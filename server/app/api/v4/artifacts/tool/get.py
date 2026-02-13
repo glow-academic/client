@@ -256,6 +256,7 @@ async def get_tool_internal(
                 "recent",
                 description_ids,
                 bypass_cache,
+                tool=True,
             )
             return selected, suggestions
 
@@ -271,6 +272,7 @@ async def get_tool_internal(
                 "linked",
                 selected_args_ids,
                 bypass_cache,
+                tool=True,
             )
             return selected, suggestions
 
@@ -288,6 +290,7 @@ async def get_tool_internal(
                 offset_count=0,
                 exclude_ids=selected_arg_position_ids,
                 bypass_cache=bypass_cache,
+                tool=True,
             )
             return selected, suggestions
 
@@ -307,6 +310,7 @@ async def get_tool_internal(
                 "linked",
                 selected_args_outputs_ids,
                 bypass_cache,
+                tool=True,
             )
             return selected, suggestions
 
@@ -320,7 +324,7 @@ async def get_tool_internal(
                 0,
                 flag_ids,
                 bypass_cache,
-                artifact_type="tool",
+                tool=True,
             )
             suggestions = [f for f in all_flags if f.name in tool_flag_names]
             return selected, suggestions

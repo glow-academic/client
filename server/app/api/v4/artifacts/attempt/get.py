@@ -595,9 +595,7 @@ async def get_attempt_internal(
                     description=resource_meta["documents"]
                     .get(document_id, {})
                     .get("description"),
-                    html=resource_meta["documents"]
-                    .get(document_id, {})
-                    .get("html"),
+                    html=resource_meta["documents"].get(document_id, {}).get("html"),
                 )
                 for document_id in resource_meta["documents"].keys()
             }

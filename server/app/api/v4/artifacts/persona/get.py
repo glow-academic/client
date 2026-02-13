@@ -402,6 +402,7 @@ async def get_persona_internal(
                 "recent",
                 description_ids,
                 bypass_cache,
+                persona=True,
             )
             return (selected, suggestions)
 
@@ -417,6 +418,7 @@ async def get_persona_internal(
                 "recent",
                 color_ids,
                 bypass_cache,
+                persona=True,
             )
             return (selected, suggestions)
 
@@ -432,6 +434,7 @@ async def get_persona_internal(
                 "recent",
                 icon_ids,
                 bypass_cache,
+                persona=True,
             )
             return (selected, suggestions)
 
@@ -449,6 +452,7 @@ async def get_persona_internal(
                 "recent",
                 instructions_ids,
                 bypass_cache,
+                persona=True,
             )
             return (selected, suggestions)
 
@@ -465,7 +469,7 @@ async def get_persona_internal(
                 0,
                 flag_ids,
                 bypass_cache,
-                artifact_type="persona",
+                persona=True,
             )
             # Filter to only persona-specific flags (business logic in Python)
             suggestions = [f for f in all_flags if f.name in PERSONA_FLAG_NAMES]
@@ -485,6 +489,7 @@ async def get_persona_internal(
                 "all",
                 department_ids,
                 bypass_cache,
+                persona=True,
             )
             return (selected, suggestions)
 
@@ -520,6 +525,7 @@ async def get_persona_internal(
                 example_source,
                 example_ids,
                 bypass_cache,
+                persona=True,
             )
             return (selected, suggestions)
 
@@ -543,6 +549,7 @@ async def get_persona_internal(
                 "all",
                 parameter_ids,
                 bypass_cache,
+                persona=True,
             )
             return (selected, suggestions)
 

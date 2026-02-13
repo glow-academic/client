@@ -1,10 +1,11 @@
 """Fields SEARCH endpoint - v4 API following DHH principles."""
 
-from typing import Annotated, cast
+from typing import Annotated, Any, cast
 from uuid import UUID
 
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from pydantic import BaseModel
 
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
@@ -12,7 +13,6 @@ from app.sql.types import (
     QGetFieldsV4Item,
     SearchFieldsApiRequest,
     SearchFieldsApiResponse,
-    SearchFieldsSqlParams,
     SearchFieldsSqlRow,
     load_sql_query,
 )
@@ -26,6 +26,33 @@ SQL_PATH = "app/sql/v4/queries/resources/fields/search_fields_complete.sql"
 router = APIRouter()
 
 
+# Handcrafted params to match SQL signature with artifact boolean filters
+class SearchFieldsParams(BaseModel):
+    search: str | None = None
+    limit_count: int | None = 20
+    offset_count: int | None = 0
+    user_department_ids: list[UUID] = []
+    draft_id: UUID | None = None
+    suggest_source: str | None = "all"
+    exclude_ids: list[UUID] = []
+    # Artifact boolean filters
+    field: bool = False
+    parameter: bool = False
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.search,
+            self.limit_count,
+            self.offset_count,
+            self.user_department_ids,
+            self.draft_id,
+            self.suggest_source,
+            self.exclude_ids,
+            self.field,
+            self.parameter,
+        )
+
+
 async def search_fields_internal(
     conn: asyncpg.Connection,
     search: str | None = None,
@@ -37,6 +64,9 @@ async def search_fields_internal(
     exclude_ids: list[UUID] | None = None,
     parameter_id: UUID | None = None,
     bypass_cache: bool = False,
+    *,
+    field: bool = False,
+    parameter: bool = False,
 ) -> list[QGetFieldsV4Item]:
     if limit_count is not None and limit_count <= 0:
         return []
@@ -53,6 +83,8 @@ async def search_fields_internal(
             "suggest_source": suggest_source,
             "exclude_ids": [str(id) for id in (exclude_ids or [])],
             "parameter_id": str(parameter_id) if parameter_id else None,
+            "field": field,
+            "parameter": parameter,
         },
     )
 
@@ -64,7 +96,7 @@ async def search_fields_internal(
                 for item in cached.get("items", [])
             ]
 
-    params = SearchFieldsSqlParams(
+    params = SearchFieldsParams(
         search=search,
         limit_count=limit_count,
         offset_count=offset_count,
@@ -72,7 +104,8 @@ async def search_fields_internal(
         draft_id=draft_id,
         suggest_source=suggest_source,
         exclude_ids=exclude_ids or [],
-        parameter_id=parameter_id,
+        field=field,
+        parameter=parameter,
     )
     result = cast(
         SearchFieldsSqlRow,

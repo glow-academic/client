@@ -28,7 +28,9 @@ CREATE OR REPLACE FUNCTION api_search_examples_v4(
     user_department_ids uuid[] DEFAULT ARRAY[]::uuid[],
     draft_id uuid DEFAULT NULL,
     suggest_source text DEFAULT 'all',
-    exclude_ids uuid[] DEFAULT ARRAY[]::uuid[]
+    exclude_ids uuid[] DEFAULT ARRAY[]::uuid[],
+    -- Artifact boolean filters: when true, only return resources linked to that artifact type
+    persona boolean DEFAULT false
 )
 RETURNS TABLE (
     items types.q_get_examples_v4_item[]
@@ -81,15 +83,9 @@ FROM (
                     AND dc.draft_id = api_search_examples_v4.draft_id
               )
           )
-          OR (
-              suggest_source = 'linked'
-              AND EXISTS (
-                  SELECT 1 FROM persona_examples_junction pe
-                  WHERE pe.example_id = e.id
-                    AND pe.active = true
-              )
-          )
       )
+      -- Artifact boolean filters (each filters to resources linked to at least one of that artifact type)
+      AND (NOT persona OR EXISTS (SELECT 1 FROM persona_examples_junction j WHERE j.example_id = e.id AND j.active = true))
     ORDER BY e.example
     LIMIT limit_count
     OFFSET offset_count

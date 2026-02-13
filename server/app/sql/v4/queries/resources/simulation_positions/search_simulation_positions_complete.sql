@@ -32,7 +32,9 @@ CREATE OR REPLACE FUNCTION api_search_simulation_positions_v4(
     simulation_id uuid DEFAULT NULL,
     limit_count int DEFAULT 20,
     offset_count int DEFAULT 0,
-    exclude_ids uuid[] DEFAULT ARRAY[]::uuid[]
+    exclude_ids uuid[] DEFAULT ARRAY[]::uuid[],
+    -- Artifact boolean filters: when true, only return resources linked to that artifact type
+    cohort boolean DEFAULT false
 )
 RETURNS TABLE (
     items types.q_search_simulation_positions_v4_item[]
@@ -61,6 +63,8 @@ position_data AS (
     WHERE (p.sim_id IS NULL OR spr.simulation_id = p.sim_id)
     -- Exclude specified IDs
     AND NOT spr.id = ANY(p.exclude_ids)
+      -- Artifact boolean filters (each filters to resources linked to at least one of that artifact type)
+      AND (NOT cohort OR EXISTS (SELECT 1 FROM cohort_simulation_positions_junction j WHERE j.simulation_position_id = spr.id AND j.active = true))
     ORDER BY spr.value, spr.simulation_id
 )
 SELECT COALESCE(

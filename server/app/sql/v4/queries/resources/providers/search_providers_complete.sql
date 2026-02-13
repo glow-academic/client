@@ -22,7 +22,10 @@ CREATE OR REPLACE FUNCTION api_search_providers_v4(
     search text DEFAULT NULL,
     limit_count int DEFAULT 20,
     offset_count int DEFAULT 0,
-    exclude_ids uuid[] DEFAULT ARRAY[]::uuid[]
+    exclude_ids uuid[] DEFAULT ARRAY[]::uuid[],
+    -- Artifact boolean filters: when true, only return resources linked to that artifact type
+    model boolean DEFAULT false,
+    provider boolean DEFAULT false
 )
 RETURNS TABLE (
     items types.q_get_providers_v4_item[]
@@ -42,6 +45,9 @@ FROM (
     FROM providers_resource p
     WHERE (search IS NULL OR search = '' OR LOWER(p.name) LIKE '%' || LOWER(search) || '%' OR LOWER(COALESCE(p.description, '')) LIKE '%' || LOWER(search) || '%')
       AND (exclude_ids IS NULL OR NOT (p.id = ANY(exclude_ids)))
+      -- Artifact boolean filters (each filters to resources linked to at least one of that artifact type)
+      AND (NOT model OR EXISTS (SELECT 1 FROM model_providers_junction j WHERE j.providers_id = p.id AND j.active = true))
+      AND (NOT provider OR EXISTS (SELECT 1 FROM provider_providers_junction j WHERE j.providers_id = p.id AND j.active = true))
     ORDER BY p.name
     LIMIT limit_count
     OFFSET offset_count

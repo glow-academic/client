@@ -1,10 +1,11 @@
 """Arg positions SEARCH endpoint - v4 API following DHH principles."""
 
-from typing import Annotated, cast
+from typing import Annotated, Any, cast
 from uuid import UUID
 
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from pydantic import BaseModel
 
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
@@ -12,7 +13,6 @@ from app.sql.types import (
     QGetArgPositionsV4Item,
     SearchArgPositionsApiRequest,
     SearchArgPositionsApiResponse,
-    SearchArgPositionsSqlParams,
     SearchArgPositionsSqlRow,
     load_sql_query,
 )
@@ -28,6 +28,25 @@ SQL_PATH = (
 router = APIRouter()
 
 
+# Handcrafted params to match SQL signature with artifact boolean filters
+class SearchArgPositionsParams(BaseModel):
+    args_ids: list[UUID] = []
+    limit_count: int | None = 100
+    offset_count: int | None = 0
+    exclude_ids: list[UUID] = []
+    # Artifact boolean filters
+    tool: bool = False
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.args_ids,
+            self.limit_count,
+            self.offset_count,
+            self.exclude_ids,
+            self.tool,
+        )
+
+
 async def search_arg_positions_internal(
     conn: asyncpg.Connection,
     args_ids: list[UUID] | None = None,
@@ -35,6 +54,8 @@ async def search_arg_positions_internal(
     offset_count: int | None = 0,
     exclude_ids: list[UUID] | None = None,
     bypass_cache: bool = False,
+    *,
+    tool: bool = False,
 ) -> list[QGetArgPositionsV4Item]:
     """Internal function to search arg_positions."""
     tags = ["resources", "arg_positions"]
@@ -45,6 +66,7 @@ async def search_arg_positions_internal(
             "limit_count": limit_count,
             "offset_count": offset_count,
             "exclude_ids": sorted([str(id) for id in (exclude_ids or [])]),
+            "tool": tool,
         },
     )
 
@@ -56,11 +78,12 @@ async def search_arg_positions_internal(
                 for item in cached.get("items", [])
             ]
 
-    params = SearchArgPositionsSqlParams(
+    params = SearchArgPositionsParams(
         args_ids=args_ids or [],
         limit_count=limit_count,
         offset_count=offset_count,
         exclude_ids=exclude_ids or [],
+        tool=tool,
     )
     result = cast(
         SearchArgPositionsSqlRow,

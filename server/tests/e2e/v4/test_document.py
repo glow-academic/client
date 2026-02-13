@@ -10,9 +10,6 @@ from playwright.sync_api import Page, expect
 
 from server.tests.e2e.v4.conftest import (
     ADMIN_PROFILE_ID,
-    generate_unique_name,
-    post_json,
-    resolve_profile_ids,
 )
 
 pytestmark = [pytest.mark.e2e, pytest.mark.test_profile_id(ADMIN_PROFILE_ID)]

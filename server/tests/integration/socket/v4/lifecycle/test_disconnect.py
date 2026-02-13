@@ -31,11 +31,10 @@ async def test_disconnect_with_profile_success(
 
     # Assert
     # Verify profile was marked as inactive in database
-    from app.utils.sql_helper import execute_sql_typed
-
     from app.sql.types import (
         TestGetProfileByIdV4SqlParams,
     )
+    from app.utils.sql_helper import execute_sql_typed
 
     profile_result = await execute_sql_typed(
         conn=db,

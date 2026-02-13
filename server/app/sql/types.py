@@ -4861,6 +4861,31 @@ class GetDocumentApiResponse(BaseModel):
 
 
 
+# Generated from: get_document_html_data
+
+class GetDocumentHtmlDataSqlParams(BaseModel):
+
+    p_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.p_id,
+        )
+
+class GetDocumentHtmlDataSqlRow(BaseModel):
+
+    html: str | None = None
+
+class GetDocumentHtmlDataApiRequest(BaseModel):
+
+    p_id: UUID
+
+class GetDocumentHtmlDataApiResponse(BaseModel):
+
+    html: str | None = None
+
+
+
 # Generated from: get_document_ids
 
 class GetDocumentIdsSqlParams(BaseModel):
@@ -4952,6 +4977,40 @@ class GetDocumentIdsApiResponse(BaseModel):
     uploads_domain_id: UUID | None = None
     images_domain_id: UUID | None = None
     texts_domain_id: UUID | None = None
+
+
+
+# Generated from: get_document_resource_data
+
+class GetDocumentResourceDataSqlParams(BaseModel):
+
+    document_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.document_id,
+        )
+
+class QGetDocumentResourceV4Item(BaseModel):
+
+    document_id: UUID | None
+    name: str | None
+    description: str | None
+    file_path: str | None
+    mime_type: str | None
+    generated: bool | None
+
+class GetDocumentResourceDataSqlRow(BaseModel):
+
+    items: list[QGetDocumentResourceV4Item] | None = None
+
+class GetDocumentResourceDataApiRequest(BaseModel):
+
+    document_id: UUID
+
+class GetDocumentResourceDataApiResponse(BaseModel):
+
+    items: list[QGetDocumentResourceV4Item] | None = None
 
 
 
@@ -10974,6 +11033,43 @@ class GetPersonaIdsApiResponse(BaseModel):
 
 
 
+# Generated from: get_persona_resource_data
+
+class GetPersonaResourceDataSqlParams(BaseModel):
+
+    id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.id,
+        )
+
+class QGetPersonaResourceV4Item(BaseModel):
+
+    persona_id: UUID | None
+    name: str | None
+    description: str | None
+    color: str | None
+    icon: str | None
+    image_model: bool | None
+    instructions: str | None
+    examples: list[str] | None
+    generated: bool | None
+
+class GetPersonaResourceDataSqlRow(BaseModel):
+
+    items: list[QGetPersonaResourceV4Item] | None = None
+
+class GetPersonaResourceDataApiRequest(BaseModel):
+
+    id: UUID
+
+class GetPersonaResourceDataApiResponse(BaseModel):
+
+    items: list[QGetPersonaResourceV4Item] | None = None
+
+
+
 # Generated from: get_persona_resource_ids_by_group_id
 
 class GetPersonaResourceIdsByGroupIdSqlParams(BaseModel):
@@ -13154,6 +13250,8 @@ class SearchAgentsSqlParams(BaseModel):
     limit_count: int | None = 20
     offset_count: int | None = 0
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    agent: bool | None = False
+    setting: bool | None = False
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
@@ -13161,6 +13259,8 @@ class SearchAgentsSqlParams(BaseModel):
             self.limit_count,
             self.offset_count,
             self.exclude_ids,
+            self.agent,
+            self.setting,
         )
 
 class SearchAgentsSqlRow(BaseModel):
@@ -13173,6 +13273,8 @@ class SearchAgentsApiRequest(BaseModel):
     limit_count: int | None = 20
     offset_count: int | None = 0
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    agent: bool | None = False
+    setting: bool | None = False
 
 class SearchAgentsApiResponse(BaseModel):
 
@@ -13216,19 +13318,19 @@ class GetArgPositionsApiResponse(BaseModel):
 
 class SearchArgPositionsSqlParams(BaseModel):
 
-    tool_id: UUID | None = None
     args_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
     limit_count: int | None = 100
     offset_count: int | None = 0
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    tool: bool | None = False
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
-            self.tool_id,
             self.args_ids,
             self.limit_count,
             self.offset_count,
             self.exclude_ids,
+            self.tool,
         )
 
 class SearchArgPositionsSqlRow(BaseModel):
@@ -13237,11 +13339,11 @@ class SearchArgPositionsSqlRow(BaseModel):
 
 class SearchArgPositionsApiRequest(BaseModel):
 
-    tool_id: UUID | None = None
     args_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
     limit_count: int | None = 100
     offset_count: int | None = 0
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    tool: bool | None = False
 
 class SearchArgPositionsApiResponse(BaseModel):
 
@@ -13253,18 +13355,12 @@ class SearchArgPositionsApiResponse(BaseModel):
 
 class ArgPositionsSqlParams(BaseModel):
 
-    agent_id: UUID
-    group_id: UUID
-    tool_id: UUID
     args_id: UUID
     value: int
     mcp: bool | None = False
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
-            self.agent_id,
-            self.group_id,
-            self.tool_id,
             self.args_id,
             self.value,
             self.mcp,
@@ -13276,9 +13372,6 @@ class ArgPositionsSqlRow(BaseModel):
 
 class ArgPositionsApiRequest(BaseModel):
 
-    agent_id: UUID
-    group_id: UUID
-    tool_id: UUID
     args_id: UUID
     value: int
     mcp: bool | None = False
@@ -13334,6 +13427,7 @@ class SearchArgsSqlParams(BaseModel):
     draft_id: UUID | None = None
     suggest_source: str | None = None
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    tool: bool | None = False
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
@@ -13343,6 +13437,7 @@ class SearchArgsSqlParams(BaseModel):
             self.draft_id,
             self.suggest_source,
             self.exclude_ids,
+            self.tool,
         )
 
 class SearchArgsSqlRow(BaseModel):
@@ -13357,6 +13452,7 @@ class SearchArgsApiRequest(BaseModel):
     draft_id: UUID | None = None
     suggest_source: str | None = None
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    tool: bool | None = False
 
 class SearchArgsApiResponse(BaseModel):
 
@@ -13453,6 +13549,7 @@ class SearchArgsOutputsSqlParams(BaseModel):
     draft_id: UUID | None = None
     suggest_source: str | None = None
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    tool: bool | None = False
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
@@ -13462,6 +13559,7 @@ class SearchArgsOutputsSqlParams(BaseModel):
             self.draft_id,
             self.suggest_source,
             self.exclude_ids,
+            self.tool,
         )
 
 class SearchArgsOutputsSqlRow(BaseModel):
@@ -13476,6 +13574,7 @@ class SearchArgsOutputsApiRequest(BaseModel):
     draft_id: UUID | None = None
     suggest_source: str | None = None
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    tool: bool | None = False
 
 class SearchArgsOutputsApiResponse(BaseModel):
 
@@ -13568,6 +13667,7 @@ class SearchAuthItemKeysSqlParams(BaseModel):
     limit_count: int | None = 20
     offset_count: int | None = 0
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    setting: bool | None = False
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
@@ -13575,6 +13675,7 @@ class SearchAuthItemKeysSqlParams(BaseModel):
             self.limit_count,
             self.offset_count,
             self.exclude_ids,
+            self.setting,
         )
 
 class SearchAuthItemKeysSqlRow(BaseModel):
@@ -13587,6 +13688,7 @@ class SearchAuthItemKeysApiRequest(BaseModel):
     limit_count: int | None = 20
     offset_count: int | None = 0
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    setting: bool | None = False
 
 class SearchAuthItemKeysApiResponse(BaseModel):
 
@@ -13671,6 +13773,8 @@ class SearchAuthsSqlParams(BaseModel):
     limit_count: int | None = 20
     offset_count: int | None = 0
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    auth: bool | None = False
+    setting: bool | None = False
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
@@ -13678,6 +13782,8 @@ class SearchAuthsSqlParams(BaseModel):
             self.limit_count,
             self.offset_count,
             self.exclude_ids,
+            self.auth,
+            self.setting,
         )
 
 class SearchAuthsSqlRow(BaseModel):
@@ -13690,6 +13796,8 @@ class SearchAuthsApiRequest(BaseModel):
     limit_count: int | None = 20
     offset_count: int | None = 0
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    auth: bool | None = False
+    setting: bool | None = False
 
 class SearchAuthsApiResponse(BaseModel):
 
@@ -13736,6 +13844,7 @@ class SearchBindingsSqlParams(BaseModel):
     limit_count: int | None = 20
     offset_count: int | None = 0
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    tool: bool | None = False
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
@@ -13743,6 +13852,7 @@ class SearchBindingsSqlParams(BaseModel):
             self.limit_count,
             self.offset_count,
             self.exclude_ids,
+            self.tool,
         )
 
 class SearchBindingsSqlRow(BaseModel):
@@ -13755,6 +13865,7 @@ class SearchBindingsApiRequest(BaseModel):
     limit_count: int | None = 20
     offset_count: int | None = 0
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    tool: bool | None = False
 
 class SearchBindingsApiResponse(BaseModel):
 
@@ -13803,6 +13914,8 @@ class SearchCohortsSqlParams(BaseModel):
     limit_count: int | None = 20
     offset_count: int | None = 0
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    cohort: bool | None = False
+    profile: bool | None = False
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
@@ -13810,6 +13923,8 @@ class SearchCohortsSqlParams(BaseModel):
             self.limit_count,
             self.offset_count,
             self.exclude_ids,
+            self.cohort,
+            self.profile,
         )
 
 class SearchCohortsSqlRow(BaseModel):
@@ -13822,6 +13937,8 @@ class SearchCohortsApiRequest(BaseModel):
     limit_count: int | None = 20
     offset_count: int | None = 0
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    cohort: bool | None = False
+    profile: bool | None = False
 
 class SearchCohortsApiResponse(BaseModel):
 
@@ -13872,6 +13989,8 @@ class SearchColorsSqlParams(BaseModel):
     draft_id: UUID | None = None
     suggest_source: str | None = None
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    persona: bool | None = False
+    setting: bool | None = False
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
@@ -13881,6 +14000,8 @@ class SearchColorsSqlParams(BaseModel):
             self.draft_id,
             self.suggest_source,
             self.exclude_ids,
+            self.persona,
+            self.setting,
         )
 
 class SearchColorsSqlRow(BaseModel):
@@ -13895,6 +14016,8 @@ class SearchColorsApiRequest(BaseModel):
     draft_id: UUID | None = None
     suggest_source: str | None = None
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    persona: bool | None = False
+    setting: bool | None = False
 
 class SearchColorsApiResponse(BaseModel):
 
@@ -14055,6 +14178,23 @@ class SearchDepartmentsSqlParams(BaseModel):
     draft_id: UUID | None = None
     suggest_source: str | None = None
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    agent: bool | None = False
+    auth: bool | None = False
+    cohort: bool | None = False
+    department: bool | None = False
+    document: bool | None = False
+    eval: bool | None = False
+    field: bool | None = False
+    model: bool | None = False
+    parameter: bool | None = False
+    persona: bool | None = False
+    profile: bool | None = False
+    provider: bool | None = False
+    rubric: bool | None = False
+    scenario: bool | None = False
+    setting: bool | None = False
+    simulation: bool | None = False
+    tool: bool | None = False
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
@@ -14065,6 +14205,23 @@ class SearchDepartmentsSqlParams(BaseModel):
             self.draft_id,
             self.suggest_source,
             self.exclude_ids,
+            self.agent,
+            self.auth,
+            self.cohort,
+            self.department,
+            self.document,
+            self.eval,
+            self.field,
+            self.model,
+            self.parameter,
+            self.persona,
+            self.profile,
+            self.provider,
+            self.rubric,
+            self.scenario,
+            self.setting,
+            self.simulation,
+            self.tool,
         )
 
 class SearchDepartmentsSqlRow(BaseModel):
@@ -14080,6 +14237,23 @@ class SearchDepartmentsApiRequest(BaseModel):
     draft_id: UUID | None = None
     suggest_source: str | None = None
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    agent: bool | None = False
+    auth: bool | None = False
+    cohort: bool | None = False
+    department: bool | None = False
+    document: bool | None = False
+    eval: bool | None = False
+    field: bool | None = False
+    model: bool | None = False
+    parameter: bool | None = False
+    persona: bool | None = False
+    profile: bool | None = False
+    provider: bool | None = False
+    rubric: bool | None = False
+    scenario: bool | None = False
+    setting: bool | None = False
+    simulation: bool | None = False
+    tool: bool | None = False
 
 class SearchDepartmentsApiResponse(BaseModel):
 
@@ -14128,6 +14302,22 @@ class SearchDescriptionsSqlParams(BaseModel):
     draft_id: UUID | None = None
     suggest_source: str | None = None
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    agent: bool | None = False
+    auth: bool | None = False
+    cohort: bool | None = False
+    department: bool | None = False
+    document: bool | None = False
+    eval: bool | None = False
+    field: bool | None = False
+    model: bool | None = False
+    parameter: bool | None = False
+    persona: bool | None = False
+    provider: bool | None = False
+    rubric: bool | None = False
+    scenario: bool | None = False
+    setting: bool | None = False
+    simulation: bool | None = False
+    tool: bool | None = False
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
@@ -14137,6 +14327,22 @@ class SearchDescriptionsSqlParams(BaseModel):
             self.draft_id,
             self.suggest_source,
             self.exclude_ids,
+            self.agent,
+            self.auth,
+            self.cohort,
+            self.department,
+            self.document,
+            self.eval,
+            self.field,
+            self.model,
+            self.parameter,
+            self.persona,
+            self.provider,
+            self.rubric,
+            self.scenario,
+            self.setting,
+            self.simulation,
+            self.tool,
         )
 
 class SearchDescriptionsSqlRow(BaseModel):
@@ -14151,6 +14357,22 @@ class SearchDescriptionsApiRequest(BaseModel):
     draft_id: UUID | None = None
     suggest_source: str | None = None
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    agent: bool | None = False
+    auth: bool | None = False
+    cohort: bool | None = False
+    department: bool | None = False
+    document: bool | None = False
+    eval: bool | None = False
+    field: bool | None = False
+    model: bool | None = False
+    parameter: bool | None = False
+    persona: bool | None = False
+    provider: bool | None = False
+    rubric: bool | None = False
+    scenario: bool | None = False
+    setting: bool | None = False
+    simulation: bool | None = False
+    tool: bool | None = False
 
 class SearchDescriptionsApiResponse(BaseModel):
 
@@ -14228,15 +14450,6 @@ class GetDocumentResourceSqlParams(BaseModel):
             self.document_id,
         )
 
-class QGetDocumentResourceV4Item(BaseModel):
-
-    document_id: UUID | None
-    name: str | None
-    description: str | None
-    file_path: str | None
-    mime_type: str | None
-    generated: bool | None
-
 class GetDocumentResourceSqlRow(BaseModel):
 
     items: list[QGetDocumentResourceV4Item] | None = None
@@ -14267,8 +14480,6 @@ class QGetDocumentsV4Item(BaseModel):
     document_id: UUID | None
     name: str | None
     description: str | None
-    file_path: str | None
-    mime_type: str | None
     generated: bool | None
     upload_id: UUID | None
     html: bool | None
@@ -14298,6 +14509,8 @@ class SearchDocumentsSqlParams(BaseModel):
     draft_id: UUID | None = None
     suggest_source: str | None = None
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    document: bool | None = False
+    scenario: bool | None = False
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
@@ -14308,6 +14521,8 @@ class SearchDocumentsSqlParams(BaseModel):
             self.draft_id,
             self.suggest_source,
             self.exclude_ids,
+            self.document,
+            self.scenario,
         )
 
 class SearchDocumentsSqlRow(BaseModel):
@@ -14323,6 +14538,8 @@ class SearchDocumentsApiRequest(BaseModel):
     draft_id: UUID | None = None
     suggest_source: str | None = None
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    document: bool | None = False
+    scenario: bool | None = False
 
 class SearchDocumentsApiResponse(BaseModel):
 
@@ -14370,6 +14587,7 @@ class SearchDomainsSqlParams(BaseModel):
     limit_count: int | None = 20
     offset_count: int | None = 0
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    tool: bool | None = False
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
@@ -14377,6 +14595,7 @@ class SearchDomainsSqlParams(BaseModel):
             self.limit_count,
             self.offset_count,
             self.exclude_ids,
+            self.tool,
         )
 
 class SearchDomainsSqlRow(BaseModel):
@@ -14389,6 +14608,7 @@ class SearchDomainsApiRequest(BaseModel):
     limit_count: int | None = 20
     offset_count: int | None = 0
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    tool: bool | None = False
 
 class SearchDomainsApiResponse(BaseModel):
 
@@ -14435,6 +14655,7 @@ class SearchEmailsSqlParams(BaseModel):
     limit_count: int | None = 20
     offset_count: int | None = 0
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    profile: bool | None = False
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
@@ -14442,6 +14663,7 @@ class SearchEmailsSqlParams(BaseModel):
             self.limit_count,
             self.offset_count,
             self.exclude_ids,
+            self.profile,
         )
 
 class SearchEmailsSqlRow(BaseModel):
@@ -14454,6 +14676,7 @@ class SearchEmailsApiRequest(BaseModel):
     limit_count: int | None = 20
     offset_count: int | None = 0
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    profile: bool | None = False
 
 class SearchEmailsApiResponse(BaseModel):
 
@@ -14534,6 +14757,7 @@ class SearchEndpointsSqlParams(BaseModel):
     limit_count: int | None = 20
     offset_count: int | None = 0
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    provider: bool | None = False
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
@@ -14541,6 +14765,7 @@ class SearchEndpointsSqlParams(BaseModel):
             self.limit_count,
             self.offset_count,
             self.exclude_ids,
+            self.provider,
         )
 
 class SearchEndpointsSqlRow(BaseModel):
@@ -14553,6 +14778,7 @@ class SearchEndpointsApiRequest(BaseModel):
     limit_count: int | None = 20
     offset_count: int | None = 0
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    provider: bool | None = False
 
 class SearchEndpointsApiResponse(BaseModel):
 
@@ -14632,6 +14858,7 @@ class SearchEvalsSqlParams(BaseModel):
     limit_count: int | None = 20
     offset_count: int | None = 0
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    eval: bool | None = False
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
@@ -14639,6 +14866,7 @@ class SearchEvalsSqlParams(BaseModel):
             self.limit_count,
             self.offset_count,
             self.exclude_ids,
+            self.eval,
         )
 
 class SearchEvalsSqlRow(BaseModel):
@@ -14651,6 +14879,7 @@ class SearchEvalsApiRequest(BaseModel):
     limit_count: int | None = 20
     offset_count: int | None = 0
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    eval: bool | None = False
 
 class SearchEvalsApiResponse(BaseModel):
 
@@ -14702,6 +14931,7 @@ class SearchExamplesSqlParams(BaseModel):
     draft_id: UUID | None = None
     suggest_source: str | None = None
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    persona: bool | None = False
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
@@ -14713,6 +14943,7 @@ class SearchExamplesSqlParams(BaseModel):
             self.draft_id,
             self.suggest_source,
             self.exclude_ids,
+            self.persona,
         )
 
 class SearchExamplesSqlRow(BaseModel):
@@ -14729,6 +14960,7 @@ class SearchExamplesApiRequest(BaseModel):
     draft_id: UUID | None = None
     suggest_source: str | None = None
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    persona: bool | None = False
 
 class SearchExamplesApiResponse(BaseModel):
 
@@ -14815,6 +15047,8 @@ class SearchFieldsSqlParams(BaseModel):
     draft_id: UUID | None = None
     suggest_source: str | None = None
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    field: bool | None = False
+    parameter: bool | None = False
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
@@ -14825,6 +15059,8 @@ class SearchFieldsSqlParams(BaseModel):
             self.draft_id,
             self.suggest_source,
             self.exclude_ids,
+            self.field,
+            self.parameter,
         )
 
 class SearchFieldsSqlRow(BaseModel):
@@ -14840,6 +15076,8 @@ class SearchFieldsApiRequest(BaseModel):
     draft_id: UUID | None = None
     suggest_source: str | None = None
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    field: bool | None = False
+    parameter: bool | None = False
 
 class SearchFieldsApiResponse(BaseModel):
 
@@ -14888,7 +15126,23 @@ class SearchFlagsSqlParams(BaseModel):
     limit_count: int | None = 20
     offset_count: int | None = 0
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    artifact_type: str | None = None
+    agent: bool | None = False
+    auth: bool | None = False
+    cohort: bool | None = False
+    department: bool | None = False
+    document: bool | None = False
+    eval: bool | None = False
+    field: bool | None = False
+    model: bool | None = False
+    parameter: bool | None = False
+    persona: bool | None = False
+    profile: bool | None = False
+    provider: bool | None = False
+    rubric: bool | None = False
+    scenario: bool | None = False
+    setting: bool | None = False
+    simulation: bool | None = False
+    tool: bool | None = False
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
@@ -14896,7 +15150,23 @@ class SearchFlagsSqlParams(BaseModel):
             self.limit_count,
             self.offset_count,
             self.exclude_ids,
-            self.artifact_type,
+            self.agent,
+            self.auth,
+            self.cohort,
+            self.department,
+            self.document,
+            self.eval,
+            self.field,
+            self.model,
+            self.parameter,
+            self.persona,
+            self.profile,
+            self.provider,
+            self.rubric,
+            self.scenario,
+            self.setting,
+            self.simulation,
+            self.tool,
         )
 
 class SearchFlagsSqlRow(BaseModel):
@@ -14909,7 +15179,23 @@ class SearchFlagsApiRequest(BaseModel):
     limit_count: int | None = 20
     offset_count: int | None = 0
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    artifact_type: str | None = None
+    agent: bool | None = False
+    auth: bool | None = False
+    cohort: bool | None = False
+    department: bool | None = False
+    document: bool | None = False
+    eval: bool | None = False
+    field: bool | None = False
+    model: bool | None = False
+    parameter: bool | None = False
+    persona: bool | None = False
+    profile: bool | None = False
+    provider: bool | None = False
+    rubric: bool | None = False
+    scenario: bool | None = False
+    setting: bool | None = False
+    simulation: bool | None = False
+    tool: bool | None = False
 
 class SearchFlagsApiResponse(BaseModel):
 
@@ -14958,6 +15244,7 @@ class SearchGroupPositionsSqlParams(BaseModel):
     limit_count: int | None = 20
     offset_count: int | None = 0
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    eval: bool | None = False
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
@@ -14965,6 +15252,7 @@ class SearchGroupPositionsSqlParams(BaseModel):
             self.limit_count,
             self.offset_count,
             self.exclude_ids,
+            self.eval,
         )
 
 class SearchGroupPositionsSqlRow(BaseModel):
@@ -14977,6 +15265,7 @@ class SearchGroupPositionsApiRequest(BaseModel):
     limit_count: int | None = 20
     offset_count: int | None = 0
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    eval: bool | None = False
 
 class SearchGroupPositionsApiResponse(BaseModel):
 
@@ -15055,6 +15344,7 @@ class SearchGroupRubricsSqlParams(BaseModel):
     limit_count: int | None = 20
     offset_count: int | None = 0
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    eval: bool | None = False
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
@@ -15062,6 +15352,7 @@ class SearchGroupRubricsSqlParams(BaseModel):
             self.limit_count,
             self.offset_count,
             self.exclude_ids,
+            self.eval,
         )
 
 class SearchGroupRubricsSqlRow(BaseModel):
@@ -15074,6 +15365,7 @@ class SearchGroupRubricsApiRequest(BaseModel):
     limit_count: int | None = 20
     offset_count: int | None = 0
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    eval: bool | None = False
 
 class SearchGroupRubricsApiResponse(BaseModel):
 
@@ -15085,16 +15377,12 @@ class SearchGroupRubricsApiResponse(BaseModel):
 
 class GroupRubricsSqlParams(BaseModel):
 
-    agent_id: UUID
-    group_id: UUID
     target_group_id: UUID
     rubric_id: UUID
     mcp: bool | None = False
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
-            self.agent_id,
-            self.group_id,
             self.target_group_id,
             self.rubric_id,
             self.mcp,
@@ -15106,8 +15394,6 @@ class GroupRubricsSqlRow(BaseModel):
 
 class GroupRubricsApiRequest(BaseModel):
 
-    agent_id: UUID
-    group_id: UUID
     target_group_id: UUID
     rubric_id: UUID
     mcp: bool | None = False
@@ -15156,6 +15442,7 @@ class SearchGroupsSqlParams(BaseModel):
     limit_count: int | None = 20
     offset_count: int | None = 0
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    eval: bool | None = False
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
@@ -15163,6 +15450,7 @@ class SearchGroupsSqlParams(BaseModel):
             self.limit_count,
             self.offset_count,
             self.exclude_ids,
+            self.eval,
         )
 
 class SearchGroupsSqlRow(BaseModel):
@@ -15175,6 +15463,7 @@ class SearchGroupsApiRequest(BaseModel):
     limit_count: int | None = 20
     offset_count: int | None = 0
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    eval: bool | None = False
 
 class SearchGroupsApiResponse(BaseModel):
 
@@ -15225,6 +15514,7 @@ class SearchIconsSqlParams(BaseModel):
     draft_id: UUID | None = None
     suggest_source: str | None = None
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    persona: bool | None = False
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
@@ -15234,6 +15524,7 @@ class SearchIconsSqlParams(BaseModel):
             self.draft_id,
             self.suggest_source,
             self.exclude_ids,
+            self.persona,
         )
 
 class SearchIconsSqlRow(BaseModel):
@@ -15248,6 +15539,7 @@ class SearchIconsApiRequest(BaseModel):
     draft_id: UUID | None = None
     suggest_source: str | None = None
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    persona: bool | None = False
 
 class SearchIconsApiResponse(BaseModel):
 
@@ -15329,6 +15621,7 @@ class SearchImagesSqlParams(BaseModel):
     limit_count: int | None = 20
     offset_count: int | None = 0
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    scenario: bool | None = False
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
@@ -15336,6 +15629,7 @@ class SearchImagesSqlParams(BaseModel):
             self.limit_count,
             self.offset_count,
             self.exclude_ids,
+            self.scenario,
         )
 
 class SearchImagesSqlRow(BaseModel):
@@ -15348,6 +15642,7 @@ class SearchImagesApiRequest(BaseModel):
     limit_count: int | None = 20
     offset_count: int | None = 0
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    scenario: bool | None = False
 
 class SearchImagesApiResponse(BaseModel):
 
@@ -15359,16 +15654,12 @@ class SearchImagesApiResponse(BaseModel):
 
 class ImagesSqlParams(BaseModel):
 
-    agent_id: UUID
-    group_id: UUID
     name: str
     description: str
     mcp: bool | None = False
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
-            self.agent_id,
-            self.group_id,
             self.name,
             self.description,
             self.mcp,
@@ -15380,8 +15671,6 @@ class ImagesSqlRow(BaseModel):
 
 class ImagesApiRequest(BaseModel):
 
-    agent_id: UUID
-    group_id: UUID
     name: str
     description: str
     mcp: bool | None = False
@@ -15433,6 +15722,8 @@ class SearchInstructionsSqlParams(BaseModel):
     draft_id: UUID | None = None
     suggest_source: str | None = None
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    agent: bool | None = False
+    persona: bool | None = False
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
@@ -15442,6 +15733,8 @@ class SearchInstructionsSqlParams(BaseModel):
             self.draft_id,
             self.suggest_source,
             self.exclude_ids,
+            self.agent,
+            self.persona,
         )
 
 class SearchInstructionsSqlRow(BaseModel):
@@ -15456,6 +15749,8 @@ class SearchInstructionsApiRequest(BaseModel):
     draft_id: UUID | None = None
     suggest_source: str | None = None
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    agent: bool | None = False
+    persona: bool | None = False
 
 class SearchInstructionsApiResponse(BaseModel):
 
@@ -15539,6 +15834,7 @@ class SearchItemsSqlParams(BaseModel):
     limit_count: int | None = 20
     offset_count: int | None = 0
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    auth: bool | None = False
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
@@ -15546,6 +15842,7 @@ class SearchItemsSqlParams(BaseModel):
             self.limit_count,
             self.offset_count,
             self.exclude_ids,
+            self.auth,
         )
 
 class SearchItemsSqlRow(BaseModel):
@@ -15558,6 +15855,7 @@ class SearchItemsApiRequest(BaseModel):
     limit_count: int | None = 20
     offset_count: int | None = 0
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    auth: bool | None = False
 
 class SearchItemsApiResponse(BaseModel):
 
@@ -15638,6 +15936,7 @@ class SearchKeysSqlParams(BaseModel):
     limit_count: int | None = 20
     offset_count: int | None = 0
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    provider: bool | None = False
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
@@ -15645,6 +15944,7 @@ class SearchKeysSqlParams(BaseModel):
             self.limit_count,
             self.offset_count,
             self.exclude_ids,
+            self.provider,
         )
 
 class SearchKeysSqlRow(BaseModel):
@@ -15657,6 +15957,7 @@ class SearchKeysApiRequest(BaseModel):
     limit_count: int | None = 20
     offset_count: int | None = 0
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    provider: bool | None = False
 
 class SearchKeysApiResponse(BaseModel):
 
@@ -15738,6 +16039,7 @@ class SearchModalitiesSqlParams(BaseModel):
     limit_count: int | None = 20
     offset_count: int | None = 0
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    model: bool | None = False
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
@@ -15745,6 +16047,7 @@ class SearchModalitiesSqlParams(BaseModel):
             self.limit_count,
             self.offset_count,
             self.exclude_ids,
+            self.model,
         )
 
 class SearchModalitiesSqlRow(BaseModel):
@@ -15757,6 +16060,7 @@ class SearchModalitiesApiRequest(BaseModel):
     limit_count: int | None = 20
     offset_count: int | None = 0
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    model: bool | None = False
 
 class SearchModalitiesApiResponse(BaseModel):
 
@@ -15812,6 +16116,8 @@ class SearchModelsSqlParams(BaseModel):
     limit_count: int | None = 20
     offset_count: int | None = 0
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    agent: bool | None = False
+    model: bool | None = False
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
@@ -15819,6 +16125,8 @@ class SearchModelsSqlParams(BaseModel):
             self.limit_count,
             self.offset_count,
             self.exclude_ids,
+            self.agent,
+            self.model,
         )
 
 class SearchModelsSqlRow(BaseModel):
@@ -15831,6 +16139,8 @@ class SearchModelsApiRequest(BaseModel):
     limit_count: int | None = 20
     offset_count: int | None = 0
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    agent: bool | None = False
+    model: bool | None = False
 
 class SearchModelsApiResponse(BaseModel):
 
@@ -15879,6 +16189,23 @@ class SearchNamesSqlParams(BaseModel):
     draft_id: UUID | None = None
     suggest_source: str | None = None
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    agent: bool | None = False
+    auth: bool | None = False
+    cohort: bool | None = False
+    department: bool | None = False
+    document: bool | None = False
+    eval: bool | None = False
+    field: bool | None = False
+    model: bool | None = False
+    parameter: bool | None = False
+    persona: bool | None = False
+    profile: bool | None = False
+    provider: bool | None = False
+    rubric: bool | None = False
+    scenario: bool | None = False
+    setting: bool | None = False
+    simulation: bool | None = False
+    tool: bool | None = False
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
@@ -15888,6 +16215,23 @@ class SearchNamesSqlParams(BaseModel):
             self.draft_id,
             self.suggest_source,
             self.exclude_ids,
+            self.agent,
+            self.auth,
+            self.cohort,
+            self.department,
+            self.document,
+            self.eval,
+            self.field,
+            self.model,
+            self.parameter,
+            self.persona,
+            self.profile,
+            self.provider,
+            self.rubric,
+            self.scenario,
+            self.setting,
+            self.simulation,
+            self.tool,
         )
 
 class SearchNamesSqlRow(BaseModel):
@@ -15902,6 +16246,23 @@ class SearchNamesApiRequest(BaseModel):
     draft_id: UUID | None = None
     suggest_source: str | None = None
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    agent: bool | None = False
+    auth: bool | None = False
+    cohort: bool | None = False
+    department: bool | None = False
+    document: bool | None = False
+    eval: bool | None = False
+    field: bool | None = False
+    model: bool | None = False
+    parameter: bool | None = False
+    persona: bool | None = False
+    profile: bool | None = False
+    provider: bool | None = False
+    rubric: bool | None = False
+    scenario: bool | None = False
+    setting: bool | None = False
+    simulation: bool | None = False
+    tool: bool | None = False
 
 class SearchNamesApiResponse(BaseModel):
 
@@ -16013,6 +16374,7 @@ class SearchObjectivesSqlParams(BaseModel):
     limit_count: int | None = 20
     offset_count: int | None = 0
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    scenario: bool | None = False
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
@@ -16020,6 +16382,7 @@ class SearchObjectivesSqlParams(BaseModel):
             self.limit_count,
             self.offset_count,
             self.exclude_ids,
+            self.scenario,
         )
 
 class SearchObjectivesSqlRow(BaseModel):
@@ -16032,6 +16395,7 @@ class SearchObjectivesApiRequest(BaseModel):
     limit_count: int | None = 20
     offset_count: int | None = 0
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    scenario: bool | None = False
 
 class SearchObjectivesApiResponse(BaseModel):
 
@@ -16114,6 +16478,7 @@ class SearchOptionsSqlParams(BaseModel):
     limit_count: int | None = 20
     offset_count: int | None = 0
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    scenario: bool | None = False
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
@@ -16121,6 +16486,7 @@ class SearchOptionsSqlParams(BaseModel):
             self.limit_count,
             self.offset_count,
             self.exclude_ids,
+            self.scenario,
         )
 
 class SearchOptionsSqlRow(BaseModel):
@@ -16133,6 +16499,7 @@ class SearchOptionsApiRequest(BaseModel):
     limit_count: int | None = 20
     offset_count: int | None = 0
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    scenario: bool | None = False
 
 class SearchOptionsApiResponse(BaseModel):
 
@@ -16177,41 +16544,6 @@ class OptionsApiResponse(BaseModel):
 
 
 
-# Generated from: get_parameter_fields
-
-class GetParameterFieldsSqlParams(BaseModel):
-
-    ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.ids,
-        )
-
-class QGetParameterFieldsV4Item(BaseModel):
-
-    id: UUID | None
-    field_id: UUID | None
-    parameter_id: UUID | None
-    name: str | None
-    description: str | None
-    generated: bool | None
-    conditional_parameter_id: UUID | None
-
-class GetParameterFieldsSqlRow(BaseModel):
-
-    items: list[QGetParameterFieldsV4Item] | None = None
-
-class GetParameterFieldsApiRequest(BaseModel):
-
-    ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-
-class GetParameterFieldsApiResponse(BaseModel):
-
-    items: list[QGetParameterFieldsV4Item] | None = None
-
-
-
 # Generated from: parameter_fields
 
 class ParameterFieldsSqlParams(BaseModel):
@@ -16246,31 +16578,6 @@ class ParameterFieldsApiRequest(BaseModel):
 class ParameterFieldsApiResponse(BaseModel):
 
     parameter_fields_id: UUID | None = None
-
-
-
-# Generated from: search_parameter_fields
-
-class SearchParameterFieldsSqlParams(BaseModel):
-
-    parameter_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.parameter_ids,
-        )
-
-class SearchParameterFieldsSqlRow(BaseModel):
-
-    items: list[QGetParameterFieldsV4Item] | None = None
-
-class SearchParameterFieldsApiRequest(BaseModel):
-
-    parameter_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-
-class SearchParameterFieldsApiResponse(BaseModel):
-
-    items: list[QGetParameterFieldsV4Item] | None = None
 
 
 
@@ -16327,6 +16634,10 @@ class SearchParametersSqlParams(BaseModel):
     p_video_parameter: bool | None = None
     suggest_source: str | None = None
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    document: bool | None = False
+    parameter: bool | None = False
+    persona: bool | None = False
+    scenario: bool | None = False
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
@@ -16339,6 +16650,10 @@ class SearchParametersSqlParams(BaseModel):
             self.p_video_parameter,
             self.suggest_source,
             self.exclude_ids,
+            self.document,
+            self.parameter,
+            self.persona,
+            self.scenario,
         )
 
 class SearchParametersSqlRow(BaseModel):
@@ -16356,6 +16671,10 @@ class SearchParametersApiRequest(BaseModel):
     p_video_parameter: bool | None = None
     suggest_source: str | None = None
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    document: bool | None = False
+    parameter: bool | None = False
+    persona: bool | None = False
+    scenario: bool | None = False
 
 class SearchParametersApiResponse(BaseModel):
 
@@ -16373,18 +16692,6 @@ class GetPersonaResourceSqlParams(BaseModel):
         return (
             self.id,
         )
-
-class QGetPersonaResourceV4Item(BaseModel):
-
-    persona_id: UUID | None
-    name: str | None
-    description: str | None
-    color: str | None
-    icon: str | None
-    image_model: bool | None
-    instructions: str | None
-    examples: list[str] | None
-    generated: bool | None
 
 class GetPersonaResourceSqlRow(BaseModel):
 
@@ -16448,6 +16755,8 @@ class SearchPersonasSqlParams(BaseModel):
     draft_id: UUID | None = None
     suggest_source: str | None = None
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    persona: bool | None = False
+    scenario: bool | None = False
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
@@ -16458,6 +16767,8 @@ class SearchPersonasSqlParams(BaseModel):
             self.draft_id,
             self.suggest_source,
             self.exclude_ids,
+            self.persona,
+            self.scenario,
         )
 
 class SearchPersonasSqlRow(BaseModel):
@@ -16473,6 +16784,8 @@ class SearchPersonasApiRequest(BaseModel):
     draft_id: UUID | None = None
     suggest_source: str | None = None
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    persona: bool | None = False
+    scenario: bool | None = False
 
 class SearchPersonasApiResponse(BaseModel):
 
@@ -16519,6 +16832,7 @@ class SearchPointsSqlParams(BaseModel):
     limit_count: int | None = 20
     offset_count: int | None = 0
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    rubric: bool | None = False
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
@@ -16526,6 +16840,7 @@ class SearchPointsSqlParams(BaseModel):
             self.limit_count,
             self.offset_count,
             self.exclude_ids,
+            self.rubric,
         )
 
 class SearchPointsSqlRow(BaseModel):
@@ -16538,6 +16853,7 @@ class SearchPointsApiRequest(BaseModel):
     limit_count: int | None = 20
     offset_count: int | None = 0
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    rubric: bool | None = False
 
 class SearchPointsApiResponse(BaseModel):
 
@@ -16620,6 +16936,7 @@ class SearchPricingSqlParams(BaseModel):
     limit_count: int | None = 20
     offset_count: int | None = 0
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    model: bool | None = False
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
@@ -16627,6 +16944,7 @@ class SearchPricingSqlParams(BaseModel):
             self.limit_count,
             self.offset_count,
             self.exclude_ids,
+            self.model,
         )
 
 class SearchPricingSqlRow(BaseModel):
@@ -16639,6 +16957,7 @@ class SearchPricingApiRequest(BaseModel):
     limit_count: int | None = 20
     offset_count: int | None = 0
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    model: bool | None = False
 
 class SearchPricingApiResponse(BaseModel):
 
@@ -16749,6 +17068,7 @@ class SearchProblemStatementsSqlParams(BaseModel):
     limit_count: int | None = 20
     offset_count: int | None = 0
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    scenario: bool | None = False
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
@@ -16756,6 +17076,7 @@ class SearchProblemStatementsSqlParams(BaseModel):
             self.limit_count,
             self.offset_count,
             self.exclude_ids,
+            self.scenario,
         )
 
 class SearchProblemStatementsSqlRow(BaseModel):
@@ -16768,6 +17089,7 @@ class SearchProblemStatementsApiRequest(BaseModel):
     limit_count: int | None = 20
     offset_count: int | None = 0
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    scenario: bool | None = False
 
 class SearchProblemStatementsApiResponse(BaseModel):
 
@@ -16812,73 +17134,6 @@ class ProblemStatementsApiResponse(BaseModel):
 
 
 
-# Generated from: get_profiles
-
-class GetProfilesSqlParams(BaseModel):
-
-    p_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.p_ids,
-        )
-
-class QGetProfilesV4Item(BaseModel):
-
-    profile_id: UUID | None
-    name: str | None
-    description: str | None
-    emails: list[str] | None
-    primary_email: str | None
-
-class GetProfilesSqlRow(BaseModel):
-
-    items: list[QGetProfilesV4Item] | None = None
-
-class GetProfilesApiRequest(BaseModel):
-
-    p_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-
-class GetProfilesApiResponse(BaseModel):
-
-    items: list[QGetProfilesV4Item] | None = None
-
-
-
-# Generated from: search_profiles
-
-class SearchProfilesSqlParams(BaseModel):
-
-    search: str | None = None
-    limit_count: int | None = 20
-    offset_count: int | None = 0
-    exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.search,
-            self.limit_count,
-            self.offset_count,
-            self.exclude_ids,
-        )
-
-class SearchProfilesSqlRow(BaseModel):
-
-    items: list[QGetProfilesV4Item] | None = None
-
-class SearchProfilesApiRequest(BaseModel):
-
-    search: str | None = None
-    limit_count: int | None = 20
-    offset_count: int | None = 0
-    exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-
-class SearchProfilesApiResponse(BaseModel):
-
-    items: list[QGetProfilesV4Item] | None = None
-
-
-
 # Generated from: get_prompts
 
 class GetPromptsSqlParams(BaseModel):
@@ -16920,6 +17175,7 @@ class SearchPromptsSqlParams(BaseModel):
     limit_count: int | None = 20
     offset_count: int | None = 0
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    agent: bool | None = False
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
@@ -16927,6 +17183,7 @@ class SearchPromptsSqlParams(BaseModel):
             self.limit_count,
             self.offset_count,
             self.exclude_ids,
+            self.agent,
         )
 
 class SearchPromptsSqlRow(BaseModel):
@@ -16939,6 +17196,7 @@ class SearchPromptsApiRequest(BaseModel):
     limit_count: int | None = 20
     offset_count: int | None = 0
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    agent: bool | None = False
 
 class SearchPromptsApiResponse(BaseModel):
 
@@ -17027,6 +17285,7 @@ class SearchProtocolsSqlParams(BaseModel):
     draft_id: UUID | None = None
     suggest_source: str | None = None
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    auth: bool | None = False
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
@@ -17036,6 +17295,7 @@ class SearchProtocolsSqlParams(BaseModel):
             self.draft_id,
             self.suggest_source,
             self.exclude_ids,
+            self.auth,
         )
 
 class SearchProtocolsSqlRow(BaseModel):
@@ -17050,6 +17310,7 @@ class SearchProtocolsApiRequest(BaseModel):
     draft_id: UUID | None = None
     suggest_source: str | None = None
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    auth: bool | None = False
 
 class SearchProtocolsApiResponse(BaseModel):
 
@@ -17132,6 +17393,7 @@ class SearchProviderKeysSqlParams(BaseModel):
     limit_count: int | None = 20
     offset_count: int | None = 0
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    setting: bool | None = False
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
@@ -17139,6 +17401,7 @@ class SearchProviderKeysSqlParams(BaseModel):
             self.limit_count,
             self.offset_count,
             self.exclude_ids,
+            self.setting,
         )
 
 class SearchProviderKeysSqlRow(BaseModel):
@@ -17151,6 +17414,7 @@ class SearchProviderKeysApiRequest(BaseModel):
     limit_count: int | None = 20
     offset_count: int | None = 0
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    setting: bool | None = False
 
 class SearchProviderKeysApiResponse(BaseModel):
 
@@ -17233,6 +17497,8 @@ class SearchProvidersSqlParams(BaseModel):
     limit_count: int | None = 20
     offset_count: int | None = 0
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    model: bool | None = False
+    provider: bool | None = False
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
@@ -17240,6 +17506,8 @@ class SearchProvidersSqlParams(BaseModel):
             self.limit_count,
             self.offset_count,
             self.exclude_ids,
+            self.model,
+            self.provider,
         )
 
 class SearchProvidersSqlRow(BaseModel):
@@ -17252,6 +17520,8 @@ class SearchProvidersApiRequest(BaseModel):
     limit_count: int | None = 20
     offset_count: int | None = 0
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    model: bool | None = False
+    provider: bool | None = False
 
 class SearchProvidersApiResponse(BaseModel):
 
@@ -17298,6 +17568,7 @@ class SearchQualitiesSqlParams(BaseModel):
     limit_count: int | None = 20
     offset_count: int | None = 0
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    model: bool | None = False
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
@@ -17305,6 +17576,7 @@ class SearchQualitiesSqlParams(BaseModel):
             self.limit_count,
             self.offset_count,
             self.exclude_ids,
+            self.model,
         )
 
 class SearchQualitiesSqlRow(BaseModel):
@@ -17317,6 +17589,7 @@ class SearchQualitiesApiRequest(BaseModel):
     limit_count: int | None = 20
     offset_count: int | None = 0
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    model: bool | None = False
 
 class SearchQualitiesApiResponse(BaseModel):
 
@@ -17397,6 +17670,7 @@ class SearchQuestionsSqlParams(BaseModel):
     limit_count: int | None = 20
     offset_count: int | None = 0
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    scenario: bool | None = False
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
@@ -17404,6 +17678,7 @@ class SearchQuestionsSqlParams(BaseModel):
             self.limit_count,
             self.offset_count,
             self.exclude_ids,
+            self.scenario,
         )
 
 class SearchQuestionsSqlRow(BaseModel):
@@ -17416,6 +17691,7 @@ class SearchQuestionsApiRequest(BaseModel):
     limit_count: int | None = 20
     offset_count: int | None = 0
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    scenario: bool | None = False
 
 class SearchQuestionsApiResponse(BaseModel):
 
@@ -17502,6 +17778,8 @@ class SearchReasoningLevelsSqlParams(BaseModel):
     limit_count: int | None = 20
     offset_count: int | None = 0
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    agent: bool | None = False
+    model: bool | None = False
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
@@ -17509,6 +17787,8 @@ class SearchReasoningLevelsSqlParams(BaseModel):
             self.limit_count,
             self.offset_count,
             self.exclude_ids,
+            self.agent,
+            self.model,
         )
 
 class SearchReasoningLevelsSqlRow(BaseModel):
@@ -17521,6 +17801,8 @@ class SearchReasoningLevelsApiRequest(BaseModel):
     limit_count: int | None = 20
     offset_count: int | None = 0
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    agent: bool | None = False
+    model: bool | None = False
 
 class SearchReasoningLevelsApiResponse(BaseModel):
 
@@ -17567,6 +17849,7 @@ class SearchRequestLimitsSqlParams(BaseModel):
     limit_count: int | None = 20
     offset_count: int | None = 0
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    profile: bool | None = False
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
@@ -17574,6 +17857,7 @@ class SearchRequestLimitsSqlParams(BaseModel):
             self.limit_count,
             self.offset_count,
             self.exclude_ids,
+            self.profile,
         )
 
 class SearchRequestLimitsSqlRow(BaseModel):
@@ -17586,6 +17870,7 @@ class SearchRequestLimitsApiRequest(BaseModel):
     limit_count: int | None = 20
     offset_count: int | None = 0
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    profile: bool | None = False
 
 class SearchRequestLimitsApiResponse(BaseModel):
 
@@ -17667,6 +17952,7 @@ class SearchRoleRoutesSqlParams(BaseModel):
     limit_count: int | None = 20
     offset_count: int | None = 0
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    setting: bool | None = False
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
@@ -17674,6 +17960,7 @@ class SearchRoleRoutesSqlParams(BaseModel):
             self.limit_count,
             self.offset_count,
             self.exclude_ids,
+            self.setting,
         )
 
 class SearchRoleRoutesSqlRow(BaseModel):
@@ -17686,6 +17973,7 @@ class SearchRoleRoutesApiRequest(BaseModel):
     limit_count: int | None = 20
     offset_count: int | None = 0
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    setting: bool | None = False
 
 class SearchRoleRoutesApiResponse(BaseModel):
 
@@ -17766,6 +18054,8 @@ class SearchRolesSqlParams(BaseModel):
     limit_count: int | None = 20
     offset_count: int | None = 0
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    profile: bool | None = False
+    setting: bool | None = False
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
@@ -17773,6 +18063,8 @@ class SearchRolesSqlParams(BaseModel):
             self.limit_count,
             self.offset_count,
             self.exclude_ids,
+            self.profile,
+            self.setting,
         )
 
 class SearchRolesSqlRow(BaseModel):
@@ -17785,6 +18077,8 @@ class SearchRolesApiRequest(BaseModel):
     limit_count: int | None = 20
     offset_count: int | None = 0
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    profile: bool | None = False
+    setting: bool | None = False
 
 class SearchRolesApiResponse(BaseModel):
 
@@ -17832,6 +18126,7 @@ class SearchRoutesSqlParams(BaseModel):
     limit_count: int | None = 20
     offset_count: int | None = 0
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    profile: bool | None = False
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
@@ -17839,6 +18134,7 @@ class SearchRoutesSqlParams(BaseModel):
             self.limit_count,
             self.offset_count,
             self.exclude_ids,
+            self.profile,
         )
 
 class SearchRoutesSqlRow(BaseModel):
@@ -17851,6 +18147,7 @@ class SearchRoutesApiRequest(BaseModel):
     limit_count: int | None = 20
     offset_count: int | None = 0
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    profile: bool | None = False
 
 class SearchRoutesApiResponse(BaseModel):
 
@@ -17895,11 +18192,11 @@ class GetRubricsBatchApiResponse(BaseModel):
 
 class GetRubricsSqlParams(BaseModel):
 
-    simulation_id: UUID
+    ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
-            self.simulation_id,
+            self.ids,
         )
 
 class QGetRubricsV4Item(BaseModel):
@@ -17914,7 +18211,7 @@ class GetRubricsSqlRow(BaseModel):
 
 class GetRubricsApiRequest(BaseModel):
 
-    simulation_id: UUID
+    ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
 
 class GetRubricsApiResponse(BaseModel):
 
@@ -17930,6 +18227,7 @@ class SearchRubricsSqlParams(BaseModel):
     limit_count: int | None = 20
     offset_count: int | None = 0
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    rubric: bool | None = False
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
@@ -17937,6 +18235,7 @@ class SearchRubricsSqlParams(BaseModel):
             self.limit_count,
             self.offset_count,
             self.exclude_ids,
+            self.rubric,
         )
 
 class SearchRubricsSqlRow(BaseModel):
@@ -17949,6 +18248,7 @@ class SearchRubricsApiRequest(BaseModel):
     limit_count: int | None = 20
     offset_count: int | None = 0
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    rubric: bool | None = False
 
 class SearchRubricsApiResponse(BaseModel):
 
@@ -17997,6 +18297,7 @@ class SearchRunPositionsSqlParams(BaseModel):
     limit_count: int | None = 20
     offset_count: int | None = 0
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    eval: bool | None = False
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
@@ -18004,6 +18305,7 @@ class SearchRunPositionsSqlParams(BaseModel):
             self.limit_count,
             self.offset_count,
             self.exclude_ids,
+            self.eval,
         )
 
 class SearchRunPositionsSqlRow(BaseModel):
@@ -18016,6 +18318,7 @@ class SearchRunPositionsApiRequest(BaseModel):
     limit_count: int | None = 20
     offset_count: int | None = 0
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    eval: bool | None = False
 
 class SearchRunPositionsApiResponse(BaseModel):
 
@@ -18094,6 +18397,7 @@ class SearchRunRubricsSqlParams(BaseModel):
     limit_count: int | None = 20
     offset_count: int | None = 0
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    eval: bool | None = False
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
@@ -18101,6 +18405,7 @@ class SearchRunRubricsSqlParams(BaseModel):
             self.limit_count,
             self.offset_count,
             self.exclude_ids,
+            self.eval,
         )
 
 class SearchRunRubricsSqlRow(BaseModel):
@@ -18113,6 +18418,7 @@ class SearchRunRubricsApiRequest(BaseModel):
     limit_count: int | None = 20
     offset_count: int | None = 0
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    eval: bool | None = False
 
 class SearchRunRubricsApiResponse(BaseModel):
 
@@ -18195,6 +18501,7 @@ class SearchRunsSqlParams(BaseModel):
     limit_count: int | None = 20
     offset_count: int | None = 0
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    eval: bool | None = False
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
@@ -18202,6 +18509,7 @@ class SearchRunsSqlParams(BaseModel):
             self.limit_count,
             self.offset_count,
             self.exclude_ids,
+            self.eval,
         )
 
 class SearchRunsSqlRow(BaseModel):
@@ -18214,6 +18522,7 @@ class SearchRunsApiRequest(BaseModel):
     limit_count: int | None = 20
     offset_count: int | None = 0
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    eval: bool | None = False
 
 class SearchRunsApiResponse(BaseModel):
 
@@ -18225,13 +18534,11 @@ class SearchRunsApiResponse(BaseModel):
 
 class GetScenarioFlagsSqlParams(BaseModel):
 
-    simulation_id: UUID
-    scenario_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
-            self.simulation_id,
-            self.scenario_ids,
+            self.ids,
         )
 
 class QGetScenarioFlagsV4Item(BaseModel):
@@ -18250,8 +18557,7 @@ class GetScenarioFlagsSqlRow(BaseModel):
 
 class GetScenarioFlagsApiRequest(BaseModel):
 
-    simulation_id: UUID
-    scenario_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
 
 class GetScenarioFlagsApiResponse(BaseModel):
 
@@ -18263,13 +18569,13 @@ class GetScenarioFlagsApiResponse(BaseModel):
 
 class SearchScenarioFlagsSqlParams(BaseModel):
 
-    simulation_id: UUID
     scenario_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    simulation: bool | None = False
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
-            self.simulation_id,
             self.scenario_ids,
+            self.simulation,
         )
 
 class SearchScenarioFlagsSqlRow(BaseModel):
@@ -18278,80 +18584,12 @@ class SearchScenarioFlagsSqlRow(BaseModel):
 
 class SearchScenarioFlagsApiRequest(BaseModel):
 
-    simulation_id: UUID
     scenario_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    simulation: bool | None = False
 
 class SearchScenarioFlagsApiResponse(BaseModel):
 
     items: list[QGetScenarioFlagsV4Item] | None = None
-
-
-
-# Generated from: get_scenario_personas
-
-class GetScenarioPersonasSqlParams(BaseModel):
-
-    simulation_id: UUID
-    scenario_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.simulation_id,
-            self.scenario_ids,
-        )
-
-class QGetScenarioPersonasV4Item(BaseModel):
-
-    id: UUID | None
-    simulation_id: UUID | None
-    scenario_id: UUID | None
-    persona_id: UUID | None
-    persona_name: str | None
-    persona_description: str | None
-    persona_icon: str | None
-    persona_color: str | None
-    generated: bool | None
-
-class GetScenarioPersonasSqlRow(BaseModel):
-
-    items: list[QGetScenarioPersonasV4Item] | None = None
-
-class GetScenarioPersonasApiRequest(BaseModel):
-
-    simulation_id: UUID
-    scenario_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-
-class GetScenarioPersonasApiResponse(BaseModel):
-
-    items: list[QGetScenarioPersonasV4Item] | None = None
-
-
-
-# Generated from: search_scenario_personas
-
-class SearchScenarioPersonasSqlParams(BaseModel):
-
-    simulation_id: UUID
-    scenario_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.simulation_id,
-            self.scenario_ids,
-        )
-
-class SearchScenarioPersonasSqlRow(BaseModel):
-
-    items: list[QGetScenarioPersonasV4Item] | None = None
-
-class SearchScenarioPersonasApiRequest(BaseModel):
-
-    simulation_id: UUID
-    scenario_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-
-class SearchScenarioPersonasApiResponse(BaseModel):
-
-    items: list[QGetScenarioPersonasV4Item] | None = None
 
 
 
@@ -18392,70 +18630,6 @@ class ScenarioPersonasApiRequest(BaseModel):
 class ScenarioPersonasApiResponse(BaseModel):
 
     id: UUID | None = None
-
-
-
-# Generated from: get_scenario_positions
-
-class GetScenarioPositionsSqlParams(BaseModel):
-
-    simulation_id: UUID
-    scenario_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.simulation_id,
-            self.scenario_ids,
-        )
-
-class QGetScenarioPositionsV4Item(BaseModel):
-
-    id: UUID | None
-    simulation_id: UUID | None
-    scenario_id: UUID | None
-    value: int | None
-    generated: bool | None
-
-class GetScenarioPositionsSqlRow(BaseModel):
-
-    items: list[QGetScenarioPositionsV4Item] | None = None
-
-class GetScenarioPositionsApiRequest(BaseModel):
-
-    simulation_id: UUID
-    scenario_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-
-class GetScenarioPositionsApiResponse(BaseModel):
-
-    items: list[QGetScenarioPositionsV4Item] | None = None
-
-
-
-# Generated from: search_scenario_positions
-
-class SearchScenarioPositionsSqlParams(BaseModel):
-
-    simulation_id: UUID
-    scenario_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.simulation_id,
-            self.scenario_ids,
-        )
-
-class SearchScenarioPositionsSqlRow(BaseModel):
-
-    items: list[QGetScenarioPositionsV4Item] | None = None
-
-class SearchScenarioPositionsApiRequest(BaseModel):
-
-    simulation_id: UUID
-    scenario_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-
-class SearchScenarioPositionsApiResponse(BaseModel):
-
-    items: list[QGetScenarioPositionsV4Item] | None = None
 
 
 
@@ -18503,13 +18677,11 @@ class ScenarioPositionsApiResponse(BaseModel):
 
 class GetScenarioRubricsSqlParams(BaseModel):
 
-    simulation_id: UUID
-    scenario_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
-            self.simulation_id,
-            self.scenario_ids,
+            self.ids,
         )
 
 class QGetScenarioRubricsV4Item(BaseModel):
@@ -18525,8 +18697,7 @@ class GetScenarioRubricsSqlRow(BaseModel):
 
 class GetScenarioRubricsApiRequest(BaseModel):
 
-    simulation_id: UUID
-    scenario_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
 
 class GetScenarioRubricsApiResponse(BaseModel):
 
@@ -18538,13 +18709,13 @@ class GetScenarioRubricsApiResponse(BaseModel):
 
 class SearchScenarioRubricsSqlParams(BaseModel):
 
-    simulation_id: UUID
     scenario_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    simulation: bool | None = False
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
-            self.simulation_id,
             self.scenario_ids,
+            self.simulation,
         )
 
 class SearchScenarioRubricsSqlRow(BaseModel):
@@ -18553,8 +18724,8 @@ class SearchScenarioRubricsSqlRow(BaseModel):
 
 class SearchScenarioRubricsApiRequest(BaseModel):
 
-    simulation_id: UUID
     scenario_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    simulation: bool | None = False
 
 class SearchScenarioRubricsApiResponse(BaseModel):
 
@@ -18603,13 +18774,11 @@ class ScenarioRubricsApiResponse(BaseModel):
 
 class GetScenarioTimeLimitsSqlParams(BaseModel):
 
-    simulation_id: UUID
-    scenario_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
-            self.simulation_id,
-            self.scenario_ids,
+            self.ids,
         )
 
 class QGetScenarioTimeLimitsV4Item(BaseModel):
@@ -18625,8 +18794,7 @@ class GetScenarioTimeLimitsSqlRow(BaseModel):
 
 class GetScenarioTimeLimitsApiRequest(BaseModel):
 
-    simulation_id: UUID
-    scenario_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
 
 class GetScenarioTimeLimitsApiResponse(BaseModel):
 
@@ -18638,13 +18806,13 @@ class GetScenarioTimeLimitsApiResponse(BaseModel):
 
 class SearchScenarioTimeLimitsSqlParams(BaseModel):
 
-    simulation_id: UUID
     scenario_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    simulation: bool | None = False
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
-            self.simulation_id,
             self.scenario_ids,
+            self.simulation,
         )
 
 class SearchScenarioTimeLimitsSqlRow(BaseModel):
@@ -18653,8 +18821,8 @@ class SearchScenarioTimeLimitsSqlRow(BaseModel):
 
 class SearchScenarioTimeLimitsApiRequest(BaseModel):
 
-    simulation_id: UUID
     scenario_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    simulation: bool | None = False
 
 class SearchScenarioTimeLimitsApiResponse(BaseModel):
 
@@ -18747,6 +18915,8 @@ class SearchScenariosSqlParams(BaseModel):
     user_department_ids: list[UUID] | None = None
     suggest_source: str | None = None
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    scenario: bool | None = False
+    simulation: bool | None = False
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
@@ -18756,6 +18926,8 @@ class SearchScenariosSqlParams(BaseModel):
             self.user_department_ids,
             self.suggest_source,
             self.exclude_ids,
+            self.scenario,
+            self.simulation,
         )
 
 class SearchScenariosSqlRow(BaseModel):
@@ -18770,6 +18942,8 @@ class SearchScenariosApiRequest(BaseModel):
     user_department_ids: list[UUID] | None = None
     suggest_source: str | None = None
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    scenario: bool | None = False
+    simulation: bool | None = False
 
 class SearchScenariosApiResponse(BaseModel):
 
@@ -18903,6 +19077,8 @@ class SearchSettingsSqlParams(BaseModel):
     limit_count: int | None = 20
     offset_count: int | None = 0
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    department: bool | None = False
+    setting: bool | None = False
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
@@ -18910,6 +19086,8 @@ class SearchSettingsSqlParams(BaseModel):
             self.limit_count,
             self.offset_count,
             self.exclude_ids,
+            self.department,
+            self.setting,
         )
 
 class SearchSettingsSqlRow(BaseModel):
@@ -18922,6 +19100,8 @@ class SearchSettingsApiRequest(BaseModel):
     limit_count: int | None = 20
     offset_count: int | None = 0
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    department: bool | None = False
+    setting: bool | None = False
 
 class SearchSettingsApiResponse(BaseModel):
 
@@ -18970,6 +19150,7 @@ class SearchSimulationPositionsSqlParams(BaseModel):
     limit_count: int | None = 20
     offset_count: int | None = 0
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    cohort: bool | None = False
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
@@ -18977,6 +19158,7 @@ class SearchSimulationPositionsSqlParams(BaseModel):
             self.limit_count,
             self.offset_count,
             self.exclude_ids,
+            self.cohort,
         )
 
 class QSearchSimulationPositionsV4Item(BaseModel):
@@ -18997,6 +19179,7 @@ class SearchSimulationPositionsApiRequest(BaseModel):
     limit_count: int | None = 20
     offset_count: int | None = 0
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    cohort: bool | None = False
 
 class SearchSimulationPositionsApiResponse(BaseModel):
 
@@ -19092,7 +19275,6 @@ class QGetSimulationsV4Item(BaseModel):
     simulation_id: UUID | None
     name: str | None
     description: str | None
-    time_limit: int | None
     generated: bool | None
 
 class GetSimulationsSqlRow(BaseModel):
@@ -19119,6 +19301,8 @@ class SearchSimulationsSqlParams(BaseModel):
     draft_id: UUID | None = None
     suggest_source: str | None = None
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    cohort: bool | None = False
+    simulation: bool | None = False
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
@@ -19128,6 +19312,8 @@ class SearchSimulationsSqlParams(BaseModel):
             self.draft_id,
             self.suggest_source,
             self.exclude_ids,
+            self.cohort,
+            self.simulation,
         )
 
 class SearchSimulationsSqlRow(BaseModel):
@@ -19142,6 +19328,8 @@ class SearchSimulationsApiRequest(BaseModel):
     draft_id: UUID | None = None
     suggest_source: str | None = None
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    cohort: bool | None = False
+    simulation: bool | None = False
 
 class SearchSimulationsApiResponse(BaseModel):
 
@@ -19190,6 +19378,7 @@ class SearchSlugsSqlParams(BaseModel):
     draft_id: UUID | None = None
     suggest_source: str | None = None
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    auth: bool | None = False
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
@@ -19199,6 +19388,7 @@ class SearchSlugsSqlParams(BaseModel):
             self.draft_id,
             self.suggest_source,
             self.exclude_ids,
+            self.auth,
         )
 
 class SearchSlugsSqlRow(BaseModel):
@@ -19213,6 +19403,7 @@ class SearchSlugsApiRequest(BaseModel):
     draft_id: UUID | None = None
     suggest_source: str | None = None
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    auth: bool | None = False
 
 class SearchSlugsApiResponse(BaseModel):
 
@@ -19292,6 +19483,7 @@ class SearchStandardGroupsSqlParams(BaseModel):
     limit_count: int | None = 20
     offset_count: int | None = 0
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    rubric: bool | None = False
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
@@ -19299,6 +19491,7 @@ class SearchStandardGroupsSqlParams(BaseModel):
             self.limit_count,
             self.offset_count,
             self.exclude_ids,
+            self.rubric,
         )
 
 class SearchStandardGroupsSqlRow(BaseModel):
@@ -19311,6 +19504,7 @@ class SearchStandardGroupsApiRequest(BaseModel):
     limit_count: int | None = 20
     offset_count: int | None = 0
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    rubric: bool | None = False
 
 class SearchStandardGroupsApiResponse(BaseModel):
 
@@ -19405,6 +19599,7 @@ class SearchStandardsSqlParams(BaseModel):
     limit_count: int | None = 20
     offset_count: int | None = 0
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    rubric: bool | None = False
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
@@ -19412,6 +19607,7 @@ class SearchStandardsSqlParams(BaseModel):
             self.limit_count,
             self.offset_count,
             self.exclude_ids,
+            self.rubric,
         )
 
 class SearchStandardsSqlRow(BaseModel):
@@ -19424,6 +19620,7 @@ class SearchStandardsApiRequest(BaseModel):
     limit_count: int | None = 20
     offset_count: int | None = 0
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    rubric: bool | None = False
 
 class SearchStandardsApiResponse(BaseModel):
 
@@ -19470,6 +19667,8 @@ class SearchTemperatureLevelsSqlParams(BaseModel):
     limit_count: int | None = 20
     offset_count: int | None = 0
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    agent: bool | None = False
+    model: bool | None = False
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
@@ -19477,6 +19676,8 @@ class SearchTemperatureLevelsSqlParams(BaseModel):
             self.limit_count,
             self.offset_count,
             self.exclude_ids,
+            self.agent,
+            self.model,
         )
 
 class SearchTemperatureLevelsSqlRow(BaseModel):
@@ -19489,6 +19690,8 @@ class SearchTemperatureLevelsApiRequest(BaseModel):
     limit_count: int | None = 20
     offset_count: int | None = 0
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    agent: bool | None = False
+    model: bool | None = False
 
 class SearchTemperatureLevelsApiResponse(BaseModel):
 
@@ -19510,7 +19713,7 @@ class GetTextsSqlParams(BaseModel):
 class QGetTextsV4Item(BaseModel):
 
     texts_id: UUID | None
-    content: str | None
+    text_id: UUID | None
     generated: bool | None
 
 class GetTextsSqlRow(BaseModel):
@@ -19634,6 +19837,7 @@ class SearchThresholdsSqlParams(BaseModel):
     limit_count: int | None = 20
     offset_count: int | None = 0
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    setting: bool | None = False
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
@@ -19641,6 +19845,7 @@ class SearchThresholdsSqlParams(BaseModel):
             self.limit_count,
             self.offset_count,
             self.exclude_ids,
+            self.setting,
         )
 
 class SearchThresholdsSqlRow(BaseModel):
@@ -19653,6 +19858,7 @@ class SearchThresholdsApiRequest(BaseModel):
     limit_count: int | None = 20
     offset_count: int | None = 0
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    setting: bool | None = False
 
 class SearchThresholdsApiResponse(BaseModel):
 
@@ -19700,6 +19906,8 @@ class SearchToolsSqlParams(BaseModel):
     limit_count: int | None = 20
     offset_count: int | None = 0
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    agent: bool | None = False
+    tool: bool | None = False
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
@@ -19707,6 +19915,8 @@ class SearchToolsSqlParams(BaseModel):
             self.limit_count,
             self.offset_count,
             self.exclude_ids,
+            self.agent,
+            self.tool,
         )
 
 class SearchToolsSqlRow(BaseModel):
@@ -19719,6 +19929,8 @@ class SearchToolsApiRequest(BaseModel):
     limit_count: int | None = 20
     offset_count: int | None = 0
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    agent: bool | None = False
+    tool: bool | None = False
 
 class SearchToolsApiResponse(BaseModel):
 
@@ -19741,9 +19953,6 @@ class QGetUploadsV4Item(BaseModel):
 
     uploads_id: UUID | None
     upload_id: UUID | None
-    file_path: str | None
-    mime_type: str | None
-    size: int | None
     generated: bool | None
 
 class GetUploadsSqlRow(BaseModel):
@@ -19768,6 +19977,7 @@ class SearchUploadsSqlParams(BaseModel):
     limit_count: int | None = 20
     offset_count: int | None = 0
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    document: bool | None = False
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
@@ -19775,6 +19985,7 @@ class SearchUploadsSqlParams(BaseModel):
             self.limit_count,
             self.offset_count,
             self.exclude_ids,
+            self.document,
         )
 
 class SearchUploadsSqlRow(BaseModel):
@@ -19787,6 +19998,7 @@ class SearchUploadsApiRequest(BaseModel):
     limit_count: int | None = 20
     offset_count: int | None = 0
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    document: bool | None = False
 
 class SearchUploadsApiResponse(BaseModel):
 
@@ -19868,6 +20080,8 @@ class SearchValuesSqlParams(BaseModel):
     offset_count: int | None = 0
     suggest_source: str | None = None
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    model: bool | None = False
+    provider: bool | None = False
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
@@ -19876,6 +20090,8 @@ class SearchValuesSqlParams(BaseModel):
             self.offset_count,
             self.suggest_source,
             self.exclude_ids,
+            self.model,
+            self.provider,
         )
 
 class SearchValuesSqlRow(BaseModel):
@@ -19889,6 +20105,8 @@ class SearchValuesApiRequest(BaseModel):
     offset_count: int | None = 0
     suggest_source: str | None = None
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    model: bool | None = False
+    provider: bool | None = False
 
 class SearchValuesApiResponse(BaseModel):
 
@@ -20005,6 +20223,7 @@ class SearchVideosSqlParams(BaseModel):
     limit_count: int | None = 20
     offset_count: int | None = 0
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    scenario: bool | None = False
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
@@ -20012,6 +20231,7 @@ class SearchVideosSqlParams(BaseModel):
             self.limit_count,
             self.offset_count,
             self.exclude_ids,
+            self.scenario,
         )
 
 class SearchVideosSqlRow(BaseModel):
@@ -20024,6 +20244,7 @@ class SearchVideosApiRequest(BaseModel):
     limit_count: int | None = 20
     offset_count: int | None = 0
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    scenario: bool | None = False
 
 class SearchVideosApiResponse(BaseModel):
 
@@ -20110,6 +20331,8 @@ class SearchVoicesSqlParams(BaseModel):
     limit_count: int | None = 20
     offset_count: int | None = 0
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    agent: bool | None = False
+    model: bool | None = False
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
@@ -20117,6 +20340,8 @@ class SearchVoicesSqlParams(BaseModel):
             self.limit_count,
             self.offset_count,
             self.exclude_ids,
+            self.agent,
+            self.model,
         )
 
 class SearchVoicesSqlRow(BaseModel):
@@ -20129,6 +20354,8 @@ class SearchVoicesApiRequest(BaseModel):
     limit_count: int | None = 20
     offset_count: int | None = 0
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    agent: bool | None = False
+    model: bool | None = False
 
 class SearchVoicesApiResponse(BaseModel):
 
@@ -22525,6 +22752,88 @@ class GetSettingsListApiResponse(BaseModel):
 
     settings: list[QGetSettingsListV4Setting] | None = None
     keys: list[QGetSettingsListV4Key] | None = None
+
+
+
+# Generated from: get_settings_resource_data
+
+class GetSettingsResourceDataSqlParams(BaseModel):
+
+    settings_id_param: UUID | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.settings_id_param,
+        )
+
+class GetSettingsResourceDataSqlRow(BaseModel):
+
+    items: list[QGetSettingsV4Item] | None = None
+
+class GetSettingsResourceDataApiRequest(BaseModel):
+
+    settings_id_param: UUID | None = None
+
+class GetSettingsResourceDataApiResponse(BaseModel):
+
+    items: list[QGetSettingsV4Item] | None = None
+
+
+
+# Generated from: get_settings_theme_data
+
+class GetSettingsThemeDataSqlParams(BaseModel):
+
+    settings_id_param: UUID | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.settings_id_param,
+        )
+
+class GetSettingsThemeDataSqlRow(BaseModel):
+
+    primary_color: str | None = None
+    accent: str | None = None
+    background: str | None = None
+    surface: str | None = None
+    success: str | None = None
+    warning: str | None = None
+    error: str | None = None
+    sidebar_background: str | None = None
+    sidebar_primary: str | None = None
+    chart1: str | None = None
+    chart2: str | None = None
+    chart3: str | None = None
+    chart4: str | None = None
+    chart5: str | None = None
+    success_threshold: int | None = None
+    warning_threshold: int | None = None
+    danger_threshold: int | None = None
+
+class GetSettingsThemeDataApiRequest(BaseModel):
+
+    settings_id_param: UUID | None = None
+
+class GetSettingsThemeDataApiResponse(BaseModel):
+
+    primary_color: str | None = None
+    accent: str | None = None
+    background: str | None = None
+    surface: str | None = None
+    success: str | None = None
+    warning: str | None = None
+    error: str | None = None
+    sidebar_background: str | None = None
+    sidebar_primary: str | None = None
+    chart1: str | None = None
+    chart2: str | None = None
+    chart3: str | None = None
+    chart4: str | None = None
+    chart5: str | None = None
+    success_threshold: int | None = None
+    warning_threshold: int | None = None
+    danger_threshold: int | None = None
 
 
 
@@ -27810,11 +28119,23 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetDocumentApiRequest",
         "GetDocumentApiResponse",
     ),
+    "app/sql/v4/queries/documents/get_document_html_data_complete.sql": (
+        "GetDocumentHtmlDataSqlParams",
+        "GetDocumentHtmlDataSqlRow",
+        "GetDocumentHtmlDataApiRequest",
+        "GetDocumentHtmlDataApiResponse",
+    ),
     "app/sql/v4/queries/documents/get_document_ids_complete.sql": (
         "GetDocumentIdsSqlParams",
         "GetDocumentIdsSqlRow",
         "GetDocumentIdsApiRequest",
         "GetDocumentIdsApiResponse",
+    ),
+    "app/sql/v4/queries/documents/get_document_resource_data_complete.sql": (
+        "GetDocumentResourceDataSqlParams",
+        "GetDocumentResourceDataSqlRow",
+        "GetDocumentResourceDataApiRequest",
+        "GetDocumentResourceDataApiResponse",
     ),
     "app/sql/v4/queries/documents/get_document_run_context_and_create_run_complete.sql": (
         "GetDocumentRunContextAndCreateRunSqlParams",
@@ -28650,6 +28971,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetPersonaIdsApiRequest",
         "GetPersonaIdsApiResponse",
     ),
+    "app/sql/v4/queries/personas/get_persona_resource_data_complete.sql": (
+        "GetPersonaResourceDataSqlParams",
+        "GetPersonaResourceDataSqlRow",
+        "GetPersonaResourceDataApiRequest",
+        "GetPersonaResourceDataApiResponse",
+    ),
     "app/sql/v4/queries/personas/get_persona_resource_ids_by_group_id_complete.sql": (
         "GetPersonaResourceIdsByGroupIdSqlParams",
         "GetPersonaResourceIdsByGroupIdSqlRow",
@@ -29418,23 +29745,11 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "OptionsApiRequest",
         "OptionsApiResponse",
     ),
-    "app/sql/v4/queries/resources/parameter_fields/get_parameter_fields_complete.sql": (
-        "GetParameterFieldsSqlParams",
-        "GetParameterFieldsSqlRow",
-        "GetParameterFieldsApiRequest",
-        "GetParameterFieldsApiResponse",
-    ),
     "app/sql/v4/queries/resources/parameter_fields/parameter_fields_complete.sql": (
         "ParameterFieldsSqlParams",
         "ParameterFieldsSqlRow",
         "ParameterFieldsApiRequest",
         "ParameterFieldsApiResponse",
-    ),
-    "app/sql/v4/queries/resources/parameter_fields/search_parameter_fields_complete.sql": (
-        "SearchParameterFieldsSqlParams",
-        "SearchParameterFieldsSqlRow",
-        "SearchParameterFieldsApiRequest",
-        "SearchParameterFieldsApiResponse",
     ),
     "app/sql/v4/queries/resources/parameters/get_parameters_complete.sql": (
         "GetParametersSqlParams",
@@ -29531,18 +29846,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "ProblemStatementsSqlRow",
         "ProblemStatementsApiRequest",
         "ProblemStatementsApiResponse",
-    ),
-    "app/sql/v4/queries/resources/profiles/get_profiles_complete.sql": (
-        "GetProfilesSqlParams",
-        "GetProfilesSqlRow",
-        "GetProfilesApiRequest",
-        "GetProfilesApiResponse",
-    ),
-    "app/sql/v4/queries/resources/profiles/search_profiles_complete.sql": (
-        "SearchProfilesSqlParams",
-        "SearchProfilesSqlRow",
-        "SearchProfilesApiRequest",
-        "SearchProfilesApiResponse",
     ),
     "app/sql/v4/queries/resources/prompts/get_prompts_complete.sql": (
         "GetPromptsSqlParams",
@@ -29796,35 +30099,11 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "SearchScenarioFlagsApiRequest",
         "SearchScenarioFlagsApiResponse",
     ),
-    "app/sql/v4/queries/resources/scenario_personas/get_scenario_personas_complete.sql": (
-        "GetScenarioPersonasSqlParams",
-        "GetScenarioPersonasSqlRow",
-        "GetScenarioPersonasApiRequest",
-        "GetScenarioPersonasApiResponse",
-    ),
-    "app/sql/v4/queries/resources/scenario_personas/search_scenario_personas_complete.sql": (
-        "SearchScenarioPersonasSqlParams",
-        "SearchScenarioPersonasSqlRow",
-        "SearchScenarioPersonasApiRequest",
-        "SearchScenarioPersonasApiResponse",
-    ),
     "app/sql/v4/queries/resources/scenario_personas_complete.sql": (
         "ScenarioPersonasSqlParams",
         "ScenarioPersonasSqlRow",
         "ScenarioPersonasApiRequest",
         "ScenarioPersonasApiResponse",
-    ),
-    "app/sql/v4/queries/resources/scenario_positions/get_scenario_positions_complete.sql": (
-        "GetScenarioPositionsSqlParams",
-        "GetScenarioPositionsSqlRow",
-        "GetScenarioPositionsApiRequest",
-        "GetScenarioPositionsApiResponse",
-    ),
-    "app/sql/v4/queries/resources/scenario_positions/search_scenario_positions_complete.sql": (
-        "SearchScenarioPositionsSqlParams",
-        "SearchScenarioPositionsSqlRow",
-        "SearchScenarioPositionsApiRequest",
-        "SearchScenarioPositionsApiResponse",
     ),
     "app/sql/v4/queries/resources/scenario_positions_complete.sql": (
         "ScenarioPositionsSqlParams",
@@ -30341,6 +30620,18 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetSettingsListSqlRow",
         "GetSettingsListApiRequest",
         "GetSettingsListApiResponse",
+    ),
+    "app/sql/v4/queries/settings/get_settings_resource_data_complete.sql": (
+        "GetSettingsResourceDataSqlParams",
+        "GetSettingsResourceDataSqlRow",
+        "GetSettingsResourceDataApiRequest",
+        "GetSettingsResourceDataApiResponse",
+    ),
+    "app/sql/v4/queries/settings/get_settings_theme_data_complete.sql": (
+        "GetSettingsThemeDataSqlParams",
+        "GetSettingsThemeDataSqlRow",
+        "GetSettingsThemeDataApiRequest",
+        "GetSettingsThemeDataApiResponse",
     ),
     "app/sql/v4/queries/settings/patch_setting_draft_complete.sql": (
         "PatchSettingDraftSqlParams",
@@ -31402,7 +31693,17 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/documents/get_document_html_data_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v4/queries/documents/get_document_ids_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/documents/get_document_resource_data_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -32102,6 +32403,11 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/personas/get_persona_resource_data_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v4/queries/personas/get_persona_resource_ids_by_group_id_complete.sql"]
     ) -> SqlString: ...
 
@@ -32742,17 +33048,7 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/queries/resources/parameter_fields/get_parameter_fields_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
         file_path: Literal["app/sql/v4/queries/resources/parameter_fields/parameter_fields_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/queries/resources/parameter_fields/search_parameter_fields_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -32833,16 +33129,6 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/queries/resources/problem_statements_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/queries/resources/profiles/get_profiles_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/queries/resources/profiles/search_profiles_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -33057,27 +33343,7 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/queries/resources/scenario_personas/get_scenario_personas_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/queries/resources/scenario_personas/search_scenario_personas_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
         file_path: Literal["app/sql/v4/queries/resources/scenario_personas_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/queries/resources/scenario_positions/get_scenario_positions_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/queries/resources/scenario_positions/search_scenario_positions_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -33508,6 +33774,16 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/queries/settings/get_settings_list_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/settings/get_settings_resource_data_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/settings/get_settings_theme_data_complete.sql"]
     ) -> SqlString: ...
 
     @overload

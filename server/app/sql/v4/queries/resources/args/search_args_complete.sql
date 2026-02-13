@@ -24,7 +24,9 @@ CREATE OR REPLACE FUNCTION api_search_args_v4(
     offset_count int DEFAULT 0,
     draft_id uuid DEFAULT NULL,
     suggest_source text DEFAULT 'all',
-    exclude_ids uuid[] DEFAULT ARRAY[]::uuid[]
+    exclude_ids uuid[] DEFAULT ARRAY[]::uuid[],
+    -- Artifact boolean filters: when true, only return resources linked to that artifact type
+    tool boolean DEFAULT false
 )
 RETURNS TABLE (
     items types.q_get_args_v4_item[]
@@ -63,14 +65,9 @@ FROM (
                     AND dc.draft_id = api_search_args_v4.draft_id
               )
           )
-          OR (
-              suggest_source = 'linked'
-              AND EXISTS (
-                  SELECT 1 FROM tool_args_junction ta
-                  WHERE ta.args_id = a.id
-              )
-          )
       )
+      -- Artifact boolean filters (each filters to resources linked to at least one of that artifact type)
+      AND (NOT tool OR EXISTS (SELECT 1 FROM tool_args_junction j WHERE j.args_id = a.id AND j.active = true))
     ORDER BY a.name
     LIMIT limit_count
     OFFSET offset_count

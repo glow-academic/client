@@ -369,6 +369,7 @@ async def get_cohort_internal(
                 "recent",
                 description_ids,
                 bypass_cache,
+                cohort=True,
             )
             return (selected, suggestions)
 
@@ -385,7 +386,7 @@ async def get_cohort_internal(
                 0,
                 flag_ids,
                 bypass_cache,
-                artifact_type="cohort",
+                cohort=True,
             )
             # Filter to only cohort-specific flags (business logic in Python)
             suggestions = [f for f in all_flags if f.name in COHORT_FLAG_NAMES]
@@ -404,6 +405,7 @@ async def get_cohort_internal(
                 "all",
                 department_ids,
                 bypass_cache,
+                cohort=True,
             )
             return (selected, suggestions)
 
@@ -427,6 +429,7 @@ async def get_cohort_internal(
                 "recent",
                 simulation_ids,
                 bypass_cache,
+                cohort=True,
             )
             return (selected, suggestions)
 

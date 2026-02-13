@@ -1,10 +1,11 @@
 """Personas SEARCH endpoint - v4 API following DHH principles."""
 
-from typing import Annotated, cast
+from typing import Annotated, Any, cast
 from uuid import UUID
 
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from pydantic import BaseModel
 
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
@@ -12,7 +13,6 @@ from app.sql.types import (
     QGetPersonasV4Item,
     SearchPersonasApiRequest,
     SearchPersonasApiResponse,
-    SearchPersonasSqlParams,
     SearchPersonasSqlRow,
     load_sql_query,
 )
@@ -26,6 +26,33 @@ SQL_PATH = "app/sql/v4/queries/resources/personas/search_personas_complete.sql"
 router = APIRouter()
 
 
+# Handcrafted params to match SQL signature with artifact boolean filters
+class SearchPersonasParams(BaseModel):
+    search: str | None = None
+    limit_count: int | None = 20
+    offset_count: int | None = 0
+    user_department_ids: list[UUID] = []
+    draft_id: UUID | None = None
+    suggest_source: str | None = "all"
+    exclude_ids: list[UUID] = []
+    # Artifact boolean filters
+    persona: bool = False
+    scenario: bool = False
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.search,
+            self.limit_count,
+            self.offset_count,
+            self.user_department_ids,
+            self.draft_id,
+            self.suggest_source,
+            self.exclude_ids,
+            self.persona,
+            self.scenario,
+        )
+
+
 async def search_personas_internal(
     conn: asyncpg.Connection,
     search: str | None = None,
@@ -33,8 +60,12 @@ async def search_personas_internal(
     offset_count: int | None = 0,
     user_department_ids: list[UUID] | None = None,
     draft_id: UUID | None = None,
+    suggest_source: str | None = None,
     exclude_ids: list[UUID] | None = None,
     bypass_cache: bool = False,
+    *,
+    persona: bool = False,
+    scenario: bool = False,
 ) -> list[QGetPersonasV4Item]:
     if limit_count is not None and limit_count <= 0:
         return []
@@ -48,7 +79,10 @@ async def search_personas_internal(
             "offset_count": offset_count,
             "user_department_ids": [str(id) for id in (user_department_ids or [])],
             "draft_id": str(draft_id) if draft_id else None,
+            "suggest_source": suggest_source,
             "exclude_ids": [str(id) for id in (exclude_ids or [])],
+            "persona": persona,
+            "scenario": scenario,
         },
     )
 
@@ -60,13 +94,16 @@ async def search_personas_internal(
                 for item in cached.get("items", [])
             ]
 
-    params = SearchPersonasSqlParams(
+    params = SearchPersonasParams(
         search=search,
         limit_count=limit_count,
         offset_count=offset_count,
         user_department_ids=user_department_ids or [],
         draft_id=draft_id,
+        suggest_source=suggest_source,
         exclude_ids=exclude_ids or [],
+        persona=persona,
+        scenario=scenario,
     )
     result = cast(
         SearchPersonasSqlRow,
@@ -106,6 +143,7 @@ async def search_personas(
             request.offset_count,
             request.user_department_ids,
             request.draft_id,
+            request.suggest_source,
             request.exclude_ids,
             bypass_cache,
         )

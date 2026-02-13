@@ -69,6 +69,27 @@ class SearchCohortsSqlRow(BaseModel):
 # =============================================================================
 
 
+# Handcrafted params to match SQL signature with artifact boolean filters
+class SearchCohortsParams(BaseModel):
+    search: str | None = None
+    limit_count: int | None = 20
+    offset_count: int | None = 0
+    exclude_ids: list[UUID] = []
+    # Artifact boolean filters
+    cohort: bool = False
+    profile: bool = False
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.search,
+            self.limit_count,
+            self.offset_count,
+            self.exclude_ids,
+            self.cohort,
+            self.profile,
+        )
+
+
 async def search_cohorts_internal(
     conn: asyncpg.Connection,
     search: str | None = None,
@@ -76,6 +97,9 @@ async def search_cohorts_internal(
     offset_count: int | None = 0,
     exclude_ids: list[UUID] | None = None,
     bypass_cache: bool = False,
+    *,
+    cohort: bool = False,
+    profile: bool = False,
 ) -> list[QGetCohortsV4Item]:
     """Internal function to search cohorts."""
     if limit_count is not None and limit_count <= 0:
@@ -89,6 +113,8 @@ async def search_cohorts_internal(
             "limit_count": limit_count,
             "offset_count": offset_count,
             "exclude_ids": [str(id) for id in (exclude_ids or [])],
+            "cohort": cohort,
+            "profile": profile,
         },
     )
 
@@ -100,11 +126,13 @@ async def search_cohorts_internal(
                 for item in cached.get("items", [])
             ]
 
-    params = SearchCohortsSqlParams(
+    params = SearchCohortsParams(
         search=search,
         limit_count=limit_count,
         offset_count=offset_count,
         exclude_ids=exclude_ids or [],
+        cohort=cohort,
+        profile=profile,
     )
     result = cast(
         SearchCohortsSqlRow,

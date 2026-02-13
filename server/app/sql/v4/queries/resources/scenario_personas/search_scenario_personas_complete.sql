@@ -20,7 +20,9 @@ END $$;
 -- Reuses type from get endpoint: types.q_get_scenario_personas_v4_item
 
 CREATE OR REPLACE FUNCTION api_search_scenario_personas_v4(
-    scenario_ids uuid[] DEFAULT ARRAY[]::uuid[]
+    scenario_ids uuid[] DEFAULT ARRAY[]::uuid[],
+    -- Artifact boolean filters: when true, only return resources linked to that artifact type
+    simulation boolean DEFAULT false
 )
 RETURNS TABLE (
     items types.q_get_scenario_personas_v4_item[]
@@ -41,5 +43,7 @@ WHERE spr.active = true
   AND (
     COALESCE(array_length(scenario_ids, 1), 0) = 0
     OR spr.scenario_id = ANY(scenario_ids)
-  );
+  )
+  -- Artifact boolean filters
+  AND (NOT simulation OR EXISTS (SELECT 1 FROM simulation_scenario_personas_junction j WHERE j.scenario_persona_id = spr.id AND j.active = true));
 $$;

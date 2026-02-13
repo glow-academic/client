@@ -1,10 +1,11 @@
 """Values SEARCH endpoint - v4 API following DHH principles."""
 
-from typing import Annotated, cast
+from typing import Annotated, Any, cast
 from uuid import UUID
 
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from pydantic import BaseModel
 
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
@@ -12,7 +13,6 @@ from app.sql.types import (
     QGetValuesV4Item,
     SearchValuesApiRequest,
     SearchValuesApiResponse,
-    SearchValuesSqlParams,
     SearchValuesSqlRow,
     load_sql_query,
 )
@@ -26,6 +26,29 @@ SQL_PATH = "app/sql/v4/queries/resources/values/search_values_complete.sql"
 router = APIRouter()
 
 
+# Handcrafted params to match SQL signature with artifact boolean filters
+class SearchValuesParams(BaseModel):
+    search: str | None = None
+    limit_count: int | None = 20
+    offset_count: int | None = 0
+    suggest_source: str | None = "all"
+    exclude_ids: list[UUID] = []
+    # Artifact boolean filters
+    model: bool = False
+    provider: bool = False
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.search,
+            self.limit_count,
+            self.offset_count,
+            self.suggest_source,
+            self.exclude_ids,
+            self.model,
+            self.provider,
+        )
+
+
 async def search_values_internal(
     conn: asyncpg.Connection,
     search: str | None = None,
@@ -34,6 +57,9 @@ async def search_values_internal(
     suggest_source: str | None = None,
     exclude_ids: list[UUID] | None = None,
     bypass_cache: bool = False,
+    *,
+    model: bool = False,
+    provider: bool = False,
 ) -> list[QGetValuesV4Item]:
     if limit_count is not None and limit_count <= 0:
         return []
@@ -47,6 +73,8 @@ async def search_values_internal(
             "offset_count": offset_count,
             "suggest_source": suggest_source,
             "exclude_ids": [str(id) for id in (exclude_ids or [])],
+            "model": model,
+            "provider": provider,
         },
     )
 
@@ -58,12 +86,14 @@ async def search_values_internal(
                 for item in cached.get("items", [])
             ]
 
-    params = SearchValuesSqlParams(
+    params = SearchValuesParams(
         search=search,
         limit_count=limit_count,
         offset_count=offset_count,
         suggest_source=suggest_source,
         exclude_ids=exclude_ids or [],
+        model=model,
+        provider=provider,
     )
     result = cast(
         SearchValuesSqlRow,

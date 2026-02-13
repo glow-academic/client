@@ -88,9 +88,7 @@ async def initialize_test_db() -> AsyncGenerator[None, None]:
     sql_content = seed_file.read_text()
     # Filter out pg_dump/psql meta-commands (lines starting with \)
     filtered_sql = "\n".join(
-        line
-        for line in sql_content.split("\n")
-        if not line.strip().startswith("\\")
+        line for line in sql_content.split("\n") if not line.strip().startswith("\\")
     )
     async with pool.acquire() as conn:
         await conn.execute(filtered_sql)

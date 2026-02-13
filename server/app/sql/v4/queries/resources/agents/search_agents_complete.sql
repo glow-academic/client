@@ -22,7 +22,10 @@ CREATE OR REPLACE FUNCTION api_search_agents_v4(
     search text DEFAULT NULL,
     limit_count int DEFAULT 20,
     offset_count int DEFAULT 0,
-    exclude_ids uuid[] DEFAULT ARRAY[]::uuid[]
+    exclude_ids uuid[] DEFAULT ARRAY[]::uuid[],
+    -- Artifact boolean filters: when true, only return resources linked to that artifact type
+    agent boolean DEFAULT false,
+    setting boolean DEFAULT false
 )
 RETURNS TABLE (
     items types.q_get_agents_v4_item[]
@@ -43,6 +46,9 @@ FROM (
     WHERE r.active = true
       AND (search IS NULL OR search = '' OR LOWER(r.name) LIKE '%' || LOWER(search) || '%' OR LOWER(r.description) LIKE '%' || LOWER(search) || '%')
       AND (exclude_ids IS NULL OR NOT (r.id = ANY(exclude_ids)))
+      -- Artifact boolean filters (each filters to resources linked to at least one of that artifact type)
+      AND (NOT agent OR EXISTS (SELECT 1 FROM agent_agents_junction j WHERE j.agents_id = r.id AND j.active = true))
+      AND (NOT setting OR EXISTS (SELECT 1 FROM setting_agents_junction j WHERE j.agents_id = r.id AND j.active = true))
     ORDER BY r.name
     LIMIT limit_count
     OFFSET offset_count

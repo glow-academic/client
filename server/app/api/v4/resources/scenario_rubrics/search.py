@@ -8,6 +8,7 @@ from uuid import UUID
 
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from pydantic import BaseModel
 
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
@@ -15,7 +16,6 @@ from app.sql.types import (
     QGetScenarioRubricsV4Item,
     SearchScenarioRubricsApiRequest,
     SearchScenarioRubricsApiResponse,
-    SearchScenarioRubricsSqlParams,
     SearchScenarioRubricsSqlRow,
     load_sql_query,
 )
@@ -37,10 +37,25 @@ router = APIRouter()
 # =============================================================================
 
 
+# Handcrafted params to match SQL signature with artifact boolean filters
+class SearchScenarioRubricsParams(BaseModel):
+    scenario_ids: list[UUID] = []
+    # Artifact boolean filters
+    simulation: bool = False
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.scenario_ids,
+            self.simulation,
+        )
+
+
 async def search_scenario_rubrics_internal(
     conn: asyncpg.Connection,
     scenario_ids: list[UUID],
     bypass_cache: bool = False,
+    *,
+    simulation: bool = False,
 ) -> list[QGetScenarioRubricsV4Item]:
     """Internal function for parallel fetching from artifact endpoint.
 
@@ -57,6 +72,7 @@ async def search_scenario_rubrics_internal(
         "scenario_rubrics/search",
         {
             "scenario_ids": sorted([str(id) for id in scenario_ids]),
+            "simulation": simulation,
         },
     )
 
@@ -70,7 +86,10 @@ async def search_scenario_rubrics_internal(
             ]
 
     # Execute SQL
-    params = SearchScenarioRubricsSqlParams(scenario_ids=scenario_ids)
+    params = SearchScenarioRubricsParams(
+        scenario_ids=scenario_ids or [],
+        simulation=simulation,
+    )
     result = cast(
         SearchScenarioRubricsSqlRow,
         await execute_sql_typed(

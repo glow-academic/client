@@ -27,7 +27,10 @@ CREATE OR REPLACE FUNCTION api_search_fields_v4(
     user_department_ids uuid[] DEFAULT ARRAY[]::uuid[],
     draft_id uuid DEFAULT NULL,
     suggest_source text DEFAULT 'all',
-    exclude_ids uuid[] DEFAULT ARRAY[]::uuid[]
+    exclude_ids uuid[] DEFAULT ARRAY[]::uuid[],
+    -- Artifact boolean filters: when true, only return resources linked to that artifact type
+    field boolean DEFAULT false,
+    parameter boolean DEFAULT false
 )
 RETURNS TABLE (
     items types.q_get_fields_v4_item[]
@@ -74,14 +77,6 @@ FROM (
                     AND dc.draft_id = api_search_fields_v4.draft_id
               )
           )
-          OR (
-              suggest_source = 'linked'
-              AND EXISTS (
-                  SELECT 1 FROM parameter_fields_resource pf
-                  WHERE pf.field_id = f.id
-                    AND pf.active = true
-              )
-          )
       )
       -- Exclude filter
       AND (exclude_ids IS NULL OR NOT (f.id = ANY(exclude_ids)))
@@ -92,6 +87,9 @@ FROM (
           OR LOWER(f.name) LIKE '%' || LOWER(search) || '%'
           OR LOWER(COALESCE(f.description, '')) LIKE '%' || LOWER(search) || '%'
       )
+      -- Artifact boolean filters (each filters to resources linked to at least one of that artifact type)
+      AND (NOT field OR EXISTS (SELECT 1 FROM field_fields_junction j WHERE j.field_id = f.id AND j.active = true))
+      AND (NOT parameter OR EXISTS (SELECT 1 FROM parameter_fields_junction j WHERE j.field_id = f.id AND j.active = true))
     ORDER BY f.name
     LIMIT limit_count
     OFFSET offset_count

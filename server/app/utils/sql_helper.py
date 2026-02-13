@@ -143,6 +143,7 @@ async def execute_sql_typed(
         InputType, OutputType = get_sql_types(sql_path)
     except ValueError:
         from tests.sql.types import get_sql_types as get_test_sql_types
+
         InputType, OutputType = get_test_sql_types(sql_path)
     # Type annotation to help type checker understand OutputType is Type[BaseModel]
     OutputTypeClass: type[BaseModel] = OutputType

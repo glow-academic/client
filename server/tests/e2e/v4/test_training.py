@@ -11,7 +11,9 @@ import re
 import pytest
 from playwright.sync_api import Page, expect
 
-from server.tests.e2e.v4.conftest import ADMIN_PROFILE_ID, post_json, resolve_profile_ids
+from server.tests.e2e.v4.conftest import (
+    ADMIN_PROFILE_ID,
+)
 
 pytestmark = [pytest.mark.e2e, pytest.mark.test_profile_id(ADMIN_PROFILE_ID)]
 
@@ -69,9 +71,7 @@ def test_home_workflow(page: Page, base_url: str) -> None:
         messages_container = page.get_by_test_id("attempt-messages-container")
         messages_container.wait_for(state="visible", timeout=10000)
 
-        message_with_content = messages_container.get_by_text(
-            test_message, exact=False
-        )
+        message_with_content = messages_container.get_by_text(test_message, exact=False)
         message_with_content.wait_for(state="visible", timeout=30000)
 
         # Step 5: Wait for AI response (60s timeout)
@@ -172,9 +172,7 @@ def test_practice_workflow(page: Page, base_url: str) -> None:
         messages_container = page.get_by_test_id("attempt-messages-container")
         messages_container.wait_for(state="visible", timeout=10000)
 
-        message_with_content = messages_container.get_by_text(
-            test_message, exact=False
-        )
+        message_with_content = messages_container.get_by_text(test_message, exact=False)
         message_with_content.wait_for(state="visible", timeout=30000)
 
         # Step 8: Wait for AI response (60s timeout)

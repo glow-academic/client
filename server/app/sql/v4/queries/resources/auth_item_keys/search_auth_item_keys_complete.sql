@@ -20,7 +20,9 @@ CREATE OR REPLACE FUNCTION api_search_auth_item_keys_v4(
     search text DEFAULT NULL,
     limit_count int DEFAULT 20,
     offset_count int DEFAULT 0,
-    exclude_ids uuid[] DEFAULT ARRAY[]::uuid[]
+    exclude_ids uuid[] DEFAULT ARRAY[]::uuid[],
+    -- Artifact boolean filters: when true, only return resources linked to that artifact type
+    setting boolean DEFAULT false
 )
 RETURNS TABLE (
     items types.q_get_auth_item_keys_v4_item[]
@@ -68,6 +70,8 @@ FROM (
         OR LOWER(COALESCE(kr.description, '')) LIKE '%' || LOWER(search) || '%'
       )
       AND (exclude_ids IS NULL OR NOT (akr.id = ANY(exclude_ids)))
+      -- Artifact boolean filters (each filters to resources linked to at least one of that artifact type)
+      AND (NOT setting OR EXISTS (SELECT 1 FROM setting_auth_item_keys_junction j WHERE j.auth_item_keys_id = akr.id AND j.active = true))
     ORDER BY COALESCE(ar.name, ''), COALESCE(kr.name, '')
     LIMIT limit_count
     OFFSET offset_count

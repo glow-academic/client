@@ -254,7 +254,14 @@ async def get_provider_internal(
         async with pool.acquire() as c:
             selected = await get_names_internal(c, name_ids, bypass_cache)
             suggestions = await search_names_internal(
-                c, None, 20, 0, effective_group_id, None, name_ids, bypass_cache,
+                c,
+                None,
+                20,
+                0,
+                effective_group_id,
+                None,
+                name_ids,
+                bypass_cache,
                 provider=True,
             )
             return (selected, suggestions)
@@ -271,6 +278,7 @@ async def get_provider_internal(
                 "recent",
                 description_ids,
                 bypass_cache,
+                provider=True,
             )
             return (selected, suggestions)
 
@@ -278,7 +286,7 @@ async def get_provider_internal(
         async with pool.acquire() as c:
             selected = await get_flags_internal(c, flag_ids, bypass_cache)
             all_flags = await search_flags_internal(
-                c, None, 50, 0, flag_ids, bypass_cache, artifact_type="provider"
+                c, None, 50, 0, flag_ids, bypass_cache, provider=True
             )
             suggestions = [f for f in all_flags if (f.name or "") == "provider_active"]
             return (selected, suggestions)
@@ -295,6 +303,7 @@ async def get_provider_internal(
                 "all",
                 department_ids,
                 bypass_cache,
+                provider=True,
             )
             return (selected, suggestions)
 
@@ -302,7 +311,15 @@ async def get_provider_internal(
         async with pool.acquire() as c:
             selected = await get_values_internal(c, value_ids, bypass_cache)
             suggestions = await search_values_internal(
-                c, None, 20, 0, effective_group_id, "recent", value_ids, bypass_cache
+                c,
+                None,
+                20,
+                0,
+                effective_group_id,
+                "recent",
+                value_ids,
+                bypass_cache,
+                provider=True,
             )
             return (selected, suggestions)
 

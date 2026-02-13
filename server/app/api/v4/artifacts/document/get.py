@@ -383,6 +383,7 @@ async def get_document_internal(
                 "recent",
                 description_ids,
                 bypass_cache,
+                document=True,
             )
             return (selected, suggestions)
 
@@ -399,7 +400,7 @@ async def get_document_internal(
                 0,
                 flag_ids,
                 bypass_cache,
-                artifact_type="document",
+                document=True,
             )
             # Filter to only document-specific flags
             suggestions = [f for f in all_flags if f.name in DOCUMENT_FLAG_NAMES]
@@ -417,6 +418,7 @@ async def get_document_internal(
                 "all",
                 department_ids,
                 bypass_cache,
+                document=True,
             )
             return (selected, suggestions)
 
@@ -448,6 +450,7 @@ async def get_document_internal(
                 offset_count=0,
                 exclude_ids=upload_ids,
                 bypass_cache=bypass_cache,
+                document=True,
             )
             return (selected, suggestions)
 

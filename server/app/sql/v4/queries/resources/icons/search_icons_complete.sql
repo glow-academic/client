@@ -26,7 +26,9 @@ CREATE OR REPLACE FUNCTION api_search_icons_v4(
     offset_count int DEFAULT 0,
     draft_id uuid DEFAULT NULL,
     suggest_source text DEFAULT 'all',
-    exclude_ids uuid[] DEFAULT ARRAY[]::uuid[]
+    exclude_ids uuid[] DEFAULT ARRAY[]::uuid[],
+    -- Artifact boolean filters: when true, only return resources linked to that artifact type
+    persona boolean DEFAULT false
 )
 RETURNS TABLE (
     items types.q_get_icons_v4_item[]
@@ -67,15 +69,9 @@ FROM (
                     AND dc.draft_id = api_search_icons_v4.draft_id
               )
           )
-          OR (
-              suggest_source = 'linked'
-              AND EXISTS (
-                  SELECT 1 FROM persona_icons_junction pi
-                  WHERE pi.icon_id = i.id
-                    AND pi.active = true
-              )
-          )
       )
+      -- Artifact boolean filters (each filters to resources linked to at least one of that artifact type)
+      AND (NOT persona OR EXISTS (SELECT 1 FROM persona_icons_junction j WHERE j.icon_id = i.id AND j.active = true))
     ORDER BY i.name
     LIMIT limit_count
     OFFSET offset_count

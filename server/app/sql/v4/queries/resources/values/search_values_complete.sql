@@ -23,7 +23,10 @@ CREATE OR REPLACE FUNCTION api_search_values_v4(
     limit_count int DEFAULT 20,
     offset_count int DEFAULT 0,
     suggest_source text DEFAULT 'all',
-    exclude_ids uuid[] DEFAULT ARRAY[]::uuid[]
+    exclude_ids uuid[] DEFAULT ARRAY[]::uuid[],
+    -- Artifact boolean filters: when true, only return resources linked to that artifact type
+    model boolean DEFAULT false,
+    provider boolean DEFAULT false
 )
 RETURNS TABLE (
     items types.q_get_values_v4_item[]
@@ -55,6 +58,9 @@ FROM (
           OR search = ''
           OR LOWER(v.value) LIKE '%' || LOWER(search) || '%'
       )
+      -- Artifact boolean filters (each filters to resources linked to at least one of that artifact type)
+      AND (NOT model OR EXISTS (SELECT 1 FROM model_values_junction j WHERE j.value_id = v.id AND j.active = true))
+      AND (NOT provider OR EXISTS (SELECT 1 FROM provider_values_junction j WHERE j.values_id = v.id AND j.active = true))
     ORDER BY v.value
     LIMIT limit_count
     OFFSET offset_count

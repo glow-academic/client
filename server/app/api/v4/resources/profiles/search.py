@@ -1,10 +1,11 @@
 """Profiles SEARCH endpoint - v4 API following DHH principles."""
 
-from typing import Annotated, cast
+from typing import Annotated, Any, cast
 from uuid import UUID
 
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from pydantic import BaseModel
 
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
@@ -12,7 +13,6 @@ from app.sql.types import (
     QGetProfilesV4Item,
     SearchProfilesApiRequest,
     SearchProfilesApiResponse,
-    SearchProfilesSqlParams,
     SearchProfilesSqlRow,
     load_sql_query,
 )
@@ -27,6 +27,27 @@ SQL_PATH = "app/sql/v4/queries/resources/profiles/search_profiles_complete.sql"
 router = APIRouter()
 
 
+# Handcrafted params to match SQL signature with artifact boolean filters
+class SearchProfilesParams(BaseModel):
+    search: str | None = None
+    limit_count: int | None = 20
+    offset_count: int | None = 0
+    exclude_ids: list[UUID] = []
+    # Artifact boolean filters
+    profile: bool = False
+    setting: bool = False
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.search,
+            self.limit_count,
+            self.offset_count,
+            self.exclude_ids,
+            self.profile,
+            self.setting,
+        )
+
+
 async def search_profiles_internal(
     conn: asyncpg.Connection,
     search: str | None = None,
@@ -34,6 +55,9 @@ async def search_profiles_internal(
     offset_count: int | None = 0,
     exclude_ids: list[UUID] | None = None,
     bypass_cache: bool = False,
+    *,
+    profile: bool = False,
+    setting: bool = False,
 ) -> list[QGetProfilesV4Item]:
     """Internal function to search profiles."""
     if limit_count is not None and limit_count <= 0:
@@ -47,6 +71,8 @@ async def search_profiles_internal(
             "limit_count": limit_count,
             "offset_count": offset_count,
             "exclude_ids": [str(id) for id in (exclude_ids or [])],
+            "profile": profile,
+            "setting": setting,
         },
     )
 
@@ -58,11 +84,13 @@ async def search_profiles_internal(
                 for item in cached.get("items", [])
             ]
 
-    params = SearchProfilesSqlParams(
+    params = SearchProfilesParams(
         search=search,
         limit_count=limit_count,
         offset_count=offset_count,
         exclude_ids=exclude_ids or [],
+        profile=profile,
+        setting=setting,
     )
     result = cast(
         SearchProfilesSqlRow,

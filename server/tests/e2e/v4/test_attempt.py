@@ -2,12 +2,14 @@
 
 from __future__ import annotations
 
-import re
-
 import pytest
 from playwright.sync_api import Page, expect
 
-from server.tests.e2e.v4.conftest import ADMIN_PROFILE_ID, post_json, resolve_profile_ids
+from server.tests.e2e.v4.conftest import (
+    ADMIN_PROFILE_ID,
+    post_json,
+    resolve_profile_ids,
+)
 
 pytestmark = [pytest.mark.e2e, pytest.mark.test_profile_id(ADMIN_PROFILE_ID)]
 

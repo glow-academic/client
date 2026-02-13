@@ -10,7 +10,7 @@ from typing import Any
 
 from playwright.sync_api import APIRequestContext
 
-from server.tests.e2e.conftest import PROFILE_ID, _build_test_headers
+from server.tests.e2e.conftest import _build_test_headers
 
 API_BASE = os.getenv("E2E_API_BASE", "http://localhost:8000")
 ADMIN_PROFILE_ID = "6a2518eb-eba7-4650-aee0-d387c3fb8265"

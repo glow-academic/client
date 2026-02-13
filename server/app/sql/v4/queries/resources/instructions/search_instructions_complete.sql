@@ -26,7 +26,10 @@ CREATE OR REPLACE FUNCTION api_search_instructions_v4(
     offset_count int DEFAULT 0,
     draft_id uuid DEFAULT NULL,
     suggest_source text DEFAULT 'all',
-    exclude_ids uuid[] DEFAULT ARRAY[]::uuid[]
+    exclude_ids uuid[] DEFAULT ARRAY[]::uuid[],
+    -- Artifact boolean filters: when true, only return resources linked to that artifact type
+    agent boolean DEFAULT false,
+    persona boolean DEFAULT false
 )
 RETURNS TABLE (
     items types.q_get_instructions_v4_item[]
@@ -65,15 +68,10 @@ FROM (
                     AND dc.draft_id = api_search_instructions_v4.draft_id
               )
           )
-          OR (
-              suggest_source = 'linked'
-              AND EXISTS (
-                  SELECT 1 FROM persona_instructions_junction pi
-                  WHERE pi.instruction_id = i.id
-                    AND pi.active = true
-              )
-          )
       )
+      -- Artifact boolean filters (each filters to resources linked to at least one of that artifact type)
+      AND (NOT agent OR EXISTS (SELECT 1 FROM agent_instructions_junction j WHERE j.instruction_id = i.id AND j.active = true))
+      AND (NOT persona OR EXISTS (SELECT 1 FROM persona_instructions_junction j WHERE j.instruction_id = i.id AND j.active = true))
     ORDER BY i.template
     LIMIT limit_count
     OFFSET offset_count

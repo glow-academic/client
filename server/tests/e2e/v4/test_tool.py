@@ -53,9 +53,7 @@ def test_tool_lifecycle(page: Page, base_url: str) -> None:
         page.wait_for_load_state("networkidle")
 
         # Step 3: Verify card visible on list page
-        tool_card = (
-            page.get_by_test_id("tool-card").filter(has_text=tool_name).first
-        )
+        tool_card = page.get_by_test_id("tool-card").filter(has_text=tool_name).first
         expect(tool_card).to_be_visible()
         tool_id = tool_card.get_attribute("data-tool-id")
         if tool_id:

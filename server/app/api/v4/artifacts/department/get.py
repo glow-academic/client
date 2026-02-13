@@ -341,6 +341,7 @@ async def get_department_internal(
                 "recent",
                 description_ids,
                 bypass_cache,
+                department=True,
             )
             return (selected, suggestions)
 
@@ -354,7 +355,7 @@ async def get_department_internal(
                 0,
                 flag_ids,
                 bypass_cache,
-                artifact_type="department",
+                department=True,
             )
             suggestions = [f for f in all_flags if f.name in DEPARTMENT_FLAG_NAMES]
             return (selected, suggestions)

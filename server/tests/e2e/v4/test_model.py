@@ -53,9 +53,7 @@ def test_model_lifecycle(page: Page, base_url: str) -> None:
         page.wait_for_load_state("networkidle")
 
         # Step 3: Verify card visible on list page
-        model_card = (
-            page.get_by_test_id("model-card").filter(has_text=model_name).first
-        )
+        model_card = page.get_by_test_id("model-card").filter(has_text=model_name).first
         expect(model_card).to_be_visible()
         model_id = model_card.get_attribute("data-model-id")
         if model_id:

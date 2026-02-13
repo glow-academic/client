@@ -27,7 +27,10 @@ CREATE OR REPLACE FUNCTION api_search_documents_v4(
     user_department_ids uuid[] DEFAULT ARRAY[]::uuid[],
     draft_id uuid DEFAULT NULL,
     suggest_source text DEFAULT 'all',
-    exclude_ids uuid[] DEFAULT ARRAY[]::uuid[]
+    exclude_ids uuid[] DEFAULT ARRAY[]::uuid[],
+    -- Artifact boolean filters: when true, only return resources linked to that artifact type
+    document boolean DEFAULT false,
+    scenario boolean DEFAULT false
 )
 RETURNS TABLE (
     items types.q_get_documents_v4_item[]
@@ -74,14 +77,6 @@ FROM (
                     AND dc.draft_id = api_search_documents_v4.draft_id
               )
           )
-          OR (
-              suggest_source = 'linked'
-              AND EXISTS (
-                  SELECT 1 FROM scenario_documents_junction sd
-                  WHERE sd.document_id = d.id
-                    AND sd.active = true
-              )
-          )
       )
       -- Exclude already selected
       AND (exclude_ids IS NULL OR NOT (d.id = ANY(exclude_ids)))
@@ -92,6 +87,9 @@ FROM (
           OR LOWER(d.name) LIKE '%' || LOWER(search) || '%'
           OR LOWER(COALESCE(d.description, '')) LIKE '%' || LOWER(search) || '%'
       )
+      -- Artifact boolean filters (each filters to resources linked to at least one of that artifact type)
+      AND (NOT document OR EXISTS (SELECT 1 FROM document_documents_junction j WHERE j.document_id = d.id AND j.active = true))
+      AND (NOT scenario OR EXISTS (SELECT 1 FROM scenario_documents_junction j WHERE j.document_id = d.id AND j.active = true))
     ORDER BY d.name
     LIMIT limit_count
     OFFSET offset_count

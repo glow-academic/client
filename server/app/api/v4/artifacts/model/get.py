@@ -429,7 +429,14 @@ async def get_model_internal(
         async with pool.acquire() as c:
             selected = await get_names_internal(c, name_ids, bypass_cache)
             suggestions = await search_names_internal(
-                c, None, 20, 0, effective_group_id, None, name_ids, bypass_cache,
+                c,
+                None,
+                20,
+                0,
+                effective_group_id,
+                None,
+                name_ids,
+                bypass_cache,
                 model=True,
             )
             return (selected, suggestions)
@@ -446,6 +453,7 @@ async def get_model_internal(
                 "recent",
                 description_ids,
                 bypass_cache,
+                model=True,
             )
             return (selected, suggestions)
 
@@ -463,7 +471,7 @@ async def get_model_internal(
         async with pool.acquire() as c:
             selected = await get_flags_internal(c, flag_ids, bypass_cache)
             all_flags = await search_flags_internal(
-                c, None, 50, 0, flag_ids, bypass_cache, artifact_type="model"
+                c, None, 50, 0, flag_ids, bypass_cache, model=True
             )
             suggestions = [f for f in all_flags if f.name in MODEL_FLAG_NAMES]
             return (selected, suggestions)
@@ -482,6 +490,7 @@ async def get_model_internal(
                 "all",
                 selected_department_ids,
                 bypass_cache,
+                model=True,
             )
             return (selected, suggestions)
 

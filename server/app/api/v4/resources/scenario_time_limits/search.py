@@ -8,6 +8,7 @@ from uuid import UUID
 
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from pydantic import BaseModel
 
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
@@ -15,7 +16,6 @@ from app.sql.types import (
     QGetScenarioTimeLimitsV4Item,
     SearchScenarioTimeLimitsApiRequest,
     SearchScenarioTimeLimitsApiResponse,
-    SearchScenarioTimeLimitsSqlParams,
     SearchScenarioTimeLimitsSqlRow,
     load_sql_query,
 )
@@ -35,10 +35,25 @@ router = APIRouter()
 # =============================================================================
 
 
+# Handcrafted params to match SQL signature with artifact boolean filters
+class SearchScenarioTimeLimitsParams(BaseModel):
+    scenario_ids: list[UUID] = []
+    # Artifact boolean filters
+    simulation: bool = False
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.scenario_ids,
+            self.simulation,
+        )
+
+
 async def search_scenario_time_limits_internal(
     conn: asyncpg.Connection,
     scenario_ids: list[UUID],
     bypass_cache: bool = False,
+    *,
+    simulation: bool = False,
 ) -> list[QGetScenarioTimeLimitsV4Item]:
     """Internal function for parallel fetching from artifact endpoint.
 
@@ -55,6 +70,7 @@ async def search_scenario_time_limits_internal(
         "scenario_time_limits/search",
         {
             "scenario_ids": sorted([str(id) for id in scenario_ids]),
+            "simulation": simulation,
         },
     )
 
@@ -68,7 +84,10 @@ async def search_scenario_time_limits_internal(
             ]
 
     # Execute SQL
-    params = SearchScenarioTimeLimitsSqlParams(scenario_ids=scenario_ids)
+    params = SearchScenarioTimeLimitsParams(
+        scenario_ids=scenario_ids or [],
+        simulation=simulation,
+    )
     result = cast(
         SearchScenarioTimeLimitsSqlRow,
         await execute_sql_typed(

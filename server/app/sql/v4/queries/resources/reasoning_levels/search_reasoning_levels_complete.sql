@@ -22,7 +22,10 @@ CREATE OR REPLACE FUNCTION api_search_reasoning_levels_v4(
     search text DEFAULT NULL,
     limit_count int DEFAULT 20,
     offset_count int DEFAULT 0,
-    exclude_ids uuid[] DEFAULT ARRAY[]::uuid[]
+    exclude_ids uuid[] DEFAULT ARRAY[]::uuid[],
+    -- Artifact boolean filters: when true, only return resources linked to that artifact type
+    agent boolean DEFAULT false,
+    model boolean DEFAULT false
 )
 RETURNS TABLE (
     items types.q_get_reasoning_levels_v4_item[]
@@ -47,6 +50,9 @@ FROM (
       AND (search IS NULL OR search = '' OR LOWER(r.reasoning_level) LIKE '%' || LOWER(search) || '%')
       -- Exclude filter
       AND (exclude_ids IS NULL OR NOT (r.id = ANY(exclude_ids)))
+      -- Artifact boolean filters (each filters to resources linked to at least one of that artifact type)
+      AND (NOT agent OR EXISTS (SELECT 1 FROM agent_reasoning_levels_junction j WHERE j.reasoning_level_id = r.id AND j.active = true))
+      AND (NOT model OR EXISTS (SELECT 1 FROM model_reasoning_levels_junction j WHERE j.reasoning_level_id = r.id AND j.active = true))
     ORDER BY r.reasoning_level ASC
     LIMIT limit_count
     OFFSET offset_count

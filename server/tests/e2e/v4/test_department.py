@@ -89,9 +89,7 @@ def test_department_lifecycle(page: Page, base_url: str) -> None:
         page.wait_for_timeout(1000)
 
         # Step 7: Delete duplicate → confirm dialog → verify gone
-        all_cards = page.get_by_test_id("department-card").filter(
-            has_text=updated_name
-        )
+        all_cards = page.get_by_test_id("department-card").filter(has_text=updated_name)
         if all_cards.count() > 1:
             dup_card = all_cards.nth(1)
             dup_id = dup_card.get_attribute("data-department-id")

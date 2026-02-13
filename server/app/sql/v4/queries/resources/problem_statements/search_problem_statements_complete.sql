@@ -22,7 +22,9 @@ CREATE OR REPLACE FUNCTION api_search_problem_statements_v4(
     search text DEFAULT NULL,
     limit_count int DEFAULT 20,
     offset_count int DEFAULT 0,
-    exclude_ids uuid[] DEFAULT ARRAY[]::uuid[]
+    exclude_ids uuid[] DEFAULT ARRAY[]::uuid[],
+    -- Artifact boolean filters: when true, only return resources linked to that artifact type
+    scenario boolean DEFAULT false
 )
 RETURNS TABLE (
     items types.q_get_problem_statements_v4_item[]
@@ -46,6 +48,8 @@ FROM problem_statements_resource ps
 WHERE ps.active = true
   AND (exclude_ids IS NULL OR NOT (ps.id = ANY(exclude_ids)))
   AND (search IS NULL OR search = '' OR LOWER(ps.name) LIKE '%' || LOWER(search) || '%' OR LOWER(ps.problem_statement) LIKE '%' || LOWER(search) || '%')
+  -- Artifact boolean filters (each filters to resources linked to at least one of that artifact type)
+  AND (NOT scenario OR EXISTS (SELECT 1 FROM scenario_problem_statements_junction j WHERE j.problem_statement_id = ps.id AND j.active = true))
 LIMIT limit_count
 OFFSET offset_count;
 $$;

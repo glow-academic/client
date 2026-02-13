@@ -523,6 +523,7 @@ async def get_scenario_internal(
                 "recent",
                 selected_description_ids,
                 bypass_cache,
+                scenario=True,
             )
             return (selected, suggestions)
 
@@ -576,7 +577,7 @@ async def get_scenario_internal(
                 0,
                 all_selected_ids,
                 bypass_cache,
-                artifact_type="scenario",
+                scenario=True,
             )
             # Filter to only scenario-specific flags (business logic in Python)
             suggestions = [f for f in all_flags if f.name in SCENARIO_FLAG_NAMES]
@@ -597,6 +598,7 @@ async def get_scenario_internal(
                 dept_source,
                 selected_department_ids,
                 bypass_cache,
+                scenario=True,
             )
             return (selected, suggestions)
 
@@ -614,6 +616,7 @@ async def get_scenario_internal(
                 effective_group_id,
                 selected_persona_ids,
                 bypass_cache,
+                scenario=True,
             )
             return (selected, suggestions)
 
@@ -631,6 +634,7 @@ async def get_scenario_internal(
                 effective_group_id,
                 selected_document_ids,
                 bypass_cache,
+                scenario=True,
             )
             return (selected, suggestions)
 
@@ -684,6 +688,7 @@ async def get_scenario_internal(
                 0,
                 selected_image_ids,
                 bypass_cache,
+                scenario=True,
             )
             return (selected, suggestions)
 
@@ -697,6 +702,7 @@ async def get_scenario_internal(
                 0,
                 selected_video_ids,
                 bypass_cache,
+                scenario=True,
             )
             return (selected, suggestions)
 
@@ -712,6 +718,7 @@ async def get_scenario_internal(
                 0,
                 selected_question_ids,
                 bypass_cache,
+                scenario=True,
             )
             return (selected, suggestions)
 

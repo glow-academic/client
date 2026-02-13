@@ -22,7 +22,9 @@ CREATE OR REPLACE FUNCTION api_search_videos_v4(
     search text DEFAULT NULL,
     limit_count int DEFAULT 20,
     offset_count int DEFAULT 0,
-    exclude_ids uuid[] DEFAULT ARRAY[]::uuid[]
+    exclude_ids uuid[] DEFAULT ARRAY[]::uuid[],
+    -- Artifact boolean filters: when true, only return resources linked to that artifact type
+    scenario boolean DEFAULT false
 )
 RETURNS TABLE (
     items types.q_get_videos_v4_item[]
@@ -49,6 +51,8 @@ FROM videos_resource v
 WHERE v.active = true
   AND (exclude_ids IS NULL OR NOT (v.id = ANY(exclude_ids)))
   AND (search IS NULL OR search = '' OR LOWER(v.name) LIKE '%' || LOWER(search) || '%')
+  -- Artifact boolean filters
+  AND (NOT scenario OR EXISTS (SELECT 1 FROM scenario_videos_junction j WHERE j.video_id = v.id AND j.active = true))
 LIMIT limit_count
 OFFSET offset_count;
 $$;

@@ -1,10 +1,11 @@
 """Items SEARCH endpoint - v4 API following DHH principles."""
 
-from typing import Annotated, cast
+from typing import Annotated, Any, cast
 from uuid import UUID
 
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from pydantic import BaseModel
 
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
@@ -12,7 +13,6 @@ from app.sql.types import (
     QGetItemsV4Item,
     SearchItemsApiRequest,
     SearchItemsApiResponse,
-    SearchItemsSqlParams,
     SearchItemsSqlRow,
     load_sql_query,
 )
@@ -27,6 +27,25 @@ SQL_PATH = "app/sql/v4/queries/resources/items/search_items_complete.sql"
 router = APIRouter()
 
 
+# Handcrafted params to match SQL signature with artifact boolean filters
+class SearchItemsParams(BaseModel):
+    search: str | None = None
+    limit_count: int | None = 20
+    offset_count: int | None = 0
+    exclude_ids: list[UUID] = []
+    # Artifact boolean filters
+    auth: bool = False
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.search,
+            self.limit_count,
+            self.offset_count,
+            self.exclude_ids,
+            self.auth,
+        )
+
+
 async def search_items_internal(
     conn: asyncpg.Connection,
     search: str | None = None,
@@ -34,6 +53,8 @@ async def search_items_internal(
     offset_count: int | None = 0,
     exclude_ids: list[UUID] | None = None,
     bypass_cache: bool = False,
+    *,
+    auth: bool = False,
 ) -> list[QGetItemsV4Item]:
     """Internal function to search items."""
     if limit_count is not None and limit_count <= 0:
@@ -47,6 +68,7 @@ async def search_items_internal(
             "limit_count": limit_count,
             "offset_count": offset_count,
             "exclude_ids": [str(id) for id in (exclude_ids or [])],
+            "auth": auth,
         },
     )
 
@@ -57,11 +79,12 @@ async def search_items_internal(
                 QGetItemsV4Item.model_validate(item) for item in cached.get("items", [])
             ]
 
-    params = SearchItemsSqlParams(
+    params = SearchItemsParams(
         search=search,
         limit_count=limit_count,
         offset_count=offset_count,
         exclude_ids=exclude_ids or [],
+        auth=auth,
     )
     result = cast(
         SearchItemsSqlRow,

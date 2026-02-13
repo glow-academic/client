@@ -8,12 +8,12 @@ from uuid import UUID
 
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from pydantic import BaseModel
 
 from app.api.v4.artifacts.simulation.types import (
     QGetScenariosV4Item,
     SearchScenariosApiRequest,
     SearchScenariosApiResponse,
-    SearchScenariosSqlParams,
     SearchScenariosSqlRow,
 )
 from app.infra.v4.activity.audit import audit_activity, audit_set
@@ -31,6 +31,31 @@ SQL_PATH = "app/sql/v4/queries/resources/scenarios/search_scenarios_complete.sql
 router = APIRouter()
 
 
+# Handcrafted params to match SQL signature with artifact boolean filters
+class SearchScenariosParams(BaseModel):
+    search: str | None = None
+    limit_count: int | None = 20
+    offset_count: int | None = 0
+    user_department_ids: list[UUID] = []
+    suggest_source: str | None = "all"
+    exclude_ids: list[UUID] = []
+    # Artifact boolean filters
+    scenario: bool = False
+    simulation: bool = False
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.search,
+            self.limit_count,
+            self.offset_count,
+            self.user_department_ids,
+            self.suggest_source,
+            self.exclude_ids,
+            self.scenario,
+            self.simulation,
+        )
+
+
 async def search_scenarios_internal(
     conn: asyncpg.Connection,
     search: str | None = None,
@@ -40,6 +65,9 @@ async def search_scenarios_internal(
     suggest_source: str | None = None,
     exclude_ids: list[UUID] | None = None,
     bypass_cache: bool = False,
+    *,
+    scenario: bool = False,
+    simulation: bool = False,
 ) -> list[QGetScenariosV4Item]:
     """Internal function to search scenarios.
 
@@ -68,6 +96,8 @@ async def search_scenarios_internal(
             else None,
             "suggest_source": suggest_source,
             "exclude_ids": [str(i) for i in exclude_ids] if exclude_ids else None,
+            "scenario": scenario,
+            "simulation": simulation,
         },
     )
 
@@ -78,13 +108,15 @@ async def search_scenarios_internal(
                 QGetScenariosV4Item.model_validate(item) for item in cached["items"]
             ]
 
-    params = SearchScenariosSqlParams(
+    params = SearchScenariosParams(
         search=search,
         limit_count=limit_count,
         offset_count=offset_count,
-        user_department_ids=user_department_ids,
+        user_department_ids=user_department_ids or [],
         suggest_source=suggest_source,
-        exclude_ids=exclude_ids,
+        exclude_ids=exclude_ids or [],
+        scenario=scenario,
+        simulation=simulation,
     )
 
     result = cast(

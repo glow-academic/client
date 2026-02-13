@@ -27,7 +27,25 @@ CREATE OR REPLACE FUNCTION api_search_departments_v4(
     user_department_ids uuid[] DEFAULT ARRAY[]::uuid[],
     draft_id uuid DEFAULT NULL,
     suggest_source text DEFAULT 'all',
-    exclude_ids uuid[] DEFAULT ARRAY[]::uuid[]
+    exclude_ids uuid[] DEFAULT ARRAY[]::uuid[],
+    -- Artifact boolean filters: when true, only return resources linked to that artifact type
+    agent boolean DEFAULT false,
+    auth boolean DEFAULT false,
+    cohort boolean DEFAULT false,
+    department boolean DEFAULT false,
+    document boolean DEFAULT false,
+    eval boolean DEFAULT false,
+    field boolean DEFAULT false,
+    model boolean DEFAULT false,
+    parameter boolean DEFAULT false,
+    persona boolean DEFAULT false,
+    profile boolean DEFAULT false,
+    provider boolean DEFAULT false,
+    rubric boolean DEFAULT false,
+    scenario boolean DEFAULT false,
+    setting boolean DEFAULT false,
+    simulation boolean DEFAULT false,
+    tool boolean DEFAULT false
 )
 RETURNS TABLE (
     items types.q_get_departments_v4_item[]
@@ -71,14 +89,6 @@ FROM (
                     AND dc.draft_id = api_search_departments_v4.draft_id
               )
           )
-          OR (
-              suggest_source = 'linked'
-              AND EXISTS (
-                  SELECT 1 FROM persona_departments_junction pd
-                  WHERE pd.department_id = d.id
-                    AND pd.active = true
-              )
-          )
       )
       -- Exclude filter
       AND (exclude_ids IS NULL OR NOT (d.id = ANY(exclude_ids)))
@@ -89,6 +99,24 @@ FROM (
           OR LOWER(d.name) LIKE '%' || LOWER(search) || '%'
           OR LOWER(COALESCE(d.description, '')) LIKE '%' || LOWER(search) || '%'
       )
+      -- Artifact boolean filters (each filters to resources linked to at least one of that artifact type)
+      AND (NOT agent OR EXISTS (SELECT 1 FROM agent_departments_junction j WHERE j.department_id = d.id AND j.active = true))
+      AND (NOT auth OR EXISTS (SELECT 1 FROM auth_departments_junction j WHERE j.department_id = d.id AND j.active = true))
+      AND (NOT cohort OR EXISTS (SELECT 1 FROM cohort_departments_junction j WHERE j.department_id = d.id AND j.active = true))
+      AND (NOT department OR EXISTS (SELECT 1 FROM department_departments_junction j WHERE j.department_id = d.id AND j.active = true))
+      AND (NOT document OR EXISTS (SELECT 1 FROM document_departments_junction j WHERE j.department_id = d.id AND j.active = true))
+      AND (NOT eval OR EXISTS (SELECT 1 FROM eval_departments_junction j WHERE j.department_id = d.id AND j.active = true))
+      AND (NOT field OR EXISTS (SELECT 1 FROM field_departments_junction j WHERE j.department_id = d.id AND j.active = true))
+      AND (NOT model OR EXISTS (SELECT 1 FROM model_departments_junction j WHERE j.department_id = d.id AND j.active = true))
+      AND (NOT parameter OR EXISTS (SELECT 1 FROM parameter_departments_junction j WHERE j.department_id = d.id AND j.active = true))
+      AND (NOT persona OR EXISTS (SELECT 1 FROM persona_departments_junction j WHERE j.department_id = d.id AND j.active = true))
+      AND (NOT profile OR EXISTS (SELECT 1 FROM profile_departments_junction j WHERE j.department_id = d.id AND j.active = true))
+      AND (NOT provider OR EXISTS (SELECT 1 FROM provider_departments_junction j WHERE j.department_id = d.id AND j.active = true))
+      AND (NOT rubric OR EXISTS (SELECT 1 FROM rubric_departments_junction j WHERE j.department_id = d.id AND j.active = true))
+      AND (NOT scenario OR EXISTS (SELECT 1 FROM scenario_departments_junction j WHERE j.department_id = d.id AND j.active = true))
+      AND (NOT setting OR EXISTS (SELECT 1 FROM setting_departments_junction j WHERE j.department_id = d.id AND j.active = true))
+      AND (NOT simulation OR EXISTS (SELECT 1 FROM simulation_departments_junction j WHERE j.department_id = d.id AND j.active = true))
+      AND (NOT tool OR EXISTS (SELECT 1 FROM tool_departments_junction j WHERE j.department_id = d.id AND j.active = true))
     ORDER BY d.name
     LIMIT limit_count
     OFFSET offset_count

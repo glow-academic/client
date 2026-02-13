@@ -22,7 +22,10 @@ CREATE OR REPLACE FUNCTION api_search_profiles_v4(
     search text DEFAULT NULL,
     limit_count int DEFAULT 20,
     offset_count int DEFAULT 0,
-    exclude_ids uuid[] DEFAULT ARRAY[]::uuid[]
+    exclude_ids uuid[] DEFAULT ARRAY[]::uuid[],
+    -- Artifact boolean filters: when true, only return resources linked to that artifact type
+    profile boolean DEFAULT false,
+    setting boolean DEFAULT false
 )
 RETURNS TABLE (
     items types.q_get_profiles_v4_item[]
@@ -48,6 +51,9 @@ FROM (
     WHERE p.active = true
       AND (search IS NULL OR search = '' OR LOWER(p.name) LIKE '%' || LOWER(search) || '%' OR LOWER(COALESCE(p.description, '')) LIKE '%' || LOWER(search) || '%')
       AND (exclude_ids IS NULL OR NOT (p.id = ANY(exclude_ids)))
+      -- Artifact boolean filters (each filters to resources linked to at least one of that artifact type)
+      AND (NOT profile OR EXISTS (SELECT 1 FROM profile_profiles_junction j WHERE j.profile_id = p.id AND j.active = true))
+      AND (NOT setting OR EXISTS (SELECT 1 FROM setting_profiles_junction j WHERE j.profile_id = p.id AND j.active = true))
     ORDER BY p.name
     LIMIT limit_count
     OFFSET offset_count

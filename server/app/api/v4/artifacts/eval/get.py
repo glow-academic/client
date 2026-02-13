@@ -381,6 +381,7 @@ async def get_eval_internal(
                 "recent",
                 description_ids,
                 bypass_cache,
+                eval=True,
             )
             return (selected, suggestions)
 
@@ -397,7 +398,7 @@ async def get_eval_internal(
                 0,
                 all_flag_ids,
                 bypass_cache,
-                artifact_type="eval",
+                eval=True,
             )
             suggestions = [f for f in all_flags if f.name in EVAL_FLAG_NAMES]
             return (selected, suggestions)
@@ -414,6 +415,7 @@ async def get_eval_internal(
                 "all",
                 department_ids,
                 bypass_cache,
+                eval=True,
             )
             return (selected, suggestions)
 

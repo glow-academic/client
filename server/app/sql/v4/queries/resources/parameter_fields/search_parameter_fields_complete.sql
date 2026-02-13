@@ -22,7 +22,11 @@ END $$;
 
 -- Create function
 CREATE OR REPLACE FUNCTION api_search_parameter_fields_v4(
-    parameter_ids uuid[] DEFAULT ARRAY[]::uuid[]
+    parameter_ids uuid[] DEFAULT ARRAY[]::uuid[],
+    -- Artifact boolean filters: when true, only return resources linked to that artifact type
+    document boolean DEFAULT false,
+    persona boolean DEFAULT false,
+    scenario boolean DEFAULT false
 )
 RETURNS TABLE (
     items types.q_get_parameter_fields_v4_item[]
@@ -68,5 +72,9 @@ WHERE pfj.active = true
   AND (
       (COALESCE(array_length(parameter_ids, 1), 0) = 0 AND pr.persona_parameter = true)
       OR ppj.parameters_id = ANY(parameter_ids)
-  );
+  )
+  -- Artifact boolean filters
+  AND (NOT document OR EXISTS (SELECT 1 FROM document_parameter_fields_junction j WHERE j.parameter_field_id = pfj.field_resource_id AND j.active = true))
+  AND (NOT persona OR EXISTS (SELECT 1 FROM persona_parameter_fields_junction j WHERE j.parameter_field_id = pfj.field_resource_id AND j.active = true))
+  AND (NOT scenario OR EXISTS (SELECT 1 FROM scenario_parameter_fields_junction j WHERE j.parameter_field_id = pfj.field_resource_id AND j.active = true));
 $$;

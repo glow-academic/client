@@ -380,6 +380,7 @@ async def get_simulation_internal(
                 "recent",
                 description_ids,
                 bypass_cache,
+                simulation=True,
             )
             return (selected, suggestions)
 
@@ -395,7 +396,7 @@ async def get_simulation_internal(
                 offset_count=0,
                 exclude_ids=None,
                 bypass_cache=bypass_cache,
-                artifact_type="simulation",
+                simulation=True,
             )
             flags_by_name = {f.name: f for f in all_flags}
             available = [
@@ -418,6 +419,7 @@ async def get_simulation_internal(
                 dept_source,
                 department_ids,
                 bypass_cache,
+                simulation=True,
             )
             return (selected, suggestions)
 
@@ -435,6 +437,7 @@ async def get_simulation_internal(
                 "recent",
                 scenario_ids,
                 bypass_cache,
+                simulation=True,
             )
             return (selected, suggestions)
 
@@ -444,7 +447,10 @@ async def get_simulation_internal(
                 c, scenario_flag_ids, bypass_cache
             )
             suggestions = await search_scenario_flags_internal(
-                c, effective_scenario_ids, bypass_cache
+                c,
+                effective_scenario_ids,
+                bypass_cache,
+                simulation=True,
             )
             return (selected, suggestions)
 

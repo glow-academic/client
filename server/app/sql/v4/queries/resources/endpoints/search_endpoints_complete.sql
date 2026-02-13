@@ -22,7 +22,9 @@ CREATE OR REPLACE FUNCTION api_search_endpoints_v4(
     search text DEFAULT NULL,
     limit_count int DEFAULT 20,
     offset_count int DEFAULT 0,
-    exclude_ids uuid[] DEFAULT ARRAY[]::uuid[]
+    exclude_ids uuid[] DEFAULT ARRAY[]::uuid[],
+    -- Artifact boolean filters: when true, only return resources linked to that artifact type
+    provider boolean DEFAULT false
 )
 RETURNS TABLE (
     items types.q_get_endpoints_v4_item[]
@@ -43,6 +45,8 @@ FROM (
     WHERE r.active = true
       AND (search IS NULL OR search = '' OR LOWER(r.base_url) LIKE '%' || LOWER(search) || '%')
       AND (exclude_ids IS NULL OR NOT (r.id = ANY(exclude_ids)))
+      -- Artifact boolean filters (each filters to resources linked to at least one of that artifact type)
+      AND (NOT provider OR EXISTS (SELECT 1 FROM provider_endpoints_junction j WHERE j.endpoint_id = r.id AND j.active = true))
     ORDER BY r.id
     LIMIT limit_count
     OFFSET offset_count

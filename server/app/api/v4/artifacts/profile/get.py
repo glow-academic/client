@@ -397,6 +397,7 @@ async def get_profile_internal(
                 0,
                 email_ids,
                 bypass_cache,
+                profile=True,
             )
             return (selected, suggestions)
 
@@ -412,6 +413,7 @@ async def get_profile_internal(
                 0,
                 request_limit_ids,
                 bypass_cache,
+                profile=True,
             )
             return (selected, suggestions)
 
@@ -425,7 +427,7 @@ async def get_profile_internal(
                 0,
                 flag_ids,
                 bypass_cache,
-                artifact_type="profile",
+                profile=True,
             )
             # Filter to only profile-specific flags
             suggestions = [f for f in all_flags if f.name in PROFILE_FLAG_NAMES]
@@ -443,6 +445,7 @@ async def get_profile_internal(
                 "all",
                 department_ids,
                 bypass_cache,
+                profile=True,
             )
             return (selected, suggestions)
 
@@ -456,6 +459,7 @@ async def get_profile_internal(
                 0,
                 cohort_ids,
                 bypass_cache,
+                profile=True,
             )
             return (selected, suggestions)
 

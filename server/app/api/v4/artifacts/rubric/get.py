@@ -401,6 +401,7 @@ async def get_rubric_internal(
                 "recent",
                 description_ids,
                 bypass_cache,
+                rubric=True,
             )
             return (selected, suggestions)
 
@@ -416,7 +417,7 @@ async def get_rubric_internal(
                 0,
                 flag_ids,
                 bypass_cache,
-                artifact_type="rubric",
+                rubric=True,
             )
             suggestions = [f for f in all_flags if f.name in RUBRIC_FLAG_NAMES]
             return (selected, suggestions)
@@ -433,6 +434,7 @@ async def get_rubric_internal(
                 "all",
                 department_ids,
                 bypass_cache,
+                rubric=True,
             )
             return (selected, suggestions)
 

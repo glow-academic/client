@@ -53,9 +53,7 @@ def test_field_lifecycle(page: Page, base_url: str) -> None:
         page.wait_for_load_state("networkidle")
 
         # Step 3: Verify card visible on list page
-        field_card = (
-            page.get_by_test_id("field-card").filter(has_text=field_name).first
-        )
+        field_card = page.get_by_test_id("field-card").filter(has_text=field_name).first
         expect(field_card).to_be_visible()
         field_id = field_card.get_attribute("data-field-id")
         if field_id:

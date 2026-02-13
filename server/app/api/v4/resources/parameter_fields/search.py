@@ -1,10 +1,11 @@
 """Parameter Fields SEARCH endpoint - v4 API following DHH principles."""
 
-from typing import Annotated, cast
+from typing import Annotated, Any, cast
 from uuid import UUID
 
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from pydantic import BaseModel
 
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
@@ -12,7 +13,6 @@ from app.sql.types import (
     QGetParameterFieldsV4Item,
     SearchParameterFieldsApiRequest,
     SearchParameterFieldsApiResponse,
-    SearchParameterFieldsSqlParams,
     SearchParameterFieldsSqlRow,
     load_sql_query,
 )
@@ -30,10 +30,31 @@ SQL_PATH = (
 router = APIRouter()
 
 
+# Handcrafted params to match SQL signature with artifact boolean filters
+class SearchParameterFieldsParams(BaseModel):
+    parameter_ids: list[UUID] = []
+    # Artifact boolean filters
+    document: bool = False
+    persona: bool = False
+    scenario: bool = False
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.parameter_ids,
+            self.document,
+            self.persona,
+            self.scenario,
+        )
+
+
 async def search_parameter_fields_internal(
     conn: asyncpg.Connection,
     parameter_ids: list[UUID],
     bypass_cache: bool = False,
+    *,
+    document: bool = False,
+    persona: bool = False,
+    scenario: bool = False,
 ) -> list[QGetParameterFieldsV4Item]:
     """Internal function to search parameter fields by parameter IDs.
 
@@ -44,7 +65,12 @@ async def search_parameter_fields_internal(
     tags = ["resources", "parameter_fields"]
     cache_key_val = cache_key(
         "/api/v4/resources/parameter_fields/search",
-        {"parameter_ids": [str(id) for id in parameter_ids]},
+        {
+            "parameter_ids": [str(id) for id in parameter_ids],
+            "document": document,
+            "persona": persona,
+            "scenario": scenario,
+        },
     )
 
     # Try cache (unless bypassed)
@@ -57,7 +83,12 @@ async def search_parameter_fields_internal(
             ]
 
     # Execute SQL
-    params = SearchParameterFieldsSqlParams(parameter_ids=parameter_ids)
+    params = SearchParameterFieldsParams(
+        parameter_ids=parameter_ids or [],
+        document=document,
+        persona=persona,
+        scenario=scenario,
+    )
     result = cast(
         SearchParameterFieldsSqlRow,
         await execute_sql_typed(conn, SQL_PATH, params=params),

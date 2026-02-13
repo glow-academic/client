@@ -24,7 +24,10 @@ CREATE OR REPLACE FUNCTION api_search_simulations_v4(
     offset_count int DEFAULT 0,
     draft_id uuid DEFAULT NULL,
     suggest_source text DEFAULT 'all',
-    exclude_ids uuid[] DEFAULT ARRAY[]::uuid[]
+    exclude_ids uuid[] DEFAULT ARRAY[]::uuid[],
+    -- Artifact boolean filters: when true, only return resources linked to that artifact type
+    cohort boolean DEFAULT false,
+    simulation boolean DEFAULT false
 )
 RETURNS TABLE (
     items types.q_get_simulations_v4_item[]
@@ -72,17 +75,10 @@ FROM (
                     AND dc.draft_id = api_search_simulations_v4.draft_id
               )
           )
-          OR (
-              suggest_source = 'linked'
-              AND EXISTS (
-                  SELECT 1
-                  FROM simulation_simulations_junction ssj
-                  JOIN cohort_simulations_junction cs ON cs.simulation_id = ssj.simulation_id
-                  WHERE ssj.simulations_id = s.id
-                    AND cs.active = true
-              )
-          )
       )
+      -- Artifact boolean filters (each filters to resources linked to at least one of that artifact type)
+      AND (NOT cohort OR EXISTS (SELECT 1 FROM cohort_simulations_junction j WHERE j.simulation_id = s.id AND j.active = true))
+      AND (NOT simulation OR EXISTS (SELECT 1 FROM simulation_simulations_junction j WHERE j.simulation_id = s.id AND j.active = true))
     ORDER BY s.name
     LIMIT limit_count
     OFFSET offset_count

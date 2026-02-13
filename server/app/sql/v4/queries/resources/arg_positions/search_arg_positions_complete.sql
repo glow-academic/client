@@ -19,7 +19,9 @@ CREATE OR REPLACE FUNCTION api_search_arg_positions_v4(
     args_ids uuid[] DEFAULT ARRAY[]::uuid[],
     limit_count int DEFAULT 100,
     offset_count int DEFAULT 0,
-    exclude_ids uuid[] DEFAULT ARRAY[]::uuid[]
+    exclude_ids uuid[] DEFAULT ARRAY[]::uuid[],
+    -- Artifact boolean filters: when true, only return resources linked to that artifact type
+    tool boolean DEFAULT false
 )
 RETURNS TABLE (
     items types.q_get_arg_positions_v4_item[]
@@ -37,6 +39,8 @@ WITH scoped AS (
     WHERE ap.active = true
       AND (COALESCE(array_length(args_ids, 1), 0) = 0 OR ap.args_id = ANY(args_ids))
       AND (COALESCE(array_length(exclude_ids, 1), 0) = 0 OR ap.id <> ALL(exclude_ids))
+      -- Artifact boolean filters (each filters to resources linked to at least one of that artifact type)
+      AND (NOT tool OR EXISTS (SELECT 1 FROM tool_arg_positions_junction j WHERE j.arg_positions_id = ap.id AND j.active = true))
     ORDER BY ap.value, ap.id
     LIMIT limit_count
     OFFSET offset_count

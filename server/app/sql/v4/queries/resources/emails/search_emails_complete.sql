@@ -22,7 +22,9 @@ CREATE OR REPLACE FUNCTION api_search_emails_v4(
     search text DEFAULT NULL,
     limit_count int DEFAULT 20,
     offset_count int DEFAULT 0,
-    exclude_ids uuid[] DEFAULT ARRAY[]::uuid[]
+    exclude_ids uuid[] DEFAULT ARRAY[]::uuid[],
+    -- Artifact boolean filters: when true, only return resources linked to that artifact type
+    profile boolean DEFAULT false
 )
 RETURNS TABLE (
     items types.q_get_emails_v4_item[]
@@ -47,6 +49,8 @@ FROM (
       AND (search IS NULL OR search = '' OR LOWER(e.email) LIKE '%' || LOWER(search) || '%')
       -- Exclude filter
       AND (exclude_ids IS NULL OR NOT (e.id = ANY(exclude_ids)))
+      -- Artifact boolean filters (each filters to resources linked to at least one of that artifact type)
+      AND (NOT profile OR EXISTS (SELECT 1 FROM profile_emails_junction j WHERE j.email_id = e.id AND j.active = true))
     ORDER BY e.email
     LIMIT limit_count
     OFFSET offset_count

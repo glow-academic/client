@@ -71,9 +71,7 @@ def test_persona_lifecycle(page: Page, base_url: str) -> None:
         description_input.fill("Persona created via E2E lifecycle test.")
 
         # Set system prompt via Monaco editor
-        prompt_textarea = page.locator(
-            "[data-testid='editor-system-prompt'] textarea"
-        )
+        prompt_textarea = page.locator("[data-testid='editor-system-prompt'] textarea")
         prompt_textarea.wait_for(state="visible", timeout=20000)
         _set_monaco_value(page, "System prompt for E2E persona lifecycle test.")
 

@@ -22,7 +22,9 @@ CREATE OR REPLACE FUNCTION api_search_routes_v4(
     search text DEFAULT NULL,
     limit_count int DEFAULT 20,
     offset_count int DEFAULT 0,
-    exclude_ids uuid[] DEFAULT ARRAY[]::uuid[]
+    exclude_ids uuid[] DEFAULT ARRAY[]::uuid[],
+    -- Artifact boolean filters: when true, only return resources linked to that artifact type
+    profile boolean DEFAULT false
 )
 RETURNS TABLE (
     items types.q_get_routes_v4_item[]
@@ -43,6 +45,8 @@ FROM (
     WHERE r.active = true
       AND (search IS NULL OR search = '' OR LOWER(r.route::text) LIKE '%' || LOWER(search) || '%')
       AND (exclude_ids IS NULL OR NOT (r.id = ANY(exclude_ids)))
+      -- Artifact boolean filters (each filters to resources linked to at least one of that artifact type)
+      AND (NOT profile OR EXISTS (SELECT 1 FROM profile_routes_junction j WHERE j.route_id = r.id AND j.active = true))
     ORDER BY r.route::text
     LIMIT limit_count
     OFFSET offset_count

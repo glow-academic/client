@@ -309,6 +309,7 @@ async def get_auth_internal(
                 "recent",
                 description_ids,
                 bypass_cache,
+                auth=True,
             )
             return (selected, suggestions)
 
@@ -324,7 +325,7 @@ async def get_auth_internal(
                 0,
                 flag_ids,
                 bypass_cache,
-                artifact_type="auth",
+                auth=True,
             )
             suggestions = [f for f in all_flags if f.name in AUTH_FLAG_NAMES]
             return (selected, suggestions)
@@ -343,6 +344,7 @@ async def get_auth_internal(
                 "recent",
                 selected_protocol_ids,
                 bypass_cache,
+                auth=True,
             )
             return (selected, suggestions)
 
@@ -358,6 +360,7 @@ async def get_auth_internal(
                 "recent",
                 selected_slug_ids,
                 bypass_cache,
+                auth=True,
             )
             return (selected, suggestions)
 

@@ -75,6 +75,25 @@ class SearchSimulationPositionsSqlRow(BaseModel):
 # =============================================================================
 
 
+# Handcrafted params to match SQL signature with artifact boolean filters
+class SearchSimulationPositionsParams(BaseModel):
+    simulation_id: UUID | None = None
+    limit_count: int | None = 20
+    offset_count: int | None = 0
+    exclude_ids: list[UUID] = []
+    # Artifact boolean filters
+    cohort: bool = False
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.simulation_id,
+            self.limit_count,
+            self.offset_count,
+            self.exclude_ids,
+            self.cohort,
+        )
+
+
 async def search_simulation_positions_internal(
     conn: asyncpg.Connection,
     simulation_id: UUID | None = None,
@@ -82,6 +101,8 @@ async def search_simulation_positions_internal(
     offset_count: int | None = 0,
     exclude_ids: list[UUID] | None = None,
     bypass_cache: bool = False,
+    *,
+    cohort: bool = False,
 ) -> list[GetSimulationPositionsV4Item]:
     """Internal function for searching simulation positions.
 
@@ -104,6 +125,7 @@ async def search_simulation_positions_internal(
             "limit_count": limit_count,
             "offset_count": offset_count,
             "exclude_ids": [str(id) for id in (exclude_ids or [])],
+            "cohort": cohort,
         },
     )
 
@@ -117,11 +139,12 @@ async def search_simulation_positions_internal(
             ]
 
     # Execute SQL
-    params = SearchSimulationPositionsSqlParams(
+    params = SearchSimulationPositionsParams(
         simulation_id=simulation_id,
         limit_count=limit_count,
         offset_count=offset_count,
         exclude_ids=exclude_ids or [],
+        cohort=cohort,
     )
 
     result = cast(

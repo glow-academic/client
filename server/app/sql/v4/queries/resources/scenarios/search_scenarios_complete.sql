@@ -23,7 +23,10 @@ CREATE OR REPLACE FUNCTION api_search_scenarios_v4(
     offset_count int DEFAULT 0,
     user_department_ids uuid[] DEFAULT NULL,
     suggest_source text DEFAULT 'all',
-    exclude_ids uuid[] DEFAULT ARRAY[]::uuid[]
+    exclude_ids uuid[] DEFAULT ARRAY[]::uuid[],
+    -- Artifact boolean filters: when true, only return resources linked to that artifact type
+    scenario boolean DEFAULT false,
+    simulation boolean DEFAULT false
 )
 RETURNS TABLE (
     items types.q_get_scenarios_v4_item[]
@@ -72,18 +75,10 @@ FROM (
       AND (
           suggest_source = 'all'
           OR suggest_source IS NULL
-          OR (
-              suggest_source = 'linked'
-              AND EXISTS (
-                  SELECT 1 FROM simulation_scenarios_junction ss
-                  WHERE ss.scenario_id = s.id
-                    AND ss.active = true
-              )
-          )
-          OR (
-              suggest_source = 'recent'
-          )
       )
+      -- Artifact boolean filters (each filters to resources linked to at least one of that artifact type)
+      AND (NOT scenario OR EXISTS (SELECT 1 FROM scenario_scenarios_junction j WHERE j.scenario_id = s.id AND j.active = true))
+      AND (NOT simulation OR EXISTS (SELECT 1 FROM simulation_scenarios_junction j WHERE j.scenario_id = s.id AND j.active = true))
     ORDER BY s.name
     LIMIT limit_count
     OFFSET offset_count

@@ -26,7 +26,24 @@ CREATE OR REPLACE FUNCTION api_search_descriptions_v4(
     offset_count int DEFAULT 0,
     draft_id uuid DEFAULT NULL,
     suggest_source text DEFAULT 'all',
-    exclude_ids uuid[] DEFAULT ARRAY[]::uuid[]
+    exclude_ids uuid[] DEFAULT ARRAY[]::uuid[],
+    -- Artifact boolean filters: when true, only return resources linked to that artifact type
+    agent boolean DEFAULT false,
+    auth boolean DEFAULT false,
+    cohort boolean DEFAULT false,
+    department boolean DEFAULT false,
+    document boolean DEFAULT false,
+    eval boolean DEFAULT false,
+    field boolean DEFAULT false,
+    model boolean DEFAULT false,
+    parameter boolean DEFAULT false,
+    persona boolean DEFAULT false,
+    provider boolean DEFAULT false,
+    rubric boolean DEFAULT false,
+    scenario boolean DEFAULT false,
+    setting boolean DEFAULT false,
+    simulation boolean DEFAULT false,
+    tool boolean DEFAULT false
 )
 RETURNS TABLE (
     items types.q_get_descriptions_v4_item[]
@@ -64,15 +81,24 @@ FROM (
                     AND dc.draft_id = api_search_descriptions_v4.draft_id
               )
           )
-          OR (
-              suggest_source = 'linked'
-              AND EXISTS (
-                  SELECT 1 FROM persona_descriptions_junction pd
-                  WHERE pd.description_id = d.id
-                    AND pd.active = true
-              )
-          )
       )
+      -- Artifact boolean filters (each filters to resources linked to at least one of that artifact type)
+      AND (NOT agent OR EXISTS (SELECT 1 FROM agent_descriptions_junction j WHERE j.description_id = d.id AND j.active = true))
+      AND (NOT auth OR EXISTS (SELECT 1 FROM auth_descriptions_junction j WHERE j.description_id = d.id AND j.active = true))
+      AND (NOT cohort OR EXISTS (SELECT 1 FROM cohort_descriptions_junction j WHERE j.description_id = d.id AND j.active = true))
+      AND (NOT department OR EXISTS (SELECT 1 FROM department_descriptions_junction j WHERE j.description_id = d.id AND j.active = true))
+      AND (NOT document OR EXISTS (SELECT 1 FROM document_descriptions_junction j WHERE j.description_id = d.id AND j.active = true))
+      AND (NOT eval OR EXISTS (SELECT 1 FROM eval_descriptions_junction j WHERE j.description_id = d.id AND j.active = true))
+      AND (NOT field OR EXISTS (SELECT 1 FROM field_descriptions_junction j WHERE j.description_id = d.id AND j.active = true))
+      AND (NOT model OR EXISTS (SELECT 1 FROM model_descriptions_junction j WHERE j.description_id = d.id AND j.active = true))
+      AND (NOT parameter OR EXISTS (SELECT 1 FROM parameter_descriptions_junction j WHERE j.description_id = d.id AND j.active = true))
+      AND (NOT persona OR EXISTS (SELECT 1 FROM persona_descriptions_junction j WHERE j.description_id = d.id AND j.active = true))
+      AND (NOT provider OR EXISTS (SELECT 1 FROM provider_descriptions_junction j WHERE j.description_id = d.id AND j.active = true))
+      AND (NOT rubric OR EXISTS (SELECT 1 FROM rubric_descriptions_junction j WHERE j.description_id = d.id AND j.active = true))
+      AND (NOT scenario OR EXISTS (SELECT 1 FROM scenario_descriptions_junction j WHERE j.description_id = d.id AND j.active = true))
+      AND (NOT setting OR EXISTS (SELECT 1 FROM setting_descriptions_junction j WHERE j.description_id = d.id AND j.active = true))
+      AND (NOT simulation OR EXISTS (SELECT 1 FROM simulation_descriptions_junction j WHERE j.description_id = d.id AND j.active = true))
+      AND (NOT tool OR EXISTS (SELECT 1 FROM tool_descriptions_junction j WHERE j.description_id = d.id AND j.active = true))
     ORDER BY d.description
     LIMIT limit_count
     OFFSET offset_count

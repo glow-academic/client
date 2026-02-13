@@ -287,6 +287,7 @@ async def get_parameter_internal(
                 "recent",
                 description_ids,
                 bypass_cache,
+                parameter=True,
             )
             return (selected, suggestions)
 
@@ -300,7 +301,7 @@ async def get_parameter_internal(
                 0,
                 flag_ids,
                 bypass_cache,
-                artifact_type="parameter",
+                parameter=True,
             )
             suggestions = [f for f in all_flags if f.name in PARAMETER_FLAG_NAMES]
             return (selected, suggestions)
@@ -317,6 +318,7 @@ async def get_parameter_internal(
                 "all",
                 department_ids,
                 bypass_cache,
+                parameter=True,
             )
             return (selected, suggestions)
 

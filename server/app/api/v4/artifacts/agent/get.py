@@ -408,7 +408,14 @@ async def get_agent_internal(
         async with pool.acquire() as c:
             selected = await get_names_internal(c, name_ids, bypass_cache)
             suggestions = await search_names_internal(
-                c, None, 20, 0, effective_group_id, None, name_ids, bypass_cache,
+                c,
+                None,
+                20,
+                0,
+                effective_group_id,
+                None,
+                name_ids,
+                bypass_cache,
                 agent=True,
             )
             return (selected, suggestions)
@@ -417,7 +424,15 @@ async def get_agent_internal(
         async with pool.acquire() as c:
             selected = await get_descriptions_internal(c, description_ids, bypass_cache)
             suggestions = await search_descriptions_internal(
-                c, None, 20, 0, None, None, description_ids, bypass_cache
+                c,
+                None,
+                20,
+                0,
+                None,
+                None,
+                description_ids,
+                bypass_cache,
+                agent=True,
             )
             return (selected, suggestions)
 
@@ -425,7 +440,13 @@ async def get_agent_internal(
         async with pool.acquire() as c:
             selected = await get_models_internal(c, model_ids, bypass_cache)
             suggestions = await search_models_internal(
-                c, None, 20, 0, model_ids, bypass_cache
+                c,
+                None,
+                20,
+                0,
+                model_ids,
+                bypass_cache,
+                agent=True,
             )
             return (selected, suggestions)
 
@@ -433,7 +454,13 @@ async def get_agent_internal(
         async with pool.acquire() as c:
             selected = await get_prompts_internal(c, prompt_ids, bypass_cache)
             suggestions = await search_prompts_internal(
-                c, None, 20, 0, prompt_ids, bypass_cache
+                c,
+                None,
+                20,
+                0,
+                prompt_ids,
+                bypass_cache,
+                agent=True,
             )
             return (selected, suggestions)
 
@@ -443,7 +470,15 @@ async def get_agent_internal(
                 c, instructions_ids, bypass_cache
             )
             suggestions = await search_instructions_internal(
-                c, None, 20, 0, None, None, instructions_ids, bypass_cache
+                c,
+                None,
+                20,
+                0,
+                None,
+                None,
+                instructions_ids,
+                bypass_cache,
+                agent=True,
             )
             return (selected, suggestions)
 
@@ -451,7 +486,7 @@ async def get_agent_internal(
         async with pool.acquire() as c:
             selected = await get_flags_internal(c, flag_ids, bypass_cache)
             all_flags = await search_flags_internal(
-                c, None, 50, 0, flag_ids, bypass_cache, artifact_type="agent"
+                c, None, 50, 0, flag_ids, bypass_cache, agent=True
             )
             # Filter to only agent-specific flags
             suggestions = [f for f in all_flags if f.name in AGENT_FLAG_NAMES]
@@ -471,6 +506,7 @@ async def get_agent_internal(
                 "all",
                 department_ids_list,
                 bypass_cache,
+                agent=True,
             )
             return (selected, suggestions)
 
@@ -478,7 +514,13 @@ async def get_agent_internal(
         async with pool.acquire() as c:
             selected = await get_tools_internal(c, tool_ids_list, bypass_cache)
             suggestions = await search_tools_internal(
-                c, None, 20, 0, tool_ids_list, bypass_cache
+                c,
+                None,
+                20,
+                0,
+                tool_ids_list,
+                bypass_cache,
+                agent=True,
             )
             return (selected, suggestions)
 
@@ -506,7 +548,13 @@ async def get_agent_internal(
         async with pool.acquire() as c:
             selected = await get_voices_internal(c, voice_ids_list, bypass_cache)
             suggestions = await search_voices_internal(
-                c, None, 20, 0, voice_ids_list, bypass_cache
+                c,
+                None,
+                20,
+                0,
+                voice_ids_list,
+                bypass_cache,
+                agent=True,
             )
             return (selected, suggestions)
 

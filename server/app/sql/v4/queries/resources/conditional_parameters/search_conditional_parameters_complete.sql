@@ -22,7 +22,9 @@ CREATE OR REPLACE FUNCTION api_search_conditional_parameters_v4(
     search text DEFAULT NULL,
     limit_count int DEFAULT 20,
     offset_count int DEFAULT 0,
-    exclude_ids uuid[] DEFAULT ARRAY[]::uuid[]
+    exclude_ids uuid[] DEFAULT ARRAY[]::uuid[],
+    -- Artifact boolean filters: when true, only return resources linked to that artifact type
+    field boolean DEFAULT false
 )
 RETURNS TABLE (
     items types.q_get_conditional_parameters_v4_item[]
@@ -44,6 +46,8 @@ FROM (
       -- No text search fields - search param accepted but not used
       -- Exclude filter
       AND (exclude_ids IS NULL OR NOT (cp.id = ANY(exclude_ids)))
+      -- Artifact boolean filters (each filters to resources linked to at least one of that artifact type)
+      AND (NOT field OR EXISTS (SELECT 1 FROM field_conditional_parameters_junction j WHERE j.conditional_parameter_id = cp.id AND j.active = true))
     ORDER BY cp.id
     LIMIT limit_count
     OFFSET offset_count

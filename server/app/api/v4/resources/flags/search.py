@@ -1,10 +1,11 @@
 """Flags SEARCH endpoint - v4 API following DHH principles."""
 
-from typing import Annotated, cast
+from typing import Annotated, Any, cast
 from uuid import UUID
 
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from pydantic import BaseModel
 
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
@@ -12,7 +13,6 @@ from app.sql.types import (
     QGetFlagsV4Item,
     SearchFlagsApiRequest,
     SearchFlagsApiResponse,
-    SearchFlagsSqlParams,
     SearchFlagsSqlRow,
     load_sql_query,
 )
@@ -26,6 +26,57 @@ SQL_PATH = "app/sql/v4/queries/resources/flags/search_flags_complete.sql"
 router = APIRouter()
 
 
+# Handcrafted params to match SQL signature with artifact boolean filters
+class SearchFlagsParams(BaseModel):
+    search: str | None = None
+    limit_count: int | None = 20
+    offset_count: int | None = 0
+    exclude_ids: list[UUID] = []
+    # Artifact boolean filters
+    agent: bool = False
+    auth: bool = False
+    cohort: bool = False
+    department: bool = False
+    document: bool = False
+    eval: bool = False
+    field: bool = False
+    model: bool = False
+    parameter: bool = False
+    persona: bool = False
+    profile: bool = False
+    provider: bool = False
+    rubric: bool = False
+    scenario: bool = False
+    setting: bool = False
+    simulation: bool = False
+    tool: bool = False
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.search,
+            self.limit_count,
+            self.offset_count,
+            self.exclude_ids,
+            self.agent,
+            self.auth,
+            self.cohort,
+            self.department,
+            self.document,
+            self.eval,
+            self.field,
+            self.model,
+            self.parameter,
+            self.persona,
+            self.profile,
+            self.provider,
+            self.rubric,
+            self.scenario,
+            self.setting,
+            self.simulation,
+            self.tool,
+        )
+
+
 async def search_flags_internal(
     conn: asyncpg.Connection,
     search: str | None = None,
@@ -33,7 +84,24 @@ async def search_flags_internal(
     offset_count: int | None = 0,
     exclude_ids: list[UUID] | None = None,
     bypass_cache: bool = False,
-    artifact_type: str | None = None,
+    *,
+    agent: bool = False,
+    auth: bool = False,
+    cohort: bool = False,
+    department: bool = False,
+    document: bool = False,
+    eval: bool = False,
+    field: bool = False,
+    model: bool = False,
+    parameter: bool = False,
+    persona: bool = False,
+    profile: bool = False,
+    provider: bool = False,
+    rubric: bool = False,
+    scenario: bool = False,
+    setting: bool = False,
+    simulation: bool = False,
+    tool: bool = False,
 ) -> list[QGetFlagsV4Item]:
     if limit_count is not None and limit_count <= 0:
         return []
@@ -46,7 +114,23 @@ async def search_flags_internal(
             "limit_count": limit_count,
             "offset_count": offset_count,
             "exclude_ids": [str(id) for id in (exclude_ids or [])],
-            "artifact_type": artifact_type,
+            "agent": agent,
+            "auth": auth,
+            "cohort": cohort,
+            "department": department,
+            "document": document,
+            "eval": eval,
+            "field": field,
+            "model": model,
+            "parameter": parameter,
+            "persona": persona,
+            "profile": profile,
+            "provider": provider,
+            "rubric": rubric,
+            "scenario": scenario,
+            "setting": setting,
+            "simulation": simulation,
+            "tool": tool,
         },
     )
 
@@ -57,12 +141,28 @@ async def search_flags_internal(
                 QGetFlagsV4Item.model_validate(item) for item in cached.get("items", [])
             ]
 
-    params = SearchFlagsSqlParams(
+    params = SearchFlagsParams(
         search=search,
         limit_count=limit_count,
         offset_count=offset_count,
         exclude_ids=exclude_ids or [],
-        artifact_type=artifact_type,
+        agent=agent,
+        auth=auth,
+        cohort=cohort,
+        department=department,
+        document=document,
+        eval=eval,
+        field=field,
+        model=model,
+        parameter=parameter,
+        persona=persona,
+        profile=profile,
+        provider=provider,
+        rubric=rubric,
+        scenario=scenario,
+        setting=setting,
+        simulation=simulation,
+        tool=tool,
     )
     result = cast(
         SearchFlagsSqlRow,

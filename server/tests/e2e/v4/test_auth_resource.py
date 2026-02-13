@@ -3,11 +3,10 @@
 from __future__ import annotations
 
 import pytest
-from playwright.sync_api import Page, expect
+from playwright.sync_api import Page
 
 from server.tests.e2e.v4.conftest import (
     ADMIN_PROFILE_ID,
-    generate_unique_name,
     post_json,
     resolve_profile_ids,
 )

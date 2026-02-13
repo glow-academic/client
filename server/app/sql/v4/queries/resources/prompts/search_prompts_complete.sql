@@ -22,7 +22,9 @@ CREATE OR REPLACE FUNCTION api_search_prompts_v4(
     search text DEFAULT NULL,
     limit_count int DEFAULT 20,
     offset_count int DEFAULT 0,
-    exclude_ids uuid[] DEFAULT ARRAY[]::uuid[]
+    exclude_ids uuid[] DEFAULT ARRAY[]::uuid[],
+    -- Artifact boolean filters: when true, only return resources linked to that artifact type
+    agent boolean DEFAULT false
 )
 RETURNS TABLE (
     items types.q_get_prompts_v4_item[]
@@ -47,6 +49,8 @@ FROM (
       AND (search IS NULL OR search = '' OR LOWER(p.name) LIKE '%' || LOWER(search) || '%')
       -- Exclude filter
       AND (exclude_ids IS NULL OR NOT (p.id = ANY(exclude_ids)))
+      -- Artifact boolean filters (each filters to resources linked to at least one of that artifact type)
+      AND (NOT agent OR EXISTS (SELECT 1 FROM agent_prompts_junction j WHERE j.prompt_id = p.id AND j.active = true))
     ORDER BY p.name
     LIMIT limit_count
     OFFSET offset_count

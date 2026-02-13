@@ -5,7 +5,6 @@ from __future__ import annotations
 import base64
 import hashlib
 import hmac
-import os
 import re
 
 import pytest
@@ -15,7 +14,6 @@ from server.tests.e2e.conftest import SECRET
 from server.tests.e2e.v4.conftest import (
     ADMIN_PROFILE_ID,
     API_BASE,
-    GUEST_PROFILE_ID,
     post_json,
 )
 

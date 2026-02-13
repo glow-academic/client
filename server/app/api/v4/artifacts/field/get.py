@@ -309,6 +309,7 @@ async def get_field_internal(
                     "recent",
                     description_ids,
                     bypass_cache,
+                    field=True,
                 ),
             )
 
@@ -322,7 +323,7 @@ async def get_field_internal(
                 0,
                 flag_ids,
                 bypass_cache,
-                artifact_type="field",
+                field=True,
             )
             suggestions = [f for f in all_flags if f.name == "field_active"]
             return (selected, suggestions)
@@ -342,6 +343,7 @@ async def get_field_internal(
                     "all",
                     selected_department_ids,
                     bypass_cache,
+                    field=True,
                 ),
             )
 
