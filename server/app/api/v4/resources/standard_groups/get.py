@@ -8,8 +8,11 @@ from uuid import UUID
 
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
 
+from app.api.v4.resources.standard_groups.types import (
+    GetStandardGroupsApiRequest,
+    GetStandardGroupsApiResponse,
+)
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
 from app.sql.types import (
@@ -27,23 +30,6 @@ BATCH_SQL_PATH = (
 )
 
 router = APIRouter()
-
-
-# =============================================================================
-# Types
-# =============================================================================
-
-
-class GetStandardGroupsApiRequest(BaseModel):
-    """Request for getting standard_groups by IDs."""
-
-    ids: list[UUID]
-
-
-class GetStandardGroupsApiResponse(BaseModel):
-    """Response for getting standard_groups."""
-
-    items: list[QGetStandardGroupsV4Item] = []
 
 
 # =============================================================================

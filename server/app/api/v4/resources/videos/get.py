@@ -3,13 +3,19 @@
 Provides get endpoint for fetching a single video by ID.
 """
 
-from typing import Annotated, Any, cast
+from typing import Annotated, cast
 from uuid import UUID
 
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
 
+from app.api.v4.resources.videos.types import (
+    GetVideoApiRequest,
+    GetVideoApiResponse,
+    GetVideoSqlParams,
+    GetVideoSqlRow,
+    GetVideoV4Item,
+)
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
 from app.sql.types import (
@@ -27,50 +33,6 @@ SQL_PATH = "app/sql/v4/queries/resources/videos/get_video_complete.sql"
 BATCH_SQL_PATH = "app/sql/v4/queries/resources/videos/get_videos_complete.sql"
 
 router = APIRouter()
-
-
-# =============================================================================
-# Types
-# =============================================================================
-
-
-class GetVideoV4Item(BaseModel):
-    """Video item returned from get endpoint."""
-
-    video_id: UUID | None = None
-    name: str | None = None
-    description: str | None = None
-    length_seconds: int | None = None
-    completed: bool | None = None
-    upload_id: UUID | None = None
-    generated: bool | None = None
-
-
-class GetVideoApiRequest(BaseModel):
-    """Request for getting a video by ID."""
-
-    id: UUID
-
-
-class GetVideoApiResponse(BaseModel):
-    """Response for getting a video."""
-
-    item: GetVideoV4Item | None = None
-
-
-class GetVideoSqlParams(BaseModel):
-    """SQL parameters for get video."""
-
-    id: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (self.id,)
-
-
-class GetVideoSqlRow(BaseModel):
-    """SQL row for get video."""
-
-    items: list[GetVideoV4Item] | None = None
 
 
 # =============================================================================

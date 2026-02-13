@@ -28,7 +28,7 @@ from app.api.v4.artifacts.profile.types import (
     ListStaffApiTrendData,
 )
 from app.api.v4.auth.context import get_profile_context_internal
-from app.api.v4.resources.cohorts.get import get_cohorts_internal
+from app.api.v4.resources.cohorts.types import get_cohorts_internal
 from app.api.v4.resources.departments.get import get_departments_internal
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error

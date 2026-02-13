@@ -1,12 +1,12 @@
 """Arg positions SEARCH endpoint - v4 API following DHH principles."""
 
-from typing import Annotated, Any, cast
+from typing import Annotated, cast
 from uuid import UUID
 
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
 
+from app.api.v4.resources.arg_positions.types import SearchArgPositionsParams
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
 from app.sql.types import (
@@ -26,25 +26,6 @@ SQL_PATH = (
 )
 
 router = APIRouter()
-
-
-# Handcrafted params to match SQL signature with artifact boolean filters
-class SearchArgPositionsParams(BaseModel):
-    args_ids: list[UUID] = []
-    limit_count: int | None = 100
-    offset_count: int | None = 0
-    exclude_ids: list[UUID] = []
-    # Artifact boolean filters
-    tool: bool = False
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.args_ids,
-            self.limit_count,
-            self.offset_count,
-            self.exclude_ids,
-            self.tool,
-        )
 
 
 async def search_arg_positions_internal(

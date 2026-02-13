@@ -1,12 +1,17 @@
 """Request Limits SEARCH endpoint - v4 API following DHH principles."""
 
-from typing import Annotated, Any, cast
+from typing import Annotated, cast
 from uuid import UUID
 
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel, Field
 
+from app.api.v4.resources.request_limits.types import (
+    SearchRequestLimitsApiRequest,
+    SearchRequestLimitsApiResponse,
+    SearchRequestLimitsParams,
+    SearchRequestLimitsSqlRow,
+)
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
 from app.sql.types import (
@@ -23,73 +28,6 @@ SQL_PATH = (
 )
 
 router = APIRouter()
-
-
-# =============================================================================
-# Types (defined locally since search types are not auto-generated yet)
-# =============================================================================
-
-
-class SearchRequestLimitsApiRequest(BaseModel):
-    """Request for searching request limits."""
-
-    search: str | None = None
-    limit_count: int | None = 20
-    offset_count: int | None = 0
-    exclude_ids: list[UUID] | None = Field(default_factory=list)
-
-
-class SearchRequestLimitsApiResponse(BaseModel):
-    """Response for searching request limits."""
-
-    items: list[QGetRequestLimitsV4Item] | None = None
-
-
-class SearchRequestLimitsSqlParams(BaseModel):
-    """SQL parameters for search request limits."""
-
-    search: str | None = None
-    limit_count: int | None = 20
-    offset_count: int | None = 0
-    exclude_ids: list[UUID] | None = Field(default_factory=list)
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.search,
-            self.limit_count,
-            self.offset_count,
-            self.exclude_ids,
-        )
-
-
-class SearchRequestLimitsSqlRow(BaseModel):
-    """SQL row for search request limits."""
-
-    items: list[QGetRequestLimitsV4Item] | None = None
-
-
-# =============================================================================
-# Internal Function
-# =============================================================================
-
-
-# Handcrafted params to match SQL signature with artifact boolean filters
-class SearchRequestLimitsParams(BaseModel):
-    search: str | None = None
-    limit_count: int | None = 20
-    offset_count: int | None = 0
-    exclude_ids: list[UUID] = []
-    # Artifact boolean filters
-    profile: bool = False
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.search,
-            self.limit_count,
-            self.offset_count,
-            self.exclude_ids,
-            self.profile,
-        )
 
 
 async def search_request_limits_internal(

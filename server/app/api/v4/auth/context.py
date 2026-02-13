@@ -23,11 +23,11 @@ from app.api.v4.auth.types import (
     GetProfileContextApiResponse,
     ProfileContextInternalData,
 )
-from app.api.v4.resources.cohorts.get import get_cohorts_internal
+from app.api.v4.resources.cohorts.types import get_cohorts_internal
 from app.api.v4.resources.departments.get import get_departments_internal
-from app.api.v4.resources.roles.get import get_roles_internal
-from app.api.v4.resources.settings.get import get_settings_internal
-from app.api.v4.resources.simulations.get import get_simulations_batch_internal
+from app.api.v4.resources.roles.types import get_roles_internal
+from app.api.v4.resources.settings.types import get_settings_internal
+from app.api.v4.resources.simulations.types import get_simulations_batch_internal
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.drafts.get import get_drafts_internal
 from app.infra.v4.error.handle_route_error import handle_route_error

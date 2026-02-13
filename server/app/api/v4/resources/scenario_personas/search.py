@@ -8,8 +8,8 @@ from uuid import UUID
 
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
 
+from app.api.v4.resources.scenario_personas.types import SearchScenarioPersonasParams
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
 from app.sql.types import (
@@ -28,24 +28,6 @@ SQL_PATH = "app/sql/v4/queries/resources/scenario_personas/search_scenario_perso
 
 
 router = APIRouter()
-
-
-# =============================================================================
-# Internal Function
-# =============================================================================
-
-
-# Handcrafted params to match SQL signature with artifact boolean filters
-class SearchScenarioPersonasParams(BaseModel):
-    scenario_ids: list[UUID] = []
-    # Artifact boolean filters
-    simulation: bool = False
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.scenario_ids,
-            self.simulation,
-        )
 
 
 async def search_scenario_personas_internal(

@@ -29,7 +29,7 @@ from app.api.v4.artifacts.leaderboard.types import (
 from app.api.v4.artifacts.types import FilterOption
 from app.api.v4.resources.profiles.get import get_profiles_internal
 from app.api.v4.resources.scenarios.get import get_scenarios_internal
-from app.api.v4.resources.simulations.get import get_simulations_batch_internal
+from app.api.v4.resources.simulations.types import get_simulations_batch_internal
 from app.api.v4.views.analytics.attempts.get import get_attempt_facts_internal
 from app.api.v4.views.analytics.chat_facts.get import get_chat_facts_internal
 from app.api.v4.views.analytics.chat_facts.types import GetChatFactsRequest

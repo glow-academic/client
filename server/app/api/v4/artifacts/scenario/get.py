@@ -86,11 +86,11 @@ from app.api.v4.resources.documents.get import get_documents_internal
 from app.api.v4.resources.documents.search import search_documents_internal
 from app.api.v4.resources.flags.get import get_flags_internal
 from app.api.v4.resources.flags.search import search_flags_internal
-from app.api.v4.resources.images.get import get_images_internal
 from app.api.v4.resources.images.search import search_images_internal
+from app.api.v4.resources.images.types import get_images_internal
 from app.api.v4.resources.names.get import get_names_internal
 from app.api.v4.resources.names.search import search_names_internal
-from app.api.v4.resources.objectives.get import get_objectives_internal
+from app.api.v4.resources.objectives.types import get_objectives_internal
 from app.api.v4.resources.parameter_fields.get import get_parameter_fields_internal
 from app.api.v4.resources.parameter_fields.search import (
     search_parameter_fields_internal,
@@ -102,15 +102,17 @@ from app.api.v4.resources.parameters.search import (
 )
 from app.api.v4.resources.personas.get import get_personas_internal
 from app.api.v4.resources.personas.search import search_personas_internal
-from app.api.v4.resources.problem_statements.get import get_problem_statements_internal
 from app.api.v4.resources.problem_statements.search import (
     search_problem_statements_internal,
 )
-from app.api.v4.resources.questions.get import get_questions_internal
+from app.api.v4.resources.problem_statements.types import (
+    get_problem_statements_internal,
+)
 from app.api.v4.resources.questions.search import search_questions_internal
+from app.api.v4.resources.questions.types import get_questions_internal
 from app.api.v4.resources.tools.get import get_tools_internal
-from app.api.v4.resources.videos.get import get_videos_internal
 from app.api.v4.resources.videos.search import search_videos_internal
+from app.api.v4.resources.videos.types import get_videos_internal
 from app.api.v4.types import CandidateAgent, build_domain_data
 from app.api.v4.views.drafts.get import get_draft_scenario_internal
 from app.infra.v4.activity.audit import audit_activity, audit_set

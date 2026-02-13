@@ -8,7 +8,6 @@ from uuid import UUID
 
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
 
 from app.api.v4.artifacts.simulation.types import (
     QGetScenariosV4Item,
@@ -16,6 +15,7 @@ from app.api.v4.artifacts.simulation.types import (
     SearchScenariosApiResponse,
     SearchScenariosSqlRow,
 )
+from app.api.v4.resources.scenarios.types import SearchScenariosParams
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
@@ -29,31 +29,6 @@ SQL_PATH = "app/sql/v4/queries/resources/scenarios/search_scenarios_complete.sql
 
 
 router = APIRouter()
-
-
-# Handcrafted params to match SQL signature with artifact boolean filters
-class SearchScenariosParams(BaseModel):
-    search: str | None = None
-    limit_count: int | None = 20
-    offset_count: int | None = 0
-    user_department_ids: list[UUID] = []
-    suggest_source: str | None = "all"
-    exclude_ids: list[UUID] = []
-    # Artifact boolean filters
-    scenario: bool = False
-    simulation: bool = False
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.search,
-            self.limit_count,
-            self.offset_count,
-            self.user_department_ids,
-            self.suggest_source,
-            self.exclude_ids,
-            self.scenario,
-            self.simulation,
-        )
 
 
 async def search_scenarios_internal(

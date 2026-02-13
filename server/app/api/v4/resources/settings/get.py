@@ -1,13 +1,18 @@
 """Settings GET endpoint - v4 API following DHH principles."""
 
-from datetime import datetime
-from typing import Annotated, Any, cast
+from typing import Annotated, cast
 from uuid import UUID
 
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
 
+from app.api.v4.resources.settings.types import (
+    GetSettingsApiRequest,
+    GetSettingsApiResponse,
+    GetSettingsSqlParams,
+    GetSettingsSqlRow,
+    QGetSettingsV4Item,
+)
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
 from app.utils.cache.cache_key import cache_key
@@ -20,88 +25,6 @@ SQL_PATH = "app/sql/v4/queries/settings/get_settings_resource_data_complete.sql"
 
 
 router = APIRouter()
-
-
-# =============================================================================
-# Types (defined locally since types.py is auto-generated)
-# =============================================================================
-
-
-class QGetSettingsV4Auth(BaseModel):
-    """Auth item in settings."""
-
-    auth_id: UUID | None = None
-    name: str | None = None
-    description: str | None = None
-    slug: str | None = None
-
-
-class QGetSettingsV4Provider(BaseModel):
-    """Provider item in settings."""
-
-    provider_id: str | None = None
-    name: str | None = None
-    description: str | None = None
-    value: str | None = None
-
-
-class QGetSettingsV4Item(BaseModel):
-    """Settings item returned from get endpoint."""
-
-    settings_id: str | None = None
-    created_at: datetime | None = None
-    active: bool | None = None
-    name: str | None = None
-    description: str | None = None
-    primary_color: str | None = None
-    accent: str | None = None
-    background: str | None = None
-    surface: str | None = None
-    success: str | None = None
-    warning: str | None = None
-    error: str | None = None
-    sidebar_background: str | None = None
-    sidebar_primary: str | None = None
-    chart1: str | None = None
-    chart2: str | None = None
-    chart3: str | None = None
-    chart4: str | None = None
-    chart5: str | None = None
-    guest_login_enabled: bool | None = None
-    success_threshold: int | None = None
-    warning_threshold: int | None = None
-    danger_threshold: int | None = None
-    auth_ids: list[str] | None = None
-    auths: list[QGetSettingsV4Auth] | None = None
-    provider_ids: list[str] | None = None
-    providers: list[QGetSettingsV4Provider] | None = None
-
-
-class GetSettingsApiRequest(BaseModel):
-    """Request for getting settings by ID."""
-
-    id: UUID
-
-
-class GetSettingsApiResponse(BaseModel):
-    """Response for getting settings."""
-
-    item: QGetSettingsV4Item | None = None
-
-
-class GetSettingsSqlParams(BaseModel):
-    """SQL parameters for get settings."""
-
-    settings_id_param: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (self.settings_id_param,)
-
-
-class GetSettingsSqlRow(BaseModel):
-    """SQL row for get settings."""
-
-    items: list[QGetSettingsV4Item] | None = None
 
 
 # =============================================================================

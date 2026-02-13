@@ -1,7 +1,7 @@
 """WebSocket-specific types for department generation."""
 
 from app.api.v4.artifacts.department.types import GetDepartmentApiRequest
-from app.api.v4.resources.settings.get import QGetSettingsV4Item
+from app.api.v4.resources.settings.types import QGetSettingsV4Item
 from app.socket.v4.artifacts.types import (
     GenerationCompleteEvent,
     GenerationErrorEvent,

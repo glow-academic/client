@@ -4,9 +4,9 @@ from __future__ import annotations
 
 from typing import Any
 
-from app.api.v4.resources.cohorts.get import QGetCohortsV4Item
+from app.api.v4.resources.cohorts.types import QGetCohortsV4Item
 from app.api.v4.resources.departments.get import QGetDepartmentsV4Item
-from app.api.v4.resources.simulations.get import GetSimulationsBatchV4Item
+from app.api.v4.resources.simulations.types import GetSimulationsBatchV4Item
 from app.infra.v4.drafts.get import QGetDraftsV4Item
 from app.sql.types import (
     QGetProfileContextAccessV4ArtifactAgent,

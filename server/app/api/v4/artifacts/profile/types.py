@@ -8,7 +8,7 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
-from app.api.v4.resources.cohorts.get import QGetCohortsV4Item
+from app.api.v4.resources.cohorts.types import QGetCohortsV4Item
 from app.api.v4.views.drafts.types import DraftProfileViewItem
 from app.sql.types import (
     QGetAgentsV4Item,

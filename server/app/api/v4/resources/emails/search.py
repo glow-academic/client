@@ -1,12 +1,17 @@
 """Emails SEARCH endpoint - v4 API following DHH principles."""
 
-from typing import Annotated, Any, cast
+from typing import Annotated, cast
 from uuid import UUID
 
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel, Field
 
+from app.api.v4.resources.emails.types import (
+    SearchEmailsApiRequest,
+    SearchEmailsApiResponse,
+    SearchEmailsParams,
+    SearchEmailsSqlRow,
+)
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
 from app.sql.types import (
@@ -21,73 +26,6 @@ from app.utils.sql_helper import execute_sql_typed
 SQL_PATH = "app/sql/v4/queries/resources/emails/search_emails_complete.sql"
 
 router = APIRouter()
-
-
-# =============================================================================
-# Types (defined locally since search types are not auto-generated yet)
-# =============================================================================
-
-
-class SearchEmailsApiRequest(BaseModel):
-    """Request for searching emails."""
-
-    search: str | None = None
-    limit_count: int | None = 20
-    offset_count: int | None = 0
-    exclude_ids: list[UUID] | None = Field(default_factory=list)
-
-
-class SearchEmailsApiResponse(BaseModel):
-    """Response for searching emails."""
-
-    items: list[QGetEmailsV4Item] | None = None
-
-
-class SearchEmailsSqlParams(BaseModel):
-    """SQL parameters for search emails."""
-
-    search: str | None = None
-    limit_count: int | None = 20
-    offset_count: int | None = 0
-    exclude_ids: list[UUID] | None = Field(default_factory=list)
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.search,
-            self.limit_count,
-            self.offset_count,
-            self.exclude_ids,
-        )
-
-
-class SearchEmailsSqlRow(BaseModel):
-    """SQL row for search emails."""
-
-    items: list[QGetEmailsV4Item] | None = None
-
-
-# =============================================================================
-# Internal Function
-# =============================================================================
-
-
-# Handcrafted params to match SQL signature with artifact boolean filters
-class SearchEmailsParams(BaseModel):
-    search: str | None = None
-    limit_count: int | None = 20
-    offset_count: int | None = 0
-    exclude_ids: list[UUID] = []
-    # Artifact boolean filters
-    profile: bool = False
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.search,
-            self.limit_count,
-            self.offset_count,
-            self.exclude_ids,
-            self.profile,
-        )
 
 
 async def search_emails_internal(

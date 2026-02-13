@@ -53,8 +53,8 @@ from app.api.v4.artifacts.profile.types import (
 from app.api.v4.auth.context import get_profile_context_internal
 from app.api.v4.permissions import select_agents_for_artifact
 from app.api.v4.resources.agents.get import get_agents_internal
-from app.api.v4.resources.cohorts.get import get_cohorts_internal
 from app.api.v4.resources.cohorts.search import search_cohorts_internal
+from app.api.v4.resources.cohorts.types import get_cohorts_internal
 from app.api.v4.resources.departments.get import get_departments_internal
 from app.api.v4.resources.departments.search import search_departments_internal
 from app.api.v4.resources.emails.get import get_emails_internal

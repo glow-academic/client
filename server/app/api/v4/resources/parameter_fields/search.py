@@ -1,12 +1,12 @@
 """Parameter Fields SEARCH endpoint - v4 API following DHH principles."""
 
-from typing import Annotated, Any, cast
+from typing import Annotated, cast
 from uuid import UUID
 
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
 
+from app.api.v4.resources.parameter_fields.types import SearchParameterFieldsParams
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
 from app.sql.types import (
@@ -28,23 +28,6 @@ SQL_PATH = (
 
 
 router = APIRouter()
-
-
-# Handcrafted params to match SQL signature with artifact boolean filters
-class SearchParameterFieldsParams(BaseModel):
-    parameter_ids: list[UUID] = []
-    # Artifact boolean filters
-    document: bool = False
-    persona: bool = False
-    scenario: bool = False
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.parameter_ids,
-            self.document,
-            self.persona,
-            self.scenario,
-        )
 
 
 async def search_parameter_fields_internal(

@@ -23,8 +23,8 @@ from app.api.v4.resources.departments.get import get_departments_internal
 from app.api.v4.resources.descriptions.get import get_descriptions_internal
 from app.api.v4.resources.names.get import get_names_internal
 from app.api.v4.resources.rubrics.get import get_rubrics_batch_internal
-from app.api.v4.resources.standard_groups.get import get_standard_groups_internal
-from app.api.v4.resources.standards.get import get_standards_internal
+from app.api.v4.resources.standard_groups.types import get_standard_groups_internal
+from app.api.v4.resources.standards.types import get_standards_internal
 from app.api.v4.views.benchmark.eval_summary.get import (
     get_benchmark_eval_summary_internal,
 )

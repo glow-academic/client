@@ -8,8 +8,12 @@ from uuid import UUID
 
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
 
+from app.api.v4.resources.options.types import (
+    GetOptionsApiRequest,
+    GetOptionsApiResponse,
+    GetOptionV4Item,
+)
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
 from app.sql.types import (
@@ -26,32 +30,6 @@ from app.utils.sql_helper import execute_sql_typed
 BATCH_SQL_PATH = "app/sql/v4/queries/resources/options/get_options_complete.sql"
 
 router = APIRouter()
-
-
-# =============================================================================
-# Types
-# =============================================================================
-
-
-class GetOptionV4Item(BaseModel):
-    """Option item returned from get endpoint."""
-
-    option_id: UUID | None = None
-    option_text: str | None = None
-    is_correct: bool | None = None
-    generated: bool | None = None
-
-
-class GetOptionsApiRequest(BaseModel):
-    """Request for getting options by IDs."""
-
-    ids: list[UUID]
-
-
-class GetOptionsApiResponse(BaseModel):
-    """Response for getting options."""
-
-    items: list[GetOptionV4Item] = []
 
 
 # =============================================================================

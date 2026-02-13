@@ -8,8 +8,14 @@ from uuid import UUID
 
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel, Field
 
+from app.api.v4.resources.simulation_positions.types import (
+    GetSimulationPositionsApiRequest,
+    GetSimulationPositionsApiResponse,
+    GetSimulationPositionsSqlParams,
+    GetSimulationPositionsSqlRow,
+    GetSimulationPositionsV4Item,
+)
 from app.infra.v4.activity.audit import audit_activity
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
@@ -24,48 +30,6 @@ SQL_PATH = "app/sql/v4/queries/resources/simulation_positions/get_simulation_pos
 
 
 router = APIRouter()
-
-
-# =============================================================================
-# Types
-# =============================================================================
-
-
-class GetSimulationPositionsV4Item(BaseModel):
-    """Simulation position item returned from get endpoint."""
-
-    id: UUID | None = None
-    simulation_id: UUID | None = None
-    value: int | None = None
-    generated: bool | None = None
-    mcp: bool | None = None
-
-
-class GetSimulationPositionsApiRequest(BaseModel):
-    """Request for getting simulation positions by simulation IDs."""
-
-    simulation_ids: list[UUID]
-
-
-class GetSimulationPositionsApiResponse(BaseModel):
-    """Response for getting simulation positions."""
-
-    items: list[GetSimulationPositionsV4Item] | None = Field(default_factory=list)
-
-
-class GetSimulationPositionsSqlParams(BaseModel):
-    """SQL parameters for get simulation positions."""
-
-    simulation_ids: list[UUID]
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (self.simulation_ids,)
-
-
-class GetSimulationPositionsSqlRow(BaseModel):
-    """SQL row for get simulation positions."""
-
-    items: list[GetSimulationPositionsV4Item] | None = None
 
 
 # =============================================================================

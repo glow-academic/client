@@ -3,13 +3,19 @@
 Provides get endpoint for fetching a single image by ID.
 """
 
-from typing import Annotated, Any, cast
+from typing import Annotated, cast
 from uuid import UUID
 
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
 
+from app.api.v4.resources.images.types import (
+    GetImageApiRequest,
+    GetImageApiResponse,
+    GetImageSqlParams,
+    GetImageSqlRow,
+    GetImageV4Item,
+)
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
 from app.sql.types import (
@@ -27,48 +33,6 @@ SQL_PATH = "app/sql/v4/queries/resources/images/get_image_complete.sql"
 BATCH_SQL_PATH = "app/sql/v4/queries/resources/images/get_images_complete.sql"
 
 router = APIRouter()
-
-
-# =============================================================================
-# Types
-# =============================================================================
-
-
-class GetImageV4Item(BaseModel):
-    """Image item returned from get endpoint."""
-
-    image_id: UUID | None = None
-    name: str | None = None
-    description: str | None = None
-    upload_id: UUID | None = None
-    generated: bool | None = None
-
-
-class GetImageApiRequest(BaseModel):
-    """Request for getting an image by ID."""
-
-    id: UUID
-
-
-class GetImageApiResponse(BaseModel):
-    """Response for getting an image."""
-
-    item: GetImageV4Item | None = None
-
-
-class GetImageSqlParams(BaseModel):
-    """SQL parameters for get image."""
-
-    id: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (self.id,)
-
-
-class GetImageSqlRow(BaseModel):
-    """SQL row for get image."""
-
-    items: list[GetImageV4Item] | None = None
 
 
 # =============================================================================

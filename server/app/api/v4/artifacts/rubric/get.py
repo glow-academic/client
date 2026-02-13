@@ -69,8 +69,8 @@ from app.api.v4.resources.names.get import get_names_internal
 from app.api.v4.resources.names.search import search_names_internal
 from app.api.v4.resources.points.get import get_points_internal
 from app.api.v4.resources.providers.get import get_providers_internal
-from app.api.v4.resources.standard_groups.get import get_standard_groups_internal
-from app.api.v4.resources.standards.get import get_standards_internal
+from app.api.v4.resources.standard_groups.types import get_standard_groups_internal
+from app.api.v4.resources.standards.types import get_standards_internal
 from app.api.v4.resources.tools.get import get_tools_internal
 from app.api.v4.types import CandidateAgent
 from app.api.v4.views.drafts.get import get_draft_rubric_internal

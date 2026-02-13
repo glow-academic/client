@@ -3,13 +3,19 @@
 Provides get endpoint for fetching a single question by ID.
 """
 
-from typing import Annotated, Any, cast
+from typing import Annotated, cast
 from uuid import UUID
 
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
 
+from app.api.v4.resources.questions.types import (
+    GetQuestionApiRequest,
+    GetQuestionApiResponse,
+    GetQuestionSqlParams,
+    GetQuestionSqlRow,
+    GetQuestionV4Item,
+)
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
 from app.sql.types import (
@@ -27,47 +33,6 @@ SQL_PATH = "app/sql/v4/queries/resources/questions/get_question_complete.sql"
 BATCH_SQL_PATH = "app/sql/v4/queries/resources/questions/get_questions_complete.sql"
 
 router = APIRouter()
-
-
-# =============================================================================
-# Types
-# =============================================================================
-
-
-class GetQuestionV4Item(BaseModel):
-    """Question item returned from get endpoint."""
-
-    question_id: UUID | None = None
-    question_text: str | None = None
-    allow_multiple: bool | None = None
-    generated: bool | None = None
-
-
-class GetQuestionApiRequest(BaseModel):
-    """Request for getting a question by ID."""
-
-    id: UUID
-
-
-class GetQuestionApiResponse(BaseModel):
-    """Response for getting a question."""
-
-    item: GetQuestionV4Item | None = None
-
-
-class GetQuestionSqlParams(BaseModel):
-    """SQL parameters for get question."""
-
-    id: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (self.id,)
-
-
-class GetQuestionSqlRow(BaseModel):
-    """SQL row for get question."""
-
-    items: list[GetQuestionV4Item] | None = None
 
 
 # =============================================================================

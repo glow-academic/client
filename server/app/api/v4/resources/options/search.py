@@ -1,12 +1,12 @@
 """Options SEARCH endpoint - v4 API following DHH principles."""
 
-from typing import Annotated, Any, cast
+from typing import Annotated, cast
 from uuid import UUID
 
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
 
+from app.api.v4.resources.options.types import SearchOptionsParams
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
 from app.sql.types import (
@@ -25,25 +25,6 @@ from app.utils.sql_helper import execute_sql_typed
 SQL_PATH = "app/sql/v4/queries/resources/options/search_options_complete.sql"
 
 router = APIRouter()
-
-
-# Handcrafted params to match SQL signature with artifact boolean filters
-class SearchOptionsParams(BaseModel):
-    search: str | None = None
-    limit_count: int | None = 20
-    offset_count: int | None = 0
-    exclude_ids: list[UUID] = []
-    # Artifact boolean filters
-    scenario: bool = False
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.search,
-            self.limit_count,
-            self.offset_count,
-            self.exclude_ids,
-            self.scenario,
-        )
 
 
 async def search_options_internal(

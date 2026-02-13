@@ -1,11 +1,17 @@
 """Roles GET endpoint - v4 API following DHH principles."""
 
-from typing import Annotated, Any, cast
+from typing import Annotated, cast
 
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
 
+from app.api.v4.resources.roles.types import (
+    GetRolesApiRequest,
+    GetRolesApiResponse,
+    GetRolesSqlParams,
+    GetRolesSqlRow,
+    QGetRolesV4Item,
+)
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
 from app.utils.cache.cache_key import cache_key
@@ -18,46 +24,6 @@ SQL_PATH = "app/sql/v4/queries/resources/roles/get_roles_complete.sql"
 
 
 router = APIRouter()
-
-
-# =============================================================================
-# Types (defined locally since types.py is auto-generated)
-# =============================================================================
-
-
-class QGetRolesV4Item(BaseModel):
-    """Role item returned from get endpoint."""
-
-    role: str | None = None
-    name: str | None = None
-    description: str | None = None
-    icon_value: str | None = None
-    color_hex: str | None = None
-
-
-class GetRolesApiRequest(BaseModel):
-    """Request for getting all roles."""
-
-    pass
-
-
-class GetRolesApiResponse(BaseModel):
-    """Response for getting roles."""
-
-    items: list[QGetRolesV4Item] | None = None
-
-
-class GetRolesSqlParams(BaseModel):
-    """SQL parameters for get roles (no parameters)."""
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return ()
-
-
-class GetRolesSqlRow(BaseModel):
-    """SQL row for get roles."""
-
-    items: list[QGetRolesV4Item] | None = None
 
 
 # =============================================================================

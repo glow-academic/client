@@ -8,8 +8,11 @@ from uuid import UUID
 
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
 
+from app.api.v4.resources.standards.types import (
+    GetStandardsApiRequest,
+    GetStandardsApiResponse,
+)
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
 from app.sql.types import (
@@ -25,23 +28,6 @@ from app.utils.sql_helper import execute_sql_typed
 BATCH_SQL_PATH = "app/sql/v4/queries/resources/standards/get_standards_complete.sql"
 
 router = APIRouter()
-
-
-# =============================================================================
-# Types
-# =============================================================================
-
-
-class GetStandardsApiRequest(BaseModel):
-    """Request for getting standards by IDs."""
-
-    ids: list[UUID]
-
-
-class GetStandardsApiResponse(BaseModel):
-    """Response for getting standards."""
-
-    items: list[QGetStandardsV4Item] = []
 
 
 # =============================================================================

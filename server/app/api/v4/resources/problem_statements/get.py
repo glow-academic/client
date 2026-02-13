@@ -3,13 +3,19 @@
 Provides get endpoint for fetching a single problem statement by ID.
 """
 
-from typing import Annotated, Any, cast
+from typing import Annotated, cast
 from uuid import UUID
 
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
 
+from app.api.v4.resources.problem_statements.types import (
+    GetProblemStatementApiRequest,
+    GetProblemStatementApiResponse,
+    GetProblemStatementSqlParams,
+    GetProblemStatementSqlRow,
+    GetProblemStatementV4Item,
+)
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
 from app.sql.types import (
@@ -29,47 +35,6 @@ SQL_PATH = (
 BATCH_SQL_PATH = "app/sql/v4/queries/resources/problem_statements/get_problem_statements_complete.sql"
 
 router = APIRouter()
-
-
-# =============================================================================
-# Types
-# =============================================================================
-
-
-class GetProblemStatementV4Item(BaseModel):
-    """Problem statement item returned from get endpoint."""
-
-    problem_statement_id: UUID | None = None
-    name: str | None = None
-    problem_statement: str | None = None
-    generated: bool | None = None
-
-
-class GetProblemStatementApiRequest(BaseModel):
-    """Request for getting a problem statement by ID."""
-
-    id: UUID
-
-
-class GetProblemStatementApiResponse(BaseModel):
-    """Response for getting a problem statement."""
-
-    item: GetProblemStatementV4Item | None = None
-
-
-class GetProblemStatementSqlParams(BaseModel):
-    """SQL parameters for get problem statement."""
-
-    id: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (self.id,)
-
-
-class GetProblemStatementSqlRow(BaseModel):
-    """SQL row for get problem statement."""
-
-    items: list[GetProblemStatementV4Item] | None = None
 
 
 # =============================================================================

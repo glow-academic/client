@@ -7,10 +7,10 @@ from datetime import datetime
 from uuid import UUID
 
 from app.api.v4.resources.agents.get import QGetAgentsV4Item
-from app.api.v4.resources.cohorts.get import QGetCohortsV4Item
+from app.api.v4.resources.cohorts.types import QGetCohortsV4Item
 from app.api.v4.resources.departments.get import QGetDepartmentsV4Item
-from app.api.v4.resources.settings.get import QGetSettingsV4Item
-from app.api.v4.resources.simulations.get import GetSimulationsBatchV4Item
+from app.api.v4.resources.settings.types import QGetSettingsV4Item
+from app.api.v4.resources.simulations.types import GetSimulationsBatchV4Item
 from app.api.v4.resources.tools.get import QGetToolsV4Item
 from app.sql.types import (
     GetProfileContextAccessSqlRow,

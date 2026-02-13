@@ -9,7 +9,7 @@ from typing import Any
 
 from fastapi import APIRouter
 
-from app.api.v4.resources.cohorts.get import get_cohorts_internal
+from app.api.v4.resources.cohorts.types import get_cohorts_internal
 from app.api.v4.resources.departments.get import get_departments_internal
 from app.api.v4.resources.emails.get import get_emails_internal
 from app.api.v4.resources.flags.get import get_flags_internal

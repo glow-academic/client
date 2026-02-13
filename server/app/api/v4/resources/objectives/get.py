@@ -3,13 +3,19 @@
 Provides get endpoint for fetching a single objective by ID.
 """
 
-from typing import Annotated, Any, cast
+from typing import Annotated, cast
 from uuid import UUID
 
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
 
+from app.api.v4.resources.objectives.types import (
+    GetObjectiveApiRequest,
+    GetObjectiveApiResponse,
+    GetObjectiveSqlParams,
+    GetObjectiveSqlRow,
+    GetObjectiveV4Item,
+)
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
 from app.sql.types import (
@@ -27,46 +33,6 @@ SQL_PATH = "app/sql/v4/queries/resources/objectives/get_objective_complete.sql"
 BATCH_SQL_PATH = "app/sql/v4/queries/resources/objectives/get_objectives_complete.sql"
 
 router = APIRouter()
-
-
-# =============================================================================
-# Types
-# =============================================================================
-
-
-class GetObjectiveV4Item(BaseModel):
-    """Objective item returned from get endpoint."""
-
-    objective_id: UUID | None = None
-    objective: str | None = None
-    generated: bool | None = None
-
-
-class GetObjectiveApiRequest(BaseModel):
-    """Request for getting an objective by ID."""
-
-    id: UUID
-
-
-class GetObjectiveApiResponse(BaseModel):
-    """Response for getting an objective."""
-
-    item: GetObjectiveV4Item | None = None
-
-
-class GetObjectiveSqlParams(BaseModel):
-    """SQL parameters for get objective."""
-
-    id: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (self.id,)
-
-
-class GetObjectiveSqlRow(BaseModel):
-    """SQL row for get objective."""
-
-    items: list[GetObjectiveV4Item] | None = None
 
 
 # =============================================================================

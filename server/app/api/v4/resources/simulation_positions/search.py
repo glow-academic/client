@@ -8,9 +8,14 @@ from uuid import UUID
 
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel, Field
 
-from app.api.v4.resources.simulation_positions.get import GetSimulationPositionsV4Item
+from app.api.v4.resources.simulation_positions.types import (
+    GetSimulationPositionsV4Item,
+    SearchSimulationPositionsApiRequest,
+    SearchSimulationPositionsApiResponse,
+    SearchSimulationPositionsParams,
+    SearchSimulationPositionsSqlRow,
+)
 from app.infra.v4.activity.audit import audit_activity
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
@@ -25,73 +30,6 @@ SQL_PATH = "app/sql/v4/queries/resources/simulation_positions/search_simulation_
 
 
 router = APIRouter()
-
-
-# =============================================================================
-# Types
-# =============================================================================
-
-
-class SearchSimulationPositionsApiRequest(BaseModel):
-    """Request for searching simulation positions."""
-
-    simulation_id: UUID | None = None
-    limit_count: int | None = 20
-    offset_count: int | None = 0
-    exclude_ids: list[UUID] | None = Field(default_factory=list)
-
-
-class SearchSimulationPositionsApiResponse(BaseModel):
-    """Response for searching simulation positions."""
-
-    items: list[GetSimulationPositionsV4Item] | None = Field(default_factory=list)
-
-
-class SearchSimulationPositionsSqlParams(BaseModel):
-    """SQL parameters for search simulation positions."""
-
-    simulation_id: UUID | None = None
-    limit_count: int | None = 20
-    offset_count: int | None = 0
-    exclude_ids: list[UUID] | None = Field(default_factory=list)
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.simulation_id,
-            self.limit_count,
-            self.offset_count,
-            self.exclude_ids or [],
-        )
-
-
-class SearchSimulationPositionsSqlRow(BaseModel):
-    """SQL row for search simulation positions."""
-
-    items: list[GetSimulationPositionsV4Item] | None = None
-
-
-# =============================================================================
-# Internal Function
-# =============================================================================
-
-
-# Handcrafted params to match SQL signature with artifact boolean filters
-class SearchSimulationPositionsParams(BaseModel):
-    simulation_id: UUID | None = None
-    limit_count: int | None = 20
-    offset_count: int | None = 0
-    exclude_ids: list[UUID] = []
-    # Artifact boolean filters
-    cohort: bool = False
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.simulation_id,
-            self.limit_count,
-            self.offset_count,
-            self.exclude_ids,
-            self.cohort,
-        )
 
 
 async def search_simulation_positions_internal(

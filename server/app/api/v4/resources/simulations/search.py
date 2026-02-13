@@ -8,9 +8,14 @@ from uuid import UUID
 
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel, Field
 
-from app.api.v4.resources.simulations.get import GetSimulationsV4Item
+from app.api.v4.resources.simulations.types import (
+    GetSimulationsV4Item,
+    SearchSimulationsApiRequest,
+    SearchSimulationsApiResponse,
+    SearchSimulationsParams,
+    SearchSimulationsSqlRow,
+)
 from app.infra.v4.activity.audit import audit_activity
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
@@ -33,80 +38,6 @@ router = APIRouter()
 
 
 SuggestSource = Literal["all", "linked", "draft"]
-
-
-class SearchSimulationsApiRequest(BaseModel):
-    """Request for searching simulations."""
-
-    search: str | None = None
-    limit_count: int | None = 20
-    offset_count: int | None = 0
-    draft_id: UUID | None = None
-    suggest_source: SuggestSource | None = "all"
-    exclude_ids: list[UUID] | None = Field(default_factory=list)
-
-
-class SearchSimulationsApiResponse(BaseModel):
-    """Response for searching simulations."""
-
-    items: list[GetSimulationsV4Item] | None = Field(default_factory=list)
-
-
-class SearchSimulationsSqlParams(BaseModel):
-    """SQL parameters for search simulations."""
-
-    search: str | None = None
-    limit_count: int | None = 20
-    offset_count: int | None = 0
-    draft_id: UUID | None = None
-    suggest_source: str | None = "all"
-    exclude_ids: list[UUID] | None = Field(default_factory=list)
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.search,
-            self.limit_count,
-            self.offset_count,
-            self.draft_id,
-            self.suggest_source,
-            self.exclude_ids or [],
-        )
-
-
-class SearchSimulationsSqlRow(BaseModel):
-    """SQL row for search simulations."""
-
-    items: list[GetSimulationsV4Item] | None = None
-
-
-# =============================================================================
-# Internal Function
-# =============================================================================
-
-
-# Handcrafted params to match SQL signature with artifact boolean filters
-class SearchSimulationsParams(BaseModel):
-    search: str | None = None
-    limit_count: int | None = 20
-    offset_count: int | None = 0
-    draft_id: UUID | None = None
-    suggest_source: str | None = "all"
-    exclude_ids: list[UUID] = []
-    # Artifact boolean filters
-    cohort: bool = False
-    simulation: bool = False
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.search,
-            self.limit_count,
-            self.offset_count,
-            self.draft_id,
-            self.suggest_source,
-            self.exclude_ids,
-            self.cohort,
-            self.simulation,
-        )
 
 
 async def search_simulations_internal(

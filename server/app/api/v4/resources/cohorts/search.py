@@ -1,14 +1,19 @@
 """Cohorts SEARCH endpoint - v4 API following DHH principles."""
 
-from typing import Annotated, Any, cast
+from typing import Annotated, cast
 from uuid import UUID
 
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel, Field
 
 # Import the locally-defined type from get.py
-from app.api.v4.resources.cohorts.get import QGetCohortsV4Item
+from app.api.v4.resources.cohorts.types import (
+    QGetCohortsV4Item,
+    SearchCohortsApiRequest,
+    SearchCohortsApiResponse,
+    SearchCohortsParams,
+    SearchCohortsSqlRow,
+)
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
 from app.utils.cache.cache_key import cache_key
@@ -19,75 +24,6 @@ from app.utils.sql_helper import execute_sql_typed
 SQL_PATH = "app/sql/v4/queries/resources/cohorts/search_cohorts_complete.sql"
 
 router = APIRouter()
-
-
-# =============================================================================
-# Types (defined locally since search types are not auto-generated yet)
-# =============================================================================
-
-
-class SearchCohortsApiRequest(BaseModel):
-    """Request for searching cohorts."""
-
-    search: str | None = None
-    limit_count: int | None = 20
-    offset_count: int | None = 0
-    exclude_ids: list[UUID] | None = Field(default_factory=list)
-
-
-class SearchCohortsApiResponse(BaseModel):
-    """Response for searching cohorts."""
-
-    items: list[QGetCohortsV4Item] | None = None
-
-
-class SearchCohortsSqlParams(BaseModel):
-    """SQL parameters for search cohorts."""
-
-    search: str | None = None
-    limit_count: int | None = 20
-    offset_count: int | None = 0
-    exclude_ids: list[UUID] | None = Field(default_factory=list)
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.search,
-            self.limit_count,
-            self.offset_count,
-            self.exclude_ids,
-        )
-
-
-class SearchCohortsSqlRow(BaseModel):
-    """SQL row for search cohorts."""
-
-    items: list[QGetCohortsV4Item] | None = None
-
-
-# =============================================================================
-# Internal Function
-# =============================================================================
-
-
-# Handcrafted params to match SQL signature with artifact boolean filters
-class SearchCohortsParams(BaseModel):
-    search: str | None = None
-    limit_count: int | None = 20
-    offset_count: int | None = 0
-    exclude_ids: list[UUID] = []
-    # Artifact boolean filters
-    cohort: bool = False
-    profile: bool = False
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.search,
-            self.limit_count,
-            self.offset_count,
-            self.exclude_ids,
-            self.cohort,
-            self.profile,
-        )
 
 
 async def search_cohorts_internal(

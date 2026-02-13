@@ -1,12 +1,18 @@
 """Cohorts GET endpoint - v4 API following DHH principles."""
 
-from typing import Annotated, Any, cast
+from typing import Annotated, cast
 from uuid import UUID
 
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel, Field
 
+from app.api.v4.resources.cohorts.types import (
+    GetCohortsApiRequest,
+    GetCohortsApiResponse,
+    GetCohortsSqlParams,
+    GetCohortsSqlRow,
+    QGetCohortsV4Item,
+)
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
 from app.utils.cache.cache_key import cache_key
@@ -19,48 +25,6 @@ SQL_PATH = "app/sql/v4/queries/resources/cohorts/get_cohorts_complete.sql"
 
 
 router = APIRouter()
-
-
-# =============================================================================
-# Types (defined locally since types.py is auto-generated)
-# =============================================================================
-
-
-class QGetCohortsV4Item(BaseModel):
-    """Cohort item returned from get endpoint."""
-
-    cohort_id: UUID | None = None
-    title: str | None = None
-    description: str | None = None
-    active: bool | None = None
-    department_ids: list[str] | None = None
-
-
-class GetCohortsApiRequest(BaseModel):
-    """Request for getting cohorts by IDs."""
-
-    ids: list[UUID] | None = Field(default_factory=list)
-
-
-class GetCohortsApiResponse(BaseModel):
-    """Response for getting cohorts."""
-
-    items: list[QGetCohortsV4Item] | None = None
-
-
-class GetCohortsSqlParams(BaseModel):
-    """SQL parameters for get cohorts."""
-
-    ids: list[UUID] | None = Field(default_factory=list)
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (self.ids,)
-
-
-class GetCohortsSqlRow(BaseModel):
-    """SQL row for get cohorts."""
-
-    items: list[QGetCohortsV4Item] | None = None
 
 
 # =============================================================================
