@@ -21,20 +21,16 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 type CreateDraftNamesIn = InputOf<"/api/v4/resources/names", "post">;
 type CreateDraftNamesOut = OutputOf<"/api/v4/resources/names", "post">;
 
+// Derive resource item type from the GET endpoint response
+type NamesGetResponse = OutputOf<"/api/v4/resources/names/get", "post">;
+export type NameResourceItem = NonNullable<NamesGetResponse["items"]>[number];
+
 export interface NamesProps {
   name_id?: string | null; // Current name_id (standardized prop name)
-  name_resource?: {
-    id?: string | null;
-    name?: string | null;
-    generated?: boolean | null;
-  } | null; // Resource data from server (standardized prop name; includes generated field)
+  name_resource?: NameResourceItem | null; // Resource data from server (standardized prop name; includes generated field)
   show_name?: boolean; // Whether to show this resource picker
   name_suggestions?: string[]; // Array of suggested resource IDs (UUIDs)
-  names?: Array<{
-    id?: string | null;
-    name?: string | null;
-    generated?: boolean | null;
-  }>; // Array of name suggestion objects (for autocomplete)
+  names?: NameResourceItem[]; // Array of name suggestion objects (for autocomplete)
   disabled?: boolean; // Based on can_edit flag
   onNameIdChange: (nameId: string | null) => void; // Update name_id in parent form state
   onGenerate?: () => Promise<void>;

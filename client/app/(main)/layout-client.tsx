@@ -89,9 +89,6 @@ function MainLayoutContent({
   // Page metadata from server controls analytics filter visibility
   const canShowAnalyticsFilters = pageMetadata?.show_analytics_filters ?? false;
 
-  // Check if we're on the staff management pages
-  const isStaffManagementPage = pathname === "/management/staff";
-
   const handleSectionChange = (section: string) => {
     // Find URL for section from breadcrumbs or sidebar
     router.push(`/${section}`);
@@ -105,17 +102,13 @@ function MainLayoutContent({
   // Server-driven action button from pageMetadata
   const actionButton = useMemo(() => {
     if (!pageMetadata?.create_url || !pageMetadata?.create_label) return null;
-    // Don't show on /new pages
-    if (pathname.includes("/new")) return null;
-    // Staff page has its own button
-    if (isStaffManagementPage) return null;
     return (
       <Button onClick={() => router.push(pageMetadata.create_url!)} size="sm">
         <Plus className="h-4 w-4 mr-2" />
         {pageMetadata.create_label}
       </Button>
     );
-  }, [pageMetadata, pathname, router, isStaffManagementPage]);
+  }, [pageMetadata, router]);
 
   return (
     <>
@@ -162,20 +155,6 @@ function MainLayoutContent({
             {/* SaveToolbar - Show on create/edit pages */}
             {isCreateOrEditPage && artifactType && (
               <SaveToolbar artifactType={artifactType} />
-            )}
-
-            {/* Add Staff Button - Show in top right for staff management pages */}
-            {isStaffManagementPage && (
-              <div className="pr-4">
-                <Button
-                  type="button"
-                  onClick={() => router.push("/management/staff/new")}
-                  size="sm"
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Staff
-                </Button>
-              </div>
             )}
 
             {actionButton && <div className="pr-4">{actionButton}</div>}

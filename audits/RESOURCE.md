@@ -195,6 +195,30 @@ Every non-common column on the `{resource}_resource` table (excluding `id`, `cre
 
 **Simple resources** (e.g., `names_resource` with only `name text`) are already covered by the `search text` parameter. This rule primarily affects resources with FK/array columns that need explicit ID-based filters.
 
+### Rule 17: Resource data props must derive types from `OutputOf`
+
+Resource components must NOT manually type `{resource}_resource` or `{resource}s` prop shapes.
+Instead, derive the item type from the resource's GET endpoint using `OutputOf`:
+
+```typescript
+import type { OutputOf } from "@/lib/api/types";
+
+type {Resource}GetResponse = OutputOf<"/api/v4/resources/{resource}/get", "post">;
+export type {Resource}ResourceItem = NonNullable<{Resource}GetResponse["items"]>[number];
+```
+
+Then use the derived type in props:
+- **Single-select**: `{resource}_resource?: {Resource}ResourceItem | null`
+- **Multi-select**: `{resource}_resources?: {Resource}ResourceItem[]`
+- **All options**: `{resource}s?: {Resource}ResourceItem[]`
+
+**Scope**: Only applies to data props. AI diff props may use `Pick<{Resource}ResourceItem, ...>`.
+Identity/control props (`disabled`, `onChange`, `show_*`, etc.) remain manually typed.
+
+**Rationale**: The auto-generated schema type from `openapi-typescript` is the single source of truth.
+Callers always pass API response data that conforms to this type. Manual duplication creates
+drift risk and is always a subset of the real type.
+
 ---
 
 ## Audit Checks

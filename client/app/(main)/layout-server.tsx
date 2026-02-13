@@ -43,15 +43,6 @@ type SearchSimulatableProfilesOut = OutputOf<
   "/api/v4/auth/simulatable",
   "post"
 >;
-type SearchStaffIn = InputOf<"/api/v4/artifacts/profiles/bulk/search", "post">;
-type SearchStaffOut = OutputOf<"/api/v4/artifacts/profiles/bulk/search", "post">;
-// Use profiles/get with null target_profile_id to get create staff data (replaces staff/data/create)
-type GetProfileIn = InputOf<"/api/v4/artifacts/profiles/get", "post">;
-type GetProfileOut = OutputOf<"/api/v4/artifacts/profiles/get", "post">;
-type ProcessCSVIn = InputOf<"/api/v4/artifacts/profiles/bulk/process", "post">;
-type ProcessCSVOut = OutputOf<"/api/v4/artifacts/profiles/bulk/process", "post">;
-type BulkCreateOrUpdateStaffIn = InputOf<"/api/v4/artifacts/profiles/bulk/save", "post">;
-type BulkCreateOrUpdateStaffOut = OutputOf<"/api/v4/artifacts/profiles/bulk/save", "post">;
 /** ---- Auth response type aliases ---- */
 export type AuthProfileResponse = AuthProfileOut;
 export type AuthSettingsResponse = AuthSettingsOut;
@@ -343,27 +334,6 @@ export async function searchSimulatableProfiles(
   return api.post("/auth/simulatable", input);
 }
 
-/** ---- Strongly-typed server actions for Staff (single source of truth) ---- */
-export async function searchStaff(
-  input: SearchStaffIn
-): Promise<SearchStaffOut> {
-  "use server";
-  return api.post("/artifacts/profiles/bulk/search", input);
-}
-
-export async function processCSV(input: ProcessCSVIn): Promise<ProcessCSVOut> {
-  "use server";
-  return api.post("/artifacts/profiles/bulk/process", input);
-}
-
-export async function bulkCreateOrUpdateStaff(
-  input: BulkCreateOrUpdateStaffIn
-): Promise<BulkCreateOrUpdateStaffOut> {
-  "use server";
-  // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/artifacts/profiles/bulk/save", input);
-}
-
 /** ---- Export types for client component (type-only imports) ---- */
 export type RefreshPageFn = (page: string) => Promise<void>;
 
@@ -372,18 +342,10 @@ export type {
   AuthAttemptOut,
   AttemptFullIn,
   AttemptFullOut,
-  BulkCreateOrUpdateStaffIn,
-  BulkCreateOrUpdateStaffOut,
   CreateFeedbackIn,
   CreateFeedbackOut,
-  GetProfileIn,
-  GetProfileOut,
-  ProcessCSVIn,
-  ProcessCSVOut,
   SearchSimulatableProfilesIn,
   SearchSimulatableProfilesOut,
-  SearchStaffIn,
-  SearchStaffOut,
   SwitchEffectiveProfileParams,
   SwitchEffectiveProfileResult,
 };
