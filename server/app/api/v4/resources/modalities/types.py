@@ -11,6 +11,8 @@ class SearchModalitiesParams(BaseModel):
     limit_count: int | None = 20
     offset_count: int | None = 0
     exclude_ids: list[UUID] = []
+    modality: str | None = None
+    is_input: bool | None = None
     # Artifact boolean filters
     model: bool = False
 
@@ -20,5 +22,7 @@ class SearchModalitiesParams(BaseModel):
             self.limit_count,
             self.offset_count,
             self.exclude_ids,
+            self.modality,
+            self.is_input,
             self.model,
         )

@@ -42,8 +42,9 @@ import {
 import { Roles, type RolesProps } from "@/components/resources/Roles";
 import { Label } from "@/components/ui/label";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { useProfile } from "@/contexts/profile-context";
 import { useDrafts } from "@/contexts/draft-context";
+import { useProfile } from "@/contexts/profile-context";
+import { useSocket } from "@/contexts/socket-context";
 import { useAiGeneration } from "@/hooks/use-ai-generation";
 import { useDraftLifecycle } from "@/hooks/use-draft-lifecycle";
 import { useFlushRegistry } from "@/hooks/use-flush-registry";
@@ -227,13 +228,9 @@ function ProfileComponent({
 }: ProfileProps) {
   const router = useRouter();
   const isEditMode = !!staffId;
-  const {
-    profile,
-    setSelectedDraftId,
-    socket,
-    isConnected,
-  } = useProfile();
-  const { isAutosaveEnabled } = useDrafts();
+  const { profile } = useProfile();
+  const { isAutosaveEnabled, setSelectedDraftId } = useDrafts();
+  const { socket, isConnected } = useSocket();
   const { flushRegistryRef, registerFlushCallbacks, flushAllResources } =
     useFlushRegistry<Record<string, unknown>>(FLUSH_KEYS);
 

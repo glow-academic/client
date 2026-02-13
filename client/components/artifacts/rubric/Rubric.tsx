@@ -25,6 +25,7 @@ import { Standards } from "@/components/resources/Standards";
 import { StandardGroups } from "@/components/resources/StandardGroups";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useProfile } from "@/contexts/profile-context";
+import { useSocket } from "@/contexts/socket-context";
 import { useDrafts } from "@/contexts/draft-context";
 import { useAiGeneration } from "@/hooks/use-ai-generation";
 import { useDraftLifecycle } from "@/hooks/use-draft-lifecycle";
@@ -191,8 +192,9 @@ function RubricComponent({
     standard_ids: [],
   });
 
-  const { profile, setSelectedDraftId, socket, isConnected } = useProfile();
-  const { isAutosaveEnabled } = useDrafts();
+  const { profile } = useProfile();
+  const { socket, isConnected } = useSocket();
+  const { setSelectedDraftId, isAutosaveEnabled } = useDrafts();
   const { flushRegistryRef, registerFlushCallbacks } =
     useFlushRegistry<Record<string, unknown>>(FLUSH_KEYS);
 

@@ -21,6 +21,7 @@ END $$;
 
 CREATE OR REPLACE FUNCTION api_search_scenario_time_limits_v4(
     scenario_ids uuid[] DEFAULT ARRAY[]::uuid[],
+    negative boolean DEFAULT NULL,
     -- Artifact boolean filters: when true, only return resources linked to that artifact type
     simulation boolean DEFAULT false
 )
@@ -44,6 +45,7 @@ WHERE stlr.active = true
     COALESCE(array_length(scenario_ids, 1), 0) = 0
     OR stlr.scenario_id = ANY(scenario_ids)
   )
+  AND (negative IS NULL OR stlr.negative = negative)
   -- Artifact boolean filters
   AND (NOT simulation OR EXISTS (SELECT 1 FROM simulation_scenario_time_limits_junction j WHERE j.scenario_time_limit_id = stlr.id AND j.active = true));
 $$;

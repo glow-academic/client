@@ -11,6 +11,8 @@ class SearchPricingParams(BaseModel):
     limit_count: int | None = 20
     offset_count: int | None = 0
     exclude_ids: list[UUID] = []
+    pricing_type: str | None = None
+    unit_ids: list[UUID] = []
     # Artifact boolean filters
     model: bool = False
 
@@ -20,5 +22,7 @@ class SearchPricingParams(BaseModel):
             self.limit_count,
             self.offset_count,
             self.exclude_ids,
+            self.pricing_type,
+            self.unit_ids,
             self.model,
         )

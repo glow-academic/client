@@ -33,6 +33,7 @@ async def search_keys_internal(
     limit_count: int | None = 20,
     offset_count: int | None = 0,
     exclude_ids: list[UUID] | None = None,
+    key_ids: list[UUID] | None = None,
     bypass_cache: bool = False,
     *,
     provider: bool = False,
@@ -49,6 +50,7 @@ async def search_keys_internal(
             "limit_count": limit_count,
             "offset_count": offset_count,
             "exclude_ids": [str(id) for id in (exclude_ids or [])],
+            "key_ids": sorted(str(i) for i in (key_ids or [])),
             "provider": provider,
         },
     )
@@ -65,6 +67,7 @@ async def search_keys_internal(
         limit_count=limit_count,
         offset_count=offset_count,
         exclude_ids=exclude_ids or [],
+        key_ids=key_ids or [],
         provider=provider,
     )
     result = cast(

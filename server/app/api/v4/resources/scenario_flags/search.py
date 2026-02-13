@@ -39,6 +39,7 @@ async def search_scenario_flags_internal(
     offset_count: int | None = 0,
     exclude_ids: list[UUID] | None = None,
     scenario_ids: list[UUID] | None = None,
+    flag_ids: list[UUID] | None = None,
     bypass_cache: bool = False,
     *,
     simulation: bool = False,
@@ -69,6 +70,7 @@ async def search_scenario_flags_internal(
             "offset_count": offset_count,
             "exclude_ids": sorted(str(i) for i in effective_exclude_ids),
             "scenario_ids": sorted(str(i) for i in effective_scenario_ids),
+            "flag_ids": sorted(str(i) for i in (flag_ids or [])),
             "simulation": simulation,
         },
     )
@@ -89,6 +91,7 @@ async def search_scenario_flags_internal(
         offset_count=offset_count,
         exclude_ids=effective_exclude_ids,
         scenario_ids=effective_scenario_ids,
+        flag_ids=flag_ids or [],
         simulation=simulation,
     )
     result = cast(

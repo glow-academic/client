@@ -12,6 +12,7 @@ import { toast } from "sonner";
 
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useProfile } from "@/contexts/profile-context";
+import { useSocket } from "@/contexts/socket-context";
 import BenchmarkZone, { BenchmarkZoneSkeleton } from "./BenchmarkZone";
 
 // Rubric mapping types
@@ -40,7 +41,8 @@ export default function Benchmark({
 }: BenchmarkProps) {
   const router = useRouter();
 
-  const { profile, isConnected, socket } = useProfile();
+  const { profile } = useProfile();
+  const { socket, isConnected } = useSocket();
   const [startingEvalId, setStartingEvalId] = useState<string | null>(null);
 
   // Use WebSocket's specific eval ID for precise loading state

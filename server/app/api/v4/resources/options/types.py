@@ -32,6 +32,8 @@ class SearchOptionsParams(BaseModel):
     limit_count: int | None = 20
     offset_count: int | None = 0
     exclude_ids: list[UUID] = []
+    question_ids: list[UUID] = []
+    is_correct: bool | None = None
     # Artifact boolean filters
     scenario: bool = False
 
@@ -41,5 +43,7 @@ class SearchOptionsParams(BaseModel):
             self.limit_count,
             self.offset_count,
             self.exclude_ids,
+            self.question_ids,
+            self.is_correct,
             self.scenario,
         )

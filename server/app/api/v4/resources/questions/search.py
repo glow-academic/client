@@ -32,6 +32,7 @@ async def search_questions_internal(
     limit_count: int | None = 20,
     offset_count: int | None = 0,
     exclude_ids: list[UUID] | None = None,
+    allow_multiple: bool | None = None,
     bypass_cache: bool = False,
     *,
     scenario: bool = False,
@@ -47,6 +48,7 @@ async def search_questions_internal(
             "limit_count": limit_count,
             "offset_count": offset_count,
             "exclude_ids": [str(id) for id in (exclude_ids or [])],
+            "allow_multiple": allow_multiple,
             "scenario": scenario,
         },
     )
@@ -64,6 +66,7 @@ async def search_questions_internal(
         limit_count=limit_count,
         offset_count=offset_count,
         exclude_ids=exclude_ids or [],
+        allow_multiple=allow_multiple,
         scenario=scenario,
     )
     result = cast(

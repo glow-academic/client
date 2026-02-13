@@ -18,6 +18,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useProfile } from "@/contexts/profile-context";
+import { useSocket } from "@/contexts/socket-context";
 import type { OutputOf } from "@/lib/api/types";
 import { AlertCircle, CheckCircle2, Clock, Play, Square, PlaySquare, Settings } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -38,7 +39,8 @@ export default function EvalAttemptStatus({
   attemptData,
 }: EvalAttemptStatusProps) {
   const router = useRouter();
-  const { socket, isConnected, profile } = useProfile();
+  const { profile } = useProfile();
+  const { socket, isConnected } = useSocket();
   const [runs, setRuns] = useState<RunItem[]>(attemptData.runs || []);
   const [startingRunIds, setStartingRunIds] = useState<Set<string>>(new Set());
   const [stoppingRunIds, setStoppingRunIds] = useState<Set<string>>(new Set());

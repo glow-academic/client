@@ -39,6 +39,7 @@ import { Tools } from "@/components/resources/Tools";
 import { Voices } from "@/components/resources/Voices";
 import { useProfile } from "@/contexts/profile-context";
 import { useDrafts } from "@/contexts/draft-context";
+import { useSocket } from "@/contexts/socket-context";
 import { useAiGeneration } from "@/hooks/use-ai-generation";
 import { useDraftLifecycle } from "@/hooks/use-draft-lifecycle";
 import { useFlushRegistry } from "@/hooks/use-flush-registry";
@@ -180,9 +181,9 @@ export default function Agent({
 }: AgentProps) {
   const router = useRouter();
   const isEditMode = !!agentId;
-  const { profile, selectedDraftId, setSelectedDraftId, socket, isConnected } =
-    useProfile();
-  const { isAutosaveEnabled } = useDrafts();
+  const { profile } = useProfile();
+  const { socket, isConnected } = useSocket();
+  const { isAutosaveEnabled, selectedDraftId, setSelectedDraftId } = useDrafts();
   const isSuperadmin = true;
   const { flushRegistryRef, registerFlushCallbacks, flushAllResources } =
     useFlushRegistry<FlushResult>(FLUSH_KEYS);

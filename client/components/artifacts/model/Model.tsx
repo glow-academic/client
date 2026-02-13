@@ -42,6 +42,7 @@ import { Voices } from "@/components/resources/Voices";
 import { Label } from "@/components/ui/label";
 import { useProfile } from "@/contexts/profile-context";
 import { useDrafts } from "@/contexts/draft-context";
+import { useSocket } from "@/contexts/socket-context";
 import { useDraftLifecycle } from "@/hooks/use-draft-lifecycle";
 import { useFlushRegistry } from "@/hooks/use-flush-registry";
 import { useGenerationModal } from "@/hooks/use-generation-modal";
@@ -184,8 +185,9 @@ function ModelComponent({
 }: ModelProps) {
   const router = useRouter();
   const isEditMode = !!modelId;
-  const { profile, setSelectedDraftId, socket, isConnected } = useProfile();
-  const { isAutosaveEnabled } = useDrafts();
+  const { profile } = useProfile();
+  const { socket, isConnected } = useSocket();
+  const { isAutosaveEnabled, setSelectedDraftId } = useDrafts();
   const { flushRegistryRef, registerFlushCallbacks, flushAllResources } =
     useFlushRegistry<FlushResult>(FLUSH_KEYS);
 

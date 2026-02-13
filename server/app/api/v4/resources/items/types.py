@@ -11,6 +11,7 @@ class SearchItemsParams(BaseModel):
     limit_count: int | None = 20
     offset_count: int | None = 0
     exclude_ids: list[UUID] = []
+    encrypted: bool | None = None
     # Artifact boolean filters
     auth: bool = False
 
@@ -20,5 +21,6 @@ class SearchItemsParams(BaseModel):
             self.limit_count,
             self.offset_count,
             self.exclude_ids,
+            self.encrypted,
             self.auth,
         )

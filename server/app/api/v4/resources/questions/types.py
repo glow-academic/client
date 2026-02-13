@@ -47,6 +47,7 @@ class SearchQuestionsParams(BaseModel):
     limit_count: int | None = 20
     offset_count: int | None = 0
     exclude_ids: list[UUID] = []
+    allow_multiple: bool | None = None
     # Artifact boolean filters
     scenario: bool = False
 
@@ -56,5 +57,6 @@ class SearchQuestionsParams(BaseModel):
             self.limit_count,
             self.offset_count,
             self.exclude_ids,
+            self.allow_multiple,
             self.scenario,
         )

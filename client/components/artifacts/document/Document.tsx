@@ -30,6 +30,7 @@ import { Uploads } from "@/components/resources/Uploads";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useProfile } from "@/contexts/profile-context";
 import { useDrafts } from "@/contexts/draft-context";
+import { useSocket } from "@/contexts/socket-context";
 import { useAiGeneration } from "@/hooks/use-ai-generation";
 import { useDraftLifecycle } from "@/hooks/use-draft-lifecycle";
 import { useFlushRegistry } from "@/hooks/use-flush-registry";
@@ -171,9 +172,9 @@ function DocumentComponent({
   const router = useRouter();
   const isEditMode = mode === "edit" && !!documentId;
   const documentDetail = documentDetailProp ?? documentDetailDefault;
-  const { profile, setSelectedDraftId, socket, isConnected } =
-    useProfile();
-  const { isAutosaveEnabled } = useDrafts();
+  const { profile } = useProfile();
+  const { socket, isConnected } = useSocket();
+  const { isAutosaveEnabled, setSelectedDraftId } = useDrafts();
   const { flushRegistryRef, registerFlushCallbacks, flushAllResources } =
     useFlushRegistry<Record<string, unknown>>(FLUSH_KEYS);
 

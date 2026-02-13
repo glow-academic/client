@@ -28,6 +28,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useProfile } from "@/contexts/profile-context";
+import { useDrafts } from "@/contexts/draft-context";
+import { useSocket } from "@/contexts/socket-context";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 import { Check } from "lucide-react";
@@ -117,13 +119,9 @@ function ToolComponent({
 }: ToolProps) {
   const router = useRouter();
   const isEditMode = !!toolId;
-  const {
-    profile,
-    selectedDraftId,
-    setSelectedDraftId,
-    socket,
-    isConnected,
-  } = useProfile();
+  const { profile } = useProfile();
+  const { socket, isConnected } = useSocket();
+  const { selectedDraftId, setSelectedDraftId } = useDrafts();
   // Generation state for AI workflows
   const [generatingResources, setGeneratingResources] = useState<
     Set<ToolResourceType>

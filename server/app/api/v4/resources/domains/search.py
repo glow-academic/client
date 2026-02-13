@@ -32,6 +32,8 @@ async def search_domains_internal(
     limit_count: int | None = 20,
     offset_count: int | None = 0,
     exclude_ids: list[UUID] | None = None,
+    resource: str | None = None,
+    creatable: bool | None = None,
     bypass_cache: bool = False,
     *,
     tool: bool = False,
@@ -47,6 +49,8 @@ async def search_domains_internal(
             "limit_count": limit_count,
             "offset_count": offset_count,
             "exclude_ids": [str(id) for id in (exclude_ids or [])],
+            "resource": resource,
+            "creatable": creatable,
             "tool": tool,
         },
     )
@@ -64,6 +68,8 @@ async def search_domains_internal(
         limit_count=limit_count,
         offset_count=offset_count,
         exclude_ids=exclude_ids or [],
+        resource=resource,
+        creatable=creatable,
         tool=tool,
     )
     result = cast(

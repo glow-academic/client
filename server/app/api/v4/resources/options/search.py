@@ -33,6 +33,8 @@ async def search_options_internal(
     limit_count: int | None = 20,
     offset_count: int | None = 0,
     exclude_ids: list[UUID] | None = None,
+    question_ids: list[UUID] | None = None,
+    is_correct: bool | None = None,
     bypass_cache: bool = False,
     *,
     scenario: bool = False,
@@ -49,6 +51,8 @@ async def search_options_internal(
             "limit_count": limit_count,
             "offset_count": offset_count,
             "exclude_ids": [str(id) for id in (exclude_ids or [])],
+            "question_ids": sorted(str(i) for i in (question_ids or [])),
+            "is_correct": is_correct,
             "scenario": scenario,
         },
     )
@@ -66,6 +70,8 @@ async def search_options_internal(
         limit_count=limit_count,
         offset_count=offset_count,
         exclude_ids=exclude_ids or [],
+        question_ids=question_ids or [],
+        is_correct=is_correct,
         scenario=scenario,
     )
     result = cast(

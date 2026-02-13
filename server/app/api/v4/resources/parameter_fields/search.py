@@ -33,6 +33,8 @@ router = APIRouter()
 async def search_parameter_fields_internal(
     conn: asyncpg.Connection,
     parameter_ids: list[UUID],
+    field_ids: list[UUID] | None = None,
+    conditional_parameter_ids: list[UUID] | None = None,
     bypass_cache: bool = False,
     *,
     document: bool = False,
@@ -50,6 +52,10 @@ async def search_parameter_fields_internal(
         "/api/v4/resources/parameter_fields/search",
         {
             "parameter_ids": [str(id) for id in parameter_ids],
+            "field_ids": sorted(str(i) for i in (field_ids or [])),
+            "conditional_parameter_ids": sorted(
+                str(i) for i in (conditional_parameter_ids or [])
+            ),
             "document": document,
             "persona": persona,
             "scenario": scenario,
@@ -68,6 +74,8 @@ async def search_parameter_fields_internal(
     # Execute SQL
     params = SearchParameterFieldsParams(
         parameter_ids=parameter_ids or [],
+        field_ids=field_ids or [],
+        conditional_parameter_ids=conditional_parameter_ids or [],
         document=document,
         persona=persona,
         scenario=scenario,

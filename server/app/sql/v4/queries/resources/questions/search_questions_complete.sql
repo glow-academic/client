@@ -23,6 +23,7 @@ CREATE OR REPLACE FUNCTION api_search_questions_v4(
     limit_count int DEFAULT 20,
     offset_count int DEFAULT 0,
     exclude_ids uuid[] DEFAULT ARRAY[]::uuid[],
+    allow_multiple boolean DEFAULT NULL,
     -- Artifact boolean filters: when true, only return resources linked to that artifact type
     scenario boolean DEFAULT false
 )
@@ -49,6 +50,7 @@ FROM questions_resource q
 WHERE q.active = true
   AND (exclude_ids IS NULL OR NOT (q.id = ANY(exclude_ids)))
   AND (search IS NULL OR search = '' OR LOWER(q.question_text) LIKE '%' || LOWER(search) || '%')
+  AND (allow_multiple IS NULL OR q.allow_multiple = allow_multiple)
   -- Artifact boolean filters (each filters to resources linked to at least one of that artifact type)
   AND (NOT scenario OR EXISTS (SELECT 1 FROM scenario_questions_junction j WHERE j.question_id = q.id AND j.active = true))
 LIMIT limit_count

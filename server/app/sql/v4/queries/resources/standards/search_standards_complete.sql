@@ -23,6 +23,7 @@ CREATE OR REPLACE FUNCTION api_search_standards_v4(
     limit_count int DEFAULT 20,
     offset_count int DEFAULT 0,
     exclude_ids uuid[] DEFAULT ARRAY[]::uuid[],
+    standard_group_ids uuid[] DEFAULT ARRAY[]::uuid[],
     -- Artifact boolean filters: when true, only return resources linked to that artifact type
     rubric boolean DEFAULT false
 )
@@ -50,6 +51,7 @@ FROM (
     WHERE r.active = true
       AND (search IS NULL OR search = '' OR LOWER(r.name) LIKE '%' || LOWER(search) || '%' OR LOWER(COALESCE(r.description, '')) LIKE '%' || LOWER(search) || '%')
       AND (exclude_ids IS NULL OR NOT (r.id = ANY(exclude_ids)))
+      AND (COALESCE(array_length(standard_group_ids, 1), 0) = 0 OR r.standard_group_id = ANY(standard_group_ids))
       -- Artifact boolean filters (each filters to resources linked to at least one of that artifact type)
       AND (NOT rubric OR EXISTS (SELECT 1 FROM rubric_standards_junction j WHERE j.standard_id = r.id AND j.active = true))
     ORDER BY r.name

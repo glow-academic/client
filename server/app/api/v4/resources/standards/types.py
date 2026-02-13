@@ -25,6 +25,7 @@ class SearchStandardsParams(BaseModel):
     limit_count: int | None = 20
     offset_count: int | None = 0
     exclude_ids: list[UUID] = []
+    standard_group_ids: list[UUID] = []
     # Artifact boolean filters
     rubric: bool = False
 
@@ -34,5 +35,6 @@ class SearchStandardsParams(BaseModel):
             self.limit_count,
             self.offset_count,
             self.exclude_ids,
+            self.standard_group_ids,
             self.rubric,
         )

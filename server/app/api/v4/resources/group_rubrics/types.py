@@ -11,6 +11,8 @@ class SearchGroupRubricsParams(BaseModel):
     limit_count: int | None = 20
     offset_count: int | None = 0
     exclude_ids: list[UUID] = []
+    groups_ids: list[UUID] = []
+    rubric_ids: list[UUID] = []
     # Artifact boolean filters
     eval: bool = False
 
@@ -20,5 +22,7 @@ class SearchGroupRubricsParams(BaseModel):
             self.limit_count,
             self.offset_count,
             self.exclude_ids,
+            self.groups_ids,
+            self.rubric_ids,
             self.eval,
         )

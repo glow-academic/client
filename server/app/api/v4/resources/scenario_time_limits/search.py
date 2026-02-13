@@ -35,6 +35,7 @@ router = APIRouter()
 async def search_scenario_time_limits_internal(
     conn: asyncpg.Connection,
     scenario_ids: list[UUID],
+    negative: bool | None = None,
     bypass_cache: bool = False,
     *,
     simulation: bool = False,
@@ -54,6 +55,7 @@ async def search_scenario_time_limits_internal(
         "scenario_time_limits/search",
         {
             "scenario_ids": sorted([str(id) for id in scenario_ids]),
+            "negative": negative,
             "simulation": simulation,
         },
     )
@@ -70,6 +72,7 @@ async def search_scenario_time_limits_internal(
     # Execute SQL
     params = SearchScenarioTimeLimitsParams(
         scenario_ids=scenario_ids or [],
+        negative=negative,
         simulation=simulation,
     )
     result = cast(

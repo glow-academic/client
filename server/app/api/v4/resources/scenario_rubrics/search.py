@@ -35,6 +35,7 @@ router = APIRouter()
 async def search_scenario_rubrics_internal(
     conn: asyncpg.Connection,
     scenario_ids: list[UUID],
+    rubric_ids: list[UUID] | None = None,
     bypass_cache: bool = False,
     *,
     simulation: bool = False,
@@ -54,6 +55,7 @@ async def search_scenario_rubrics_internal(
         "scenario_rubrics/search",
         {
             "scenario_ids": sorted([str(id) for id in scenario_ids]),
+            "rubric_ids": sorted(str(i) for i in (rubric_ids or [])),
             "simulation": simulation,
         },
     )
@@ -70,6 +72,7 @@ async def search_scenario_rubrics_internal(
     # Execute SQL
     params = SearchScenarioRubricsParams(
         scenario_ids=scenario_ids or [],
+        rubric_ids=rubric_ids or [],
         simulation=simulation,
     )
     result = cast(

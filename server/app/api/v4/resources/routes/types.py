@@ -11,6 +11,8 @@ class SearchRoutesParams(BaseModel):
     limit_count: int | None = 20
     offset_count: int | None = 0
     exclude_ids: list[UUID] = []
+    route: str | None = None
+    role_ids: list[UUID] = []
     # Artifact boolean filters
     profile: bool = False
 
@@ -20,5 +22,7 @@ class SearchRoutesParams(BaseModel):
             self.limit_count,
             self.offset_count,
             self.exclude_ids,
+            self.route,
+            self.role_ids,
             self.profile,
         )

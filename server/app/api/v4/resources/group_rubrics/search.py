@@ -35,6 +35,8 @@ async def search_group_rubrics_internal(
     limit_count: int | None = 20,
     offset_count: int | None = 0,
     exclude_ids: list[UUID] | None = None,
+    groups_ids: list[UUID] | None = None,
+    rubric_ids: list[UUID] | None = None,
     bypass_cache: bool = False,
     *,
     eval: bool = False,
@@ -51,6 +53,8 @@ async def search_group_rubrics_internal(
             "limit_count": limit_count,
             "offset_count": offset_count,
             "exclude_ids": [str(id) for id in (exclude_ids or [])],
+            "groups_ids": sorted(str(i) for i in (groups_ids or [])),
+            "rubric_ids": sorted(str(i) for i in (rubric_ids or [])),
             "eval": eval,
         },
     )
@@ -68,6 +72,8 @@ async def search_group_rubrics_internal(
         limit_count=limit_count,
         offset_count=offset_count,
         exclude_ids=exclude_ids or [],
+        groups_ids=groups_ids or [],
+        rubric_ids=rubric_ids or [],
         eval=eval,
     )
     result = cast(

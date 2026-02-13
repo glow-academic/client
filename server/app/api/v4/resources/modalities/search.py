@@ -32,6 +32,8 @@ async def search_modalities_internal(
     limit_count: int | None = 20,
     offset_count: int | None = 0,
     exclude_ids: list[UUID] | None = None,
+    modality: str | None = None,
+    is_input: bool | None = None,
     bypass_cache: bool = False,
     *,
     model: bool = False,
@@ -48,6 +50,8 @@ async def search_modalities_internal(
             "limit_count": limit_count,
             "offset_count": offset_count,
             "exclude_ids": [str(id) for id in (exclude_ids or [])],
+            "modality": modality,
+            "is_input": is_input,
             "model": model,
         },
     )
@@ -65,6 +69,8 @@ async def search_modalities_internal(
         limit_count=limit_count,
         offset_count=offset_count,
         exclude_ids=exclude_ids or [],
+        modality=modality,
+        is_input=is_input,
         model=model,
     )
     result = cast(

@@ -11,6 +11,8 @@ class SearchProviderKeysParams(BaseModel):
     limit_count: int | None = 20
     offset_count: int | None = 0
     exclude_ids: list[UUID] = []
+    provider_ids: list[UUID] = []
+    key_ids: list[UUID] = []
     # Artifact boolean filters
     setting: bool = False
 
@@ -20,5 +22,7 @@ class SearchProviderKeysParams(BaseModel):
             self.limit_count,
             self.offset_count,
             self.exclude_ids,
+            self.provider_ids,
+            self.key_ids,
             self.setting,
         )

@@ -48,6 +48,8 @@ class SearchImagesParams(BaseModel):
     limit_count: int | None = 20
     offset_count: int | None = 0
     exclude_ids: list[UUID] = []
+    upload_ids: list[UUID] = []
+    completed: bool | None = None
     # Artifact boolean filters
     scenario: bool = False
 
@@ -57,5 +59,7 @@ class SearchImagesParams(BaseModel):
             self.limit_count,
             self.offset_count,
             self.exclude_ids,
+            self.upload_ids,
+            self.completed,
             self.scenario,
         )

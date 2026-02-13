@@ -21,7 +21,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { GenerateRegenerateModal, type GenerateRegenerateModalResource } from "@/components/common/forms/GenerateRegenerateModal";
-import { useProfile } from "@/contexts/profile-context";
+import { useSocket } from "@/contexts/socket-context";
 
 import type {
   DeleteScenarioIn,
@@ -107,7 +107,7 @@ export function Scenarios({
   );
 
   // Generation modal state
-  const { socket, isConnected } = useProfile();
+  const { socket, isConnected } = useSocket();
   const [showGenerateModal, setShowGenerateModal] = useState(false);
   const [modalResources, setModalResources] = useState<GenerateRegenerateModalResource[]>([]);
   const [modalInstructions, setModalInstructions] = useState("");

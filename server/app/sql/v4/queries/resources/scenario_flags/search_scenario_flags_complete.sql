@@ -25,6 +25,7 @@ CREATE OR REPLACE FUNCTION api_search_scenario_flags_v4(
     offset_count int DEFAULT 0,
     exclude_ids uuid[] DEFAULT ARRAY[]::uuid[],
     scenario_ids uuid[] DEFAULT ARRAY[]::uuid[],
+    flag_ids uuid[] DEFAULT ARRAY[]::uuid[],
     -- Artifact boolean filters: when true, only return resources linked to that artifact type
     simulation boolean DEFAULT false
 )
@@ -45,6 +46,7 @@ WITH filtered AS (
       )
       AND (search IS NULL OR f.name ILIKE '%' || search || '%' OR f.description ILIKE '%' || search || '%')
       AND (COALESCE(array_length(exclude_ids, 1), 0) = 0 OR sfr.id != ALL(exclude_ids))
+      AND (COALESCE(array_length(flag_ids, 1), 0) = 0 OR sfr.flag_id = ANY(flag_ids))
       -- Artifact boolean filters
       AND (NOT simulation OR EXISTS (SELECT 1 FROM simulation_scenario_flags_junction j WHERE j.scenario_flag_id = sfr.id AND j.active = true))
     ORDER BY f.name, sfr.scenario_id

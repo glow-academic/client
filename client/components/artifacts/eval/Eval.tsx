@@ -39,7 +39,9 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useDrafts } from "@/contexts/draft-context";
 import { useProfile } from "@/contexts/profile-context";
+import { useSocket } from "@/contexts/socket-context";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { ResourceType } from "@/lib/resources/types";
 import { Loader2, Sparkles } from "lucide-react";
@@ -219,13 +221,9 @@ function EvalComponent({
 }: EvalProps) {
   const router = useRouter();
   const isEditMode = !!evalId;
-  const {
-    profile,
-    selectedDraftId,
-    setSelectedDraftId,
-    socket,
-    isConnected,
-  } = useProfile();
+  const { profile } = useProfile();
+  const { selectedDraftId, setSelectedDraftId } = useDrafts();
+  const { socket, isConnected } = useSocket();
   const evalData = isEditMode ? evalDetail : evalDetailDefault;
   const s = useMemo(() => {
     if (!evalData) return null;

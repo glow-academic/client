@@ -11,6 +11,7 @@ class SearchReasoningLevelsParams(BaseModel):
     limit_count: int | None = 20
     offset_count: int | None = 0
     exclude_ids: list[UUID] = []
+    reasoning_level_ids: list[UUID] = []
     # Artifact boolean filters
     agent: bool = False
     model: bool = False
@@ -21,6 +22,7 @@ class SearchReasoningLevelsParams(BaseModel):
             self.limit_count,
             self.offset_count,
             self.exclude_ids,
+            self.reasoning_level_ids,
             self.agent,
             self.model,
         )

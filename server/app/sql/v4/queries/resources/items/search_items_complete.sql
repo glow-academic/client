@@ -23,6 +23,7 @@ CREATE OR REPLACE FUNCTION api_search_items_v4(
     limit_count int DEFAULT 20,
     offset_count int DEFAULT 0,
     exclude_ids uuid[] DEFAULT ARRAY[]::uuid[],
+    encrypted boolean DEFAULT NULL,
     -- Artifact boolean filters: when true, only return resources linked to that artifact type
     auth boolean DEFAULT false
 )
@@ -45,6 +46,7 @@ FROM (
     WHERE r.active = true
       AND (search IS NULL OR search = '' OR LOWER(r.name) LIKE '%' || LOWER(search) || '%' OR LOWER(r.description) LIKE '%' || LOWER(search) || '%')
       AND (exclude_ids IS NULL OR NOT (r.id = ANY(exclude_ids)))
+      AND (encrypted IS NULL OR r.encrypted = encrypted)
       -- Artifact boolean filters (each filters to resources linked to at least one of that artifact type)
       AND (NOT auth OR EXISTS (SELECT 1 FROM auth_items_junction j WHERE j.item_id = r.id AND j.active = true))
     ORDER BY r.name

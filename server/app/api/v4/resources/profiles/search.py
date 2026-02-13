@@ -36,6 +36,7 @@ async def search_profiles_internal(
     department_ids: list[UUID] | None = None,
     cohort_ids: list[UUID] | None = None,
     role_ids: list[UUID] | None = None,
+    role: str | None = None,
     bypass_cache: bool = False,
     *,
     profile: bool = False,
@@ -56,6 +57,7 @@ async def search_profiles_internal(
             "department_ids": sorted(str(i) for i in (department_ids or [])),
             "cohort_ids": sorted(str(i) for i in (cohort_ids or [])),
             "role_ids": sorted(str(i) for i in (role_ids or [])),
+            "role": role,
             "profile": profile,
             "setting": setting,
         },
@@ -77,6 +79,7 @@ async def search_profiles_internal(
         department_ids=department_ids or [],
         cohort_ids=cohort_ids or [],
         role_ids=role_ids or [],
+        role=role,
         profile=profile,
         setting=setting,
     )

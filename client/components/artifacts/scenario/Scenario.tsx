@@ -322,8 +322,7 @@ function ScenarioComponent({
   const isEditMode = !!scenarioId;
   const { profile } = useProfile();
   const { socket, isConnected } = useSocket();
-  const { setSelectedDraftId } = useDrafts();
-  const { isAutosaveEnabled } = useDrafts();
+  const { setSelectedDraftId, isAutosaveEnabled } = useDrafts();
 
   // Use scenarioDetail for edit mode, scenarioDetailDefault for new mode
   const scenarioData = isEditMode

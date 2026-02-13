@@ -14,6 +14,7 @@ class SearchProfilesParams(BaseModel):
     department_ids: list[UUID] = []
     cohort_ids: list[UUID] = []
     role_ids: list[UUID] = []
+    role: str | None = None
     # Artifact boolean filters
     profile: bool = False
     setting: bool = False
@@ -27,6 +28,7 @@ class SearchProfilesParams(BaseModel):
             self.department_ids,
             self.cohort_ids,
             self.role_ids,
+            self.role,
             self.profile,
             self.setting,
         )

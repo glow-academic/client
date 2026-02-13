@@ -21,6 +21,7 @@ END $$;
 
 CREATE OR REPLACE FUNCTION api_search_scenario_personas_v4(
     scenario_ids uuid[] DEFAULT ARRAY[]::uuid[],
+    persona_ids uuid[] DEFAULT ARRAY[]::uuid[],
     -- Artifact boolean filters: when true, only return resources linked to that artifact type
     simulation boolean DEFAULT false
 )
@@ -44,6 +45,7 @@ WHERE spr.active = true
     COALESCE(array_length(scenario_ids, 1), 0) = 0
     OR spr.scenario_id = ANY(scenario_ids)
   )
+  AND (COALESCE(array_length(persona_ids, 1), 0) = 0 OR spr.persona_id = ANY(persona_ids))
   -- Artifact boolean filters
   AND (NOT simulation OR EXISTS (SELECT 1 FROM simulation_scenario_personas_junction j WHERE j.scenario_persona_id = spr.id AND j.active = true));
 $$;

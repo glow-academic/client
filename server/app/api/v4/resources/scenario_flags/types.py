@@ -12,6 +12,7 @@ class SearchScenarioFlagsParams(BaseModel):
     offset_count: int | None = 0
     exclude_ids: list[UUID] = []
     scenario_ids: list[UUID] = []
+    flag_ids: list[UUID] = []
     # Artifact boolean filters
     simulation: bool = False
 
@@ -22,5 +23,6 @@ class SearchScenarioFlagsParams(BaseModel):
             self.offset_count,
             self.exclude_ids,
             self.scenario_ids,
+            self.flag_ids,
             self.simulation,
         )

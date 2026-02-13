@@ -11,6 +11,8 @@ class SearchDomainsParams(BaseModel):
     limit_count: int | None = 20
     offset_count: int | None = 0
     exclude_ids: list[UUID] = []
+    resource: str | None = None
+    creatable: bool | None = None
     # Artifact boolean filters
     tool: bool = False
 
@@ -20,5 +22,7 @@ class SearchDomainsParams(BaseModel):
             self.limit_count,
             self.offset_count,
             self.exclude_ids,
+            self.resource,
+            self.creatable,
             self.tool,
         )

@@ -31719,6 +31719,8 @@ export interface components {
             suggest_source?: string | null;
             /** Exclude Ids */
             exclude_ids?: string[] | null;
+            /** Required */
+            required?: boolean | null;
             /**
              * Tool
              * @default false
@@ -31777,6 +31779,12 @@ export interface components {
             offset_count: number | null;
             /** Exclude Ids */
             exclude_ids?: string[] | null;
+            /** Auth Ids */
+            auth_ids?: string[] | null;
+            /** Key Ids */
+            key_ids?: string[] | null;
+            /** Item Ids */
+            item_ids?: string[] | null;
             /**
              * Setting
              * @default false
@@ -32206,6 +32214,8 @@ export interface components {
             exclude_ids?: string[] | null;
             /** Resource */
             resource?: string | null;
+            /** Creatable */
+            creatable?: boolean | null;
             /**
              * Tool
              * @default false
@@ -32392,6 +32402,8 @@ export interface components {
             offset_count: number | null;
             /** Exclude Ids */
             exclude_ids?: string[] | null;
+            /** Flag Type */
+            flag_type?: string | null;
             /**
              * Agent
              * @default false
@@ -32499,6 +32511,10 @@ export interface components {
             offset_count: number | null;
             /** Exclude Ids */
             exclude_ids?: string[] | null;
+            /** Groups Ids */
+            groups_ids?: string[] | null;
+            /** Eval Ids */
+            eval_ids?: string[] | null;
             /**
              * Eval
              * @default false
@@ -32526,6 +32542,10 @@ export interface components {
             offset_count: number | null;
             /** Exclude Ids */
             exclude_ids?: string[] | null;
+            /** Groups Ids */
+            groups_ids?: string[] | null;
+            /** Rubric Ids */
+            rubric_ids?: string[] | null;
             /**
              * Eval
              * @default false
@@ -32611,6 +32631,10 @@ export interface components {
             offset_count: number | null;
             /** Exclude Ids */
             exclude_ids?: string[] | null;
+            /** Upload Ids */
+            upload_ids?: string[] | null;
+            /** Completed */
+            completed?: boolean | null;
             /**
              * Scenario
              * @default false
@@ -32674,6 +32698,8 @@ export interface components {
             offset_count: number | null;
             /** Exclude Ids */
             exclude_ids?: string[] | null;
+            /** Encrypted */
+            encrypted?: boolean | null;
             /**
              * Auth
              * @default false
@@ -32701,6 +32727,8 @@ export interface components {
             offset_count: number | null;
             /** Exclude Ids */
             exclude_ids?: string[] | null;
+            /** Key Ids */
+            key_ids?: string[] | null;
             /**
              * Provider
              * @default false
@@ -32730,6 +32758,8 @@ export interface components {
             exclude_ids?: string[] | null;
             /** Modality */
             modality?: string | null;
+            /** Is Input */
+            is_input?: boolean | null;
             /**
              * Model
              * @default false
@@ -32941,6 +32971,10 @@ export interface components {
             offset_count: number | null;
             /** Exclude Ids */
             exclude_ids?: string[] | null;
+            /** Question Ids */
+            question_ids?: string[] | null;
+            /** Is Correct */
+            is_correct?: boolean | null;
             /**
              * Scenario
              * @default false
@@ -32956,6 +32990,10 @@ export interface components {
         SearchParameterFieldsApiRequest: {
             /** Parameter Ids */
             parameter_ids?: string[] | null;
+            /** Field Ids */
+            field_ids?: string[] | null;
+            /** Conditional Parameter Ids */
+            conditional_parameter_ids?: string[] | null;
             /**
              * Document
              * @default false
@@ -33116,6 +33154,8 @@ export interface components {
             exclude_ids?: string[] | null;
             /** Pricing Type */
             pricing_type?: string | null;
+            /** Unit Ids */
+            unit_ids?: string[] | null;
             /**
              * Model
              * @default false
@@ -33241,6 +33281,10 @@ export interface components {
             offset_count: number | null;
             /** Exclude Ids */
             exclude_ids?: string[] | null;
+            /** Provider Ids */
+            provider_ids?: string[] | null;
+            /** Key Ids */
+            key_ids?: string[] | null;
             /**
              * Setting
              * @default false
@@ -33329,6 +33373,8 @@ export interface components {
             offset_count: number | null;
             /** Exclude Ids */
             exclude_ids?: string[] | null;
+            /** Reasoning Level Ids */
+            reasoning_level_ids?: string[] | null;
             /**
              * Agent
              * @default false
@@ -33389,6 +33435,10 @@ export interface components {
             offset_count: number | null;
             /** Exclude Ids */
             exclude_ids?: string[] | null;
+            /** Role Ids */
+            role_ids?: string[] | null;
+            /** Route Ids */
+            route_ids?: string[] | null;
             /**
              * Setting
              * @default false
@@ -33418,6 +33468,10 @@ export interface components {
             exclude_ids?: string[] | null;
             /** Role */
             role?: string | null;
+            /** Icon Ids */
+            icon_ids?: string[] | null;
+            /** Color Ids */
+            color_ids?: string[] | null;
             /**
              * Profile
              * @default false
@@ -33452,6 +33506,8 @@ export interface components {
             exclude_ids?: string[] | null;
             /** Route */
             route?: string | null;
+            /** Role Ids */
+            role_ids?: string[] | null;
             /**
              * Profile
              * @default false
@@ -33512,6 +33568,10 @@ export interface components {
             offset_count: number | null;
             /** Exclude Ids */
             exclude_ids?: string[] | null;
+            /** Runs Ids */
+            runs_ids?: string[] | null;
+            /** Eval Ids */
+            eval_ids?: string[] | null;
             /**
              * Eval
              * @default false
@@ -33539,6 +33599,10 @@ export interface components {
             offset_count: number | null;
             /** Exclude Ids */
             exclude_ids?: string[] | null;
+            /** Runs Ids */
+            runs_ids?: string[] | null;
+            /** Rubric Ids */
+            rubric_ids?: string[] | null;
             /**
              * Eval
              * @default false
@@ -33595,6 +33659,8 @@ export interface components {
             exclude_ids?: string[] | null;
             /** Scenario Ids */
             scenario_ids?: string[] | null;
+            /** Flag Ids */
+            flag_ids?: string[] | null;
             /**
              * Simulation
              * @default false
@@ -33610,6 +33676,8 @@ export interface components {
         SearchScenarioPersonasApiRequest: {
             /** Scenario Ids */
             scenario_ids?: string[] | null;
+            /** Persona Ids */
+            persona_ids?: string[] | null;
             /**
              * Simulation
              * @default false
@@ -33640,6 +33708,8 @@ export interface components {
         SearchScenarioRubricsApiRequest: {
             /** Scenario Ids */
             scenario_ids?: string[] | null;
+            /** Rubric Ids */
+            rubric_ids?: string[] | null;
             /**
              * Simulation
              * @default false
@@ -33655,6 +33725,8 @@ export interface components {
         SearchScenarioTimeLimitsApiRequest: {
             /** Scenario Ids */
             scenario_ids?: string[] | null;
+            /** Negative */
+            negative?: boolean | null;
             /**
              * Simulation
              * @default false
@@ -33889,6 +33961,8 @@ export interface components {
             offset_count: number | null;
             /** Exclude Ids */
             exclude_ids?: string[] | null;
+            /** Standard Group Ids */
+            standard_group_ids?: string[] | null;
             /**
              * Rubric
              * @default false

@@ -21,6 +21,7 @@ END $$;
 
 CREATE OR REPLACE FUNCTION api_search_scenario_rubrics_v4(
     scenario_ids uuid[] DEFAULT ARRAY[]::uuid[],
+    rubric_ids uuid[] DEFAULT ARRAY[]::uuid[],
     -- Artifact boolean filters: when true, only return resources linked to that artifact type
     simulation boolean DEFAULT false
 )
@@ -44,6 +45,7 @@ WHERE srr.active = true
     COALESCE(array_length(scenario_ids, 1), 0) = 0
     OR srr.scenario_id = ANY(scenario_ids)
   )
+  AND (COALESCE(array_length(rubric_ids, 1), 0) = 0 OR srr.rubric_id = ANY(rubric_ids))
   -- Artifact boolean filters
   AND (NOT simulation OR EXISTS (SELECT 1 FROM simulation_scenario_rubrics_junction j WHERE j.scenario_rubric_id = srr.id AND j.active = true));
 $$;

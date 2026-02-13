@@ -21,6 +21,8 @@ CREATE OR REPLACE FUNCTION api_search_provider_keys_v4(
     limit_count int DEFAULT 20,
     offset_count int DEFAULT 0,
     exclude_ids uuid[] DEFAULT ARRAY[]::uuid[],
+    provider_ids uuid[] DEFAULT ARRAY[]::uuid[],
+    key_ids uuid[] DEFAULT ARRAY[]::uuid[],
     -- Artifact boolean filters: when true, only return resources linked to that artifact type
     setting boolean DEFAULT false
 )
@@ -68,6 +70,8 @@ FROM (
         OR LOWER(COALESCE(kr.description, '')) LIKE '%' || LOWER(search) || '%'
       )
       AND (exclude_ids IS NULL OR NOT (pkr.id = ANY(exclude_ids)))
+      AND (COALESCE(array_length(provider_ids, 1), 0) = 0 OR pkr.provider_id = ANY(provider_ids))
+      AND (COALESCE(array_length(key_ids, 1), 0) = 0 OR pkr.key_id = ANY(key_ids))
       -- Artifact boolean filters (each filters to resources linked to at least one of that artifact type)
       AND (NOT setting OR EXISTS (SELECT 1 FROM setting_provider_keys_junction j WHERE j.provider_key_id = pkr.id AND j.active = true))
     ORDER BY COALESCE(pr.name, ''), COALESCE(kr.name, '')

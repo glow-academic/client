@@ -11,6 +11,7 @@ class SearchFlagsParams(BaseModel):
     limit_count: int | None = 20
     offset_count: int | None = 0
     exclude_ids: list[UUID] = []
+    flag_type: str | None = None
     # Artifact boolean filters
     agent: bool = False
     auth: bool = False
@@ -36,6 +37,7 @@ class SearchFlagsParams(BaseModel):
             self.limit_count,
             self.offset_count,
             self.exclude_ids,
+            self.flag_type,
             self.agent,
             self.auth,
             self.cohort,

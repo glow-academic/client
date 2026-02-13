@@ -49,6 +49,9 @@ class SearchRolesParams(BaseModel):
     limit_count: int | None = 20
     offset_count: int | None = 0
     exclude_ids: list[UUID] = []
+    role: str | None = None
+    icon_ids: list[UUID] = []
+    color_ids: list[UUID] = []
     # Artifact boolean filters
     profile: bool = False
     setting: bool = False
@@ -59,6 +62,9 @@ class SearchRolesParams(BaseModel):
             self.limit_count,
             self.offset_count,
             self.exclude_ids,
+            self.role,
+            self.icon_ids,
+            self.color_ids,
             self.profile,
             self.setting,
         )

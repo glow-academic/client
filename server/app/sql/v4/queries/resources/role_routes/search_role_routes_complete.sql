@@ -23,6 +23,8 @@ CREATE OR REPLACE FUNCTION api_search_role_routes_v4(
     limit_count int DEFAULT 20,
     offset_count int DEFAULT 0,
     exclude_ids uuid[] DEFAULT ARRAY[]::uuid[],
+    role_ids uuid[] DEFAULT ARRAY[]::uuid[],
+    route_ids uuid[] DEFAULT ARRAY[]::uuid[],
     -- Artifact boolean filters: when true, only return resources linked to that artifact type
     setting boolean DEFAULT false
 )
@@ -44,6 +46,8 @@ FROM (
     FROM role_routes_resource r
     WHERE r.active = true
       AND (exclude_ids IS NULL OR NOT (r.id = ANY(exclude_ids)))
+      AND (COALESCE(array_length(role_ids, 1), 0) = 0 OR r.role_id = ANY(role_ids))
+      AND (COALESCE(array_length(route_ids, 1), 0) = 0 OR r.route_id = ANY(route_ids))
       -- Artifact boolean filters (each filters to resources linked to at least one of that artifact type)
       AND (NOT setting OR EXISTS (SELECT 1 FROM setting_role_routes_junction j WHERE j.role_routes_id = r.id AND j.active = true))
     ORDER BY r.id

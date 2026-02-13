@@ -33,6 +33,7 @@ router = APIRouter()
 async def search_scenario_personas_internal(
     conn: asyncpg.Connection,
     scenario_ids: list[UUID],
+    persona_ids: list[UUID] | None = None,
     bypass_cache: bool = False,
     *,
     simulation: bool = False,
@@ -52,6 +53,7 @@ async def search_scenario_personas_internal(
         "scenario_personas/search",
         {
             "scenario_ids": sorted([str(id) for id in scenario_ids]),
+            "persona_ids": sorted(str(i) for i in (persona_ids or [])),
             "simulation": simulation,
         },
     )
@@ -68,6 +70,7 @@ async def search_scenario_personas_internal(
     # Execute SQL
     params = SearchScenarioPersonasParams(
         scenario_ids=scenario_ids or [],
+        persona_ids=persona_ids or [],
         simulation=simulation,
     )
     result = cast(

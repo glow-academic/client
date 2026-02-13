@@ -36,7 +36,9 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useDrafts } from "@/contexts/draft-context";
 import { useProfile } from "@/contexts/profile-context";
+import { useSocket } from "@/contexts/socket-context";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { ResourceType } from "@/lib/resources/types";
 import { Loader2, Sparkles } from "lucide-react";
@@ -143,13 +145,9 @@ function SettingComponent({
 }: SettingProps) {
   const router = useRouter();
   const isEditMode = !!settingId;
-  const {
-    profile,
-    selectedDraftId,
-    setSelectedDraftId,
-    socket,
-    isConnected,
-  } = useProfile();
+  const { profile } = useProfile();
+  const { selectedDraftId, setSelectedDraftId } = useDrafts();
+  const { socket, isConnected } = useSocket();
   // Generation state for AI workflows - simplified using ResourceType
   const [generatingResources, setGeneratingResources] = useState<
     Set<ResourceType>

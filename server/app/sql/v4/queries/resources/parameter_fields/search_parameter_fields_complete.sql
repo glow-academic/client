@@ -75,6 +75,8 @@ WHERE pfj.active = true
       (COALESCE(array_length(parameter_ids, 1), 0) = 0 AND pr.persona_parameter = true)
       OR ppj.parameters_id = ANY(parameter_ids)
   )
+  AND (COALESCE(array_length(field_ids, 1), 0) = 0 OR pfj.field_resource_id = ANY(field_ids))
+  AND (COALESCE(array_length(conditional_parameter_ids, 1), 0) = 0 OR cp_lookup.conditional_parameter_id = ANY(conditional_parameter_ids))
   -- Artifact boolean filters
   AND (NOT document OR EXISTS (SELECT 1 FROM document_parameter_fields_junction j WHERE j.parameter_field_id = pfj.field_resource_id AND j.active = true))
   AND (NOT persona OR EXISTS (SELECT 1 FROM persona_parameter_fields_junction j WHERE j.parameter_field_id = pfj.field_resource_id AND j.active = true))

@@ -33,6 +33,7 @@ async def search_standards_internal(
     limit_count: int | None = 20,
     offset_count: int | None = 0,
     exclude_ids: list[UUID] | None = None,
+    standard_group_ids: list[UUID] | None = None,
     bypass_cache: bool = False,
     *,
     rubric: bool = False,
@@ -49,6 +50,7 @@ async def search_standards_internal(
             "limit_count": limit_count,
             "offset_count": offset_count,
             "exclude_ids": [str(id) for id in (exclude_ids or [])],
+            "standard_group_ids": sorted(str(i) for i in (standard_group_ids or [])),
             "rubric": rubric,
         },
     )
@@ -66,6 +68,7 @@ async def search_standards_internal(
         limit_count=limit_count,
         offset_count=offset_count,
         exclude_ids=exclude_ids or [],
+        standard_group_ids=standard_group_ids or [],
         rubric=rubric,
     )
     result = cast(

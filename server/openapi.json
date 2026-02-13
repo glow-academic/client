@@ -118317,6 +118317,17 @@
             ],
             "title": "Exclude Ids"
           },
+          "required": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Required"
+          },
           "tool": {
             "anyOf": [
               {
@@ -118515,6 +118526,51 @@
               }
             ],
             "title": "Exclude Ids"
+          },
+          "auth_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Auth Ids"
+          },
+          "key_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Key Ids"
+          },
+          "item_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Item Ids"
           },
           "setting": {
             "anyOf": [
@@ -119863,6 +119919,17 @@
             ],
             "title": "Resource"
           },
+          "creatable": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Creatable"
+          },
           "tool": {
             "anyOf": [
               {
@@ -120511,6 +120578,17 @@
             ],
             "title": "Exclude Ids"
           },
+          "flag_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Flag Type"
+          },
           "agent": {
             "anyOf": [
               {
@@ -120791,6 +120869,36 @@
             ],
             "title": "Exclude Ids"
           },
+          "groups_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Groups Ids"
+          },
+          "eval_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Eval Ids"
+          },
           "eval": {
             "anyOf": [
               {
@@ -120878,6 +120986,36 @@
               }
             ],
             "title": "Exclude Ids"
+          },
+          "groups_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Groups Ids"
+          },
+          "rubric_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rubric Ids"
           },
           "eval": {
             "anyOf": [
@@ -121166,6 +121304,32 @@
             ],
             "title": "Exclude Ids"
           },
+          "upload_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Upload Ids"
+          },
+          "completed": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Completed"
+          },
           "scenario": {
             "anyOf": [
               {
@@ -121377,6 +121541,17 @@
             ],
             "title": "Exclude Ids"
           },
+          "encrypted": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Encrypted"
+          },
           "auth": {
             "anyOf": [
               {
@@ -121464,6 +121639,21 @@
               }
             ],
             "title": "Exclude Ids"
+          },
+          "key_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Key Ids"
           },
           "provider": {
             "anyOf": [
@@ -121563,6 +121753,17 @@
               }
             ],
             "title": "Modality"
+          },
+          "is_input": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Is Input"
           },
           "model": {
             "anyOf": [
@@ -122248,6 +122449,32 @@
             ],
             "title": "Exclude Ids"
           },
+          "question_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Question Ids"
+          },
+          "is_correct": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Is Correct"
+          },
           "scenario": {
             "anyOf": [
               {
@@ -122300,6 +122527,36 @@
               }
             ],
             "title": "Parameter Ids"
+          },
+          "field_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Field Ids"
+          },
+          "conditional_parameter_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Conditional Parameter Ids"
           },
           "document": {
             "anyOf": [
@@ -122859,6 +123116,21 @@
             ],
             "title": "Pricing Type"
           },
+          "unit_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unit Ids"
+          },
           "model": {
             "anyOf": [
               {
@@ -123302,6 +123574,36 @@
             ],
             "title": "Exclude Ids"
           },
+          "provider_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Provider Ids"
+          },
+          "key_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Key Ids"
+          },
           "setting": {
             "anyOf": [
               {
@@ -123593,6 +123895,21 @@
             ],
             "title": "Exclude Ids"
           },
+          "reasoning_level_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reasoning Level Ids"
+          },
           "agent": {
             "anyOf": [
               {
@@ -123771,6 +124088,36 @@
             ],
             "title": "Exclude Ids"
           },
+          "role_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Role Ids"
+          },
+          "route_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Route Ids"
+          },
           "setting": {
             "anyOf": [
               {
@@ -123869,6 +124216,36 @@
               }
             ],
             "title": "Role"
+          },
+          "icon_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Icon Ids"
+          },
+          "color_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Color Ids"
           },
           "profile": {
             "anyOf": [
@@ -123980,6 +124357,21 @@
               }
             ],
             "title": "Route"
+          },
+          "role_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Role Ids"
           },
           "profile": {
             "anyOf": [
@@ -124194,6 +124586,36 @@
             ],
             "title": "Exclude Ids"
           },
+          "runs_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Runs Ids"
+          },
+          "eval_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Eval Ids"
+          },
           "eval": {
             "anyOf": [
               {
@@ -124281,6 +124703,36 @@
               }
             ],
             "title": "Exclude Ids"
+          },
+          "runs_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Runs Ids"
+          },
+          "rubric_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rubric Ids"
           },
           "eval": {
             "anyOf": [
@@ -124473,6 +124925,21 @@
             ],
             "title": "Scenario Ids"
           },
+          "flag_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Flag Ids"
+          },
           "simulation": {
             "anyOf": [
               {
@@ -124525,6 +124992,21 @@
               }
             ],
             "title": "Scenario Ids"
+          },
+          "persona_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Persona Ids"
           },
           "simulation": {
             "anyOf": [
@@ -124632,6 +125114,21 @@
             ],
             "title": "Scenario Ids"
           },
+          "rubric_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rubric Ids"
+          },
           "simulation": {
             "anyOf": [
               {
@@ -124684,6 +125181,17 @@
               }
             ],
             "title": "Scenario Ids"
+          },
+          "negative": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Negative"
           },
           "simulation": {
             "anyOf": [
@@ -125470,6 +125978,21 @@
               }
             ],
             "title": "Exclude Ids"
+          },
+          "standard_group_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Standard Group Ids"
           },
           "rubric": {
             "anyOf": [

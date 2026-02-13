@@ -24,6 +24,7 @@ CREATE OR REPLACE FUNCTION api_search_domains_v4(
     offset_count int DEFAULT 0,
     exclude_ids uuid[] DEFAULT ARRAY[]::uuid[],
     resource text DEFAULT NULL,
+    creatable boolean DEFAULT NULL,
     -- Artifact boolean filters: when true, only return resources linked to that artifact type
     tool boolean DEFAULT false
 )
@@ -47,6 +48,7 @@ FROM (
       AND (search IS NULL OR search = '' OR LOWER(r.resource::text) LIKE '%' || LOWER(search) || '%')
       AND (exclude_ids IS NULL OR NOT (r.id = ANY(exclude_ids)))
       AND (api_search_domains_v4.resource IS NULL OR r.resource::text = api_search_domains_v4.resource)
+      AND (creatable IS NULL OR r.creatable = creatable)
       -- Artifact boolean filters (each filters to resources linked to at least one of that artifact type)
       AND (NOT tool OR EXISTS (SELECT 1 FROM tool_domains_junction j WHERE j.domain_id = r.id AND j.active = true))
     ORDER BY r.resource::text

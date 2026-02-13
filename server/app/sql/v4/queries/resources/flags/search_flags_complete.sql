@@ -23,6 +23,7 @@ CREATE OR REPLACE FUNCTION api_search_flags_v4(
     limit_count int DEFAULT 20,
     offset_count int DEFAULT 0,
     exclude_ids uuid[] DEFAULT ARRAY[]::uuid[],
+    flag_type text DEFAULT NULL,
     -- Artifact boolean filters: when true, only return resources linked to that artifact type
     agent boolean DEFAULT false,
     auth boolean DEFAULT false,
@@ -60,6 +61,7 @@ FROM (
     FROM flags_resource f
     WHERE (search IS NULL OR search = '' OR LOWER(f.name) LIKE '%' || LOWER(search) || '%')
       AND (exclude_ids IS NULL OR NOT (f.id = ANY(exclude_ids)))
+      AND (api_search_flags_v4.flag_type IS NULL OR f.type::text = api_search_flags_v4.flag_type)
       -- Artifact boolean filters (each filters to resources linked to at least one of that artifact type)
       AND (NOT agent OR EXISTS (SELECT 1 FROM agent_flags_junction j WHERE j.flag_id = f.id AND j.active = true))
       AND (NOT auth OR EXISTS (SELECT 1 FROM auth_flags_junction j WHERE j.flag_id = f.id AND j.active = true))

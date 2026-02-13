@@ -23,6 +23,8 @@ CREATE OR REPLACE FUNCTION api_search_run_rubrics_v4(
     limit_count int DEFAULT 20,
     offset_count int DEFAULT 0,
     exclude_ids uuid[] DEFAULT ARRAY[]::uuid[],
+    runs_ids uuid[] DEFAULT ARRAY[]::uuid[],
+    rubric_ids uuid[] DEFAULT ARRAY[]::uuid[],
     -- Artifact boolean filters: when true, only return resources linked to that artifact type
     eval boolean DEFAULT false
 )
@@ -48,6 +50,8 @@ FROM (
     FROM run_rubrics_resource r
     WHERE r.active = true
       AND (exclude_ids IS NULL OR NOT (r.id = ANY(exclude_ids)))
+      AND (COALESCE(array_length(runs_ids, 1), 0) = 0 OR r.runs_id = ANY(runs_ids))
+      AND (COALESCE(array_length(rubric_ids, 1), 0) = 0 OR r.rubric_id = ANY(rubric_ids))
       -- Artifact boolean filters (each filters to resources linked to at least one of that artifact type)
       AND (NOT eval OR EXISTS (SELECT 1 FROM eval_runs_rubrics_junction j WHERE j.run_rubric_id = r.id AND j.active = true))
     ORDER BY r.id
