@@ -186,7 +186,7 @@ profile_resources AS (
     SELECT
         ppj.profiles_id,
         (SELECT ccj.cohorts_id FROM profile_cohorts_junction pcj
-         JOIN cohort_cohorts_junction ccj ON ccj.cohort_id = pcj.cohort_id
+         JOIN cohort_cohorts_junction ccj ON ccj.cohorts_id = pcj.cohort_id
          WHERE pcj.profile_id = p.profile_id AND pcj.active = true
          LIMIT 1) as cohorts_resource_id,
         pdj.department_id as departments_resource_id

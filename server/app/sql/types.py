@@ -1382,7 +1382,7 @@ class CreateAttemptSqlParams(BaseModel):
 
 class CreateAttemptSqlRow(BaseModel):
 
-    attempt_id: UUID | None = None
+    out_attempt_id: UUID | None = None
 
 class CreateAttemptApiRequest(BaseModel):
 
@@ -1391,7 +1391,7 @@ class CreateAttemptApiRequest(BaseModel):
 
 class CreateAttemptApiResponse(BaseModel):
 
-    attempt_id: UUID | None = None
+    out_attempt_id: UUID | None = None
 
 
 
@@ -11531,7 +11531,7 @@ class GetPersonasListApiResponse(BaseModel):
 
 
 
-# Generated from: patch_persona_draft
+# Generated from: save_persona
 
 class PersonaMultiResourceAction(BaseModel):
 
@@ -11547,73 +11547,6 @@ class PersonaResourceAction(BaseModel):
     resource_id: UUID | None
     create_tool_id: UUID | None
     link_tool_id: UUID | None
-
-class PatchPersonaDraftSqlParams(BaseModel):
-
-    profile_id: UUID
-    input_draft_id: UUID | None = None
-    group_id: UUID | None = None
-    names: PersonaResourceAction | None = None
-    descriptions: PersonaResourceAction | None = None
-    colors: PersonaResourceAction | None = None
-    icons: PersonaResourceAction | None = None
-    instructions: PersonaResourceAction | None = None
-    flags: PersonaResourceAction | None = None
-    departments: PersonaMultiResourceAction | None = None
-    parameter_fields: PersonaMultiResourceAction | None = None
-    examples: PersonaMultiResourceAction | None = None
-    parameters: PersonaMultiResourceAction | None = None
-    expected_version: int | None = 0
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.profile_id,
-            self.input_draft_id,
-            self.group_id,
-            self.names,
-            self.descriptions,
-            self.colors,
-            self.icons,
-            self.instructions,
-            self.flags,
-            self.departments,
-            self.parameter_fields,
-            self.examples,
-            self.parameters,
-            self.expected_version,
-        )
-
-class PatchPersonaDraftSqlRow(BaseModel):
-
-    draft_id: UUID | None = None
-    new_version: int | None = None
-    draft_exists: bool | None = None
-
-class PatchPersonaDraftApiRequest(BaseModel):
-
-    input_draft_id: UUID | None = None
-    group_id: UUID | None = None
-    names: PersonaResourceAction | None = None
-    descriptions: PersonaResourceAction | None = None
-    colors: PersonaResourceAction | None = None
-    icons: PersonaResourceAction | None = None
-    instructions: PersonaResourceAction | None = None
-    flags: PersonaResourceAction | None = None
-    departments: PersonaMultiResourceAction | None = None
-    parameter_fields: PersonaMultiResourceAction | None = None
-    examples: PersonaMultiResourceAction | None = None
-    parameters: PersonaMultiResourceAction | None = None
-    expected_version: int | None = 0
-
-class PatchPersonaDraftApiResponse(BaseModel):
-
-    draft_id: UUID | None = None
-    new_version: int | None = None
-    draft_exists: bool | None = None
-
-
-
-# Generated from: save_persona
 
 class SavePersonaSqlParams(BaseModel):
 
@@ -30173,12 +30106,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetPersonasListApiRequest",
         "GetPersonasListApiResponse",
     ),
-    "app/sql/v4/queries/personas/patch_persona_draft_complete.sql": (
-        "PatchPersonaDraftSqlParams",
-        "PatchPersonaDraftSqlRow",
-        "PatchPersonaDraftApiRequest",
-        "PatchPersonaDraftApiResponse",
-    ),
     "app/sql/v4/queries/personas/save_persona_complete.sql": (
         "SavePersonaSqlParams",
         "SavePersonaSqlRow",
@@ -33766,11 +33693,6 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/queries/personas/get_personas_list_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/queries/personas/patch_persona_draft_complete.sql"]
     ) -> SqlString: ...
 
     @overload

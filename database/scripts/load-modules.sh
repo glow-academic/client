@@ -173,7 +173,7 @@ load_root_module() {
 # Helper: load categories for a setup type (organization or university)
 load_setup_categories() {
   local setup_name=$1  # "organization" or "university"
-  local setup_dir="$modules_dir/10-setups/$setup_name"
+  local setup_dir="$modules_dir/11-setups/$setup_name"
 
   # Check if this section exists in the YAML at all
   local section_check
@@ -187,7 +187,7 @@ load_setup_categories() {
     return
   fi
 
-  echo "Loading 10-setups/$setup_name/ ..."
+  echo "Loading 11-setups/$setup_name/ ..."
 
   # Institution auth (if present)
   if [[ -d "$setup_dir/00-auth" ]]; then
@@ -248,31 +248,35 @@ echo ""
 echo "=== Assembling seed SQL from modules ==="
 echo ""
 
-# --- 00-base: Always loaded ---------------------------------------------------
-echo "Loading 00-base/ (always included) ..."
-add_dir_sorted "$modules_dir/00-base"
+# --- 00-relations: Always loaded -----------------------------------------------
+echo "Loading 00-relations/ (always included) ..."
+add_dir_sorted "$modules_dir/00-relations"
 
-# --- 01-providers -------------------------------------------------------------
+# --- 01-resources: Always loaded -----------------------------------------------
+echo "Loading 01-resources/ (always included) ..."
+add_dir_sorted "$modules_dir/01-resources"
+
+# --- 02-providers -------------------------------------------------------------
 providers=$(read_yaml_list "$config_file" ".modules.providers")
 if [[ -n "$providers" ]]; then
-  echo "Loading 01-providers/ ..."
+  echo "Loading 02-providers/ ..."
   if [[ "$providers" == "all" ]]; then
-    add_dir_sorted "$modules_dir/01-providers"
+    add_dir_sorted "$modules_dir/02-providers"
   else
     while IFS= read -r name; do
       [[ -z "$name" ]] && continue
-      add_file "$modules_dir/01-providers/${name}.sql"
+      add_file "$modules_dir/02-providers/${name}.sql"
     done <<< "$providers"
   fi
 fi
 
-# --- 02-models ----------------------------------------------------------------
+# --- 03-models ----------------------------------------------------------------
 model_providers=$(read_yaml_map_keys "$config_file" ".modules.models")
 if [[ -n "$model_providers" ]]; then
-  echo "Loading 02-models/ ..."
+  echo "Loading 03-models/ ..."
   if [[ "$model_providers" == "all" ]]; then
     # Load all models for all providers
-    for provider_dir in "$modules_dir"/02-models/*/; do
+    for provider_dir in "$modules_dir"/03-models/*/; do
       add_dir_sorted "$provider_dir"
     done
   else
@@ -280,75 +284,75 @@ if [[ -n "$model_providers" ]]; then
       [[ -z "$provider" ]] && continue
       model_list=$(read_yaml_map_list "$config_file" ".modules.models" "$provider")
       if [[ "$model_list" == "all" ]]; then
-        add_dir_sorted "$modules_dir/02-models/$provider"
+        add_dir_sorted "$modules_dir/03-models/$provider"
       else
         while IFS= read -r model; do
           [[ -z "$model" ]] && continue
-          add_file "$modules_dir/02-models/$provider/${model}.sql"
+          add_file "$modules_dir/03-models/$provider/${model}.sql"
         done <<< "$model_list"
       fi
     done <<< "$model_providers"
   fi
 fi
 
-# --- 03-agents ----------------------------------------------------------------
+# --- 04-agents ----------------------------------------------------------------
 agents=$(read_yaml_list "$config_file" ".modules.agents")
 if [[ -n "$agents" ]]; then
-  echo "Loading 03-agents/ ..."
+  echo "Loading 04-agents/ ..."
   if [[ "$agents" == "all" ]]; then
-    add_dir_sorted "$modules_dir/03-agents"
+    add_dir_sorted "$modules_dir/04-agents"
   else
     while IFS= read -r name; do
       [[ -z "$name" ]] && continue
-      add_file "$modules_dir/03-agents/${name}.sql"
+      add_file "$modules_dir/04-agents/${name}.sql"
     done <<< "$agents"
   fi
 fi
 
-# --- 04-tools ----------------------------------------------------------------
+# --- 05-tools ----------------------------------------------------------------
 tools=$(read_yaml_list "$config_file" ".modules.tools")
 if [[ -n "$tools" ]]; then
-  echo "Loading 04-tools/ ..."
+  echo "Loading 05-tools/ ..."
   if [[ "$tools" == "all" ]]; then
-    add_dir_sorted "$modules_dir/04-tools"
+    add_dir_sorted "$modules_dir/05-tools"
   else
     while IFS= read -r name; do
       [[ -z "$name" ]] && continue
-      add_file "$modules_dir/04-tools/${name}.sql"
+      add_file "$modules_dir/05-tools/${name}.sql"
     done <<< "$tools"
   fi
 fi
 
-# --- 05-auth ------------------------------------------------------------------
+# --- 06-auth ------------------------------------------------------------------
 auth_list=$(read_yaml_list "$config_file" ".modules.auth")
 if [[ -n "$auth_list" ]]; then
-  echo "Loading 05-auth/ ..."
+  echo "Loading 06-auth/ ..."
   if [[ "$auth_list" == "all" ]]; then
-    add_dir_sorted "$modules_dir/05-auth"
+    add_dir_sorted "$modules_dir/06-auth"
   else
     while IFS= read -r name; do
       [[ -z "$name" ]] && continue
-      add_file "$modules_dir/05-auth/${name}.sql"
+      add_file "$modules_dir/06-auth/${name}.sql"
     done <<< "$auth_list"
   fi
 fi
 
-# --- 06-rubrics ---------------------------------------------------------------
-load_root_module "rubrics" "06-rubrics"
+# --- 07-rubrics ---------------------------------------------------------------
+load_root_module "rubrics" "07-rubrics"
 
-# --- 07-evals ----------------------------------------------------------------
-load_root_module "evals" "07-evals"
+# --- 08-evals ----------------------------------------------------------------
+load_root_module "evals" "08-evals"
 
-# --- 08-profiles --------------------------------------------------------------
-load_root_module "profiles" "08-profiles"
+# --- 09-profiles --------------------------------------------------------------
+load_root_module "profiles" "09-profiles"
 
-# --- 09-settings --------------------------------------------------------------
-load_root_module "settings" "09-settings"
+# --- 10-settings --------------------------------------------------------------
+load_root_module "settings" "10-settings"
 
-# --- 10-setups: Organization --------------------------------------------------
+# --- 11-setups: Organization --------------------------------------------------
 load_setup_categories "organization"
 
-# --- 10-setups: University ----------------------------------------------------
+# --- 11-setups: University ----------------------------------------------------
 # Only load university if the config declares it
 load_setup_categories "university"
 

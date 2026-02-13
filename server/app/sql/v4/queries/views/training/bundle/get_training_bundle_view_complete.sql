@@ -76,7 +76,7 @@ access_check AS (
           ON pcj.profile_id = p.profile_id
          AND pcj.active = true
         JOIN cohort_cohorts_junction ccj
-          ON ccj.cohort_id = pcj.cohort_id
+          ON ccj.cohorts_id = pcj.cohort_id
          AND ccj.active = true
         WHERE ccj.cohorts_id = ANY(t.cohort_ids)
     ) AS profile_has_access

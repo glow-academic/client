@@ -64,7 +64,7 @@ async def create_attempt(
             await execute_sql_typed(conn, SQL_PATH, params=params),
         )
 
-        if not row or not row.attempt_id:
+        if not row or not row.out_attempt_id:
             raise HTTPException(
                 status_code=500,
                 detail="Failed to create attempt.",
@@ -73,7 +73,7 @@ async def create_attempt(
         # Invalidate caches so the new attempt is visible
         await invalidate_tags(["attempt", "attempts"])
 
-        return CreateAttemptResponse(attempt_id=row.attempt_id)
+        return CreateAttemptResponse(attempt_id=row.out_attempt_id)
 
     except HTTPException:
         raise

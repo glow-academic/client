@@ -7,14 +7,15 @@ for a single logical object (artifact + junctions + resource rows), with
 ON CONFLICT DO NOTHING for idempotency.
 
 Usage:
-    python export_modules.py           # Export all modules
-    python export_modules.py base      # Export only 00-base/
-    python export_modules.py providers # Export only 01-providers/
-    python export_modules.py models    # Export only 02-models/
-    python export_modules.py agents    # Export only 03-agents/
-    python export_modules.py tools     # Export only 04-tools/
-    python export_modules.py auth      # Export only 05-auth/
-    python export_modules.py setup     # Export only 10-setups/university/
+    python export_modules.py            # Export all modules
+    python export_modules.py relations  # Export only 00-relations/
+    python export_modules.py resources  # Export only 01-resources/
+    python export_modules.py providers  # Export only 02-providers/
+    python export_modules.py models     # Export only 03-models/
+    python export_modules.py agents     # Export only 04-agents/
+    python export_modules.py tools      # Export only 05-tools/
+    python export_modules.py auth       # Export only 06-auth/
+    python export_modules.py setup      # Export only 11-setups/
 """
 
 import asyncio
@@ -52,9 +53,9 @@ DB_PORT = int(os.environ.get("DB_PORT", "5432"))
 DB_NAME = os.environ.get("DB_NAME", "mydb")
 
 # ---------------------------------------------------------------------------
-# Tables exported fully in 00-base/ (never exported per-artifact)
+# Tables exported fully in 01-resources/ (never exported per-artifact)
 # ---------------------------------------------------------------------------
-BASE_RESOURCE_TABLES = {
+RESOURCE_TABLES = {
     "colors_resource",
     "icons_resource",
     "flags_resource",
@@ -76,13 +77,14 @@ BASE_RESOURCE_TABLES = {
     "values_resource",
     "reasoning_levels_resource",
     "temperature_levels_resource",
-}
-
-# Tables that should NEVER be exported (secrets / runtime)
-EXCLUDED_TABLES = {
+    # Secrets/key tables (exported with dummy values via SENSITIVE_COLUMNS)
     "keys_resource",
     "provider_keys_resource",
     "auth_item_keys_resource",
+}
+
+# Tables that should NEVER be exported (runtime / entry tables)
+EXCLUDED_TABLES = {
     "runs_resource",
     "groups_resource",
     # Entry tables referenced by some junctions
@@ -91,14 +93,20 @@ EXCLUDED_TABLES = {
     "calls_entry",
 }
 
-# Junction tables to skip entirely (point to secrets/runtime)
+# Junction tables to skip entirely (point to runtime/entry tables)
 EXCLUDED_JUNCTIONS = {
-    "setting_auth_item_keys_junction",
     "tool_calls_junction",
     "profile_activity_junction",
     "scenario_parameter_fields_junction",
     "simulation_scenarios_junction",  # Dead — all orphans; scenarios linked via simulations_resource.scenario_ids
     "scenario_tree_junction",  # Uses parent_id/child_id, not scenario_id; handled specially
+}
+
+# Sensitive columns: table -> column -> dummy value
+# These columns contain secrets and are replaced with dummy values during export
+SENSITIVE_COLUMNS: dict[str, dict[str, str]] = {
+    "keys_resource": {"key": "dummy-key-value"},
+    "provider_keys_resource": {"key": "dummy-provider-key-value"},
 }
 
 # Non-standard artifact FK column names in junction tables
@@ -234,7 +242,11 @@ def make_insert(
     table: str, record: asyncpg.Record, columns: list[str], pk_cols: list[str]
 ) -> str:
     """Generate an INSERT ... ON CONFLICT DO NOTHING statement."""
-    vals = ", ".join(sql_literal(record[c]) for c in columns)
+    sensitive = SENSITIVE_COLUMNS.get(table, {})
+    vals = ", ".join(
+        sql_literal(sensitive[c]) if c in sensitive else sql_literal(record[c])
+        for c in columns
+    )
     cols = ", ".join(columns)
     stmt = f"INSERT INTO public.{table} ({cols}) VALUES ({vals})"
     if pk_cols:
@@ -278,7 +290,7 @@ def get_junction_resource_fk(
         if tgt_table in EXCLUDED_TABLES:
             continue
         # Skip base resource tables (they're exported in 00-base/)
-        if tgt_table in BASE_RESOURCE_TABLES:
+        if tgt_table in RESOURCE_TABLES:
             continue
         return (src_col, tgt_table)
     return None
@@ -302,7 +314,7 @@ def get_all_junction_fks(
             continue
         if tgt_table in EXCLUDED_TABLES:
             continue
-        if tgt_table in BASE_RESOURCE_TABLES:
+        if tgt_table in RESOURCE_TABLES:
             continue
         results.append((src_col, tgt_table))
     return results
@@ -537,57 +549,83 @@ async def write_artifact_module(
 # ---------------------------------------------------------------------------
 
 
-async def export_base(conn: asyncpg.Connection) -> None:
-    print("Exporting 00-base/ ...")
-    base_dir = MODULES_DIR / "00-base"
-    if base_dir.exists():
-        for old in base_dir.glob("*.sql"):
+async def export_relations(conn: asyncpg.Connection) -> None:
+    """Export relation tables to 00-relations/."""
+    print("Exporting 00-relations/ ...")
+    rel_dir = MODULES_DIR / "00-relations"
+    if rel_dir.exists():
+        for old in rel_dir.glob("*.sql"):
             old.unlink()
-    base_dir.mkdir(parents=True, exist_ok=True)
+    rel_dir.mkdir(parents=True, exist_ok=True)
 
-    # Relation tables
     rel_tables = await conn.fetch("""
         SELECT tablename FROM pg_tables
         WHERE schemaname = 'public' AND tablename LIKE '%_relation'
         ORDER BY tablename
     """)
 
-    base_files: list[tuple[str, str, list[str]]] = [
-        ("00-relations", "relations", [r["tablename"] for r in rel_tables]),
-        ("01-colors", "colors", ["colors_resource"]),
-        ("02-icons", "icons", ["icons_resource"]),
-        ("03-flags", "flags", ["flags_resource"]),
+    output_path = rel_dir / "00-relations.sql"
+    with open(output_path, "w") as f:
+        f.write("-- Module: relations\n")
+        f.write("-- Category: relations\n")
+        f.write("-- Description: System relation tables\n")
+        f.write("-- ============================================================\n")
+
+        total = 0
+        for r in rel_tables:
+            n = await export_table_full(conn, r["tablename"], f, f"Table: {r['tablename']}")
+            total += n
+
+    print(f"    00-relations.sql ({total} inserts)")
+
+
+async def export_resources(conn: asyncpg.Connection) -> None:
+    """Export standalone resource tables to 01-resources/."""
+    print("Exporting 01-resources/ ...")
+    res_dir = MODULES_DIR / "01-resources"
+    if res_dir.exists():
+        for old in res_dir.glob("*.sql"):
+            old.unlink()
+    res_dir.mkdir(parents=True, exist_ok=True)
+
+    resource_files: list[tuple[str, str, list[str]]] = [
+        ("00-colors", "colors", ["colors_resource"]),
+        ("01-icons", "icons", ["icons_resource"]),
+        ("02-flags", "flags", ["flags_resource"]),
         (
-            "04-roles-routes",
+            "03-roles-routes",
             "roles-routes",
             ["roles_resource", "routes_resource", "role_routes_resource"],
         ),
-        ("05-modalities", "modalities", ["modalities_resource"]),
-        ("06-qualities", "qualities", ["qualities_resource"]),
-        ("07-thresholds", "thresholds", ["thresholds_resource"]),
-        ("08-points", "points", ["points_resource"]),
-        ("09-protocols", "protocols", ["protocols_resource"]),
-        ("10-domains", "domains", ["domains_resource"]),
-        ("11-slugs", "slugs", ["slugs_resource"]),
-        ("12-texts", "texts", ["texts_resource"]),
-        ("13-args", "args", ["args_resource", "args_outputs_resource"]),
-        ("14-request-limits", "request-limits", ["request_limits_resource"]),
-        ("15-voices", "voices", ["voices_resource"]),
-        ("16-values", "values", ["values_resource"]),
-        ("17-reasoning-levels", "reasoning-levels", ["reasoning_levels_resource"]),
+        ("04-modalities", "modalities", ["modalities_resource"]),
+        ("05-qualities", "qualities", ["qualities_resource"]),
+        ("06-thresholds", "thresholds", ["thresholds_resource"]),
+        ("07-points", "points", ["points_resource"]),
+        ("08-protocols", "protocols", ["protocols_resource"]),
+        ("09-domains", "domains", ["domains_resource"]),
+        ("10-slugs", "slugs", ["slugs_resource"]),
+        ("11-texts", "texts", ["texts_resource"]),
+        ("12-args", "args", ["args_resource", "args_outputs_resource"]),
+        ("13-request-limits", "request-limits", ["request_limits_resource"]),
+        ("14-voices", "voices", ["voices_resource"]),
+        ("15-values", "values", ["values_resource"]),
+        ("16-reasoning-levels", "reasoning-levels", ["reasoning_levels_resource"]),
         (
-            "18-temperature-levels",
+            "17-temperature-levels",
             "temperature-levels",
             ["temperature_levels_resource"],
         ),
+        # Secrets/key tables (sensitive columns replaced with dummy values)
+        ("18-keys", "keys", ["keys_resource", "provider_keys_resource"]),
+        ("19-auth-item-keys", "auth-item-keys", ["auth_item_keys_resource"]),
     ]
 
-    for file_prefix, label, tables in base_files:
-        output_path = base_dir / f"{file_prefix}.sql"
+    for file_prefix, label, tables in resource_files:
+        output_path = res_dir / f"{file_prefix}.sql"
         with open(output_path, "w") as f:
             f.write(f"-- Module: {label}\n")
-            f.write("-- Category: base\n")
-            f.write(f"-- Description: {label} system data\n")
+            f.write("-- Category: resources\n")
+            f.write(f"-- Description: {label} resource data\n")
             f.write("-- ============================================================\n")
 
             total = 0
@@ -599,13 +637,13 @@ async def export_base(conn: asyncpg.Connection) -> None:
 
 
 # ---------------------------------------------------------------------------
-# 01-providers: One file per AI provider
+# 02-providers: One file per AI provider
 # ---------------------------------------------------------------------------
 
 
 async def export_providers(conn: asyncpg.Connection) -> None:
-    print("Exporting 01-providers/ ...")
-    providers_dir = MODULES_DIR / "01-providers"
+    print("Exporting 02-providers/ ...")
+    providers_dir = MODULES_DIR / "02-providers"
     providers_dir.mkdir(parents=True, exist_ok=True)
 
     artifacts = await get_artifacts_with_names(conn, "provider")
@@ -627,12 +665,12 @@ async def export_providers(conn: asyncpg.Connection) -> None:
 
 
 # ---------------------------------------------------------------------------
-# 02-models: One file per model, grouped by provider
+# 03-models: One file per model, grouped by provider
 # ---------------------------------------------------------------------------
 
 
 async def export_models(conn: asyncpg.Connection) -> None:
-    print("Exporting 02-models/ ...")
+    print("Exporting 03-models/ ...")
 
     # Get models with provider info
     rows = await conn.fetch("""
@@ -659,7 +697,7 @@ async def export_models(conn: asyncpg.Connection) -> None:
         model_slug = to_slug(model_name)
         file_key = f"{provider_slug}/{model_slug}"
 
-        model_dir = MODULES_DIR / "02-models" / provider_slug
+        model_dir = MODULES_DIR / "03-models" / provider_slug
         model_dir.mkdir(parents=True, exist_ok=True)
         output_path = model_dir / f"{model_slug}.sql"
 
@@ -696,18 +734,18 @@ async def export_models(conn: asyncpg.Connection) -> None:
                 seen_resource_ids=seen,
             )
 
-    file_count = sum(1 for _ in (MODULES_DIR / "02-models").rglob("*.sql"))
+    file_count = sum(1 for _ in (MODULES_DIR / "03-models").rglob("*.sql"))
     print(f"    Generated {file_count} model module files")
 
 
 # ---------------------------------------------------------------------------
-# 03-agents: One file per system agent
+# 04-agents: One file per system agent
 # ---------------------------------------------------------------------------
 
 
 async def export_agents(conn: asyncpg.Connection) -> None:
-    print("Exporting 03-agents/ ...")
-    agents_dir = MODULES_DIR / "03-agents"
+    print("Exporting 04-agents/ ...")
+    agents_dir = MODULES_DIR / "04-agents"
     agents_dir.mkdir(parents=True, exist_ok=True)
 
     rows = await conn.fetch("""
@@ -741,13 +779,13 @@ async def export_agents(conn: asyncpg.Connection) -> None:
 
 
 # ---------------------------------------------------------------------------
-# 04-tools: One file per tool
+# 05-tools: One file per tool
 # ---------------------------------------------------------------------------
 
 
 async def export_tools(conn: asyncpg.Connection) -> None:
-    print("Exporting 04-tools/ ...")
-    tools_dir = MODULES_DIR / "04-tools"
+    print("Exporting 05-tools/ ...")
+    tools_dir = MODULES_DIR / "05-tools"
     tools_dir.mkdir(parents=True, exist_ok=True)
 
     artifacts = await get_artifacts_with_names(conn, "tool")
@@ -769,13 +807,13 @@ async def export_tools(conn: asyncpg.Connection) -> None:
 
 
 # ---------------------------------------------------------------------------
-# 05-auth: Auth providers (generic → 05-auth/, institution → 10-setups/)
+# 06-auth: Auth providers (generic → 06-auth/, institution → 11-setups/)
 # ---------------------------------------------------------------------------
 
 
 async def export_auth(conn: asyncpg.Connection) -> None:
-    print("Exporting 05-auth/ ...")
-    auth_dir = MODULES_DIR / "05-auth"
+    print("Exporting 06-auth/ ...")
+    auth_dir = MODULES_DIR / "06-auth"
     auth_dir.mkdir(parents=True, exist_ok=True)
 
     # Only export auth providers with auth_active flag = true
@@ -797,9 +835,9 @@ async def export_auth(conn: asyncpg.Connection) -> None:
     for art_id, art_name in artifacts:
         slug = to_slug(art_name)
 
-        # Route institution-specific auth to 10-setups/
+        # Route institution-specific auth to 11-setups/
         if "purdue" in art_name.lower() or "university" in art_name.lower():
-            out_dir = MODULES_DIR / "10-setups" / "university" / "00-auth"
+            out_dir = MODULES_DIR / "11-setups" / "university" / "00-auth"
         else:
             out_dir = auth_dir
         out_dir.mkdir(parents=True, exist_ok=True)
@@ -818,7 +856,7 @@ async def export_auth(conn: asyncpg.Connection) -> None:
 
 
 # ---------------------------------------------------------------------------
-# 10-setups/university: Setup-specific objects
+# 11-setups/university: Setup-specific objects
 # ---------------------------------------------------------------------------
 
 
@@ -837,7 +875,7 @@ async def export_setup_per_artifact(
     If filter_name is set, only export the artifact with that exact name.
     """
     print(f"  Exporting {subfolder}/ ...")
-    out_dir = MODULES_DIR / "10-setups" / "university" / subfolder
+    out_dir = MODULES_DIR / "11-setups" / "university" / subfolder
     if out_dir.exists():
         for old in out_dir.glob("*.sql"):
             old.unlink()
@@ -900,7 +938,7 @@ async def export_setup_all_in_one(
 ) -> None:
     """Export all artifacts of a type into a single 'all.sql' file."""
     print(f"  Exporting {subfolder}/ ...")
-    out_dir = MODULES_DIR / "10-setups" / "university" / subfolder
+    out_dir = MODULES_DIR / "11-setups" / "university" / subfolder
     if out_dir.exists():
         for old in out_dir.glob("*.sql"):
             old.unlink()
@@ -956,13 +994,13 @@ async def export_setup_all_in_one(
 async def export_rubrics(conn: asyncpg.Connection) -> None:
     """Export rubrics split by simulation/video flags.
 
-    - simulation_rubric=true OR video_rubric=true → 10-setups/university/05-rubrics/
-    - otherwise → 06-rubrics/ (module root)
+    - simulation_rubric=true OR video_rubric=true → 11-setups/university/05-rubrics/
+    - otherwise → 07-rubrics/ (module root)
     """
-    print("  Exporting 06-rubrics/ (split base/university) ...")
+    print("  Exporting 07-rubrics/ (split base/university) ...")
 
-    base_dir = MODULES_DIR / "06-rubrics"
-    univ_dir = MODULES_DIR / "10-setups" / "university" / "05-rubrics"
+    base_dir = MODULES_DIR / "07-rubrics"
+    univ_dir = MODULES_DIR / "11-setups" / "university" / "05-rubrics"
     # Clean stale files before writing
     for d in (base_dir, univ_dir):
         if d.exists():
@@ -1009,9 +1047,9 @@ async def export_rubrics(conn: asyncpg.Connection) -> None:
 
 
 async def export_evals(conn: asyncpg.Connection) -> None:
-    """Export one file per eval into 07-evals/ at module root."""
-    print("  Exporting 07-evals/ ...")
-    out_dir = MODULES_DIR / "07-evals"
+    """Export one file per eval into 08-evals/ at module root."""
+    print("  Exporting 08-evals/ ...")
+    out_dir = MODULES_DIR / "08-evals"
     out_dir.mkdir(parents=True, exist_ok=True)
 
     artifacts = await get_artifacts_with_names(conn, "eval")
@@ -1033,14 +1071,14 @@ async def export_evals(conn: asyncpg.Connection) -> None:
 
 
 async def export_base_profiles(conn: asyncpg.Connection) -> None:
-    """Export default profiles to 08-profiles/ (base data only).
+    """Export default profiles to 09-profiles/ (base data only).
 
     Exports the profile artifact + all junctions EXCEPT
     profile_departments_junction and profile_emails_junction, which are
     section-specific and exported per setup (organization/university).
     """
-    print("Exporting 08-profiles/ ...")
-    out_dir = MODULES_DIR / "08-profiles"
+    print("Exporting 09-profiles/ ...")
+    out_dir = MODULES_DIR / "09-profiles"
     if out_dir.exists():
         for old in out_dir.glob("*.sql"):
             old.unlink()
@@ -1085,13 +1123,13 @@ async def export_base_profiles(conn: asyncpg.Connection) -> None:
 
 
 async def export_base_settings(conn: asyncpg.Connection) -> None:
-    """Export settings not linked to any department to 09-settings/.
+    """Export settings not linked to any department to 10-settings/.
 
     Settings linked to departments are exported at the setup level
-    (10-setups/university/10-settings/) instead.
+    (11-setups/university/10-settings/) instead.
     """
-    print("Exporting 09-settings/ ...")
-    out_dir = MODULES_DIR / "09-settings"
+    print("Exporting 10-settings/ ...")
+    out_dir = MODULES_DIR / "10-settings"
     # Clean up old files (settings may have moved to setup level)
     if out_dir.exists():
         for old in out_dir.glob("*.sql"):
@@ -1130,10 +1168,10 @@ async def export_base_settings(conn: asyncpg.Connection) -> None:
 
 async def export_setup_departments(conn: asyncpg.Connection) -> None:
     """Export active non-General departments to university, General to root."""
-    # General → 10-setups/organization/01-departments/
-    # Non-General active → 10-setups/university/01-departments/
-    org_dir = MODULES_DIR / "10-setups" / "organization" / "01-departments"
-    univ_dir = MODULES_DIR / "10-setups" / "university" / "01-departments"
+    # General → 11-setups/organization/01-departments/
+    # Non-General active → 11-setups/university/01-departments/
+    org_dir = MODULES_DIR / "11-setups" / "organization" / "01-departments"
+    univ_dir = MODULES_DIR / "11-setups" / "university" / "01-departments"
     for d in (org_dir, univ_dir):
         if d.exists():
             for old in d.glob("*.sql"):
@@ -1159,10 +1197,10 @@ async def export_setup_departments(conn: asyncpg.Connection) -> None:
         slug = to_slug(art_name).replace(",", "")
 
         if art_name.lower() == "general":
-            out_dir = MODULES_DIR / "10-setups" / "organization" / "01-departments"
+            out_dir = MODULES_DIR / "11-setups" / "organization" / "01-departments"
             label = "organization"
         else:
-            out_dir = MODULES_DIR / "10-setups" / "university" / "01-departments"
+            out_dir = MODULES_DIR / "11-setups" / "university" / "01-departments"
             label = "university"
         out_dir.mkdir(parents=True, exist_ok=True)
 
@@ -1189,7 +1227,7 @@ async def export_setup_profiles(conn: asyncpg.Connection) -> None:
     """
     # Clean up both locations
     for loc in ("organization", "university"):
-        old_dir = MODULES_DIR / "10-setups" / loc / "09-profiles"
+        old_dir = MODULES_DIR / "11-setups" / loc / "09-profiles"
         if old_dir.exists():
             for old in old_dir.glob("*.sql"):
                 old.unlink()
@@ -1241,7 +1279,7 @@ async def export_setup_profiles(conn: asyncpg.Connection) -> None:
     for section, dept_ids in sections.items():
         if not dept_ids:
             continue
-        out_dir = MODULES_DIR / "10-setups" / section / "09-profiles"
+        out_dir = MODULES_DIR / "11-setups" / section / "09-profiles"
         out_dir.mkdir(parents=True, exist_ok=True)
         domain = email_domains[section]
 
@@ -1377,11 +1415,11 @@ async def export_setup_profiles(conn: asyncpg.Connection) -> None:
 async def export_setup_settings(conn: asyncpg.Connection) -> None:
     """Export settings linked to departments.
 
-    General Settings → 10-setups/organization/10-settings/
-    Non-General → 10-setups/university/10-settings/
+    General Settings → 11-setups/organization/10-settings/
+    Non-General → 11-setups/university/10-settings/
     """
-    org_dir = MODULES_DIR / "10-setups" / "organization" / "10-settings"
-    univ_dir = MODULES_DIR / "10-setups" / "university" / "10-settings"
+    org_dir = MODULES_DIR / "11-setups" / "organization" / "10-settings"
+    univ_dir = MODULES_DIR / "11-setups" / "university" / "10-settings"
     for d in (org_dir, univ_dir):
         if d.exists():
             for old in d.glob("*.sql"):
@@ -1471,7 +1509,7 @@ async def _get_scenario_artifact_ids_for_simulation(
 async def export_setup_simulations(conn: asyncpg.Connection) -> None:
     """Export simulations with inline scenarios."""
     print("  Exporting 06-simulations/ ...")
-    sim_dir = MODULES_DIR / "10-setups" / "university" / "06-simulations"
+    sim_dir = MODULES_DIR / "11-setups" / "university" / "06-simulations"
     if sim_dir.exists():
         for old in sim_dir.glob("*.sql"):
             old.unlink()
@@ -1555,7 +1593,7 @@ async def export_setup_simulations(conn: asyncpg.Connection) -> None:
 async def export_setup_scenarios(conn: asyncpg.Connection) -> None:
     """Export scenarios linked to the 6 practice simulations."""
     print("  Exporting 07-scenarios/ ...")
-    scn_dir = MODULES_DIR / "10-setups" / "university" / "07-scenarios"
+    scn_dir = MODULES_DIR / "11-setups" / "university" / "07-scenarios"
     if scn_dir.exists():
         for old in scn_dir.glob("*.sql"):
             old.unlink()
@@ -1612,7 +1650,7 @@ async def export_setup_scenarios(conn: asyncpg.Connection) -> None:
 async def export_setup_documents(conn: asyncpg.Connection) -> None:
     """Export documents with no department (shared templates/policies)."""
     print("  Exporting 03-documents/ ...")
-    out_dir = MODULES_DIR / "10-setups" / "university" / "03-documents"
+    out_dir = MODULES_DIR / "11-setups" / "university" / "03-documents"
     if out_dir.exists():
         for old in out_dir.glob("*.sql"):
             old.unlink()
@@ -1649,7 +1687,7 @@ async def export_setup_documents(conn: asyncpg.Connection) -> None:
 async def export_setup_fields(conn: asyncpg.Connection) -> None:
     """Export fields linked to Purdue CS or with no department."""
     print("  Exporting 04-fields/ ...")
-    out_dir = MODULES_DIR / "10-setups" / "university" / "04-fields"
+    out_dir = MODULES_DIR / "11-setups" / "university" / "04-fields"
     if out_dir.exists():
         for old in out_dir.glob("*.sql"):
             old.unlink()
@@ -1691,7 +1729,7 @@ async def export_setup_fields(conn: asyncpg.Connection) -> None:
 
 
 async def export_setup(conn: asyncpg.Connection) -> None:
-    print("Exporting 10-setups/university/ ...")
+    print("Exporting 11-setups/ ...")
     await export_setup_departments(conn)
     await export_setup_per_artifact(conn, "persona", "02-personas", "persona")
     await export_setup_documents(conn)
@@ -1732,7 +1770,8 @@ async def main() -> None:
         print()
 
         dispatch: dict[str, Any] = {
-            "base": export_base,
+            "relations": export_relations,
+            "resources": export_resources,
             "providers": export_providers,
             "models": export_models,
             "agents": export_agents,
@@ -1747,7 +1786,9 @@ async def main() -> None:
 
         if target == "all":
             print("=== Exporting all modular seed data ===\n")
-            await export_base(conn)
+            await export_relations(conn)
+            print()
+            await export_resources(conn)
             print()
             await export_providers(conn)
             print()
@@ -1775,17 +1816,18 @@ async def main() -> None:
             await dispatch[target](conn)
         else:
             print(
-                f"Usage: {sys.argv[0]} {{all|base|providers|models|agents|tools|auth|setup}}"
+                f"Usage: {sys.argv[0]} {{all|relations|resources|providers|models|agents|tools|auth|setup}}"
             )
             print()
             print("  all       - Export all modules (default)")
-            print("  base      - Export 00-base/ (system resources)")
-            print("  providers - Export 01-providers/")
-            print("  models    - Export 02-models/")
-            print("  agents    - Export 03-agents/")
-            print("  tools     - Export 04-tools/")
-            print("  auth      - Export 05-auth/")
-            print("  setup     - Export 10-setups/university/")
+            print("  relations - Export 00-relations/")
+            print("  resources - Export 01-resources/")
+            print("  providers - Export 02-providers/")
+            print("  models    - Export 03-models/")
+            print("  agents    - Export 04-agents/")
+            print("  tools     - Export 05-tools/")
+            print("  auth      - Export 06-auth/")
+            print("  setup     - Export 11-setups/")
             sys.exit(1)
     finally:
         await conn.close()

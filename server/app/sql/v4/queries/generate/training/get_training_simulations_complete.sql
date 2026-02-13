@@ -65,7 +65,7 @@ user_cohorts AS (
     SELECT ARRAY_AGG(DISTINCT ccj.cohorts_id) AS cohort_ids
     FROM profile_cohorts_junction pcj
     JOIN cohort_cohorts_junction ccj
-      ON ccj.cohort_id = pcj.cohort_id
+      ON ccj.cohorts_id = pcj.cohort_id
      AND ccj.active = true
     WHERE pcj.profile_id = (SELECT profile_id FROM params)
       AND pcj.active = true

@@ -21,7 +21,7 @@ CREATE OR REPLACE FUNCTION create_attempt_v4(
     p_training_bundle_entry_id uuid
 )
 RETURNS TABLE (
-    attempt_id uuid
+    out_attempt_id uuid
 )
 LANGUAGE plpgsql
 VOLATILE
@@ -56,7 +56,7 @@ BEGIN
     LIMIT 1;
 
     -- Resolve primary department for the profile.
-    SELECT pdj.departments_id INTO v_department_id
+    SELECT pdj.department_id INTO v_department_id
     FROM profile_departments_junction pdj
     WHERE pdj.profile_id = p_profile_id
       AND pdj.active = true
