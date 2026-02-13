@@ -296,13 +296,13 @@ async def get_provider_internal(
             selected = await get_departments_internal(c, department_ids, bypass_cache)
             suggestions = await search_departments_internal(
                 c,
-                None,
-                20,
-                0,
-                user_department_ids,
-                "all",
-                department_ids,
-                bypass_cache,
+                search=None,
+                limit_count=20,
+                offset_count=0,
+                department_ids=user_department_ids,
+                suggest_source="all",
+                exclude_ids=department_ids,
+                bypass_cache=bypass_cache,
                 provider=True,
             )
             return (selected, suggestions)

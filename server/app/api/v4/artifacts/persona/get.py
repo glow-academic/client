@@ -482,13 +482,13 @@ async def get_persona_internal(
             # This ensures users can see all options when editing, not just recently used ones
             suggestions = await search_departments_internal(
                 c,
-                None,
-                20,
-                0,
-                user_department_ids,
-                "all",
-                department_ids,
-                bypass_cache,
+                search=None,
+                limit_count=20,
+                offset_count=0,
+                department_ids=user_department_ids,
+                suggest_source="all",
+                exclude_ids=department_ids,
+                bypass_cache=bypass_cache,
                 persona=True,
             )
             return (selected, suggestions)
@@ -539,16 +539,16 @@ async def get_persona_internal(
             )
             suggestions = await search_parameters_internal(
                 c,
-                None,  # No search filter for internal calls
-                20,
-                0,
-                True,
-                None,
-                None,
-                None,
-                "all",
-                parameter_ids,
-                bypass_cache,
+                search=None,  # No search filter for internal calls
+                limit_count=20,
+                offset_count=0,
+                persona_parameter=True,
+                document_parameter=None,
+                scenario_parameter=None,
+                video_parameter=None,
+                suggest_source="all",
+                exclude_ids=parameter_ids,
+                bypass_cache=bypass_cache,
                 persona=True,
             )
             return (selected, suggestions)

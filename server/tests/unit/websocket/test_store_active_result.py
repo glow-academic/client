@@ -1,5 +1,5 @@
 """
-Tests for app.utils.websocket.store_active_result
+Tests for app.infra.v4.websocket.store_active_result
 """
 
 from unittest.mock import AsyncMock, MagicMock, patch
@@ -22,7 +22,7 @@ class TestStore_Active_Result:
 
         # Act
         with patch(
-            "app.utils.websocket.store_active_result.get_active_results_dict",
+            "app.infra.v4.websocket.store_active_result.get_active_results_dict",
             return_value=mock_active_results,
         ):
             await store_active_result(chat_id, result)
@@ -41,7 +41,7 @@ class TestStore_Active_Result:
 
         # Act
         with patch(
-            "app.utils.websocket.store_active_result.get_active_results_dict",
+            "app.infra.v4.websocket.store_active_result.get_active_results_dict",
             return_value=mock_active_results,
         ):
             await store_active_result(chat_id, result)

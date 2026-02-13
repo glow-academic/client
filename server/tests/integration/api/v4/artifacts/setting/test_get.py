@@ -2,10 +2,9 @@
 
 import httpx
 import pytest
-
 from tests.seed_helpers import TEST_SUPERADMIN_PROFILE_ID
 
-pytestmark = pytest.mark.asyncio
+pytestmark = pytest.mark.asyncio(loop_scope="session")
 
 BYPASS_CACHE_HEADERS = {"X-Bypass-Cache": "1"}
 HEADERS = {**BYPASS_CACHE_HEADERS, "X-Profile-Id": TEST_SUPERADMIN_PROFILE_ID}
@@ -14,13 +13,13 @@ ZEROED_UUID = "00000000-0000-0000-0000-000000000000"
 
 
 class TestSettingGetNew:
-    """Tests for GET /api/v4/artifacts/setting/get with no setting_id (new mode)."""
+    """Tests for GET /api/v4/artifacts/settings/get with no setting_id (new mode)."""
 
     async def test_get_new_returns_defaults(self, client: httpx.AsyncClient) -> None:
         """GET with no setting_id returns default sections for new setting."""
         # Act
         response = await client.post(
-            "/api/v4/artifacts/setting/get",
+            "/api/v4/artifacts/settings/get",
             json={},
             headers=HEADERS,
         )
@@ -37,7 +36,7 @@ class TestSettingGetNew:
         """GET new setting returns all 11 resource sections."""
         # Act
         response = await client.post(
-            "/api/v4/artifacts/setting/get",
+            "/api/v4/artifacts/settings/get",
             json={},
             headers=HEADERS,
         )
@@ -67,7 +66,7 @@ class TestSettingGetNew:
         """GET new setting sections include show/required/show_ai_generate metadata."""
         # Act
         response = await client.post(
-            "/api/v4/artifacts/setting/get",
+            "/api/v4/artifacts/settings/get",
             json={},
             headers=HEADERS,
         )
@@ -80,13 +79,11 @@ class TestSettingGetNew:
         assert "required" in names_section
         assert "show_ai_generate" in names_section
 
-    async def test_get_new_returns_actor_name(
-        self, client: httpx.AsyncClient
-    ) -> None:
+    async def test_get_new_returns_actor_name(self, client: httpx.AsyncClient) -> None:
         """GET new setting returns actor_name from profile context."""
         # Act
         response = await client.post(
-            "/api/v4/artifacts/setting/get",
+            "/api/v4/artifacts/settings/get",
             json={},
             headers=HEADERS,
         )
@@ -97,7 +94,7 @@ class TestSettingGetNew:
 
 
 class TestSettingGetExisting:
-    """Tests for GET /api/v4/artifacts/setting/get with existing setting_id."""
+    """Tests for GET /api/v4/artifacts/settings/get with existing setting_id."""
 
     async def test_get_existing_returns_setting(
         self, client: httpx.AsyncClient
@@ -105,7 +102,7 @@ class TestSettingGetExisting:
         """GET with seed setting_id returns setting data."""
         # Act
         response = await client.post(
-            "/api/v4/artifacts/setting/get",
+            "/api/v4/artifacts/settings/get",
             json={"settings_id": SEED_SETTING_ID},
             headers=HEADERS,
         )
@@ -122,7 +119,7 @@ class TestSettingGetExisting:
         """GET existing setting returns name resource from seed data."""
         # Act
         response = await client.post(
-            "/api/v4/artifacts/setting/get",
+            "/api/v4/artifacts/settings/get",
             json={"settings_id": SEED_SETTING_ID},
             headers=HEADERS,
         )
@@ -139,7 +136,7 @@ class TestSettingGetExisting:
         """GET existing setting returns description resource from seed data."""
         # Act
         response = await client.post(
-            "/api/v4/artifacts/setting/get",
+            "/api/v4/artifacts/settings/get",
             json={"settings_id": SEED_SETTING_ID},
             headers=HEADERS,
         )
@@ -153,7 +150,7 @@ class TestSettingGetExisting:
         """GET existing setting returns colors from seed data."""
         # Act
         response = await client.post(
-            "/api/v4/artifacts/setting/get",
+            "/api/v4/artifacts/settings/get",
             json={"settings_id": SEED_SETTING_ID},
             headers=HEADERS,
         )
@@ -168,7 +165,7 @@ class TestSettingGetExisting:
         """GET existing setting returns enriched flag configs."""
         # Act
         response = await client.post(
-            "/api/v4/artifacts/setting/get",
+            "/api/v4/artifacts/settings/get",
             json={"settings_id": SEED_SETTING_ID},
             headers=HEADERS,
         )
@@ -187,7 +184,7 @@ class TestSettingGetExisting:
         """GET existing setting returns auth resources from seed data."""
         # Act
         response = await client.post(
-            "/api/v4/artifacts/setting/get",
+            "/api/v4/artifacts/settings/get",
             json={"settings_id": SEED_SETTING_ID},
             headers=HEADERS,
         )
@@ -204,7 +201,7 @@ class TestSettingGetExisting:
         """GET existing setting returns resource_agent_ids mapping."""
         # Act
         response = await client.post(
-            "/api/v4/artifacts/setting/get",
+            "/api/v4/artifacts/settings/get",
             json={"settings_id": SEED_SETTING_ID},
             headers=HEADERS,
         )
@@ -220,7 +217,7 @@ class TestSettingGetExisting:
         """GET existing setting returns group_id field."""
         # Act
         response = await client.post(
-            "/api/v4/artifacts/setting/get",
+            "/api/v4/artifacts/settings/get",
             json={"settings_id": SEED_SETTING_ID},
             headers=HEADERS,
         )
@@ -231,15 +228,13 @@ class TestSettingGetExisting:
 
 
 class TestSettingGetErrors:
-    """Tests for GET /api/v4/artifacts/setting/get error cases."""
+    """Tests for GET /api/v4/artifacts/settings/get error cases."""
 
-    async def test_get_nonexistent_returns_404(
-        self, client: httpx.AsyncClient
-    ) -> None:
+    async def test_get_nonexistent_returns_404(self, client: httpx.AsyncClient) -> None:
         """GET with nonexistent setting_id returns 404."""
         # Act
         response = await client.post(
-            "/api/v4/artifacts/setting/get",
+            "/api/v4/artifacts/settings/get",
             json={"settings_id": ZEROED_UUID},
             headers=HEADERS,
         )
@@ -247,13 +242,11 @@ class TestSettingGetErrors:
         # Assert
         assert response.status_code == 404
 
-    async def test_get_no_profile_returns_401(
-        self, client: httpx.AsyncClient
-    ) -> None:
+    async def test_get_no_profile_returns_401(self, client: httpx.AsyncClient) -> None:
         """GET without X-Profile-Id returns 401."""
         # Act
         response = await client.post(
-            "/api/v4/artifacts/setting/get",
+            "/api/v4/artifacts/settings/get",
             json={"settings_id": SEED_SETTING_ID},
             headers=BYPASS_CACHE_HEADERS,
         )

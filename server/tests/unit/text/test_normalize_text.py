@@ -8,7 +8,7 @@ class TestNormalize_Text:
 
     def test_normalize_text_success(self) -> None:
         """Test successful normalize_text execution."""
-        from utils.text.normalize_text import normalize_text
+        from app.utils.text.normalize_text import normalize_text
 
         # Test basic normalization
         result = normalize_text("Hello World")
@@ -16,7 +16,7 @@ class TestNormalize_Text:
 
     def test_normalize_text_accents(self) -> None:
         """Test normalize_text with accents."""
-        from utils.text.normalize_text import normalize_text
+        from app.utils.text.normalize_text import normalize_text
 
         # Test accent removal
         result = normalize_text("Café résumé")
@@ -24,7 +24,7 @@ class TestNormalize_Text:
 
     def test_normalize_text_whitespace(self) -> None:
         """Test normalize_text with multiple whitespace."""
-        from utils.text.normalize_text import normalize_text
+        from app.utils.text.normalize_text import normalize_text
 
         # Test whitespace collapse
         result = normalize_text("Hello    World  \n\t  Test")
@@ -32,7 +32,7 @@ class TestNormalize_Text:
 
     def test_normalize_text_none(self) -> None:
         """Test normalize_text with None input."""
-        from utils.text.normalize_text import normalize_text
+        from app.utils.text.normalize_text import normalize_text
 
         # Test None handling
         result = normalize_text(None)

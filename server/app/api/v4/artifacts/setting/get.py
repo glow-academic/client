@@ -355,13 +355,13 @@ async def get_setting_internal(
             )
             suggestions = await search_departments_internal(
                 c,
-                None,
-                20,
-                0,
-                user_department_ids,
-                "all",
-                selected_department_ids,
-                bypass_cache,
+                search=None,
+                limit_count=20,
+                offset_count=0,
+                department_ids=user_department_ids,
+                suggest_source="all",
+                exclude_ids=selected_department_ids,
+                bypass_cache=bypass_cache,
                 setting=True,
             )
             return (selected, suggestions)
@@ -373,11 +373,11 @@ async def get_setting_internal(
             )
             suggestions = await search_profiles_internal(
                 c,
-                None,
-                20,
-                0,
-                selected_profile_ids,
-                bypass_cache,
+                search=None,
+                limit_count=20,
+                offset_count=0,
+                exclude_ids=selected_profile_ids,
+                bypass_cache=bypass_cache,
                 setting=True,
             )
             return (selected, suggestions)

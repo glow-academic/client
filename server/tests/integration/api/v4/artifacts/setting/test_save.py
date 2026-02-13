@@ -2,10 +2,9 @@
 
 import httpx
 import pytest
-
 from tests.seed_helpers import TEST_SUPERADMIN_PROFILE_ID
 
-pytestmark = pytest.mark.asyncio
+pytestmark = pytest.mark.asyncio(loop_scope="session")
 
 BYPASS_CACHE_HEADERS = {"X-Bypass-Cache": "1"}
 HEADERS = {**BYPASS_CACHE_HEADERS, "X-Profile-Id": TEST_SUPERADMIN_PROFILE_ID}
@@ -37,7 +36,7 @@ def _build_save_request(
 
 
 class TestSettingSaveCreate:
-    """Tests for POST /api/v4/artifacts/setting/save (create mode)."""
+    """Tests for POST /api/v4/artifacts/settings/save (create mode)."""
 
     async def test_create_setting_success(self, client: httpx.AsyncClient) -> None:
         """SAVE with no input_setting_id creates a new setting."""
@@ -46,7 +45,7 @@ class TestSettingSaveCreate:
 
         # Act
         response = await client.post(
-            "/api/v4/artifacts/setting/save",
+            "/api/v4/artifacts/settings/save",
             json=payload,
             headers=HEADERS,
         )
@@ -66,7 +65,7 @@ class TestSettingSaveCreate:
 
         # Act
         response = await client.post(
-            "/api/v4/artifacts/setting/save",
+            "/api/v4/artifacts/settings/save",
             json=payload,
             headers=HEADERS,
         )
@@ -77,7 +76,7 @@ class TestSettingSaveCreate:
 
 
 class TestSettingSaveUpdate:
-    """Tests for POST /api/v4/artifacts/setting/save (update mode)."""
+    """Tests for POST /api/v4/artifacts/settings/save (update mode)."""
 
     async def test_update_setting_success(self, client: httpx.AsyncClient) -> None:
         """SAVE with input_setting_id updates existing setting."""
@@ -86,7 +85,7 @@ class TestSettingSaveUpdate:
 
         # Act
         response = await client.post(
-            "/api/v4/artifacts/setting/save",
+            "/api/v4/artifacts/settings/save",
             json=payload,
             headers=HEADERS,
         )
@@ -99,18 +98,16 @@ class TestSettingSaveUpdate:
 
 
 class TestSettingSaveErrors:
-    """Tests for POST /api/v4/artifacts/setting/save error cases."""
+    """Tests for POST /api/v4/artifacts/settings/save error cases."""
 
-    async def test_save_no_profile_returns_401(
-        self, client: httpx.AsyncClient
-    ) -> None:
+    async def test_save_no_profile_returns_401(self, client: httpx.AsyncClient) -> None:
         """SAVE without X-Profile-Id returns 401."""
         # Arrange
         payload = _build_save_request(setting_id=None)
 
         # Act
         response = await client.post(
-            "/api/v4/artifacts/setting/save",
+            "/api/v4/artifacts/settings/save",
             json=payload,
             headers=BYPASS_CACHE_HEADERS,
         )

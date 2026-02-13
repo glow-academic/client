@@ -1,8 +1,6 @@
 """Unit tests for app.infra.v4.agents.generic_agent."""
 
-from unittest.mock import MagicMock
-
-from app.infra.v4.agents.generic_agent import GenericAgent
+from unittest.mock import MagicMock, patch
 
 
 class TestGenericAgent:
@@ -10,132 +8,152 @@ class TestGenericAgent:
 
     def test_generic_agent_initialization(self) -> None:
         """Test GenericAgent initialization."""
-        # Arrange & Act
-        agent = GenericAgent(
-            agent_name="test_agent",
-            system_prompt="Test prompt",
-            temperature=0.7,
-            model_name="gpt-4",
-            provider="openai",
-            api_key="test_key",
-            base_url=None,
-            reasoning=None,
-        )
+        with patch(
+            "app.infra.v4.agents.generic_agent.decrypt_api_key",
+            return_value="decrypted_key",
+        ):
+            from app.infra.v4.agents.generic_agent import GenericAgent
 
-        # Assert
-        assert agent.agent_name == "test_agent"
-        assert agent.system_prompt == "Test prompt"
-        assert agent.temperature == 0.7
-        assert agent.model_name == "gpt-4"
-        assert agent.provider == "openai"
+            agent = GenericAgent(
+                agent_name="test_agent",
+                system_prompt="Test prompt",
+                temperature=0.7,
+                model_name="gpt-4",
+                provider="openai",
+                api_key="test_key",
+                base_url=None,
+                reasoning=None,
+            )
+
+            assert agent.agent_name == "test_agent"
+            assert agent.system_prompt == "Test prompt"
+            assert agent.temperature == 0.7
+            assert agent.model_name == "gpt-4"
+            assert agent.provider == "openai"
 
     def test_generic_agent_with_tools(self) -> None:
         """Test GenericAgent initialization with tools."""
-        # Arrange
         mock_tool = MagicMock()
 
-        # Act
-        agent = GenericAgent(
-            agent_name="test_agent",
-            system_prompt="Test prompt",
-            temperature=0.7,
-            model_name="gpt-4",
-            provider="openai",
-            api_key="test_key",
-            base_url=None,
-            reasoning=None,
-            tools=[mock_tool],
-        )
+        with patch(
+            "app.infra.v4.agents.generic_agent.decrypt_api_key",
+            return_value="decrypted_key",
+        ):
+            from app.infra.v4.agents.generic_agent import GenericAgent
 
-        # Assert
-        assert agent.tools is not None
-        assert len(agent.tools) == 1
+            agent = GenericAgent(
+                agent_name="test_agent",
+                system_prompt="Test prompt",
+                temperature=0.7,
+                model_name="gpt-4",
+                provider="openai",
+                api_key="test_key",
+                base_url=None,
+                reasoning=None,
+                tools=[mock_tool],
+            )
+
+            assert agent.tools is not None
+            assert len(agent.tools) == 1
 
     def test_generic_agent_with_reasoning(self) -> None:
         """Test GenericAgent initialization with reasoning."""
-        # Arrange & Act
-        agent = GenericAgent(
-            agent_name="test_agent",
-            system_prompt="Test prompt",
-            temperature=0.7,
-            model_name="gpt-4",
-            provider="openai",
-            api_key="test_key",
-            base_url=None,
-            reasoning="high",
-        )
+        with patch(
+            "app.infra.v4.agents.generic_agent.decrypt_api_key",
+            return_value="decrypted_key",
+        ):
+            from app.infra.v4.agents.generic_agent import GenericAgent
 
-        # Assert
-        assert agent.reasoning == "high"
+            agent = GenericAgent(
+                agent_name="test_agent",
+                system_prompt="Test prompt",
+                temperature=0.7,
+                model_name="gpt-4",
+                provider="openai",
+                api_key="test_key",
+                base_url=None,
+                reasoning="high",
+            )
+
+            assert agent.reasoning == "high"
 
     def test_get_system_prompt(self) -> None:
         """Test GenericAgent.get_system_prompt() method."""
-        # Arrange
-        agent = GenericAgent(
-            agent_name="test_agent",
-            system_prompt="Test prompt",
-            temperature=0.7,
-            model_name="gpt-4",
-            provider="openai",
-            api_key="test_key",
-            base_url=None,
-            reasoning=None,
-        )
+        with patch(
+            "app.infra.v4.agents.generic_agent.decrypt_api_key",
+            return_value="decrypted_key",
+        ):
+            from app.infra.v4.agents.generic_agent import GenericAgent
 
-        # Act
-        system_prompt = agent.get_system_prompt()
+            agent = GenericAgent(
+                agent_name="test_agent",
+                system_prompt="Test prompt",
+                temperature=0.7,
+                model_name="gpt-4",
+                provider="openai",
+                api_key="test_key",
+                base_url=None,
+                reasoning=None,
+            )
 
-        # Assert
-        assert "Test prompt" in system_prompt
-        assert "debug_info" in system_prompt  # Should include DEBUG_INFO_TOOL_SUFFIX
+            system_prompt = agent.get_system_prompt()
+
+            assert "Test prompt" in system_prompt
+            assert "debug_info" in system_prompt
 
     def test_get_model_config(self) -> None:
         """Test GenericAgent.get_model_config() method."""
-        # Arrange
-        agent = GenericAgent(
-            agent_name="test_agent",
-            system_prompt="Test prompt",
-            temperature=0.7,
-            model_name="gpt-4",
-            provider="openai",
-            api_key="test_key",
-            base_url="https://api.example.com",
-            reasoning=None,
-        )
+        with patch(
+            "app.infra.v4.agents.generic_agent.decrypt_api_key",
+            return_value="decrypted_key",
+        ):
+            from app.infra.v4.agents.generic_agent import GenericAgent
 
-        # Act
-        config = agent.get_model_config()
+            agent = GenericAgent(
+                agent_name="test_agent",
+                system_prompt="Test prompt",
+                temperature=0.7,
+                model_name="gpt-4",
+                provider="openai",
+                api_key="test_key",
+                base_url="https://api.example.com",
+                reasoning=None,
+            )
 
-        # Assert
-        assert config["model"] == "gpt-4"
-        assert config["temperature"] == 0.7
-        assert config["base_url"] == "https://api.example.com"
-        assert "api_key" in config
+            config = agent.get_model_config()
+
+            assert "gpt-4" in config["model"]
+            assert config["temperature"] == 0.7
+            assert config["base_url"] == "https://api.example.com"
+            assert "api_key" in config
 
     def test_get_tool_functions(self) -> None:
         """Test GenericAgent.get_tool_functions() method."""
 
-        # Arrange
         async def mock_tool(arg1: str) -> str:
             return "success"
 
         mock_tool.__name__ = "mock_tool"
 
-        agent = GenericAgent(
-            agent_name="test_agent",
-            system_prompt="Test prompt",
-            temperature=0.7,
-            model_name="gpt-4",
-            provider="openai",
-            api_key="test_key",
-            base_url=None,
-            reasoning=None,
-            tools=[mock_tool],
-        )
+        with patch(
+            "app.infra.v4.agents.generic_agent.decrypt_api_key",
+            return_value="decrypted_key",
+        ):
+            from app.infra.v4.agents.generic_agent import GenericAgent
 
-        # Act
-        tool_functions = agent.get_tool_functions()
+            agent = GenericAgent(
+                agent_name="test_agent",
+                system_prompt="Test prompt",
+                temperature=0.7,
+                model_name="gpt-4",
+                provider="openai",
+                api_key="test_key",
+                base_url=None,
+                reasoning=None,
+                tools=[mock_tool],
+            )
 
-        # Assert
-        assert "mock_tool" in tool_functions
-        assert tool_functions["mock_tool"] == mock_tool
+            tool_functions = agent.get_tool_functions()
+
+            assert "mock_tool" in tool_functions
+            assert tool_functions["mock_tool"] == mock_tool

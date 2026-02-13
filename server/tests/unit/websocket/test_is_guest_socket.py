@@ -1,5 +1,5 @@
 """
-Tests for app.utils.websocket.is_guest_socket
+Tests for app.infra.v4.websocket.is_guest_socket
 """
 
 from unittest.mock import AsyncMock, patch
@@ -20,7 +20,7 @@ class TestIs_Guest_Socket:
         mock_redis.sismember = AsyncMock(return_value=True)
 
         with patch(
-            "app.utils.websocket.is_guest_socket.get_redis_client",
+            "app.infra.v4.websocket.is_guest_socket.get_redis_client",
             return_value=mock_redis,
         ):
             result = await is_guest_socket(socket_id)
@@ -36,7 +36,7 @@ class TestIs_Guest_Socket:
         mock_redis.sismember = AsyncMock(return_value=False)
 
         with patch(
-            "app.utils.websocket.is_guest_socket.get_redis_client",
+            "app.infra.v4.websocket.is_guest_socket.get_redis_client",
             return_value=mock_redis,
         ):
             result = await is_guest_socket(socket_id)
@@ -49,7 +49,7 @@ class TestIs_Guest_Socket:
         socket_id = "socket-123"
 
         with patch(
-            "app.utils.websocket.is_guest_socket.get_redis_client", return_value=None
+            "app.infra.v4.websocket.is_guest_socket.get_redis_client", return_value=None
         ):
             result = await is_guest_socket(socket_id)
 
@@ -63,7 +63,7 @@ class TestIs_Guest_Socket:
         mock_redis.sismember = AsyncMock(side_effect=Exception("Redis error"))
 
         with patch(
-            "app.utils.websocket.is_guest_socket.get_redis_client",
+            "app.infra.v4.websocket.is_guest_socket.get_redis_client",
             return_value=mock_redis,
         ):
             result = await is_guest_socket(socket_id)

@@ -441,11 +441,11 @@ async def get_agent_internal(
             selected = await get_models_internal(c, model_ids, bypass_cache)
             suggestions = await search_models_internal(
                 c,
-                None,
-                20,
-                0,
-                model_ids,
-                bypass_cache,
+                search=None,
+                limit_count=20,
+                offset_count=0,
+                exclude_ids=model_ids,
+                bypass_cache=bypass_cache,
                 agent=True,
             )
             return (selected, suggestions)
@@ -499,13 +499,13 @@ async def get_agent_internal(
             )
             suggestions = await search_departments_internal(
                 c,
-                None,
-                20,
-                0,
-                user_department_ids,
-                "all",
-                department_ids_list,
-                bypass_cache,
+                search=None,
+                limit_count=20,
+                offset_count=0,
+                department_ids=user_department_ids,
+                suggest_source="all",
+                exclude_ids=department_ids_list,
+                bypass_cache=bypass_cache,
                 agent=True,
             )
             return (selected, suggestions)
@@ -515,11 +515,11 @@ async def get_agent_internal(
             selected = await get_tools_internal(c, tool_ids_list, bypass_cache)
             suggestions = await search_tools_internal(
                 c,
-                None,
-                20,
-                0,
-                tool_ids_list,
-                bypass_cache,
+                search=None,
+                limit_count=20,
+                offset_count=0,
+                exclude_ids=tool_ids_list,
+                bypass_cache=bypass_cache,
                 agent=True,
             )
             return (selected, suggestions)

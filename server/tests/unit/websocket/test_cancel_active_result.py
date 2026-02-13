@@ -1,5 +1,5 @@
 """
-Tests for app.utils.websocket.cancel_active_result
+Tests for app.infra.v4.websocket.cancel_active_result
 """
 
 from unittest.mock import AsyncMock, MagicMock, patch
@@ -27,7 +27,7 @@ class TestCancel_Active_Result:
 
         # Act
         with patch(
-            "app.utils.websocket.cancel_active_result.get_active_results_dict",
+            "app.infra.v4.websocket.cancel_active_result.get_active_results_dict",
             return_value=mock_active_results,
         ):
             result = await cancel_active_result(chat_id)
@@ -53,7 +53,7 @@ class TestCancel_Active_Result:
 
         # Act
         with patch(
-            "app.utils.websocket.cancel_active_result.get_active_results_dict",
+            "app.infra.v4.websocket.cancel_active_result.get_active_results_dict",
             return_value=mock_active_results,
         ):
             result = await cancel_active_result(chat_id)
@@ -70,7 +70,7 @@ class TestCancel_Active_Result:
 
         # Act
         with patch(
-            "app.utils.websocket.cancel_active_result.get_active_results_dict",
+            "app.infra.v4.websocket.cancel_active_result.get_active_results_dict",
             return_value=mock_active_results,
         ):
             result = await cancel_active_result(chat_id)
@@ -89,7 +89,7 @@ class TestCancel_Active_Result:
 
         # Act
         with patch(
-            "app.utils.websocket.cancel_active_result.get_active_results_dict",
+            "app.infra.v4.websocket.cancel_active_result.get_active_results_dict",
             return_value=mock_active_results,
         ):
             result = await cancel_active_result(chat_id)
@@ -109,7 +109,7 @@ class TestCancel_Active_Result:
 
         # Act
         with patch(
-            "app.utils.websocket.cancel_active_result.get_active_results_dict",
+            "app.infra.v4.websocket.cancel_active_result.get_active_results_dict",
             return_value=mock_active_results,
         ):
             result = await cancel_active_result(chat_id)

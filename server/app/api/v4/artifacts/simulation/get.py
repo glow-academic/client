@@ -412,13 +412,13 @@ async def get_simulation_internal(
             dept_source = "all" if simulation_id is None else "recent"
             suggestions = await search_departments_internal(
                 c,
-                None,
-                20,
-                0,
-                user_department_ids,
-                dept_source,
-                department_ids,
-                bypass_cache,
+                search=None,
+                limit_count=20,
+                offset_count=0,
+                department_ids=user_department_ids,
+                suggest_source=dept_source,
+                exclude_ids=department_ids,
+                bypass_cache=bypass_cache,
                 simulation=True,
             )
             return (selected, suggestions)
@@ -430,13 +430,13 @@ async def get_simulation_internal(
             selected = await get_scenarios_internal(c, scenario_ids, bypass_cache)
             suggestions = await search_scenarios_internal(
                 c,
-                scenario_search,
-                20,
-                0,
-                user_department_ids,
-                "recent",
-                scenario_ids,
-                bypass_cache,
+                search=scenario_search,
+                limit_count=20,
+                offset_count=0,
+                department_ids=user_department_ids,
+                suggest_source="recent",
+                exclude_ids=scenario_ids,
+                bypass_cache=bypass_cache,
                 simulation=True,
             )
             return (selected, suggestions)

@@ -1,5 +1,5 @@
 """
-Tests for app.utils.websocket.set_active_run
+Tests for app.infra.v4.websocket.set_active_run
 """
 
 from unittest.mock import AsyncMock, patch

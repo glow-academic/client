@@ -411,13 +411,13 @@ async def get_document_internal(
             selected = await get_departments_internal(c, department_ids, bypass_cache)
             suggestions = await search_departments_internal(
                 c,
-                None,
-                20,
-                0,
-                user_department_ids,
-                "all",
-                department_ids,
-                bypass_cache,
+                search=None,
+                limit_count=20,
+                offset_count=0,
+                department_ids=user_department_ids,
+                suggest_source="all",
+                exclude_ids=department_ids,
+                bypass_cache=bypass_cache,
                 document=True,
             )
             return (selected, suggestions)
@@ -428,15 +428,15 @@ async def get_document_internal(
             # Search for available fields scoped to user departments
             suggestions = await search_fields_internal(
                 c,
-                None,
-                20,
-                0,
-                user_department_ids,
-                None,
-                "all",
-                field_ids,
-                None,
-                bypass_cache,
+                search=None,
+                limit_count=20,
+                offset_count=0,
+                department_ids=user_department_ids,
+                draft_id=None,
+                suggest_source="all",
+                exclude_ids=field_ids,
+                conditional_parameter_ids=None,
+                bypass_cache=bypass_cache,
             )
             return (selected, suggestions)
 

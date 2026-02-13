@@ -1,5 +1,5 @@
 """
-Tests for app.utils.websocket.add_guest_socket
+Tests for app.infra.v4.websocket.add_guest_socket
 """
 
 from unittest.mock import AsyncMock, patch
@@ -20,7 +20,7 @@ class TestAdd_Guest_Socket:
         mock_redis.sadd = AsyncMock(return_value=1)
 
         with patch(
-            "app.utils.websocket.add_guest_socket.get_redis_client",
+            "app.infra.v4.websocket.add_guest_socket.get_redis_client",
             return_value=mock_redis,
         ):
             await add_guest_socket(socket_id)
@@ -33,7 +33,8 @@ class TestAdd_Guest_Socket:
         socket_id = "socket-123"
 
         with patch(
-            "app.utils.websocket.add_guest_socket.get_redis_client", return_value=None
+            "app.infra.v4.websocket.add_guest_socket.get_redis_client",
+            return_value=None,
         ):
             # Should not raise an error
             await add_guest_socket(socket_id)
@@ -46,7 +47,7 @@ class TestAdd_Guest_Socket:
         mock_redis.sadd = AsyncMock(side_effect=Exception("Redis error"))
 
         with patch(
-            "app.utils.websocket.add_guest_socket.get_redis_client",
+            "app.infra.v4.websocket.add_guest_socket.get_redis_client",
             return_value=mock_redis,
         ):
             # Should not raise an error, just log it

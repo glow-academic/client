@@ -1,5 +1,5 @@
 """
-Tests for app.utils.websocket.find_profile_by_socket
+Tests for app.infra.v4.websocket.find_profile_by_socket
 """
 
 from collections.abc import AsyncIterator
@@ -126,12 +126,13 @@ class TestFind_Profile_By_Socket:
         # Then during scan_iter, get() is called again for forward mapping lookup
         get_calls = []
 
-        async def mock_get(key: str):
-            get_calls.append(key)
-            if key == f"socket_to_profile:{socket_id}":
+        async def mock_get(key: str | bytes):
+            key_str = key.decode("utf-8") if isinstance(key, bytes) else key
+            get_calls.append(key_str)
+            if key_str == f"socket_to_profile:{socket_id}":
                 # First call: reverse index lookup returns None
                 return None
-            elif key == f"socket_owner:{profile_id}":
+            elif key_str == f"socket_owner:{profile_id}":
                 # Second call during scan_iter: forward mapping lookup
                 return socket_id.encode("utf-8")
             return None

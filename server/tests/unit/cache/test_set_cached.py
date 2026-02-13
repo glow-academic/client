@@ -28,7 +28,9 @@ class TestSet_Cached:
         mock_pipeline.expire = MagicMock(return_value=mock_pipeline)
         mock_pipeline.execute = AsyncMock()
 
-        with patch("app.utils.cache.set_cached.redis_client", mock_redis):
+        with patch(
+            "app.utils.cache.set_cached.get_redis_client", return_value=mock_redis
+        ):
             await set_cached(key, data, ttl, tags)
 
             mock_redis.pipeline.assert_called_once()
@@ -43,7 +45,7 @@ class TestSet_Cached:
         ttl = 60
         tags = ["tag1"]
 
-        with patch("app.utils.cache.set_cached.redis_client", None):
+        with patch("app.utils.cache.set_cached.get_redis_client", return_value=None):
             # Should not raise an error
             await set_cached(key, data, ttl, tags)
 
@@ -58,6 +60,8 @@ class TestSet_Cached:
         mock_redis = AsyncMock()
         mock_redis.pipeline = MagicMock(side_effect=Exception("Redis error"))
 
-        with patch("app.utils.cache.set_cached.redis_client", mock_redis):
+        with patch(
+            "app.utils.cache.set_cached.get_redis_client", return_value=mock_redis
+        ):
             # Should not raise an error, just log it
             await set_cached(key, data, ttl, tags)

@@ -1,5 +1,5 @@
 """
-Tests for app.utils.websocket.remove_active_run
+Tests for app.infra.v4.websocket.remove_active_run
 """
 
 from unittest.mock import AsyncMock, patch
@@ -22,7 +22,7 @@ class TestRemove_Active_Run:
 
         # Act
         with patch(
-            "app.utils.websocket.remove_active_run.get_redis_client",
+            "app.infra.v4.websocket.remove_active_run.get_redis_client",
             return_value=mock_redis,
         ):
             await remove_active_run(chat_id)
@@ -38,7 +38,8 @@ class TestRemove_Active_Run:
 
         # Act
         with patch(
-            "app.utils.websocket.remove_active_run.get_redis_client", return_value=None
+            "app.infra.v4.websocket.remove_active_run.get_redis_client",
+            return_value=None,
         ):
             await remove_active_run(chat_id)
 
@@ -54,7 +55,7 @@ class TestRemove_Active_Run:
 
         # Act
         with patch(
-            "app.utils.websocket.remove_active_run.get_redis_client",
+            "app.infra.v4.websocket.remove_active_run.get_redis_client",
             return_value=mock_redis,
         ):
             await remove_active_run(chat_id)

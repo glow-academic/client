@@ -26,7 +26,9 @@ class TestInvalidate_Tags:
         mock_pipeline.delete = MagicMock(return_value=mock_pipeline)
         mock_pipeline.execute = AsyncMock()
 
-        with patch("app.utils.cache.invalidate_tags.redis_client", mock_redis):
+        with patch(
+            "app.utils.cache.invalidate_tags.get_redis_client", return_value=mock_redis
+        ):
             await invalidate_tags(tags)
 
             mock_redis.pipeline.assert_called_once()
@@ -44,7 +46,9 @@ class TestInvalidate_Tags:
         mock_pipeline.delete = MagicMock(return_value=mock_pipeline)
         mock_pipeline.execute = AsyncMock()
 
-        with patch("app.utils.cache.invalidate_tags.redis_client", mock_redis):
+        with patch(
+            "app.utils.cache.invalidate_tags.get_redis_client", return_value=mock_redis
+        ):
             await invalidate_tags(tags)
 
             mock_pipeline.execute.assert_called_once()
@@ -54,7 +58,9 @@ class TestInvalidate_Tags:
         """Test invalidate_tags when redis_client is None."""
         tags = ["tag1"]
 
-        with patch("app.utils.cache.invalidate_tags.redis_client", None):
+        with patch(
+            "app.utils.cache.invalidate_tags.get_redis_client", return_value=None
+        ):
             # Should not raise an error
             await invalidate_tags(tags)
 
@@ -66,6 +72,8 @@ class TestInvalidate_Tags:
         mock_redis = AsyncMock()
         mock_redis.pipeline = MagicMock(side_effect=Exception("Redis error"))
 
-        with patch("app.utils.cache.invalidate_tags.redis_client", mock_redis):
+        with patch(
+            "app.utils.cache.invalidate_tags.get_redis_client", return_value=mock_redis
+        ):
             # Should not raise an error, just log it
             await invalidate_tags(tags)

@@ -61,7 +61,7 @@ class TestHandle_Route_Error:
         operation = "test_operation"
 
         with patch(
-            "app.utils.error.handle_route_error.log_and_raise_error"
+            "app.infra.v4.error.handle_route_error.log_and_raise_error"
         ) as mock_log_and_raise:
             mock_log_and_raise.side_effect = HTTPException(
                 status_code=500, detail="Test"

@@ -13,7 +13,7 @@ class TestInjectThemeCssVariables:
         """Test injecting CSS variables into HTML with head tag."""
         # Arrange
         html = "<html><head><title>Test</title></head><body>Content</body></html>"
-        from utils.settings.theme import ThemeTokens
+        from app.utils.settings.theme import ThemeTokens
 
         theme_tokens = ThemeTokens(
             primary="#000000",
@@ -34,7 +34,7 @@ class TestInjectThemeCssVariables:
         """Test injecting CSS variables into HTML without head tag."""
         # Arrange
         html = "<html><body>Content</body></html>"
-        from utils.settings.theme import ThemeTokens
+        from app.utils.settings.theme import ThemeTokens
 
         theme_tokens = ThemeTokens(
             primary="#000000",
@@ -57,23 +57,31 @@ class TestRenderTemplate:
 
     def test_render_template_success(self) -> None:
         """Test successful template rendering."""
+        from app.utils.settings.theme import ThemeTokens
+
         # Arrange
         template = "Hello {{ name }}!"
         context = {"name": "World"}
+        theme_tokens = ThemeTokens(
+            primary="#000000",
+            primaryForeground="#ffffff",
+            background="#ffffff",
+            foreground="#000000",
+        )
 
         # Act
-        result = render_template(template, context)
+        result = render_template(template, context, theme_tokens)
 
         # Assert
-        assert result == "Hello World!"
+        assert "Hello World!" in result
 
     def test_render_template_with_theme(self) -> None:
         """Test template rendering with theme injection."""
+        from app.utils.settings.theme import ThemeTokens
+
         # Arrange
         template = "<html><head></head><body>Content</body></html>"
         context = {}
-        from utils.settings.theme import ThemeTokens
-
         theme_tokens = ThemeTokens(
             primary="#000000",
             primaryForeground="#ffffff",
@@ -90,12 +98,20 @@ class TestRenderTemplate:
 
     def test_render_template_with_variables(self) -> None:
         """Test template rendering with variables."""
+        from app.utils.settings.theme import ThemeTokens
+
         # Arrange
         template = "{{ greeting }}, {{ name }}!"
         context = {"greeting": "Hello", "name": "World"}
+        theme_tokens = ThemeTokens(
+            primary="#000000",
+            primaryForeground="#ffffff",
+            background="#ffffff",
+            foreground="#000000",
+        )
 
         # Act
-        result = render_template(template, context)
+        result = render_template(template, context, theme_tokens)
 
         # Assert
-        assert result == "Hello, World!"
+        assert "Hello, World!" in result

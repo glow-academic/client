@@ -159,13 +159,13 @@ async def search_departments(
     try:
         items = await search_departments_internal(
             conn,
-            request.search,
-            request.limit_count,
-            request.offset_count,
-            request.department_ids,
-            request.suggest_source,
-            request.exclude_ids,
-            bypass_cache,
+            search=request.search,
+            limit_count=request.limit_count,
+            offset_count=request.offset_count,
+            department_ids=request.department_ids,
+            suggest_source=request.suggest_source,
+            exclude_ids=request.exclude_ids,
+            bypass_cache=bypass_cache,
         )
         response.headers["X-Cache-Tags"] = ",".join(tags)
         return SearchDepartmentsApiResponse(items=items)

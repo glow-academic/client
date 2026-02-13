@@ -2,10 +2,9 @@
 
 import httpx
 import pytest
-
 from tests.seed_helpers import TEST_SUPERADMIN_PROFILE_ID
 
-pytestmark = pytest.mark.asyncio
+pytestmark = pytest.mark.asyncio(loop_scope="session")
 
 BYPASS_CACHE_HEADERS = {"X-Bypass-Cache": "1"}
 HEADERS = {**BYPASS_CACHE_HEADERS, "X-Profile-Id": TEST_SUPERADMIN_PROFILE_ID}
@@ -13,7 +12,7 @@ SEED_NAME_ID = "019b995c-8eb2-79f4-ad14-da57e866749a"
 
 
 class TestSettingDraft:
-    """Tests for PATCH /api/v4/artifacts/setting/draft endpoint."""
+    """Tests for PATCH /api/v4/artifacts/settings/draft endpoint."""
 
     async def test_create_draft_success(self, client: httpx.AsyncClient) -> None:
         """DRAFT with no input_draft_id creates a new draft."""
@@ -25,7 +24,7 @@ class TestSettingDraft:
 
         # Act
         response = await client.patch(
-            "/api/v4/artifacts/setting/draft",
+            "/api/v4/artifacts/settings/draft",
             json=payload,
             headers=HEADERS,
         )
@@ -49,7 +48,7 @@ class TestSettingDraft:
 
         # Act
         response = await client.patch(
-            "/api/v4/artifacts/setting/draft",
+            "/api/v4/artifacts/settings/draft",
             json=payload,
             headers=HEADERS,
         )
@@ -68,7 +67,7 @@ class TestSettingDraft:
             "expected_version": 0,
         }
         create_response = await client.patch(
-            "/api/v4/artifacts/setting/draft",
+            "/api/v4/artifacts/settings/draft",
             json=create_payload,
             headers=HEADERS,
         )
@@ -83,7 +82,7 @@ class TestSettingDraft:
             "expected_version": new_version,
         }
         response = await client.patch(
-            "/api/v4/artifacts/setting/draft",
+            "/api/v4/artifacts/settings/draft",
             json=update_payload,
             headers=HEADERS,
         )
@@ -97,7 +96,7 @@ class TestSettingDraft:
 
 
 class TestSettingDraftErrors:
-    """Tests for PATCH /api/v4/artifacts/setting/draft error cases."""
+    """Tests for PATCH /api/v4/artifacts/settings/draft error cases."""
 
     async def test_draft_no_profile_returns_401(
         self, client: httpx.AsyncClient
@@ -111,7 +110,7 @@ class TestSettingDraftErrors:
 
         # Act
         response = await client.patch(
-            "/api/v4/artifacts/setting/draft",
+            "/api/v4/artifacts/settings/draft",
             json=payload,
             headers=BYPASS_CACHE_HEADERS,
         )

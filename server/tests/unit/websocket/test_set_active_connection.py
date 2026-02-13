@@ -1,5 +1,5 @@
 """
-Tests for app.utils.websocket.set_active_connection
+Tests for app.infra.v4.websocket.set_active_connection
 """
 
 from unittest.mock import AsyncMock, patch
@@ -18,16 +18,20 @@ class TestSet_Active_Connection:
         chat_id = "chat-123"
         socket_id = "socket-123"
         mock_redis = AsyncMock()
-        mock_redis.setex = AsyncMock()
+        mock_redis.sadd = AsyncMock()
+        mock_redis.expire = AsyncMock()
 
         with patch(
-            "app.utils.websocket.set_active_connection.get_redis_client",
+            "app.infra.v4.websocket.set_active_connection.get_redis_client",
             return_value=mock_redis,
         ):
             await set_active_connection(chat_id, socket_id)
 
-            mock_redis.setex.assert_called_once_with(
-                f"active_connection:{chat_id}", 3600, socket_id
+            mock_redis.sadd.assert_called_once_with(
+                f"active_connection:{chat_id}", socket_id
+            )
+            mock_redis.expire.assert_called_once_with(
+                f"active_connection:{chat_id}", 3600
             )
 
     @pytest.mark.asyncio
@@ -37,7 +41,7 @@ class TestSet_Active_Connection:
         socket_id = "socket-123"
 
         with patch(
-            "app.utils.websocket.set_active_connection.get_redis_client",
+            "app.infra.v4.websocket.set_active_connection.get_redis_client",
             return_value=None,
         ):
             # Should not raise an error
@@ -49,10 +53,10 @@ class TestSet_Active_Connection:
         chat_id = "chat-123"
         socket_id = "socket-123"
         mock_redis = AsyncMock()
-        mock_redis.setex = AsyncMock(side_effect=Exception("Redis error"))
+        mock_redis.sadd = AsyncMock(side_effect=Exception("Redis error"))
 
         with patch(
-            "app.utils.websocket.set_active_connection.get_redis_client",
+            "app.infra.v4.websocket.set_active_connection.get_redis_client",
             return_value=mock_redis,
         ):
             # Should not raise an error, just log it

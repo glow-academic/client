@@ -24,7 +24,7 @@ class TestRead_Document_Content_For_Similarity:
 
         # Mock UPLOAD_FOLDER to use tmp_path - patch where it's imported
         monkeypatch.setattr(
-            "app.utils.text.read_document_content_for_similarity.UPLOAD_FOLDER",
+            "app.infra.v4.documents.read_document_content_for_similarity.UPLOAD_FOLDER",
             tmp_path,
         )
 
@@ -41,7 +41,7 @@ class TestRead_Document_Content_For_Similarity:
 
         # Mock UPLOAD_FOLDER to use tmp_path - patch where it's imported
         monkeypatch.setattr(
-            "app.utils.text.read_document_content_for_similarity.UPLOAD_FOLDER",
+            "app.infra.v4.documents.read_document_content_for_similarity.UPLOAD_FOLDER",
             tmp_path,
         )
 
@@ -62,7 +62,7 @@ class TestRead_Document_Content_For_Similarity:
 
         # Mock UPLOAD_FOLDER to use tmp_path - patch where it's imported
         monkeypatch.setattr(
-            "app.utils.text.read_document_content_for_similarity.UPLOAD_FOLDER",
+            "app.infra.v4.documents.read_document_content_for_similarity.UPLOAD_FOLDER",
             tmp_path,
         )
 
@@ -87,7 +87,7 @@ class TestRead_Document_Content_For_Similarity:
 
         # Mock UPLOAD_FOLDER to use tmp_path
         monkeypatch.setattr(
-            "app.utils.text.read_document_content_for_similarity.UPLOAD_FOLDER",
+            "app.infra.v4.documents.read_document_content_for_similarity.UPLOAD_FOLDER",
             tmp_path,
         )
 
@@ -119,7 +119,7 @@ class TestRead_Document_Content_For_Similarity:
 
         # Mock UPLOAD_FOLDER to use tmp_path
         monkeypatch.setattr(
-            "app.utils.text.read_document_content_for_similarity.UPLOAD_FOLDER",
+            "app.infra.v4.documents.read_document_content_for_similarity.UPLOAD_FOLDER",
             tmp_path,
         )
 

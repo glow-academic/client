@@ -593,13 +593,13 @@ async def get_scenario_internal(
             dept_source = "all" if scenario_id is None else "recent"
             suggestions = await search_departments_internal(
                 c,
-                None,
-                20,
-                0,
-                user_department_ids,
-                dept_source,
-                selected_department_ids,
-                bypass_cache,
+                search=None,
+                limit_count=20,
+                offset_count=0,
+                department_ids=user_department_ids,
+                suggest_source=dept_source,
+                exclude_ids=selected_department_ids,
+                bypass_cache=bypass_cache,
                 scenario=True,
             )
             return (selected, suggestions)
@@ -650,16 +650,16 @@ async def get_scenario_internal(
             )
             suggestions = await search_parameters_internal(
                 c,
-                parameter_search,
-                20,
-                0,
-                None,
-                None,
-                True,
-                None,
-                "all",
-                selected_parameter_ids,
-                bypass_cache,
+                search=parameter_search,
+                limit_count=20,
+                offset_count=0,
+                persona_parameter=None,
+                document_parameter=None,
+                scenario_parameter=True,
+                video_parameter=None,
+                suggest_source="all",
+                exclude_ids=selected_parameter_ids,
+                bypass_cache=bypass_cache,
             )
             return (selected, suggestions)
 

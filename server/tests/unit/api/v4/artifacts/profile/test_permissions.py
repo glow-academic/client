@@ -193,11 +193,11 @@ class TestComputeCanCreate:
     def test_admin_can_create_with_departments(self) -> None:
         assert compute_can_create("admin", department_ids=[uuid4()]) is True
 
-    def test_admin_cannot_create_without_departments(self) -> None:
-        assert compute_can_create("admin", department_ids=None) is False
+    def test_admin_can_create_without_departments(self) -> None:
+        assert compute_can_create("admin", department_ids=None) is True
 
-    def test_admin_cannot_create_with_empty_departments(self) -> None:
-        assert compute_can_create("admin", department_ids=[]) is False
+    def test_admin_can_create_with_empty_departments(self) -> None:
+        assert compute_can_create("admin", department_ids=[]) is True
 
     def test_instructional_cannot_create(self) -> None:
         assert compute_can_create("instructional", department_ids=[uuid4()]) is False

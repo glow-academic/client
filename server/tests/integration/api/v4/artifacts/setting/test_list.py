@@ -2,10 +2,9 @@
 
 import httpx
 import pytest
-
 from tests.seed_helpers import TEST_SUPERADMIN_PROFILE_ID
 
-pytestmark = pytest.mark.asyncio
+pytestmark = pytest.mark.asyncio(loop_scope="session")
 
 BYPASS_CACHE_HEADERS = {"X-Bypass-Cache": "1"}
 HEADERS = {**BYPASS_CACHE_HEADERS, "X-Profile-Id": TEST_SUPERADMIN_PROFILE_ID}
@@ -112,9 +111,7 @@ class TestSettingList:
         data = response.json()
         assert "keys" in data
 
-    async def test_list_no_profile_returns_401(
-        self, client: httpx.AsyncClient
-    ) -> None:
+    async def test_list_no_profile_returns_401(self, client: httpx.AsyncClient) -> None:
         """LIST without X-Profile-Id returns 401."""
         # Act
         response = await client.post(

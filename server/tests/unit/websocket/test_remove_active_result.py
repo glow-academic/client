@@ -1,5 +1,5 @@
 """
-Tests for app.utils.websocket.remove_active_result
+Tests for app.infra.v4.websocket.remove_active_result
 """
 
 from unittest.mock import patch
@@ -21,7 +21,7 @@ class TestRemove_Active_Result:
 
         # Act
         with patch(
-            "app.utils.websocket.remove_active_result.get_active_results_dict",
+            "app.infra.v4.websocket.remove_active_result.get_active_results_dict",
             return_value=mock_active_results,
         ):
             await remove_active_result(chat_id)
@@ -38,7 +38,7 @@ class TestRemove_Active_Result:
 
         # Act
         with patch(
-            "app.utils.websocket.remove_active_result.get_active_results_dict",
+            "app.infra.v4.websocket.remove_active_result.get_active_results_dict",
             return_value=mock_active_results,
         ):
             await remove_active_result(chat_id)

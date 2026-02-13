@@ -1,7 +1,7 @@
 """Unit tests for artifact discovery helpers."""
 
 import uuid
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock
 
 import pytest
 
@@ -50,8 +50,7 @@ class TestGetResourceSqlFunctionName:
         from unittest.mock import patch
 
         conn = AsyncMock()
-        mock_row = MagicMock()
-        mock_row.get = MagicMock(return_value="api_create_persona_v4")
+        mock_row = {"function_name": "api_create_persona_v4"}
         conn.fetchrow = AsyncMock(return_value=mock_row)
 
         with patch(
@@ -72,8 +71,7 @@ class TestGetResourceSqlFunctionName:
         from unittest.mock import patch
 
         conn = AsyncMock()
-        mock_row = MagicMock()
-        mock_row.get = MagicMock(return_value="api_create_personas_v4")
+        mock_row = {"function_name": "api_create_personas_v4"}
         conn.fetchrow = AsyncMock(return_value=mock_row)
 
         with patch(
@@ -430,8 +428,7 @@ class TestGetAgentEndEventName:
         from unittest.mock import patch
 
         conn = AsyncMock()
-        mock_row = MagicMock()
-        mock_row.get = MagicMock(return_value="scenario_end")
+        mock_row = {"event_name": "scenario_end"}
         conn.fetchrow = AsyncMock(return_value=mock_row)
 
         with patch(
@@ -472,8 +469,7 @@ class TestGetAgentEndEventName:
         from unittest.mock import patch
 
         conn = AsyncMock()
-        mock_row = MagicMock()
-        mock_row.get = MagicMock(return_value="voice_end")
+        mock_row = {"event_name": "voice_end"}
         conn.fetchrow = AsyncMock(return_value=mock_row)
 
         with patch(

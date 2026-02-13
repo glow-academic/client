@@ -1,5 +1,5 @@
 """
-Tests for app.utils.websocket.is_run_cancelled
+Tests for app.infra.v4.websocket.is_run_cancelled
 """
 
 from unittest.mock import AsyncMock, patch
@@ -22,7 +22,7 @@ class TestIs_Run_Cancelled:
 
         # Act
         with patch(
-            "app.utils.websocket.is_run_cancelled.get_redis_client",
+            "app.infra.v4.websocket.is_run_cancelled.get_redis_client",
             return_value=mock_redis,
         ):
             result = await is_run_cancelled(run_id)
@@ -41,7 +41,7 @@ class TestIs_Run_Cancelled:
 
         # Act
         with patch(
-            "app.utils.websocket.is_run_cancelled.get_redis_client",
+            "app.infra.v4.websocket.is_run_cancelled.get_redis_client",
             return_value=mock_redis,
         ):
             result = await is_run_cancelled(run_id)
@@ -57,7 +57,8 @@ class TestIs_Run_Cancelled:
 
         # Act
         with patch(
-            "app.utils.websocket.is_run_cancelled.get_redis_client", return_value=None
+            "app.infra.v4.websocket.is_run_cancelled.get_redis_client",
+            return_value=None,
         ):
             result = await is_run_cancelled(run_id)
 
@@ -74,7 +75,7 @@ class TestIs_Run_Cancelled:
 
         # Act
         with patch(
-            "app.utils.websocket.is_run_cancelled.get_redis_client",
+            "app.infra.v4.websocket.is_run_cancelled.get_redis_client",
             return_value=mock_redis,
         ):
             result = await is_run_cancelled(run_id)

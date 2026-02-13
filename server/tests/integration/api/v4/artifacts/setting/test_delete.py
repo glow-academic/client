@@ -2,10 +2,9 @@
 
 import httpx
 import pytest
-
 from tests.seed_helpers import TEST_SUPERADMIN_PROFILE_ID
 
-pytestmark = pytest.mark.asyncio
+pytestmark = pytest.mark.asyncio(loop_scope="session")
 
 BYPASS_CACHE_HEADERS = {"X-Bypass-Cache": "1"}
 HEADERS = {**BYPASS_CACHE_HEADERS, "X-Profile-Id": TEST_SUPERADMIN_PROFILE_ID}
@@ -16,7 +15,7 @@ ZEROED_UUID = "00000000-0000-0000-0000-000000000000"
 
 
 class TestSettingDelete:
-    """Tests for POST /api/v4/artifacts/setting/delete endpoint."""
+    """Tests for POST /api/v4/artifacts/settings/delete endpoint."""
 
     async def test_delete_created_setting(self, client: httpx.AsyncClient) -> None:
         """DELETE a freshly created setting succeeds."""
@@ -36,7 +35,7 @@ class TestSettingDelete:
             "role_routes": {"resource_ids": []},
         }
         save_response = await client.post(
-            "/api/v4/artifacts/setting/save",
+            "/api/v4/artifacts/settings/save",
             json=save_payload,
             headers=HEADERS,
         )
@@ -45,7 +44,7 @@ class TestSettingDelete:
 
         # Act
         response = await client.post(
-            "/api/v4/artifacts/setting/delete",
+            "/api/v4/artifacts/settings/delete",
             json={"setting_id": new_setting_id},
             headers=HEADERS,
         )
@@ -62,7 +61,7 @@ class TestSettingDelete:
         """DELETE with nonexistent setting_id returns 404."""
         # Act
         response = await client.post(
-            "/api/v4/artifacts/setting/delete",
+            "/api/v4/artifacts/settings/delete",
             json={"setting_id": ZEROED_UUID},
             headers=HEADERS,
         )
@@ -72,7 +71,7 @@ class TestSettingDelete:
 
 
 class TestSettingDeleteErrors:
-    """Tests for POST /api/v4/artifacts/setting/delete error cases."""
+    """Tests for POST /api/v4/artifacts/settings/delete error cases."""
 
     async def test_delete_no_profile_returns_401(
         self, client: httpx.AsyncClient
@@ -80,7 +79,7 @@ class TestSettingDeleteErrors:
         """DELETE without X-Profile-Id returns 401."""
         # Act
         response = await client.post(
-            "/api/v4/artifacts/setting/delete",
+            "/api/v4/artifacts/settings/delete",
             json={"setting_id": SEED_SETTING_ID},
             headers=BYPASS_CACHE_HEADERS,
         )

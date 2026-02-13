@@ -14,7 +14,7 @@ class TestFormat_Chat_Scenario:
 
         result = format_chat_scenario(problem_statement)
 
-        assert result["role"] == "user"
+        assert result["role"] == "developer"
         assert "The following is the scenario for the chat:" in result["content"]
         assert problem_statement in result["content"]
 
@@ -24,5 +24,5 @@ class TestFormat_Chat_Scenario:
 
         result = format_chat_scenario("")
 
-        assert result["role"] == "user"
+        assert result["role"] == "developer"
         assert "The following is the scenario for the chat:" in result["content"]

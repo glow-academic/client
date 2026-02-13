@@ -2,10 +2,9 @@
 
 import httpx
 import pytest
-
 from tests.seed_helpers import TEST_SUPERADMIN_PROFILE_ID
 
-pytestmark = pytest.mark.asyncio
+pytestmark = pytest.mark.asyncio(loop_scope="session")
 
 BYPASS_CACHE_HEADERS = {"X-Bypass-Cache": "1"}
 HEADERS = {**BYPASS_CACHE_HEADERS, "X-Profile-Id": TEST_SUPERADMIN_PROFILE_ID}
@@ -14,13 +13,13 @@ ZEROED_UUID = "00000000-0000-0000-0000-000000000000"
 
 
 class TestSettingDuplicate:
-    """Tests for POST /api/v4/artifacts/setting/duplicate endpoint."""
+    """Tests for POST /api/v4/artifacts/settings/duplicate endpoint."""
 
     async def test_duplicate_seed_setting(self, client: httpx.AsyncClient) -> None:
         """DUPLICATE the seed setting creates a new copy."""
         # Act
         response = await client.post(
-            "/api/v4/artifacts/setting/duplicate",
+            "/api/v4/artifacts/settings/duplicate",
             json={"setting_id": SEED_SETTING_ID},
             headers=HEADERS,
         )
@@ -36,7 +35,7 @@ class TestSettingDuplicate:
         """DUPLICATE returns a success message with original name."""
         # Act
         response = await client.post(
-            "/api/v4/artifacts/setting/duplicate",
+            "/api/v4/artifacts/settings/duplicate",
             json={"setting_id": SEED_SETTING_ID},
             headers=HEADERS,
         )
@@ -52,7 +51,7 @@ class TestSettingDuplicate:
         """DUPLICATE with nonexistent setting_id returns error."""
         # Act
         response = await client.post(
-            "/api/v4/artifacts/setting/duplicate",
+            "/api/v4/artifacts/settings/duplicate",
             json={"setting_id": ZEROED_UUID},
             headers=HEADERS,
         )
@@ -62,7 +61,7 @@ class TestSettingDuplicate:
 
 
 class TestSettingDuplicateErrors:
-    """Tests for POST /api/v4/artifacts/setting/duplicate error cases."""
+    """Tests for POST /api/v4/artifacts/settings/duplicate error cases."""
 
     async def test_duplicate_no_profile_returns_401(
         self, client: httpx.AsyncClient
@@ -70,7 +69,7 @@ class TestSettingDuplicateErrors:
         """DUPLICATE without X-Profile-Id returns 401."""
         # Act
         response = await client.post(
-            "/api/v4/artifacts/setting/duplicate",
+            "/api/v4/artifacts/settings/duplicate",
             json={"setting_id": SEED_SETTING_ID},
             headers=BYPASS_CACHE_HEADERS,
         )

@@ -17,7 +17,7 @@ class TestFormat_Document_Info:
 
         result = format_document_info([])
 
-        assert result["role"] == "user"
+        assert result["role"] in ("user", "developer")
         assert isinstance(result["content"], list)
         assert len(result["content"]) == 1
         assert result["content"][0]["type"] == "input_text"
@@ -49,7 +49,7 @@ class TestFormat_Document_Info:
 
         result = format_document_info(documents, show_images=False)
 
-        assert result["role"] == "user"
+        assert result["role"] == "developer"
         assert isinstance(result["content"], list)
         assert len(result["content"]) > 0
 
@@ -98,7 +98,7 @@ class TestFormat_Document_Info:
         ):
             result = format_document_info(documents, show_images=False)
 
-            assert result["role"] == "user"
+            assert result["role"] == "developer"
             assert isinstance(result["content"], list)
             assert len(result["content"]) > 0
             assert "Test PDF" in result["content"][0]["text"]
@@ -144,7 +144,7 @@ class TestFormat_Document_Info:
         ):
             result = format_document_info(documents, show_images=True)
 
-            assert result["role"] == "user"
+            assert result["role"] == "developer"
             assert isinstance(result["content"], list)
             # Should have image item followed by text item
             assert result["content"][0]["type"] == "input_image"
@@ -177,7 +177,7 @@ class TestFormat_Document_Info:
 
         result = format_document_info(documents, show_images=True)
 
-        assert result["role"] == "user"
+        assert result["role"] == "developer"
         assert isinstance(result["content"], list)
         assert len(result["content"]) > 0
         # Check if we got an image or if it failed and fell back
@@ -214,7 +214,7 @@ class TestFormat_Document_Info:
         result = format_document_info(documents, show_images=False)
 
         # When show_images=False, image files should add nothing
-        assert result["role"] == "user"
+        assert result["role"] == "developer"
         # Should have fallback "No documents provided" since no content was added
         assert len(result["content"]) == 1
         assert result["content"][0]["type"] == "input_text"

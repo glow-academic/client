@@ -13,13 +13,13 @@ class TestLoad_Sql:
     def test_load_sql_success(self) -> None:
         """Test successful load_sql execution."""
         # Test with a known SQL file
-        sql_content = load_sql("app/sql/v3/profile/get_profile.sql")
+        sql_content = load_sql("app/sql/v4/queries/profile/get_profile_complete.sql")
         assert isinstance(sql_content, str)
         assert len(sql_content) > 0
 
     def test_load_sql_returns_string(self) -> None:
         """Test that load_sql returns a string."""
-        sql_content = load_sql("app/sql/v3/profile/get_profile.sql")
+        sql_content = load_sql("app/sql/v4/queries/profile/get_profile_complete.sql")
         assert isinstance(sql_content, str)
 
     def test_load_sql_file_not_found(self) -> None:

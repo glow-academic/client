@@ -1,5 +1,5 @@
 """
-Tests for app.utils.websocket.get_socket_owner
+Tests for app.infra.v4.websocket.get_socket_owner
 """
 
 from unittest.mock import AsyncMock, patch
@@ -23,11 +23,11 @@ class TestGet_Socket_Owner:
 
         with (
             patch(
-                "app.utils.websocket.get_socket_owner.get_redis_client",
+                "app.infra.v4.websocket.get_socket_owner.get_redis_client",
                 return_value=mock_redis,
             ),
             patch(
-                "app.utils.websocket.get_socket_owner.get_socket_owner_dict",
+                "app.infra.v4.websocket.get_socket_owner.get_socket_owner_dict",
                 return_value=mock_socket_owner,
             ),
         ):
@@ -46,11 +46,11 @@ class TestGet_Socket_Owner:
 
         with (
             patch(
-                "app.utils.websocket.get_socket_owner.get_redis_client",
+                "app.infra.v4.websocket.get_socket_owner.get_redis_client",
                 return_value=mock_redis,
             ),
             patch(
-                "app.utils.websocket.get_socket_owner.get_socket_owner_dict",
+                "app.infra.v4.websocket.get_socket_owner.get_socket_owner_dict",
                 return_value=mock_socket_owner,
             ),
         ):
@@ -67,11 +67,11 @@ class TestGet_Socket_Owner:
 
         with (
             patch(
-                "app.utils.websocket.get_socket_owner.get_redis_client",
+                "app.infra.v4.websocket.get_socket_owner.get_redis_client",
                 return_value=None,
             ),
             patch(
-                "app.utils.websocket.get_socket_owner.get_socket_owner_dict",
+                "app.infra.v4.websocket.get_socket_owner.get_socket_owner_dict",
                 return_value=mock_socket_owner,
             ),
         ):
@@ -90,11 +90,11 @@ class TestGet_Socket_Owner:
 
         with (
             patch(
-                "app.utils.websocket.get_socket_owner.get_redis_client",
+                "app.infra.v4.websocket.get_socket_owner.get_redis_client",
                 return_value=mock_redis,
             ),
             patch(
-                "app.utils.websocket.get_socket_owner.get_socket_owner_dict",
+                "app.infra.v4.websocket.get_socket_owner.get_socket_owner_dict",
                 return_value=mock_socket_owner,
             ),
         ):

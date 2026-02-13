@@ -438,13 +438,13 @@ async def get_profile_internal(
             selected = await get_departments_internal(c, department_ids, bypass_cache)
             suggestions = await search_departments_internal(
                 c,
-                None,
-                20,
-                0,
-                user_department_ids,
-                "all",
-                department_ids,
-                bypass_cache,
+                search=None,
+                limit_count=20,
+                offset_count=0,
+                department_ids=user_department_ids,
+                suggest_source="all",
+                exclude_ids=department_ids,
+                bypass_cache=bypass_cache,
                 profile=True,
             )
             return (selected, suggestions)
@@ -454,11 +454,11 @@ async def get_profile_internal(
             selected = await get_cohorts_internal(c, cohort_ids, bypass_cache)
             suggestions = await search_cohorts_internal(
                 c,
-                None,
-                20,
-                0,
-                cohort_ids,
-                bypass_cache,
+                search=None,
+                limit_count=20,
+                offset_count=0,
+                exclude_ids=cohort_ids,
+                bypass_cache=bypass_cache,
                 profile=True,
             )
             return (selected, suggestions)

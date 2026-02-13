@@ -105,7 +105,7 @@ class TestLog_And_Raise_Error:
         route_path = "/api/v3/test"
         operation = "test_operation"
 
-        with patch("app.utils.error.log_and_raise_error.logger") as mock_logger:
+        with patch("app.infra.v4.error.log_and_raise_error.logger") as mock_logger:
             with pytest.raises(HTTPException):
                 log_and_raise_error(error, route_path, operation)
 

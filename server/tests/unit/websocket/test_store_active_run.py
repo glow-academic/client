@@ -1,5 +1,5 @@
 """
-Tests for app.utils.websocket.store_active_run
+Tests for app.infra.v4.websocket.store_active_run
 """
 
 from unittest.mock import MagicMock, patch
@@ -21,7 +21,7 @@ class TestStore_Active_Run:
 
         # Act
         with patch(
-            "app.utils.websocket.store_active_run.set_active_run"
+            "app.infra.v4.websocket.store_active_run.set_active_run"
         ) as mock_set_active_run:
             await store_active_run(chat_id, run_result)
 
