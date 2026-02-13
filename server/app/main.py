@@ -666,8 +666,6 @@ class DBLoggingMiddleware(BaseHTTPMiddleware):
                 profile_id = request.headers.get("X-Profile-Id")
 
         # Set profile_id if found, otherwise skip DB logging
-        # Note: We do NOT resolve from department-id/auth-mode cookies here
-        # Only /api/v4/profile/context resolves from cookies (single source of truth)
         if profile_id:
             set_profile_id(profile_id)
         else:
