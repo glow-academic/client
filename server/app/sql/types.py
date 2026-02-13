@@ -26454,6 +26454,408 @@ class GetVideoRunContextAndCreateRunApiResponse(BaseModel):
 
 
 
+# Generated from: get_activity_audits_view
+
+class GetActivityAuditsViewSqlParams(BaseModel):
+
+    profile_id_filter: UUID | None = None
+    profile_ids_filter: list[UUID] | None = None
+    session_id_filter: UUID | None = None
+    error_filter: bool | None = None
+    endpoint_filter: str | None = None
+    date_from: datetime
+    date_to: datetime
+    sort_desc: bool | None = True
+    page_limit: int | None = 50
+    page_offset: int | None = 0
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id_filter,
+            self.profile_ids_filter,
+            self.session_id_filter,
+            self.error_filter,
+            self.endpoint_filter,
+            self.date_from,
+            self.date_to,
+            self.sort_desc,
+            self.page_limit,
+            self.page_offset,
+        )
+
+class QGetActivityAuditsViewV4Item(BaseModel):
+
+    audit_id: UUID | None
+    created_at: datetime | None
+    endpoint: str | None
+    message: str | None
+    error: bool | None
+    session_id: UUID | None
+    profile_id: UUID | None
+
+class GetActivityAuditsViewSqlRow(BaseModel):
+
+    items: list[QGetActivityAuditsViewV4Item] | None = None
+    total_count: int | None = None
+
+class GetActivityAuditsViewApiRequest(BaseModel):
+
+    profile_id_filter: UUID | None = None
+    profile_ids_filter: list[UUID] | None = None
+    session_id_filter: UUID | None = None
+    error_filter: bool | None = None
+    endpoint_filter: str | None = None
+    date_from: datetime
+    date_to: datetime
+    sort_desc: bool | None = True
+    page_limit: int | None = 50
+    page_offset: int | None = 0
+
+class GetActivityAuditsViewApiResponse(BaseModel):
+
+    items: list[QGetActivityAuditsViewV4Item] | None = None
+    total_count: int | None = None
+
+
+
+# Generated from: get_activity_daily_view
+
+class GetActivityDailyViewSqlParams(BaseModel):
+
+    event_type_filter: str | None = None
+    date_from: date | None = None
+    date_to: date | None = None
+    page_limit: int | None = 30
+    page_offset: int | None = 0
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.event_type_filter,
+            self.date_from,
+            self.date_to,
+            self.page_limit,
+            self.page_offset,
+        )
+
+class QGetActivityDailyViewV4Item(BaseModel):
+
+    date_key: str | None
+    event_type: str | None
+    event_count: int | None
+    unique_profiles: int | None
+    saved_count: int | None
+    created_count: int | None
+    duplicated_count: int | None
+    uploaded_count: int | None
+    deleted_count: int | None
+    updated_count: int | None
+
+class GetActivityDailyViewSqlRow(BaseModel):
+
+    items: list[QGetActivityDailyViewV4Item] | None = None
+    total_count: int | None = None
+
+class GetActivityDailyViewApiRequest(BaseModel):
+
+    event_type_filter: str | None = None
+    date_from: date | None = None
+    date_to: date | None = None
+    page_limit: int | None = 30
+    page_offset: int | None = 0
+
+class GetActivityDailyViewApiResponse(BaseModel):
+
+    items: list[QGetActivityDailyViewV4Item] | None = None
+    total_count: int | None = None
+
+
+
+# Generated from: get_activity_feedbacks_view
+
+class GetActivityFeedbacksViewSqlParams(BaseModel):
+
+    profile_id_filter: UUID | None = None
+    profile_ids_filter: list[UUID] | None = None
+    feedback_type_filter: str | None = None
+    date_from: datetime
+    date_to: datetime
+    sort_desc: bool | None = True
+    page_limit: int | None = 50
+    page_offset: int | None = 0
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id_filter,
+            self.profile_ids_filter,
+            self.feedback_type_filter,
+            self.date_from,
+            self.date_to,
+            self.sort_desc,
+            self.page_limit,
+            self.page_offset,
+        )
+
+class QGetActivityFeedbacksViewV4Item(BaseModel):
+
+    feedback_id: UUID | None
+    grade_id: UUID | None
+    feedback_type: str | None
+    total: int | None
+    total_points: float | None
+    pass_points: float | None
+    created_at: datetime | None
+    updated_at: datetime | None
+    call_id: UUID | None
+    active: bool | None
+    simulation_attempt_id: UUID | None
+    benchmark_test_id: UUID | None
+    profile_id: UUID | None
+
+class GetActivityFeedbacksViewSqlRow(BaseModel):
+
+    items: list[QGetActivityFeedbacksViewV4Item] | None = None
+    total_count: int | None = None
+
+class GetActivityFeedbacksViewApiRequest(BaseModel):
+
+    profile_id_filter: UUID | None = None
+    profile_ids_filter: list[UUID] | None = None
+    feedback_type_filter: str | None = None
+    date_from: datetime
+    date_to: datetime
+    sort_desc: bool | None = True
+    page_limit: int | None = 50
+    page_offset: int | None = 0
+
+class GetActivityFeedbacksViewApiResponse(BaseModel):
+
+    items: list[QGetActivityFeedbacksViewV4Item] | None = None
+    total_count: int | None = None
+
+
+
+# Generated from: get_activity_logins_view
+
+class GetActivityLoginsViewSqlParams(BaseModel):
+
+    profile_id_filter: UUID | None = None
+    profile_ids_filter: list[UUID] | None = None
+    active_filter: bool | None = None
+    date_from: datetime
+    date_to: datetime
+    sort_by: str | None = None
+    sort_desc: bool | None = True
+    page_limit: int | None = 50
+    page_offset: int | None = 0
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id_filter,
+            self.profile_ids_filter,
+            self.active_filter,
+            self.date_from,
+            self.date_to,
+            self.sort_by,
+            self.sort_desc,
+            self.page_limit,
+            self.page_offset,
+        )
+
+class QGetActivityLoginsViewV4Item(BaseModel):
+
+    login_id: UUID | None
+    profile_id: UUID | None
+    last_login: datetime | None
+    created_at: datetime | None
+    updated_at: datetime | None
+    active: bool | None
+    call_id: UUID | None
+
+class GetActivityLoginsViewSqlRow(BaseModel):
+
+    items: list[QGetActivityLoginsViewV4Item] | None = None
+    total_count: int | None = None
+
+class GetActivityLoginsViewApiRequest(BaseModel):
+
+    profile_id_filter: UUID | None = None
+    profile_ids_filter: list[UUID] | None = None
+    active_filter: bool | None = None
+    date_from: datetime
+    date_to: datetime
+    sort_by: str | None = None
+    sort_desc: bool | None = True
+    page_limit: int | None = 50
+    page_offset: int | None = 0
+
+class GetActivityLoginsViewApiResponse(BaseModel):
+
+    items: list[QGetActivityLoginsViewV4Item] | None = None
+    total_count: int | None = None
+
+
+
+# Generated from: get_activity_problems_view
+
+class GetActivityProblemsViewSqlParams(BaseModel):
+
+    profile_id_filter: UUID | None = None
+    profile_ids_filter: list[UUID] | None = None
+    resolved_filter: bool | None = None
+    date_from: datetime
+    date_to: datetime
+    sort_desc: bool | None = True
+    page_limit: int | None = 50
+    page_offset: int | None = 0
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id_filter,
+            self.profile_ids_filter,
+            self.resolved_filter,
+            self.date_from,
+            self.date_to,
+            self.sort_desc,
+            self.page_limit,
+            self.page_offset,
+        )
+
+class QGetActivityProblemsViewV4Item(BaseModel):
+
+    problem_id: UUID | None
+    type: str | None
+    message: str | None
+    resolved: bool | None
+    created_at: datetime | None
+    updated_at: datetime | None
+    profile_id: UUID | None
+    profile_name: str | None
+
+class GetActivityProblemsViewSqlRow(BaseModel):
+
+    items: list[QGetActivityProblemsViewV4Item] | None = None
+    total_count: int | None = None
+
+class GetActivityProblemsViewApiRequest(BaseModel):
+
+    profile_id_filter: UUID | None = None
+    profile_ids_filter: list[UUID] | None = None
+    resolved_filter: bool | None = None
+    date_from: datetime
+    date_to: datetime
+    sort_desc: bool | None = True
+    page_limit: int | None = 50
+    page_offset: int | None = 0
+
+class GetActivityProblemsViewApiResponse(BaseModel):
+
+    items: list[QGetActivityProblemsViewV4Item] | None = None
+    total_count: int | None = None
+
+
+
+# Generated from: get_activity_session_facts_view
+
+class GetActivitySessionFactsViewSqlParams(BaseModel):
+
+    profile_id_filter: UUID | None = None
+    profile_ids_filter: list[UUID] | None = None
+    active_filter: bool | None = None
+    date_from: datetime
+    date_to: datetime
+    sort_by: str | None = None
+    sort_desc: bool | None = True
+    page_limit: int | None = 50
+    page_offset: int | None = 0
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id_filter,
+            self.profile_ids_filter,
+            self.active_filter,
+            self.date_from,
+            self.date_to,
+            self.sort_by,
+            self.sort_desc,
+            self.page_limit,
+            self.page_offset,
+        )
+
+class QGetActivitySessionFactsViewV4Item(BaseModel):
+
+    session_id: UUID | None
+    profile_id: UUID | None
+    session_created_at: datetime | None
+    session_updated_at: datetime | None
+    active: bool | None
+    group_count: int | None
+    first_group_at: datetime | None
+    last_group_at: datetime | None
+    run_count: int | None
+    total_tokens: int | None
+
+class GetActivitySessionFactsViewSqlRow(BaseModel):
+
+    items: list[QGetActivitySessionFactsViewV4Item] | None = None
+    total_count: int | None = None
+
+class GetActivitySessionFactsViewApiRequest(BaseModel):
+
+    profile_id_filter: UUID | None = None
+    profile_ids_filter: list[UUID] | None = None
+    active_filter: bool | None = None
+    date_from: datetime
+    date_to: datetime
+    sort_by: str | None = None
+    sort_desc: bool | None = True
+    page_limit: int | None = 50
+    page_offset: int | None = 0
+
+class GetActivitySessionFactsViewApiResponse(BaseModel):
+
+    items: list[QGetActivitySessionFactsViewV4Item] | None = None
+    total_count: int | None = None
+
+
+
+# Generated from: get_activity_summary_view
+
+class GetActivitySummaryViewSqlParams(BaseModel):
+
+    pass
+
+class QGetActivitySummaryViewV4Item(BaseModel):
+
+    total_sessions: int | None
+    active_sessions: int | None
+    total_active_profiles: int | None
+    total_logins: int | None
+    total_content_created: int | None
+    total_drafts: int | None
+    total_problems: int | None
+    unresolved_problems: int | None
+    sessions_last_24h: int | None
+    logins_last_24h: int | None
+    events_last_24h: int | None
+    sessions_last_7d: int | None
+    logins_last_7d: int | None
+    active_profiles_last_7d: int | None
+    refreshed_at: datetime | None
+
+class GetActivitySummaryViewSqlRow(BaseModel):
+
+    items: list[QGetActivitySummaryViewV4Item] | None = None
+
+class GetActivitySummaryViewApiRequest(BaseModel):
+
+    pass
+
+class GetActivitySummaryViewApiResponse(BaseModel):
+
+    items: list[QGetActivitySummaryViewV4Item] | None = None
+
+
+
 # Generated from: get_analytics_attempts_view
 
 class GetAnalyticsAttemptsViewSqlParams(BaseModel):
@@ -31799,6 +32201,48 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetVideoRunContextAndCreateRunApiRequest",
         "GetVideoRunContextAndCreateRunApiResponse",
     ),
+    "app/sql/v4/queries/views/activity/audits/get_activity_audits_view_complete.sql": (
+        "GetActivityAuditsViewSqlParams",
+        "GetActivityAuditsViewSqlRow",
+        "GetActivityAuditsViewApiRequest",
+        "GetActivityAuditsViewApiResponse",
+    ),
+    "app/sql/v4/queries/views/activity/daily/get_activity_daily_view_complete.sql": (
+        "GetActivityDailyViewSqlParams",
+        "GetActivityDailyViewSqlRow",
+        "GetActivityDailyViewApiRequest",
+        "GetActivityDailyViewApiResponse",
+    ),
+    "app/sql/v4/queries/views/activity/feedbacks/get_activity_feedbacks_view_complete.sql": (
+        "GetActivityFeedbacksViewSqlParams",
+        "GetActivityFeedbacksViewSqlRow",
+        "GetActivityFeedbacksViewApiRequest",
+        "GetActivityFeedbacksViewApiResponse",
+    ),
+    "app/sql/v4/queries/views/activity/logins/get_activity_logins_view_complete.sql": (
+        "GetActivityLoginsViewSqlParams",
+        "GetActivityLoginsViewSqlRow",
+        "GetActivityLoginsViewApiRequest",
+        "GetActivityLoginsViewApiResponse",
+    ),
+    "app/sql/v4/queries/views/activity/problems/get_activity_problems_view_complete.sql": (
+        "GetActivityProblemsViewSqlParams",
+        "GetActivityProblemsViewSqlRow",
+        "GetActivityProblemsViewApiRequest",
+        "GetActivityProblemsViewApiResponse",
+    ),
+    "app/sql/v4/queries/views/activity/session_facts/get_activity_session_facts_view_complete.sql": (
+        "GetActivitySessionFactsViewSqlParams",
+        "GetActivitySessionFactsViewSqlRow",
+        "GetActivitySessionFactsViewApiRequest",
+        "GetActivitySessionFactsViewApiResponse",
+    ),
+    "app/sql/v4/queries/views/activity/summary/get_activity_summary_view_complete.sql": (
+        "GetActivitySummaryViewSqlParams",
+        "GetActivitySummaryViewSqlRow",
+        "GetActivitySummaryViewApiRequest",
+        "GetActivitySummaryViewApiResponse",
+    ),
     "app/sql/v4/queries/views/analytics/attempts/get_analytics_attempts_view_complete.sql": (
         "GetAnalyticsAttemptsViewSqlParams",
         "GetAnalyticsAttemptsViewSqlRow",
@@ -35012,6 +35456,41 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/queries/videos/get_video_run_context_and_create_run_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/views/activity/audits/get_activity_audits_view_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/views/activity/daily/get_activity_daily_view_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/views/activity/feedbacks/get_activity_feedbacks_view_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/views/activity/logins/get_activity_logins_view_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/views/activity/problems/get_activity_problems_view_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/views/activity/session_facts/get_activity_session_facts_view_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/views/activity/summary/get_activity_summary_view_complete.sql"]
     ) -> SqlString: ...
 
     @overload

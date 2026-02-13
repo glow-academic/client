@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/tooltip";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
-import { Check, X } from "lucide-react";
+import { Check, Loader2, Sparkles, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef } from "react";
 
 type CreateDraftToolsIn = InputOf<"/api/v4/resources/tools", "post">;
@@ -198,6 +198,10 @@ export function Tools({
     [ids, onChange]
   );
 
+  const hasGenerated = useMemo(() => {
+    return tool_resources?.some((t) => t.generated) ?? false;
+  }, [tool_resources]);
+
   // Don't render if show_tools is false (AFTER all hooks)
   if (!show) {
     return null;
@@ -210,6 +214,31 @@ export function Tools({
           {label}
           {required && <span className="text-destructive">*</span>}
         </Label>
+        {onGenerate && showAiGenerate && (
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="h-6 w-6"
+                  onClick={onGenerate}
+                  disabled={disabled || isGenerating || showDiff}
+                >
+                  {isGenerating ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <Sparkles className="h-3.5 w-3.5" />
+                  )}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                {hasGenerated ? "Regenerate" : "Generate"}
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        )}
         {showDiff && (
           <>
             <TooltipProvider>

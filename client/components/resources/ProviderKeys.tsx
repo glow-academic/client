@@ -3,8 +3,15 @@
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import type { OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
+import { Loader2, Sparkles } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 // Derive resource item type from the GET endpoint response
@@ -64,11 +71,11 @@ export function ProviderKeys({
   show_provider_keys = true,
   getProviderKeysAction,
   createProviderKeysAction,
-  showAiGenerate: _showAiGenerate = false,
-  onGenerate: _onGenerate,
-  isGenerating: _isGenerating = false,
-  onAccept: _onAccept,
-  onReject: _onReject,
+  showAiGenerate = false,
+  onGenerate,
+  isGenerating = false,
+  onAccept,
+  onReject,
 }: ProviderKeysProps) {
   const selectedIds = useMemo(() => provider_key_ids ?? [], [provider_key_ids]);
   const [resourcesById, setResourcesById] = useState<Map<string, ProviderKeysResourceItem>>(
@@ -205,11 +212,42 @@ export function ProviderKeys({
     ]
   );
 
+  const hasGenerated = useMemo(() => {
+    return provider_key_resources?.some((p) => p.generated) ?? false;
+  }, [provider_key_resources]);
+
   if (!show_provider_keys) return null;
 
   return (
     <div className="space-y-2">
-      <Label className="flex items-center gap-1">{label}</Label>
+      <div className="flex items-center gap-2">
+        <Label className="flex items-center gap-1">{label}</Label>
+        {onGenerate && showAiGenerate && (
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="h-6 w-6"
+                  onClick={onGenerate}
+                  disabled={disabled || isGenerating}
+                >
+                  {isGenerating ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <Sparkles className="h-3.5 w-3.5" />
+                  )}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                {hasGenerated ? "Regenerate" : "Generate"}
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        )}
+      </div>
       <p className="text-xs text-muted-foreground">{description}</p>
       {providerItems.length === 0 || keyItems.length === 0 ? (
         <div className="text-sm text-muted-foreground py-2">

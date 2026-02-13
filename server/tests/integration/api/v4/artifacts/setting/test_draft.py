@@ -8,7 +8,7 @@ pytestmark = pytest.mark.asyncio(loop_scope="session")
 
 BYPASS_CACHE_HEADERS = {"X-Bypass-Cache": "1"}
 HEADERS = {**BYPASS_CACHE_HEADERS, "X-Profile-Id": TEST_SUPERADMIN_PROFILE_ID}
-SEED_NAME_ID = "019b995c-8eb2-79f4-ad14-da57e866749a"
+SEED_NAME_ID = "019b995c-8eb2-79fe-9f43-b82f75849bb4"
 
 
 class TestSettingDraft:

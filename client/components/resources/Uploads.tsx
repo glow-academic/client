@@ -438,6 +438,10 @@ export function Uploads({
     onReject?.();
   }, [onReject]);
 
+  const hasGenerated = useMemo(() => {
+    return upload_resources?.some((u) => u.generated) ?? false;
+  }, [upload_resources]);
+
   if (!show) {
     return null;
   }
@@ -490,7 +494,7 @@ export function Uploads({
                     )}
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent>Generate files with AI</TooltipContent>
+                <TooltipContent>{hasGenerated ? "Regenerate files with AI" : "Generate files with AI"}</TooltipContent>
               </Tooltip>
             </TooltipProvider>
           )}

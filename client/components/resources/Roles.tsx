@@ -30,7 +30,7 @@ import {
 import type { OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 import { ICON_MAP, ICON_NAMES } from "@/utils/icons";
-import { Check, Pencil, Plus, User, X } from "lucide-react";
+import { Check, Loader2, Pencil, Plus, Sparkles, User, X } from "lucide-react";
 import { useCallback, useMemo, useState } from "react";
 
 // Derive resource item type from the GET endpoint response
@@ -239,9 +239,9 @@ export function Roles({
   showSelectedFilter = false,
   emptyMessage = "No roles found. Try adjusting your search.",
   onRoleResourceChange,
-  showAiGenerate: _showAiGenerate = false,
-  onGenerate: _onGenerate,
-  isGenerating: _isGenerating = false,
+  showAiGenerate = false,
+  onGenerate,
+  isGenerating = false,
   // AI diff view props
   aiRoleResources,
   onAccept,
@@ -414,6 +414,10 @@ export function Roles({
     onReject?.();
   }, [onReject]);
 
+  const hasGenerated = useMemo(() => {
+    return roles?.some((r) => r.generated) ?? false;
+  }, [roles]);
+
   if (!show_roles) {
     return null;
   }
@@ -426,6 +430,31 @@ export function Roles({
             {label}
             {required && <span className="text-destructive">*</span>}
           </Label>
+          {onGenerate && showAiGenerate && (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6"
+                    onClick={onGenerate}
+                    disabled={disabled || isGenerating || showDiff}
+                  >
+                    {isGenerating ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      <Sparkles className="h-3.5 w-3.5" />
+                    )}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  {hasGenerated ? "Regenerate" : "Generate"}
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          )}
           {showDiff && (
             <>
               <TooltipProvider>
