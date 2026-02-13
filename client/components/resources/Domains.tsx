@@ -59,7 +59,7 @@ export interface DomainsProps {
 
 export function Domains({
   domain_ids,
-  domain_resources,
+  domain_resources: _domain_resources,
   show_domains = false,
   domain_suggestions,
   domains,
@@ -129,11 +129,6 @@ export function Domains({
   const handleReject = useCallback(() => {
     onReject?.();
   }, [onReject]);
-
-  // Check if any resource is generated (must be before early return)
-  const _hasGenerated = useMemo(() => {
-    return domain_resources?.some((d) => d.generated) ?? false;
-  }, [domain_resources]);
 
   // Don't render if show is false (AFTER all hooks)
   if (!show) {
@@ -205,7 +200,9 @@ export function Domains({
                 "hover:shadow-md hover:bg-accent/50",
                 "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
                 isSelected && "ring-2 ring-primary bg-accent",
-                isAiSuggested && !isSelected && "ring-2 ring-success bg-success/10"
+                isAiSuggested &&
+                  !isSelected &&
+                  "ring-2 ring-success bg-success/10"
               )}
             >
               {isSelected && (

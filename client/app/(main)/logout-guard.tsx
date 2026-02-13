@@ -9,8 +9,8 @@ import { useEffect, useState } from "react";
  * during logout to avoid flash of access denied screen.
  * Shows a minimal loading state instead.
  *
- * Only shows loading if logout is actually in progress (has session/cookies being cleared).
- * If already logged out (no session, no cookies), clears flag and shows normal access denied.
+ * Only shows loading if logout is actually in progress (session being cleared).
+ * If already logged out (no session), clears flag and shows normal access denied.
  */
 export function LogoutGuard({ children }: { children: React.ReactNode }) {
   const [isLoggingOut, setIsLoggingOut] = useState(false);
@@ -57,7 +57,6 @@ export function LogoutGuard({ children }: { children: React.ReactNode }) {
             session !== null &&
             (status === "authenticated" || status === "loading");
           const hasCookies =
-            document.cookie.includes("department-id") ||
             document.cookie.includes("next-auth.session-token");
 
           // If we still have session/cookies, show loading

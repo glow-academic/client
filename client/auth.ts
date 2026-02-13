@@ -63,8 +63,7 @@ export const {
   basePath: `${appPrefix}/api/auth`,
   providers: [
     // Single Keycloak provider - frontend controls which identity provider via kc_idp_hint
-    // Realm selection: Dynamic based on realm-name cookie set by Login component
-    // Each department gets its own realm (master for default, department_id for others)
+    // Always use master realm (organizations replace multi-realm architecture)
     Keycloak({
       clientId: keycloakClientId,
       clientSecret: keycloakClientSecret,

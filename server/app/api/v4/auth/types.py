@@ -125,6 +125,16 @@ class GetAuthPageApiResponse(BaseModel):
     page_metadata: PageMetadata | None = None
 
 
+class GetAuthAttemptApiResponse(BaseModel):
+    """Lightweight attempt control state for layout header SSR."""
+
+    show_controls: bool = False
+    attempt_id: str | None = None
+    current_chat_id: str | None = None
+    simulation_id: str | None = None
+    has_messages: bool = False
+
+
 class GetDraftsApiResponse(BaseModel):
     """Response model for /auth/drafts endpoint."""
 

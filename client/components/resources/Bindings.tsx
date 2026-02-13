@@ -56,7 +56,7 @@ export interface BindingsProps {
 
 export function Bindings({
   binding_ids,
-  binding_resources,
+  binding_resources: _binding_resources,
   show_bindings = false,
   binding_suggestions,
   bindings,
@@ -125,11 +125,6 @@ export function Bindings({
   const handleReject = useCallback(() => {
     onReject?.();
   }, [onReject]);
-
-  // Check if any resource is generated (must be before early return)
-  const _hasGenerated = useMemo(() => {
-    return binding_resources?.some((b) => b.generated) ?? false;
-  }, [binding_resources]);
 
   // Don't render if show_bindings is false (AFTER all hooks)
   if (!show) {
@@ -201,7 +196,9 @@ export function Bindings({
                 "hover:shadow-md hover:bg-accent/50",
                 "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
                 isSelected && "ring-2 ring-primary bg-accent",
-                isAiSuggested && !isSelected && "ring-2 ring-success bg-success/10"
+                isAiSuggested &&
+                  !isSelected &&
+                  "ring-2 ring-success bg-success/10"
               )}
             >
               {isSelected && (

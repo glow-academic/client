@@ -6,7 +6,7 @@ import { getSession } from "@/auth";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Session } from "next-auth";
-import { cookies, headers } from "next/headers";
+import { headers } from "next/headers";
 import { cache } from "react";
 
 /** ---- Strong types from OpenAPI ---- */
@@ -34,6 +34,8 @@ const REFRESH_ENDPOINT_MAP: Record<string, string> = {
   activity: "/artifacts/activity/refresh",
   health: "/artifacts/health/refresh",
 };
+type AuthAttemptIn = InputOf<"/api/v4/auth/attempt", "post">;
+type AuthAttemptOut = OutputOf<"/api/v4/auth/attempt", "post">;
 type AttemptFullIn = InputOf<"/api/v4/artifacts/attempt/get", "post">;
 type AttemptFullOut = OutputOf<"/api/v4/artifacts/attempt/get", "post">;
 type SearchSimulatableProfilesIn = InputOf<"/api/v4/auth/simulatable", "post">;
@@ -57,19 +59,10 @@ export type AuthPageResponse = AuthPageOut;
 
 /** ---- Shared header builder for auth endpoints ---- */
 async function buildAuthHeaders(): Promise<Record<string, string>> {
-  const cookieStore = await cookies();
-  const cookieHeader = [
-    cookieStore.get("department-id")?.value &&
-      `department-id=${cookieStore.get("department-id")?.value}`,
-  ]
-    .filter(Boolean)
-    .join("; ");
-
   const headersList = await headers();
   const pathname = headersList.get("x-pathname") || "/";
 
   const extraHeaders: Record<string, string> = {};
-  if (cookieHeader) extraHeaders["Cookie"] = cookieHeader;
   extraHeaders["X-Pathname"] = pathname;
   return extraHeaders;
 }
@@ -119,20 +112,19 @@ export const getAnalyticsFilters = cache(
   }
 );
 
-/** ---- Direct fetch (no caching - source of truth) ----
- * Always bypass cache to ensure fresh data for websocket/attempt pages.
- */
-const getAttemptFull = async (
-  _attemptId: string,
-  input: AttemptFullIn
-): Promise<AttemptFullOut> => {
-  return api.post("/artifacts/attempt/get", input, {
-    cache: "no-store",
-    headers: {
-      "X-Bypass-Cache": "1",
-    },
-  });
-};
+/** ---- Cached auth attempt fetch (lightweight controls for layout header) ---- */
+export const getAuthAttempt = cache(
+  async (): Promise<AuthAttemptOut | null> => {
+    try {
+      const extraHeaders = await buildAuthHeaders();
+      return await api.post("/auth/attempt", {} as AuthAttemptIn, {
+        headers: extraHeaders,
+      });
+    } catch {
+      return null;
+    }
+  }
+);
 
 /** ---- Export type for client (type-only imports) ---- */
 export type DraftsResponse = DraftsOut;
@@ -196,20 +188,23 @@ export async function getLayoutContextData(session?: Session | null) {
   let pageData: AuthPageOut | null = null;
   let draftsResult: DraftsOut | null = null;
   let analyticsFilters: AnalyticsFiltersOut | null = null;
+  let attemptControls: AuthAttemptOut | null = null;
 
   try {
-    const [profileRes, settingsRes, pageRes, draftsRes, filtersRes] = await Promise.all([
+    const [profileRes, settingsRes, pageRes, draftsRes, filtersRes, attemptRes] = await Promise.all([
       getAuthProfile(),
       getAuthSettings(),
       getAuthPage(),
       getDrafts(),
       getAnalyticsFilters(),
+      getAuthAttempt(),
     ]);
     profileData = profileRes;
     settingsData = settingsRes;
     pageData = pageRes;
     draftsResult = draftsRes;
     analyticsFilters = filtersRes;
+    attemptControls = attemptRes;
   } catch {
     // If fetch fails (e.g., 403/404), return null
     return {
@@ -217,7 +212,7 @@ export async function getLayoutContextData(session?: Session | null) {
       settingsData: null,
       pageData: null,
       snapshot,
-      attemptData: null,
+      attemptControls: null,
       drafts: [],
       analyticsFilters: null,
     };
@@ -230,32 +225,10 @@ export async function getLayoutContextData(session?: Session | null) {
       settingsData: null,
       pageData: null,
       snapshot,
-      attemptData: null,
+      attemptControls: null,
       drafts: [],
       analyticsFilters: null,
     };
-  }
-
-  // Read pathname from headers to check if we're on an attempt page
-  const headersList = await headers();
-  const pathname = headersList.get("x-pathname") || "/";
-
-  // Extract attemptId from pathname if we're on an attempt page
-  const attemptMatch =
-    pathname.match(/\/home\/([0-9a-f-]{36})/) ||
-    pathname.match(/\/practice\/([0-9a-f-]{36})/);
-  const attemptId = attemptMatch ? attemptMatch[1] : null;
-
-  // Fetch attempt data if we have an attemptId (using resolved UUID)
-  let attemptData: AttemptFullOut | null = null;
-  if (attemptId) {
-    try {
-      attemptData = await getAttemptFull(attemptId, {
-        body: { attempt_id: attemptId },
-      });
-    } catch {
-      attemptData = null;
-    }
   }
 
   return {
@@ -263,7 +236,7 @@ export async function getLayoutContextData(session?: Session | null) {
     settingsData,
     pageData,
     snapshot,
-    attemptData,
+    attemptControls,
     drafts: draftsResult?.drafts ?? [],
     analyticsFilters,
   };
@@ -340,16 +313,9 @@ export async function switchEffectiveProfile(
   }
 }
 
-/** Server action to clear session cookies. */
+/** Server action to clear session state. */
 export async function clearSessionCookies(): Promise<void> {
   "use server";
-  try {
-    const cookieStore = await cookies();
-    cookieStore.delete("department-id");
-    cookieStore.delete("realm-name");
-  } catch {
-    // Ignore errors - cookies might not exist
-  }
 }
 
 /** ---- Strongly-typed server actions for Feedback (single source of truth) ---- */
@@ -403,6 +369,7 @@ export type RefreshPageFn = (page: string) => Promise<void>;
 
 export type {
   AnalyticsFiltersOut,
+  AuthAttemptOut,
   AttemptFullIn,
   AttemptFullOut,
   BulkCreateOrUpdateStaffIn,

@@ -59,7 +59,7 @@ export interface RubricsProps {
 
 export function Rubrics({
   rubric_ids,
-  rubric_resources,
+  rubric_resources: _rubric_resources,
   show_rubrics = false,
   rubric_suggestions,
   rubrics,
@@ -129,11 +129,6 @@ export function Rubrics({
   const handleReject = useCallback(() => {
     onReject?.();
   }, [onReject]);
-
-  // Check if any resource is generated (must be before early return)
-  const _hasGenerated = useMemo(() => {
-    return rubric_resources?.some((r) => r.generated) ?? false;
-  }, [rubric_resources]);
 
   // Don't render if show is false (AFTER all hooks)
   if (!show) {
@@ -205,7 +200,9 @@ export function Rubrics({
                 "hover:shadow-md hover:bg-accent/50",
                 "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
                 isSelected && "ring-2 ring-primary bg-accent",
-                isAiSuggested && !isSelected && "ring-2 ring-success bg-success/10"
+                isAiSuggested &&
+                  !isSelected &&
+                  "ring-2 ring-success bg-success/10"
               )}
             >
               {isSelected && (

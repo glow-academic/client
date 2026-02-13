@@ -55,7 +55,7 @@ export default async function MainLayout({
   }
 
   // Fetch all layout data in parallel
-  const { profileData, settingsData, pageData, snapshot, attemptData, drafts, analyticsFilters } =
+  const { profileData, settingsData, pageData, snapshot, attemptControls, drafts, analyticsFilters } =
     await getLayoutContextData(session);
 
   // Profile resolution failed → full-width access denied
@@ -86,7 +86,7 @@ export default async function MainLayout({
         settingsData={settingsData}
         pageData={pageData}
         sessionSnapshot={snapshot}
-        attemptData={attemptData}
+        attemptControls={attemptControls}
         drafts={drafts}
         analyticsFilters={analyticsFilters}
         initialAutosave={initialAutosave}

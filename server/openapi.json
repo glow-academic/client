@@ -41015,6 +41015,103 @@
         ]
       }
     },
+    "/api/v4/auth/attempt": {
+      "post": {
+        "tags": [
+          "v4",
+          "auth"
+        ],
+        "summary": "Get Auth Attempt",
+        "description": "Lightweight attempt control state for layout header SSR.",
+        "operationId": "get_auth_attempt_api_v4_auth_attempt_post",
+        "parameters": [
+          {
+            "name": "X-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Session-Id"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GetProfileContextApiRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetAuthAttemptApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v4",
+          "auth"
+        ]
+      }
+    },
     "/api/v4/auth/context": {
       "post": {
         "tags": [
@@ -68995,6 +69092,56 @@
         "type": "object",
         "title": "GetAuthApiResponse",
         "description": "Response model for get auth endpoint."
+      },
+      "GetAuthAttemptApiResponse": {
+        "properties": {
+          "show_controls": {
+            "type": "boolean",
+            "title": "Show Controls",
+            "default": false
+          },
+          "attempt_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Attempt Id"
+          },
+          "current_chat_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current Chat Id"
+          },
+          "simulation_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulation Id"
+          },
+          "has_messages": {
+            "type": "boolean",
+            "title": "Has Messages",
+            "default": false
+          }
+        },
+        "type": "object",
+        "title": "GetAuthAttemptApiResponse",
+        "description": "Lightweight attempt control state for layout header SSR."
       },
       "GetAuthItemKeysApiRequest": {
         "properties": {

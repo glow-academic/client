@@ -8322,6 +8322,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/auth/attempt": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Auth Attempt
+         * @description Lightweight attempt control state for layout header SSR.
+         */
+        post: operations["get_auth_attempt_api_v4_auth_attempt_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v4/auth/context": {
         parameters: {
             query?: never;
@@ -18159,6 +18179,28 @@ export interface components {
             protocols?: components["schemas"]["AuthProtocolSection"] | null;
             slugs?: components["schemas"]["AuthSlugSection"] | null;
             items?: components["schemas"]["AuthItemSection"] | null;
+        };
+        /**
+         * GetAuthAttemptApiResponse
+         * @description Lightweight attempt control state for layout header SSR.
+         */
+        GetAuthAttemptApiResponse: {
+            /**
+             * Show Controls
+             * @default false
+             */
+            show_controls: boolean;
+            /** Attempt Id */
+            attempt_id?: string | null;
+            /** Current Chat Id */
+            current_chat_id?: string | null;
+            /** Simulation Id */
+            simulation_id?: string | null;
+            /**
+             * Has Messages
+             * @default false
+             */
+            has_messages: boolean;
         };
         /** GetAuthItemKeysApiRequest */
         GetAuthItemKeysApiRequest: {
@@ -52756,6 +52798,43 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["GetLoginDataApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_auth_attempt_api_v4_auth_attempt_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GetProfileContextApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetAuthAttemptApiResponse"];
                 };
             };
             /** @description Validation Error */

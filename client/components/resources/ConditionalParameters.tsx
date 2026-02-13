@@ -56,7 +56,7 @@ export interface ConditionalParametersProps {
 
 export function ConditionalParameters({
   conditional_parameter_ids,
-  conditional_parameter_resources,
+  conditional_parameter_resources: _conditional_parameter_resources,
   show_conditional_parameters = false,
   conditional_parameter_suggestions,
   conditional_parameters,
@@ -132,11 +132,6 @@ export function ConditionalParameters({
     onReject?.();
   }, [onReject]);
 
-  // Check if any resource is generated (must be before early return)
-  const _hasGenerated = useMemo(() => {
-    return conditional_parameter_resources?.some((c) => c.generated) ?? false;
-  }, [conditional_parameter_resources]);
-
   // Don't render if show is false (AFTER all hooks)
   if (!show) {
     return null;
@@ -207,7 +202,9 @@ export function ConditionalParameters({
                 "hover:shadow-md hover:bg-accent/50",
                 "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
                 isSelected && "ring-2 ring-primary bg-accent",
-                isAiSuggested && !isSelected && "ring-2 ring-success bg-success/10"
+                isAiSuggested &&
+                  !isSelected &&
+                  "ring-2 ring-success bg-success/10"
               )}
             >
               {isSelected && (

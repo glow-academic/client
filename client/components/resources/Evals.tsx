@@ -59,7 +59,7 @@ export interface EvalsProps {
 
 export function Evals({
   eval_ids,
-  eval_resources,
+  eval_resources: _eval_resources,
   show_evals = false,
   eval_suggestions,
   evals,
@@ -129,11 +129,6 @@ export function Evals({
   const handleReject = useCallback(() => {
     onReject?.();
   }, [onReject]);
-
-  // Check if any resource is generated (must be before early return)
-  const _hasGenerated = useMemo(() => {
-    return eval_resources?.some((e) => e.generated) ?? false;
-  }, [eval_resources]);
 
   // Don't render if show is false (AFTER all hooks)
   if (!show) {
@@ -205,7 +200,9 @@ export function Evals({
                 "hover:shadow-md hover:bg-accent/50",
                 "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
                 isSelected && "ring-2 ring-primary bg-accent",
-                isAiSuggested && !isSelected && "ring-2 ring-success bg-success/10"
+                isAiSuggested &&
+                  !isSelected &&
+                  "ring-2 ring-success bg-success/10"
               )}
             >
               {isSelected && (

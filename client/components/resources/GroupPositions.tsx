@@ -62,7 +62,7 @@ export interface GroupPositionsProps {
 
 export function GroupPositions({
   group_position_ids,
-  group_position_resources,
+  group_position_resources: _group_position_resources,
   show_group_positions = false,
   group_position_suggestions,
   group_positions,
@@ -140,11 +140,6 @@ export function GroupPositions({
     onReject?.();
   }, [onReject]);
 
-  // Check if any resource is generated (must be before early return)
-  const _hasGenerated = useMemo(() => {
-    return group_position_resources?.some((g) => g.generated) ?? false;
-  }, [group_position_resources]);
-
   // Don't render if show is false (AFTER all hooks)
   if (!show) {
     return null;
@@ -215,7 +210,9 @@ export function GroupPositions({
                 "hover:shadow-md hover:bg-accent/50",
                 "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
                 isSelected && "ring-2 ring-primary bg-accent",
-                isAiSuggested && !isSelected && "ring-2 ring-success bg-success/10"
+                isAiSuggested &&
+                  !isSelected &&
+                  "ring-2 ring-success bg-success/10"
               )}
             >
               {isSelected && (

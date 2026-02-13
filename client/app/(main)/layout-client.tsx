@@ -29,10 +29,10 @@ import { SettingsProviderClient } from "@/contexts/settings-context";
 import { SocketProviderClient } from "@/contexts/socket-context";
 import type {
   AnalyticsFiltersResponse,
+  AuthAttemptOut,
   AuthPageResponse,
   AuthProfileResponse,
   AuthSettingsResponse,
-  AttemptFullOut,
   CreateFeedbackIn,
   CreateFeedbackOut,
   RefreshPageFn,
@@ -47,7 +47,7 @@ import type {
 function MainLayoutContent({
   children,
   pageData,
-  attemptData,
+  attemptControls,
   switchEffectiveProfileAction,
   createFeedbackAction,
   refreshPageAction,
@@ -55,7 +55,7 @@ function MainLayoutContent({
 }: {
   children: React.ReactNode;
   pageData: AuthPageResponse | null;
-  attemptData: AttemptFullOut | null;
+  attemptControls: AuthAttemptOut | null;
   switchEffectiveProfileAction: (
     input: SwitchEffectiveProfileParams
   ) => Promise<SwitchEffectiveProfileResult>;
@@ -97,20 +97,6 @@ function MainLayoutContent({
     router.push(`/${section}`);
     router.refresh();
   };
-
-  // Extract attemptId from pathname if we're on an attempt page
-  const attemptMatch =
-    pathname.match(/\/home\/([0-9a-f-]{36})/) ||
-    pathname.match(/\/practice\/([0-9a-f-]{36})/);
-  const attemptId = attemptMatch ? attemptMatch[1] : null;
-
-  // Check if we should show SimulationControls
-  const shouldShowSimulationControls = useMemo(() => {
-    if (!attemptData || !attemptId || !attemptData.attempt) {
-      return false;
-    }
-    return attemptData.is_own_attempt === true;
-  }, [attemptData, attemptId]);
 
   // Use server-driven page metadata for create/edit detection
   const isCreateOrEditPage = pageMetadata?.show_save_toolbar ?? false;
@@ -158,12 +144,14 @@ function MainLayoutContent({
               <AnalyticsFilters refreshPage={refreshPageAction} />
             )}
 
-            {/* SimulationControls - Show when on attempt page and attempt belongs to active profile */}
-            {shouldShowSimulationControls && attemptId && attemptData && (
+            {/* SimulationControls - Server gates via show_controls */}
+            {attemptControls?.show_controls && (
               <div className="pr-4">
                 <SimulationControls
-                  attemptId={attemptId}
-                  attemptData={attemptData}
+                  attemptId={attemptControls.attempt_id!}
+                  currentChatId={attemptControls.current_chat_id!}
+                  simulationId={attemptControls.simulation_id!}
+                  hasMessages={attemptControls.has_messages ?? false}
                 />
               </div>
             )}
@@ -208,7 +196,7 @@ export function MainLayoutClient({
   settingsData,
   pageData,
   sessionSnapshot,
-  attemptData,
+  attemptControls,
   drafts,
   analyticsFilters,
   initialAutosave,
@@ -222,7 +210,7 @@ export function MainLayoutClient({
   settingsData: AuthSettingsResponse | null;
   pageData: AuthPageResponse | null;
   sessionSnapshot: SafeSessionSnapshot;
-  attemptData: AttemptFullOut | null;
+  attemptControls: AuthAttemptOut | null;
   drafts: DraftItem[];
   analyticsFilters: AnalyticsFiltersResponse | null;
   /** Initial autosave preference from SSR cookie */
@@ -281,7 +269,7 @@ export function MainLayoutClient({
             <SettingsProviderClient settings={settingsData}>
               <MainLayoutContent
                 pageData={pageData}
-                attemptData={attemptData}
+                attemptControls={attemptControls}
                 switchEffectiveProfileAction={switchEffectiveProfileAction}
                 createFeedbackAction={createFeedbackAction}
                 refreshPageAction={refreshPageAction}

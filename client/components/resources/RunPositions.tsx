@@ -62,7 +62,7 @@ export interface RunPositionsProps {
 
 export function RunPositions({
   run_position_ids,
-  run_position_resources,
+  run_position_resources: _run_position_resources,
   show_run_positions = false,
   run_position_suggestions,
   run_positions,
@@ -140,11 +140,6 @@ export function RunPositions({
     onReject?.();
   }, [onReject]);
 
-  // Check if any resource is generated (must be before early return)
-  const _hasGenerated = useMemo(() => {
-    return run_position_resources?.some((r) => r.generated) ?? false;
-  }, [run_position_resources]);
-
   // Don't render if show is false (AFTER all hooks)
   if (!show) {
     return null;
@@ -215,7 +210,9 @@ export function RunPositions({
                 "hover:shadow-md hover:bg-accent/50",
                 "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
                 isSelected && "ring-2 ring-primary bg-accent",
-                isAiSuggested && !isSelected && "ring-2 ring-success bg-success/10"
+                isAiSuggested &&
+                  !isSelected &&
+                  "ring-2 ring-success bg-success/10"
               )}
             >
               {isSelected && (
