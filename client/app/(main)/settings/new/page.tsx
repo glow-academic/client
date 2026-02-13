@@ -207,10 +207,24 @@ export default async function NewSettingPage({
         createNamesAction={createDraftNames}
         createDescriptionsAction={createDraftDescriptions}
         createColorsAction={createDraftColors}
-        createProviderKeysAction={createProviderKeys}
-        getProviderKeysAction={getProviderKeys}
-        createAuthItemKeysAction={createAuthItemKeys}
-        getAuthItemKeysAction={getAuthItemKeys}
+        createProviderKeysAction={async (input) => {
+          "use server";
+          return createProviderKeys({ body: { ...input, mcp: false } });
+        }}
+        getProviderKeysAction={async (ids) => {
+          "use server";
+          const result = await getProviderKeys({ body: { ids } });
+          return result.items ?? [];
+        }}
+        createAuthItemKeysAction={async (input) => {
+          "use server";
+          return createAuthItemKeys({ body: { ...input, mcp: false } });
+        }}
+        getAuthItemKeysAction={async (ids) => {
+          "use server";
+          const result = await getAuthItemKeys({ body: { ids } });
+          return result.items ?? [];
+        }}
       />
     </div>
   );

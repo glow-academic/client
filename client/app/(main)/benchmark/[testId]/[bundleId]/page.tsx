@@ -2,18 +2,25 @@ import BenchmarkBundle, {
   type BenchmarkBundleData,
 } from "@/components/artifacts/benchmark/BenchmarkBundle";
 import { api } from "@/lib/api/client";
+import type { OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
+
+/** ---- Strong types from OpenAPI ---- */
+type GetBenchmarkBundleOut = OutputOf<
+  "/api/v4/artifacts/benchmark/bundle/get",
+  "post"
+>;
 
 const getBenchmarkBundle = async (
   bundleId: string,
-): Promise<BenchmarkBundleData> => {
-  const response = await api.post(
-    "/artifacts/benchmark/bundle/get" as never,
+): Promise<GetBenchmarkBundleOut> => {
+  return api.post(
+    "/artifacts/benchmark/bundle/get",
     {
       body: {
         benchmark_bundle_entry_id: bundleId,
       },
-    } as never,
+    },
     {
       cache: "no-store",
       headers: {
@@ -21,7 +28,6 @@ const getBenchmarkBundle = async (
       },
     },
   );
-  return response as BenchmarkBundleData;
 };
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -40,5 +46,5 @@ export default async function BenchmarkBundlePage({
 
   const bundleData = await getBenchmarkBundle(bundleId);
 
-  return <BenchmarkBundle bundleData={bundleData} testId={testId} />;
+  return <BenchmarkBundle bundleData={bundleData as BenchmarkBundleData} testId={testId} />;
 }

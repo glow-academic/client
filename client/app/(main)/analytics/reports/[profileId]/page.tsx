@@ -98,7 +98,7 @@ export default async function ReportsPage({
   const filters = resolveAnalyticsFilters(q, defaults, profileContext);
 
   // Build reports filters with target_profile_id from URL path
-  const reportsFilters = {
+  const reportsFilters: ReportsOverviewIn["body"] = {
     start_date: filters.startDate,
     end_date: filters.endDate,
     cohort_ids: filters.cohortIds,
@@ -107,8 +107,7 @@ export default async function ReportsPage({
     simulation_filters: filters.simulationFilters,
     actor_profile_id: profileContext.id || profileId,
     target_profile_id: profileId,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  } as any;
+  };
 
   // History params with defaults
   const historyPage = q.historyPage ?? 0;

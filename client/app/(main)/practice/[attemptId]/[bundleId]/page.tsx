@@ -1,34 +1,34 @@
 import TrainingBundle, { type TrainingBundleData } from "@/components/artifacts/training/TrainingBundle";
 import { api } from "@/lib/api/client";
+import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
 
-type PatchTrainingDraftIn = {
-  body: {
-    input_draft_id?: string | null;
-    expected_version?: number;
-    departments?: { resource_ids?: string[] };
-    personas?: { resource_ids?: string[] };
-    documents?: { resource_ids?: string[] };
-    parameter_fields?: { resource_ids?: string[] };
-  };
-};
-type PatchTrainingDraftOut = {
-  draft_id?: string | null;
-  new_version?: number | null;
-};
+/** ---- Strong types from OpenAPI ---- */
+type GetTrainingBundleOut = OutputOf<
+  "/api/v4/artifacts/training/bundle/get",
+  "post"
+>;
+type PatchTrainingDraftIn = InputOf<
+  "/api/v4/artifacts/training/draft",
+  "patch"
+>;
+type PatchTrainingDraftOut = OutputOf<
+  "/api/v4/artifacts/training/draft",
+  "patch"
+>;
 
 const getTrainingBundle = async (
   bundleId: string,
   draftId: string | null,
-): Promise<TrainingBundleData> => {
-  const response = await api.post(
-    "/artifacts/training/bundle/get" as never,
+): Promise<GetTrainingBundleOut> => {
+  return api.post(
+    "/artifacts/training/bundle/get",
     {
       body: {
         training_bundle_entry_id: bundleId,
         draft_id: draftId,
       },
-    } as never,
+    },
     {
       cache: "no-store",
       headers: {
@@ -36,14 +36,13 @@ const getTrainingBundle = async (
       },
     },
   );
-  return response as TrainingBundleData;
 };
 
 async function patchTrainingDraft(
   input: PatchTrainingDraftIn,
 ): Promise<PatchTrainingDraftOut> {
   "use server";
-  return api.patch("/artifacts/training/draft" as never, input);
+  return api.patch("/artifacts/training/draft", input);
 }
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -75,8 +74,8 @@ export default async function PracticeBundlePage({
   return (
     <TrainingBundle
       mode="practice"
-      bundleData={bundleData}
-      patchTrainingDraftAction={patchTrainingDraft as never}
+      bundleData={bundleData as TrainingBundleData}
+      patchTrainingDraftAction={patchTrainingDraft}
       attemptId={attemptId}
     />
   );

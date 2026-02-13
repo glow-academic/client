@@ -15,7 +15,10 @@ import type {
   SettingsActiveClient,
 } from "@/app/(main)/layout-server";
 import { createSocketClient } from "@/lib/ws/socket";
-import type { ServerToClientEvents } from "@/lib/ws/types";
+import type {
+  ClientToServerEvents,
+  ServerToClientEvents,
+} from "@/lib/ws/types";
 import { usePathname, useRouter } from "next/navigation";
 import React, {
   createContext,
@@ -99,7 +102,7 @@ interface ProfileContextType {
   setSelectedDraftId: (id: string | null) => void;
 
   // WebSocket connection (tied to profile)
-  socket: Socket | null;
+  socket: Socket<ServerToClientEvents, ClientToServerEvents> | null;
   isConnected: boolean;
   startingSimulationId: string | null;
   startingEvalId: string | null;
@@ -195,7 +198,10 @@ export function ProfileProviderClient({
     string | null
   >(null);
   const [startingEvalId, setStartingEvalId] = useState<string | null>(null);
-  const socketRef = useRef<Socket | null>(null);
+  const socketRef = useRef<Socket<
+    ServerToClientEvents,
+    ClientToServerEvents
+  > | null>(null);
   const connectionAttempts = useRef(0);
   const maxConnectionAttempts = 5;
   const currentRoomsRef = useRef<Set<string>>(new Set());
@@ -355,6 +361,10 @@ export function ProfileProviderClient({
   );
 
   // WebSocket helper methods
+  type SimulationStartPayload = Parameters<
+    ClientToServerEvents["simulation_start"]
+  >[0];
+
   const emitStartSimulation = useCallback(
     (data: {
       simulation_id: string;
@@ -367,7 +377,7 @@ export function ProfileProviderClient({
         toast.error("WebSocket not connected. Please refresh the page.");
         return;
       }
-      const payload: Record<string, unknown> = {
+      const payload: SimulationStartPayload = {
         simulation_id: data.simulation_id,
         ...(data.scenario_id !== undefined && {
           scenario_id: data.scenario_id,
@@ -376,10 +386,8 @@ export function ProfileProviderClient({
         ...(data.infinite_time_limit !== undefined && {
           infinite_time_limit: data.infinite_time_limit,
         }),
+        ...(data.profile_id ? { profile_id: data.profile_id } : {}),
       };
-      if (data.profile_id) {
-        payload["profile_id"] = data.profile_id;
-      }
 
       setStartingSimulationId(data.simulation_id);
       socketRef.current.emit("simulation_start", payload);
@@ -402,23 +410,22 @@ export function ProfileProviderClient({
         return;
       }
       // Convert practice payload to start simulation payload with practice_mode=True
-      const payload: Record<string, unknown> = {
+      const payload: SimulationStartPayload = {
         practice_mode: true,
         ...(data.profile_id ? { profile_id: data.profile_id } : {}),
+        ...(data.persona_id != null
+          ? { practice_persona_id: data.persona_id }
+          : {}),
+        ...(data.parameter_item_ids !== undefined
+          ? { practice_parameter_item_ids: data.parameter_item_ids }
+          : {}),
+        ...(data.department_id != null
+          ? { practice_department_id: data.department_id }
+          : {}),
+        ...(data.infinite_mode !== undefined
+          ? { infinite: data.infinite_mode }
+          : {}),
       };
-      if (data.persona_id !== undefined && data.persona_id !== null) {
-        payload["practice_persona_id"] = data.persona_id;
-      }
-      if (data.parameter_item_ids !== undefined) {
-        payload["practice_parameter_item_ids"] = data.parameter_item_ids;
-      }
-      if (data.department_id !== undefined && data.department_id !== null) {
-        payload["practice_department_id"] = data.department_id;
-      }
-      if (data.infinite_mode !== undefined) {
-        payload["infinite"] = data.infinite_mode;
-      }
-      // Note: simulation_id is optional in practice mode (will be found by server)
 
       socketRef.current.emit("simulation_start", payload);
     },
