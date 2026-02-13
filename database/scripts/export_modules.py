@@ -1033,9 +1033,17 @@ async def export_evals(conn: asyncpg.Connection) -> None:
 
 
 async def export_base_profiles(conn: asyncpg.Connection) -> None:
-    """Export profiles with no department (default admin roles) to 08-profiles/."""
+    """Export profiles with no department to 08-profiles/.
+
+    Profiles linked to departments are exported at the setup level
+    (10-setups/university/09-profiles/) instead.
+    """
     print("Exporting 08-profiles/ ...")
     out_dir = MODULES_DIR / "08-profiles"
+    # Clean up old files (profiles may have moved to setup level)
+    if out_dir.exists():
+        for old in out_dir.glob("*.sql"):
+            old.unlink()
     out_dir.mkdir(parents=True, exist_ok=True)
 
     rows = await conn.fetch("""
@@ -1430,6 +1438,7 @@ async def export_setup(conn: asyncpg.Connection) -> None:
     await export_setup_per_artifact(
         conn, "cohort", "08-cohorts", "cohort", filter_name="Practice Cohort"
     )
+    await export_setup_profiles(conn)
 
 
 # ---------------------------------------------------------------------------

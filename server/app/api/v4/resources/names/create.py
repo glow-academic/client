@@ -1,6 +1,7 @@
 """names endpoint - v4 API following DHH principles."""
 
 from typing import Annotated, Any, cast
+from uuid import UUID
 
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
@@ -20,6 +21,28 @@ from app.utils.sql_helper import execute_sql_typed
 
 # Load SQL with types at module level - makes it clear what SQL file is used
 SQL_PATH = "app/sql/v4/queries/resources/names_complete.sql"
+
+
+async def create_names_internal(
+    conn: asyncpg.Connection,
+    name: str,
+    mcp: bool = False,
+) -> UUID:
+    """Create a name resource and return its ID.
+
+    Can be called directly from other routes (e.g. duplicate endpoints)
+    without HTTP overhead. Uses the same SQL as the HTTP endpoint.
+    """
+    params = NamesSqlParams(name=name, mcp=mcp)
+    result = cast(
+        NamesSqlRow,
+        await execute_sql_typed(conn, SQL_PATH, params=params),
+    )
+    if not result or not result.name_id:
+        raise ValueError(f"Failed to create name: {name}")
+
+    await invalidate_tags(["resources", "names"])
+    return result.name_id
 
 
 router = APIRouter()

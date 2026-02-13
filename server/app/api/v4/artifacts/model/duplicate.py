@@ -11,6 +11,7 @@ from app.api.v4.artifacts.model.types import (
     DuplicateModelApiResponse,
 )
 from app.api.v4.auth.profile import get_auth_profile_internal
+from app.api.v4.resources.names.create import create_names_internal
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
@@ -82,6 +83,7 @@ async def duplicate_model(
         # Permission check: get user role using typed SQL
         access_params = CheckModelDuplicateAccessSqlParams(
             profile_id=profile_id,
+            model_id=request.model_id,
         )
         access_result = cast(
             CheckModelDuplicateAccessSqlRow,
@@ -106,10 +108,17 @@ async def duplicate_model(
                 detail="You don't have permission to duplicate this model.",
             )
 
+        # Phase 1: Python creates name resource (Rule 4: Python creates, not SQL)
+        original_name = access_result.original_name or "Unknown"
+        new_name = f"{original_name} Copy"
+        name_resource_id = await create_names_internal(conn, new_name)
+
         async with conn.transaction():
-            # Convert API request to SQL params (add profile_id from header)
+            # Phase 2: SQL creates artifact + links junctions
             params = DuplicateModelSqlParams(
-                **request.model_dump(), profile_id=profile_id
+                model_id=request.model_id,
+                profile_id=profile_id,
+                name_resource_id=name_resource_id,
             )
             sql_params = params.to_tuple()
 
@@ -125,8 +134,6 @@ async def duplicate_model(
 
             if not result or not result.model_id:
                 raise ValueError(f"Model not found: {request.model_id}")
-
-            original_name = result.original_name or "Unknown"
 
             # Set audit context with data from SQL query
             if actor_name:

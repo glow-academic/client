@@ -589,22 +589,24 @@ class PatchModelDraftSqlParams(BaseModel):
     def from_request(
         cls, request: PatchModelDraftApiRequest, profile_id: UUID
     ) -> PatchModelDraftSqlParams:
+        _empty_single = ModelResourceAction()
+        _empty_multi = ModelMultiResourceAction()
         return cls(
             profile_id=profile_id,
             input_draft_id=request.input_draft_id,
             group_id=request.group_id,
-            names=request.names,
-            descriptions=request.descriptions,
-            values=request.values,
-            providers=request.providers,
-            flags=request.flags,
-            departments=request.departments,
-            modalities=request.modalities,
-            temperature_levels=request.temperature_levels,
-            pricing=request.pricing,
-            reasoning_levels=request.reasoning_levels,
-            qualities=request.qualities,
-            voices=request.voices,
+            names=request.names or _empty_single,
+            descriptions=request.descriptions or _empty_single,
+            values=request.values or _empty_single,
+            providers=request.providers or _empty_single,
+            flags=request.flags or _empty_multi,
+            departments=request.departments or _empty_multi,
+            modalities=request.modalities or _empty_multi,
+            temperature_levels=request.temperature_levels or _empty_multi,
+            pricing=request.pricing or _empty_multi,
+            reasoning_levels=request.reasoning_levels or _empty_multi,
+            qualities=request.qualities or _empty_multi,
+            voices=request.voices or _empty_multi,
             expected_version=request.expected_version,
         )
 

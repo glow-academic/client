@@ -1,5 +1,7 @@
--- Duplicate persona - creates copy linking to existing resources (except name)
--- Only name gets " Copy" suffix, active flag set to FALSE
+-- Duplicate persona - creates copy linking to existing resources
+-- Name resource created by Python (passed as name_resource_id)
+-- SQL links junctions, never creates resources
+-- Active flag set to FALSE
 -- All other resources (color, icon, description, instructions, departments, fields, examples, parameters) link to existing
 -- Converted to function
 -- 1) Drop function first (breaks dependency on types)
@@ -20,7 +22,8 @@ END $$;
 
 CREATE OR REPLACE FUNCTION api_duplicate_persona_v4(
     persona_id uuid,
-    profile_id uuid
+    profile_id uuid,
+    name_resource_id uuid DEFAULT NULL
 )
 RETURNS TABLE (
     new_persona_id uuid,
@@ -32,7 +35,8 @@ AS $$
 -- User context (actor_name, user_role, department_ids) comes from get_profile_context_internal() in Python
 WITH params AS (
     SELECT persona_id AS persona_id,
-           profile_id AS profile_id
+           profile_id AS profile_id,
+           name_resource_id AS name_resource_id
 ),
 original_persona AS (
     SELECT
@@ -69,15 +73,6 @@ original_parameters AS (
     FROM params x
     JOIN persona_parameters_junction ppj ON ppj.persona_id = x.persona_id AND ppj.active = true
 ),
--- Insert name INTO names_resource table (only resource that gets copied with " Copy" suffix)
-new_name_resource AS (
-    INSERT INTO names_resource (name, created_at)
-    SELECT name || ' Copy', NOW()
-    FROM original_persona
-    WHERE name IS NOT NULL
-    ON CONFLICT (name) DO UPDATE SET created_at = EXCLUDED.created_at
-    RETURNING id as name_id, name
-),
 new_persona AS (
     INSERT INTO persona_artifact (
         created_at,
@@ -89,15 +84,16 @@ new_persona AS (
     FROM original_persona op
     RETURNING id
 ),
--- Link persona to name (new name with " Copy" suffix)
+-- Link persona to name (created by Python, passed as name_resource_id)
 link_persona_name AS (
     INSERT INTO persona_names_junction (persona_id, name_id, created_at)
     SELECT
         np.id,
-        nnr.name_id,
+        x.name_resource_id,
         NOW()
     FROM new_persona np
-    CROSS JOIN new_name_resource nnr
+    CROSS JOIN params x
+    WHERE x.name_resource_id IS NOT NULL
 ),
 -- Link persona to existing description
 link_persona_description AS (
@@ -209,4 +205,3 @@ SELECT
     (SELECT id FROM new_persona LIMIT 1) as new_persona_id,
     (SELECT name FROM original_persona LIMIT 1) as original_name
 $$;
-

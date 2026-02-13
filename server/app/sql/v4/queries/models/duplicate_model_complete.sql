@@ -1,4 +1,6 @@
 -- Duplicate model with profile_id for auditing
+-- Name resource created by Python (passed as name_resource_id)
+-- SQL links junctions, never creates resources (except models_resource which is artifact-specific)
 -- Converted to function with composite types
 -- Uses safe drop/recreate pattern: drop function first, then types (no CASCADE), then recreate
 -- 1) Drop function first (breaks dependency on types)
@@ -6,9 +8,9 @@ DO $$
 DECLARE
     r RECORD;
 BEGIN
-    FOR r IN 
-        SELECT oidvectortypes(proargtypes) as sig 
-        FROM pg_proc 
+    FOR r IN
+        SELECT oidvectortypes(proargtypes) as sig
+        FROM pg_proc
         WHERE proname = 'api_duplicate_model_v4'
           AND pronamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'public')
     LOOP
@@ -19,7 +21,8 @@ END $$;
 -- 2) Recreate function
 CREATE OR REPLACE FUNCTION api_duplicate_model_v4(
     model_id uuid,
-    profile_id uuid
+    profile_id uuid,
+    name_resource_id uuid DEFAULT NULL
 )
 RETURNS TABLE (
     model_exists boolean,
@@ -31,37 +34,27 @@ LANGUAGE sql
 VOLATILE
 AS $$
 WITH params AS (
-    SELECT model_id AS model_id, profile_id AS profile_id
+    SELECT model_id AS model_id, profile_id AS profile_id, name_resource_id AS name_resource_id
 ),
 model_exists_check AS (
     SELECT EXISTS(SELECT 1 FROM model_artifact WHERE id = (SELECT model_id FROM params))::boolean as model_exists
 ),
 actor_profile AS (
-    SELECT 
+    SELECT
         x.profile_id,
         COALESCE(COALESCE((SELECT n.name FROM profile_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1), ''), 'System') as actor_name
     FROM params x
     JOIN profile_artifact p ON p.id = x.profile_id
 ),
 source_model AS (
-    SELECT 
+    SELECT
         (SELECT n.name FROM model_names_junction mn JOIN names_resource n ON mn.name_id = n.id WHERE mn.model_id = m.id LIMIT 1) as name,
         (SELECT d.description FROM model_descriptions_junction md JOIN descriptions_resource d ON md.description_id = d.id WHERE md.model_id = m.id LIMIT 1) as description,
         EXISTS (SELECT 1 FROM model_flags_junction mf JOIN flags_resource f ON mf.flag_id = f.id WHERE mf.model_id = m.id AND f.name = 'model_active' AND mf.value = TRUE) as active,
         NULL::uuid as domain_id,  -- Domain no longer exists, use NULL
-        (SELECT mpj.providers_id FROM model_providers_junction mpj WHERE mpj.model_id = m.id AND mpj.active = true LIMIT 1) as provider_id,
-        (SELECT v.value FROM model_values_junction mv JOIN values_resource v ON mv.value_id = v.id WHERE mv.model_id = m.id LIMIT 1) as value
+        (SELECT mpj.providers_id FROM model_providers_junction mpj WHERE mpj.model_id = m.id AND mpj.active = true LIMIT 1) as provider_id
     FROM params x
     JOIN model_artifact m ON m.id = x.model_id
-),
--- Insert name INTO names_resource table
-new_name_resource AS (
-    INSERT INTO names_resource (name, created_at)
-    SELECT name || ' Copy', NOW()
-    FROM source_model
-    WHERE name IS NOT NULL
-    ON CONFLICT (name) DO UPDATE SET created_at = EXCLUDED.created_at
-    RETURNING id as name_id, name
 ),
 -- Get existing description_id from junction and link (instead of creating new)
 original_description_id AS (
@@ -86,34 +79,21 @@ duplicated_model AS (
     WHERE mec.model_exists = true
     RETURNING id
 ),
--- Insert value for duplicated model
-duplicated_model_value AS (
-    INSERT INTO values_resource (value, created_at, active, generated, mcp)
-    SELECT
-        sm.value,
-        NOW(),
-        true,
-        false,
-        false
-    FROM source_model sm
-    CROSS JOIN duplicated_model dm
-    WHERE sm.value IS NOT NULL AND sm.value != ''
-    ON CONFLICT (value) DO UPDATE SET created_at = EXCLUDED.created_at
-    RETURNING id as value_id
-),
-link_duplicated_model_value AS (
+-- Copy active value junction from source model (link to same existing value resource)
+link_model_value AS (
     INSERT INTO model_values_junction (model_id, value_id, created_at, generated, mcp)
-    SELECT 
+    SELECT
         dm.id,
-        dmv.value_id,
+        mv.value_id,
         NOW(),
         false,
         false
     FROM duplicated_model dm
-    CROSS JOIN duplicated_model_value dmv
-    RETURNING model_id
+    CROSS JOIN model_values_junction mv
+    WHERE mv.model_id = (SELECT model_id FROM params) AND mv.active = true
+    LIMIT 1
 ),
--- Create models resource entry for duplicated model artifact
+-- Create models resource entry for duplicated model artifact (artifact-specific)
 duplicated_model_resource AS (
     INSERT INTO models_resource (active, generated, mcp, created_at)
     SELECT
@@ -138,15 +118,16 @@ link_model_models_junction AS (
     CROSS JOIN duplicated_model_resource dmr
     ON CONFLICT (model_id, models_id) DO NOTHING
 ),
--- Link model to name
+-- Link model to name (created by Python, passed as name_resource_id)
 link_model_name AS (
     INSERT INTO model_names_junction (model_id, name_id, created_at)
-    SELECT 
+    SELECT
         dm.id,
-        nnr.name_id,
+        x.name_resource_id,
         NOW()
     FROM duplicated_model dm
-    CROSS JOIN new_name_resource nnr
+    CROSS JOIN params x
+    WHERE x.name_resource_id IS NOT NULL
     ON CONFLICT (model_id, name_id) DO NOTHING
 ),
 -- Link model to existing description
@@ -182,18 +163,19 @@ link_model_active_flag AS (
     FROM duplicated_model dm
     CROSS JOIN flags_resource f
     WHERE f.name = 'model_active'
-    ON CONFLICT (model_id, flag_id) DO UPDATE SET 
+    ON CONFLICT (model_id, flag_id) DO UPDATE SET
         value = FALSE
 ),
 model_with_name AS (
     -- Get model with name for return
-    SELECT 
+    SELECT
         dm.id,
-        nnr.name
+        n.name
     FROM duplicated_model dm
-    LEFT JOIN new_name_resource nnr ON true
+    LEFT JOIN params x ON true
+    LEFT JOIN names_resource n ON n.id = x.name_resource_id
 )
-SELECT 
+SELECT
     mec.model_exists::boolean as model_exists,
     mwn.id as model_id,
     sm.name::text as original_name,

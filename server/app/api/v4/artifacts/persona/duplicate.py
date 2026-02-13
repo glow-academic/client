@@ -11,6 +11,7 @@ from app.api.v4.artifacts.persona.types import (
     DuplicatePersonaApiResponse,
 )
 from app.api.v4.auth.profile import get_auth_profile_internal
+from app.api.v4.resources.names.create import create_names_internal
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
@@ -83,6 +84,7 @@ async def duplicate_persona(
         # Permission check: get user role using typed SQL
         access_params = CheckPersonaDuplicateAccessSqlParams(
             profile_id=profile_id,
+            persona_id=request.persona_id,
         )
         access_result = cast(
             CheckPersonaDuplicateAccessSqlRow,
@@ -107,10 +109,17 @@ async def duplicate_persona(
                 detail="You don't have permission to duplicate this persona.",
             )
 
+        # Phase 1: Python creates name resource (Rule 4: Python creates, not SQL)
+        original_name = access_result.original_name or "Unknown"
+        new_name = f"{original_name} Copy"
+        name_resource_id = await create_names_internal(conn, new_name)
+
         async with conn.transaction():
-            # Convert API request to SQL params (add profile_id from header)
+            # Phase 2: SQL creates artifact + links junctions
             params = DuplicatePersonaSqlParams(
-                **request.model_dump(), profile_id=profile_id
+                persona_id=request.persona_id,
+                profile_id=profile_id,
+                name_resource_id=name_resource_id,
             )
             sql_params = params.to_tuple()
 
@@ -126,8 +135,6 @@ async def duplicate_persona(
 
             if not result or not result.new_persona_id:
                 raise ValueError(f"Persona not found: {request.persona_id}")
-
-            original_name = result.original_name or "Unknown"
 
             # Set audit context with data from SQL query
             if actor_name:
