@@ -28,6 +28,7 @@ CREATE OR REPLACE FUNCTION api_search_agents_v4(
     instruction_ids uuid[] DEFAULT ARRAY[]::uuid[],
     model_ids uuid[] DEFAULT ARRAY[]::uuid[],
     prompt_ids uuid[] DEFAULT ARRAY[]::uuid[],
+    quality text DEFAULT NULL,
     -- Artifact boolean filters: when true, only return resources linked to that artifact type
     agent boolean DEFAULT false,
     setting boolean DEFAULT false
@@ -56,6 +57,7 @@ FROM (
       AND (COALESCE(array_length(instruction_ids, 1), 0) = 0 OR r.instruction_ids && instruction_ids)
       AND (COALESCE(array_length(model_ids, 1), 0) = 0 OR r.model_id = ANY(model_ids))
       AND (COALESCE(array_length(prompt_ids, 1), 0) = 0 OR r.prompt_id = ANY(prompt_ids))
+      AND (api_search_agents_v4.quality IS NULL OR r.quality::text = api_search_agents_v4.quality)
       -- Artifact boolean filters (each filters to resources linked to at least one of that artifact type)
       AND (NOT agent OR EXISTS (SELECT 1 FROM agent_agents_junction j WHERE j.agents_id = r.id AND j.active = true))
       AND (NOT setting OR EXISTS (SELECT 1 FROM setting_agents_junction j WHERE j.agents_id = r.id AND j.active = true))

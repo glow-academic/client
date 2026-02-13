@@ -358,6 +358,7 @@ BEGIN
         END IF;
     END IF;
 
+    RETURN QUERY
     WITH params AS (
         SELECT
             v_setting_id AS setting_id,
@@ -374,29 +375,8 @@ BEGIN
             v_role_ids AS role_ids,
             v_role_route_ids AS role_route_ids
     ),
-    object_current_departments AS (
-        SELECT COALESCE(ARRAY_AGG(department_id::text), ARRAY[]::text[]) as department_ids
-        FROM department_settings_junction
-        WHERE department_settings_junction.settings_id = (SELECT p.setting_id FROM params p LIMIT 1) AND active = true
-    ),
-    validate_permissions AS (
-        SELECT
-            CASE
-                WHEN (SELECT p.setting_id FROM params p) IS NULL THEN
-                    (SELECT validate_department_create_permissions(
-                        up.role::text,
-                        x.department_ids::text[]
-                    ) FROM params x CROSS JOIN user_profile up)
-                ELSE
-                    (SELECT validate_department_update_permissions(
-                        up.role::text,
-                        ocd.department_ids,
-                        ud.department_ids
-                    ) FROM user_profile up
-                    CROSS JOIN object_current_departments ocd
-                    CROSS JOIN user_departments ud)
-            END as validation_passed
-    ),
+    -- NOTE: Department permission validation is handled in Python (save.py)
+    -- via compute_can_edit() before this SQL function is called.
     link_setting_name AS (
         INSERT INTO setting_names_junction (setting_id, name_id, active, created_at)
         SELECT x.setting_id, x.name_id, true, NOW()
@@ -447,9 +427,9 @@ BEGIN
     ),
     link_profiles AS (
         INSERT INTO setting_profiles_junction (setting_id, profile_id, active, created_at)
-        SELECT x.setting_id, profile_id, true, NOW()
+        SELECT x.setting_id, pid, true, NOW()
         FROM params x
-        CROSS JOIN UNNEST(x.profile_ids) as profile_id
+        CROSS JOIN UNNEST(x.profile_ids) as pid
         WHERE COALESCE(array_length(x.profile_ids, 1), 0) > 0
         ON CONFLICT ON CONSTRAINT setting_profiles_pkey DO UPDATE SET
             active = true
@@ -520,9 +500,6 @@ BEGIN
           AND j.setting_id = p.setting_id
         RETURNING r.id
     )
-    SELECT 1;
-
-    RETURN QUERY
     SELECT v_setting_id;
 END;
 $$;

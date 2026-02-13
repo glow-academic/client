@@ -6,9 +6,9 @@ fetching and profile context resolution. This requires:
 2. JIT-compiled SQL types/functions/views COMMITTED to DB (visible to all
    pool connections, not just the test transaction)
 
-The bootstrap fixture applies SQL files in dependency order using a separate
-committed connection. Test isolation is limited for mutations since changes
-via pool connections are committed.
+The bootstrap fixture applies SQL files in dependency order using a
+committed pool connection. Test isolation is limited for mutations since
+changes via pool connections are committed.
 """
 
 from collections.abc import AsyncGenerator
@@ -20,11 +20,23 @@ import pytest_asyncio
 
 from app.main import fastapi_app, get_db, get_pool
 
+# Inline SQL: create only the legacy views that setting queries reference,
+# and refresh MVs that are created WITH NO DATA in the base schema.
+# The monolithic create_legacy_entry_views_complete.sql creates 25+ views;
+# if ANY view fails (e.g. references a removed table), the entire script
+# fails and view_drafts_entry is never created.
+_BOOTSTRAP_VIEWS_SQL = """
+CREATE OR REPLACE VIEW view_drafts_entry AS SELECT * FROM drafts_entry;
+CREATE OR REPLACE VIEW view_groups_entry AS SELECT * FROM groups_entry;
+CREATE OR REPLACE VIEW view_sessions_entry AS SELECT * FROM sessions_entry;
+REFRESH MATERIALIZED VIEW mv_session_facts;
+"""
+
 # All SQL files needed, in dependency order.
 # GET files define composite types -> SEARCH files reference those types.
 _SETTING_SQL_FILES = [
-    # Phase 1: Legacy views (foundation for profile context + drafts)
-    "app/sql/v4/views/legacy/create_legacy_entry_views_complete.sql",
+    # Phase 1: Materialized view for draft setting (before its function)
+    "app/sql/v4/views/drafts/mv_draft_setting.sql",
     # Phase 2: Resource GET files (create composite types)
     "app/sql/v4/queries/resources/names/get_names_complete.sql",
     "app/sql/v4/queries/resources/descriptions/get_descriptions_complete.sql",
@@ -65,10 +77,11 @@ _SETTING_SQL_FILES = [
     "app/sql/v4/queries/resources/provider_keys/search_provider_keys_complete.sql",
     "app/sql/v4/queries/resources/roles/search_roles_complete.sql",
     "app/sql/v4/queries/resources/role_routes/search_role_routes_complete.sql",
-    # Phase 4: Profile context (depends on legacy views)
+    # Phase 4: Profile context (+ session helper it depends on)
+    "app/sql/v4/queries/infra/sessions/get_session_complete.sql",
     "app/sql/v4/queries/profile/get_profile_context_access_complete.sql",
     "app/sql/v4/queries/profile/get_profile_context_complete.sql",
-    # Phase 5: Draft views (depends on legacy views)
+    # Phase 5: Draft view function (depends on mv_draft_setting from Phase 1)
     "app/sql/v4/queries/views/drafts/get_draft_setting_view_complete.sql",
     # Phase 6: Setting artifact SQL files
     "app/sql/v4/queries/settings/get_setting_access_complete.sql",
@@ -90,7 +103,7 @@ _SETTING_SQL_FILES = [
 async def bootstrap_setting_sql() -> None:
     """Bootstrap SQL types, views, and functions COMMITTED to the database.
 
-    Uses a separate connection that auto-commits so that all pool connections
+    Uses a pool connection that auto-commits so that all pool connections
     (including those acquired by artifact endpoints) can see the types/views.
     Must run before db/client fixtures.
     """
@@ -98,8 +111,12 @@ async def bootstrap_setting_sql() -> None:
     if pool is None:
         raise RuntimeError("Database pool not available. Did initialize_test_db run?")
 
-    server_dir = Path(__file__).parent.parent.parent.parent.parent.parent
+    server_dir = Path(__file__).parent.parent.parent.parent.parent.parent.parent
     async with pool.acquire() as conn:
+        # Step 1: Create inline legacy views (only the ones setting queries need)
+        await conn.execute(_BOOTSTRAP_VIEWS_SQL)
+
+        # Step 2: Execute SQL files in dependency order
         for sql_path in _SETTING_SQL_FILES:
             full_path = server_dir / sql_path
             if full_path.exists():

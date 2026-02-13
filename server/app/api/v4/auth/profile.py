@@ -1,0 +1,140 @@
+"""POST /auth/profile — identity + permissions endpoint."""
+
+from __future__ import annotations
+
+import asyncio
+import time
+from typing import Annotated, Any
+
+import asyncpg
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
+
+from app.api.v4.auth.access import get_access_internal
+from app.api.v4.auth.permissions import convert_role
+from app.api.v4.auth.types import GetAuthProfileApiResponse
+from app.api.v4.resources.cohorts.get import get_cohorts_internal
+from app.api.v4.resources.departments.get import get_departments_internal
+from app.api.v4.resources.roles.get import get_roles_internal
+from app.infra.v4.activity.audit import audit_activity, audit_set
+from app.infra.v4.error.handle_route_error import handle_route_error
+from app.infra.v4.sessions.get import get_session_internal
+from app.main import get_db, get_pool
+from app.sql.types import GetProfileContextApiRequest
+
+router = APIRouter()
+
+
+@router.post(
+    "/profile",
+    response_model=GetAuthProfileApiResponse,
+    dependencies=[
+        audit_activity("auth.profile", "{{ actor.name }} viewed auth profile")
+    ],
+)
+async def get_auth_profile(
+    request: GetProfileContextApiRequest,
+    http_request: Request,
+    response: Response,
+    conn: Annotated[asyncpg.Connection, Depends(get_db)],
+) -> GetAuthProfileApiResponse:
+    """Identity + permissions endpoint."""
+    sql_query: str | None = None
+    sql_params: tuple[Any, ...] | None = None
+
+    try:
+        try:
+            profile_id = http_request.state.profile_id
+        except AttributeError:
+            profile_id = None
+
+        department_id_cookie = http_request.cookies.get("department-id")
+        bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
+
+        pass1_start = time.time()
+        access = await get_access_internal(
+            conn, profile_id, department_id_cookie, bypass_cache
+        )
+        pass1_time = (time.time() - pass1_start) * 1000
+
+        if access.actor_name and profile_id:
+            audit_set(
+                http_request,
+                actor={"name": access.actor_name, "id": profile_id},
+            )
+
+        # Pass 2: parallel resource fetch
+        pass2_start = time.time()
+
+        pool = get_pool()
+        if not pool:
+            raise HTTPException(status_code=500, detail="Database pool not available")
+
+        department_ids = access.department_ids or []
+        cohort_ids = access.cohort_ids or []
+
+        async def fetch_departments():
+            if not department_ids:
+                return []
+            async with pool.acquire() as c:
+                return await get_departments_internal(c, department_ids, bypass_cache)
+
+        async def fetch_cohorts():
+            if not cohort_ids:
+                return []
+            async with pool.acquire() as c:
+                return await get_cohorts_internal(c, cohort_ids, bypass_cache)
+
+        async def fetch_roles():
+            async with pool.acquire() as c:
+                return await get_roles_internal(c, bypass_cache=bypass_cache)
+
+        async def fetch_session():
+            if not profile_id:
+                return None
+            async with pool.acquire() as c:
+                return await get_session_internal(c, profile_id, bypass_cache)
+
+        (
+            _departments_raw,
+            _cohorts_raw,
+            roles_raw,
+            session_id,
+        ) = await asyncio.gather(
+            fetch_departments(),
+            fetch_cohorts(),
+            fetch_roles(),
+            fetch_session(),
+        )
+
+        pass2_time = (time.time() - pass2_start) * 1000
+
+        response.headers["X-Two-Pass"] = "1"
+        response.headers["X-Pass1-Time"] = f"{pass1_time:.1f}"
+        response.headers["X-Pass2-Time"] = f"{pass2_time:.1f}"
+
+        return GetAuthProfileApiResponse(
+            is_authorized=access.is_authorized,
+            id=access.id,
+            name=access.name,
+            role=access.role,
+            active=access.active,
+            scoped_roles=access.scoped_roles,
+            available_sections=access.available_sections,
+            available_routes=access.available_routes,
+            redirect_path=access.redirect_path,
+            role_resources=[convert_role(r) for r in roles_raw],
+            session_id=session_id,
+            actor_name=access.actor_name,
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        handle_route_error(
+            error=e,
+            route_path=http_request.url.path,
+            operation="get_auth_profile",
+            sql_query=sql_query,
+            sql_params=sql_params,
+            request=http_request,
+        )

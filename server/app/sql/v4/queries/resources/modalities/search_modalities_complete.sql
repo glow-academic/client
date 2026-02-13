@@ -23,6 +23,7 @@ CREATE OR REPLACE FUNCTION api_search_modalities_v4(
     limit_count int DEFAULT 20,
     offset_count int DEFAULT 0,
     exclude_ids uuid[] DEFAULT ARRAY[]::uuid[],
+    modality text DEFAULT NULL,
     -- Artifact boolean filters: when true, only return resources linked to that artifact type
     model boolean DEFAULT false
 )
@@ -47,6 +48,7 @@ FROM (
       AND (search IS NULL OR search = '' OR m.modality::text ILIKE '%' || search || '%')
       -- Exclude filter
       AND (exclude_ids IS NULL OR NOT (m.id = ANY(exclude_ids)))
+      AND (api_search_modalities_v4.modality IS NULL OR m.modality::text = api_search_modalities_v4.modality)
       -- Artifact boolean filters (each filters to resources linked to at least one of that artifact type)
       AND (NOT model OR EXISTS (SELECT 1 FROM model_modalities_junction j WHERE j.modality_id = m.id AND j.active = true))
     ORDER BY m.modality ASC

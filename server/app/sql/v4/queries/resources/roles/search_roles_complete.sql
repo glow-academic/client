@@ -23,6 +23,7 @@ CREATE OR REPLACE FUNCTION api_search_roles_v4(
     limit_count int DEFAULT 20,
     offset_count int DEFAULT 0,
     exclude_ids uuid[] DEFAULT ARRAY[]::uuid[],
+    role text DEFAULT NULL,
     -- Artifact boolean filters: when true, only return resources linked to that artifact type
     profile boolean DEFAULT false,
     setting boolean DEFAULT false
@@ -54,6 +55,7 @@ FROM (
     WHERE r.active = true
       AND (search IS NULL OR search = '' OR LOWER(r.role::text) LIKE '%' || LOWER(search) || '%' OR LOWER(r.name) LIKE '%' || LOWER(search) || '%' OR LOWER(COALESCE(r.description, '')) LIKE '%' || LOWER(search) || '%')
       AND (exclude_ids IS NULL OR NOT (r.id = ANY(exclude_ids)))
+      AND (api_search_roles_v4.role IS NULL OR r.role::text = api_search_roles_v4.role)
       -- Artifact boolean filters (each filters to resources linked to at least one of that artifact type)
       AND (NOT profile OR EXISTS (SELECT 1 FROM profile_roles_junction j WHERE j.role_id = r.id AND j.active = true))
       AND (NOT setting OR EXISTS (SELECT 1 FROM setting_roles_junction j WHERE j.role_id = r.id AND j.active = true))

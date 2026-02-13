@@ -19289,16 +19289,6 @@ export interface components {
             /** Items */
             items?: components["schemas"]["QGetInstructionsV4Item"][] | null;
         };
-        /** GetItemsApiRequest */
-        GetItemsApiRequest: {
-            /** Ids */
-            ids?: string[] | null;
-        };
-        /** GetItemsApiResponse */
-        GetItemsApiResponse: {
-            /** Items */
-            items?: components["schemas"]["QGetItemsV4Item"][] | null;
-        };
         /** GetKeyForDecryptApiRequest */
         GetKeyForDecryptApiRequest: {
             /**
@@ -20442,16 +20432,6 @@ export interface components {
         GetRequestLimitsApiResponse: {
             /** Items */
             items?: components["schemas"]["QGetRequestLimitsV4Item"][] | null;
-        };
-        /** GetRoleRoutesApiRequest */
-        GetRoleRoutesApiRequest: {
-            /** Ids */
-            ids?: string[] | null;
-        };
-        /** GetRoleRoutesApiResponse */
-        GetRoleRoutesApiResponse: {
-            /** Items */
-            items?: components["schemas"]["QGetRoleRoutesV4Item"][] | null;
         };
         /**
          * GetRolesApiRequest
@@ -31547,6 +31527,8 @@ export interface components {
             model_ids?: string[] | null;
             /** Prompt Ids */
             prompt_ids?: string[] | null;
+            /** Quality */
+            quality?: string | null;
             /**
              * Agent
              * @default false
@@ -32095,6 +32077,8 @@ export interface components {
             offset_count: number | null;
             /** Exclude Ids */
             exclude_ids?: string[] | null;
+            /** Resource */
+            resource?: string | null;
             /**
              * Tool
              * @default false
@@ -32134,33 +32118,6 @@ export interface components {
             /** Items */
             items?: components["schemas"]["QGetEmailsV4Item"][] | null;
         };
-        /** SearchEndpointsApiRequest */
-        SearchEndpointsApiRequest: {
-            /** Search */
-            search?: string | null;
-            /**
-             * Limit Count
-             * @default 20
-             */
-            limit_count: number | null;
-            /**
-             * Offset Count
-             * @default 0
-             */
-            offset_count: number | null;
-            /** Exclude Ids */
-            exclude_ids?: string[] | null;
-            /**
-             * Provider
-             * @default false
-             */
-            provider: boolean | null;
-        };
-        /** SearchEndpointsApiResponse */
-        SearchEndpointsApiResponse: {
-            /** Items */
-            items?: components["schemas"]["QGetEndpointsV4Item"][] | null;
-        };
         /** SearchEvalsApiRequest */
         SearchEvalsApiRequest: {
             /** Search */
@@ -32189,41 +32146,6 @@ export interface components {
         SearchEvalsApiResponse: {
             /** Items */
             items?: components["schemas"]["QGetEvalsV4Item"][] | null;
-        };
-        /** SearchExamplesApiRequest */
-        SearchExamplesApiRequest: {
-            /** Search */
-            search?: string | null;
-            /**
-             * Limit Count
-             * @default 20
-             */
-            limit_count: number | null;
-            /**
-             * Offset Count
-             * @default 0
-             */
-            offset_count: number | null;
-            /** Persona Id */
-            persona_id?: string | null;
-            /** Department Ids */
-            department_ids?: string[] | null;
-            /** Draft Id */
-            draft_id?: string | null;
-            /** Suggest Source */
-            suggest_source?: string | null;
-            /** Exclude Ids */
-            exclude_ids?: string[] | null;
-            /**
-             * Persona
-             * @default false
-             */
-            persona: boolean | null;
-        };
-        /** SearchExamplesApiResponse */
-        SearchExamplesApiResponse: {
-            /** Items */
-            items?: components["schemas"]["QGetExamplesV4Item"][] | null;
         };
         /** SearchFieldsApiRequest */
         SearchFieldsApiRequest: {
@@ -32264,113 +32186,6 @@ export interface components {
         SearchFieldsApiResponse: {
             /** Items */
             items?: components["schemas"]["QGetFieldsV4Item"][] | null;
-        };
-        /** SearchFlagsApiRequest */
-        SearchFlagsApiRequest: {
-            /** Search */
-            search?: string | null;
-            /**
-             * Limit Count
-             * @default 20
-             */
-            limit_count: number | null;
-            /**
-             * Offset Count
-             * @default 0
-             */
-            offset_count: number | null;
-            /** Exclude Ids */
-            exclude_ids?: string[] | null;
-            /**
-             * Agent
-             * @default false
-             */
-            agent: boolean | null;
-            /**
-             * Auth
-             * @default false
-             */
-            auth: boolean | null;
-            /**
-             * Cohort
-             * @default false
-             */
-            cohort: boolean | null;
-            /**
-             * Department
-             * @default false
-             */
-            department: boolean | null;
-            /**
-             * Document
-             * @default false
-             */
-            document: boolean | null;
-            /**
-             * Eval
-             * @default false
-             */
-            eval: boolean | null;
-            /**
-             * Field
-             * @default false
-             */
-            field: boolean | null;
-            /**
-             * Model
-             * @default false
-             */
-            model: boolean | null;
-            /**
-             * Parameter
-             * @default false
-             */
-            parameter: boolean | null;
-            /**
-             * Persona
-             * @default false
-             */
-            persona: boolean | null;
-            /**
-             * Profile
-             * @default false
-             */
-            profile: boolean | null;
-            /**
-             * Provider
-             * @default false
-             */
-            provider: boolean | null;
-            /**
-             * Rubric
-             * @default false
-             */
-            rubric: boolean | null;
-            /**
-             * Scenario
-             * @default false
-             */
-            scenario: boolean | null;
-            /**
-             * Setting
-             * @default false
-             */
-            setting: boolean | null;
-            /**
-             * Simulation
-             * @default false
-             */
-            simulation: boolean | null;
-            /**
-             * Tool
-             * @default false
-             */
-            tool: boolean | null;
-        };
-        /** SearchFlagsApiResponse */
-        SearchFlagsApiResponse: {
-            /** Items */
-            items?: components["schemas"]["QGetFlagsV4Item"][] | null;
         };
         /** SearchGroupPositionsApiRequest */
         SearchGroupPositionsApiRequest: {
@@ -32452,37 +32267,6 @@ export interface components {
         SearchGroupsApiResponse: {
             /** Items */
             items?: components["schemas"]["QGetGroupsV4Item"][] | null;
-        };
-        /** SearchIconsApiRequest */
-        SearchIconsApiRequest: {
-            /** Search */
-            search?: string | null;
-            /**
-             * Limit Count
-             * @default 20
-             */
-            limit_count: number | null;
-            /**
-             * Offset Count
-             * @default 0
-             */
-            offset_count: number | null;
-            /** Draft Id */
-            draft_id?: string | null;
-            /** Suggest Source */
-            suggest_source?: string | null;
-            /** Exclude Ids */
-            exclude_ids?: string[] | null;
-            /**
-             * Persona
-             * @default false
-             */
-            persona: boolean | null;
-        };
-        /** SearchIconsApiResponse */
-        SearchIconsApiResponse: {
-            /** Items */
-            items?: components["schemas"]["QGetIconsV4Item"][] | null;
         };
         /** SearchImagesApiRequest */
         SearchImagesApiRequest: {
@@ -32617,6 +32401,8 @@ export interface components {
             offset_count: number | null;
             /** Exclude Ids */
             exclude_ids?: string[] | null;
+            /** Modality */
+            modality?: string | null;
             /**
              * Model
              * @default false
@@ -33001,6 +32787,8 @@ export interface components {
             offset_count: number | null;
             /** Exclude Ids */
             exclude_ids?: string[] | null;
+            /** Pricing Type */
+            pricing_type?: string | null;
             /**
              * Model
              * @default false
@@ -33034,6 +32822,8 @@ export interface components {
             cohort_ids?: string[] | null;
             /** Role Ids */
             role_ids?: string[] | null;
+            /** Role */
+            role?: string | null;
             /**
              * Profile
              * @default false
@@ -33134,40 +32924,6 @@ export interface components {
         SearchProviderKeysApiResponse: {
             /** Items */
             items?: components["schemas"]["QGetProviderKeysV4Item"][] | null;
-        };
-        /** SearchProvidersApiRequest */
-        SearchProvidersApiRequest: {
-            /** Search */
-            search?: string | null;
-            /**
-             * Limit Count
-             * @default 20
-             */
-            limit_count: number | null;
-            /**
-             * Offset Count
-             * @default 0
-             */
-            offset_count: number | null;
-            /** Exclude Ids */
-            exclude_ids?: string[] | null;
-            /** Department Ids */
-            department_ids?: string[] | null;
-            /**
-             * Model
-             * @default false
-             */
-            model: boolean | null;
-            /**
-             * Provider
-             * @default false
-             */
-            provider: boolean | null;
-        };
-        /** SearchProvidersApiResponse */
-        SearchProvidersApiResponse: {
-            /** Items */
-            items?: components["schemas"]["QGetProvidersV4Item"][] | null;
         };
         /** SearchQualitiesApiRequest */
         SearchQualitiesApiRequest: {
@@ -33299,6 +33055,8 @@ export interface components {
             offset_count: number | null;
             /** Exclude Ids */
             exclude_ids?: string[] | null;
+            /** Role */
+            role?: string | null;
             /**
              * Profile
              * @default false
@@ -33331,6 +33089,8 @@ export interface components {
             offset_count: number | null;
             /** Exclude Ids */
             exclude_ids?: string[] | null;
+            /** Route */
+            route?: string | null;
             /**
              * Profile
              * @default false
@@ -33576,46 +33336,6 @@ export interface components {
         SearchScenariosApiResponse: {
             /** Items */
             items?: components["schemas"]["app__api__v4__artifacts__simulation__types__QGetScenariosV4Item"][] | null;
-        };
-        /** SearchSettingsApiRequest */
-        SearchSettingsApiRequest: {
-            /** Search */
-            search?: string | null;
-            /**
-             * Limit Count
-             * @default 20
-             */
-            limit_count: number | null;
-            /**
-             * Offset Count
-             * @default 0
-             */
-            offset_count: number | null;
-            /** Exclude Ids */
-            exclude_ids?: string[] | null;
-            /** Department Ids */
-            department_ids?: string[] | null;
-            /** Agent Ids */
-            agent_ids?: string[] | null;
-            /** Provider Key Ids */
-            provider_key_ids?: string[] | null;
-            /** Auth Ids */
-            auth_ids?: string[] | null;
-            /**
-             * Department
-             * @default false
-             */
-            department: boolean | null;
-            /**
-             * Setting
-             * @default false
-             */
-            setting: boolean | null;
-        };
-        /** SearchSettingsApiResponse */
-        SearchSettingsApiResponse: {
-            /** Items */
-            items?: components["schemas"]["app__sql__types__QGetSettingsV4Item"][] | null;
         };
         /** SearchSimulatableProfilesApiRequest */
         SearchSimulatableProfilesApiRequest: {
@@ -36724,14 +36444,6 @@ export interface components {
             /** Voices Id */
             voices_id?: string | null;
         };
-        /** RefreshHomeMvsNewApiRequest */
-        "_MissingSqlType-Input": {
-            [key: string]: unknown;
-        };
-        /** RefreshHomeMvsNewApiResponse */
-        "_MissingSqlType-Output": {
-            [key: string]: unknown;
-        };
         /**
          * DeleteDocumentApiRequest
          * @description Request model for delete document endpoint.
@@ -37200,6 +36912,78 @@ export interface components {
         app__sql__types__SaveDocumentApiResponse: {
             /** Document Id */
             document_id?: string | null;
+        };
+        /** RefreshHomeMvsNewApiRequest */
+        app__sql__types___build_missing_type___locals____MissingSqlType__1: {
+            [key: string]: unknown;
+        };
+        /** RefreshHomeMvsNewApiResponse */
+        app__sql__types___build_missing_type___locals____MissingSqlType__10: {
+            [key: string]: unknown;
+        };
+        /** SearchEndpointsApiResponse */
+        app__sql__types___build_missing_type___locals____MissingSqlType__11: {
+            [key: string]: unknown;
+        };
+        /** SearchExamplesApiResponse */
+        app__sql__types___build_missing_type___locals____MissingSqlType__12: {
+            [key: string]: unknown;
+        };
+        /** SearchFlagsApiResponse */
+        app__sql__types___build_missing_type___locals____MissingSqlType__13: {
+            [key: string]: unknown;
+        };
+        /** SearchIconsApiResponse */
+        app__sql__types___build_missing_type___locals____MissingSqlType__14: {
+            [key: string]: unknown;
+        };
+        /** GetItemsApiResponse */
+        app__sql__types___build_missing_type___locals____MissingSqlType__15: {
+            [key: string]: unknown;
+        };
+        /** SearchProvidersApiResponse */
+        app__sql__types___build_missing_type___locals____MissingSqlType__16: {
+            [key: string]: unknown;
+        };
+        /** GetRoleRoutesApiResponse */
+        app__sql__types___build_missing_type___locals____MissingSqlType__17: {
+            [key: string]: unknown;
+        };
+        /** SearchSettingsApiResponse */
+        app__sql__types___build_missing_type___locals____MissingSqlType__18: {
+            [key: string]: unknown;
+        };
+        /** SearchEndpointsApiRequest */
+        app__sql__types___build_missing_type___locals____MissingSqlType__2: {
+            [key: string]: unknown;
+        };
+        /** SearchExamplesApiRequest */
+        app__sql__types___build_missing_type___locals____MissingSqlType__3: {
+            [key: string]: unknown;
+        };
+        /** SearchFlagsApiRequest */
+        app__sql__types___build_missing_type___locals____MissingSqlType__4: {
+            [key: string]: unknown;
+        };
+        /** SearchIconsApiRequest */
+        app__sql__types___build_missing_type___locals____MissingSqlType__5: {
+            [key: string]: unknown;
+        };
+        /** GetItemsApiRequest */
+        app__sql__types___build_missing_type___locals____MissingSqlType__6: {
+            [key: string]: unknown;
+        };
+        /** SearchProvidersApiRequest */
+        app__sql__types___build_missing_type___locals____MissingSqlType__7: {
+            [key: string]: unknown;
+        };
+        /** GetRoleRoutesApiRequest */
+        app__sql__types___build_missing_type___locals____MissingSqlType__8: {
+            [key: string]: unknown;
+        };
+        /** SearchSettingsApiRequest */
+        app__sql__types___build_missing_type___locals____MissingSqlType__9: {
+            [key: string]: unknown;
         };
     };
     responses: never;
@@ -42251,7 +42035,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["_MissingSqlType-Input"];
+                "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__1"];
             };
         };
         responses: {
@@ -42261,7 +42045,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["_MissingSqlType-Output"];
+                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__10"];
                 };
             };
             /** @description Validation Error */
@@ -45133,7 +44917,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["SearchEndpointsApiRequest"];
+                "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__2"];
             };
         };
         responses: {
@@ -45143,7 +44927,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["SearchEndpointsApiResponse"];
+                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__11"];
                 };
             };
             /** @description Validation Error */
@@ -45318,7 +45102,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["SearchExamplesApiRequest"];
+                "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__3"];
             };
         };
         responses: {
@@ -45328,7 +45112,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["SearchExamplesApiResponse"];
+                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__12"];
                 };
             };
             /** @description Validation Error */
@@ -45577,7 +45361,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["SearchFlagsApiRequest"];
+                "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__4"];
             };
         };
         responses: {
@@ -45587,7 +45371,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["SearchFlagsApiResponse"];
+                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__13"];
                 };
             };
             /** @description Validation Error */
@@ -45947,7 +45731,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["SearchIconsApiRequest"];
+                "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__5"];
             };
         };
         responses: {
@@ -45957,7 +45741,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["SearchIconsApiResponse"];
+                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__14"];
                 };
             };
             /** @description Validation Error */
@@ -46243,7 +46027,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["GetItemsApiRequest"];
+                "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__6"];
             };
         };
         responses: {
@@ -46253,7 +46037,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["GetItemsApiResponse"];
+                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__15"];
                 };
             };
             /** @description Validation Error */
@@ -47797,7 +47581,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["SearchProvidersApiRequest"];
+                "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__7"];
             };
         };
         responses: {
@@ -47807,7 +47591,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["SearchProvidersApiResponse"];
+                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__16"];
                 };
             };
             /** @description Validation Error */
@@ -48796,7 +48580,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["GetRoleRoutesApiRequest"];
+                "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__8"];
             };
         };
         responses: {
@@ -48806,7 +48590,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["GetRoleRoutesApiResponse"];
+                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__17"];
                 };
             };
             /** @description Validation Error */
@@ -49425,7 +49209,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["SearchSettingsApiRequest"];
+                "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__9"];
             };
         };
         responses: {
@@ -49435,7 +49219,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["SearchSettingsApiResponse"];
+                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__18"];
                 };
             };
             /** @description Validation Error */

@@ -391,7 +391,7 @@ async def get_setting_internal(
                 20,
                 0,
                 selected_auth_ids,
-                bypass_cache,
+                bypass_cache=bypass_cache,
                 setting=True,
             )
             return (selected, suggestions)
@@ -513,7 +513,7 @@ async def get_setting_internal(
     departments = _dedupe_by_id(
         departments_selected + departments_suggestions, "department_id"
     )
-    profiles = _dedupe_by_id(profiles_selected + profiles_suggestions, "id")
+    profiles = _dedupe_by_id(profiles_selected + profiles_suggestions, "profile_id")
     auths = _dedupe_by_id(auths_selected + auths_suggestions, "id")
     provider_keys = _dedupe_by_id(
         provider_keys_selected + provider_keys_suggestions, "id"
@@ -545,7 +545,7 @@ async def get_setting_internal(
     department_resources = [
         d for d in departments if d.department_id in department_id_set
     ]
-    profile_resources = [p for p in profiles if p.id in profile_id_set]
+    profile_resources = [p for p in profiles if p.profile_id in profile_id_set]
     auth_resources = [a for a in auths if a.id in auth_id_set]
     provider_key_resources = [pk for pk in provider_keys if pk.id in pk_id_set]
     auth_item_key_resources = [aik for aik in auth_item_keys if aik.id in aik_id_set]
@@ -558,7 +558,7 @@ async def get_setting_internal(
     description_suggestions_ids = [d.id for d in descriptions_suggestions]
     color_suggestions_ids = [c.id for c in colors_suggestions]
     department_suggestions_ids = [d.department_id for d in departments_suggestions]
-    profile_suggestions_ids = [p.id for p in profiles_suggestions]
+    profile_suggestions_ids = [p.profile_id for p in profiles_suggestions]
     auth_suggestions_ids = [a.id for a in auths_suggestions]
     pk_suggestions_ids = [pk.id for pk in provider_keys_suggestions]
     aik_suggestions_ids = [aik.id for aik in auth_item_keys_suggestions]
