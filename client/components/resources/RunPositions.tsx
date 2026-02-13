@@ -16,10 +16,15 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import type { OutputOf } from "@/lib/api/types";
+import type { InputOf, OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
-import { Check, X } from "lucide-react";
-import { useCallback, useMemo } from "react";
+import { Check, Loader2, Sparkles, X } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
+
+type FlushResult = { run_positions_id: string | null } | void;
+
+type CreateDraftRunPositionsIn = InputOf<"/api/v4/resources/run_positions", "post">;
+type CreateDraftRunPositionsOut = OutputOf<"/api/v4/resources/run_positions", "post">;
 
 // Derive resource item type from the GET endpoint response
 type RunPositionsGetResponse = OutputOf<"/api/v4/resources/run_positions/get", "post">;
@@ -41,6 +46,15 @@ export interface RunPositionsProps {
   disabled?: boolean;
   onChange: (ids: string[]) => void;
   label?: string;
+  group_id?: string | null;
+  create_tool_id?: string | null;
+  createRunPositionsAction?:
+    | ((input: CreateDraftRunPositionsIn) => Promise<CreateDraftRunPositionsOut>)
+    | undefined;
+  /** When false, skip automatic resource creation (manual save mode) */
+  isAutosaveEnabled?: boolean;
+  /** Register a flush callback with parent for manual save */
+  registerFlush?: (flush: () => Promise<FlushResult>) => void;
   // AI diff props
   aiRunPositionResources?: Pick<RunPositionsResourceItem, "id" | "value">[] | null;
   onAccept?: () => void;
@@ -52,17 +66,25 @@ export interface RunPositionsProps {
 
 export function RunPositions({
   run_position_ids,
-  run_position_resources: _run_position_resources,
+  run_position_resources,
   show_run_positions = false,
   run_position_suggestions,
   run_positions,
   disabled = false,
   onChange,
   label = "Run Positions",
+  group_id,
+  create_tool_id: _create_tool_id,
+  createRunPositionsAction: _createRunPositionsAction,
+  isAutosaveEnabled: _isAutosaveEnabled = true,
+  registerFlush,
   // AI diff props
   aiRunPositionResources,
   onAccept,
   onReject,
+  showAiGenerate = false,
+  onGenerate,
+  isGenerating = false,
 }: RunPositionsProps) {
   const ids = useMemo(
     () => run_position_ids ?? [],
@@ -77,6 +99,23 @@ export function RunPositions({
     () => run_position_suggestions ?? [],
     [run_position_suggestions]
   );
+
+  // Ref for flush function (stable reference for registerFlush)
+  const flushRef = useRef<(() => Promise<FlushResult>) | undefined>(undefined);
+
+  // Update flush function when dependencies change
+  flushRef.current = async (): Promise<FlushResult> => {
+    if (!group_id) return;
+    const lastId = ids.length > 0 ? ids[ids.length - 1] : null;
+    return { run_positions_id: lastId };
+  };
+
+  // Register flush callback with parent
+  useEffect(() => {
+    if (registerFlush) {
+      registerFlush(() => flushRef.current?.() ?? Promise.resolve());
+    }
+  }, [registerFlush]);
 
   // AI suggestion state
   const showDiff = !!aiRunPositionResources?.length;
@@ -114,6 +153,11 @@ export function RunPositions({
     [onChange]
   );
 
+  // Check if any resource is generated (must be before early return)
+  const hasGenerated = useMemo(() => {
+    return run_position_resources?.some((r) => r.generated) ?? false;
+  }, [run_position_resources]);
+
   // Accept AI suggestion
   const handleAccept = useCallback(() => {
     if (!aiRunPositionResources?.length) return;
@@ -140,6 +184,31 @@ export function RunPositions({
       {label && (
         <div className="flex items-center gap-2">
           <Label className="flex items-center gap-1">{label}</Label>
+          {onGenerate && showAiGenerate && (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6"
+                    onClick={onGenerate}
+                    disabled={disabled || isGenerating || showDiff}
+                  >
+                    {isGenerating ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      <Sparkles className="h-3.5 w-3.5" />
+                    )}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  {hasGenerated ? "Regenerate" : "Generate"}
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          )}
           {showDiff && (
             <>
               <TooltipProvider>

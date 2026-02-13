@@ -1,8 +1,8 @@
 /**
- * Bindings.tsx
- * Resource component for binding selection
- * Uses SelectableGrid to display bindings as horizontal scrollable cards
- * Manages binding_ids array and reports to parent
+ * Thresholds.tsx
+ * Resource component for threshold selection
+ * Uses SelectableGrid to display thresholds as horizontal scrollable cards
+ * Manages threshold_ids array and reports to parent
  */
 
 "use client";
@@ -22,25 +22,25 @@ import { Check, Loader2, Sparkles, X } from "lucide-react";
 import { useCallback, useMemo } from "react";
 
 // Derive resource item type from the GET endpoint response
-type BindingsGetResponse = OutputOf<"/api/v4/resources/bindings/get", "post">;
-export type BindingsResourceItem = NonNullable<BindingsGetResponse["items"]>[number];
+type ThresholdsGetResponse = OutputOf<"/api/v4/resources/thresholds/get", "post">;
+export type ThresholdResourceItem = NonNullable<ThresholdsGetResponse["items"]>[number];
 
-export interface BindingItem {
+export interface ThresholdItem {
   id: string;
-  entry: string;
+  value: number | null;
 }
 
-export interface BindingsProps {
-  binding_ids?: string[];
-  binding_resources?: BindingsResourceItem[];
-  show_bindings?: boolean;
-  binding_suggestions?: string[];
-  bindings?: BindingsResourceItem[];
+export interface ThresholdsProps {
+  threshold_ids?: string[];
+  threshold_resources?: ThresholdResourceItem[];
+  show_thresholds?: boolean;
+  threshold_suggestions?: string[];
+  thresholds?: ThresholdResourceItem[];
   disabled?: boolean;
   onChange: (ids: string[]) => void;
   label?: string;
   // AI diff props
-  aiBindingResources?: Pick<BindingsResourceItem, "id" | "entry">[] | null;
+  aiThresholdResources?: Pick<ThresholdResourceItem, "id" | "value">[] | null;
   onAccept?: () => void;
   onReject?: () => void;
   showAiGenerate?: boolean;
@@ -48,55 +48,55 @@ export interface BindingsProps {
   isGenerating?: boolean;
 }
 
-export function Bindings({
-  binding_ids,
-  binding_resources,
-  show_bindings = false,
-  binding_suggestions,
-  bindings,
+export function Thresholds({
+  threshold_ids,
+  threshold_resources,
+  show_thresholds = false,
+  threshold_suggestions,
+  thresholds,
   disabled = false,
   onChange,
-  label = "Bindings",
+  label = "Thresholds",
   // AI diff props
-  aiBindingResources,
+  aiThresholdResources,
   onAccept,
   onReject,
-  showAiGenerate,
+  showAiGenerate = false,
   onGenerate,
-  isGenerating,
-}: BindingsProps) {
-  const ids = useMemo(() => binding_ids ?? [], [binding_ids]);
-  const show = show_bindings ?? false;
-  const allBindings = useMemo(() => bindings ?? [], [bindings]);
+  isGenerating = false,
+}: ThresholdsProps) {
+  const ids = useMemo(() => threshold_ids ?? [], [threshold_ids]);
+  const show = show_thresholds ?? false;
+  const allThresholds = useMemo(() => thresholds ?? [], [thresholds]);
   const suggestionsList = useMemo(
-    () => binding_suggestions ?? [],
-    [binding_suggestions]
+    () => threshold_suggestions ?? [],
+    [threshold_suggestions]
   );
 
   // AI suggestion state
-  const showDiff = !!aiBindingResources?.length;
+  const showDiff = !!aiThresholdResources?.length;
   const aiSuggestedIds = useMemo(
     () =>
       new Set(
-        aiBindingResources
-          ?.map((b) => b.id)
+        aiThresholdResources
+          ?.map((t) => t.id)
           .filter(Boolean) as string[]
       ),
-    [aiBindingResources]
+    [aiThresholdResources]
   );
 
   // Convert to items format for SelectableGrid
-  const bindingItems = useMemo(() => {
-    return allBindings
-      .filter((b) => b.id)
-      .map((b) => ({
-        id: b.id!,
-        entry: b.entry ?? "",
+  const thresholdItems = useMemo(() => {
+    return allThresholds
+      .filter((t) => t.id)
+      .map((t) => ({
+        id: t.id!,
+        value: t.value ?? null,
       }));
-  }, [allBindings]);
+  }, [allThresholds]);
 
   const isSuggested = useCallback(
-    (bindingId: string) => suggestionsList.includes(bindingId),
+    (itemId: string) => suggestionsList.includes(itemId),
     [suggestionsList]
   );
 
@@ -107,28 +107,28 @@ export function Bindings({
     [onChange]
   );
 
+  // Check if any threshold resource is generated (must be before early return)
+  const hasGenerated = useMemo(() => {
+    return threshold_resources?.some((t) => t.generated) ?? false;
+  }, [threshold_resources]);
+
   // Accept AI suggestion
   const handleAccept = useCallback(() => {
-    if (!aiBindingResources?.length) return;
-    const newIds = aiBindingResources
-      .map((b) => b.id)
+    if (!aiThresholdResources?.length) return;
+    const newIds = aiThresholdResources
+      .map((t) => t.id)
       .filter((id): id is string => !!id && !ids.includes(id));
     if (newIds.length > 0) {
       onChange([...ids, ...newIds]);
     }
     onAccept?.();
-  }, [aiBindingResources, ids, onChange, onAccept]);
+  }, [aiThresholdResources, ids, onChange, onAccept]);
 
   const handleReject = useCallback(() => {
     onReject?.();
   }, [onReject]);
 
-  // Check if any binding resource is generated (must be before early return)
-  const hasGenerated = useMemo(() => {
-    return binding_resources?.some((b) => b.generated) ?? false;
-  }, [binding_resources]);
-
-  // Don't render if show_bindings is false (AFTER all hooks)
+  // Don't render if show is false (AFTER all hooks)
   if (!show) {
     return null;
   }
@@ -202,14 +202,14 @@ export function Bindings({
         </div>
       )}
 
-      <SelectableGrid<BindingItem>
-        items={bindingItems}
+      <SelectableGrid<ThresholdItem>
+        items={thresholdItems}
         selectedId={null}
         selectedIds={ids}
-        onSelect={(bindingId) => {
-          const newIds = ids.includes(bindingId)
-            ? ids.filter((id) => id !== bindingId)
-            : [...ids, bindingId];
+        onSelect={(itemId) => {
+          const newIds = ids.includes(itemId)
+            ? ids.filter((id) => id !== itemId)
+            : [...ids, itemId];
           handleSelect(newIds);
         }}
         getId={(item) => item.id}
@@ -244,14 +244,14 @@ export function Bindings({
                 </div>
               )}
               <div className="flex flex-col justify-center gap-1 flex-1 overflow-hidden">
-                <span className="text-sm font-medium truncate">
-                  {item.entry || "Unnamed"}
+                <span className="text-sm font-medium">
+                  Threshold: {item.value ?? "\u2014"}
                 </span>
               </div>
             </div>
           );
         }}
-        emptyMessage="No bindings available."
+        emptyMessage="No thresholds available."
         disabled={disabled}
         horizontal
       />

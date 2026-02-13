@@ -1,8 +1,8 @@
 /**
- * Bindings.tsx
- * Resource component for binding selection
- * Uses SelectableGrid to display bindings as horizontal scrollable cards
- * Manages binding_ids array and reports to parent
+ * Items.tsx
+ * Resource component for item selection
+ * Uses SelectableGrid to display items as horizontal scrollable cards
+ * Manages item_ids array and reports to parent
  */
 
 "use client";
@@ -22,25 +22,28 @@ import { Check, Loader2, Sparkles, X } from "lucide-react";
 import { useCallback, useMemo } from "react";
 
 // Derive resource item type from the GET endpoint response
-type BindingsGetResponse = OutputOf<"/api/v4/resources/bindings/get", "post">;
-export type BindingsResourceItem = NonNullable<BindingsGetResponse["items"]>[number];
+type ItemsGetResponse = OutputOf<"/api/v4/resources/items/get", "post">;
+export type ItemResourceItem = NonNullable<ItemsGetResponse["items"]>[number];
 
-export interface BindingItem {
+export interface ItemItem {
   id: string;
-  entry: string;
+  name: string;
+  description: string;
+  encrypted: boolean;
+  position: number | null;
 }
 
-export interface BindingsProps {
-  binding_ids?: string[];
-  binding_resources?: BindingsResourceItem[];
-  show_bindings?: boolean;
-  binding_suggestions?: string[];
-  bindings?: BindingsResourceItem[];
+export interface ItemsProps {
+  item_ids?: string[];
+  item_resources?: ItemResourceItem[];
+  show_items?: boolean;
+  item_suggestions?: string[];
+  items?: ItemResourceItem[];
   disabled?: boolean;
   onChange: (ids: string[]) => void;
   label?: string;
   // AI diff props
-  aiBindingResources?: Pick<BindingsResourceItem, "id" | "entry">[] | null;
+  aiItemResources?: Pick<ItemResourceItem, "id" | "name">[] | null;
   onAccept?: () => void;
   onReject?: () => void;
   showAiGenerate?: boolean;
@@ -48,55 +51,58 @@ export interface BindingsProps {
   isGenerating?: boolean;
 }
 
-export function Bindings({
-  binding_ids,
-  binding_resources,
-  show_bindings = false,
-  binding_suggestions,
-  bindings,
+export function Items({
+  item_ids,
+  item_resources,
+  show_items = false,
+  item_suggestions,
+  items,
   disabled = false,
   onChange,
-  label = "Bindings",
+  label = "Items",
   // AI diff props
-  aiBindingResources,
+  aiItemResources,
   onAccept,
   onReject,
-  showAiGenerate,
+  showAiGenerate = false,
   onGenerate,
-  isGenerating,
-}: BindingsProps) {
-  const ids = useMemo(() => binding_ids ?? [], [binding_ids]);
-  const show = show_bindings ?? false;
-  const allBindings = useMemo(() => bindings ?? [], [bindings]);
+  isGenerating = false,
+}: ItemsProps) {
+  const ids = useMemo(() => item_ids ?? [], [item_ids]);
+  const show = show_items ?? false;
+  const allItems = useMemo(() => items ?? [], [items]);
   const suggestionsList = useMemo(
-    () => binding_suggestions ?? [],
-    [binding_suggestions]
+    () => item_suggestions ?? [],
+    [item_suggestions]
   );
 
   // AI suggestion state
-  const showDiff = !!aiBindingResources?.length;
+  const showDiff = !!aiItemResources?.length;
   const aiSuggestedIds = useMemo(
     () =>
       new Set(
-        aiBindingResources
-          ?.map((b) => b.id)
+        aiItemResources
+          ?.map((i) => i.id)
           .filter(Boolean) as string[]
       ),
-    [aiBindingResources]
+    [aiItemResources]
   );
 
   // Convert to items format for SelectableGrid
-  const bindingItems = useMemo(() => {
-    return allBindings
-      .filter((b) => b.id)
-      .map((b) => ({
-        id: b.id!,
-        entry: b.entry ?? "",
+  const itemItems = useMemo(() => {
+    return allItems
+      .filter((i) => i.id)
+      .map((i) => ({
+        id: i.id!,
+        name: i.name ?? "",
+        description: i.description ?? "",
+        encrypted: i.encrypted ?? false,
+        position: i.position ?? null,
       }));
-  }, [allBindings]);
+  }, [allItems]);
 
   const isSuggested = useCallback(
-    (bindingId: string) => suggestionsList.includes(bindingId),
+    (itemId: string) => suggestionsList.includes(itemId),
     [suggestionsList]
   );
 
@@ -107,28 +113,28 @@ export function Bindings({
     [onChange]
   );
 
+  // Check if any item resource is generated (must be before early return)
+  const hasGenerated = useMemo(() => {
+    return item_resources?.some((i) => i.generated) ?? false;
+  }, [item_resources]);
+
   // Accept AI suggestion
   const handleAccept = useCallback(() => {
-    if (!aiBindingResources?.length) return;
-    const newIds = aiBindingResources
-      .map((b) => b.id)
+    if (!aiItemResources?.length) return;
+    const newIds = aiItemResources
+      .map((i) => i.id)
       .filter((id): id is string => !!id && !ids.includes(id));
     if (newIds.length > 0) {
       onChange([...ids, ...newIds]);
     }
     onAccept?.();
-  }, [aiBindingResources, ids, onChange, onAccept]);
+  }, [aiItemResources, ids, onChange, onAccept]);
 
   const handleReject = useCallback(() => {
     onReject?.();
   }, [onReject]);
 
-  // Check if any binding resource is generated (must be before early return)
-  const hasGenerated = useMemo(() => {
-    return binding_resources?.some((b) => b.generated) ?? false;
-  }, [binding_resources]);
-
-  // Don't render if show_bindings is false (AFTER all hooks)
+  // Don't render if show is false (AFTER all hooks)
   if (!show) {
     return null;
   }
@@ -202,14 +208,14 @@ export function Bindings({
         </div>
       )}
 
-      <SelectableGrid<BindingItem>
-        items={bindingItems}
+      <SelectableGrid<ItemItem>
+        items={itemItems}
         selectedId={null}
         selectedIds={ids}
-        onSelect={(bindingId) => {
-          const newIds = ids.includes(bindingId)
-            ? ids.filter((id) => id !== bindingId)
-            : [...ids, bindingId];
+        onSelect={(itemId) => {
+          const newIds = ids.includes(itemId)
+            ? ids.filter((id) => id !== itemId)
+            : [...ids, itemId];
           handleSelect(newIds);
         }}
         getId={(item) => item.id}
@@ -245,13 +251,16 @@ export function Bindings({
               )}
               <div className="flex flex-col justify-center gap-1 flex-1 overflow-hidden">
                 <span className="text-sm font-medium truncate">
-                  {item.entry || "Unnamed"}
+                  {item.name || "Unnamed"}
+                </span>
+                <span className="text-xs text-muted-foreground truncate">
+                  {item.description || "No description"}
                 </span>
               </div>
             </div>
           );
         }}
-        emptyMessage="No bindings available."
+        emptyMessage="No items available."
         disabled={disabled}
         horizontal
       />

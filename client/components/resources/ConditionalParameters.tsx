@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/tooltip";
 import type { OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
-import { Check, X } from "lucide-react";
+import { Check, Loader2, Sparkles, X } from "lucide-react";
 import { useCallback, useMemo } from "react";
 
 // Derive resource item type from the GET endpoint response
@@ -50,7 +50,7 @@ export interface ConditionalParametersProps {
 
 export function ConditionalParameters({
   conditional_parameter_ids,
-  conditional_parameter_resources: _conditional_parameter_resources,
+  conditional_parameter_resources,
   show_conditional_parameters = false,
   conditional_parameter_suggestions,
   conditional_parameters,
@@ -61,6 +61,9 @@ export function ConditionalParameters({
   aiConditionalParameterResources,
   onAccept,
   onReject,
+  showAiGenerate,
+  onGenerate,
+  isGenerating,
 }: ConditionalParametersProps) {
   const ids = useMemo(
     () => conditional_parameter_ids ?? [],
@@ -126,6 +129,11 @@ export function ConditionalParameters({
     onReject?.();
   }, [onReject]);
 
+  // Check if any conditional parameter resource is generated (must be before early return)
+  const hasGenerated = useMemo(() => {
+    return conditional_parameter_resources?.some((c) => c.generated) ?? false;
+  }, [conditional_parameter_resources]);
+
   // Don't render if show is false (AFTER all hooks)
   if (!show) {
     return null;
@@ -136,6 +144,31 @@ export function ConditionalParameters({
       {label && (
         <div className="flex items-center gap-2">
           <Label className="flex items-center gap-1">{label}</Label>
+          {onGenerate && showAiGenerate && (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6"
+                    onClick={onGenerate}
+                    disabled={disabled || isGenerating || showDiff}
+                  >
+                    {isGenerating ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      <Sparkles className="h-3.5 w-3.5" />
+                    )}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  {hasGenerated ? "Regenerate" : "Generate"}
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          )}
           {showDiff && (
             <>
               <TooltipProvider>

@@ -32,19 +32,14 @@ CREATE OR REPLACE VIEW view_sessions_entry AS SELECT * FROM sessions_entry;
 REFRESH MATERIALIZED VIEW mv_session_facts;
 """
 
-# Ensure the test superadmin profile is linked to the CS department so that
-# artifact GET endpoints (which require ≥1 accessible department) work.
+# Ensure the test superadmin profile is linked to the Purdue CS department so
+# that artifact GET endpoints (which require ≥1 accessible department) work.
+# Uses the real Purdue CS department from the seed data.
 _SEED_PROFILE_DEPARTMENT_SQL = """
-INSERT INTO departments_resource (id, name, description, active, created_at, generated, mcp)
-VALUES (
-    '019b3be4-3247-7cb0-bd74-9b2467b5e32d',
-    'Computer Science', 'CS Department', true, NOW(), false, false
-) ON CONFLICT (id) DO NOTHING;
-
 INSERT INTO profile_departments_junction (profile_id, department_id, is_primary, active, created_at, generated, mcp)
 VALUES (
     '019b3be4-36f0-788c-9df2-481eb5917940',
-    '019b3be4-3247-7cb0-bd74-9b2467b5e32d',
+    '019bb25e-e624-73da-8cef-166028a1065a',
     true, true, NOW(), false, false
 ) ON CONFLICT (profile_id, department_id) DO NOTHING;
 """

@@ -1,8 +1,8 @@
 /**
- * Bindings.tsx
- * Resource component for binding selection
- * Uses SelectableGrid to display bindings as horizontal scrollable cards
- * Manages binding_ids array and reports to parent
+ * Routes.tsx
+ * Resource component for route selection
+ * Uses SelectableGrid to display routes as horizontal scrollable cards
+ * Manages route_ids array and reports to parent
  */
 
 "use client";
@@ -22,25 +22,25 @@ import { Check, Loader2, Sparkles, X } from "lucide-react";
 import { useCallback, useMemo } from "react";
 
 // Derive resource item type from the GET endpoint response
-type BindingsGetResponse = OutputOf<"/api/v4/resources/bindings/get", "post">;
-export type BindingsResourceItem = NonNullable<BindingsGetResponse["items"]>[number];
+type RoutesGetResponse = OutputOf<"/api/v4/resources/routes/get", "post">;
+export type RouteResourceItem = NonNullable<RoutesGetResponse["items"]>[number];
 
-export interface BindingItem {
+export interface RouteItem {
   id: string;
-  entry: string;
+  route: string;
 }
 
-export interface BindingsProps {
-  binding_ids?: string[];
-  binding_resources?: BindingsResourceItem[];
-  show_bindings?: boolean;
-  binding_suggestions?: string[];
-  bindings?: BindingsResourceItem[];
+export interface RoutesProps {
+  route_ids?: string[];
+  route_resources?: RouteResourceItem[];
+  show_routes?: boolean;
+  route_suggestions?: string[];
+  routes?: RouteResourceItem[];
   disabled?: boolean;
   onChange: (ids: string[]) => void;
   label?: string;
   // AI diff props
-  aiBindingResources?: Pick<BindingsResourceItem, "id" | "entry">[] | null;
+  aiRouteResources?: Pick<RouteResourceItem, "id" | "route">[] | null;
   onAccept?: () => void;
   onReject?: () => void;
   showAiGenerate?: boolean;
@@ -48,55 +48,55 @@ export interface BindingsProps {
   isGenerating?: boolean;
 }
 
-export function Bindings({
-  binding_ids,
-  binding_resources,
-  show_bindings = false,
-  binding_suggestions,
-  bindings,
+export function Routes({
+  route_ids,
+  route_resources,
+  show_routes = false,
+  route_suggestions,
+  routes,
   disabled = false,
   onChange,
-  label = "Bindings",
+  label = "Routes",
   // AI diff props
-  aiBindingResources,
+  aiRouteResources,
   onAccept,
   onReject,
-  showAiGenerate,
+  showAiGenerate = false,
   onGenerate,
-  isGenerating,
-}: BindingsProps) {
-  const ids = useMemo(() => binding_ids ?? [], [binding_ids]);
-  const show = show_bindings ?? false;
-  const allBindings = useMemo(() => bindings ?? [], [bindings]);
+  isGenerating = false,
+}: RoutesProps) {
+  const ids = useMemo(() => route_ids ?? [], [route_ids]);
+  const show = show_routes ?? false;
+  const allRoutes = useMemo(() => routes ?? [], [routes]);
   const suggestionsList = useMemo(
-    () => binding_suggestions ?? [],
-    [binding_suggestions]
+    () => route_suggestions ?? [],
+    [route_suggestions]
   );
 
   // AI suggestion state
-  const showDiff = !!aiBindingResources?.length;
+  const showDiff = !!aiRouteResources?.length;
   const aiSuggestedIds = useMemo(
     () =>
       new Set(
-        aiBindingResources
-          ?.map((b) => b.id)
+        aiRouteResources
+          ?.map((r) => r.id)
           .filter(Boolean) as string[]
       ),
-    [aiBindingResources]
+    [aiRouteResources]
   );
 
   // Convert to items format for SelectableGrid
-  const bindingItems = useMemo(() => {
-    return allBindings
-      .filter((b) => b.id)
-      .map((b) => ({
-        id: b.id!,
-        entry: b.entry ?? "",
+  const routeItems = useMemo(() => {
+    return allRoutes
+      .filter((r) => r.id)
+      .map((r) => ({
+        id: r.id!,
+        route: r.route ?? "",
       }));
-  }, [allBindings]);
+  }, [allRoutes]);
 
   const isSuggested = useCallback(
-    (bindingId: string) => suggestionsList.includes(bindingId),
+    (itemId: string) => suggestionsList.includes(itemId),
     [suggestionsList]
   );
 
@@ -107,28 +107,28 @@ export function Bindings({
     [onChange]
   );
 
+  // Check if any route resource is generated (must be before early return)
+  const hasGenerated = useMemo(() => {
+    return route_resources?.some((r) => r.generated) ?? false;
+  }, [route_resources]);
+
   // Accept AI suggestion
   const handleAccept = useCallback(() => {
-    if (!aiBindingResources?.length) return;
-    const newIds = aiBindingResources
-      .map((b) => b.id)
+    if (!aiRouteResources?.length) return;
+    const newIds = aiRouteResources
+      .map((r) => r.id)
       .filter((id): id is string => !!id && !ids.includes(id));
     if (newIds.length > 0) {
       onChange([...ids, ...newIds]);
     }
     onAccept?.();
-  }, [aiBindingResources, ids, onChange, onAccept]);
+  }, [aiRouteResources, ids, onChange, onAccept]);
 
   const handleReject = useCallback(() => {
     onReject?.();
   }, [onReject]);
 
-  // Check if any binding resource is generated (must be before early return)
-  const hasGenerated = useMemo(() => {
-    return binding_resources?.some((b) => b.generated) ?? false;
-  }, [binding_resources]);
-
-  // Don't render if show_bindings is false (AFTER all hooks)
+  // Don't render if show is false (AFTER all hooks)
   if (!show) {
     return null;
   }
@@ -202,14 +202,14 @@ export function Bindings({
         </div>
       )}
 
-      <SelectableGrid<BindingItem>
-        items={bindingItems}
+      <SelectableGrid<RouteItem>
+        items={routeItems}
         selectedId={null}
         selectedIds={ids}
-        onSelect={(bindingId) => {
-          const newIds = ids.includes(bindingId)
-            ? ids.filter((id) => id !== bindingId)
-            : [...ids, bindingId];
+        onSelect={(itemId) => {
+          const newIds = ids.includes(itemId)
+            ? ids.filter((id) => id !== itemId)
+            : [...ids, itemId];
           handleSelect(newIds);
         }}
         getId={(item) => item.id}
@@ -245,13 +245,13 @@ export function Bindings({
               )}
               <div className="flex flex-col justify-center gap-1 flex-1 overflow-hidden">
                 <span className="text-sm font-medium truncate">
-                  {item.entry || "Unnamed"}
+                  {item.route || "Unnamed"}
                 </span>
               </div>
             </div>
           );
         }}
-        emptyMessage="No bindings available."
+        emptyMessage="No routes available."
         disabled={disabled}
         horizontal
       />

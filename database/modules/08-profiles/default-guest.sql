@@ -5,7 +5,6 @@
 
 
 -- Resource rows
-INSERT INTO public.cohorts_resource (created_at, active, generated, mcp, id, name, description, department_ids, simulation_ids) VALUES ('2026-02-03T02:23:35.540414+00:00', true, false, false, '019bb25e-e605-7500-8000-000000000001', 'Practice Cohort', NULL, '{}', '{019bb25e-e62c-78a4-a556-64cb01be3d92,019bb25e-e62c-789f-add0-0e4d307e952c,019bb25e-e62c-7899-81e2-c49cae2dbc50,019bb25e-e62c-78ae-9b5d-fa21cbd364d4,019bb25e-e62c-78b0-9cc1-39f25f8db3ef,019bb25e-e62c-7894-b18e-ddd3518cec67}') ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.names_resource (id, name, created_at, active, generated, mcp) VALUES ('019b995b-cb82-777d-af04-d80af5048021', 'Default Guest', '2025-08-12T12:52:09.564220+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.profiles_resource (last_login, created_at, role, active, generated, mcp, id, name, description, department_ids, cohort_ids, role_id, emails, primary_email) VALUES ('2025-08-12T12:52:09.564220+00:00', '2025-08-12T12:52:09.564220+00:00', 'guest', true, false, false, '019bb25e-e611-78ab-b453-5c7720d87aec', 'Default Guest', NULL, '{}', '{019bb25e-e605-7500-8000-000000000001}', '019bbabc-5a37-7028-8b98-728b7aa54d0d', '{019c57ef-f302-787e-b140-15f193cc887d,019c5801-d006-7d59-ad92-0d98a5c02a51}', 'redacted@purdue.edu') ON CONFLICT (id) DO NOTHING;
 
@@ -14,8 +13,6 @@ INSERT INTO public.profiles_resource (last_login, created_at, role, active, gene
 INSERT INTO public.profile_artifact (updated_at, created_at, id, generated, mcp) VALUES ('2025-08-12T12:52:09.564220+00:00', '2025-08-12T12:52:09.564220+00:00', '019b3be4-36f0-792c-82d6-126664ed18b6', false, false) ON CONFLICT (id) DO NOTHING;
 
 -- Junctions
--- profile_cohorts_junction
-INSERT INTO public.profile_cohorts_junction (profile_id, cohort_id, active, created_at, generated, mcp) VALUES ('019b3be4-36f0-792c-82d6-126664ed18b6', '019bb25e-e605-7500-8000-000000000001', true, '2026-02-03T02:23:35.540414+00:00', false, false) ON CONFLICT (profile_id, cohort_id) DO NOTHING;
 -- profile_flags_junction
 INSERT INTO public.profile_flags_junction (profile_id, flag_id, value, created_at, generated, mcp, active) VALUES ('019b3be4-36f0-792c-82d6-126664ed18b6', '019be334-bfc5-7197-8f3e-c203790334de', false, '2025-08-12T12:52:09.564220+00:00', false, false, true) ON CONFLICT (profile_id, flag_id) DO NOTHING;
 -- profile_names_junction

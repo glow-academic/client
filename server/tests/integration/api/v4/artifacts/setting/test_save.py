@@ -8,9 +8,9 @@ pytestmark = pytest.mark.asyncio(loop_scope="session")
 
 BYPASS_CACHE_HEADERS = {"X-Bypass-Cache": "1"}
 HEADERS = {**BYPASS_CACHE_HEADERS, "X-Profile-Id": TEST_SUPERADMIN_PROFILE_ID}
-SEED_SETTING_ID = "019b3be4-3c61-7699-b40c-29d4bcb6e2b3"
-SEED_NAME_ID = "019b995c-8eb2-79f4-ad14-da57e866749a"
-SEED_DESCRIPTION_ID = "019b995c-8eb3-760f-b55d-98b8fc86ba42"
+SEED_SETTING_ID = "019b3be4-3c61-76ff-befb-69b082df2acd"
+SEED_NAME_ID = "019b995c-8eb2-79fe-9f43-b82f75849bb4"
+SEED_DESCRIPTION_ID = "019b995c-8eb3-7615-afbd-17de2a204302"
 
 
 def _build_save_request(

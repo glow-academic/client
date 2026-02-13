@@ -1,8 +1,8 @@
 /**
- * Bindings.tsx
- * Resource component for binding selection
- * Uses SelectableGrid to display bindings as horizontal scrollable cards
- * Manages binding_ids array and reports to parent
+ * Providers.tsx
+ * Resource component for provider selection
+ * Uses SelectableGrid to display providers as horizontal scrollable cards
+ * Manages provider_ids array and reports to parent
  */
 
 "use client";
@@ -22,25 +22,28 @@ import { Check, Loader2, Sparkles, X } from "lucide-react";
 import { useCallback, useMemo } from "react";
 
 // Derive resource item type from the GET endpoint response
-type BindingsGetResponse = OutputOf<"/api/v4/resources/bindings/get", "post">;
-export type BindingsResourceItem = NonNullable<BindingsGetResponse["items"]>[number];
+type ProvidersGetResponse = OutputOf<"/api/v4/resources/providers/get", "post">;
+export type ProviderResourceItem = NonNullable<ProvidersGetResponse["items"]>[number];
 
-export interface BindingItem {
+export interface ProviderItem {
   id: string;
-  entry: string;
+  name: string;
+  description: string;
+  value: string;
+  endpoint: string;
 }
 
-export interface BindingsProps {
-  binding_ids?: string[];
-  binding_resources?: BindingsResourceItem[];
-  show_bindings?: boolean;
-  binding_suggestions?: string[];
-  bindings?: BindingsResourceItem[];
+export interface ProvidersProps {
+  provider_ids?: string[];
+  provider_resources?: ProviderResourceItem[];
+  show_providers?: boolean;
+  provider_suggestions?: string[];
+  providers?: ProviderResourceItem[];
   disabled?: boolean;
   onChange: (ids: string[]) => void;
   label?: string;
   // AI diff props
-  aiBindingResources?: Pick<BindingsResourceItem, "id" | "entry">[] | null;
+  aiProviderResources?: Pick<ProviderResourceItem, "id" | "name">[] | null;
   onAccept?: () => void;
   onReject?: () => void;
   showAiGenerate?: boolean;
@@ -48,55 +51,58 @@ export interface BindingsProps {
   isGenerating?: boolean;
 }
 
-export function Bindings({
-  binding_ids,
-  binding_resources,
-  show_bindings = false,
-  binding_suggestions,
-  bindings,
+export function Providers({
+  provider_ids,
+  provider_resources,
+  show_providers = false,
+  provider_suggestions,
+  providers,
   disabled = false,
   onChange,
-  label = "Bindings",
+  label = "Providers",
   // AI diff props
-  aiBindingResources,
+  aiProviderResources,
   onAccept,
   onReject,
-  showAiGenerate,
+  showAiGenerate = false,
   onGenerate,
-  isGenerating,
-}: BindingsProps) {
-  const ids = useMemo(() => binding_ids ?? [], [binding_ids]);
-  const show = show_bindings ?? false;
-  const allBindings = useMemo(() => bindings ?? [], [bindings]);
+  isGenerating = false,
+}: ProvidersProps) {
+  const ids = useMemo(() => provider_ids ?? [], [provider_ids]);
+  const show = show_providers ?? false;
+  const allProviders = useMemo(() => providers ?? [], [providers]);
   const suggestionsList = useMemo(
-    () => binding_suggestions ?? [],
-    [binding_suggestions]
+    () => provider_suggestions ?? [],
+    [provider_suggestions]
   );
 
   // AI suggestion state
-  const showDiff = !!aiBindingResources?.length;
+  const showDiff = !!aiProviderResources?.length;
   const aiSuggestedIds = useMemo(
     () =>
       new Set(
-        aiBindingResources
-          ?.map((b) => b.id)
+        aiProviderResources
+          ?.map((p) => p.id)
           .filter(Boolean) as string[]
       ),
-    [aiBindingResources]
+    [aiProviderResources]
   );
 
   // Convert to items format for SelectableGrid
-  const bindingItems = useMemo(() => {
-    return allBindings
-      .filter((b) => b.id)
-      .map((b) => ({
-        id: b.id!,
-        entry: b.entry ?? "",
+  const providerItems = useMemo(() => {
+    return allProviders
+      .filter((p) => p.id)
+      .map((p) => ({
+        id: p.id!,
+        name: p.name ?? "",
+        description: p.description ?? "",
+        value: p.value ?? "",
+        endpoint: p.endpoint ?? "",
       }));
-  }, [allBindings]);
+  }, [allProviders]);
 
   const isSuggested = useCallback(
-    (bindingId: string) => suggestionsList.includes(bindingId),
+    (itemId: string) => suggestionsList.includes(itemId),
     [suggestionsList]
   );
 
@@ -107,28 +113,28 @@ export function Bindings({
     [onChange]
   );
 
+  // Check if any provider resource is generated (must be before early return)
+  const hasGenerated = useMemo(() => {
+    return provider_resources?.some((p) => p.generated) ?? false;
+  }, [provider_resources]);
+
   // Accept AI suggestion
   const handleAccept = useCallback(() => {
-    if (!aiBindingResources?.length) return;
-    const newIds = aiBindingResources
-      .map((b) => b.id)
+    if (!aiProviderResources?.length) return;
+    const newIds = aiProviderResources
+      .map((p) => p.id)
       .filter((id): id is string => !!id && !ids.includes(id));
     if (newIds.length > 0) {
       onChange([...ids, ...newIds]);
     }
     onAccept?.();
-  }, [aiBindingResources, ids, onChange, onAccept]);
+  }, [aiProviderResources, ids, onChange, onAccept]);
 
   const handleReject = useCallback(() => {
     onReject?.();
   }, [onReject]);
 
-  // Check if any binding resource is generated (must be before early return)
-  const hasGenerated = useMemo(() => {
-    return binding_resources?.some((b) => b.generated) ?? false;
-  }, [binding_resources]);
-
-  // Don't render if show_bindings is false (AFTER all hooks)
+  // Don't render if show is false (AFTER all hooks)
   if (!show) {
     return null;
   }
@@ -202,14 +208,14 @@ export function Bindings({
         </div>
       )}
 
-      <SelectableGrid<BindingItem>
-        items={bindingItems}
+      <SelectableGrid<ProviderItem>
+        items={providerItems}
         selectedId={null}
         selectedIds={ids}
-        onSelect={(bindingId) => {
-          const newIds = ids.includes(bindingId)
-            ? ids.filter((id) => id !== bindingId)
-            : [...ids, bindingId];
+        onSelect={(itemId) => {
+          const newIds = ids.includes(itemId)
+            ? ids.filter((id) => id !== itemId)
+            : [...ids, itemId];
           handleSelect(newIds);
         }}
         getId={(item) => item.id}
@@ -245,13 +251,16 @@ export function Bindings({
               )}
               <div className="flex flex-col justify-center gap-1 flex-1 overflow-hidden">
                 <span className="text-sm font-medium truncate">
-                  {item.entry || "Unnamed"}
+                  {item.name || "Unnamed"}
+                </span>
+                <span className="text-xs text-muted-foreground truncate">
+                  {item.value || item.endpoint || "No details"}
                 </span>
               </div>
             </div>
           );
         }}
-        emptyMessage="No bindings available."
+        emptyMessage="No providers available."
         disabled={disabled}
         horizontal
       />

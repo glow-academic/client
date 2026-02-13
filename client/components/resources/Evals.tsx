@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/tooltip";
 import type { OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
-import { Check, X } from "lucide-react";
+import { Check, Loader2, Sparkles, X } from "lucide-react";
 import { useCallback, useMemo } from "react";
 
 // Derive resource item type from the GET endpoint response
@@ -51,7 +51,7 @@ export interface EvalsProps {
 
 export function Evals({
   eval_ids,
-  eval_resources: _eval_resources,
+  eval_resources,
   show_evals = false,
   eval_suggestions,
   evals,
@@ -62,6 +62,9 @@ export function Evals({
   aiEvalResources,
   onAccept,
   onReject,
+  showAiGenerate,
+  onGenerate,
+  isGenerating,
 }: EvalsProps) {
   const ids = useMemo(() => eval_ids ?? [], [eval_ids]);
   const show = show_evals ?? false;
@@ -122,6 +125,11 @@ export function Evals({
     onReject?.();
   }, [onReject]);
 
+  // Check if any eval resource is generated (must be before early return)
+  const hasGenerated = useMemo(() => {
+    return eval_resources?.some((e) => e.generated) ?? false;
+  }, [eval_resources]);
+
   // Don't render if show is false (AFTER all hooks)
   if (!show) {
     return null;
@@ -132,6 +140,31 @@ export function Evals({
       {label && (
         <div className="flex items-center gap-2">
           <Label className="flex items-center gap-1">{label}</Label>
+          {onGenerate && showAiGenerate && (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6"
+                    onClick={onGenerate}
+                    disabled={disabled || isGenerating || showDiff}
+                  >
+                    {isGenerating ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      <Sparkles className="h-3.5 w-3.5" />
+                    )}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  {hasGenerated ? "Regenerate" : "Generate"}
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          )}
           {showDiff && (
             <>
               <TooltipProvider>

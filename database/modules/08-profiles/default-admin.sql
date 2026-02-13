@@ -5,14 +5,6 @@
 
 
 -- Resource rows
-INSERT INTO public.cohorts_resource (created_at, active, generated, mcp, id, name, description, department_ids, simulation_ids) VALUES ('2025-08-14T18:15:01.709000+00:00', true, false, false, '019bb25e-e605-7406-b985-0a3e9f95395c', 'First Time GTA''s', 'New-To-Purdue GTAs & First Time GTA (but may be a returning student)
-2025-2026', '{}', '{019bb25e-e62c-77e2-b28d-23a973c68ebb,019bb25e-e62c-7863-8135-e591447d42e6}') ON CONFLICT (id) DO NOTHING;
-INSERT INTO public.cohorts_resource (created_at, active, generated, mcp, id, name, description, department_ids, simulation_ids) VALUES ('2025-08-18T15:00:34.010000+00:00', false, false, false, '019bb25e-e605-7497-9ea7-9ab10588dcce', '[DEMO] TESTING SIMULATIONS', 'TO USE: Add the simulation you wish to test to this simulation.  DO NOT ADD STUDENTS.  The simulation will show up on your dashboard for you to test.
-Remove any old simulations you don''t want to test at the same time. Grades for those simulations will remain in your history on "Home."', '{}', '{019bb25e-e62c-7872-b843-abe9462f94b3,019bb25e-e62c-78a0-a305-70daf72ee453,019bb25e-e62c-78ab-ae9f-76c6eafd5ca6}') ON CONFLICT (id) DO NOTHING;
-INSERT INTO public.cohorts_resource (created_at, active, generated, mcp, id, name, description, department_ids, simulation_ids) VALUES ('2025-05-01T00:00:00+00:00', true, false, false, '019bb25e-e605-749f-a376-47857f500e1c', 'Returning GTAs', 'Returning GTAs
-2025-2026
-(Have been a GTA before)', '{}', '{019bb25e-e62c-7868-9c45-1c50c29ff8dc,019bb25e-e62c-786c-b16c-d435ce8d7ed6}') ON CONFLICT (id) DO NOTHING;
-INSERT INTO public.cohorts_resource (created_at, active, generated, mcp, id, name, description, department_ids, simulation_ids) VALUES ('2026-02-03T02:23:35.540414+00:00', true, false, false, '019bb25e-e605-7500-8000-000000000001', 'Practice Cohort', NULL, '{}', '{019bb25e-e62c-78a4-a556-64cb01be3d92,019bb25e-e62c-789f-add0-0e4d307e952c,019bb25e-e62c-7899-81e2-c49cae2dbc50,019bb25e-e62c-78ae-9b5d-fa21cbd364d4,019bb25e-e62c-78b0-9cc1-39f25f8db3ef,019bb25e-e62c-7894-b18e-ddd3518cec67}') ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.names_resource (id, name, created_at, active, generated, mcp) VALUES ('019b995b-cb82-75d7-a98e-77ead2e72539', 'Default Admin', '2025-08-12T12:52:09.564220+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.profiles_resource (last_login, created_at, role, active, generated, mcp, id, name, description, department_ids, cohort_ids, role_id, emails, primary_email) VALUES ('2025-08-12T12:52:09.564220+00:00', '2025-08-12T12:52:09.564220+00:00', 'admin', true, false, false, '019bb25e-e611-74f8-9a0c-eab4a6208857', 'Default Admin', NULL, '{}', '{019bb25e-e605-7406-b985-0a3e9f95395c,019bb25e-e605-7497-9ea7-9ab10588dcce,019bb25e-e605-749f-a376-47857f500e1c,019bb25e-e605-7500-8000-000000000001}', '019bbabc-5a36-76d3-8fc3-8415fe308cd3', '{019c57ef-f302-703f-9448-d3ca0c41f316,019c5801-d006-7898-b044-cac8b2f6e0be}', 'redacted@purdue.edu') ON CONFLICT (id) DO NOTHING;
 
@@ -21,11 +13,6 @@ INSERT INTO public.profiles_resource (last_login, created_at, role, active, gene
 INSERT INTO public.profile_artifact (updated_at, created_at, id, generated, mcp) VALUES ('2025-08-12T12:52:09.564220+00:00', '2025-08-12T12:52:09.564220+00:00', '019b3be4-36ef-7a5f-98ab-ccb879770be0', false, false) ON CONFLICT (id) DO NOTHING;
 
 -- Junctions
--- profile_cohorts_junction
-INSERT INTO public.profile_cohorts_junction (profile_id, cohort_id, active, created_at, generated, mcp) VALUES ('019b3be4-36ef-7a5f-98ab-ccb879770be0', '019bb25e-e605-7406-b985-0a3e9f95395c', true, '2025-10-20T13:00:34.656927+00:00', false, false) ON CONFLICT (profile_id, cohort_id) DO NOTHING;
-INSERT INTO public.profile_cohorts_junction (profile_id, cohort_id, active, created_at, generated, mcp) VALUES ('019b3be4-36ef-7a5f-98ab-ccb879770be0', '019bb25e-e605-7497-9ea7-9ab10588dcce', true, '2025-10-20T13:00:34.656927+00:00', false, false) ON CONFLICT (profile_id, cohort_id) DO NOTHING;
-INSERT INTO public.profile_cohorts_junction (profile_id, cohort_id, active, created_at, generated, mcp) VALUES ('019b3be4-36ef-7a5f-98ab-ccb879770be0', '019bb25e-e605-749f-a376-47857f500e1c', true, '2025-10-20T13:00:34.656927+00:00', false, false) ON CONFLICT (profile_id, cohort_id) DO NOTHING;
-INSERT INTO public.profile_cohorts_junction (profile_id, cohort_id, active, created_at, generated, mcp) VALUES ('019b3be4-36ef-7a5f-98ab-ccb879770be0', '019bb25e-e605-7500-8000-000000000001', true, '2026-02-03T02:23:35.540414+00:00', false, false) ON CONFLICT (profile_id, cohort_id) DO NOTHING;
 -- profile_flags_junction
 INSERT INTO public.profile_flags_junction (profile_id, flag_id, value, created_at, generated, mcp, active) VALUES ('019b3be4-36ef-7a5f-98ab-ccb879770be0', '019be334-bfc5-7197-8f3e-c203790334de', false, '2025-08-12T12:52:09.564220+00:00', false, false, true) ON CONFLICT (profile_id, flag_id) DO NOTHING;
 -- profile_names_junction

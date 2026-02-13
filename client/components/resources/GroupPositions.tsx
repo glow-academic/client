@@ -16,10 +16,15 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import type { OutputOf } from "@/lib/api/types";
+import type { InputOf, OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
-import { Check, X } from "lucide-react";
-import { useCallback, useMemo } from "react";
+import { Check, Loader2, Sparkles, X } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
+
+type FlushResult = { group_positions_id: string | null } | void;
+
+type CreateDraftGroupPositionsIn = InputOf<"/api/v4/resources/group_positions", "post">;
+type CreateDraftGroupPositionsOut = OutputOf<"/api/v4/resources/group_positions", "post">;
 
 // Derive resource item type from the GET endpoint response
 type GroupPositionsGetResponse = OutputOf<"/api/v4/resources/group_positions/get", "post">;
@@ -41,6 +46,15 @@ export interface GroupPositionsProps {
   disabled?: boolean;
   onChange: (ids: string[]) => void;
   label?: string;
+  group_id?: string | null;
+  create_tool_id?: string | null;
+  createGroupPositionsAction?:
+    | ((input: CreateDraftGroupPositionsIn) => Promise<CreateDraftGroupPositionsOut>)
+    | undefined;
+  /** When false, skip automatic resource creation (manual save mode) */
+  isAutosaveEnabled?: boolean;
+  /** Register a flush callback with parent for manual save */
+  registerFlush?: (flush: () => Promise<FlushResult>) => void;
   // AI diff props
   aiGroupPositionResources?: Pick<GroupPositionResourceItem, "id" | "value">[] | null;
   onAccept?: () => void;
@@ -52,17 +66,25 @@ export interface GroupPositionsProps {
 
 export function GroupPositions({
   group_position_ids,
-  group_position_resources: _group_position_resources,
+  group_position_resources,
   show_group_positions = false,
   group_position_suggestions,
   group_positions,
   disabled = false,
   onChange,
   label = "Group Positions",
+  group_id,
+  create_tool_id: _create_tool_id,
+  createGroupPositionsAction: _createGroupPositionsAction,
+  isAutosaveEnabled: _isAutosaveEnabled = true,
+  registerFlush,
   // AI diff props
   aiGroupPositionResources,
   onAccept,
   onReject,
+  showAiGenerate = false,
+  onGenerate,
+  isGenerating = false,
 }: GroupPositionsProps) {
   const ids = useMemo(
     () => group_position_ids ?? [],
@@ -90,6 +112,23 @@ export function GroupPositions({
     [aiGroupPositionResources]
   );
 
+  // Ref for flush function (stable reference for registerFlush)
+  const flushRef = useRef<(() => Promise<FlushResult>) | undefined>(undefined);
+
+  // Update flush function when dependencies change
+  flushRef.current = async (): Promise<FlushResult> => {
+    if (!group_id) return;
+    const lastId = ids.length > 0 ? ids[ids.length - 1] : null;
+    return { group_positions_id: lastId };
+  };
+
+  // Register flush callback with parent
+  useEffect(() => {
+    if (registerFlush) {
+      registerFlush(() => flushRef.current?.() ?? Promise.resolve());
+    }
+  }, [registerFlush]);
+
   // Convert to items format for SelectableGrid
   const items = useMemo(() => {
     return allItems
@@ -113,6 +152,11 @@ export function GroupPositions({
     },
     [onChange]
   );
+
+  // Check if any resource is generated (must be before early return)
+  const hasGenerated = useMemo(() => {
+    return group_position_resources?.some((g) => g.generated) ?? false;
+  }, [group_position_resources]);
 
   // Accept AI suggestion
   const handleAccept = useCallback(() => {
@@ -140,6 +184,31 @@ export function GroupPositions({
       {label && (
         <div className="flex items-center gap-2">
           <Label className="flex items-center gap-1">{label}</Label>
+          {onGenerate && showAiGenerate && (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6"
+                    onClick={onGenerate}
+                    disabled={disabled || isGenerating || showDiff}
+                  >
+                    {isGenerating ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      <Sparkles className="h-3.5 w-3.5" />
+                    )}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  {hasGenerated ? "Regenerate" : "Generate"}
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          )}
           {showDiff && (
             <>
               <TooltipProvider>

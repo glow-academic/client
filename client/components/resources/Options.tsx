@@ -17,9 +17,14 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
-import type { OutputOf } from "@/lib/api/types";
-import { Check, X } from "lucide-react";
-import { useCallback, useMemo } from "react";
+import type { InputOf, OutputOf } from "@/lib/api/types";
+import { Check, Loader2, Sparkles, X } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
+
+type FlushResult = { option_id: string | null } | void;
+
+type CreateDraftOptionsIn = InputOf<"/api/v4/resources/options", "post">;
+type CreateDraftOptionsOut = OutputOf<"/api/v4/resources/options", "post">;
 
 // Derive resource item type from the GET endpoint response
 type OptionsGetResponse = OutputOf<"/api/v4/resources/options/get", "post">;
@@ -40,6 +45,15 @@ export interface OptionsProps {
   disabled?: boolean;
   onChange: (ids: string[]) => void;
   label?: string;
+  group_id?: string | null;
+  create_tool_id?: string | null;
+  createOptionsAction?:
+    | ((input: CreateDraftOptionsIn) => Promise<CreateDraftOptionsOut>)
+    | undefined;
+  /** When false, skip automatic resource creation (manual save mode) */
+  isAutosaveEnabled?: boolean;
+  /** Register a flush callback with parent for manual save */
+  registerFlush?: (flush: () => Promise<FlushResult>) => void;
   // AI diff props
   aiOptionResources?: Array<{
     option_id?: string | null;
@@ -54,17 +68,25 @@ export interface OptionsProps {
 
 export function Options({
   option_ids,
-  option_resources: _option_resources,
+  option_resources,
   show_options = false,
   option_suggestions,
   options,
   disabled = false,
   onChange,
   label = "Options",
+  group_id,
+  create_tool_id: _create_tool_id,
+  createOptionsAction: _createOptionsAction,
+  isAutosaveEnabled: _isAutosaveEnabled = true,
+  registerFlush,
   // AI diff props
   aiOptionResources,
   onAccept,
   onReject,
+  showAiGenerate = false,
+  onGenerate,
+  isGenerating = false,
 }: OptionsProps) {
   const ids = useMemo(() => option_ids ?? [], [option_ids]);
   const show = show_options ?? false;
@@ -73,6 +95,23 @@ export function Options({
     () => option_suggestions ?? [],
     [option_suggestions]
   );
+
+  // Ref for flush function (stable reference for registerFlush)
+  const flushRef = useRef<(() => Promise<FlushResult>) | undefined>(undefined);
+
+  // Update flush function when dependencies change
+  flushRef.current = async (): Promise<FlushResult> => {
+    if (!group_id) return;
+    const lastId = ids.length > 0 ? ids[ids.length - 1] : null;
+    return { option_id: lastId };
+  };
+
+  // Register flush callback with parent
+  useEffect(() => {
+    if (registerFlush) {
+      registerFlush(() => flushRef.current?.() ?? Promise.resolve());
+    }
+  }, [registerFlush]);
 
   // AI suggestion state
   const showDiff = !!aiOptionResources?.length;
@@ -109,6 +148,11 @@ export function Options({
     [onChange]
   );
 
+  // Check if any option resource is generated (must be before early return)
+  const hasGenerated = useMemo(() => {
+    return option_resources?.some((o) => o.generated) ?? false;
+  }, [option_resources]);
+
   // Accept AI suggestion
   const handleAccept = useCallback(() => {
     if (!aiOptionResources?.length) return;
@@ -135,6 +179,31 @@ export function Options({
       {label && (
         <div className="flex items-center gap-2">
           <Label className="flex items-center gap-1">{label}</Label>
+          {onGenerate && showAiGenerate && (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6"
+                    onClick={onGenerate}
+                    disabled={disabled || isGenerating || showDiff}
+                  >
+                    {isGenerating ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      <Sparkles className="h-3.5 w-3.5" />
+                    )}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  {hasGenerated ? "Regenerate" : "Generate"}
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          )}
           {showDiff && (
             <>
               <TooltipProvider>

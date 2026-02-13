@@ -8,7 +8,7 @@ pytestmark = pytest.mark.asyncio(loop_scope="session")
 
 BYPASS_CACHE_HEADERS = {"X-Bypass-Cache": "1"}
 HEADERS = {**BYPASS_CACHE_HEADERS, "X-Profile-Id": TEST_SUPERADMIN_PROFILE_ID}
-SEED_SETTING_ID = "019b3be4-3c61-7699-b40c-29d4bcb6e2b3"
+SEED_SETTING_ID = "019b3be4-3c61-76ff-befb-69b082df2acd"
 ZEROED_UUID = "00000000-0000-0000-0000-000000000000"
 
 

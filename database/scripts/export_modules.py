@@ -1178,12 +1178,12 @@ async def export_setup_departments(conn: asyncpg.Connection) -> None:
 
 
 async def export_setup_profiles(conn: asyncpg.Connection) -> None:
-    """Export section-specific profile links (departments + emails).
+    """Export section-specific profile links (departments + emails + cohorts).
 
     Each setup section gets its own profile_departments_junction and
     profile_emails_junction rows:
       organization/09-profiles/ → General dept + @gmail.com emails
-      university/09-profiles/   → Purdue CS dept + @purdue.edu emails
+      university/09-profiles/   → Purdue CS dept + @purdue.edu emails + cohort links
     """
     # Clean up both locations
     for loc in ("organization", "university"):
@@ -1231,6 +1231,10 @@ async def export_setup_profiles(conn: asyncpg.Connection) -> None:
     email_junction_pks = TABLE_PKS.get("profile_emails_junction", [])
     email_res_cols = TABLE_COLUMNS.get("emails_resource", [])
     email_res_pks = TABLE_PKS.get("emails_resource", [])
+    cohort_junction_cols = TABLE_COLUMNS.get("profile_cohorts_junction", [])
+    cohort_junction_pks = TABLE_PKS.get("profile_cohorts_junction", [])
+    cohort_res_cols = TABLE_COLUMNS.get("cohorts_resource", [])
+    cohort_res_pks = TABLE_PKS.get("cohorts_resource", [])
 
     for section, dept_ids in sections.items():
         if not dept_ids:
@@ -1291,6 +1295,37 @@ async def export_setup_profiles(conn: asyncpg.Connection) -> None:
                     for erow in email_rows:
                         f.write(make_insert("profile_emails_junction", erow, email_junction_cols, email_junction_pks) + "\n")
                         count += 1
+
+                # Cohort links (university section only)
+                if section == "university" and cohort_junction_cols:
+                    cohort_col_list = ", ".join(cohort_junction_cols)
+                    cohort_rows = await conn.fetch(
+                        f"SELECT {cohort_col_list} FROM public.profile_cohorts_junction "
+                        f"WHERE profile_id = $1",
+                        UUID(art_id),
+                    )
+                    if cohort_rows:
+                        # First write the cohorts_resource rows
+                        seen_cohort_ids: set[str] = set()
+                        f.write("-- cohorts_resource\n")
+                        cres_col_list = ", ".join(cohort_res_cols)
+                        for crow in cohort_rows:
+                            cid = str(crow["cohort_id"])
+                            if cid in seen_cohort_ids:
+                                continue
+                            seen_cohort_ids.add(cid)
+                            cres_row = await conn.fetchrow(
+                                f"SELECT {cres_col_list} FROM public.cohorts_resource WHERE id = $1",
+                                crow["cohort_id"],
+                            )
+                            if cres_row:
+                                f.write(make_insert("cohorts_resource", cres_row, cohort_res_cols, cohort_res_pks) + "\n")
+                                count += 1
+
+                        f.write("-- profile_cohorts_junction\n")
+                        for crow in cohort_rows:
+                            f.write(make_insert("profile_cohorts_junction", crow, cohort_junction_cols, cohort_junction_pks) + "\n")
+                            count += 1
 
             print(f"    {slug}.sql ({count} inserts)")
 

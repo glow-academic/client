@@ -1,5 +1,5 @@
 <#-- GENERATED FILE: do not edit manually -->
-<#-- Generated at: 2026-02-13T12:12:27.596497 -->
+<#-- Generated at: 2026-02-13T12:37:42.932820 -->
 <#--
   Provider mapping: department_id -> allowed IdP aliases
 
@@ -10,8 +10,6 @@
   Enumerated IdP aliases:
     - auth_google_019b3be4-3117-7aa4-aa34-0041aa51d1d8
     - auth_microsoft_019b3be4-3117-7afc-8d1d-a2815d70f294
-    - google
-    - microsoft
 
   Default-IdP aliases:
 -->
@@ -29,7 +27,7 @@
 } />
 
 <#-- Platform providers (only used when no departments exist) -->
-<#assign platformProviders = ["google", "microsoft"] />
+<#assign platformProviders = [] />
 
 <#function getAllowedProvidersForDepartment deptId>
   <#-- If departments exist, always use department-specific providers -->
