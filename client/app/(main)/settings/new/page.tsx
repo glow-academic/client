@@ -28,6 +28,35 @@ type CreateDraftDescriptionsOut = OutputOf<
 >;
 type CreateDraftColorsIn = InputOf<"/api/v4/resources/colors", "post">;
 type CreateDraftColorsOut = OutputOf<"/api/v4/resources/colors", "post">;
+type CreateProviderKeysIn = InputOf<"/api/v4/resources/provider_keys", "post">;
+type CreateProviderKeysOut = OutputOf<
+  "/api/v4/resources/provider_keys",
+  "post"
+>;
+type GetProviderKeysIn = InputOf<
+  "/api/v4/resources/provider_keys/get",
+  "post"
+>;
+type GetProviderKeysOut = OutputOf<
+  "/api/v4/resources/provider_keys/get",
+  "post"
+>;
+type CreateAuthItemKeysIn = InputOf<
+  "/api/v4/resources/auth_item_keys",
+  "post"
+>;
+type CreateAuthItemKeysOut = OutputOf<
+  "/api/v4/resources/auth_item_keys",
+  "post"
+>;
+type GetAuthItemKeysIn = InputOf<
+  "/api/v4/resources/auth_item_keys/get",
+  "post"
+>;
+type GetAuthItemKeysOut = OutputOf<
+  "/api/v4/resources/auth_item_keys/get",
+  "post"
+>;
 
 /** ---- Direct fetch (no caching - source of truth) ----
  * Always bypass cache to ensure fresh data for detail/edit pages.
@@ -83,94 +112,32 @@ async function createDraftColors(
   return api.post("/resources/colors", input);
 }
 
-async function createProviderKeys(input: {
-  provider_id: string;
-  key_id: string;
-}): Promise<{ provider_keys_id?: string | null }> {
+async function createProviderKeys(
+  input: CreateProviderKeysIn
+): Promise<CreateProviderKeysOut> {
   "use server";
-  const result = await api.post("/resources/provider_keys" as any, {
-    body: {
-      provider_id: input.provider_id,
-      key_id: input.key_id,
-      mcp: false,
-    },
-  });
-  return result as { provider_keys_id?: string | null };
+  return api.post("/resources/provider_keys", input);
 }
 
 async function getProviderKeys(
-  ids: string[]
-): Promise<
-  Array<{
-    id?: string | null;
-    provider_id?: string | null;
-    key_id?: string | null;
-    provider_name?: string | null;
-    key_name?: string | null;
-    key_description?: string | null;
-    generated?: boolean | null;
-  }>
-> {
+  input: GetProviderKeysIn
+): Promise<GetProviderKeysOut> {
   "use server";
-  const result = await api.post("/resources/provider_keys/get" as any, {
-    body: { ids },
-  });
-  return (result as { items?: unknown[] }).items as Array<{
-    id?: string | null;
-    provider_id?: string | null;
-    key_id?: string | null;
-    provider_name?: string | null;
-    key_name?: string | null;
-    key_description?: string | null;
-    generated?: boolean | null;
-  }>;
+  return api.post("/resources/provider_keys/get", input);
 }
 
-async function createAuthItemKeys(input: {
-  auth_id: string;
-  item_id: string;
-  key_id: string;
-}): Promise<{ auth_item_keys_id?: string | null }> {
+async function createAuthItemKeys(
+  input: CreateAuthItemKeysIn
+): Promise<CreateAuthItemKeysOut> {
   "use server";
-  const result = await api.post("/resources/auth_item_keys" as any, {
-    body: {
-      auth_id: input.auth_id,
-      item_id: input.item_id,
-      key_id: input.key_id,
-      mcp: false,
-    },
-  });
-  return result as { auth_item_keys_id?: string | null };
+  return api.post("/resources/auth_item_keys", input);
 }
 
 async function getAuthItemKeys(
-  ids: string[]
-): Promise<
-  Array<{
-    id?: string | null;
-    auth_id?: string | null;
-    item_id?: string | null;
-    key_id?: string | null;
-    auth_name?: string | null;
-    key_name?: string | null;
-    key_description?: string | null;
-    generated?: boolean | null;
-  }>
-> {
+  input: GetAuthItemKeysIn
+): Promise<GetAuthItemKeysOut> {
   "use server";
-  const result = await api.post("/resources/auth_item_keys/get" as any, {
-    body: { ids },
-  });
-  return (result as { items?: unknown[] }).items as Array<{
-    id?: string | null;
-    auth_id?: string | null;
-    item_id?: string | null;
-    key_id?: string | null;
-    auth_name?: string | null;
-    key_name?: string | null;
-    key_description?: string | null;
-    generated?: boolean | null;
-  }>;
+  return api.post("/resources/auth_item_keys/get", input);
 }
 
 
