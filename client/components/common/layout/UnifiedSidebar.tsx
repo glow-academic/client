@@ -5,6 +5,7 @@
  * 05/20/2025
  */
 import type {
+  AuthPageResponse,
   CreateFeedbackIn,
   CreateFeedbackOut,
   SearchSimulatableProfilesIn,
@@ -74,6 +75,7 @@ import { SidebarSkeleton } from "./SidebarSkeleton";
 
 export interface UnifiedSidebarProps
   extends React.ComponentProps<typeof Sidebar> {
+  sidebarRoutes: AuthPageResponse["sidebar_routes"];
   activeSection: string;
   onSectionChange?: (section: string) => void;
   switchEffectiveProfile: (
@@ -133,6 +135,7 @@ const getInitials = (name?: string): string => {
 };
 
 export function UnifiedSidebar({
+  sidebarRoutes,
   activeSection,
   onSectionChange,
   switchEffectiveProfile,
@@ -161,8 +164,8 @@ export function UnifiedSidebar({
   // Get sidebar context to close mobile sidebar on navigation
   const { isMobile, setOpenMobile } = useSidebar();
 
-  // Use the profile context — sidebar routes come from server
-  const { profile, isLoading, sidebarRoutes, isAuthenticated } =
+  // Use the profile context
+  const { profile, isLoading, isAuthenticated } =
     useProfile();
 
   // Convert server-driven sidebar routes into NavSection format with search filtering
