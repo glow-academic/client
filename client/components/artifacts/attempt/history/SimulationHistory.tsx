@@ -44,6 +44,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useProfile } from "@/contexts/profile-context";
+import { useSocket } from "@/contexts/socket-context";
 import type { OutputOf } from "@/lib/api/types";
 import {
   Column,
@@ -95,7 +96,8 @@ function HistoryRowActions({
     infinite_time_limit?: number | null;
   }) => void;
 }) {
-  const { profile, isConnected } = useProfile();
+  const { profile } = useProfile();
+  const { isConnected } = useSocket();
   const router = useRouter();
   const [isRetrying, setIsRetrying] = React.useState(false);
   const timeoutRef = React.useRef<NodeJS.Timeout | null>(null);

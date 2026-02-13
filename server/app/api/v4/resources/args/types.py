@@ -13,6 +13,7 @@ class SearchArgsParams(BaseModel):
     draft_id: UUID | None = None
     suggest_source: str | None = "all"
     exclude_ids: list[UUID] = []
+    required: bool | None = None
     # Artifact boolean filters
     tool: bool = False
 
@@ -24,5 +25,6 @@ class SearchArgsParams(BaseModel):
             self.draft_id,
             self.suggest_source,
             self.exclude_ids,
+            self.required,
             self.tool,
         )

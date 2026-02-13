@@ -25,6 +25,7 @@ CREATE OR REPLACE FUNCTION api_search_args_v4(
     draft_id uuid DEFAULT NULL,
     suggest_source text DEFAULT 'all',
     exclude_ids uuid[] DEFAULT ARRAY[]::uuid[],
+    required boolean DEFAULT NULL,
     -- Artifact boolean filters: when true, only return resources linked to that artifact type
     tool boolean DEFAULT false
 )
@@ -51,6 +52,7 @@ FROM (
       AND (search IS NULL OR search = '' OR LOWER(a.name) LIKE '%' || LOWER(search) || '%' OR LOWER(a.description) LIKE '%' || LOWER(search) || '%')
       -- Exclude filter
       AND (exclude_ids IS NULL OR NOT (a.id = ANY(exclude_ids)))
+      AND (required IS NULL OR a.required = required)
       -- Suggest source filter
       AND (
           suggest_source = 'all'

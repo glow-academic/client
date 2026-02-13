@@ -11,6 +11,9 @@ class SearchAuthItemKeysParams(BaseModel):
     limit_count: int | None = 20
     offset_count: int | None = 0
     exclude_ids: list[UUID] = []
+    auth_ids: list[UUID] = []
+    key_ids: list[UUID] = []
+    item_ids: list[UUID] = []
     # Artifact boolean filters
     setting: bool = False
 
@@ -20,5 +23,8 @@ class SearchAuthItemKeysParams(BaseModel):
             self.limit_count,
             self.offset_count,
             self.exclude_ids,
+            self.auth_ids,
+            self.key_ids,
+            self.item_ids,
             self.setting,
         )

@@ -35,6 +35,7 @@ async def search_args_internal(
     draft_id: UUID | None = None,
     suggest_source: str | None = None,
     exclude_ids: list[UUID] | None = None,
+    required: bool | None = None,
     bypass_cache: bool = False,
     *,
     tool: bool = False,
@@ -53,6 +54,7 @@ async def search_args_internal(
             "draft_id": str(draft_id) if draft_id else None,
             "suggest_source": suggest_source,
             "exclude_ids": [str(id) for id in (exclude_ids or [])],
+            "required": required,
             "tool": tool,
         },
     )
@@ -71,6 +73,7 @@ async def search_args_internal(
         draft_id=draft_id,
         suggest_source=suggest_source,
         exclude_ids=exclude_ids or [],
+        required=required,
         tool=tool,
     )
     result = cast(

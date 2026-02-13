@@ -23,6 +23,8 @@ END $$;
 -- Create function
 CREATE OR REPLACE FUNCTION api_search_parameter_fields_v4(
     parameter_ids uuid[] DEFAULT ARRAY[]::uuid[],
+    field_ids uuid[] DEFAULT ARRAY[]::uuid[],
+    conditional_parameter_ids uuid[] DEFAULT ARRAY[]::uuid[],
     -- Artifact boolean filters: when true, only return resources linked to that artifact type
     document boolean DEFAULT false,
     persona boolean DEFAULT false,

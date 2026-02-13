@@ -16,6 +16,7 @@ class SearchAgentsParams(BaseModel):
     instruction_ids: list[UUID] = []
     model_ids: list[UUID] = []
     prompt_ids: list[UUID] = []
+    quality: str | None = None
     # Artifact boolean filters
     agent: bool = False
     setting: bool = False
@@ -31,6 +32,7 @@ class SearchAgentsParams(BaseModel):
             self.instruction_ids,
             self.model_ids,
             self.prompt_ids,
+            self.quality,
             self.agent,
             self.setting,
         )

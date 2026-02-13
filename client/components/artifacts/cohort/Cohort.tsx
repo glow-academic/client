@@ -32,6 +32,7 @@ import {
 import { Simulations } from "@/components/resources/Simulations";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useProfile } from "@/contexts/profile-context";
+import { useSocket } from "@/contexts/socket-context";
 import { useDrafts } from "@/contexts/draft-context";
 import { useAiGeneration } from "@/hooks/use-ai-generation";
 import { useDraftLifecycle } from "@/hooks/use-draft-lifecycle";
@@ -179,13 +180,9 @@ function CohortComponent({
 }: CohortProps) {
   const router = useRouter();
   const isEditMode = !!cohortId;
-  const {
-    profile,
-    setSelectedDraftId,
-    socket,
-    isConnected,
-  } = useProfile();
-  const { isAutosaveEnabled } = useDrafts();
+  const { profile } = useProfile();
+  const { socket, isConnected } = useSocket();
+  const { setSelectedDraftId, isAutosaveEnabled } = useDrafts();
 
   // --- Flush Registry ---
   const { flushRegistryRef, registerFlushCallbacks, flushAllResources } =

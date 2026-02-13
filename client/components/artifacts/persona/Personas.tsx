@@ -52,6 +52,7 @@ import {
 } from "@/components/ui/tooltip";
 import { GenerateRegenerateModal, type GenerateRegenerateModalResource } from "@/components/common/forms/GenerateRegenerateModal";
 import { useProfile } from "@/contexts/profile-context";
+import { useSocket } from "@/contexts/socket-context";
 
 // Utility function to generate gradient from hex color
 const generateGradientFromHex = (hexColor: string): string => {
@@ -103,7 +104,8 @@ export default function Personas({
   fieldSearch,
   departmentSearch,
 }: PersonasProps) {
-  const { profile, socket, isConnected } = useProfile();
+  const { profile } = useProfile();
+  const { socket, isConnected } = useSocket();
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();

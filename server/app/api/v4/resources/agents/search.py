@@ -38,6 +38,7 @@ async def search_agents_internal(
     instruction_ids: list[UUID] | None = None,
     model_ids: list[UUID] | None = None,
     prompt_ids: list[UUID] | None = None,
+    quality: str | None = None,
     bypass_cache: bool = False,
     *,
     agent: bool = False,
@@ -60,6 +61,7 @@ async def search_agents_internal(
             "instruction_ids": sorted(str(i) for i in (instruction_ids or [])),
             "model_ids": sorted(str(i) for i in (model_ids or [])),
             "prompt_ids": sorted(str(i) for i in (prompt_ids or [])),
+            "quality": quality,
             "agent": agent,
             "setting": setting,
         },
@@ -83,6 +85,7 @@ async def search_agents_internal(
         instruction_ids=instruction_ids or [],
         model_ids=model_ids or [],
         prompt_ids=prompt_ids or [],
+        quality=quality,
         agent=agent,
         setting=setting,
     )

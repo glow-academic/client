@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { useProfile } from "@/contexts/profile-context";
+import { useSocket } from "@/contexts/socket-context";
 import type { components } from "@/lib/api/schema";
 import type { ServerToClientEvents } from "@/lib/ws/types";
 import { Play, SlidersHorizontal, SkipForward } from "lucide-react";
@@ -45,7 +45,7 @@ export function AttemptLobby({
   continuationOptions,
 }: AttemptLobbyProps) {
   const router = useRouter();
-  const { socket, isConnected } = useProfile();
+  const { socket, isConnected } = useSocket();
   const [isStarting, setIsStarting] = useState(false);
   const [selectedOptionIndex, setSelectedOptionIndex] = useState<string>("");
 

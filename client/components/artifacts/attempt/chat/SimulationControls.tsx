@@ -18,7 +18,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
-import { useProfile } from "@/contexts/profile-context";
+import { useSocket } from "@/contexts/socket-context";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
@@ -31,7 +31,7 @@ export function SimulationControls({
   attemptId,
   attemptData,
 }: SimulationControlsProps) {
-  const { socket } = useProfile();
+  const { socket } = useSocket();
 
   // Extract data from attemptData
   const attempt = attemptData?.attempt || null;

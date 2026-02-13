@@ -23,6 +23,8 @@ CREATE OR REPLACE FUNCTION api_search_images_v4(
     limit_count int DEFAULT 20,
     offset_count int DEFAULT 0,
     exclude_ids uuid[] DEFAULT ARRAY[]::uuid[],
+    upload_ids uuid[] DEFAULT ARRAY[]::uuid[],
+    completed boolean DEFAULT NULL,
     -- Artifact boolean filters: when true, only return resources linked to that artifact type
     scenario boolean DEFAULT false
 )
@@ -48,6 +50,8 @@ SELECT COALESCE(
 FROM images_resource i
 WHERE i.active = true
   AND (exclude_ids IS NULL OR NOT (i.id = ANY(exclude_ids)))
+  AND (COALESCE(array_length(upload_ids, 1), 0) = 0 OR i.upload_id = ANY(upload_ids))
+  AND (completed IS NULL OR i.completed = completed)
   AND (search IS NULL OR search = '' OR LOWER(i.name) LIKE '%' || LOWER(search) || '%')
   -- Artifact boolean filters (each filters to resources linked to at least one of that artifact type)
   AND (NOT scenario OR EXISTS (SELECT 1 FROM scenario_images_junction j WHERE j.image_id = i.id AND j.active = true))

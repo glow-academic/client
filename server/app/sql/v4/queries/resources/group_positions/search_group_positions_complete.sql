@@ -23,6 +23,8 @@ CREATE OR REPLACE FUNCTION api_search_group_positions_v4(
     limit_count int DEFAULT 20,
     offset_count int DEFAULT 0,
     exclude_ids uuid[] DEFAULT ARRAY[]::uuid[],
+    groups_ids uuid[] DEFAULT ARRAY[]::uuid[],
+    eval_ids uuid[] DEFAULT ARRAY[]::uuid[],
     -- Artifact boolean filters: when true, only return resources linked to that artifact type
     eval boolean DEFAULT false
 )
@@ -44,6 +46,8 @@ FROM (
     FROM group_positions_resource r
     WHERE r.active = true
       AND (exclude_ids IS NULL OR NOT (r.id = ANY(exclude_ids)))
+      AND (COALESCE(array_length(groups_ids, 1), 0) = 0 OR r.groups_id = ANY(groups_ids))
+      AND (COALESCE(array_length(eval_ids, 1), 0) = 0 OR r.eval_id = ANY(eval_ids))
       -- Artifact boolean filters (each filters to resources linked to at least one of that artifact type)
       AND (NOT eval OR EXISTS (SELECT 1 FROM eval_group_positions_junction j WHERE j.group_positions_id = r.id AND j.active = true))
     ORDER BY r.id

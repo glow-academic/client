@@ -7,7 +7,7 @@
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { useProfile } from "@/contexts/profile-context";
+import { useSocket } from "@/contexts/socket-context";
 import {
   ChevronLeft,
   ChevronRight,
@@ -148,7 +148,7 @@ export function AttemptChat({
   user_instructions: userInstructionsProp = null,
 }: AttemptChatProps) {
   const router = useRouter();
-  const { socket, isConnected } = useProfile();
+  const { socket, isConnected } = useSocket();
 
   // ---------------------------------------------------------------------------
   // STATE MANAGEMENT

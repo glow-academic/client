@@ -32,7 +32,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { useProfile } from "@/contexts/profile-context";
+import { useSocket } from "@/contexts/socket-context";
 import {
   ColumnDef,
   ColumnFiltersState,
@@ -57,7 +57,7 @@ export default function Evals({
   deleteEvalAction,
 }: EvalsProps) {
   const router = useRouter();
-  const { socket } = useProfile();
+  const { socket } = useSocket();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [deleteItem, setDeleteItem] = useState<{
     id: string;

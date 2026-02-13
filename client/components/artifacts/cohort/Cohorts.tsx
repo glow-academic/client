@@ -51,7 +51,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { GenerateRegenerateModal, type GenerateRegenerateModalResource } from "@/components/common/forms/GenerateRegenerateModal";
-import { useProfile } from "@/contexts/profile-context";
+import { useSocket } from "@/contexts/socket-context";
 
 export interface CohortsProps {
   // Server-provided data (for server-side rendering)
@@ -81,7 +81,7 @@ export default function Cohorts({
   profileSearch,
   departmentSearch,
 }: CohortsProps) {
-  const { socket, isConnected } = useProfile();
+  const { socket, isConnected } = useSocket();
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();

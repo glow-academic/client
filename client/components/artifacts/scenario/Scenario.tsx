@@ -39,6 +39,7 @@ import { Questions } from "@/components/resources/Questions";
 import { Videos } from "@/components/resources/Videos";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useProfile } from "@/contexts/profile-context";
+import { useSocket } from "@/contexts/socket-context";
 import { useDrafts } from "@/contexts/draft-context";
 import { useAiGeneration } from "@/hooks/use-ai-generation";
 import { useConditionalParameterToggle } from "@/hooks/use-conditional-parameter-toggle";
@@ -319,7 +320,9 @@ function ScenarioComponent({
 }: ScenarioProps) {
   const router = useRouter();
   const isEditMode = !!scenarioId;
-  const { profile, setSelectedDraftId, socket, isConnected } = useProfile();
+  const { profile } = useProfile();
+  const { socket, isConnected } = useSocket();
+  const { setSelectedDraftId } = useDrafts();
   const { isAutosaveEnabled } = useDrafts();
 
   // Use scenarioDetail for edit mode, scenarioDetailDefault for new mode
