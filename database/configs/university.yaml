@@ -23,6 +23,7 @@ modules:
     departments: all
     personas: all
     documents: all
+    uploads: all
     fields: all
     parameters: all
     rubrics: all

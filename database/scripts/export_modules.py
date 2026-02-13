@@ -21,6 +21,7 @@ Usage:
 import asyncio
 import os
 import re
+import shutil
 import sys
 from datetime import date, datetime, time, timedelta
 from decimal import Decimal
@@ -36,6 +37,7 @@ import asyncpg
 SCRIPT_DIR = Path(__file__).parent
 DB_DIR = SCRIPT_DIR.parent
 MODULES_DIR = DB_DIR / "modules"
+PROJECT_ROOT = DB_DIR.parent
 
 # Load .env if present
 env_file = DB_DIR / ".env"
@@ -550,7 +552,7 @@ async def write_artifact_module(
 
 
 async def export_relations(conn: asyncpg.Connection) -> None:
-    """Export relation tables to 00-relations/."""
+    """Export relation tables to 00-relations/, one file per table."""
     print("Exporting 00-relations/ ...")
     rel_dir = MODULES_DIR / "00-relations"
     if rel_dir.exists():
@@ -558,25 +560,41 @@ async def export_relations(conn: asyncpg.Connection) -> None:
             old.unlink()
     rel_dir.mkdir(parents=True, exist_ok=True)
 
-    rel_tables = await conn.fetch("""
-        SELECT tablename FROM pg_tables
-        WHERE schemaname = 'public' AND tablename LIKE '%_relation'
-        ORDER BY tablename
-    """)
+    relation_files: list[tuple[str, str, list[str]]] = [
+        ("00-artifact-flags", "artifact-flags", ["artifact_flags_relation"]),
+        ("01-artifact-outputs", "artifact-outputs", ["artifact_outputs_relation"]),
+        ("02-artifact-resources", "artifact-resources", ["artifact_resources_relation"]),
+        ("03-artifact-roles", "artifact-roles", ["artifact_roles_relation"]),
+        ("04-artifact-routes", "artifact-routes", ["artifact_routes_relation"]),
+        ("05-artifact-units", "artifact-units", ["artifact_units_relation"]),
+        ("06-artifact-views", "artifact-views", ["artifact_view_relation"]),
+        ("07-entry-resources", "entry-resources", ["entry_resource_relation"]),
+        ("08-entry-tools", "entry-tools", ["entry_tools_relation"]),
+        ("09-resource-entries", "resource-entries", ["resource_entry_relation"]),
+        ("10-resource-flags", "resource-flags", ["resource_flags_relation"]),
+        ("11-resource-modalities", "resource-modalities", ["resource_modalities_relation"]),
+        ("12-resource-outputs", "resource-outputs", ["resource_outputs_relation"]),
+        ("13-resource-resources", "resource-resources", ["resource_resource_relation"]),
+        ("14-resource-tools", "resource-tools", ["resource_tools_relation"]),
+        ("15-view-entries", "view-entries", ["view_entry_relation"]),
+        ("16-view-outputs", "view-outputs", ["view_outputs_relation"]),
+        ("17-view-resources", "view-resources", ["view_resource_relation"]),
+    ]
 
-    output_path = rel_dir / "00-relations.sql"
-    with open(output_path, "w") as f:
-        f.write("-- Module: relations\n")
-        f.write("-- Category: relations\n")
-        f.write("-- Description: System relation tables\n")
-        f.write("-- ============================================================\n")
+    for file_prefix, label, tables in relation_files:
+        output_path = rel_dir / f"{file_prefix}.sql"
+        with open(output_path, "w") as f:
+            f.write(f"-- Module: {label}\n")
+            f.write("-- Category: relations\n")
+            f.write(f"-- Description: {label} relation data\n")
+            f.write("-- ============================================================\n")
 
-        total = 0
-        for r in rel_tables:
-            n = await export_table_full(conn, r["tablename"], f, f"Table: {r['tablename']}")
-            total += n
+            total = 0
+            for table in tables:
+                n = await export_table_full(conn, table, f, f"Table: {table}")
+                total += n
 
-    print(f"    00-relations.sql ({total} inserts)")
+        print(f"    {file_prefix}.sql ({total} inserts)")
 
 
 async def export_resources(conn: asyncpg.Connection) -> None:
@@ -1728,11 +1746,128 @@ async def export_setup_fields(conn: asyncpg.Connection) -> None:
         print(f"    {slug}.sql ({count} inserts)")
 
 
+async def export_uploads(conn: asyncpg.Connection) -> None:
+    """Export uploads_entry + uploads_uploads_connection for documents with uploads.
+
+    Also copies the actual upload files to the module's files/ directory.
+    """
+    print("  Exporting uploads/ ...")
+    out_dir = MODULES_DIR / "11-setups" / "university" / "uploads"
+    if out_dir.exists():
+        for old in out_dir.glob("*.sql"):
+            old.unlink()
+    files_dir = out_dir / "files"
+    if files_dir.exists():
+        for old in files_dir.iterdir():
+            old.unlink()
+    out_dir.mkdir(parents=True, exist_ok=True)
+    files_dir.mkdir(parents=True, exist_ok=True)
+
+    # Find document artifacts with no department (same filter as export_setup_documents)
+    # that have uploads linked via document_uploads_junction
+    rows = await conn.fetch("""
+        SELECT DISTINCT da.id, nr.name, duj.uploads_id
+        FROM document_artifact da
+        JOIN document_names_junction dnj ON dnj.document_id = da.id
+        JOIN names_resource nr ON nr.id = dnj.name_id
+        JOIN document_uploads_junction duj ON duj.document_id = da.id AND duj.active = true
+        WHERE NOT EXISTS (
+            SELECT 1 FROM document_departments_junction ddj WHERE ddj.document_id = da.id
+        )
+        ORDER BY nr.name
+    """)
+
+    if not rows:
+        print("    uploads.sql (0 inserts, 0 files)")
+        return
+
+    entry_cols = TABLE_COLUMNS.get("uploads_entry", [])
+    entry_pks = TABLE_PKS.get("uploads_entry", [])
+    conn_cols = TABLE_COLUMNS.get("uploads_uploads_connection", [])
+    conn_pks = TABLE_PKS.get("uploads_uploads_connection", [])
+
+    output_path = out_dir / "uploads.sql"
+    seen_entry_ids: set[str] = set()
+    seen_conn_keys: set[tuple[str, str]] = set()
+    copied_files: set[str] = set()
+    upload_source = PROJECT_ROOT / "uploads"
+
+    with open(output_path, "w") as f:
+        f.write("-- Module: uploads\n")
+        f.write("-- Category: uploads\n")
+        f.write("-- Description: Upload entries and connections for document uploads\n")
+        f.write("-- ============================================================\n")
+
+        # Collect uploads_entry and uploads_uploads_connection rows
+        entry_inserts: list[str] = []
+        conn_inserts: list[str] = []
+
+        for r in rows:
+            uploads_id = r["uploads_id"]
+
+            # Get uploads_uploads_connection rows for this uploads_resource
+            conn_col_list = ", ".join(conn_cols)
+            conn_rows = await conn.fetch(
+                f"SELECT {conn_col_list} FROM public.uploads_uploads_connection WHERE uploads_id = $1",
+                uploads_id,
+            )
+
+            for crow in conn_rows:
+                upload_id = crow["upload_id"]
+                upload_id_str = str(upload_id)
+
+                # Export uploads_entry (deduplicated)
+                if upload_id_str not in seen_entry_ids:
+                    seen_entry_ids.add(upload_id_str)
+                    entry_col_list = ", ".join(entry_cols)
+                    entry_row = await conn.fetchrow(
+                        f"SELECT {entry_col_list} FROM public.uploads_entry WHERE id = $1",
+                        upload_id,
+                    )
+                    if entry_row:
+                        entry_inserts.append(
+                            make_insert("uploads_entry", entry_row, entry_cols, entry_pks)
+                        )
+                        # Copy the actual file
+                        file_path = entry_row["file_path"]
+                        if file_path and file_path not in copied_files:
+                            src = upload_source / file_path
+                            if src.exists():
+                                shutil.copy2(src, files_dir / file_path)
+                                copied_files.add(file_path)
+                            else:
+                                print(f"    WARNING: Upload file not found: {src}")
+
+                # Export uploads_uploads_connection (deduplicated)
+                conn_key = (str(uploads_id), upload_id_str)
+                if conn_key not in seen_conn_keys:
+                    seen_conn_keys.add(conn_key)
+                    conn_inserts.append(
+                        make_insert("uploads_uploads_connection", crow, conn_cols, conn_pks)
+                    )
+
+        # Write entry rows first (referenced by connections)
+        if entry_inserts:
+            f.write("\n-- uploads_entry\n")
+            for stmt in entry_inserts:
+                f.write(stmt + "\n")
+
+        # Then connection rows
+        if conn_inserts:
+            f.write("\n-- uploads_uploads_connection\n")
+            for stmt in conn_inserts:
+                f.write(stmt + "\n")
+
+    total = len(entry_inserts) + len(conn_inserts)
+    print(f"    uploads.sql ({total} inserts, {len(copied_files)} files)")
+
+
 async def export_setup(conn: asyncpg.Connection) -> None:
     print("Exporting 11-setups/ ...")
     await export_setup_departments(conn)
     await export_setup_per_artifact(conn, "persona", "02-personas", "persona")
     await export_setup_documents(conn)
+    await export_uploads(conn)
     await export_setup_fields(conn)
     await export_setup_per_artifact(conn, "parameter", "05-parameters", "parameter")
     await export_rubrics(conn)
@@ -1781,6 +1916,7 @@ async def main() -> None:
             "evals": export_evals,
             "profiles": export_base_profiles,
             "settings": export_base_settings,
+            "uploads": export_uploads,
             "setup": export_setup,
         }
 
