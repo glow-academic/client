@@ -45,10 +45,6 @@ import {
 } from "@/components/ui/tooltip";
 import { useFilterOptions } from "@/contexts/filter-options-context";
 import { useProfile } from "@/contexts/profile-context";
-import type {
-  ClientToServerEvents,
-  ServerToClientEvents,
-} from "@/lib/ws/types";
 import type { OutputOf } from "@/lib/api/types";
 import {
   Column,
@@ -403,17 +399,15 @@ export default function SimulationHistory({
   const searchParams = useSearchParams();
   const { socket, isConnected } = useProfile();
 
-  // Simulation start state (socket emit + listeners)
-  const [startingSimulationId, setStartingSimulationId] = React.useState<string | null>(null);
-
   // Register socket listeners for simulation events
   React.useEffect(() => {
     if (!socket) return;
 
-    const handleStarted = (
-      data: Parameters<ServerToClientEvents["simulation_started"]>[0]
-    ) => {
-      setStartingSimulationId(null);
+    const handleStarted = (data: {
+      success: boolean;
+      message: string;
+      attempt_id?: string;
+    }) => {
       if (data.success) {
         toast.success(data.message);
         window.dispatchEvent(
@@ -426,35 +420,28 @@ export default function SimulationHistory({
       }
     };
 
-    const handleStartError = (
-      data: Parameters<ServerToClientEvents["simulation_start_error"]>[0]
-    ) => {
-      setStartingSimulationId(null);
+    const handleStartError = (data: { message: string }) => {
       toast.error(data.message);
       window.dispatchEvent(new CustomEvent("simulationError"));
     };
 
-    const handleError = (
-      data: Parameters<ServerToClientEvents["simulation_error"]>[0]
-    ) => {
+    const handleError = (data: { message: string }) => {
       toast.error(data.message);
       window.dispatchEvent(new CustomEvent("simulationError"));
     };
 
-    socket.on("simulation_started", handleStarted);
-    socket.on("simulation_start_error", handleStartError);
-    socket.on("simulation_error", handleError);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const s = socket as any;
+    s.on("simulation_started", handleStarted);
+    s.on("simulation_start_error", handleStartError);
+    s.on("simulation_error", handleError);
 
     return () => {
-      socket.off("simulation_started", handleStarted);
-      socket.off("simulation_start_error", handleStartError);
-      socket.off("simulation_error", handleError);
+      s.off("simulation_started", handleStarted);
+      s.off("simulation_start_error", handleStartError);
+      s.off("simulation_error", handleError);
     };
   }, [socket]);
-
-  type SimulationStartPayload = Parameters<
-    ClientToServerEvents["simulation_start"]
-  >[0];
 
   const emitStartSimulation = React.useCallback(
     (data: {
@@ -468,7 +455,7 @@ export default function SimulationHistory({
         toast.error("WebSocket not connected. Please refresh the page.");
         return;
       }
-      const payload: SimulationStartPayload = {
+      const payload: Record<string, unknown> = {
         simulation_id: data.simulation_id,
         ...(data.scenario_id !== undefined && {
           scenario_id: data.scenario_id,
@@ -480,8 +467,8 @@ export default function SimulationHistory({
         ...(data.profile_id ? { profile_id: data.profile_id } : {}),
       };
 
-      setStartingSimulationId(data.simulation_id);
-      socket.emit("simulation_start", payload);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (socket as any).emit("simulation_start", payload);
     },
     [socket, isConnected]
   );
@@ -1217,13 +1204,13 @@ export default function SimulationHistory({
         id: "actions",
         cell: ({ row }) => {
           const item = row.original;
-          return <HistoryRowActions item={item} />;
+          return <HistoryRowActions item={item} emitStartSimulation={emitStartSimulation} />;
         },
       },
     ];
 
     return attemptColumns;
-  }, [hideName]);
+  }, [hideName, emitStartSimulation]);
 
   // Add checkbox column when showArchive is true
   const columnsWithCheckbox = React.useMemo(() => {

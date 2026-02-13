@@ -104,27 +104,6 @@ interface ProfileContextType {
   // WebSocket connection (tied to profile)
   socket: Socket<ServerToClientEvents, ClientToServerEvents> | null;
   isConnected: boolean;
-  startingSimulationId: string | null;
-  startingEvalId: string | null;
-  setStartingEvalId: ((evalId: string | null) => void) | null;
-
-  // WebSocket helper methods
-  emitStartSimulation: (data: {
-    simulation_id: string;
-    profile_id?: string | null;
-    scenario_id?: string | null;
-    infinite?: boolean;
-    infinite_time_limit?: number | null;
-  }) => void;
-  emitCreatePracticeScenario: (data: {
-    persona_id?: string | null;
-    parameter_item_ids?: string[];
-    department_id?: string | null;
-    infinite_mode?: boolean;
-    infinite_time_limit?: number | null;
-    simulation_id?: string | null;
-    profile_id?: string | null;
-  }) => void;
 
   // Artifact generation capability flags (from profile context SSR)
   artifactHasGeneration: Record<string, boolean>;
@@ -194,10 +173,6 @@ export function ProfileProviderClient({
 
   // WebSocket connection state
   const [isConnected, setIsConnected] = useState(false);
-  const [startingSimulationId, setStartingSimulationId] = useState<
-    string | null
-  >(null);
-  const [startingEvalId, setStartingEvalId] = useState<string | null>(null);
   const socketRef = useRef<Socket<
     ServerToClientEvents,
     ClientToServerEvents
@@ -266,48 +241,6 @@ export function ProfileProviderClient({
         }
       });
 
-      // Set up event handlers for simulation tracking
-      // Note: Socket.IO server-to-client events use requestBody as payload
-      // Listen for simulation_started event (used by start.py)
-      socket.on(
-        "simulation_started",
-        (data: Parameters<ServerToClientEvents["simulation_started"]>[0]) => {
-          setStartingSimulationId(null);
-          if (data.success) {
-            toast.success(data.message);
-            window.dispatchEvent(
-              new CustomEvent("simulationStarted", {
-                detail: { attemptId: data.attempt_id },
-              })
-            );
-          } else {
-            toast.error(data.message);
-          }
-        }
-      );
-
-      // Listen for simulation start errors (used by start.py, replaces practice errors)
-      socket.on(
-        "simulation_start_error",
-        (
-          data: Parameters<ServerToClientEvents["simulation_start_error"]>[0]
-        ) => {
-          setStartingSimulationId(null);
-          toast.error(data.message);
-          window.dispatchEvent(new CustomEvent("simulationError"));
-        }
-      );
-
-      // Listen for centralized simulation errors (from child operations)
-      socket.on(
-        "simulation_error",
-        (
-          data: Parameters<ServerToClientEvents["simulation_error"]>[0]
-        ) => {
-          toast.error(data.message);
-          window.dispatchEvent(new CustomEvent("simulationError"));
-        }
-      );
     };
 
     connectWebSocket();
@@ -360,78 +293,6 @@ export function ProfileProviderClient({
     [profile?.role, initial?.available_sections]
   );
 
-  // WebSocket helper methods
-  type SimulationStartPayload = Parameters<
-    ClientToServerEvents["simulation_start"]
-  >[0];
-
-  const emitStartSimulation = useCallback(
-    (data: {
-      simulation_id: string;
-      profile_id?: string | null;
-      scenario_id?: string | null;
-      infinite?: boolean;
-      infinite_time_limit?: number | null;
-    }) => {
-      if (!socketRef.current || !isConnected) {
-        toast.error("WebSocket not connected. Please refresh the page.");
-        return;
-      }
-      const payload: SimulationStartPayload = {
-        simulation_id: data.simulation_id,
-        ...(data.scenario_id !== undefined && {
-          scenario_id: data.scenario_id,
-        }),
-        ...(data.infinite !== undefined && { infinite: data.infinite }),
-        ...(data.infinite_time_limit !== undefined && {
-          infinite_time_limit: data.infinite_time_limit,
-        }),
-        ...(data.profile_id ? { profile_id: data.profile_id } : {}),
-      };
-
-      setStartingSimulationId(data.simulation_id);
-      socketRef.current.emit("simulation_start", payload);
-    },
-    [isConnected]
-  );
-
-  const emitCreatePracticeScenario = useCallback(
-    (data: {
-      persona_id?: string | null;
-      parameter_item_ids?: string[];
-      department_id?: string | null;
-      infinite_mode?: boolean;
-      infinite_time_limit?: number | null;
-      simulation_id?: string | null;
-      profile_id?: string | null;
-    }) => {
-      if (!socketRef.current || !isConnected) {
-        toast.error("WebSocket not connected. Please refresh the page.");
-        return;
-      }
-      // Convert practice payload to start simulation payload with practice_mode=True
-      const payload: SimulationStartPayload = {
-        practice_mode: true,
-        ...(data.profile_id ? { profile_id: data.profile_id } : {}),
-        ...(data.persona_id != null
-          ? { practice_persona_id: data.persona_id }
-          : {}),
-        ...(data.parameter_item_ids !== undefined
-          ? { practice_parameter_item_ids: data.parameter_item_ids }
-          : {}),
-        ...(data.department_id != null
-          ? { practice_department_id: data.department_id }
-          : {}),
-        ...(data.infinite_mode !== undefined
-          ? { infinite: data.infinite_mode }
-          : {}),
-      };
-
-      socketRef.current.emit("simulation_start", payload);
-    },
-    [isConnected]
-  );
-
   const value: ProfileContextType = {
     // Profile data
     profile,
@@ -478,11 +339,6 @@ export function ProfileProviderClient({
     // WebSocket connection (tied to profile)
     socket: socketRef.current,
     isConnected,
-    startingSimulationId,
-    startingEvalId,
-    setStartingEvalId,
-    emitStartSimulation,
-    emitCreatePracticeScenario,
 
     // Artifact agent IDs for generation capability (from profile context SSR)
     artifactHasGeneration: initial?.artifact_has_generation ?? {},

@@ -41,13 +41,8 @@ export default function Benchmark({
 }: BenchmarkProps) {
   const router = useRouter();
 
-  const {
-    profile,
-    isConnected,
-    socket,
-    startingEvalId,
-    setStartingEvalId,
-  } = useProfile();
+  const { profile, isConnected, socket } = useProfile();
+  const [startingEvalId, setStartingEvalId] = useState<string | null>(null);
 
   // Set section-specific filter options in context (benchmark has no cohort filter)
   const { setOptions } = useFilterOptions();
@@ -94,9 +89,7 @@ export default function Benchmark({
         toast.dismiss(loadingToastId);
         setLoadingToastId(null);
       }
-      if (setStartingEvalId) {
-        setStartingEvalId(null);
-      }
+      setStartingEvalId(null);
       const { attemptId } = event.detail;
       // Server-side Redis cache is already invalidated by the WebSocket handler
       router.refresh(); // Refresh current page data so it's updated when user returns
@@ -112,9 +105,7 @@ export default function Benchmark({
         toast.dismiss(loadingToastId);
         setLoadingToastId(null);
       }
-      if (setStartingEvalId) {
-        setStartingEvalId(null);
-      }
+      setStartingEvalId(null);
       toast.error("Failed to start eval. Please try again.");
     };
 
@@ -145,9 +136,7 @@ export default function Benchmark({
       message: string;
       attempt_id: string;
     }) => {
-      if (setStartingEvalId) {
-        setStartingEvalId(null);
-      }
+      setStartingEvalId(null);
       if (data.success) {
         toast.success(data.message);
         window.dispatchEvent(
@@ -165,9 +154,7 @@ export default function Benchmark({
       success: boolean;
       message: string;
     }) => {
-      if (setStartingEvalId) {
-        setStartingEvalId(null);
-      }
+      setStartingEvalId(null);
       toast.error(data.message);
       window.dispatchEvent(new CustomEvent("evalError"));
     };
@@ -196,9 +183,7 @@ export default function Benchmark({
             { dismissible: true }
           );
           setLoadingToastId(toastId);
-          if (setStartingEvalId) {
-            setStartingEvalId(evalId);
-          }
+          setStartingEvalId(evalId);
 
           try {
             const result = await createTestAction({
@@ -207,9 +192,7 @@ export default function Benchmark({
 
             toast.dismiss(toastId);
             setLoadingToastId(null);
-            if (setStartingEvalId) {
-              setStartingEvalId(null);
-            }
+            setStartingEvalId(null);
 
             if (result.test_id) {
               toast.success("Eval started successfully.");
@@ -222,9 +205,7 @@ export default function Benchmark({
             toast.dismiss(toastId);
             toast.error("Failed to start eval. Please try again.");
             setLoadingToastId(null);
-            if (setStartingEvalId) {
-              setStartingEvalId(null);
-            }
+            setStartingEvalId(null);
           }
           return;
         }
@@ -252,9 +233,7 @@ export default function Benchmark({
         );
         setLoadingToastId(toastId);
 
-        if (setStartingEvalId) {
-          setStartingEvalId(evalId);
-        }
+        setStartingEvalId(evalId);
 
         const profileIdForEmit = String(profile?.id || "");
 
@@ -270,17 +249,13 @@ export default function Benchmark({
           toast.dismiss(toastId);
           toast.error("Eval start timed out. Please try again.");
           setLoadingToastId(null);
-          if (setStartingEvalId) {
-            setStartingEvalId(null);
-          }
+          setStartingEvalId(null);
         }, 60000); // 60 seconds timeout for evals
       } catch {
         if (loadingToastId) toast.dismiss(loadingToastId);
         toast.error("Failed to start eval. Please try again.");
         setLoadingToastId(null);
-        if (setStartingEvalId) {
-          setStartingEvalId(null);
-        }
+        setStartingEvalId(null);
       }
     },
     [
@@ -288,7 +263,6 @@ export default function Benchmark({
       isConnected,
       socket,
       loadingToastId,
-      setStartingEvalId,
       createTestAction,
       router,
     ]
