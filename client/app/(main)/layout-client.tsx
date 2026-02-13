@@ -20,24 +20,25 @@ import { AnalyticsFilters } from "@/components/common/layout/AnalyticsFilters";
 import { NavigationBreadcrumbs } from "@/components/common/layout/NavigationBreadcrumbs";
 import { UnifiedSidebar } from "@/components/common/layout/UnifiedSidebar";
 import { ThemeHydrator } from "@/components/theme/ThemeHydrator";
-import { GenerationProvider } from "@/contexts/generation-context";
 import {
   DraftProviderClient,
   type DraftItem,
 } from "@/contexts/draft-context";
-import { ProfileProviderClient, useProfile } from "@/contexts/profile-context";
+import { ProfileProviderClient } from "@/contexts/profile-context";
+import { SettingsProviderClient } from "@/contexts/settings-context";
 import { SocketProviderClient } from "@/contexts/socket-context";
 import type {
   AnalyticsFiltersResponse,
+  AuthPageResponse,
+  AuthProfileResponse,
+  AuthSettingsResponse,
   AttemptFullOut,
   CreateFeedbackIn,
   CreateFeedbackOut,
-  LayoutContextResponse,
   RefreshPageFn,
   SafeSessionSnapshot,
   SearchSimulatableProfilesIn,
   SearchSimulatableProfilesOut,
-  SettingsActiveClient,
   SwitchEffectiveProfileParams,
   SwitchEffectiveProfileResult,
 } from "./layout-server";
@@ -45,6 +46,7 @@ import type {
 // Inner component that uses the role context
 function MainLayoutContent({
   children,
+  pageData,
   attemptData,
   switchEffectiveProfileAction,
   createFeedbackAction,
@@ -52,6 +54,7 @@ function MainLayoutContent({
   searchSimulatableProfilesAction,
 }: {
   children: React.ReactNode;
+  pageData: AuthPageResponse | null;
   attemptData: AttemptFullOut | null;
   switchEffectiveProfileAction: (
     input: SwitchEffectiveProfileParams
@@ -65,7 +68,8 @@ function MainLayoutContent({
   const pathname = usePathname() || "/";
 
   const router = useRouter();
-  const { breadcrumbs: serverBreadcrumbs, pageMetadata } = useProfile();
+  const serverBreadcrumbs = pageData?.breadcrumbs ?? null;
+  const pageMetadata = pageData?.page_metadata ?? null;
   // Use server-driven breadcrumbs, falling back to empty array
   const breadcrumbs = useMemo(() => {
     return serverBreadcrumbs ?? [];
@@ -73,8 +77,9 @@ function MainLayoutContent({
 
   // Derive active section from server breadcrumbs
   const activeSection = useMemo(() => {
-    if (breadcrumbs.length > 0 && breadcrumbs[0].section) {
-      return breadcrumbs[0].section;
+    const first = breadcrumbs[0];
+    if (breadcrumbs.length > 0 && first?.section) {
+      return first.section;
     }
     // Fallback: derive from pathname
     const segments = pathname.split("/").filter(Boolean);
@@ -130,6 +135,7 @@ function MainLayoutContent({
     <>
       <SidebarProvider>
         <UnifiedSidebar
+          sidebarRoutes={pageData?.sidebar_routes ?? null}
           activeSection={activeSection}
           onSectionChange={handleSectionChange}
           switchEffectiveProfile={switchEffectiveProfileAction}
@@ -198,10 +204,11 @@ function MainLayoutContent({
 
 export function MainLayoutClient({
   children,
-  initial,
+  profileData,
+  settingsData,
+  pageData,
   sessionSnapshot,
   attemptData,
-  activeSettings,
   drafts,
   analyticsFilters,
   initialAutosave,
@@ -211,10 +218,11 @@ export function MainLayoutClient({
   searchSimulatableProfilesAction,
 }: {
   children: React.ReactNode;
-  initial: LayoutContextResponse | null; // Can be null if user doesn't have access
+  profileData: AuthProfileResponse | null;
+  settingsData: AuthSettingsResponse | null;
+  pageData: AuthPageResponse | null;
   sessionSnapshot: SafeSessionSnapshot;
   attemptData: AttemptFullOut | null;
-  activeSettings: SettingsActiveClient | null;
   drafts: DraftItem[];
   analyticsFilters: AnalyticsFiltersResponse | null;
   /** Initial autosave preference from SSR cookie */
@@ -259,30 +267,31 @@ export function MainLayoutClient({
 
   return (
     <>
-      <ThemeHydrator activeSettings={activeSettings} />
+      <ThemeHydrator tokens={settingsData?.tokens ?? null} />
       <SocketProviderClient
-        profileId={initial?.id ?? null}
-        sessionId={initial?.session_id ?? null}
+        profileId={profileData?.id ?? null}
+        sessionId={profileData?.session_id ?? null}
       >
         <DraftProviderClient drafts={drafts} initialAutosave={initialAutosave}>
           <ProfileProviderClient
-            initial={initial}
+            initial={profileData}
             sessionSnapshot={sessionSnapshot}
             analyticsFilters={analyticsFilters}
           >
-            <GenerationProvider>
-                <MainLayoutContent
-                  attemptData={attemptData}
-                  switchEffectiveProfileAction={switchEffectiveProfileAction}
-                  createFeedbackAction={createFeedbackAction}
-                  refreshPageAction={refreshPageAction}
-                  searchSimulatableProfilesAction={
-                    searchSimulatableProfilesAction
-                  }
-                >
-                  {children}
-                </MainLayoutContent>
-            </GenerationProvider>
+            <SettingsProviderClient settings={settingsData}>
+              <MainLayoutContent
+                pageData={pageData}
+                attemptData={attemptData}
+                switchEffectiveProfileAction={switchEffectiveProfileAction}
+                createFeedbackAction={createFeedbackAction}
+                refreshPageAction={refreshPageAction}
+                searchSimulatableProfilesAction={
+                  searchSimulatableProfilesAction
+                }
+              >
+                {children}
+              </MainLayoutContent>
+            </SettingsProviderClient>
           </ProfileProviderClient>
         </DraftProviderClient>
       </SocketProviderClient>

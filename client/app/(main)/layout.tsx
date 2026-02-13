@@ -66,7 +66,7 @@ export default async function MainLayout({
 
     // Otherwise (route-denied or department), user is logged in (including guests)
     // Fetch layout data and show access denied inside sidebar
-    const { initial, snapshot, attemptData, activeSettings, drafts, analyticsFilters } =
+    const { profileData, settingsData, pageData, snapshot, attemptData, drafts, analyticsFilters } =
       await getLayoutContextData(session);
 
     return (
@@ -77,10 +77,11 @@ export default async function MainLayout({
       >
         <MainLayoutClient
           key={`access-denied-${pathname}-${reason}`}
-          initial={initial}
+          profileData={profileData}
+          settingsData={settingsData}
+          pageData={pageData}
           sessionSnapshot={snapshot}
           attemptData={attemptData}
-          activeSettings={activeSettings}
           drafts={drafts}
           analyticsFilters={analyticsFilters}
           initialAutosave={initialAutosave}
@@ -101,20 +102,14 @@ export default async function MainLayout({
   }
 
   // User has access, proceed with layout data fetching
-  const { initial, snapshot, attemptData, activeSettings, drafts, analyticsFilters } =
+  const { profileData, settingsData, pageData, snapshot, attemptData, drafts, analyticsFilters } =
     await getLayoutContextData(session);
 
   // If profile resolution failed, show access denied
-  // This can happen if:
-  // 1. Cookies are invalid (guest/default-account users)
-  // 2. Session has invalid profile ID (profile doesn't exist in database)
-  // 3. Database was reset but session still has old profile IDs
-  if (!initial || !initial.id) {
-    // If we have a session but profile resolution failed, the session is invalid
-    // Show access denied with "not-logged-in" reason to prompt re-authentication
+  if (!profileData || !profileData.id) {
     const reason = session?.user?.profileId
-      ? "not-logged-in" // Invalid session - profile doesn't exist
-      : "not-logged-in"; // No session at all
+      ? "not-logged-in"
+      : "not-logged-in";
     return (
       <LogoutGuard>
         <UnifiedAccessDenied
@@ -127,8 +122,8 @@ export default async function MainLayout({
     );
   }
 
-  // Server-driven route access: check page_access from context response
-  if (initial.page_access && !initial.page_access.authorized) {
+  // Server-driven route access: check page_access from page response
+  if (pageData?.page_access && !pageData.page_access.authorized) {
     return (
       <div
         key={`page-access-denied-wrapper-${pathname}`}
@@ -137,10 +132,11 @@ export default async function MainLayout({
       >
         <MainLayoutClient
           key={`page-access-denied-${pathname}`}
-          initial={initial}
+          profileData={profileData}
+          settingsData={settingsData}
+          pageData={pageData}
           sessionSnapshot={snapshot}
           attemptData={attemptData}
-          activeSettings={activeSettings}
           drafts={drafts}
           analyticsFilters={analyticsFilters}
           initialAutosave={initialAutosave}
@@ -153,7 +149,7 @@ export default async function MainLayout({
             key={`page-access-denied-content-${pathname}`}
             reason="route-denied"
             pathname={pathname}
-            role={initial.role ?? undefined}
+            role={profileData.role ?? undefined}
           />
         </MainLayoutClient>
       </div>
@@ -168,10 +164,11 @@ export default async function MainLayout({
     >
       <MainLayoutClient
         key={`allowed-${pathname}`}
-        initial={initial}
+        profileData={profileData}
+        settingsData={settingsData}
+        pageData={pageData}
         sessionSnapshot={snapshot}
         attemptData={attemptData}
-        activeSettings={activeSettings}
         drafts={drafts}
         analyticsFilters={analyticsFilters}
         initialAutosave={initialAutosave}

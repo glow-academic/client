@@ -10,13 +10,10 @@
 
 import type {
   AnalyticsFiltersResponse,
-  LayoutContextResponse,
+  AuthProfileResponse,
   ProfileItem,
   SafeSessionSnapshot,
-  SettingsActiveClient,
 } from "@/app/(main)/layout-server";
-import { useDrafts, type DraftItem } from "@/contexts/draft-context";
-import { useSocket, type AppSocket } from "@/contexts/socket-context";
 import { usePathname, useRouter } from "next/navigation";
 import React, {
   createContext,
@@ -38,9 +35,8 @@ type ProfileRole =
 // TYPES (derived from LayoutContextResponse)
 // ============================================================================
 
-export type { DraftItem };
 export type RoleResourceItem = NonNullable<
-  LayoutContextResponse["role_resources"]
+  AuthProfileResponse["role_resources"]
 >[number];
 
 // Note: With server-side access control, users without valid sessions won't reach pages
@@ -73,30 +69,6 @@ interface ProfileContextType {
   redirectPath: string;
   scopedRoles: string[]; // Roles that the effective profile has scope to see
   roleResources: RoleResourceItem[];
-
-  // Settings data (from server)
-  // Note: Settings are stored as flat fields (settings_*) in LayoutContextResponse
-  // The layout-server.tsx transforms these into a nested SettingsActiveClient object
-  // Currently not used in profile context, but available for future use
-  settings: SettingsActiveClient | null;
-
-  // Drafts data (from server)
-  drafts: DraftItem[];
-  selectedDraftId: string | null;
-  setSelectedDraftId: (id: string | null) => void;
-
-  // WebSocket connection (tied to profile)
-  socket: AppSocket | null;
-  isConnected: boolean;
-
-  // Artifact generation capability flags (from profile context SSR)
-  artifactHasGeneration: Record<string, boolean>;
-
-  // Server-driven routing data
-  sidebarRoutes: LayoutContextResponse["sidebar_routes"];
-  breadcrumbs: LayoutContextResponse["breadcrumbs"];
-  pageAccess: LayoutContextResponse["page_access"];
-  pageMetadata: LayoutContextResponse["page_metadata"];
 }
 
 export const ProfileContext = createContext<ProfileContextType | null>(null);
@@ -111,9 +83,7 @@ export const useProfile = () => {
 
 interface ProfileProviderClientProps {
   children: React.ReactNode;
-  // Use LayoutContextResponse directly from OutputOf - it matches API response exactly (snake_case)
-  // No need for manual type assertions - OpenAPI types are generated from server schema
-  initial: LayoutContextResponse | null; // Can be null if user doesn't have access
+  initial: AuthProfileResponse | null;
   sessionSnapshot: SafeSessionSnapshot;
   analyticsFilters: AnalyticsFiltersResponse | null;
 }
@@ -132,9 +102,6 @@ export function ProfileProviderClient({
     []
   );
 
-  // Draft state (delegated to DraftProviderClient)
-  const { drafts, selectedDraftId, setSelectedDraftId } = useDrafts();
-
   // Handle null initial (access denied case) - with server-side access control,
   // users without valid sessions won't reach pages (they see UnifiedAccessDenied).
   // However, we handle null gracefully for edge cases and loading states.
@@ -148,9 +115,6 @@ export function ProfileProviderClient({
       active: initial.active ?? false,
     };
   }, [initial]);
-
-  // WebSocket connection (delegated to SocketProviderClient)
-  const { socket, isConnected } = useSocket();
 
   // Compute effective department IDs from analytics filters
   const allDepartmentIds = useMemo(
@@ -205,38 +169,12 @@ export function ProfileProviderClient({
     // Analytics filters (from server — per-page filter config + options)
     analyticsFilters: analyticsFilters ?? null,
 
-    // Permissions data (from server) - handle null initial gracefully
-    // LayoutContextResponse uses snake_case fields matching API response exactly (from OpenAPI schema)
-    // No type assertions needed - types are auto-generated from server schema
+    // Permissions data (from server)
     availableSections: initial?.available_sections ?? [],
     availableRoutes: initial?.available_routes ?? [],
     redirectPath: initial?.redirect_path ?? "/home",
     scopedRoles: initial?.scoped_roles ?? [],
     roleResources: initial?.role_resources ?? [],
-
-    // Settings data (from server) - handle null initial gracefully
-    // Note: Settings are stored as flat fields (settings_*) in LayoutContextResponse
-    // The layout-server.tsx transforms these into a nested SettingsActiveClient object
-    // Currently not used in profile context, but available for future use
-    settings: null,
-
-    // Drafts data (from DraftProviderClient)
-    drafts,
-    selectedDraftId,
-    setSelectedDraftId,
-
-    // WebSocket connection (tied to profile, delegated to SocketProviderClient)
-    socket,
-    isConnected,
-
-    // Artifact agent IDs for generation capability (from profile context SSR)
-    artifactHasGeneration: initial?.artifact_has_generation ?? {},
-
-    // Server-driven routing data
-    sidebarRoutes: initial?.sidebar_routes ?? null,
-    breadcrumbs: initial?.breadcrumbs ?? null,
-    pageAccess: initial?.page_access ?? null,
-    pageMetadata: initial?.page_metadata ?? null,
   };
 
   return (

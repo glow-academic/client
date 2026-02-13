@@ -52,68 +52,57 @@ type ProcessCSVIn = InputOf<"/api/v4/artifacts/profiles/bulk/process", "post">;
 type ProcessCSVOut = OutputOf<"/api/v4/artifacts/profiles/bulk/process", "post">;
 type BulkCreateOrUpdateStaffIn = InputOf<"/api/v4/artifacts/profiles/bulk/save", "post">;
 type BulkCreateOrUpdateStaffOut = OutputOf<"/api/v4/artifacts/profiles/bulk/save", "post">;
-/** ---- Client-side settings type (excludes guestProfileId) ----
- * guestProfileId is server-side only and should not be exposed to client components
- *
- * Transforms flat settings_* fields from API response into nested settings object
- * Uses inferred types from LayoutContextOut to ensure type safety
- */
-type SettingsFields = Pick<
-  LayoutContextOut,
-  | "settings_id"
-  | "settings_success_threshold"
-  | "settings_warning_threshold"
-  | "settings_danger_threshold"
-  | "settings_tokens"
->;
+/** ---- Auth response type aliases ---- */
+export type AuthProfileResponse = AuthProfileOut;
+export type AuthSettingsResponse = AuthSettingsOut;
+export type AuthPageResponse = AuthPageOut;
 
-// Transform settings_* fields to nested structure (remove settings_ prefix)
-type TransformSettings<T> = {
-  [K in keyof T as K extends `settings_${infer Rest}` ? Rest : never]: T[K];
-};
+/** ---- Shared header builder for auth endpoints ---- */
+async function buildAuthHeaders(): Promise<Record<string, string>> {
+  const cookieStore = await cookies();
+  const cookieHeader = [
+    cookieStore.get("department-id")?.value &&
+      `department-id=${cookieStore.get("department-id")?.value}`,
+  ]
+    .filter(Boolean)
+    .join("; ");
 
-type SettingsTransformed = TransformSettings<SettingsFields>;
+  const headersList = await headers();
+  const pathname = headersList.get("x-pathname") || "/";
 
-// Add guestProfileId for server-side use, then omit it for client
-type SettingsWithGuest = SettingsTransformed & {
-  guestProfileId?: string | null; // Server-side only
-};
+  const extraHeaders: Record<string, string> = {};
+  if (cookieHeader) extraHeaders["Cookie"] = cookieHeader;
+  extraHeaders["X-Pathname"] = pathname;
+  return extraHeaders;
+}
 
-export type SettingsActiveClient = Omit<SettingsWithGuest, "guestProfileId">;
-
-/** ---- Cached fetch ---- */
+/** ---- Cached fetch (legacy — still used by internal consumers) ---- */
 export const getLayoutContext = cache(
   async (input: LayoutContextIn): Promise<LayoutContextOut> => {
-    // Profile IDs are automatically injected via X-Profile-Id header
-    // by request-core.ts, so we don't need to pass them in the body anymore.
-    // The backend reads them from request.state (set by router-level dependencies).
-    // We still accept them in the input for backward compatibility, but they're ignored.
+    const extraHeaders = await buildAuthHeaders();
+    return api.post("/auth/context", input, { headers: extraHeaders });
+  }
+);
 
-    // Forward cookies from server action context to API request
-    // This is needed because server actions run server-side and cookies aren't automatically forwarded
-    const cookieStore = await cookies();
-    const cookieHeader = [
-      cookieStore.get("department-id")?.value &&
-        `department-id=${cookieStore.get("department-id")?.value}`,
-    ]
-      .filter(Boolean)
-      .join("; ");
+/** ---- New split auth fetches ---- */
+export const getAuthProfile = cache(
+  async (): Promise<AuthProfileOut> => {
+    const extraHeaders = await buildAuthHeaders();
+    return api.post("/auth/profile", {} as AuthProfileIn, { headers: extraHeaders });
+  }
+);
 
-    // Forward pathname so server can compute sidebar, breadcrumbs, page metadata
-    const headersList = await headers();
-    const pathname = headersList.get("x-pathname") || "/";
+export const getAuthSettings = cache(
+  async (): Promise<AuthSettingsOut> => {
+    const extraHeaders = await buildAuthHeaders();
+    return api.post("/auth/settings", {} as AuthSettingsIn, { headers: extraHeaders });
+  }
+);
 
-    const extraHeaders: Record<string, string> = {};
-    if (cookieHeader) extraHeaders["Cookie"] = cookieHeader;
-    extraHeaders["X-Pathname"] = pathname;
-
-    const result = await api.post(
-      "/auth/context",
-      input,
-      { headers: extraHeaders }
-    );
-
-    return result;
+export const getAuthPage = cache(
+  async (): Promise<AuthPageOut> => {
+    const extraHeaders = await buildAuthHeaders();
+    return api.post("/auth/page", {} as AuthPageIn, { headers: extraHeaders });
   }
 );
 
@@ -188,10 +177,8 @@ export async function getValidatedProfileId(session?: Session | null): Promise<{
 }
 
 // Export ProfileItem type derived from server response
-// Extracts profile fields from LayoutContextOut (effective profile fields: id, name, etc.)
-// Uses inferred types to ensure type safety
 export type ProfileItem = Pick<
-  LayoutContextOut,
+  AuthProfileOut,
   | "id"
   | "name"
   | "role"
@@ -229,49 +216,56 @@ export async function getLayoutContextData(session?: Session | null) {
 
   // Extract profile ID from session
   let profileId = resolvedSession?.user?.profileId || null;
-  let initial: LayoutContextOut | null = null;
+  let profileData: AuthProfileOut | null = null;
+  let settingsData: AuthSettingsOut | null = null;
+  let pageData: AuthPageOut | null = null;
 
-  // Fetch profile context + drafts + analytics filters in parallel
+  // Fetch profile + settings + page + drafts + analytics filters in parallel
   let draftsResult: DraftsOut | null = null;
   let analyticsFilters: AnalyticsFiltersOut | null = null;
   try {
-    const [contextResult, draftsRes, filtersRes] = await Promise.all([
-      getLayoutContext({ body: {} }),
+    const [profileRes, settingsRes, pageRes, draftsRes, filtersRes] = await Promise.all([
+      getAuthProfile(),
+      getAuthSettings(),
+      getAuthPage(),
       getDrafts(),
       getAnalyticsFilters(),
     ]);
-    initial = contextResult;
+    profileData = profileRes;
+    settingsData = settingsRes;
+    pageData = pageRes;
     draftsResult = draftsRes;
     analyticsFilters = filtersRes;
-    if (initial?.id) {
-      profileId = initial.id;
+    if (profileData?.id) {
+      profileId = profileData.id;
     }
   } catch {
-    // If context fetch fails (e.g., 403/404), return null
-    // Layout will handle access denied via AccessControl component
-    initial = null;
+    // If fetch fails (e.g., 403/404), return null
+    profileData = null;
+    settingsData = null;
+    pageData = null;
     draftsResult = null;
     analyticsFilters = null;
   }
 
-  // Ensure we have profile ID - use from initial if extraction failed
-  if (initial && !profileId && initial.id) {
-    profileId = initial.id;
+  // Ensure we have profile ID
+  if (profileData && !profileId && profileData.id) {
+    profileId = profileData.id;
   }
 
-  // Early return if no valid profile context (user not logged in or invalid session)
-  // Only return null if we truly don't have valid profile data
-  if (!initial || !initial.id) {
+  // Early return if no valid profile context
+  if (!profileData || !profileData.id) {
     // eslint-disable-next-line no-console
-    console.log("Returning null initial:", {
-      hasInitial: !!initial,
+    console.log("Returning null profileData:", {
+      hasProfileData: !!profileData,
       profileId,
     });
     return {
-      initial: null,
+      profileData: null,
+      settingsData: null,
+      pageData: null,
       snapshot,
       attemptData: null,
-      activeSettings: null,
       drafts: [],
       analyticsFilters: null,
     };
@@ -295,30 +289,16 @@ export async function getLayoutContextData(session?: Session | null) {
         body: { attempt_id: attemptId },
       });
     } catch {
-      // If attempt fetch fails, just continue without attempt data
-      // This can happen if the attempt doesn't exist or user doesn't have access
       attemptData = null;
     }
   }
 
-  // Extract settings from profile context response
-  // Transform flat settings_* fields into nested settings object
-  // Extract guestProfileId before passing to client (server-side only)
-  const activeSettingsClient: SettingsActiveClient | null = initial.settings_id
-    ? {
-        id: initial.settings_id ?? null,
-        success_threshold: initial.settings_success_threshold ?? null,
-        warning_threshold: initial.settings_warning_threshold ?? null,
-        danger_threshold: initial.settings_danger_threshold ?? null,
-        tokens: initial.settings_tokens ?? null,
-      }
-    : null;
-
   return {
-    initial,
+    profileData,
+    settingsData,
+    pageData,
     snapshot,
     attemptData,
-    activeSettings: activeSettingsClient,
     drafts: draftsResult?.drafts ?? [],
     analyticsFilters,
   };
