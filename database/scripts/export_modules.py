@@ -79,10 +79,6 @@ RESOURCE_TABLES = {
     "pricing_resource",
     "reasoning_levels_resource",
     "temperature_levels_resource",
-    # Secrets/key tables (exported with dummy values via SENSITIVE_COLUMNS)
-    "keys_resource",
-    "provider_keys_resource",
-    "auth_item_keys_resource",
 }
 
 # Tables that should NEVER be exported (runtime / entry tables)
@@ -660,9 +656,6 @@ async def export_resources(conn: asyncpg.Connection) -> None:
             "temperature-levels",
             ["temperature_levels_resource"],
         ),
-        # Secrets/key tables (sensitive columns replaced with dummy values)
-        ("17-keys", "keys", ["keys_resource", "provider_keys_resource"]),
-        ("18-auth-item-keys", "auth-item-keys", ["auth_item_keys_resource"]),
     ]
 
     for file_prefix, label, tables in resource_files:
