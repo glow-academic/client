@@ -67,7 +67,10 @@ CREATE TYPE types.q_get_attempt_list_view_v4_item AS (
 -- ============================================================================
 
 CREATE OR REPLACE FUNCTION api_get_attempt_list_view_v4(
-    attempt_ids uuid[]
+    attempt_ids uuid[] DEFAULT NULL,
+    profile_id_filter uuid DEFAULT NULL,
+    simulation_id_filter uuid DEFAULT NULL,
+    practice_filter boolean DEFAULT NULL
 )
 RETURNS TABLE (
     items types.q_get_attempt_list_view_v4_item[]
@@ -76,11 +79,14 @@ LANGUAGE sql
 STABLE
 AS $$
     WITH
-    -- Fetch from MV by attempt IDs
+    -- Fetch from MV with declarative filters
     mv_data AS (
         SELECT mv.*
         FROM mv_attempt_list mv
-        WHERE mv.attempt_id = ANY(COALESCE(attempt_ids, ARRAY[]::uuid[]))
+        WHERE (attempt_ids IS NULL OR mv.attempt_id = ANY(attempt_ids))
+          AND (profile_id_filter IS NULL OR mv.profile_id = profile_id_filter)
+          AND (simulation_id_filter IS NULL OR mv.simulation_id = simulation_id_filter)
+          AND (practice_filter IS NULL OR mv.practice = practice_filter)
     ),
     -- No resource JOINs needed - all metadata fetched via internal handlers
     -- Aggregates derived in service layer from chats

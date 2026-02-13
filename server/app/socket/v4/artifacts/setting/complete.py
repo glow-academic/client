@@ -139,7 +139,7 @@ async def handle_setting_artifact_complete(data: dict[str, Any]) -> None:
                 items = await get_auth_item_keys_internal(conn, [resource_id])
                 event.auth_item_key_resources = items if items else None
             elif resource_type == "roles":
-                items = await get_roles_internal(conn)
+                items = await get_roles_internal(conn, [resource_id])
                 event.role_resources = items if items else None
             elif resource_type == "role_routes":
                 items = await get_role_routes_internal(conn, [resource_id])

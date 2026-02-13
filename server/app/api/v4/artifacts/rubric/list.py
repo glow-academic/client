@@ -30,7 +30,7 @@ from app.api.v4.artifacts.rubric.types import (
 )
 from app.api.v4.auth.context import get_profile_context_internal
 from app.api.v4.resources.departments.get import get_departments_internal
-from app.api.v4.resources.simulations.get import get_simulations_batch_internal
+from app.api.v4.resources.simulations.get import get_simulations_internal
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
@@ -243,7 +243,7 @@ async def get_rubric_list(
                 if not simulation_ids_to_fetch:
                     return []
                 async with pool.acquire() as c:
-                    return await get_simulations_batch_internal(
+                    return await get_simulations_internal(
                         c, simulation_ids_to_fetch, bypass_cache
                     )
 
@@ -274,7 +274,7 @@ async def get_rubric_list(
         simulation_options: list[ListRubricApiSimulationOption] = [
             ListRubricApiSimulationOption(
                 simulation_id=s.simulation_id,
-                name=s.title,
+                name=s.name,
                 description=s.description or "",
                 count=simulation_count_map.get(s.simulation_id, 0)
                 if s.simulation_id
@@ -284,7 +284,7 @@ async def get_rubric_list(
             if s.simulation_id
             and (
                 simulation_search is None
-                or simulation_search.lower() in (s.title or "").lower()
+                or simulation_search.lower() in (s.name or "").lower()
             )
         ]
 

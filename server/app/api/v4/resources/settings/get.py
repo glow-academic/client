@@ -21,7 +21,7 @@ from app.utils.cache.set_cached import set_cached
 from app.utils.sql_helper import execute_sql_typed
 
 # Load SQL with types at module level
-SQL_PATH = "app/sql/v4/queries/settings/get_settings_resource_data_complete.sql"
+SQL_PATH = "app/sql/v4/queries/resources/settings/get_settings_complete.sql"
 
 
 router = APIRouter()
@@ -34,47 +34,49 @@ router = APIRouter()
 
 async def get_settings_internal(
     conn: asyncpg.Connection,
-    id: UUID,
+    ids: list[UUID],
     bypass_cache: bool = False,
-) -> QGetSettingsV4Item | None:
-    """Internal function to fetch settings by ID.
+) -> list[QGetSettingsV4Item]:
+    """Internal function to fetch settings by IDs.
 
     Can be called directly from other routes without HTTP overhead.
     """
+    if not ids:
+        return []
+
     tags = ["resources", "settings"]
     cache_key_val = cache_key(
         "/api/v4/resources/settings/get",
-        {"id": str(id)},
+        {"ids": sorted(str(i) for i in ids)},
     )
 
     # Try cache (unless bypassed)
     if not bypass_cache:
         cached = await get_cached(cache_key_val)
         if cached:
-            item_data = cached.get("item")
-            if item_data:
-                return QGetSettingsV4Item.model_validate(item_data)
-            return None
+            return [
+                QGetSettingsV4Item.model_validate(item)
+                for item in cached.get("items", [])
+            ]
 
     # Execute SQL
-    params = GetSettingsSqlParams(settings_id_param=id)
+    params = GetSettingsSqlParams(ids=ids)
     result = cast(
         GetSettingsSqlRow,
         await execute_sql_typed(conn, SQL_PATH, params=params),
     )
 
-    items_list = result.items if result and result.items else []
-    item: QGetSettingsV4Item | None = items_list[0] if items_list else None
+    items: list[QGetSettingsV4Item] = result.items if result and result.items else []
 
     # Cache result
     await set_cached(
         cache_key_val,
-        {"item": item.model_dump(mode="json") if item else None},
+        {"items": [item.model_dump(mode="json") for item in items]},
         ttl=60,
         tags=tags,
     )
 
-    return item
+    return items
 
 
 # =============================================================================
@@ -92,7 +94,7 @@ async def get_settings(
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> GetSettingsApiResponse:
-    """Get settings resource by ID.
+    """Get settings resources by IDs.
 
     HTTP wrapper that delegates to internal function for caching and data fetching.
     """
@@ -100,9 +102,9 @@ async def get_settings(
     bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
 
     try:
-        item = await get_settings_internal(conn, request.id, bypass_cache)
+        items = await get_settings_internal(conn, request.ids or [], bypass_cache)
         response.headers["X-Cache-Tags"] = ",".join(tags)
-        return GetSettingsApiResponse(item=item)
+        return GetSettingsApiResponse(items=items)
     except HTTPException:
         raise
     except ValueError as e:

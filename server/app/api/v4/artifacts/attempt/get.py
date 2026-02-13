@@ -23,6 +23,7 @@ from app.api.v4.artifacts.attempt.permissions import (
     compute_achieved_standards,
     compute_attempt_aggregates,
     compute_chat_position_and_current,
+    compute_continuation_options,
     compute_current_chat_index,
     compute_passed_standards,
     compute_percentage,
@@ -77,7 +78,7 @@ from app.api.v4.resources.profiles.get import get_profiles_internal
 from app.api.v4.resources.questions.get import get_questions_internal
 from app.api.v4.resources.rubrics.get import get_rubrics_batch_internal
 from app.api.v4.resources.scenarios.get import get_scenarios_internal
-from app.api.v4.resources.simulations.get import get_simulations_batch_internal
+from app.api.v4.resources.simulations.get import get_simulations_internal
 from app.api.v4.resources.standard_groups.get import get_standard_groups_internal
 from app.api.v4.resources.standards.get import get_standards_internal
 from app.api.v4.resources.videos.get import get_videos_internal
@@ -432,11 +433,11 @@ async def get_attempt_internal(
             if not sim_id:
                 return None
             async with pool.acquire() as c:
-                items = await get_simulations_batch_internal(
+                items = await get_simulations_internal(
                     c, [sim_id], bypass_cache=bypass_cache
                 )
-                if items and items[0].title:
-                    return items[0].title
+                if items and items[0].name:
+                    return items[0].name
             return None
 
         async def fetch_profile_meta(prof_id: UUID | None) -> str | None:
@@ -1081,6 +1082,57 @@ async def get_attempt_internal(
         show_results = all_chats_completed
         should_show_controls = is_active and not all_chats_completed
 
+        # === COMPUTE LOBBY STATE & CONTINUATION OPTIONS ===
+        # Lobby shows between chats when: all existing chats are completed,
+        # there are remaining scenarios, attempt is still active, and this
+        # is a training attempt.
+        # TODO: Use proper expected scenario count from simulation config
+        # instead of heuristic based on expected_chat_count.
+        has_remaining = (
+            expected_chat_count is not None
+            and expected_chat_count > 0
+            and completed_chats < expected_chat_count
+        )
+        is_lobby = (
+            all_chats_completed
+            and bool(has_remaining)
+            and is_active
+            and bool(training_bundle_entry_id)
+        )
+
+        # Fetch continuation options only when in lobby (non-practice only)
+        continuation_options = None
+        if is_lobby and not practice and attempt_item.profile_id:
+            try:
+                prev_attempts = await get_attempt_list_internal(
+                    conn,
+                    profile_id_filter=attempt_item.profile_id,
+                    simulation_id_filter=attempt_item.simulation_id,
+                    practice_filter=False,
+                )
+                other_ids = [
+                    a.attempt_id for a in prev_attempts if a.attempt_id != attempt_id
+                ]
+                if other_ids:
+                    async with pool.acquire() as c:
+                        prev_chats = await get_attempt_chats_internal(
+                            c, attempt_ids=other_ids
+                        )
+                    # Build scenario name lookup from resource_meta
+                    scenario_names: dict[str, str] = {}
+                    for sid, meta in resource_meta.get("scenarios", {}).items():
+                        name = meta.get("name") if isinstance(meta, dict) else None
+                        if name:
+                            scenario_names[str(sid)] = name
+                    continuation_options = compute_continuation_options(
+                        current_chats=chats_result or [],
+                        previous_chats=prev_chats,
+                        scenario_names=scenario_names,
+                    )
+            except Exception:
+                # Don't fail the whole request if continuation computation fails
+                continuation_options = None
+
         api_response = GetAttemptDetailResponse(
             actor_name=profile_name,
             attempt_exists=True,
@@ -1092,10 +1144,11 @@ async def get_attempt_internal(
             current_chat_index=current_chat_index,
             expected_chat_count=expected_chat_count,
             is_active=is_active,
+            is_lobby=is_lobby,
             show_results=show_results,
             should_show_controls=should_show_controls,
             is_own_attempt=is_own_attempt,
-            available_continuation_options=None,
+            available_continuation_options=continuation_options,
             rubric_structure=rubric_structure,
             training_id=training_id,
             training_bundle_entry_id=training_bundle_entry_id,

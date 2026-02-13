@@ -9,6 +9,7 @@ from pydantic import BaseModel
 class QGetRolesV4Item(BaseModel):
     """Role item returned from get endpoint."""
 
+    id: str | None = None
     role: str | None = None
     name: str | None = None
     description: str | None = None
@@ -17,9 +18,9 @@ class QGetRolesV4Item(BaseModel):
 
 
 class GetRolesApiRequest(BaseModel):
-    """Request for getting all roles."""
+    """Request for getting roles by IDs (empty = all)."""
 
-    pass
+    ids: list[UUID] = []
 
 
 class GetRolesApiResponse(BaseModel):
@@ -29,10 +30,12 @@ class GetRolesApiResponse(BaseModel):
 
 
 class GetRolesSqlParams(BaseModel):
-    """SQL parameters for get roles (no parameters)."""
+    """SQL parameters for get roles."""
+
+    ids: list[UUID] = []
 
     def to_tuple(self) -> tuple[Any, ...]:
-        return ()
+        return (self.ids,)
 
 
 class GetRolesSqlRow(BaseModel):

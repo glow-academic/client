@@ -26,7 +26,10 @@ router = APIRouter()
 
 async def get_attempt_list_internal(
     conn: asyncpg.Connection,
-    attempt_ids: list[UUID],
+    attempt_ids: list[UUID] | None = None,
+    profile_id_filter: UUID | None = None,
+    simulation_id_filter: UUID | None = None,
+    practice_filter: bool | None = None,
     bypass_cache: bool = False,
 ) -> list[AttemptViewItem]:
     """Internal function for fetching attempt data.
@@ -35,7 +38,10 @@ async def get_attempt_list_internal(
 
     Args:
         conn: Database connection
-        attempt_ids: List of attempt IDs to fetch
+        attempt_ids: List of attempt IDs to fetch (optional)
+        profile_id_filter: Filter by profile ID (optional)
+        simulation_id_filter: Filter by simulation ID (optional)
+        practice_filter: Filter by practice flag (optional)
         bypass_cache: Skip cache lookup
 
     Returns:
@@ -47,7 +53,14 @@ async def get_attempt_list_internal(
 
     cache_key_val = cache_key(
         "views/attempt/list/get",
-        {"attempt_ids": [str(a) for a in attempt_ids]},
+        {
+            "attempt_ids": [str(a) for a in attempt_ids] if attempt_ids else None,
+            "profile_id_filter": str(profile_id_filter) if profile_id_filter else None,
+            "simulation_id_filter": str(simulation_id_filter)
+            if simulation_id_filter
+            else None,
+            "practice_filter": practice_filter,
+        },
     )
 
     if not bypass_cache:
@@ -56,7 +69,12 @@ async def get_attempt_list_internal(
             return [AttemptViewItem.model_validate(item) for item in cached["items"]]
 
     # Execute SQL query
-    params = GetAttemptListViewSqlParams(attempt_ids=attempt_ids)
+    params = GetAttemptListViewSqlParams(
+        attempt_ids=attempt_ids,
+        profile_id_filter=profile_id_filter,
+        simulation_id_filter=simulation_id_filter,
+        practice_filter=practice_filter,
+    )
 
     result = await execute_sql_typed(conn, SQL_PATH, params=params)
 

@@ -35,13 +35,14 @@ STABLE
 AS $$
 SELECT COALESCE(
     ARRAY_AGG(
-        (q.role, q.name, q.description, q.icon_value, q.color_hex)::types.q_get_roles_v4_item
+        (q.id, q.role, q.name, q.description, q.icon_value, q.color_hex)::types.q_get_roles_v4_item
         ORDER BY q.name
     ),
     ARRAY[]::types.q_get_roles_v4_item[]
 ) as items
 FROM (
     SELECT
+        r.id,
         r.role::text,
         r.name,
         r.description,

@@ -150,13 +150,14 @@ async def get_profile_context_internal(
 
     async def fetch_roles():
         async with pool.acquire() as c:
-            return await get_roles_internal(c, bypass_cache)
+            return await get_roles_internal(c, bypass_cache=bypass_cache)
 
     async def fetch_settings():
         if not settings_id:
             return None
         async with pool.acquire() as c:
-            return await get_settings_internal(c, settings_id, bypass_cache)
+            items = await get_settings_internal(c, [settings_id], bypass_cache)
+            return items[0] if items else None
 
     async def fetch_settings_agents():
         if not settings_agent_ids:

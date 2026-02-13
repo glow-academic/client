@@ -11,7 +11,11 @@ from typing import TYPE_CHECKING
 from uuid import UUID
 
 if TYPE_CHECKING:
-    from app.api.v4.artifacts.attempt.types import ChatData
+    from app.api.v4.artifacts.attempt.types import (
+        AvailableContinuationOptions,
+        ChatData,
+    )
+    from app.api.v4.views.attempt.chats.types import ChatViewItem
 
 # Default styling for user messages
 DEFAULT_USER_COLOR = "#6366f1"  # Indigo
@@ -291,3 +295,153 @@ def compute_passed_standards(
                 }
             )
     return passed
+
+
+# =============================================================================
+# Continuation Options (Use Previous)
+# =============================================================================
+
+
+def compute_continuation_options(
+    current_chats: list[ChatViewItem],
+    previous_chats: list[ChatViewItem],
+    scenario_names: dict[str, str],
+) -> AvailableContinuationOptions | None:
+    """Compute available continuation options from previous attempt chats.
+
+    Derives remaining scenarios and their order from previous attempt chats.
+    Trusts the order of scenario_ids as they appear in previous_chats (the MV
+    returns chats ordered by created_at, which matches scenario position order).
+
+    TODO: Once the MV is updated to order by scenario position explicitly,
+    this will automatically pick up the correct ordering.
+
+    Algorithm:
+    1. Build ordered scenario list from previous chats (preserves MV order)
+    2. Filter out scenarios already completed in current attempt
+    3. For each remaining scenario, pick best graded chat (highest score)
+    4. Build consecutive options: [first], [first, second], etc.
+    5. Pareto filter dominated options
+
+    Returns None if no options.
+    """
+    from app.api.v4.artifacts.attempt.types import (
+        AvailableContinuationOptions,
+        ContinuationOption,
+        PreviousChatOption,
+    )
+
+    # 1. Find completed scenario IDs in current attempt
+    current_scenario_ids = {
+        str(c.scenario_id) for c in current_chats if c.completed and c.scenario_id
+    }
+
+    # 2. Build ordered scenario list from previous chats, preserving MV order.
+    #    Use first occurrence of each scenario_id to establish position.
+    seen_scenarios: dict[str, int] = {}  # scenario_id -> position
+    for chat in previous_chats:
+        if not chat.scenario_id:
+            continue
+        sid = str(chat.scenario_id)
+        if sid not in seen_scenarios:
+            seen_scenarios[sid] = len(seen_scenarios)
+
+    # 3. Group previous graded chats by scenario_id (only remaining ones)
+    prev_by_scenario: dict[str, list[ChatViewItem]] = {}
+    for chat in previous_chats:
+        if not chat.scenario_id or not chat.grade or not chat.completed:
+            continue
+        sid = str(chat.scenario_id)
+        if sid in current_scenario_ids:
+            continue
+        prev_by_scenario.setdefault(sid, []).append(chat)
+
+    if not prev_by_scenario:
+        return None
+
+    # 4. Pick best per scenario (highest score, tiebreak: lowest time)
+    best_per_scenario: dict[str, ChatViewItem] = {}
+    for sid, chats_list in prev_by_scenario.items():
+        best = max(
+            chats_list,
+            key=lambda c: (
+                c.grade.score if c.grade and c.grade.score is not None else -1,
+                -(
+                    c.grade.time_taken
+                    if c.grade and c.grade.time_taken is not None
+                    else 999999
+                ),
+            ),
+        )
+        best_per_scenario[sid] = best
+
+    # 5. Order remaining scenarios by their position from the MV
+    ordered_remaining = sorted(
+        best_per_scenario.items(),
+        key=lambda pair: seen_scenarios.get(pair[0], 999),
+    )
+
+    # 6. Build PreviousChatOption list
+    remaining_options: list[PreviousChatOption] = []
+    for position, (sid, chat) in enumerate(ordered_remaining):
+        score = chat.grade.score if chat.grade else None
+        time_taken = (
+            float(chat.grade.time_taken)
+            if chat.grade and chat.grade.time_taken
+            else 0.0
+        )
+
+        remaining_options.append(
+            PreviousChatOption(
+                scenario_id=sid,
+                scenario_name=scenario_names.get(sid),
+                previous_chat_id=str(chat.chat_id),
+                score=score,
+                percentage=None,
+                time_taken=time_taken,
+                position=position,
+            )
+        )
+
+    if not remaining_options:
+        return None
+
+    # 7. Build sequential bundles: [0], [0,1], [0,1,2], ...
+    options: list[ContinuationOption] = []
+    for length in range(1, len(remaining_options) + 1):
+        bundle = remaining_options[:length]
+        total_score = sum(o.score or 0.0 for o in bundle)
+        total_time = sum(o.time_taken or 0.0 for o in bundle)
+        options.append(
+            ContinuationOption(
+                scenarios=bundle,
+                total_score=total_score,
+                total_percentage=None,
+                total_time=total_time,
+            )
+        )
+
+    # 8. Pareto filter: remove options dominated on both score AND time
+    filtered: list[ContinuationOption] = []
+    for opt in options:
+        dominated = False
+        for other in options:
+            if other is opt:
+                continue
+            if (
+                other.total_score >= opt.total_score
+                and other.total_time <= opt.total_time
+            ):
+                if (
+                    other.total_score > opt.total_score
+                    or other.total_time < opt.total_time
+                ):
+                    dominated = True
+                    break
+        if not dominated:
+            filtered.append(opt)
+
+    if not filtered:
+        return None
+
+    return AvailableContinuationOptions(options=filtered)

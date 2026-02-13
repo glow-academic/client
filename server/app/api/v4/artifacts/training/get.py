@@ -33,7 +33,7 @@ from app.api.v4.artifacts.training.types import (
 from app.api.v4.auth.context import get_profile_context_internal
 from app.api.v4.resources.cohorts.get import get_cohorts_internal
 from app.api.v4.resources.personas.get import get_personas_internal
-from app.api.v4.resources.simulations.get import get_simulations_batch_internal
+from app.api.v4.resources.simulations.get import get_simulations_internal
 from app.api.v4.resources.standard_groups.get import get_standard_groups_internal
 from app.api.v4.resources.standards.get import get_standards_internal
 from app.api.v4.views.analytics.attempts.get import get_attempt_facts_internal
@@ -273,7 +273,7 @@ async def get_training_internal(
     # --- Phase 2: Parallel resource hydration + conditional instructional data ---
     async def fetch_simulations() -> list:
         async with pool.acquire() as c:
-            return await get_simulations_batch_internal(
+            return await get_simulations_internal(
                 c, simulation_ids, bypass_cache=bypass_cache
             )
 
@@ -448,11 +448,11 @@ async def get_training_internal(
             items.append(
                 TrainingSimulationOperational(
                     simulation_id=item.simulation_id,
-                    simulation_name=simulation.title if simulation else None,
+                    simulation_name=simulation.name if simulation else None,
                     simulation_description=(
                         simulation.description if simulation else None
                     ),
-                    time_limit=simulation.time_limit if simulation else None,
+                    time_limit=None,  # TODO: time_limit not on simulations_resource
                     training_bundle_entry_id=training_bundle_entry_id,
                     scenario_ids=item.scenario_ids,
                     cohort_ids=item.cohort_ids,

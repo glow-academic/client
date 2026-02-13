@@ -31,7 +31,7 @@ from app.api.v4.resources.departments.get import get_departments_internal
 from app.api.v4.resources.fields.get import get_fields_internal
 from app.api.v4.resources.objectives.get import get_objectives_internal
 from app.api.v4.resources.personas.get import get_personas_internal
-from app.api.v4.resources.simulations.get import get_simulations_batch_internal
+from app.api.v4.resources.simulations.get import get_simulations_internal
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
@@ -200,7 +200,7 @@ async def get_scenario_list(
                 if not simulation_id_set:
                     return []
                 async with pool.acquire() as c:
-                    return await get_simulations_batch_internal(
+                    return await get_simulations_internal(
                         c, list(simulation_id_set), bypass_cache
                     )
 

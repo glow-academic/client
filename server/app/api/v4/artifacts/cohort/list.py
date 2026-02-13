@@ -21,7 +21,7 @@ from app.api.v4.artifacts.cohort.types import (
 from app.api.v4.auth.context import get_profile_context_internal
 from app.api.v4.resources.departments.get import get_departments_internal
 from app.api.v4.resources.profiles.get import get_profiles_internal
-from app.api.v4.resources.simulations.get import get_simulations_batch_internal
+from app.api.v4.resources.simulations.get import get_simulations_internal
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
@@ -173,7 +173,7 @@ async def get_cohort_list(
                 if not simulation_id_set:
                     return []
                 async with pool.acquire() as c:
-                    return await get_simulations_batch_internal(
+                    return await get_simulations_internal(
                         c, list(simulation_id_set), bypass_cache
                     )
 

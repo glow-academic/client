@@ -74,7 +74,7 @@ from app.api.v4.resources.providers.get import get_providers_internal
 from app.api.v4.resources.simulation_positions.get import (
     get_simulation_positions_internal,
 )
-from app.api.v4.resources.simulations.get import get_simulation_internal
+from app.api.v4.resources.simulations.get import get_simulations_internal
 from app.api.v4.resources.simulations.search import search_simulations_internal
 from app.api.v4.resources.tools.get import get_tools_internal
 from app.api.v4.types import CandidateAgent
@@ -411,14 +411,9 @@ async def get_cohort_internal(
 
     async def fetch_simulations() -> tuple[list[Any], list[Any]]:
         async with pool.acquire() as c:
-            # Fetch each selected simulation
-            selected = []
-            for sim_id in simulation_ids:
-                sim = await get_simulation_internal(
-                    c, sim_id, bypass_cache=bypass_cache
-                )
-                if sim:
-                    selected.append(sim)
+            selected = await get_simulations_internal(
+                c, simulation_ids, bypass_cache=bypass_cache
+            )
             # Search for suggestions
             suggestions = await search_simulations_internal(
                 c,

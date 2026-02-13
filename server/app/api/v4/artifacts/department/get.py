@@ -362,12 +362,9 @@ async def get_department_internal(
 
     async def fetch_settings() -> tuple[list[Any], list[Any]]:
         async with pool.acquire() as c:
-            # Fetch selected settings one at a time
-            selected = []
-            for sid in selected_settings_ids:
-                item = await get_settings_internal(c, sid, bypass_cache)
-                if item:
-                    selected.append(item)
+            selected = await get_settings_internal(
+                c, selected_settings_ids, bypass_cache
+            )
             # No search for settings - they're fetched by ID
             return (selected, [])
 

@@ -26,7 +26,7 @@ from app.api.v4.resources.personas.get import get_personas_internal
 from app.api.v4.resources.profiles.get import get_profiles_internal
 from app.api.v4.resources.rubrics.get import get_rubrics_batch_internal
 from app.api.v4.resources.scenarios.get import get_scenarios_internal
-from app.api.v4.resources.simulations.get import get_simulations_batch_internal
+from app.api.v4.resources.simulations.get import get_simulations_internal
 from app.api.v4.views.analytics.attempts.get import get_attempt_facts_internal
 from app.api.v4.views.analytics.chat_facts.get import (
     get_chat_facts_internal,
@@ -290,7 +290,7 @@ async def get_dashboard(
             )
 
         async with pool.acquire() as c:
-            simulations = await get_simulations_batch_internal(
+            simulations = await get_simulations_internal(
                 conn=c,
                 ids=list(simulation_ids),
                 bypass_cache=bypass_cache,
@@ -366,9 +366,9 @@ async def get_dashboard(
             str(s.scenario_id): s.name for s in scenarios if s.scenario_id and s.name
         }
         simulation_name_map: dict[str, str] = {
-            str(s.simulation_id): s.title
+            str(s.simulation_id): s.name
             for s in simulations
-            if s.simulation_id and s.title
+            if s.simulation_id and s.name
         }
 
         # Assemble business calculations from MV slices (+ resource metadata for footer logic)
@@ -407,10 +407,10 @@ async def get_dashboard(
                 "simulation_id": str(item.simulation_id)
                 if item.simulation_id
                 else None,
-                "name": item.title,
+                "name": item.name,
                 "description": item.description,
                 "department_ids": item.department_ids,
-                "time_limit": item.time_limit,
+                "time_limit": None,  # TODO: time_limit not on simulations_resource
             }
             for item in simulations
         ]
@@ -458,7 +458,7 @@ async def get_dashboard(
         bundle.simulation_options = [
             FilterOption(
                 value=str(item.simulation_id) if item.simulation_id else "",
-                label=item.title,
+                label=item.name,
             )
             for item in simulations
             if item.simulation_id

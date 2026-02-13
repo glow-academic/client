@@ -77,7 +77,7 @@ CREATE TYPE types.q_get_settings_v4_item AS (
 
 -- Create function
 CREATE OR REPLACE FUNCTION api_get_settings_v4(
-    settings_id_param uuid DEFAULT NULL
+    ids uuid[] DEFAULT ARRAY[]::uuid[]
 )
 RETURNS TABLE (
     items types.q_get_settings_v4_item[]
@@ -87,6 +87,7 @@ STABLE
 AS $$
 WITH settings_auths_data AS (
     SELECT
+        sa.settings_id,
         ARRAY_AGG(a.id::text ORDER BY (SELECT n.name FROM auth_names_junction an JOIN names_resource n ON an.name_id = n.id WHERE an.auth_id = a.id LIMIT 1)) as auth_ids,
         COALESCE(
             ARRAY_AGG(
@@ -98,17 +99,18 @@ WITH settings_auths_data AS (
     FROM setting_auths_junction sa
     JOIN auths_resource a ON a.id = sa.auth_id
         AND EXISTS (SELECT 1 FROM auth_flags_junction af JOIN flags_resource f ON af.flag_id = f.id WHERE af.auth_id = a.id AND f.name = 'auth_active' AND af.value = true)
-    WHERE sa.settings_id = settings_id_param
+    WHERE sa.settings_id = ANY(ids)
       AND sa.active = true
+    GROUP BY sa.settings_id
 ),
 settings_provider_keys_data AS (
     SELECT
+        ssj.setting_id,
         COALESCE(sr.provider_key_ids, ARRAY[]::uuid[]) as provider_key_ids
     FROM setting_settings_junction ssj
     JOIN settings_resource sr ON sr.id = ssj.settings_id
-    WHERE ssj.setting_id = settings_id_param
+    WHERE ssj.setting_id = ANY(ids)
       AND ssj.active = true
-    LIMIT 1
 )
 SELECT COALESCE(
     ARRAY_AGG(
@@ -144,8 +146,8 @@ SELECT COALESCE(
     ARRAY[]::types.q_get_settings_v4_item[]
 ) as items
 FROM setting_artifact s
-LEFT JOIN settings_auths_data sad ON true
-LEFT JOIN settings_provider_keys_data spkd ON true
-WHERE s.id = settings_id_param
+LEFT JOIN settings_auths_data sad ON sad.settings_id = s.id
+LEFT JOIN settings_provider_keys_data spkd ON spkd.setting_id = s.id
+WHERE s.id = ANY(ids)
   AND EXISTS (SELECT 1 FROM setting_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.setting_id = s.id AND f.name = 'setting_active' AND sf.value = TRUE);
 $$;

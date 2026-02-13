@@ -50,6 +50,7 @@ END $$;
 
 -- Create composite type for role item
 CREATE TYPE types.q_get_roles_v4_item AS (
+    id uuid,
     role text,
     name text,
     description text,
@@ -58,7 +59,9 @@ CREATE TYPE types.q_get_roles_v4_item AS (
 );
 
 -- Create function
-CREATE OR REPLACE FUNCTION api_get_roles_v4()
+CREATE OR REPLACE FUNCTION api_get_roles_v4(
+    ids uuid[] DEFAULT ARRAY[]::uuid[]
+)
 RETURNS TABLE (
     items types.q_get_roles_v4_item[]
 )
@@ -68,6 +71,7 @@ AS $$
 SELECT COALESCE(
     ARRAY_AGG(
         (
+            r.id,
             r.role::text,
             r.name,
             r.description,
@@ -81,5 +85,6 @@ SELECT COALESCE(
 FROM roles_resource r
 LEFT JOIN icons_resource i ON i.id = r.icon_id
 LEFT JOIN colors_resource c ON c.id = r.color_id
-WHERE r.active = true;
+WHERE r.active = true
+  AND (COALESCE(array_length(ids, 1), 0) = 0 OR r.id = ANY(ids));
 $$;

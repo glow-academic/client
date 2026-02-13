@@ -37,7 +37,7 @@ STABLE
 AS $$
 SELECT COALESCE(
     ARRAY_AGG(
-        (q.id, q.name, q.description, q.generated)::types.q_get_simulations_v4_item
+        (q.id, q.name, q.description, q.department_ids, q.active, q.generated)::types.q_get_simulations_v4_item
         ORDER BY q.name
     ),
     ARRAY[]::types.q_get_simulations_v4_item[]
@@ -47,6 +47,8 @@ FROM (
         s.id,
         s.name,
         COALESCE(s.description, '') as description,
+        COALESCE(s.department_ids::text[], ARRAY[]::text[]) as department_ids,
+        s.active,
         COALESCE(s.generated, false) as generated
     FROM simulations_resource s
     WHERE s.active = true

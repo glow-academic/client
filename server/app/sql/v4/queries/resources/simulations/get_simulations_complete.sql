@@ -1,6 +1,7 @@
--- Get simulation by ID
--- Returns simulation details for a single ID
--- CLEAN PATTERN: Query simulations_resource directly (no time_limit computation)
+-- Get simulations by IDs
+-- Standard batch resource endpoint
+-- Parameters: ids (uuid[])
+-- Returns: items (array of simulation resources)
 
 -- Drop function if exists (handles signature variations)
 DO $$
@@ -32,18 +33,19 @@ BEGIN
     END LOOP;
 END $$;
 
--- Create composite type for simulation item (no time_limit)
+-- Create composite type for simulation item
 CREATE TYPE types.q_get_simulations_v4_item AS (
     simulation_id uuid,
     name text,
     description text,
+    department_ids text[],
+    active boolean,
     generated boolean
 );
 
--- Accepts simulation resource ID and returns simulation details
--- Returns item as array for asyncpg compatibility
+-- Accepts simulation resource IDs and returns simulation details
 CREATE OR REPLACE FUNCTION api_get_simulations_v4(
-    p_simulation_id uuid
+    ids uuid[] DEFAULT ARRAY[]::uuid[]
 )
 RETURNS TABLE (
     items types.q_get_simulations_v4_item[]
@@ -57,12 +59,14 @@ SELECT COALESCE(
             s.id,
             s.name,
             COALESCE(s.description, ''),
+            COALESCE(s.department_ids::text[], ARRAY[]::text[]),
+            s.active,
             COALESCE(s.generated, false)
         )::types.q_get_simulations_v4_item
+        ORDER BY array_position(ids, s.id)
     ),
     ARRAY[]::types.q_get_simulations_v4_item[]
 ) as items
 FROM simulations_resource s
-WHERE s.id = p_simulation_id
-  AND s.active = true;
+WHERE s.id = ANY(ids);
 $$;

@@ -1,7 +1,6 @@
 """Simulations get endpoint - v4 API.
 
-Provides get endpoint for fetching a single simulation by ID,
-and batch endpoint for fetching multiple simulations by IDs.
+Provides get endpoint for fetching simulations by IDs.
 """
 
 from typing import Annotated, Any, cast
@@ -11,16 +10,11 @@ import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 from app.api.v4.resources.simulations.types import (
-    GetSimulationApiRequest,
-    GetSimulationApiResponse,
-    GetSimulationsBatchApiRequest,
-    GetSimulationsBatchApiResponse,
-    GetSimulationsBatchSqlParams,
-    GetSimulationsBatchSqlRow,
-    GetSimulationsBatchV4Item,
-    GetSimulationSqlParams,
-    GetSimulationSqlRow,
-    GetSimulationV4Item,
+    GetSimulationsApiRequest,
+    GetSimulationsApiResponse,
+    GetSimulationsSqlParams,
+    GetSimulationsSqlRow,
+    GetSimulationsV4Item,
 )
 from app.infra.v4.activity.audit import audit_activity
 from app.infra.v4.error.handle_route_error import handle_route_error
@@ -33,9 +27,6 @@ from app.utils.sql_helper import execute_sql_typed
 
 # Load SQL with types at module level
 SQL_PATH = "app/sql/v4/queries/resources/simulations/get_simulations_complete.sql"
-SQL_BATCH_PATH = (
-    "app/sql/v4/queries/resources/simulations/get_simulations_batch_complete.sql"
-)
 
 
 router = APIRouter()
@@ -46,48 +37,59 @@ router = APIRouter()
 # =============================================================================
 
 
-async def get_simulation_internal(
+async def get_simulations_internal(
     conn: asyncpg.Connection,
-    id: UUID,
+    ids: list[UUID],
     bypass_cache: bool = False,
-) -> GetSimulationV4Item | None:
-    """Internal function for fetching a single simulation.
+) -> list[GetSimulationsV4Item]:
+    """Internal function for fetching simulations by IDs.
+
+    Can be called directly from other routes without HTTP overhead.
 
     Args:
         conn: Database connection
-        id: Simulation ID to fetch
+        ids: List of simulation IDs to fetch
         bypass_cache: Whether to bypass cache
 
     Returns:
-        Simulation item or None if not found
+        List of simulation items
     """
-    cache_key_val = cache_key("simulations/get", {"id": str(id)})
+    if not ids:
+        return []
 
+    tags = ["resources", "simulations"]
+    cache_key_val = cache_key(
+        "/api/v4/resources/simulations/get",
+        {"ids": sorted(str(i) for i in ids)},
+    )
+
+    # Try cache (unless bypassed)
     if not bypass_cache:
         cached = await get_cached(cache_key_val)
         if cached:
-            item_data = cached.get("data")
-            if item_data:
-                return GetSimulationV4Item.model_validate(item_data)
-            return None
+            return [
+                GetSimulationsV4Item.model_validate(item)
+                for item in cached.get("items", [])
+            ]
 
-    params = GetSimulationSqlParams(id=id)
+    # Execute SQL
+    params = GetSimulationsSqlParams(ids=ids)
     result = cast(
-        GetSimulationSqlRow,
+        GetSimulationsSqlRow,
         await execute_sql_typed(conn, SQL_PATH, params=params),
     )
 
-    items = result.items if result and result.items else []
-    item = items[0] if items else None
+    items: list[GetSimulationsV4Item] = result.items if result and result.items else []
 
+    # Cache result
     await set_cached(
         cache_key_val,
-        {"data": item.model_dump(mode="json") if item else None},
+        {"items": [item.model_dump(mode="json") for item in items]},
         ttl=60,
-        tags=["simulations"],
+        tags=tags,
     )
 
-    return item
+    return items
 
 
 # =============================================================================
@@ -97,7 +99,7 @@ async def get_simulation_internal(
 
 @router.post(
     "/simulations/get",
-    response_model=GetSimulationApiResponse,
+    response_model=GetSimulationsApiResponse,
     dependencies=[
         audit_activity(
             "simulations.get",
@@ -105,13 +107,13 @@ async def get_simulation_internal(
         )
     ],
 )
-async def get_simulation(
-    request: GetSimulationApiRequest,
+async def get_simulations(
+    request: GetSimulationsApiRequest,
     http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
-) -> GetSimulationApiResponse:
-    """Get simulation by ID."""
+) -> GetSimulationsApiResponse:
+    """Get simulations by IDs."""
     tags = ["resources", "simulations"]
 
     sql_query = load_sql_query(SQL_PATH)
@@ -130,13 +132,13 @@ async def get_simulation(
         bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
 
         # Use internal function
-        item = await get_simulation_internal(
+        items = await get_simulations_internal(
             conn=conn,
-            id=request.id,
+            ids=request.ids or [],
             bypass_cache=bypass_cache,
         )
 
-        api_response = GetSimulationApiResponse(item=item)
+        api_response = GetSimulationsApiResponse(items=items)
 
         response.headers["X-Cache-Tags"] = ",".join(tags)
 
@@ -147,114 +149,8 @@ async def get_simulation(
         handle_route_error(
             error=e,
             route_path=http_request.url.path,
-            operation="get_simulation",
+            operation="get_simulations",
             sql_query=sql_query,
             sql_params=sql_params,
-            request=http_request,
-        )
-
-
-# =============================================================================
-# Batch Internal Function
-# =============================================================================
-
-
-async def get_simulations_batch_internal(
-    conn: asyncpg.Connection,
-    ids: list[UUID],
-    bypass_cache: bool = False,
-) -> list[GetSimulationsBatchV4Item]:
-    """Internal function for fetching multiple simulations by IDs.
-
-    Can be called directly from other routes without HTTP overhead.
-
-    Args:
-        conn: Database connection
-        ids: List of simulation IDs to fetch
-        bypass_cache: Whether to bypass cache
-
-    Returns:
-        List of simulation items
-    """
-    if not ids:
-        return []
-
-    tags = ["resources", "simulations"]
-    cache_key_val = cache_key(
-        "/api/v4/resources/simulations/batch",
-        {"ids": [str(id) for id in ids]},
-    )
-
-    # Try cache (unless bypassed)
-    if not bypass_cache:
-        cached = await get_cached(cache_key_val)
-        if cached:
-            return [
-                GetSimulationsBatchV4Item.model_validate(item)
-                for item in cached.get("items", [])
-            ]
-
-    # Execute SQL
-    params = GetSimulationsBatchSqlParams(ids=ids)
-    result = cast(
-        GetSimulationsBatchSqlRow,
-        await execute_sql_typed(conn, SQL_BATCH_PATH, params=params),
-    )
-
-    items: list[GetSimulationsBatchV4Item] = (
-        result.items if result and result.items else []
-    )
-
-    # Cache result
-    await set_cached(
-        cache_key_val,
-        {"items": [item.model_dump(mode="json") for item in items]},
-        ttl=60,
-        tags=tags,
-    )
-
-    return items
-
-
-# =============================================================================
-# Batch HTTP Endpoint
-# =============================================================================
-
-
-@router.post(
-    "/simulations/batch",
-    response_model=GetSimulationsBatchApiResponse,
-)
-async def get_simulations_batch(
-    request: GetSimulationsBatchApiRequest,
-    http_request: Request,
-    response: Response,
-    conn: Annotated[asyncpg.Connection, Depends(get_db)],
-) -> GetSimulationsBatchApiResponse:
-    """Get simulations by IDs (batch).
-
-    HTTP wrapper that delegates to internal function for caching and data fetching.
-    Used by profile context 2-pass architecture.
-    """
-    tags = ["resources", "simulations"]
-    bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
-
-    try:
-        items = await get_simulations_batch_internal(
-            conn, request.ids or [], bypass_cache
-        )
-        response.headers["X-Cache-Tags"] = ",".join(tags)
-        return GetSimulationsBatchApiResponse(items=items)
-    except HTTPException:
-        raise
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e)) from e
-    except Exception as e:
-        handle_route_error(
-            error=e,
-            route_path=http_request.url.path,
-            operation="get_simulations_batch",
-            sql_query=None,
-            sql_params=None,
             request=http_request,
         )

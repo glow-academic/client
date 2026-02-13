@@ -1756,18 +1756,19 @@ export function AttemptChat({
   // RENDER
   // ---------------------------------------------------------------------------
 
-  // Lobby state: no chats yet — show lobby for the user to start or customize
-  if (chats.length === 0 && attemptData.training_bundle_entry_id) {
+  // Lobby state: server says is_lobby (inter-chat interstitial), OR no chats yet with training context
+  if (attemptData.is_lobby || (chats.length === 0 && attemptData.training_bundle_entry_id)) {
     const practice = attemptData?.attempt?.practice ?? false;
     return (
       <AttemptLobby
         attemptId={attempt_id}
-        trainingBundleEntryId={attemptData.training_bundle_entry_id}
+        trainingBundleEntryId={attemptData.training_bundle_entry_id ?? ""}
         simulationName={attemptData?.simulation?.name ?? null}
         mode={practice ? "practice" : "home"}
         draftId={draftIdProp ?? null}
         infiniteMode={infiniteModeProp}
         userInstructions={userInstructionsProp}
+        continuationOptions={attemptData?.available_continuation_options ?? null}
       />
     );
   }

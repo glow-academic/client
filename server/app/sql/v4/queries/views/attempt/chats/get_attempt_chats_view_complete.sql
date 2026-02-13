@@ -137,7 +137,7 @@ CREATE TYPE types.q_get_attempt_chats_view_v4_item AS (
 -- ============================================================================
 
 CREATE OR REPLACE FUNCTION api_get_attempt_chats_view_v4(
-    attempt_id_filter uuid
+    attempt_ids_filter uuid[]
 )
 RETURNS TABLE (
     items types.q_get_attempt_chats_view_v4_item[]
@@ -146,11 +146,11 @@ LANGUAGE sql
 STABLE
 AS $$
     WITH
-    -- Fetch from MV by attempt ID
+    -- Fetch from MV by attempt IDs
     mv_data AS (
         SELECT mv.*
         FROM mv_attempt_chats mv
-        WHERE mv.attempt_id = attempt_id_filter
+        WHERE mv.attempt_id = ANY(attempt_ids_filter)
     ),
     -- Transform feedbacks with standard names
     feedbacks_transformed AS (

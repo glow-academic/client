@@ -6581,7 +6581,7 @@ export interface paths {
         put?: never;
         /**
          * Get Settings
-         * @description Get settings resource by ID.
+         * @description Get settings resources by IDs.
          *
          *     HTTP wrapper that delegates to internal function for caching and data fetching.
          */
@@ -6682,33 +6682,10 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Get Simulation
-         * @description Get simulation by ID.
+         * Get Simulations
+         * @description Get simulations by IDs.
          */
-        post: operations["get_simulation_api_v4_resources_simulations_get_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/resources/simulations/batch": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Simulations Batch
-         * @description Get simulations by IDs (batch).
-         *
-         *     HTTP wrapper that delegates to internal function for caching and data fetching.
-         *     Used by profile context 2-pass architecture.
-         */
-        post: operations["get_simulations_batch_api_v4_resources_simulations_batch_post"];
+        post: operations["get_simulations_api_v4_resources_simulations_get_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -13081,8 +13058,8 @@ export interface components {
          * @description Available continuation options for an attempt.
          */
         AvailableContinuationOptions: {
-            /** Next Sequential Options */
-            next_sequential_options?: components["schemas"]["ContinuationOption"][] | null;
+            /** Options */
+            options: components["schemas"]["ContinuationOption"][];
         };
         /**
          * BenchmarkAgentItem
@@ -14590,25 +14567,17 @@ export interface components {
         };
         /**
          * ContinuationOption
-         * @description Continuation option for using previous chat results.
+         * @description A bundle of consecutive scenarios that can be reused from previous attempts.
          */
         ContinuationOption: {
-            /** Scenario Id */
-            scenario_id?: string | null;
-            /** Scenario Name */
-            scenario_name?: string | null;
-            /** Previous Chat Id */
-            previous_chat_id?: string | null;
-            /** Title */
-            title?: string | null;
-            /** Score */
-            score?: number | null;
-            /** Percentage */
-            percentage?: number | null;
-            /** Time Taken */
-            time_taken?: number | null;
-            /** Position */
-            position?: number | null;
+            /** Scenarios */
+            scenarios: components["schemas"]["PreviousChatOption"][];
+            /** Total Score */
+            total_score: number;
+            /** Total Percentage */
+            total_percentage?: number | null;
+            /** Total Time */
+            total_time: number;
         };
         /** CreateAttemptRequest */
         CreateAttemptRequest: {
@@ -15621,9 +15590,9 @@ export interface components {
             /** Link Tool Id */
             link_tool_id?: string | null;
             /** Current */
-            current?: components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__11"][] | null;
+            current?: components["schemas"]["QGetParameterFieldsV4Item"][] | null;
             /** Resources */
-            resources?: components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__11"][] | null;
+            resources?: components["schemas"]["QGetParameterFieldsV4Item"][] | null;
         };
         /**
          * DocumentFlagConfig
@@ -15710,7 +15679,7 @@ export interface components {
             /** Department Resources */
             department_resources?: components["schemas"]["QGetDepartmentsV4Item"][] | null;
             /** Field Resources */
-            field_resources?: components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__11"][] | null;
+            field_resources?: components["schemas"]["QGetParameterFieldsV4Item"][] | null;
             /** Upload Resources */
             upload_resources?: components["schemas"]["QGetUploadsV4Item"][] | null;
             /** Image Resources */
@@ -17712,6 +17681,8 @@ export interface components {
             expected_chat_count?: number | null;
             /** Is Active */
             is_active?: boolean | null;
+            /** Is Lobby */
+            is_lobby?: boolean | null;
             /** Show Results */
             show_results?: boolean | null;
             /** Should Show Controls */
@@ -19513,6 +19484,16 @@ export interface components {
             departments?: components["schemas"]["ParameterDepartmentSection"] | null;
             fields?: components["schemas"]["ParameterFieldSection"] | null;
         };
+        /** GetParameterFieldsApiRequest */
+        GetParameterFieldsApiRequest: {
+            /** Ids */
+            ids?: string[] | null;
+        };
+        /** GetParameterFieldsApiResponse */
+        GetParameterFieldsApiResponse: {
+            /** Items */
+            items?: components["schemas"]["QGetParameterFieldsV4Item"][] | null;
+        };
         /** GetParametersApiRequest */
         GetParametersApiRequest: {
             /** Ids */
@@ -20344,9 +20325,15 @@ export interface components {
         };
         /**
          * GetRolesApiRequest
-         * @description Request for getting all roles.
+         * @description Request for getting roles by IDs (empty = all).
          */
-        GetRolesApiRequest: Record<string, never>;
+        GetRolesApiRequest: {
+            /**
+             * Ids
+             * @default []
+             */
+            ids: string[];
+        };
         /**
          * GetRolesApiResponse
          * @description Response for getting roles.
@@ -20563,6 +20550,26 @@ export interface components {
         GetScenarioFlagsApiResponse: {
             /** Items */
             items?: components["schemas"]["QGetScenarioFlagsV4Item"][] | null;
+        };
+        /** GetScenarioPersonasApiRequest */
+        GetScenarioPersonasApiRequest: {
+            /** Ids */
+            ids?: string[] | null;
+        };
+        /** GetScenarioPersonasApiResponse */
+        GetScenarioPersonasApiResponse: {
+            /** Items */
+            items?: components["schemas"]["QGetScenarioPersonasV4Item"][] | null;
+        };
+        /** GetScenarioPositionsApiRequest */
+        GetScenarioPositionsApiRequest: {
+            /** Ids */
+            ids?: string[] | null;
+        };
+        /** GetScenarioPositionsApiResponse */
+        GetScenarioPositionsApiResponse: {
+            /** Items */
+            items?: components["schemas"]["QGetScenarioPositionsV4Item"][] | null;
         };
         /** GetScenarioRubricsApiRequest */
         GetScenarioRubricsApiRequest: {
@@ -20801,24 +20808,71 @@ export interface components {
         };
         /**
          * GetSettingsApiRequest
-         * @description Request for getting settings by ID.
+         * @description Request for getting settings by IDs.
          */
         GetSettingsApiRequest: {
             /**
-             * Id
-             * Format: uuid
+             * Ids
+             * @default []
              */
-            id: string;
+            ids: string[];
         };
         /**
          * GetSettingsApiResponse
          * @description Response for getting settings.
          */
         GetSettingsApiResponse: {
-            item?: components["schemas"]["app__api__v4__resources__settings__types__QGetSettingsV4Item"] | null;
+            /** Items */
+            items?: components["schemas"]["app__api__v4__resources__settings__types__QGetSettingsV4Item"][] | null;
         };
         /** GetSettingsListApiRequest */
         GetSettingsListApiRequest: Record<string, never>;
+        /**
+         * GetSimulationApiRequest
+         * @description Request for getting a single simulation.
+         */
+        GetSimulationApiRequest: {
+            /** Simulation Id */
+            simulation_id?: string | null;
+            /** Draft Id */
+            draft_id?: string | null;
+            /** Scenario Search */
+            scenario_search?: string | null;
+            /** Filter Scenario Ids */
+            filter_scenario_ids?: string[] | null;
+        };
+        /**
+         * GetSimulationApiResponse
+         * @description Section-first response for simulation editor.
+         */
+        GetSimulationApiResponse: {
+            /** Actor Name */
+            actor_name?: string | null;
+            /** Simulation Exists */
+            simulation_exists?: boolean | null;
+            /** Can Edit */
+            can_edit?: boolean | null;
+            /** Disabled Reason */
+            disabled_reason?: string | null;
+            /** Draft Version */
+            draft_version?: number | null;
+            /** Group Id */
+            group_id?: string | null;
+            /** Basic Show Ai Generate */
+            basic_show_ai_generate?: boolean | null;
+            names?: components["schemas"]["SimulationNameSection"] | null;
+            descriptions?: components["schemas"]["SimulationDescriptionSection"] | null;
+            flags?: components["schemas"]["SimulationFlagSection"] | null;
+            departments?: components["schemas"]["SimulationDepartmentSection"] | null;
+            scenarios?: components["schemas"]["SimulationScenarioSection"] | null;
+            scenario_flags?: components["schemas"]["SimulationScenarioFlagSection"] | null;
+            scenario_personas?: components["schemas"]["SimulationScenarioPersonaSection"] | null;
+            scenario_positions?: components["schemas"]["SimulationScenarioPositionSection"] | null;
+            scenario_rubrics?: components["schemas"]["SimulationScenarioRubricSection"] | null;
+            scenario_time_limits?: components["schemas"]["SimulationScenarioTimeLimitSection"] | null;
+            /** Rubrics */
+            rubrics?: components["schemas"]["QGetRubricsV4Item"][] | null;
+        };
         /**
          * GetSimulationPositionsApiRequest
          * @description Request for getting simulation positions by simulation IDs.
@@ -20852,56 +20906,23 @@ export interface components {
             mcp?: boolean | null;
         };
         /**
-         * GetSimulationV4Item
-         * @description Simulation item returned from get endpoint.
+         * GetSimulationsApiRequest
+         * @description Request for getting simulations by IDs.
          */
-        GetSimulationV4Item: {
-            /** Simulation Id */
-            simulation_id?: string | null;
-            /** Name */
-            name?: string | null;
-            /** Description */
-            description?: string | null;
-            /** Time Limit */
-            time_limit?: number | null;
-            /** Generated */
-            generated?: boolean | null;
+        GetSimulationsApiRequest: {
+            /**
+             * Ids
+             * @default []
+             */
+            ids: string[];
         };
         /**
-         * GetSimulationsBatchApiRequest
-         * @description Request for getting simulations by IDs (batch).
+         * GetSimulationsApiResponse
+         * @description Response for getting simulations.
          */
-        GetSimulationsBatchApiRequest: {
-            /** Ids */
-            ids?: string[] | null;
-        };
-        /**
-         * GetSimulationsBatchApiResponse
-         * @description Response for getting simulations batch.
-         */
-        GetSimulationsBatchApiResponse: {
+        GetSimulationsApiResponse: {
             /** Items */
-            items?: components["schemas"]["GetSimulationsBatchV4Item"][] | null;
-        };
-        /**
-         * GetSimulationsBatchV4Item
-         * @description Simulation batch item with full context data.
-         */
-        GetSimulationsBatchV4Item: {
-            /** Simulation Id */
-            simulation_id?: string | null;
-            /** Title */
-            title?: string | null;
-            /** Description */
-            description?: string | null;
-            /** Department Ids */
-            department_ids?: string[] | null;
-            /** Time Limit */
-            time_limit?: number | null;
-            /** Active */
-            active?: boolean | null;
-            /** Practice Simulation */
-            practice_simulation?: boolean | null;
+            items?: components["schemas"]["GetSimulationsV4Item"][] | null;
         };
         /** GetSimulationsListApiRequest */
         GetSimulationsListApiRequest: {
@@ -20929,6 +20950,24 @@ export interface components {
              * @default 0
              */
             page_offset: number | null;
+        };
+        /**
+         * GetSimulationsV4Item
+         * @description Simulation item returned from get endpoint.
+         */
+        GetSimulationsV4Item: {
+            /** Simulation Id */
+            simulation_id?: string | null;
+            /** Name */
+            name?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
+            /** Active */
+            active?: boolean | null;
+            /** Generated */
+            generated?: boolean | null;
         };
         /** GetSlugsApiRequest */
         GetSlugsApiRequest: {
@@ -24734,9 +24773,9 @@ export interface components {
             /** Link Tool Id */
             link_tool_id?: string | null;
             /** Current */
-            current?: components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__11"][] | null;
+            current?: components["schemas"]["QGetParameterFieldsV4Item"][] | null;
             /** Resources */
-            resources?: components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__11"][] | null;
+            resources?: components["schemas"]["QGetParameterFieldsV4Item"][] | null;
         };
         /** ParameterFieldsApiRequest */
         ParameterFieldsApiRequest: {
@@ -24852,7 +24891,7 @@ export interface components {
             /** Department Resources */
             department_resources?: components["schemas"]["QGetDepartmentsV4Item"][] | null;
             /** Field Resources */
-            field_resources?: components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__11"][] | null;
+            field_resources?: components["schemas"]["QGetParameterFieldsV4Item"][] | null;
         };
         /** ParameterMultiResourceAction */
         ParameterMultiResourceAction: {
@@ -25810,7 +25849,7 @@ export interface components {
             /** Department Resources */
             department_resources?: components["schemas"]["QGetDepartmentsV4Item"][] | null;
             /** Parameter Field Resources */
-            parameter_field_resources?: components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__11"][] | null;
+            parameter_field_resources?: components["schemas"]["QGetParameterFieldsV4Item"][] | null;
             /** Example Resources */
             example_resources?: components["schemas"]["QGetExamplesV4Item"][] | null;
             /** Parameter Resources */
@@ -26004,9 +26043,9 @@ export interface components {
             /** Link Tool Id */
             link_tool_id?: string | null;
             /** Current */
-            current?: components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__11"][] | null;
+            current?: components["schemas"]["QGetParameterFieldsV4Item"][] | null;
             /** Resources */
-            resources?: components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__11"][] | null;
+            resources?: components["schemas"]["QGetParameterFieldsV4Item"][] | null;
         };
         /** PersonaParameterSection */
         PersonaParameterSection: {
@@ -26077,6 +26116,26 @@ export interface components {
         PointsApiResponse: {
             /** Point Id */
             point_id?: string | null;
+        };
+        /**
+         * PreviousChatOption
+         * @description A single scenario's best previous graded chat.
+         */
+        PreviousChatOption: {
+            /** Scenario Id */
+            scenario_id?: string | null;
+            /** Scenario Name */
+            scenario_name?: string | null;
+            /** Previous Chat Id */
+            previous_chat_id?: string | null;
+            /** Score */
+            score?: number | null;
+            /** Percentage */
+            percentage?: number | null;
+            /** Time Taken */
+            time_taken?: number | null;
+            /** Position */
+            position?: number | null;
         };
         /**
          * PricingAgentItem
@@ -27921,6 +27980,23 @@ export interface components {
             /** Question Id */
             question_id: string | null;
         };
+        /** QGetParameterFieldsV4Item */
+        QGetParameterFieldsV4Item: {
+            /** Id */
+            id: string | null;
+            /** Field Id */
+            field_id: string | null;
+            /** Parameter Id */
+            parameter_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Generated */
+            generated: boolean | null;
+            /** Conditional Parameter Id */
+            conditional_parameter_id: string | null;
+        };
         /** QGetParametersV4Item */
         QGetParametersV4Item: {
             /** Parameter Id */
@@ -28124,6 +28200,19 @@ export interface components {
             /** Sidebar Ring */
             sidebar_ring: string | null;
         };
+        /** QGetProfilesV4Item */
+        QGetProfilesV4Item: {
+            /** Profile Id */
+            profile_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Emails */
+            emails: string[] | null;
+            /** Primary Email */
+            primary_email: string | null;
+        };
         /** QGetPromptsV4Item */
         QGetPromptsV4Item: {
             /** Id */
@@ -28237,6 +28326,8 @@ export interface components {
         };
         /** QGetRolesV4Item */
         "QGetRolesV4Item-Input": {
+            /** Id */
+            id: string | null;
             /** Role */
             role: string | null;
             /** Name */
@@ -28326,6 +28417,28 @@ export interface components {
             description: string | null;
             /** Icon */
             icon: string | null;
+            /** Generated */
+            generated: boolean | null;
+        };
+        /** QGetScenarioPersonasV4Item */
+        QGetScenarioPersonasV4Item: {
+            /** Id */
+            id: string | null;
+            /** Scenario Id */
+            scenario_id: string | null;
+            /** Persona Id */
+            persona_id: string | null;
+            /** Generated */
+            generated: boolean | null;
+        };
+        /** QGetScenarioPositionsV4Item */
+        QGetScenarioPositionsV4Item: {
+            /** Id */
+            id: string | null;
+            /** Scenario Id */
+            scenario_id: string | null;
+            /** Value */
+            value: number | null;
             /** Generated */
             generated: boolean | null;
         };
@@ -30776,7 +30889,7 @@ export interface components {
             /** Parameter Resources */
             parameter_resources?: components["schemas"]["QGetParametersV4Item"][] | null;
             /** Parameter Field Resources */
-            parameter_field_resources?: components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__11"][] | null;
+            parameter_field_resources?: components["schemas"]["QGetParameterFieldsV4Item"][] | null;
         };
         /**
          * ScenarioImage
@@ -32580,6 +32693,31 @@ export interface components {
             /** Items */
             items?: components["schemas"]["QGetOptionsV4Item"][] | null;
         };
+        /** SearchParameterFieldsApiRequest */
+        SearchParameterFieldsApiRequest: {
+            /** Parameter Ids */
+            parameter_ids?: string[] | null;
+            /**
+             * Document
+             * @default false
+             */
+            document: boolean | null;
+            /**
+             * Persona
+             * @default false
+             */
+            persona: boolean | null;
+            /**
+             * Scenario
+             * @default false
+             */
+            scenario: boolean | null;
+        };
+        /** SearchParameterFieldsApiResponse */
+        SearchParameterFieldsApiResponse: {
+            /** Items */
+            items?: components["schemas"]["QGetParameterFieldsV4Item"][] | null;
+        };
         /** SearchParametersApiRequest */
         SearchParametersApiRequest: {
             /** Search */
@@ -32723,6 +32861,38 @@ export interface components {
         SearchPricingApiResponse: {
             /** Items */
             items?: components["schemas"]["QGetPricingV4Item"][] | null;
+        };
+        /** SearchProfilesApiRequest */
+        SearchProfilesApiRequest: {
+            /** Search */
+            search?: string | null;
+            /**
+             * Limit Count
+             * @default 20
+             */
+            limit_count: number | null;
+            /**
+             * Offset Count
+             * @default 0
+             */
+            offset_count: number | null;
+            /** Exclude Ids */
+            exclude_ids?: string[] | null;
+            /**
+             * Profile
+             * @default false
+             */
+            profile: boolean | null;
+            /**
+             * Setting
+             * @default false
+             */
+            setting: boolean | null;
+        };
+        /** SearchProfilesApiResponse */
+        SearchProfilesApiResponse: {
+            /** Items */
+            items?: components["schemas"]["QGetProfilesV4Item"][] | null;
         };
         /** SearchPromptsApiRequest */
         SearchPromptsApiRequest: {
@@ -33124,6 +33294,20 @@ export interface components {
         };
         /** SearchScenarioFlagsApiRequest */
         SearchScenarioFlagsApiRequest: {
+            /** Search */
+            search?: string | null;
+            /**
+             * Limit Count
+             * @default 20
+             */
+            limit_count: number | null;
+            /**
+             * Offset Count
+             * @default 0
+             */
+            offset_count: number | null;
+            /** Exclude Ids */
+            exclude_ids?: string[] | null;
             /** Scenario Ids */
             scenario_ids?: string[] | null;
             /**
@@ -33136,6 +33320,36 @@ export interface components {
         SearchScenarioFlagsApiResponse: {
             /** Items */
             items?: components["schemas"]["QGetScenarioFlagsV4Item"][] | null;
+        };
+        /** SearchScenarioPersonasApiRequest */
+        SearchScenarioPersonasApiRequest: {
+            /** Scenario Ids */
+            scenario_ids?: string[] | null;
+            /**
+             * Simulation
+             * @default false
+             */
+            simulation: boolean | null;
+        };
+        /** SearchScenarioPersonasApiResponse */
+        SearchScenarioPersonasApiResponse: {
+            /** Items */
+            items?: components["schemas"]["QGetScenarioPersonasV4Item"][] | null;
+        };
+        /** SearchScenarioPositionsApiRequest */
+        SearchScenarioPositionsApiRequest: {
+            /** Scenario Ids */
+            scenario_ids?: string[] | null;
+            /**
+             * Simulation
+             * @default false
+             */
+            simulation: boolean | null;
+        };
+        /** SearchScenarioPositionsApiResponse */
+        SearchScenarioPositionsApiResponse: {
+            /** Items */
+            items?: components["schemas"]["QGetScenarioPositionsV4Item"][] | null;
         };
         /** SearchScenarioRubricsApiRequest */
         SearchScenarioRubricsApiRequest: {
@@ -33306,7 +33520,7 @@ export interface components {
          */
         SearchSimulationsApiResponse: {
             /** Items */
-            items?: components["schemas"]["GetSimulationV4Item"][] | null;
+            items?: components["schemas"]["GetSimulationsV4Item"][] | null;
         };
         /** SearchSlugsApiRequest */
         SearchSlugsApiRequest: {
@@ -34050,7 +34264,7 @@ export interface components {
             /** Department Resources */
             department_resources?: components["schemas"]["QGetDepartmentsV4Item"][] | null;
             /** Profile Resources */
-            profile_resources?: components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__12"][] | null;
+            profile_resources?: components["schemas"]["QGetProfilesV4Item"][] | null;
             /** Auth Resources */
             auth_resources?: components["schemas"]["QGetAuthsV4Item"][] | null;
             /** Provider Key Resources */
@@ -34125,9 +34339,9 @@ export interface components {
             /** Link Tool Id */
             link_tool_id?: string | null;
             /** Current */
-            current?: components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__12"][] | null;
+            current?: components["schemas"]["QGetProfilesV4Item"][] | null;
             /** Resources */
-            resources?: components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__12"][] | null;
+            resources?: components["schemas"]["QGetProfilesV4Item"][] | null;
         };
         /** SettingProviderKeySection */
         SettingProviderKeySection: {
@@ -34434,9 +34648,9 @@ export interface components {
             /** Scenario Flag Resources */
             scenario_flag_resources?: components["schemas"]["QGetScenarioFlagsV4Item"][] | null;
             /** Scenario Persona Resources */
-            scenario_persona_resources?: components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__9"][] | null;
+            scenario_persona_resources?: components["schemas"]["QGetScenarioPersonasV4Item"][] | null;
             /** Scenario Position Resources */
-            scenario_position_resources?: components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__10"][] | null;
+            scenario_position_resources?: components["schemas"]["QGetScenarioPositionsV4Item"][] | null;
             /** Scenario Rubric Resources */
             scenario_rubric_resources?: components["schemas"]["QGetScenarioRubricsV4Item"][] | null;
             /** Scenario Time Limit Resources */
@@ -34601,9 +34815,9 @@ export interface components {
             /** Link Tool Id */
             link_tool_id?: string | null;
             /** Current */
-            current?: components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__9"][] | null;
+            current?: components["schemas"]["QGetScenarioPersonasV4Item"][] | null;
             /** Resources */
-            resources?: components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__9"][] | null;
+            resources?: components["schemas"]["QGetScenarioPersonasV4Item"][] | null;
         };
         /** SimulationScenarioPositionSection */
         SimulationScenarioPositionSection: {
@@ -34629,9 +34843,9 @@ export interface components {
             /** Link Tool Id */
             link_tool_id?: string | null;
             /** Current */
-            current?: components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__10"][] | null;
+            current?: components["schemas"]["QGetScenarioPositionsV4Item"][] | null;
             /** Resources */
-            resources?: components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__10"][] | null;
+            resources?: components["schemas"]["QGetScenarioPositionsV4Item"][] | null;
         };
         /** SimulationScenarioRubricSection */
         SimulationScenarioRubricSection: {
@@ -35789,9 +36003,9 @@ export interface components {
             /** Link Tool Id */
             link_tool_id?: string | null;
             /** Current */
-            current?: components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__11"][] | null;
+            current?: components["schemas"]["QGetParameterFieldsV4Item"][] | null;
             /** Resources */
-            resources?: components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__11"][] | null;
+            resources?: components["schemas"]["QGetParameterFieldsV4Item"][] | null;
         };
         /** TrainingBundleParameterSection */
         TrainingBundleParameterSection: {
@@ -36178,6 +36392,10 @@ export interface components {
             user_instructions?: string[] | null;
             /** Infinite */
             infinite?: boolean | null;
+            /** Previous Chat Map */
+            previous_chat_map?: {
+                [key: string]: string;
+            } | null;
         };
         /**
          * TrainingStartedEvent
@@ -36330,6 +36548,14 @@ export interface components {
             /** Voices Id */
             voices_id?: string | null;
         };
+        /** RefreshHomeMvsNewApiRequest */
+        "_MissingSqlType-Input": {
+            [key: string]: unknown;
+        };
+        /** RefreshHomeMvsNewApiResponse */
+        "_MissingSqlType-Output": {
+            [key: string]: unknown;
+        };
         /**
          * DeleteDocumentApiRequest
          * @description Request model for delete document endpoint.
@@ -36455,52 +36681,6 @@ export interface components {
             previous_context_start_index?: number | null;
         };
         /**
-         * GetSimulationApiRequest
-         * @description Request for getting a single simulation.
-         */
-        app__api__v4__artifacts__simulation__types__GetSimulationApiRequest: {
-            /** Simulation Id */
-            simulation_id?: string | null;
-            /** Draft Id */
-            draft_id?: string | null;
-            /** Scenario Search */
-            scenario_search?: string | null;
-            /** Filter Scenario Ids */
-            filter_scenario_ids?: string[] | null;
-        };
-        /**
-         * GetSimulationApiResponse
-         * @description Section-first response for simulation editor.
-         */
-        app__api__v4__artifacts__simulation__types__GetSimulationApiResponse: {
-            /** Actor Name */
-            actor_name?: string | null;
-            /** Simulation Exists */
-            simulation_exists?: boolean | null;
-            /** Can Edit */
-            can_edit?: boolean | null;
-            /** Disabled Reason */
-            disabled_reason?: string | null;
-            /** Draft Version */
-            draft_version?: number | null;
-            /** Group Id */
-            group_id?: string | null;
-            /** Basic Show Ai Generate */
-            basic_show_ai_generate?: boolean | null;
-            names?: components["schemas"]["SimulationNameSection"] | null;
-            descriptions?: components["schemas"]["SimulationDescriptionSection"] | null;
-            flags?: components["schemas"]["SimulationFlagSection"] | null;
-            departments?: components["schemas"]["SimulationDepartmentSection"] | null;
-            scenarios?: components["schemas"]["SimulationScenarioSection"] | null;
-            scenario_flags?: components["schemas"]["SimulationScenarioFlagSection"] | null;
-            scenario_personas?: components["schemas"]["SimulationScenarioPersonaSection"] | null;
-            scenario_positions?: components["schemas"]["SimulationScenarioPositionSection"] | null;
-            scenario_rubrics?: components["schemas"]["SimulationScenarioRubricSection"] | null;
-            scenario_time_limits?: components["schemas"]["SimulationScenarioTimeLimitSection"] | null;
-            /** Rubrics */
-            rubrics?: components["schemas"]["QGetRubricsV4Item"][] | null;
-        };
-        /**
          * QGetScenariosV4Item
          * @description Scenario item from scenarios resource query.
          */
@@ -36545,6 +36725,8 @@ export interface components {
          * @description Role item returned from get endpoint.
          */
         app__api__v4__resources__roles__types__QGetRolesV4Item: {
+            /** Id */
+            id?: string | null;
             /** Role */
             role?: string | null;
             /** Name */
@@ -36629,24 +36811,6 @@ export interface components {
             provider_ids?: string[] | null;
             /** Providers */
             providers?: components["schemas"]["QGetSettingsV4Provider"][] | null;
-        };
-        /**
-         * GetSimulationApiRequest
-         * @description Request for getting a simulation by ID.
-         */
-        app__api__v4__resources__simulations__types__GetSimulationApiRequest: {
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-        };
-        /**
-         * GetSimulationApiResponse
-         * @description Response for getting a simulation.
-         */
-        app__api__v4__resources__simulations__types__GetSimulationApiResponse: {
-            item?: components["schemas"]["GetSimulationV4Item"] | null;
         };
         /**
          * FilterOption
@@ -36739,6 +36903,8 @@ export interface components {
         };
         /** QGetRolesV4Item */
         app__sql__types__QGetRolesV4Item: {
+            /** Id */
+            id: string | null;
             /** Role */
             role: string | null;
             /** Name */
@@ -36858,86 +37024,6 @@ export interface components {
         app__sql__types__SaveDocumentApiResponse: {
             /** Document Id */
             document_id?: string | null;
-        };
-        /** RefreshHomeMvsNewApiRequest */
-        app__sql__types___build_missing_type___locals____MissingSqlType__1: {
-            [key: string]: unknown;
-        };
-        /** QGetScenarioPositionsV4Item */
-        app__sql__types___build_missing_type___locals____MissingSqlType__10: {
-            [key: string]: unknown;
-        };
-        /** QGetParameterFieldsV4Item */
-        app__sql__types___build_missing_type___locals____MissingSqlType__11: {
-            [key: string]: unknown;
-        };
-        /** QGetProfilesV4Item */
-        app__sql__types___build_missing_type___locals____MissingSqlType__12: {
-            [key: string]: unknown;
-        };
-        /** RefreshHomeMvsNewApiResponse */
-        app__sql__types___build_missing_type___locals____MissingSqlType__13: {
-            [key: string]: unknown;
-        };
-        /** GetParameterFieldsApiResponse */
-        app__sql__types___build_missing_type___locals____MissingSqlType__14: {
-            [key: string]: unknown;
-        };
-        /** SearchParameterFieldsApiResponse */
-        app__sql__types___build_missing_type___locals____MissingSqlType__15: {
-            [key: string]: unknown;
-        };
-        /** SearchProfilesApiResponse */
-        app__sql__types___build_missing_type___locals____MissingSqlType__16: {
-            [key: string]: unknown;
-        };
-        /** GetScenarioPersonasApiResponse */
-        app__sql__types___build_missing_type___locals____MissingSqlType__17: {
-            [key: string]: unknown;
-        };
-        /** SearchScenarioPersonasApiResponse */
-        app__sql__types___build_missing_type___locals____MissingSqlType__18: {
-            [key: string]: unknown;
-        };
-        /** GetScenarioPositionsApiResponse */
-        app__sql__types___build_missing_type___locals____MissingSqlType__19: {
-            [key: string]: unknown;
-        };
-        /** GetParameterFieldsApiRequest */
-        app__sql__types___build_missing_type___locals____MissingSqlType__2: {
-            [key: string]: unknown;
-        };
-        /** SearchScenarioPositionsApiResponse */
-        app__sql__types___build_missing_type___locals____MissingSqlType__20: {
-            [key: string]: unknown;
-        };
-        /** SearchParameterFieldsApiRequest */
-        app__sql__types___build_missing_type___locals____MissingSqlType__3: {
-            [key: string]: unknown;
-        };
-        /** SearchProfilesApiRequest */
-        app__sql__types___build_missing_type___locals____MissingSqlType__4: {
-            [key: string]: unknown;
-        };
-        /** GetScenarioPersonasApiRequest */
-        app__sql__types___build_missing_type___locals____MissingSqlType__5: {
-            [key: string]: unknown;
-        };
-        /** SearchScenarioPersonasApiRequest */
-        app__sql__types___build_missing_type___locals____MissingSqlType__6: {
-            [key: string]: unknown;
-        };
-        /** GetScenarioPositionsApiRequest */
-        app__sql__types___build_missing_type___locals____MissingSqlType__7: {
-            [key: string]: unknown;
-        };
-        /** SearchScenarioPositionsApiRequest */
-        app__sql__types___build_missing_type___locals____MissingSqlType__8: {
-            [key: string]: unknown;
-        };
-        /** QGetScenarioPersonasV4Item */
-        app__sql__types___build_missing_type___locals____MissingSqlType__9: {
-            [key: string]: unknown;
         };
     };
     responses: never;
@@ -37479,7 +37565,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["app__api__v4__artifacts__simulation__types__GetSimulationApiRequest"];
+                "application/json": components["schemas"]["GetSimulationApiRequest"];
             };
         };
         responses: {
@@ -37489,7 +37575,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__api__v4__artifacts__simulation__types__GetSimulationApiResponse"];
+                    "application/json": components["schemas"]["GetSimulationApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -41989,7 +42075,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__1"];
+                "application/json": components["schemas"]["_MissingSqlType-Input"];
             };
         };
         responses: {
@@ -41999,7 +42085,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__13"];
+                    "application/json": components["schemas"]["_MissingSqlType-Output"];
                 };
             };
             /** @description Validation Error */
@@ -45204,7 +45290,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__2"];
+                "application/json": components["schemas"]["GetParameterFieldsApiRequest"];
             };
         };
         responses: {
@@ -45214,7 +45300,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__14"];
+                    "application/json": components["schemas"]["GetParameterFieldsApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -45241,7 +45327,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__3"];
+                "application/json": components["schemas"]["SearchParameterFieldsApiRequest"];
             };
         };
         responses: {
@@ -45251,7 +45337,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__15"];
+                    "application/json": components["schemas"]["SearchParameterFieldsApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -47239,7 +47325,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__4"];
+                "application/json": components["schemas"]["SearchProfilesApiRequest"];
             };
         };
         responses: {
@@ -47249,7 +47335,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__16"];
+                    "application/json": components["schemas"]["SearchProfilesApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -48645,7 +48731,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__5"];
+                "application/json": components["schemas"]["GetScenarioPersonasApiRequest"];
             };
         };
         responses: {
@@ -48655,7 +48741,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__17"];
+                    "application/json": components["schemas"]["GetScenarioPersonasApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -48682,7 +48768,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__6"];
+                "application/json": components["schemas"]["SearchScenarioPersonasApiRequest"];
             };
         };
         responses: {
@@ -48692,7 +48778,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__18"];
+                    "application/json": components["schemas"]["SearchScenarioPersonasApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -48756,7 +48842,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__7"];
+                "application/json": components["schemas"]["GetScenarioPositionsApiRequest"];
             };
         };
         responses: {
@@ -48766,7 +48852,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__19"];
+                    "application/json": components["schemas"]["GetScenarioPositionsApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -48793,7 +48879,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__8"];
+                "application/json": components["schemas"]["SearchScenarioPositionsApiRequest"];
             };
         };
         responses: {
@@ -48803,7 +48889,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__20"];
+                    "application/json": components["schemas"]["SearchScenarioPositionsApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -49298,7 +49384,7 @@ export interface operations {
             };
         };
     };
-    get_simulation_api_v4_resources_simulations_get_post: {
+    get_simulations_api_v4_resources_simulations_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -49311,7 +49397,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["app__api__v4__resources__simulations__types__GetSimulationApiRequest"];
+                "application/json": components["schemas"]["GetSimulationsApiRequest"];
             };
         };
         responses: {
@@ -49321,44 +49407,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__api__v4__resources__simulations__types__GetSimulationApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_simulations_batch_api_v4_resources_simulations_batch_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["GetSimulationsBatchApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GetSimulationsBatchApiResponse"];
+                    "application/json": components["schemas"]["GetSimulationsApiResponse"];
                 };
             };
             /** @description Validation Error */

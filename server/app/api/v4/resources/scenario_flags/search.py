@@ -34,7 +34,11 @@ router = APIRouter()
 
 async def search_scenario_flags_internal(
     conn: asyncpg.Connection,
-    scenario_ids: list[UUID],
+    search: str | None = None,
+    limit_count: int | None = 20,
+    offset_count: int | None = 0,
+    exclude_ids: list[UUID] | None = None,
+    scenario_ids: list[UUID] | None = None,
     bypass_cache: bool = False,
     *,
     simulation: bool = False,
@@ -43,17 +47,28 @@ async def search_scenario_flags_internal(
 
     Args:
         conn: Database connection
+        search: Text search filter
+        limit_count: Max results to return
+        offset_count: Offset for pagination
+        exclude_ids: IDs to exclude from results
         scenario_ids: List of scenario IDs to search flags for (empty = all scenarios)
         bypass_cache: Whether to bypass cache
 
     Returns:
         List of available scenario flag items
     """
+    effective_scenario_ids = scenario_ids or []
+    effective_exclude_ids = exclude_ids or []
+
     # Generate cache key
     cache_key_val = cache_key(
         "scenario_flags/search",
         {
-            "scenario_ids": sorted([str(id) for id in scenario_ids]),
+            "search": search,
+            "limit_count": limit_count,
+            "offset_count": offset_count,
+            "exclude_ids": sorted(str(i) for i in effective_exclude_ids),
+            "scenario_ids": sorted(str(i) for i in effective_scenario_ids),
             "simulation": simulation,
         },
     )
@@ -69,7 +84,11 @@ async def search_scenario_flags_internal(
 
     # Execute SQL
     params = SearchScenarioFlagsParams(
-        scenario_ids=scenario_ids or [],
+        search=search,
+        limit_count=limit_count,
+        offset_count=offset_count,
+        exclude_ids=effective_exclude_ids,
+        scenario_ids=effective_scenario_ids,
         simulation=simulation,
     )
     result = cast(
@@ -127,6 +146,12 @@ async def search_scenario_flags(
 
         items = await search_scenario_flags_internal(
             conn=conn,
+            search=request.search if hasattr(request, "search") else None,
+            limit_count=request.limit_count if hasattr(request, "limit_count") else 20,
+            offset_count=request.offset_count
+            if hasattr(request, "offset_count")
+            else 0,
+            exclude_ids=request.exclude_ids if hasattr(request, "exclude_ids") else [],
             scenario_ids=request.scenario_ids or [],
             bypass_cache=bypass_cache,
         )

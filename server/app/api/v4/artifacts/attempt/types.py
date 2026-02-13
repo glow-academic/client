@@ -547,23 +547,31 @@ class AggregatedResults(BaseModel):
     total_chats: int | None = None
 
 
-class ContinuationOption(BaseModel):
-    """Continuation option for using previous chat results."""
+class PreviousChatOption(BaseModel):
+    """A single scenario's best previous graded chat."""
 
     scenario_id: str | None = None
     scenario_name: str | None = None
     previous_chat_id: str | None = None
-    title: str | None = None
     score: float | None = None
     percentage: float | None = None
     time_taken: float | None = None
     position: int | None = None
 
 
+class ContinuationOption(BaseModel):
+    """A bundle of consecutive scenarios that can be reused from previous attempts."""
+
+    scenarios: list[PreviousChatOption]
+    total_score: float
+    total_percentage: float | None = None
+    total_time: float
+
+
 class AvailableContinuationOptions(BaseModel):
     """Available continuation options for an attempt."""
 
-    next_sequential_options: list[ContinuationOption] | None = None
+    options: list[ContinuationOption]
 
 
 class GetAttemptDetailResponse(BaseModel):
@@ -580,6 +588,7 @@ class GetAttemptDetailResponse(BaseModel):
     current_chat_index: int | None = None
     expected_chat_count: int | None = None
     is_active: bool | None = None
+    is_lobby: bool | None = None
     show_results: bool | None = None
     should_show_controls: bool | None = None
     is_own_attempt: bool | None = None

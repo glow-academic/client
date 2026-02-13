@@ -33,7 +33,7 @@ from app.api.v4.resources.personas.get import get_personas_internal
 from app.api.v4.resources.profiles.get import get_profiles_internal
 from app.api.v4.resources.rubrics.get import get_rubrics_batch_internal
 from app.api.v4.resources.scenarios.get import get_scenarios_internal
-from app.api.v4.resources.simulations.get import get_simulations_batch_internal
+from app.api.v4.resources.simulations.get import get_simulations_internal
 from app.api.v4.views.analytics.attempts.get import get_attempt_facts_internal
 from app.api.v4.views.analytics.chat_facts.get import get_chat_facts_internal
 from app.api.v4.views.analytics.chat_facts.types import GetChatFactsRequest
@@ -355,7 +355,7 @@ async def get_reports(
 
         # Hydrate minimal metadata for normalized resources
         async with pool.acquire() as c:
-            simulations = await get_simulations_batch_internal(
+            simulations = await get_simulations_internal(
                 conn=c,
                 ids=[UUID(simulation_id) for simulation_id in simulation_ids],
                 bypass_cache=bypass_cache,
@@ -391,7 +391,7 @@ async def get_reports(
                 key = str(item.simulation_id)
                 resources.simulations[key] = ReportsSimulationResource(
                     simulation_id=key,
-                    name=item.title,
+                    name=item.name,
                     description=item.description,
                 )
 

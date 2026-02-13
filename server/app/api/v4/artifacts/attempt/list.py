@@ -28,7 +28,7 @@ from app.api.v4.artifacts.training.permissions import (
 from app.api.v4.resources.personas.get import get_personas_internal
 from app.api.v4.resources.profiles.get import get_profiles_internal
 from app.api.v4.resources.scenarios.get import get_scenarios_internal
-from app.api.v4.resources.simulations.get import get_simulations_batch_internal
+from app.api.v4.resources.simulations.get import get_simulations_internal
 from app.api.v4.views.analytics.attempts.get import get_attempt_facts_internal
 from app.api.v4.views.analytics.attempts.types import AttemptFactsItem
 from app.infra.v4.activity.audit import audit_activity, audit_set
@@ -165,15 +165,15 @@ async def _fetch_resource_metadata(
     }
 
     if simulation_ids:
-        items = await get_simulations_batch_internal(
+        items = await get_simulations_internal(
             conn, simulation_ids, bypass_cache=bypass_cache
         )
         for item in items:
             if item.simulation_id:
                 result["simulations"][item.simulation_id] = {
-                    "name": item.title,
+                    "name": item.name,
                     "description": item.description,
-                    "time_limit": item.time_limit,
+                    "time_limit": None,  # TODO: time_limit not on simulations_resource
                 }
 
     if profile_ids:

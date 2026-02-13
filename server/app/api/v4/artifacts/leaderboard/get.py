@@ -29,7 +29,7 @@ from app.api.v4.artifacts.leaderboard.types import (
 from app.api.v4.artifacts.types import FilterOption
 from app.api.v4.resources.profiles.get import get_profiles_internal
 from app.api.v4.resources.scenarios.get import get_scenarios_internal
-from app.api.v4.resources.simulations.get import get_simulations_batch_internal
+from app.api.v4.resources.simulations.get import get_simulations_internal
 from app.api.v4.views.analytics.attempts.get import get_attempt_facts_internal
 from app.api.v4.views.analytics.chat_facts.get import get_chat_facts_internal
 from app.api.v4.views.analytics.chat_facts.types import GetChatFactsRequest
@@ -288,7 +288,7 @@ async def get_leaderboard(
 
         async def fetch_simulations() -> list:
             async with pool.acquire() as c:
-                return await get_simulations_batch_internal(
+                return await get_simulations_internal(
                     conn=c,
                     ids=list(simulation_id_set),
                     bypass_cache=bypass_cache,
@@ -350,7 +350,7 @@ async def get_leaderboard(
         simulation_resources = {
             str(item.simulation_id): LeaderboardSimulationResource(
                 simulation_id=str(item.simulation_id),
-                name=item.title,
+                name=item.name,
                 description=item.description,
             )
             for item in simulations

@@ -448,8 +448,8 @@ async def get_simulation_internal(
             )
             suggestions = await search_scenario_flags_internal(
                 c,
-                effective_scenario_ids,
-                bypass_cache,
+                scenario_ids=effective_scenario_ids,
+                bypass_cache=bypass_cache,
                 simulation=True,
             )
             return (selected, suggestions)

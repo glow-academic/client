@@ -58,24 +58,24 @@ class QGetSettingsV4Item(BaseModel):
 
 
 class GetSettingsApiRequest(BaseModel):
-    """Request for getting settings by ID."""
+    """Request for getting settings by IDs."""
 
-    id: UUID
+    ids: list[UUID] = []
 
 
 class GetSettingsApiResponse(BaseModel):
     """Response for getting settings."""
 
-    item: QGetSettingsV4Item | None = None
+    items: list[QGetSettingsV4Item] | None = None
 
 
 class GetSettingsSqlParams(BaseModel):
     """SQL parameters for get settings."""
 
-    settings_id_param: UUID
+    ids: list[UUID] = []
 
     def to_tuple(self) -> tuple[Any, ...]:
-        return (self.settings_id_param,)
+        return (self.ids,)
 
 
 class GetSettingsSqlRow(BaseModel):

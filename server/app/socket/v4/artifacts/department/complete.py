@@ -65,8 +65,8 @@ async def handle_department_artifact_complete(data: dict[str, Any]) -> None:
                     items = await get_flags_internal(conn, [resource_id], True)
                     flag_resource = items[0] if items else None
                 elif resource_type == "settings":
-                    item = await get_settings_internal(conn, resource_id, True)
-                    settings_resources = [item] if item else None
+                    items = await get_settings_internal(conn, [resource_id], True)
+                    settings_resources = items if items else None
 
     except Exception as e:
         await sio.emit(

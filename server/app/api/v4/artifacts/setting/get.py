@@ -430,8 +430,7 @@ async def get_setting_internal(
 
     async def fetch_roles():
         async with pool.acquire() as c:
-            # get_roles_internal returns all roles (no ID filter)
-            all_roles = await get_roles_internal(c, bypass_cache)
+            all_roles = await get_roles_internal(c, bypass_cache=bypass_cache)
             suggestions = await search_roles_internal(
                 c,
                 None,

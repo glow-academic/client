@@ -1,6 +1,7 @@
 """Roles GET endpoint - v4 API following DHH principles."""
 
 from typing import Annotated, cast
+from uuid import UUID
 
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
@@ -33,14 +34,19 @@ router = APIRouter()
 
 async def get_roles_internal(
     conn: asyncpg.Connection,
+    ids: list[UUID] | None = None,
     bypass_cache: bool = False,
 ) -> list[QGetRolesV4Item]:
-    """Internal function to fetch all roles.
+    """Internal function to fetch roles by IDs (empty/None = all).
 
     Can be called directly from other routes without HTTP overhead.
     """
+    effective_ids = ids or []
     tags = ["resources", "roles"]
-    cache_key_val = cache_key("/api/v4/resources/roles/get", {})
+    cache_key_val = cache_key(
+        "/api/v4/resources/roles/get",
+        {"ids": sorted(str(i) for i in effective_ids)},
+    )
 
     # Try cache (unless bypassed)
     if not bypass_cache:
@@ -51,7 +57,7 @@ async def get_roles_internal(
             ]
 
     # Execute SQL
-    params = GetRolesSqlParams()
+    params = GetRolesSqlParams(ids=effective_ids)
     result = cast(
         GetRolesSqlRow,
         await execute_sql_typed(conn, SQL_PATH, params=params),
@@ -93,7 +99,7 @@ async def get_roles(
     bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
 
     try:
-        items = await get_roles_internal(conn, bypass_cache)
+        items = await get_roles_internal(conn, request.ids or [], bypass_cache)
         response.headers["X-Cache-Tags"] = ",".join(tags)
         return GetRolesApiResponse(items=items)
     except HTTPException:

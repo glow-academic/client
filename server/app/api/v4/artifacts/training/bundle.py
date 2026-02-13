@@ -327,14 +327,14 @@ async def get_training_bundle_internal(
     simulation_name: str | None = None
     if simulation_id:
         from app.api.v4.resources.simulations.get import (
-            get_simulations_batch_internal,
+            get_simulations_internal,
         )
 
-        sim_list = await get_simulations_batch_internal(
+        sim_list = await get_simulations_internal(
             conn, [simulation_id], bypass_cache=bypass_cache
         )
         if sim_list:
-            simulation_name = sim_list[0].title
+            simulation_name = sim_list[0].name
 
     # 10. Resource agent IDs
     resource_agent_ids: dict[str, UUID | None] = {

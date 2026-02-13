@@ -12,7 +12,7 @@ from app.api.v4.resources.names.get import get_names_internal
 from app.api.v4.resources.simulation_positions.get import (
     get_simulation_positions_internal,
 )
-from app.api.v4.resources.simulations.get import get_simulation_internal
+from app.api.v4.resources.simulations.get import get_simulations_internal
 from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
 from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.main import get_internal_sio, sio
@@ -131,14 +131,14 @@ async def handle_cohort_artifact_complete(data: dict[str, Any]) -> None:
                         for d in items
                     ]
             elif resource_type == "simulations":
-                item = await get_simulation_internal(conn, resource_id)
-                if item:
+                items = await get_simulations_internal(conn, [resource_id])
+                if items:
+                    item = items[0]
                     event.simulation_resources = [
                         {
                             "simulation_id": item.simulation_id,
                             "name": item.name,
                             "description": item.description,
-                            "time_limit": item.time_limit,
                             "generated": item.generated,
                         }
                     ]

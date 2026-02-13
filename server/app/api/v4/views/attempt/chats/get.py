@@ -30,7 +30,8 @@ router = APIRouter()
 
 async def get_attempt_chats_internal(
     conn: asyncpg.Connection,
-    attempt_id: UUID,
+    attempt_id: UUID | None = None,
+    attempt_ids: list[UUID] | None = None,
     bypass_cache: bool = False,
 ) -> list[ChatViewItem]:
     """Internal function for fetching chat data.
@@ -39,7 +40,8 @@ async def get_attempt_chats_internal(
 
     Args:
         conn: Database connection
-        attempt_id: Attempt ID to fetch chats for
+        attempt_id: Single attempt ID (backward compat, wraps to list)
+        attempt_ids: Multiple attempt IDs to fetch chats for
         bypass_cache: Skip cache lookup
 
     Returns:
@@ -49,9 +51,11 @@ async def get_attempt_chats_internal(
         GetAttemptChatsViewSqlParams,
     )
 
+    ids = attempt_ids or ([attempt_id] if attempt_id else [])
+
     cache_key_val = cache_key(
         "views/attempt/chats/get",
-        {"attempt_id": str(attempt_id)},
+        {"attempt_ids": [str(a) for a in ids]},
     )
 
     if not bypass_cache:
@@ -60,7 +64,7 @@ async def get_attempt_chats_internal(
             return [ChatViewItem.model_validate(item) for item in cached["items"]]
 
     # Execute SQL query
-    params = GetAttemptChatsViewSqlParams(attempt_id_filter=attempt_id)
+    params = GetAttemptChatsViewSqlParams(attempt_ids_filter=ids)
 
     result = await execute_sql_typed(conn, SQL_PATH, params=params)
 
