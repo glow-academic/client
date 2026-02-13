@@ -10,6 +10,7 @@ INSERT INTO public.models_resource (created_at, value, active, generated, mcp, i
 INSERT INTO public.names_resource (id, name, created_at, active, generated, mcp) VALUES ('019b995c-8ea2-7c66-ab0d-ad961755eb4e', 'imagen-4.0-generate-001', '2025-12-02T18:34:42.754909+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.pricing_resource (id, pricing_type, price, unit_id, created_at, active, generated, mcp) VALUES ('019bbce5-e616-78c7-98da-9323f8fbe9c0', 'output', 0.03999999910593033, '019b3be4-3ced-7b2b-8fd2-54556abd3391', '2026-01-14T14:25:41.899298+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.providers_resource (id, created_at, active, generated, mcp, name, description, department_ids, value, endpoint, key) VALUES ('019bb2af-b2a8-7035-bbfd-664ba627bd44', '2026-01-12T14:50:17.639595+00:00', true, false, false, 'gemini', 'Provider description', '{}', 'gemini', NULL, NULL) ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.values_resource (id, value, created_at, active, generated, mcp) VALUES ('019bbabc-5a34-797f-a6bd-ac67cc27d37c', 'imagen-4.0-generate-001', '2025-12-02T18:34:42.754909+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
 
 -- Artifact
 -- model_artifact

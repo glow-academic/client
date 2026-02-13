@@ -76,7 +76,6 @@ RESOURCE_TABLES = {
     "args_outputs_resource",
     "request_limits_resource",
     "voices_resource",
-    "values_resource",
     "reasoning_levels_resource",
     "temperature_levels_resource",
     # Secrets/key tables (exported with dummy values via SENSITIVE_COLUMNS)
@@ -626,16 +625,15 @@ async def export_resources(conn: asyncpg.Connection) -> None:
         ("12-args", "args", ["args_resource", "args_outputs_resource"]),
         ("13-request-limits", "request-limits", ["request_limits_resource"]),
         ("14-voices", "voices", ["voices_resource"]),
-        ("15-values", "values", ["values_resource"]),
-        ("16-reasoning-levels", "reasoning-levels", ["reasoning_levels_resource"]),
+        ("15-reasoning-levels", "reasoning-levels", ["reasoning_levels_resource"]),
         (
-            "17-temperature-levels",
+            "16-temperature-levels",
             "temperature-levels",
             ["temperature_levels_resource"],
         ),
         # Secrets/key tables (sensitive columns replaced with dummy values)
-        ("18-keys", "keys", ["keys_resource", "provider_keys_resource"]),
-        ("19-auth-item-keys", "auth-item-keys", ["auth_item_keys_resource"]),
+        ("17-keys", "keys", ["keys_resource", "provider_keys_resource"]),
+        ("18-auth-item-keys", "auth-item-keys", ["auth_item_keys_resource"]),
     ]
 
     for file_prefix, label, tables in resource_files:

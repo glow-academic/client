@@ -13,6 +13,7 @@ INSERT INTO public.pricing_resource (id, pricing_type, price, unit_id, created_a
 INSERT INTO public.pricing_resource (id, pricing_type, price, unit_id, created_at, active, generated, mcp) VALUES ('019bbce5-e615-7039-9e54-d02b6e278e6e', 'input', 4.0, '019b3be4-3ced-7acb-afab-19ceef6b410b', '2026-01-14T14:25:41.899298+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.pricing_resource (id, pricing_type, price, unit_id, created_at, active, generated, mcp) VALUES ('019bbce5-e614-7b0a-9775-52f849776328', 'input', 2.0, '019b3be4-3ced-7b19-a313-ffdaa73b65fe', '2026-01-14T14:25:41.899298+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.providers_resource (id, created_at, active, generated, mcp, name, description, department_ids, value, endpoint, key) VALUES ('019bb2af-b2a8-7035-bbfd-664ba627bd44', '2026-01-12T14:50:17.639595+00:00', true, false, false, 'gemini', 'Provider description', '{}', 'gemini', NULL, NULL) ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.values_resource (id, value, created_at, active, generated, mcp) VALUES ('019bbabc-5a34-76ee-8806-c808ff4eebbb', 'gemini-3-pro-preview', '2025-12-02T16:56:17.353896+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
 
 -- Artifact
 -- model_artifact

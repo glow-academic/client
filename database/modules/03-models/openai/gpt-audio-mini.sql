@@ -13,6 +13,7 @@ INSERT INTO public.pricing_resource (id, pricing_type, price, unit_id, created_a
 INSERT INTO public.pricing_resource (id, pricing_type, price, unit_id, created_at, active, generated, mcp) VALUES ('019bbce5-e618-7315-91c0-40ae2e80e797', 'output', 2.4000000953674316, '019b3be4-3ced-7acb-afab-19ceef6b410b', '2026-01-14T14:25:41.899298+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.pricing_resource (id, pricing_type, price, unit_id, created_at, active, generated, mcp) VALUES ('019bbce5-e613-763f-8532-d1640980f1cd', 'input', 0.6000000238418579, '019b3be4-3ced-7acb-afab-19ceef6b410b', '2026-01-14T14:25:41.899298+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.providers_resource (id, created_at, active, generated, mcp, name, description, department_ids, value, endpoint, key) VALUES ('019bb2af-b2a7-7d85-a61a-0dc4fd93b3c6', '2026-01-12T14:50:17.639595+00:00', true, false, false, 'openai', 'Provider description', '{}', 'openai', NULL, NULL) ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.values_resource (id, value, created_at, active, generated, mcp) VALUES ('019bbabc-5a34-7792-9b3f-4a7793a59bfd', 'gpt-audio-mini', '2025-12-02T16:56:17.374057+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
 
 -- Artifact
 -- model_artifact
