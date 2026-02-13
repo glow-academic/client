@@ -33,6 +33,8 @@ async def search_role_routes_internal(
     limit_count: int | None = 20,
     offset_count: int | None = 0,
     exclude_ids: list[UUID] | None = None,
+    role_ids: list[UUID] | None = None,
+    route_ids: list[UUID] | None = None,
     bypass_cache: bool = False,
     *,
     setting: bool = False,
@@ -49,6 +51,8 @@ async def search_role_routes_internal(
             "limit_count": limit_count,
             "offset_count": offset_count,
             "exclude_ids": [str(id) for id in (exclude_ids or [])],
+            "role_ids": sorted(str(i) for i in (role_ids or [])),
+            "route_ids": sorted(str(i) for i in (route_ids or [])),
             "setting": setting,
         },
     )

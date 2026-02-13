@@ -35,6 +35,7 @@ async def search_reasoning_levels_internal(
     limit_count: int | None = 20,
     offset_count: int | None = 0,
     exclude_ids: list[UUID] | None = None,
+    reasoning_level_ids: list[UUID] | None = None,
     bypass_cache: bool = False,
     *,
     agent: bool = False,
@@ -52,6 +53,7 @@ async def search_reasoning_levels_internal(
             "limit_count": limit_count,
             "offset_count": offset_count,
             "exclude_ids": [str(id) for id in (exclude_ids or [])],
+            "reasoning_level_ids": sorted(str(i) for i in (reasoning_level_ids or [])),
             "agent": agent,
             "model": model,
         },
@@ -70,6 +72,7 @@ async def search_reasoning_levels_internal(
         limit_count=limit_count,
         offset_count=offset_count,
         exclude_ids=exclude_ids or [],
+        reasoning_level_ids=reasoning_level_ids or [],
         agent=agent,
         model=model,
     )
