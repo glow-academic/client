@@ -109299,18 +109299,6 @@
             ],
             "title": "Route"
           },
-          "role_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Role Id"
-          },
           "generated": {
             "anyOf": [
               {
@@ -109327,7 +109315,6 @@
         "required": [
           "id",
           "route",
-          "role_id",
           "generated"
         ],
         "title": "QGetRoutesV4Item"

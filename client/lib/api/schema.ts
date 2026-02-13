@@ -28995,8 +28995,6 @@ export interface components {
             id: string | null;
             /** Route */
             route: string | null;
-            /** Role Id */
-            role_id: string | null;
             /** Generated */
             generated: boolean | null;
         };
