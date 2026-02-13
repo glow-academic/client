@@ -177,6 +177,24 @@ Every resource component must track and display the `generated?: boolean | null`
 - AI badge display on generated items
 - Diff view behavior
 
+### Rule 16: Search endpoints must support filtering by every resource table column
+
+Every non-common column on the `{resource}_resource` table (excluding `id`, `created_at`, `updated_at`, `active`, `generated`, `mcp`) must be filterable through the search endpoint's SQL function parameters.
+
+**Column type → parameter mapping:**
+
+| Column type | Example column | Search param | SQL WHERE clause |
+|-------------|---------------|-------------|-----------------|
+| **Text** (`name`, `description`, `value`) | `name text` | Covered by `search text` | `AND (search IS NULL OR LOWER(r.name) LIKE '%' \|\| LOWER(search) \|\| '%')` |
+| **Single FK** (`{thing}_id uuid`) | `scenario_id uuid` | `scenario_ids uuid[]` (plural) | `AND (COALESCE(array_length(scenario_ids, 1), 0) = 0 OR r.scenario_id = ANY(scenario_ids))` |
+| **Array FK** (`{thing}_ids uuid[]`) | `department_ids uuid[]` | `department_ids uuid[]` | `AND (COALESCE(array_length(department_ids, 1), 0) = 0 OR r.department_ids && department_ids)` |
+| **Boolean** (`is_root`, `persona_parameter`) | `is_root boolean` | `is_root boolean DEFAULT NULL` | `AND (is_root IS NULL OR r.is_root = is_root)` |
+| **Enum/other scalar** | `role profile_type` | Covered by `search text` or explicit param | Case-by-case |
+
+**Rationale**: This ensures every resource can be queried by any of its attributes without cross-table joins. The "empty array = no filter" pattern (`COALESCE(array_length(...), 0) = 0`) makes all filters optional — callers only apply them when needed.
+
+**Simple resources** (e.g., `names_resource` with only `name text`) are already covered by the `search text` parameter. This rule primarily affects resources with FK/array columns that need explicit ID-based filters.
+
 ---
 
 ## Audit Checks
@@ -489,6 +507,40 @@ done
 ```
 
 **Expected**: Empty. All components must track the `generated` flag.
+
+### Audit 19: Search endpoints missing column-based filters (Rule 16)
+
+For each resource table, check that every FK/array column has a corresponding search parameter:
+
+```sql
+-- Get FK/array columns on resource tables that need search filters
+SELECT
+    t.tablename AS resource_table,
+    c.column_name,
+    c.udt_name AS column_type
+FROM pg_tables t
+JOIN information_schema.columns c
+    ON c.table_name = t.tablename
+    AND c.table_schema = 'public'
+WHERE t.tablename LIKE '%_resource'
+    AND t.schemaname = 'public'
+    AND c.column_name NOT IN ('id', 'created_at', 'updated_at', 'active', 'generated', 'mcp')
+    AND (c.udt_name = 'uuid' OR c.column_name LIKE '%_ids' OR c.column_name LIKE '%_id')
+ORDER BY t.tablename, c.ordinal_position;
+```
+
+Then cross-reference against search function parameters:
+
+```sql
+-- Get search function parameters
+SELECT p.proname, pg_get_function_arguments(p.oid)
+FROM pg_proc p
+JOIN pg_namespace n ON n.oid = p.pronamespace
+WHERE n.nspname = 'public' AND p.proname LIKE 'api_search_%_v4'
+ORDER BY p.proname;
+```
+
+**Expected**: Every FK/array column on a resource table has a corresponding parameter in that resource's search function. For single FK columns like `scenario_id`, the search param should be `scenario_ids uuid[]` (plural array). For array columns like `department_ids uuid[]`, the search param should match.
 
 ---
 
