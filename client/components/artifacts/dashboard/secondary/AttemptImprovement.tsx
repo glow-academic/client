@@ -100,8 +100,8 @@ export default function AttemptImprovement({
   status,
   initialSelectedSimulations,
   onSimulationSelect,
-  simulationSearchValue: _simulationSearchValue,
-  onSimulationSearchChange: _onSimulationSearchChange,
+  simulationSearchValue,
+  onSimulationSearchChange,
 }: AttemptImprovementProps) {
   // Create lookup map from array for backward compatibility
   const simulationMapping = useMemo(() => {
@@ -234,6 +234,8 @@ export default function AttemptImprovement({
             multiSelect={true}
             buttonClassName="w-48"
             groupHeading="Simulations"
+            {...(simulationSearchValue !== undefined && { initialSearchTerm: simulationSearchValue })}
+            {...(onSimulationSearchChange !== undefined && { onSearchChange: onSimulationSearchChange })}
           />
         </div>
       </CardHeader>

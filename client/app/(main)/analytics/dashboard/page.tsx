@@ -359,7 +359,9 @@ async function DashboardPrimarySection({
     <DashboardPrimary
       data={data}
       initialPersonaSimulations={personaSimulationIds}
+      personaSimulationsSearch={personaSimulationsSearch}
       initialHeatmapRubrics={heatmapRubricIds}
+      heatmapRubricSearch={heatmapRubricSearch}
     />
   );
 }
@@ -408,8 +410,11 @@ async function DashboardSecondarySection({
     <DashboardSecondary
       data={data}
       initialCohortSimulations={cohortSimulationIds}
+      cohortSimulationsSearch={cohortSimulationsSearch}
       initialImprovementSimulations={improvementSimulationIds}
+      improvementSimulationsSearch={improvementSimulationsSearch}
       initialSkillRubrics={skillRubricIds}
+      skillRubricSearch={skillRubricSearch}
     />
   );
 }
@@ -458,8 +463,11 @@ async function DashboardFooterSection({
     <DashboardFooter
       data={data}
       initialScenarioPerfParameters={scenarioPerfParameterIds}
+      scenarioPerfParamSearch={scenarioPerfParamSearch}
       initialScenarioStatsParameters={scenarioStatsParameterIds}
+      scenarioStatsParamSearch={scenarioStatsParamSearch}
       initialSimPerfSimulations={simPerfSimulationIds}
+      simPerfSimulationSearch={simPerfSimulationSearch}
     />
   );
 }

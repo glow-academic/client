@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useMemo, useState } from "react";
 
+import { useDashboardSectionParams } from "@/hooks/use-dashboard-section-params";
+
 import ScenarioPerformance from "./footer/ScenarioPerformance";
 import ScenarioStats from "./footer/ScenarioStats";
 import SimulationComposition from "./footer/SimulationComposition";
@@ -54,6 +56,28 @@ export default function DashboardFooter({
   simPerfSimulationSearch,
   onSimPerfSimulationSearchChange,
 }: DashboardFooterProps) {
+  const {
+    params: sectionParams,
+    setScenarioPerfParameterIds,
+    setScenarioPerfParamSearch,
+    setScenarioStatsParameterIds,
+    setScenarioStatsParamSearch,
+    setSimPerfSimulationIds,
+    setSimPerfSimulationSearch,
+  } = useDashboardSectionParams();
+
+  const effectiveOnScenarioPerfChange = onScenarioPerfParameterChange ?? setScenarioPerfParameterIds;
+  const effectiveOnScenarioPerfSearch = onScenarioPerfParamSearchChange ?? setScenarioPerfParamSearch;
+  const effectiveScenarioPerfSearch = scenarioPerfParamSearch ?? sectionParams.scenarioPerfParamSearch ?? undefined;
+
+  const effectiveOnScenarioStatsChange = onScenarioStatsParameterChange ?? setScenarioStatsParameterIds;
+  const effectiveOnScenarioStatsSearch = onScenarioStatsParamSearchChange ?? setScenarioStatsParamSearch;
+  const effectiveScenarioStatsSearch = scenarioStatsParamSearch ?? sectionParams.scenarioStatsParamSearch ?? undefined;
+
+  const effectiveOnSimPerfChange = onSimPerfSimulationChange ?? setSimPerfSimulationIds;
+  const effectiveOnSimPerfSearch = onSimPerfSimulationSearchChange ?? setSimPerfSimulationSearch;
+  const effectiveSimPerfSearch = simPerfSimulationSearch ?? sectionParams.simPerfSimulationSearch ?? undefined;
+
   const [leftFooterCarouselIndex, setLeftFooterCarouselIndex] = useState(0);
   const [rightFooterCarouselIndex, setRightFooterCarouselIndex] = useState(0);
   const [isLeftFooterHovered, setIsLeftFooterHovered] = useState(false);
@@ -103,9 +127,9 @@ export default function DashboardFooter({
         actionableInsight={data.insights?.scenario_performance ?? null}
         status={validateStatus(scenarioPerformance.status)}
         initialSelectedParameters={initialScenarioPerfParameters}
-        onParameterSelect={onScenarioPerfParameterChange}
-        parameterSearchValue={scenarioPerfParamSearch}
-        onParameterSearchChange={onScenarioPerfParamSearchChange}
+        onParameterSelect={effectiveOnScenarioPerfChange}
+        parameterSearchValue={effectiveScenarioPerfSearch}
+        onParameterSearchChange={effectiveOnScenarioPerfSearch}
       />,
       <ScenarioStats
         key="scenario-stats"
@@ -134,12 +158,12 @@ export default function DashboardFooter({
         actionableInsight={data.insights?.scenario_stats ?? null}
         status={validateStatus(scenarioStats.status)}
         initialSelectedParameters={initialScenarioStatsParameters}
-        onParameterSelect={onScenarioStatsParameterChange}
-        parameterSearchValue={scenarioStatsParamSearch}
-        onParameterSearchChange={onScenarioStatsParamSearchChange}
+        onParameterSelect={effectiveOnScenarioStatsChange}
+        parameterSearchValue={effectiveScenarioStatsSearch}
+        onParameterSearchChange={effectiveOnScenarioStatsSearch}
       />,
     ];
-  }, [data, initialScenarioPerfParameters, onScenarioPerfParameterChange, scenarioPerfParamSearch, onScenarioPerfParamSearchChange, initialScenarioStatsParameters, onScenarioStatsParameterChange, scenarioStatsParamSearch, onScenarioStatsParamSearchChange]);
+  }, [data, initialScenarioPerfParameters, effectiveOnScenarioPerfChange, effectiveScenarioPerfSearch, effectiveOnScenarioPerfSearch, initialScenarioStatsParameters, effectiveOnScenarioStatsChange, effectiveScenarioStatsSearch, effectiveOnScenarioStatsSearch]);
 
   const rightFooterComponents = useMemo(() => {
     if (!data?.footer_metrics) return [];
@@ -170,9 +194,9 @@ export default function DashboardFooter({
         actionableInsight={data.insights?.simulation_performance ?? null}
         status={validateStatus(simulationPerformance.status)}
         initialSelectedSimulations={initialSimPerfSimulations}
-        onSimulationSelect={onSimPerfSimulationChange}
-        simulationSearchValue={simPerfSimulationSearch}
-        onSimulationSearchChange={onSimPerfSimulationSearchChange}
+        onSimulationSelect={effectiveOnSimPerfChange}
+        simulationSearchValue={effectiveSimPerfSearch}
+        onSimulationSearchChange={effectiveOnSimPerfSearch}
       />,
       <SimulationComposition
         key="simulation-composition"
@@ -226,7 +250,7 @@ export default function DashboardFooter({
         status={validateStatus(simulationComposition.status)}
       />,
     ];
-  }, [data, initialSimPerfSimulations, onSimPerfSimulationChange, simPerfSimulationSearch, onSimPerfSimulationSearchChange]);
+  }, [data, initialSimPerfSimulations, effectiveOnSimPerfChange, effectiveSimPerfSearch, effectiveOnSimPerfSearch]);
 
   const navigateLeftFooter = (direction: "prev" | "next") => {
     const length = leftFooterComponents.length;

@@ -182,8 +182,8 @@ export default function PersonaPerformance({
   thresholds: _thresholds,
   initialSelectedSimulations,
   onSimulationSelect,
-  simulationSearchValue: _simulationSearchValue,
-  onSimulationSearchChange: _onSimulationSearchChange,
+  simulationSearchValue,
+  onSimulationSearchChange,
 }: PersonaPerformanceProps) {
   // Create lookup map from array for backward compatibility
   const simulationMapping = useMemo(() => {
@@ -338,6 +338,8 @@ export default function PersonaPerformance({
             multiSelect={true}
             buttonClassName="w-48"
             groupHeading="Simulations"
+            {...(simulationSearchValue !== undefined && { initialSearchTerm: simulationSearchValue })}
+            {...(onSimulationSearchChange !== undefined && { onSearchChange: onSimulationSearchChange })}
           />
         </div>
       </CardHeader>

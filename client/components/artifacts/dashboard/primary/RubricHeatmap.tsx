@@ -94,8 +94,8 @@ export default function RubricHeatmap({
   status,
   initialSelectedRubrics,
   onRubricSelect,
-  rubricSearchValue: _rubricSearchValue,
-  onRubricSearchChange: _onRubricSearchChange,
+  rubricSearchValue,
+  onRubricSearchChange,
 }: RubricHeatmapProps) {
   // Create lookup map from array for backward compatibility
   const rubricMapping = useMemo(() => {
@@ -239,6 +239,8 @@ export default function RubricHeatmap({
             placeholder="Filter by rubric..."
             hideSelectedChips={true}
             buttonClassName={cn(isMobile ? "w-full sm:w-48" : "w-48")}
+            {...(rubricSearchValue !== undefined && { initialSearchTerm: rubricSearchValue })}
+            {...(onRubricSearchChange !== undefined && { onSearchChange: onRubricSearchChange })}
           />
         </div>
       </CardHeader>

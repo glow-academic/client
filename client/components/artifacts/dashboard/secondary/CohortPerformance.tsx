@@ -97,8 +97,8 @@ export default function CohortPerformance({
   status,
   initialSelectedSimulations,
   onSimulationSelect,
-  simulationSearchValue: _simulationSearchValue,
-  onSimulationSearchChange: _onSimulationSearchChange,
+  simulationSearchValue,
+  onSimulationSearchChange,
 }: CohortPerformanceProps) {
   // Create lookup map from array for backward compatibility
   const simulationMapping = useMemo(() => {
@@ -256,6 +256,8 @@ export default function CohortPerformance({
             showLabel={false}
             multiSelect={true}
             groupHeading="Simulations"
+            {...(simulationSearchValue !== undefined && { initialSearchTerm: simulationSearchValue })}
+            {...(onSimulationSearchChange !== undefined && { onSearchChange: onSimulationSearchChange })}
           />
         </div>
       </CardHeader>

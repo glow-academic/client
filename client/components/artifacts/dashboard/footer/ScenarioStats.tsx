@@ -112,8 +112,8 @@ export default function ScenarioStats({
   status,
   initialSelectedParameters,
   onParameterSelect,
-  parameterSearchValue: _parameterSearchValue,
-  onParameterSearchChange: _onParameterSearchChange,
+  parameterSearchValue,
+  onParameterSearchChange,
 }: ScenarioStatsProps) {
   // Create lookup map from array for backward compatibility
   const parameterMapping = useMemo(() => {
@@ -289,6 +289,8 @@ export default function ScenarioStats({
               searchPlaceholder="Search parameters..."
               emptyMessage="No parameter found."
               groupHeading="Parameters"
+              {...(parameterSearchValue !== undefined && { initialSearchTerm: parameterSearchValue })}
+              {...(onParameterSearchChange !== undefined && { onSearchChange: onParameterSearchChange })}
             />
           </div>
         </CardHeader>

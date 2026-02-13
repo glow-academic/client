@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useMemo, useState } from "react";
 
+import { useDashboardSectionParams } from "@/hooks/use-dashboard-section-params";
+
 import Growth from "./primary/Growth";
 import PersonaPerformance from "./primary/PersonaPerformance";
 import RubricHeatmap from "./primary/RubricHeatmap";
@@ -45,6 +47,22 @@ export default function DashboardPrimary({
   heatmapRubricSearch,
   onHeatmapRubricSearchChange,
 }: DashboardPrimaryProps) {
+  const {
+    params: sectionParams,
+    setPersonaSimulationIds,
+    setPersonaSimulationsSearch,
+    setHeatmapRubricIds,
+    setHeatmapRubricSearch,
+  } = useDashboardSectionParams();
+
+  const effectiveOnPersonaChange = onPersonaSimulationChange ?? setPersonaSimulationIds;
+  const effectiveOnPersonaSearch = onPersonaSimulationsSearchChange ?? setPersonaSimulationsSearch;
+  const effectivePersonaSearch = personaSimulationsSearch ?? sectionParams.personaSimulationsSearch ?? undefined;
+
+  const effectiveOnHeatmapChange = onHeatmapRubricChange ?? setHeatmapRubricIds;
+  const effectiveOnHeatmapSearch = onHeatmapRubricSearchChange ?? setHeatmapRubricSearch;
+  const effectiveHeatmapSearch = heatmapRubricSearch ?? sectionParams.heatmapRubricSearch ?? undefined;
+
   const [primaryCarouselIndex, setPrimaryCarouselIndex] = useState(0);
   const [isPrimaryHovered, setIsPrimaryHovered] = useState(false);
 
@@ -193,9 +211,9 @@ export default function DashboardPrimary({
           danger: data.thresholds.danger ?? 0,
         } : { success: 0, warning: 0, danger: 0 }}
         initialSelectedSimulations={initialPersonaSimulations}
-        onSimulationSelect={onPersonaSimulationChange}
-        simulationSearchValue={personaSimulationsSearch}
-        onSimulationSearchChange={onPersonaSimulationsSearchChange}
+        onSimulationSelect={effectiveOnPersonaChange}
+        simulationSearchValue={effectivePersonaSearch}
+        onSimulationSearchChange={effectiveOnPersonaSearch}
       />,
       <RubricHeatmap
         key="rubric-heatmap"
@@ -215,12 +233,12 @@ export default function DashboardPrimary({
         actionableInsight={data.insights?.rubric_heatmap ?? null}
         status={validateStatus(rubricHeatmap.status)}
         initialSelectedRubrics={initialHeatmapRubrics}
-        onRubricSelect={onHeatmapRubricChange}
-        rubricSearchValue={heatmapRubricSearch}
-        onRubricSearchChange={onHeatmapRubricSearchChange}
+        onRubricSelect={effectiveOnHeatmapChange}
+        rubricSearchValue={effectiveHeatmapSearch}
+        onRubricSearchChange={effectiveOnHeatmapSearch}
       />,
     ];
-  }, [data, initialPersonaSimulations, onPersonaSimulationChange, personaSimulationsSearch, onPersonaSimulationsSearchChange, initialHeatmapRubrics, onHeatmapRubricChange, heatmapRubricSearch, onHeatmapRubricSearchChange]);
+  }, [data, initialPersonaSimulations, effectiveOnPersonaChange, effectivePersonaSearch, effectiveOnPersonaSearch, initialHeatmapRubrics, effectiveOnHeatmapChange, effectiveHeatmapSearch, effectiveOnHeatmapSearch]);
 
   const navigatePrimary = (direction: "prev" | "next") => {
     const length = primaryComponents.length;

@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useMemo, useState } from "react";
 
+import { useDashboardSectionParams } from "@/hooks/use-dashboard-section-params";
+
 import AttemptImprovement from "./secondary/AttemptImprovement";
 import CohortPerformance from "./secondary/CohortPerformance";
 import SkillPerformance from "./secondary/SkillPerformance";
@@ -55,6 +57,28 @@ export default function DashboardSecondary({
   skillRubricSearch,
   onSkillRubricSearchChange,
 }: DashboardSecondaryProps) {
+  const {
+    params: sectionParams,
+    setCohortSimulationIds,
+    setCohortSimulationsSearch,
+    setImprovementSimulationIds,
+    setImprovementSimulationsSearch,
+    setSkillRubricIds,
+    setSkillRubricSearch,
+  } = useDashboardSectionParams();
+
+  const effectiveOnCohortChange = onCohortSimulationChange ?? setCohortSimulationIds;
+  const effectiveOnCohortSearch = onCohortSimulationsSearchChange ?? setCohortSimulationsSearch;
+  const effectiveCohortSearch = cohortSimulationsSearch ?? sectionParams.cohortSimulationsSearch ?? undefined;
+
+  const effectiveOnImprovementChange = onImprovementSimulationChange ?? setImprovementSimulationIds;
+  const effectiveOnImprovementSearch = onImprovementSimulationsSearchChange ?? setImprovementSimulationsSearch;
+  const effectiveImprovementSearch = improvementSimulationsSearch ?? sectionParams.improvementSimulationsSearch ?? undefined;
+
+  const effectiveOnSkillChange = onSkillRubricChange ?? setSkillRubricIds;
+  const effectiveOnSkillSearch = onSkillRubricSearchChange ?? setSkillRubricSearch;
+  const effectiveSkillSearch = skillRubricSearch ?? sectionParams.skillRubricSearch ?? undefined;
+
   const [secondaryCarouselIndex, setSecondaryCarouselIndex] = useState(0);
   const [isSecondaryHovered, setIsSecondaryHovered] = useState(false);
 
@@ -131,9 +155,9 @@ export default function DashboardSecondary({
         } : {})}
         status={validateStatus(cohortPerformance.status)}
         initialSelectedSimulations={initialCohortSimulations}
-        onSimulationSelect={onCohortSimulationChange}
-        simulationSearchValue={cohortSimulationsSearch}
-        onSimulationSearchChange={onCohortSimulationsSearchChange}
+        onSimulationSelect={effectiveOnCohortChange}
+        simulationSearchValue={effectiveCohortSearch}
+        onSimulationSearchChange={effectiveOnCohortSearch}
       />,
       <AttemptImprovement
         key="attempt-improvement"
@@ -159,9 +183,9 @@ export default function DashboardSecondary({
         actionableInsight={data.insights?.attempt_improvement ?? null}
         status={validateStatus(attemptImprovement.status)}
         initialSelectedSimulations={initialImprovementSimulations}
-        onSimulationSelect={onImprovementSimulationChange}
-        simulationSearchValue={improvementSimulationsSearch}
-        onSimulationSearchChange={onImprovementSimulationsSearchChange}
+        onSimulationSelect={effectiveOnImprovementChange}
+        simulationSearchValue={effectiveImprovementSearch}
+        onSimulationSearchChange={effectiveOnImprovementSearch}
       />,
       <SkillPerformance
         key="skill-performance"
@@ -197,12 +221,12 @@ export default function DashboardSecondary({
         actionableInsight={data.insights?.skill_performance ?? null}
         status={validateStatus(skillPerformance.status)}
         initialSelectedRubrics={initialSkillRubrics}
-        onRubricSelect={onSkillRubricChange}
-        rubricSearchValue={skillRubricSearch}
-        onRubricSearchChange={onSkillRubricSearchChange}
+        onRubricSelect={effectiveOnSkillChange}
+        rubricSearchValue={effectiveSkillSearch}
+        onRubricSearchChange={effectiveOnSkillSearch}
       />,
     ];
-  }, [data, profileId, initialCohortSimulations, onCohortSimulationChange, cohortSimulationsSearch, onCohortSimulationsSearchChange, initialImprovementSimulations, onImprovementSimulationChange, improvementSimulationsSearch, onImprovementSimulationsSearchChange, initialSkillRubrics, onSkillRubricChange, skillRubricSearch, onSkillRubricSearchChange]);
+  }, [data, profileId, initialCohortSimulations, effectiveOnCohortChange, effectiveCohortSearch, effectiveOnCohortSearch, initialImprovementSimulations, effectiveOnImprovementChange, effectiveImprovementSearch, effectiveOnImprovementSearch, initialSkillRubrics, effectiveOnSkillChange, effectiveSkillSearch, effectiveOnSkillSearch]);
 
   const navigateSecondary = (direction: "prev" | "next") => {
     const length = secondaryComponents.length;

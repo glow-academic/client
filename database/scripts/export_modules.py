@@ -1033,14 +1033,14 @@ async def export_evals(conn: asyncpg.Connection) -> None:
 
 
 async def export_base_profiles(conn: asyncpg.Connection) -> None:
-    """Export profiles with no department to 08-profiles/.
+    """Export default profiles to 08-profiles/ (base data only).
 
-    Profiles linked to departments are exported at the setup level
-    (10-setups/university/09-profiles/) instead.
+    Exports the profile artifact + all junctions EXCEPT
+    profile_departments_junction and profile_emails_junction, which are
+    section-specific and exported per setup (organization/university).
     """
     print("Exporting 08-profiles/ ...")
     out_dir = MODULES_DIR / "08-profiles"
-    # Clean up old files (profiles may have moved to setup level)
     if out_dir.exists():
         for old in out_dir.glob("*.sql"):
             old.unlink()
@@ -1051,14 +1051,21 @@ async def export_base_profiles(conn: asyncpg.Connection) -> None:
         FROM profile_artifact p
         JOIN profile_names_junction pnj ON pnj.profile_id = p.id
         JOIN names_resource nr ON nr.id = pnj.name_id
-        WHERE NOT EXISTS (
-            SELECT 1 FROM profile_departments_junction pdj WHERE pdj.profile_id = p.id
-        )
+        WHERE nr.name ILIKE 'Default %'
           AND nr.name NOT ILIKE '%benchmark%'
         ORDER BY nr.name
     """)
     artifacts = [(str(r["id"]), r["name"]) for r in rows]
-    junctions = await get_junction_tables(conn, "profile")
+    all_junctions = await get_junction_tables(conn, "profile")
+    # Exclude section-specific junctions (exported per setup)
+    base_junctions = [
+        j for j in all_junctions
+        if j not in (
+            "profile_departments_junction",
+            "profile_emails_junction",
+            "profile_cohorts_junction",
+        )
+    ]
 
     for art_id, art_name in artifacts:
         slug = to_slug(art_name)
@@ -1070,7 +1077,7 @@ async def export_base_profiles(conn: asyncpg.Connection) -> None:
             f"-- ============================================================\n\n"
         )
         count = await write_artifact_module(
-            conn, "profile", art_id, junctions, output_path, header
+            conn, "profile", art_id, base_junctions, output_path, header
         )
         print(f"    {slug}.sql ({count} inserts)")
 
@@ -1171,22 +1178,21 @@ async def export_setup_departments(conn: asyncpg.Connection) -> None:
 
 
 async def export_setup_profiles(conn: asyncpg.Connection) -> None:
-    """Export default profiles (with departments) to 10-setups/university/09-profiles/.
+    """Export section-specific profile links (departments + emails).
 
-    Only the 5 default role profiles (Default *) are exported here, with their
-    profile_departments_junction rows, instead of at the root 08-profiles/ level.
+    Each setup section gets its own profile_departments_junction and
+    profile_emails_junction rows:
+      organization/09-profiles/ → General dept + @gmail.com emails
+      university/09-profiles/   → Purdue CS dept + @purdue.edu emails
     """
-    print("  Exporting 09-profiles/ ...")
-    # Clean up both locations (profiles moved from university to organization)
+    # Clean up both locations
     for loc in ("organization", "university"):
         old_dir = MODULES_DIR / "10-setups" / loc / "09-profiles"
         if old_dir.exists():
             for old in old_dir.glob("*.sql"):
                 old.unlink()
 
-    out_dir = MODULES_DIR / "10-setups" / "organization" / "09-profiles"
-    out_dir.mkdir(parents=True, exist_ok=True)
-
+    # Get default profile artifact IDs
     rows = await conn.fetch("""
         SELECT p.id, nr.name
         FROM profile_artifact p
@@ -1197,21 +1203,96 @@ async def export_setup_profiles(conn: asyncpg.Connection) -> None:
         ORDER BY nr.name
     """)
     artifacts = [(str(r["id"]), r["name"]) for r in rows]
-    junctions = await get_junction_tables(conn, "profile")
 
-    for art_id, art_name in artifacts:
-        slug = to_slug(art_name)
-        output_path = out_dir / f"{slug}.sql"
-        header = (
-            f"-- Module: {art_name}\n"
-            f"-- Category: profile (organization)\n"
-            f"-- Description: {art_name} profile\n"
-            f"-- ============================================================\n\n"
-        )
-        count = await write_artifact_module(
-            conn, "profile", art_id, junctions, output_path, header
-        )
-        print(f"    {slug}.sql ({count} inserts)")
+    # Get department sections: General → organization, others → university
+    dept_rows = await conn.fetch("""
+        SELECT dr.id, dr.name
+        FROM departments_resource dr
+        JOIN department_departments_junction ddj ON ddj.departments_id = dr.id AND ddj.active = true
+        JOIN department_flags_junction dfl ON dfl.department_id = ddj.department_id AND dfl.active = true
+        JOIN flags_resource f ON f.id = dfl.flag_id AND f.name = 'department_active' AND dfl.value = true
+        ORDER BY dr.name
+    """)
+
+    # Build section → department IDs mapping
+    sections: dict[str, list[str]] = {"organization": [], "university": []}
+    for dr in dept_rows:
+        if dr["name"].lower() == "general":
+            sections["organization"].append(str(dr["id"]))
+        else:
+            sections["university"].append(str(dr["id"]))
+
+    # Email domain per section
+    email_domains = {"organization": "@gmail.com", "university": "@purdue.edu"}
+
+    dept_cols = TABLE_COLUMNS.get("profile_departments_junction", [])
+    dept_pks = TABLE_PKS.get("profile_departments_junction", [])
+    email_junction_cols = TABLE_COLUMNS.get("profile_emails_junction", [])
+    email_junction_pks = TABLE_PKS.get("profile_emails_junction", [])
+    email_res_cols = TABLE_COLUMNS.get("emails_resource", [])
+    email_res_pks = TABLE_PKS.get("emails_resource", [])
+
+    for section, dept_ids in sections.items():
+        if not dept_ids:
+            continue
+        out_dir = MODULES_DIR / "10-setups" / section / "09-profiles"
+        out_dir.mkdir(parents=True, exist_ok=True)
+        domain = email_domains[section]
+
+        print(f"  Exporting {section}/09-profiles/ ...")
+        for art_id, art_name in artifacts:
+            slug = to_slug(art_name)
+            output_path = out_dir / f"{slug}.sql"
+            header = (
+                f"-- Module: {art_name}\n"
+                f"-- Category: profile ({section})\n"
+                f"-- Description: {art_name} profile — {section} links\n"
+                f"-- ============================================================\n\n"
+            )
+            count = 0
+            with open(output_path, "w") as f:
+                f.write(header)
+
+                # Department links for this section
+                dept_col_list = ", ".join(dept_cols)
+                for did in dept_ids:
+                    dept_row = await conn.fetchrow(
+                        f"SELECT {dept_col_list} FROM public.profile_departments_junction "
+                        f"WHERE profile_id = $1 AND department_id = $2",
+                        UUID(art_id), UUID(did),
+                    )
+                    if dept_row:
+                        if count == 0:
+                            f.write("-- profile_departments_junction\n")
+                        f.write(make_insert("profile_departments_junction", dept_row, dept_cols, dept_pks) + "\n")
+                        count += 1
+
+                # Email links for this section (filtered by domain)
+                email_col_list = ", ".join(email_junction_cols)
+                email_rows = await conn.fetch(
+                    f"SELECT {email_col_list} FROM public.profile_emails_junction "
+                    f"WHERE profile_id = $1 AND email LIKE $2",
+                    UUID(art_id), f"%{domain}",
+                )
+                if email_rows:
+                    # First write the emails_resource rows
+                    f.write("-- emails_resource\n")
+                    eres_col_list = ", ".join(email_res_cols)
+                    for erow in email_rows:
+                        eres_row = await conn.fetchrow(
+                            f"SELECT {eres_col_list} FROM public.emails_resource WHERE id = $1",
+                            erow["email_id"],
+                        )
+                        if eres_row:
+                            f.write(make_insert("emails_resource", eres_row, email_res_cols, email_res_pks) + "\n")
+                            count += 1
+
+                    f.write("-- profile_emails_junction\n")
+                    for erow in email_rows:
+                        f.write(make_insert("profile_emails_junction", erow, email_junction_cols, email_junction_pks) + "\n")
+                        count += 1
+
+            print(f"    {slug}.sql ({count} inserts)")
 
 
 async def export_setup_settings(conn: asyncpg.Connection) -> None:

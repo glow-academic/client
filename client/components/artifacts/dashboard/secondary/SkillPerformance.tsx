@@ -104,8 +104,8 @@ export default function SkillPerformance({
   status,
   initialSelectedRubrics,
   onRubricSelect,
-  rubricSearchValue: _rubricSearchValue,
-  onRubricSearchChange: _onRubricSearchChange,
+  rubricSearchValue,
+  onRubricSearchChange,
 }: SkillPerformanceProps) {
   // Create lookup map from array for backward compatibility
   const rubricMapping = useMemo(() => {
@@ -184,6 +184,8 @@ export default function SkillPerformance({
               placeholder="Filter by rubric..."
               hideSelectedChips={true}
               buttonClassName="w-48"
+              {...(rubricSearchValue !== undefined && { initialSearchTerm: rubricSearchValue })}
+              {...(onRubricSearchChange !== undefined && { onSearchChange: onRubricSearchChange })}
             />
           )}
         </div>
