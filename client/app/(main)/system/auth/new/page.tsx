@@ -42,12 +42,17 @@ const getAuthDefault = async (input: GetAuthIn): Promise<GetAuthOut> => {
   });
 };
 
+/** ---- Docs types for page metadata ---- */
+type DocsIn = InputOf<"/api/v4/artifacts/auths/docs", "post">;
+type DocsOut = OutputOf<"/api/v4/artifacts/auths/docs", "post">;
+
+const getDocs = async (input: DocsIn): Promise<DocsOut> => {
+  return api.post("/artifacts/auths/docs", input);
+};
+
 export async function generateMetadata(): Promise<Metadata> {
-  return {
-    title: "Create Auth",
-    description:
-      "Create a new authentication method for teaching assistant training platform. Configure SSO, OAuth, and other identity providers for secure access to educational institutions and L&D programs.",
-  };
+  const docs = await getDocs({ body: {} });
+  return { title: docs.new.title, description: docs.new.description };
 }
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */

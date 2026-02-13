@@ -2,11 +2,12 @@
 
 from typing import Any
 
+from fastapi import APIRouter
+
 from app.api.v4.artifacts.test import permissions
 from app.utils.docs_helper import (
     ArtifactDocsConfig,
     build_artifact_docs_static,
-    create_artifact_docs_router,
 )
 
 CONFIG = ArtifactDocsConfig(
@@ -56,7 +57,12 @@ CONFIG = ArtifactDocsConfig(
     },
 )
 
-router = create_artifact_docs_router(CONFIG)
+router = APIRouter()
+
+
+@router.post("/docs")
+async def get_test_docs_endpoint() -> dict[str, Any]:
+    return build_artifact_docs_static(CONFIG)
 
 
 def get_tests_docs() -> dict[str, Any]:

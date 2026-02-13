@@ -87,12 +87,17 @@ async function createTestAction(
   return api.post("/artifacts/test/create", input);
 }
 
+/** ---- Docs types for page metadata ---- */
+type DocsIn = InputOf<"/api/v4/artifacts/benchmark/docs", "post">;
+type DocsOut = OutputOf<"/api/v4/artifacts/benchmark/docs", "post">;
+
+const getDocs = async (input: DocsIn): Promise<DocsOut> => {
+  return api.post("/artifacts/benchmark/docs", input);
+};
+
 export async function generateMetadata(): Promise<Metadata> {
-  return {
-    title: "Benchmark",
-    description:
-      "Run and manage evaluations for teaching assistant training platform. Execute benchmark tests, analyze performance metrics, and evaluate system effectiveness for educational institutions and L&D programs.",
-  };
+  const docs = await getDocs({ body: {} });
+  return { title: docs.list.title, description: docs.list.description };
 }
 
 interface BenchmarkPageProps {

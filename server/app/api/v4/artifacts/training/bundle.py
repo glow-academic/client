@@ -43,21 +43,21 @@ from app.api.v4.resources.agents.get import get_agents_internal
 from app.api.v4.resources.departments.get import get_departments_internal
 from app.api.v4.resources.documents.get import get_documents_internal
 from app.api.v4.resources.fields.get import get_fields_internal
-from app.api.v4.resources.images.types import get_images_internal
+from app.api.v4.resources.images.get import get_images_internal
 from app.api.v4.resources.models.get import get_models_internal
-from app.api.v4.resources.objectives.types import get_objectives_internal
-from app.api.v4.resources.options.types import get_options_internal
+from app.api.v4.resources.objectives.get import get_objectives_internal
+from app.api.v4.resources.options.get import get_options_internal
 from app.api.v4.resources.parameter_fields.get import get_parameter_fields_internal
 from app.api.v4.resources.parameters.get import get_parameters_internal
 from app.api.v4.resources.personas.get import get_personas_internal
-from app.api.v4.resources.problem_statements.types import (
+from app.api.v4.resources.problem_statements.get import (
     get_problem_statements_internal,
 )
 from app.api.v4.resources.providers.get import get_providers_internal
-from app.api.v4.resources.questions.types import get_questions_internal
+from app.api.v4.resources.questions.get import get_questions_internal
 from app.api.v4.resources.scenarios.get import get_scenarios_internal
 from app.api.v4.resources.tools.get import get_tools_internal
-from app.api.v4.resources.videos.types import get_videos_internal
+from app.api.v4.resources.videos.get import get_videos_internal
 from app.api.v4.views.drafts.get import get_draft_training_internal
 from app.api.v4.views.drafts.types import DraftTrainingViewItem
 from app.api.v4.views.training.bundle.get import get_training_bundle_view_internal
@@ -326,7 +326,7 @@ async def get_training_bundle_internal(
     # 9. Resolve simulation name
     simulation_name: str | None = None
     if simulation_id:
-        from app.api.v4.resources.simulations.types import (
+        from app.api.v4.resources.simulations.get import (
             get_simulations_batch_internal,
         )
 

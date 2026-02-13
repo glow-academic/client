@@ -24,7 +24,6 @@ import { Points } from "@/components/resources/Points";
 import { Standards } from "@/components/resources/Standards";
 import { StandardGroups } from "@/components/resources/StandardGroups";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
 import { useProfile } from "@/contexts/profile-context";
 import { useSaveContext } from "@/contexts/save-context";
 import { useAiGeneration } from "@/hooks/use-ai-generation";
@@ -194,7 +193,6 @@ function RubricComponent({
 
   const { profile, setSelectedDraftId, socket, isConnected } = useProfile();
   const { isAutosaveEnabled } = useSaveContext();
-  const { setEntityMetadata, clearEntityMetadata } = useBreadcrumbContext();
   const { flushRegistryRef, registerFlushCallbacks } =
     useFlushRegistry<Record<string, unknown>>(FLUSH_KEYS);
 
@@ -501,24 +499,6 @@ function RubricComponent({
     });
 
   const disabled = useMemo(() => !s?.can_edit, [s?.can_edit]);
-
-  useEffect(() => {
-    const rubricName = s?.names?.resource?.name;
-    if (rubricName && rubricId && isEditMode) {
-      setEntityMetadata({
-        entityId: rubricId,
-        entityName: rubricName,
-        entityType: "rubric",
-      });
-    }
-    return () => clearEntityMetadata();
-  }, [
-    s?.names?.resource?.name,
-    rubricId,
-    isEditMode,
-    setEntityMetadata,
-    clearEntityMetadata,
-  ]);
 
   const handleSubmit = useCallback(
     async (_formData: Record<string, unknown>) => {

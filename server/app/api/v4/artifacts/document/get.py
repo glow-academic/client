@@ -63,8 +63,8 @@ from app.api.v4.resources.descriptions.search import search_descriptions_interna
 from app.api.v4.resources.fields.search import search_fields_internal
 from app.api.v4.resources.flags.get import get_flags_internal
 from app.api.v4.resources.flags.search import search_flags_internal
+from app.api.v4.resources.images.get import get_images_internal
 from app.api.v4.resources.images.search import search_images_internal
-from app.api.v4.resources.images.types import get_images_internal
 from app.api.v4.resources.models.get import get_models_internal
 from app.api.v4.resources.names.get import get_names_internal
 from app.api.v4.resources.names.search import search_names_internal

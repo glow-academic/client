@@ -9,7 +9,7 @@ import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDen
 import Parameter from "@/components/artifacts/parameter/Parameter";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
-import type { Metadata, ResolvingMetadata } from "next";
+import type { Metadata } from "next";
 import { createLoader, parseAsBoolean, parseAsString } from "nuqs/server";
 
 /** ---- Strong types from OpenAPI ---- */
@@ -40,40 +40,22 @@ const getParameter = async (
   });
 };
 
-/** ---- Metadata uses the same cached fetch ---- */
-export async function generateMetadata(
-  { params }: { params: Promise<{ parameterId: string }> },
-  _parent: ResolvingMetadata
-): Promise<Metadata> {
-  const { parameterId } = await params;
-  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  try {
-    const input: ParameterGetIn = {
-      body: {
-        parameter_id: parameterId,
-        draft_id: null,
-      } as ParameterGetIn["body"],
-    };
-    const parameter = await getParameter(input);
-    const p = parameter as unknown as {
-      names?: { resource?: { name?: string | null } | null } | null;
-      descriptions?: { resource?: { description?: string | null } | null } | null;
-    };
-    const name = p.names?.resource?.name ?? "Parameter";
-    const description = p.descriptions?.resource?.description ?? "";
-    return {
-      title: `${name} Parameter`,
-      description: `${name ? `${name} - ` : ""}System parameter configuration for teaching assistant training platform.${description ? ` ${description}` : ""} Manage platform-wide settings and learning environment configurations for effective L&D program administration.`,
-    };
-  } catch {
-    // Fall through to default metadata
-  }
+/** ---- Docs types for page metadata ---- */
+type DocsIn = InputOf<"/api/v4/artifacts/parameters/docs", "post">;
+type DocsOut = OutputOf<"/api/v4/artifacts/parameters/docs", "post">;
 
-  return {
-    title: "Parameter",
-    description:
-      "System parameter configuration for teaching assistant training platform. Manage platform-wide settings and learning environment configurations for effective L&D program administration.",
-  };
+const getDocs = async (input: DocsIn): Promise<DocsOut> => {
+  return api.post("/artifacts/parameters/docs", input);
+};
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ parameterId: string }>;
+}): Promise<Metadata> {
+  const { parameterId } = await params;
+  const docs = await getDocs({ body: { entity_id: parameterId } });
+  return { title: docs.detail.title, description: docs.detail.description };
 }
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */

@@ -33,12 +33,17 @@ const getEvalDefault = async (input: GetEvalIn): Promise<GetEvalOut> => {
 };
 
 /** ---- Metadata ---- */
+/** ---- Docs types for page metadata ---- */
+type DocsIn = InputOf<"/api/v4/artifacts/evals/docs", "post">;
+type DocsOut = OutputOf<"/api/v4/artifacts/evals/docs", "post">;
+
+const getDocs = async (input: DocsIn): Promise<DocsOut> => {
+  return api.post("/artifacts/evals/docs", input);
+};
+
 export async function generateMetadata(): Promise<Metadata> {
-  return {
-    title: "Create Eval",
-    description:
-      "Create a new automated evaluation run for teaching assistant assessments. Configure batch evaluations to analyze pedagogical performance, teaching effectiveness, and student interaction quality across multiple practice sessions.",
-  };
+  const docs = await getDocs({ body: {} });
+  return { title: docs.new.title, description: docs.new.description };
 }
 
 /** ---- Strongly-typed server actions ---- */

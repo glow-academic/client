@@ -28,7 +28,6 @@ import { Images } from "@/components/resources/Images";
 import { Texts } from "@/components/resources/Texts";
 import { Uploads } from "@/components/resources/Uploads";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
 import { useProfile } from "@/contexts/profile-context";
 import { useSaveContext } from "@/contexts/save-context";
 import { useAiGeneration } from "@/hooks/use-ai-generation";
@@ -175,7 +174,6 @@ function DocumentComponent({
   const { profile, setSelectedDraftId, socket, isConnected } =
     useProfile();
   const { isAutosaveEnabled } = useSaveContext();
-  const { setEntityMetadata, clearEntityMetadata } = useBreadcrumbContext();
   const { flushRegistryRef, registerFlushCallbacks, flushAllResources } =
     useFlushRegistry<Record<string, unknown>>(FLUSH_KEYS);
 
@@ -597,25 +595,6 @@ function DocumentComponent({
     if (!documentDetail) return false;
     return !documentDetail.can_edit;
   }, [documentDetail]);
-
-  // Set breadcrumb context when document data is loaded
-  useEffect(() => {
-    const documentName = documentDetail?.names?.resource?.name;
-    if (documentName && documentId && isEditMode) {
-      setEntityMetadata({
-        entityId: documentId,
-        entityName: documentName,
-        entityType: "document",
-      });
-    }
-    return () => clearEntityMetadata();
-  }, [
-    documentDetail,
-    documentId,
-    isEditMode,
-    setEntityMetadata,
-    clearEntityMetadata,
-  ]);
 
   // Submit handler for GenericForm (uses formState, not formData parameter)
   const handleSubmit = useCallback(

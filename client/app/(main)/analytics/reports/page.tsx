@@ -40,12 +40,17 @@ const getReports = async (input: ReportsIn): Promise<ReportsOut> => {
   });
 };
 
+/** ---- Docs types for page metadata ---- */
+type DocsIn = InputOf<"/api/v4/artifacts/reports/docs", "post">;
+type DocsOut = OutputOf<"/api/v4/artifacts/reports/docs", "post">;
+
+const getDocs = async (input: DocsIn): Promise<DocsOut> => {
+  return api.post("/artifacts/reports/docs", input);
+};
+
 export async function generateMetadata(): Promise<Metadata> {
-  return {
-    title: "Reports",
-    description:
-      "Comprehensive assessment reports and evaluation data for teaching assistant training. Generate detailed performance analytics, pedagogical assessment summaries, and learning progress reports to track teaching effectiveness and professional development.",
-  };
+  const docs = await getDocs({ body: {} });
+  return { title: docs.list.title, description: docs.list.description };
 }
 
 interface ReportsPageProps {

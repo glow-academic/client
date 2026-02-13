@@ -7,7 +7,7 @@ import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDen
 import Setting from "@/components/artifacts/setting/Setting";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
-import type { Metadata, ResolvingMetadata } from "next";
+import type { Metadata } from "next";
 import { createLoader, parseAsString } from "nuqs/server";
 
 /** ---- Strong types from OpenAPI ---- */
@@ -42,33 +42,22 @@ const getSetting = async (input: GetSettingIn): Promise<GetSettingOut> => {
   });
 };
 
-/** ---- Metadata uses the same cached fetch ---- */
-export async function generateMetadata(
-  { params }: { params: Promise<{ settingId: string }> },
-  _parent: ResolvingMetadata
-): Promise<Metadata> {
-  const { settingId } = await params;
-  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  try {
-    const input: GetSettingIn = {
-      body: {
-        settings_id: settingId,
-        color_search: null,
-      } as GetSettingIn["body"],
-    };
-    const setting = await getSetting(input);
-    return {
-      title: `${setting?.name_resource?.name || "Setting"} Settings`,
-      description: `${setting?.name_resource?.name ? `${setting.name_resource.name} - ` : ""}Application settings configuration.${setting?.description_resource?.description ? ` ${setting.description_resource.description}` : ""}`,
-    };
-  } catch {
-    // Fall through to default metadata
-  }
+/** ---- Docs types for page metadata ---- */
+type DocsIn = InputOf<"/api/v4/artifacts/settings/docs", "post">;
+type DocsOut = OutputOf<"/api/v4/artifacts/settings/docs", "post">;
 
-  return {
-    title: "Settings",
-    description: "Application settings configuration.",
-  };
+const getDocs = async (input: DocsIn): Promise<DocsOut> => {
+  return api.post("/artifacts/settings/docs", input);
+};
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ settingId: string }>;
+}): Promise<Metadata> {
+  const { settingId } = await params;
+  const docs = await getDocs({ body: { entity_id: settingId } });
+  return { title: docs.detail.title, description: docs.detail.description };
 }
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */

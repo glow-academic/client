@@ -139,8 +139,8 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Get Docs */
-        post: operations["get_docs_api_v4_artifacts_personas_docs_post"];
+        /** Get Persona Docs Endpoint */
+        post: operations["get_persona_docs_endpoint_api_v4_artifacts_personas_docs_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -282,8 +282,8 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Get Docs */
-        post: operations["get_docs_api_v4_artifacts_scenarios_docs_post"];
+        /** Get Scenario Docs Endpoint */
+        post: operations["get_scenario_docs_endpoint_api_v4_artifacts_scenarios_docs_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -435,8 +435,8 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Get Docs */
-        post: operations["get_docs_api_v4_artifacts_simulations_docs_post"];
+        /** Get Simulation Docs Endpoint */
+        post: operations["get_simulation_docs_endpoint_api_v4_artifacts_simulations_docs_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -652,8 +652,8 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Get Docs */
-        post: operations["get_docs_api_v4_artifacts_documents_docs_post"];
+        /** Get Document Docs Endpoint */
+        post: operations["get_document_docs_endpoint_api_v4_artifacts_documents_docs_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -791,8 +791,8 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Get Docs */
-        post: operations["get_docs_api_v4_artifacts_departments_docs_post"];
+        /** Get Department Docs Endpoint */
+        post: operations["get_department_docs_endpoint_api_v4_artifacts_departments_docs_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -934,8 +934,8 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Get Docs */
-        post: operations["get_docs_api_v4_artifacts_cohorts_docs_post"];
+        /** Get Cohort Docs Endpoint */
+        post: operations["get_cohort_docs_endpoint_api_v4_artifacts_cohorts_docs_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1077,8 +1077,8 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Get Docs */
-        post: operations["get_docs_api_v4_artifacts_evals_docs_post"];
+        /** Get Eval Docs Endpoint */
+        post: operations["get_eval_docs_endpoint_api_v4_artifacts_evals_docs_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1218,8 +1218,8 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Get Docs */
-        post: operations["get_docs_api_v4_artifacts_rubrics_docs_post"];
+        /** Get Rubric Docs Endpoint */
+        post: operations["get_rubric_docs_endpoint_api_v4_artifacts_rubrics_docs_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1360,8 +1360,8 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Get Docs */
-        post: operations["get_docs_api_v4_artifacts_settings_docs_post"];
+        /** Get Setting Docs Endpoint */
+        post: operations["get_setting_docs_endpoint_api_v4_artifacts_settings_docs_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1497,8 +1497,8 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Get Docs */
-        post: operations["get_docs_api_v4_artifacts_agents_docs_post"];
+        /** Get Agent Docs Endpoint */
+        post: operations["get_agent_docs_endpoint_api_v4_artifacts_agents_docs_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1638,8 +1638,8 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Get Docs */
-        post: operations["get_docs_api_v4_artifacts_models_docs_post"];
+        /** Get Model Docs Endpoint */
+        post: operations["get_model_docs_endpoint_api_v4_artifacts_models_docs_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1775,8 +1775,8 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Get Docs */
-        post: operations["get_docs_api_v4_artifacts_providers_docs_post"];
+        /** Get Provider Docs Endpoint */
+        post: operations["get_provider_docs_endpoint_api_v4_artifacts_providers_docs_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1912,8 +1912,8 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Get Docs */
-        post: operations["get_docs_api_v4_artifacts_parameters_docs_post"];
+        /** Get Parameter Docs Endpoint */
+        post: operations["get_parameter_docs_endpoint_api_v4_artifacts_parameters_docs_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2046,8 +2046,8 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Get Docs */
-        post: operations["get_docs_api_v4_artifacts_fields_docs_post"];
+        /** Get Field Docs Endpoint */
+        post: operations["get_field_docs_endpoint_api_v4_artifacts_fields_docs_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2263,8 +2263,8 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Get Docs */
-        post: operations["get_docs_api_v4_artifacts_profiles_docs_post"];
+        /** Get Profile Docs Endpoint */
+        post: operations["get_profile_docs_endpoint_api_v4_artifacts_profiles_docs_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2400,8 +2400,8 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Get Docs */
-        post: operations["get_docs_api_v4_artifacts_auths_docs_post"];
+        /** Get Auth Docs Endpoint */
+        post: operations["get_auth_docs_endpoint_api_v4_artifacts_auths_docs_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2537,8 +2537,8 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Get Docs */
-        post: operations["get_docs_api_v4_artifacts_tools_docs_post"];
+        /** Get Tool Docs Endpoint */
+        post: operations["get_tool_docs_endpoint_api_v4_artifacts_tools_docs_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2594,8 +2594,8 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Get Docs */
-        post: operations["get_docs_api_v4_artifacts_group_docs_post"];
+        /** Get Group Docs Endpoint */
+        post: operations["get_group_docs_endpoint_api_v4_artifacts_group_docs_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2651,8 +2651,8 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Get Docs */
-        post: operations["get_docs_api_v4_artifacts_session_docs_post"];
+        /** Get Session Docs Endpoint */
+        post: operations["get_session_docs_endpoint_api_v4_artifacts_session_docs_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2754,8 +2754,8 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Get Docs */
-        post: operations["get_docs_api_v4_artifacts_training_docs_post"];
+        /** Get Training Docs Endpoint */
+        post: operations["get_training_docs_endpoint_api_v4_artifacts_training_docs_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2879,8 +2879,8 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Get Docs */
-        post: operations["get_docs_api_v4_artifacts_attempt_docs_post"];
+        /** Get Attempt Docs Endpoint */
+        post: operations["get_attempt_docs_endpoint_api_v4_artifacts_attempt_docs_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2939,8 +2939,8 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Get Docs */
-        post: operations["get_docs_api_v4_artifacts_dashboard_docs_post"];
+        /** Get Dashboard Docs Endpoint */
+        post: operations["get_dashboard_docs_endpoint_api_v4_artifacts_dashboard_docs_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3018,8 +3018,8 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Get Docs */
-        post: operations["get_docs_api_v4_artifacts_reports_docs_post"];
+        /** Get Reports Docs Endpoint */
+        post: operations["get_reports_docs_endpoint_api_v4_artifacts_reports_docs_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3078,8 +3078,8 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Get Docs */
-        post: operations["get_docs_api_v4_artifacts_leaderboard_docs_post"];
+        /** Get Leaderboard Docs Endpoint */
+        post: operations["get_leaderboard_docs_endpoint_api_v4_artifacts_leaderboard_docs_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3135,8 +3135,8 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Get Docs */
-        post: operations["get_docs_api_v4_artifacts_pricing_docs_post"];
+        /** Get Pricing Docs Endpoint */
+        post: operations["get_pricing_docs_endpoint_api_v4_artifacts_pricing_docs_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3232,8 +3232,8 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Get Docs */
-        post: operations["get_docs_api_v4_artifacts_activity_docs_post"];
+        /** Get Activity Docs Endpoint */
+        post: operations["get_activity_docs_endpoint_api_v4_artifacts_activity_docs_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3289,8 +3289,8 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Get Docs */
-        post: operations["get_docs_api_v4_artifacts_health_docs_post"];
+        /** Get Health Docs Endpoint */
+        post: operations["get_health_docs_endpoint_api_v4_artifacts_health_docs_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3346,8 +3346,8 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Get Docs */
-        post: operations["get_docs_api_v4_artifacts_benchmark_docs_post"];
+        /** Get Benchmark Docs Endpoint */
+        post: operations["get_benchmark_docs_endpoint_api_v4_artifacts_benchmark_docs_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3443,8 +3443,8 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Get Docs */
-        post: operations["get_docs_api_v4_artifacts_test_docs_post"];
+        /** Get Test Docs Endpoint */
+        post: operations["get_test_docs_endpoint_api_v4_artifacts_test_docs_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -13819,6 +13819,15 @@ export interface components {
             /** Client Secret */
             client_secret?: string;
         };
+        /** BreadcrumbItem */
+        BreadcrumbItem: {
+            /** Title */
+            title: string;
+            /** Section */
+            section?: string | null;
+            /** Url */
+            url: string;
+        };
         /** BulkArchiveAttemptsApiRequest */
         BulkArchiveAttemptsApiRequest: {
             /** Archived */
@@ -15496,6 +15505,17 @@ export interface components {
         DescriptionsApiResponse: {
             /** Description Id */
             description_id?: string | null;
+        };
+        /** DocsApiRequest */
+        DocsApiRequest: {
+            /** Entity Id */
+            entity_id?: string | null;
+        };
+        /** DocsApiResponse */
+        DocsApiResponse: {
+            list: components["schemas"]["PageMetaItem"];
+            detail: components["schemas"]["PageMetaItem"];
+            new: components["schemas"]["PageMetaItem"];
         };
         /** DocumentDepartmentSection */
         DocumentDepartmentSection: {
@@ -20169,6 +20189,12 @@ export interface components {
             artifact_has_generation?: {
                 [key: string]: boolean;
             } | null;
+            /** Sidebar Routes */
+            sidebar_routes?: components["schemas"]["SidebarSection"][] | null;
+            /** Breadcrumbs */
+            breadcrumbs?: components["schemas"]["BreadcrumbItem"][] | null;
+            page_access?: components["schemas"]["PageAccess"] | null;
+            page_metadata?: components["schemas"]["PageMetadata"] | null;
         };
         /**
          * GetProfileMetricsRequest
@@ -20394,7 +20420,7 @@ export interface components {
          */
         GetRolesApiResponse: {
             /** Items */
-            items?: components["schemas"]["app__api__v4__resources__roles__get__QGetRolesV4Item"][] | null;
+            items?: components["schemas"]["app__api__v4__resources__roles__types__QGetRolesV4Item"][] | null;
         };
         /** GetRoutesApiRequest */
         GetRoutesApiRequest: {
@@ -20970,7 +20996,7 @@ export interface components {
          * @description Response for getting settings.
          */
         GetSettingsApiResponse: {
-            item?: components["schemas"]["app__api__v4__resources__settings__get__QGetSettingsV4Item"] | null;
+            item?: components["schemas"]["app__api__v4__resources__settings__types__QGetSettingsV4Item"] | null;
         };
         /** GetSettingsListApiRequest */
         GetSettingsListApiRequest: Record<string, never>;
@@ -24764,6 +24790,64 @@ export interface components {
             not_started_count?: number | null;
             /** Total Members */
             total_members?: number | null;
+        };
+        /** PageAccess */
+        PageAccess: {
+            /**
+             * Authorized
+             * @default true
+             */
+            authorized: boolean;
+            /** Redirect */
+            redirect?: string | null;
+            /** Reason */
+            reason?: string | null;
+        };
+        /** PageMetaItem */
+        PageMetaItem: {
+            /** Title */
+            title: string;
+            /** Description */
+            description: string;
+        };
+        /** PageMetadata */
+        PageMetadata: {
+            /**
+             * Is List Page
+             * @default false
+             */
+            is_list_page: boolean;
+            /**
+             * Is Detail Page
+             * @default false
+             */
+            is_detail_page: boolean;
+            /**
+             * Is Create Page
+             * @default false
+             */
+            is_create_page: boolean;
+            /**
+             * Is Analytics Page
+             * @default false
+             */
+            is_analytics_page: boolean;
+            /**
+             * Show Analytics Filters
+             * @default false
+             */
+            show_analytics_filters: boolean;
+            /**
+             * Show Save Toolbar
+             * @default false
+             */
+            show_save_toolbar: boolean;
+            /** Artifact Type */
+            artifact_type?: string | null;
+            /** Create Url */
+            create_url?: string | null;
+            /** Create Label */
+            create_label?: string | null;
         };
         /** ParameterDepartmentSection */
         ParameterDepartmentSection: {
@@ -34205,6 +34289,28 @@ export interface components {
             /** Link Tool Id */
             link_tool_id?: string | null;
         };
+        /** SidebarMenuItem */
+        SidebarMenuItem: {
+            /** Title */
+            title: string;
+            /** Section */
+            section: string;
+            /** Url */
+            url: string;
+        };
+        /** SidebarSection */
+        SidebarSection: {
+            /** Title */
+            title: string;
+            /** Section */
+            section: string;
+            /** Icon */
+            icon: string;
+            /** Url */
+            url: string;
+            /** Items */
+            items?: components["schemas"]["SidebarMenuItem"][] | null;
+        };
         /**
          * SimulationData
          * @description Simulation metadata.
@@ -36550,7 +36656,7 @@ export interface components {
          * QGetRolesV4Item
          * @description Role item returned from get endpoint.
          */
-        app__api__v4__resources__roles__get__QGetRolesV4Item: {
+        app__api__v4__resources__roles__types__QGetRolesV4Item: {
             /** Role */
             role?: string | null;
             /** Name */
@@ -36566,7 +36672,7 @@ export interface components {
          * QGetSettingsV4Auth
          * @description Auth item in settings.
          */
-        app__api__v4__resources__settings__get__QGetSettingsV4Auth: {
+        app__api__v4__resources__settings__types__QGetSettingsV4Auth: {
             /** Auth Id */
             auth_id?: string | null;
             /** Name */
@@ -36580,7 +36686,7 @@ export interface components {
          * QGetSettingsV4Item
          * @description Settings item returned from get endpoint.
          */
-        app__api__v4__resources__settings__get__QGetSettingsV4Item: {
+        app__api__v4__resources__settings__types__QGetSettingsV4Item: {
             /** Settings Id */
             settings_id?: string | null;
             /** Created At */
@@ -36630,7 +36736,7 @@ export interface components {
             /** Auth Ids */
             auth_ids?: string[] | null;
             /** Auths */
-            auths?: components["schemas"]["app__api__v4__resources__settings__get__QGetSettingsV4Auth"][] | null;
+            auths?: components["schemas"]["app__api__v4__resources__settings__types__QGetSettingsV4Auth"][] | null;
             /** Provider Ids */
             provider_ids?: string[] | null;
             /** Providers */
@@ -36640,7 +36746,7 @@ export interface components {
          * GetSimulationApiRequest
          * @description Request for getting a simulation by ID.
          */
-        app__api__v4__resources__simulations__get__GetSimulationApiRequest: {
+        app__api__v4__resources__simulations__types__GetSimulationApiRequest: {
             /**
              * Id
              * Format: uuid
@@ -36651,7 +36757,7 @@ export interface components {
          * GetSimulationApiResponse
          * @description Response for getting a simulation.
          */
-        app__api__v4__resources__simulations__get__GetSimulationApiResponse: {
+        app__api__v4__resources__simulations__types__GetSimulationApiResponse: {
             item?: components["schemas"]["GetSimulationV4Item"] | null;
         };
         /**
@@ -37172,7 +37278,7 @@ export interface operations {
             };
         };
     };
-    get_docs_api_v4_artifacts_personas_docs_post: {
+    get_persona_docs_endpoint_api_v4_artifacts_personas_docs_post: {
         parameters: {
             query?: never;
             header?: {
@@ -37183,7 +37289,11 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DocsApiRequest"];
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {
@@ -37191,9 +37301,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
+                    "application/json": components["schemas"]["DocsApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -37429,7 +37537,7 @@ export interface operations {
             };
         };
     };
-    get_docs_api_v4_artifacts_scenarios_docs_post: {
+    get_scenario_docs_endpoint_api_v4_artifacts_scenarios_docs_post: {
         parameters: {
             query?: never;
             header?: {
@@ -37440,7 +37548,11 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DocsApiRequest"];
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {
@@ -37448,9 +37560,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
+                    "application/json": components["schemas"]["DocsApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -37686,7 +37796,7 @@ export interface operations {
             };
         };
     };
-    get_docs_api_v4_artifacts_simulations_docs_post: {
+    get_simulation_docs_endpoint_api_v4_artifacts_simulations_docs_post: {
         parameters: {
             query?: never;
             header?: {
@@ -37697,7 +37807,11 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DocsApiRequest"];
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {
@@ -37705,9 +37819,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
+                    "application/json": components["schemas"]["DocsApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -38091,7 +38203,7 @@ export interface operations {
             };
         };
     };
-    get_docs_api_v4_artifacts_documents_docs_post: {
+    get_document_docs_endpoint_api_v4_artifacts_documents_docs_post: {
         parameters: {
             query?: never;
             header?: {
@@ -38102,7 +38214,11 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DocsApiRequest"];
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {
@@ -38110,9 +38226,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
+                    "application/json": components["schemas"]["DocsApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -38348,7 +38462,7 @@ export interface operations {
             };
         };
     };
-    get_docs_api_v4_artifacts_departments_docs_post: {
+    get_department_docs_endpoint_api_v4_artifacts_departments_docs_post: {
         parameters: {
             query?: never;
             header?: {
@@ -38359,7 +38473,11 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DocsApiRequest"];
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {
@@ -38367,9 +38485,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
+                    "application/json": components["schemas"]["DocsApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -38605,7 +38721,7 @@ export interface operations {
             };
         };
     };
-    get_docs_api_v4_artifacts_cohorts_docs_post: {
+    get_cohort_docs_endpoint_api_v4_artifacts_cohorts_docs_post: {
         parameters: {
             query?: never;
             header?: {
@@ -38616,7 +38732,11 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DocsApiRequest"];
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {
@@ -38624,9 +38744,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
+                    "application/json": components["schemas"]["DocsApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -38862,7 +38980,7 @@ export interface operations {
             };
         };
     };
-    get_docs_api_v4_artifacts_evals_docs_post: {
+    get_eval_docs_endpoint_api_v4_artifacts_evals_docs_post: {
         parameters: {
             query?: never;
             header?: {
@@ -38873,7 +38991,11 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DocsApiRequest"];
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {
@@ -38881,9 +39003,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
+                    "application/json": components["schemas"]["DocsApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -39119,7 +39239,7 @@ export interface operations {
             };
         };
     };
-    get_docs_api_v4_artifacts_rubrics_docs_post: {
+    get_rubric_docs_endpoint_api_v4_artifacts_rubrics_docs_post: {
         parameters: {
             query?: never;
             header?: {
@@ -39130,7 +39250,11 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DocsApiRequest"];
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {
@@ -39138,9 +39262,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
+                    "application/json": components["schemas"]["DocsApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -39376,7 +39498,7 @@ export interface operations {
             };
         };
     };
-    get_docs_api_v4_artifacts_settings_docs_post: {
+    get_setting_docs_endpoint_api_v4_artifacts_settings_docs_post: {
         parameters: {
             query?: never;
             header?: {
@@ -39387,7 +39509,11 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DocsApiRequest"];
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {
@@ -39395,9 +39521,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
+                    "application/json": components["schemas"]["DocsApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -39633,7 +39757,7 @@ export interface operations {
             };
         };
     };
-    get_docs_api_v4_artifacts_agents_docs_post: {
+    get_agent_docs_endpoint_api_v4_artifacts_agents_docs_post: {
         parameters: {
             query?: never;
             header?: {
@@ -39644,7 +39768,11 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DocsApiRequest"];
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {
@@ -39652,9 +39780,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
+                    "application/json": components["schemas"]["DocsApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -39890,7 +40016,7 @@ export interface operations {
             };
         };
     };
-    get_docs_api_v4_artifacts_models_docs_post: {
+    get_model_docs_endpoint_api_v4_artifacts_models_docs_post: {
         parameters: {
             query?: never;
             header?: {
@@ -39901,7 +40027,11 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DocsApiRequest"];
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {
@@ -39909,9 +40039,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
+                    "application/json": components["schemas"]["DocsApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -40147,7 +40275,7 @@ export interface operations {
             };
         };
     };
-    get_docs_api_v4_artifacts_providers_docs_post: {
+    get_provider_docs_endpoint_api_v4_artifacts_providers_docs_post: {
         parameters: {
             query?: never;
             header?: {
@@ -40158,7 +40286,11 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DocsApiRequest"];
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {
@@ -40166,9 +40298,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
+                    "application/json": components["schemas"]["DocsApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -40404,7 +40534,7 @@ export interface operations {
             };
         };
     };
-    get_docs_api_v4_artifacts_parameters_docs_post: {
+    get_parameter_docs_endpoint_api_v4_artifacts_parameters_docs_post: {
         parameters: {
             query?: never;
             header?: {
@@ -40415,7 +40545,11 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DocsApiRequest"];
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {
@@ -40423,9 +40557,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
+                    "application/json": components["schemas"]["DocsApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -40661,7 +40793,7 @@ export interface operations {
             };
         };
     };
-    get_docs_api_v4_artifacts_fields_docs_post: {
+    get_field_docs_endpoint_api_v4_artifacts_fields_docs_post: {
         parameters: {
             query?: never;
             header?: {
@@ -40672,7 +40804,11 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DocsApiRequest"];
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {
@@ -40680,9 +40816,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
+                    "application/json": components["schemas"]["DocsApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -41066,7 +41200,7 @@ export interface operations {
             };
         };
     };
-    get_docs_api_v4_artifacts_profiles_docs_post: {
+    get_profile_docs_endpoint_api_v4_artifacts_profiles_docs_post: {
         parameters: {
             query?: never;
             header?: {
@@ -41077,7 +41211,11 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DocsApiRequest"];
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {
@@ -41085,9 +41223,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
+                    "application/json": components["schemas"]["DocsApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -41323,7 +41459,7 @@ export interface operations {
             };
         };
     };
-    get_docs_api_v4_artifacts_auths_docs_post: {
+    get_auth_docs_endpoint_api_v4_artifacts_auths_docs_post: {
         parameters: {
             query?: never;
             header?: {
@@ -41334,7 +41470,11 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DocsApiRequest"];
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {
@@ -41342,9 +41482,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
+                    "application/json": components["schemas"]["DocsApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -41580,7 +41718,7 @@ export interface operations {
             };
         };
     };
-    get_docs_api_v4_artifacts_tools_docs_post: {
+    get_tool_docs_endpoint_api_v4_artifacts_tools_docs_post: {
         parameters: {
             query?: never;
             header?: {
@@ -41591,7 +41729,11 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DocsApiRequest"];
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {
@@ -41599,9 +41741,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
+                    "application/json": components["schemas"]["DocsApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -41689,7 +41829,7 @@ export interface operations {
             };
         };
     };
-    get_docs_api_v4_artifacts_group_docs_post: {
+    get_group_docs_endpoint_api_v4_artifacts_group_docs_post: {
         parameters: {
             query?: never;
             header?: {
@@ -41798,7 +41938,7 @@ export interface operations {
             };
         };
     };
-    get_docs_api_v4_artifacts_session_docs_post: {
+    get_session_docs_endpoint_api_v4_artifacts_session_docs_post: {
         parameters: {
             query?: never;
             header?: {
@@ -41981,7 +42121,7 @@ export interface operations {
             };
         };
     };
-    get_docs_api_v4_artifacts_training_docs_post: {
+    get_training_docs_endpoint_api_v4_artifacts_training_docs_post: {
         parameters: {
             query?: never;
             header?: {
@@ -41992,7 +42132,11 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DocsApiRequest"];
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {
@@ -42000,9 +42144,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
+                    "application/json": components["schemas"]["DocsApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -42201,7 +42343,7 @@ export interface operations {
             };
         };
     };
-    get_docs_api_v4_artifacts_attempt_docs_post: {
+    get_attempt_docs_endpoint_api_v4_artifacts_attempt_docs_post: {
         parameters: {
             query?: never;
             header?: {
@@ -42212,7 +42354,11 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DocsApiRequest"];
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {
@@ -42220,9 +42366,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
+                    "application/json": components["schemas"]["DocsApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -42310,7 +42454,7 @@ export interface operations {
             };
         };
     };
-    get_docs_api_v4_artifacts_dashboard_docs_post: {
+    get_dashboard_docs_endpoint_api_v4_artifacts_dashboard_docs_post: {
         parameters: {
             query?: never;
             header?: {
@@ -42321,7 +42465,11 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DocsApiRequest"];
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {
@@ -42329,9 +42477,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
+                    "application/json": components["schemas"]["DocsApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -42456,7 +42602,7 @@ export interface operations {
             };
         };
     };
-    get_docs_api_v4_artifacts_reports_docs_post: {
+    get_reports_docs_endpoint_api_v4_artifacts_reports_docs_post: {
         parameters: {
             query?: never;
             header?: {
@@ -42467,7 +42613,11 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DocsApiRequest"];
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {
@@ -42475,9 +42625,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
+                    "application/json": components["schemas"]["DocsApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -42565,7 +42713,7 @@ export interface operations {
             };
         };
     };
-    get_docs_api_v4_artifacts_leaderboard_docs_post: {
+    get_leaderboard_docs_endpoint_api_v4_artifacts_leaderboard_docs_post: {
         parameters: {
             query?: never;
             header?: {
@@ -42576,7 +42724,11 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DocsApiRequest"];
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {
@@ -42584,9 +42736,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
+                    "application/json": components["schemas"]["DocsApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -42674,7 +42824,7 @@ export interface operations {
             };
         };
     };
-    get_docs_api_v4_artifacts_pricing_docs_post: {
+    get_pricing_docs_endpoint_api_v4_artifacts_pricing_docs_post: {
         parameters: {
             query?: never;
             header?: {
@@ -42685,7 +42835,11 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DocsApiRequest"];
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {
@@ -42693,9 +42847,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
+                    "application/json": components["schemas"]["DocsApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -42857,7 +43009,7 @@ export interface operations {
             };
         };
     };
-    get_docs_api_v4_artifacts_activity_docs_post: {
+    get_activity_docs_endpoint_api_v4_artifacts_activity_docs_post: {
         parameters: {
             query?: never;
             header?: {
@@ -42868,7 +43020,11 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DocsApiRequest"];
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {
@@ -42876,9 +43032,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
+                    "application/json": components["schemas"]["DocsApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -42966,7 +43120,7 @@ export interface operations {
             };
         };
     };
-    get_docs_api_v4_artifacts_health_docs_post: {
+    get_health_docs_endpoint_api_v4_artifacts_health_docs_post: {
         parameters: {
             query?: never;
             header?: {
@@ -43075,7 +43229,7 @@ export interface operations {
             };
         };
     };
-    get_docs_api_v4_artifacts_benchmark_docs_post: {
+    get_benchmark_docs_endpoint_api_v4_artifacts_benchmark_docs_post: {
         parameters: {
             query?: never;
             header?: {
@@ -43086,7 +43240,11 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DocsApiRequest"];
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {
@@ -43094,9 +43252,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
+                    "application/json": components["schemas"]["DocsApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -43258,7 +43414,7 @@ export interface operations {
             };
         };
     };
-    get_docs_api_v4_artifacts_test_docs_post: {
+    get_test_docs_endpoint_api_v4_artifacts_test_docs_post: {
         parameters: {
             query?: never;
             header?: {
@@ -49263,7 +49419,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["app__api__v4__resources__simulations__get__GetSimulationApiRequest"];
+                "application/json": components["schemas"]["app__api__v4__resources__simulations__types__GetSimulationApiRequest"];
             };
         };
         responses: {
@@ -49273,7 +49429,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__api__v4__resources__simulations__get__GetSimulationApiResponse"];
+                    "application/json": components["schemas"]["app__api__v4__resources__simulations__types__GetSimulationApiResponse"];
                 };
             };
             /** @description Validation Error */

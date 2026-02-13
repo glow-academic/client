@@ -7,7 +7,7 @@ import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDen
 import Provider from "@/components/artifacts/provider/Provider";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
-import type { Metadata, ResolvingMetadata } from "next";
+import type { Metadata } from "next";
 import { createLoader, parseAsString } from "nuqs/server";
 
 /** ---- Strong types from OpenAPI ---- */
@@ -46,34 +46,22 @@ const getProvider = async (
   });
 };
 
-/** ---- Metadata uses the same cached fetch ---- */
-export async function generateMetadata(
-  { params }: { params: Promise<{ providerId: string }> },
-  _parent: ResolvingMetadata
-): Promise<Metadata> {
-  const { providerId } = await params;
-  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  try {
-    const input: GetProviderIn = {
-      body: {
-        provider_id: providerId,
-      } as GetProviderIn["body"],
-    };
-    const provider = await getProvider(input);
-    const providerName = provider?.names?.resource?.name || "Provider";
-    return {
-      title: providerName,
-      description: `${providerName !== "Provider" ? `${providerName} - ` : ""}AI provider configuration for teaching assistant training platform. Manage provider settings, API endpoints, and platform integrations for educational institutions and L&D programs.`,
-    };
-  } catch {
-    // Fall through to default metadata
-  }
+/** ---- Docs types for page metadata ---- */
+type DocsIn = InputOf<"/api/v4/artifacts/providers/docs", "post">;
+type DocsOut = OutputOf<"/api/v4/artifacts/providers/docs", "post">;
 
-  return {
-    title: "Provider",
-    description:
-      "AI provider configuration for teaching assistant training platform. Manage provider settings, API endpoints, and platform integrations for educational institutions and L&D programs.",
-  };
+const getDocs = async (input: DocsIn): Promise<DocsOut> => {
+  return api.post("/artifacts/providers/docs", input);
+};
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ providerId: string }>;
+}): Promise<Metadata> {
+  const { providerId } = await params;
+  const docs = await getDocs({ body: { entity_id: providerId } });
+  return { title: docs.detail.title, description: docs.detail.description };
 }
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */

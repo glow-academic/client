@@ -16,7 +16,6 @@ import type {
 } from "@/app/(main)/layout-server";
 import { createSocketClient } from "@/lib/ws/socket";
 import type { ServerToClientEvents } from "@/lib/ws/types";
-import { getSectionRoute } from "@/utils/navigation-utils";
 import { usePathname, useRouter } from "next/navigation";
 import React, {
   createContext,
@@ -126,6 +125,12 @@ interface ProfileContextType {
 
   // Artifact generation capability flags (from profile context SSR)
   artifactHasGeneration: Record<string, boolean>;
+
+  // Server-driven routing data
+  sidebarRoutes: LayoutContextResponse["sidebar_routes"];
+  breadcrumbs: LayoutContextResponse["breadcrumbs"];
+  pageAccess: LayoutContextResponse["page_access"];
+  pageMetadata: LayoutContextResponse["page_metadata"];
 }
 
 export const ProfileContext = createContext<ProfileContextType | null>(null);
@@ -334,7 +339,8 @@ export function ProfileProviderClient({
         availableSections.length > 0
           ? availableSections[0]
           : "home";
-      const route = getSectionRoute(defaultSection, pathname);
+      // Use redirect_path from server if available, otherwise construct from section
+      const route = initial?.redirect_path || `/${defaultSection}`;
       router.push(route);
     },
     [router, pathname, initial?.available_sections]
@@ -473,6 +479,12 @@ export function ProfileProviderClient({
 
     // Artifact agent IDs for generation capability (from profile context SSR)
     artifactHasGeneration: initial?.artifact_has_generation ?? {},
+
+    // Server-driven routing data
+    sidebarRoutes: initial?.sidebar_routes ?? null,
+    breadcrumbs: initial?.breadcrumbs ?? null,
+    pageAccess: initial?.page_access ?? null,
+    pageMetadata: initial?.page_metadata ?? null,
   };
 
   return (

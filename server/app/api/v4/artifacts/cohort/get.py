@@ -71,11 +71,11 @@ from app.api.v4.resources.models.get import get_models_internal
 from app.api.v4.resources.names.get import get_names_internal
 from app.api.v4.resources.names.search import search_names_internal
 from app.api.v4.resources.providers.get import get_providers_internal
-from app.api.v4.resources.simulation_positions.types import (
+from app.api.v4.resources.simulation_positions.get import (
     get_simulation_positions_internal,
 )
+from app.api.v4.resources.simulations.get import get_simulation_internal
 from app.api.v4.resources.simulations.search import search_simulations_internal
-from app.api.v4.resources.simulations.types import get_simulation_internal
 from app.api.v4.resources.tools.get import get_tools_internal
 from app.api.v4.types import CandidateAgent
 from app.api.v4.views.drafts.get import get_draft_cohort_internal

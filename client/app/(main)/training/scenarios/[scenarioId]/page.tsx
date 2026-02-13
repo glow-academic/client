@@ -9,7 +9,7 @@ import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDen
 import Scenario from "@/components/artifacts/scenario/Scenario";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
-import type { Metadata, ResolvingMetadata } from "next";
+import type { Metadata } from "next";
 import {
   csvToArray,
   extractFieldShowSelectedByParam,
@@ -183,28 +183,22 @@ const getScenario = async (
   );
 };
 
-/** ---- Metadata uses the same cached fetch ---- */
-export async function generateMetadata(
-  { params }: { params: Promise<{ scenarioId: string }> },
-  _parent: ResolvingMetadata
-): Promise<Metadata> {
-  const { scenarioId } = await params;
-  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  try {
-    const scenario = await getScenario(scenarioId);
-    return {
-      title: `${scenario?.name || "Scenario"}`,
-      description: `${scenario?.name ? `${scenario.name} - ` : ""}Problem-based learning scenario for teaching assistant training. Practice pedagogical problem-solving and instructional design through realistic educational challenges.${scenario?.problem_statement ? ` ${scenario.problem_statement}` : ""}`,
-    };
-  } catch {
-    // Fall through to default metadata
-  }
+/** ---- Docs types for page metadata ---- */
+type DocsIn = InputOf<"/api/v4/artifacts/scenarios/docs", "post">;
+type DocsOut = OutputOf<"/api/v4/artifacts/scenarios/docs", "post">;
 
-  return {
-    title: "Scenario",
-    description:
-      "Problem-based learning scenario for teaching assistant training. Practice pedagogical problem-solving and instructional design through realistic educational challenges.",
-  };
+const getDocs = async (input: DocsIn): Promise<DocsOut> => {
+  return api.post("/artifacts/scenarios/docs", input);
+};
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ scenarioId: string }>;
+}): Promise<Metadata> {
+  const { scenarioId } = await params;
+  const docs = await getDocs({ body: { entity_id: scenarioId } });
+  return { title: docs.detail.title, description: docs.detail.description };
 }
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */

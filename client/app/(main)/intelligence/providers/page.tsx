@@ -45,12 +45,17 @@ async function deleteProvider(
   });
 }
 
+/** ---- Docs types for page metadata ---- */
+type DocsIn = InputOf<"/api/v4/artifacts/providers/docs", "post">;
+type DocsOut = OutputOf<"/api/v4/artifacts/providers/docs", "post">;
+
+const getDocs = async (input: DocsIn): Promise<DocsOut> => {
+  return api.post("/artifacts/providers/docs", input);
+};
+
 export async function generateMetadata(): Promise<Metadata> {
-  return {
-    title: "Providers",
-    description:
-      "Manage AI providers and their configurations for teaching assistant training platform. Configure provider settings, API endpoints, and maintain platform integrations for educational institutions and L&D programs.",
-  };
+  const docs = await getDocs({ body: {} });
+  return { title: docs.list.title, description: docs.list.description };
 }
 
 export default async function ProvidersPage() {

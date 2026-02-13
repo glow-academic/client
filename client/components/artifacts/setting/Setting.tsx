@@ -36,7 +36,6 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
 import { useProfile } from "@/contexts/profile-context";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { ResourceType } from "@/lib/resources/types";
@@ -151,8 +150,6 @@ function SettingComponent({
     socket,
     isConnected,
   } = useProfile();
-  const { setEntityMetadata, clearEntityMetadata } = useBreadcrumbContext();
-
   // Generation state for AI workflows - simplified using ResourceType
   const [generatingResources, setGeneratingResources] = useState<
     Set<ResourceType>
@@ -735,25 +732,6 @@ function SettingComponent({
     if (!settingData) return false;
     return !settingData.can_edit;
   }, [settingData]);
-
-  // Set breadcrumb context when setting data is loaded
-  useEffect(() => {
-    const settingName = settingData?.name_resource?.name;
-    if (settingName && settingId && isEditMode) {
-      setEntityMetadata({
-        entityId: settingId,
-        entityName: settingName,
-        entityType: "setting",
-      });
-    }
-    return () => clearEntityMetadata();
-  }, [
-    settingData,
-    settingId,
-    isEditMode,
-    setEntityMetadata,
-    clearEntityMetadata,
-  ]);
 
   // Submit handler for GenericForm (uses formState, not formData parameter)
   const handleSubmit = useCallback(

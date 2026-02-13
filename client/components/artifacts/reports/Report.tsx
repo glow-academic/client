@@ -13,8 +13,7 @@ import type {
 import Dashboard from "@/components/artifacts/dashboard/Dashboard";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
-import { useEffect, useMemo } from "react";
+import { useMemo } from "react";
 
 // Helper function to get initials
 const getInitials = (name: string): string => {
@@ -66,8 +65,6 @@ export default function Report({
   profileData,
   dashboardData,
 }: ReportProps) {
-  const { setEntityMetadata, clearEntityMetadata } = useBreadcrumbContext();
-
   // Use profile data from props (fetched server-side)
   const profile = useMemo(
     () =>
@@ -83,18 +80,6 @@ export default function Report({
         : null,
     [profileData]
   );
-
-  // Set breadcrumb context when profile data is loaded
-  useEffect(() => {
-    if (profile?.name && profileId) {
-      setEntityMetadata({
-        entityId: profileId,
-        entityName: profile.name,
-        entityType: "profile",
-      });
-    }
-    return () => clearEntityMetadata();
-  }, [profile, profileId, setEntityMetadata, clearEntityMetadata]);
 
   // Data is always available from server-side fetch
   if (!profile) {

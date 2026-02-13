@@ -10,8 +10,8 @@ from app.api.v4.resources.descriptions.get import get_descriptions_internal
 from app.api.v4.resources.flags.get import get_flags_internal
 from app.api.v4.resources.names.get import get_names_internal
 from app.api.v4.resources.points.get import get_points_internal
-from app.api.v4.resources.standard_groups.types import get_standard_groups_internal
-from app.api.v4.resources.standards.types import get_standards_internal
+from app.api.v4.resources.standard_groups.get import get_standard_groups_internal
+from app.api.v4.resources.standards.get import get_standards_internal
 from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.main import get_internal_sio, sio
 from app.socket.v4.artifacts.rubric.types import RubricGenerationCompleteEvent

@@ -66,21 +66,21 @@ from app.api.v4.artifacts.attempt.types import (
     VideoEntry,
 )
 from app.api.v4.resources.documents.get import get_documents_internal
-from app.api.v4.resources.images.types import get_images_internal
-from app.api.v4.resources.objectives.types import get_objectives_internal
-from app.api.v4.resources.options.types import get_options_internal
+from app.api.v4.resources.images.get import get_images_internal
+from app.api.v4.resources.objectives.get import get_objectives_internal
+from app.api.v4.resources.options.get import get_options_internal
 from app.api.v4.resources.personas.get import get_personas_internal
-from app.api.v4.resources.problem_statements.types import (
+from app.api.v4.resources.problem_statements.get import (
     get_problem_statements_internal,
 )
 from app.api.v4.resources.profiles.get import get_profiles_internal
-from app.api.v4.resources.questions.types import get_questions_internal
+from app.api.v4.resources.questions.get import get_questions_internal
 from app.api.v4.resources.rubrics.get import get_rubrics_batch_internal
 from app.api.v4.resources.scenarios.get import get_scenarios_internal
-from app.api.v4.resources.simulations.types import get_simulations_batch_internal
-from app.api.v4.resources.standard_groups.types import get_standard_groups_internal
-from app.api.v4.resources.standards.types import get_standards_internal
-from app.api.v4.resources.videos.types import get_videos_internal
+from app.api.v4.resources.simulations.get import get_simulations_batch_internal
+from app.api.v4.resources.standard_groups.get import get_standard_groups_internal
+from app.api.v4.resources.standards.get import get_standards_internal
+from app.api.v4.resources.videos.get import get_videos_internal
 from app.api.v4.views.attempt.chats.get import get_attempt_chats_internal
 from app.api.v4.views.attempt.list.get import get_attempt_list_internal
 from app.api.v4.views.attempt.messages.get import get_attempt_messages_internal

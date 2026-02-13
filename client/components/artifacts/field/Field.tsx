@@ -22,7 +22,6 @@ import { Flags } from "@/components/resources/Flags";
 import { Names } from "@/components/resources/Names";
 import { Parameters } from "@/components/resources/Parameters";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
 import { useProfile } from "@/contexts/profile-context";
 import { useSaveContext } from "@/contexts/save-context";
 import { useAiGeneration } from "@/hooks/use-ai-generation";
@@ -140,7 +139,6 @@ function FieldComponent({
   const isEditMode = !!fieldId;
   const { profile, socket, isConnected, setSelectedDraftId } = useProfile();
   const { isAutosaveEnabled } = useSaveContext();
-  const { setEntityMetadata, clearEntityMetadata } = useBreadcrumbContext();
 
   const { flushRegistryRef, registerFlushCallbacks, flushAllResources } =
     useFlushRegistry<FlushResult>(FLUSH_KEYS);
@@ -516,24 +514,6 @@ function FieldComponent({
   );
 
   const disabled = useMemo(() => !fieldData?.can_edit, [fieldData?.can_edit]);
-
-  useEffect(() => {
-    if (!isEditMode || !fieldId) return;
-    const name = stableFieldData?.names?.resource?.name;
-    if (!name) return;
-    setEntityMetadata({
-      entityId: fieldId,
-      entityName: name,
-      entityType: "field",
-    });
-    return () => clearEntityMetadata();
-  }, [
-    clearEntityMetadata,
-    fieldId,
-    isEditMode,
-    setEntityMetadata,
-    stableFieldData?.names?.resource?.name,
-  ]);
 
   const handleSubmit = useCallback(async () => {
     if (!profile?.id) {

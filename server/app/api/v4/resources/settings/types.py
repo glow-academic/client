@@ -1,5 +1,6 @@
 """Types for this resource endpoint."""
 
+from datetime import datetime
 from typing import Any
 from uuid import UUID
 

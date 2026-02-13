@@ -2,18 +2,19 @@
 
 Provides dataclass configs and builder functions to generate dynamic
 (DB-backed) and static documentation for all artifacts and resources.
+Also provides shared models and business logic for page metadata endpoints.
 """
 
 from __future__ import annotations
 
 import inspect
-from collections.abc import AsyncGenerator
 from dataclasses import dataclass, field
 from types import ModuleType
-from typing import Annotated, Any, cast
+from typing import Any, cast
+from uuid import UUID
 
 import asyncpg  # type: ignore
-from fastapi import APIRouter, Depends
+from pydantic import BaseModel
 
 from app.sql.types import (
     GetDocsColumnsSqlParams,
@@ -29,6 +30,57 @@ from app.utils.sql_helper import execute_sql_typed
 COLUMNS_SQL = "app/sql/v4/queries/docs/get_docs_columns_complete.sql"
 JUNCTIONS_SQL = "app/sql/v4/queries/docs/get_docs_junctions_complete.sql"
 FK_SQL = "app/sql/v4/queries/docs/get_docs_foreign_keys_complete.sql"
+
+
+# ========== Page Metadata Models ==========
+
+
+class PageMetaItem(BaseModel):
+    title: str
+    description: str
+
+
+class DocsApiRequest(BaseModel):
+    entity_id: UUID | None = None
+
+
+class DocsApiResponse(BaseModel):
+    list: PageMetaItem
+    detail: PageMetaItem
+    new: PageMetaItem
+
+
+@dataclass
+class PageMetadataConfig:
+    list_title: str = ""
+    list_description: str = ""
+    detail_title: str = ""
+    detail_description: str = ""
+    new_title: str = ""
+    new_description: str = ""
+
+
+def compute_docs_metadata(
+    page_config: PageMetadataConfig,
+    entity_name: str | None = None,
+) -> DocsApiResponse:
+    """Compute page metadata from config and optional entity name."""
+    detail_title = (
+        f"{entity_name} {page_config.detail_title}"
+        if entity_name
+        else page_config.detail_title
+    )
+    return DocsApiResponse(
+        list=PageMetaItem(
+            title=page_config.list_title, description=page_config.list_description
+        ),
+        detail=PageMetaItem(
+            title=detail_title, description=page_config.detail_description
+        ),
+        new=PageMetaItem(
+            title=page_config.new_title, description=page_config.new_description
+        ),
+    )
 
 
 # ========== Config Dataclasses ==========
@@ -50,6 +102,7 @@ class ArtifactDocsConfig:
     glow_context: dict[str, Any] = field(default_factory=dict)
     resources_info: list[dict[str, Any]] = field(default_factory=list)
     extra_sections: dict[str, Any] = field(default_factory=dict)
+    page_metadata: PageMetadataConfig | None = None
 
 
 @dataclass
@@ -179,89 +232,6 @@ def _extract_linked_resources(
     return linked
 
 
-# ========== Async Builders (with DB) ==========
-
-
-async def build_artifact_docs(
-    conn: asyncpg.Connection, config: ArtifactDocsConfig
-) -> dict[str, Any]:
-    """Build complete artifact documentation with dynamic DB introspection."""
-    docs: dict[str, Any] = {
-        "name": config.plural_name,
-        "type": config.entity_type,
-    }
-
-    # Dynamic: DB schema (only if table exists)
-    if config.table_name:
-        columns = await get_table_columns(conn, config.table_name)
-        foreign_keys = (
-            await get_foreign_keys(conn, config.fk_pattern) if config.fk_pattern else []
-        )
-        docs["database"] = {
-            "table": config.table_name,
-            "columns": columns,
-            "foreign_keys": foreign_keys,
-        }
-
-    # Dynamic: Junction tables
-    if config.junction_prefix:
-        junction_tables = await get_junction_tables(conn, config.junction_prefix)
-        linked_resources = _extract_linked_resources(
-            junction_tables, config.junction_prefix
-        )
-        docs["relationships"] = {
-            "junction_tables": junction_tables,
-            "linked_resources": linked_resources,
-        }
-
-    # Dynamic: Business logic from permissions.py
-    if config.permissions_module and config.permission_functions:
-        docs["business_logic"] = extract_business_logic(
-            config.permissions_module, config.permission_functions
-        )
-
-    # Static sections
-    if config.api_routing:
-        docs["api_routing"] = config.api_routing
-    if config.resources_info:
-        docs["resources"] = {"available": config.resources_info}
-    if config.glow_context:
-        docs["glow_context"] = config.glow_context
-    for key, value in config.extra_sections.items():
-        docs[key] = value
-
-    return docs
-
-
-async def build_resource_docs(
-    conn: asyncpg.Connection, config: ResourceDocsConfig
-) -> dict[str, Any]:
-    """Build complete resource documentation with dynamic DB introspection."""
-    docs: dict[str, Any] = {
-        "name": config.name,
-        "type": "resource",
-        "description": config.description,
-    }
-
-    # Dynamic: DB schema
-    if config.table_name:
-        columns = await get_table_columns(conn, config.table_name)
-        docs["database"] = {
-            "table": config.table_name,
-            "columns": columns,
-        }
-
-    # Static sections
-    if config.used_by_artifacts:
-        docs["used_by_artifacts"] = config.used_by_artifacts
-    if config.glow_context:
-        docs["glow_context"] = config.glow_context
-    for key, value in config.extra_sections.items():
-        docs[key] = value
-
-    return docs
-
-
 # ========== Sync Builders (for MCP, no DB) ==========
 
 
@@ -275,7 +245,7 @@ def build_artifact_docs_static(config: ArtifactDocsConfig) -> dict[str, Any]:
     if config.table_name:
         docs["database"] = {"table": config.table_name}
 
-    # Business logic (still works without DB — uses inspect)
+    # Business logic (still works without DB -- uses inspect)
     if config.permissions_module and config.permission_functions:
         docs["business_logic"] = extract_business_logic(
             config.permissions_module, config.permission_functions
@@ -311,29 +281,3 @@ def build_resource_docs_static(config: ResourceDocsConfig) -> dict[str, Any]:
         docs[key] = value
 
     return docs
-
-
-# ========== Router Factories ==========
-# These create FastAPI routers with /docs endpoints, using lazy imports
-# of get_db to avoid circular import issues (docs.py -> app.main -> router -> docs.py).
-
-
-async def _lazy_get_db() -> AsyncGenerator[asyncpg.Connection, None]:
-    """Lazily import and yield from get_db to avoid circular imports."""
-    from app.main import get_db
-
-    async for conn in get_db():
-        yield conn
-
-
-def create_artifact_docs_router(config: ArtifactDocsConfig) -> APIRouter:
-    """Create a FastAPI router with a POST /docs endpoint for an artifact."""
-    router = APIRouter()
-
-    @router.post("/docs")
-    async def get_docs(
-        conn: Annotated[asyncpg.Connection, Depends(_lazy_get_db)],
-    ) -> dict[str, Any]:
-        return await build_artifact_docs(conn, config)
-
-    return router

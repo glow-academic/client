@@ -9,7 +9,7 @@ import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDen
 import Rubric from "@/components/artifacts/rubric/Rubric";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
-import type { Metadata, ResolvingMetadata } from "next";
+import type { Metadata } from "next";
 import { createLoader, parseAsString } from "nuqs/server";
 
 /** ---- Strong types from OpenAPI ---- */
@@ -69,32 +69,24 @@ const getRubric = async (
 };
 
 /** ---- Metadata uses the same cached fetch ---- */
-export async function generateMetadata(
-  { params }: { params: Promise<{ rubricId: string }> },
-  _parent: ResolvingMetadata
-): Promise<Metadata> {
-  const { rubricId } = await params;
-  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  try {
-    const rubric = await getRubric(rubricId, null, null, null);
-    const rubricName = rubric?.names?.resource?.name;
-    const rubricDescription = rubric?.descriptions?.resource?.description;
-    return {
-      title: `${rubricName || "Rubric"}`,
-      description: `${rubricName ? `${rubricName} - ` : ""}Assessment rubric for teaching assistant evaluation.${rubricDescription ? ` ${rubricDescription}` : ""} Customize rubric-based evaluation criteria to assess pedagogical performance, teaching effectiveness, and student interaction skills.`,
-    };
-  } catch {
-    // Fall through to default metadata
-  }
+/** ---- Docs types for page metadata ---- */
+type DocsIn = InputOf<"/api/v4/artifacts/rubrics/docs", "post">;
+type DocsOut = OutputOf<"/api/v4/artifacts/rubrics/docs", "post">;
 
-  return {
-    title: "Rubric",
-    description:
-      "Assessment rubric for teaching assistant evaluation. Customize rubric-based evaluation criteria to assess pedagogical performance, teaching effectiveness, and student interaction skills.",
-  };
+const getDocs = async (input: DocsIn): Promise<DocsOut> => {
+  return api.post("/artifacts/rubrics/docs", input);
+};
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ rubricId: string }>;
+}): Promise<Metadata> {
+  const { rubricId } = await params;
+  const docs = await getDocs({ body: { entity_id: rubricId } });
+  return { title: docs.detail.title, description: docs.detail.description };
 }
 
-/** ---- Server renders client with typed data (read-only, mutations in child components) ---- */
 export default async function EditRubricPage({
   params,
   searchParams,

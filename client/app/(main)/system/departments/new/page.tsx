@@ -77,12 +77,17 @@ async function patchDepartmentDraft(
   return api.patch("/artifacts/departments/draft", input);
 }
 
+/** ---- Docs types for page metadata ---- */
+type DocsIn = InputOf<"/api/v4/artifacts/departments/docs", "post">;
+type DocsOut = OutputOf<"/api/v4/artifacts/departments/docs", "post">;
+
+const getDocs = async (input: DocsIn): Promise<DocsOut> => {
+  return api.post("/artifacts/departments/docs", input);
+};
+
 export async function generateMetadata(): Promise<Metadata> {
-  return {
-    title: "New Department",
-    description:
-      "Create a new academic department for teaching assistant training programs. Set up department-specific configurations, organize teaching staff, and coordinate L&D programs across different academic units.",
-  };
+  const docs = await getDocs({ body: {} });
+  return { title: docs.new.title, description: docs.new.description };
 }
 
 /** ---- Server renders client with typed data and actions ---- */

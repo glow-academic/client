@@ -53,11 +53,17 @@ const getToolDefault = async (input: GetToolIn): Promise<GetToolOut> => {
 };
 
 /** ---- Metadata ---- */
+/** ---- Docs types for page metadata ---- */
+type DocsIn = InputOf<"/api/v4/artifacts/tools/docs", "post">;
+type DocsOut = OutputOf<"/api/v4/artifacts/tools/docs", "post">;
+
+const getDocs = async (input: DocsIn): Promise<DocsOut> => {
+  return api.post("/artifacts/tools/docs", input);
+};
+
 export async function generateMetadata(): Promise<Metadata> {
-  return {
-    title: "Create Tool",
-    description: "Create a new tool for teaching assistant training platform.",
-  };
+  const docs = await getDocs({ body: {} });
+  return { title: docs.new.title, description: docs.new.description };
 }
 
 /** ---- Strongly-typed server actions ---- */

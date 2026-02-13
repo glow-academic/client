@@ -3,7 +3,7 @@
 Provides search endpoint for simulations with suggest_source pattern.
 """
 
-from typing import Annotated, Any, Literal, cast
+from typing import Annotated, Any, cast
 from uuid import UUID
 
 import asyncpg  # type: ignore
@@ -30,14 +30,6 @@ SQL_PATH = "app/sql/v4/queries/resources/simulations/search_simulations_complete
 
 
 router = APIRouter()
-
-
-# =============================================================================
-# Types
-# =============================================================================
-
-
-SuggestSource = Literal["all", "linked", "draft"]
 
 
 async def search_simulations_internal(

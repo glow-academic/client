@@ -69,12 +69,17 @@ async function deleteScenario(
   return api.post("/artifacts/scenarios/delete", input);
 }
 
+/** ---- Docs types for page metadata ---- */
+type DocsIn = InputOf<"/api/v4/artifacts/scenarios/docs", "post">;
+type DocsOut = OutputOf<"/api/v4/artifacts/scenarios/docs", "post">;
+
+const getDocs = async (input: DocsIn): Promise<DocsOut> => {
+  return api.post("/artifacts/scenarios/docs", input);
+};
+
 export async function generateMetadata(): Promise<Metadata> {
-  return {
-    title: "Scenarios",
-    description:
-      "Manage problem-based learning scenarios for teaching assistant training. Create and organize realistic educational challenges and problem statements to practice pedagogical problem-solving and enhance instructional design skills.",
-  };
+  const docs = await getDocs({ body: {} });
+  return { title: docs.list.title, description: docs.list.description };
 }
 
 interface ScenariosPageProps {

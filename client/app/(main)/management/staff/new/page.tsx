@@ -85,12 +85,17 @@ async function patchProfileDraft(
 }
 
 /** ---- Metadata ---- */
+/** ---- Docs types for page metadata ---- */
+type DocsIn = InputOf<"/api/v4/artifacts/profiles/docs", "post">;
+type DocsOut = OutputOf<"/api/v4/artifacts/profiles/docs", "post">;
+
+const getDocs = async (input: DocsIn): Promise<DocsOut> => {
+  return api.post("/artifacts/profiles/docs", input);
+};
+
 export async function generateMetadata(): Promise<Metadata> {
-  return {
-    title: "New Staff",
-    description:
-      "Add a new teaching staff member to the training platform. Create staff profiles, assign roles and permissions, and configure access to learning cohorts and educational resources for teaching assistant development programs.",
-  };
+  const docs = await getDocs({ body: {} });
+  return { title: docs.new.title, description: docs.new.description };
 }
 
 /** ---- Server renders client with typed data and actions ---- */

@@ -41,10 +41,6 @@ SQL_BATCH_PATH = (
 router = APIRouter()
 
 
-# Alias for backward compatibility with search.py
-GetSimulationsV4Item = GetSimulationV4Item
-
-
 # =============================================================================
 # Internal Function
 # =============================================================================

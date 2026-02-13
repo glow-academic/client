@@ -39,12 +39,17 @@ async function deleteEval(input: DeleteEvalIn): Promise<DeleteEvalOut> {
   return api.post("/artifacts/evals/delete", input);
 }
 
+/** ---- Docs types for page metadata ---- */
+type DocsIn = InputOf<"/api/v4/artifacts/evals/docs", "post">;
+type DocsOut = OutputOf<"/api/v4/artifacts/evals/docs", "post">;
+
+const getDocs = async (input: DocsIn): Promise<DocsOut> => {
+  return api.post("/artifacts/evals/docs", input);
+};
+
 export async function generateMetadata(): Promise<Metadata> {
-  return {
-    title: "Evals",
-    description:
-      "Manage automated evaluation runs for teaching assistant assessments. Configure and execute batch evaluations to analyze pedagogical performance, teaching effectiveness, and student interaction quality across multiple practice sessions.",
-  };
+  const docs = await getDocs({ body: {} });
+  return { title: docs.list.title, description: docs.list.description };
 }
 
 export default async function EvalsPage() {

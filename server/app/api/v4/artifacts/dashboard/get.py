@@ -26,7 +26,7 @@ from app.api.v4.resources.personas.get import get_personas_internal
 from app.api.v4.resources.profiles.get import get_profiles_internal
 from app.api.v4.resources.rubrics.get import get_rubrics_batch_internal
 from app.api.v4.resources.scenarios.get import get_scenarios_internal
-from app.api.v4.resources.simulations.types import get_simulations_batch_internal
+from app.api.v4.resources.simulations.get import get_simulations_batch_internal
 from app.api.v4.views.analytics.attempts.get import get_attempt_facts_internal
 from app.api.v4.views.analytics.chat_facts.get import (
     get_chat_facts_internal,

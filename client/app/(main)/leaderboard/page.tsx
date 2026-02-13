@@ -40,12 +40,17 @@ const getLeaderboard = async (
   });
 };
 
+/** ---- Docs types for page metadata ---- */
+type DocsIn = InputOf<"/api/v4/artifacts/leaderboard/docs", "post">;
+type DocsOut = OutputOf<"/api/v4/artifacts/leaderboard/docs", "post">;
+
+const getDocs = async (input: DocsIn): Promise<DocsOut> => {
+  return api.post("/artifacts/leaderboard/docs", input);
+};
+
 export async function generateMetadata(): Promise<Metadata> {
-  return {
-    title: "Leaderboard",
-    description:
-      "Teaching assistant performance leaderboard and comparative analytics. View rankings, performance metrics, and comparative assessment data to track teaching effectiveness and identify top performers in pedagogical practice.",
-  };
+  const docs = await getDocs({ body: {} });
+  return { title: docs.list.title, description: docs.list.description };
 }
 
 interface LeaderboardPageProps {

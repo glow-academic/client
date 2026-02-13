@@ -2,10 +2,15 @@
 
 from typing import Any
 
+from fastapi import APIRouter
+
 from app.utils.docs_helper import (
     ArtifactDocsConfig,
+    DocsApiRequest,
+    DocsApiResponse,
+    PageMetadataConfig,
     build_artifact_docs_static,
-    create_artifact_docs_router,
+    compute_docs_metadata,
 )
 
 CONFIG = ArtifactDocsConfig(
@@ -42,9 +47,24 @@ CONFIG = ArtifactDocsConfig(
             "Dashboard - Pricing feeds into dashboard cost metrics",
         ],
     },
+    page_metadata=PageMetadataConfig(
+        list_title="Pricing",
+        list_description="Manage pricing and subscription plans for GLOW teaching assistant training platform. Configure access levels, feature sets, and billing options for educational institutions and learning and development programs.",
+        detail_title="Pricing",
+        detail_description="Pricing details for teaching assistant training platform. View cost analytics and billing information.",
+        new_title="New Pricing",
+        new_description="Configure new pricing for teaching assistant training platform.",
+    ),
 )
 
-router = create_artifact_docs_router(CONFIG)
+router = APIRouter()
+
+
+@router.post("/docs", response_model=DocsApiResponse)
+async def get_pricing_docs_endpoint(
+    request: DocsApiRequest,
+) -> DocsApiResponse:
+    return compute_docs_metadata(CONFIG.page_metadata)
 
 
 def get_pricing_docs_static() -> dict[str, Any]:

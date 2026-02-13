@@ -7,7 +7,7 @@ import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDen
 import Tool from "@/components/artifacts/tool/Tool";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
-import type { Metadata, ResolvingMetadata } from "next";
+import type { Metadata } from "next";
 import { createLoader, parseAsString } from "nuqs/server";
 
 /** ---- Strong types from OpenAPI ---- */
@@ -53,38 +53,22 @@ const getTool = async (input: GetToolIn): Promise<GetToolOut> => {
   });
 };
 
-/** ---- Metadata ---- */
-export async function generateMetadata(
-  { params }: { params: Promise<{ toolId: string }> },
-  parent: ResolvingMetadata
-): Promise<Metadata> {
-  const { toolId } = await params;
-  const parentMetadata = await parent;
-  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  try {
-    const input: GetToolIn = {
-      body: {
-        tool_id: toolId,
-      },
-    };
-    const tool = await getTool(input);
-    const toolName = tool?.names?.resource?.name;
-    const toolDesc = tool?.descriptions?.resource?.description;
-    return {
-      title: `${toolName || "Tool"} - ${parentMetadata.title?.absolute || "Tools"}`,
-      description:
-        toolDesc ||
-        "View and edit tool details for teaching assistant training platform.",
-    };
-  } catch {
-    // Fall through to default metadata
-  }
+/** ---- Docs types for page metadata ---- */
+type DocsIn = InputOf<"/api/v4/artifacts/tools/docs", "post">;
+type DocsOut = OutputOf<"/api/v4/artifacts/tools/docs", "post">;
 
-  return {
-    title: `Tool Details - ${parentMetadata.title?.absolute || "Tools"}`,
-    description:
-      "View and edit tool details for teaching assistant training platform.",
-  };
+const getDocs = async (input: DocsIn): Promise<DocsOut> => {
+  return api.post("/artifacts/tools/docs", input);
+};
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ toolId: string }>;
+}): Promise<Metadata> {
+  const { toolId } = await params;
+  const docs = await getDocs({ body: { entity_id: toolId } });
+  return { title: docs.detail.title, description: docs.detail.description };
 }
 
 /** ---- Strongly-typed server actions ---- */

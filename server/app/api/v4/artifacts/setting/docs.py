@@ -2,10 +2,15 @@
 
 from typing import Any
 
+from fastapi import APIRouter
+
 from app.utils.docs_helper import (
     ArtifactDocsConfig,
+    DocsApiRequest,
+    DocsApiResponse,
+    PageMetadataConfig,
     build_artifact_docs_static,
-    create_artifact_docs_router,
+    compute_docs_metadata,
 )
 
 CONFIG = ArtifactDocsConfig(
@@ -78,9 +83,24 @@ CONFIG = ArtifactDocsConfig(
             "Resources - Settings use multiple resource types for rich representation",
         ],
     },
+    page_metadata=PageMetadataConfig(
+        list_title="Settings",
+        list_description="Manage platform settings and configuration for teaching assistant training. Configure system-wide settings, preferences, and platform behavior.",
+        detail_title="Setting",
+        detail_description="Platform setting configuration for teaching assistant training. Manage system-wide preferences and behavior.",
+        new_title="New Setting",
+        new_description="Create a new platform setting for teaching assistant training. Configure system-wide settings and preferences.",
+    ),
 )
 
-router = create_artifact_docs_router(CONFIG)
+router = APIRouter()
+
+
+@router.post("/docs", response_model=DocsApiResponse)
+async def get_setting_docs_endpoint(
+    request: DocsApiRequest,
+) -> DocsApiResponse:
+    return compute_docs_metadata(CONFIG.page_metadata)
 
 
 def get_settings_docs() -> dict[str, Any]:

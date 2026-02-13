@@ -9,17 +9,17 @@ from app.api.v4.resources.departments.get import get_departments_internal
 from app.api.v4.resources.descriptions.get import get_descriptions_internal
 from app.api.v4.resources.documents.get import get_documents_internal
 from app.api.v4.resources.flags.get import get_flags_internal
-from app.api.v4.resources.images.types import get_images_internal
+from app.api.v4.resources.images.get import get_images_internal
 from app.api.v4.resources.names.get import get_names_internal
-from app.api.v4.resources.objectives.types import get_objectives_internal
+from app.api.v4.resources.objectives.get import get_objectives_internal
 from app.api.v4.resources.parameter_fields.get import get_parameter_fields_internal
 from app.api.v4.resources.parameters.get import get_parameters_internal
 from app.api.v4.resources.personas.get import get_personas_internal
-from app.api.v4.resources.problem_statements.types import (
+from app.api.v4.resources.problem_statements.get import (
     get_problem_statements_internal,
 )
-from app.api.v4.resources.questions.types import get_questions_internal
-from app.api.v4.resources.videos.types import get_videos_internal
+from app.api.v4.resources.questions.get import get_questions_internal
+from app.api.v4.resources.videos.get import get_videos_internal
 from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
 from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.main import get_internal_sio, sio

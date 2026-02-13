@@ -125,6 +125,37 @@ export default async function MainLayout({
     );
   }
 
+  // Server-driven route access: check page_access from context response
+  if (initial.page_access && !initial.page_access.authorized) {
+    return (
+      <div
+        key={`page-access-denied-wrapper-${pathname}`}
+        data-route-pathname={pathname}
+        data-access-state="denied"
+      >
+        <MainLayoutClient
+          key={`page-access-denied-${pathname}`}
+          initial={initial}
+          sessionSnapshot={snapshot}
+          attemptData={attemptData}
+          activeSettings={activeSettings}
+          initialAutosave={initialAutosave}
+          switchEffectiveProfileAction={switchEffectiveProfile}
+          createFeedbackAction={createFeedback}
+          refreshPageAction={refreshPage}
+          searchSimulatableProfilesAction={searchSimulatableProfiles}
+        >
+          <UnifiedAccessDenied
+            key={`page-access-denied-content-${pathname}`}
+            reason="route-denied"
+            pathname={pathname}
+            role={initial.role ?? undefined}
+          />
+        </MainLayoutClient>
+      </div>
+    );
+  }
+
   return (
     <div
       key={`allowed-wrapper-${pathname}`}

@@ -1,13 +1,25 @@
 """Persona artifact documentation."""
 
-from typing import Any
+from typing import Annotated, Any, cast
+
+import asyncpg  # type: ignore
+from fastapi import APIRouter, Depends
 
 from app.api.v4.artifacts.persona import permissions
+from app.api.v4.resources.names.get import get_names_internal
+from app.main import get_db
+from app.sql.types import GetPersonaDocsSqlParams, GetPersonaDocsSqlRow
 from app.utils.docs_helper import (
     ArtifactDocsConfig,
+    DocsApiRequest,
+    DocsApiResponse,
+    PageMetadataConfig,
     build_artifact_docs_static,
-    create_artifact_docs_router,
+    compute_docs_metadata,
 )
+from app.utils.sql_helper import execute_sql_typed
+
+SQL_PATH = "app/sql/v4/queries/personas/get_persona_docs_complete.sql"
 
 CONFIG = ArtifactDocsConfig(
     name="persona",
@@ -99,9 +111,36 @@ CONFIG = ArtifactDocsConfig(
             "Resources - Personas use multiple resource types for rich representation",
         ],
     },
+    page_metadata=PageMetadataConfig(
+        list_title="Personas",
+        list_description="Manage AI-powered student personas for teaching assistant training. Create and organize realistic student profiles with diverse personalities and learning styles to enhance simulation-based pedagogical practice and student interaction training.",
+        detail_title="Persona",
+        detail_description="AI-powered student persona for simulation-based teaching assistant training. Practice pedagogical techniques and student interaction strategies in realistic educational scenarios.",
+        new_title="New Persona",
+        new_description="Create a new AI-powered student persona for teaching assistant training. Design realistic student profiles with unique personalities and learning styles to practice pedagogical techniques and improve student interaction skills through simulation-based learning.",
+    ),
 )
 
-router = create_artifact_docs_router(CONFIG)
+router = APIRouter()
+
+
+@router.post("/docs", response_model=DocsApiResponse)
+async def get_persona_docs_endpoint(
+    request: DocsApiRequest,
+    conn: Annotated[asyncpg.Connection, Depends(get_db)],
+) -> DocsApiResponse:
+    entity_name: str | None = None
+    if request.entity_id:
+        params = GetPersonaDocsSqlParams(p_entity_id=request.entity_id)
+        row = cast(
+            GetPersonaDocsSqlRow | None,
+            await execute_sql_typed(conn, SQL_PATH, params=params),
+        )
+        if row and row.name_id:
+            names = await get_names_internal(conn, [row.name_id])
+            if names:
+                entity_name = names[0].name
+    return compute_docs_metadata(CONFIG.page_metadata, entity_name)
 
 
 def get_personas_docs() -> dict[str, Any]:

@@ -35,7 +35,6 @@ import { Names } from "@/components/resources/Names";
 import { ParameterFields } from "@/components/resources/ParameterFields";
 import { Parameters } from "@/components/resources/Parameters";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
 import { useProfile } from "@/contexts/profile-context";
 import { useSaveContext } from "@/contexts/save-context";
 import { StepCardAiButton } from "@/components/common/forms/StepCardAiButton";
@@ -249,7 +248,6 @@ function PersonaComponent({
   const router = useRouter();
   const isEditMode = !!personaId;
   const { profile, setSelectedDraftId, socket, isConnected } = useProfile();
-  const { setEntityMetadata, clearEntityMetadata } = useBreadcrumbContext();
   const { isAutosaveEnabled } = useSaveContext();
 
   // --- Flush Registry ---
@@ -855,25 +853,6 @@ function PersonaComponent({
     if (!personaData) return false;
     return !personaData.can_edit;
   }, [personaData]);
-
-  const personaNameForBreadcrumb =
-    stablePersonaDataFields?.names?.resource?.name;
-  useEffect(() => {
-    if (personaNameForBreadcrumb && personaId && isEditMode) {
-      setEntityMetadata({
-        entityId: personaId,
-        entityName: personaNameForBreadcrumb,
-        entityType: "persona",
-      });
-    }
-    return () => clearEntityMetadata();
-  }, [
-    personaNameForBreadcrumb,
-    personaId,
-    isEditMode,
-    setEntityMetadata,
-    clearEntityMetadata,
-  ]);
 
   // --- Submit ---
   const handleSubmit = useCallback(

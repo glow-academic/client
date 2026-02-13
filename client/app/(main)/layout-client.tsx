@@ -21,22 +21,12 @@ import { NavigationBreadcrumbs } from "@/components/common/layout/NavigationBrea
 import { UnifiedSidebar } from "@/components/common/layout/UnifiedSidebar";
 import { ThemeHydrator } from "@/components/theme/ThemeHydrator";
 import {
-  BreadcrumbProvider,
-  useBreadcrumbContext,
-} from "@/contexts/breadcrumb-context";
-import {
   FilterOptionsProvider,
   useFilterOptions,
 } from "@/contexts/filter-options-context";
 import { GenerationProvider } from "@/contexts/generation-context";
 import { ProfileProviderClient, useProfile } from "@/contexts/profile-context";
 import { SaveProvider } from "@/contexts/save-context";
-import {
-  generateBreadcrumbs,
-  getActiveSectionFromPath,
-} from "@/utils/breadcrumb-utils";
-import { createSectionChangeHandler } from "@/utils/navigation-utils";
-import { normalizeUrlPathToArtifactType } from "@/utils/resource-type-utils";
 import type {
   AttemptFullOut,
   CreateFeedbackIn,
@@ -74,8 +64,7 @@ function MainLayoutContent({
   const pathname = usePathname() || "/";
 
   const router = useRouter();
-  const { profile } = useProfile();
-  const { getEntityName } = useBreadcrumbContext();
+  const { profile, breadcrumbs: serverBreadcrumbs, pageMetadata } = useProfile();
   const { clearOptions } = useFilterOptions();
 
   // Clear section-specific filter options when navigating away from analytics-related pages
@@ -87,285 +76,52 @@ function MainLayoutContent({
     }
   }, [pathname, clearOptions]);
 
-  // Check if we're on the staff management pages (but not on /new page)
+  // Use server-driven breadcrumbs, falling back to empty array
+  const breadcrumbs = useMemo(() => {
+    return serverBreadcrumbs ?? [];
+  }, [serverBreadcrumbs]);
+
+  // Derive active section from server breadcrumbs
+  const activeSection = useMemo(() => {
+    if (breadcrumbs.length > 0 && breadcrumbs[0].section) {
+      return breadcrumbs[0].section;
+    }
+    // Fallback: derive from pathname
+    const segments = pathname.split("/").filter(Boolean);
+    return segments[0] || "home";
+  }, [breadcrumbs, pathname]);
+
+  // Page metadata from server (with fallbacks for backward compat)
+  const canShowAnalyticsFilters = useMemo(() => {
+    if (pageMetadata?.show_analytics_filters) return true;
+    // Fallback for when server hasn't sent metadata yet
+    if (pathname === "/leaderboard" || pathname === "/health") return true;
+    const analyticsPages = ["/analytics", "/home", "/practice", "/benchmark"];
+    return analyticsPages.some((p) => pathname.startsWith(p));
+  }, [pageMetadata, pathname]);
+
+  const isHomePage = pathname === "/home";
+  const isPracticePage = pathname === "/practice";
+  const isBenchmarkPage = pathname === "/benchmark";
+  const isHealthPage = pathname === "/health";
+  const isReportPage = pathname.startsWith("/analytics/reports/") && pathname.split("/").length >= 4;
+
+  // Check if we're on the staff management pages
   const isStaffManagementPage = pathname === "/management/staff";
 
-  // Generate breadcrumbs client-side and enrich with entity names from context
-  const breadcrumbs = useMemo(() => {
-    const baseBreadcrumbs = generateBreadcrumbs(pathname);
-
-    // Enrich breadcrumbs with entity names from context
-    return baseBreadcrumbs.map((crumb) => {
-      // If title is truncated (e.g., "53385232..."), check context for entity name
-      if (crumb.title.includes("...") && crumb.section) {
-        const match = crumb.section.match(/-([\w-]+)$/);
-        if (match && match[1]) {
-          const entityId = match[1];
-          const entityName = getEntityName(entityId);
-          if (entityName) {
-            return { ...crumb, title: entityName };
-          }
-        }
-      }
-      return crumb;
-    });
-  }, [pathname, getEntityName]);
-
-  // Role context is available for child components
-  const activeSection = getActiveSectionFromPath(pathname);
-
-  const isReportPage = useMemo(() => {
-    return pathname.startsWith("/analytics/reports/") && pathname.split("/").length >= 4;
-  }, [pathname]);
-
-  // Check if we're on an analytics page and should show filters
-  const isAnalyticsPage = useMemo(() => {
-    return pathname.startsWith("/analytics");
-  }, [pathname]);
-
-  const isHomePage = useMemo(() => {
-    return pathname === "/home";
-  }, [pathname]);
-
-  const isPracticePage = useMemo(() => {
-    return pathname === "/practice";
-  }, [pathname]);
-
-  const isPricingGroupPage = useMemo(() => {
-    return pathname.startsWith("/analytics/pricing/") && pathname.split("/").length >= 4;
-  }, [pathname]);
-
-  const isHealthPage = useMemo(() => {
-    return pathname === "/health";
-  }, [pathname]);
-
-  const isBenchmarkPage = useMemo(() => {
-    return pathname === "/benchmark";
-  }, [pathname]);
-
-  const canShowAnalyticsFilters = useMemo(() => {
-    if (pathname === "/leaderboard") {
-      return true;
-    }
-    if (isHealthPage) {
-      return true;
-    }
-    return (
-      (isAnalyticsPage || isHomePage || isPracticePage || isBenchmarkPage) &&
-      !pathname.includes("/edit") &&
-      !isPricingGroupPage
-    );
-  }, [
-    isAnalyticsPage,
-    pathname,
-    isHomePage,
-    isPracticePage,
-    isBenchmarkPage,
-    isPricingGroupPage,
-    isHealthPage,
-  ]);
-
-  const handleSectionChange = createSectionChangeHandler(router, pathname);
-
-  // Determine action button based on current path
-  const getActionButton = () => {
-    // Don't show buttons on /new pages
-    if (pathname.includes("/new")) {
-      return null;
-    }
-
-    if (pathname === "/training/cohorts") {
-      return (
-        <Button onClick={() => router.push("/training/cohorts/new")} size="sm">
-          <Plus className="h-4 w-4 mr-2" />
-          Create Cohort
-        </Button>
-      );
-    }
-
-    if (pathname === "/training/personas") {
-      return (
-        <Button onClick={() => router.push("/training/personas/new")} size="sm">
-          <Plus className="h-4 w-4 mr-2" />
-          Create Persona
-        </Button>
-      );
-    }
-
-    if (pathname === "/management/documents") {
-      return (
-        <Button
-          onClick={() => router.push("/management/documents/new")}
-          size="sm"
-        >
-          <Plus className="h-4 w-4 mr-2" />
-          Create Document
-        </Button>
-      );
-    }
-
-    if (pathname === "/system/rubrics") {
-      return (
-        <Button onClick={() => router.push("/system/rubrics/new")} size="sm">
-          <Plus className="h-4 w-4 mr-2" />
-          Create Rubric
-        </Button>
-      );
-    }
-
-    if (pathname === "/system/auth") {
-      return (
-        <Button onClick={() => router.push("/system/auth/new")} size="sm">
-          <Plus className="h-4 w-4 mr-2" />
-          Create Auth
-        </Button>
-      );
-    }
-
-    if (pathname === "/intelligence/providers") {
-      return (
-        <Button onClick={() => router.push("/intelligence/providers/new")} size="sm">
-          <Plus className="h-4 w-4 mr-2" />
-          Create Provider
-        </Button>
-      );
-    }
-
-    if (pathname === "/training/scenarios") {
-      return (
-        <Button onClick={() => router.push("/training/scenarios/new")} size="sm">
-          <Plus className="h-4 w-4 mr-2" />
-          Create Scenario
-        </Button>
-      );
-    }
-
-    if (pathname === "/training/simulations") {
-      return (
-        <Button
-          onClick={() => router.push("/training/simulations/new")}
-          size="sm"
-        >
-          <Plus className="h-4 w-4 mr-2" />
-          Create Simulation
-        </Button>
-      );
-    }
-
-    if (pathname === "/management/staff") {
-      // CreateStaffButton is now handled directly in Staff.tsx component
-      return null;
-    }
-
-    if (pathname === "/intelligence/models") {
-      return (
-        <Button onClick={() => router.push("/intelligence/models/new")} size="sm">
-          <Plus className="h-4 w-4 mr-2" />
-          Create Model
-        </Button>
-      );
-    }
-
-    if (pathname === "/management/parameters") {
-      return (
-        <Button
-          onClick={() => router.push("/management/parameters/new")}
-          size="sm"
-        >
-          <Plus className="h-4 w-4 mr-2" />
-          Create Parameter
-        </Button>
-      );
-    }
-
-    if (pathname === "/management/fields") {
-      return (
-        <Button onClick={() => router.push("/management/fields/new")} size="sm">
-          <Plus className="h-4 w-4 mr-2" />
-          Create Field
-        </Button>
-      );
-    }
-
-    if (pathname === "/intelligence/agents") {
-      return (
-        <Button onClick={() => router.push("/intelligence/agents/new")} size="sm">
-          <Plus className="h-4 w-4 mr-2" />
-          Create Agent
-        </Button>
-      );
-    }
-
-    if (pathname === "/intelligence/evals") {
-      return (
-        <Button onClick={() => router.push("/intelligence/evals/new")} size="sm">
-          <Plus className="h-4 w-4 mr-2" />
-          New Eval
-        </Button>
-      );
-    }
-
-    if (pathname === "/system/evals") {
-      return (
-        <Button onClick={() => router.push("/system/evals/new")} size="sm">
-          <Plus className="h-4 w-4 mr-2" />
-          New Eval
-        </Button>
-      );
-    }
-
-    if (pathname === "/system/departments") {
-      return (
-        <Button
-          onClick={() => router.push("/system/departments/new")}
-          size="sm"
-        >
-          <Plus className="h-4 w-4 mr-2" />
-          Create Department
-        </Button>
-      );
-    }
-
-    if (pathname === "/system/keys") {
-      return (
-        <Button onClick={() => router.push("/system/keys/new")} size="sm">
-          <Plus className="h-4 w-4 mr-2" />
-          Create Key
-        </Button>
-      );
-    }
-
-    if (pathname === "/settings") {
-      return (
-        <Button onClick={() => router.push("/settings/new")} size="sm">
-          <Plus className="h-4 w-4 mr-2" />
-          Create Setting
-        </Button>
-      );
-    }
-
-    if (pathname === "/intelligence/tools") {
-      return (
-        <Button onClick={() => router.push("/intelligence/tools/new")} size="sm">
-          <Plus className="h-4 w-4 mr-2" />
-          Create Tool
-        </Button>
-      );
-    }
-
-    // Chat components are now handled by AssistantChat
-    return null;
+  const handleSectionChange = (section: string) => {
+    // Find URL for section from breadcrumbs or sidebar
+    router.push(`/${section}`);
+    router.refresh();
   };
-
-  const actionButton = getActionButton();
 
   // Extract attemptId from pathname if we're on an attempt page
   const attemptMatch =
-    pathname.match(/\/home\/([^/]+)/) ||
-    pathname.match(/\/practice\/([^/]+)/);
+    pathname.match(/\/home\/([0-9a-f-]{36})/) ||
+    pathname.match(/\/practice\/([0-9a-f-]{36})/);
   const attemptId = attemptMatch ? attemptMatch[1] : null;
+
   // Check if we should show SimulationControls
-  // Only show if we have attemptData, attemptId, and the attempt belongs to the active profile
   const shouldShowSimulationControls = useMemo(() => {
     if (!attemptData || !attemptId || !attemptData.attempt) {
       return false;
@@ -373,32 +129,24 @@ function MainLayoutContent({
     return attemptData.is_own_attempt === true;
   }, [attemptData, attemptId]);
 
-  // Determine if we're on a create/edit page and get resource type
-  const isCreateOrEditPage = useMemo(() => {
-    // Match patterns like:
-    // /training/personas/new, /training/personas/[id]
-    // /management/staff/new
-    // /system/rubrics/new
-    // /system/departments/new
-    return /^\/(training|management|intelligence|system)\/([^/]+)\/(new|[^/]+)/.test(
-      pathname
-    );
-  }, [pathname]);
+  // Use server-driven page metadata for create/edit detection
+  const isCreateOrEditPage = pageMetadata?.show_save_toolbar ?? false;
+  const artifactType = pageMetadata?.artifact_type ?? null;
 
-  const urlPathSegment = useMemo(() => {
-    if (!isCreateOrEditPage) return null;
-    const match = pathname.match(
-      /^\/(training|management|intelligence|system)\/([^/]+)/
+  // Server-driven action button from pageMetadata
+  const actionButton = useMemo(() => {
+    if (!pageMetadata?.create_url || !pageMetadata?.create_label) return null;
+    // Don't show on /new pages
+    if (pathname.includes("/new")) return null;
+    // Staff page has its own button
+    if (isStaffManagementPage) return null;
+    return (
+      <Button onClick={() => router.push(pageMetadata.create_url!)} size="sm">
+        <Plus className="h-4 w-4 mr-2" />
+        {pageMetadata.create_label}
+      </Button>
     );
-    return match ? match[2] : null; // Use second capture group (URL path segment)
-  }, [pathname, isCreateOrEditPage]);
-
-  // Normalize URL path segment from plural form to singular artifact enum value
-  const artifactType = useMemo(() => {
-    return urlPathSegment
-      ? normalizeUrlPathToArtifactType(urlPathSegment)
-      : null;
-  }, [urlPathSegment]);
+  }, [pageMetadata, pathname, router, isStaffManagementPage]);
 
   return (
     <>
@@ -520,10 +268,6 @@ export function MainLayoutClient({
         "data-route-pathname"
       );
 
-      // If we're on an allowed route but see access denied component, force refresh
-      // This handles the case where navigation happens but React hasn't updated the DOM yet
-      // Simple check: if we're on /practice (always allowed for guests) and see access denied, refresh
-      // OR if wrapper says allowed but pathname doesn't match (stale wrapper)
       if (
         pathname === "/practice" &&
         accessDeniedElement &&
@@ -545,25 +289,23 @@ export function MainLayoutClient({
         initial={initial}
         sessionSnapshot={sessionSnapshot}
       >
-        <BreadcrumbProvider>
-          <FilterOptionsProvider>
-            <GenerationProvider>
-              <SaveProvider initialAutosave={initialAutosave}>
-                <MainLayoutContent
-                  attemptData={attemptData}
-                  switchEffectiveProfileAction={switchEffectiveProfileAction}
-                  createFeedbackAction={createFeedbackAction}
-                  refreshPageAction={refreshPageAction}
-                  searchSimulatableProfilesAction={
-                    searchSimulatableProfilesAction
-                  }
-                >
-                  {children}
-                </MainLayoutContent>
-              </SaveProvider>
-            </GenerationProvider>
-          </FilterOptionsProvider>
-        </BreadcrumbProvider>
+        <FilterOptionsProvider>
+          <GenerationProvider>
+            <SaveProvider initialAutosave={initialAutosave}>
+              <MainLayoutContent
+                attemptData={attemptData}
+                switchEffectiveProfileAction={switchEffectiveProfileAction}
+                createFeedbackAction={createFeedbackAction}
+                refreshPageAction={refreshPageAction}
+                searchSimulatableProfilesAction={
+                  searchSimulatableProfilesAction
+                }
+              >
+                {children}
+              </MainLayoutContent>
+            </SaveProvider>
+          </GenerationProvider>
+        </FilterOptionsProvider>
       </ProfileProviderClient>
     </>
   );

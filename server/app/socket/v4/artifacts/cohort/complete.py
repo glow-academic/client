@@ -9,10 +9,10 @@ from app.api.v4.resources.departments.get import get_departments_internal
 from app.api.v4.resources.descriptions.get import get_descriptions_internal
 from app.api.v4.resources.flags.get import get_flags_internal
 from app.api.v4.resources.names.get import get_names_internal
-from app.api.v4.resources.simulation_positions.types import (
+from app.api.v4.resources.simulation_positions.get import (
     get_simulation_positions_internal,
 )
-from app.api.v4.resources.simulations.types import get_simulation_internal
+from app.api.v4.resources.simulations.get import get_simulation_internal
 from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
 from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.main import get_internal_sio, sio

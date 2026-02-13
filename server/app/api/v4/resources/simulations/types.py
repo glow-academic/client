@@ -1,9 +1,11 @@
 """Types for this resource endpoint."""
 
-from typing import Any
+from typing import Any, Literal
 from uuid import UUID
 
 from pydantic import BaseModel, Field
+
+SuggestSource = Literal["all", "linked", "draft"]
 
 
 class GetSimulationV4Item(BaseModel):
@@ -14,6 +16,10 @@ class GetSimulationV4Item(BaseModel):
     description: str | None = None
     time_limit: int | None = None  # Not populated by SQL; artifact layer computes
     generated: bool | None = None
+
+
+# Alias for backward compatibility with search types
+GetSimulationsV4Item = GetSimulationV4Item
 
 
 class GetSimulationApiRequest(BaseModel):

@@ -27,7 +27,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
 import { useProfile } from "@/contexts/profile-context";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
@@ -125,8 +124,6 @@ function ToolComponent({
     socket,
     isConnected,
   } = useProfile();
-  const { setEntityMetadata, clearEntityMetadata } = useBreadcrumbContext();
-
   // Generation state for AI workflows
   const [generatingResources, setGeneratingResources] = useState<
     Set<ToolResourceType>
@@ -801,19 +798,6 @@ function ToolComponent({
     if (!toolData) return false;
     return !toolData.can_edit;
   }, [toolData]);
-
-  // Set breadcrumb context when tool data is loaded
-  useEffect(() => {
-    const toolName = toolData?.names?.resource?.name;
-    if (toolName && toolId && isEditMode) {
-      setEntityMetadata({
-        entityId: toolId,
-        entityName: toolName,
-        entityType: "tool",
-      });
-    }
-    return () => clearEntityMetadata();
-  }, [toolData, toolId, isEditMode, setEntityMetadata, clearEntityMetadata]);
 
   // Submit handler for GenericForm
   const handleSubmit = useCallback(

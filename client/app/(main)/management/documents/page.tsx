@@ -51,12 +51,17 @@ async function deleteDocument(
 
 // generateTemplate removed - component now uses WebSocket directly
 
+/** ---- Docs types for page metadata ---- */
+type DocsIn = InputOf<"/api/v4/artifacts/documents/docs", "post">;
+type DocsOut = OutputOf<"/api/v4/artifacts/documents/docs", "post">;
+
+const getDocs = async (input: DocsIn): Promise<DocsOut> => {
+  return api.post("/artifacts/documents/docs", input);
+};
+
 export async function generateMetadata(): Promise<Metadata> {
-  return {
-    title: "Documents",
-    description:
-      "Manage learning resources and educational documents for teaching assistant training. Organize course materials, instructional resources, and reference documents to support pedagogical development and L&D program content.",
-  };
+  const docs = await getDocs({ body: {} });
+  return { title: docs.list.title, description: docs.list.description };
 }
 
 export default async function DocumentsPage() {

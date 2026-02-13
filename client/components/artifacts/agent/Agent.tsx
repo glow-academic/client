@@ -37,7 +37,6 @@ import { ReasoningLevels } from "@/components/resources/ReasoningLevels";
 import { TemperatureLevels } from "@/components/resources/TemperatureLevels";
 import { Tools } from "@/components/resources/Tools";
 import { Voices } from "@/components/resources/Voices";
-import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
 import { useProfile } from "@/contexts/profile-context";
 import { useSaveContext } from "@/contexts/save-context";
 import { useAiGeneration } from "@/hooks/use-ai-generation";
@@ -184,7 +183,6 @@ export default function Agent({
   const { profile, selectedDraftId, setSelectedDraftId, socket, isConnected } =
     useProfile();
   const { isAutosaveEnabled } = useSaveContext();
-  const { setEntityMetadata, clearEntityMetadata } = useBreadcrumbContext();
   const isSuperadmin = true;
   const { flushRegistryRef, registerFlushCallbacks, flushAllResources } =
     useFlushRegistry<FlushResult>(FLUSH_KEYS);
@@ -545,25 +543,6 @@ export default function Agent({
       has_video_output: outputMods.includes("video"),
     };
   }, [draftState.modelId, modelsSection?.resources]);
-
-  // Set breadcrumb context when agent data is loaded
-  useEffect(() => {
-    const agentName = namesSection?.resource?.name;
-    if (agentName && agentId && isEditMode) {
-      setEntityMetadata({
-        entityId: agentId,
-        entityName: agentName,
-        entityType: "agent",
-      });
-    }
-    return () => clearEntityMetadata();
-  }, [
-    namesSection?.resource?.name,
-    agentId,
-    isEditMode,
-    setEntityMetadata,
-    clearEntityMetadata,
-  ]);
 
   // handleInputChange removed - use setDraftState directly
 

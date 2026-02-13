@@ -9,7 +9,7 @@ import Agent from "@/components/artifacts/agent/Agent";
 import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
-import type { Metadata, ResolvingMetadata } from "next";
+import type { Metadata } from "next";
 import { createLoader, parseAsString } from "nuqs/server";
 
 /** ---- Strong types from OpenAPI ---- */
@@ -37,33 +37,22 @@ const getAgent = async (input: GetAgentIn): Promise<GetAgentOut> => {
   });
 };
 
-/** ---- Metadata uses the same cached fetch ---- */
-export async function generateMetadata(
-  { params }: { params: Promise<{ agentId: string }> },
-  _parent: ResolvingMetadata
-): Promise<Metadata> {
-  const { agentId } = await params;
-  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  try {
-    const input: GetAgentIn = {
-      body: {
-        agent_id: agentId,
-      } as GetAgentIn["body"],
-    };
-    const agent = await getAgent(input);
-    return {
-      title: `${agent?.names?.resource?.name || "Agent"} Agent`,
-      description: `${agent?.names?.resource?.name ? `${agent.names.resource.name} - ` : ""}AI agent configuration for teaching assistant training simulations.${agent?.descriptions?.resource?.description ? ` ${agent.descriptions.resource.description}` : ""} Customize intelligent agents to power student personas and enhance simulation-based learning experiences.`,
-    };
-  } catch {
-    // Fall through to default metadata
-  }
+/** ---- Docs types for page metadata ---- */
+type DocsIn = InputOf<"/api/v4/artifacts/agents/docs", "post">;
+type DocsOut = OutputOf<"/api/v4/artifacts/agents/docs", "post">;
 
-  return {
-    title: "Agent",
-    description:
-      "AI agent configuration for teaching assistant training simulations. Customize intelligent agents to power student personas and enhance simulation-based learning experiences.",
-  };
+const getDocs = async (input: DocsIn): Promise<DocsOut> => {
+  return api.post("/artifacts/agents/docs", input);
+};
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ agentId: string }>;
+}): Promise<Metadata> {
+  const { agentId } = await params;
+  const docs = await getDocs({ body: { entity_id: agentId } });
+  return { title: docs.detail.title, description: docs.detail.description };
 }
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */

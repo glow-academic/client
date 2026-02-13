@@ -9,7 +9,7 @@ import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDen
 import Persona from "@/components/artifacts/persona/Persona";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
-import type { Metadata, ResolvingMetadata } from "next";
+import type { Metadata } from "next";
 import { createLoader, parseAsBoolean, parseAsString } from "nuqs/server";
 
 /** ---- Strong types from OpenAPI ---- */
@@ -62,35 +62,22 @@ const getPersona = async (input: GetPersonaIn): Promise<GetPersonaOut> => {
   });
 };
 
-/** ---- Metadata uses the same cached fetch ---- */
-export async function generateMetadata(
-  { params }: { params: Promise<{ personaId: string }> },
-  _parent: ResolvingMetadata
-): Promise<Metadata> {
-  const { personaId } = await params;
-  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  try {
-    const input: GetPersonaIn = {
-      body: {
-        persona_id: personaId,
-        color_search: null,
-        icon_search: null,
-      } as GetPersonaIn["body"],
-    };
-    const persona = await getPersona(input);
-    return {
-      title: `${persona?.names?.resource?.name || "Persona"} Persona`,
-      description: `${persona?.names?.resource?.name ? `${persona.names.resource.name} - ` : ""}AI-powered student persona for simulation-based teaching assistant training. Practice pedagogical techniques and student interaction strategies in realistic educational scenarios.${persona?.descriptions?.resource?.description ? ` ${persona.descriptions.resource.description}` : ""}`,
-    };
-  } catch {
-    // Fall through to default metadata
-  }
+/** ---- Docs types for page metadata ---- */
+type DocsIn = InputOf<"/api/v4/artifacts/personas/docs", "post">;
+type DocsOut = OutputOf<"/api/v4/artifacts/personas/docs", "post">;
 
-  return {
-    title: "Persona",
-    description:
-      "AI-powered student persona for simulation-based teaching assistant training. Practice pedagogical techniques and student interaction strategies in realistic educational scenarios.",
-  };
+const getDocs = async (input: DocsIn): Promise<DocsOut> => {
+  return api.post("/artifacts/personas/docs", input);
+};
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ personaId: string }>;
+}): Promise<Metadata> {
+  const { personaId } = await params;
+  const docs = await getDocs({ body: { entity_id: personaId } });
+  return { title: docs.detail.title, description: docs.detail.description };
 }
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */

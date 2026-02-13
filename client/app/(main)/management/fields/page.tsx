@@ -47,12 +47,17 @@ async function deleteField(input: DeleteFieldIn): Promise<DeleteFieldOut> {
   return api.post("/artifacts/fields/delete", input);
 }
 
+/** ---- Docs types for page metadata ---- */
+type DocsIn = InputOf<"/api/v4/artifacts/fields/docs", "post">;
+type DocsOut = OutputOf<"/api/v4/artifacts/fields/docs", "post">;
+
+const getDocs = async (input: DocsIn): Promise<DocsOut> => {
+  return api.post("/artifacts/fields/docs", input);
+};
+
 export async function generateMetadata(): Promise<Metadata> {
-  return {
-    title: "Fields",
-    description:
-      "Manage custom fields and data configuration for teaching assistant training platform. Configure custom field definitions to track additional educational data, assessment criteria, and learning metrics for comprehensive L&D program management.",
-  };
+  const docs = await getDocs({ body: {} });
+  return { title: docs.list.title, description: docs.list.description };
 }
 
 export default async function FieldsPage() {

@@ -22,7 +22,6 @@ import { Names } from "@/components/resources/Names";
 import { Protocols } from "@/components/resources/Protocols";
 import { Slugs } from "@/components/resources/Slugs";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
 import { useProfile } from "@/contexts/profile-context";
 import { useSaveContext } from "@/contexts/save-context";
 import { useAiGeneration } from "@/hooks/use-ai-generation";
@@ -164,7 +163,6 @@ function AuthComponent({
 
   const { profile, setSelectedDraftId, socket, isConnected } = useProfile();
   const { isAutosaveEnabled } = useSaveContext();
-  const { setEntityMetadata, clearEntityMetadata } = useBreadcrumbContext();
   const { flushRegistryRef, registerFlushCallbacks, flushAllResources } =
     useFlushRegistry<FlushResult>(FLUSH_KEYS);
 
@@ -469,24 +467,6 @@ function AuthComponent({
     });
 
   const disabled = useMemo(() => !s?.can_edit, [s?.can_edit]);
-
-  useEffect(() => {
-    const authName = s?.names?.resource?.name;
-    if (authName && authId && isEditMode) {
-      setEntityMetadata({
-        entityId: authId,
-        entityName: authName,
-        entityType: "auth",
-      });
-    }
-    return () => clearEntityMetadata();
-  }, [
-    s?.names?.resource?.name,
-    authId,
-    isEditMode,
-    setEntityMetadata,
-    clearEntityMetadata,
-  ]);
 
   const handleSubmit = useCallback(
     async (_formData: Record<string, unknown>) => {

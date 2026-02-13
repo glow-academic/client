@@ -26,12 +26,12 @@ from app.api.v4.artifacts.scenario.types import (
     ListScenarioSqlRow,
 )
 from app.api.v4.auth.context import get_profile_context_internal
-from app.api.v4.resources.cohorts.types import get_cohorts_internal
+from app.api.v4.resources.cohorts.get import get_cohorts_internal
 from app.api.v4.resources.departments.get import get_departments_internal
 from app.api.v4.resources.fields.get import get_fields_internal
-from app.api.v4.resources.objectives.types import get_objectives_internal
+from app.api.v4.resources.objectives.get import get_objectives_internal
 from app.api.v4.resources.personas.get import get_personas_internal
-from app.api.v4.resources.simulations.types import get_simulations_batch_internal
+from app.api.v4.resources.simulations.get import get_simulations_batch_internal
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool

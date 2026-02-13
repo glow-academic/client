@@ -42,7 +42,6 @@ import {
 import { Roles, type RolesProps } from "@/components/resources/Roles";
 import { Label } from "@/components/ui/label";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
 import { useProfile } from "@/contexts/profile-context";
 import { useSaveContext } from "@/contexts/save-context";
 import { useAiGeneration } from "@/hooks/use-ai-generation";
@@ -234,7 +233,6 @@ function ProfileComponent({
     socket,
     isConnected,
   } = useProfile();
-  const { setEntityMetadata, clearEntityMetadata } = useBreadcrumbContext();
   const { isAutosaveEnabled } = useSaveContext();
   const { flushRegistryRef, registerFlushCallbacks, flushAllResources } =
     useFlushRegistry<Record<string, unknown>>(FLUSH_KEYS);
@@ -854,18 +852,6 @@ function ProfileComponent({
       },
       isGenerating,
     });
-
-  useEffect(() => {
-    const staffName = currentStaffData?.name;
-    if (staffName && staffId && isEditMode) {
-      setEntityMetadata({
-        entityId: staffId,
-        entityName: staffName,
-        entityType: "profile",
-      });
-    }
-    return () => clearEntityMetadata();
-  }, [currentStaffData?.name, staffId, isEditMode, setEntityMetadata, clearEntityMetadata]);
 
   const handleSubmit = useCallback(
     async (_formData: Record<string, unknown>) => {

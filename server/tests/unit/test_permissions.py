@@ -36,8 +36,9 @@ class TestGet_Available_Subsections_For_Role:
         """Test get_available_subsections_for_role with admin role."""
         result = get_available_subsections_for_role("admin")
         assert isinstance(result, list)
+        assert "analytics" in result
+        assert "training" in result
         assert "management" in result
-        assert "system" in result
 
     def test_get_available_subsections_for_role_superadmin(self) -> None:
         """Test get_available_subsections_for_role with superadmin role."""
@@ -52,7 +53,7 @@ class TestGet_Redirect_Path_For_Role:
     def test_get_redirect_path_for_role_guest(self) -> None:
         """Test get_redirect_path_for_role with guest role."""
         result = get_redirect_path_for_role("guest")
-        assert result == "/home"
+        assert result == "/practice"
 
     def test_get_redirect_path_for_role_ta(self) -> None:
         """Test get_redirect_path_for_role with member role."""
@@ -62,17 +63,17 @@ class TestGet_Redirect_Path_For_Role:
     def test_get_redirect_path_for_role_instructional(self) -> None:
         """Test get_redirect_path_for_role with instructional role."""
         result = get_redirect_path_for_role("instructional")
-        assert result == "/home"
+        assert result == "/analytics/dashboard"
 
     def test_get_redirect_path_for_role_admin(self) -> None:
         """Test get_redirect_path_for_role with admin role."""
         result = get_redirect_path_for_role("admin")
-        assert result == "/home"
+        assert result == "/analytics/dashboard"
 
     def test_get_redirect_path_for_role_superadmin(self) -> None:
         """Test get_redirect_path_for_role with superadmin role."""
         result = get_redirect_path_for_role("superadmin")
-        assert result == "/home"
+        assert result == "/analytics/dashboard"
 
 
 class TestRoute_Permissions:

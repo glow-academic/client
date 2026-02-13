@@ -48,12 +48,17 @@ const getModelDetailDefault = async (
 };
 
 /** ---- Metadata ---- */
+/** ---- Docs types for page metadata ---- */
+type DocsIn = InputOf<"/api/v4/artifacts/models/docs", "post">;
+type DocsOut = OutputOf<"/api/v4/artifacts/models/docs", "post">;
+
+const getDocs = async (input: DocsIn): Promise<DocsOut> => {
+  return api.post("/artifacts/models/docs", input);
+};
+
 export async function generateMetadata(): Promise<Metadata> {
-  return {
-    title: "Create Model",
-    description:
-      "Create a new AI language model configuration for teaching assistant training simulations. Set up custom models to power realistic student personas and enhance simulation-based learning experiences for pedagogical development.",
-  };
+  const docs = await getDocs({ body: {} });
+  return { title: docs.new.title, description: docs.new.description };
 }
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */

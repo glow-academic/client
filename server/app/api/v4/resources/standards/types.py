@@ -5,6 +5,8 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
+from app.sql.types import QGetStandardsV4Item
+
 
 class GetStandardsApiRequest(BaseModel):
     """Request for getting standards by IDs."""

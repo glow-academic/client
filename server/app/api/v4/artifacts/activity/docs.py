@@ -2,10 +2,15 @@
 
 from typing import Any
 
+from fastapi import APIRouter
+
 from app.utils.docs_helper import (
     ArtifactDocsConfig,
+    DocsApiRequest,
+    DocsApiResponse,
+    PageMetadataConfig,
     build_artifact_docs_static,
-    create_artifact_docs_router,
+    compute_docs_metadata,
 )
 
 CONFIG = ArtifactDocsConfig(
@@ -40,9 +45,24 @@ CONFIG = ArtifactDocsConfig(
             "Attempts - Activity includes attempt completions",
         ],
     },
+    page_metadata=PageMetadataConfig(
+        list_title="Activity",
+        list_description="View activity logs and user interactions across the platform. Track system events, user actions, and engagement metrics for comprehensive activity monitoring.",
+        detail_title="Activity",
+        detail_description="Activity details and interaction logs for teaching assistant training platform.",
+        new_title="New Activity",
+        new_description="Create a new activity log entry for teaching assistant training platform.",
+    ),
 )
 
-router = create_artifact_docs_router(CONFIG)
+router = APIRouter()
+
+
+@router.post("/docs", response_model=DocsApiResponse)
+async def get_activity_docs_endpoint(
+    request: DocsApiRequest,
+) -> DocsApiResponse:
+    return compute_docs_metadata(CONFIG.page_metadata)
 
 
 def get_activity_docs_static() -> dict[str, Any]:

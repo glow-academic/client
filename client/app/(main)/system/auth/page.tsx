@@ -52,12 +52,17 @@ async function deleteAuth(input: DeleteAuthIn): Promise<DeleteAuthOut> {
   return api.post("/artifacts/auths/delete", input);
 }
 
+/** ---- Docs types for page metadata ---- */
+type DocsIn = InputOf<"/api/v4/artifacts/auths/docs", "post">;
+type DocsOut = OutputOf<"/api/v4/artifacts/auths/docs", "post">;
+
+const getDocs = async (input: DocsIn): Promise<DocsOut> => {
+  return api.post("/artifacts/auths/docs", input);
+};
+
 export async function generateMetadata(): Promise<Metadata> {
-  return {
-    title: "Auth",
-    description:
-      "Manage authentication methods and identity providers for teaching assistant training platform. Configure SSO, OAuth, and other authentication mechanisms for secure access to educational institutions and L&D programs.",
-  };
+  const docs = await getDocs({ body: {} });
+  return { title: docs.list.title, description: docs.list.description };
 }
 
 export default async function AuthPage() {

@@ -10,7 +10,7 @@ import GroupMessages from "@/components/artifacts/pricing/GroupMessages";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { isHardRefresh } from "@/lib/cache-utils";
-import type { Metadata, ResolvingMetadata } from "next";
+import type { Metadata } from "next";
 
 /** ---- Strong types from OpenAPI ---- */
 type PricingGroupDetailIn = InputOf<"/api/v4/artifacts/group/get", "post">;
@@ -35,17 +35,22 @@ const getPricingGroupDetail = async (
   });
 };
 
-export async function generateMetadata(
-  { params }: { params: Promise<{ groupId: string }> },
-  _parent: ResolvingMetadata
-): Promise<Metadata> {
-  const { groupId } = await params;
+/** ---- Docs types for page metadata ---- */
+type DocsIn = InputOf<"/api/v4/artifacts/pricing/docs", "post">;
+type DocsOut = OutputOf<"/api/v4/artifacts/pricing/docs", "post">;
 
-  return {
-    title: `Group ${groupId.substring(0, 8)}...`,
-    description:
-      "Group run details for teaching assistant training platform. Review cost analysis, usage metrics, and pricing data for educational institutions and L&D programs.",
-  };
+const getDocs = async (input: DocsIn): Promise<DocsOut> => {
+  return api.post("/artifacts/pricing/docs", input);
+};
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ groupId: string }>;
+}): Promise<Metadata> {
+  const { groupId } = await params;
+  const docs = await getDocs({ body: { entity_id: groupId } });
+  return { title: docs.detail.title, description: docs.detail.description };
 }
 
 export default async function PricingGroupPage({

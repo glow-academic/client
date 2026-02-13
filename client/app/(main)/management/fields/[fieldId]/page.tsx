@@ -9,7 +9,7 @@ import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDen
 import Field from "@/components/artifacts/field/Field";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
-import type { Metadata, ResolvingMetadata } from "next";
+import type { Metadata } from "next";
 import { createLoader, parseAsBoolean, parseAsString } from "nuqs/server";
 
 /** ---- Strong types from OpenAPI ---- */
@@ -55,38 +55,22 @@ const getField = async (input: GetFieldIn): Promise<GetFieldOut> => {
   }
 };
 
-/** ---- Metadata uses the same cached fetch ---- */
-export async function generateMetadata(
-  { params }: { params: Promise<{ fieldId: string }> },
-  _parent: ResolvingMetadata
-): Promise<Metadata> {
-  const { fieldId } = await params;
-  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  try {
-    const input: GetFieldIn = {
-      body: {
-        field_id: fieldId,
-        draft_id: null,
-      } as GetFieldIn["body"],
-    };
-    const field = await getField(input);
-    const fieldName = field?.names?.resource?.name ?? null;
-    const fieldDescription = field?.descriptions?.resource?.description ?? null;
-    return {
-      title: `${fieldName || "Field"}`,
-      description:
-        fieldDescription ||
-        `${fieldName ? `${fieldName} - ` : ""}Custom field configuration for teaching assistant training platform. Manage field definitions to track additional educational data, assessment criteria, and learning metrics.`,
-    };
-  } catch {
-    // Fall through to default metadata
-  }
+/** ---- Docs types for page metadata ---- */
+type DocsIn = InputOf<"/api/v4/artifacts/fields/docs", "post">;
+type DocsOut = OutputOf<"/api/v4/artifacts/fields/docs", "post">;
 
-  return {
-    title: "Field",
-    description:
-      "Custom field configuration for teaching assistant training platform. Manage field definitions to track additional educational data, assessment criteria, and learning metrics.",
-  };
+const getDocs = async (input: DocsIn): Promise<DocsOut> => {
+  return api.post("/artifacts/fields/docs", input);
+};
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ fieldId: string }>;
+}): Promise<Metadata> {
+  const { fieldId } = await params;
+  const docs = await getDocs({ body: { entity_id: fieldId } });
+  return { title: docs.detail.title, description: docs.detail.description };
 }
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */

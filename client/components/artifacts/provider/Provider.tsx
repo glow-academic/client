@@ -19,7 +19,6 @@ import { Flags } from "@/components/resources/Flags";
 import { Keys } from "@/components/resources/Keys";
 import { Names } from "@/components/resources/Names";
 import { Values } from "@/components/resources/Values";
-import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
 import { useProfile } from "@/contexts/profile-context";
 import { useSaveContext } from "@/contexts/save-context";
 import { useAiGeneration } from "@/hooks/use-ai-generation";
@@ -130,7 +129,6 @@ export default function Provider({
   const router = useRouter();
   const { setSelectedDraftId, socket, isConnected } = useProfile();
   const { isAutosaveEnabled } = useSaveContext();
-  const { setEntityMetadata, clearEntityMetadata } = useBreadcrumbContext();
   const { flushRegistryRef, registerFlushCallbacks, flushAllResources } =
     useFlushRegistry<Record<string, unknown>>(FLUSH_KEYS);
 
@@ -403,26 +401,6 @@ export default function Provider({
     isAutosaveEnabled,
     flushAllResources,
     router,
-  ]);
-
-  useEffect(() => {
-    const providerName = s?.names?.resource?.name;
-    if (providerName && providerId && isEditMode) {
-      setEntityMetadata({
-        entityId: providerId,
-        entityName: providerName,
-        entityType: "provider",
-      });
-    }
-    return () => {
-      if (providerId) clearEntityMetadata(providerId);
-    };
-  }, [
-    s?.names?.resource?.name,
-    providerId,
-    isEditMode,
-    setEntityMetadata,
-    clearEntityMetadata,
   ]);
 
   const disabled = !s?.can_edit;

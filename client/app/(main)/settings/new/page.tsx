@@ -174,12 +174,17 @@ async function getAuthItemKeys(
 }
 
 
+/** ---- Docs types for page metadata ---- */
+type DocsIn = InputOf<"/api/v4/artifacts/settings/docs", "post">;
+type DocsOut = OutputOf<"/api/v4/artifacts/settings/docs", "post">;
+
+const getDocs = async (input: DocsIn): Promise<DocsOut> => {
+  return api.post("/artifacts/settings/docs", input);
+};
+
 export async function generateMetadata(): Promise<Metadata> {
-  return {
-    title: "New Settings",
-    description:
-      "Create new application settings configuration including authentication methods, providers, departments, and configuration options.",
-  };
+  const docs = await getDocs({ body: {} });
+  return { title: docs.new.title, description: docs.new.description };
 }
 
 export default async function NewSettingPage({

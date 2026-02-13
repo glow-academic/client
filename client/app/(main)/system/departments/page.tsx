@@ -54,13 +54,19 @@ async function deleteDepartment(
   return api.post("/artifacts/departments/delete", input);
 }
 
+/** ---- Docs types for page metadata ---- */
+type DocsIn = InputOf<"/api/v4/artifacts/departments/docs", "post">;
+type DocsOut = OutputOf<"/api/v4/artifacts/departments/docs", "post">;
+
+const getDocs = async (input: DocsIn): Promise<DocsOut> => {
+  return api.post("/artifacts/departments/docs", input);
+};
+
 export async function generateMetadata(): Promise<Metadata> {
-  return {
-    title: "Departments",
-    description:
-      "Manage academic departments and organizational units for teaching assistant training programs. Organize departments, configure department-specific settings, and coordinate L&D programs across different academic units.",
-  };
+  const docs = await getDocs({ body: {} });
+  return { title: docs.list.title, description: docs.list.description };
 }
+
 export default async function DepartmentsPage() {
   // Access control handled server-side in layout
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)

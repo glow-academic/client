@@ -14,7 +14,7 @@ import {
   computeAnalyticsDefaults,
   resolveAnalyticsFilters,
 } from "@/lib/search-params/analytics-defaults";
-import type { Metadata, ResolvingMetadata } from "next";
+import type { Metadata } from "next";
 import { Suspense } from "react";
 import { loadProfileReportSearchParams } from "@/lib/search-params/profile-report";
 
@@ -61,41 +61,22 @@ const getReportHistory = async (
   });
 };
 
-export async function generateMetadata(
-  { params }: { params: Promise<{ profileId: string }> },
-  _parent: ResolvingMetadata
-): Promise<Metadata> {
+/** ---- Docs types for page metadata ---- */
+type DocsIn = InputOf<"/api/v4/artifacts/reports/docs", "post">;
+type DocsOut = OutputOf<"/api/v4/artifacts/reports/docs", "post">;
+
+const getDocs = async (input: DocsIn): Promise<DocsOut> => {
+  return api.post("/artifacts/reports/docs", input);
+};
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ profileId: string }>;
+}): Promise<Metadata> {
   const { profileId } = await params;
-
-  try {
-    const { defaults, profileContext } = await computeAnalyticsDefaults();
-
-    const reportsData = await getReportsOverview({
-      body: {
-        start_date: defaults.startDate,
-        end_date: defaults.endDate,
-        cohort_ids: profileContext.cohort_ids || [],
-        department_ids: profileContext.department_ids || [],
-        roles: profileContext.scoped_roles || [],
-        simulation_filters: ["general"],
-        actor_profile_id: profileContext.id || profileId,
-        target_profile_id: profileId,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      } as any,
-    });
-
-    const name = reportsData.profile_name || "";
-    return {
-      title: name,
-      description: `${name ? `${name} - ` : ""}Individual teaching assistant performance reports and assessment analytics. Track pedagogical progress, teaching effectiveness metrics, and professional development outcomes through detailed evaluation data.`,
-    };
-  } catch {
-    return {
-      title: "Profile Report",
-      description:
-        "Individual teaching assistant performance reports and assessment analytics. Track pedagogical progress, teaching effectiveness metrics, and professional development outcomes through detailed evaluation data.",
-    };
-  }
+  const docs = await getDocs({ body: { entity_id: profileId } });
+  return { title: docs.detail.title, description: docs.detail.description };
 }
 
 interface ProfileReportsPageProps {

@@ -56,12 +56,17 @@ const getFieldDefault = async (input: GetFieldIn): Promise<GetFieldOut> => {
 };
 
 /** ---- Metadata ---- */
+/** ---- Docs types for page metadata ---- */
+type DocsIn = InputOf<"/api/v4/artifacts/fields/docs", "post">;
+type DocsOut = OutputOf<"/api/v4/artifacts/fields/docs", "post">;
+
+const getDocs = async (input: DocsIn): Promise<DocsOut> => {
+  return api.post("/artifacts/fields/docs", input);
+};
+
 export async function generateMetadata(): Promise<Metadata> {
-  return {
-    title: "Create Field",
-    description:
-      "Create a new custom field for teaching assistant training platform. Define custom field configurations to track additional educational data, assessment criteria, and learning metrics for comprehensive L&D program management.",
-  };
+  const docs = await getDocs({ body: {} });
+  return { title: docs.new.title, description: docs.new.description };
 }
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */

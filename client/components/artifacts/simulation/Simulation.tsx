@@ -30,7 +30,6 @@ import { ScenarioTimeLimits } from "@/components/resources/ScenarioTimeLimits";
 import { Scenarios } from "@/components/resources/Scenarios";
 import { TooltipProvider } from "@/components/ui/tooltip";
 
-import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
 import { useProfile } from "@/contexts/profile-context";
 import { useSaveContext } from "@/contexts/save-context";
 import { useAiGeneration } from "@/hooks/use-ai-generation";
@@ -272,7 +271,6 @@ function SimulationComponent({
     socket,
     isConnected,
   } = useProfile();
-  const { setEntityMetadata, clearEntityMetadata } = useBreadcrumbContext();
   const { isAutosaveEnabled } = useSaveContext();
 
   // --- Flush Registry ---
@@ -830,25 +828,6 @@ function SimulationComponent({
     if (!stableSimulationDataFields) return false;
     return !(stableSimulationDataFields.can_edit as boolean | undefined);
   }, [stableSimulationDataFields]);
-
-  // Set breadcrumb context when simulation data is loaded
-  useEffect(() => {
-    const simulationName = stableSimulationDataFields?.names?.resource?.name;
-    if (simulationName && simulationId && isEditMode) {
-      setEntityMetadata({
-        entityId: simulationId,
-        entityName: simulationName,
-        entityType: "simulation",
-      });
-    }
-    return () => clearEntityMetadata();
-  }, [
-    stableSimulationDataFields,
-    simulationId,
-    isEditMode,
-    setEntityMetadata,
-    clearEntityMetadata,
-  ]);
 
   // Submit handler for GenericForm (uses formState, not formData parameter)
   const handleSubmit = useCallback(

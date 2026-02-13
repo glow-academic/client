@@ -9,7 +9,7 @@ import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDen
 import Department from "@/components/artifacts/department/Department";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
-import type { Metadata, ResolvingMetadata } from "next";
+import type { Metadata } from "next";
 import { createLoader, parseAsString } from "nuqs/server";
 
 /** ---- Strong types from OpenAPI ---- */
@@ -44,36 +44,22 @@ const getDepartment = async (
   });
 };
 
-/** ---- Metadata uses the same cached fetch ---- */
-export async function generateMetadata(
-  { params }: { params: Promise<{ departmentId: string }> },
-  _parent: ResolvingMetadata
-): Promise<Metadata> {
-  const { departmentId } = await params;
-  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  try {
-    const input: GetDepartmentIn = {
-      body: {
-        department_id: departmentId,
-        draft_id: null,
-      } as GetDepartmentIn["body"],
-    };
-    const department = await getDepartment(input);
-    const deptName = department?.names?.resource?.name;
-    const deptDesc = department?.descriptions?.resource?.description;
-    return {
-      title: `${deptName || "Department"} Department`,
-      description: `${deptName ? `${deptName} - ` : ""}Academic department for teaching assistant training programs.${deptDesc ? ` ${deptDesc}` : ""} Manage department-specific settings and coordinate L&D programs across different academic units.`,
-    };
-  } catch {
-    // Fall through to default metadata
-  }
+/** ---- Docs types for page metadata ---- */
+type DocsIn = InputOf<"/api/v4/artifacts/departments/docs", "post">;
+type DocsOut = OutputOf<"/api/v4/artifacts/departments/docs", "post">;
 
-  return {
-    title: "Department",
-    description:
-      "Academic department for teaching assistant training programs. Manage department-specific settings and coordinate L&D programs across different academic units.",
-  };
+const getDocs = async (input: DocsIn): Promise<DocsOut> => {
+  return api.post("/artifacts/departments/docs", input);
+};
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ departmentId: string }>;
+}): Promise<Metadata> {
+  const { departmentId } = await params;
+  const docs = await getDocs({ body: { entity_id: departmentId } });
+  return { title: docs.detail.title, description: docs.detail.description };
 }
 
 /** ---- Strongly-typed server actions ---- */

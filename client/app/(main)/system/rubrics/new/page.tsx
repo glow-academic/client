@@ -111,12 +111,17 @@ async function createDraftStandardGroups(
   return api.post("/resources/standard_groups", input);
 }
 
+/** ---- Docs types for page metadata ---- */
+type DocsIn = InputOf<"/api/v4/artifacts/rubrics/docs", "post">;
+type DocsOut = OutputOf<"/api/v4/artifacts/rubrics/docs", "post">;
+
+const getDocs = async (input: DocsIn): Promise<DocsOut> => {
+  return api.post("/artifacts/rubrics/docs", input);
+};
+
 export async function generateMetadata(): Promise<Metadata> {
-  return {
-    title: "New Rubric",
-    description:
-      "Create a new assessment rubric for teaching assistant evaluation. Design rubric-based evaluation criteria to assess pedagogical performance, teaching effectiveness, and student interaction skills through structured assessment frameworks.",
-  };
+  const docs = await getDocs({ body: {} });
+  return { title: docs.new.title, description: docs.new.description };
 }
 
 /** ---- Server renders client with typed data (mutations in child components) ---- */

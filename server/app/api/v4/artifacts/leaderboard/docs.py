@@ -2,11 +2,16 @@
 
 from typing import Any
 
+from fastapi import APIRouter
+
 from app.api.v4.artifacts.leaderboard import permissions
 from app.utils.docs_helper import (
     ArtifactDocsConfig,
+    DocsApiRequest,
+    DocsApiResponse,
+    PageMetadataConfig,
     build_artifact_docs_static,
-    create_artifact_docs_router,
+    compute_docs_metadata,
 )
 
 CONFIG = ArtifactDocsConfig(
@@ -45,9 +50,24 @@ CONFIG = ArtifactDocsConfig(
             "Attempts - Leaderboard ranks attempt performance",
         ],
     },
+    page_metadata=PageMetadataConfig(
+        list_title="Leaderboard",
+        list_description="View leaderboard rankings and accolades for teaching assistant training. Track top performers, compare pedagogical skills, and celebrate achievements in simulation-based learning.",
+        detail_title="Leaderboard",
+        detail_description="Leaderboard rankings for teaching assistant training. View top performers and achievements.",
+        new_title="New Leaderboard",
+        new_description="Configure a new leaderboard for teaching assistant training.",
+    ),
 )
 
-router = create_artifact_docs_router(CONFIG)
+router = APIRouter()
+
+
+@router.post("/docs", response_model=DocsApiResponse)
+async def get_leaderboard_docs_endpoint(
+    request: DocsApiRequest,
+) -> DocsApiResponse:
+    return compute_docs_metadata(CONFIG.page_metadata)
 
 
 def get_leaderboard_docs_static() -> dict[str, Any]:

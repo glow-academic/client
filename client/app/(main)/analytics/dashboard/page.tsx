@@ -70,12 +70,17 @@ const getDashboardHistory = async (
   });
 };
 
+/** ---- Docs types for page metadata ---- */
+type DocsIn = InputOf<"/api/v4/artifacts/dashboard/docs", "post">;
+type DocsOut = OutputOf<"/api/v4/artifacts/dashboard/docs", "post">;
+
+const getDocs = async (input: DocsIn): Promise<DocsOut> => {
+  return api.post("/artifacts/dashboard/docs", input);
+};
+
 export async function generateMetadata(): Promise<Metadata> {
-  return {
-    title: "Dashboard",
-    description:
-      "Learning analytics dashboard for teaching assistant performance metrics. Track simulation-based practice sessions, review pedagogical assessments, analyze teaching effectiveness, and monitor professional development progress.",
-  };
+  const docs = await getDocs({ body: {} });
+  return { title: docs.list.title, description: docs.list.description };
 }
 
 interface DashboardPageProps {

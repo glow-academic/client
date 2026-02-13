@@ -7,7 +7,7 @@ import Auth from "@/components/artifacts/auth/Auth";
 import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
-import type { Metadata, ResolvingMetadata } from "next";
+import type { Metadata } from "next";
 import { createLoader, parseAsString } from "nuqs/server";
 
 /** ---- Strong types from OpenAPI ---- */
@@ -44,36 +44,22 @@ const getAuth = async (input: GetAuthIn): Promise<GetAuthOut> => {
   });
 };
 
-/** ---- Metadata uses the same cached fetch ---- */
-export async function generateMetadata(
-  { params }: { params: Promise<{ authId: string }> },
-  _parent: ResolvingMetadata
-): Promise<Metadata> {
-  const { authId } = await params;
-  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  try {
-    const input: GetAuthIn = {
-      body: {
-        auth_id: authId,
-        draft_id: null,
-      } as GetAuthIn["body"],
-    };
-    const auth = await getAuth(input);
-    const authName = auth?.names?.resource?.name;
-    const authDescription = auth?.descriptions?.resource?.description;
-    return {
-      title: `${authName || "Auth"} Auth`,
-      description: `${authName ? `${authName} - ` : ""}Authentication method configuration for teaching assistant training platform.${authDescription ? ` ${authDescription}` : ""} Manage identity providers and secure access mechanisms for educational institutions and L&D programs.`,
-    };
-  } catch {
-    // Fall through to default metadata
-  }
+/** ---- Docs types for page metadata ---- */
+type DocsIn = InputOf<"/api/v4/artifacts/auths/docs", "post">;
+type DocsOut = OutputOf<"/api/v4/artifacts/auths/docs", "post">;
 
-  return {
-    title: "Auth",
-    description:
-      "Authentication method configuration for teaching assistant training platform. Manage identity providers and secure access mechanisms for educational institutions and L&D programs.",
-  };
+const getDocs = async (input: DocsIn): Promise<DocsOut> => {
+  return api.post("/artifacts/auths/docs", input);
+};
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ authId: string }>;
+}): Promise<Metadata> {
+  const { authId } = await params;
+  const docs = await getDocs({ body: { entity_id: authId } });
+  return { title: docs.detail.title, description: docs.detail.description };
 }
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */

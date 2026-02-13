@@ -31,7 +31,6 @@ import {
 } from "@/components/resources/SimulationPositions";
 import { Simulations } from "@/components/resources/Simulations";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
 import { useProfile } from "@/contexts/profile-context";
 import { useSaveContext } from "@/contexts/save-context";
 import { useAiGeneration } from "@/hooks/use-ai-generation";
@@ -186,7 +185,6 @@ function CohortComponent({
     socket,
     isConnected,
   } = useProfile();
-  const { setEntityMetadata, clearEntityMetadata } = useBreadcrumbContext();
   const { isAutosaveEnabled } = useSaveContext();
 
   // --- Flush Registry ---
@@ -770,25 +768,6 @@ function CohortComponent({
     if (!cohortData) return false;
     return !cohortData.can_edit;
   }, [cohortData]);
-
-  // Set breadcrumb context when cohort data is loaded
-  useEffect(() => {
-    const cohortName = cohortData?.names?.resource?.name;
-    if (cohortName && cohortId && isEditMode) {
-      setEntityMetadata({
-        entityId: cohortId,
-        entityName: cohortName,
-        entityType: "cohort",
-      });
-    }
-    return () => clearEntityMetadata();
-  }, [
-    cohortData,
-    cohortId,
-    isEditMode,
-    setEntityMetadata,
-    clearEntityMetadata,
-  ]);
 
   // Submit handler for GenericForm (uses formState, not formData parameter)
   const handleSubmit = useCallback(

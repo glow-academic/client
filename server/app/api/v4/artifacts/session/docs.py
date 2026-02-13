@@ -2,10 +2,11 @@
 
 from typing import Any
 
+from fastapi import APIRouter
+
 from app.utils.docs_helper import (
     ArtifactDocsConfig,
     build_artifact_docs_static,
-    create_artifact_docs_router,
 )
 
 CONFIG = ArtifactDocsConfig(
@@ -46,7 +47,12 @@ CONFIG = ArtifactDocsConfig(
     },
 )
 
-router = create_artifact_docs_router(CONFIG)
+router = APIRouter()
+
+
+@router.post("/docs")
+async def get_session_docs_endpoint() -> dict[str, Any]:
+    return build_artifact_docs_static(CONFIG)
 
 
 def get_sessions_docs() -> dict[str, Any]:

@@ -9,7 +9,7 @@ import Cohort from "@/components/artifacts/cohort/Cohort";
 import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
-import type { Metadata, ResolvingMetadata } from "next";
+import type { Metadata } from "next";
 import { createLoader, parseAsBoolean, parseAsString } from "nuqs/server";
 
 /** ---- Strong types from OpenAPI ---- */
@@ -50,39 +50,22 @@ const getCohort = async (input: GetCohortIn): Promise<GetCohortOut> => {
   });
 };
 
-/** ---- Metadata uses the same cached fetch ---- */
-export async function generateMetadata(
-  { params }: { params: Promise<{ cohortId: string }> },
-  _parent: ResolvingMetadata
-): Promise<Metadata> {
+/** ---- Docs types for page metadata ---- */
+type DocsIn = InputOf<"/api/v4/artifacts/cohorts/docs", "post">;
+type DocsOut = OutputOf<"/api/v4/artifacts/cohorts/docs", "post">;
+
+const getDocs = async (input: DocsIn): Promise<DocsOut> => {
+  return api.post("/artifacts/cohorts/docs", input);
+};
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ cohortId: string }>;
+}): Promise<Metadata> {
   const { cohortId } = await params;
-
-  try {
-    const input: GetCohortIn = {
-      body: {
-        cohort_id: cohortId,
-        draft_id: null,
-        descriptions_search: null,
-        simulation_search: null,
-        simulation_show_selected: null,
-        mcp: false,
-      } as GetCohortIn["body"],
-    };
-    const cohort = await getCohort(input);
-    const cohortName = cohort?.names?.resource?.name || "Cohort";
-    return {
-      title: `${cohortName} Edit`,
-      description: `${cohortName} - Edit learning cohort for teaching assistant training programs. Manage group settings and coordinate group-based learning activities for effective L&D program administration.`,
-    };
-  } catch {
-    // Fall through to default metadata
-  }
-
-  return {
-    title: "Cohort Edit",
-    description:
-      "Edit learning cohort for teaching assistant training programs. Manage group settings and coordinate group-based learning activities for effective L&D program administration.",
-  };
+  const docs = await getDocs({ body: { entity_id: cohortId } });
+  return { title: docs.detail.title, description: docs.detail.description };
 }
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */

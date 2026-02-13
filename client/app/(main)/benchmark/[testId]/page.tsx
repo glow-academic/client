@@ -8,8 +8,8 @@
 import EvalAttemptStatus from "@/components/artifacts/benchmark/EvalAttemptStatus";
 import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
 import { api } from "@/lib/api/client";
-import type { OutputOf } from "@/lib/api/types";
-import type { Metadata, ResolvingMetadata } from "next";
+import type { InputOf, OutputOf } from "@/lib/api/types";
+import type { Metadata } from "next";
 
 /** ---- Strong types from OpenAPI ---- */
 export type TestArtifactOut = OutputOf<"/api/v4/artifacts/test/get", "post">;
@@ -30,28 +30,22 @@ const getTestArtifact = async (
   );
 };
 
-/** ---- Metadata ---- */
-export async function generateMetadata(
-  { params }: { params: Promise<{ testId: string }> },
-  _parent: ResolvingMetadata,
-): Promise<Metadata> {
-  const { testId } = await params;
-  try {
-    const data = await getTestArtifact(testId);
-    const evalName = data?.eval_name;
-    return {
-      title: `Benchmark ${evalName || "Test"}`,
-      description: `${evalName ? `${evalName} - ` : ""}Evaluation benchmark test for teaching assistant training platform.`,
-    };
-  } catch {
-    // Fall through to default metadata
-  }
+/** ---- Docs types for page metadata ---- */
+type DocsIn = InputOf<"/api/v4/artifacts/benchmark/docs", "post">;
+type DocsOut = OutputOf<"/api/v4/artifacts/benchmark/docs", "post">;
 
-  return {
-    title: `Benchmark Test ${testId.substring(0, 8)}...`,
-    description:
-      "Evaluation benchmark test for teaching assistant training platform.",
-  };
+const getDocs = async (input: DocsIn): Promise<DocsOut> => {
+  return api.post("/artifacts/benchmark/docs", input);
+};
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ testId: string }>;
+}): Promise<Metadata> {
+  const { testId } = await params;
+  const docs = await getDocs({ body: { entity_id: testId } });
+  return { title: docs.detail.title, description: docs.detail.description };
 }
 
 /** ---- Page component ---- */

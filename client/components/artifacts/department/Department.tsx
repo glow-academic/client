@@ -21,7 +21,6 @@ import { Flags } from "@/components/resources/Flags";
 import { Names } from "@/components/resources/Names";
 import { Settings } from "@/components/resources/Settings";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
 import { useProfile } from "@/contexts/profile-context";
 import { useSaveContext } from "@/contexts/save-context";
 import { useAiGeneration } from "@/hooks/use-ai-generation";
@@ -137,7 +136,6 @@ function DepartmentComponent({
 
   const { profile, setSelectedDraftId, socket, isConnected } = useProfile();
   const { isAutosaveEnabled } = useSaveContext();
-  const { setEntityMetadata, clearEntityMetadata } = useBreadcrumbContext();
   const { flushRegistryRef, registerFlushCallbacks, flushAllResources } =
     useFlushRegistry<FlushResult>(FLUSH_KEYS);
 
@@ -372,24 +370,6 @@ function DepartmentComponent({
     });
 
   const disabled = useMemo(() => !s?.can_edit, [s?.can_edit]);
-
-  useEffect(() => {
-    const departmentName = s?.names?.resource?.name;
-    if (departmentName && departmentId && isEditMode) {
-      setEntityMetadata({
-        entityId: departmentId,
-        entityName: departmentName,
-        entityType: "department",
-      });
-    }
-    return () => clearEntityMetadata();
-  }, [
-    s?.names?.resource?.name,
-    departmentId,
-    isEditMode,
-    setEntityMetadata,
-    clearEntityMetadata,
-  ]);
 
   const handleSubmit = useCallback(
     async (_formData: Record<string, unknown>) => {

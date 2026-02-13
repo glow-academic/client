@@ -96,12 +96,17 @@ async function bulkCreateOrUpdateStaff(
   return api.post("/artifacts/profiles/bulk/save", input);
 }
 
+/** ---- Docs types for page metadata ---- */
+type DocsIn = InputOf<"/api/v4/artifacts/profiles/docs", "post">;
+type DocsOut = OutputOf<"/api/v4/artifacts/profiles/docs", "post">;
+
+const getDocs = async (input: DocsIn): Promise<DocsOut> => {
+  return api.post("/artifacts/profiles/docs", input);
+};
+
 export async function generateMetadata(): Promise<Metadata> {
-  return {
-    title: "Staff",
-    description:
-      "Manage teaching staff and role assignments for teaching assistant training programs. Organize staff members, assign roles and permissions, and coordinate learning cohort participation for effective L&D program administration.",
-  };
+  const docs = await getDocs({ body: {} });
+  return { title: docs.list.title, description: docs.list.description };
 }
 
 export default async function StaffPage() {

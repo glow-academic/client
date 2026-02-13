@@ -6,12 +6,11 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
-import { createBreadcrumbSectionChangeHandler } from "@/utils/navigation-utils";
-import { usePathname, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import * as React from "react";
 
 export interface NavigationBreadcrumbsProps {
-  breadcrumbs: Array<{ title: string; section?: string | null }>;
+  breadcrumbs: Array<{ title: string; section?: string | null; url?: string }>;
   onSectionChange?: (section: string) => void;
 }
 
@@ -20,24 +19,16 @@ export function NavigationBreadcrumbs({
   onSectionChange,
 }: NavigationBreadcrumbsProps) {
   const router = useRouter();
-  const pathname = usePathname();
-  const breadcrumbNavigate = createBreadcrumbSectionChangeHandler(
-    router,
-    pathname,
-  );
 
   const handleBreadcrumbClick = (crumb: {
     title: string;
     section?: string | null;
+    url?: string;
   }) => {
-    if (crumb.section) {
-      if (onSectionChange) {
-        // If we have an onSectionChange prop, use it (for layout components)
-        onSectionChange(crumb.section);
-      } else {
-        // Otherwise, handle navigation directly with breadcrumb-specific logic
-        breadcrumbNavigate(crumb.section);
-      }
+    if (onSectionChange && crumb.section) {
+      onSectionChange(crumb.section);
+    } else if (crumb.url) {
+      router.push(crumb.url);
     }
   };
 

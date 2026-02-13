@@ -30,13 +30,22 @@ const getEvalDetail = async (input: GetEvalIn): Promise<GetEvalOut> => {
   });
 };
 
-/** ---- Metadata ---- */
-export async function generateMetadata(): Promise<Metadata> {
-  return {
-    title: "Eval Details",
-    description:
-      "View and edit automated evaluation runs for teaching assistant assessments. Monitor batch evaluation progress, review pedagogical performance metrics, and analyze teaching effectiveness across multiple practice sessions.",
-  };
+/** ---- Docs types for page metadata ---- */
+type DocsIn = InputOf<"/api/v4/artifacts/evals/docs", "post">;
+type DocsOut = OutputOf<"/api/v4/artifacts/evals/docs", "post">;
+
+const getDocs = async (input: DocsIn): Promise<DocsOut> => {
+  return api.post("/artifacts/evals/docs", input);
+};
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ evalId: string }>;
+}): Promise<Metadata> {
+  const { evalId } = await params;
+  const docs = await getDocs({ body: { entity_id: evalId } });
+  return { title: docs.detail.title, description: docs.detail.description };
 }
 
 /** ---- Strongly-typed server actions ---- */

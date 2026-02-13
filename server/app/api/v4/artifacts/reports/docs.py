@@ -2,11 +2,16 @@
 
 from typing import Any
 
+from fastapi import APIRouter
+
 from app.api.v4.artifacts.reports import permissions
 from app.utils.docs_helper import (
     ArtifactDocsConfig,
+    DocsApiRequest,
+    DocsApiResponse,
+    PageMetadataConfig,
     build_artifact_docs_static,
-    create_artifact_docs_router,
+    compute_docs_metadata,
 )
 
 CONFIG = ArtifactDocsConfig(
@@ -56,9 +61,24 @@ CONFIG = ArtifactDocsConfig(
             "Attempts - Reports aggregate attempt data",
         ],
     },
+    page_metadata=PageMetadataConfig(
+        list_title="Reports",
+        list_description="Comprehensive learning analytics and reports for teaching assistant training. Track simulation-based practice sessions, review pedagogical assessments, analyze teaching effectiveness, and monitor professional development progress.",
+        detail_title="Report",
+        detail_description="Learning analytics report for teaching assistant training. Review pedagogical assessments and teaching effectiveness.",
+        new_title="New Report",
+        new_description="Generate a new learning analytics report for teaching assistant training.",
+    ),
 )
 
-router = create_artifact_docs_router(CONFIG)
+router = APIRouter()
+
+
+@router.post("/docs", response_model=DocsApiResponse)
+async def get_reports_docs_endpoint(
+    request: DocsApiRequest,
+) -> DocsApiResponse:
+    return compute_docs_metadata(CONFIG.page_metadata)
 
 
 def get_reports_docs_static() -> dict[str, Any]:

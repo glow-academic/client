@@ -40,7 +40,6 @@ import { TemperatureLevels } from "@/components/resources/TemperatureLevels";
 import { Values } from "@/components/resources/Values";
 import { Voices } from "@/components/resources/Voices";
 import { Label } from "@/components/ui/label";
-import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
 import { useProfile } from "@/contexts/profile-context";
 import { useSaveContext } from "@/contexts/save-context";
 import { useDraftLifecycle } from "@/hooks/use-draft-lifecycle";
@@ -187,7 +186,6 @@ function ModelComponent({
   const isEditMode = !!modelId;
   const { profile, setSelectedDraftId, socket, isConnected } = useProfile();
   const { isAutosaveEnabled } = useSaveContext();
-  const { setEntityMetadata, clearEntityMetadata } = useBreadcrumbContext();
   const { flushRegistryRef, registerFlushCallbacks, flushAllResources } =
     useFlushRegistry<FlushResult>(FLUSH_KEYS);
 
@@ -721,29 +719,6 @@ function ModelComponent({
   const providers = useMemo(() => {
     return s?.providers?.resources || [];
   }, [s?.providers?.resources]);
-
-  // Set breadcrumb context
-  useEffect(() => {
-    const modelName = s?.names?.resource?.name;
-    if (modelName && modelId && isEditMode) {
-      setEntityMetadata({
-        entityId: modelId,
-        entityName: modelName,
-        entityType: "model",
-      });
-    }
-    return () => {
-      if (modelId) {
-        clearEntityMetadata(modelId);
-      }
-    };
-  }, [
-    s?.names?.resource?.name,
-    modelId,
-    isEditMode,
-    setEntityMetadata,
-    clearEntityMetadata,
-  ]);
 
   // Step-to-resources mapping
   const stepResources: Record<string, ResourceType[]> = useMemo(

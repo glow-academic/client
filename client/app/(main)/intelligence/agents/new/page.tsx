@@ -53,12 +53,17 @@ async function createDraftVoices(input: CreateDraftVoicesIn): Promise<CreateDraf
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   return api.post("/resources/voices", input);
 }
+/** ---- Docs types for page metadata ---- */
+type DocsIn = InputOf<"/api/v4/artifacts/agents/docs", "post">;
+type DocsOut = OutputOf<"/api/v4/artifacts/agents/docs", "post">;
+
+const getDocs = async (input: DocsIn): Promise<DocsOut> => {
+  return api.post("/artifacts/agents/docs", input);
+};
+
 export async function generateMetadata(): Promise<Metadata> {
-  return {
-    title: "New Agent",
-    description:
-      "Create a new AI agent for teaching assistant training simulations. Configure intelligent agents to power student personas, enhance simulation-based learning experiences, and support pedagogical development through advanced AI capabilities.",
-  };
+  const docs = await getDocs({ body: {} });
+  return { title: docs.new.title, description: docs.new.description };
 }
 
 export default async function NewAgentPage({

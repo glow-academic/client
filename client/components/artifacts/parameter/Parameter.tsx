@@ -20,7 +20,6 @@ import { Names } from "@/components/resources/Names";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
 import { useProfile } from "@/contexts/profile-context";
 import { useSaveContext } from "@/contexts/save-context";
 import { useAiGeneration } from "@/hooks/use-ai-generation";
@@ -202,7 +201,6 @@ function ParameterComponent({
   const s = (parameterData ?? null) as unknown as ParameterSectionData | null;
   const { profile, setSelectedDraftId, socket, isConnected } = useProfile();
   const { isAutosaveEnabled } = useSaveContext();
-  const { setEntityMetadata, clearEntityMetadata } = useBreadcrumbContext();
   const { flushRegistryRef, registerFlushCallbacks, flushAllResources } =
     useFlushRegistry<FlushResult>(FLUSH_KEYS);
 
@@ -546,18 +544,6 @@ function ParameterComponent({
   );
 
   const disabled = useMemo(() => !s?.can_edit, [s?.can_edit]);
-
-  useEffect(() => {
-    const name = s?.names?.resource?.name;
-    if (name && parameterId && isEditMode) {
-      setEntityMetadata({
-        entityId: parameterId,
-        entityName: name,
-        entityType: "parameter",
-      });
-    }
-    return () => clearEntityMetadata();
-  }, [s?.names?.resource?.name, parameterId, isEditMode, setEntityMetadata, clearEntityMetadata]);
 
   const handleSubmit = useCallback(
     async (_formData: Record<string, unknown>) => {

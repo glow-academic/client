@@ -65,12 +65,17 @@ async function createDescriptions(
   return api.post("/resources/descriptions", input);
 }
 
+/** ---- Docs types for page metadata ---- */
+type DocsIn = InputOf<"/api/v4/artifacts/parameters/docs", "post">;
+type DocsOut = OutputOf<"/api/v4/artifacts/parameters/docs", "post">;
+
+const getDocs = async (input: DocsIn): Promise<DocsOut> => {
+  return api.post("/artifacts/parameters/docs", input);
+};
+
 export async function generateMetadata(): Promise<Metadata> {
-  return {
-    title: "New Parameter",
-    description:
-      "Create a new system parameter for teaching assistant training platform. Configure platform-wide parameters, learning environment settings, and system-wide configurations for effective L&D program administration.",
-  };
+  const docs = await getDocs({ body: {} });
+  return { title: docs.new.title, description: docs.new.description };
 }
 
 export default async function NewParameterPage({

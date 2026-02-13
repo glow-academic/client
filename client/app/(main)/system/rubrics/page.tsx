@@ -65,12 +65,17 @@ export async function saveRubric(input: SaveRubricIn): Promise<SaveRubricOut> {
   return api.post("/artifacts/rubrics/save", input);
 }
 
+/** ---- Docs types for page metadata ---- */
+type DocsIn = InputOf<"/api/v4/artifacts/rubrics/docs", "post">;
+type DocsOut = OutputOf<"/api/v4/artifacts/rubrics/docs", "post">;
+
+const getDocs = async (input: DocsIn): Promise<DocsOut> => {
+  return api.post("/artifacts/rubrics/docs", input);
+};
+
 export async function generateMetadata(): Promise<Metadata> {
-  return {
-    title: "Rubrics",
-    description:
-      "Manage assessment rubrics for teaching assistant evaluation. Create and customize rubric-based evaluation criteria to assess pedagogical performance, teaching effectiveness, and student interaction skills.",
-  };
+  const docs = await getDocs({ body: {} });
+  return { title: docs.list.title, description: docs.list.description };
 }
 
 export default async function RubricsPage() {

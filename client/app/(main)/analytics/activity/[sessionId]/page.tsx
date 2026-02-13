@@ -10,7 +10,7 @@ import SessionTimeline from "@/components/artifacts/activity/SessionTimeline";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { isHardRefresh } from "@/lib/cache-utils";
-import type { Metadata, ResolvingMetadata } from "next";
+import type { Metadata } from "next";
 
 /** ---- Strong types from OpenAPI ---- */
 type SessionDetailIn = InputOf<"/api/v4/artifacts/session/get", "post">;
@@ -35,17 +35,22 @@ const getSessionDetail = async (
   });
 };
 
-export async function generateMetadata(
-  { params }: { params: Promise<{ sessionId: string }> },
-  _parent: ResolvingMetadata
-): Promise<Metadata> {
-  const { sessionId } = await params;
+/** ---- Docs types for page metadata ---- */
+type DocsIn = InputOf<"/api/v4/artifacts/activity/docs", "post">;
+type DocsOut = OutputOf<"/api/v4/artifacts/activity/docs", "post">;
 
-  return {
-    title: `Session ${sessionId.substring(0, 8)}...`,
-    description:
-      "Session detail view showing audit trail and pricing group activity for the teaching assistant platform.",
-  };
+const getDocs = async (input: DocsIn): Promise<DocsOut> => {
+  return api.post("/artifacts/activity/docs", input);
+};
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ sessionId: string }>;
+}): Promise<Metadata> {
+  const { sessionId } = await params;
+  const docs = await getDocs({ body: { entity_id: sessionId } });
+  return { title: docs.detail.title, description: docs.detail.description };
 }
 
 export default async function SessionDetailPage({

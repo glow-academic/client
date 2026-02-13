@@ -2,11 +2,16 @@
 
 from typing import Any
 
+from fastapi import APIRouter
+
 from app.api.v4.artifacts.training import permissions
 from app.utils.docs_helper import (
     ArtifactDocsConfig,
+    DocsApiRequest,
+    DocsApiResponse,
+    PageMetadataConfig,
     build_artifact_docs_static,
-    create_artifact_docs_router,
+    compute_docs_metadata,
 )
 
 CONFIG = ArtifactDocsConfig(
@@ -54,9 +59,24 @@ CONFIG = ArtifactDocsConfig(
             "Dashboard - Training metrics feed into dashboard",
         ],
     },
+    page_metadata=PageMetadataConfig(
+        list_title="Create",
+        list_description="Create new teaching resources for teaching assistant training. Design simulations, scenarios, personas, and other educational content to support simulation-based learning and pedagogical development.",
+        detail_title="Training",
+        detail_description="Training details for teaching assistant development. View simulation cards and practice progress.",
+        new_title="New Training",
+        new_description="Create new training content for teaching assistant development.",
+    ),
 )
 
-router = create_artifact_docs_router(CONFIG)
+router = APIRouter()
+
+
+@router.post("/docs", response_model=DocsApiResponse)
+async def get_training_docs_endpoint(
+    request: DocsApiRequest,
+) -> DocsApiResponse:
+    return compute_docs_metadata(CONFIG.page_metadata)
 
 
 def get_training_docs_static() -> dict[str, Any]:

@@ -31,11 +31,11 @@ from app.api.v4.artifacts.training.types import (
     TrainingWebsocketViews,
 )
 from app.api.v4.auth.context import get_profile_context_internal
-from app.api.v4.resources.cohorts.types import get_cohorts_internal
+from app.api.v4.resources.cohorts.get import get_cohorts_internal
 from app.api.v4.resources.personas.get import get_personas_internal
-from app.api.v4.resources.simulations.types import get_simulations_batch_internal
-from app.api.v4.resources.standard_groups.types import get_standard_groups_internal
-from app.api.v4.resources.standards.types import get_standards_internal
+from app.api.v4.resources.simulations.get import get_simulations_batch_internal
+from app.api.v4.resources.standard_groups.get import get_standard_groups_internal
+from app.api.v4.resources.standards.get import get_standards_internal
 from app.api.v4.views.analytics.attempts.get import get_attempt_facts_internal
 from app.api.v4.views.analytics.attempts.types import (
     AttemptFactsItem,

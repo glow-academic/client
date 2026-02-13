@@ -2,11 +2,16 @@
 
 from typing import Any
 
+from fastapi import APIRouter
+
 from app.api.v4.artifacts.dashboard import permissions
 from app.utils.docs_helper import (
     ArtifactDocsConfig,
+    DocsApiRequest,
+    DocsApiResponse,
+    PageMetadataConfig,
     build_artifact_docs_static,
-    create_artifact_docs_router,
+    compute_docs_metadata,
 )
 
 CONFIG = ArtifactDocsConfig(
@@ -50,9 +55,24 @@ CONFIG = ArtifactDocsConfig(
             "Sessions - Dashboard tracks session metrics",
         ],
     },
+    page_metadata=PageMetadataConfig(
+        list_title="Dashboard",
+        list_description="Comprehensive learning and development dashboard for graduate teaching assistants. Track simulation-based practice sessions, review pedagogical assessments, and monitor teaching performance metrics.",
+        detail_title="Dashboard",
+        detail_description="Learning and development dashboard for teaching assistant training. View performance metrics and progress.",
+        new_title="New Dashboard",
+        new_description="Configure a new dashboard view for teaching assistant training.",
+    ),
 )
 
-router = create_artifact_docs_router(CONFIG)
+router = APIRouter()
+
+
+@router.post("/docs", response_model=DocsApiResponse)
+async def get_dashboard_docs_endpoint(
+    request: DocsApiRequest,
+) -> DocsApiResponse:
+    return compute_docs_metadata(CONFIG.page_metadata)
 
 
 def get_dashboard_docs_static() -> dict[str, Any]:

@@ -2,11 +2,16 @@
 
 from typing import Any
 
+from fastapi import APIRouter
+
 from app.api.v4.artifacts.attempt import permissions
 from app.utils.docs_helper import (
     ArtifactDocsConfig,
+    DocsApiRequest,
+    DocsApiResponse,
+    PageMetadataConfig,
     build_artifact_docs_static,
-    create_artifact_docs_router,
+    compute_docs_metadata,
 )
 
 CONFIG = ArtifactDocsConfig(
@@ -64,9 +69,24 @@ CONFIG = ArtifactDocsConfig(
             "Training - Attempts feed into training analytics",
         ],
     },
+    page_metadata=PageMetadataConfig(
+        list_title="Attempts",
+        list_description="View and manage practice attempts for teaching assistant training. Track simulation history, review performance, and monitor learning progress.",
+        detail_title="Attempt",
+        detail_description="Practice attempt details for teaching assistant training. Review performance and learning outcomes.",
+        new_title="New Attempt",
+        new_description="Start a new practice attempt for teaching assistant training.",
+    ),
 )
 
-router = create_artifact_docs_router(CONFIG)
+router = APIRouter()
+
+
+@router.post("/docs", response_model=DocsApiResponse)
+async def get_attempt_docs_endpoint(
+    request: DocsApiRequest,
+) -> DocsApiResponse:
+    return compute_docs_metadata(CONFIG.page_metadata)
 
 
 def get_attempts_docs() -> dict[str, Any]:

@@ -52,12 +52,17 @@ async function duplicateTool(
   return api.post("/artifacts/tools/duplicate", input);
 }
 
+/** ---- Docs types for page metadata ---- */
+type DocsIn = InputOf<"/api/v4/artifacts/tools/docs", "post">;
+type DocsOut = OutputOf<"/api/v4/artifacts/tools/docs", "post">;
+
+const getDocs = async (input: DocsIn): Promise<DocsOut> => {
+  return api.post("/artifacts/tools/docs", input);
+};
+
 export async function generateMetadata(): Promise<Metadata> {
-  return {
-    title: "Tools",
-    description:
-      "Manage tools for teaching assistant training platform. Configure and organize tools for enhanced functionality.",
-  };
+  const docs = await getDocs({ body: {} });
+  return { title: docs.list.title, description: docs.list.description };
 }
 
 export default async function ToolsPage() {

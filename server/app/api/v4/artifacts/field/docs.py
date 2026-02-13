@@ -1,12 +1,24 @@
 """Field artifact documentation."""
 
-from typing import Any
+from typing import Annotated, Any, cast
 
+import asyncpg  # type: ignore
+from fastapi import APIRouter, Depends
+
+from app.api.v4.resources.names.get import get_names_internal
+from app.main import get_db
+from app.sql.types import GetFieldDocsSqlParams, GetFieldDocsSqlRow
 from app.utils.docs_helper import (
     ArtifactDocsConfig,
+    DocsApiRequest,
+    DocsApiResponse,
+    PageMetadataConfig,
     build_artifact_docs_static,
-    create_artifact_docs_router,
+    compute_docs_metadata,
 )
+from app.utils.sql_helper import execute_sql_typed
+
+SQL_PATH = "app/sql/v4/queries/fields/get_field_docs_complete.sql"
 
 CONFIG = ArtifactDocsConfig(
     name="field",
@@ -74,9 +86,36 @@ CONFIG = ArtifactDocsConfig(
             "Resources - Fields use multiple resource types for rich representation",
         ],
     },
+    page_metadata=PageMetadataConfig(
+        list_title="Fields",
+        list_description="Manage custom fields and data configuration for teaching assistant training platform. Configure custom field definitions to track additional educational data, assessment criteria, and learning metrics for comprehensive L&D program management.",
+        detail_title="Field",
+        detail_description="Custom field configuration for teaching assistant training platform. Manage field definitions to track additional educational data, assessment criteria, and learning metrics.",
+        new_title="Create Field",
+        new_description="Create a new custom field for teaching assistant training platform. Define custom field configurations to track additional educational data, assessment criteria, and learning metrics for comprehensive L&D program management.",
+    ),
 )
 
-router = create_artifact_docs_router(CONFIG)
+router = APIRouter()
+
+
+@router.post("/docs", response_model=DocsApiResponse)
+async def get_field_docs_endpoint(
+    request: DocsApiRequest,
+    conn: Annotated[asyncpg.Connection, Depends(get_db)],
+) -> DocsApiResponse:
+    entity_name: str | None = None
+    if request.entity_id:
+        params = GetFieldDocsSqlParams(p_entity_id=request.entity_id)
+        row = cast(
+            GetFieldDocsSqlRow | None,
+            await execute_sql_typed(conn, SQL_PATH, params=params),
+        )
+        if row and row.name_id:
+            names = await get_names_internal(conn, [row.name_id])
+            if names:
+                entity_name = names[0].name
+    return compute_docs_metadata(CONFIG.page_metadata, entity_name)
 
 
 def get_fields_docs() -> dict[str, Any]:

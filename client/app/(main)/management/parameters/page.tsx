@@ -56,12 +56,17 @@ async function deleteParameter(
   return api.post("/artifacts/parameters/delete", input);
 }
 
+/** ---- Docs types for page metadata ---- */
+type DocsIn = InputOf<"/api/v4/artifacts/parameters/docs", "post">;
+type DocsOut = OutputOf<"/api/v4/artifacts/parameters/docs", "post">;
+
+const getDocs = async (input: DocsIn): Promise<DocsOut> => {
+  return api.post("/artifacts/parameters/docs", input);
+};
+
 export async function generateMetadata(): Promise<Metadata> {
-  return {
-    title: "Parameters",
-    description:
-      "Manage system parameters and configuration settings for teaching assistant training platform. Configure platform-wide parameters, learning environment settings, and system-wide configurations for effective L&D program administration.",
-  };
+  const docs = await getDocs({ body: {} });
+  return { title: docs.list.title, description: docs.list.description };
 }
 
 export default async function ContextPage() {

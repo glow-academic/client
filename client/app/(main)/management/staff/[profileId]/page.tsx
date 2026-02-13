@@ -9,7 +9,7 @@ import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDen
 import Profile from "@/components/artifacts/profile/Profile";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
-import type { Metadata, ResolvingMetadata } from "next";
+import type { Metadata } from "next";
 import { createLoader, parseAsString } from "nuqs/server";
 
 /** ---- Strong types from OpenAPI ---- */
@@ -44,37 +44,22 @@ const getStaff = async (input: GetStaffIn): Promise<GetStaffOut> => {
   });
 };
 
-/** ---- Metadata uses the same cached fetch ---- */
-export async function generateMetadata(
-  { params }: { params: Promise<{ profileId: string }> },
-  _parent: ResolvingMetadata
-): Promise<Metadata> {
-  const { profileId } = await params;
-  // currentProfileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  try {
-    const input: GetStaffIn = {
-      body: {
-        target_profile_id: profileId,
-        draft_id: null,
-      } as GetStaffIn["body"],
-    };
-    const staffDetail = await getStaff(input);
-    const staffName =
-      (staffDetail as { names?: { resource?: { name?: string | null } | null } })
-        .names?.resource?.name ?? null;
-    return {
-      title: `Edit ${staffName || "Staff"}`,
-      description: `${staffName ? `Edit ${staffName} - ` : ""}Manage teaching staff member profile, role assignments, and access permissions for teaching assistant training programs. Configure staff participation in learning cohorts and educational resources.`,
-    };
-  } catch {
-    // Fall through to default metadata
-  }
+/** ---- Docs types for page metadata ---- */
+type DocsIn = InputOf<"/api/v4/artifacts/profiles/docs", "post">;
+type DocsOut = OutputOf<"/api/v4/artifacts/profiles/docs", "post">;
 
-  return {
-    title: "Edit Staff",
-    description:
-      "Manage teaching staff member profile, role assignments, and access permissions for teaching assistant training programs. Configure staff participation in learning cohorts and educational resources.",
-  };
+const getDocs = async (input: DocsIn): Promise<DocsOut> => {
+  return api.post("/artifacts/profiles/docs", input);
+};
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ profileId: string }>;
+}): Promise<Metadata> {
+  const { profileId } = await params;
+  const docs = await getDocs({ body: { entity_id: profileId } });
+  return { title: docs.detail.title, description: docs.detail.description };
 }
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */

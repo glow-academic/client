@@ -8,7 +8,7 @@
 import Model from "@/components/artifacts/model/Model";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
-import type { Metadata, ResolvingMetadata } from "next";
+import type { Metadata } from "next";
 import { createLoader, parseAsString } from "nuqs/server";
 
 /** ---- Strong types from OpenAPI ---- */
@@ -48,38 +48,22 @@ const getModel = async (input: GetModelIn): Promise<GetModelOut> => {
   });
 };
 
-/** ---- Metadata uses the same cached fetch ---- */
-export async function generateMetadata(
-  { params }: { params: Promise<{ modelId: string }> },
-  _parent: ResolvingMetadata
-): Promise<Metadata> {
-  const { modelId } = await params;
-  try {
-    const input: GetModelIn = {
-      body: {
-        model_id: modelId,
-        draft_id: null,
-      },
-    };
-    const model = await getModel(input);
-    // Section-first API: name comes from names.resource.name
-    const name = model?.names?.resource?.name;
-    const description = model?.descriptions?.resource?.description;
-    return {
-      title: `${name || "Model"}`,
-      description:
-        description ||
-        `${name ? `${name} - ` : ""}AI language model configuration for teaching assistant training simulations. Customize model settings to power realistic student personas and enhance simulation-based learning experiences.`,
-    };
-  } catch {
-    // Fall through to default metadata
-  }
+/** ---- Docs types for page metadata ---- */
+type DocsIn = InputOf<"/api/v4/artifacts/models/docs", "post">;
+type DocsOut = OutputOf<"/api/v4/artifacts/models/docs", "post">;
 
-  return {
-    title: "Model",
-    description:
-      "AI language model configuration for teaching assistant training simulations. Customize model settings to power realistic student personas and enhance simulation-based learning experiences.",
-  };
+const getDocs = async (input: DocsIn): Promise<DocsOut> => {
+  return api.post("/artifacts/models/docs", input);
+};
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ modelId: string }>;
+}): Promise<Metadata> {
+  const { modelId } = await params;
+  const docs = await getDocs({ body: { entity_id: modelId } });
+  return { title: docs.detail.title, description: docs.detail.description };
 }
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */

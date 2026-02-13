@@ -66,8 +66,8 @@ router.include_router(bindings_get_router)
 router.include_router(bindings_search_router)
 # NOTE: cohorts removed - non-creatable, sync via artifact save (migration 328)
 # GET endpoint available for profile context two-pass architecture
+from app.api.v4.resources.cohorts.get import router as cohorts_get_router
 from app.api.v4.resources.cohorts.search import router as cohorts_search_router
-from app.api.v4.resources.cohorts.types import router as cohorts_get_router
 
 router.include_router(cohorts_get_router)
 router.include_router(cohorts_search_router)
@@ -223,7 +223,7 @@ from app.api.v4.resources.icons.search import router as icons_search_router
 router.include_router(icons_get_router)
 router.include_router(icons_search_router)
 from app.api.v4.resources.images.create import router as images_router
-from app.api.v4.resources.images.types import router as images_get_router
+from app.api.v4.resources.images.get import router as images_get_router
 
 router.include_router(images_router)
 router.include_router(images_get_router)
@@ -293,7 +293,7 @@ router.include_router(names_router)
 router.include_router(names_get_router)
 router.include_router(names_search_router)
 from app.api.v4.resources.objectives.create import router as objectives_router
-from app.api.v4.resources.objectives.types import router as objectives_get_router
+from app.api.v4.resources.objectives.get import router as objectives_get_router
 
 router.include_router(objectives_router)
 router.include_router(objectives_get_router)
@@ -301,7 +301,7 @@ from app.api.v4.resources.objectives.search import router as objectives_search_r
 
 router.include_router(objectives_search_router)
 from app.api.v4.resources.options.create import router as options_router
-from app.api.v4.resources.options.types import router as options_get_router
+from app.api.v4.resources.options.get import router as options_get_router
 
 router.include_router(options_router)
 router.include_router(options_get_router)
@@ -342,7 +342,7 @@ router.include_router(pricing_search_router)
 from app.api.v4.resources.problem_statements.create import (
     router as problem_statements_router,
 )
-from app.api.v4.resources.problem_statements.types import (
+from app.api.v4.resources.problem_statements.get import (
     router as problem_statements_get_router,
 )
 
@@ -389,7 +389,7 @@ from app.api.v4.resources.qualities.search import (
 router.include_router(qualities_get_router)
 router.include_router(qualities_search_router)
 from app.api.v4.resources.questions.create import router as questions_router
-from app.api.v4.resources.questions.types import router as questions_get_router
+from app.api.v4.resources.questions.get import router as questions_get_router
 
 router.include_router(questions_router)
 router.include_router(questions_get_router)
@@ -416,7 +416,7 @@ router.include_router(request_limits_search_router)
 # NOTE: responses removed - converted to entry table (migration 305)
 # NOTE: roles removed - non-creatable (migration 328)
 # GET endpoint available for profile context two-pass architecture
-from app.api.v4.resources.roles.types import router as roles_get_router
+from app.api.v4.resources.roles.get import router as roles_get_router
 
 router.include_router(roles_get_router)
 from app.api.v4.resources.roles.search import router as roles_search_router
@@ -543,7 +543,7 @@ from app.api.v4.resources.scenarios import router as scenarios_router
 router.include_router(scenarios_router)
 # NOTE: settings removed - non-creatable, sync via artifact save (migration 328)
 # GET endpoint available for profile context two-pass architecture
-from app.api.v4.resources.settings.types import router as settings_get_router
+from app.api.v4.resources.settings.get import router as settings_get_router
 
 router.include_router(settings_get_router)
 from app.api.v4.resources.settings.search import router as settings_search_router
@@ -552,11 +552,11 @@ router.include_router(settings_search_router)
 from app.api.v4.resources.simulation_positions.create import (
     router as simulation_positions_router,
 )
+from app.api.v4.resources.simulation_positions.get import (
+    router as simulation_positions_get_router,
+)
 from app.api.v4.resources.simulation_positions.search import (
     router as simulation_positions_search_router,
-)
-from app.api.v4.resources.simulation_positions.types import (
-    router as simulation_positions_get_router,
 )
 
 router.include_router(simulation_positions_router)
@@ -564,8 +564,8 @@ router.include_router(simulation_positions_get_router)
 router.include_router(simulation_positions_search_router)
 # NOTE: simulations removed - non-creatable, sync via artifact save (migration 328)
 # GET/Search endpoints available for cohorts two-pass architecture
+from app.api.v4.resources.simulations.get import router as simulations_get_router
 from app.api.v4.resources.simulations.search import router as simulations_search_router
-from app.api.v4.resources.simulations.types import router as simulations_get_router
 
 router.include_router(simulations_get_router)
 router.include_router(simulations_search_router)
@@ -577,7 +577,7 @@ router.include_router(slugs_router)
 router.include_router(slugs_get_router)
 router.include_router(slugs_search_router)
 from app.api.v4.resources.standard_groups.create import router as standard_groups_router
-from app.api.v4.resources.standard_groups.types import (
+from app.api.v4.resources.standard_groups.get import (
     router as standard_groups_get_router,
 )
 
@@ -590,7 +590,7 @@ from app.api.v4.resources.standard_groups.search import (
 router.include_router(standard_groups_search_router)
 # NOTE: standards removed - non-creatable (migration 328)
 # GET endpoint available for simulations two-pass architecture
-from app.api.v4.resources.standards.types import router as standards_get_router
+from app.api.v4.resources.standards.get import router as standards_get_router
 
 router.include_router(standards_get_router)
 from app.api.v4.resources.standards.search import router as standards_search_router
@@ -632,7 +632,7 @@ router.include_router(values_router)
 router.include_router(values_get_router)
 router.include_router(values_search_router)
 from app.api.v4.resources.videos.create import router as videos_router
-from app.api.v4.resources.videos.types import router as videos_get_router
+from app.api.v4.resources.videos.get import router as videos_get_router
 
 router.include_router(videos_router)
 router.include_router(videos_get_router)

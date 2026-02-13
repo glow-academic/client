@@ -453,6 +453,28 @@ class GetAgentApiResponse(BaseModel):
     tools: list[QGetAgentV4Tool] | None = None
 
 
+# Generated from: get_agent_docs
+
+
+class GetAgentDocsSqlParams(BaseModel):
+    p_entity_id: UUID | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (self.p_entity_id,)
+
+
+class GetAgentDocsSqlRow(BaseModel):
+    name_id: UUID | None = None
+
+
+class GetAgentDocsApiRequest(BaseModel):
+    p_entity_id: UUID | None = None
+
+
+class GetAgentDocsApiResponse(BaseModel):
+    name_id: UUID | None = None
+
+
 # Generated from: get_agent_ids
 
 
@@ -2373,6 +2395,28 @@ class GetAuthApiResponse(BaseModel):
     draft_version: int | None = None
 
 
+# Generated from: get_auth_docs
+
+
+class GetAuthDocsSqlParams(BaseModel):
+    p_entity_id: UUID | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (self.p_entity_id,)
+
+
+class GetAuthDocsSqlRow(BaseModel):
+    name_id: UUID | None = None
+
+
+class GetAuthDocsApiRequest(BaseModel):
+    p_entity_id: UUID | None = None
+
+
+class GetAuthDocsApiResponse(BaseModel):
+    name_id: UUID | None = None
+
+
 # Generated from: get_auth_ids
 
 
@@ -2990,6 +3034,28 @@ class GetCohortApiResponse(BaseModel):
     simulation_positions_required: bool | None = None
     basic_agent_id: UUID | None = None
     general_agent_id: UUID | None = None
+
+
+# Generated from: get_cohort_docs
+
+
+class GetCohortDocsSqlParams(BaseModel):
+    p_entity_id: UUID | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (self.p_entity_id,)
+
+
+class GetCohortDocsSqlRow(BaseModel):
+    name_id: UUID | None = None
+
+
+class GetCohortDocsApiRequest(BaseModel):
+    p_entity_id: UUID | None = None
+
+
+class GetCohortDocsApiResponse(BaseModel):
+    name_id: UUID | None = None
 
 
 # Generated from: get_cohort_ids
@@ -3789,6 +3855,28 @@ class GetDepartmentApiResponse(BaseModel):
     draft_version: int | None = None
 
 
+# Generated from: get_department_docs
+
+
+class GetDepartmentDocsSqlParams(BaseModel):
+    p_entity_id: UUID | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (self.p_entity_id,)
+
+
+class GetDepartmentDocsSqlRow(BaseModel):
+    name_id: UUID | None = None
+
+
+class GetDepartmentDocsApiRequest(BaseModel):
+    p_entity_id: UUID | None = None
+
+
+class GetDepartmentDocsApiResponse(BaseModel):
+    name_id: UUID | None = None
+
+
 # Generated from: get_department_ids
 
 
@@ -4571,6 +4659,28 @@ class GetDocumentApiResponse(BaseModel):
     general_agent_id: UUID | None = None
 
 
+# Generated from: get_document_docs
+
+
+class GetDocumentDocsSqlParams(BaseModel):
+    p_entity_id: UUID | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (self.p_entity_id,)
+
+
+class GetDocumentDocsSqlRow(BaseModel):
+    name_id: UUID | None = None
+
+
+class GetDocumentDocsApiRequest(BaseModel):
+    p_entity_id: UUID | None = None
+
+
+class GetDocumentDocsApiResponse(BaseModel):
+    name_id: UUID | None = None
+
+
 # Generated from: get_document_html_data
 
 
@@ -5338,6 +5448,28 @@ class GetEvalAccessApiResponse(BaseModel):
     active_usage_count: int | None = None
 
 
+# Generated from: get_eval_docs
+
+
+class GetEvalDocsSqlParams(BaseModel):
+    p_entity_id: UUID | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (self.p_entity_id,)
+
+
+class GetEvalDocsSqlRow(BaseModel):
+    name_id: UUID | None = None
+
+
+class GetEvalDocsApiRequest(BaseModel):
+    p_entity_id: UUID | None = None
+
+
+class GetEvalDocsApiResponse(BaseModel):
+    name_id: UUID | None = None
+
+
 # Generated from: get_eval_ids
 
 
@@ -5950,6 +6082,28 @@ class GetFieldApiResponse(BaseModel):
     parameters_required: bool | None = None
     parameter_suggestions: list[UUID] | None = None
     parameters: list[QGetFieldV4Parameter] | None = None
+
+
+# Generated from: get_field_docs
+
+
+class GetFieldDocsSqlParams(BaseModel):
+    p_entity_id: UUID | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (self.p_entity_id,)
+
+
+class GetFieldDocsSqlRow(BaseModel):
+    name_id: UUID | None = None
+
+
+class GetFieldDocsApiRequest(BaseModel):
+    p_entity_id: UUID | None = None
+
+
+class GetFieldDocsApiResponse(BaseModel):
+    name_id: UUID | None = None
 
 
 # Generated from: get_field_ids
@@ -9146,6 +9300,28 @@ class GetModelAccessApiResponse(BaseModel):
     active_persona_count: int | None = None
 
 
+# Generated from: get_model_docs
+
+
+class GetModelDocsSqlParams(BaseModel):
+    p_entity_id: UUID | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (self.p_entity_id,)
+
+
+class GetModelDocsSqlRow(BaseModel):
+    name_id: UUID | None = None
+
+
+class GetModelDocsApiRequest(BaseModel):
+    p_entity_id: UUID | None = None
+
+
+class GetModelDocsApiResponse(BaseModel):
+    name_id: UUID | None = None
+
+
 # Generated from: get_model_ids
 
 
@@ -9816,6 +9992,28 @@ class GetParameterApiResponse(BaseModel):
     fields: list[QGetParameterV4Field] | None = None
 
 
+# Generated from: get_parameter_docs
+
+
+class GetParameterDocsSqlParams(BaseModel):
+    p_entity_id: UUID | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (self.p_entity_id,)
+
+
+class GetParameterDocsSqlRow(BaseModel):
+    name_id: UUID | None = None
+
+
+class GetParameterDocsApiRequest(BaseModel):
+    p_entity_id: UUID | None = None
+
+
+class GetParameterDocsApiResponse(BaseModel):
+    name_id: UUID | None = None
+
+
 # Generated from: get_parameter_ids
 
 
@@ -10319,6 +10517,28 @@ class GetPersonaDocsColumnsApiRequest(BaseModel):
 
 class GetPersonaDocsColumnsApiResponse(BaseModel):
     columns: list[QPersonaDocsColumnsV4Column] | None = None
+
+
+# Generated from: get_persona_docs
+
+
+class GetPersonaDocsSqlParams(BaseModel):
+    p_entity_id: UUID | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (self.p_entity_id,)
+
+
+class GetPersonaDocsSqlRow(BaseModel):
+    name_id: UUID | None = None
+
+
+class GetPersonaDocsApiRequest(BaseModel):
+    p_entity_id: UUID | None = None
+
+
+class GetPersonaDocsApiResponse(BaseModel):
+    name_id: UUID | None = None
 
 
 # Generated from: get_persona_docs_foreign_keys
@@ -11729,6 +11949,28 @@ class GetProfileContextApiResponse(BaseModel):
     session_id: UUID | None = None
 
 
+# Generated from: get_profile_docs
+
+
+class GetProfileDocsSqlParams(BaseModel):
+    p_entity_id: UUID | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (self.p_entity_id,)
+
+
+class GetProfileDocsSqlRow(BaseModel):
+    name_id: UUID | None = None
+
+
+class GetProfileDocsApiRequest(BaseModel):
+    p_entity_id: UUID | None = None
+
+
+class GetProfileDocsApiResponse(BaseModel):
+    name_id: UUID | None = None
+
+
 # Generated from: get_profile_ids
 
 
@@ -12292,6 +12534,28 @@ class GetProviderAccessApiResponse(BaseModel):
     group_id: UUID | None = None
     provider_department_ids: list[UUID] | None = None
     model_usage_count: int | None = None
+
+
+# Generated from: get_provider_docs
+
+
+class GetProviderDocsSqlParams(BaseModel):
+    p_entity_id: UUID | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (self.p_entity_id,)
+
+
+class GetProviderDocsSqlRow(BaseModel):
+    name_id: UUID | None = None
+
+
+class GetProviderDocsApiRequest(BaseModel):
+    p_entity_id: UUID | None = None
+
+
+class GetProviderDocsApiResponse(BaseModel):
+    name_id: UUID | None = None
 
 
 # Generated from: get_provider_ids
@@ -19883,6 +20147,28 @@ class GetRubricApiResponse(BaseModel):
     standards: list[QGetRubricV4StandardResource] | None = None
 
 
+# Generated from: get_rubric_docs
+
+
+class GetRubricDocsSqlParams(BaseModel):
+    p_entity_id: UUID | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (self.p_entity_id,)
+
+
+class GetRubricDocsSqlRow(BaseModel):
+    name_id: UUID | None = None
+
+
+class GetRubricDocsApiRequest(BaseModel):
+    p_entity_id: UUID | None = None
+
+
+class GetRubricDocsApiResponse(BaseModel):
+    name_id: UUID | None = None
+
+
 # Generated from: get_rubric_ids
 
 
@@ -20528,6 +20814,28 @@ class GetScenarioAccessApiResponse(BaseModel):
     group_id: UUID | None = None
     scenario_department_ids: list[UUID] | None = None
     active_simulation_count: int | None = None
+
+
+# Generated from: get_scenario_docs
+
+
+class GetScenarioDocsSqlParams(BaseModel):
+    p_entity_id: UUID | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (self.p_entity_id,)
+
+
+class GetScenarioDocsSqlRow(BaseModel):
+    name_id: UUID | None = None
+
+
+class GetScenarioDocsApiRequest(BaseModel):
+    p_entity_id: UUID | None = None
+
+
+class GetScenarioDocsApiResponse(BaseModel):
+    name_id: UUID | None = None
 
 
 # Generated from: get_scenario_ids
@@ -22384,6 +22692,28 @@ class GetSimulationApiResponse(BaseModel):
     general_agent_id: UUID | None = None
 
 
+# Generated from: get_simulation_docs
+
+
+class GetSimulationDocsSqlParams(BaseModel):
+    p_entity_id: UUID | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (self.p_entity_id,)
+
+
+class GetSimulationDocsSqlRow(BaseModel):
+    name_id: UUID | None = None
+
+
+class GetSimulationDocsApiRequest(BaseModel):
+    p_entity_id: UUID | None = None
+
+
+class GetSimulationDocsApiResponse(BaseModel):
+    name_id: UUID | None = None
+
+
 # Generated from: get_simulation_ids
 
 
@@ -23685,6 +24015,28 @@ class GetToolApiResponse(BaseModel):
     args_outputs: list[QGetToolV4ArgsOutputsResource] | None = None
     input_args_fields: list[QGetToolV4ArgsFieldDetail] | None = None
     output_args_outputs: list[QGetToolV4ArgsOutputsDetail] | None = None
+
+
+# Generated from: get_tool_docs
+
+
+class GetToolDocsSqlParams(BaseModel):
+    p_entity_id: UUID | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (self.p_entity_id,)
+
+
+class GetToolDocsSqlRow(BaseModel):
+    name_id: UUID | None = None
+
+
+class GetToolDocsApiRequest(BaseModel):
+    p_entity_id: UUID | None = None
+
+
+class GetToolDocsApiResponse(BaseModel):
+    name_id: UUID | None = None
 
 
 # Generated from: get_tool_ids
@@ -26174,6 +26526,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetAgentApiRequest",
         "GetAgentApiResponse",
     ),
+    "app/sql/v4/queries/agents/get_agent_docs_complete.sql": (
+        "GetAgentDocsSqlParams",
+        "GetAgentDocsSqlRow",
+        "GetAgentDocsApiRequest",
+        "GetAgentDocsApiResponse",
+    ),
     "app/sql/v4/queries/agents/get_agent_ids_complete.sql": (
         "GetAgentIdsSqlParams",
         "GetAgentIdsSqlRow",
@@ -26462,6 +26820,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetAuthApiRequest",
         "GetAuthApiResponse",
     ),
+    "app/sql/v4/queries/auth/get_auth_docs_complete.sql": (
+        "GetAuthDocsSqlParams",
+        "GetAuthDocsSqlRow",
+        "GetAuthDocsApiRequest",
+        "GetAuthDocsApiResponse",
+    ),
     "app/sql/v4/queries/auth/get_auth_ids_complete.sql": (
         "GetAuthIdsSqlParams",
         "GetAuthIdsSqlRow",
@@ -26527,6 +26891,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetCohortSqlRow",
         "GetCohortApiRequest",
         "GetCohortApiResponse",
+    ),
+    "app/sql/v4/queries/cohorts/get_cohort_docs_complete.sql": (
+        "GetCohortDocsSqlParams",
+        "GetCohortDocsSqlRow",
+        "GetCohortDocsApiRequest",
+        "GetCohortDocsApiResponse",
     ),
     "app/sql/v4/queries/cohorts/get_cohort_ids_complete.sql": (
         "GetCohortIdsSqlParams",
@@ -26611,6 +26981,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetDepartmentSqlRow",
         "GetDepartmentApiRequest",
         "GetDepartmentApiResponse",
+    ),
+    "app/sql/v4/queries/departments/get_department_docs_complete.sql": (
+        "GetDepartmentDocsSqlParams",
+        "GetDepartmentDocsSqlRow",
+        "GetDepartmentDocsApiRequest",
+        "GetDepartmentDocsApiResponse",
     ),
     "app/sql/v4/queries/departments/get_department_ids_complete.sql": (
         "GetDepartmentIdsSqlParams",
@@ -26726,6 +27102,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetDocumentApiRequest",
         "GetDocumentApiResponse",
     ),
+    "app/sql/v4/queries/documents/get_document_docs_complete.sql": (
+        "GetDocumentDocsSqlParams",
+        "GetDocumentDocsSqlRow",
+        "GetDocumentDocsApiRequest",
+        "GetDocumentDocsApiResponse",
+    ),
     "app/sql/v4/queries/documents/get_document_html_data_complete.sql": (
         "GetDocumentHtmlDataSqlParams",
         "GetDocumentHtmlDataSqlRow",
@@ -26822,6 +27204,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetEvalAccessApiRequest",
         "GetEvalAccessApiResponse",
     ),
+    "app/sql/v4/queries/evals/get_eval_docs_complete.sql": (
+        "GetEvalDocsSqlParams",
+        "GetEvalDocsSqlRow",
+        "GetEvalDocsApiRequest",
+        "GetEvalDocsApiResponse",
+    ),
     "app/sql/v4/queries/evals/get_eval_ids_complete.sql": (
         "GetEvalIdsSqlParams",
         "GetEvalIdsSqlRow",
@@ -26887,6 +27275,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetFieldSqlRow",
         "GetFieldApiRequest",
         "GetFieldApiResponse",
+    ),
+    "app/sql/v4/queries/fields/get_field_docs_complete.sql": (
+        "GetFieldDocsSqlParams",
+        "GetFieldDocsSqlRow",
+        "GetFieldDocsApiRequest",
+        "GetFieldDocsApiResponse",
     ),
     "app/sql/v4/queries/fields/get_field_ids_complete.sql": (
         "GetFieldIdsSqlParams",
@@ -27416,6 +27810,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetModelAccessApiRequest",
         "GetModelAccessApiResponse",
     ),
+    "app/sql/v4/queries/models/get_model_docs_complete.sql": (
+        "GetModelDocsSqlParams",
+        "GetModelDocsSqlRow",
+        "GetModelDocsApiRequest",
+        "GetModelDocsApiResponse",
+    ),
     "app/sql/v4/queries/models/get_model_ids_complete.sql": (
         "GetModelIdsSqlParams",
         "GetModelIdsSqlRow",
@@ -27481,6 +27881,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetParameterSqlRow",
         "GetParameterApiRequest",
         "GetParameterApiResponse",
+    ),
+    "app/sql/v4/queries/parameters/get_parameter_docs_complete.sql": (
+        "GetParameterDocsSqlParams",
+        "GetParameterDocsSqlRow",
+        "GetParameterDocsApiRequest",
+        "GetParameterDocsApiResponse",
     ),
     "app/sql/v4/queries/parameters/get_parameter_ids_complete.sql": (
         "GetParameterIdsSqlParams",
@@ -27553,6 +27959,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetPersonaDocsColumnsSqlRow",
         "GetPersonaDocsColumnsApiRequest",
         "GetPersonaDocsColumnsApiResponse",
+    ),
+    "app/sql/v4/queries/personas/get_persona_docs_complete.sql": (
+        "GetPersonaDocsSqlParams",
+        "GetPersonaDocsSqlRow",
+        "GetPersonaDocsApiRequest",
+        "GetPersonaDocsApiResponse",
     ),
     "app/sql/v4/queries/personas/get_persona_docs_foreign_keys_complete.sql": (
         "GetPersonaDocsForeignKeysSqlParams",
@@ -27710,6 +28122,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetProfileContextApiRequest",
         "GetProfileContextApiResponse",
     ),
+    "app/sql/v4/queries/profile/get_profile_docs_complete.sql": (
+        "GetProfileDocsSqlParams",
+        "GetProfileDocsSqlRow",
+        "GetProfileDocsApiRequest",
+        "GetProfileDocsApiResponse",
+    ),
     "app/sql/v4/queries/profile/get_profile_ids_complete.sql": (
         "GetProfileIdsSqlParams",
         "GetProfileIdsSqlRow",
@@ -27799,6 +28217,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetProviderAccessSqlRow",
         "GetProviderAccessApiRequest",
         "GetProviderAccessApiResponse",
+    ),
+    "app/sql/v4/queries/providers/get_provider_docs_complete.sql": (
+        "GetProviderDocsSqlParams",
+        "GetProviderDocsSqlRow",
+        "GetProviderDocsApiRequest",
+        "GetProviderDocsApiResponse",
     ),
     "app/sql/v4/queries/providers/get_provider_ids_complete.sql": (
         "GetProviderIdsSqlParams",
@@ -29054,6 +29478,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetRubricApiRequest",
         "GetRubricApiResponse",
     ),
+    "app/sql/v4/queries/rubrics/get_rubric_docs_complete.sql": (
+        "GetRubricDocsSqlParams",
+        "GetRubricDocsSqlRow",
+        "GetRubricDocsApiRequest",
+        "GetRubricDocsApiResponse",
+    ),
     "app/sql/v4/queries/rubrics/get_rubric_ids_complete.sql": (
         "GetRubricIdsSqlParams",
         "GetRubricIdsSqlRow",
@@ -29131,6 +29561,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetScenarioAccessSqlRow",
         "GetScenarioAccessApiRequest",
         "GetScenarioAccessApiResponse",
+    ),
+    "app/sql/v4/queries/scenarios/get_scenario_docs_complete.sql": (
+        "GetScenarioDocsSqlParams",
+        "GetScenarioDocsSqlRow",
+        "GetScenarioDocsApiRequest",
+        "GetScenarioDocsApiResponse",
     ),
     "app/sql/v4/queries/scenarios/get_scenario_ids_complete.sql": (
         "GetScenarioIdsSqlParams",
@@ -29312,6 +29748,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetSimulationApiRequest",
         "GetSimulationApiResponse",
     ),
+    "app/sql/v4/queries/simulations/get_simulation_docs_complete.sql": (
+        "GetSimulationDocsSqlParams",
+        "GetSimulationDocsSqlRow",
+        "GetSimulationDocsApiRequest",
+        "GetSimulationDocsApiResponse",
+    ),
     "app/sql/v4/queries/simulations/get_simulation_ids_complete.sql": (
         "GetSimulationIdsSqlParams",
         "GetSimulationIdsSqlRow",
@@ -29443,6 +29885,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetToolSqlRow",
         "GetToolApiRequest",
         "GetToolApiResponse",
+    ),
+    "app/sql/v4/queries/tools/get_tool_docs_complete.sql": (
+        "GetToolDocsSqlParams",
+        "GetToolDocsSqlRow",
+        "GetToolDocsApiRequest",
+        "GetToolDocsApiResponse",
     ),
     "app/sql/v4/queries/tools/get_tool_ids_complete.sql": (
         "GetToolIdsSqlParams",
@@ -29844,6 +30292,11 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/agents/get_agent_docs_complete.sql"],
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v4/queries/agents/get_agent_ids_complete.sql"],
     ) -> SqlString: ...
 
@@ -30158,6 +30611,11 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/auth/get_auth_docs_complete.sql"],
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v4/queries/auth/get_auth_ids_complete.sql"],
     ) -> SqlString: ...
 
@@ -30211,6 +30669,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/queries/cohorts/get_cohort_complete.sql"],
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/cohorts/get_cohort_docs_complete.sql"],
     ) -> SqlString: ...
 
     @overload
@@ -30302,6 +30765,13 @@ if TYPE_CHECKING:
     def load_sql_query(
         file_path: Literal[
             "app/sql/v4/queries/departments/get_department_complete.sql"
+        ],
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal[
+            "app/sql/v4/queries/departments/get_department_docs_complete.sql"
         ],
     ) -> SqlString: ...
 
@@ -30433,6 +30903,13 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal[
+            "app/sql/v4/queries/documents/get_document_docs_complete.sql"
+        ],
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal[
             "app/sql/v4/queries/documents/get_document_html_data_complete.sql"
         ],
     ) -> SqlString: ...
@@ -30534,6 +31011,11 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/evals/get_eval_docs_complete.sql"],
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v4/queries/evals/get_eval_ids_complete.sql"],
     ) -> SqlString: ...
 
@@ -30591,6 +31073,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/queries/fields/get_field_complete.sql"],
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/fields/get_field_docs_complete.sql"],
     ) -> SqlString: ...
 
     @overload
@@ -31191,6 +31678,11 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/models/get_model_docs_complete.sql"],
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v4/queries/models/get_model_ids_complete.sql"],
     ) -> SqlString: ...
 
@@ -31254,6 +31746,13 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/queries/parameters/get_parameter_complete.sql"],
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal[
+            "app/sql/v4/queries/parameters/get_parameter_docs_complete.sql"
+        ],
     ) -> SqlString: ...
 
     @overload
@@ -31334,6 +31833,11 @@ if TYPE_CHECKING:
         file_path: Literal[
             "app/sql/v4/queries/personas/get_persona_docs_columns_complete.sql"
         ],
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/personas/get_persona_docs_complete.sql"],
     ) -> SqlString: ...
 
     @overload
@@ -31510,6 +32014,11 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/profile/get_profile_docs_complete.sql"],
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v4/queries/profile/get_profile_ids_complete.sql"],
     ) -> SqlString: ...
 
@@ -31604,6 +32113,13 @@ if TYPE_CHECKING:
     def load_sql_query(
         file_path: Literal[
             "app/sql/v4/queries/providers/get_provider_access_complete.sql"
+        ],
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal[
+            "app/sql/v4/queries/providers/get_provider_docs_complete.sql"
         ],
     ) -> SqlString: ...
 
@@ -32964,6 +33480,11 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/rubrics/get_rubric_docs_complete.sql"],
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v4/queries/rubrics/get_rubric_ids_complete.sql"],
     ) -> SqlString: ...
 
@@ -33044,6 +33565,13 @@ if TYPE_CHECKING:
     def load_sql_query(
         file_path: Literal[
             "app/sql/v4/queries/scenarios/get_scenario_access_complete.sql"
+        ],
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal[
+            "app/sql/v4/queries/scenarios/get_scenario_docs_complete.sql"
         ],
     ) -> SqlString: ...
 
@@ -33250,6 +33778,13 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal[
+            "app/sql/v4/queries/simulations/get_simulation_docs_complete.sql"
+        ],
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal[
             "app/sql/v4/queries/simulations/get_simulation_ids_complete.sql"
         ],
     ) -> SqlString: ...
@@ -33381,6 +33916,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/queries/tools/get_tool_complete.sql"],
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/tools/get_tool_docs_complete.sql"],
     ) -> SqlString: ...
 
     @overload

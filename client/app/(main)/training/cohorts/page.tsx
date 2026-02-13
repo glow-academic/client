@@ -67,12 +67,17 @@ async function deleteCohort(input: DeleteCohortIn): Promise<DeleteCohortOut> {
   return api.post("/artifacts/cohorts/delete", input);
 }
 
+/** ---- Docs types for page metadata ---- */
+type DocsIn = InputOf<"/api/v4/artifacts/cohorts/docs", "post">;
+type DocsOut = OutputOf<"/api/v4/artifacts/cohorts/docs", "post">;
+
+const getDocs = async (input: DocsIn): Promise<DocsOut> => {
+  return api.post("/artifacts/cohorts/docs", input);
+};
+
 export async function generateMetadata(): Promise<Metadata> {
-  return {
-    title: "Cohorts",
-    description:
-      "Manage learning cohorts for teaching assistant training programs. Organize groups of teaching assistants, track cohort progress, and coordinate group-based learning activities for effective L&D program administration.",
-  };
+  const docs = await getDocs({ body: {} });
+  return { title: docs.list.title, description: docs.list.description };
 }
 
 interface CohortsPageProps {

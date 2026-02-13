@@ -38,7 +38,6 @@ import { ProblemStatements } from "@/components/resources/ProblemStatements";
 import { Questions } from "@/components/resources/Questions";
 import { Videos } from "@/components/resources/Videos";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
 import { useProfile } from "@/contexts/profile-context";
 import { useSaveContext } from "@/contexts/save-context";
 import { useAiGeneration } from "@/hooks/use-ai-generation";
@@ -321,7 +320,6 @@ function ScenarioComponent({
   const router = useRouter();
   const isEditMode = !!scenarioId;
   const { profile, setSelectedDraftId, socket, isConnected } = useProfile();
-  const { setEntityMetadata, clearEntityMetadata } = useBreadcrumbContext();
   const { isAutosaveEnabled } = useSaveContext();
 
   // Use scenarioDetail for edit mode, scenarioDetailDefault for new mode
@@ -969,25 +967,6 @@ function ScenarioComponent({
     if (!scenarioData) return false;
     return !scenarioData.can_edit;
   }, [scenarioData]);
-
-  // Set breadcrumb context when scenario data is loaded in edit mode
-  useEffect(() => {
-    const scenarioName = stableScenarioDataFields?.names?.resource?.name;
-    if (scenarioName && scenarioId && isEditMode) {
-      setEntityMetadata({
-        entityId: scenarioId,
-        entityName: scenarioName,
-        entityType: "scenario",
-      });
-    }
-    return () => clearEntityMetadata();
-  }, [
-    stableScenarioDataFields?.names?.resource?.name,
-    scenarioId,
-    isEditMode,
-    setEntityMetadata,
-    clearEntityMetadata,
-  ]);
 
   // --- Generation Handlers ---
   const handleGenerateResources = useCallback(

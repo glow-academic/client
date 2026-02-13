@@ -90,12 +90,17 @@ async function createDraftSimulationPositions(
   return api.post("/resources/simulation_positions", input);
 }
 
+/** ---- Docs types for page metadata ---- */
+type DocsIn = InputOf<"/api/v4/artifacts/cohorts/docs", "post">;
+type DocsOut = OutputOf<"/api/v4/artifacts/cohorts/docs", "post">;
+
+const getDocs = async (input: DocsIn): Promise<DocsOut> => {
+  return api.post("/artifacts/cohorts/docs", input);
+};
+
 export async function generateMetadata(): Promise<Metadata> {
-  return {
-    title: "New Cohort",
-    description:
-      "Create a new learning cohort for teaching assistant training programs. Organize groups of teaching assistants, configure cohort settings, and set up group-based learning activities for effective L&D program administration.",
-  };
+  const docs = await getDocs({ body: {} });
+  return { title: docs.new.title, description: docs.new.description };
 }
 
 export default async function NewCohortPage({

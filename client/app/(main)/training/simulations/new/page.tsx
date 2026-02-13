@@ -157,12 +157,17 @@ async function createDraftScenarioTimeLimits(
   return api.post("/resources/scenario_time_limits", input);
 }
 
+/** ---- Docs types for page metadata ---- */
+type DocsIn = InputOf<"/api/v4/artifacts/simulations/docs", "post">;
+type DocsOut = OutputOf<"/api/v4/artifacts/simulations/docs", "post">;
+
+const getDocs = async (input: DocsIn): Promise<DocsOut> => {
+  return api.post("/artifacts/simulations/docs", input);
+};
+
 export async function generateMetadata(): Promise<Metadata> {
-  return {
-    title: "New Simulation",
-    description:
-      "Create a new teaching practice simulation for graduate teaching assistant training. Practice pedagogical techniques and student interaction strategies through realistic educational scenarios and simulation-based learning.",
-  };
+  const docs = await getDocs({ body: {} });
+  return { title: docs.new.title, description: docs.new.description };
 }
 
 export default async function NewSimulationPage({

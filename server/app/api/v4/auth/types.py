@@ -6,6 +6,12 @@ from dataclasses import dataclass
 from datetime import datetime
 from uuid import UUID
 
+from app.api.v4.auth.route_permissions import (
+    BreadcrumbItem,
+    PageAccess,
+    PageMetadata,
+    SidebarSection,
+)
 from app.api.v4.resources.agents.get import QGetAgentsV4Item
 from app.api.v4.resources.cohorts.types import QGetCohortsV4Item
 from app.api.v4.resources.departments.get import QGetDepartmentsV4Item
@@ -28,6 +34,10 @@ class GetProfileContextApiResponse(BaseGetProfileContextApiResponse):
     """Extended profile context response with generated artifact map."""
 
     artifact_has_generation: dict[str, bool] | None = None
+    sidebar_routes: list[SidebarSection] | None = None
+    breadcrumbs: list[BreadcrumbItem] | None = None
+    page_access: PageAccess | None = None
+    page_metadata: PageMetadata | None = None
 
 
 @dataclass

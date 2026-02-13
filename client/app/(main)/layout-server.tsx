@@ -113,10 +113,18 @@ export const getLayoutContext = cache(
       .filter(Boolean)
       .join("; ");
 
+    // Forward pathname so server can compute sidebar, breadcrumbs, page metadata
+    const headersList = await headers();
+    const pathname = headersList.get("x-pathname") || "/";
+
+    const extraHeaders: Record<string, string> = {};
+    if (cookieHeader) extraHeaders["Cookie"] = cookieHeader;
+    extraHeaders["X-Pathname"] = pathname;
+
     const result = await api.post(
       "/auth/context",
       input,
-      cookieHeader ? { headers: { Cookie: cookieHeader } } : undefined
+      { headers: extraHeaders }
     );
 
     return result;
@@ -249,8 +257,8 @@ export async function getLayoutContextData(session?: Session | null) {
 
   // Extract attemptId from pathname if we're on an attempt page
   const attemptMatch =
-    pathname.match(/\/home\/a\/([^/]+)/) ||
-    pathname.match(/\/practice\/a\/([^/]+)/);
+    pathname.match(/\/home\/([0-9a-f-]{36})/) ||
+    pathname.match(/\/practice\/([0-9a-f-]{36})/);
   const attemptId = attemptMatch ? attemptMatch[1] : null;
 
   // Fetch attempt data if we have an attemptId (using resolved UUID)

@@ -19,15 +19,22 @@ from app.api.v4.auth.permissions import (
     convert_simulation,
     derive_theme_tokens,
 )
+from app.api.v4.auth.route_permissions import (
+    compute_breadcrumbs,
+    compute_page_access,
+    compute_page_metadata,
+    compute_sidebar_routes,
+    get_entity_name_junction,
+)
 from app.api.v4.auth.types import (
     GetProfileContextApiResponse,
     ProfileContextInternalData,
 )
-from app.api.v4.resources.cohorts.types import get_cohorts_internal
+from app.api.v4.resources.cohorts.get import get_cohorts_internal
 from app.api.v4.resources.departments.get import get_departments_internal
-from app.api.v4.resources.roles.types import get_roles_internal
-from app.api.v4.resources.settings.types import get_settings_internal
-from app.api.v4.resources.simulations.types import get_simulations_batch_internal
+from app.api.v4.resources.roles.get import get_roles_internal
+from app.api.v4.resources.settings.get import get_settings_internal
+from app.api.v4.resources.simulations.get import get_simulations_batch_internal
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.drafts.get import get_drafts_internal
 from app.infra.v4.error.handle_route_error import handle_route_error
@@ -269,6 +276,7 @@ async def get_profile_context(
 
         department_id_cookie = http_request.cookies.get("department-id")
         bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
+        pathname = http_request.headers.get("X-Pathname", "")
 
         sql_query = load_sql_query(SQL_ACCESS_PATH)
 
@@ -303,6 +311,43 @@ async def get_profile_context(
         response.headers["X-Two-Pass"] = "1"
         response.headers["X-Pass1-Time"] = f"{data.pass1_time_ms:.1f}"
         response.headers["X-Pass2-Time"] = f"{data.pass2_time_ms:.1f}"
+
+        # --- Server-driven routing computations ---
+        available_sections = access.available_sections or []
+        available_routes = access.available_routes or []
+
+        sidebar_routes = compute_sidebar_routes(available_sections)
+        breadcrumbs = compute_breadcrumbs(pathname) if pathname else []
+        page_access = (
+            compute_page_access(pathname, available_routes) if pathname else None
+        )
+        page_metadata = (
+            compute_page_metadata(pathname, available_routes) if pathname else None
+        )
+
+        # Resolve entity name for breadcrumbs if pathname has a UUID
+        if pathname and breadcrumbs:
+            entity_info = get_entity_name_junction(pathname)
+            if entity_info:
+                entity_id, _entity_type, name_junction = entity_info
+                try:
+                    pool = get_pool()
+                    if pool:
+                        async with pool.acquire() as c:
+                            entity_name = await c.fetchval(
+                                f"SELECT nr.name FROM {name_junction} nj "  # noqa: S608
+                                f"JOIN names_resource nr ON nr.id = nj.name_id "
+                                f"WHERE nj.parent_id = $1::uuid "
+                                f"AND nj.active = true LIMIT 1",
+                                UUID(entity_id),
+                            )
+                        if entity_name:
+                            # Replace the placeholder breadcrumb title
+                            for bc in breadcrumbs:
+                                if bc.url and entity_id in bc.url and "..." in bc.title:
+                                    bc.title = entity_name
+                except Exception:
+                    pass  # Graceful fallback — keep truncated UUID
 
         return GetProfileContextApiResponse(
             is_authorized=access.is_authorized,
@@ -364,6 +409,10 @@ async def get_profile_context(
             actor_name=data.actor_name,
             session_id=access.session_id,
             artifact_has_generation=data.artifact_has_generation,
+            sidebar_routes=sidebar_routes,
+            breadcrumbs=breadcrumbs if breadcrumbs else None,
+            page_access=page_access,
+            page_metadata=page_metadata,
         )
 
     except HTTPException:

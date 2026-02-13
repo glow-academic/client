@@ -10,7 +10,7 @@ import type { ScenarioFlagsProps } from "@/components/resources/ScenarioFlags";
 import Simulation from "@/components/artifacts/simulation/Simulation";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
-import type { Metadata, ResolvingMetadata } from "next";
+import type { Metadata } from "next";
 import { createLoader, parseAsString } from "nuqs/server";
 
 /** ---- Strong types from OpenAPI ---- */
@@ -103,35 +103,22 @@ const getSimulation = async (
   }
 };
 
-/** ---- Metadata uses the same cached fetch ---- */
-export async function generateMetadata(
-  { params }: { params: Promise<{ simulationId: string }> },
-  _parent: ResolvingMetadata
-): Promise<Metadata> {
+/** ---- Docs types for page metadata ---- */
+type DocsIn = InputOf<"/api/v4/artifacts/simulations/docs", "post">;
+type DocsOut = OutputOf<"/api/v4/artifacts/simulations/docs", "post">;
+
+const getDocs = async (input: DocsIn): Promise<DocsOut> => {
+  return api.post("/artifacts/simulations/docs", input);
+};
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ simulationId: string }>;
+}): Promise<Metadata> {
   const { simulationId } = await params;
-  // profileId removed - comes from X-Profile-Id header automatically
-
-  try {
-    const input: GetSimulationIn = {
-      body: {
-        simulation_id: simulationId,
-        draft_id: null,
-      } as GetSimulationIn["body"],
-    };
-    const simulation = await getSimulation(input);
-    return {
-      title: `${simulation?.names?.resource?.name || "Simulation"}`,
-      description: `${simulation?.names?.resource?.name ? `${simulation.names?.resource?.name} - ` : ""}Teaching practice simulation for graduate teaching assistant training. Practice pedagogical techniques and student interaction strategies through realistic educational scenarios and simulation-based learning.`,
-    };
-  } catch {
-    // Fall through to default metadata
-  }
-
-  return {
-    title: "Simulation",
-    description:
-      "Teaching practice simulation for graduate teaching assistant training. Practice pedagogical techniques and student interaction strategies through realistic educational scenarios and simulation-based learning.",
-  };
+  const docs = await getDocs({ body: { entity_id: simulationId } });
+  return { title: docs.detail.title, description: docs.detail.description };
 }
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */

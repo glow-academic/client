@@ -46,7 +46,6 @@ import {
 } from "@/components/ui/sidebar";
 import { useProfile } from "@/contexts/profile-context";
 import { useFederatedLogout } from "@/hooks/useFederatedLogout";
-import { getSectionRoute } from "@/utils/navigation-utils";
 import Link from "next/link";
 import {
   Activity,
@@ -107,6 +106,21 @@ interface NavSection {
   section?: string;
 }
 
+// Icon map: resolves Lucide icon name string → React component
+const NAV_ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
+  home: Home,
+  target: Target,
+  trophy: Trophy,
+  "pie-chart": PieChart,
+  "graduation-cap": GraduationCap,
+  "clipboard-list": ClipboardList,
+  sparkles: Sparkles,
+  server: Server,
+  activity: Activity,
+  gauge: Gauge,
+  settings: Settings,
+};
+
 // Helper function to get initials from name
 const getInitials = (name?: string): string => {
   if (!name) return "??";
@@ -147,295 +161,63 @@ export function UnifiedSidebar({
   // Get sidebar context to close mobile sidebar on navigation
   const { isMobile, setOpenMobile } = useSidebar();
 
-  // Use the profile context
-  const { profile, isLoading, availableSections, isAuthenticated } =
+  // Use the profile context — sidebar routes come from server
+  const { profile, isLoading, sidebarRoutes, isAuthenticated } =
     useProfile();
 
-  // Build navigation menu based on role with search filtering
+  // Convert server-driven sidebar routes into NavSection format with search filtering
   const navMain = useMemo(() => {
-    if (!profile) return [];
+    if (!profile || !sidebarRoutes) return [];
 
-    const menu: NavSection[] = [];
-    // Use server-provided available sections from profile context
+    const menu: NavSection[] = sidebarRoutes.map((section) => {
+      const IconComponent = NAV_ICON_MAP[section.icon] || Home;
+      const items: MenuItem[] | undefined = section.items
+        ? section.items.map((item) => ({
+            title: item.title,
+            url: item.url,
+            section: item.section,
+          }))
+        : undefined;
 
-    // Home - Only for non guest users
-    if (availableSections.includes("home")) {
-      menu.push({
-        title: "Home",
-        url: "#",
-        icon: Home,
-        section: "home",
-      });
-    }
-    // Practice - all users
-    if (availableSections.includes("practice")) {
-      menu.push({
-        title: "Practice",
-        url: "#",
-        icon: Target,
-        section: "practice",
-      });
-    }
-
-    // Leaderboard - Available for all authorized users as root-level item
-    if (availableSections.includes("leaderboard")) {
-      menu.push({
-        title: "Leaderboard",
-        url: "#",
-        icon: Trophy,
-        section: "leaderboard",
-      });
-    }
-
-    // Analytics - Available from instructional level and up
-    // Check for parent section "analytics" - if present, show all subsections
-    if (availableSections.includes("analytics")) {
-      const analyticsItems: MenuItem[] = [];
-
-      // Show all analytics subsections when parent section is available
-      analyticsItems.push({
-        title: "Dashboard",
-        url: "#",
-        section: "dashboard",
-      });
-      analyticsItems.push({
-        title: "Reports",
-        url: "#",
-        section: "reports",
-      });
-      analyticsItems.push({
-        title: "Activity",
-        url: "#",
-        section: "activity",
-      });
-      analyticsItems.push({
-        title: "Pricing",
-        url: "#",
-        section: "pricing",
-      });
-
-      menu.push({
-        title: "Analytics",
-        url: "#",
-        icon: PieChart,
-        items: analyticsItems,
-      });
-    }
-
-    // Training - Available from instructor level and up
-    // Check for parent section "training" - if present, show all subsections
-    if (availableSections.includes("training")) {
-      const trainingItems: MenuItem[] = [];
-
-      // Show all training subsections when parent section is available
-      trainingItems.push({
-        title: "Cohorts",
-        url: "#",
-        section: "cohorts",
-      });
-      trainingItems.push({
-        title: "Simulations",
-        url: "#",
-        section: "simulations",
-      });
-      trainingItems.push({
-        title: "Scenarios",
-        url: "#",
-        section: "scenarios",
-      });
-      trainingItems.push({
-        title: "Personas",
-        url: "#",
-        section: "personas",
-      });
-
-      menu.push({
-        title: "Training",
-        url: "#",
-        icon: GraduationCap,
-        items: trainingItems,
-      });
-    }
-
-    // Management - Available from admin level and up
-    // Check for parent section "management" - if present, show all subsections
-    if (availableSections.includes("management")) {
-      const managementItems: MenuItem[] = [];
-
-      // Show all management subsections when parent section is available
-      managementItems.push({
-        title: "Staff",
-        url: "#",
-        section: "staff",
-      });
-      managementItems.push({
-        title: "Documents",
-        url: "#",
-        section: "documents",
-      });
-      managementItems.push({
-        title: "Parameters",
-        url: "#",
-        section: "parameters",
-      });
-      managementItems.push({
-        title: "Fields",
-        url: "#",
-        section: "fields",
-      });
-
-      menu.push({
-        title: "Management",
-        url: "#",
-        icon: ClipboardList,
-        items: managementItems,
-      });
-    }
-
-    // Intelligence - Available for admin and superadmin
-    // Check for parent section "intelligence" - if present, show all subsections
-    if (availableSections.includes("intelligence")) {
-      const intelligenceItems: MenuItem[] = [];
-
-      // Show all intelligence subsections when parent section is available
-      intelligenceItems.push({
-        title: "Agents",
-        url: "#",
-        section: "agents",
-      });
-      intelligenceItems.push({
-        title: "Models",
-        url: "#",
-        section: "models",
-      });
-      intelligenceItems.push({
-        title: "Providers",
-        url: "#",
-        section: "providers",
-      });
-      intelligenceItems.push({
-        title: "Tools",
-        url: "#",
-        section: "tools",
-      });
-
-      menu.push({
-        title: "Intelligence",
-        url: "#",
-        icon: Sparkles,
-        items: intelligenceItems,
-      });
-    }
-
-    // System - Available for superadmin only
-    // Check for parent section "system" - if present, show all subsections
-    if (availableSections.includes("system")) {
-      const systemItems: MenuItem[] = [];
-
-      // Show all system subsections when parent section is available
-      systemItems.push({
-        title: "Departments",
-        url: "#",
-        section: "departments",
-      });
-      systemItems.push({
-        title: "Rubrics",
-        url: "#",
-        section: "rubrics",
-      });
-      systemItems.push({
-        title: "Auth",
-        url: "#",
-        section: "auth",
-      });
-      systemItems.push({
-        title: "Evals",
-        url: "#",
-        section: "evals",
-      });
-
-      menu.push({
-        title: "System",
-        url: "#",
-        icon: Server,
-        items: systemItems,
-      });
-    }
-
-    // Health - Available for superadmin only, top-level
-    if (availableSections.includes("health")) {
-      menu.push({
-        title: "Health",
-        url: "#",
-        icon: Activity,
-        section: "health",
-      });
-    }
-
-    // Benchmark - Available for superadmin only, top-level
-    if (availableSections.includes("benchmark")) {
-      menu.push({
-        title: "Benchmark",
-        url: "#",
-        icon: Gauge,
-        section: "benchmark",
-      });
-    }
-
-    // Settings - Available for admin and superadmin, root level (bottom)
-    if (availableSections.includes("settings")) {
-      menu.push({
-        title: "Settings",
-        url: "#",
-        icon: Settings,
-        section: "settings",
-      });
-    }
+      return {
+        title: section.title,
+        url: section.url,
+        icon: IconComponent,
+        section: section.section,
+        items,
+      };
+    });
 
     // Apply search filter if search term exists
     if (searchTerm.trim()) {
       const searchLower = searchTerm.toLowerCase();
-      const filteredMenu = menu
+      return menu
         .map((section) => {
-          // Check if this is a root-level item (has section but no items)
           if (section.section && !section.items) {
-            // Root-level item - check if it matches search
             const matchesSearch =
               section.title.toLowerCase().includes(searchLower) ||
               section.section.toLowerCase().includes(searchLower);
             return matchesSearch ? section : null;
           }
-
-          // Section with sub-items - filter items
           const filteredItems =
             section.items?.filter(
               (item) =>
                 item.title.toLowerCase().includes(searchLower) ||
                 item.section?.toLowerCase().includes(searchLower)
             ) || [];
-
-          // Also check if the section title itself matches
           const sectionMatches = section.title
             .toLowerCase()
             .includes(searchLower);
-
-          // Return section if it has matching items or if section title matches
           if (filteredItems.length > 0 || sectionMatches) {
-            return {
-              ...section,
-              items: filteredItems,
-            };
+            return { ...section, items: filteredItems };
           }
-
           return null;
         })
         .filter((section): section is NavSection => section !== null);
-
-      return filteredMenu;
     }
 
     return menu;
-  }, [profile, searchTerm, availableSections]);
+  }, [profile, searchTerm, sidebarRoutes]);
 
   // Resolve the href for any menu item (for use with <Link>)
   const getItemHref = useCallback(
@@ -443,12 +225,9 @@ export function UnifiedSidebar({
       if (item.url && item.url !== "#") {
         return item.url;
       }
-      if (item.section) {
-        return getSectionRoute(item.section, pathname);
-      }
       return "#";
     },
-    [pathname]
+    []
   );
 
   const handleItemClick = useCallback(

@@ -9,7 +9,7 @@ import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDen
 import Document from "@/components/artifacts/document/Document";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
-import type { Metadata, ResolvingMetadata } from "next";
+import type { Metadata } from "next";
 import { createLoader, parseAsString } from "nuqs/server";
 
 /** ---- Strong types from OpenAPI ---- */
@@ -51,31 +51,22 @@ const getDocumentDefault = async (
   });
 };
 
-/** ---- Metadata uses the same cached fetch ---- */
-export async function generateMetadata(
-  { params }: { params: Promise<{ documentId: string }> },
-  _parent: ResolvingMetadata
-): Promise<Metadata> {
-  const { documentId } = await params;
-  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  try {
-    const document = await getDocumentDefault({
-      body: { document_id: documentId, draft_id: null },
-    });
-    const documentName = document?.names?.resource?.name;
-    return {
-      title: `${documentName || "Document"}`,
-      description: `${documentName ? `${documentName} - ` : ""}Learning resource and educational document for teaching assistant training. Access course materials, instructional resources, and reference documents to support pedagogical development.`,
-    };
-  } catch {
-    // Fall through to default metadata
-  }
+/** ---- Docs types for page metadata ---- */
+type DocsIn = InputOf<"/api/v4/artifacts/documents/docs", "post">;
+type DocsOut = OutputOf<"/api/v4/artifacts/documents/docs", "post">;
 
-  return {
-    title: "Document",
-    description:
-      "Learning resource and educational document for teaching assistant training. Access course materials, instructional resources, and reference documents to support pedagogical development.",
-  };
+const getDocs = async (input: DocsIn): Promise<DocsOut> => {
+  return api.post("/artifacts/documents/docs", input);
+};
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ documentId: string }>;
+}): Promise<Metadata> {
+  const { documentId } = await params;
+  const docs = await getDocs({ body: { entity_id: documentId } });
+  return { title: docs.detail.title, description: docs.detail.description };
 }
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */

@@ -39,7 +39,6 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
 import { useProfile } from "@/contexts/profile-context";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { ResourceType } from "@/lib/resources/types";
@@ -227,8 +226,6 @@ function EvalComponent({
     socket,
     isConnected,
   } = useProfile();
-  const { setEntityMetadata, clearEntityMetadata } = useBreadcrumbContext();
-
   const evalData = isEditMode ? evalDetail : evalDetailDefault;
   const s = useMemo(() => {
     if (!evalData) return null;
@@ -570,21 +567,6 @@ function EvalComponent({
 
     return () => clearTimeout(timer);
   }, [draftPatchKey, draftId, formState]);
-
-  // Set breadcrumb context when eval data is loaded
-  useEffect(() => {
-    const evalName =
-      s?.names?.resource?.name ??
-      null;
-    if (evalName && evalId && isEditMode) {
-      setEntityMetadata({
-        entityId: evalId,
-        entityName: evalName,
-        entityType: "eval",
-      });
-    }
-    return () => clearEntityMetadata();
-  }, [s, evalId, isEditMode, setEntityMetadata, clearEntityMetadata]);
 
   // Set generation capability when eval data is loaded
   const hasAnyAiGenerate =
