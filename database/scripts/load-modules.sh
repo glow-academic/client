@@ -208,6 +208,7 @@ load_setup_categories() {
     "scenarios:07-scenarios"
     "cohorts:08-cohorts"
     "profiles:09-profiles"
+    "settings:10-settings"
   )
 
   for pair in "${categories[@]}"; do

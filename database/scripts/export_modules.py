@@ -1076,9 +1076,17 @@ async def export_base_profiles(conn: asyncpg.Connection) -> None:
 
 
 async def export_base_settings(conn: asyncpg.Connection) -> None:
-    """Export settings not linked to any department to 09-settings/."""
+    """Export settings not linked to any department to 09-settings/.
+
+    Settings linked to departments are exported at the setup level
+    (10-setups/university/10-settings/) instead.
+    """
     print("Exporting 09-settings/ ...")
     out_dir = MODULES_DIR / "09-settings"
+    # Clean up old files (settings may have moved to setup level)
+    if out_dir.exists():
+        for old in out_dir.glob("*.sql"):
+            old.unlink()
     out_dir.mkdir(parents=True, exist_ok=True)
 
     rows = await conn.fetch("""
@@ -1169,10 +1177,14 @@ async def export_setup_profiles(conn: asyncpg.Connection) -> None:
     profile_departments_junction rows, instead of at the root 08-profiles/ level.
     """
     print("  Exporting 09-profiles/ ...")
-    out_dir = MODULES_DIR / "10-setups" / "university" / "09-profiles"
-    if out_dir.exists():
-        for old in out_dir.glob("*.sql"):
-            old.unlink()
+    # Clean up both locations (profiles moved from university to organization)
+    for loc in ("organization", "university"):
+        old_dir = MODULES_DIR / "10-setups" / loc / "09-profiles"
+        if old_dir.exists():
+            for old in old_dir.glob("*.sql"):
+                old.unlink()
+
+    out_dir = MODULES_DIR / "10-setups" / "organization" / "09-profiles"
     out_dir.mkdir(parents=True, exist_ok=True)
 
     rows = await conn.fetch("""
@@ -1192,7 +1204,7 @@ async def export_setup_profiles(conn: asyncpg.Connection) -> None:
         output_path = out_dir / f"{slug}.sql"
         header = (
             f"-- Module: {art_name}\n"
-            f"-- Category: profile (university)\n"
+            f"-- Category: profile (organization)\n"
             f"-- Description: {art_name} profile\n"
             f"-- ============================================================\n\n"
         )
@@ -1200,6 +1212,59 @@ async def export_setup_profiles(conn: asyncpg.Connection) -> None:
             conn, "profile", art_id, junctions, output_path, header
         )
         print(f"    {slug}.sql ({count} inserts)")
+
+
+async def export_setup_settings(conn: asyncpg.Connection) -> None:
+    """Export settings linked to departments.
+
+    General Settings → 10-setups/organization/10-settings/
+    Non-General → 10-setups/university/10-settings/
+    """
+    org_dir = MODULES_DIR / "10-setups" / "organization" / "10-settings"
+    univ_dir = MODULES_DIR / "10-setups" / "university" / "10-settings"
+    for d in (org_dir, univ_dir):
+        if d.exists():
+            for old in d.glob("*.sql"):
+                old.unlink()
+
+    rows = await conn.fetch("""
+        SELECT sa.id, nr.name
+        FROM setting_artifact sa
+        JOIN setting_names_junction snj ON snj.setting_id = sa.id
+        JOIN names_resource nr ON nr.id = snj.name_id
+        WHERE EXISTS (
+            SELECT 1 FROM setting_settings_junction ssj
+            JOIN departments_resource dr ON ssj.settings_id = ANY(dr.setting_ids)
+            WHERE ssj.setting_id = sa.id
+        )
+        ORDER BY nr.name
+    """)
+    junctions = await get_junction_tables(conn, "setting")
+
+    for r in rows:
+        art_id = str(r["id"])
+        art_name = r["name"]
+        slug = to_slug(art_name)
+
+        if art_name.lower().startswith("general"):
+            out_dir = org_dir
+            label = "organization"
+        else:
+            out_dir = univ_dir
+            label = "university"
+        out_dir.mkdir(parents=True, exist_ok=True)
+
+        output_path = out_dir / f"{slug}.sql"
+        header = (
+            f"-- Module: {art_name}\n"
+            f"-- Category: setting ({label})\n"
+            f"-- Description: {art_name} setting\n"
+            f"-- ============================================================\n\n"
+        )
+        count = await write_artifact_module(
+            conn, "setting", art_id, junctions, output_path, header
+        )
+        print(f"    {output_path.relative_to(MODULES_DIR)} ({count} inserts)")
 
 
 async def _get_scenario_artifact_ids_for_simulation(
@@ -1479,6 +1544,7 @@ async def export_setup(conn: asyncpg.Connection) -> None:
         conn, "cohort", "08-cohorts", "cohort", filter_name="Practice Cohort"
     )
     await export_setup_profiles(conn)
+    await export_setup_settings(conn)
 
 
 # ---------------------------------------------------------------------------

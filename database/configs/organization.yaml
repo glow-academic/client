@@ -16,3 +16,4 @@ modules:
 
   organization:
     departments: all
+    settings: all

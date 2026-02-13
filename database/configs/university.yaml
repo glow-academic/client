@@ -16,6 +16,8 @@ modules:
 
   organization:
     departments: all
+    profiles: all
+    settings: all
 
   university:
     departments: all
@@ -28,3 +30,4 @@ modules:
     scenarios: all
     cohorts: all
     profiles: all
+    settings: all
