@@ -12,7 +12,6 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 from app.api.v4.auth.permissions import (
     build_artifact_has_generation_map,
-    convert_draft,
     convert_role,
     derive_theme_tokens,
 )
@@ -34,7 +33,6 @@ from app.api.v4.resources.roles.get import get_roles_internal
 from app.api.v4.resources.settings.get import get_settings_internal
 from app.api.v4.resources.tools.get import get_tools_internal
 from app.infra.v4.activity.audit import audit_activity, audit_set
-from app.infra.v4.drafts.get import get_drafts_internal
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.infra.v4.sessions.get import get_session_internal
 from app.main import get_db, get_pool
@@ -116,7 +114,6 @@ async def get_profile_context_internal(
     cohort_ids = access_result.cohort_ids or []
     settings_id = access_result.settings_id
     settings_agent_ids = access_result.settings_agent_ids or []
-    draft_ids = access_result.draft_ids or []
 
     async def fetch_departments():
         if not department_ids:
@@ -141,12 +138,6 @@ async def get_profile_context_internal(
                     c, SQL_SETTINGS_THEME_PATH, params=theme_params
                 ),
             )
-
-    async def fetch_drafts():
-        if not draft_ids:
-            return []
-        async with pool.acquire() as c:
-            return await get_drafts_internal(c, draft_ids, bypass_cache)
 
     async def fetch_roles():
         async with pool.acquire() as c:
@@ -175,7 +166,6 @@ async def get_profile_context_internal(
         departments_raw,
         cohorts_raw,
         settings_theme,
-        drafts_raw,
         roles_raw,
         settings_item,
         settings_agents,
@@ -184,7 +174,6 @@ async def get_profile_context_internal(
         fetch_departments(),
         fetch_cohorts(),
         fetch_settings_theme(),
-        fetch_drafts(),
         fetch_roles(),
         fetch_settings(),
         fetch_settings_agents(),
@@ -235,7 +224,6 @@ async def get_profile_context_internal(
         primary_department_id=access_result.primary_department_id,
         departments=departments_raw,
         cohorts=cohorts_raw,
-        drafts=[convert_draft(d) for d in drafts_raw],
         settings=settings_item,
         settings_agents=settings_agents,
         settings_tools=settings_tools,
@@ -354,7 +342,6 @@ async def get_profile_context(
             settings_agents=data.settings_agents,
             settings_tools=data.settings_tools,
             role_resources=data.role_resources,
-            drafts=data.drafts,
             session_id=data.session_id,
             actor_name=data.actor_name,
             artifact_has_generation=data.artifact_has_generation,

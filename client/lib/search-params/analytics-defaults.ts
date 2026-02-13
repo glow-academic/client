@@ -5,9 +5,10 @@
  */
 
 import type { OutputOf } from "@/lib/api/types";
-import { getLayoutContext } from "@/app/(main)/layout-server";
+import { getAnalyticsFilters, getLayoutContext } from "@/app/(main)/layout-server";
 
 type LayoutContextOut = OutputOf<"/api/v4/auth/context", "post">;
+type AnalyticsFiltersOut = OutputOf<"/api/v4/auth/analytics", "post">;
 
 export interface AnalyticsDefaults {
   startDate: string;
@@ -47,12 +48,16 @@ export interface ParsedAnalyticsParams {
 export async function computeAnalyticsDefaults(): Promise<{
   defaults: AnalyticsDefaults;
   profileContext: LayoutContextOut;
+  analyticsFilters: AnalyticsFiltersOut | null;
 }> {
-  const profileContext = await getLayoutContext({ body: {} });
+  const [profileContext, analyticsFilters] = await Promise.all([
+    getLayoutContext({ body: {} }),
+    getAnalyticsFilters(),
+  ]);
 
   let startDate: Date;
-  if (profileContext.earliest_attempt_date) {
-    startDate = new Date(profileContext.earliest_attempt_date);
+  if (analyticsFilters?.date_range_earliest) {
+    startDate = new Date(analyticsFilters.date_range_earliest);
     startDate.setHours(0, 0, 0, 0);
   } else {
     startDate = new Date();
@@ -73,6 +78,7 @@ export async function computeAnalyticsDefaults(): Promise<{
       simulationFilters: ["general"],
     },
     profileContext,
+    analyticsFilters,
   };
 }
 
@@ -94,15 +100,9 @@ export function resolveAnalyticsFilters(
   const simulationFilters =
     parsed.simulationFilters || defaults.simulationFilters;
 
-  // Empty selections mean "all" - fall back to profile context values
-  const cohortIds =
-    selectedCohortIds.length > 0
-      ? selectedCohortIds
-      : profileContext.cohort_ids || [];
-  const departmentIds =
-    selectedDepartmentIds.length > 0
-      ? selectedDepartmentIds
-      : profileContext.department_ids || [];
+  // Empty selections mean "all" — pass empty array to backend (backend treats null/empty as unfiltered)
+  const cohortIds = selectedCohortIds;
+  const departmentIds = selectedDepartmentIds;
   const roles =
     selectedRoles.length > 0
       ? selectedRoles

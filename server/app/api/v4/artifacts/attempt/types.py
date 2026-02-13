@@ -680,7 +680,3 @@ class GetAttemptListResponse(BaseModel):
     simulation_options: list[AttemptListFilterOption] | None = None
     scenario_options: list[AttemptListFilterOption] | None = None
     profile_options: list[AttemptListFilterOption] | None = None
-    cohort_options: list[AttemptListFilterOption] | None = None
-    department_options: list[AttemptListFilterOption] | None = None
-    date_range_earliest: str | None = None
-    date_range_latest: str | None = None

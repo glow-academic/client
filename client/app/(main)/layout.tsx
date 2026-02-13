@@ -66,7 +66,7 @@ export default async function MainLayout({
 
     // Otherwise (route-denied or department), user is logged in (including guests)
     // Fetch layout data and show access denied inside sidebar
-    const { initial, snapshot, attemptData, activeSettings } =
+    const { initial, snapshot, attemptData, activeSettings, drafts, analyticsFilters } =
       await getLayoutContextData(session);
 
     return (
@@ -81,6 +81,8 @@ export default async function MainLayout({
           sessionSnapshot={snapshot}
           attemptData={attemptData}
           activeSettings={activeSettings}
+          drafts={drafts}
+          analyticsFilters={analyticsFilters}
           initialAutosave={initialAutosave}
           switchEffectiveProfileAction={switchEffectiveProfile}
           createFeedbackAction={createFeedback}
@@ -99,7 +101,7 @@ export default async function MainLayout({
   }
 
   // User has access, proceed with layout data fetching
-  const { initial, snapshot, attemptData, activeSettings } =
+  const { initial, snapshot, attemptData, activeSettings, drafts, analyticsFilters } =
     await getLayoutContextData(session);
 
   // If profile resolution failed, show access denied
@@ -139,6 +141,8 @@ export default async function MainLayout({
           sessionSnapshot={snapshot}
           attemptData={attemptData}
           activeSettings={activeSettings}
+          drafts={drafts}
+          analyticsFilters={analyticsFilters}
           initialAutosave={initialAutosave}
           switchEffectiveProfileAction={switchEffectiveProfile}
           createFeedbackAction={createFeedback}
@@ -168,6 +172,8 @@ export default async function MainLayout({
         sessionSnapshot={snapshot}
         attemptData={attemptData}
         activeSettings={activeSettings}
+        drafts={drafts}
+        analyticsFilters={analyticsFilters}
         initialAutosave={initialAutosave}
         switchEffectiveProfileAction={switchEffectiveProfile}
         createFeedbackAction={createFeedback}

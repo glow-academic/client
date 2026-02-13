@@ -34,6 +34,7 @@ async def search_tools_internal(
     offset_count: int | None = 0,
     exclude_ids: list[UUID] | None = None,
     department_ids: list[UUID] | None = None,
+    createable: bool | None = None,
     bypass_cache: bool = False,
     *,
     agent: bool = False,
@@ -52,6 +53,7 @@ async def search_tools_internal(
             "offset_count": offset_count,
             "exclude_ids": [str(id) for id in (exclude_ids or [])],
             "department_ids": sorted(str(i) for i in (department_ids or [])),
+            "createable": createable,
             "agent": agent,
             "tool": tool,
         },
@@ -70,6 +72,7 @@ async def search_tools_internal(
         offset_count=offset_count,
         exclude_ids=exclude_ids or [],
         department_ids=department_ids or [],
+        createable=createable,
         agent=agent,
         tool=tool,
     )

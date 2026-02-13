@@ -24,6 +24,8 @@ CREATE OR REPLACE FUNCTION api_search_profiles_v4(
     offset_count int DEFAULT 0,
     exclude_ids uuid[] DEFAULT ARRAY[]::uuid[],
     department_ids uuid[] DEFAULT ARRAY[]::uuid[],
+    cohort_ids uuid[] DEFAULT ARRAY[]::uuid[],
+    role_ids uuid[] DEFAULT ARRAY[]::uuid[],
     -- Artifact boolean filters: when true, only return resources linked to that artifact type
     profile boolean DEFAULT false,
     setting boolean DEFAULT false
@@ -53,6 +55,8 @@ FROM (
       AND (search IS NULL OR search = '' OR LOWER(p.name) LIKE '%' || LOWER(search) || '%' OR LOWER(COALESCE(p.description, '')) LIKE '%' || LOWER(search) || '%')
       AND (exclude_ids IS NULL OR NOT (p.id = ANY(exclude_ids)))
       AND (COALESCE(array_length(department_ids, 1), 0) = 0 OR p.department_ids && department_ids)
+      AND (COALESCE(array_length(cohort_ids, 1), 0) = 0 OR p.cohort_ids && cohort_ids)
+      AND (COALESCE(array_length(role_ids, 1), 0) = 0 OR p.role_id = ANY(role_ids))
       -- Artifact boolean filters (each filters to resources linked to at least one of that artifact type)
       AND (NOT profile OR EXISTS (SELECT 1 FROM profile_profiles_junction j WHERE j.profile_id = p.id AND j.active = true))
       AND (NOT setting OR EXISTS (SELECT 1 FROM setting_profiles_junction j WHERE j.profile_id = p.id AND j.active = true))

@@ -24,6 +24,12 @@ CREATE OR REPLACE FUNCTION api_search_models_v4(
     offset_count int DEFAULT 0,
     exclude_ids uuid[] DEFAULT ARRAY[]::uuid[],
     department_ids uuid[] DEFAULT ARRAY[]::uuid[],
+    provider_ids uuid[] DEFAULT ARRAY[]::uuid[],
+    temperature_level_ids uuid[] DEFAULT ARRAY[]::uuid[],
+    reasoning_level_ids uuid[] DEFAULT ARRAY[]::uuid[],
+    quality_ids uuid[] DEFAULT ARRAY[]::uuid[],
+    voice_ids uuid[] DEFAULT ARRAY[]::uuid[],
+    modality_ids uuid[] DEFAULT ARRAY[]::uuid[],
     -- Artifact boolean filters: when true, only return resources linked to that artifact type
     agent boolean DEFAULT false,
     model boolean DEFAULT false
@@ -53,6 +59,12 @@ FROM (
       -- Exclude filter
       AND (exclude_ids IS NULL OR NOT (m.id = ANY(exclude_ids)))
       AND (COALESCE(array_length(department_ids, 1), 0) = 0 OR m.department_ids && department_ids)
+      AND (COALESCE(array_length(provider_ids, 1), 0) = 0 OR m.provider_id = ANY(provider_ids))
+      AND (COALESCE(array_length(temperature_level_ids, 1), 0) = 0 OR m.temperature_level_ids && temperature_level_ids)
+      AND (COALESCE(array_length(reasoning_level_ids, 1), 0) = 0 OR m.reasoning_level_ids && reasoning_level_ids)
+      AND (COALESCE(array_length(quality_ids, 1), 0) = 0 OR m.quality_ids && quality_ids)
+      AND (COALESCE(array_length(voice_ids, 1), 0) = 0 OR m.voice_ids && voice_ids)
+      AND (COALESCE(array_length(modality_ids, 1), 0) = 0 OR m.modality_ids && modality_ids)
       -- Artifact boolean filters (each filters to resources linked to at least one of that artifact type)
       AND (NOT agent OR EXISTS (SELECT 1 FROM agent_models_junction j WHERE j.model_id = m.id AND j.active = true))
       AND (NOT model OR EXISTS (SELECT 1 FROM model_models_junction j WHERE j.model_id = m.id AND j.active = true))

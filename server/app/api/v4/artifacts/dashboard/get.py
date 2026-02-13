@@ -13,11 +13,6 @@ from app.api.v4.artifacts.dashboard.types import (
     DashboardBundleResponse,
     DashboardRequest,
 )
-from app.api.v4.artifacts.filter_helpers import (
-    fetch_cohort_filter_options,
-    fetch_date_range_from_mv,
-    fetch_department_filter_options,
-)
 from app.api.v4.artifacts.types import FilterOption
 from app.api.v4.resources.fields.get import get_fields_internal
 from app.api.v4.resources.parameter_fields.get import get_parameter_fields_internal
@@ -206,18 +201,12 @@ async def get_dashboard(
             daily_rows,
             profile_rows,
             first_attempt_rows,
-            cohort_filter_options,
-            department_filter_options,
-            date_range_result,
         ) = await asyncio.gather(
             fetch_attempts(),
             fetch_chat_facts(),
             fetch_daily_metrics(),
             fetch_profile_metrics(),
             fetch_first_attempt_rows(),
-            fetch_cohort_filter_options(pool, request.accessible_cohort_ids),
-            fetch_department_filter_options(pool, request.accessible_department_ids),
-            fetch_date_range_from_mv(pool, request.accessible_department_ids),
         )
 
         threshold_success = 85
@@ -463,11 +452,6 @@ async def get_dashboard(
             for item in simulations
             if item.simulation_id
         ]
-
-        bundle.cohort_options = cohort_filter_options
-        bundle.department_options = department_filter_options
-        bundle.date_range_earliest = date_range_result[0]
-        bundle.date_range_latest = date_range_result[1]
 
         # Hydrate target profile metadata (for single-profile report pages)
         if request.target_profile_id:

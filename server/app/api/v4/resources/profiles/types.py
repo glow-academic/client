@@ -12,6 +12,8 @@ class SearchProfilesParams(BaseModel):
     offset_count: int | None = 0
     exclude_ids: list[UUID] = []
     department_ids: list[UUID] = []
+    cohort_ids: list[UUID] = []
+    role_ids: list[UUID] = []
     # Artifact boolean filters
     profile: bool = False
     setting: bool = False
@@ -23,6 +25,8 @@ class SearchProfilesParams(BaseModel):
             self.offset_count,
             self.exclude_ids,
             self.department_ids,
+            self.cohort_ids,
+            self.role_ids,
             self.profile,
             self.setting,
         )

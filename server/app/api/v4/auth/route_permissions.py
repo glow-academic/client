@@ -985,7 +985,7 @@ def compute_page_metadata(
         "benchmark",
     }
     is_analytics = section in analytics_sections
-    show_analytics_filters = section == "analytics"
+    show_analytics_filters = section in analytics_sections
 
     # Determine page type
     is_create = len(segments) >= 2 and segments[-1] == "new"

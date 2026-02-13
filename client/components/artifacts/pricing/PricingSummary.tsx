@@ -7,9 +7,8 @@
  */
 
 import type { PricingOut } from "@/app/(main)/analytics/pricing/page";
-import { useFilterOptions } from "@/contexts/filter-options-context";
 import { format } from "date-fns";
-import { useEffect, useMemo } from "react";
+import { useMemo } from "react";
 import type { TooltipProps } from "recharts";
 
 import { useChartColors, getStatusColor } from "@/lib/utils/chartColors";
@@ -124,21 +123,6 @@ interface PricingSummaryProps {
 }
 
 export function PricingSummary({ pricingData }: PricingSummaryProps) {
-  // Set section-specific filter options in context (pricing has no cohort filter)
-  const { setOptions } = useFilterOptions();
-  useEffect(() => {
-    setOptions({
-      cohortOptions: [],
-      departmentOptions: (pricingData.department_options || []).map((o) => ({
-        value: o.value || "",
-        label: o.label ?? null,
-        count: o.count ?? null,
-      })),
-      dateRangeEarliest: pricingData.date_range_earliest ?? null,
-      dateRangeLatest: pricingData.date_range_latest ?? null,
-    });
-  }, [pricingData, setOptions]);
-
   // Extract data from artifacts/pricing response
   const dailyItems = useMemo(
     () => pricingData?.views?.daily || [],

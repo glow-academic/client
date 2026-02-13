@@ -14,6 +14,7 @@ class SearchFieldsParams(BaseModel):
     draft_id: UUID | None = None
     suggest_source: str | None = "all"
     exclude_ids: list[UUID] = []
+    conditional_parameter_ids: list[UUID] = []
     # Artifact boolean filters
     field: bool = False
     parameter: bool = False
@@ -27,6 +28,7 @@ class SearchFieldsParams(BaseModel):
             self.draft_id,
             self.suggest_source,
             self.exclude_ids,
+            self.conditional_parameter_ids,
             self.field,
             self.parameter,
         )

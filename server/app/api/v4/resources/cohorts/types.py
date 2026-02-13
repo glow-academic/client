@@ -87,6 +87,7 @@ class SearchCohortsParams(BaseModel):
     offset_count: int | None = 0
     exclude_ids: list[UUID] = []
     department_ids: list[UUID] = []
+    simulation_ids: list[UUID] = []
     # Artifact boolean filters
     cohort: bool = False
     profile: bool = False
@@ -98,6 +99,7 @@ class SearchCohortsParams(BaseModel):
             self.offset_count,
             self.exclude_ids,
             self.department_ids,
+            self.simulation_ids,
             self.cohort,
             self.profile,
         )

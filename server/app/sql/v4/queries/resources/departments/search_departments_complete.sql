@@ -28,6 +28,7 @@ CREATE OR REPLACE FUNCTION api_search_departments_v4(
     draft_id uuid DEFAULT NULL,
     suggest_source text DEFAULT 'all',
     exclude_ids uuid[] DEFAULT ARRAY[]::uuid[],
+    setting_ids uuid[] DEFAULT ARRAY[]::uuid[],
     -- Artifact boolean filters: when true, only return resources linked to that artifact type
     agent boolean DEFAULT false,
     auth boolean DEFAULT false,
@@ -92,6 +93,7 @@ FROM (
       )
       -- Exclude filter
       AND (exclude_ids IS NULL OR NOT (d.id = ANY(exclude_ids)))
+      AND (COALESCE(array_length(setting_ids, 1), 0) = 0 OR d.setting_ids && setting_ids)
       -- Search filter
       AND (
           search IS NULL

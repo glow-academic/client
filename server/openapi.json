@@ -41112,6 +41112,188 @@
         ]
       }
     },
+    "/api/v4/auth/analytics": {
+      "post": {
+        "tags": [
+          "v4",
+          "auth"
+        ],
+        "summary": "Get Analytics Filters",
+        "description": "Return per-page analytics filter config and MV-backed options.\n\nReturns None for pages that don't show analytics filters.",
+        "operationId": "get_analytics_filters_api_v4_auth_analytics_post",
+        "parameters": [
+          {
+            "name": "X-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Session-Id"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/GetAnalyticsFiltersApiResponse"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "title": "Response Get Analytics Filters Api V4 Auth Analytics Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v4",
+          "auth"
+        ]
+      }
+    },
+    "/api/v4/auth/drafts": {
+      "post": {
+        "tags": [
+          "v4",
+          "auth"
+        ],
+        "summary": "Get Drafts",
+        "description": "Return drafts for the current profile (parallel with /auth/context).",
+        "operationId": "get_drafts_api_v4_auth_drafts_post",
+        "parameters": [
+          {
+            "name": "X-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Session-Id"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetDraftsApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v4",
+          "auth"
+        ]
+      }
+    },
     "/api/v4/auth/email": {
       "post": {
         "tags": [
@@ -49471,6 +49653,84 @@
         "type": "object",
         "title": "AnalysisItem",
         "description": "Analysis item with content."
+      },
+      "AnalyticsFilterField": {
+        "properties": {
+          "visible": {
+            "type": "boolean",
+            "title": "Visible",
+            "default": true
+          },
+          "disabled": {
+            "type": "boolean",
+            "title": "Disabled",
+            "default": false
+          }
+        },
+        "type": "object",
+        "title": "AnalyticsFilterField",
+        "description": "Visibility/disabled state for a single filter field."
+      },
+      "AnalyticsFilterFields": {
+        "properties": {
+          "date_range": {
+            "$ref": "#/components/schemas/AnalyticsFilterField",
+            "default": {
+              "visible": true,
+              "disabled": false
+            }
+          },
+          "departments": {
+            "$ref": "#/components/schemas/AnalyticsFilterField",
+            "default": {
+              "visible": true,
+              "disabled": false
+            }
+          },
+          "cohorts": {
+            "$ref": "#/components/schemas/AnalyticsFilterField",
+            "default": {
+              "visible": true,
+              "disabled": false
+            }
+          },
+          "roles": {
+            "$ref": "#/components/schemas/AnalyticsFilterField",
+            "default": {
+              "visible": true,
+              "disabled": false
+            }
+          },
+          "attempts": {
+            "$ref": "#/components/schemas/AnalyticsFilterField",
+            "default": {
+              "visible": true,
+              "disabled": false
+            }
+          }
+        },
+        "type": "object",
+        "title": "AnalyticsFilterFields",
+        "description": "Per-page filter field visibility configuration."
+      },
+      "AnalyticsFilterOption": {
+        "properties": {
+          "value": {
+            "type": "string",
+            "title": "Value"
+          },
+          "label": {
+            "type": "string",
+            "title": "Label"
+          }
+        },
+        "type": "object",
+        "required": [
+          "value",
+          "label"
+        ],
+        "title": "AnalyticsFilterOption",
+        "description": "A single filter option for dropdown selectors."
       },
       "ArchiveTestsRequest": {
         "properties": {
@@ -58873,42 +59133,6 @@
             "type": "array",
             "title": "Simulation Options"
           },
-          "cohort_options": {
-            "items": {
-              "$ref": "#/components/schemas/app__api__v4__artifacts__types__FilterOption"
-            },
-            "type": "array",
-            "title": "Cohort Options"
-          },
-          "department_options": {
-            "items": {
-              "$ref": "#/components/schemas/app__api__v4__artifacts__types__FilterOption"
-            },
-            "type": "array",
-            "title": "Department Options"
-          },
-          "date_range_earliest": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Date Range Earliest"
-          },
-          "date_range_latest": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Date Range Latest"
-          },
           "profile_name": {
             "anyOf": [
               {
@@ -67105,6 +67329,73 @@
         "type": "object",
         "title": "GetAgentsListApiRequest"
       },
+      "GetAnalyticsFiltersApiResponse": {
+        "properties": {
+          "fields": {
+            "$ref": "#/components/schemas/AnalyticsFilterFields"
+          },
+          "department_options": {
+            "items": {
+              "$ref": "#/components/schemas/AnalyticsFilterOption"
+            },
+            "type": "array",
+            "title": "Department Options",
+            "default": []
+          },
+          "cohort_options": {
+            "items": {
+              "$ref": "#/components/schemas/AnalyticsFilterOption"
+            },
+            "type": "array",
+            "title": "Cohort Options",
+            "default": []
+          },
+          "role_options": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Role Options",
+            "default": []
+          },
+          "attempt_options": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Attempt Options",
+            "default": []
+          },
+          "date_range_earliest": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Date Range Earliest"
+          },
+          "date_range_latest": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Date Range Latest"
+          }
+        },
+        "type": "object",
+        "required": [
+          "fields"
+        ],
+        "title": "GetAnalyticsFiltersApiResponse",
+        "description": "Response for POST /api/v4/auth/analytics."
+      },
       "GetArgPositionsApiRequest": {
         "properties": {
           "ids": {
@@ -68190,56 +68481,6 @@
               }
             ],
             "title": "Profile Options"
-          },
-          "cohort_options": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/AttemptListFilterOption"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Cohort Options"
-          },
-          "department_options": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/AttemptListFilterOption"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Department Options"
-          },
-          "date_range_earliest": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Date Range Earliest"
-          },
-          "date_range_latest": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Date Range Latest"
           }
         },
         "type": "object",
@@ -70934,6 +71175,27 @@
         },
         "type": "object",
         "title": "GetDomainsApiResponse"
+      },
+      "GetDraftsApiResponse": {
+        "properties": {
+          "drafts": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetProfileContextV4Draft"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Drafts"
+          }
+        },
+        "type": "object",
+        "title": "GetDraftsApiResponse",
+        "description": "Response model for /auth/drafts endpoint."
       },
       "GetEmailsApiRequest": {
         "properties": {
@@ -75811,20 +76073,6 @@
               }
             ],
             "title": "Role Resources"
-          },
-          "drafts": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/QGetProfileContextV4Draft"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Drafts"
           },
           "session_id": {
             "anyOf": [
@@ -83965,42 +84213,6 @@
             },
             "type": "array",
             "title": "Profile Options"
-          },
-          "cohort_options": {
-            "items": {
-              "$ref": "#/components/schemas/app__api__v4__artifacts__types__FilterOption"
-            },
-            "type": "array",
-            "title": "Cohort Options"
-          },
-          "department_options": {
-            "items": {
-              "$ref": "#/components/schemas/app__api__v4__artifacts__types__FilterOption"
-            },
-            "type": "array",
-            "title": "Department Options"
-          },
-          "date_range_earliest": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Date Range Earliest"
-          },
-          "date_range_latest": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Date Range Latest"
           }
         },
         "type": "object",
@@ -99178,35 +99390,6 @@
             },
             "type": "array",
             "title": "Agent Options"
-          },
-          "department_options": {
-            "items": {
-              "$ref": "#/components/schemas/app__api__v4__artifacts__types__FilterOption"
-            },
-            "type": "array",
-            "title": "Department Options"
-          },
-          "date_range_earliest": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Date Range Earliest"
-          },
-          "date_range_latest": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Date Range Latest"
           }
         },
         "type": "object",
@@ -110868,42 +111051,6 @@
             },
             "type": "array",
             "title": "Scenario Options"
-          },
-          "cohort_options": {
-            "items": {
-              "$ref": "#/components/schemas/app__api__v4__artifacts__types__FilterOption"
-            },
-            "type": "array",
-            "title": "Cohort Options"
-          },
-          "department_options": {
-            "items": {
-              "$ref": "#/components/schemas/app__api__v4__artifacts__types__FilterOption"
-            },
-            "type": "array",
-            "title": "Department Options"
-          },
-          "date_range_earliest": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Date Range Earliest"
-          },
-          "date_range_latest": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Date Range Latest"
           }
         },
         "type": "object",
@@ -117345,6 +117492,66 @@
             ],
             "title": "Department Ids"
           },
+          "tool_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tool Ids"
+          },
+          "instruction_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Instruction Ids"
+          },
+          "model_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model Ids"
+          },
+          "prompt_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Prompt Ids"
+          },
           "agent": {
             "anyOf": [
               {
@@ -118330,6 +118537,21 @@
             ],
             "title": "Exclude Ids"
           },
+          "setting_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Setting Ids"
+          },
           "agent": {
             "anyOf": [
               {
@@ -118938,6 +119160,47 @@
               }
             ],
             "title": "Exclude Ids"
+          },
+          "upload_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Upload Ids"
+          },
+          "text_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Text Ids"
+          },
+          "html": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Html"
           },
           "document": {
             "anyOf": [
@@ -119571,6 +119834,21 @@
               }
             ],
             "title": "Exclude Ids"
+          },
+          "conditional_parameter_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Conditional Parameter Ids"
           },
           "field": {
             "anyOf": [
@@ -120817,6 +121095,96 @@
             ],
             "title": "Department Ids"
           },
+          "provider_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Provider Ids"
+          },
+          "temperature_level_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Temperature Level Ids"
+          },
+          "reasoning_level_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reasoning Level Ids"
+          },
+          "quality_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Quality Ids"
+          },
+          "voice_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Voice Ids"
+          },
+          "modality_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Modality Ids"
+          },
           "agent": {
             "anyOf": [
               {
@@ -121543,6 +121911,21 @@
             ],
             "title": "Department Ids"
           },
+          "field_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Field Ids"
+          },
           "document": {
             "anyOf": [
               {
@@ -121995,6 +122378,36 @@
               }
             ],
             "title": "Department Ids"
+          },
+          "cohort_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cohort Ids"
+          },
+          "role_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Role Ids"
           },
           "profile": {
             "anyOf": [
@@ -123055,6 +123468,28 @@
             ],
             "title": "Department Ids"
           },
+          "simulation_rubric": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulation Rubric"
+          },
+          "video_rubric": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Video Rubric"
+          },
           "rubric": {
             "anyOf": [
               {
@@ -123840,6 +124275,51 @@
               }
             ],
             "title": "Department Ids"
+          },
+          "agent_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Agent Ids"
+          },
+          "provider_key_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Provider Key Ids"
+          },
+          "auth_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Auth Ids"
           },
           "department": {
             "anyOf": [
@@ -124741,6 +125221,17 @@
               }
             ],
             "title": "Department Ids"
+          },
+          "createable": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Createable"
           },
           "agent": {
             "anyOf": [

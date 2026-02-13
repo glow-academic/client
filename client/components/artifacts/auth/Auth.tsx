@@ -23,7 +23,7 @@ import { Protocols } from "@/components/resources/Protocols";
 import { Slugs } from "@/components/resources/Slugs";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useProfile } from "@/contexts/profile-context";
-import { useSaveContext } from "@/contexts/save-context";
+import { useDrafts } from "@/contexts/draft-context";
 import { useAiGeneration } from "@/hooks/use-ai-generation";
 import { useDraftLifecycle } from "@/hooks/use-draft-lifecycle";
 import { useFlushRegistry } from "@/hooks/use-flush-registry";
@@ -162,7 +162,7 @@ function AuthComponent({
   });
 
   const { profile, setSelectedDraftId, socket, isConnected } = useProfile();
-  const { isAutosaveEnabled } = useSaveContext();
+  const { isAutosaveEnabled } = useDrafts();
   const { flushRegistryRef, registerFlushCallbacks, flushAllResources } =
     useFlushRegistry<FlushResult>(FLUSH_KEYS);
 

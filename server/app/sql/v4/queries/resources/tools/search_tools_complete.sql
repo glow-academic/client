@@ -24,6 +24,7 @@ CREATE OR REPLACE FUNCTION api_search_tools_v4(
     offset_count int DEFAULT 0,
     exclude_ids uuid[] DEFAULT ARRAY[]::uuid[],
     department_ids uuid[] DEFAULT ARRAY[]::uuid[],
+    createable boolean DEFAULT NULL,
     -- Artifact boolean filters: when true, only return resources linked to that artifact type
     agent boolean DEFAULT false,
     tool boolean DEFAULT false
@@ -50,6 +51,7 @@ FROM (
       -- Exclude filter
       AND (exclude_ids IS NULL OR NOT (t.id = ANY(exclude_ids)))
       AND (COALESCE(array_length(department_ids, 1), 0) = 0 OR t.department_ids && department_ids)
+      AND (createable IS NULL OR t.createable = createable)
       -- Artifact boolean filters (each filters to resources linked to at least one of that artifact type)
       AND (NOT agent OR EXISTS (SELECT 1 FROM agent_tools_junction j WHERE j.tool_id = t.id AND j.active = true))
       AND (NOT tool OR EXISTS (SELECT 1 FROM tool_tools_junction j WHERE j.tool_id = t.id AND j.active = true))

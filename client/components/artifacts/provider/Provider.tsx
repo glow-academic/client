@@ -20,7 +20,7 @@ import { Keys } from "@/components/resources/Keys";
 import { Names } from "@/components/resources/Names";
 import { Values } from "@/components/resources/Values";
 import { useProfile } from "@/contexts/profile-context";
-import { useSaveContext } from "@/contexts/save-context";
+import { useDrafts } from "@/contexts/draft-context";
 import { useAiGeneration } from "@/hooks/use-ai-generation";
 import { useDraftLifecycle } from "@/hooks/use-draft-lifecycle";
 import { useFlushRegistry } from "@/hooks/use-flush-registry";
@@ -128,7 +128,7 @@ export default function Provider({
   const isEditMode = !!providerId;
   const router = useRouter();
   const { setSelectedDraftId, socket, isConnected } = useProfile();
-  const { isAutosaveEnabled } = useSaveContext();
+  const { isAutosaveEnabled } = useDrafts();
   const { flushRegistryRef, registerFlushCallbacks, flushAllResources } =
     useFlushRegistry<Record<string, unknown>>(FLUSH_KEYS);
 

@@ -14,7 +14,6 @@ import {
 } from "@/components/common/forms/profile-roles";
 import { Button } from "@/components/ui/button";
 import { DatePickerWithRange } from "@/components/ui/date-picker-range";
-import { useFilterOptions } from "@/contexts/filter-options-context";
 import { useProfile } from "@/contexts/profile-context";
 import {
   type SimulationFilter,
@@ -48,20 +47,10 @@ function getRefreshPageFromPathname(pathname: string): string {
 }
 
 export interface AnalyticsFiltersProps {
-  homePage?: boolean;
-  reportPage?: boolean;
-  practicePage?: boolean;
-  benchmarkPage?: boolean;
-  healthPage?: boolean;
   refreshPage: RefreshPageFn;
 }
 
 export function AnalyticsFilters({
-  homePage = false,
-  reportPage = false,
-  practicePage = false,
-  benchmarkPage = false,
-  healthPage = false,
   refreshPage,
 }: AnalyticsFiltersProps) {
   const isMobile = useIsMobile();
@@ -69,9 +58,6 @@ export function AnalyticsFilters({
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  // Derive pricing/activity page from pathname (these are analytics sub-pages)
-  const isPricingPage = pathname.startsWith("/analytics/pricing");
-  const isActivityPage = pathname.startsWith("/analytics/activity");
   const {
     startDate,
     endDate,
@@ -86,11 +72,14 @@ export function AnalyticsFilters({
     setSimulationFilters,
   } = useAnalyticsParams();
 
-  const { cohorts, cohortMemberCounts, departments, scopedRoles } =
-    useProfile();
-  const { options: sectionFilterOptions } = useFilterOptions();
-  const getCohortMemberCount = (cohortId: string) =>
-    cohortMemberCounts[cohortId] ?? 0;
+  const { analyticsFilters, scopedRoles } = useProfile();
+
+  // Server-driven field visibility
+  const filterFields = analyticsFilters?.fields;
+  const showAttempts = filterFields?.attempts?.visible ?? false;
+  const showRoles = filterFields?.roles?.visible ?? false;
+  const showCohorts = filterFields?.cohorts?.visible ?? false;
+  const showDepartments = filterFields?.departments?.visible ?? false;
 
   const [isRefreshing, setIsRefreshing] = useState(false);
 
@@ -204,30 +193,13 @@ export function AnalyticsFilters({
     }
   };
 
-  // Filter to only active cohorts and convert to the format expected by CohortPicker
-  // Prefer section-specific options (MV-backed) when available, fall back to ProfileContext
-  const activeCohorts = cohorts.filter((cohort) => cohort.active);
-
-  const profileCohortOptions = activeCohorts.map((cohort) => {
-    const cohortId = "cohort_id" in cohort ? cohort.cohort_id : null;
-    return {
-      id: cohortId || "",
-      title: cohort.title,
-      description:
-        cohort.description ||
-        (cohortId ? `Cohort with ${getCohortMemberCount(cohortId)} members` : ""),
-      memberCount: cohortId ? getCohortMemberCount(cohortId) : 0,
-    };
-  }).filter((cohort) => cohort.id);
-
-  const cohortOptions = sectionFilterOptions?.cohortOptions
-    ? sectionFilterOptions.cohortOptions.map((o) => ({
-        id: o.value,
-        title: o.label || o.value,
-        description: o.count != null ? `${o.count} attempts` : "",
-        memberCount: 0,
-      }))
-    : profileCohortOptions;
+  // Use analytics filters for cohort options (MV-backed)
+  const cohortOptions = (analyticsFilters?.cohort_options ?? []).map((o) => ({
+    id: o.value,
+    title: o.label || o.value,
+    description: "",
+    memberCount: 0,
+  }));
 
   // Get selected cohorts for the picker
   const selectedCohorts = cohortOptions.filter((cohort) =>
@@ -253,32 +225,11 @@ export function AnalyticsFilters({
     setSelectedCohortIds(cohorts.map((c) => c.id));
   };
 
-  // Filter to only active departments and convert to the format expected by DepartmentSelector
-  // Prefer section-specific options (MV-backed) when available, fall back to ProfileContext
-  const activeDepartments = departments.filter((department) => department.active);
-
-  const profileDepartmentOptions = activeDepartments
-    .filter((department) => {
-      const departmentId = "department_id" in department ? department.department_id : null;
-      const departmentName = "title" in department ? department.title : null;
-      return departmentId && departmentName;
-    })
-    .map((department) => {
-      const departmentId = "department_id" in department ? department.department_id : null;
-      const departmentName = "title" in department ? department.title : null;
-      return {
-        id: departmentId!,
-        title: departmentName as string,
-        ...(("description" in department && department.description) && { description: department.description }),
-      };
-    });
-
-  const departmentOptions = sectionFilterOptions?.departmentOptions
-    ? sectionFilterOptions.departmentOptions.map((o) => ({
-        id: o.value,
-        title: o.label || o.value,
-      }))
-    : profileDepartmentOptions;
+  // Use analytics filters for department options (MV-backed)
+  const departmentOptions = (analyticsFilters?.department_options ?? []).map((o) => ({
+    id: o.value,
+    title: o.label || o.value,
+  }));
 
   // Get selected departments for the picker
   const selectedDepartments = departmentOptions.filter((department) =>
@@ -372,17 +323,17 @@ export function AnalyticsFilters({
               </Button>
             )}
 
-            {/* General/Practice/Archived Selector - hide on home, practice, pricing, activity, and health pages */}
-            {!homePage && !practicePage && !isPricingPage && !isActivityPage && !healthPage && (
+            {/* General/Practice/Archived Selector - server-driven visibility */}
+            {showAttempts && (
               <AttemptSelector
-                options={benchmarkPage ? ["general", "archived"] : ["general", "practice", "archived"]}
+                options={analyticsFilters?.attempt_options as SimulationFilter[] ?? ["general", "practice", "archived"]}
                 selected={attemptSelected}
                 onChange={(vals) => {
                   // Update UI state first
                   setAttemptSelected(vals);
                   // Empty selection means all attempts (all available modes on)
                   if (vals.length === 0) {
-                    setSimulationFilters(benchmarkPage ? ["general", "archived"] : ["general", "practice", "archived"]);
+                    setSimulationFilters(analyticsFilters?.attempt_options as SimulationFilter[] ?? ["general", "practice", "archived"]);
                     return;
                   }
                   setSimulationFilters(vals);
@@ -391,8 +342,8 @@ export function AnalyticsFilters({
               />
             )}
 
-            {/* Role Picker - hide on home, report, practice, benchmark, and health pages */}
-            {!homePage && !reportPage && !practicePage && !benchmarkPage && !healthPage && (
+            {/* Role Picker - server-driven visibility */}
+            {showRoles && (
               <RoleSelector
                 roles={
                   selectedCohortIds.length > 0
@@ -408,8 +359,8 @@ export function AnalyticsFilters({
               />
             )}
 
-            {/* Cohort Picker - hide on benchmark, pricing, activity, and health pages */}
-            {!benchmarkPage && !isPricingPage && !isActivityPage && !healthPage && cohortOptions.length > 0 && (
+            {/* Cohort Picker - server-driven visibility */}
+            {showCohorts && cohortOptions.length > 0 && (
               <CohortSelector
                 cohorts={cohortOptions}
                 selectedCohorts={selectedCohorts}
@@ -419,8 +370,8 @@ export function AnalyticsFilters({
               />
             )}
 
-            {/* Department Picker - hide on health page */}
-            {!healthPage && departmentOptions.length > 0 && (
+            {/* Department Picker - server-driven visibility */}
+            {showDepartments && departmentOptions.length > 0 && (
               <DepartmentSelector
                 departments={departmentOptions}
                 selectedDepartments={selectedDepartments}

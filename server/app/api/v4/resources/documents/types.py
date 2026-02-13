@@ -14,6 +14,9 @@ class SearchDocumentsParams(BaseModel):
     draft_id: UUID | None = None
     suggest_source: str | None = "all"
     exclude_ids: list[UUID] = []
+    upload_ids: list[UUID] = []
+    text_ids: list[UUID] = []
+    html: bool | None = None
     # Artifact boolean filters
     document: bool = False
     scenario: bool = False
@@ -27,6 +30,9 @@ class SearchDocumentsParams(BaseModel):
             self.draft_id,
             self.suggest_source,
             self.exclude_ids,
+            self.upload_ids,
+            self.text_ids,
+            self.html,
             self.document,
             self.scenario,
         )

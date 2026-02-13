@@ -270,22 +270,6 @@ async function HomeHistorySection({
     };
   });
 
-  // Extract section-specific filter options from response
-  const cohortFilterOptions = (historyData.cohort_options || []).map(
-    (o: { value?: string | null; label?: string | null; count?: number | null }) => ({
-      value: String(o.value || ""),
-      label: o.label ?? null,
-      count: typeof o.count === "number" ? o.count : null,
-    })
-  );
-  const departmentFilterOptions = (historyData.department_options || []).map(
-    (o: { value?: string | null; label?: string | null; count?: number | null }) => ({
-      value: String(o.value || ""),
-      label: o.label ?? null,
-      count: typeof o.count === "number" ? o.count : null,
-    })
-  );
-
   return (
     <SimulationHistory
       data={dataArray}
@@ -301,10 +285,6 @@ async function HomeHistorySection({
       profileOptions={profileOptions}
       simulationOptions={simulationOptions}
       scenarioOptions={scenarioOptions}
-      cohortFilterOptions={cohortFilterOptions}
-      departmentFilterOptions={departmentFilterOptions}
-      dateRangeEarliest={historyData.date_range_earliest ?? null}
-      dateRangeLatest={historyData.date_range_latest ?? null}
     />
   );
 }

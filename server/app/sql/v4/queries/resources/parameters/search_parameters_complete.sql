@@ -30,6 +30,7 @@ CREATE OR REPLACE FUNCTION api_search_parameters_v4(
     suggest_source text DEFAULT 'all',
     exclude_ids uuid[] DEFAULT ARRAY[]::uuid[],
     department_ids uuid[] DEFAULT ARRAY[]::uuid[],
+    field_ids uuid[] DEFAULT ARRAY[]::uuid[],
     -- Artifact boolean filters: when true, only return resources linked to that artifact type
     document boolean DEFAULT false,
     parameter boolean DEFAULT false,
@@ -88,6 +89,7 @@ FROM (
       AND (p_video_parameter IS NULL OR p.video_parameter = p_video_parameter)
       AND (exclude_ids IS NULL OR NOT (p.id = ANY(exclude_ids)))
       AND (COALESCE(array_length(department_ids, 1), 0) = 0 OR p.department_ids && department_ids)
+      AND (COALESCE(array_length(field_ids, 1), 0) = 0 OR p.field_ids && field_ids)
       -- Artifact boolean filters (each filters to resources linked to at least one of that artifact type)
       AND (NOT document OR EXISTS (SELECT 1 FROM document_parameters_junction j WHERE j.parameter_id = p.id AND j.active = true))
       AND (NOT parameter OR EXISTS (SELECT 1 FROM parameter_parameters_junction j WHERE j.parameter_id = p.id AND j.active = true))

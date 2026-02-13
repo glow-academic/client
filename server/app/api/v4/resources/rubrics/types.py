@@ -12,6 +12,8 @@ class SearchRubricsParams(BaseModel):
     offset_count: int | None = 0
     exclude_ids: list[UUID] = []
     department_ids: list[UUID] = []
+    simulation_rubric: bool | None = None
+    video_rubric: bool | None = None
     # Artifact boolean filters
     rubric: bool = False
 
@@ -22,5 +24,7 @@ class SearchRubricsParams(BaseModel):
             self.offset_count,
             self.exclude_ids,
             self.department_ids,
+            self.simulation_rubric,
+            self.video_rubric,
             self.rubric,
         )

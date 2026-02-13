@@ -9,28 +9,22 @@
 "use client";
 
 import type {
+  AnalyticsFiltersResponse,
   LayoutContextResponse,
   ProfileItem,
   SafeSessionSnapshot,
   SettingsActiveClient,
 } from "@/app/(main)/layout-server";
-import { createSocketClient } from "@/lib/ws/socket";
-import type {
-  ClientToServerEvents,
-  ServerToClientEvents,
-} from "@/lib/ws/types";
+import { useDrafts, type DraftItem } from "@/contexts/draft-context";
+import { useSocket, type AppSocket } from "@/contexts/socket-context";
 import { usePathname, useRouter } from "next/navigation";
 import React, {
   createContext,
   useCallback,
   useContext,
-  useEffect,
   useMemo,
-  useRef,
   useState,
 } from "react";
-import { Socket } from "socket.io-client";
-import { toast } from "sonner";
 
 type ProfileRole =
   | "superadmin"
@@ -44,14 +38,7 @@ type ProfileRole =
 // TYPES (derived from LayoutContextResponse)
 // ============================================================================
 
-export type DepartmentItem = NonNullable<
-  LayoutContextResponse["departments"]
->[number];
-export type CohortItem = NonNullable<LayoutContextResponse["cohorts"]>[number];
-export type SimulationContextItem = NonNullable<
-  LayoutContextResponse["simulations"]
->[number];
-export type DraftItem = NonNullable<LayoutContextResponse["drafts"]>[number];
+export type { DraftItem };
 export type RoleResourceItem = NonNullable<
   LayoutContextResponse["role_resources"]
 >[number];
@@ -71,17 +58,14 @@ interface ProfileContextType {
   isSectionAvailable: (section: string, role?: ProfileRole) => boolean;
 
   // Layout data (from useLayoutContext)
-  departments: DepartmentItem[];
   departmentIds: string[];
   selectedDepartmentIds: string[];
   setSelectedDepartmentIds: (ids: string[]) => void;
   effectiveDepartmentIds: string[];
-  cohorts: CohortItem[];
   cohortIds: string[];
-  simulations: SimulationContextItem[];
-  simulationIds: string[];
-  cohortMemberCounts: Record<string, number>;
-  earliestAttemptDate: string | null;
+
+  // Analytics filters (from server — per-page filter config + options)
+  analyticsFilters: AnalyticsFiltersResponse | null;
 
   // Permissions data (from server)
   availableSections: string[];
@@ -102,7 +86,7 @@ interface ProfileContextType {
   setSelectedDraftId: (id: string | null) => void;
 
   // WebSocket connection (tied to profile)
-  socket: Socket<ServerToClientEvents, ClientToServerEvents> | null;
+  socket: AppSocket | null;
   isConnected: boolean;
 
   // Artifact generation capability flags (from profile context SSR)
@@ -131,12 +115,14 @@ interface ProfileProviderClientProps {
   // No need for manual type assertions - OpenAPI types are generated from server schema
   initial: LayoutContextResponse | null; // Can be null if user doesn't have access
   sessionSnapshot: SafeSessionSnapshot;
+  analyticsFilters: AnalyticsFiltersResponse | null;
 }
 
 export function ProfileProviderClient({
   children,
   initial,
   sessionSnapshot,
+  analyticsFilters,
 }: ProfileProviderClientProps) {
   const router = useRouter();
   const pathname = usePathname();
@@ -146,8 +132,8 @@ export function ProfileProviderClient({
     []
   );
 
-  // Draft state
-  const [selectedDraftId, setSelectedDraftId] = useState<string | null>(null);
+  // Draft state (delegated to DraftProviderClient)
+  const { drafts, selectedDraftId, setSelectedDraftId } = useDrafts();
 
   // Handle null initial (access denied case) - with server-side access control,
   // users without valid sessions won't reach pages (they see UnifiedAccessDenied).
@@ -158,118 +144,24 @@ export function ProfileProviderClient({
     return {
       id: initial.id ?? "",
       name: initial.name ?? null,
-      emails: initial.emails ?? [],
-      primary_email: initial.primary_email ?? null,
       role: initial.role ?? "guest",
       active: initial.active ?? false,
-      req_per_day: initial.req_per_day ?? null,
-      last_login: initial.last_login ?? null,
-      last_active: initial.last_active ?? null,
-      created_at: initial.created_at ?? null,
-      updated_at: initial.updated_at ?? null,
-      primary_department_id: initial.primary_department_id ?? null,
     };
   }, [initial]);
 
-  // WebSocket connection state
-  const [isConnected, setIsConnected] = useState(false);
-  const socketRef = useRef<Socket<
-    ServerToClientEvents,
-    ClientToServerEvents
-  > | null>(null);
-  const connectionAttempts = useRef(0);
-  const maxConnectionAttempts = 5;
-  const currentRoomsRef = useRef<Set<string>>(new Set());
+  // WebSocket connection (delegated to SocketProviderClient)
+  const { socket, isConnected } = useSocket();
 
-  // Get profile ID and session ID for socket connection
-  const profileId = profile?.id ?? null;
-  const sessionId = initial?.session_id ?? null;
-
-  // Initialize WebSocket connection when profileId is resolved
-  // Note: profileId may be null for legitimate guest connections (e.g., practice page with guest role)
-  useEffect(() => {
-    // Capture current rooms at effect creation time for cleanup
-    const roomsToCleanup = currentRoomsRef.current;
-
-    // Clean up existing socket if profile changes
-    if (socketRef.current) {
-      roomsToCleanup.forEach((roomId) => {
-        socketRef.current?.emit("simulation_leave", {
-          chat_id: roomId,
-          chat_type: "any",
-        });
-      });
-      roomsToCleanup.clear();
-      socketRef.current.disconnect();
-      socketRef.current = null;
-      setIsConnected(false);
-    }
-
-    const connectWebSocket = async () => {
-      const query: Record<string, string | number | undefined> = {
-        timestamp: Date.now(),
-        EIO: "4",
-      };
-      if (profileId) {
-        query["profileId"] = profileId;
-      }
-      if (sessionId) {
-        query["sessionId"] = sessionId;
-      }
-
-      const socket = await createSocketClient(query);
-
-      socketRef.current = socket;
-
-      socket.on("connect", () => {
-        setIsConnected(true);
-        connectionAttempts.current = 0;
-      });
-
-      socket.on("disconnect", () => {
-        setIsConnected(false);
-      });
-
-      socket.on("connect_error", (_error: Error) => {
-        connectionAttempts.current++;
-        setIsConnected(false);
-
-        if (connectionAttempts.current >= maxConnectionAttempts) {
-          toast.error(
-            "Unable to connect to real-time updates. Some features may be limited."
-          );
-        }
-      });
-
-    };
-
-    connectWebSocket();
-
-    return () => {
-      if (socketRef.current) {
-        // Leave all rooms before disconnecting using captured rooms
-        roomsToCleanup.forEach((roomId) => {
-          socketRef.current?.emit("simulation_leave", {
-            chat_id: roomId,
-            chat_type: "any",
-          });
-        });
-        roomsToCleanup.clear();
-
-        socketRef.current.disconnect();
-        socketRef.current = null;
-        setIsConnected(false);
-      }
-    };
-  }, [profileId]);
-
-  // Compute effective department IDs (like cohorts in Home.tsx)
+  // Compute effective department IDs from analytics filters
+  const allDepartmentIds = useMemo(
+    () => analyticsFilters?.department_options?.map((o) => o.value) ?? [],
+    [analyticsFilters]
+  );
   const effectiveDepartmentIds = useMemo(() => {
-    const allDepartmentIds = initial?.department_ids ?? [];
     return selectedDepartmentIds.length > 0
       ? selectedDepartmentIds
       : allDepartmentIds;
-  }, [selectedDepartmentIds, initial?.department_ids]);
+  }, [selectedDepartmentIds, allDepartmentIds]);
 
   const navigateToDefault = useCallback(
     (role: ProfileRole) => {
@@ -304,17 +196,14 @@ export function ProfileProviderClient({
     isSectionAvailable,
 
     // Layout data (from server) - handle null initial gracefully
-    departments: initial?.departments ?? [],
-    departmentIds: initial?.department_ids ?? [],
+    departmentIds: allDepartmentIds,
     selectedDepartmentIds,
     setSelectedDepartmentIds,
     effectiveDepartmentIds,
-    cohorts: initial?.cohorts ?? [], // Arrays directly (no .items property)
-    cohortIds: initial?.cohort_ids ?? [],
-    simulations: initial?.simulations ?? [], // Arrays directly (no .items property)
-    simulationIds: initial?.simulation_ids ?? [],
-    cohortMemberCounts: {}, // TODO: Compute from cohorts array if needed
-    earliestAttemptDate: initial?.earliest_attempt_date ?? null,
+    cohortIds: analyticsFilters?.cohort_options?.map((o) => o.value) ?? [],
+
+    // Analytics filters (from server — per-page filter config + options)
+    analyticsFilters: analyticsFilters ?? null,
 
     // Permissions data (from server) - handle null initial gracefully
     // LayoutContextResponse uses snake_case fields matching API response exactly (from OpenAPI schema)
@@ -331,13 +220,13 @@ export function ProfileProviderClient({
     // Currently not used in profile context, but available for future use
     settings: null,
 
-    // Drafts data (from server) - handle null initial gracefully
-    drafts: initial?.drafts ?? [],
+    // Drafts data (from DraftProviderClient)
+    drafts,
     selectedDraftId,
     setSelectedDraftId,
 
-    // WebSocket connection (tied to profile)
-    socket: socketRef.current,
+    // WebSocket connection (tied to profile, delegated to SocketProviderClient)
+    socket,
     isConnected,
 
     // Artifact agent IDs for generation capability (from profile context SSR)

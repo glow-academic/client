@@ -180,7 +180,3 @@ class LeaderboardResponse(BaseModel):
 
     simulation_options: list[FilterOption] = Field(default_factory=list)
     profile_options: list[FilterOption] = Field(default_factory=list)
-    cohort_options: list[FilterOption] = Field(default_factory=list)
-    department_options: list[FilterOption] = Field(default_factory=list)
-    date_range_earliest: str | None = None
-    date_range_latest: str | None = None

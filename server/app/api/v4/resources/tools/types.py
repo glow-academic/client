@@ -12,6 +12,7 @@ class SearchToolsParams(BaseModel):
     offset_count: int | None = 0
     exclude_ids: list[UUID] = []
     department_ids: list[UUID] = []
+    createable: bool | None = None
     # Artifact boolean filters
     agent: bool = False
     tool: bool = False
@@ -23,6 +24,7 @@ class SearchToolsParams(BaseModel):
             self.offset_count,
             self.exclude_ids,
             self.department_ids,
+            self.createable,
             self.agent,
             self.tool,
         )

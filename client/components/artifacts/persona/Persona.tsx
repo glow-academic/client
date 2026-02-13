@@ -36,7 +36,7 @@ import { ParameterFields } from "@/components/resources/ParameterFields";
 import { Parameters } from "@/components/resources/Parameters";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useProfile } from "@/contexts/profile-context";
-import { useSaveContext } from "@/contexts/save-context";
+import { useDrafts } from "@/contexts/draft-context";
 import { StepCardAiButton } from "@/components/common/forms/StepCardAiButton";
 import { useAiGeneration } from "@/hooks/use-ai-generation";
 import { useConditionalParameterToggle } from "@/hooks/use-conditional-parameter-toggle";
@@ -248,7 +248,7 @@ function PersonaComponent({
   const router = useRouter();
   const isEditMode = !!personaId;
   const { profile, setSelectedDraftId, socket, isConnected } = useProfile();
-  const { isAutosaveEnabled } = useSaveContext();
+  const { isAutosaveEnabled } = useDrafts();
 
   // --- Flush Registry ---
   const { flushRegistryRef, registerFlushCallbacks, flushAllResources } =

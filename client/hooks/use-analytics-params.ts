@@ -5,7 +5,6 @@
 
 "use client";
 
-import { useFilterOptions } from "@/contexts/filter-options-context";
 import { useProfile } from "@/contexts/profile-context";
 import { subDays } from "date-fns";
 import { usePathname } from "next/navigation";
@@ -51,33 +50,27 @@ export function useAnalyticsParams() {
   const pathname = usePathname();
   const {
     profile,
-    earliestAttemptDate,
+    analyticsFilters,
     cohortIds: profileCohortIds,
     departmentIds: profileDepartmentIds,
   } = useProfile();
-  const { options: sectionFilterOptions } = useFilterOptions();
 
   const [params, setParams] = useQueryStates(analyticsParamsClient, {
     shallow: false,
     history: "replace",
   });
 
-  // Compute default start date - prefer section-specific MV date range, then profile context, then 30-day fallback
+  // Compute default start date from analytics filters (MV-backed), then 30-day fallback
   const earliestDate = useMemo(() => {
-    if (sectionFilterOptions?.dateRangeEarliest) {
-      const date = new Date(sectionFilterOptions.dateRangeEarliest);
-      date.setHours(0, 0, 0, 0);
-      return date;
-    }
-    if (earliestAttemptDate) {
-      const date = new Date(earliestAttemptDate);
+    if (analyticsFilters?.date_range_earliest) {
+      const date = new Date(analyticsFilters.date_range_earliest);
       date.setHours(0, 0, 0, 0);
       return date;
     }
     const fallback = subDays(new Date(), 30);
     fallback.setHours(0, 0, 0, 0);
     return fallback;
-  }, [sectionFilterOptions?.dateRangeEarliest, earliestAttemptDate]);
+  }, [analyticsFilters?.date_range_earliest]);
 
   // Parse URL dates or use defaults
   const startDate = useMemo(() => {

@@ -8342,6 +8342,48 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/auth/analytics": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Analytics Filters
+         * @description Return per-page analytics filter config and MV-backed options.
+         *
+         *     Returns None for pages that don't show analytics filters.
+         */
+        post: operations["get_analytics_filters_api_v4_auth_analytics_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/auth/drafts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Drafts
+         * @description Return drafts for the current profile (parallel with /auth/context).
+         */
+        post: operations["get_drafts_api_v4_auth_drafts_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v4/auth/email": {
         parameters: {
             query?: never;
@@ -11607,6 +11649,73 @@ export interface components {
             content?: string | null;
         };
         /**
+         * AnalyticsFilterField
+         * @description Visibility/disabled state for a single filter field.
+         */
+        AnalyticsFilterField: {
+            /**
+             * Visible
+             * @default true
+             */
+            visible: boolean;
+            /**
+             * Disabled
+             * @default false
+             */
+            disabled: boolean;
+        };
+        /**
+         * AnalyticsFilterFields
+         * @description Per-page filter field visibility configuration.
+         */
+        AnalyticsFilterFields: {
+            /**
+             * @default {
+             *       "visible": true,
+             *       "disabled": false
+             *     }
+             */
+            date_range: components["schemas"]["AnalyticsFilterField"];
+            /**
+             * @default {
+             *       "visible": true,
+             *       "disabled": false
+             *     }
+             */
+            departments: components["schemas"]["AnalyticsFilterField"];
+            /**
+             * @default {
+             *       "visible": true,
+             *       "disabled": false
+             *     }
+             */
+            cohorts: components["schemas"]["AnalyticsFilterField"];
+            /**
+             * @default {
+             *       "visible": true,
+             *       "disabled": false
+             *     }
+             */
+            roles: components["schemas"]["AnalyticsFilterField"];
+            /**
+             * @default {
+             *       "visible": true,
+             *       "disabled": false
+             *     }
+             */
+            attempts: components["schemas"]["AnalyticsFilterField"];
+        };
+        /**
+         * AnalyticsFilterOption
+         * @description A single filter option for dropdown selectors.
+         */
+        AnalyticsFilterOption: {
+            /** Value */
+            value: string;
+            /** Label */
+            label: string;
+        };
+        /**
          * ArchiveTestsRequest
          * @description Request for archiving/unarchiving benchmark tests.
          */
@@ -14798,14 +14907,6 @@ export interface components {
             insights?: components["schemas"]["DashboardInsights"] | null;
             /** Simulation Options */
             simulation_options?: components["schemas"]["app__api__v4__artifacts__types__FilterOption"][];
-            /** Cohort Options */
-            cohort_options?: components["schemas"]["app__api__v4__artifacts__types__FilterOption"][];
-            /** Department Options */
-            department_options?: components["schemas"]["app__api__v4__artifacts__types__FilterOption"][];
-            /** Date Range Earliest */
-            date_range_earliest?: string | null;
-            /** Date Range Latest */
-            date_range_latest?: string | null;
             /** Profile Name */
             profile_name?: string | null;
             /** Profile Emails */
@@ -17512,6 +17613,37 @@ export interface components {
              */
             page_offset: number | null;
         };
+        /**
+         * GetAnalyticsFiltersApiResponse
+         * @description Response for POST /api/v4/auth/analytics.
+         */
+        GetAnalyticsFiltersApiResponse: {
+            fields: components["schemas"]["AnalyticsFilterFields"];
+            /**
+             * Department Options
+             * @default []
+             */
+            department_options: components["schemas"]["AnalyticsFilterOption"][];
+            /**
+             * Cohort Options
+             * @default []
+             */
+            cohort_options: components["schemas"]["AnalyticsFilterOption"][];
+            /**
+             * Role Options
+             * @default []
+             */
+            role_options: string[];
+            /**
+             * Attempt Options
+             * @default []
+             */
+            attempt_options: string[];
+            /** Date Range Earliest */
+            date_range_earliest?: string | null;
+            /** Date Range Latest */
+            date_range_latest?: string | null;
+        };
         /** GetArgPositionsApiRequest */
         GetArgPositionsApiRequest: {
             /** Ids */
@@ -17909,14 +18041,6 @@ export interface components {
             scenario_options?: components["schemas"]["AttemptListFilterOption"][] | null;
             /** Profile Options */
             profile_options?: components["schemas"]["AttemptListFilterOption"][] | null;
-            /** Cohort Options */
-            cohort_options?: components["schemas"]["AttemptListFilterOption"][] | null;
-            /** Department Options */
-            department_options?: components["schemas"]["AttemptListFilterOption"][] | null;
-            /** Date Range Earliest */
-            date_range_earliest?: string | null;
-            /** Date Range Latest */
-            date_range_latest?: string | null;
         };
         /**
          * GetAttemptsRequest
@@ -18735,6 +18859,14 @@ export interface components {
         GetDomainsApiResponse: {
             /** Items */
             items?: components["schemas"]["QGetDomainsV4Item"][] | null;
+        };
+        /**
+         * GetDraftsApiResponse
+         * @description Response model for /auth/drafts endpoint.
+         */
+        GetDraftsApiResponse: {
+            /** Drafts */
+            drafts?: components["schemas"]["QGetProfileContextV4Draft"][] | null;
         };
         /** GetEmailsApiRequest */
         GetEmailsApiRequest: {
@@ -20093,8 +20225,6 @@ export interface components {
             settings_tools?: components["schemas"]["QGetToolsV4Item"][] | null;
             /** Role Resources */
             role_resources?: components["schemas"]["QGetProfileContextV4RoleResource"][] | null;
-            /** Drafts */
-            drafts?: components["schemas"]["QGetProfileContextV4Draft"][] | null;
             /** Session Id */
             session_id?: string | null;
             /** Actor Name */
@@ -22534,14 +22664,6 @@ export interface components {
             simulation_options?: components["schemas"]["app__api__v4__artifacts__types__FilterOption"][];
             /** Profile Options */
             profile_options?: components["schemas"]["app__api__v4__artifacts__types__FilterOption"][];
-            /** Cohort Options */
-            cohort_options?: components["schemas"]["app__api__v4__artifacts__types__FilterOption"][];
-            /** Department Options */
-            department_options?: components["schemas"]["app__api__v4__artifacts__types__FilterOption"][];
-            /** Date Range Earliest */
-            date_range_earliest?: string | null;
-            /** Date Range Latest */
-            date_range_latest?: string | null;
         };
         /** LeaderboardScenarioResource */
         LeaderboardScenarioResource: {
@@ -26571,12 +26693,6 @@ export interface components {
             model_options?: components["schemas"]["app__api__v4__artifacts__types__FilterOption"][];
             /** Agent Options */
             agent_options?: components["schemas"]["app__api__v4__artifacts__types__FilterOption"][];
-            /** Department Options */
-            department_options?: components["schemas"]["app__api__v4__artifacts__types__FilterOption"][];
-            /** Date Range Earliest */
-            date_range_earliest?: string | null;
-            /** Date Range Latest */
-            date_range_latest?: string | null;
         };
         /**
          * PricingRunFactsItem
@@ -29416,14 +29532,6 @@ export interface components {
             profile_options?: components["schemas"]["app__api__v4__artifacts__types__FilterOption"][];
             /** Scenario Options */
             scenario_options?: components["schemas"]["app__api__v4__artifacts__types__FilterOption"][];
-            /** Cohort Options */
-            cohort_options?: components["schemas"]["app__api__v4__artifacts__types__FilterOption"][];
-            /** Department Options */
-            department_options?: components["schemas"]["app__api__v4__artifacts__types__FilterOption"][];
-            /** Date Range Earliest */
-            date_range_earliest?: string | null;
-            /** Date Range Latest */
-            date_range_latest?: string | null;
         };
         /** ReportsRubricResource */
         ReportsRubricResource: {
@@ -31431,6 +31539,14 @@ export interface components {
             exclude_ids?: string[] | null;
             /** Department Ids */
             department_ids?: string[] | null;
+            /** Tool Ids */
+            tool_ids?: string[] | null;
+            /** Instruction Ids */
+            instruction_ids?: string[] | null;
+            /** Model Ids */
+            model_ids?: string[] | null;
+            /** Prompt Ids */
+            prompt_ids?: string[] | null;
             /**
              * Agent
              * @default false
@@ -31720,6 +31836,8 @@ export interface components {
             suggest_source?: string | null;
             /** Exclude Ids */
             exclude_ids?: string[] | null;
+            /** Setting Ids */
+            setting_ids?: string[] | null;
             /**
              * Agent
              * @default false
@@ -31939,6 +32057,12 @@ export interface components {
             suggest_source?: string | null;
             /** Exclude Ids */
             exclude_ids?: string[] | null;
+            /** Upload Ids */
+            upload_ids?: string[] | null;
+            /** Text Ids */
+            text_ids?: string[] | null;
+            /** Html */
+            html?: boolean | null;
             /**
              * Document
              * @default false
@@ -32123,6 +32247,8 @@ export interface components {
             suggest_source?: string | null;
             /** Exclude Ids */
             exclude_ids?: string[] | null;
+            /** Conditional Parameter Ids */
+            conditional_parameter_ids?: string[] | null;
             /**
              * Field
              * @default false
@@ -32520,6 +32646,18 @@ export interface components {
             exclude_ids?: string[] | null;
             /** Department Ids */
             department_ids?: string[] | null;
+            /** Provider Ids */
+            provider_ids?: string[] | null;
+            /** Temperature Level Ids */
+            temperature_level_ids?: string[] | null;
+            /** Reasoning Level Ids */
+            reasoning_level_ids?: string[] | null;
+            /** Quality Ids */
+            quality_ids?: string[] | null;
+            /** Voice Ids */
+            voice_ids?: string[] | null;
+            /** Modality Ids */
+            modality_ids?: string[] | null;
             /**
              * Agent
              * @default false
@@ -32754,6 +32892,8 @@ export interface components {
             exclude_ids?: string[] | null;
             /** Department Ids */
             department_ids?: string[] | null;
+            /** Field Ids */
+            field_ids?: string[] | null;
             /**
              * Document
              * @default false
@@ -32890,6 +33030,10 @@ export interface components {
             exclude_ids?: string[] | null;
             /** Department Ids */
             department_ids?: string[] | null;
+            /** Cohort Ids */
+            cohort_ids?: string[] | null;
+            /** Role Ids */
+            role_ids?: string[] | null;
             /**
              * Profile
              * @default false
@@ -33216,6 +33360,10 @@ export interface components {
             exclude_ids?: string[] | null;
             /** Department Ids */
             department_ids?: string[] | null;
+            /** Simulation Rubric */
+            simulation_rubric?: boolean | null;
+            /** Video Rubric */
+            video_rubric?: boolean | null;
             /**
              * Rubric
              * @default false
@@ -33447,6 +33595,12 @@ export interface components {
             exclude_ids?: string[] | null;
             /** Department Ids */
             department_ids?: string[] | null;
+            /** Agent Ids */
+            agent_ids?: string[] | null;
+            /** Provider Key Ids */
+            provider_key_ids?: string[] | null;
+            /** Auth Ids */
+            auth_ids?: string[] | null;
             /**
              * Department
              * @default false
@@ -33724,6 +33878,8 @@ export interface components {
             exclude_ids?: string[] | null;
             /** Department Ids */
             department_ids?: string[] | null;
+            /** Createable */
+            createable?: boolean | null;
             /**
              * Agent
              * @default false
@@ -52430,6 +52586,72 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["GetProfileContextApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_analytics_filters_api_v4_auth_analytics_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetAnalyticsFiltersApiResponse"] | null;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_drafts_api_v4_auth_drafts_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetDraftsApiResponse"];
                 };
             };
             /** @description Validation Error */

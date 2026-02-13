@@ -28,6 +28,7 @@ CREATE OR REPLACE FUNCTION api_search_fields_v4(
     draft_id uuid DEFAULT NULL,
     suggest_source text DEFAULT 'all',
     exclude_ids uuid[] DEFAULT ARRAY[]::uuid[],
+    conditional_parameter_ids uuid[] DEFAULT ARRAY[]::uuid[],
     -- Artifact boolean filters: when true, only return resources linked to that artifact type
     field boolean DEFAULT false,
     parameter boolean DEFAULT false
@@ -80,6 +81,7 @@ FROM (
       )
       -- Exclude filter
       AND (exclude_ids IS NULL OR NOT (f.id = ANY(exclude_ids)))
+      AND (COALESCE(array_length(conditional_parameter_ids, 1), 0) = 0 OR f.conditional_parameter_ids && conditional_parameter_ids)
       -- Search filter
       AND (
           search IS NULL

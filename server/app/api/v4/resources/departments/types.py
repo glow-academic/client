@@ -14,6 +14,7 @@ class SearchDepartmentsParams(BaseModel):
     draft_id: UUID | None = None
     suggest_source: str | None = "all"
     exclude_ids: list[UUID] = []
+    setting_ids: list[UUID] = []
     # Artifact boolean filters
     agent: bool = False
     auth: bool = False
@@ -42,6 +43,7 @@ class SearchDepartmentsParams(BaseModel):
             self.draft_id,
             self.suggest_source,
             self.exclude_ids,
+            self.setting_ids,
             self.agent,
             self.auth,
             self.cohort,

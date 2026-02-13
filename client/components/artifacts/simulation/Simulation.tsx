@@ -31,7 +31,7 @@ import { Scenarios } from "@/components/resources/Scenarios";
 import { TooltipProvider } from "@/components/ui/tooltip";
 
 import { useProfile } from "@/contexts/profile-context";
-import { useSaveContext } from "@/contexts/save-context";
+import { useDrafts } from "@/contexts/draft-context";
 import { useAiGeneration } from "@/hooks/use-ai-generation";
 import { useDraftLifecycle } from "@/hooks/use-draft-lifecycle";
 import { useFlushRegistry } from "@/hooks/use-flush-registry";
@@ -271,7 +271,7 @@ function SimulationComponent({
     socket,
     isConnected,
   } = useProfile();
-  const { isAutosaveEnabled } = useSaveContext();
+  const { isAutosaveEnabled } = useDrafts();
 
   // --- Flush Registry ---
   const { flushRegistryRef, registerFlushCallbacks, flushAllResources } =

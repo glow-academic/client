@@ -29,7 +29,7 @@ import { Texts } from "@/components/resources/Texts";
 import { Uploads } from "@/components/resources/Uploads";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useProfile } from "@/contexts/profile-context";
-import { useSaveContext } from "@/contexts/save-context";
+import { useDrafts } from "@/contexts/draft-context";
 import { useAiGeneration } from "@/hooks/use-ai-generation";
 import { useDraftLifecycle } from "@/hooks/use-draft-lifecycle";
 import { useFlushRegistry } from "@/hooks/use-flush-registry";
@@ -173,7 +173,7 @@ function DocumentComponent({
   const documentDetail = documentDetailProp ?? documentDetailDefault;
   const { profile, setSelectedDraftId, socket, isConnected } =
     useProfile();
-  const { isAutosaveEnabled } = useSaveContext();
+  const { isAutosaveEnabled } = useDrafts();
   const { flushRegistryRef, registerFlushCallbacks, flushAllResources } =
     useFlushRegistry<Record<string, unknown>>(FLUSH_KEYS);
 

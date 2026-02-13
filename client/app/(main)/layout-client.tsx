@@ -25,9 +25,14 @@ import {
   useFilterOptions,
 } from "@/contexts/filter-options-context";
 import { GenerationProvider } from "@/contexts/generation-context";
+import {
+  DraftProviderClient,
+  type DraftItem,
+} from "@/contexts/draft-context";
 import { ProfileProviderClient, useProfile } from "@/contexts/profile-context";
-import { SaveProvider } from "@/contexts/save-context";
+import { SocketProviderClient } from "@/contexts/socket-context";
 import type {
+  AnalyticsFiltersResponse,
   AttemptFullOut,
   CreateFeedbackIn,
   CreateFeedbackOut,
@@ -64,7 +69,7 @@ function MainLayoutContent({
   const pathname = usePathname() || "/";
 
   const router = useRouter();
-  const { profile, breadcrumbs: serverBreadcrumbs, pageMetadata } = useProfile();
+  const { breadcrumbs: serverBreadcrumbs, pageMetadata } = useProfile();
   const { clearOptions } = useFilterOptions();
 
   // Clear section-specific filter options when navigating away from analytics-related pages
@@ -91,20 +96,8 @@ function MainLayoutContent({
     return segments[0] || "home";
   }, [breadcrumbs, pathname]);
 
-  // Page metadata from server (with fallbacks for backward compat)
-  const canShowAnalyticsFilters = useMemo(() => {
-    if (pageMetadata?.show_analytics_filters) return true;
-    // Fallback for when server hasn't sent metadata yet
-    if (pathname === "/leaderboard" || pathname === "/health") return true;
-    const analyticsPages = ["/analytics", "/home", "/practice", "/benchmark"];
-    return analyticsPages.some((p) => pathname.startsWith(p));
-  }, [pageMetadata, pathname]);
-
-  const isHomePage = pathname === "/home";
-  const isPracticePage = pathname === "/practice";
-  const isBenchmarkPage = pathname === "/benchmark";
-  const isHealthPage = pathname === "/health";
-  const isReportPage = pathname.startsWith("/analytics/reports/") && pathname.split("/").length >= 4;
+  // Page metadata from server controls analytics filter visibility
+  const canShowAnalyticsFilters = pageMetadata?.show_analytics_filters ?? false;
 
   // Check if we're on the staff management pages
   const isStaffManagementPage = pathname === "/management/staff";
@@ -171,14 +164,7 @@ function MainLayoutContent({
 
             {/* Analytics Filters - Show in top right for analytics pages */}
             {canShowAnalyticsFilters && (
-              <AnalyticsFilters
-                homePage={isHomePage}
-                reportPage={isReportPage}
-                practicePage={isPracticePage}
-                benchmarkPage={isBenchmarkPage}
-                healthPage={isHealthPage}
-                refreshPage={refreshPageAction}
-              />
+              <AnalyticsFilters refreshPage={refreshPageAction} />
             )}
 
             {/* SimulationControls - Show when on attempt page and attempt belongs to active profile */}
@@ -231,6 +217,8 @@ export function MainLayoutClient({
   sessionSnapshot,
   attemptData,
   activeSettings,
+  drafts,
+  analyticsFilters,
   initialAutosave,
   switchEffectiveProfileAction,
   createFeedbackAction,
@@ -242,6 +230,8 @@ export function MainLayoutClient({
   sessionSnapshot: SafeSessionSnapshot;
   attemptData: AttemptFullOut | null;
   activeSettings: SettingsActiveClient | null;
+  drafts: DraftItem[];
+  analyticsFilters: AnalyticsFiltersResponse | null;
   /** Initial autosave preference from SSR cookie */
   initialAutosave?: boolean;
   switchEffectiveProfileAction: (
@@ -285,28 +275,34 @@ export function MainLayoutClient({
   return (
     <>
       <ThemeHydrator activeSettings={activeSettings} />
-      <ProfileProviderClient
-        initial={initial}
-        sessionSnapshot={sessionSnapshot}
+      <SocketProviderClient
+        profileId={initial?.id ?? null}
+        sessionId={initial?.session_id ?? null}
       >
-        <FilterOptionsProvider>
-          <GenerationProvider>
-            <SaveProvider initialAutosave={initialAutosave}>
-              <MainLayoutContent
-                attemptData={attemptData}
-                switchEffectiveProfileAction={switchEffectiveProfileAction}
-                createFeedbackAction={createFeedbackAction}
-                refreshPageAction={refreshPageAction}
-                searchSimulatableProfilesAction={
-                  searchSimulatableProfilesAction
-                }
-              >
-                {children}
-              </MainLayoutContent>
-            </SaveProvider>
-          </GenerationProvider>
-        </FilterOptionsProvider>
-      </ProfileProviderClient>
+        <DraftProviderClient drafts={drafts} initialAutosave={initialAutosave}>
+          <ProfileProviderClient
+            initial={initial}
+            sessionSnapshot={sessionSnapshot}
+            analyticsFilters={analyticsFilters}
+          >
+            <FilterOptionsProvider>
+              <GenerationProvider>
+                  <MainLayoutContent
+                    attemptData={attemptData}
+                    switchEffectiveProfileAction={switchEffectiveProfileAction}
+                    createFeedbackAction={createFeedbackAction}
+                    refreshPageAction={refreshPageAction}
+                    searchSimulatableProfilesAction={
+                      searchSimulatableProfilesAction
+                    }
+                  >
+                    {children}
+                  </MainLayoutContent>
+              </GenerationProvider>
+            </FilterOptionsProvider>
+          </ProfileProviderClient>
+        </DraftProviderClient>
+      </SocketProviderClient>
     </>
   );
 }

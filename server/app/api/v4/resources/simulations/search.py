@@ -41,6 +41,7 @@ async def search_simulations_internal(
     suggest_source: str | None = "all",
     exclude_ids: list[UUID] | None = None,
     department_ids: list[UUID] | None = None,
+    scenario_ids: list[UUID] | None = None,
     bypass_cache: bool = False,
     *,
     cohort: bool = False,
@@ -72,6 +73,7 @@ async def search_simulations_internal(
             "suggest_source": suggest_source,
             "exclude_ids": [str(id) for id in (exclude_ids or [])],
             "department_ids": sorted(str(i) for i in (department_ids or [])),
+            "scenario_ids": sorted(str(i) for i in (scenario_ids or [])),
             "cohort": cohort,
             "simulation": simulation,
         },
@@ -95,6 +97,7 @@ async def search_simulations_internal(
         suggest_source=suggest_source,
         exclude_ids=exclude_ids or [],
         department_ids=department_ids or [],
+        scenario_ids=scenario_ids or [],
         cohort=cohort,
         simulation=simulation,
     )

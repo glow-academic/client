@@ -35,6 +35,7 @@ async def search_fields_internal(
     draft_id: UUID | None = None,
     suggest_source: str | None = None,
     exclude_ids: list[UUID] | None = None,
+    conditional_parameter_ids: list[UUID] | None = None,
     parameter_id: UUID | None = None,
     bypass_cache: bool = False,
     *,
@@ -55,6 +56,9 @@ async def search_fields_internal(
             "draft_id": str(draft_id) if draft_id else None,
             "suggest_source": suggest_source,
             "exclude_ids": [str(id) for id in (exclude_ids or [])],
+            "conditional_parameter_ids": sorted(
+                str(i) for i in (conditional_parameter_ids or [])
+            ),
             "parameter_id": str(parameter_id) if parameter_id else None,
             "field": field,
             "parameter": parameter,
@@ -77,6 +81,7 @@ async def search_fields_internal(
         draft_id=draft_id,
         suggest_source=suggest_source,
         exclude_ids=exclude_ids or [],
+        conditional_parameter_ids=conditional_parameter_ids or [],
         field=field,
         parameter=parameter,
     )

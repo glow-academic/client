@@ -25,8 +25,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Switch } from "@/components/ui/switch";
-import { useProfile } from "@/contexts/profile-context";
-import { useSaveContext } from "@/contexts/save-context";
+import { useDrafts } from "@/contexts/draft-context";
 import { FileText, Loader2, Plus, RefreshCw, Save } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useMemo, useState } from "react";
@@ -43,9 +42,10 @@ export function SaveToolbar({ artifactType }: SaveToolbarProps) {
     saveStatus,
     hasUnsavedChanges,
     triggerSave,
-  } = useSaveContext();
-
-  const { drafts, selectedDraftId, setSelectedDraftId } = useProfile();
+    drafts,
+    selectedDraftId,
+    setSelectedDraftId,
+  } = useDrafts();
   const router = useRouter();
   const searchParams = useSearchParams();
 

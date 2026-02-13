@@ -12,6 +12,9 @@ import { cache } from "react";
 /** ---- Strong types from OpenAPI ---- */
 type LayoutContextIn = InputOf<"/api/v4/auth/context", "post">;
 type LayoutContextOut = OutputOf<"/api/v4/auth/context", "post">;
+type DraftsIn = InputOf<"/api/v4/auth/drafts", "post">;
+type DraftsOut = OutputOf<"/api/v4/auth/drafts", "post">;
+type AnalyticsFiltersOut = OutputOf<"/api/v4/auth/analytics", "post">;
 type CreateEmulationGrantIn = InputOf<"/api/v4/auth/emulate", "post">;
 type CreateEmulationGrantOut = OutputOf<"/api/v4/auth/emulate", "post">;
 type CreateFeedbackIn = InputOf<"/api/v4/artifacts/activity/problem", "post">;
@@ -52,32 +55,9 @@ type BulkCreateOrUpdateStaffOut = OutputOf<"/api/v4/artifacts/profiles/bulk/save
 type SettingsFields = Pick<
   LayoutContextOut,
   | "settings_id"
-  | "settings_created_at"
-  | "settings_active"
-  | "settings_name"
-  | "settings_description"
-  | "settings_primary_color"
-  | "settings_accent"
-  | "settings_background"
-  | "settings_surface"
-  | "settings_success"
-  | "settings_warning"
-  | "settings_error"
-  | "settings_sidebar_background"
-  | "settings_sidebar_primary"
-  | "settings_chart1"
-  | "settings_chart2"
-  | "settings_chart3"
-  | "settings_chart4"
-  | "settings_chart5"
-  | "settings_guest_login_enabled"
   | "settings_success_threshold"
   | "settings_warning_threshold"
   | "settings_danger_threshold"
-  | "settings_auth_ids"
-  | "settings_auths"
-  | "settings_provider_ids"
-  | "settings_providers"
   | "settings_tokens"
 >;
 
@@ -131,6 +111,41 @@ export const getLayoutContext = cache(
   }
 );
 
+/** ---- Cached drafts fetch (parallel with context) ---- */
+export const getDrafts = cache(
+  async (): Promise<DraftsOut> => {
+    return api.post("/auth/drafts", {} as DraftsIn);
+  }
+);
+
+/** ---- Cached analytics filters fetch (parallel with context) ---- */
+export const getAnalyticsFilters = cache(
+  async (): Promise<AnalyticsFiltersOut | null> => {
+    const headersList = await headers();
+    const pathname = headersList.get("x-pathname") || "/";
+
+    const cookieStore = await cookies();
+    const extraHeaders: Record<string, string> = { "X-Pathname": pathname };
+    const cookieHeader = [
+      cookieStore.get("department-id")?.value &&
+        `department-id=${cookieStore.get("department-id")?.value}`,
+    ]
+      .filter(Boolean)
+      .join("; ");
+    if (cookieHeader) extraHeaders["Cookie"] = cookieHeader;
+
+    try {
+      return await api.post(
+        "/auth/analytics",
+        {} as InputOf<"/api/v4/auth/analytics", "post">,
+        { headers: extraHeaders }
+      );
+    } catch {
+      return null;
+    }
+  }
+);
+
 /** ---- Direct fetch (no caching - source of truth) ----
  * Always bypass cache to ensure fresh data for websocket/attempt pages.
  */
@@ -148,6 +163,8 @@ const getAttemptFull = async (
 
 /** ---- Export type for client (type-only imports) ---- */
 export type LayoutContextResponse = LayoutContextOut;
+export type DraftsResponse = DraftsOut;
+export type AnalyticsFiltersResponse = AnalyticsFiltersOut;
 
 /** ---- Helper to get validated profile ID (reusable for API calls) ----
  * @param session - Optional session to reuse. If not provided, will fetch session.
@@ -171,16 +188,8 @@ export type ProfileItem = Pick<
   LayoutContextOut,
   | "id"
   | "name"
-  | "emails"
-  | "primary_email"
   | "role"
   | "active"
-  | "req_per_day"
-  | "last_login"
-  | "last_active"
-  | "created_at"
-  | "updated_at"
-  | "primary_department_id"
 >;
 
 export type SafeSessionSnapshot = {
@@ -216,11 +225,18 @@ export async function getLayoutContextData(session?: Session | null) {
   let profileId = resolvedSession?.user?.profileId || null;
   let initial: LayoutContextOut | null = null;
 
-  // Fetch profile context
+  // Fetch profile context + drafts + analytics filters in parallel
+  let draftsResult: DraftsOut | null = null;
+  let analyticsFilters: AnalyticsFiltersOut | null = null;
   try {
-    initial = await getLayoutContext({
-      body: {},
-    });
+    const [contextResult, draftsRes, filtersRes] = await Promise.all([
+      getLayoutContext({ body: {} }),
+      getDrafts(),
+      getAnalyticsFilters(),
+    ]);
+    initial = contextResult;
+    draftsResult = draftsRes;
+    analyticsFilters = filtersRes;
     if (initial?.id) {
       profileId = initial.id;
     }
@@ -228,6 +244,8 @@ export async function getLayoutContextData(session?: Session | null) {
     // If context fetch fails (e.g., 403/404), return null
     // Layout will handle access denied via AccessControl component
     initial = null;
+    draftsResult = null;
+    analyticsFilters = null;
   }
 
   // Ensure we have profile ID - use from initial if extraction failed
@@ -248,6 +266,8 @@ export async function getLayoutContextData(session?: Session | null) {
       snapshot,
       attemptData: null,
       activeSettings: null,
+      drafts: [],
+      analyticsFilters: null,
     };
   }
 
@@ -281,34 +301,10 @@ export async function getLayoutContextData(session?: Session | null) {
   const activeSettingsClient: SettingsActiveClient | null = initial.settings_id
     ? {
         id: initial.settings_id ?? null,
-        created_at: initial.settings_created_at ?? null,
-        active: initial.settings_active ?? null,
-        name: initial.settings_name ?? null,
-        description: initial.settings_description ?? null,
-        primary_color: initial.settings_primary_color ?? null,
-        accent: initial.settings_accent ?? null,
-        background: initial.settings_background ?? null,
-        surface: initial.settings_surface ?? null,
-        success: initial.settings_success ?? null,
-        warning: initial.settings_warning ?? null,
-        error: initial.settings_error ?? null,
-        sidebar_background: initial.settings_sidebar_background ?? null,
-        sidebar_primary: initial.settings_sidebar_primary ?? null,
-        chart1: initial.settings_chart1 ?? null,
-        chart2: initial.settings_chart2 ?? null,
-        chart3: initial.settings_chart3 ?? null,
-        chart4: initial.settings_chart4 ?? null,
-        chart5: initial.settings_chart5 ?? null,
-        guest_login_enabled: initial.settings_guest_login_enabled ?? null,
         success_threshold: initial.settings_success_threshold ?? null,
         warning_threshold: initial.settings_warning_threshold ?? null,
         danger_threshold: initial.settings_danger_threshold ?? null,
-        auth_ids: initial.settings_auth_ids ?? null,
-        auths: initial.settings_auths ?? null,
-        provider_ids: initial.settings_provider_ids ?? null,
-        providers: initial.settings_providers ?? null,
         tokens: initial.settings_tokens ?? null,
-        // guestProfileId is excluded (server-side only)
       }
     : null;
 
@@ -317,6 +313,8 @@ export async function getLayoutContextData(session?: Session | null) {
     snapshot,
     attemptData,
     activeSettings: activeSettingsClient,
+    drafts: draftsResult?.drafts ?? [],
+    analyticsFilters,
   };
 }
 
@@ -460,6 +458,7 @@ export async function bulkCreateOrUpdateStaff(
 export type RefreshPageFn = (page: string) => Promise<void>;
 
 export type {
+  AnalyticsFiltersOut,
   AttemptFullIn,
   AttemptFullOut,
   BulkCreateOrUpdateStaffIn,

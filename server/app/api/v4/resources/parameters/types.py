@@ -17,6 +17,7 @@ class SearchParametersParams(BaseModel):
     suggest_source: str | None = "all"
     exclude_ids: list[UUID] = []
     department_ids: list[UUID] = []
+    field_ids: list[UUID] = []
     # Artifact boolean filters
     document: bool = False
     parameter: bool = False
@@ -35,6 +36,7 @@ class SearchParametersParams(BaseModel):
             self.suggest_source,
             self.exclude_ids,
             self.department_ids,
+            self.field_ids,
             self.document,
             self.parameter,
             self.persona,

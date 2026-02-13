@@ -24,6 +24,15 @@ CREATE OR REPLACE FUNCTION api_search_scenarios_v4(
     department_ids uuid[] DEFAULT NULL,
     suggest_source text DEFAULT 'all',
     exclude_ids uuid[] DEFAULT ARRAY[]::uuid[],
+    persona_ids uuid[] DEFAULT ARRAY[]::uuid[],
+    parameter_ids uuid[] DEFAULT ARRAY[]::uuid[],
+    parent_ids uuid[] DEFAULT ARRAY[]::uuid[],
+    is_root boolean DEFAULT NULL,
+    problem_statement_enabled boolean DEFAULT NULL,
+    objectives_enabled boolean DEFAULT NULL,
+    video_enabled boolean DEFAULT NULL,
+    images_enabled boolean DEFAULT NULL,
+    questions_enabled boolean DEFAULT NULL,
     -- Artifact boolean filters: when true, only return resources linked to that artifact type
     scenario boolean DEFAULT false,
     simulation boolean DEFAULT false
@@ -71,6 +80,15 @@ FROM (
       )
       -- Exclude specified IDs
       AND (COALESCE(array_length(exclude_ids, 1), 0) = 0 OR NOT s.id = ANY(exclude_ids))
+      AND (COALESCE(array_length(persona_ids, 1), 0) = 0 OR s.persona_ids && persona_ids)
+      AND (COALESCE(array_length(parameter_ids, 1), 0) = 0 OR s.parameter_ids && parameter_ids)
+      AND (COALESCE(array_length(parent_ids, 1), 0) = 0 OR s.parent_id = ANY(parent_ids))
+      AND (is_root IS NULL OR s.is_root = is_root)
+      AND (problem_statement_enabled IS NULL OR s.problem_statement_enabled = problem_statement_enabled)
+      AND (objectives_enabled IS NULL OR s.objectives_enabled = objectives_enabled)
+      AND (video_enabled IS NULL OR s.video_enabled = video_enabled)
+      AND (images_enabled IS NULL OR s.images_enabled = images_enabled)
+      AND (questions_enabled IS NULL OR s.questions_enabled = questions_enabled)
       -- Suggest source filter
       AND (
           suggest_source = 'all'

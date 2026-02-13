@@ -70,6 +70,3 @@ class PricingResponse(BaseModel):
 
     model_options: list[FilterOption] = Field(default_factory=list)
     agent_options: list[FilterOption] = Field(default_factory=list)
-    department_options: list[FilterOption] = Field(default_factory=list)
-    date_range_earliest: str | None = None
-    date_range_latest: str | None = None

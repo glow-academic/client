@@ -1,53 +1,59 @@
-/**
- * save-context.tsx
- * Context for managing save state across layout and page components
- * Handles autosave toggle, save status, and unsaved changes tracking
- */
-
 "use client";
 
+import type { DraftsResponse } from "@/app/(main)/layout-server";
 import React, {
   createContext,
   useCallback,
   useContext,
   useEffect,
+  useMemo,
   useState,
 } from "react";
 import { toast } from "sonner";
 
-type SaveStatus = "idle" | "saving" | "saved" | "error";
+export type DraftItem = NonNullable<DraftsResponse["drafts"]>[number];
 
-interface SaveContextType {
-  /** Whether autosave is enabled (persisted in localStorage) */
+export type SaveStatus = "idle" | "saving" | "saved" | "error";
+
+interface DraftContextType {
+  drafts: DraftItem[];
+  selectedDraftId: string | null;
+  setSelectedDraftId: (id: string | null) => void;
   isAutosaveEnabled: boolean;
-  /** Whether the autosave preference has been loaded from localStorage */
   isAutosaveLoaded: boolean;
-  /** Toggle autosave on/off */
   setAutosaveEnabled: (enabled: boolean) => void;
-  /** Current save status for UI indicator */
   saveStatus: SaveStatus;
-  /** Whether there are unsaved changes */
   hasUnsavedChanges: boolean;
-  /** Trigger save from layout (dispatches window event) */
   triggerSave: () => void;
 }
 
-const SaveContext = createContext<SaveContextType | undefined>(undefined);
+const DraftContext = createContext<DraftContextType | null>(null);
 
 const AUTOSAVE_COOKIE = "glow_autosave";
 
-interface SaveProviderProps {
-  children: React.ReactNode;
-  /** Initial autosave value from SSR (read from cookie) */
-  initialAutosave?: boolean;
+export function useDrafts(): DraftContextType {
+  const context = useContext(DraftContext);
+  if (!context) {
+    throw new Error("useDrafts must be used within a DraftProviderClient");
+  }
+  return context;
 }
 
-export function SaveProvider({ children, initialAutosave }: SaveProviderProps) {
-  // Initialize from SSR prop (cookie), falling back to true
+export function DraftProviderClient({
+  children,
+  drafts,
+  initialAutosave,
+}: {
+  children: React.ReactNode;
+  drafts: DraftItem[];
+  initialAutosave?: boolean;
+}) {
+  const [selectedDraftId, setSelectedDraftId] = useState<string | null>(null);
+
+  // Autosave state — initialized from SSR cookie prop, falling back to true
   const [isAutosaveEnabled, setIsAutosaveEnabledState] = useState(
     initialAutosave ?? true
   );
-  // If we have SSR value, we're already "loaded"; otherwise wait for useEffect
   const [isAutosaveLoaded, setIsAutosaveLoaded] = useState(
     initialAutosave !== undefined
   );
@@ -57,7 +63,6 @@ export function SaveProvider({ children, initialAutosave }: SaveProviderProps) {
   // For first-time visitors (no cookie), set the default cookie and mark as loaded
   useEffect(() => {
     if (initialAutosave === undefined) {
-      // First visit - set default cookie (true) for future SSR
       document.cookie = `${AUTOSAVE_COOKIE}=true; path=/; max-age=31536000; SameSite=Lax`;
       setIsAutosaveLoaded(true);
     }
@@ -66,7 +71,6 @@ export function SaveProvider({ children, initialAutosave }: SaveProviderProps) {
   // Persist autosave preference to cookie
   const setAutosaveEnabled = useCallback((enabled: boolean) => {
     setIsAutosaveEnabledState(enabled);
-    // Set cookie for SSR access (1 year expiry)
     document.cookie = `${AUTOSAVE_COOKIE}=${enabled}; path=/; max-age=31536000; SameSite=Lax`;
     toast.info(enabled ? "Autosave enabled" : "Autosave disabled");
   }, []);
@@ -97,26 +101,31 @@ export function SaveProvider({ children, initialAutosave }: SaveProviderProps) {
     };
   }, []);
 
-  return (
-    <SaveContext.Provider
-      value={{
-        isAutosaveEnabled,
-        isAutosaveLoaded,
-        setAutosaveEnabled,
-        saveStatus,
-        hasUnsavedChanges,
-        triggerSave,
-      }}
-    >
-      {children}
-    </SaveContext.Provider>
+  const value = useMemo<DraftContextType>(
+    () => ({
+      drafts,
+      selectedDraftId,
+      setSelectedDraftId,
+      isAutosaveEnabled,
+      isAutosaveLoaded,
+      setAutosaveEnabled,
+      saveStatus,
+      hasUnsavedChanges,
+      triggerSave,
+    }),
+    [
+      drafts,
+      selectedDraftId,
+      isAutosaveEnabled,
+      isAutosaveLoaded,
+      setAutosaveEnabled,
+      saveStatus,
+      hasUnsavedChanges,
+      triggerSave,
+    ]
   );
-}
 
-export function useSaveContext() {
-  const context = useContext(SaveContext);
-  if (!context) {
-    throw new Error("useSaveContext must be used within a SaveProvider");
-  }
-  return context;
+  return (
+    <DraftContext.Provider value={value}>{children}</DraftContext.Provider>
+  );
 }

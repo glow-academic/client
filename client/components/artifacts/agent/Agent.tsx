@@ -38,7 +38,7 @@ import { TemperatureLevels } from "@/components/resources/TemperatureLevels";
 import { Tools } from "@/components/resources/Tools";
 import { Voices } from "@/components/resources/Voices";
 import { useProfile } from "@/contexts/profile-context";
-import { useSaveContext } from "@/contexts/save-context";
+import { useDrafts } from "@/contexts/draft-context";
 import { useAiGeneration } from "@/hooks/use-ai-generation";
 import { useDraftLifecycle } from "@/hooks/use-draft-lifecycle";
 import { useFlushRegistry } from "@/hooks/use-flush-registry";
@@ -182,7 +182,7 @@ export default function Agent({
   const isEditMode = !!agentId;
   const { profile, selectedDraftId, setSelectedDraftId, socket, isConnected } =
     useProfile();
-  const { isAutosaveEnabled } = useSaveContext();
+  const { isAutosaveEnabled } = useDrafts();
   const isSuperadmin = true;
   const { flushRegistryRef, registerFlushCallbacks, flushAllResources } =
     useFlushRegistry<FlushResult>(FLUSH_KEYS);

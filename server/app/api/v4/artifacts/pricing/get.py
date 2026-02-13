@@ -87,59 +87,12 @@ async def get_pricing(
                     bypass_cache=bypass_cache,
                 )
 
-        async def fetch_pricing_department_options() -> list[FilterOption]:
-            if not request.accessible_department_ids:
-                return []
-            async with pool.acquire() as c:
-                rows = await c.fetch(
-                    """
-                    SELECT DISTINCT pgs.department_id, dr.name, COUNT(*) as cnt
-                    FROM mv_pricing_group_summary pgs
-                    JOIN departments_resource dr ON dr.id = pgs.department_id
-                    WHERE pgs.department_id = ANY($1::uuid[])
-                    GROUP BY pgs.department_id, dr.name
-                    ORDER BY dr.name
-                    """,
-                    [UUID(did) for did in request.accessible_department_ids],
-                )
-                return [
-                    FilterOption(
-                        value=str(r["department_id"]),
-                        label=r["name"],
-                        count=r["cnt"],
-                    )
-                    for r in rows
-                ]
-
-        async def fetch_pricing_date_range() -> tuple[str | None, str | None]:
-            if not request.accessible_department_ids:
-                return (None, None)
-            async with pool.acquire() as c:
-                row = await c.fetchrow(
-                    """
-                    SELECT MIN(date) as earliest, MAX(date) as latest
-                    FROM mv_pricing_daily
-                    WHERE department_id = ANY($1::uuid[])
-                    """,
-                    [UUID(did) for did in request.accessible_department_ids],
-                )
-                if row and row["earliest"]:
-                    return (
-                        row["earliest"].isoformat(),
-                        row["latest"].isoformat(),
-                    )
-                return (None, None)
-
         (
             group_summary_result,
             daily_result,
-            pricing_dept_options,
-            pricing_date_range,
         ) = await asyncio.gather(
             fetch_group_summary(),
             fetch_daily(),
-            fetch_pricing_department_options(),
-            fetch_pricing_date_range(),
         )
 
         # Collect artifact IDs and build artifact_id → name_id mappings
@@ -250,9 +203,6 @@ async def get_pricing(
             total_count=group_summary_result.total_count,
             model_options=model_options,
             agent_options=agent_options,
-            department_options=pricing_dept_options,
-            date_range_earliest=pricing_date_range[0],
-            date_range_latest=pricing_date_range[1],
         )
 
     except HTTPException:

@@ -98,6 +98,7 @@ class SearchSimulationsParams(BaseModel):
     suggest_source: str | None = "all"
     exclude_ids: list[UUID] = []
     department_ids: list[UUID] = []
+    scenario_ids: list[UUID] = []
     # Artifact boolean filters
     cohort: bool = False
     simulation: bool = False
@@ -111,6 +112,7 @@ class SearchSimulationsParams(BaseModel):
             self.suggest_source,
             self.exclude_ids,
             self.department_ids,
+            self.scenario_ids,
             self.cohort,
             self.simulation,
         )

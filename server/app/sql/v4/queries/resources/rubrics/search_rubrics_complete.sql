@@ -24,6 +24,8 @@ CREATE OR REPLACE FUNCTION api_search_rubrics_v4(
     offset_count int DEFAULT 0,
     exclude_ids uuid[] DEFAULT ARRAY[]::uuid[],
     department_ids uuid[] DEFAULT ARRAY[]::uuid[],
+    simulation_rubric boolean DEFAULT NULL,
+    video_rubric boolean DEFAULT NULL,
     -- Artifact boolean filters: when true, only return resources linked to that artifact type
     rubric boolean DEFAULT false
 )
@@ -50,6 +52,8 @@ FROM (
       AND (search IS NULL OR search = '' OR LOWER(r.name) LIKE '%' || LOWER(search) || '%' OR LOWER(COALESCE(r.description, '')) LIKE '%' || LOWER(search) || '%')
       AND (exclude_ids IS NULL OR NOT (r.id = ANY(exclude_ids)))
       AND (COALESCE(array_length(department_ids, 1), 0) = 0 OR r.department_ids && department_ids)
+      AND (simulation_rubric IS NULL OR r.simulation_rubric = simulation_rubric)
+      AND (video_rubric IS NULL OR r.video_rubric = video_rubric)
       -- Artifact boolean filters (each filters to resources linked to at least one of that artifact type)
       AND (NOT rubric OR EXISTS (SELECT 1 FROM rubric_rubrics_junction j WHERE j.rubric_id = r.id AND j.active = true))
     ORDER BY r.name

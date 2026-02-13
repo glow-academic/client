@@ -28,6 +28,9 @@ CREATE OR REPLACE FUNCTION api_search_documents_v4(
     draft_id uuid DEFAULT NULL,
     suggest_source text DEFAULT 'all',
     exclude_ids uuid[] DEFAULT ARRAY[]::uuid[],
+    upload_ids uuid[] DEFAULT ARRAY[]::uuid[],
+    text_ids uuid[] DEFAULT ARRAY[]::uuid[],
+    html boolean DEFAULT NULL,
     -- Artifact boolean filters: when true, only return resources linked to that artifact type
     document boolean DEFAULT false,
     scenario boolean DEFAULT false
@@ -80,6 +83,9 @@ FROM (
       )
       -- Exclude already selected
       AND (exclude_ids IS NULL OR NOT (d.id = ANY(exclude_ids)))
+      AND (COALESCE(array_length(upload_ids, 1), 0) = 0 OR d.upload_id = ANY(upload_ids))
+      AND (COALESCE(array_length(text_ids, 1), 0) = 0 OR d.text_id = ANY(text_ids))
+      AND (html IS NULL OR d.html = html)
       -- Optional search filter
       AND (
           search IS NULL
