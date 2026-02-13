@@ -1257,12 +1257,13 @@ export interface paths {
         put?: never;
         /**
          * Get Setting
-         * @description Get setting information - handles both new (settings_id = NULL) and detail (settings_id provided).
+         * @description Get setting information using two-pass architecture.
          *
-         *     Validation Logic:
-         *     - Tools are REQUIRED for resources - error if no tools exist (via missing_tools_check CTE)
-         *     - Agents are OPTIONAL - NULL agent_id means manual entry only (no generate button shown)
-         *     - Frontend components check agent_id before showing generate button
+         *     This is a thin HTTP wrapper around get_setting_client().
+         *
+         *     Query 1: Access check (user role, departments, setting state)
+         *     Query 2: ID fetching (resource IDs, suggestions, agents)
+         *     Pass 2: Parallel resource fetching (each resource type has own cache)
          */
         post: operations["get_setting_api_v4_artifacts_settings_get_post"];
         delete?: never;
@@ -10580,7 +10581,13 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Setting Generation Complete Api */
+        /**
+         * Setting Generation Complete Api
+         * @description Server-to-client event: Setting generation completed.
+         *
+         *     Emitted when a setting resource is successfully generated.
+         *     Contains full resource objects for immediate frontend use.
+         */
         post: operations["setting_generation_complete_api_socket_v4_server_setting_generation_complete_post"];
         delete?: never;
         options?: never;
@@ -20759,8 +20766,13 @@ export interface components {
              */
             mcp: boolean | null;
         };
-        /** GetSettingApiResponse */
+        /**
+         * GetSettingApiResponse
+         * @description Section-first response model for get setting endpoint.
+         */
         GetSettingApiResponse: {
+            /** Actor Name */
+            actor_name?: string | null;
             /** Setting Exists */
             setting_exists?: boolean | null;
             /** Can Edit */
@@ -20771,143 +20783,21 @@ export interface components {
             draft_version?: number | null;
             /** Group Id */
             group_id?: string | null;
-            /** Name Id */
-            name_id?: string | null;
-            name_resource?: components["schemas"]["QGetSettingV4NameResource"] | null;
-            /** Show Name */
-            show_name?: boolean | null;
-            /** Name Agent Id */
-            name_agent_id?: string | null;
-            /** Name Required */
-            name_required?: boolean | null;
-            /** Name Suggestions */
-            name_suggestions?: string[] | null;
-            /** Names */
-            names?: components["schemas"]["QGetSettingV4NameResource"][] | null;
-            /** Description Id */
-            description_id?: string | null;
-            description_resource?: components["schemas"]["QGetSettingV4DescriptionResource"] | null;
-            /** Show Description */
-            show_description?: boolean | null;
-            /** Description Agent Id */
-            description_agent_id?: string | null;
-            /** Description Required */
-            description_required?: boolean | null;
-            /** Description Suggestions */
-            description_suggestions?: string[] | null;
-            /** Descriptions */
-            descriptions?: components["schemas"]["QGetSettingV4DescriptionResource"][] | null;
-            /** Color Ids */
-            color_ids?: string[] | null;
-            /** Color Resources */
-            color_resources?: components["schemas"]["QGetSettingV4ColorResource"][] | null;
-            /** Show Colors */
-            show_colors?: boolean | null;
-            /** Colors Agent Id */
-            colors_agent_id?: string | null;
-            /** Colors Required */
-            colors_required?: boolean | null;
-            /** Color Suggestions */
-            color_suggestions?: string[] | null;
-            /** Colors */
-            colors?: components["schemas"]["QGetSettingV4ColorOption"][] | null;
-            /** Active Flag Id */
-            active_flag_id?: string | null;
-            flag_resource?: components["schemas"]["QGetSettingV4FlagResource"] | null;
-            /** Show Flag */
-            show_flag?: boolean | null;
-            /** Flag Agent Id */
-            flag_agent_id?: string | null;
-            /** Flag Required */
-            flag_required?: boolean | null;
-            /** Flags */
-            flags?: components["schemas"]["QGetSettingV4FlagResource"][] | null;
-            /** Department Ids */
-            department_ids?: string[] | null;
-            /** Department Resources */
-            department_resources?: components["schemas"]["QGetSettingV4Department"][] | null;
-            /** Show Departments */
-            show_departments?: boolean | null;
-            /** Departments Agent Id */
-            departments_agent_id?: string | null;
-            /** Departments Required */
-            departments_required?: boolean | null;
-            /** Department Suggestions */
-            department_suggestions?: string[] | null;
-            /** Departments */
-            departments?: components["schemas"]["QGetSettingV4Department"][] | null;
-            /** Profile Ids */
-            profile_ids?: string[] | null;
-            /** Profile Resources */
-            profile_resources?: components["schemas"]["QGetSettingV4Profile"][] | null;
-            /** Show Profiles */
-            show_profiles?: boolean | null;
-            /** Profiles Agent Id */
-            profiles_agent_id?: string | null;
-            /** Profiles Required */
-            profiles_required?: boolean | null;
-            /** Profile Suggestions */
-            profile_suggestions?: string[] | null;
-            /** Profiles */
-            profiles?: components["schemas"]["QGetSettingV4Profile"][] | null;
-            /** Auth Ids */
-            auth_ids?: string[] | null;
-            /** Auth Resources */
-            auth_resources?: components["schemas"]["QGetSettingV4Auth"][] | null;
-            /** Show Auths */
-            show_auths?: boolean | null;
-            /** Auths Agent Id */
-            auths_agent_id?: string | null;
-            /** Auths Required */
-            auths_required?: boolean | null;
-            /** Auth Suggestions */
-            auth_suggestions?: string[] | null;
-            /** Auths */
-            auths?: components["schemas"]["QGetSettingV4Auth"][] | null;
-            /** Provider Key Ids */
-            provider_key_ids?: string[] | null;
-            /** Key Ids */
-            key_ids?: string[] | null;
-            /** Key Resources */
-            key_resources?: components["schemas"]["QGetSettingV4Key"][] | null;
-            /** Show Keys */
-            show_keys?: boolean | null;
-            /** Keys Agent Id */
-            keys_agent_id?: string | null;
-            /** Keys Required */
-            keys_required?: boolean | null;
-            /** Key Suggestions */
-            key_suggestions?: string[] | null;
-            /** Keys */
-            keys?: components["schemas"]["QGetSettingV4Key"][] | null;
-            /** Role Ids */
-            role_ids?: string[] | null;
-            /** Role Resources */
-            role_resources?: components["schemas"]["QGetSettingV4RoleResource"][] | null;
-            /** Show Roles */
-            show_roles?: boolean | null;
-            /** Roles Required */
-            roles_required?: boolean | null;
-            /** Roles */
-            roles?: components["schemas"]["QGetSettingV4RoleResource"][] | null;
-            /** Route Ids */
-            route_ids?: string[] | null;
-            /** Route Resources */
-            route_resources?: components["schemas"]["QGetSettingV4RouteResource"][] | null;
-            /** Show Routes */
-            show_routes?: boolean | null;
-            /** Routes Required */
-            routes_required?: boolean | null;
-            /** Routes */
-            routes?: components["schemas"]["QGetSettingV4RouteResource"][] | null;
-            /** Role Route Ids */
-            role_route_ids?: string[] | null;
-            /** Role Route Resources */
-            role_route_resources?: components["schemas"]["QGetSettingV4RoleRoute"][] | null;
-            /** Show Role Routes */
-            show_role_routes?: boolean | null;
-            /** Role Routes */
-            role_routes?: components["schemas"]["QGetSettingV4RoleRoute"][] | null;
+            /** Resource Agent Ids */
+            resource_agent_ids?: {
+                [key: string]: string | null;
+            } | null;
+            names?: components["schemas"]["SettingNameSection"] | null;
+            descriptions?: components["schemas"]["SettingDescriptionSection"] | null;
+            colors?: components["schemas"]["SettingColorSection"] | null;
+            flags?: components["schemas"]["SettingFlagSection"] | null;
+            departments?: components["schemas"]["SettingDepartmentSection"] | null;
+            profiles?: components["schemas"]["SettingProfileSection"] | null;
+            auths?: components["schemas"]["SettingAuthSection"] | null;
+            provider_keys?: components["schemas"]["SettingProviderKeySection"] | null;
+            auth_item_keys?: components["schemas"]["SettingAuthItemKeySection"] | null;
+            roles?: components["schemas"]["SettingRoleSection"] | null;
+            role_routes?: components["schemas"]["SettingRoleRouteSection"] | null;
         };
         /**
          * GetSettingsApiRequest
@@ -28345,6 +28235,19 @@ export interface components {
             /** Generated */
             generated: boolean | null;
         };
+        /** QGetRolesV4Item */
+        "QGetRolesV4Item-Input": {
+            /** Role */
+            role: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Icon Value */
+            icon_value: string | null;
+            /** Color Hex */
+            color_hex: string | null;
+        };
         /** QGetRoutesV4Item */
         QGetRoutesV4Item: {
             /** Id */
@@ -28470,165 +28373,6 @@ export interface components {
             questions_enabled: boolean | null;
             /** Persona Ids */
             persona_ids: string[] | null;
-        };
-        /** QGetSettingV4Auth */
-        QGetSettingV4Auth: {
-            /** Auth Id */
-            auth_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-            /** Slug */
-            slug: string | null;
-            /** Active */
-            active: boolean | null;
-            /** Auth Items Junction */
-            auth_items_junction: components["schemas"]["QGetSettingV4AuthItem"][] | null;
-        };
-        /** QGetSettingV4AuthItem */
-        QGetSettingV4AuthItem: {
-            /** Id */
-            id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-            /** Encrypted */
-            encrypted: boolean | null;
-        };
-        /** QGetSettingV4ColorOption */
-        QGetSettingV4ColorOption: {
-            /** Id */
-            id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-            /** Hex Code */
-            hex_code: string | null;
-            /** Generated */
-            generated: boolean | null;
-        };
-        /** QGetSettingV4ColorResource */
-        QGetSettingV4ColorResource: {
-            /** Id */
-            id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-            /** Hex Code */
-            hex_code: string | null;
-            /** Generated */
-            generated: boolean | null;
-        };
-        /** QGetSettingV4Department */
-        QGetSettingV4Department: {
-            /** Department Id */
-            department_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-            /** Generated */
-            generated: boolean | null;
-        };
-        /** QGetSettingV4DescriptionResource */
-        QGetSettingV4DescriptionResource: {
-            /** Id */
-            id: string | null;
-            /** Description */
-            description: string | null;
-            /** Generated */
-            generated: boolean | null;
-        };
-        /** QGetSettingV4FlagResource */
-        QGetSettingV4FlagResource: {
-            /** Id */
-            id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-            /** Icon */
-            icon: string | null;
-            /** Generated */
-            generated: boolean | null;
-        };
-        /** QGetSettingV4Key */
-        QGetSettingV4Key: {
-            /** Key Id */
-            key_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Masked Key */
-            masked_key: string | null;
-            /** Description */
-            description: string | null;
-            /** Active */
-            active: boolean | null;
-            /** Department Ids */
-            department_ids: string[] | null;
-        };
-        /** QGetSettingV4NameResource */
-        QGetSettingV4NameResource: {
-            /** Id */
-            id: string | null;
-            /** Name */
-            name: string | null;
-            /** Generated */
-            generated: boolean | null;
-        };
-        /** QGetSettingV4Profile */
-        QGetSettingV4Profile: {
-            /** Profile Id */
-            profile_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-            /** Generated */
-            generated: boolean | null;
-        };
-        /** QGetSettingV4RoleResource */
-        QGetSettingV4RoleResource: {
-            /** Role Id */
-            role_id: string | null;
-            /** Role */
-            role: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-            /** Icon Value */
-            icon_value: string | null;
-            /** Color Hex */
-            color_hex: string | null;
-            /** Generated */
-            generated: boolean | null;
-        };
-        /** QGetSettingV4RoleRoute */
-        QGetSettingV4RoleRoute: {
-            /** Id */
-            id: string | null;
-            /** Role Id */
-            role_id: string | null;
-            /** Route Id */
-            route_id: string | null;
-            /** Generated */
-            generated: boolean | null;
-        };
-        /** QGetSettingV4RouteResource */
-        QGetSettingV4RouteResource: {
-            /** Route Id */
-            route_id: string | null;
-            /** Route */
-            route: string | null;
-            /** Role Id */
-            role_id: string | null;
-            /** Generated */
-            generated: boolean | null;
         };
         /**
          * QGetSettingsV4Provider
@@ -34079,6 +33823,245 @@ export interface components {
              */
             error_count: number;
         };
+        /** SettingAuthItemKeySection */
+        SettingAuthItemKeySection: {
+            /**
+             * Show
+             * @default false
+             */
+            show: boolean;
+            /**
+             * Required
+             * @default false
+             */
+            required: boolean;
+            /** Suggestions */
+            suggestions?: string[] | null;
+            /**
+             * Show Ai Generate
+             * @default false
+             */
+            show_ai_generate: boolean;
+            /** Create Tool Id */
+            create_tool_id?: string | null;
+            /** Link Tool Id */
+            link_tool_id?: string | null;
+            /** Current */
+            current?: components["schemas"]["QGetAuthItemKeysV4Item"][] | null;
+            /** Resources */
+            resources?: components["schemas"]["QGetAuthItemKeysV4Item"][] | null;
+        };
+        /** SettingAuthSection */
+        SettingAuthSection: {
+            /**
+             * Show
+             * @default false
+             */
+            show: boolean;
+            /**
+             * Required
+             * @default false
+             */
+            required: boolean;
+            /** Suggestions */
+            suggestions?: string[] | null;
+            /**
+             * Show Ai Generate
+             * @default false
+             */
+            show_ai_generate: boolean;
+            /** Create Tool Id */
+            create_tool_id?: string | null;
+            /** Link Tool Id */
+            link_tool_id?: string | null;
+            /** Current */
+            current?: components["schemas"]["QGetAuthsV4Item"][] | null;
+            /** Resources */
+            resources?: components["schemas"]["QGetAuthsV4Item"][] | null;
+        };
+        /** SettingColorSection */
+        SettingColorSection: {
+            /**
+             * Show
+             * @default false
+             */
+            show: boolean;
+            /**
+             * Required
+             * @default false
+             */
+            required: boolean;
+            /** Suggestions */
+            suggestions?: string[] | null;
+            /**
+             * Show Ai Generate
+             * @default false
+             */
+            show_ai_generate: boolean;
+            /** Create Tool Id */
+            create_tool_id?: string | null;
+            /** Link Tool Id */
+            link_tool_id?: string | null;
+            /** Current */
+            current?: components["schemas"]["QGetColorsV4Item"][] | null;
+            /** Resources */
+            resources?: components["schemas"]["QGetColorsV4Item"][] | null;
+        };
+        /** SettingDepartmentSection */
+        SettingDepartmentSection: {
+            /**
+             * Show
+             * @default false
+             */
+            show: boolean;
+            /**
+             * Required
+             * @default false
+             */
+            required: boolean;
+            /** Suggestions */
+            suggestions?: string[] | null;
+            /**
+             * Show Ai Generate
+             * @default false
+             */
+            show_ai_generate: boolean;
+            /** Create Tool Id */
+            create_tool_id?: string | null;
+            /** Link Tool Id */
+            link_tool_id?: string | null;
+            /** Current */
+            current?: components["schemas"]["QGetDepartmentsV4Item"][] | null;
+            /** Resources */
+            resources?: components["schemas"]["QGetDepartmentsV4Item"][] | null;
+        };
+        /** SettingDescriptionSection */
+        SettingDescriptionSection: {
+            /**
+             * Show
+             * @default false
+             */
+            show: boolean;
+            /**
+             * Required
+             * @default false
+             */
+            required: boolean;
+            /** Suggestions */
+            suggestions?: string[] | null;
+            /**
+             * Show Ai Generate
+             * @default false
+             */
+            show_ai_generate: boolean;
+            /** Create Tool Id */
+            create_tool_id?: string | null;
+            /** Link Tool Id */
+            link_tool_id?: string | null;
+            resource?: components["schemas"]["QGetDescriptionsV4Item"] | null;
+            /** Resources */
+            resources?: components["schemas"]["QGetDescriptionsV4Item"][] | null;
+        };
+        /**
+         * SettingFlagConfig
+         * @description Enriched flag config for direct client consumption.
+         */
+        SettingFlagConfig: {
+            /** Key */
+            key: string;
+            /** Label */
+            label: string;
+            /** Description */
+            description?: string | null;
+            /** Icon Id */
+            icon_id?: string | null;
+            /** Flag Option Id */
+            flag_option_id?: string | null;
+            /**
+             * Show
+             * @default true
+             */
+            show: boolean;
+            /**
+             * Required
+             * @default false
+             */
+            required: boolean;
+            /** Generated */
+            generated?: boolean | null;
+        };
+        /** SettingFlagSection */
+        SettingFlagSection: {
+            /**
+             * Show
+             * @default false
+             */
+            show: boolean;
+            /**
+             * Required
+             * @default false
+             */
+            required: boolean;
+            /** Suggestions */
+            suggestions?: string[] | null;
+            /**
+             * Show Ai Generate
+             * @default false
+             */
+            show_ai_generate: boolean;
+            /** Create Tool Id */
+            create_tool_id?: string | null;
+            /** Link Tool Id */
+            link_tool_id?: string | null;
+            current?: components["schemas"]["SettingFlagConfig"] | null;
+            /** Resources */
+            resources?: components["schemas"]["SettingFlagConfig"][] | null;
+        };
+        /**
+         * SettingGenerationCompleteEvent
+         * @description Server-to-client event: setting_generation_complete.
+         *
+         *     Emitted when a setting resource generation completes successfully.
+         *     Contains full resource objects (not just IDs) for immediate frontend use.
+         */
+        SettingGenerationCompleteEvent: {
+            /**
+             * Artifact Type
+             * @default setting
+             */
+            artifact_type: string;
+            /** Group Id */
+            group_id: string;
+            /** Resource Type */
+            resource_type: string;
+            /** Run Id */
+            run_id?: string | null;
+            /** Success */
+            success: boolean;
+            /** Message */
+            message: string;
+            /** Type */
+            type?: string | null;
+            name_resource?: components["schemas"]["QGetNamesV4Item"] | null;
+            description_resource?: components["schemas"]["QGetDescriptionsV4Item"] | null;
+            flag_resource?: components["schemas"]["QGetFlagsV4Item"] | null;
+            /** Color Resources */
+            color_resources?: components["schemas"]["QGetColorsV4Item"][] | null;
+            /** Department Resources */
+            department_resources?: components["schemas"]["QGetDepartmentsV4Item"][] | null;
+            /** Profile Resources */
+            profile_resources?: components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__12"][] | null;
+            /** Auth Resources */
+            auth_resources?: components["schemas"]["QGetAuthsV4Item"][] | null;
+            /** Provider Key Resources */
+            provider_key_resources?: components["schemas"]["QGetProviderKeysV4Item"][] | null;
+            /** Auth Item Key Resources */
+            auth_item_key_resources?: components["schemas"]["QGetAuthItemKeysV4Item"][] | null;
+            /** Role Resources */
+            role_resources?: components["schemas"]["QGetRolesV4Item-Input"][] | null;
+            /** Role Route Resources */
+            role_route_resources?: components["schemas"]["QGetRoleRoutesV4Item"][] | null;
+        };
         /**
          * SettingMultiResourceAction
          * @description Multi-select resource with tool call tracking.
@@ -34091,6 +34074,89 @@ export interface components {
             /** Link Tool Id */
             link_tool_id?: string | null;
         };
+        /** SettingNameSection */
+        SettingNameSection: {
+            /**
+             * Show
+             * @default false
+             */
+            show: boolean;
+            /**
+             * Required
+             * @default false
+             */
+            required: boolean;
+            /** Suggestions */
+            suggestions?: string[] | null;
+            /**
+             * Show Ai Generate
+             * @default false
+             */
+            show_ai_generate: boolean;
+            /** Create Tool Id */
+            create_tool_id?: string | null;
+            /** Link Tool Id */
+            link_tool_id?: string | null;
+            resource?: components["schemas"]["QGetNamesV4Item"] | null;
+            /** Resources */
+            resources?: components["schemas"]["QGetNamesV4Item"][] | null;
+        };
+        /** SettingProfileSection */
+        SettingProfileSection: {
+            /**
+             * Show
+             * @default false
+             */
+            show: boolean;
+            /**
+             * Required
+             * @default false
+             */
+            required: boolean;
+            /** Suggestions */
+            suggestions?: string[] | null;
+            /**
+             * Show Ai Generate
+             * @default false
+             */
+            show_ai_generate: boolean;
+            /** Create Tool Id */
+            create_tool_id?: string | null;
+            /** Link Tool Id */
+            link_tool_id?: string | null;
+            /** Current */
+            current?: components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__12"][] | null;
+            /** Resources */
+            resources?: components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__12"][] | null;
+        };
+        /** SettingProviderKeySection */
+        SettingProviderKeySection: {
+            /**
+             * Show
+             * @default false
+             */
+            show: boolean;
+            /**
+             * Required
+             * @default false
+             */
+            required: boolean;
+            /** Suggestions */
+            suggestions?: string[] | null;
+            /**
+             * Show Ai Generate
+             * @default false
+             */
+            show_ai_generate: boolean;
+            /** Create Tool Id */
+            create_tool_id?: string | null;
+            /** Link Tool Id */
+            link_tool_id?: string | null;
+            /** Current */
+            current?: components["schemas"]["QGetProviderKeysV4Item"][] | null;
+            /** Resources */
+            resources?: components["schemas"]["QGetProviderKeysV4Item"][] | null;
+        };
         /**
          * SettingResourceAction
          * @description Single-select resource with tool call tracking.
@@ -34102,6 +34168,62 @@ export interface components {
             create_tool_id?: string | null;
             /** Link Tool Id */
             link_tool_id?: string | null;
+        };
+        /** SettingRoleRouteSection */
+        SettingRoleRouteSection: {
+            /**
+             * Show
+             * @default false
+             */
+            show: boolean;
+            /**
+             * Required
+             * @default false
+             */
+            required: boolean;
+            /** Suggestions */
+            suggestions?: string[] | null;
+            /**
+             * Show Ai Generate
+             * @default false
+             */
+            show_ai_generate: boolean;
+            /** Create Tool Id */
+            create_tool_id?: string | null;
+            /** Link Tool Id */
+            link_tool_id?: string | null;
+            /** Current */
+            current?: components["schemas"]["QGetRoleRoutesV4Item"][] | null;
+            /** Resources */
+            resources?: components["schemas"]["QGetRoleRoutesV4Item"][] | null;
+        };
+        /** SettingRoleSection */
+        SettingRoleSection: {
+            /**
+             * Show
+             * @default false
+             */
+            show: boolean;
+            /**
+             * Required
+             * @default false
+             */
+            required: boolean;
+            /** Suggestions */
+            suggestions?: string[] | null;
+            /**
+             * Show Ai Generate
+             * @default false
+             */
+            show_ai_generate: boolean;
+            /** Create Tool Id */
+            create_tool_id?: string | null;
+            /** Link Tool Id */
+            link_tool_id?: string | null;
+            /** Current */
+            current?: components["schemas"]["app__sql__types__QGetRolesV4Item"][] | null;
+            /** Resources */
+            resources?: components["schemas"]["app__sql__types__QGetRolesV4Item"][] | null;
         };
         /** SidebarMenuItem */
         SidebarMenuItem: {
@@ -36749,40 +36871,44 @@ export interface components {
         app__sql__types___build_missing_type___locals____MissingSqlType__11: {
             [key: string]: unknown;
         };
-        /** RefreshHomeMvsNewApiResponse */
+        /** QGetProfilesV4Item */
         app__sql__types___build_missing_type___locals____MissingSqlType__12: {
             [key: string]: unknown;
         };
-        /** GetParameterFieldsApiResponse */
+        /** RefreshHomeMvsNewApiResponse */
         app__sql__types___build_missing_type___locals____MissingSqlType__13: {
             [key: string]: unknown;
         };
-        /** SearchParameterFieldsApiResponse */
+        /** GetParameterFieldsApiResponse */
         app__sql__types___build_missing_type___locals____MissingSqlType__14: {
             [key: string]: unknown;
         };
-        /** SearchProfilesApiResponse */
+        /** SearchParameterFieldsApiResponse */
         app__sql__types___build_missing_type___locals____MissingSqlType__15: {
             [key: string]: unknown;
         };
-        /** GetScenarioPersonasApiResponse */
+        /** SearchProfilesApiResponse */
         app__sql__types___build_missing_type___locals____MissingSqlType__16: {
             [key: string]: unknown;
         };
-        /** SearchScenarioPersonasApiResponse */
+        /** GetScenarioPersonasApiResponse */
         app__sql__types___build_missing_type___locals____MissingSqlType__17: {
             [key: string]: unknown;
         };
-        /** GetScenarioPositionsApiResponse */
+        /** SearchScenarioPersonasApiResponse */
         app__sql__types___build_missing_type___locals____MissingSqlType__18: {
             [key: string]: unknown;
         };
-        /** SearchScenarioPositionsApiResponse */
+        /** GetScenarioPositionsApiResponse */
         app__sql__types___build_missing_type___locals____MissingSqlType__19: {
             [key: string]: unknown;
         };
         /** GetParameterFieldsApiRequest */
         app__sql__types___build_missing_type___locals____MissingSqlType__2: {
+            [key: string]: unknown;
+        };
+        /** SearchScenarioPositionsApiResponse */
+        app__sql__types___build_missing_type___locals____MissingSqlType__20: {
             [key: string]: unknown;
         };
         /** SearchParameterFieldsApiRequest */
@@ -41873,7 +41999,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__12"];
+                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__13"];
                 };
             };
             /** @description Validation Error */
@@ -45088,7 +45214,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__13"];
+                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__14"];
                 };
             };
             /** @description Validation Error */
@@ -45125,7 +45251,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__14"];
+                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__15"];
                 };
             };
             /** @description Validation Error */
@@ -47123,7 +47249,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__15"];
+                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__16"];
                 };
             };
             /** @description Validation Error */
@@ -48529,7 +48655,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__16"];
+                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__17"];
                 };
             };
             /** @description Validation Error */
@@ -48566,7 +48692,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__17"];
+                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__18"];
                 };
             };
             /** @description Validation Error */
@@ -48640,7 +48766,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__18"];
+                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__19"];
                 };
             };
             /** @description Validation Error */
@@ -48677,7 +48803,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__19"];
+                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__20"];
                 };
             };
             /** @description Validation Error */
@@ -56137,9 +56263,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": {
-                    [key: string]: unknown;
-                };
+                "application/json": components["schemas"]["SettingGenerationCompleteEvent"];
             };
         };
         responses: {

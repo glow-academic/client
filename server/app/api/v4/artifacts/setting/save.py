@@ -3,10 +3,12 @@ Unified endpoint that handles both create (setting_id = NULL) and update (settin
 """
 
 from typing import Annotated, Any, cast
+from uuid import UUID
 
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
+from app.api.v4.artifacts.setting.permissions import compute_can_edit
 from app.api.v4.artifacts.setting.types import (
     SaveSettingApiRequest,
     SaveSettingApiResponse,
@@ -17,11 +19,18 @@ from app.api.v4.auth.context import get_profile_context_internal
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
-from app.sql.types import load_sql_query
+from app.sql.types import (
+    CheckSettingSaveAccessSqlParams,
+    CheckSettingSaveAccessSqlRow,
+    load_sql_query,
+)
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.sql_helper import execute_sql_typed
 
-# Load SQL with types at module level - makes it clear what SQL file is used
+# SQL paths
+ACCESS_CHECK_SQL_PATH = (
+    "app/sql/v4/queries/settings/check_setting_save_access_complete.sql"
+)
 SQL_PATH = "app/sql/v4/queries/settings/save_setting_complete.sql"
 
 
@@ -59,7 +68,7 @@ async def save_setting(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        # Fetch user context for audit logging
+        # Fetch user context for permissions and audit logging
         pool = get_pool()
         if pool:
             async with pool.acquire() as context_conn:
@@ -70,8 +79,54 @@ async def save_setting(
                     bypass_cache=False,
                 )
                 actor_name = resolved_context.actor_name
+                user_role = resolved_context.user_role
+                user_department_ids: list[UUID] = [
+                    d.department_id
+                    for d in resolved_context.departments
+                    if d.department_id
+                ]
         else:
             actor_name = None
+            user_role = None
+            user_department_ids = []
+
+        # Permission check: get setting department_ids using typed SQL
+        access_params = CheckSettingSaveAccessSqlParams(
+            profile_id=profile_id,
+            setting_id=request.input_setting_id,
+        )
+        access_result = cast(
+            CheckSettingSaveAccessSqlRow,
+            await execute_sql_typed(
+                conn,
+                ACCESS_CHECK_SQL_PATH,
+                params=access_params,
+            ),
+        )
+
+        if not access_result:
+            raise HTTPException(
+                status_code=401,
+                detail="Unable to verify user permissions.",
+            )
+
+        # Permission logic: create vs update mode
+        if request.input_setting_id:
+            # Update mode: check department access
+            can_save = compute_can_edit(
+                user_role=user_role,
+                user_department_ids=user_department_ids,
+                setting_department_ids=access_result.setting_department_ids or [],
+            )
+        else:
+            # Create mode: any authenticated user can create
+            can_save = user_role is not None
+
+        if not can_save:
+            raise HTTPException(
+                status_code=403,
+                detail="You don't have permission to save this setting.",
+            )
 
         async with conn.transaction():
             # Convert API request to SQL params (add profile_id from header)

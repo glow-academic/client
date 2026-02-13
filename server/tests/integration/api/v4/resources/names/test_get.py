@@ -1,6 +1,5 @@
 """Integration tests for resource names get endpoint."""
 
-
 import asyncpg
 import httpx
 import pytest
