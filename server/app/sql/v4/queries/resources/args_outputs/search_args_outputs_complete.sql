@@ -1,5 +1,5 @@
 -- Search args_outputs resources with optional context
--- Parameters: search (text), limit_count (int), offset_count (int), draft_id (uuid), suggest_source (text), exclude_ids (uuid[])
+-- Parameters: search (text), limit_count (int), offset_count (int), draft_id (uuid), suggest_source (text), exclude_ids (uuid[]), args_ids (uuid[])
 -- Returns: items (array of args_outputs resources)
 
 -- Drop function if exists (handles signature variations)
@@ -25,6 +25,8 @@ CREATE OR REPLACE FUNCTION api_search_args_outputs_v4(
     draft_id uuid DEFAULT NULL,
     suggest_source text DEFAULT 'all',
     exclude_ids uuid[] DEFAULT ARRAY[]::uuid[],
+    -- Column filters
+    args_ids uuid[] DEFAULT ARRAY[]::uuid[],
     -- Artifact boolean filters: when true, only return resources linked to that artifact type
     tool boolean DEFAULT false
 )
@@ -51,6 +53,8 @@ FROM (
       AND (search IS NULL OR search = '' OR LOWER(ao.name) LIKE '%' || LOWER(search) || '%' OR LOWER(ao.template) LIKE '%' || LOWER(search) || '%')
       -- Exclude filter
       AND (exclude_ids IS NULL OR NOT (ao.id = ANY(exclude_ids)))
+      -- Column filter: args_ids
+      AND (COALESCE(array_length(args_ids, 1), 0) = 0 OR ao.args_id = ANY(args_ids))
       -- Suggest source filter
       AND (
           suggest_source = 'all'

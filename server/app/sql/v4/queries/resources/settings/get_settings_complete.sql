@@ -75,7 +75,8 @@ CREATE TYPE types.q_get_settings_v4_item AS (
     provider_key_ids uuid[]
 );
 
--- Create function
+-- Create function — reads directly from settings_resource columns
+-- Colors, thresholds, and guest_login_enabled are fetched via the artifact-level theme query
 CREATE OR REPLACE FUNCTION api_get_settings_v4(
     ids uuid[] DEFAULT ARRAY[]::uuid[]
 )
@@ -85,69 +86,50 @@ RETURNS TABLE (
 LANGUAGE sql
 STABLE
 AS $$
-WITH settings_auths_data AS (
-    SELECT
-        sa.settings_id,
-        ARRAY_AGG(a.id::text ORDER BY (SELECT n.name FROM auth_names_junction an JOIN names_resource n ON an.name_id = n.id WHERE an.auth_id = a.id LIMIT 1)) as auth_ids,
-        COALESCE(
-            ARRAY_AGG(
-                (a.id, (SELECT n.name FROM auth_names_junction an JOIN names_resource n ON an.name_id = n.id WHERE an.auth_id = a.id LIMIT 1), COALESCE((SELECT d.description FROM auth_descriptions_junction ad JOIN descriptions_resource d ON ad.description_id = d.id WHERE ad.auth_id = a.id LIMIT 1), ''), (SELECT sl.value FROM auth_slugs_junction as_j JOIN slugs_resource sl ON sl.id = as_j.slug_id WHERE as_j.auth_id = a.id LIMIT 1))::types.q_get_settings_v4_auth
-                ORDER BY (SELECT n.name FROM auth_names_junction an JOIN names_resource n ON an.name_id = n.id WHERE an.auth_id = a.id LIMIT 1)
-            ),
-            ARRAY[]::types.q_get_settings_v4_auth[]
-        ) as auths
-    FROM setting_auths_junction sa
-    JOIN auths_resource a ON a.id = sa.auth_id
-        AND EXISTS (SELECT 1 FROM auth_flags_junction af JOIN flags_resource f ON af.flag_id = f.id WHERE af.auth_id = a.id AND f.name = 'auth_active' AND af.value = true)
-    WHERE sa.settings_id = ANY(ids)
-      AND sa.active = true
-    GROUP BY sa.settings_id
-),
-settings_provider_keys_data AS (
-    SELECT
-        ssj.setting_id,
-        COALESCE(sr.provider_key_ids, ARRAY[]::uuid[]) as provider_key_ids
+WITH resolved_resources AS (
+    -- Resolve setting artifact IDs to settings_resource
+    SELECT sr.*, ssj.setting_id as artifact_id
     FROM setting_settings_junction ssj
     JOIN settings_resource sr ON sr.id = ssj.settings_id
     WHERE ssj.setting_id = ANY(ids)
       AND ssj.active = true
+      AND sr.active = true
+),
+settings_auths_data AS (
+    -- Get auth details from auths_resource using auth_ids on settings_resource
+    SELECT
+        rr.artifact_id,
+        ARRAY_AGG(a.id::text ORDER BY COALESCE(a.name, '')) as auth_ids,
+        COALESCE(
+            ARRAY_AGG(
+                (a.id, COALESCE(a.name, ''), COALESCE(a.description, ''), COALESCE(a.slug, ''))::types.q_get_settings_v4_auth
+                ORDER BY COALESCE(a.name, '')
+            ),
+            ARRAY[]::types.q_get_settings_v4_auth[]
+        ) as auths
+    FROM resolved_resources rr
+    CROSS JOIN LATERAL unnest(COALESCE(rr.auth_ids, ARRAY[]::uuid[])) AS auth_id_val
+    JOIN auths_resource a ON a.id = auth_id_val AND a.active = true
+    GROUP BY rr.artifact_id
 )
 SELECT COALESCE(
     ARRAY_AGG(
         (
-            s.id::text,
-            s.created_at,
-            EXISTS (SELECT 1 FROM setting_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.setting_id = s.id AND f.name = 'setting_active' AND sf.value = TRUE),
-            (SELECT n.name FROM setting_names_junction sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.setting_id = s.id LIMIT 1),
-            (SELECT d.description FROM setting_descriptions_junction sd JOIN descriptions_resource d ON sd.description_id = d.id WHERE sd.setting_id = s.id LIMIT 1),
-            (SELECT c.hex_code FROM setting_colors_junction sc JOIN colors_resource c ON sc.color_id = c.id WHERE sc.setting_id = s.id AND sc.type = 'primary'::color_type LIMIT 1),
-            (SELECT c.hex_code FROM setting_colors_junction sc JOIN colors_resource c ON sc.color_id = c.id WHERE sc.setting_id = s.id AND sc.type = 'accent'::color_type LIMIT 1),
-            (SELECT c.hex_code FROM setting_colors_junction sc JOIN colors_resource c ON sc.color_id = c.id WHERE sc.setting_id = s.id AND sc.type = 'background'::color_type LIMIT 1),
-            (SELECT c.hex_code FROM setting_colors_junction sc JOIN colors_resource c ON sc.color_id = c.id WHERE sc.setting_id = s.id AND sc.type = 'surface'::color_type LIMIT 1),
-            (SELECT c.hex_code FROM setting_colors_junction sc JOIN colors_resource c ON sc.color_id = c.id WHERE sc.setting_id = s.id AND sc.type = 'success'::color_type LIMIT 1),
-            (SELECT c.hex_code FROM setting_colors_junction sc JOIN colors_resource c ON sc.color_id = c.id WHERE sc.setting_id = s.id AND sc.type = 'warning'::color_type LIMIT 1),
-            (SELECT c.hex_code FROM setting_colors_junction sc JOIN colors_resource c ON sc.color_id = c.id WHERE sc.setting_id = s.id AND sc.type = 'error'::color_type LIMIT 1),
-            (SELECT c.hex_code FROM setting_colors_junction sc JOIN colors_resource c ON sc.color_id = c.id WHERE sc.setting_id = s.id AND sc.type = 'sidebar_background'::color_type LIMIT 1),
-            (SELECT c.hex_code FROM setting_colors_junction sc JOIN colors_resource c ON sc.color_id = c.id WHERE sc.setting_id = s.id AND sc.type = 'sidebar_primary'::color_type LIMIT 1),
-            (SELECT c.hex_code FROM setting_colors_junction sc JOIN colors_resource c ON sc.color_id = c.id WHERE sc.setting_id = s.id AND sc.type = 'chart1'::color_type LIMIT 1),
-            (SELECT c.hex_code FROM setting_colors_junction sc JOIN colors_resource c ON sc.color_id = c.id WHERE sc.setting_id = s.id AND sc.type = 'chart2'::color_type LIMIT 1),
-            (SELECT c.hex_code FROM setting_colors_junction sc JOIN colors_resource c ON sc.color_id = c.id WHERE sc.setting_id = s.id AND sc.type = 'chart3'::color_type LIMIT 1),
-            (SELECT c.hex_code FROM setting_colors_junction sc JOIN colors_resource c ON sc.color_id = c.id WHERE sc.setting_id = s.id AND sc.type = 'chart4'::color_type LIMIT 1),
-            (SELECT c.hex_code FROM setting_colors_junction sc JOIN colors_resource c ON sc.color_id = c.id WHERE sc.setting_id = s.id AND sc.type = 'chart5'::color_type LIMIT 1),
-            EXISTS (SELECT 1 FROM setting_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.setting_id = s.id AND f.name = 'guest_login_enabled' AND sf.value = TRUE),
-            (SELECT t.value FROM setting_thresholds_junction st JOIN thresholds_resource t ON st.threshold_id = t.id WHERE st.setting_id = s.id AND st.type = 'success'::threshold_type LIMIT 1),
-            (SELECT t.value FROM setting_thresholds_junction st JOIN thresholds_resource t ON st.threshold_id = t.id WHERE st.setting_id = s.id AND st.type = 'warning'::threshold_type LIMIT 1),
-            (SELECT t.value FROM setting_thresholds_junction st JOIN thresholds_resource t ON st.threshold_id = t.id WHERE st.setting_id = s.id AND st.type = 'danger'::threshold_type LIMIT 1),
+            rr.artifact_id::text,
+            rr.created_at,
+            rr.active,
+            COALESCE(rr.name, ''),
+            COALESCE(rr.description, ''),
+            NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+            NULL,
+            NULL, NULL, NULL,
             COALESCE(sad.auth_ids, ARRAY[]::text[]),
             COALESCE(sad.auths, ARRAY[]::types.q_get_settings_v4_auth[]),
-            COALESCE(spkd.provider_key_ids, ARRAY[]::uuid[])
+            COALESCE(rr.provider_key_ids, ARRAY[]::uuid[])
         )::types.q_get_settings_v4_item
     ),
     ARRAY[]::types.q_get_settings_v4_item[]
 ) as items
-FROM setting_artifact s
-LEFT JOIN settings_auths_data sad ON sad.settings_id = s.id
-LEFT JOIN settings_provider_keys_data spkd ON spkd.setting_id = s.id
-WHERE s.id = ANY(ids)
-  AND EXISTS (SELECT 1 FROM setting_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.setting_id = s.id AND f.name = 'setting_active' AND sf.value = TRUE);
+FROM resolved_resources rr
+LEFT JOIN settings_auths_data sad ON sad.artifact_id = rr.artifact_id;
 $$;

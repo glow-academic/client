@@ -34,7 +34,7 @@ router = APIRouter()
 
 async def search_simulation_positions_internal(
     conn: asyncpg.Connection,
-    simulation_id: UUID | None = None,
+    simulation_ids: list[UUID] | None = None,
     limit_count: int | None = 20,
     offset_count: int | None = 0,
     exclude_ids: list[UUID] | None = None,
@@ -46,7 +46,7 @@ async def search_simulation_positions_internal(
 
     Args:
         conn: Database connection
-        simulation_id: Optional simulation ID to filter by
+        simulation_ids: Optional simulation IDs to filter by
         limit_count: Maximum number of results
         offset_count: Offset for pagination
         exclude_ids: IDs to exclude from results
@@ -59,7 +59,7 @@ async def search_simulation_positions_internal(
     cache_key_val = cache_key(
         "simulation_positions/search",
         {
-            "simulation_id": str(simulation_id) if simulation_id else None,
+            "simulation_ids": [str(id) for id in (simulation_ids or [])],
             "limit_count": limit_count,
             "offset_count": offset_count,
             "exclude_ids": [str(id) for id in (exclude_ids or [])],
@@ -78,7 +78,7 @@ async def search_simulation_positions_internal(
 
     # Execute SQL
     params = SearchSimulationPositionsParams(
-        simulation_id=simulation_id,
+        simulation_ids=simulation_ids or [],
         limit_count=limit_count,
         offset_count=offset_count,
         exclude_ids=exclude_ids or [],
@@ -149,7 +149,7 @@ async def search_simulation_positions(
         # Use internal function
         items = await search_simulation_positions_internal(
             conn=conn,
-            simulation_id=request.simulation_id,
+            simulation_ids=request.simulation_ids,
             limit_count=request.limit_count,
             offset_count=request.offset_count,
             exclude_ids=request.exclude_ids,

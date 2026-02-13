@@ -13913,6 +13913,7 @@ class SearchArgsOutputsSqlParams(BaseModel):
     draft_id: UUID | None = None
     suggest_source: str | None = None
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    args_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
     tool: bool | None = False
 
     def to_tuple(self) -> tuple[Any, ...]:
@@ -13923,6 +13924,7 @@ class SearchArgsOutputsSqlParams(BaseModel):
             self.draft_id,
             self.suggest_source,
             self.exclude_ids,
+            self.args_ids,
             self.tool,
         )
 
@@ -13938,6 +13940,7 @@ class SearchArgsOutputsApiRequest(BaseModel):
     draft_id: UUID | None = None
     suggest_source: str | None = None
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    args_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
     tool: bool | None = False
 
 class SearchArgsOutputsApiResponse(BaseModel):
@@ -19907,63 +19910,6 @@ class GetSettingsApiResponse(BaseModel):
 
 
 
-# Generated from: get_settings_theme
-
-class GetSettingsThemeSqlParams(BaseModel):
-
-    settings_id_param: UUID | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.settings_id_param,
-        )
-
-class GetSettingsThemeSqlRow(BaseModel):
-
-    primary_color: str | None = None
-    accent: str | None = None
-    background: str | None = None
-    surface: str | None = None
-    success: str | None = None
-    warning: str | None = None
-    error: str | None = None
-    sidebar_background: str | None = None
-    sidebar_primary: str | None = None
-    chart1: str | None = None
-    chart2: str | None = None
-    chart3: str | None = None
-    chart4: str | None = None
-    chart5: str | None = None
-    success_threshold: int | None = None
-    warning_threshold: int | None = None
-    danger_threshold: int | None = None
-
-class GetSettingsThemeApiRequest(BaseModel):
-
-    settings_id_param: UUID | None = None
-
-class GetSettingsThemeApiResponse(BaseModel):
-
-    primary_color: str | None = None
-    accent: str | None = None
-    background: str | None = None
-    surface: str | None = None
-    success: str | None = None
-    warning: str | None = None
-    error: str | None = None
-    sidebar_background: str | None = None
-    sidebar_primary: str | None = None
-    chart1: str | None = None
-    chart2: str | None = None
-    chart3: str | None = None
-    chart4: str | None = None
-    chart5: str | None = None
-    success_threshold: int | None = None
-    warning_threshold: int | None = None
-    danger_threshold: int | None = None
-
-
-
 # Generated from: search_settings
 
 class SearchSettingsSqlParams(BaseModel):
@@ -20053,7 +19999,7 @@ class GetSimulationPositionsApiResponse(BaseModel):
 
 class SearchSimulationPositionsSqlParams(BaseModel):
 
-    simulation_id: UUID | None = None
+    simulation_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
     limit_count: int | None = 20
     offset_count: int | None = 0
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
@@ -20061,7 +20007,7 @@ class SearchSimulationPositionsSqlParams(BaseModel):
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
-            self.simulation_id,
+            self.simulation_ids,
             self.limit_count,
             self.offset_count,
             self.exclude_ids,
@@ -20082,7 +20028,7 @@ class SearchSimulationPositionsSqlRow(BaseModel):
 
 class SearchSimulationPositionsApiRequest(BaseModel):
 
-    simulation_id: UUID | None = None
+    simulation_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
     limit_count: int | None = 20
     offset_count: int | None = 0
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
@@ -31402,12 +31348,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetSettingsApiRequest",
         "GetSettingsApiResponse",
     ),
-    "app/sql/v4/queries/resources/settings/get_settings_theme_complete.sql": (
-        "GetSettingsThemeSqlParams",
-        "GetSettingsThemeSqlRow",
-        "GetSettingsThemeApiRequest",
-        "GetSettingsThemeApiResponse",
-    ),
     "app/sql/v4/queries/resources/settings/search_settings_complete.sql": (
         "SearchSettingsSqlParams",
         "SearchSettingsSqlRow",
@@ -34790,11 +34730,6 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/queries/resources/settings/get_settings_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/queries/resources/settings/get_settings_theme_complete.sql"]
     ) -> SqlString: ...
 
     @overload

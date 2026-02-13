@@ -46,7 +46,7 @@ class GetSimulationPositionsSqlRow(BaseModel):
 class SearchSimulationPositionsApiRequest(BaseModel):
     """Request for searching simulation positions."""
 
-    simulation_id: UUID | None = None
+    simulation_ids: list[UUID] | None = Field(default_factory=list)
     limit_count: int | None = 20
     offset_count: int | None = 0
     exclude_ids: list[UUID] | None = Field(default_factory=list)
@@ -61,14 +61,14 @@ class SearchSimulationPositionsApiResponse(BaseModel):
 class SearchSimulationPositionsSqlParams(BaseModel):
     """SQL parameters for search simulation positions."""
 
-    simulation_id: UUID | None = None
+    simulation_ids: list[UUID] | None = Field(default_factory=list)
     limit_count: int | None = 20
     offset_count: int | None = 0
     exclude_ids: list[UUID] | None = Field(default_factory=list)
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
-            self.simulation_id,
+            self.simulation_ids or [],
             self.limit_count,
             self.offset_count,
             self.exclude_ids or [],
@@ -82,7 +82,7 @@ class SearchSimulationPositionsSqlRow(BaseModel):
 
 
 class SearchSimulationPositionsParams(BaseModel):
-    simulation_id: UUID | None = None
+    simulation_ids: list[UUID] = []
     limit_count: int | None = 20
     offset_count: int | None = 0
     exclude_ids: list[UUID] = []
@@ -91,7 +91,7 @@ class SearchSimulationPositionsParams(BaseModel):
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
-            self.simulation_id,
+            self.simulation_ids,
             self.limit_count,
             self.offset_count,
             self.exclude_ids,

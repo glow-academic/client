@@ -29,7 +29,7 @@ CREATE TYPE types.q_search_simulation_positions_v4_item AS (
 );
 
 CREATE OR REPLACE FUNCTION api_search_simulation_positions_v4(
-    simulation_id uuid DEFAULT NULL,
+    simulation_ids uuid[] DEFAULT ARRAY[]::uuid[],
     limit_count int DEFAULT 20,
     offset_count int DEFAULT 0,
     exclude_ids uuid[] DEFAULT ARRAY[]::uuid[],
@@ -42,13 +42,7 @@ RETURNS TABLE (
 LANGUAGE sql
 STABLE
 AS $$
-WITH params AS (
-    SELECT
-        simulation_id AS sim_id,
-        COALESCE(limit_count, 20) AS limit_val,
-        COALESCE(offset_count, 0) AS offset_val,
-        COALESCE(exclude_ids, ARRAY[]::uuid[]) AS exclude_ids
-),
+WITH
 -- All simulation positions with filtering
 position_data AS (
     SELECT
@@ -58,11 +52,10 @@ position_data AS (
         COALESCE(spr.generated, false) as generated,
         COALESCE(spr.mcp, false) as mcp
     FROM simulation_positions_resource spr
-    CROSS JOIN params p
-    -- Filter by simulation_id if provided
-    WHERE (p.sim_id IS NULL OR spr.simulation_id = p.sim_id)
+    -- Filter by simulation_ids if provided
+    WHERE (COALESCE(array_length(simulation_ids, 1), 0) = 0 OR spr.simulation_id = ANY(simulation_ids))
     -- Exclude specified IDs
-    AND NOT spr.id = ANY(p.exclude_ids)
+    AND (exclude_ids IS NULL OR NOT (spr.id = ANY(exclude_ids)))
       -- Artifact boolean filters (each filters to resources linked to at least one of that artifact type)
       AND (NOT cohort OR EXISTS (SELECT 1 FROM cohort_simulation_positions_junction j WHERE j.simulation_position_id = spr.id AND j.active = true))
     ORDER BY spr.value, spr.simulation_id

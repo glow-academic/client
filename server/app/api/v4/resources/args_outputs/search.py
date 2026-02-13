@@ -37,6 +37,7 @@ async def search_args_outputs_internal(
     exclude_ids: list[UUID] | None = None,
     bypass_cache: bool = False,
     *,
+    args_ids: list[UUID] | None = None,
     tool: bool = False,
 ) -> list[QGetArgsOutputsV4Item]:
     """Internal function to search args_outputs."""
@@ -53,6 +54,7 @@ async def search_args_outputs_internal(
             "draft_id": str(draft_id) if draft_id else None,
             "suggest_source": suggest_source,
             "exclude_ids": [str(id) for id in (exclude_ids or [])],
+            "args_ids": [str(id) for id in (args_ids or [])],
             "tool": tool,
         },
     )
@@ -72,6 +74,7 @@ async def search_args_outputs_internal(
         draft_id=draft_id,
         suggest_source=suggest_source,
         exclude_ids=exclude_ids or [],
+        args_ids=args_ids or [],
         tool=tool,
     )
     result = cast(
@@ -115,6 +118,7 @@ async def search_args_outputs(
             request.suggest_source,
             request.exclude_ids,
             bypass_cache,
+            args_ids=getattr(request, "args_ids", None),
         )
         response.headers["X-Cache-Tags"] = ",".join(tags)
         return SearchArgsOutputsApiResponse(items=items)

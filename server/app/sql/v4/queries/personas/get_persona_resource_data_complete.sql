@@ -40,7 +40,6 @@ CREATE TYPE types.q_get_persona_resource_v4_item AS (
     description text,
     color text,
     icon text,
-    image_model boolean,
     instructions text,
     examples text[],
     generated boolean
@@ -64,7 +63,6 @@ SELECT COALESCE(
             COALESCE(pr.description, ''),
             COALESCE(pr.color, ''),
             COALESCE(pr.icon, ''),
-            false,  -- image_model: pending denormalization onto personas_resource
             COALESCE(pr.instructions, ''),
             COALESCE(pr.examples, ARRAY[]::text[]),
             COALESCE(pr.generated, false)

@@ -174,8 +174,8 @@ BEGIN
         DELETE FROM document_parameter_fields_junction WHERE document_id = v_document_id;
         DELETE FROM document_parameters_junction WHERE document_id = v_document_id;
         DELETE FROM document_uploads_junction WHERE document_id = v_document_id;
-        DELETE FROM document_images WHERE document_id = v_document_id;
-        DELETE FROM document_texts WHERE document_id = v_document_id;
+        DELETE FROM document_images_junction WHERE document_id = v_document_id;
+        DELETE FROM document_texts_junction WHERE document_id = v_document_id;
         -- Update existing flags
         UPDATE document_flags_junction SET
             flag_id = COALESCE(v_flag_id, document_flags_junction.flag_id),
@@ -404,19 +404,19 @@ BEGIN
         active = true;
 
     -- Link images
-    INSERT INTO document_images (document_id, images_id, active, created_at)
+    INSERT INTO document_images_junction (document_id, images_id, active, created_at)
     SELECT v_document_id, iid, true, NOW()
     FROM UNNEST(v_image_ids) AS iid
     WHERE COALESCE(array_length(v_image_ids, 1), 0) > 0
-    ON CONFLICT ON CONSTRAINT document_images_pkey DO UPDATE SET
+    ON CONFLICT ON CONSTRAINT document_images_junction_pkey DO UPDATE SET
         active = true;
 
     -- Link texts
-    INSERT INTO document_texts (document_id, texts_id, active, created_at)
+    INSERT INTO document_texts_junction (document_id, texts_id, active, created_at)
     SELECT v_document_id, tid, true, NOW()
     FROM UNNEST(v_text_ids) AS tid
     WHERE COALESCE(array_length(v_text_ids, 1), 0) > 0
-    ON CONFLICT ON CONSTRAINT document_texts_pkey DO UPDATE SET
+    ON CONFLICT ON CONSTRAINT document_texts_junction_pkey DO UPDATE SET
         active = true;
 
     -- Sync linked resources with name/description

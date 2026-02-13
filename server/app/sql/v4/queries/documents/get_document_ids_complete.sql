@@ -146,7 +146,7 @@ document_images_data AS (
             WHEN (SELECT document_id FROM params) IS NULL THEN ARRAY[]::uuid[]
             ELSE COALESCE(
                 (SELECT ARRAY_AGG(di.images_id ORDER BY di.created_at)
-                 FROM document_images di
+                 FROM document_images_junction di
                  WHERE di.document_id = (SELECT document_id FROM params) AND di.active = true),
                 ARRAY[]::uuid[]
             )
@@ -160,7 +160,7 @@ document_texts_data AS (
             WHEN (SELECT document_id FROM params) IS NULL THEN ARRAY[]::uuid[]
             ELSE COALESCE(
                 (SELECT ARRAY_AGG(dt.texts_id ORDER BY dt.created_at)
-                 FROM document_texts dt
+                 FROM document_texts_junction dt
                  WHERE dt.document_id = (SELECT document_id FROM params) AND dt.active = true),
                 ARRAY[]::uuid[]
             )

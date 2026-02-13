@@ -24,8 +24,8 @@ from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
 from app.sql.types import (
     GetProfileContextApiRequest,
-    GetSettingsThemeSqlParams,
-    GetSettingsThemeSqlRow,
+    GetSettingsThemeDataSqlParams,
+    GetSettingsThemeDataSqlRow,
 )
 from app.utils.sql_helper import execute_sql_typed
 
@@ -59,9 +59,9 @@ async def get_auth_settings_internal(
         if not settings_id:
             return None
         async with pool.acquire() as c:
-            theme_params = GetSettingsThemeSqlParams(settings_id_param=settings_id)
+            theme_params = GetSettingsThemeDataSqlParams(settings_id_param=settings_id)
             return cast(
-                GetSettingsThemeSqlRow | None,
+                GetSettingsThemeDataSqlRow | None,
                 await execute_sql_typed(
                     c, SQL_SETTINGS_THEME_PATH, params=theme_params
                 ),

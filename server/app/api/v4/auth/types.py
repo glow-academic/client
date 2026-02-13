@@ -20,7 +20,7 @@ from app.api.v4.resources.settings.types import QGetSettingsV4Item
 from app.api.v4.resources.tools.get import QGetToolsV4Item
 from app.sql.types import (
     GetProfileContextAccessSqlRow,
-    GetSettingsThemeSqlRow,
+    GetSettingsThemeDataSqlRow,
     QGetProfileContextV4Draft,
     QGetProfileContextV4RoleResource,
     QGetProfileContextV4ThemeTokens,
@@ -46,7 +46,7 @@ class AuthSettingsInternalData:
     settings: QGetSettingsV4Item | None
     settings_agents: list[QGetAgentsV4Item]
     settings_tools: list[QGetToolsV4Item]
-    settings_theme: GetSettingsThemeSqlRow
+    settings_theme: GetSettingsThemeDataSqlRow
     settings_tokens: QGetProfileContextV4ThemeTokens
     artifact_has_generation: dict[str, bool]
 
@@ -102,7 +102,7 @@ class ProfileContextInternalData:
     settings_agents: list[QGetAgentsV4Item]
     settings_tools: list[QGetToolsV4Item]
     role_resources: list[QGetProfileContextV4RoleResource]
-    settings_theme: GetSettingsThemeSqlRow
+    settings_theme: GetSettingsThemeDataSqlRow
     settings_tokens: QGetProfileContextV4ThemeTokens
     session_id: UUID | None
     artifact_has_generation: dict[str, bool]

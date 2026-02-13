@@ -1,7 +1,7 @@
 -- Get uploads resources by IDs
--- Simple data fetching from uploads_resource + uploads_uploads_connection only
+-- Simple data fetching from uploads_resource only (upload_id denormalized)
 -- Parameters: ids (uuid[])
--- Returns: items (array of upload resources with upload_id from connection)
+-- Returns: items (array of upload resources with upload_id)
 
 -- Drop function if exists (handles signature variations)
 DO $$
@@ -33,14 +33,14 @@ BEGIN
     END LOOP;
 END $$;
 
--- Create composite type for upload item (upload_id from connection, no file details)
+-- Create composite type for upload item (upload_id denormalized on resource)
 CREATE TYPE types.q_get_uploads_v4_item AS (
     uploads_id uuid,
     upload_id uuid,
     generated boolean
 );
 
--- Create function - query uploads_resource + uploads_uploads_connection only
+-- Create function — reads directly from uploads_resource columns
 CREATE OR REPLACE FUNCTION api_get_uploads_v4(
     ids uuid[] DEFAULT ARRAY[]::uuid[]
 )
@@ -52,13 +52,12 @@ STABLE
 AS $$
 SELECT COALESCE(
     ARRAY_AGG(
-        (ur.id, uuc.upload_id, COALESCE(ur.generated, false))::types.q_get_uploads_v4_item
+        (ur.id, ur.upload_id, COALESCE(ur.generated, false))::types.q_get_uploads_v4_item
         ORDER BY array_position(ids, ur.id)
     ),
     ARRAY[]::types.q_get_uploads_v4_item[]
 ) as items
 FROM uploads_resource ur
-LEFT JOIN uploads_uploads_connection uuc ON uuc.uploads_id = ur.id AND uuc.active = true
 WHERE ur.id = ANY(ids)
   AND ur.active = true;
 $$;
