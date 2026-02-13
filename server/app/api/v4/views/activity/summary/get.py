@@ -15,6 +15,11 @@ from app.main import get_db
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
+from app.utils.sql_helper import execute_sql_typed
+
+SQL_PATH = (
+    "app/sql/v4/queries/views/activity/summary/get_activity_summary_view_complete.sql"
+)
 
 router = APIRouter()
 
@@ -31,26 +36,27 @@ async def get_activity_summary_internal(
         if cached:
             return GetActivitySummaryResponse.model_validate(cached)
 
-    row = await conn.fetchrow("SELECT * FROM mv_activity_summary LIMIT 1")
+    result = await execute_sql_typed(conn, SQL_PATH)
 
     summary = None
-    if row:
+    if result and result.items:
+        item = result.items[0]
         summary = ActivitySummaryItem(
-            total_sessions=row["total_sessions"] or 0,
-            active_sessions=row["active_sessions"] or 0,
-            total_active_profiles=row["total_active_profiles"] or 0,
-            total_logins=row["total_logins"] or 0,
-            total_content_created=row["total_content_created"] or 0,
-            total_drafts=row["total_drafts"] or 0,
-            total_problems=row["total_problems"] or 0,
-            unresolved_problems=row["unresolved_problems"] or 0,
-            sessions_last_24h=row["sessions_last_24h"] or 0,
-            logins_last_24h=row["logins_last_24h"] or 0,
-            events_last_24h=row["events_last_24h"] or 0,
-            sessions_last_7d=row["sessions_last_7d"] or 0,
-            logins_last_7d=row["logins_last_7d"] or 0,
-            active_profiles_last_7d=row["active_profiles_last_7d"] or 0,
-            refreshed_at=row["refreshed_at"],
+            total_sessions=item.total_sessions or 0,
+            active_sessions=item.active_sessions or 0,
+            total_active_profiles=item.total_active_profiles or 0,
+            total_logins=item.total_logins or 0,
+            total_content_created=item.total_content_created or 0,
+            total_drafts=item.total_drafts or 0,
+            total_problems=item.total_problems or 0,
+            unresolved_problems=item.unresolved_problems or 0,
+            sessions_last_24h=item.sessions_last_24h or 0,
+            logins_last_24h=item.logins_last_24h or 0,
+            events_last_24h=item.events_last_24h or 0,
+            sessions_last_7d=item.sessions_last_7d or 0,
+            logins_last_7d=item.logins_last_7d or 0,
+            active_profiles_last_7d=item.active_profiles_last_7d or 0,
+            refreshed_at=item.refreshed_at,
         )
 
     response = GetActivitySummaryResponse(summary=summary)

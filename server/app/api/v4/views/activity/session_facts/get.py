@@ -1,7 +1,7 @@
 """Get endpoint for activity session facts view (mv_activity_session_facts)."""
 
 from datetime import datetime
-from typing import Annotated, Any
+from typing import Annotated
 from uuid import UUID
 
 import asyncpg
@@ -18,6 +18,9 @@ from app.main import get_db
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
+from app.utils.sql_helper import execute_sql_typed
+
+SQL_PATH = "app/sql/v4/queries/views/activity/session_facts/get_activity_session_facts_view_complete.sql"
 
 router = APIRouter()
 
@@ -36,6 +39,8 @@ async def get_activity_session_facts_internal(
     bypass_cache: bool = False,
 ) -> GetActivitySessionFactsResponse:
     """Internal function for fetching activity session facts data."""
+    from app.sql.types import GetActivitySessionFactsViewSqlParams
+
     cache_key_val = cache_key(
         "views/activity/session_facts/get",
         {
@@ -56,75 +61,39 @@ async def get_activity_session_facts_internal(
         if cached:
             return GetActivitySessionFactsResponse.model_validate(cached)
 
-    conditions: list[str] = []
-    params: list[Any] = []
-    param_idx = 1
+    params = GetActivitySessionFactsViewSqlParams.model_construct(
+        profile_id_filter=profile_id,
+        profile_ids_filter=profile_ids,
+        active_filter=active,
+        date_from=date_from,
+        date_to=date_to,
+        sort_by=sort_by,
+        sort_desc=sort_order == "desc",
+        page_limit=page_limit,
+        page_offset=page_offset,
+    )
 
-    if profile_id:
-        conditions.append(f"profile_id = ${param_idx}")
-        params.append(profile_id)
-        param_idx += 1
+    result = await execute_sql_typed(conn, SQL_PATH, params=params)
 
-    if profile_ids:
-        conditions.append(f"profile_id = ANY(${param_idx}::uuid[])")
-        params.append(profile_ids)
-        param_idx += 1
+    items = []
+    if result and result.items:
+        for item in result.items:
+            items.append(
+                ActivitySessionFactsItem(
+                    session_id=item.session_id,
+                    profile_id=item.profile_id,
+                    session_created_at=item.session_created_at,
+                    session_updated_at=item.session_updated_at,
+                    active=item.active or False,
+                    group_count=item.group_count or 0,
+                    first_group_at=item.first_group_at,
+                    last_group_at=item.last_group_at,
+                    run_count=item.run_count or 0,
+                    total_tokens=item.total_tokens or 0,
+                )
+            )
 
-    if active is not None:
-        conditions.append(f"active = ${param_idx}")
-        params.append(active)
-        param_idx += 1
-
-    if date_from:
-        conditions.append(f"session_created_at >= ${param_idx}")
-        params.append(date_from)
-        param_idx += 1
-
-    if date_to:
-        conditions.append(f"session_created_at < ${param_idx}")
-        params.append(date_to)
-        param_idx += 1
-
-    where_clause = " AND ".join(conditions) if conditions else "TRUE"
-
-    sort_column = {
-        "date": "session_created_at",
-        "groups": "group_count",
-        "runs": "run_count",
-        "tokens": "total_tokens",
-    }.get(sort_by, "session_created_at")
-
-    order_dir = "DESC" if sort_order == "desc" else "ASC"
-
-    count_query = f"SELECT COUNT(*) FROM mv_activity_session_facts WHERE {where_clause}"
-    total_count = await conn.fetchval(count_query, *params)
-
-    data_query = f"""
-        SELECT *
-        FROM mv_activity_session_facts
-        WHERE {where_clause}
-        ORDER BY {sort_column} {order_dir}
-        LIMIT ${param_idx} OFFSET ${param_idx + 1}
-    """
-    params.extend([page_limit, page_offset])
-
-    rows = await conn.fetch(data_query, *params)
-
-    items = [
-        ActivitySessionFactsItem(
-            session_id=row["session_id"],
-            profile_id=row["profile_id"],
-            session_created_at=row["session_created_at"],
-            session_updated_at=row["session_updated_at"],
-            active=row["active"] or False,
-            group_count=row["group_count"] or 0,
-            first_group_at=row["first_group_at"],
-            last_group_at=row["last_group_at"],
-            run_count=row["run_count"] or 0,
-            total_tokens=row["total_tokens"] or 0,
-        )
-        for row in rows
-    ]
+    total_count = result.total_count if result else 0
 
     response = GetActivitySessionFactsResponse(
         items=items, total_count=total_count or 0

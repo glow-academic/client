@@ -1059,8 +1059,10 @@ async def export_base_profiles(conn: asyncpg.Connection) -> None:
     all_junctions = await get_junction_tables(conn, "profile")
     # Exclude section-specific junctions (exported per setup)
     base_junctions = [
-        j for j in all_junctions
-        if j not in (
+        j
+        for j in all_junctions
+        if j
+        not in (
             "profile_departments_junction",
             "profile_emails_junction",
             "profile_cohorts_junction",
@@ -1263,12 +1265,21 @@ async def export_setup_profiles(conn: asyncpg.Connection) -> None:
                     dept_row = await conn.fetchrow(
                         f"SELECT {dept_col_list} FROM public.profile_departments_junction "
                         f"WHERE profile_id = $1 AND department_id = $2",
-                        UUID(art_id), UUID(did),
+                        UUID(art_id),
+                        UUID(did),
                     )
                     if dept_row:
                         if count == 0:
                             f.write("-- profile_departments_junction\n")
-                        f.write(make_insert("profile_departments_junction", dept_row, dept_cols, dept_pks) + "\n")
+                        f.write(
+                            make_insert(
+                                "profile_departments_junction",
+                                dept_row,
+                                dept_cols,
+                                dept_pks,
+                            )
+                            + "\n"
+                        )
                         count += 1
 
                 # Email links for this section (filtered by domain)
@@ -1276,7 +1287,8 @@ async def export_setup_profiles(conn: asyncpg.Connection) -> None:
                 email_rows = await conn.fetch(
                     f"SELECT {email_col_list} FROM public.profile_emails_junction "
                     f"WHERE profile_id = $1 AND email LIKE $2",
-                    UUID(art_id), f"%{domain}",
+                    UUID(art_id),
+                    f"%{domain}",
                 )
                 if email_rows:
                     # First write the emails_resource rows
@@ -1288,12 +1300,28 @@ async def export_setup_profiles(conn: asyncpg.Connection) -> None:
                             erow["email_id"],
                         )
                         if eres_row:
-                            f.write(make_insert("emails_resource", eres_row, email_res_cols, email_res_pks) + "\n")
+                            f.write(
+                                make_insert(
+                                    "emails_resource",
+                                    eres_row,
+                                    email_res_cols,
+                                    email_res_pks,
+                                )
+                                + "\n"
+                            )
                             count += 1
 
                     f.write("-- profile_emails_junction\n")
                     for erow in email_rows:
-                        f.write(make_insert("profile_emails_junction", erow, email_junction_cols, email_junction_pks) + "\n")
+                        f.write(
+                            make_insert(
+                                "profile_emails_junction",
+                                erow,
+                                email_junction_cols,
+                                email_junction_pks,
+                            )
+                            + "\n"
+                        )
                         count += 1
 
                 # Cohort links (university section only)
@@ -1319,12 +1347,28 @@ async def export_setup_profiles(conn: asyncpg.Connection) -> None:
                                 crow["cohort_id"],
                             )
                             if cres_row:
-                                f.write(make_insert("cohorts_resource", cres_row, cohort_res_cols, cohort_res_pks) + "\n")
+                                f.write(
+                                    make_insert(
+                                        "cohorts_resource",
+                                        cres_row,
+                                        cohort_res_cols,
+                                        cohort_res_pks,
+                                    )
+                                    + "\n"
+                                )
                                 count += 1
 
                         f.write("-- profile_cohorts_junction\n")
                         for crow in cohort_rows:
-                            f.write(make_insert("profile_cohorts_junction", crow, cohort_junction_cols, cohort_junction_pks) + "\n")
+                            f.write(
+                                make_insert(
+                                    "profile_cohorts_junction",
+                                    crow,
+                                    cohort_junction_cols,
+                                    cohort_junction_pks,
+                                )
+                                + "\n"
+                            )
                             count += 1
 
             print(f"    {slug}.sql ({count} inserts)")

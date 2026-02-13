@@ -1,7 +1,7 @@
 """Get endpoint for activity feedbacks view (mv_activity_feedbacks)."""
 
 from datetime import datetime
-from typing import Annotated, Any
+from typing import Annotated
 from uuid import UUID
 
 import asyncpg
@@ -18,6 +18,9 @@ from app.main import get_db
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
+from app.utils.sql_helper import execute_sql_typed
+
+SQL_PATH = "app/sql/v4/queries/views/activity/feedbacks/get_activity_feedbacks_view_complete.sql"
 
 router = APIRouter()
 
@@ -35,6 +38,8 @@ async def get_activity_feedbacks_internal(
     bypass_cache: bool = False,
 ) -> GetActivityFeedbacksResponse:
     """Internal function for fetching activity feedbacks data."""
+    from app.sql.types import GetActivityFeedbacksViewSqlParams
+
     cache_key_val = cache_key(
         "views/activity/feedbacks/get",
         {
@@ -54,71 +59,41 @@ async def get_activity_feedbacks_internal(
         if cached:
             return GetActivityFeedbacksResponse.model_validate(cached)
 
-    conditions: list[str] = []
-    params: list[Any] = []
-    param_idx = 1
-
-    if profile_id:
-        conditions.append(f"profile_id = ${param_idx}")
-        params.append(profile_id)
-        param_idx += 1
-
-    if profile_ids:
-        conditions.append(f"profile_id = ANY(${param_idx}::uuid[])")
-        params.append(profile_ids)
-        param_idx += 1
-
-    if feedback_type:
-        conditions.append(f"feedback_type = ${param_idx}")
-        params.append(feedback_type)
-        param_idx += 1
-
-    if date_from:
-        conditions.append(f"created_at >= ${param_idx}")
-        params.append(date_from)
-        param_idx += 1
-
-    if date_to:
-        conditions.append(f"created_at < ${param_idx}")
-        params.append(date_to)
-        param_idx += 1
-
-    where_clause = " AND ".join(conditions) if conditions else "TRUE"
-    order_dir = "DESC" if sort_order == "desc" else "ASC"
-
-    total_count = await conn.fetchval(
-        f"SELECT COUNT(*) FROM mv_activity_feedbacks WHERE {where_clause}",
-        *params,
+    params = GetActivityFeedbacksViewSqlParams.model_construct(
+        profile_id_filter=profile_id,
+        profile_ids_filter=profile_ids,
+        feedback_type_filter=feedback_type,
+        date_from=date_from,
+        date_to=date_to,
+        sort_desc=sort_order == "desc",
+        page_limit=page_limit,
+        page_offset=page_offset,
     )
 
-    data_query = f"""
-        SELECT *
-        FROM mv_activity_feedbacks
-        WHERE {where_clause}
-        ORDER BY created_at {order_dir}
-        LIMIT ${param_idx} OFFSET ${param_idx + 1}
-    """
-    params.extend([page_limit, page_offset])
-    rows = await conn.fetch(data_query, *params)
+    result = await execute_sql_typed(conn, SQL_PATH, params=params)
 
-    items = [
-        ActivityFeedbackItem(
-            feedback_id=row["feedback_id"],
-            grade_id=row["grade_id"],
-            feedback_type=row["feedback_type"],
-            total=row["total"],
-            total_points=row["total_points"],
-            pass_points=row["pass_points"],
-            created_at=row["created_at"],
-            updated_at=row["updated_at"],
-            call_id=row["call_id"],
-            active=row["active"] or False,
-            simulation_attempt_id=row["simulation_attempt_id"],
-            benchmark_test_id=row["benchmark_test_id"],
-            profile_id=row["profile_id"],
-        )
-        for row in rows
-    ]
+    items = []
+    if result and result.items:
+        for item in result.items:
+            items.append(
+                ActivityFeedbackItem(
+                    feedback_id=item.feedback_id,
+                    grade_id=item.grade_id,
+                    feedback_type=item.feedback_type,
+                    total=item.total,
+                    total_points=item.total_points,
+                    pass_points=item.pass_points,
+                    created_at=item.created_at,
+                    updated_at=item.updated_at,
+                    call_id=item.call_id,
+                    active=item.active or False,
+                    simulation_attempt_id=item.simulation_attempt_id,
+                    benchmark_test_id=item.benchmark_test_id,
+                    profile_id=item.profile_id,
+                )
+            )
+
+    total_count = result.total_count if result else 0
 
     response = GetActivityFeedbacksResponse(items=items, total_count=total_count or 0)
 

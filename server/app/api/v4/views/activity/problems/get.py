@@ -1,7 +1,7 @@
 """Get endpoint for activity problems view (mv_activity_problems)."""
 
 from datetime import datetime
-from typing import Annotated, Any
+from typing import Annotated
 from uuid import UUID
 
 import asyncpg
@@ -18,6 +18,11 @@ from app.main import get_db
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
+from app.utils.sql_helper import execute_sql_typed
+
+SQL_PATH = (
+    "app/sql/v4/queries/views/activity/problems/get_activity_problems_view_complete.sql"
+)
 
 router = APIRouter()
 
@@ -35,6 +40,8 @@ async def get_activity_problems_internal(
     bypass_cache: bool = False,
 ) -> GetActivityProblemsResponse:
     """Internal function for fetching activity problems data."""
+    from app.sql.types import GetActivityProblemsViewSqlParams
+
     cache_key_val = cache_key(
         "views/activity/problems/get",
         {
@@ -54,66 +61,36 @@ async def get_activity_problems_internal(
         if cached:
             return GetActivityProblemsResponse.model_validate(cached)
 
-    conditions: list[str] = []
-    params: list[Any] = []
-    param_idx = 1
-
-    if profile_id:
-        conditions.append(f"profile_id = ${param_idx}")
-        params.append(profile_id)
-        param_idx += 1
-
-    if profile_ids:
-        conditions.append(f"profile_id = ANY(${param_idx}::uuid[])")
-        params.append(profile_ids)
-        param_idx += 1
-
-    if resolved is not None:
-        conditions.append(f"resolved = ${param_idx}")
-        params.append(resolved)
-        param_idx += 1
-
-    if date_from:
-        conditions.append(f"created_at >= ${param_idx}")
-        params.append(date_from)
-        param_idx += 1
-
-    if date_to:
-        conditions.append(f"created_at < ${param_idx}")
-        params.append(date_to)
-        param_idx += 1
-
-    where_clause = " AND ".join(conditions) if conditions else "TRUE"
-    order_dir = "DESC" if sort_order == "desc" else "ASC"
-
-    total_count = await conn.fetchval(
-        f"SELECT COUNT(*) FROM mv_activity_problems WHERE {where_clause}",
-        *params,
+    params = GetActivityProblemsViewSqlParams.model_construct(
+        profile_id_filter=profile_id,
+        profile_ids_filter=profile_ids,
+        resolved_filter=resolved,
+        date_from=date_from,
+        date_to=date_to,
+        sort_desc=sort_order == "desc",
+        page_limit=page_limit,
+        page_offset=page_offset,
     )
 
-    data_query = f"""
-        SELECT *
-        FROM mv_activity_problems
-        WHERE {where_clause}
-        ORDER BY created_at {order_dir}
-        LIMIT ${param_idx} OFFSET ${param_idx + 1}
-    """
-    params.extend([page_limit, page_offset])
-    rows = await conn.fetch(data_query, *params)
+    result = await execute_sql_typed(conn, SQL_PATH, params=params)
 
-    items = [
-        ActivityProblemItem(
-            problem_id=row["problem_id"],
-            type=row["type"],
-            message=row["message"],
-            resolved=row["resolved"] or False,
-            created_at=row["created_at"],
-            updated_at=row["updated_at"],
-            profile_id=row["profile_id"],
-            profile_name=row["profile_name"],
-        )
-        for row in rows
-    ]
+    items = []
+    if result and result.items:
+        for item in result.items:
+            items.append(
+                ActivityProblemItem(
+                    problem_id=item.problem_id,
+                    type=item.type,
+                    message=item.message,
+                    resolved=item.resolved or False,
+                    created_at=item.created_at,
+                    updated_at=item.updated_at,
+                    profile_id=item.profile_id,
+                    profile_name=item.profile_name,
+                )
+            )
+
+    total_count = result.total_count if result else 0
 
     response = GetActivityProblemsResponse(items=items, total_count=total_count or 0)
 

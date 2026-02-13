@@ -1,7 +1,7 @@
 """Get endpoint for activity logins view (mv_activity_logins)."""
 
 from datetime import datetime
-from typing import Annotated, Any
+from typing import Annotated
 from uuid import UUID
 
 import asyncpg
@@ -18,6 +18,11 @@ from app.main import get_db
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
+from app.utils.sql_helper import execute_sql_typed
+
+SQL_PATH = (
+    "app/sql/v4/queries/views/activity/logins/get_activity_logins_view_complete.sql"
+)
 
 router = APIRouter()
 
@@ -36,6 +41,8 @@ async def get_activity_logins_internal(
     bypass_cache: bool = False,
 ) -> GetActivityLoginsResponse:
     """Internal function for fetching activity logins data."""
+    from app.sql.types import GetActivityLoginsViewSqlParams
+
     cache_key_val = cache_key(
         "views/activity/logins/get",
         {
@@ -56,69 +63,36 @@ async def get_activity_logins_internal(
         if cached:
             return GetActivityLoginsResponse.model_validate(cached)
 
-    conditions: list[str] = []
-    params: list[Any] = []
-    param_idx = 1
-
-    if profile_id:
-        conditions.append(f"profile_id = ${param_idx}")
-        params.append(profile_id)
-        param_idx += 1
-
-    if profile_ids:
-        conditions.append(f"profile_id = ANY(${param_idx}::uuid[])")
-        params.append(profile_ids)
-        param_idx += 1
-
-    if active is not None:
-        conditions.append(f"active = ${param_idx}")
-        params.append(active)
-        param_idx += 1
-
-    if date_from:
-        conditions.append(f"last_login >= ${param_idx}")
-        params.append(date_from)
-        param_idx += 1
-
-    if date_to:
-        conditions.append(f"last_login < ${param_idx}")
-        params.append(date_to)
-        param_idx += 1
-
-    where_clause = " AND ".join(conditions) if conditions else "TRUE"
-
-    sort_column = {
-        "last_login": "last_login",
-        "created": "created_at",
-    }.get(sort_by, "last_login")
-    order_dir = "DESC" if sort_order == "desc" else "ASC"
-
-    total_count = await conn.fetchval(
-        f"SELECT COUNT(*) FROM mv_activity_logins WHERE {where_clause}", *params
+    params = GetActivityLoginsViewSqlParams.model_construct(
+        profile_id_filter=profile_id,
+        profile_ids_filter=profile_ids,
+        active_filter=active,
+        date_from=date_from,
+        date_to=date_to,
+        sort_by=sort_by,
+        sort_desc=sort_order == "desc",
+        page_limit=page_limit,
+        page_offset=page_offset,
     )
 
-    data_query = f"""
-        SELECT *
-        FROM mv_activity_logins
-        WHERE {where_clause}
-        ORDER BY {sort_column} {order_dir}
-        LIMIT ${param_idx} OFFSET ${param_idx + 1}
-    """
-    params.extend([page_limit, page_offset])
-    rows = await conn.fetch(data_query, *params)
+    result = await execute_sql_typed(conn, SQL_PATH, params=params)
 
-    items = [
-        ActivityLoginItem(
-            login_id=row["login_id"],
-            profile_id=row["profile_id"],
-            last_login=row["last_login"],
-            created_at=row["created_at"],
-            updated_at=row["updated_at"],
-            active=row["active"] or False,
-            call_id=row["call_id"],
-        )
-        for row in rows
-    ]
+    items = []
+    if result and result.items:
+        for item in result.items:
+            items.append(
+                ActivityLoginItem(
+                    login_id=item.login_id,
+                    profile_id=item.profile_id,
+                    last_login=item.last_login,
+                    created_at=item.created_at,
+                    updated_at=item.updated_at,
+                    active=item.active or False,
+                    call_id=item.call_id,
+                )
+            )
+
+    total_count = result.total_count if result else 0
 
     response = GetActivityLoginsResponse(items=items, total_count=total_count or 0)
 

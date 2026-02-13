@@ -62,28 +62,28 @@ async function buildAuthHeaders(): Promise<Record<string, string>> {
 export const getAuthProfile = cache(
   async (): Promise<AuthProfileOut> => {
     const extraHeaders = await buildAuthHeaders();
-    return api.post("/auth/profile", {} as AuthProfileIn, { headers: extraHeaders });
+    return api.post("/auth/profile", { body: {} } as AuthProfileIn, { headers: extraHeaders });
   }
 );
 
 export const getAuthSettings = cache(
   async (): Promise<AuthSettingsOut> => {
     const extraHeaders = await buildAuthHeaders();
-    return api.post("/auth/settings", {} as AuthSettingsIn, { headers: extraHeaders });
+    return api.post("/auth/settings", { body: {} } as AuthSettingsIn, { headers: extraHeaders });
   }
 );
 
 export const getAuthPage = cache(
   async (): Promise<AuthPageOut> => {
     const extraHeaders = await buildAuthHeaders();
-    return api.post("/auth/page", {} as AuthPageIn, { headers: extraHeaders });
+    return api.post("/auth/page", { body: {} } as AuthPageIn, { headers: extraHeaders });
   }
 );
 
 /** ---- Cached drafts fetch (parallel with context) ---- */
 export const getDrafts = cache(
   async (): Promise<DraftsOut> => {
-    return api.post("/auth/drafts", {} as DraftsIn);
+    return api.post("/auth/drafts", { body: {} } as DraftsIn);
   }
 );
 
@@ -94,7 +94,7 @@ export const getAnalyticsFilters = cache(
       const extraHeaders = await buildAuthHeaders();
       return await api.post(
         "/auth/analytics",
-        {} as InputOf<"/api/v4/auth/analytics", "post">,
+        { body: {} } as InputOf<"/api/v4/auth/analytics", "post">,
         { headers: extraHeaders }
       );
     } catch {

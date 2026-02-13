@@ -1,7 +1,7 @@
 """Get endpoint for activity daily view (mv_activity_daily)."""
 
 from datetime import date
-from typing import Annotated, Any
+from typing import Annotated
 
 import asyncpg
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
@@ -17,6 +17,11 @@ from app.main import get_db
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
+from app.utils.sql_helper import execute_sql_typed
+
+SQL_PATH = (
+    "app/sql/v4/queries/views/activity/daily/get_activity_daily_view_complete.sql"
+)
 
 router = APIRouter()
 
@@ -31,6 +36,8 @@ async def get_activity_daily_internal(
     bypass_cache: bool = False,
 ) -> GetActivityDailyResponse:
     """Internal function for fetching activity daily data."""
+    from app.sql.types import GetActivityDailyViewSqlParams
+
     cache_key_val = cache_key(
         "views/activity/daily/get",
         {
@@ -47,56 +54,35 @@ async def get_activity_daily_internal(
         if cached:
             return GetActivityDailyResponse.model_validate(cached)
 
-    conditions: list[str] = []
-    params: list[Any] = []
-    param_idx = 1
+    params = GetActivityDailyViewSqlParams(
+        event_type_filter=event_type,
+        date_from=date_from,
+        date_to=date_to,
+        page_limit=page_limit,
+        page_offset=page_offset,
+    )
 
-    if event_type:
-        conditions.append(f"event_type LIKE ${param_idx}")
-        params.append(f"%{event_type}%")
-        param_idx += 1
+    result = await execute_sql_typed(conn, SQL_PATH, params=params)
 
-    if date_from:
-        conditions.append(f"date_key >= ${param_idx}")
-        params.append(date_from)
-        param_idx += 1
+    items = []
+    if result and result.items:
+        for item in result.items:
+            items.append(
+                ActivityDailyItem(
+                    date_key=item.date_key,
+                    event_type=item.event_type,
+                    event_count=item.event_count or 0,
+                    unique_profiles=item.unique_profiles or 0,
+                    saved_count=item.saved_count or 0,
+                    created_count=item.created_count or 0,
+                    duplicated_count=item.duplicated_count or 0,
+                    uploaded_count=item.uploaded_count or 0,
+                    deleted_count=item.deleted_count or 0,
+                    updated_count=item.updated_count or 0,
+                )
+            )
 
-    if date_to:
-        conditions.append(f"date_key <= ${param_idx}")
-        params.append(date_to)
-        param_idx += 1
-
-    where_clause = " AND ".join(conditions) if conditions else "TRUE"
-
-    count_query = f"SELECT COUNT(*) FROM mv_activity_daily WHERE {where_clause}"
-    total_count = await conn.fetchval(count_query, *params)
-
-    data_query = f"""
-        SELECT *
-        FROM mv_activity_daily
-        WHERE {where_clause}
-        ORDER BY date_key DESC, event_count DESC
-        LIMIT ${param_idx} OFFSET ${param_idx + 1}
-    """
-    params.extend([page_limit, page_offset])
-
-    rows = await conn.fetch(data_query, *params)
-
-    items = [
-        ActivityDailyItem(
-            date_key=row["date_key"],
-            event_type=row["event_type"],
-            event_count=row["event_count"] or 0,
-            unique_profiles=row["unique_profiles"] or 0,
-            saved_count=row["saved_count"] or 0,
-            created_count=row["created_count"] or 0,
-            duplicated_count=row["duplicated_count"] or 0,
-            uploaded_count=row["uploaded_count"] or 0,
-            deleted_count=row["deleted_count"] or 0,
-            updated_count=row["updated_count"] or 0,
-        )
-        for row in rows
-    ]
+    total_count = result.total_count if result else 0
 
     response = GetActivityDailyResponse(items=items, total_count=total_count or 0)
 
