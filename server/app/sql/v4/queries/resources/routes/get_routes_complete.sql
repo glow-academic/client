@@ -52,7 +52,6 @@ END $$;
 CREATE TYPE types.q_get_routes_v4_item AS (
     id uuid,
     route text,
-    role_id uuid,
     generated boolean
 );
 
@@ -68,7 +67,7 @@ STABLE
 AS $$
 SELECT COALESCE(
     ARRAY_AGG(
-        (r.id, r.route::text, r.role_id, COALESCE(r.generated, false))::types.q_get_routes_v4_item
+        (r.id, r.route::text, COALESCE(r.generated, false))::types.q_get_routes_v4_item
         ORDER BY array_position(ids, r.id)
     ),
     ARRAY[]::types.q_get_routes_v4_item[]

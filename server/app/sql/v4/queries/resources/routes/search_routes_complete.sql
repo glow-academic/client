@@ -36,19 +36,21 @@ STABLE
 AS $$
 SELECT COALESCE(
     ARRAY_AGG(
-        (q.id, q.route, q.role_id, q.generated)::types.q_get_routes_v4_item
+        (q.id, q.route, q.generated)::types.q_get_routes_v4_item
         ORDER BY q.route
     ),
     ARRAY[]::types.q_get_routes_v4_item[]
 ) as items
 FROM (
-    SELECT r.id, r.route::text, r.role_id, COALESCE(r.generated, false) AS generated
+    SELECT r.id, r.route::text, COALESCE(r.generated, false) AS generated
     FROM routes_resource r
     WHERE r.active = true
       AND (search IS NULL OR search = '' OR LOWER(r.route::text) LIKE '%' || LOWER(search) || '%')
       AND (exclude_ids IS NULL OR NOT (r.id = ANY(exclude_ids)))
       AND (api_search_routes_v4.route IS NULL OR r.route::text = api_search_routes_v4.route)
-      AND (COALESCE(array_length(role_ids, 1), 0) = 0 OR r.role_id = ANY(role_ids))
+      AND (COALESCE(array_length(role_ids, 1), 0) = 0 OR EXISTS (
+          SELECT 1 FROM role_routes_resource rr WHERE rr.route_id = r.id AND rr.role_id = ANY(role_ids) AND rr.active = true
+      ))
       -- Artifact boolean filters (each filters to resources linked to at least one of that artifact type)
       AND (NOT profile OR EXISTS (SELECT 1 FROM profile_routes_junction j WHERE j.route_id = r.id AND j.active = true))
     ORDER BY r.route::text
