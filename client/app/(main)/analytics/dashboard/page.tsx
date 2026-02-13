@@ -94,7 +94,7 @@ export default async function DashboardPage({
   const q = loadDashboardSearchParams(await searchParams);
 
   // Compute defaults and resolve filters
-  const { defaults, profileContext, analyticsFilters } = await computeAnalyticsDefaults();
+  const { defaults, profileContext } = await computeAnalyticsDefaults();
   const filters = resolveAnalyticsFilters(q, defaults, profileContext);
 
   // History params with defaults
@@ -119,8 +119,6 @@ export default async function DashboardPage({
       simulation_filters: filters.simulationFilters,
       page_limit: 50,
       page_offset: 0,
-      accessible_cohort_ids: analyticsFilters?.cohort_options?.map(o => o.value) ?? [],
-      accessible_department_ids: analyticsFilters?.department_options?.map(o => o.value) ?? [],
     },
   });
 

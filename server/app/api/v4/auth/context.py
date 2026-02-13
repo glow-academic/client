@@ -10,6 +10,7 @@ from uuid import UUID
 import asyncpg
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
+from app.api.v4.auth.access import get_access_internal
 from app.api.v4.auth.permissions import (
     build_artifact_has_generation_map,
     convert_role,
@@ -37,8 +38,6 @@ from app.infra.v4.error.handle_route_error import handle_route_error
 from app.infra.v4.sessions.get import get_session_internal
 from app.main import get_db, get_pool
 from app.sql.types import (
-    GetProfileContextAccessSqlParams,
-    GetProfileContextAccessSqlRow,
     GetProfileContextApiRequest,
     GetSettingsThemeSqlParams,
     GetSettingsThemeSqlRow,
@@ -66,43 +65,11 @@ async def get_profile_context_internal(
     """
     pass1_start = time.time()
 
-    params = GetProfileContextAccessSqlParams(
-        profile_id=profile_id,
-        department_id=department_id_cookie if department_id_cookie else None,
-    )
-    access_result = cast(
-        GetProfileContextAccessSqlRow | None,
-        await execute_sql_typed(conn, SQL_ACCESS_PATH, params=params),
+    access_result = await get_access_internal(
+        conn, profile_id, department_id_cookie, bypass_cache
     )
 
     pass1_time = (time.time() - pass1_start) * 1000
-
-    is_settings_only_request = not profile_id and department_id_cookie is not None
-
-    if is_settings_only_request:
-        if access_result is None or access_result.settings_id is None:
-            raise HTTPException(
-                status_code=404,
-                detail="Settings not available for this department. Please select a different department.",
-            )
-    elif not profile_id and not department_id_cookie:
-        raise HTTPException(
-            status_code=404,
-            detail="Profile context not found: Could not resolve profile. Please try logging in again.",
-        )
-
-    if (
-        not is_settings_only_request
-        and profile_id
-        and (not access_result or not access_result.is_authorized)
-    ):
-        raise HTTPException(
-            status_code=404,
-            detail=f"Profile context not found: {profile_id}",
-        )
-
-    if not access_result:
-        raise HTTPException(status_code=404, detail="Profile context not found")
 
     pass2_start = time.time()
 

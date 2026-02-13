@@ -90,7 +90,7 @@ export default async function PracticePage({
   const q = loadPracticeSearchParams(await searchParams);
 
   // Compute defaults and resolve filters (same as home page)
-  const { defaults, profileContext, analyticsFilters } = await computeAnalyticsDefaults();
+  const { defaults, profileContext } = await computeAnalyticsDefaults();
   const defaultFilters = resolveAnalyticsFilters(q, defaults, profileContext);
 
   // Cards endpoint (now includes all stats needed for simulation cards)
@@ -178,8 +178,6 @@ export default async function PracticePage({
               historyInfiniteMode={historyInfiniteMode}
               historySortBy={historySortBy}
               historySortOrder={historySortOrder}
-              accessibleCohortIds={analyticsFilters?.cohort_options?.map(o => o.value) ?? []}
-              accessibleDepartmentIds={analyticsFilters?.department_options?.map(o => o.value) ?? []}
             />
           </Suspense>
         </div>
@@ -199,8 +197,6 @@ async function PracticeHistorySection({
   historyInfiniteMode,
   historySortBy,
   historySortOrder,
-  accessibleCohortIds,
-  accessibleDepartmentIds,
 }: {
   defaultFilters: {
     startDate: string;
@@ -217,8 +213,6 @@ async function PracticeHistorySection({
   historyInfiniteMode?: boolean | undefined;
   historySortBy: string;
   historySortOrder: string;
-  accessibleCohortIds: string[];
-  accessibleDepartmentIds: string[];
 }) {
   const historyFilters: PracticeHistoryIn = {
     body: {
@@ -230,8 +224,6 @@ async function PracticeHistorySection({
       page: historyPage,
       page_size: historyPageSize,
       show_archived: false,
-      accessible_cohort_ids: accessibleCohortIds,
-      accessible_department_ids: accessibleDepartmentIds,
       ...(historySearch && { search: historySearch }),
       ...(historySimulationIds &&
         historySimulationIds.length > 0 && {

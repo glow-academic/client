@@ -36,8 +36,6 @@ class LeaderboardRequest(BaseModel):
 
     page_limit: int = Field(default=50, ge=1, le=200)
     page_offset: int = Field(default=0, ge=0)
-    accessible_cohort_ids: list[str] = Field(default_factory=list)
-    accessible_department_ids: list[str] = Field(default_factory=list)
 
 
 class LeaderboardMetric(BaseModel):

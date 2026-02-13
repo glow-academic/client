@@ -10,7 +10,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { useProfile } from "@/contexts/profile-context";
+import { useSettings } from "@/contexts/settings-context";
 import { normalizeUrlPathToArtifactType } from "@/utils/resource-type-utils";
 import { Sparkles } from "lucide-react";
 import { usePathname } from "next/navigation";
@@ -18,7 +18,7 @@ import { useCallback, useMemo } from "react";
 
 export function FullPageGenerateButton() {
   const pathname = usePathname();
-  const { artifactHasGeneration } = useProfile();
+  const { artifactHasGeneration } = useSettings();
 
   // Compute artifactType from URL (same logic as layout-client)
   const urlPathSegment = useMemo(() => {

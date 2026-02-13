@@ -12,6 +12,12 @@ import { cache } from "react";
 /** ---- Strong types from OpenAPI ---- */
 type LayoutContextIn = InputOf<"/api/v4/auth/context", "post">;
 type LayoutContextOut = OutputOf<"/api/v4/auth/context", "post">;
+type AuthProfileIn = InputOf<"/api/v4/auth/profile", "post">;
+type AuthProfileOut = OutputOf<"/api/v4/auth/profile", "post">;
+type AuthSettingsIn = InputOf<"/api/v4/auth/settings", "post">;
+type AuthSettingsOut = OutputOf<"/api/v4/auth/settings", "post">;
+type AuthPageIn = InputOf<"/api/v4/auth/page", "post">;
+type AuthPageOut = OutputOf<"/api/v4/auth/page", "post">;
 type DraftsIn = InputOf<"/api/v4/auth/drafts", "post">;
 type DraftsOut = OutputOf<"/api/v4/auth/drafts", "post">;
 type AnalyticsFiltersOut = OutputOf<"/api/v4/auth/analytics", "post">;

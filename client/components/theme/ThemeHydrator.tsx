@@ -2,36 +2,30 @@
 
 import { useEffect } from "react";
 import { applyThemeTokens } from "@/lib/theme/apply-theme";
-import { SettingsActiveClient } from "@/app/(main)/layout-server";
+import type { ThemeTokens } from "@/lib/theme/types";
 
 /**
- * ThemeHydrator component that applies theme tokens from activeSettings
+ * ThemeHydrator component that applies theme tokens
  * to CSS variables and handles dark/light mode class toggling.
  *
  * This component runs client-side only and applies theme changes when
- * activeSettings changes. It returns null (no UI).
+ * tokens change. It returns null (no UI).
  */
 export function ThemeHydrator({
-  activeSettings,
+  tokens,
 }: {
-  activeSettings: SettingsActiveClient | null;
+  tokens: ThemeTokens | null;
 }) {
   useEffect(() => {
-    if (!activeSettings?.tokens) return;
+    if (!tokens) return;
 
     // Apply theme tokens to CSS variables
-    applyThemeTokens(activeSettings.tokens);
+    applyThemeTokens(tokens);
 
-    // Handle dark/light mode by toggling .dark class on document root
-    // Note: mode is not currently in SettingsActiveClient type, so we skip mode handling for now
-    // If mode support is needed, it should be added to SettingsFields in layout-server.tsx
+    // Default to light mode
     const root = document.documentElement;
-    // Default to light mode if mode is not available
     root.classList.remove("dark");
-  }, [
-    activeSettings?.id,
-    activeSettings?.tokens,
-  ]); // Re-run when active theme changes
+  }, [tokens]);
 
   return null; // No UI
 }

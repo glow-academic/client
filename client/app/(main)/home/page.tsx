@@ -88,7 +88,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
   const q = loadHomeSearchParams(await searchParams);
 
   // Compute defaults and resolve filters
-  const { defaults, profileContext, analyticsFilters } = await computeAnalyticsDefaults();
+  const { defaults, profileContext } = await computeAnalyticsDefaults();
   const defaultFilters = resolveAnalyticsFilters(q, defaults, profileContext);
 
   // Cards endpoint (now includes all stats needed for simulation cards)
@@ -170,8 +170,6 @@ export default async function HomePage({ searchParams }: HomePageProps) {
             historyInfiniteMode={historyInfiniteMode}
             historySortBy={historySortBy}
             historySortOrder={historySortOrder}
-            accessibleCohortIds={analyticsFilters?.cohort_options?.map(o => o.value) ?? []}
-            accessibleDepartmentIds={analyticsFilters?.department_options?.map(o => o.value) ?? []}
           />
         </Suspense>
       </div>
@@ -190,8 +188,6 @@ async function HomeHistorySection({
   historyInfiniteMode,
   historySortBy,
   historySortOrder,
-  accessibleCohortIds,
-  accessibleDepartmentIds,
 }: {
   defaultFilters: {
     startDate: string;
@@ -208,8 +204,6 @@ async function HomeHistorySection({
   historyInfiniteMode?: boolean | undefined;
   historySortBy: string;
   historySortOrder: string;
-  accessibleCohortIds: string[];
-  accessibleDepartmentIds: string[];
 }) {
   // Build history filters using /attempt/list endpoint
   // practice: false for home mode
@@ -223,8 +217,6 @@ async function HomeHistorySection({
       page: historyPage,
       page_size: historyPageSize,
       show_archived: false,
-      accessible_cohort_ids: accessibleCohortIds,
-      accessible_department_ids: accessibleDepartmentIds,
       ...(historySearch && { search: historySearch }),
       ...(historySimulationIds &&
         historySimulationIds.length > 0 && {

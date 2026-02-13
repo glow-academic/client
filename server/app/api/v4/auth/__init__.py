@@ -8,6 +8,9 @@ from app.api.v4.auth.drafts import router as drafts_router
 from app.api.v4.auth.email import router as email_router
 from app.api.v4.auth.emulate import router as emulate_router
 from app.api.v4.auth.login import router as login_router
+from app.api.v4.auth.page import router as page_router
+from app.api.v4.auth.profile import router as profile_router
+from app.api.v4.auth.settings import router as settings_router
 from app.api.v4.auth.simulatable import router as simulatable_router
 from app.api.v4.auth.upsert import router as upsert_router
 
@@ -16,6 +19,9 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 # Include all auth endpoint routers
 router.include_router(login_router)
 router.include_router(context_router)
+router.include_router(profile_router)
+router.include_router(settings_router)
+router.include_router(page_router)
 router.include_router(analytics_router)
 router.include_router(drafts_router)
 router.include_router(email_router)

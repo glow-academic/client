@@ -64,7 +64,7 @@ export default async function ReportsFullPage({
   const q = loadReportsSearchParams(await searchParams);
 
   // Compute defaults and resolve filters
-  const { defaults, profileContext, analyticsFilters } = await computeAnalyticsDefaults();
+  const { defaults, profileContext } = await computeAnalyticsDefaults();
   const resolved = resolveAnalyticsFilters(q, defaults, profileContext);
 
   // Build AnalyticsFilters for Reports component (optional arrays)
@@ -154,8 +154,6 @@ export default async function ReportsFullPage({
           reportsScenarioIds={reportsScenarioIds}
           reportsSortBy={reportsSortBy}
           reportsSortOrder={reportsSortOrder}
-          accessibleCohortIds={analyticsFilters?.cohort_options?.map(o => o.value) ?? []}
-          accessibleDepartmentIds={analyticsFilters?.department_options?.map(o => o.value) ?? []}
         />
       </Suspense>
     </div>
@@ -173,8 +171,6 @@ async function ReportsSection({
   reportsScenarioIds,
   reportsSortBy,
   reportsSortOrder,
-  accessibleCohortIds,
-  accessibleDepartmentIds,
 }: {
   filters: AnalyticsFilters;
   reportsPage: number;
@@ -185,8 +181,6 @@ async function ReportsSection({
   reportsScenarioIds?: string[] | undefined;
   reportsSortBy: string;
   reportsSortOrder: string;
-  accessibleCohortIds: string[];
-  accessibleDepartmentIds: string[];
 }) {
   // Build reports filters with pagination/search/sorting/filtering params (snake_case for API)
   const reportsFilters = {
@@ -213,8 +207,6 @@ async function ReportsSection({
       reportsScenarioIds.length > 0 && {
         scenario_ids: reportsScenarioIds,
       }),
-    accessible_cohort_ids: accessibleCohortIds,
-    accessible_department_ids: accessibleDepartmentIds,
   };
 
   // Fetch reports data server-side

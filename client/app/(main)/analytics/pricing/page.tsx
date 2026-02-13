@@ -75,7 +75,7 @@ export default async function PricingPage({ searchParams }: PricingPageProps) {
   const q = loadPricingSearchParams(await searchParams);
 
   // Compute defaults and resolve filters
-  const { defaults, profileContext, analyticsFilters } = await computeAnalyticsDefaults();
+  const { defaults, profileContext } = await computeAnalyticsDefaults();
   const filters = resolveAnalyticsFilters(q, defaults, profileContext);
 
   // Fetch summary data server-side (for chart - all runs, no pagination)
@@ -89,7 +89,6 @@ export default async function PricingPage({ searchParams }: PricingPageProps) {
       simulation_filters: filters.simulationFilters,
       page_limit: 100,
       page_offset: 0,
-      accessible_department_ids: analyticsFilters?.department_options?.map(o => o.value) ?? [],
     },
   });
 

@@ -635,8 +635,6 @@ class GetAttemptListRequest(BaseModel):
     page: int = 0
     page_size: int = 20
     show_archived: bool = False
-    accessible_cohort_ids: list[str] = Field(default_factory=list)
-    accessible_department_ids: list[str] = Field(default_factory=list)
 
 
 class AttemptListItem(BaseModel):

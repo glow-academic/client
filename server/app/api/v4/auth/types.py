@@ -86,6 +86,45 @@ class ProfileContextInternalData:
     pass2_time_ms: float
 
 
+class GetAuthProfileApiResponse(BaseModel):
+    """Response for POST /auth/profile — identity + permissions."""
+
+    is_authorized: bool | None = None
+    id: UUID | None = None
+    name: str | None = None
+    role: str | None = None
+    active: bool | None = None
+    scoped_roles: list[str] | None = None
+    available_sections: list[str] | None = None
+    available_routes: list[str] | None = None
+    redirect_path: str | None = None
+    role_resources: list[QGetProfileContextV4RoleResource] | None = None
+    session_id: UUID | None = None
+    actor_name: str | None = None
+
+
+class GetAuthSettingsApiResponse(BaseModel):
+    """Response for POST /auth/settings — department-level settings + theme."""
+
+    settings_id: str | None = None
+    success_threshold: int | None = None
+    warning_threshold: int | None = None
+    danger_threshold: int | None = None
+    tokens: QGetProfileContextV4ThemeTokens | None = None
+    agents: list[QGetAgentsV4Item] | None = None
+    tools: list[QGetToolsV4Item] | None = None
+    artifact_has_generation: dict[str, bool] | None = None
+
+
+class GetAuthPageApiResponse(BaseModel):
+    """Response for POST /auth/page — server-driven routing metadata."""
+
+    sidebar_routes: list[SidebarSection] | None = None
+    breadcrumbs: list[BreadcrumbItem] | None = None
+    page_access: PageAccess | None = None
+    page_metadata: PageMetadata | None = None
+
+
 class GetDraftsApiResponse(BaseModel):
     """Response model for /auth/drafts endpoint."""
 
