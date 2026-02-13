@@ -15278,7 +15278,10 @@ export interface components {
             /** Actor Name */
             actor_name?: string | null;
         };
-        /** DeleteSettingApiRequest */
+        /**
+         * DeleteSettingApiRequest
+         * @description Request model for delete setting endpoint.
+         */
         DeleteSettingApiRequest: {
             /**
              * Setting Id
@@ -15286,7 +15289,10 @@ export interface components {
              */
             setting_id: string;
         };
-        /** DeleteSettingApiResponse */
+        /**
+         * DeleteSettingApiResponse
+         * @description Response model for delete setting endpoint.
+         */
         DeleteSettingApiResponse: {
             /** Success */
             success: boolean;
@@ -16127,7 +16133,10 @@ export interface components {
             /** Actor Name */
             actor_name?: string | null;
         };
-        /** DuplicateSettingApiRequest */
+        /**
+         * DuplicateSettingApiRequest
+         * @description Request model for duplicate setting endpoint.
+         */
         DuplicateSettingApiRequest: {
             /**
              * Setting Id
@@ -16135,7 +16144,10 @@ export interface components {
              */
             setting_id: string;
         };
-        /** DuplicateSettingApiResponse */
+        /**
+         * DuplicateSettingApiResponse
+         * @description Response model for duplicate setting endpoint.
+         */
         DuplicateSettingApiResponse: {
             /** Success */
             success: boolean;
@@ -20057,7 +20069,7 @@ export interface components {
         };
         /**
          * GetProfileContextApiResponse
-         * @description Extended profile context response with generated artifact map.
+         * @description Slim profile context response — only fields the client needs.
          */
         GetProfileContextApiResponse: {
             /** Is Authorized */
@@ -20066,109 +20078,39 @@ export interface components {
             id?: string | null;
             /** Name */
             name?: string | null;
-            /** Emails */
-            emails?: string[] | null;
-            /** Primary Email */
-            primary_email?: string | null;
             /** Role */
             role?: string | null;
             /** Active */
             active?: boolean | null;
-            /** Req Per Day */
-            req_per_day?: number | null;
-            /** Last Login */
-            last_login?: string | null;
-            /** Last Active */
-            last_active?: string | null;
-            /** Created At */
-            created_at?: string | null;
-            /** Updated At */
-            updated_at?: string | null;
-            /** Primary Department Id */
-            primary_department_id?: string | null;
-            /** Departments */
-            departments?: components["schemas"]["QGetProfileContextV4Department"][] | null;
-            /** Cohorts */
-            cohorts?: components["schemas"]["QGetProfileContextV4Cohort"][] | null;
-            /** Simulations */
-            simulations?: components["schemas"]["QGetProfileContextV4Simulation"][] | null;
-            /** Earliest Attempt Date */
-            earliest_attempt_date?: string | null;
             /** Scoped Roles */
             scoped_roles?: string[] | null;
-            /** Role Resources */
-            role_resources?: components["schemas"]["QGetProfileContextV4RoleResource"][] | null;
-            /** Settings Id */
-            settings_id?: string | null;
-            /** Settings Created At */
-            settings_created_at?: string | null;
-            /** Settings Active */
-            settings_active?: boolean | null;
-            /** Settings Name */
-            settings_name?: string | null;
-            /** Settings Description */
-            settings_description?: string | null;
-            /** Settings Primary Color */
-            settings_primary_color?: string | null;
-            /** Settings Accent */
-            settings_accent?: string | null;
-            /** Settings Background */
-            settings_background?: string | null;
-            /** Settings Surface */
-            settings_surface?: string | null;
-            /** Settings Success */
-            settings_success?: string | null;
-            /** Settings Warning */
-            settings_warning?: string | null;
-            /** Settings Error */
-            settings_error?: string | null;
-            /** Settings Sidebar Background */
-            settings_sidebar_background?: string | null;
-            /** Settings Sidebar Primary */
-            settings_sidebar_primary?: string | null;
-            /** Settings Chart1 */
-            settings_chart1?: string | null;
-            /** Settings Chart2 */
-            settings_chart2?: string | null;
-            /** Settings Chart3 */
-            settings_chart3?: string | null;
-            /** Settings Chart4 */
-            settings_chart4?: string | null;
-            /** Settings Chart5 */
-            settings_chart5?: string | null;
-            /** Settings Guest Login Enabled */
-            settings_guest_login_enabled?: boolean | null;
-            /** Settings Success Threshold */
-            settings_success_threshold?: number | null;
-            /** Settings Warning Threshold */
-            settings_warning_threshold?: number | null;
-            /** Settings Danger Threshold */
-            settings_danger_threshold?: number | null;
-            /** Settings Auth Ids */
-            settings_auth_ids?: string[] | null;
-            /** Settings Auths */
-            settings_auths?: components["schemas"]["QGetProfileContextV4Auth"][] | null;
-            /** Settings Provider Key Ids */
-            settings_provider_key_ids?: string[] | null;
             /** Available Sections */
             available_sections?: string[] | null;
             /** Available Routes */
             available_routes?: string[] | null;
             /** Redirect Path */
             redirect_path?: string | null;
-            /** Department Ids */
-            department_ids?: string[] | null;
-            /** Cohort Ids */
-            cohort_ids?: string[] | null;
-            /** Simulation Ids */
-            simulation_ids?: string[] | null;
+            /** Settings Id */
+            settings_id?: string | null;
+            /** Settings Success Threshold */
+            settings_success_threshold?: number | null;
+            /** Settings Warning Threshold */
+            settings_warning_threshold?: number | null;
+            /** Settings Danger Threshold */
+            settings_danger_threshold?: number | null;
+            settings_tokens?: components["schemas"]["QGetProfileContextV4ThemeTokens"] | null;
+            /** Settings Agents */
+            settings_agents?: components["schemas"]["QGetAgentsV4Item"][] | null;
+            /** Settings Tools */
+            settings_tools?: components["schemas"]["QGetToolsV4Item"][] | null;
+            /** Role Resources */
+            role_resources?: components["schemas"]["QGetProfileContextV4RoleResource"][] | null;
             /** Drafts */
             drafts?: components["schemas"]["QGetProfileContextV4Draft"][] | null;
-            settings_tokens?: components["schemas"]["QGetProfileContextV4ThemeTokens"] | null;
-            /** Actor Name */
-            actor_name?: string | null;
             /** Session Id */
             session_id?: string | null;
+            /** Actor Name */
+            actor_name?: string | null;
             /** Artifact Has Generation */
             artifact_has_generation?: {
                 [key: string]: boolean;
@@ -20800,7 +20742,10 @@ export interface components {
              */
             total_pages: number;
         };
-        /** GetSettingApiRequest */
+        /**
+         * GetSettingApiRequest
+         * @description Request model for get setting endpoint.
+         */
         GetSettingApiRequest: {
             /** Settings Id */
             settings_id?: string | null;
@@ -23820,7 +23765,10 @@ export interface components {
             /** Department Ids */
             department_ids?: string[] | null;
         };
-        /** ListSettingApiKey */
+        /**
+         * ListSettingApiKey
+         * @description Key type for list endpoint.
+         */
         ListSettingApiKey: {
             /** Key Id */
             key_id?: string | null;
@@ -23835,7 +23783,10 @@ export interface components {
             /** Department Ids */
             department_ids?: string[] | null;
         };
-        /** ListSettingApiResponse */
+        /**
+         * ListSettingApiResponse
+         * @description Response model for list setting endpoint.
+         */
         ListSettingApiResponse: {
             /** Actor Name */
             actor_name?: string | null;
@@ -23846,7 +23797,10 @@ export interface components {
             /** Keys */
             keys?: components["schemas"]["ListSettingApiKey"][] | null;
         };
-        /** ListSettingApiSetting */
+        /**
+         * ListSettingApiSetting
+         * @description Setting type for list endpoint with computed permissions.
+         */
         ListSettingApiSetting: {
             /** Settings Id */
             settings_id?: string | null;
@@ -25571,7 +25525,10 @@ export interface components {
             /** Draft Exists */
             draft_exists?: boolean | null;
         };
-        /** PatchSettingDraftApiRequest */
+        /**
+         * PatchSettingDraftApiRequest
+         * @description Request model for patch setting draft endpoint - nested resource actions.
+         */
         PatchSettingDraftApiRequest: {
             /** Input Draft Id */
             input_draft_id?: string | null;
@@ -25594,14 +25551,22 @@ export interface components {
              */
             expected_version: number;
         };
-        /** PatchSettingDraftApiResponse */
+        /**
+         * PatchSettingDraftApiResponse
+         * @description Response model for patch setting draft endpoint.
+         */
         PatchSettingDraftApiResponse: {
-            /** Draft Id */
-            draft_id?: string | null;
+            /** Success */
+            success: boolean;
+            /**
+             * Draft Id
+             * Format: uuid
+             */
+            draft_id: string;
             /** New Version */
-            new_version?: number | null;
-            /** Draft Exists */
-            draft_exists?: boolean | null;
+            new_version: number;
+            /** Message */
+            message: string;
         };
         /**
          * PatchSimulationDraftApiRequest
@@ -28166,43 +28131,6 @@ export interface components {
             /** Generated */
             generated: boolean | null;
         };
-        /** QGetProfileContextV4Auth */
-        QGetProfileContextV4Auth: {
-            /** Auth Id */
-            auth_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-            /** Slug */
-            slug: string | null;
-        };
-        /** QGetProfileContextV4Cohort */
-        QGetProfileContextV4Cohort: {
-            /** Cohort Id */
-            cohort_id: string | null;
-            /** Title */
-            title: string | null;
-            /** Description */
-            description: string | null;
-            /** Active */
-            active: boolean | null;
-            /** Department Ids */
-            department_ids: string[] | null;
-        };
-        /** QGetProfileContextV4Department */
-        QGetProfileContextV4Department: {
-            /** Department Id */
-            department_id: string | null;
-            /** Title */
-            title: string | null;
-            /** Description */
-            description: string | null;
-            /** Active */
-            active: boolean | null;
-            /** Is Primary */
-            is_primary: boolean | null;
-        };
         /** QGetProfileContextV4Draft */
         QGetProfileContextV4Draft: {
             /** Id */
@@ -28228,23 +28156,6 @@ export interface components {
             icon_value: string | null;
             /** Color Hex */
             color_hex: string | null;
-        };
-        /** QGetProfileContextV4Simulation */
-        QGetProfileContextV4Simulation: {
-            /** Simulation Id */
-            simulation_id: string | null;
-            /** Title */
-            title: string | null;
-            /** Description */
-            description: string | null;
-            /** Department Ids */
-            department_ids: string[] | null;
-            /** Time Limit */
-            time_limit: number | null;
-            /** Active */
-            active: boolean | null;
-            /** Practice Simulation */
-            practice_simulation: boolean | null;
         };
         /** QGetProfileContextV4ThemeTokens */
         QGetProfileContextV4ThemeTokens: {
@@ -30730,7 +30641,10 @@ export interface components {
             /** Actor Name */
             actor_name?: string | null;
         };
-        /** SaveSettingApiRequest */
+        /**
+         * SaveSettingApiRequest
+         * @description Request model for save setting endpoint - accepts nested resource actions.
+         */
         SaveSettingApiRequest: {
             /** Input Setting Id */
             input_setting_id?: string | null;
@@ -30748,10 +30662,28 @@ export interface components {
             roles: components["schemas"]["SettingMultiResourceAction"];
             role_routes: components["schemas"]["SettingMultiResourceAction"];
         };
-        /** SaveSettingApiResponse */
+        /**
+         * SaveSettingApiResponse
+         * @description Response model for save setting endpoint.
+         */
         SaveSettingApiResponse: {
-            /** Setting Id */
-            setting_id?: string | null;
+            /**
+             * Success
+             * @default true
+             */
+            success: boolean;
+            /**
+             * Setting Id
+             * Format: uuid
+             */
+            setting_id: string;
+            /**
+             * Message
+             * @default
+             */
+            message: string;
+            /** Actor Name */
+            actor_name?: string | null;
         };
         /**
          * SaveSimulationApiRequest
@@ -34147,7 +34079,10 @@ export interface components {
              */
             error_count: number;
         };
-        /** SettingMultiResourceAction */
+        /**
+         * SettingMultiResourceAction
+         * @description Multi-select resource with tool call tracking.
+         */
         SettingMultiResourceAction: {
             /** Resource Ids */
             resource_ids?: string[] | null;
@@ -34156,7 +34091,10 @@ export interface components {
             /** Link Tool Id */
             link_tool_id?: string | null;
         };
-        /** SettingResourceAction */
+        /**
+         * SettingResourceAction
+         * @description Single-select resource with tool call tracking.
+         */
         SettingResourceAction: {
             /** Resource Id */
             resource_id?: string | null;

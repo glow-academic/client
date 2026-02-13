@@ -1,9 +1,8 @@
 """Integration tests for resource providers search endpoint."""
 
-import pytest
-
 import asyncpg
 import httpx
+import pytest
 
 from app.api.v4.resources.providers.search import search_providers_internal
 
@@ -31,9 +30,7 @@ class TestSearchProviders:
         data = response.json()
         assert len(data["items"]) > 0
 
-    async def test_search_providers_with_limit(
-        self, client: httpx.AsyncClient
-    ) -> None:
+    async def test_search_providers_with_limit(self, client: httpx.AsyncClient) -> None:
         """SEARCH with limit_count=1 returns at most 1 item."""
         # Act
         response = await client.post(

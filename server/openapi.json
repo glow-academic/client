@@ -60417,7 +60417,8 @@
         "required": [
           "setting_id"
         ],
-        "title": "DeleteSettingApiRequest"
+        "title": "DeleteSettingApiRequest",
+        "description": "Request model for delete setting endpoint."
       },
       "DeleteSettingApiResponse": {
         "properties": {
@@ -60435,7 +60436,8 @@
           "success",
           "message"
         ],
-        "title": "DeleteSettingApiResponse"
+        "title": "DeleteSettingApiResponse",
+        "description": "Response model for delete setting endpoint."
       },
       "DeleteSimulationApiRequest": {
         "properties": {
@@ -62752,7 +62754,8 @@
         "required": [
           "setting_id"
         ],
-        "title": "DuplicateSettingApiRequest"
+        "title": "DuplicateSettingApiRequest",
+        "description": "Request model for duplicate setting endpoint."
       },
       "DuplicateSettingApiResponse": {
         "properties": {
@@ -62776,7 +62779,8 @@
           "setting_id",
           "message"
         ],
-        "title": "DuplicateSettingApiResponse"
+        "title": "DuplicateSettingApiResponse",
+        "description": "Response model for duplicate setting endpoint."
       },
       "DuplicateSimulationApiRequest": {
         "properties": {
@@ -75744,31 +75748,6 @@
             ],
             "title": "Name"
           },
-          "emails": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Emails"
-          },
-          "primary_email": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Primary Email"
-          },
           "role": {
             "anyOf": [
               {
@@ -75791,131 +75770,6 @@
             ],
             "title": "Active"
           },
-          "req_per_day": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Req Per Day"
-          },
-          "last_login": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "date-time"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Last Login"
-          },
-          "last_active": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "date-time"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Last Active"
-          },
-          "created_at": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "date-time"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Created At"
-          },
-          "updated_at": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "date-time"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Updated At"
-          },
-          "primary_department_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Primary Department Id"
-          },
-          "departments": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/QGetProfileContextV4Department"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Departments"
-          },
-          "cohorts": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/QGetProfileContextV4Cohort"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Cohorts"
-          },
-          "simulations": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/QGetProfileContextV4Simulation"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Simulations"
-          },
-          "earliest_attempt_date": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "date-time"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Earliest Attempt Date"
-          },
           "scoped_roles": {
             "anyOf": [
               {
@@ -75929,317 +75783,6 @@
               }
             ],
             "title": "Scoped Roles"
-          },
-          "role_resources": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/QGetProfileContextV4RoleResource"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Role Resources"
-          },
-          "settings_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Settings Id"
-          },
-          "settings_created_at": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "date-time"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Settings Created At"
-          },
-          "settings_active": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Settings Active"
-          },
-          "settings_name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Settings Name"
-          },
-          "settings_description": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Settings Description"
-          },
-          "settings_primary_color": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Settings Primary Color"
-          },
-          "settings_accent": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Settings Accent"
-          },
-          "settings_background": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Settings Background"
-          },
-          "settings_surface": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Settings Surface"
-          },
-          "settings_success": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Settings Success"
-          },
-          "settings_warning": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Settings Warning"
-          },
-          "settings_error": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Settings Error"
-          },
-          "settings_sidebar_background": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Settings Sidebar Background"
-          },
-          "settings_sidebar_primary": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Settings Sidebar Primary"
-          },
-          "settings_chart1": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Settings Chart1"
-          },
-          "settings_chart2": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Settings Chart2"
-          },
-          "settings_chart3": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Settings Chart3"
-          },
-          "settings_chart4": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Settings Chart4"
-          },
-          "settings_chart5": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Settings Chart5"
-          },
-          "settings_guest_login_enabled": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Settings Guest Login Enabled"
-          },
-          "settings_success_threshold": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Settings Success Threshold"
-          },
-          "settings_warning_threshold": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Settings Warning Threshold"
-          },
-          "settings_danger_threshold": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Settings Danger Threshold"
-          },
-          "settings_auth_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Settings Auth Ids"
-          },
-          "settings_auths": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/QGetProfileContextV4Auth"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Settings Auths"
-          },
-          "settings_provider_key_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Settings Provider Key Ids"
           },
           "available_sections": {
             "anyOf": [
@@ -76280,39 +75823,65 @@
             ],
             "title": "Redirect Path"
           },
-          "department_ids": {
+          "settings_id": {
             "anyOf": [
               {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
+                "type": "string"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Department Ids"
+            "title": "Settings Id"
           },
-          "cohort_ids": {
+          "settings_success_threshold": {
             "anyOf": [
               {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
+                "type": "integer"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Cohort Ids"
+            "title": "Settings Success Threshold"
           },
-          "simulation_ids": {
+          "settings_warning_threshold": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Settings Warning Threshold"
+          },
+          "settings_danger_threshold": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Settings Danger Threshold"
+          },
+          "settings_tokens": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/QGetProfileContextV4ThemeTokens"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "settings_agents": {
             "anyOf": [
               {
                 "items": {
-                  "type": "string"
+                  "$ref": "#/components/schemas/QGetAgentsV4Item"
                 },
                 "type": "array"
               },
@@ -76320,7 +75889,35 @@
                 "type": "null"
               }
             ],
-            "title": "Simulation Ids"
+            "title": "Settings Agents"
+          },
+          "settings_tools": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetToolsV4Item"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Settings Tools"
+          },
+          "role_resources": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetProfileContextV4RoleResource"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Role Resources"
           },
           "drafts": {
             "anyOf": [
@@ -76336,27 +75933,6 @@
             ],
             "title": "Drafts"
           },
-          "settings_tokens": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/QGetProfileContextV4ThemeTokens"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "actor_name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Actor Name"
-          },
           "session_id": {
             "anyOf": [
               {
@@ -76368,6 +75944,17 @@
               }
             ],
             "title": "Session Id"
+          },
+          "actor_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor Name"
           },
           "artifact_has_generation": {
             "anyOf": [
@@ -76434,7 +76021,7 @@
         },
         "type": "object",
         "title": "GetProfileContextApiResponse",
-        "description": "Extended profile context response with generated artifact map."
+        "description": "Slim profile context response \u2014 only fields the client needs."
       },
       "GetProfileMetricsRequest": {
         "properties": {
@@ -78827,7 +78414,8 @@
           }
         },
         "type": "object",
-        "title": "GetSettingApiRequest"
+        "title": "GetSettingApiRequest",
+        "description": "Request model for get setting endpoint."
       },
       "GetSettingApiResponse": {
         "properties": {
@@ -90287,7 +89875,8 @@
           }
         },
         "type": "object",
-        "title": "ListSettingApiKey"
+        "title": "ListSettingApiKey",
+        "description": "Key type for list endpoint."
       },
       "ListSettingApiResponse": {
         "properties": {
@@ -90343,7 +89932,8 @@
           }
         },
         "type": "object",
-        "title": "ListSettingApiResponse"
+        "title": "ListSettingApiResponse",
+        "description": "Response model for list setting endpoint."
       },
       "ListSettingApiSetting": {
         "properties": {
@@ -90453,7 +90043,8 @@
           }
         },
         "type": "object",
-        "title": "ListSettingApiSetting"
+        "title": "ListSettingApiSetting",
+        "description": "Setting type for list endpoint with computed permissions."
       },
       "ListSimulationApiOption": {
         "properties": {
@@ -96866,47 +96457,38 @@
           }
         },
         "type": "object",
-        "title": "PatchSettingDraftApiRequest"
+        "title": "PatchSettingDraftApiRequest",
+        "description": "Request model for patch setting draft endpoint - nested resource actions."
       },
       "PatchSettingDraftApiResponse": {
         "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success"
+          },
           "draft_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
+            "type": "string",
+            "format": "uuid",
             "title": "Draft Id"
           },
           "new_version": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
+            "type": "integer",
             "title": "New Version"
           },
-          "draft_exists": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Draft Exists"
+          "message": {
+            "type": "string",
+            "title": "Message"
           }
         },
         "type": "object",
-        "title": "PatchSettingDraftApiResponse"
+        "required": [
+          "success",
+          "draft_id",
+          "new_version",
+          "message"
+        ],
+        "title": "PatchSettingDraftApiResponse",
+        "description": "Response model for patch setting draft endpoint."
       },
       "PatchSimulationDraftApiRequest": {
         "properties": {
@@ -106209,204 +105791,6 @@
         ],
         "title": "QGetProblemStatementsV4Item"
       },
-      "QGetProfileContextV4Auth": {
-        "properties": {
-          "auth_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Auth Id"
-          },
-          "name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Name"
-          },
-          "description": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Description"
-          },
-          "slug": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Slug"
-          }
-        },
-        "type": "object",
-        "required": [
-          "auth_id",
-          "name",
-          "description",
-          "slug"
-        ],
-        "title": "QGetProfileContextV4Auth"
-      },
-      "QGetProfileContextV4Cohort": {
-        "properties": {
-          "cohort_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Cohort Id"
-          },
-          "title": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Title"
-          },
-          "description": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Description"
-          },
-          "active": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Active"
-          },
-          "department_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Department Ids"
-          }
-        },
-        "type": "object",
-        "required": [
-          "cohort_id",
-          "title",
-          "description",
-          "active",
-          "department_ids"
-        ],
-        "title": "QGetProfileContextV4Cohort"
-      },
-      "QGetProfileContextV4Department": {
-        "properties": {
-          "department_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Department Id"
-          },
-          "title": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Title"
-          },
-          "description": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Description"
-          },
-          "active": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Active"
-          },
-          "is_primary": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Is Primary"
-          }
-        },
-        "type": "object",
-        "required": [
-          "department_id",
-          "title",
-          "description",
-          "active",
-          "is_primary"
-        ],
-        "title": "QGetProfileContextV4Department"
-      },
       "QGetProfileContextV4Draft": {
         "properties": {
           "id": {
@@ -106542,102 +105926,6 @@
           "color_hex"
         ],
         "title": "QGetProfileContextV4RoleResource"
-      },
-      "QGetProfileContextV4Simulation": {
-        "properties": {
-          "simulation_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Simulation Id"
-          },
-          "title": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Title"
-          },
-          "description": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Description"
-          },
-          "department_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Department Ids"
-          },
-          "time_limit": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Time Limit"
-          },
-          "active": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Active"
-          },
-          "practice_simulation": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Practice Simulation"
-          }
-        },
-        "type": "object",
-        "required": [
-          "simulation_id",
-          "title",
-          "description",
-          "department_ids",
-          "time_limit",
-          "active",
-          "practice_simulation"
-        ],
-        "title": "QGetProfileContextV4Simulation"
       },
       "QGetProfileContextV4ThemeTokens": {
         "properties": {
@@ -115934,25 +115222,44 @@
           "roles",
           "role_routes"
         ],
-        "title": "SaveSettingApiRequest"
+        "title": "SaveSettingApiRequest",
+        "description": "Request model for save setting endpoint - accepts nested resource actions."
       },
       "SaveSettingApiResponse": {
         "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success",
+            "default": true
+          },
           "setting_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Setting Id"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": ""
+          },
+          "actor_name": {
             "anyOf": [
               {
-                "type": "string",
-                "format": "uuid"
+                "type": "string"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Setting Id"
+            "title": "Actor Name"
           }
         },
         "type": "object",
-        "title": "SaveSettingApiResponse"
+        "required": [
+          "setting_id"
+        ],
+        "title": "SaveSettingApiResponse",
+        "description": "Response model for save setting endpoint."
       },
       "SaveSimulationApiRequest": {
         "properties": {
@@ -127099,7 +126406,8 @@
           }
         },
         "type": "object",
-        "title": "SettingMultiResourceAction"
+        "title": "SettingMultiResourceAction",
+        "description": "Multi-select resource with tool call tracking."
       },
       "SettingResourceAction": {
         "properties": {
@@ -127141,7 +126449,8 @@
           }
         },
         "type": "object",
-        "title": "SettingResourceAction"
+        "title": "SettingResourceAction",
+        "description": "Single-select resource with tool call tracking."
       },
       "SidebarMenuItem": {
         "properties": {

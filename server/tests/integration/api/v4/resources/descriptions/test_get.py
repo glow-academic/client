@@ -1,9 +1,8 @@
 """Integration tests for resource descriptions get endpoint."""
 
-import pytest
-
 import asyncpg
 import httpx
+import pytest
 
 from app.api.v4.resources.descriptions.get import get_descriptions_internal
 from app.api.v4.resources.descriptions.search import search_descriptions_internal
@@ -44,9 +43,7 @@ class TestGetDescriptions:
         returned_ids = {item["id"] for item in data["items"]}
         assert returned_ids == set(seed_ids)
 
-    async def test_get_descriptions_empty_ids(
-        self, client: httpx.AsyncClient
-    ) -> None:
+    async def test_get_descriptions_empty_ids(self, client: httpx.AsyncClient) -> None:
         """GET with empty ids returns empty items."""
         # Act
         response = await client.post(

@@ -1,9 +1,8 @@
 """Integration tests for resource prompts search endpoint."""
 
-import pytest
-
 import asyncpg
 import httpx
+import pytest
 
 from app.api.v4.resources.prompts.search import search_prompts_internal
 
@@ -44,9 +43,7 @@ class TestSearchPrompts:
         assert response.status_code == 200
         assert len(response.json()["items"]) <= 1
 
-    async def test_search_prompts_with_offset(
-        self, client: httpx.AsyncClient
-    ) -> None:
+    async def test_search_prompts_with_offset(self, client: httpx.AsyncClient) -> None:
         """SEARCH with large offset returns 0 items."""
         # Act
         response = await client.post(

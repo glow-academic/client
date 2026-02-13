@@ -75,22 +75,7 @@ async def save_setting(
 
         async with conn.transaction():
             # Convert API request to SQL params (add profile_id from header)
-            params = SaveSettingSqlParams(
-                profile_id=profile_id,
-                group_id=request.group_id,
-                input_setting_id=request.input_setting_id,
-                names=request.names,
-                descriptions=request.descriptions,
-                colors=request.colors,
-                flags=request.flags,
-                departments=request.departments,
-                profiles=request.profiles,
-                auths=request.auths,
-                provider_keys=request.provider_keys,
-                auth_item_keys=request.auth_item_keys,
-                roles=request.roles,
-                role_routes=request.role_routes,
-            )
+            params = SaveSettingSqlParams.from_request(request, profile_id)
             sql_params = params.to_tuple()
 
             # Execute SQL with typed helper - automatically detects and calls function if present

@@ -1,9 +1,8 @@
 """Integration tests for resource providers get endpoint."""
 
-import pytest
-
 import asyncpg
 import httpx
+import pytest
 
 from app.api.v4.resources.providers.get import get_providers_internal
 from app.api.v4.resources.providers.search import search_providers_internal
@@ -17,9 +16,7 @@ ZEROED_UUID = "00000000-0000-0000-0000-000000000000"
 class TestGetProviders:
     """Tests for GET /api/v4/resources/providers/get endpoint."""
 
-    async def test_get_providers_returns_items(
-        self, client: httpx.AsyncClient
-    ) -> None:
+    async def test_get_providers_returns_items(self, client: httpx.AsyncClient) -> None:
         """GET with valid seed IDs returns items."""
         # Arrange
         search_response = await client.post(

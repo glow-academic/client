@@ -1,9 +1,8 @@
 """Integration tests for resource keys get endpoint."""
 
-import pytest
-
 import asyncpg
 import httpx
+import pytest
 
 from app.api.v4.resources.keys.get import get_keys_internal
 from app.api.v4.resources.keys.search import search_keys_internal

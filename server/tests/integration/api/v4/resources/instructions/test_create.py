@@ -1,9 +1,7 @@
 """Integration tests for resource instructions create endpoint."""
 
-import pytest
-
 import httpx
-
+import pytest
 from tests.seed_helpers import TEST_SUPERADMIN_PROFILE_ID
 
 pytestmark = pytest.mark.asyncio
@@ -14,9 +12,7 @@ BYPASS_CACHE_HEADERS = {"X-Bypass-Cache": "1"}
 class TestCreateInstructions:
     """Tests for POST /api/v4/resources/instructions endpoint."""
 
-    async def test_create_instructions_success(
-        self, client: httpx.AsyncClient
-    ) -> None:
+    async def test_create_instructions_success(self, client: httpx.AsyncClient) -> None:
         """CREATE with valid data returns created ID."""
         # Arrange
         headers = {

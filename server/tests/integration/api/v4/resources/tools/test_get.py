@@ -1,9 +1,8 @@
 """Integration tests for resource tools get endpoint."""
 
-import pytest
-
 import asyncpg
 import httpx
+import pytest
 
 from app.api.v4.resources.tools.get import get_tools_internal
 from app.api.v4.resources.tools.search import search_tools_internal

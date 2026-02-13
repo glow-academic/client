@@ -1,9 +1,8 @@
 """Integration tests for resource prompts get endpoint."""
 
-import pytest
-
 import asyncpg
 import httpx
+import pytest
 
 from app.api.v4.resources.prompts.get import get_prompts_internal
 from app.api.v4.resources.prompts.search import search_prompts_internal
@@ -55,9 +54,7 @@ class TestGetPrompts:
         assert response.status_code == 200
         assert response.json()["items"] == []
 
-    async def test_get_prompts_nonexistent_id(
-        self, client: httpx.AsyncClient
-    ) -> None:
+    async def test_get_prompts_nonexistent_id(self, client: httpx.AsyncClient) -> None:
         """GET with nonexistent UUID returns empty items."""
         # Act
         response = await client.post(

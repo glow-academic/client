@@ -1,9 +1,8 @@
 """Integration tests for resource descriptions search endpoint."""
 
-import pytest
-
 import asyncpg
 import httpx
+import pytest
 
 from app.api.v4.resources.descriptions.search import search_descriptions_internal
 
@@ -90,9 +89,7 @@ class TestSearchDescriptionsInternal:
     async def test_respects_limit(self, db: asyncpg.Connection) -> None:
         """Internal function respects limit_count."""
         # Act
-        items = await search_descriptions_internal(
-            db, limit_count=1, bypass_cache=True
-        )
+        items = await search_descriptions_internal(db, limit_count=1, bypass_cache=True)
 
         # Assert
         assert len(items) <= 1
@@ -100,9 +97,7 @@ class TestSearchDescriptionsInternal:
     async def test_returns_empty_for_zero_limit(self, db: asyncpg.Connection) -> None:
         """Internal function returns empty list for limit_count=0."""
         # Act
-        items = await search_descriptions_internal(
-            db, limit_count=0, bypass_cache=True
-        )
+        items = await search_descriptions_internal(db, limit_count=0, bypass_cache=True)
 
         # Assert
         assert items == []

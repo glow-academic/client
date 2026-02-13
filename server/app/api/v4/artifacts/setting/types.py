@@ -16,7 +16,6 @@ from app.sql.types import (
     QGetColorsV4Item,
     QGetDepartmentsV4Item,
     QGetDescriptionsV4Item,
-    QGetFlagsV4Item,
     QGetModelsV4Item,
     QGetNamesV4Item,
     QGetProfilesV4Item,
@@ -26,7 +25,6 @@ from app.sql.types import (
     QGetRolesV4Item,
     QGetToolsV4Item,
 )
-
 
 # ========== Flag Enrichment ==========
 

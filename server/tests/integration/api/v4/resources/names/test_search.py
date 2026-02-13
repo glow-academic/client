@@ -1,9 +1,8 @@
 """Integration tests for resource names search endpoint."""
 
-import pytest
-
 import asyncpg
 import httpx
+import pytest
 
 from app.api.v4.resources.names.search import search_names_internal
 

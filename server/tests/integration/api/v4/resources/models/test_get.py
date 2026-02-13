@@ -1,9 +1,8 @@
 """Integration tests for resource models get endpoint."""
 
-import pytest
-
 import asyncpg
 import httpx
+import pytest
 
 from app.api.v4.resources.models.get import get_models_internal
 from app.api.v4.resources.models.search import search_models_internal

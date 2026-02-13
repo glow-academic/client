@@ -60,11 +60,9 @@ RETURNS TABLE (
     -- IDs for parallel fetching (Pass 2)
     department_ids uuid[],
     cohort_ids uuid[],
-    simulation_ids uuid[],
     settings_id uuid,
+    settings_agent_ids uuid[],
     draft_ids uuid[],
-    -- Session
-    session_id uuid,
     -- Computed
     scoped_roles text[],
     available_sections text[],
@@ -163,29 +161,6 @@ cohort_ids_data AS (
     ) as cohort_ids
     FROM cohort_ids_internal
 ),
-simulation_ids_data AS (
-    -- Get simulation resource IDs for the profile's cohorts (matches mv_chat_facts.simulation_id)
-    -- NOTE: cohort_simulations_junction.cohort_id is an ARTIFACT ID (FK -> cohort_artifact.id)
-    --   cohort_simulations_junction.simulation_id is a RESOURCE ID (FK -> simulations_resource.id)
-    --   so we return cs.simulation_id directly as the resource ID,
-    --   and bridge through simulation_simulations_junction for the active flag check
-    SELECT COALESCE(
-        ARRAY_AGG(DISTINCT cs.simulation_id ORDER BY cs.simulation_id),
-        ARRAY[]::uuid[]
-    ) as simulation_ids
-    FROM cohort_simulations_junction cs
-    WHERE cs.cohort_id = ANY(SELECT artifact_id FROM cohort_ids_internal)
-      AND cs.active = true
-      AND EXISTS (
-          SELECT 1 FROM simulation_simulations_junction ssj
-          JOIN simulation_flags_junction sf ON sf.simulation_id = ssj.simulation_id
-          JOIN flags_resource f ON sf.flag_id = f.id
-          WHERE ssj.simulations_id = cs.simulation_id
-            AND ssj.active = true
-            AND f.name = 'simulation_active'
-            AND sf.value = TRUE
-      )
-),
 settings_resolution AS (
     -- Resolve settings based on profile's department OR department_id parameter
     WITH default_settings AS (
@@ -245,13 +220,14 @@ draft_ids_data AS (
     JOIN view_drafts_entry d ON d.id = pdc.draft_id
     WHERE ppj.profile_id = (SELECT profile_id FROM params)
 ),
-session_data AS (
-    SELECT id as session_id
-    FROM view_sessions_entry
-    WHERE profile_id = (SELECT profile_id FROM params)
-      AND active = true
-    ORDER BY created_at DESC
-    LIMIT 1
+settings_agent_ids_data AS (
+    SELECT COALESCE(
+        ARRAY_AGG(sj.agents_id ORDER BY sj.created_at),
+        ARRAY[]::uuid[]
+    ) as settings_agent_ids
+    FROM setting_agents_junction sj
+    WHERE sj.setting_id = (SELECT settings_id FROM settings_resolution)
+      AND sj.active = true
 ),
 available_routes_data AS (
     SELECT COALESCE(
@@ -388,11 +364,9 @@ SELECT
     -- IDs for parallel fetching
     (SELECT department_ids FROM department_ids_data) as department_ids,
     (SELECT cohort_ids FROM cohort_ids_data) as cohort_ids,
-    (SELECT simulation_ids FROM simulation_ids_data) as simulation_ids,
     (SELECT settings_id FROM settings_resolution) as settings_id,
+    (SELECT settings_agent_ids FROM settings_agent_ids_data) as settings_agent_ids,
     (SELECT draft_ids FROM draft_ids_data) as draft_ids,
-    -- Session
-    (SELECT session_id FROM session_data) as session_id,
     -- Computed
     (SELECT scoped_roles FROM scoped_roles_computed) as scoped_roles,
     (SELECT available_sections FROM available_sections_computed) as available_sections,

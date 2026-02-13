@@ -5,16 +5,16 @@ from typing import Annotated, Any, cast
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
-from app.api.v4.artifacts.setting.types import PatchSettingDraftApiRequest
-from app.infra.v4.activity.audit import audit_set
-from app.infra.v4.error.handle_route_error import handle_route_error
-from app.main import get_db
-from app.sql.types import (
+from app.api.v4.artifacts.setting.types import (
+    PatchSettingDraftApiRequest,
     PatchSettingDraftApiResponse,
     PatchSettingDraftSqlParams,
     PatchSettingDraftSqlRow,
-    load_sql_query,
 )
+from app.infra.v4.activity.audit import audit_set
+from app.infra.v4.error.handle_route_error import handle_route_error
+from app.main import get_db
+from app.sql.types import load_sql_query
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.sql_helper import execute_sql_typed
 
@@ -48,23 +48,7 @@ async def patch_setting_draft(
             )
 
         async with conn.transaction():
-            params = PatchSettingDraftSqlParams(
-                profile_id=profile_id,
-                input_draft_id=request.input_draft_id,
-                group_id=request.group_id,
-                names=request.names,
-                descriptions=request.descriptions,
-                colors=request.colors,
-                flags=request.flags,
-                departments=request.departments,
-                profiles=request.profiles,
-                auths=request.auths,
-                provider_keys=request.provider_keys,
-                auth_item_keys=request.auth_item_keys,
-                roles=request.roles,
-                role_routes=request.role_routes,
-                expected_version=request.expected_version,
-            )
+            params = PatchSettingDraftSqlParams.from_request(request, profile_id)
             sql_params = params.to_tuple()
 
             result = cast(
@@ -81,7 +65,12 @@ async def patch_setting_draft(
                 draft={"id": str(result.draft_id)},
             )
 
-        api_response = PatchSettingDraftApiResponse.model_validate(result.model_dump())
+        api_response = PatchSettingDraftApiResponse(
+            success=True,
+            draft_id=result.draft_id,
+            new_version=result.new_version or 0,
+            message="Draft saved successfully",
+        )
 
         await invalidate_tags(tags)
         response.headers["X-Invalidate-Tags"] = ",".join(tags)

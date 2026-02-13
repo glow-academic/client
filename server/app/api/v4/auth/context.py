@@ -12,11 +12,8 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 from app.api.v4.auth.permissions import (
     build_artifact_has_generation_map,
-    convert_cohort,
-    convert_department,
     convert_draft,
     convert_role,
-    convert_simulation,
     derive_theme_tokens,
 )
 from app.api.v4.auth.route_permissions import (
@@ -30,14 +27,16 @@ from app.api.v4.auth.types import (
     GetProfileContextApiResponse,
     ProfileContextInternalData,
 )
+from app.api.v4.resources.agents.get import get_agents_internal
 from app.api.v4.resources.cohorts.get import get_cohorts_internal
 from app.api.v4.resources.departments.get import get_departments_internal
 from app.api.v4.resources.roles.get import get_roles_internal
 from app.api.v4.resources.settings.get import get_settings_internal
-from app.api.v4.resources.simulations.get import get_simulations_batch_internal
+from app.api.v4.resources.tools.get import get_tools_internal
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.drafts.get import get_drafts_internal
 from app.infra.v4.error.handle_route_error import handle_route_error
+from app.infra.v4.sessions.get import get_session_internal
 from app.main import get_db, get_pool
 from app.sql.types import (
     GetProfileContextAccessSqlParams,
@@ -115,8 +114,8 @@ async def get_profile_context_internal(
 
     department_ids = access_result.department_ids or []
     cohort_ids = access_result.cohort_ids or []
-    simulation_ids = access_result.simulation_ids or []
     settings_id = access_result.settings_id
+    settings_agent_ids = access_result.settings_agent_ids or []
     draft_ids = access_result.draft_ids or []
 
     async def fetch_departments():
@@ -130,12 +129,6 @@ async def get_profile_context_internal(
             return []
         async with pool.acquire() as c:
             return await get_cohorts_internal(c, cohort_ids, bypass_cache)
-
-    async def fetch_simulations():
-        if not simulation_ids:
-            return []
-        async with pool.acquire() as c:
-            return await get_simulations_batch_internal(c, simulation_ids, bypass_cache)
 
     async def fetch_settings_theme():
         if not settings_id:
@@ -159,43 +152,42 @@ async def get_profile_context_internal(
         async with pool.acquire() as c:
             return await get_roles_internal(c, bypass_cache)
 
-    async def fetch_earliest_attempt_date():
-        if not department_ids:
-            return None
-        async with pool.acquire() as c:
-            return await c.fetchval(
-                """
-                SELECT MIN(attempt_created_at)
-                FROM mv_attempt_facts
-                WHERE department_id = ANY($1::uuid[])
-                """,
-                department_ids,
-            )
-
     async def fetch_settings():
         if not settings_id:
             return None
         async with pool.acquire() as c:
             return await get_settings_internal(c, settings_id, bypass_cache)
 
+    async def fetch_settings_agents():
+        if not settings_agent_ids:
+            return []
+        async with pool.acquire() as c:
+            return await get_agents_internal(c, settings_agent_ids, bypass_cache)
+
+    async def fetch_session():
+        if not profile_id:
+            return None
+        async with pool.acquire() as c:
+            return await get_session_internal(c, profile_id, bypass_cache)
+
     (
         departments_raw,
         cohorts_raw,
-        simulations_raw,
         settings_theme,
         drafts_raw,
         roles_raw,
-        earliest_attempt_date,
         settings_item,
+        settings_agents,
+        session_id,
     ) = await asyncio.gather(
         fetch_departments(),
         fetch_cohorts(),
-        fetch_simulations(),
         fetch_settings_theme(),
         fetch_drafts(),
         fetch_roles(),
-        fetch_earliest_attempt_date(),
         fetch_settings(),
+        fetch_settings_agents(),
+        fetch_session(),
     )
 
     if not settings_theme or not settings_theme.primary_color:
@@ -204,9 +196,17 @@ async def get_profile_context_internal(
             detail="Settings theme not found in profile context",
         )
 
-    # TODO: future provider->agent expansion in context graph
-    settings_agents: list = []
-    settings_tools: list = []
+    # Derive tools from settings agents
+    all_tool_ids: list[UUID] = []
+    for agent in settings_agents:
+        if agent.tool_ids:
+            all_tool_ids.extend(agent.tool_ids)
+    settings_tools = []
+    if all_tool_ids:
+        async with pool.acquire() as c:
+            settings_tools = await get_tools_internal(
+                c, list(set(all_tool_ids)), bypass_cache
+            )
 
     theme_primitives = {
         "primary": settings_theme.primary_color or "",
@@ -234,7 +234,6 @@ async def get_profile_context_internal(
         primary_department_id=access_result.primary_department_id,
         departments=departments_raw,
         cohorts=cohorts_raw,
-        simulations=simulations_raw,
         drafts=[convert_draft(d) for d in drafts_raw],
         settings=settings_item,
         settings_agents=settings_agents,
@@ -242,7 +241,7 @@ async def get_profile_context_internal(
         role_resources=[convert_role(r) for r in roles_raw],
         settings_theme=settings_theme,
         settings_tokens=derive_theme_tokens(theme_primitives),
-        earliest_attempt_date=earliest_attempt_date,
+        session_id=session_id,
         artifact_has_generation=build_artifact_has_generation_map(
             access_result.artifact_agent_ids
         ),
@@ -287,20 +286,7 @@ async def get_profile_context(
             bypass_cache=bypass_cache,
         )
 
-        # Convert to legacy HTTP response shape for compatibility.
-        departments = [convert_department(d) for d in data.departments]
-        if data.primary_department_id:
-            for dept in departments:
-                if dept.department_id == data.primary_department_id:
-                    dept.is_primary = True
-
-        cohorts = [convert_cohort(c) for c in data.cohorts]
-        simulations = [convert_simulation(s) for s in data.simulations]
-
         access = data.access
-        department_ids = access.department_ids or []
-        cohort_ids = access.cohort_ids or []
-        simulation_ids = access.simulation_ids or []
 
         if data.actor_name and profile_id:
             audit_set(
@@ -353,61 +339,23 @@ async def get_profile_context(
             is_authorized=access.is_authorized,
             id=access.id,
             name=access.name,
-            emails=None,
-            primary_email=None,
             role=access.role,
             active=access.active,
-            req_per_day=None,
-            last_login=None,
-            last_active=None,
-            created_at=None,
-            updated_at=None,
-            primary_department_id=access.primary_department_id,
-            departments=departments,
-            cohorts=cohorts,
-            simulations=simulations,
-            earliest_attempt_date=data.earliest_attempt_date.isoformat()
-            if data.earliest_attempt_date
-            else None,
             scoped_roles=access.scoped_roles,
-            role_resources=data.role_resources,
-            settings_id=str(access.settings_id) if access.settings_id else None,
-            settings_created_at=None,
-            settings_active=None,
-            settings_name=None,
-            settings_description=None,
-            settings_primary_color=data.settings_theme.primary_color,
-            settings_accent=data.settings_theme.accent,
-            settings_background=data.settings_theme.background,
-            settings_surface=data.settings_theme.surface,
-            settings_success=data.settings_theme.success,
-            settings_warning=data.settings_theme.warning,
-            settings_error=data.settings_theme.error,
-            settings_sidebar_background=data.settings_theme.sidebar_background,
-            settings_sidebar_primary=data.settings_theme.sidebar_primary,
-            settings_chart1=data.settings_theme.chart1,
-            settings_chart2=data.settings_theme.chart2,
-            settings_chart3=data.settings_theme.chart3,
-            settings_chart4=data.settings_theme.chart4,
-            settings_chart5=data.settings_theme.chart5,
-            settings_guest_login_enabled=None,
-            settings_success_threshold=data.settings_theme.success_threshold,
-            settings_warning_threshold=data.settings_theme.warning_threshold,
-            settings_danger_threshold=data.settings_theme.danger_threshold,
-            settings_auth_ids=None,
-            settings_auths=None,
-            settings_provider_ids=None,
-            settings_providers=None,
             available_sections=access.available_sections,
             available_routes=access.available_routes,
             redirect_path=access.redirect_path,
-            department_ids=[str(d) for d in department_ids] if department_ids else [],
-            cohort_ids=[str(c) for c in cohort_ids] if cohort_ids else [],
-            simulation_ids=[str(s) for s in simulation_ids] if simulation_ids else [],
-            drafts=data.drafts,
+            settings_id=str(access.settings_id) if access.settings_id else None,
+            settings_success_threshold=data.settings_theme.success_threshold,
+            settings_warning_threshold=data.settings_theme.warning_threshold,
+            settings_danger_threshold=data.settings_theme.danger_threshold,
             settings_tokens=data.settings_tokens,
+            settings_agents=data.settings_agents,
+            settings_tools=data.settings_tools,
+            role_resources=data.role_resources,
+            drafts=data.drafts,
+            session_id=data.session_id,
             actor_name=data.actor_name,
-            session_id=access.session_id,
             artifact_has_generation=data.artifact_has_generation,
             sidebar_routes=sidebar_routes,
             breadcrumbs=breadcrumbs if breadcrumbs else None,

@@ -1,9 +1,8 @@
 """Integration tests for resource agents get endpoint."""
 
-import pytest
-
 import asyncpg
 import httpx
+import pytest
 
 from app.api.v4.resources.agents.get import get_agents_internal
 from app.api.v4.resources.agents.search import search_agents_internal

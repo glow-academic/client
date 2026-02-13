@@ -1,10 +1,9 @@
 """Integration tests for resource names get endpoint."""
 
-import pytest
-from uuid import UUID
 
 import asyncpg
 import httpx
+import pytest
 
 from app.api.v4.resources.names.get import get_names_internal
 from app.api.v4.resources.names.search import search_names_internal

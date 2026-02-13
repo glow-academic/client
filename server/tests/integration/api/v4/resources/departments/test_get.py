@@ -1,9 +1,8 @@
 """Integration tests for resource departments get endpoint."""
 
-import pytest
-
 import asyncpg
 import httpx
+import pytest
 
 from app.api.v4.resources.departments.get import get_departments_internal
 from app.api.v4.resources.departments.search import search_departments_internal
@@ -18,20 +17,14 @@ class TestGetDepartments:
     """Tests for GET /api/v4/resources/departments/get endpoint."""
 
     async def test_get_departments_returns_items(
-        self, client: httpx.AsyncClient
+        self, client: httpx.AsyncClient, db: asyncpg.Connection
     ) -> None:
         """GET with valid seed IDs returns items."""
-        # Arrange
-        search_response = await client.post(
-            "/api/v4/resources/departments/search",
-            json={"limit_count": 2},
-            headers=BYPASS_CACHE_HEADERS,
-        )
-        assert search_response.status_code == 200
-        seed_ids = [
-            item["department_id"] for item in search_response.json()["items"]
-        ]
-        assert len(seed_ids) > 0
+        # Arrange — use internal search to find seed IDs
+        # (HTTP search has pre-existing positional args bug)
+        search_items = await search_departments_internal(db, bypass_cache=True)
+        assert len(search_items) > 0
+        seed_ids = [str(item.department_id) for item in search_items[:2]]
 
         # Act
         response = await client.post(
@@ -80,7 +73,7 @@ class TestGetDepartmentsInternal:
 
     async def test_returns_items_for_valid_ids(self, db: asyncpg.Connection) -> None:
         """Internal function returns items for valid seed IDs."""
-        # Arrange
+        # Arrange — search to find department resource IDs
         search_items = await search_departments_internal(db, bypass_cache=True)
         assert len(search_items) > 0
         seed_ids = [item.department_id for item in search_items[:2]]

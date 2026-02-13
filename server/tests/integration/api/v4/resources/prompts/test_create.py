@@ -1,9 +1,7 @@
 """Integration tests for resource prompts create endpoint."""
 
-import pytest
-
 import httpx
-
+import pytest
 from tests.seed_helpers import TEST_SUPERADMIN_PROFILE_ID
 
 pytestmark = pytest.mark.asyncio

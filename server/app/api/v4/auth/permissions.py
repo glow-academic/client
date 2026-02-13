@@ -6,7 +6,6 @@ from typing import Any
 
 from app.api.v4.resources.cohorts.types import QGetCohortsV4Item
 from app.api.v4.resources.departments.get import QGetDepartmentsV4Item
-from app.api.v4.resources.simulations.types import GetSimulationsBatchV4Item
 from app.infra.v4.drafts.get import QGetDraftsV4Item
 from app.sql.types import (
     QGetProfileContextAccessV4ArtifactAgent,
@@ -14,7 +13,6 @@ from app.sql.types import (
     QGetProfileContextV4Department,
     QGetProfileContextV4Draft,
     QGetProfileContextV4RoleResource,
-    QGetProfileContextV4Simulation,
     QGetProfileContextV4ThemeTokens,
 )
 from app.utils.theme.color_utils import ensure_contrast, shade, tint
@@ -129,20 +127,6 @@ def convert_cohort(item: QGetCohortsV4Item) -> QGetProfileContextV4Cohort:
         description=item.description,
         active=item.active,
         department_ids=item.department_ids,
-    )
-
-
-def convert_simulation(
-    item: GetSimulationsBatchV4Item,
-) -> QGetProfileContextV4Simulation:
-    return QGetProfileContextV4Simulation(
-        simulation_id=item.simulation_id,
-        title=item.title,
-        description=item.description,
-        department_ids=item.department_ids,
-        time_limit=item.time_limit,
-        active=item.active,
-        practice_simulation=item.practice_simulation,
     )
 
 

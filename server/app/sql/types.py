@@ -8314,6 +8314,31 @@ class GetDraftsApiResponse(BaseModel):
 
 
 
+# Generated from: get_session
+
+class GetSessionSqlParams(BaseModel):
+
+    p_profile_id: UUID | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.p_profile_id,
+        )
+
+class GetSessionSqlRow(BaseModel):
+
+    session_id: UUID | None = None
+
+class GetSessionApiRequest(BaseModel):
+
+    p_profile_id: UUID | None = None
+
+class GetSessionApiResponse(BaseModel):
+
+    session_id: UUID | None = None
+
+
+
 # Generated from: infra_activity_get_profile_name_for_logging
 
 class InfraActivityGetProfileNameForLoggingSqlParams(BaseModel):
@@ -12329,10 +12354,9 @@ class GetProfileContextAccessSqlRow(BaseModel):
     primary_department_id: UUID | None = None
     department_ids: list[UUID] | None = None
     cohort_ids: list[UUID] | None = None
-    simulation_ids: list[UUID] | None = None
     settings_id: UUID | None = None
+    settings_agent_ids: list[UUID] | None = None
     draft_ids: list[UUID] | None = None
-    session_id: UUID | None = None
     scoped_roles: list[str] | None = None
     available_sections: list[str] | None = None
     available_routes: list[str] | None = None
@@ -12354,10 +12378,9 @@ class GetProfileContextAccessApiResponse(BaseModel):
     primary_department_id: UUID | None = None
     department_ids: list[UUID] | None = None
     cohort_ids: list[UUID] | None = None
-    simulation_ids: list[UUID] | None = None
     settings_id: UUID | None = None
+    settings_agent_ids: list[UUID] | None = None
     draft_ids: list[UUID] | None = None
-    session_id: UUID | None = None
     scoped_roles: list[str] | None = None
     available_sections: list[str] | None = None
     available_routes: list[str] | None = None
@@ -23031,17 +23054,19 @@ class GetSettingIdsSqlParams(BaseModel):
 
     profile_id: UUID
     setting_id: UUID | None = None
-    color_search: str | None = None
     draft_id: UUID | None = None
+    color_search: str | None = None
     mcp: bool | None = False
+    user_department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.profile_id,
             self.setting_id,
-            self.color_search,
             self.draft_id,
+            self.color_search,
             self.mcp,
+            self.user_department_ids,
         )
 
 class GetSettingIdsSqlRow(BaseModel):
@@ -23051,22 +23076,31 @@ class GetSettingIdsSqlRow(BaseModel):
     active_flag_id: UUID | None = None
     color_ids: list[UUID] | None = None
     department_ids: list[UUID] | None = None
-    name_agent_id: UUID | None = None
-    description_agent_id: UUID | None = None
-    colors_agent_id: UUID | None = None
-    flag_agent_id: UUID | None = None
-    departments_agent_id: UUID | None = None
-    profiles_agent_id: UUID | None = None
-    auths_agent_id: UUID | None = None
+    profile_ids: list[UUID] | None = None
+    auth_ids: list[UUID] | None = None
     provider_key_ids: list[UUID] | None = None
-    keys_agent_id: UUID | None = None
+    auth_item_key_ids: list[UUID] | None = None
+    role_ids: list[UUID] | None = None
+    role_route_ids: list[UUID] | None = None
+    candidate_agents: Any | None = None
+    names_has_tools: bool | None = None
+    descriptions_has_tools: bool | None = None
+    colors_has_tools: bool | None = None
+    flags_has_tools: bool | None = None
+    departments_has_tools: bool | None = None
+    profiles_has_tools: bool | None = None
+    auths_has_tools: bool | None = None
+    config_agent_resource_ids: list[UUID] | None = None
+    config_model_resource_ids: list[UUID] | None = None
+    config_provider_resource_ids: list[UUID] | None = None
 
 class GetSettingIdsApiRequest(BaseModel):
 
     setting_id: UUID | None = None
-    color_search: str | None = None
     draft_id: UUID | None = None
+    color_search: str | None = None
     mcp: bool | None = False
+    user_department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
 
 class GetSettingIdsApiResponse(BaseModel):
 
@@ -23075,15 +23109,23 @@ class GetSettingIdsApiResponse(BaseModel):
     active_flag_id: UUID | None = None
     color_ids: list[UUID] | None = None
     department_ids: list[UUID] | None = None
-    name_agent_id: UUID | None = None
-    description_agent_id: UUID | None = None
-    colors_agent_id: UUID | None = None
-    flag_agent_id: UUID | None = None
-    departments_agent_id: UUID | None = None
-    profiles_agent_id: UUID | None = None
-    auths_agent_id: UUID | None = None
+    profile_ids: list[UUID] | None = None
+    auth_ids: list[UUID] | None = None
     provider_key_ids: list[UUID] | None = None
-    keys_agent_id: UUID | None = None
+    auth_item_key_ids: list[UUID] | None = None
+    role_ids: list[UUID] | None = None
+    role_route_ids: list[UUID] | None = None
+    candidate_agents: Any | None = None
+    names_has_tools: bool | None = None
+    descriptions_has_tools: bool | None = None
+    colors_has_tools: bool | None = None
+    flags_has_tools: bool | None = None
+    departments_has_tools: bool | None = None
+    profiles_has_tools: bool | None = None
+    auths_has_tools: bool | None = None
+    config_agent_resource_ids: list[UUID] | None = None
+    config_model_resource_ids: list[UUID] | None = None
+    config_provider_resource_ids: list[UUID] | None = None
 
 
 
@@ -28969,6 +29011,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetDraftsApiRequest",
         "GetDraftsApiResponse",
     ),
+    "app/sql/v4/queries/infra/sessions/get_session_complete.sql": (
+        "GetSessionSqlParams",
+        "GetSessionSqlRow",
+        "GetSessionApiRequest",
+        "GetSessionApiResponse",
+    ),
     "app/sql/v4/queries/infrastructure/activity/get_profile_name_for_logging_complete.sql": (
         "InfraActivityGetProfileNameForLoggingSqlParams",
         "InfraActivityGetProfileNameForLoggingSqlRow",
@@ -32565,6 +32613,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/queries/infra/drafts/get_drafts_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/infra/sessions/get_session_complete.sql"]
     ) -> SqlString: ...
 
     @overload

@@ -1,9 +1,8 @@
 """Integration tests for resource agents search endpoint."""
 
-import pytest
-
 import asyncpg
 import httpx
+import pytest
 
 from app.api.v4.resources.agents.search import search_agents_internal
 
@@ -15,9 +14,7 @@ BYPASS_CACHE_HEADERS = {"X-Bypass-Cache": "1"}
 class TestSearchAgents:
     """Tests for POST /api/v4/resources/agents/search endpoint."""
 
-    async def test_search_agents_returns_items(
-        self, client: httpx.AsyncClient
-    ) -> None:
+    async def test_search_agents_returns_items(self, client: httpx.AsyncClient) -> None:
         """SEARCH with no filters returns items."""
         # Act
         response = await client.post(
