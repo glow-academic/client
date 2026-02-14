@@ -33,88 +33,80 @@ There are no separate `/create` and `/update` endpoints at the artifact level.
 
 Reference: `server/app/api/v4/artifacts/persona/save.py`
 
-### Rule 2: Nested resource action payloads
+### Rule 2: Flat resource ID parameters
 
-Save requests use nested resource action types, NOT flat ID parameters:
-
-```python
-class {Artifact}ResourceAction(BaseModel):
-    """Single-select resource with tool call tracking."""
-    resource_id: UUID | None = None
-    create_tool_id: UUID | None = None  # Set if resource was just created (flush)
-    link_tool_id: UUID | None = None    # Set if selection changed from previous
-
-class {Artifact}MultiResourceAction(BaseModel):
-    """Multi-select resource with tool call tracking."""
-    resource_ids: list[UUID] | None = None
-    create_tool_id: UUID | None = None
-    link_tool_id: UUID | None = None
-```
-
-ALL resources must be present in the save request — use empty action if unchanged.
+Save requests use flat resource ID parameters — no nested wrapper types:
 
 ```python
 class Save{Artifact}ApiRequest(BaseModel):
     input_{artifact}_id: UUID | None = None
-    group_id: UUID
-    names: {Artifact}ResourceAction
-    descriptions: {Artifact}ResourceAction
-    # ... all single-select resources ...
-    departments: {Artifact}MultiResourceAction
-    # ... all multi-select resources ...
+    name_id: UUID | None = None
+    description_id: UUID | None = None
+    color_id: UUID | None = None
+    icon_id: UUID | None = None
+    instruction_id: UUID | None = None
+    # ... all single-select resources as flat UUIDs ...
+    department_ids: list[UUID] | None = None
+    # ... all multi-select resources as flat UUID lists ...
 ```
 
-Reference: `server/app/api/v4/artifacts/persona/types.py:341-374`
+The client sends only resource IDs. No `group_id` (server-resolved), no tool IDs (server-resolved). ALL resources must be present in the save request — `None` means no resource selected.
 
-### Rule 3: Tool call ID tracking
+Reference: `server/app/api/v4/artifacts/persona/types.py`
 
-Every resource action carries optional `create_tool_id` and `link_tool_id`:
+### Rule 3: Server-resolved tool call tracking
 
-- `create_tool_id` — set when the resource was just AI-created (flush). Used to track which AI tool call created this resource.
-- `link_tool_id` — set when the user changed the selection from the previous value. Used to track which AI tool call recommended this link.
+The server resolves a single `tool_id` per resource type from the artifact's `resource_agent_ids` mapping via `tool_ids_map()`. The client does NOT send tool IDs.
 
-Both are propagated to SQL for mutation tracking via `runs_entry` + `calls_entry` + `tool_calls_junction`.
+The save handler:
+1. Calls `get_{artifact}_internal()` or uses the access check to obtain `resource_agent_ids`
+2. Builds `tool_ids: dict[str, UUID | None]` from the selected agents
+3. Passes each resource's `tool_id` to the SQL function for mutation tracking
+
+Tool IDs are propagated to SQL for lineage via `runs_entry` + `calls_entry` + `tool_calls_junction`.
 
 ### Rule 4: `to_tuple()` serialization
 
-The SQL params class must have a `to_tuple()` method that serializes resource actions for asyncpg:
+The SQL params class must have a `to_tuple()` method that serializes flat resource IDs for asyncpg:
 
 ```python
 def to_tuple(self) -> tuple:
-    def single(a: {Artifact}ResourceAction) -> tuple:
-        return (a.resource_id, a.create_tool_id, a.link_tool_id)
-
-    def multi(a: {Artifact}MultiResourceAction) -> tuple:
-        return (a.resource_ids, a.create_tool_id, a.link_tool_id)
-
     return (
         self.profile_id,
         self.input_{artifact}_id,
-        self.group_id,
-        single(self.names),
-        single(self.descriptions),
-        # ... single-select ...
-        multi(self.departments),
-        # ... multi-select ...
+        self.group_id,          # Server-resolved
+        self.name_id,
+        self.description_id,
+        # ... all single-select flat IDs ...
+        self.department_ids,
+        # ... all multi-select flat ID lists ...
+        self.tool_ids_json,     # Server-resolved JSONB
     )
 ```
 
-Reference: `server/app/api/v4/artifacts/persona/types.py:408-431`
+Reference: `server/app/api/v4/artifacts/persona/types.py`
 
 ### Rule 5: `from_request()` class method
 
-SQL params class must have a `from_request()` class method that adds `profile_id` from the request header:
+SQL params class must have a `from_request()` class method that adds server-resolved fields (`profile_id`, `group_id`, `tool_ids`):
 
 ```python
 @classmethod
-def from_request(cls, req: Save{Artifact}ApiRequest, profile_id: UUID):
+def from_request(
+    cls,
+    req: Save{Artifact}ApiRequest,
+    profile_id: UUID,
+    group_id: UUID,           # Resolved from access check
+    tool_ids: dict[str, UUID | None],  # Resolved from resource_agent_ids
+):
     return cls(
         profile_id=profile_id,
         input_{artifact}_id=req.input_{artifact}_id,
-        group_id=req.group_id,
-        names=req.names,
-        descriptions=req.descriptions,
-        # ...
+        group_id=group_id,
+        name_id=req.name_id,
+        description_id=req.description_id,
+        # ... flat IDs from request ...
+        tool_ids_json=json.dumps({k: str(v) for k, v in tool_ids.items() if v}),
     )
 ```
 
@@ -140,27 +132,25 @@ else:
 
 Reference: `server/app/api/v4/artifacts/persona/save.py`, `check_persona_save_access_complete.sql`
 
-### Rule 7: SQL composite types for resource actions
+### Rule 7: Flat UUID parameters in SQL functions
 
-Save SQL must define composite types in the `types` schema for resource actions:
+Save SQL receives flat UUID parameters for resource IDs — no composite types needed for the resource IDs themselves. Tool tracking uses a single JSONB parameter with server-resolved `tool_id` per resource:
 
 ```sql
-DROP TYPE IF EXISTS types.{artifact}_resource_action CASCADE;
-CREATE TYPE types.{artifact}_resource_action AS (
-    resource_id UUID,
-    create_tool_id UUID,
-    link_tool_id UUID
-);
-
-DROP TYPE IF EXISTS types.{artifact}_multi_resource_action CASCADE;
-CREATE TYPE types.{artifact}_multi_resource_action AS (
-    resource_ids UUID[],
-    create_tool_id UUID,
-    link_tool_id UUID
-);
+CREATE OR REPLACE FUNCTION api_save_{artifact}_v4(
+    p_profile_id UUID,
+    p_input_{artifact}_id UUID,
+    p_group_id UUID,              -- Server-resolved
+    p_name_id UUID,
+    p_description_id UUID,
+    -- ... flat UUID params for single-select ...
+    p_department_ids UUID[],
+    -- ... flat UUID[] params for multi-select ...
+    p_tool_ids JSONB              -- Server-resolved: {"names": "uuid", ...}
+)
 ```
 
-The `DROP TYPE ... CASCADE` is intentional — both save and draft SQL define the same types, and JIT compilation means each file re-creates its dependencies.
+The SQL function extracts tool IDs from the JSONB parameter for lineage tracking.
 
 Reference: `save_persona_complete.sql`
 
@@ -256,17 +246,27 @@ user_department_ids = [d.department_id for d in profile_ctx.departments if d.dep
 
 Reference: `server/app/api/v4/artifacts/persona/save.py`
 
+### Rule 15: Server-side `group_id` resolution
+
+The client does NOT send `group_id` in the save request. The server resolves it from the access check SQL:
+
+- **Update** (`input_{artifact}_id` provided): `group_id` comes from `check_{artifact}_save_access_complete.sql` which returns the existing artifact's `group_id`.
+- **Create** (`input_{artifact}_id` is NULL): A new `group_id` is generated server-side.
+
+This prevents the client from associating a save with an arbitrary group.
+
 ---
 
 ## MUST NOT Rules
 
-1. **MUST NOT** use flat ID parameters (e.g., `name_id`, `description_id`) in the save request — use nested resource actions
-2. **MUST NOT** skip tool call tracking — `create_tool_id` and `link_tool_id` must be propagated to SQL
+1. **MUST NOT** use nested resource action wrapper types (e.g., `{Artifact}ResourceAction`, `{Artifact}MultiResourceAction`) — use flat ID parameters
+2. **MUST NOT** skip tool call tracking — `tool_id` per resource must be server-resolved and propagated to SQL
 3. **MUST NOT** create resources in SQL — SQL is a pure linker; resource creation happens in Python via `*_internal()`
 4. **MUST NOT** skip transaction wrapper for mutations
 5. **MUST NOT** invalidate cache inside the transaction — only after commit
 6. **MUST NOT** compute permissions in SQL — permissions are pure Python
 7. **MUST NOT** have separate create and update endpoints — unified save handles both
+8. **MUST NOT** accept `group_id` from the client in save requests — server resolves it from the access check
 
 ---
 
@@ -283,23 +283,22 @@ done
 
 **Expected**: All artifacts that support saving should have `save.py`.
 
-### Audit 2: Nested resource action types
+### Audit 2: Flat resource ID parameters in save request
 
 ```bash
 for artifact_dir in server/app/api/v4/artifacts/*/; do
   artifact=$(basename "$artifact_dir")
   file="${artifact_dir}types.py"
   [ ! -f "$file" ] && continue
-  grep -q "ResourceAction" "$file" || continue
-  missing=""
-  grep -q "resource_id" "$file" || missing="$missing resource_id"
-  grep -q "create_tool_id" "$file" || missing="$missing create_tool_id"
-  grep -q "link_tool_id" "$file" || missing="$missing link_tool_id"
-  [ -n "$missing" ] && echo "MISSING ACTION FIELDS ($artifact):$missing"
+  grep -q "Save.*ApiRequest\|Save.*Request" "$file" || continue
+  # Check for legacy nested wrapper types
+  grep -q "ResourceAction\|MultiResourceAction" "$file" && echo "LEGACY NESTED WRAPPERS: $artifact"
+  # Check for legacy client-sent group_id in save request
+  grep -A 30 "class Save.*Request" "$file" | grep -q "group_id.*UUID" && echo "CLIENT group_id IN SAVE REQUEST: $artifact"
 done
 ```
 
-**Expected**: Empty.
+**Expected**: Empty. Save requests should use flat IDs with server-resolved group_id.
 
 ### Audit 3: `to_tuple()` method
 
@@ -367,19 +366,17 @@ done
 
 **Expected**: Empty.
 
-### Audit 8: SQL composite types
+### Audit 8: Flat UUID parameters in save SQL
 
 ```bash
 for sql_file in server/app/sql/v4/queries/*/save_*_complete.sql; do
   artifact=$(basename "$(dirname "$sql_file")")
-  missing=""
-  grep -q "resource_action" "$sql_file" || missing="$missing resource_action"
-  grep -q "multi_resource_action" "$sql_file" || missing="$missing multi_resource_action"
-  [ -n "$missing" ] && echo "MISSING SQL COMPOSITES ($artifact):$missing"
+  # Check for legacy composite types
+  grep -q "resource_action\|multi_resource_action" "$sql_file" && echo "LEGACY COMPOSITES: $artifact ($sql_file)"
 done
 ```
 
-**Expected**: Empty.
+**Expected**: Empty. Save SQL should use flat UUID parameters, not composite types.
 
 ---
 
@@ -443,7 +440,7 @@ SQL composites: {N}
 
 1. **Do NOT fix anything.** This is a read-only audit. Report only.
 2. **The persona save is the gold standard.** Reference: `server/app/api/v4/artifacts/persona/save.py`.
-3. **Shared composite types**: Both save and draft SQL define the same `types.{artifact}_resource_action` and `types.{artifact}_multi_resource_action`. The `DROP TYPE ... CASCADE` is intentional for JIT compilation.
-4. **PostgreSQL reserved words**: If a resource name is a reserved word (e.g., `values`), it must be quoted in SQL function parameters and composite access expressions.
-5. **External call ID format**: `'{artifact}_save_create_{resource}_' || v_call_id::text` for create tool IDs, `'{artifact}_save_link_{resource}_' || v_call_id::text` for link tool IDs.
+3. **No composite types needed**: Save SQL receives flat UUID parameters. The previous `types.{artifact}_resource_action` composites are replaced by flat parameters.
+4. **PostgreSQL reserved words**: If a resource name is a reserved word (e.g., `values`), it must be quoted in SQL function parameters.
+5. **External call ID format**: `'{artifact}_save_{resource}_' || v_call_id::text` for tool call tracking.
 6. **Mutation endpoints still using auto-generated SQL types** (e.g., agent save) are known deviations with migration deferred.

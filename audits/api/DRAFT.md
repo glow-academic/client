@@ -33,45 +33,51 @@ async def patch_{artifact}_draft(http_request: Request, body: Patch{Artifact}Dra
 
 Reference: `server/app/api/v4/artifacts/persona/draft.py`
 
-### Rule 2: All resource fields are optional
+### Rule 2: All resource fields are flat optional IDs
 
-Unlike save (where all resources are required), draft resource actions are all optional. `None` means "don't update this resource":
+Unlike save (where all resources are present), draft resource IDs are all optional. `None` means "don't update this resource":
 
 ```python
 class Patch{Artifact}DraftApiRequest(BaseModel):
     input_draft_id: UUID | None = None
-    group_id: UUID | None = None
     expected_version: int = 0
-    names: {Artifact}ResourceAction | None = None
-    descriptions: {Artifact}ResourceAction | None = None
-    # ... all resources optional ...
-    departments: {Artifact}MultiResourceAction | None = None
+    name_id: UUID | None = None
+    description_id: UUID | None = None
+    # ... all single-select resources as optional flat UUIDs ...
+    department_ids: list[UUID] | None = None
+    # ... all multi-select resources as optional flat UUID lists ...
 ```
 
-Reference: `server/app/api/v4/artifacts/persona/types.py:477-543`
+No `group_id` (server-resolved), no tool IDs (server-resolved), no nested wrapper types.
+
+Reference: `server/app/api/v4/artifacts/persona/types.py`
 
 ### Rule 3: `expected_version` for optimistic concurrency control
 
 Draft requests must include `expected_version: int` for optimistic concurrency control. The SQL function detects version collisions and returns an error if the draft was modified by another session since the client last read it.
 
-### Rule 4: `from_request()` defaults None to empty actions
+### Rule 4: `from_request()` adds server-resolved fields
 
-The `from_request()` class method converts `None` resource actions to empty action objects, ensuring SQL always receives valid composites:
+The `from_request()` class method adds `profile_id`, server-resolved `group_id`, and server-resolved `tool_ids`. Flat IDs pass through directly:
 
 ```python
 @classmethod
-def from_request(cls, req: Patch{Artifact}DraftApiRequest, profile_id: UUID):
-    _empty_single = {Artifact}ResourceAction()
-    _empty_multi = {Artifact}MultiResourceAction()
+def from_request(
+    cls,
+    req: Patch{Artifact}DraftApiRequest,
+    profile_id: UUID,
+    group_id: UUID | None,
+    tool_ids: dict[str, UUID | None],
+):
     return cls(
         profile_id=profile_id,
         input_draft_id=req.input_draft_id,
-        group_id=req.group_id,
+        group_id=group_id,
         expected_version=req.expected_version,
-        names=req.names or _empty_single,
-        descriptions=req.descriptions or _empty_single,
-        # ...
-        departments=req.departments or _empty_multi,
+        name_id=req.name_id,
+        description_id=req.description_id,
+        # ... flat IDs pass through ...
+        tool_ids_json=json.dumps({k: str(v) for k, v in tool_ids.items() if v}) if tool_ids else None,
     )
 ```
 
@@ -99,26 +105,23 @@ Drafts always replace all connections — there is no `active` flag on draft con
 
 Reference: `patch_persona_draft_complete.sql`
 
-### Rule 7: `to_tuple()` includes `expected_version`
+### Rule 7: `to_tuple()` includes flat IDs and `expected_version`
 
-The draft SQL params `to_tuple()` must include `expected_version` at the end:
+The draft SQL params `to_tuple()` serializes flat resource IDs with `expected_version` at the end:
 
 ```python
 def to_tuple(self) -> tuple:
-    def single(a: {Artifact}ResourceAction) -> tuple:
-        return (a.resource_id, a.create_tool_id, a.link_tool_id)
-
-    def multi(a: {Artifact}MultiResourceAction) -> tuple:
-        return (a.resource_ids, a.create_tool_id, a.link_tool_id)
-
     return (
         self.profile_id,
         self.input_draft_id,
-        self.group_id,
-        single(self.names),
-        # ... resources ...
-        multi(self.departments),
-        self.expected_version,  # at the end
+        self.group_id,              # Server-resolved
+        self.name_id,
+        self.description_id,
+        # ... flat single-select IDs ...
+        self.department_ids,
+        # ... flat multi-select ID lists ...
+        self.expected_version,      # at the end
+        self.tool_ids_json,         # Server-resolved JSONB
     )
 ```
 
@@ -192,13 +195,16 @@ class Patch{Artifact}DraftApiResponse(BaseModel):
     message: str
 ```
 
-### Rule 13: Same resource action types as save
+### Rule 13: Same flat ID pattern as save
 
-Draft uses the same `{Artifact}ResourceAction` and `{Artifact}MultiResourceAction` types as save, but wrapped in `Optional`. The SQL composite types are shared between save and draft SQL files.
+Draft uses the same flat resource ID pattern as save, but all fields are optional (`None` = skip update). No nested wrapper types.
 
-### Rule 14: Shared composite type note
+### Rule 14: Server-side `group_id` resolution
 
-Both save and draft SQL define the same composite types (`types.{artifact}_resource_action`, `types.{artifact}_multi_resource_action`). Each file's `DROP TYPE IF EXISTS ... CASCADE` will cascade-drop functions from the other file. This is by design for JIT compilation.
+The client does NOT send `group_id` in the draft request. The server resolves it:
+
+- **Update** (`input_draft_id` provided): `group_id` comes from the existing draft's access check.
+- **Create** (`input_draft_id` is NULL): `group_id` may be NULL for brand-new drafts without a generation context.
 
 ---
 
@@ -211,6 +217,8 @@ Both save and draft SQL define the same composite types (`types.{artifact}_resou
 5. **MUST NOT** track tool calls when `group_id` is NULL
 6. **MUST NOT** use heavy save access check SQL — use lighter duplicate access check
 7. **MUST NOT** skip audit context — even minimal actor ID + draft ID is required
+8. **MUST NOT** use nested resource action wrapper types — use flat optional IDs
+9. **MUST NOT** accept `group_id` from the client — server resolves it from the access check
 
 ---
 
@@ -366,6 +374,6 @@ Version collision detection: {N}
 
 1. **Do NOT fix anything.** This is a read-only audit. Report only.
 2. **The persona draft is the gold standard.** Reference: `server/app/api/v4/artifacts/persona/draft.py`.
-3. **Shared composite types**: Both save and draft SQL define the same composite types. `DROP TYPE IF EXISTS ... CASCADE` is intentional.
+3. **No composite types needed**: Both save and draft SQL receive flat UUID parameters. The previous composite types are replaced by flat parameters.
 4. **No `audit_activity` decorator**: Unlike save/delete/duplicate, draft endpoints typically do NOT use the `audit_activity` decorator — they use minimal `audit_set()` with actor ID + draft ID only.
 5. **Frontend integration**: Drafts are autosaved by `useDraftLifecycle` hook (1s debounce). The hook sends the full form state on every change with `expected_version` for concurrency control.

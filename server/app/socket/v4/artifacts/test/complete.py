@@ -18,13 +18,19 @@ from app.socket.v4.artifacts.test.types import (
     TestGradedEvent,
     TestRunCompleteEvent,
 )
+from app.sql.types import CompleteTestGradeSqlParams
 from app.utils.logging.db_logger import get_logger
+from app.utils.sql_helper import execute_sql_typed
 
 logger = get_logger(__name__)
 
 internal_sio = get_internal_sio()
 
 server_router = APIRouter()
+
+SQL_PATH_COMPLETE_GRADE = (
+    "app/sql/v4/queries/generate/test/complete_test_grade_complete.sql"
+)
 
 
 @internal_sio.on("test_run_done")  # type: ignore
@@ -160,42 +166,23 @@ async def handle_test_grade_complete(data: dict[str, Any]) -> None:
     feedback = _extract_grade_feedback(tool_results)
 
     try:
-        async with get_db_connection() as conn:
-            # Update grade entry
-            if grade_id and (score is not None or passed is not None):
-                await conn.execute(
-                    """
-                    UPDATE benchmark_grades_entry
-                    SET score = COALESCE($2, score),
-                        passed = COALESCE($3, passed),
-                        updated_at = NOW()
-                    WHERE id = $1
-                    """,
-                    uuid.UUID(grade_id),
-                    score,
-                    passed,
-                )
+        input_tokens = data.get("input_text_tokens", data.get("input_tokens", 0))
+        output_tokens = data.get("output_text_tokens", data.get("output_tokens", 0))
 
-            # Update run tokens
-            if run_id:
-                input_tokens = data.get(
-                    "input_text_tokens", data.get("input_tokens", 0)
-                )
-                output_tokens = data.get(
-                    "output_text_tokens", data.get("output_tokens", 0)
-                )
-                await conn.execute(
-                    """
-                    UPDATE runs_entry
-                    SET input_tokens = COALESCE($2, input_tokens),
-                        output_tokens = COALESCE($3, output_tokens),
-                        updated_at = NOW()
-                    WHERE id = $1
-                    """,
-                    uuid.UUID(run_id),
-                    input_tokens,
-                    output_tokens,
-                )
+        async with get_db_connection() as conn:
+            # Update grade + run tokens via typed SQL
+            await execute_sql_typed(
+                conn,
+                SQL_PATH_COMPLETE_GRADE,
+                params=CompleteTestGradeSqlParams(
+                    p_grade_id=uuid.UUID(grade_id) if grade_id else uuid.UUID(int=0),
+                    p_run_id=uuid.UUID(run_id) if run_id else uuid.UUID(int=0),
+                    p_score=score,
+                    p_passed=passed,
+                    p_input_tokens=input_tokens if run_id else None,
+                    p_output_tokens=output_tokens if run_id else None,
+                ),
+            )
 
         # Emit test_graded to client
         event = TestGradedEvent(
