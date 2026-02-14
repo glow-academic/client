@@ -1,8 +1,11 @@
 """Attempt detail endpoint - POST /attempt/get.
 
-Unified endpoint for attempt detail. The practice flag is determined from
-the attempt data itself (not from client request). Uses view internal handlers
-with parallel query execution:
+Three-layer BFF pattern:
+- get_attempt_internal(): Core data fetcher, returns AttemptInternalData
+- get_attempt_client(): HTTP response layer with caching
+- get_attempt_websocket(): WebSocket response layer with config resources
+
+Uses view internal handlers with parallel query execution:
 1. Query 1 (Attempt): Attempt-level data via simulation_attempts view
 2. Query 2 (Chats): Chat-level data via simulation_chats view
 3. Query 3 (Messages): Message-level data via simulation_messages view
@@ -33,14 +36,17 @@ from app.api.v4.artifacts.attempt.types import (
     AggregatedResults,
     AnalysisEntry,
     AttemptData,
+    AttemptInternalData,
     AttemptResources,
     AttemptViews,
+    AttemptWebsocketResources,
     ChatData,
     ContentEntry,
     DocumentEntry,
     FeedbackEntry,
     GetAttemptDetailRequest,
     GetAttemptDetailResponse,
+    GetAttemptWebsocketResponse,
     GradeData,
     GradingStateData,
     HighlightEntry,
@@ -66,8 +72,10 @@ from app.api.v4.artifacts.attempt.types import (
     TimerData,
     VideoEntry,
 )
+from app.api.v4.resources.agents.get import get_agents_internal
 from app.api.v4.resources.documents.get import get_documents_internal
 from app.api.v4.resources.images.get import get_images_internal
+from app.api.v4.resources.models.get import get_models_internal
 from app.api.v4.resources.objectives.get import get_objectives_internal
 from app.api.v4.resources.options.get import get_options_internal
 from app.api.v4.resources.personas.get import get_personas_internal
@@ -75,12 +83,14 @@ from app.api.v4.resources.problem_statements.get import (
     get_problem_statements_internal,
 )
 from app.api.v4.resources.profiles.get import get_profiles_internal
+from app.api.v4.resources.providers.get import get_providers_internal
 from app.api.v4.resources.questions.get import get_questions_internal
 from app.api.v4.resources.rubrics.get import get_rubrics_batch_internal
 from app.api.v4.resources.scenarios.get import get_scenarios_internal
 from app.api.v4.resources.simulations.get import get_simulations_internal
 from app.api.v4.resources.standard_groups.get import get_standard_groups_internal
 from app.api.v4.resources.standards.get import get_standards_internal
+from app.api.v4.resources.tools.get import get_tools_internal
 from app.api.v4.resources.videos.get import get_videos_internal
 from app.api.v4.views.attempt.chats.get import get_attempt_chats_internal
 from app.api.v4.views.attempt.list.get import get_attempt_list_internal
@@ -138,27 +148,23 @@ def _format_timer(
     )
 
 
+# =============================================================================
+# Layer 1: Core data fetcher (no caching, no HTTP concerns)
+# =============================================================================
+
+
 async def get_attempt_internal(
     conn: asyncpg.Connection,
     profile_id: UUID,
     attempt_id: UUID,
     bypass_cache: bool = False,
-    cache_key_path: str = "/api/v4/artifacts/attempt/get",
     http_request: Request | None = None,
-) -> tuple[GetAttemptDetailResponse, bool]:
-    """Internal attempt detail fetcher with caching.
+) -> AttemptInternalData:
+    """Core attempt detail fetcher.
 
-    Returns (response, cache_hit).
+    Fetches all data, computes business logic, and returns AttemptInternalData.
+    No caching — consumer layers handle their own caching.
     """
-    tags = ["attempt"]
-    body_dict = GetAttemptDetailRequest(attempt_id=attempt_id).model_dump(mode="json")
-    cache_key_val = cache_key(cache_key_path, body_dict)
-
-    if not bypass_cache:
-        cached = await get_cached(cache_key_val)
-        if cached:
-            return GetAttemptDetailResponse.model_validate(cached["data"]), True
-
     try:
         # Resolve profile_id (artifact) to profiles_id (resource) for MV comparison
         profiles_id = await conn.fetchval(
@@ -402,25 +408,35 @@ async def get_attempt_internal(
         )
 
         if not attempt_result:
-            return (
-                GetAttemptDetailResponse(
-                    attempt_exists=False,
-                    access_denied=True,
-                    actor_name=None,
-                ),
-                False,
+            return AttemptInternalData(
+                actor_name=None,
+                attempt_exists=False,
+                access_denied=True,
+                is_own_attempt=False,
+                practice=False,
+                profiles_id=profiles_id,
+                profile_name=None,
+                simulation_name=None,
+                training_id=None,
+                training_bundle_entry_id=None,
+                group_id=None,
             )
 
         attempt_item = attempt_result[0] if attempt_result else None
 
         if not attempt_item:
-            return (
-                GetAttemptDetailResponse(
-                    attempt_exists=False,
-                    access_denied=True,
-                    actor_name=None,
-                ),
-                False,
+            return AttemptInternalData(
+                actor_name=None,
+                attempt_exists=False,
+                access_denied=True,
+                is_own_attempt=False,
+                practice=False,
+                profiles_id=profiles_id,
+                profile_name=None,
+                simulation_name=None,
+                training_id=None,
+                training_bundle_entry_id=None,
+                group_id=None,
             )
 
         practice = attempt_item.practice or False
@@ -457,13 +473,18 @@ async def get_attempt_internal(
         )
 
         if not check_attempt_access(attempt_item.profile_id, profiles_id):
-            return (
-                GetAttemptDetailResponse(
-                    attempt_exists=True,
-                    access_denied=True,
-                    actor_name=profile_name,
-                ),
-                False,
+            return AttemptInternalData(
+                actor_name=profile_name,
+                attempt_exists=True,
+                access_denied=True,
+                is_own_attempt=False,
+                practice=practice,
+                profiles_id=profiles_id,
+                profile_name=profile_name,
+                simulation_name=simulation_name,
+                training_id=None,
+                training_bundle_entry_id=None,
+                group_id=None,
             )
 
         if profile_name and http_request:
@@ -489,6 +510,72 @@ async def get_attempt_internal(
         if training_row:
             training_id = training_row["training_id"]
             training_bundle_entry_id = training_row["training_bundle_entry_id"]
+
+        # === RESOLVE CONFIG CHAIN (group_id -> agent/model/provider) ===
+        first_chat_item = chats_result[0] if chats_result else None
+        group_id = first_chat_item.group_id if first_chat_item else None
+
+        agent_ids: dict[str, UUID | None] = {}
+        config_agent_resources = None
+        config_model_resources = None
+        config_provider_resources = None
+
+        if group_id:
+            config_row = await conn.fetchrow(
+                """
+                SELECT aaj.agent_id, ar.model_id, mr.provider_id
+                FROM runs_entry r
+                JOIN config_entry ce ON ce.run_id = r.id
+                JOIN config_agents_connection cac ON cac.config_id = ce.id AND cac.active = true
+                JOIN agent_agents_junction aaj ON aaj.agents_id = cac.agents_id AND aaj.active = true
+                JOIN agents_resource ar ON ar.id = aaj.agents_id
+                LEFT JOIN models_resource mr ON mr.id = ar.model_id
+                WHERE r.group_id = $1
+                ORDER BY r.created_at DESC
+                LIMIT 1
+                """,
+                group_id,
+            )
+            if config_row:
+                agent_id = config_row["agent_id"]
+                model_id = config_row["model_id"]
+                provider_id = config_row["provider_id"]
+                agent_ids["primary"] = agent_id
+
+                # Fetch config resources in parallel
+                async def fetch_config_agents() -> Any:
+                    if not agent_id:
+                        return None
+                    async with pool.acquire() as c:
+                        return await get_agents_internal(
+                            c, [agent_id], bypass_cache=bypass_cache
+                        )
+
+                async def fetch_config_models() -> Any:
+                    if not model_id:
+                        return None
+                    async with pool.acquire() as c:
+                        return await get_models_internal(
+                            c, [model_id], bypass_cache=bypass_cache
+                        )
+
+                async def fetch_config_providers() -> Any:
+                    if not provider_id:
+                        return None
+                    async with pool.acquire() as c:
+                        return await get_providers_internal(
+                            c, [provider_id], bypass_cache=bypass_cache
+                        )
+
+                (
+                    config_agent_resources,
+                    config_model_resources,
+                    config_provider_resources,
+                ) = await asyncio.gather(
+                    fetch_config_agents(),
+                    fetch_config_models(),
+                    fetch_config_providers(),
+                )
 
         # === COMPUTE TIME LIMIT FROM CHATS ===
         time_limit_seconds = sum(
@@ -1083,11 +1170,6 @@ async def get_attempt_internal(
         should_show_controls = is_active and not all_chats_completed
 
         # === COMPUTE LOBBY STATE & CONTINUATION OPTIONS ===
-        # Lobby shows between chats when: all existing chats are completed,
-        # there are remaining scenarios, attempt is still active, and this
-        # is a training attempt.
-        # TODO: Use proper expected scenario count from simulation config
-        # instead of heuristic based on expected_chat_count.
         has_remaining = (
             expected_chat_count is not None
             and expected_chat_count > 0
@@ -1133,10 +1215,26 @@ async def get_attempt_internal(
                 # Don't fail the whole request if continuation computation fails
                 continuation_options = None
 
-        api_response = GetAttemptDetailResponse(
+        return AttemptInternalData(
             actor_name=profile_name,
             attempt_exists=True,
             access_denied=False,
+            is_own_attempt=is_own_attempt,
+            practice=practice,
+            profiles_id=profiles_id,
+            profile_name=profile_name,
+            simulation_name=simulation_name,
+            training_id=training_id,
+            training_bundle_entry_id=training_bundle_entry_id,
+            group_id=group_id,
+            agent_ids=agent_ids,
+            attempt_item=attempt_item,
+            chats_result=chats_result,
+            messages_result=messages_result,
+            resource_meta=resource_meta,
+            resources_payload=resources_payload,
+            chats=chats,
+            messages=messages_payload,
             attempt=attempt,
             simulation=simulation,
             timer=timer,
@@ -1147,27 +1245,12 @@ async def get_attempt_internal(
             is_lobby=is_lobby,
             show_results=show_results,
             should_show_controls=should_show_controls,
-            is_own_attempt=is_own_attempt,
-            available_continuation_options=continuation_options,
             rubric_structure=rubric_structure,
-            training_id=training_id,
-            training_bundle_entry_id=training_bundle_entry_id,
-            resources=resources_payload,
-            views=AttemptViews(
-                simulation_attempts=[attempt_item],
-                simulation_chats=chats,
-                simulation_messages=messages_payload,
-            ),
+            continuation_options=continuation_options,
+            config_agent_resources=config_agent_resources,
+            config_model_resources=config_model_resources,
+            config_provider_resources=config_provider_resources,
         )
-
-        await set_cached(
-            cache_key_val,
-            {"data": api_response.model_dump(mode="json")},
-            ttl=300,
-            tags=tags,
-        )
-
-        return api_response, False
 
     except HTTPException:
         raise
@@ -1176,12 +1259,177 @@ async def get_attempt_internal(
     except Exception as e:
         handle_route_error(
             error=e,
-            route_path=cache_key_path,
-            operation="attempt_get",
+            route_path="/api/v4/artifacts/attempt/get",
+            operation="attempt_get_internal",
             sql_query="view_internals: attempts, chats, messages",
             sql_params=None,
             request=http_request,
         )
+        # handle_route_error raises, but mypy needs a return
+        raise  # pragma: no cover
+
+
+# =============================================================================
+# Layer 2a: HTTP client response (with caching)
+# =============================================================================
+
+
+async def get_attempt_client(
+    conn: asyncpg.Connection,
+    profile_id: UUID,
+    attempt_id: UUID,
+    bypass_cache: bool = False,
+    cache_key_path: str = "/api/v4/artifacts/attempt/get",
+    http_request: Request | None = None,
+) -> tuple[GetAttemptDetailResponse, bool]:
+    """HTTP response layer with caching.
+
+    Calls get_attempt_internal() and assembles GetAttemptDetailResponse.
+    Returns (response, cache_hit).
+    """
+    tags = ["attempt"]
+    body_dict = GetAttemptDetailRequest(attempt_id=attempt_id).model_dump(mode="json")
+    cache_key_val = cache_key(cache_key_path, body_dict)
+
+    if not bypass_cache:
+        cached = await get_cached(cache_key_val)
+        if cached:
+            return GetAttemptDetailResponse.model_validate(cached["data"]), True
+
+    data = await get_attempt_internal(
+        conn=conn,
+        profile_id=profile_id,
+        attempt_id=attempt_id,
+        bypass_cache=bypass_cache,
+        http_request=http_request,
+    )
+
+    # Early return for not-found / access-denied
+    if not data.attempt_exists or data.access_denied:
+        return (
+            GetAttemptDetailResponse(
+                attempt_exists=data.attempt_exists,
+                access_denied=data.access_denied,
+                actor_name=data.actor_name,
+            ),
+            False,
+        )
+
+    api_response = GetAttemptDetailResponse(
+        actor_name=data.actor_name,
+        attempt_exists=True,
+        access_denied=False,
+        attempt=data.attempt,
+        simulation=data.simulation,
+        timer=data.timer,
+        aggregated_results=data.aggregated_results,
+        current_chat_index=data.current_chat_index,
+        expected_chat_count=data.expected_chat_count,
+        is_active=data.is_active,
+        is_lobby=data.is_lobby,
+        show_results=data.show_results,
+        should_show_controls=data.should_show_controls,
+        is_own_attempt=data.is_own_attempt,
+        available_continuation_options=data.continuation_options,
+        rubric_structure=data.rubric_structure,
+        training_id=data.training_id,
+        training_bundle_entry_id=data.training_bundle_entry_id,
+        resources=data.resources_payload,
+        views=AttemptViews(
+            simulation_attempts=[data.attempt_item] if data.attempt_item else None,
+            simulation_chats=data.chats,
+            simulation_messages=data.messages,
+        ),
+    )
+
+    await set_cached(
+        cache_key_val,
+        {"data": api_response.model_dump(mode="json")},
+        ttl=300,
+        tags=tags,
+    )
+
+    return api_response, False
+
+
+# =============================================================================
+# Layer 2b: WebSocket response (config resources + tools)
+# =============================================================================
+
+
+async def get_attempt_websocket(
+    conn: asyncpg.Connection,
+    profile_id: UUID,
+    attempt_id: UUID,
+    bypass_cache: bool = False,
+) -> GetAttemptWebsocketResponse:
+    """WebSocket response layer with config resources.
+
+    Calls get_attempt_internal() and assembles GetAttemptWebsocketResponse
+    with content resources + config resources (agents, models, providers, tools).
+    """
+    data = await get_attempt_internal(
+        conn=conn,
+        profile_id=profile_id,
+        attempt_id=attempt_id,
+        bypass_cache=bypass_cache,
+    )
+
+    if not data.attempt_exists or data.access_denied:
+        return GetAttemptWebsocketResponse()
+
+    # Hydrate tools from config agent's tool_ids
+    config_tools = None
+    if data.config_agent_resources:
+        tool_ids: list[UUID] = []
+        for agent in data.config_agent_resources:
+            if agent.tool_ids:
+                tool_ids.extend(agent.tool_ids)
+        if tool_ids:
+            pool = get_pool()
+            if pool:
+                async with pool.acquire() as c:
+                    config_tools = await get_tools_internal(
+                        c, list(set(tool_ids)), bypass_cache=bypass_cache
+                    )
+
+    # Build websocket resources (content + config)
+    ws_resources = AttemptWebsocketResources(
+        # Content resources from resources_payload
+        scenarios=data.resources_payload.scenarios,
+        personas=data.resources_payload.personas,
+        documents=data.resources_payload.documents,
+        images=data.resources_payload.images,
+        videos=data.resources_payload.videos,
+        objectives=data.resources_payload.objectives,
+        questions=data.resources_payload.questions,
+        options=data.resources_payload.options,
+        problem_statements=data.resources_payload.problem_statements,
+        rubrics=data.resources_payload.rubrics,
+        standard_groups=data.resources_payload.standard_groups,
+        standards=data.resources_payload.standards,
+        # Config resources
+        agents=data.config_agent_resources,
+        models=data.config_model_resources,
+        providers=data.config_provider_resources,
+        tools=config_tools,
+    )
+
+    return GetAttemptWebsocketResponse(
+        views=AttemptViews(
+            simulation_attempts=[data.attempt_item] if data.attempt_item else None,
+            simulation_chats=data.chats,
+            simulation_messages=data.messages,
+        ),
+        resources=ws_resources,
+        resource_agent_ids=data.agent_ids if data.agent_ids else None,
+        group_id=data.group_id,
+    )
+
+
+# =============================================================================
+# HTTP Route Handler
+# =============================================================================
 
 
 @router.post(
@@ -1221,7 +1469,7 @@ async def attempt_get(
 
         attempt_id = request.attempt_id
 
-        response_data, cache_hit = await get_attempt_internal(
+        response_data, cache_hit = await get_attempt_client(
             conn=conn,
             profile_id=profile_id,
             attempt_id=attempt_id,

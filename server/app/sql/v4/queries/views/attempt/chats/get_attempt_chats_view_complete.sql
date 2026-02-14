@@ -81,6 +81,9 @@ CREATE TYPE types.q_get_attempt_chats_view_v4_item AS (
     -- Foreign keys
     attempt_id uuid,
 
+    -- Config chain entry point
+    group_id uuid,
+
     -- Resource IDs (singular - metadata fetched via internal handlers)
     scenario_id uuid,
     rubric_id uuid,
@@ -213,6 +216,7 @@ AS $$
         SELECT
             mv.chat_id,
             mv.attempt_id,
+            mv.group_id,
             mv.scenario_id,
             mv.rubric_id,
             mv.problem_statement_id,
@@ -263,6 +267,7 @@ AS $$
                 (
                     chat_id,
                     attempt_id,
+                    group_id,
                     scenario_id,
                     rubric_id,
                     problem_statement_id,

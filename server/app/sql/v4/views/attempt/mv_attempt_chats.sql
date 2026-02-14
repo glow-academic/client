@@ -169,6 +169,7 @@ base_chats AS (
     SELECT
         c.id AS chat_id,
         c.attempt_id,
+        c.group_id,
         c.created_at AS chat_created_at,
         (EXISTS (SELECT 1 FROM simulation_completions_entry comp WHERE comp.chat_id = c.id AND comp.active = TRUE)) AS chat_completed,
         sb.scenario_id AS scenario_id,
@@ -205,6 +206,7 @@ base_chats AS (
 SELECT
     bc.chat_id,
     bc.attempt_id,
+    bc.group_id,
     bc.scenario_id,
     bc.rubric_id,
     bc.copy_paste_allowed,

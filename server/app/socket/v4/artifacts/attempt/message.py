@@ -12,7 +12,7 @@ from typing import Any, cast
 
 from fastapi import APIRouter
 
-from app.api.v4.artifacts.attempt.get import get_attempt_internal
+from app.api.v4.artifacts.attempt.get import get_attempt_client
 from app.infra.v4.artifacts.discovery import extract_template_variable_name
 from app.infra.v4.generation import convert_tools_to_dict, render_developer_instructions
 from app.infra.v4.tools.render_tool_template import GET_OUTPUT_SCHEMA_FIELDS_SQL_PATH
@@ -326,7 +326,7 @@ async def _attempt_message_impl(
                 resource_type = "attempt"
 
             # Step 4: Render developer instructions with Jinja
-            attempt_response, _cache_hit = await get_attempt_internal(
+            attempt_response, _cache_hit = await get_attempt_client(
                 conn=conn,
                 profile_id=profile_id,
                 attempt_id=context_row.attempt_id,

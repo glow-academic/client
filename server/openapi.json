@@ -57510,6 +57510,18 @@
             ],
             "title": "Attempt Id"
           },
+          "group_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Group Id"
+          },
           "scenario_id": {
             "anyOf": [
               {

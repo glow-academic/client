@@ -17,7 +17,6 @@ import asyncio
 import os
 import sys
 from pathlib import Path
-from uuid import UUID
 
 import asyncpg
 
@@ -51,6 +50,7 @@ DRY_RUN = "--dry-run" in sys.argv
 # PDF helpers
 # ---------------------------------------------------------------------------
 
+
 def extract_text_pages(pdf_path: str) -> list[str]:
     """Extract text per page from a PDF using pypdf."""
     from pypdf import PdfReader
@@ -63,7 +63,9 @@ def extract_text_pages(pdf_path: str) -> list[str]:
     return pages
 
 
-def render_pages_as_png(pdf_path: str, output_dir: Path, slug: str) -> list[tuple[str, bytes]]:
+def render_pages_as_png(
+    pdf_path: str, output_dir: Path, slug: str
+) -> list[tuple[str, bytes]]:
     """Render each PDF page as PNG. Returns list of (relative_path, png_bytes)."""
     import fitz  # pymupdf
 
@@ -82,6 +84,7 @@ def render_pages_as_png(pdf_path: str, output_dir: Path, slug: str) -> list[tupl
 # ---------------------------------------------------------------------------
 # Main backfill
 # ---------------------------------------------------------------------------
+
 
 async def backfill(conn: asyncpg.Connection) -> None:
     """Backfill text and images for PDF documents."""
@@ -131,44 +134,66 @@ async def backfill(conn: asyncpg.Connection) -> None:
         else:
             # Create texts_entry (reuse if same content already exists)
             import hashlib
+
             content_hash = hashlib.md5(full_text.encode()).hexdigest()
-            text_entry_id = await conn.fetchval("""
+            text_entry_id = await conn.fetchval(
+                """
                 SELECT id FROM texts_entry WHERE content_hash = $1
-            """, content_hash)
+            """,
+                content_hash,
+            )
             if text_entry_id is None:
-                text_entry_id = await conn.fetchval("""
+                text_entry_id = await conn.fetchval(
+                    """
                     INSERT INTO texts_entry (content, active, generated, mcp)
                     VALUES ($1, true, false, false)
                     RETURNING id
-                """, full_text)
+                """,
+                    full_text,
+                )
             else:
                 print(f"    Text: reusing existing texts_entry={text_entry_id}")
 
             # Create texts_resource with denormalized text_id
-            text_res_id = await conn.fetchval("""
+            text_res_id = await conn.fetchval(
+                """
                 INSERT INTO texts_resource (active, generated, mcp, text_id)
                 VALUES (true, false, false, $1)
                 RETURNING id
-            """, text_entry_id)
+            """,
+                text_entry_id,
+            )
 
             # Create texts_texts_connection
-            await conn.execute("""
+            await conn.execute(
+                """
                 INSERT INTO texts_texts_connection (texts_id, text_id, active)
                 VALUES ($1, $2, true)
                 ON CONFLICT (texts_id, text_id) DO NOTHING
-            """, text_res_id, text_entry_id)
+            """,
+                text_res_id,
+                text_entry_id,
+            )
 
             # Create document_texts_junction
-            await conn.execute("""
+            await conn.execute(
+                """
                 INSERT INTO document_texts_junction (document_id, texts_id, active)
                 VALUES ($1, $2, true)
                 ON CONFLICT (document_id, texts_id) DO NOTHING
-            """, artifact_id, text_res_id)
+            """,
+                artifact_id,
+                text_res_id,
+            )
 
             # Update documents_resource.text_id
-            await conn.execute("""
+            await conn.execute(
+                """
                 UPDATE documents_resource SET text_id = $1 WHERE id = $2
-            """, text_res_id, doc_res_id)
+            """,
+                text_res_id,
+                doc_res_id,
+            )
 
             print(f"    Text: {len(full_text)} chars -> texts_entry={text_entry_id}")
 
@@ -189,47 +214,70 @@ async def backfill(conn: asyncpg.Connection) -> None:
                 out_path.write_bytes(png_bytes)
 
                 # Create uploads_entry for the image file
-                upload_entry_id = await conn.fetchval("""
+                upload_entry_id = await conn.fetchval(
+                    """
                     INSERT INTO uploads_entry (file_path, mime_type, size, active, generated, mcp)
                     VALUES ($1, 'image/png', $2, true, false, false)
                     RETURNING id
-                """, rel_path, len(png_bytes))
+                """,
+                    rel_path,
+                    len(png_bytes),
+                )
 
                 # Create uploads_resource (wraps the entry)
-                upload_res_id = await conn.fetchval("""
+                upload_res_id = await conn.fetchval(
+                    """
                     INSERT INTO uploads_resource (active, generated, mcp, upload_id)
                     VALUES (true, false, false, $1)
                     RETURNING id
-                """, upload_entry_id)
+                """,
+                    upload_entry_id,
+                )
 
                 # Create uploads_uploads_connection (links resource ↔ entry)
-                await conn.execute("""
+                await conn.execute(
+                    """
                     INSERT INTO uploads_uploads_connection (uploads_id, upload_id, active)
                     VALUES ($1, $2, true)
                     ON CONFLICT (uploads_id, upload_id) DO NOTHING
-                """, upload_res_id, upload_entry_id)
+                """,
+                    upload_res_id,
+                    upload_entry_id,
+                )
 
                 # Create images_resource (upload_id → uploads_resource)
                 img_name = f"{doc_name} Page {page_num}"
-                image_res_id = await conn.fetchval("""
+                image_res_id = await conn.fetchval(
+                    """
                     INSERT INTO images_resource (name, description, upload_id, completed, active, generated, mcp)
                     VALUES ($1, $1, $2, true, true, false, false)
                     RETURNING id
-                """, img_name, upload_res_id)
+                """,
+                    img_name,
+                    upload_res_id,
+                )
 
                 # Create document_images_junction
-                await conn.execute("""
+                await conn.execute(
+                    """
                     INSERT INTO document_images_junction (document_id, images_id, active)
                     VALUES ($1, $2, true)
                     ON CONFLICT (document_id, images_id) DO NOTHING
-                """, artifact_id, image_res_id)
+                """,
+                    artifact_id,
+                    image_res_id,
+                )
 
                 image_ids.append(image_res_id)
 
             # Update documents_resource.image_ids
-            await conn.execute("""
+            await conn.execute(
+                """
                 UPDATE documents_resource SET image_ids = $1 WHERE id = $2
-            """, image_ids, doc_res_id)
+            """,
+                image_ids,
+                doc_res_id,
+            )
 
             print(f"    Images: {len(image_ids)} pages saved to uploads/image/")
 

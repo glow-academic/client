@@ -6,12 +6,21 @@ The practice flag is determined server-side from the attempt data itself.
 
 from __future__ import annotations
 
+from dataclasses import dataclass, field
 from datetime import datetime
 from uuid import UUID
 
 from pydantic import BaseModel, Field
 
+from app.api.v4.views.attempt.chats.types import ChatViewItem
 from app.api.v4.views.attempt.list.types import AttemptViewItem
+from app.api.v4.views.attempt.messages.types import MessageViewItem
+from app.sql.types import (
+    QGetAgentsV4Item,
+    QGetModelsV4Item,
+    QGetProvidersV4Item,
+    QGetToolsV4Item,
+)
 
 # =============================================================================
 # Attempt detail endpoint types (client-facing)
@@ -602,6 +611,108 @@ class GetAttemptDetailResponse(BaseModel):
     # New normalized maps
     resources: AttemptResources | None = None
     views: AttemptViews | None = None
+
+
+# =============================================================================
+# Internal data (three-layer BFF pattern)
+# =============================================================================
+
+
+@dataclass
+class AttemptInternalData:
+    """Core data container returned by get_attempt_internal().
+
+    Contains all fetched and computed values. Consumer layers
+    (get_attempt_client, get_attempt_websocket) reshape this
+    into their specific response types.
+    """
+
+    # Access context
+    actor_name: str | None
+    attempt_exists: bool
+    access_denied: bool
+    is_own_attempt: bool
+    practice: bool
+    profiles_id: UUID | None
+
+    # Metadata
+    profile_name: str | None
+    simulation_name: str | None
+    training_id: UUID | None
+    training_bundle_entry_id: UUID | None
+
+    # Config chain
+    group_id: UUID | None
+    agent_ids: dict[str, UUID | None] = field(default_factory=dict)
+
+    # Raw MV results
+    attempt_item: AttemptViewItem | None = None
+    chats_result: list[ChatViewItem] | None = None
+    messages_result: list[MessageViewItem] | None = None
+
+    # Resource metadata (raw lookup dict)
+    resource_meta: dict[str, dict[UUID, dict]] = field(default_factory=dict)
+
+    # Assembled payloads
+    resources_payload: AttemptResources = field(default_factory=AttemptResources)
+    chats: list[ChatData] = field(default_factory=list)
+    messages: list[MessageData] = field(default_factory=list)
+
+    # Computed business logic
+    attempt: AttemptData | None = None
+    simulation: SimulationData | None = None
+    timer: TimerData | None = None
+    aggregated_results: AggregatedResults | None = None
+    current_chat_index: int | None = None
+    expected_chat_count: int | None = None
+    is_active: bool = True
+    is_lobby: bool = False
+    show_results: bool = False
+    should_show_controls: bool = False
+    rubric_structure: RubricStructureData | None = None
+    continuation_options: AvailableContinuationOptions | None = None
+
+    # Config resources (from group -> config chain)
+    config_agent_resources: list[QGetAgentsV4Item] | None = None
+    config_model_resources: list[QGetModelsV4Item] | None = None
+    config_provider_resources: list[QGetProvidersV4Item] | None = None
+
+
+# =============================================================================
+# WebSocket response types (three-layer BFF pattern)
+# =============================================================================
+
+
+class AttemptWebsocketResources(BaseModel):
+    """Content resources + config resources for websocket."""
+
+    # Content resources (same shape as AttemptResources)
+    scenarios: dict[str, ScenarioEntry] | None = None
+    personas: dict[str, PersonaEntry] | None = None
+    documents: dict[str, DocumentEntry] | None = None
+    images: dict[str, ImageEntry] | None = None
+    videos: dict[str, VideoEntry] | None = None
+    objectives: dict[str, ObjectiveEntry] | None = None
+    questions: dict[str, QuestionEntry] | None = None
+    options: dict[str, OptionEntry] | None = None
+    problem_statements: dict[str, ProblemStatementEntry] | None = None
+    rubrics: dict[str, RubricEntry] | None = None
+    standard_groups: dict[str, StandardGroupEntry] | None = None
+    standards: dict[str, StandardEntry] | None = None
+    # Config resources
+    agents: list[QGetAgentsV4Item] | None = None
+    models: list[QGetModelsV4Item] | None = None
+    providers: list[QGetProvidersV4Item] | None = None
+    tools: list[QGetToolsV4Item] | None = None
+
+
+class GetAttemptWebsocketResponse(BaseModel):
+    """Minimal response for WebSocket handlers."""
+
+    views: AttemptViews | None = None
+    resources: AttemptWebsocketResources | None = None
+    resource_agent_ids: dict[str, UUID | None] | None = None
+    group_id: UUID | None = None
 
 
 # =============================================================================

@@ -27321,6 +27321,7 @@ class QGetAttemptChatsViewV4Item(BaseModel):
 
     chat_id: UUID | None
     attempt_id: UUID | None
+    group_id: UUID | None
     scenario_id: UUID | None
     rubric_id: UUID | None
     problem_statement_id: UUID | None

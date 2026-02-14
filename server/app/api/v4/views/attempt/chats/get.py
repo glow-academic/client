@@ -117,6 +117,7 @@ async def get_attempt_chats_internal(
                 ChatViewItem(
                     chat_id=item.chat_id,
                     attempt_id=item.attempt_id,
+                    group_id=item.group_id,
                     scenario_id=item.scenario_id,
                     rubric_id=item.rubric_id,
                     problem_statement_id=item.problem_statement_id,

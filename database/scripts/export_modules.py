@@ -523,7 +523,12 @@ async def export_resource_rows_for_artifact(
                 if res_row:
                     # Write nested resource dependencies first (FK ordering)
                     await _export_nested_resource_fks(
-                        conn, artifact_type, resource_table, res_row, f, seen_resource_ids
+                        conn,
+                        artifact_type,
+                        resource_table,
+                        res_row,
+                        f,
+                        seen_resource_ids,
                     )
                     f.write(
                         make_insert(resource_table, res_row, res_cols, res_pk) + "\n"
@@ -1869,9 +1874,7 @@ async def _collect_upload_chain(
             )
             if entry_row:
                 entry_inserts.append(
-                    make_insert(
-                        "uploads_entry", entry_row, entry_cols, entry_pks
-                    )
+                    make_insert("uploads_entry", entry_row, entry_cols, entry_pks)
                 )
                 # Copy the actual file (handle subdirectories like image/)
                 file_path = entry_row["file_path"]
@@ -1890,9 +1893,7 @@ async def _collect_upload_chain(
         if conn_key not in seen_conn_keys:
             seen_conn_keys.add(conn_key)
             conn_inserts.append(
-                make_insert(
-                    "uploads_uploads_connection", crow, conn_cols, conn_pks
-                )
+                make_insert("uploads_uploads_connection", crow, conn_cols, conn_pks)
             )
 
 
@@ -1938,10 +1939,19 @@ async def export_uploads(conn: asyncpg.Connection) -> None:
 
     for r in pdf_rows:
         await _collect_upload_chain(
-            conn, r["uploads_id"],
-            entry_cols, entry_pks, conn_cols, conn_pks,
-            entry_inserts, conn_inserts, seen_entry_ids, seen_conn_keys,
-            copied_files, upload_source, files_dir,
+            conn,
+            r["uploads_id"],
+            entry_cols,
+            entry_pks,
+            conn_cols,
+            conn_pks,
+            entry_inserts,
+            conn_inserts,
+            seen_entry_ids,
+            seen_conn_keys,
+            copied_files,
+            upload_source,
+            files_dir,
         )
 
     # --- Pass 2: Image uploads via document_images_junction → images_resource ---
@@ -1958,10 +1968,19 @@ async def export_uploads(conn: asyncpg.Connection) -> None:
 
     for r in img_rows:
         await _collect_upload_chain(
-            conn, r["uploads_id"],
-            entry_cols, entry_pks, conn_cols, conn_pks,
-            entry_inserts, conn_inserts, seen_entry_ids, seen_conn_keys,
-            copied_files, upload_source, files_dir,
+            conn,
+            r["uploads_id"],
+            entry_cols,
+            entry_pks,
+            conn_cols,
+            conn_pks,
+            entry_inserts,
+            conn_inserts,
+            seen_entry_ids,
+            seen_conn_keys,
+            copied_files,
+            upload_source,
+            files_dir,
         )
 
     # --- Write output ---
@@ -2055,9 +2074,7 @@ async def export_texts(conn: asyncpg.Connection) -> None:
                     )
                     if entry_row:
                         entry_inserts.append(
-                            make_insert(
-                                "texts_entry", entry_row, entry_cols, entry_pks
-                            )
+                            make_insert("texts_entry", entry_row, entry_cols, entry_pks)
                         )
 
                 # Export texts_texts_connection (deduplicated)
@@ -2065,9 +2082,7 @@ async def export_texts(conn: asyncpg.Connection) -> None:
                 if conn_key not in seen_conn_keys:
                     seen_conn_keys.add(conn_key)
                     conn_inserts.append(
-                        make_insert(
-                            "texts_texts_connection", crow, conn_cols, conn_pks
-                        )
+                        make_insert("texts_texts_connection", crow, conn_cols, conn_pks)
                     )
 
         # Write entry rows first (referenced by connections)

@@ -50,6 +50,9 @@ class ChatViewItem(BaseModel):
     # Foreign keys
     attempt_id: UUID | None = None
 
+    # Config chain entry point
+    group_id: UUID | None = None
+
     # Resource IDs (singular - metadata fetched via internal handlers)
     scenario_id: UUID | None = None
     rubric_id: UUID | None = None

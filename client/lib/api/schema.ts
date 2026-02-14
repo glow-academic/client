@@ -14382,6 +14382,8 @@ export interface components {
             chat_id: string;
             /** Attempt Id */
             attempt_id?: string | null;
+            /** Group Id */
+            group_id?: string | null;
             /** Scenario Id */
             scenario_id?: string | null;
             /** Rubric Id */
