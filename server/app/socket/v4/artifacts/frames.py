@@ -7,7 +7,7 @@ Outbound audio is handled via internal_sio events (see documentation below).
 from typing import Any
 
 from app.main import sio
-from app.socket.v4.artifacts.session_store import (
+from app.infra.v4.websocket.session_store import (
     get_session_by_group_id,
     get_session_by_sid,
 )

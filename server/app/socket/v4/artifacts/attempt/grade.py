@@ -22,7 +22,7 @@ from app.api.v4.artifacts.attempt.types import GetAttemptWebsocketResponse
 from app.api.v4.resources.instructions.get import get_instructions_internal
 from app.api.v4.resources.prompts.get import get_prompts_internal
 from app.infra.v4.generation import convert_tools_to_dict, render_developer_instructions
-from app.infra.v4.websocket.attempt.types import (
+from app.socket.v4.artifacts.attempt.types import (
     ATTEMPT_GRADE_ENTRY_TYPES,
     AttemptGradedEvent,
     AttemptGradePayload,

@@ -8,7 +8,7 @@ from typing import Any
 
 from fastapi import APIRouter
 
-from app.infra.v4.websocket.test.types import (
+from app.socket.v4.artifacts.test.types import (
     TestErrorEvent,
     TestStopPayload,
     TestStoppedEvent,

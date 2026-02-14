@@ -7,7 +7,7 @@ from typing import Any
 
 from fastapi import APIRouter
 
-from app.infra.v4.websocket.test.types import TestErrorEvent
+from app.socket.v4.artifacts.test.types import TestErrorEvent
 from app.main import get_internal_sio, sio
 
 internal_sio = get_internal_sio()

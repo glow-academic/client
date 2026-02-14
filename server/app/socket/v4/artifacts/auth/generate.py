@@ -13,7 +13,7 @@ from app.socket.v4.artifacts.auth.types import (
     AUTH_GENERATE_RESOURCE_TYPES,
     GenerateAuthPayload,
 )
-from app.socket.v4.artifacts.generation_common import (
+from app.infra.v4.websocket.generation_common import (
     emit_generate_artifact,
     emit_generation_error,
 )

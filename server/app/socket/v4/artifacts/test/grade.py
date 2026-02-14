@@ -24,7 +24,7 @@ from app.api.v4.resources.prompts.get import get_prompts_internal
 from app.infra.v4.generation import convert_tools_to_dict, render_developer_instructions
 from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
 from app.infra.v4.websocket.get_db_connection import get_db_connection
-from app.infra.v4.websocket.test.types import (
+from app.socket.v4.artifacts.test.types import (
     TEST_GRADE_ENTRY_TYPES,
     TestGradedEvent,
     TestGradePayload,

@@ -25,7 +25,7 @@ from app.socket.v4.artifacts.adapters.audio.base import (
     AudioSessionConfig,
     BaseAudioAdapter,
 )
-from app.socket.v4.artifacts.session_store import AudioSession
+from app.infra.v4.websocket.session_store import AudioSession
 
 logger = logging.getLogger(__name__)
 

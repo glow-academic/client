@@ -5,7 +5,7 @@ from typing import Any, Literal
 
 from pydantic import BaseModel
 
-from app.socket.v4.artifacts.session_store import AudioSession
+from app.infra.v4.websocket.session_store import AudioSession
 
 
 class AudioSessionConfig(BaseModel):

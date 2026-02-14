@@ -13,7 +13,7 @@ from fastapi import APIRouter
 
 from app.api.v4.artifacts.test.get import get_test_websocket
 from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
-from app.infra.v4.websocket.test.types import (
+from app.socket.v4.artifacts.test.types import (
     TestAllCompleteEvent,
     TestErrorEvent,
     TestProgressEvent,

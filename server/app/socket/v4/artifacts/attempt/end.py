@@ -10,7 +10,7 @@ from typing import Any
 from fastapi import APIRouter
 
 from app.infra.v4.activity.websocket_logger import log_websocket_activity
-from app.infra.v4.websocket.attempt.types import (
+from app.socket.v4.artifacts.attempt.types import (
     AttemptChatEndedEvent,
     AttemptEndPayload,
     AttemptUnifiedErrorEvent,

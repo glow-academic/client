@@ -10,7 +10,7 @@ from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
 from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.infra.v4.websocket.typed_emit import emit_to_internal
 from app.main import get_internal_sio, sio
-from app.socket.v4.artifacts.generation_common import emit_generate_artifact
+from app.infra.v4.websocket.generation_common import emit_generate_artifact
 from app.socket.v4.artifacts.tool.types import GenerateToolPayload
 from app.socket.v4.artifacts.types import GenerateErrorApiRequest
 
