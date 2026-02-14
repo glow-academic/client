@@ -8080,6 +8080,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/views/activity/list/get": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Activity
+         * @description Get activity data from the materialized view.
+         */
+        post: operations["get_activity_api_v4_views_activity_list_get_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v4/views/activity/session-facts/get": {
         parameters: {
             query?: never;
@@ -8214,6 +8234,26 @@ export interface paths {
          * @description Get activity summary data from mv_activity_summary.
          */
         post: operations["get_activity_summary_api_v4_views_activity_summary_get_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/views/health/list/get": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Health
+         * @description Get health data from the materialized view.
+         */
+        post: operations["get_health_api_v4_views_health_list_get_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -8674,6 +8714,66 @@ export interface paths {
          * @description Get call data from the materialized view.
          */
         post: operations["get_calls_api_v4_views_call_get_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/views/problem/list/get": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Problems
+         * @description Get problem data from the materialized view.
+         */
+        post: operations["get_problems_api_v4_views_problem_list_get_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/views/login/list/get": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Logins
+         * @description Get login data from the materialized view.
+         */
+        post: operations["get_logins_api_v4_views_login_list_get_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/views/metric/list/get": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Metrics
+         * @description Get metric data from the materialized view.
+         */
+        post: operations["get_metrics_api_v4_views_metric_list_get_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -12628,6 +12728,59 @@ export interface components {
             active_profiles_last_7d: number;
             /** Refreshed At */
             refreshed_at?: string | null;
+        };
+        /**
+         * ActivityViewItem
+         * @description Single activity row from the activity list view.
+         */
+        ActivityViewItem: {
+            /**
+             * Date Key
+             * Format: date
+             */
+            date_key: string;
+            /** Event Type */
+            event_type?: string | null;
+            /**
+             * Event Count
+             * @default 0
+             */
+            event_count: number;
+            /**
+             * Unique Profiles
+             * @default 0
+             */
+            unique_profiles: number;
+            /**
+             * Saved Count
+             * @default 0
+             */
+            saved_count: number;
+            /**
+             * Created Count
+             * @default 0
+             */
+            created_count: number;
+            /**
+             * Duplicated Count
+             * @default 0
+             */
+            duplicated_count: number;
+            /**
+             * Uploaded Count
+             * @default 0
+             */
+            uploaded_count: number;
+            /**
+             * Deleted Count
+             * @default 0
+             */
+            deleted_count: number;
+            /**
+             * Updated Count
+             * @default 0
+             */
+            updated_count: number;
         };
         /**
          * ActivityViews
@@ -19286,6 +19439,23 @@ export interface components {
             total_count: number;
         };
         /**
+         * GetActivityListViewResponse
+         * @description Response containing activity list data.
+         */
+        GetActivityListViewResponse: {
+            /**
+             * Items
+             * @description Activity data items
+             */
+            items?: components["schemas"]["ActivityViewItem"][];
+            /**
+             * Total Count
+             * @description Total count before pagination
+             * @default 0
+             */
+            total_count: number;
+        };
+        /**
          * GetActivityLoginsRequest
          * @description Request for activity logins view.
          */
@@ -21216,6 +21386,23 @@ export interface components {
             metrics?: components["schemas"]["HealthMetricsItem"][];
         };
         /**
+         * GetHealthListViewResponse
+         * @description Response containing health list data.
+         */
+        GetHealthListViewResponse: {
+            /**
+             * Items
+             * @description Health data items
+             */
+            items?: components["schemas"]["HealthViewItem"][];
+            /**
+             * Total Count
+             * @description Total count before pagination
+             * @default 0
+             */
+            total_count: number;
+        };
+        /**
          * GetHealthMetricsHourlyRequest
          * @description Request for getting health metrics hourly data.
          */
@@ -21395,6 +21582,23 @@ export interface components {
             organization_id?: string | null;
         };
         /**
+         * GetLoginListViewResponse
+         * @description Response containing login list data.
+         */
+        GetLoginListViewResponse: {
+            /**
+             * Items
+             * @description Login data items
+             */
+            items?: components["schemas"]["LoginViewItem"][];
+            /**
+             * Total Count
+             * @description Total count before pagination
+             * @default 0
+             */
+            total_count: number;
+        };
+        /**
          * GetMessageListViewResponse
          * @description Response containing message list data.
          */
@@ -21435,6 +21639,23 @@ export interface components {
              * @description Message data items
              */
             items?: components["schemas"]["app__api__v4__views__attempt__messages__types__MessageViewItem"][];
+        };
+        /**
+         * GetMetricListViewResponse
+         * @description Response containing metric list data.
+         */
+        GetMetricListViewResponse: {
+            /**
+             * Items
+             * @description Metric data items
+             */
+            items?: components["schemas"]["MetricViewItem"][];
+            /**
+             * Total Count
+             * @description Total count before pagination
+             * @default 0
+             */
+            total_count: number;
         };
         /** GetModalitiesApiRequest */
         GetModalitiesApiRequest: {
@@ -22140,6 +22361,23 @@ export interface components {
             profiles?: components["schemas"]["PricingProfileItem"][];
             /** Agents */
             agents?: components["schemas"]["PricingAgentItem"][];
+        };
+        /**
+         * GetProblemListViewResponse
+         * @description Response containing problem list data.
+         */
+        GetProblemListViewResponse: {
+            /**
+             * Items
+             * @description Problem data items
+             */
+            items?: components["schemas"]["ProblemViewItem"][];
+            /**
+             * Total Count
+             * @description Total count before pagination
+             * @default 0
+             */
+            total_count: number;
         };
         /**
          * GetProblemStatementApiRequest
@@ -24820,6 +25058,46 @@ export interface components {
             count: number;
         };
         /**
+         * HealthViewItem
+         * @description Single health row from the health list view.
+         */
+        HealthViewItem: {
+            /**
+             * Date Hour
+             * Format: date-time
+             */
+            date_hour: string;
+            /** Service */
+            service?: string | null;
+            /**
+             * Check Count
+             * @default 0
+             */
+            check_count: number;
+            /**
+             * Ok Count
+             * @default 0
+             */
+            ok_count: number;
+            /**
+             * Fail Count
+             * @default 0
+             */
+            fail_count: number;
+            /** Uptime Percent */
+            uptime_percent?: number | null;
+            /** Avg Latency Ms */
+            avg_latency_ms?: number | null;
+            /** Min Latency Ms */
+            min_latency_ms?: number | null;
+            /** Max Latency Ms */
+            max_latency_ms?: number | null;
+            /** Latest Ok */
+            latest_ok?: boolean | null;
+            /** Latest Error */
+            latest_error?: string | null;
+        };
+        /**
          * HealthViews
          * @description Health view data.
          */
@@ -26697,6 +26975,31 @@ export interface components {
             can_delete?: boolean | null;
         };
         /**
+         * LoginViewItem
+         * @description Single login from the login list view.
+         */
+        LoginViewItem: {
+            /**
+             * Login Id
+             * Format: uuid
+             */
+            login_id: string;
+            /** Profile Id */
+            profile_id?: string | null;
+            /** Last Login */
+            last_login?: string | null;
+            /** Login Created At */
+            login_created_at?: string | null;
+            /** Active */
+            active?: boolean | null;
+            /** Generated */
+            generated?: boolean | null;
+            /** Mcp */
+            mcp?: boolean | null;
+            /** Call Id */
+            call_id?: string | null;
+        };
+        /**
          * MessageData
          * @description Message with contents, feedbacks, and hints.
          *
@@ -26746,6 +27049,44 @@ export interface components {
             highlights?: components["schemas"]["HighlightEntry"][] | null;
             /** Replaces */
             replaces?: components["schemas"]["ReplacementEntry"][] | null;
+        };
+        /**
+         * MetricViewItem
+         * @description Single metric row from the metric list view.
+         */
+        MetricViewItem: {
+            /**
+             * Date Hour
+             * Format: date-time
+             */
+            date_hour: string;
+            /**
+             * Sample Count
+             * @default 0
+             */
+            sample_count: number;
+            /** Avg Cpu Percent */
+            avg_cpu_percent?: number | null;
+            /** Min Cpu Percent */
+            min_cpu_percent?: number | null;
+            /** Max Cpu Percent */
+            max_cpu_percent?: number | null;
+            /** Avg Latency Ms */
+            avg_latency_ms?: number | null;
+            /** Min Latency Ms */
+            min_latency_ms?: number | null;
+            /** Max Latency Ms */
+            max_latency_ms?: number | null;
+            /** Avg Memory Bytes */
+            avg_memory_bytes?: number | null;
+            /** Min Memory Bytes */
+            min_memory_bytes?: number | null;
+            /** Max Memory Bytes */
+            max_memory_bytes?: number | null;
+            /** Max Requests Total */
+            max_requests_total?: number | null;
+            /** Max Errors Total */
+            max_errors_total?: number | null;
         };
         /** ModelDepartmentSection */
         ModelDepartmentSection: {
@@ -29513,6 +29854,29 @@ export interface components {
         ProblemStatementsApiResponse: {
             /** Problem Statement Id */
             problem_statement_id?: string | null;
+        };
+        /**
+         * ProblemViewItem
+         * @description Single problem from the problem list view.
+         */
+        ProblemViewItem: {
+            /**
+             * Problem Id
+             * Format: uuid
+             */
+            problem_id: string;
+            /** Type */
+            type?: string | null;
+            /** Message */
+            message?: string | null;
+            /** Resolved */
+            resolved?: boolean | null;
+            /** Problem Created At */
+            problem_created_at?: string | null;
+            /** Problem Updated At */
+            problem_updated_at?: string | null;
+            /** Profile Id */
+            profile_id?: string | null;
         };
         /** ProcessCsvApiRequest */
         ProcessCsvApiRequest: {
@@ -55351,6 +55715,39 @@ export interface operations {
             };
         };
     };
+    get_activity_api_v4_views_activity_list_get_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetActivityListViewResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_activity_session_facts_api_v4_views_activity_session_facts_get_post: {
         parameters: {
             query?: never;
@@ -55593,6 +55990,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["GetActivitySummaryResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_health_api_v4_views_health_list_get_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetHealthListViewResponse"];
                 };
             };
             /** @description Validation Error */
@@ -56398,6 +56828,105 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["GetCallListViewResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_problems_api_v4_views_problem_list_get_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetProblemListViewResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_logins_api_v4_views_login_list_get_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetLoginListViewResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_metrics_api_v4_views_metric_list_get_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetMetricListViewResponse"];
                 };
             };
             /** @description Validation Error */

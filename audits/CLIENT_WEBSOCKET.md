@@ -209,6 +209,46 @@ type MySocketEvents = {
 
 Socket event names must come from the typed event maps. Using arbitrary string literals for event names that don't exist in the OpenAPI schema indicates a missing server-side socket endpoint definition.
 
+### Rule 10: Per-resource event names follow `{resource}_generation_{lifecycle}` pattern
+
+Client components must listen for per-resource typed events, not a generic `resource_generation_complete`. Event names follow the pattern:
+
+- `{resource}_generation_started` — resource generation has begun
+- `{resource}_generation_progress` — streaming arguments delta
+- `{resource}_generation_complete` — resource created, payload is fully typed
+- `{resource}_generation_error` — resource generation failed with `error_stage`
+
+```typescript
+// Correct: typed per-resource event
+socket.on("names_generation_complete", (data) => {
+  // data is auto-typed from ServerToClientEvents
+  setInternalAiResource({ id: data.id, name: data.name });
+});
+
+// Incorrect: generic event with manual filtering and casting
+socket.on("resource_generation_complete", (data: Record<string, unknown>) => {
+  if (data["resource_type"] !== "names") return;
+  const resourceData = data["resource_data"] as Record<string, unknown>;
+});
+```
+
+### Rule 11: No `Record<string, unknown>` for socket event data
+
+Socket event handler data must be typed via `ServerToClientEvents` inference or `Parameters<>` extraction. Using `Record<string, unknown>` with manual casting defeats the auto-generated type pipeline.
+
+```typescript
+// Correct: type inferred from ServerToClientEvents
+socket.on("names_generation_complete", (data) => {
+  data.id;   // string | null — auto-typed
+  data.name; // string | null — auto-typed
+});
+
+// Incorrect: untyped with manual casting
+socket.on("resource_generation_complete", (data: Record<string, unknown>) => {
+  const id = data["id"] as string;  // unsafe cast
+});
+```
+
 ---
 
 ## Audit Checks
@@ -337,6 +377,25 @@ done
 ```
 
 **Expected**: Empty.
+
+### Audit 11: Components using generic `resource_generation_complete` instead of per-resource events
+
+```bash
+# Find components listening for the old generic event
+grep -rn "resource_generation_complete" client/components/ --include="*.tsx"
+```
+
+**Expected**: Empty. All components should use per-resource event names (e.g., `names_generation_complete`).
+
+### Audit 12: Components using `Record<string, unknown>` for socket event data
+
+```bash
+# Find socket.on handlers using Record<string, unknown>
+grep -rn "Record<string, unknown>" client/components/ --include="*.tsx" | \
+  grep -i "socket\|generation\|resource"
+```
+
+**Expected**: Empty. Socket event data should be typed via `ServerToClientEvents`.
 
 ---
 

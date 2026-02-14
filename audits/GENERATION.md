@@ -158,6 +158,33 @@ Each agent may have different system prompts, developer instructions, and tools.
 
 The client receives multiple streams of events for a multi-agent generation. It correlates them using `run_id` (same generation) and `resource_type` (which agent produced what). The `group_id` is for cross-regeneration correlation.
 
+### Rule 11: Resource events flow through per-resource socket handlers
+
+The token factory emits internal events (`generate_call_start`, `generate_call_progress`, `generate_call_complete`, `generate_call_error`) on the internal socket bus. The resource dispatcher (`server/app/socket/v4/resources/dispatcher.py`) routes these events by `resource_type` to per-resource handler modules:
+
+```
+server/app/socket/v4/resources/{resource}/
+  __init__.py     — OpenAPI POST endpoints for schema generation
+  types.py        — Per-resource Pydantic event models
+  start.py        — handle_start() → emits {resource}_generation_started
+  progress.py     — handle_progress() → emits {resource}_generation_progress
+  complete.py     — handle_complete() → hydrates via get_*_internal(), emits {resource}_generation_complete
+  error.py        — handle_error() → emits {resource}_generation_error
+```
+
+Each handler emits a typed, per-resource client-facing event. Complete handlers hydrate resources via `get_*_internal()` and include typed fields (not raw dicts). Start/progress/error handlers emit base event types with resource_type-specific event names.
+
+The dispatcher is the only file that registers `@internal_sio.on` listeners for resource events. Per-resource handlers are plain async functions, not socket listeners.
+
+### Rule 12: The `save` flag controls artifact persistence on completion
+
+`GenerateArtifactPayload` includes `save: bool = True`. Domain handlers set this based on the client's intent:
+
+- `save=True` (default): After all agents complete, the completion handler auto-saves the artifact (e.g., creates a new persona). Used when generating from the list page.
+- `save=False`: Generation runs but does not persist the artifact. Used when generating from the edit/get page where the user will manually save.
+
+The `save` flag is threaded through: client payload → domain handler → `generate_artifact` emit → `run_complete` event → completion handler.
+
 ---
 
 ## File Locations
@@ -165,8 +192,12 @@ The client receives multiple streams of events for a multi-agent generation. It 
 ```
 server/app/socket/v4/artifacts/generate.py              — Token factory (DO NOT add domain logic here)
 server/app/socket/v4/artifacts/{domain}/generate.py      — Domain handlers (orchestration lives here)
+server/app/socket/v4/artifacts/{domain}/complete.py      — Artifact completion handler (run_complete, text_complete)
+server/app/socket/v4/artifacts/{domain}/progress.py      — Artifact progress handler (percentage tracking)
 server/app/socket/v4/artifacts/{domain}/types.py         — Domain-specific payload types
 server/app/socket/v4/artifacts/types.py                  — Shared event types (error, progress, complete)
+server/app/socket/v4/resources/dispatcher.py             — Resource event dispatcher (routes by resource_type)
+server/app/socket/v4/resources/{resource}/               — Per-resource handlers (start, progress, complete, error)
 server/app/api/v4/artifacts/{domain}/get.py              — get_{domain}_websocket() (pre-fetches resources)
 server/app/api/v4/artifacts/{domain}/types.py            — Websocket response types (resource_agent_ids, resources)
 ```
@@ -191,6 +222,7 @@ class GenerateArtifactPayload(BaseModel):
     llm_config: ModelConfig               # Fully resolved model config for this agent
     tools: list[dict[str, Any]] | None    # Tools available to this agent
     tool_timeout_seconds: float = 60.0
+    save: bool = True                     # Whether to auto-save artifact on completion
 ```
 
 Each field is fully resolved before reaching the token factory. No IDs to look up, no chains to resolve, no domain logic to apply.

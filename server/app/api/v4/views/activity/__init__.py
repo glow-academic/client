@@ -5,6 +5,7 @@ from fastapi import APIRouter
 from app.api.v4.views.activity.audits import router as audits_router
 from app.api.v4.views.activity.daily import router as daily_router
 from app.api.v4.views.activity.feedbacks import router as feedbacks_router
+from app.api.v4.views.activity.list import router as list_router
 from app.api.v4.views.activity.logins import router as logins_router
 from app.api.v4.views.activity.problems import router as problems_router
 from app.api.v4.views.activity.session_facts import router as session_facts_router
@@ -12,6 +13,7 @@ from app.api.v4.views.activity.summary import router as summary_router
 
 router = APIRouter(prefix="/activity", tags=["views", "activity"])
 
+router.include_router(list_router, prefix="/list", tags=["list"])
 router.include_router(
     session_facts_router, prefix="/session-facts", tags=["session_facts"]
 )

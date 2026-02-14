@@ -16,8 +16,11 @@ from app.api.v4.views.call import router as call_router
 from app.api.v4.views.config import router as config_router
 from app.api.v4.views.group import router as group_router
 from app.api.v4.views.health import router as health_router
+from app.api.v4.views.login import router as login_router
 from app.api.v4.views.message import router as message_router
+from app.api.v4.views.metric import router as metric_router
 from app.api.v4.views.pricing import router as pricing_router
+from app.api.v4.views.problem import router as problem_router
 from app.api.v4.views.run import router as run_router
 from app.api.v4.views.session import router as session_router
 from app.api.v4.views.training import router as training_router
@@ -39,3 +42,6 @@ router.include_router(audit_router)
 router.include_router(run_router)
 router.include_router(message_router)
 router.include_router(call_router)
+router.include_router(problem_router)
+router.include_router(login_router)
+router.include_router(metric_router)

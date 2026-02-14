@@ -219,6 +219,61 @@ Identity/control props (`disabled`, `onChange`, `show_*`, etc.) remain manually 
 Callers always pass API response data that conforms to this type. Manual duplication creates
 drift risk and is always a subset of the real type.
 
+### Rule 18: Every AI-generated resource must have a socket handler module
+
+Resources that participate in AI generation must have a socket handler module at `server/app/socket/v4/resources/{resource}/` with 6 files:
+
+```
+server/app/socket/v4/resources/{resource}/
+  __init__.py     — server_router with OpenAPI POST endpoints (4 endpoints)
+  types.py        — Per-resource Pydantic event models (complete event with typed fields)
+  start.py        — handle_start() → emits {resource}_generation_started
+  progress.py     — handle_progress() → emits {resource}_generation_progress
+  complete.py     — handle_complete() → hydrates via get_{resource}_internal(), emits {resource}_generation_complete
+  error.py        — handle_error() → emits {resource}_generation_error
+```
+
+Resources without socket handlers will not emit typed lifecycle events to the client during AI generation.
+
+### Rule 19: Complete handlers must hydrate via `get_*_internal()`
+
+Resource socket complete handlers (`complete.py`) must hydrate resources using the cached `get_{resource}_internal()` function — never raw SQL or passthrough of tool results. This ensures the client receives the same typed shape as the REST API.
+
+```python
+# Correct: hydrate via internal function
+items = await get_names_internal(conn, [resource_id])
+event.id = items[0].id if items else None
+event.name = items[0].name if items else None
+
+# Incorrect: passthrough raw tool result
+event.id = tool_result.get("resource_id")
+event.name = tool_result.get("name")
+```
+
+### Rule 20: Socket handler modules must be registered in the dispatcher
+
+Every per-resource socket handler module must be imported and registered in the dispatcher (`server/app/socket/v4/resources/dispatcher.py`) handler dicts:
+
+- `START_HANDLERS["{resource}"]` → `{resource}_start.handle_start`
+- `PROGRESS_HANDLERS["{resource}"]` → `{resource}_progress.handle_progress`
+- `COMPLETE_HANDLERS["{resource}"]` → `{resource}_complete.handle_complete`
+- `ERROR_HANDLERS["{resource}"]` → `{resource}_error.handle_error`
+
+Missing registrations mean events for that resource type are silently dropped.
+
+### Rule 21: Client components must listen for per-resource socket events
+
+Resource UI components must listen for typed per-resource socket events (e.g., `names_generation_complete`) — not a generic `resource_generation_complete` event with manual filtering. The per-resource event name is derived from the resource type:
+
+| Event | Pattern |
+|---|---|
+| Started | `{resource}_generation_started` |
+| Progress | `{resource}_generation_progress` |
+| Complete | `{resource}_generation_complete` |
+| Error | `{resource}_generation_error` |
+
+The event payload is automatically typed via `ServerToClientEvents` from the OpenAPI schema. No `Record<string, unknown>` casting.
+
 ---
 
 ## Audit Checks
@@ -565,6 +620,48 @@ ORDER BY p.proname;
 ```
 
 **Expected**: Every FK/array column on a resource table has a corresponding parameter in that resource's search function. For single FK columns like `scenario_id`, the search param should be `scenario_ids uuid[]` (plural array). For array columns like `department_ids uuid[]`, the search param should match.
+
+### Audit 20: Resources missing socket handler modules
+
+```bash
+# Check which AI-generated resources have socket handler modules
+for resource_dir in server/app/socket/v4/resources/*/; do
+  resource=$(basename "$resource_dir")
+  [ "$resource" = "__pycache__" ] && continue
+  missing=""
+  [ ! -f "${resource_dir}start.py" ] && missing="$missing start.py"
+  [ ! -f "${resource_dir}progress.py" ] && missing="$missing progress.py"
+  [ ! -f "${resource_dir}complete.py" ] && missing="$missing complete.py"
+  [ ! -f "${resource_dir}error.py" ] && missing="$missing error.py"
+  [ ! -f "${resource_dir}types.py" ] && missing="$missing types.py"
+  [ -n "$missing" ] && echo "INCOMPLETE SOCKET MODULE ($resource):$missing"
+done
+```
+
+**Expected**: Empty. Every resource with a socket handler module must have all 6 files.
+
+### Audit 21: Socket handler modules not registered in dispatcher
+
+```bash
+# Check that every resource socket module is registered in the dispatcher
+dispatcher="server/app/socket/v4/resources/dispatcher.py"
+for resource_dir in server/app/socket/v4/resources/*/; do
+  resource=$(basename "$resource_dir")
+  [ "$resource" = "__pycache__" ] && continue
+  grep -q "\"$resource\"" "$dispatcher" || echo "NOT REGISTERED IN DISPATCHER: $resource"
+done
+```
+
+**Expected**: Empty.
+
+### Audit 22: Client components using generic `resource_generation_complete`
+
+```bash
+# Find components still listening for the old generic event
+grep -rl "resource_generation_complete" client/components/ --include="*.tsx"
+```
+
+**Expected**: Empty. All components should use per-resource event names (e.g., `names_generation_complete`).
 
 ---
 

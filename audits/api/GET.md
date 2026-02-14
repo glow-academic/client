@@ -86,16 +86,15 @@ resource_agent_ids = select_agents_for_artifact(
 
 Reference: `server/app/api/v4/artifacts/persona/get.py:261-273`
 
-### Rule 5: Tool ID maps built from selected agents
+### Rule 5: Tool ID map built from selected agents
 
-After agent scoring, two maps are built per resource type:
+After agent scoring, a single tool ID map is built per resource type:
 
-- `create_tool_ids: dict[str, UUID | None]` — extracted via `create_tool_ids_map()`
-- `link_tool_ids: dict[str, UUID | None]` — extracted via `link_tool_ids_map()`
+- `tool_ids: dict[str, UUID | None]` — extracted via `tool_ids_map()`
 
-These maps are derived from the selected agents' tool definitions. They tell the frontend which tool call ID to send back on save/draft for tracking.
+This map is derived from the selected agents' tool definitions. Each resource type maps to a single `tool_id` (replacing the previous `create_tool_id` + `link_tool_id` split). The server uses this map to resolve tool IDs for save/draft tracking — the client does not send tool IDs.
 
-Reference: `server/app/api/v4/artifacts/persona/get.py:275-290`
+Reference: `server/app/api/v4/artifacts/persona/get.py`
 
 ### Rule 6: Pass 2 uses parallel fetch via `asyncio.gather()`
 
@@ -173,12 +172,11 @@ Reference: `server/app/api/v4/artifacts/persona/types.py:225-268`
 - `required: bool` — whether this section is mandatory
 - `suggestions: list[...]` — suggestion resources for this section
 - `show_ai_generate: bool` — whether to show the AI generate button
-- `create_tool_id: UUID | None` — tool call ID for resource creation tracking
-- `link_tool_id: UUID | None` — tool call ID for resource linking tracking
+- `tool_id: UUID | None` — single tool ID for tracking (server-resolved, not sent by client)
 
 Single-select sections have `resource` (singular) + `resources` (list). Multi-select sections have `current` (list) + `resources` (list).
 
-Reference: `server/app/api/v4/artifacts/persona/get.py:897-998`, `types.py:46-108`
+Reference: `server/app/api/v4/artifacts/persona/get.py`, `types.py`
 
 ### Rule 10: Websocket response has exactly 4 top-level fields
 

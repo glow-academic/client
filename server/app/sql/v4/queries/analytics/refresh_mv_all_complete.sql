@@ -152,6 +152,23 @@ BEGIN
     REFRESH MATERIALIZED VIEW CONCURRENTLY mv_training_bundle;
     refreshed := array_append(refreshed, 'mv_training_bundle');
 
+    -- Lean Activity MVs
+    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_problems;
+    refreshed := array_append(refreshed, 'mv_problems');
+
+    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_logins;
+    refreshed := array_append(refreshed, 'mv_logins');
+
+    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_activity;
+    refreshed := array_append(refreshed, 'mv_activity');
+
+    -- Lean Health MVs
+    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_health;
+    refreshed := array_append(refreshed, 'mv_health');
+
+    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_metrics;
+    refreshed := array_append(refreshed, 'mv_metrics');
+
     -- Config MV
     REFRESH MATERIALIZED VIEW CONCURRENTLY mv_config;
     refreshed := array_append(refreshed, 'mv_config');
