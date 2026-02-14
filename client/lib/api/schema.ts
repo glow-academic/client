@@ -12280,6 +12280,7 @@ export interface components {
          * @description Server-to-client event: attempt_complete.
          *
          *     Emitted when message generation completes and is saved to DB.
+         *     Terminal event for a generation turn — client uses this to clear sending state.
          */
         AttemptCompleteEvent: {
             /**
@@ -12299,6 +12300,8 @@ export interface components {
             message: string;
             /** Type */
             type?: string | null;
+            /** Chat Id */
+            chat_id: string;
             /** Final Content */
             final_content?: string | null;
             /**
@@ -32173,6 +32176,8 @@ export interface components {
             suggest_source?: string | null;
             /** Exclude Ids */
             exclude_ids?: string[] | null;
+            /** Args Ids */
+            args_ids?: string[] | null;
             /**
              * Tool
              * @default false
@@ -34250,8 +34255,8 @@ export interface components {
          * @description Request for searching simulation positions.
          */
         SearchSimulationPositionsApiRequest: {
-            /** Simulation Id */
-            simulation_id?: string | null;
+            /** Simulation Ids */
+            simulation_ids?: string[] | null;
             /**
              * Limit Count
              * @default 20

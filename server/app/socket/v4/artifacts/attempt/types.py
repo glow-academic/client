@@ -110,9 +110,11 @@ class AttemptCompleteEvent(GenerationCompleteEvent):
     """Server-to-client event: attempt_complete.
 
     Emitted when message generation completes and is saved to DB.
+    Terminal event for a generation turn — client uses this to clear sending state.
     """
 
     artifact_type: str = "attempt"
+    chat_id: str
     final_content: str | None = None
     completed: bool = True
 
@@ -323,15 +325,6 @@ class AttemptAssistantCompleteEvent(BaseModel):
     content: str
     created_at: str | None = None
     persona_id: str | None = None
-
-
-class AttemptTurnCompleteEvent(BaseModel):
-    """Server-to-client event: attempt_turn_complete.
-
-    Emitted when the full conversation turn is complete.
-    """
-
-    chat_id: str
 
 
 class AttemptStoppedEvent(BaseModel):

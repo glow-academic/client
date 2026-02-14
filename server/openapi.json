@@ -51592,6 +51592,10 @@
             ],
             "title": "Type"
           },
+          "chat_id": {
+            "type": "string",
+            "title": "Chat Id"
+          },
           "final_content": {
             "anyOf": [
               {
@@ -51614,10 +51618,11 @@
           "group_id",
           "resource_type",
           "success",
-          "message"
+          "message",
+          "chat_id"
         ],
         "title": "AttemptCompleteEvent",
-        "description": "Server-to-client event: attempt_complete.\n\nEmitted when message generation completes and is saved to DB."
+        "description": "Server-to-client event: attempt_complete.\n\nEmitted when message generation completes and is saved to DB.\nTerminal event for a generation turn \u2014 client uses this to clear sending state."
       },
       "AttemptContentProgressEvent": {
         "properties": {
@@ -120252,6 +120257,21 @@
             ],
             "title": "Exclude Ids"
           },
+          "args_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Args Ids"
+          },
           "tool": {
             "anyOf": [
               {
@@ -127357,17 +127377,20 @@
       },
       "SearchSimulationPositionsApiRequest": {
         "properties": {
-          "simulation_id": {
+          "simulation_ids": {
             "anyOf": [
               {
-                "type": "string",
-                "format": "uuid"
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Simulation Id"
+            "title": "Simulation Ids"
           },
           "limit_count": {
             "anyOf": [

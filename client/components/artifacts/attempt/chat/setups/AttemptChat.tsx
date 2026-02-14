@@ -100,7 +100,7 @@ type AttemptAssistantStartEvent = Parameters<ServerToClientEvents["attempt_assis
 type AttemptAssistantDeltaEvent = Parameters<ServerToClientEvents["attempt_assistant_delta"]>[0];
 type AttemptAssistantAudioEvent = Parameters<ServerToClientEvents["attempt_assistant_audio"]>[0];
 type AttemptAssistantCompleteEvent = Parameters<ServerToClientEvents["attempt_assistant_complete"]>[0];
-type AttemptTurnCompleteEvent = Parameters<ServerToClientEvents["attempt_turn_complete"]>[0];
+type AttemptCompleteEvent = Parameters<ServerToClientEvents["attempt_complete"]>[0];
 type AttemptStoppedEvent = Parameters<ServerToClientEvents["attempt_stopped"]>[0];
 type AttemptChatEndedEvent = Parameters<ServerToClientEvents["attempt_chat_ended"]>[0];
 type AttemptEndedEvent = Parameters<ServerToClientEvents["attempt_ended"]>[0];
@@ -226,7 +226,6 @@ export function AttemptChat({
   const pendingNextChatIdRef = useRef<string | null>(null);
   const freshlyCompletedChatsRef = useRef<Set<string>>(new Set());
   const refreshTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const sendingMessageTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const transcriptDeltasRef = useRef<Map<string, string>>(new Map());
   const itemIdToOptimisticIdRef = useRef<Map<string, string>>(new Map());
   const voiceInputRef = useRef<HybridInputHandle | null>(null);
@@ -943,16 +942,6 @@ export function AttemptChat({
         return newMap;
       });
 
-      if (sendingMessageTimeoutRef.current) {
-        clearTimeout(sendingMessageTimeoutRef.current);
-      }
-      sendingMessageTimeoutRef.current = setTimeout(() => {
-        if (currentChatIdRef.current === data.chat_id) {
-          setIsSendingMessage(false);
-        }
-        sendingMessageTimeoutRef.current = null;
-      }, 2000);
-
       if (refreshTimeoutRef.current) {
         clearTimeout(refreshTimeoutRef.current);
       }
@@ -1125,23 +1114,15 @@ export function AttemptChat({
       voiceInputRef.current?.enqueue_audio_delta(data.audio);
     };
 
-    // Turn complete
-    const handleTurnComplete = (data: AttemptTurnCompleteEvent) => {
+    // Generation turn complete (terminal event — clears sending state)
+    const handleAttemptComplete = (data: AttemptCompleteEvent) => {
       if (data.chat_id !== currentChatIdRef.current) return;
-      if (sendingMessageTimeoutRef.current) {
-        clearTimeout(sendingMessageTimeoutRef.current);
-        sendingMessageTimeoutRef.current = null;
-      }
       setIsSendingMessage(false);
     };
 
     // Response stopped
     const handleStopped = (data: AttemptStoppedEvent) => {
       if (data.chat_id === currentChatIdRef.current) {
-        if (sendingMessageTimeoutRef.current) {
-          clearTimeout(sendingMessageTimeoutRef.current);
-          sendingMessageTimeoutRef.current = null;
-        }
         setIsSendingMessage(false);
         setIsStoppingMessage(false);
       }
@@ -1406,10 +1387,6 @@ export function AttemptChat({
 
     // Unified error
     const handleError = (data: AttemptErrorEvent) => {
-      if (sendingMessageTimeoutRef.current) {
-        clearTimeout(sendingMessageTimeoutRef.current);
-        sendingMessageTimeoutRef.current = null;
-      }
       setIsSendingMessage(false);
       setIsStoppingMessage(false);
       toast.error(data.message);
@@ -1423,7 +1400,7 @@ export function AttemptChat({
     socket.on("attempt_user_start", handleUserStart);
     socket.on("attempt_user_delta", handleUserDelta);
     socket.on("attempt_user_complete", handleUserComplete);
-    socket.on("attempt_turn_complete", handleTurnComplete);
+    socket.on("attempt_complete", handleAttemptComplete);
     socket.on("attempt_stopped", handleStopped);
     socket.on("attempt_chat_ended", handleChatEnded);
     socket.on("attempt_ended", handleAttemptEnded);
@@ -1441,7 +1418,7 @@ export function AttemptChat({
       socket.off("attempt_user_start", handleUserStart);
       socket.off("attempt_user_delta", handleUserDelta);
       socket.off("attempt_user_complete", handleUserComplete);
-      socket.off("attempt_turn_complete", handleTurnComplete);
+      socket.off("attempt_complete", handleAttemptComplete);
       socket.off("attempt_stopped", handleStopped);
       socket.off("attempt_chat_ended", handleChatEnded);
       socket.off("attempt_ended", handleAttemptEnded);
@@ -1453,9 +1430,6 @@ export function AttemptChat({
 
       if (refreshTimeoutRef.current) {
         clearTimeout(refreshTimeoutRef.current);
-      }
-      if (sendingMessageTimeoutRef.current) {
-        clearTimeout(sendingMessageTimeoutRef.current);
       }
     };
   }, [

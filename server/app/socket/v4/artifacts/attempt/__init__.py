@@ -22,7 +22,7 @@ Event flow:
 3. Server emits attempt_assistant_start -> Client shows placeholder
 4. Server emits attempt_assistant_delta -> Client shows streaming
 5. Server emits attempt_assistant_complete -> Client shows final message
-6. Server emits attempt_turn_complete -> Client updates state
+6. Server emits attempt_complete -> Client clears sending state (terminal event)
 7. Server emits attempt_hint_progress -> Client shows hints (auto-triggered)
 """
 

@@ -23,7 +23,6 @@ from app.socket.v4.artifacts.attempt.types import (
     AttemptGradedEvent,
     AttemptGradingProgressEvent,
     AttemptHintProgressEvent,
-    AttemptTurnCompleteEvent,
 )
 from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import load_sql
@@ -163,9 +162,10 @@ async def _handle_message_complete(sid: str, data: dict[str, Any]) -> None:
             room=sid,
         )
 
-        # Emit attempt_complete event
+        # Emit attempt_complete event (terminal event — client clears sending state)
         event = AttemptCompleteEvent(
             artifact_type="attempt",
+            chat_id=str(chat_id),
             group_id=data.get("group_id", ""),
             resource_type="attempt",
             run_id=run_id,
@@ -178,14 +178,6 @@ async def _handle_message_complete(sid: str, data: dict[str, Any]) -> None:
         await sio.emit(
             "attempt_complete",
             event.model_dump(mode="json"),
-            room=sid,
-        )
-
-        # Emit attempt_turn_complete so the client clears the sending state
-        turn_event = AttemptTurnCompleteEvent(chat_id=str(chat_id))
-        await sio.emit(
-            "attempt_turn_complete",
-            turn_event.model_dump(mode="json"),
             room=sid,
         )
 

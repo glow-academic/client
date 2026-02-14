@@ -86,6 +86,62 @@ class GenerateArtifactPayload(BaseModel):
     upload_id: str | None = None
 
 
+def _parse_partial_json(partial: str) -> dict[str, Any] | None:
+    """Parse partial JSON by closing open strings and structures.
+
+    Handles streaming tool call arguments that are incomplete JSON.
+    Returns the parsed dict if successful, None otherwise.
+    """
+    if not partial or not partial.strip():
+        return None
+
+    candidate = partial.rstrip()
+
+    # Try as-is first (might already be complete)
+    try:
+        result = json.loads(candidate)
+        return result if isinstance(result, dict) else None
+    except json.JSONDecodeError:
+        pass
+
+    # Walk the string tracking state to figure out what closings are needed
+    in_string = False
+    escape_next = False
+    open_stack: list[str] = []
+
+    for ch in candidate:
+        if escape_next:
+            escape_next = False
+            continue
+        if ch == "\\" and in_string:
+            escape_next = True
+            continue
+        if ch == '"':
+            in_string = not in_string
+            continue
+        if not in_string:
+            if ch == "{":
+                open_stack.append("}")
+            elif ch == "[":
+                open_stack.append("]")
+            elif ch in ("}", "]") and open_stack:
+                open_stack.pop()
+
+    # Close open string if needed
+    if in_string:
+        candidate += '"'
+
+    # Close open structures
+    for closer in reversed(open_stack):
+        candidate += closer
+
+    try:
+        result = json.loads(candidate)
+        return result if isinstance(result, dict) else None
+    except json.JSONDecodeError:
+        return None
+
+
 def _event_name_for_modality(modality: str, phase: str) -> str:
     """Return event name for a modality/phase pair."""
     return f"generate_{modality}_{phase}"
@@ -604,6 +660,7 @@ async def _generate_artifact_impl(
                     if tool_name and not st["tool_name"]:
                         st["tool_name"] = tool_name
                     st["arguments"] += delta
+                    parsed_args = _parse_partial_json(st["arguments"])
                     await _emit_modality_event(
                         "call",
                         "progress",
@@ -620,6 +677,7 @@ async def _generate_artifact_impl(
                             "delta": delta,
                             "tool_name": st.get("tool_name"),
                             "arguments_delta": delta,
+                            "arguments": parsed_args,
                         },
                     )
 
