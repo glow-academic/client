@@ -143,21 +143,22 @@ export function Colors({
 
   useEffect(() => {
     if (!aiSocket || !aiIsConnected) return;
-    const handleResourceComplete = (data: Record<string, unknown>) => {
-      if (data["resource_type"] !== "colors") return;
-      if (group_id && data["group_id"] !== group_id) return;
-      const resourceData = data["resource_data"] as Record<string, unknown> | undefined;
-      if (resourceData) {
-        setInternalAiResource({
-          id: resourceData["id"] as string | null,
-          name: resourceData["name"] as string | null,
-          hex_code: resourceData["hex_code"] as string | null,
-        });
-      }
+    const handleResourceComplete = (data: {
+      group_id?: string;
+      id?: string | null;
+      name?: string | null;
+      hex_code?: string | null;
+    }) => {
+      if (group_id && data.group_id !== group_id) return;
+      setInternalAiResource({
+        id: data.id ?? null,
+        name: data.name ?? null,
+        hex_code: data.hex_code ?? null,
+      });
       onGenerationComplete?.();
     };
-    aiSocket.on("resource_generation_complete", handleResourceComplete);
-    return () => { aiSocket.off("resource_generation_complete", handleResourceComplete); };
+    aiSocket.on("colors_generation_complete", handleResourceComplete);
+    return () => { aiSocket.off("colors_generation_complete", handleResourceComplete); };
   }, [aiSocket, aiIsConnected, group_id, onGenerationComplete]);
 
   const effectiveAiResource = internalAiResource ?? aiResource ?? null;

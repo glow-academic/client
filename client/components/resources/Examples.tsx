@@ -335,19 +335,15 @@ export function Examples({
   useEffect(() => {
     if (!aiSocket || !aiIsConnected || !group_id) return;
 
-    const handleGenerationComplete = (data: Record<string, unknown>) => {
-      if (data["resource_type"] === "examples" && data["group_id"] === group_id) {
-        const resourceData = data["resource_data"] as Record<string, unknown> | undefined;
-        if (resourceData) {
-          setInternalAiExampleResources([{ id: resourceData["id"] as string, example: resourceData["example"] as string }]);
-        }
-        onGenerationComplete?.();
-      }
+    const handleGenerationComplete = (data: { group_id?: string; id?: string | null; example?: string | null }) => {
+      if (data.group_id !== group_id) return;
+      setInternalAiExampleResources([{ id: data.id as string, example: data.example as string }]);
+      onGenerationComplete?.();
     };
 
-    aiSocket.on("resource_generation_complete", handleGenerationComplete);
+    aiSocket.on("examples_generation_complete", handleGenerationComplete);
     return () => {
-      aiSocket.off("resource_generation_complete", handleGenerationComplete);
+      aiSocket.off("examples_generation_complete", handleGenerationComplete);
     };
   }, [aiSocket, aiIsConnected, group_id, onGenerationComplete]);
 

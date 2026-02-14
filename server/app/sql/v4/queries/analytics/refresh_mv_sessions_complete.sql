@@ -43,6 +43,18 @@ BEGIN
     REFRESH MATERIALIZED VIEW CONCURRENTLY mv_artifact_session_list;
     refreshed := array_append(refreshed, 'mv_artifact_session_list');
 
+    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_sessions;
+    refreshed := array_append(refreshed, 'mv_sessions');
+
+    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_groups;
+    refreshed := array_append(refreshed, 'mv_groups');
+
+    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_audits;
+    refreshed := array_append(refreshed, 'mv_audits');
+
+    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_runs;
+    refreshed := array_append(refreshed, 'mv_runs');
+
     -- Get actor_name from profile_artifact using profile_names_junction junction table
     SELECT COALESCE(
         (SELECT n.name FROM profile_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = api_refresh_sessions_v4.profile_id LIMIT 1),

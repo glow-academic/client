@@ -5,6 +5,8 @@ Types are registered in OpenAPI via FastAPI endpoints, enabling
 automatic type extraction in the frontend via InputOf/OutputOf.
 """
 
+from pydantic import BaseModel
+
 from app.api.v4.artifacts.persona.types import GetPersonaApiRequest
 from app.socket.v4.artifacts.types import (
     GenerationCompleteEvent,
@@ -48,6 +50,21 @@ class PersonaGenerationCompleteEvent(GenerationCompleteEvent):
 
     artifact_type: str = "persona"
     persona_id: str | None = None
+
+
+class PersonaGenerationProgressEvent(BaseModel):
+    """Server-to-client event: persona_generation_progress.
+
+    Emitted as individual resources complete, providing percentage progress.
+    """
+
+    artifact_type: str = "persona"
+    group_id: str
+    run_id: str | None = None
+    completed_resources: int
+    total_resources: int
+    percentage: int  # 0-100
+    last_completed_resource: str | None = None
 
 
 class PersonaGenerationErrorEvent(GenerationErrorEvent):

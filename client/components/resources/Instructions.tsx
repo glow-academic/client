@@ -399,20 +399,18 @@ export function Instructions({
     if (!aiSocket || !aiIsConnected) return;
 
     const handleGenerationComplete = (data: {
-      resource_type?: string;
       group_id?: string | null;
-      resource_data?: { id?: string | null; template?: string | null };
+      id?: string | null;
+      template?: string | null;
     }) => {
-      if (data.resource_type !== "instructions") return;
       if (data.group_id !== group_id) return;
-      const { id, template } = data.resource_data ?? {};
-      setInternalAiResource({ id: id ?? null, template: template ?? null });
+      setInternalAiResource({ id: data.id ?? null, template: data.template ?? null });
       onGenerationComplete?.();
     };
 
-    aiSocket.on("resource_generation_complete", handleGenerationComplete);
+    aiSocket.on("instructions_generation_complete", handleGenerationComplete);
     return () => {
-      aiSocket.off("resource_generation_complete", handleGenerationComplete);
+      aiSocket.off("instructions_generation_complete", handleGenerationComplete);
     };
   }, [aiSocket, aiIsConnected, group_id, onGenerationComplete]);
 

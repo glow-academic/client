@@ -239,6 +239,7 @@ function PersonaComponent({
   const [generatingResources, setGeneratingResources] = useState<Set<ResourceType>>(
     new Set(),
   );
+  const [_generationProgress, setGenerationProgress] = useState<number>(0);
 
   const isGenerating = useCallback(
     (resourceType: string) => generatingResources.has(resourceType as ResourceType),
@@ -252,23 +253,36 @@ function PersonaComponent({
   useEffect(() => {
     if (!socket || !isConnected) return;
 
-    const handleStarted = (data: Record<string, unknown>) => {
-      if (data["group_id"] !== groupId) return;
-      const resourceTypes = data["resource_types"] as string[] | undefined;
-      if (resourceTypes) {
+    const handleStarted = (data: {
+      group_id?: string;
+      resource_types?: string[];
+    }) => {
+      if (data.group_id !== groupId) return;
+      if (data.resource_types) {
         setGeneratingResources((prev) => {
           const next = new Set(prev);
-          resourceTypes.forEach((rt) => next.add(rt as ResourceType));
+          data.resource_types!.forEach((rt) => next.add(rt as ResourceType));
           return next;
         });
       }
+      setGenerationProgress(0);
     };
 
-    const handleError = (data: Record<string, unknown>) => {
-      if (data["group_id"] && data["group_id"] !== groupId) return;
+    const handleError = (data: {
+      artifact_type: string;
+      group_id?: string | null;
+      resource_types?: string[] | null;
+      resource_type?: string | null;
+      resource_id?: string | null;
+      run_id?: string | null;
+      success: boolean;
+      message: string;
+      trace_id?: string | null;
+    }) => {
+      if (data.group_id && data.group_id !== groupId) return;
       const resourceTypes =
-        (data["resource_types"] as string[]) ||
-        (data["resource_type"] ? [data["resource_type"] as string] : []);
+        data.resource_types ||
+        (data.resource_type ? [data.resource_type] : []);
       setGeneratingResources((prev) => {
         const next = new Set(prev);
         resourceTypes.forEach((rt) => {
@@ -278,23 +292,34 @@ function PersonaComponent({
         });
         return next;
       });
-      toast.error((data["message"] as string) || "Generation failed");
+      toast.error(data.message || "Generation failed");
     };
 
-    const handleComplete = (data: Record<string, unknown>) => {
-      if (data["group_id"] && data["group_id"] !== groupId) return;
+    const handleComplete = (data: { group_id?: string }) => {
+      if (data.group_id && data.group_id !== groupId) return;
       // All agents finished - clear all generating resources
       setGeneratingResources(new Set());
+      setGenerationProgress(0);
+    };
+
+    const handleProgress = (data: {
+      group_id?: string;
+      percentage?: number;
+    }) => {
+      if (data.group_id !== groupId) return;
+      setGenerationProgress(data.percentage ?? 0);
     };
 
     socket.on("persona_generation_started", handleStarted);
     socket.on("persona_generation_error", handleError);
     socket.on("persona_generation_complete", handleComplete);
+    socket.on("persona_generation_progress", handleProgress);
 
     return () => {
       socket.off("persona_generation_started", handleStarted);
       socket.off("persona_generation_error", handleError);
       socket.off("persona_generation_complete", handleComplete);
+      socket.off("persona_generation_progress", handleProgress);
     };
   }, [socket, isConnected, groupId]);
 

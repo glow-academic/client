@@ -94,22 +94,6 @@ class GenerateErrorApiRequest(BaseModel):
 # =============================================================================
 
 
-class ResourceGenerationCompleteEvent(BaseModel):
-    """Server-to-client event: resource_generation_complete.
-
-    Emitted when a single resource finishes generating.
-    Contains the hydrated resource data for immediate frontend use.
-    """
-
-    artifact_type: str
-    resource_type: str
-    resource_id: str
-    group_id: str
-    run_id: str | None = None
-    success: bool
-    resource_data: dict[str, Any] = {}
-
-
 class PersonaGenerationStartedEvent(BaseModel):
     """Server-to-client event: persona_generation_started.
 

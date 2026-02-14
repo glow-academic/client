@@ -738,7 +738,11 @@ async def _generate_artifact_impl(
                     try:
                         tool_result = json.loads(tool_result_str)
                     except json.JSONDecodeError:
-                        tool_result = {"success": False, "message": tool_result_str}
+                        tool_result = {
+                            "success": False,
+                            "message": tool_result_str,
+                            "error_stage": "result_parse",
+                        }
 
                     # Store for agentic loop - we'll append to appropriate state
                     tool_results.append(
@@ -753,6 +757,11 @@ async def _generate_artifact_impl(
                         }
                     )
 
+                    # Use resource_type from tool result if available (more accurate for multi-resource agents)
+                    result_resource_type = (
+                        tool_result.get("resource_type") or resource_type
+                    )
+
                     await _emit_modality_event(
                         "call",
                         "complete",
@@ -760,7 +769,7 @@ async def _generate_artifact_impl(
                             "modality": "call",
                             "sid": sid,
                             "artifact_type": data.artifact_type,
-                            "resource_type": resource_type,
+                            "resource_type": result_resource_type,
                             "run_id": data.run_id,
                             "group_id": data.group_id,
                             "type": "complete",

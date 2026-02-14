@@ -8542,6 +8542,86 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/views/session/get": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Sessions
+         * @description Get session data from the materialized view.
+         */
+        post: operations["get_sessions_api_v4_views_session_get_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/views/group/get": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Groups
+         * @description Get group data from the materialized view.
+         */
+        post: operations["get_groups_api_v4_views_group_get_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/views/audit/get": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Audits
+         * @description Get audit data from the materialized view.
+         */
+        post: operations["get_audits_api_v4_views_audit_get_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/views/run/get": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Runs
+         * @description Get run data from the materialized view.
+         */
+        post: operations["get_runs_api_v4_views_run_get_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v4/auth/login": {
         parameters: {
             query?: never;
@@ -10148,29 +10228,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v4/server/resource_generation_complete": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Resource Generation Complete Api
-         * @description Server-to-client event: Resource generation completed.
-         *
-         *     Emitted when a single resource is successfully generated.
-         *     Contains the hydrated resource data for immediate frontend use.
-         */
-        post: operations["resource_generation_complete_api_socket_v4_server_resource_generation_complete_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/socket/v4/server/scenario_generation_progress": {
         parameters: {
             query?: never;
@@ -10478,6 +10535,29 @@ export interface paths {
          *     Emitted when persona resource generation fails.
          */
         post: operations["persona_generation_error_api_socket_v4_server_persona_generation_error_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v4/server/persona_generation_progress": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Persona Generation Progress Api
+         * @description Server-to-client event: Persona generation progress.
+         *
+         *     Emitted as individual resources complete during persona generation.
+         *     Contains percentage-based progress tracking.
+         */
+        post: operations["persona_generation_progress_api_socket_v4_server_persona_generation_progress_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -11068,6 +11148,806 @@ export interface paths {
         put?: never;
         /** Setting Generation Error Api */
         post: operations["setting_generation_error_api_socket_v4_server_setting_generation_error_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v4/server/names_generation_complete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Names Generation Complete Api
+         * @description Server-to-client event: Names generation completed.
+         */
+        post: operations["names_generation_complete_api_socket_v4_server_names_generation_complete_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v4/server/names_generation_started": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Names Generation Started Api
+         * @description Server-to-client event: Names generation started.
+         */
+        post: operations["names_generation_started_api_socket_v4_server_names_generation_started_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v4/server/names_generation_progress": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Names Generation Progress Api
+         * @description Server-to-client event: Names generation progress.
+         */
+        post: operations["names_generation_progress_api_socket_v4_server_names_generation_progress_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v4/server/names_generation_error": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Names Generation Error Api
+         * @description Server-to-client event: Names generation error.
+         */
+        post: operations["names_generation_error_api_socket_v4_server_names_generation_error_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v4/server/descriptions_generation_complete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Descriptions Generation Complete Api
+         * @description Server-to-client event: Descriptions generation completed.
+         */
+        post: operations["descriptions_generation_complete_api_socket_v4_server_descriptions_generation_complete_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v4/server/descriptions_generation_started": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Descriptions Generation Started Api
+         * @description Server-to-client event: Descriptions generation started.
+         */
+        post: operations["descriptions_generation_started_api_socket_v4_server_descriptions_generation_started_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v4/server/descriptions_generation_progress": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Descriptions Generation Progress Api
+         * @description Server-to-client event: Descriptions generation progress.
+         */
+        post: operations["descriptions_generation_progress_api_socket_v4_server_descriptions_generation_progress_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v4/server/descriptions_generation_error": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Descriptions Generation Error Api
+         * @description Server-to-client event: Descriptions generation error.
+         */
+        post: operations["descriptions_generation_error_api_socket_v4_server_descriptions_generation_error_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v4/server/colors_generation_complete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Colors Generation Complete Api
+         * @description Server-to-client event: Colors generation completed.
+         */
+        post: operations["colors_generation_complete_api_socket_v4_server_colors_generation_complete_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v4/server/colors_generation_started": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Colors Generation Started Api
+         * @description Server-to-client event: Colors generation started.
+         */
+        post: operations["colors_generation_started_api_socket_v4_server_colors_generation_started_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v4/server/colors_generation_progress": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Colors Generation Progress Api
+         * @description Server-to-client event: Colors generation progress.
+         */
+        post: operations["colors_generation_progress_api_socket_v4_server_colors_generation_progress_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v4/server/colors_generation_error": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Colors Generation Error Api
+         * @description Server-to-client event: Colors generation error.
+         */
+        post: operations["colors_generation_error_api_socket_v4_server_colors_generation_error_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v4/server/icons_generation_complete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Icons Generation Complete Api
+         * @description Server-to-client event: Icons generation completed.
+         */
+        post: operations["icons_generation_complete_api_socket_v4_server_icons_generation_complete_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v4/server/icons_generation_started": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Icons Generation Started Api
+         * @description Server-to-client event: Icons generation started.
+         */
+        post: operations["icons_generation_started_api_socket_v4_server_icons_generation_started_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v4/server/icons_generation_progress": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Icons Generation Progress Api
+         * @description Server-to-client event: Icons generation progress.
+         */
+        post: operations["icons_generation_progress_api_socket_v4_server_icons_generation_progress_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v4/server/icons_generation_error": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Icons Generation Error Api
+         * @description Server-to-client event: Icons generation error.
+         */
+        post: operations["icons_generation_error_api_socket_v4_server_icons_generation_error_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v4/server/instructions_generation_complete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Instructions Generation Complete Api
+         * @description Server-to-client event: Instructions generation completed.
+         */
+        post: operations["instructions_generation_complete_api_socket_v4_server_instructions_generation_complete_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v4/server/instructions_generation_started": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Instructions Generation Started Api
+         * @description Server-to-client event: Instructions generation started.
+         */
+        post: operations["instructions_generation_started_api_socket_v4_server_instructions_generation_started_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v4/server/instructions_generation_progress": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Instructions Generation Progress Api
+         * @description Server-to-client event: Instructions generation progress.
+         */
+        post: operations["instructions_generation_progress_api_socket_v4_server_instructions_generation_progress_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v4/server/instructions_generation_error": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Instructions Generation Error Api
+         * @description Server-to-client event: Instructions generation error.
+         */
+        post: operations["instructions_generation_error_api_socket_v4_server_instructions_generation_error_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v4/server/flags_generation_complete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Flags Generation Complete Api
+         * @description Server-to-client event: Flags generation completed.
+         */
+        post: operations["flags_generation_complete_api_socket_v4_server_flags_generation_complete_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v4/server/flags_generation_started": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Flags Generation Started Api
+         * @description Server-to-client event: Flags generation started.
+         */
+        post: operations["flags_generation_started_api_socket_v4_server_flags_generation_started_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v4/server/flags_generation_progress": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Flags Generation Progress Api
+         * @description Server-to-client event: Flags generation progress.
+         */
+        post: operations["flags_generation_progress_api_socket_v4_server_flags_generation_progress_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v4/server/flags_generation_error": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Flags Generation Error Api
+         * @description Server-to-client event: Flags generation error.
+         */
+        post: operations["flags_generation_error_api_socket_v4_server_flags_generation_error_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v4/server/departments_generation_complete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Departments Generation Complete Api
+         * @description Server-to-client event: Departments generation completed.
+         */
+        post: operations["departments_generation_complete_api_socket_v4_server_departments_generation_complete_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v4/server/departments_generation_started": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Departments Generation Started Api
+         * @description Server-to-client event: Departments generation started.
+         */
+        post: operations["departments_generation_started_api_socket_v4_server_departments_generation_started_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v4/server/departments_generation_progress": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Departments Generation Progress Api
+         * @description Server-to-client event: Departments generation progress.
+         */
+        post: operations["departments_generation_progress_api_socket_v4_server_departments_generation_progress_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v4/server/departments_generation_error": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Departments Generation Error Api
+         * @description Server-to-client event: Departments generation error.
+         */
+        post: operations["departments_generation_error_api_socket_v4_server_departments_generation_error_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v4/server/parameter_fields_generation_complete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Parameter Fields Generation Complete Api
+         * @description Server-to-client event: Parameter fields generation completed.
+         */
+        post: operations["parameter_fields_generation_complete_api_socket_v4_server_parameter_fields_generation_complete_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v4/server/parameter_fields_generation_started": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Parameter Fields Generation Started Api
+         * @description Server-to-client event: Parameter fields generation started.
+         */
+        post: operations["parameter_fields_generation_started_api_socket_v4_server_parameter_fields_generation_started_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v4/server/parameter_fields_generation_progress": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Parameter Fields Generation Progress Api
+         * @description Server-to-client event: Parameter fields generation progress.
+         */
+        post: operations["parameter_fields_generation_progress_api_socket_v4_server_parameter_fields_generation_progress_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v4/server/parameter_fields_generation_error": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Parameter Fields Generation Error Api
+         * @description Server-to-client event: Parameter fields generation error.
+         */
+        post: operations["parameter_fields_generation_error_api_socket_v4_server_parameter_fields_generation_error_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v4/server/examples_generation_complete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Examples Generation Complete Api
+         * @description Server-to-client event: Examples generation completed.
+         */
+        post: operations["examples_generation_complete_api_socket_v4_server_examples_generation_complete_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v4/server/examples_generation_started": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Examples Generation Started Api
+         * @description Server-to-client event: Examples generation started.
+         */
+        post: operations["examples_generation_started_api_socket_v4_server_examples_generation_started_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v4/server/examples_generation_progress": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Examples Generation Progress Api
+         * @description Server-to-client event: Examples generation progress.
+         */
+        post: operations["examples_generation_progress_api_socket_v4_server_examples_generation_progress_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v4/server/examples_generation_error": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Examples Generation Error Api
+         * @description Server-to-client event: Examples generation error.
+         */
+        post: operations["examples_generation_error_api_socket_v4_server_examples_generation_error_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v4/server/parameters_generation_complete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Parameters Generation Complete Api
+         * @description Server-to-client event: Parameters generation completed.
+         */
+        post: operations["parameters_generation_complete_api_socket_v4_server_parameters_generation_complete_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v4/server/parameters_generation_started": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Parameters Generation Started Api
+         * @description Server-to-client event: Parameters generation started.
+         */
+        post: operations["parameters_generation_started_api_socket_v4_server_parameters_generation_started_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v4/server/parameters_generation_progress": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Parameters Generation Progress Api
+         * @description Server-to-client event: Parameters generation progress.
+         */
+        post: operations["parameters_generation_progress_api_socket_v4_server_parameters_generation_progress_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v4/server/parameters_generation_error": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Parameters Generation Error Api
+         * @description Server-to-client event: Parameters generation error.
+         */
+        post: operations["parameters_generation_error_api_socket_v4_server_parameters_generation_error_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -13258,6 +14138,30 @@ export interface components {
             /** Simulation Messages */
             simulation_messages?: components["schemas"]["MessageData"][] | null;
         };
+        /**
+         * AuditViewItem
+         * @description Single audit from the audit list view.
+         */
+        AuditViewItem: {
+            /**
+             * Audit Id
+             * Format: uuid
+             */
+            audit_id: string;
+            /** Session Id */
+            session_id?: string | null;
+            /** Audit Created At */
+            audit_created_at?: string | null;
+            /** Message */
+            message?: string | null;
+            /** Endpoint */
+            endpoint?: string | null;
+            /**
+             * Error
+             * @default false
+             */
+            error: boolean;
+        };
         /** AuthDescriptionSection */
         AuthDescriptionSection: {
             /**
@@ -15096,6 +16000,40 @@ export interface components {
             color_id?: string | null;
         };
         /**
+         * ColorsGenerationCompleteEvent
+         * @description Server-to-client event: colors_generation_complete.
+         */
+        ColorsGenerationCompleteEvent: {
+            /** Artifact Type */
+            artifact_type: string;
+            /**
+             * Resource Type
+             * @default colors
+             */
+            resource_type: string;
+            /** Resource Id */
+            resource_id?: string | null;
+            /** Group Id */
+            group_id: string;
+            /** Run Id */
+            run_id?: string | null;
+            /**
+             * Success
+             * @default true
+             */
+            success: boolean;
+            /** Id */
+            id?: string | null;
+            /** Name */
+            name?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Hex Code */
+            hex_code?: string | null;
+            /** Generated */
+            generated?: boolean | null;
+        };
+        /**
          * ConfigViewItem
          * @description Single config from the config view (inference config).
          */
@@ -16275,6 +17213,38 @@ export interface components {
             /** Resources */
             resources?: components["schemas"]["app__sql__types__QGetSettingsV4Item"][] | null;
         };
+        /**
+         * DepartmentsGenerationCompleteEvent
+         * @description Server-to-client event: departments_generation_complete.
+         */
+        DepartmentsGenerationCompleteEvent: {
+            /** Artifact Type */
+            artifact_type: string;
+            /**
+             * Resource Type
+             * @default departments
+             */
+            resource_type: string;
+            /** Resource Id */
+            resource_id?: string | null;
+            /** Group Id */
+            group_id: string;
+            /** Run Id */
+            run_id?: string | null;
+            /**
+             * Success
+             * @default true
+             */
+            success: boolean;
+            /** Department Id */
+            department_id?: string | null;
+            /** Name */
+            name?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Generated */
+            generated?: boolean | null;
+        };
         /** DescriptionsApiRequest */
         DescriptionsApiRequest: {
             /** Description */
@@ -16293,6 +17263,36 @@ export interface components {
         DescriptionsApiResponse: {
             /** Description Id */
             description_id?: string | null;
+        };
+        /**
+         * DescriptionsGenerationCompleteEvent
+         * @description Server-to-client event: descriptions_generation_complete.
+         */
+        DescriptionsGenerationCompleteEvent: {
+            /** Artifact Type */
+            artifact_type: string;
+            /**
+             * Resource Type
+             * @default descriptions
+             */
+            resource_type: string;
+            /** Resource Id */
+            resource_id?: string | null;
+            /** Group Id */
+            group_id: string;
+            /** Run Id */
+            run_id?: string | null;
+            /**
+             * Success
+             * @default true
+             */
+            success: boolean;
+            /** Id */
+            id?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Generated */
+            generated?: boolean | null;
         };
         /** DocsApiRequest */
         DocsApiRequest: {
@@ -17485,6 +18485,38 @@ export interface components {
             example_id?: string | null;
         };
         /**
+         * ExamplesGenerationCompleteEvent
+         * @description Server-to-client event: examples_generation_complete.
+         */
+        ExamplesGenerationCompleteEvent: {
+            /** Artifact Type */
+            artifact_type: string;
+            /**
+             * Resource Type
+             * @default examples
+             */
+            resource_type: string;
+            /** Resource Id */
+            resource_id?: string | null;
+            /** Group Id */
+            group_id: string;
+            /** Run Id */
+            run_id?: string | null;
+            /**
+             * Success
+             * @default true
+             */
+            success: boolean;
+            /** Id */
+            id?: string | null;
+            /** Example */
+            example?: string | null;
+            /** Idx */
+            idx?: number | null;
+            /** Generated */
+            generated?: boolean | null;
+        };
+        /**
          * ExportRequest
          * @description Export request - extends GetReportsBundleApiRequest with export-specific options.
          */
@@ -17819,6 +18851,40 @@ export interface components {
             message?: string | null;
             /** Status */
             status?: string | null;
+        };
+        /**
+         * FlagsGenerationCompleteEvent
+         * @description Server-to-client event: flags_generation_complete.
+         */
+        FlagsGenerationCompleteEvent: {
+            /** Artifact Type */
+            artifact_type: string;
+            /**
+             * Resource Type
+             * @default flags
+             */
+            resource_type: string;
+            /** Resource Id */
+            resource_id?: string | null;
+            /** Group Id */
+            group_id: string;
+            /** Run Id */
+            run_id?: string | null;
+            /**
+             * Success
+             * @default true
+             */
+            success: boolean;
+            /** Id */
+            id?: string | null;
+            /** Name */
+            name?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Icon */
+            icon?: string | null;
+            /** Generated */
+            generated?: boolean | null;
         };
         /** FooterNumericAttemptFact */
         FooterNumericAttemptFact: {
@@ -18795,6 +19861,23 @@ export interface components {
              * @description Available profile filter options
              */
             profile_options?: components["schemas"]["app__api__v4__views__attempt__list__types__FilterOption"][] | null;
+        };
+        /**
+         * GetAuditListViewResponse
+         * @description Response containing audit list data.
+         */
+        GetAuditListViewResponse: {
+            /**
+             * Items
+             * @description Audit data items
+             */
+            items?: components["schemas"]["AuditViewItem"][];
+            /**
+             * Total Count
+             * @description Total count before pagination
+             * @default 0
+             */
+            total_count: number;
         };
         /**
          * GetAuthApiRequest
@@ -19915,6 +20998,23 @@ export interface components {
             items?: components["schemas"]["GroupListItem"][];
             /**
              * Total Count
+             * @default 0
+             */
+            total_count: number;
+        };
+        /**
+         * GetGroupListViewResponse
+         * @description Response containing group list data.
+         */
+        GetGroupListViewResponse: {
+            /**
+             * Items
+             * @description Group data items
+             */
+            items?: components["schemas"]["GroupViewItem"][];
+            /**
+             * Total Count
+             * @description Total count before pagination
              * @default 0
              */
             total_count: number;
@@ -21582,6 +22682,23 @@ export interface components {
              */
             page_offset: number | null;
         };
+        /**
+         * GetRunListViewResponse
+         * @description Response containing run list data.
+         */
+        GetRunListViewResponse: {
+            /**
+             * Items
+             * @description Run data items
+             */
+            items?: components["schemas"]["RunViewItem"][];
+            /**
+             * Total Count
+             * @description Total count before pagination
+             * @default 0
+             */
+            total_count: number;
+        };
         /** GetRunPositionsApiRequest */
         GetRunPositionsApiRequest: {
             /** Ids */
@@ -22026,6 +23143,23 @@ export interface components {
              * @default 0
              */
             total_pages: number;
+        };
+        /**
+         * GetSessionListViewResponse
+         * @description Response containing session list data.
+         */
+        GetSessionListViewResponse: {
+            /**
+             * Items
+             * @description Session data items
+             */
+            items?: components["schemas"]["SessionViewItem"][];
+            /**
+             * Total Count
+             * @description Total count before pagination
+             * @default 0
+             */
+            total_count: number;
         };
         /**
          * GetSettingApiRequest
@@ -22688,7 +23822,6 @@ export interface components {
             parameter_fields?: components["schemas"]["TrainingBundleParameterFieldSection"] | null;
             scenarios?: components["schemas"]["TrainingBundleScenarioSection"] | null;
             parameters?: components["schemas"]["TrainingBundleParameterSection"] | null;
-            fields?: components["schemas"]["TrainingBundleFieldSection"] | null;
             questions?: components["schemas"]["TrainingBundleQuestionSection"] | null;
             options?: components["schemas"]["TrainingBundleOptionSection"] | null;
             videos?: components["schemas"]["TrainingBundleVideoSection"] | null;
@@ -23246,6 +24379,30 @@ export interface components {
             /** Id */
             id?: string | null;
         };
+        /**
+         * GroupViewItem
+         * @description Single group from the group list view.
+         */
+        GroupViewItem: {
+            /**
+             * Group Id
+             * Format: uuid
+             */
+            group_id: string;
+            /** Session Id */
+            session_id?: string | null;
+            /** Group Created At */
+            group_created_at?: string | null;
+            /** Trace Id */
+            trace_id?: string | null;
+            /** Group Name */
+            group_name?: string | null;
+            /**
+             * Active
+             * @default false
+             */
+            active: boolean;
+        };
         /** HTTPValidationError */
         HTTPValidationError: {
             /** Detail */
@@ -23582,6 +24739,40 @@ export interface components {
             cohort_ids: string[] | null;
         };
         /**
+         * IconsGenerationCompleteEvent
+         * @description Server-to-client event: icons_generation_complete.
+         */
+        IconsGenerationCompleteEvent: {
+            /** Artifact Type */
+            artifact_type: string;
+            /**
+             * Resource Type
+             * @default icons
+             */
+            resource_type: string;
+            /** Resource Id */
+            resource_id?: string | null;
+            /** Group Id */
+            group_id: string;
+            /** Run Id */
+            run_id?: string | null;
+            /**
+             * Success
+             * @default true
+             */
+            success: boolean;
+            /** Id */
+            id?: string | null;
+            /** Name */
+            name?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Value */
+            value?: string | null;
+            /** Generated */
+            generated?: boolean | null;
+        };
+        /**
          * ImageEntry
          * @description Image entry with resource metadata.
          */
@@ -23646,6 +24837,36 @@ export interface components {
         InstructionsApiResponse: {
             /** Instruction Id */
             instruction_id?: string | null;
+        };
+        /**
+         * InstructionsGenerationCompleteEvent
+         * @description Server-to-client event: instructions_generation_complete.
+         */
+        InstructionsGenerationCompleteEvent: {
+            /** Artifact Type */
+            artifact_type: string;
+            /**
+             * Resource Type
+             * @default instructions
+             */
+            resource_type: string;
+            /** Resource Id */
+            resource_id?: string | null;
+            /** Group Id */
+            group_id: string;
+            /** Run Id */
+            run_id?: string | null;
+            /**
+             * Success
+             * @default true
+             */
+            success: boolean;
+            /** Id */
+            id?: string | null;
+            /** Template */
+            template?: string | null;
+            /** Generated */
+            generated?: boolean | null;
         };
         /** ItemsApiRequest */
         ItemsApiRequest: {
@@ -25852,6 +27073,36 @@ export interface components {
             name_id?: string | null;
         };
         /**
+         * NamesGenerationCompleteEvent
+         * @description Server-to-client event: names_generation_complete.
+         */
+        NamesGenerationCompleteEvent: {
+            /** Artifact Type */
+            artifact_type: string;
+            /**
+             * Resource Type
+             * @default names
+             */
+            resource_type: string;
+            /** Resource Id */
+            resource_id?: string | null;
+            /** Group Id */
+            group_id: string;
+            /** Run Id */
+            run_id?: string | null;
+            /**
+             * Success
+             * @default true
+             */
+            success: boolean;
+            /** Id */
+            id?: string | null;
+            /** Name */
+            name?: string | null;
+            /** Generated */
+            generated?: boolean | null;
+        };
+        /**
          * ObjectiveEntry
          * @description Objective entry with resource metadata.
          */
@@ -26142,6 +27393,44 @@ export interface components {
             parameter_fields_id?: string | null;
         };
         /**
+         * ParameterFieldsGenerationCompleteEvent
+         * @description Server-to-client event: parameter_fields_generation_complete.
+         */
+        ParameterFieldsGenerationCompleteEvent: {
+            /** Artifact Type */
+            artifact_type: string;
+            /**
+             * Resource Type
+             * @default parameter_fields
+             */
+            resource_type: string;
+            /** Resource Id */
+            resource_id?: string | null;
+            /** Group Id */
+            group_id: string;
+            /** Run Id */
+            run_id?: string | null;
+            /**
+             * Success
+             * @default true
+             */
+            success: boolean;
+            /** Id */
+            id?: string | null;
+            /** Field Id */
+            field_id?: string | null;
+            /** Parameter Id */
+            parameter_id?: string | null;
+            /** Name */
+            name?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Generated */
+            generated?: boolean | null;
+            /** Conditional Parameter Id */
+            conditional_parameter_id?: string | null;
+        };
+        /**
          * ParameterFlagConfig
          * @description Enriched flag config for direct client consumption.
          */
@@ -26274,6 +27563,52 @@ export interface components {
             create_tool_id?: string | null;
             /** Link Tool Id */
             link_tool_id?: string | null;
+        };
+        /**
+         * ParametersGenerationCompleteEvent
+         * @description Server-to-client event: parameters_generation_complete.
+         */
+        ParametersGenerationCompleteEvent: {
+            /** Artifact Type */
+            artifact_type: string;
+            /**
+             * Resource Type
+             * @default parameters
+             */
+            resource_type: string;
+            /** Resource Id */
+            resource_id?: string | null;
+            /** Group Id */
+            group_id: string;
+            /** Run Id */
+            run_id?: string | null;
+            /**
+             * Success
+             * @default true
+             */
+            success: boolean;
+            /** Parameter Id */
+            parameter_id?: string | null;
+            /** Name */
+            name?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Value */
+            value?: string | null;
+            /** Generated */
+            generated?: boolean | null;
+            /** Persona Parameter */
+            persona_parameter?: boolean | null;
+            /** Document Parameter */
+            document_parameter?: boolean | null;
+            /** Scenario Parameter */
+            scenario_parameter?: boolean | null;
+            /** Video Parameter */
+            video_parameter?: boolean | null;
+            /** Conditional */
+            conditional?: boolean | null;
+            /** Field Ids */
+            field_ids?: string[] | null;
         };
         /**
          * PatchAgentDraftApiRequest
@@ -27212,6 +28547,31 @@ export interface components {
             message: string;
             /** Trace Id */
             trace_id?: string | null;
+        };
+        /**
+         * PersonaGenerationProgressEvent
+         * @description Server-to-client event: persona_generation_progress.
+         *
+         *     Emitted as individual resources complete, providing percentage progress.
+         */
+        PersonaGenerationProgressEvent: {
+            /**
+             * Artifact Type
+             * @default persona
+             */
+            artifact_type: string;
+            /** Group Id */
+            group_id: string;
+            /** Run Id */
+            run_id?: string | null;
+            /** Completed Resources */
+            completed_resources: number;
+            /** Total Resources */
+            total_resources: number;
+            /** Percentage */
+            percentage: number;
+            /** Last Completed Resource */
+            last_completed_resource?: string | null;
         };
         /**
          * PersonaGenerationStartedEvent
@@ -30941,32 +32301,77 @@ export interface components {
             updated_at: string;
         };
         /**
-         * ResourceGenerationCompleteEvent
-         * @description Server-to-client event: resource_generation_complete.
-         *
-         *     Emitted when a single resource finishes generating.
-         *     Contains the hydrated resource data for immediate frontend use.
+         * ResourceErrorEvent
+         * @description Emitted when a resource tool call fails.
          */
-        ResourceGenerationCompleteEvent: {
+        ResourceErrorEvent: {
             /** Artifact Type */
             artifact_type: string;
             /** Resource Type */
             resource_type: string;
-            /** Resource Id */
-            resource_id: string;
+            /** Group Id */
+            group_id?: string | null;
+            /** Run Id */
+            run_id?: string | null;
+            /**
+             * Success
+             * @default false
+             */
+            success: boolean;
+            /** Message */
+            message: string;
+            /** Error Stage */
+            error_stage?: string | null;
+            /** Tool Name */
+            tool_name?: string | null;
+            /** Tool Call Id */
+            tool_call_id?: string | null;
+            /** Arguments */
+            arguments?: {
+                [key: string]: unknown;
+            } | null;
+        };
+        /**
+         * ResourceProgressEvent
+         * @description Emitted during streaming of tool call arguments.
+         */
+        ResourceProgressEvent: {
+            /** Artifact Type */
+            artifact_type: string;
+            /** Resource Type */
+            resource_type: string;
+            /** Group Id */
+            group_id?: string | null;
+            /** Run Id */
+            run_id?: string | null;
+            /** Tool Call Id */
+            tool_call_id?: string | null;
+            /** Tool Name */
+            tool_name?: string | null;
+            /** Arguments Delta */
+            arguments_delta?: string | null;
+            /** Arguments */
+            arguments?: {
+                [key: string]: unknown;
+            } | null;
+        };
+        /**
+         * ResourceStartEvent
+         * @description Emitted when a resource tool call begins.
+         */
+        ResourceStartEvent: {
+            /** Artifact Type */
+            artifact_type: string;
+            /** Resource Type */
+            resource_type: string;
             /** Group Id */
             group_id: string;
             /** Run Id */
             run_id?: string | null;
-            /** Success */
-            success: boolean;
-            /**
-             * Resource Data
-             * @default {}
-             */
-            resource_data: {
-                [key: string]: unknown;
-            };
+            /** Tool Call Id */
+            tool_call_id?: string | null;
+            /** Tool Name */
+            tool_name?: string | null;
         };
         /**
          * ResponseItem
@@ -31453,6 +32858,23 @@ export interface components {
             /** Run Positions Id */
             run_positions_id?: string | null;
         };
+        /**
+         * RunPricingItem
+         * @description Single pricing entry for a run. Cost computed at runtime.
+         */
+        RunPricingItem: {
+            /** Pricing Type */
+            pricing_type?: string | null;
+            /**
+             * Count
+             * @default 0
+             */
+            count: number;
+            /** Unit Id */
+            unit_id?: string | null;
+            /** Pricing Id */
+            pricing_id?: string | null;
+        };
         /** RunRubricsApiRequest */
         RunRubricsApiRequest: {
             /**
@@ -31479,6 +32901,44 @@ export interface components {
         RunRubricsApiResponse: {
             /** Id */
             id?: string | null;
+        };
+        /**
+         * RunViewItem
+         * @description Single run from the run list view.
+         */
+        RunViewItem: {
+            /**
+             * Run Id
+             * Format: uuid
+             */
+            run_id: string;
+            /** Group Id */
+            group_id?: string | null;
+            /**
+             * Input Tokens
+             * @default 0
+             */
+            input_tokens: number;
+            /**
+             * Output Tokens
+             * @default 0
+             */
+            output_tokens: number;
+            /**
+             * Cached Input Tokens
+             * @default 0
+             */
+            cached_input_tokens: number;
+            /** Run Created At */
+            run_created_at?: string | null;
+            /** Agent Ids */
+            agent_ids?: string[] | null;
+            /** Model Ids */
+            model_ids?: string[] | null;
+            /** Provider Ids */
+            provider_ids?: string[] | null;
+            /** Pricing */
+            pricing?: components["schemas"]["RunPricingItem"][];
         };
         /**
          * SaveAgentApiRequest
@@ -35682,6 +37142,26 @@ export interface components {
              */
             error_count: number;
         };
+        /**
+         * SessionViewItem
+         * @description Single session from the session list view.
+         */
+        SessionViewItem: {
+            /**
+             * Session Id
+             * Format: uuid
+             */
+            session_id: string;
+            /** Profile Id */
+            profile_id?: string | null;
+            /** Session Created At */
+            session_created_at?: string | null;
+            /**
+             * Active
+             * @default false
+             */
+            active: boolean;
+        };
         /** SettingAuthItemKeySection */
         SettingAuthItemKeySection: {
             /**
@@ -37638,34 +39118,6 @@ export interface components {
             current?: components["schemas"]["QGetDocumentsV4Item"][] | null;
             /** Resources */
             resources?: components["schemas"]["QGetDocumentsV4Item"][] | null;
-        };
-        /** TrainingBundleFieldSection */
-        TrainingBundleFieldSection: {
-            /**
-             * Show
-             * @default false
-             */
-            show: boolean;
-            /**
-             * Required
-             * @default false
-             */
-            required: boolean;
-            /** Suggestions */
-            suggestions?: string[] | null;
-            /**
-             * Show Ai Generate
-             * @default false
-             */
-            show_ai_generate: boolean;
-            /** Create Tool Id */
-            create_tool_id?: string | null;
-            /** Link Tool Id */
-            link_tool_id?: string | null;
-            /** Current */
-            current?: components["schemas"]["QGetFieldsV4Item"][] | null;
-            /** Resources */
-            resources?: components["schemas"]["QGetFieldsV4Item"][] | null;
         };
         /** TrainingBundleImageSection */
         TrainingBundleImageSection: {
@@ -54531,6 +55983,138 @@ export interface operations {
             };
         };
     };
+    get_sessions_api_v4_views_session_get_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetSessionListViewResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_groups_api_v4_views_group_get_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetGroupListViewResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_audits_api_v4_views_audit_get_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetAuditListViewResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_runs_api_v4_views_run_get_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetRunListViewResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_login_providers_api_v4_auth_login_post: {
         parameters: {
             query?: never;
@@ -57329,41 +58913,6 @@ export interface operations {
             };
         };
     };
-    resource_generation_complete_api_socket_v4_server_resource_generation_complete_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ResourceGenerationCompleteEvent"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: boolean;
-                    };
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     scenario_generation_progress_api_socket_v4_server_scenario_generation_progress_post: {
         parameters: {
             query?: never;
@@ -57882,6 +59431,41 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["PersonaGenerationErrorEvent"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    persona_generation_progress_api_socket_v4_server_persona_generation_progress_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PersonaGenerationProgressEvent"];
             };
         };
         responses: {
@@ -58958,6 +60542,1406 @@ export interface operations {
                 "application/json": {
                     [key: string]: unknown;
                 };
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    names_generation_complete_api_socket_v4_server_names_generation_complete_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NamesGenerationCompleteEvent"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    names_generation_started_api_socket_v4_server_names_generation_started_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ResourceStartEvent"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    names_generation_progress_api_socket_v4_server_names_generation_progress_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ResourceProgressEvent"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    names_generation_error_api_socket_v4_server_names_generation_error_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ResourceErrorEvent"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    descriptions_generation_complete_api_socket_v4_server_descriptions_generation_complete_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DescriptionsGenerationCompleteEvent"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    descriptions_generation_started_api_socket_v4_server_descriptions_generation_started_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ResourceStartEvent"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    descriptions_generation_progress_api_socket_v4_server_descriptions_generation_progress_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ResourceProgressEvent"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    descriptions_generation_error_api_socket_v4_server_descriptions_generation_error_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ResourceErrorEvent"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    colors_generation_complete_api_socket_v4_server_colors_generation_complete_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ColorsGenerationCompleteEvent"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    colors_generation_started_api_socket_v4_server_colors_generation_started_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ResourceStartEvent"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    colors_generation_progress_api_socket_v4_server_colors_generation_progress_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ResourceProgressEvent"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    colors_generation_error_api_socket_v4_server_colors_generation_error_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ResourceErrorEvent"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    icons_generation_complete_api_socket_v4_server_icons_generation_complete_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["IconsGenerationCompleteEvent"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    icons_generation_started_api_socket_v4_server_icons_generation_started_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ResourceStartEvent"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    icons_generation_progress_api_socket_v4_server_icons_generation_progress_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ResourceProgressEvent"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    icons_generation_error_api_socket_v4_server_icons_generation_error_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ResourceErrorEvent"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    instructions_generation_complete_api_socket_v4_server_instructions_generation_complete_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["InstructionsGenerationCompleteEvent"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    instructions_generation_started_api_socket_v4_server_instructions_generation_started_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ResourceStartEvent"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    instructions_generation_progress_api_socket_v4_server_instructions_generation_progress_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ResourceProgressEvent"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    instructions_generation_error_api_socket_v4_server_instructions_generation_error_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ResourceErrorEvent"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    flags_generation_complete_api_socket_v4_server_flags_generation_complete_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FlagsGenerationCompleteEvent"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    flags_generation_started_api_socket_v4_server_flags_generation_started_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ResourceStartEvent"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    flags_generation_progress_api_socket_v4_server_flags_generation_progress_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ResourceProgressEvent"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    flags_generation_error_api_socket_v4_server_flags_generation_error_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ResourceErrorEvent"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    departments_generation_complete_api_socket_v4_server_departments_generation_complete_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DepartmentsGenerationCompleteEvent"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    departments_generation_started_api_socket_v4_server_departments_generation_started_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ResourceStartEvent"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    departments_generation_progress_api_socket_v4_server_departments_generation_progress_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ResourceProgressEvent"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    departments_generation_error_api_socket_v4_server_departments_generation_error_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ResourceErrorEvent"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    parameter_fields_generation_complete_api_socket_v4_server_parameter_fields_generation_complete_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ParameterFieldsGenerationCompleteEvent"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    parameter_fields_generation_started_api_socket_v4_server_parameter_fields_generation_started_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ResourceStartEvent"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    parameter_fields_generation_progress_api_socket_v4_server_parameter_fields_generation_progress_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ResourceProgressEvent"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    parameter_fields_generation_error_api_socket_v4_server_parameter_fields_generation_error_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ResourceErrorEvent"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    examples_generation_complete_api_socket_v4_server_examples_generation_complete_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ExamplesGenerationCompleteEvent"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    examples_generation_started_api_socket_v4_server_examples_generation_started_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ResourceStartEvent"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    examples_generation_progress_api_socket_v4_server_examples_generation_progress_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ResourceProgressEvent"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    examples_generation_error_api_socket_v4_server_examples_generation_error_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ResourceErrorEvent"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    parameters_generation_complete_api_socket_v4_server_parameters_generation_complete_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ParametersGenerationCompleteEvent"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    parameters_generation_started_api_socket_v4_server_parameters_generation_started_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ResourceStartEvent"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    parameters_generation_progress_api_socket_v4_server_parameters_generation_progress_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ResourceProgressEvent"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    parameters_generation_error_api_socket_v4_server_parameters_generation_error_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ResourceErrorEvent"];
             };
         };
         responses: {

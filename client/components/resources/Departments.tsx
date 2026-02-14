@@ -126,16 +126,15 @@ export function Departments({
   useEffect(() => {
     if (!aiSocket || !aiIsConnected) return;
 
-    const handleGenerationComplete = (data: Record<string, unknown>) => {
-      if (data["resource_type"] !== "departments") return;
-      if (data["group_id"] !== group_id) return;
-      setInternalAiDepartmentResources([{ department_id: data["department_id"] as string | null, name: data["name"] as string | null }]);
+    const handleGenerationComplete = (data: { group_id?: string; department_id?: string | null; name?: string | null }) => {
+      if (data.group_id !== group_id) return;
+      setInternalAiDepartmentResources([{ department_id: data.department_id ?? null, name: data.name ?? null }]);
       onGenerationComplete?.();
     };
 
-    aiSocket.on("resource_generation_complete", handleGenerationComplete);
+    aiSocket.on("departments_generation_complete", handleGenerationComplete);
     return () => {
-      aiSocket.off("resource_generation_complete", handleGenerationComplete);
+      aiSocket.off("departments_generation_complete", handleGenerationComplete);
     };
   }, [aiSocket, aiIsConnected, group_id, onGenerationComplete]);
 

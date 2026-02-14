@@ -73,6 +73,7 @@ async def execute_tool_call(
                 {
                     "success": False,
                     "message": f"Tool not found: {tool_name}",
+                    "error_stage": "tool_resolve",
                 }
             )
 
@@ -114,6 +115,7 @@ async def execute_tool_call(
             {
                 "success": False,
                 "message": f"Tool execution error: {str(e)}",
+                "error_stage": "tool_execute",
             }
         )
 
@@ -155,6 +157,7 @@ async def _execute_entry_tool(
                 {
                     "success": False,
                     "message": f"No values to insert for {tool_name}. Check tool configuration.",
+                    "error_stage": "tool_execute",
                 }
             )
 
@@ -218,6 +221,7 @@ async def _execute_entry_tool(
             {
                 "success": False,
                 "message": f"Entry tool execution error: {str(e)}",
+                "error_stage": "tool_execute",
             }
         )
 
@@ -267,6 +271,7 @@ async def _execute_resource_tool(
                 {
                     "success": False,
                     "message": f"No resource_type configured for tool: {tool_name}",
+                    "error_stage": "tool_resolve",
                 }
             )
 
@@ -295,6 +300,7 @@ async def _execute_resource_tool(
                     {
                         "success": False,
                         "message": f"No values to insert for {tool_name}. Check tool configuration.",
+                        "error_stage": "tool_execute",
                     }
                 )
 
@@ -373,6 +379,7 @@ async def _execute_resource_tool(
                 "success": True,
                 "message": f"Successfully {action} {resource_type} entry",
                 "resource_id": resource_id,
+                "resource_type": resource_type,
                 "call_id": str(call_id) if call_id else None,
             }
         )
@@ -383,6 +390,7 @@ async def _execute_resource_tool(
             {
                 "success": False,
                 "message": f"Resource tool execution error: {str(e)}",
+                "error_stage": "tool_execute",
             }
         )
 

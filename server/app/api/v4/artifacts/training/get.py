@@ -362,9 +362,7 @@ async def get_training_internal(
                 bypass_cache=bypass_cache,
             )
 
-    sg_list, std_list = await asyncio.gather(
-        fetch_standard_groups(), fetch_standards()
-    )
+    sg_list, std_list = await asyncio.gather(fetch_standard_groups(), fetch_standards())
 
     # Build lookup maps
     simulation_map = {

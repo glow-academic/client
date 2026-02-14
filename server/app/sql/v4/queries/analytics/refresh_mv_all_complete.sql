@@ -68,6 +68,19 @@ BEGIN
     REFRESH MATERIALIZED VIEW CONCURRENTLY mv_artifact_session_list;
     refreshed := array_append(refreshed, 'mv_artifact_session_list');
 
+    -- Lean MVs (session/group pages)
+    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_sessions;
+    refreshed := array_append(refreshed, 'mv_sessions');
+
+    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_groups;
+    refreshed := array_append(refreshed, 'mv_groups');
+
+    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_audits;
+    refreshed := array_append(refreshed, 'mv_audits');
+
+    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_runs;
+    refreshed := array_append(refreshed, 'mv_runs');
+
     -- Attempt MVs
     REFRESH MATERIALIZED VIEW CONCURRENTLY mv_attempt_chats;
     refreshed := array_append(refreshed, 'mv_attempt_chats');

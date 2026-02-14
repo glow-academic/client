@@ -23,7 +23,10 @@ from app.api.v4.resources.prompts.get import get_prompts_internal
 from app.api.v4.views.config.get import get_config_internal
 from app.infra.v4.generation import convert_tools_to_dict, render_developer_instructions
 from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
-from app.infra.v4.websocket.generation_tracker import init_generation
+from app.infra.v4.websocket.generation_tracker import (
+    init_generation,
+    init_resource_progress,
+)
 from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.infra.v4.websocket.typed_emit import emit_to_internal
 from app.main import get_internal_sio, get_pool, sio
@@ -501,6 +504,7 @@ async def _persona_generate_impl(
             # Step 9: Initialize generation tracker for multi-agent support
             num_agents = len(agent_groups)
             await init_generation(str(run_id), num_agents)
+            await init_resource_progress(str(run_id), len(resource_types))
 
             # Emit persona_generation_started to client
             await sio.emit(

@@ -411,20 +411,16 @@ export function Descriptions({
 
   useEffect(() => {
     if (!aiSocket || !aiIsConnected) return;
-    const handleResourceComplete = (data: Record<string, unknown>) => {
-      if (data["resource_type"] !== "descriptions") return;
-      if (group_id && data["group_id"] !== group_id) return;
-      const resourceData = data["resource_data"] as Record<string, unknown> | undefined;
-      if (resourceData) {
-        setInternalAiResource({
-          id: resourceData["id"] as string | null,
-          description: resourceData["description"] as string | null,
-        });
-      }
+    const handleResourceComplete = (data: { group_id?: string; id?: string | null; description?: string | null }) => {
+      if (group_id && data.group_id !== group_id) return;
+      setInternalAiResource({
+        id: data.id ?? null,
+        description: data.description ?? null,
+      });
       onGenerationComplete?.();
     };
-    aiSocket.on("resource_generation_complete", handleResourceComplete);
-    return () => { aiSocket.off("resource_generation_complete", handleResourceComplete); };
+    aiSocket.on("descriptions_generation_complete", handleResourceComplete);
+    return () => { aiSocket.off("descriptions_generation_complete", handleResourceComplete); };
   }, [aiSocket, aiIsConnected, group_id, onGenerationComplete]);
 
   // Compute effective AI resource: internal socket state takes priority, then prop

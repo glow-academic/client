@@ -496,24 +496,22 @@ export function ParameterFields({
   useEffect(() => {
     if (!aiSocket || !aiIsConnected || !group_id) return;
 
-    const handleGenerationComplete = (data: Record<string, unknown>) => {
-      const resourceType = data["resource_type"] as string | undefined;
-      const dataGroupId = data["group_id"] as string | undefined;
-      if (resourceType !== "parameter_fields" || dataGroupId !== group_id) return;
+    const handleGenerationComplete = (data: { group_id?: string; id?: string | null; field_id?: string | null; parameter_id?: string | null }) => {
+      if (data.group_id !== group_id) return;
 
       setInternalAiParameterFieldResources([
         {
-          id: data["id"] as string,
-          field_id: data["field_id"] as string,
-          parameter_id: data["parameter_id"] as string,
+          id: data.id as string,
+          field_id: data.field_id as string,
+          parameter_id: data.parameter_id as string,
         },
       ]);
       onGenerationComplete?.();
     };
 
-    aiSocket.on("resource_generation_complete", handleGenerationComplete);
+    aiSocket.on("parameter_fields_generation_complete", handleGenerationComplete);
     return () => {
-      aiSocket.off("resource_generation_complete", handleGenerationComplete);
+      aiSocket.off("parameter_fields_generation_complete", handleGenerationComplete);
     };
   }, [aiSocket, aiIsConnected, group_id, onGenerationComplete]);
 
