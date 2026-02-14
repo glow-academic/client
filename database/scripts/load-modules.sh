@@ -202,6 +202,7 @@ load_setup_categories() {
     "personas:02-personas"
     "documents:03-documents"
     "uploads:uploads"
+    "texts:texts"
     "fields:04-fields"
     "parameters:05-parameters"
     "rubrics:05-rubrics"
@@ -407,14 +408,15 @@ else
     echo "SET session_replication_role = DEFAULT;"
   } | psql "$DB_URL" -v ON_ERROR_STOP=0 --quiet 2>&1 | grep -v "^$" || true
 
-  # Copy upload files to the project uploads directory
+  # Copy upload files to the project uploads directory (handles subdirectories)
   uploads_dir="$project_root/uploads"
   for setup_name in organization university; do
     uploads_files_dir="$modules_dir/11-setups/$setup_name/uploads/files"
     if [[ -d "$uploads_files_dir" ]]; then
       mkdir -p "$uploads_dir"
       echo "Copying upload files from $setup_name/uploads/files/ ..."
-      cp -n "$uploads_files_dir"/* "$uploads_dir/" 2>/dev/null || true
+      # Use cp -Rn to handle subdirectories (e.g., image/ for page PNGs)
+      cp -Rn "$uploads_files_dir"/ "$uploads_dir/" 2>/dev/null || true
     fi
   done
 

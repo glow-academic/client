@@ -24,6 +24,7 @@ modules:
     personas: all
     documents: all
     uploads: all
+    texts: all
     fields: all
     parameters: all
     rubrics: all

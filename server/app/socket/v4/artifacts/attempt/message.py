@@ -13,7 +13,9 @@ from typing import Any, cast
 from fastapi import APIRouter
 
 from app.api.v4.artifacts.attempt.get import get_attempt_internal
+from app.infra.v4.artifacts.discovery import extract_template_variable_name
 from app.infra.v4.generation import convert_tools_to_dict, render_developer_instructions
+from app.infra.v4.tools.render_tool_template import GET_OUTPUT_SCHEMA_FIELDS_SQL_PATH
 from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
 from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.infra.v4.websocket.typed_emit import emit_to_internal
@@ -23,7 +25,11 @@ from app.socket.v4.artifacts.attempt.permissions import (
     format_generation_error,
     validate_attempt_message_access,
 )
-from app.socket.v4.artifacts.attempt.run_store import set_run_context
+from app.socket.v4.artifacts.attempt.run_store import (
+    ENTRY_TYPE_DISPLAY_COLUMNS,
+    ToolStreamingMeta,
+    set_run_context,
+)
 from app.socket.v4.artifacts.attempt.types import (
     ATTEMPT_MESSAGE_ENTRY_TYPES,
     AttemptAssistantStartEvent,
@@ -34,6 +40,8 @@ from app.socket.v4.artifacts.types import GenerateErrorApiRequest
 from app.sql.types import (
     GetAttemptMessageContextSqlParams,
     GetAttemptMessageContextSqlRow,
+    GetResourceOutputSchemaFieldsSqlParams,
+    GetResourceOutputSchemaFieldsSqlRow,
     PrepareAttemptMessageSqlParams,
     PrepareAttemptMessageSqlRow,
 )
@@ -230,8 +238,59 @@ async def _attempt_message_impl(
             group_id = str(prepare_row.group_id) if prepare_row.group_id else None
             trace_id = prepare_row.trace_id
 
+            # Build tool_meta mapping for streaming: tool_name → (entry_type, display_arg)
+            # This lets progress.py know which argument to stream for each tool,
+            # resolved deterministically via output schema (no hardcoded arg names).
+            tool_meta: dict[str, ToolStreamingMeta] = {}
+            if prepare_row.tools:
+                for tool in prepare_row.tools:
+                    if tool is None or not isinstance(tool, tuple) or len(tool) < 9:
+                        continue
+                    tool_id = tool[0]
+                    tool_name = tool[1]
+                    entry_type = tool[3]  # from br.entry::text
+                    if (
+                        not tool_id
+                        or not tool_name
+                        or entry_type not in ENTRY_TYPE_DISPLAY_COLUMNS
+                    ):
+                        continue
+
+                    # Find which argument maps to the display column
+                    display_column = ENTRY_TYPE_DISPLAY_COLUMNS[entry_type]
+                    display_arg: str | None = None
+                    try:
+                        output_rows = cast(
+                            list[GetResourceOutputSchemaFieldsSqlRow],
+                            await execute_sql_typed(
+                                conn,
+                                GET_OUTPUT_SCHEMA_FIELDS_SQL_PATH,
+                                params=GetResourceOutputSchemaFieldsSqlParams(
+                                    tool_id=tool_id
+                                ),
+                                multi_row=True,
+                            ),
+                        )
+                        for row in output_rows or []:
+                            if row.name == display_column and row.template:
+                                display_arg = extract_template_variable_name(
+                                    row.template
+                                )
+                                break
+                    except Exception:
+                        logger.warning(
+                            f"Failed to resolve output schema for tool {tool_name}"
+                        )
+
+                    tool_meta[tool_name] = ToolStreamingMeta(
+                        entry_type=entry_type,
+                        display_arg=display_arg,
+                    )
+
             # Cache run context for streaming deltas (avoids DB query per delta)
-            set_run_context(run_id, str(data.chat_id), assistant_message_id)
+            set_run_context(
+                run_id, str(data.chat_id), assistant_message_id, tool_meta=tool_meta
+            )
 
             # Ensure MV is fresh before building developer context
             await conn.execute("REFRESH MATERIALIZED VIEW mv_attempt_messages")

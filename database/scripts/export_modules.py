@@ -1828,10 +1828,78 @@ async def export_setup_fields(conn: asyncpg.Connection) -> None:
         print(f"    {slug}.sql ({count} inserts)")
 
 
+async def _collect_upload_chain(
+    conn: asyncpg.Connection,
+    uploads_id,
+    entry_cols: list[str],
+    entry_pks: list[str],
+    conn_cols: list[str],
+    conn_pks: list[str],
+    entry_inserts: list[str],
+    conn_inserts: list[str],
+    seen_entry_ids: set[str],
+    seen_conn_keys: set[tuple[str, str]],
+    copied_files: set[str],
+    upload_source: Path,
+    files_dir: Path,
+) -> None:
+    """Collect uploads_entry + uploads_uploads_connection for one uploads_resource ID.
+
+    Also copies actual files. Shared by PDF uploads and image uploads.
+    """
+    conn_col_list = ", ".join(conn_cols)
+    conn_rows = await conn.fetch(
+        f"SELECT {conn_col_list} FROM public.uploads_uploads_connection WHERE uploads_id = $1",
+        uploads_id,
+    )
+
+    for crow in conn_rows:
+        upload_id = crow["upload_id"]
+        upload_id_str = str(upload_id)
+
+        # Export uploads_entry (deduplicated)
+        if upload_id_str not in seen_entry_ids:
+            seen_entry_ids.add(upload_id_str)
+            entry_col_list = ", ".join(entry_cols)
+            entry_row = await conn.fetchrow(
+                f"SELECT {entry_col_list} FROM public.uploads_entry WHERE id = $1",
+                upload_id,
+            )
+            if entry_row:
+                entry_inserts.append(
+                    make_insert(
+                        "uploads_entry", entry_row, entry_cols, entry_pks
+                    )
+                )
+                # Copy the actual file (handle subdirectories like image/)
+                file_path = entry_row["file_path"]
+                if file_path and file_path not in copied_files:
+                    src = upload_source / file_path
+                    if src.exists():
+                        dest = files_dir / file_path
+                        dest.parent.mkdir(parents=True, exist_ok=True)
+                        shutil.copy2(src, dest)
+                        copied_files.add(file_path)
+                    else:
+                        print(f"    WARNING: Upload file not found: {src}")
+
+        # Export uploads_uploads_connection (deduplicated)
+        conn_key = (str(uploads_id), upload_id_str)
+        if conn_key not in seen_conn_keys:
+            seen_conn_keys.add(conn_key)
+            conn_inserts.append(
+                make_insert(
+                    "uploads_uploads_connection", crow, conn_cols, conn_pks
+                )
+            )
+
+
 async def export_uploads(conn: asyncpg.Connection) -> None:
     """Export uploads_entry + uploads_uploads_connection for documents with uploads.
 
-    Also copies the actual upload files to the module's files/ directory.
+    Handles both PDF uploads (via document_uploads_junction) and image uploads
+    (via document_images_junction → images_resource → uploads_resource).
+    Also copies the actual files to the module's files/ directory.
     """
     print("  Exporting uploads/ ...")
     out_dir = MODULES_DIR / "11-setups" / "university" / "uploads"
@@ -1840,105 +1908,73 @@ async def export_uploads(conn: asyncpg.Connection) -> None:
             old.unlink()
     files_dir = out_dir / "files"
     if files_dir.exists():
-        for old in files_dir.iterdir():
-            old.unlink()
+        shutil.rmtree(files_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
     files_dir.mkdir(parents=True, exist_ok=True)
-
-    # Find document artifacts with no department (same filter as export_setup_documents)
-    # that have uploads linked via document_uploads_junction
-    rows = await conn.fetch("""
-        SELECT DISTINCT da.id, nr.name, duj.uploads_id
-        FROM document_artifact da
-        JOIN document_names_junction dnj ON dnj.document_id = da.id
-        JOIN names_resource nr ON nr.id = dnj.name_id
-        JOIN document_uploads_junction duj ON duj.document_id = da.id AND duj.active = true
-        WHERE NOT EXISTS (
-            SELECT 1 FROM document_departments_junction ddj WHERE ddj.document_id = da.id
-        )
-        ORDER BY nr.name
-    """)
-
-    if not rows:
-        print("    uploads.sql (0 inserts, 0 files)")
-        return
 
     entry_cols = TABLE_COLUMNS.get("uploads_entry", [])
     entry_pks = TABLE_PKS.get("uploads_entry", [])
     conn_cols = TABLE_COLUMNS.get("uploads_uploads_connection", [])
     conn_pks = TABLE_PKS.get("uploads_uploads_connection", [])
 
-    output_path = out_dir / "uploads.sql"
+    entry_inserts: list[str] = []
+    conn_inserts: list[str] = []
     seen_entry_ids: set[str] = set()
     seen_conn_keys: set[tuple[str, str]] = set()
     copied_files: set[str] = set()
     upload_source = PROJECT_ROOT / "uploads"
 
+    # --- Pass 1: PDF uploads via document_uploads_junction ---
+    pdf_rows = await conn.fetch("""
+        SELECT DISTINCT duj.uploads_id
+        FROM document_artifact da
+        JOIN document_uploads_junction duj ON duj.document_id = da.id AND duj.active = true
+        WHERE NOT EXISTS (
+            SELECT 1 FROM document_departments_junction ddj WHERE ddj.document_id = da.id
+        )
+    """)
+
+    for r in pdf_rows:
+        await _collect_upload_chain(
+            conn, r["uploads_id"],
+            entry_cols, entry_pks, conn_cols, conn_pks,
+            entry_inserts, conn_inserts, seen_entry_ids, seen_conn_keys,
+            copied_files, upload_source, files_dir,
+        )
+
+    # --- Pass 2: Image uploads via document_images_junction → images_resource ---
+    img_rows = await conn.fetch("""
+        SELECT DISTINCT ir.upload_id AS uploads_id
+        FROM document_artifact da
+        JOIN document_images_junction dij ON dij.document_id = da.id AND dij.active = true
+        JOIN images_resource ir ON ir.id = dij.images_id
+        WHERE NOT EXISTS (
+            SELECT 1 FROM document_departments_junction ddj WHERE ddj.document_id = da.id
+        )
+        AND ir.upload_id IS NOT NULL
+    """)
+
+    for r in img_rows:
+        await _collect_upload_chain(
+            conn, r["uploads_id"],
+            entry_cols, entry_pks, conn_cols, conn_pks,
+            entry_inserts, conn_inserts, seen_entry_ids, seen_conn_keys,
+            copied_files, upload_source, files_dir,
+        )
+
+    # --- Write output ---
+    output_path = out_dir / "uploads.sql"
     with open(output_path, "w") as f:
         f.write("-- Module: uploads\n")
         f.write("-- Category: uploads\n")
         f.write("-- Description: Upload entries and connections for document uploads\n")
         f.write("-- ============================================================\n")
 
-        # Collect uploads_entry and uploads_uploads_connection rows
-        entry_inserts: list[str] = []
-        conn_inserts: list[str] = []
-
-        for r in rows:
-            uploads_id = r["uploads_id"]
-
-            # Get uploads_uploads_connection rows for this uploads_resource
-            conn_col_list = ", ".join(conn_cols)
-            conn_rows = await conn.fetch(
-                f"SELECT {conn_col_list} FROM public.uploads_uploads_connection WHERE uploads_id = $1",
-                uploads_id,
-            )
-
-            for crow in conn_rows:
-                upload_id = crow["upload_id"]
-                upload_id_str = str(upload_id)
-
-                # Export uploads_entry (deduplicated)
-                if upload_id_str not in seen_entry_ids:
-                    seen_entry_ids.add(upload_id_str)
-                    entry_col_list = ", ".join(entry_cols)
-                    entry_row = await conn.fetchrow(
-                        f"SELECT {entry_col_list} FROM public.uploads_entry WHERE id = $1",
-                        upload_id,
-                    )
-                    if entry_row:
-                        entry_inserts.append(
-                            make_insert(
-                                "uploads_entry", entry_row, entry_cols, entry_pks
-                            )
-                        )
-                        # Copy the actual file
-                        file_path = entry_row["file_path"]
-                        if file_path and file_path not in copied_files:
-                            src = upload_source / file_path
-                            if src.exists():
-                                shutil.copy2(src, files_dir / file_path)
-                                copied_files.add(file_path)
-                            else:
-                                print(f"    WARNING: Upload file not found: {src}")
-
-                # Export uploads_uploads_connection (deduplicated)
-                conn_key = (str(uploads_id), upload_id_str)
-                if conn_key not in seen_conn_keys:
-                    seen_conn_keys.add(conn_key)
-                    conn_inserts.append(
-                        make_insert(
-                            "uploads_uploads_connection", crow, conn_cols, conn_pks
-                        )
-                    )
-
-        # Write entry rows first (referenced by connections)
         if entry_inserts:
             f.write("\n-- uploads_entry\n")
             for stmt in entry_inserts:
                 f.write(stmt + "\n")
 
-        # Then connection rows
         if conn_inserts:
             f.write("\n-- uploads_uploads_connection\n")
             for stmt in conn_inserts:
@@ -1948,12 +1984,113 @@ async def export_uploads(conn: asyncpg.Connection) -> None:
     print(f"    uploads.sql ({total} inserts, {len(copied_files)} files)")
 
 
+async def export_texts(conn: asyncpg.Connection) -> None:
+    """Export texts_entry + texts_texts_connection for documents with text content.
+
+    Also exports texts_entry + texts_texts_connection for all module documents
+    (those with no department) that have a text_id set.
+    """
+    print("  Exporting texts/ ...")
+    out_dir = MODULES_DIR / "11-setups" / "university" / "texts"
+    if out_dir.exists():
+        for old in out_dir.glob("*.sql"):
+            old.unlink()
+    out_dir.mkdir(parents=True, exist_ok=True)
+
+    # Find document artifacts with no department that have texts
+    rows = await conn.fetch("""
+        SELECT DISTINCT dtj.texts_id
+        FROM document_artifact da
+        JOIN document_texts_junction dtj ON dtj.document_id = da.id AND dtj.active = true
+        WHERE NOT EXISTS (
+            SELECT 1 FROM document_departments_junction ddj WHERE ddj.document_id = da.id
+        )
+    """)
+
+    if not rows:
+        print("    texts.sql (0 inserts)")
+        return
+
+    entry_cols = TABLE_COLUMNS.get("texts_entry", [])
+    entry_pks = TABLE_PKS.get("texts_entry", [])
+    conn_cols = TABLE_COLUMNS.get("texts_texts_connection", [])
+    conn_pks = TABLE_PKS.get("texts_texts_connection", [])
+
+    output_path = out_dir / "texts.sql"
+    seen_entry_ids: set[str] = set()
+    seen_conn_keys: set[tuple[str, str]] = set()
+
+    with open(output_path, "w") as f:
+        f.write("-- Module: texts\n")
+        f.write("-- Category: texts\n")
+        f.write("-- Description: Text entries and connections for document texts\n")
+        f.write("-- ============================================================\n")
+
+        entry_inserts: list[str] = []
+        conn_inserts: list[str] = []
+
+        for r in rows:
+            texts_id = r["texts_id"]
+
+            # Get texts_texts_connection rows for this texts_resource
+            conn_col_list = ", ".join(conn_cols)
+            conn_rows = await conn.fetch(
+                f"SELECT {conn_col_list} FROM public.texts_texts_connection WHERE texts_id = $1",
+                texts_id,
+            )
+
+            for crow in conn_rows:
+                text_id = crow["text_id"]
+                text_id_str = str(text_id)
+
+                # Export texts_entry (deduplicated)
+                if text_id_str not in seen_entry_ids:
+                    seen_entry_ids.add(text_id_str)
+                    entry_col_list = ", ".join(entry_cols)
+                    entry_row = await conn.fetchrow(
+                        f"SELECT {entry_col_list} FROM public.texts_entry WHERE id = $1",
+                        text_id,
+                    )
+                    if entry_row:
+                        entry_inserts.append(
+                            make_insert(
+                                "texts_entry", entry_row, entry_cols, entry_pks
+                            )
+                        )
+
+                # Export texts_texts_connection (deduplicated)
+                conn_key = (str(texts_id), text_id_str)
+                if conn_key not in seen_conn_keys:
+                    seen_conn_keys.add(conn_key)
+                    conn_inserts.append(
+                        make_insert(
+                            "texts_texts_connection", crow, conn_cols, conn_pks
+                        )
+                    )
+
+        # Write entry rows first (referenced by connections)
+        if entry_inserts:
+            f.write("\n-- texts_entry\n")
+            for stmt in entry_inserts:
+                f.write(stmt + "\n")
+
+        # Then connection rows
+        if conn_inserts:
+            f.write("\n-- texts_texts_connection\n")
+            for stmt in conn_inserts:
+                f.write(stmt + "\n")
+
+    total = len(entry_inserts) + len(conn_inserts)
+    print(f"    texts.sql ({total} inserts)")
+
+
 async def export_setup(conn: asyncpg.Connection) -> None:
     print("Exporting 11-setups/ ...")
     await export_setup_departments(conn)
     await export_setup_per_artifact(conn, "persona", "02-personas", "persona")
     await export_setup_documents(conn)
     await export_uploads(conn)
+    await export_texts(conn)
     await export_setup_fields(conn)
     await export_setup_per_artifact(conn, "parameter", "05-parameters", "parameter")
     await export_rubrics(conn)
@@ -2003,6 +2140,7 @@ async def main() -> None:
             "profiles": export_base_profiles,
             "settings": export_base_settings,
             "uploads": export_uploads,
+            "texts": export_texts,
             "setup": export_setup,
         }
 
