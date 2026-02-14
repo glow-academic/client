@@ -1,12 +1,11 @@
 """Per-resource socket event handlers.
 
-Aggregates server_routers from all per-resource modules and imports the
-dispatcher to register internal_sio listeners.
+Each resource module registers its own internal_sio listeners
+and provides server_router endpoints for OpenAPI documentation.
 """
 
 from fastapi import APIRouter
 
-from . import dispatcher  # noqa: F401 — registers internal_sio listeners
 from .agents import server_router as agents_server_router
 from .arg_positions import server_router as arg_positions_server_router
 from .args import server_router as args_server_router

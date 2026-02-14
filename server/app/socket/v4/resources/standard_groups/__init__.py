@@ -1,44 +1,21 @@
-"""StandardGroups resource socket events - OpenAPI schema endpoints."""
+"""StandardGroups resource socket event handlers."""
 
 from fastapi import APIRouter
 
-from app.socket.v4.resources.standard_groups.types import StandardGroupsGenerationCompleteEvent
-from app.socket.v4.resources.types import (
-    ResourceErrorEvent,
-    ResourceProgressEvent,
-    ResourceStartEvent,
-)
+from .complete import server_router as complete_router
+from .error import server_router as error_router
+from .progress import server_router as progress_router
+from .start import server_router as start_router
+
+# Import handler modules to register internal_sio listeners
+from . import complete as _complete  # noqa: F401
+from . import error as _error  # noqa: F401
+from . import progress as _progress  # noqa: F401
+from . import start as _start  # noqa: F401
 
 server_router = APIRouter()
 
-
-@server_router.post("/standard_groups_generation_complete")
-async def standard_groups_generation_complete_api(
-    request: StandardGroupsGenerationCompleteEvent,
-) -> dict[str, bool]:
-    """Server-to-client event: StandardGroups generation completed."""
-    return {"success": True}
-
-
-@server_router.post("/standard_groups_generation_started")
-async def standard_groups_generation_started_api(
-    request: ResourceStartEvent,
-) -> dict[str, bool]:
-    """Server-to-client event: StandardGroups generation started."""
-    return {"success": True}
-
-
-@server_router.post("/standard_groups_generation_progress")
-async def standard_groups_generation_progress_api(
-    request: ResourceProgressEvent,
-) -> dict[str, bool]:
-    """Server-to-client event: StandardGroups generation progress."""
-    return {"success": True}
-
-
-@server_router.post("/standard_groups_generation_error")
-async def standard_groups_generation_error_api(
-    request: ResourceErrorEvent,
-) -> dict[str, bool]:
-    """Server-to-client event: StandardGroups generation error."""
-    return {"success": True}
+server_router.include_router(start_router)
+server_router.include_router(progress_router)
+server_router.include_router(complete_router)
+server_router.include_router(error_router)

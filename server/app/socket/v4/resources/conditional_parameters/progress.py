@@ -2,8 +2,15 @@
 
 from typing import Any
 
-from app.main import sio
-from app.socket.v4.resources.types import ResourceProgressEvent
+from fastapi import APIRouter
+
+from app.main import get_internal_sio, sio
+from app.socket.v4.resources.conditional_parameters.types import ConditionalParametersGenerationProgressEvent
+from app.socket.v4.resources.utils import resolve_resource_type
+
+internal_sio = get_internal_sio()
+
+server_router = APIRouter()
 
 
 async def handle_progress(data: dict[str, Any]) -> None:
@@ -12,9 +19,8 @@ async def handle_progress(data: dict[str, Any]) -> None:
     if not sid:
         return
 
-    event = ResourceProgressEvent(
+    event = ConditionalParametersGenerationProgressEvent(
         artifact_type=data.get("artifact_type", ""),
-        resource_type="conditional_parameters",
         group_id=data.get("group_id"),
         run_id=data.get("run_id"),
         tool_call_id=data.get("tool_call_id"),
@@ -28,3 +34,31 @@ async def handle_progress(data: dict[str, Any]) -> None:
         event.model_dump(mode="json"),
         room=sid,
     )
+
+
+# =============================================================================
+# Internal SIO listener
+# =============================================================================
+
+
+@internal_sio.on("generate_call_progress")  # type: ignore
+async def conditional_parameters_call_progress_listener(data: dict[str, Any]) -> None:
+    """Listen for tool_call_delta events targeting conditional_parameters."""
+    if data.get("event_type") != "tool_call_delta":
+        return
+    if resolve_resource_type(data) != "conditional_parameters":
+        return
+    await handle_progress(data)
+
+
+# =============================================================================
+# FastAPI endpoint for OpenAPI documentation
+# =============================================================================
+
+
+@server_router.post("/conditional_parameters_generation_progress")
+async def conditional_parameters_generation_progress_api(
+    request: ConditionalParametersGenerationProgressEvent,
+) -> dict[str, bool]:
+    """Server-to-client event: ConditionalParameters generation progress."""
+    return {"success": True}

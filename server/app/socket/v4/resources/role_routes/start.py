@@ -2,8 +2,15 @@
 
 from typing import Any
 
-from app.main import sio
-from app.socket.v4.resources.types import ResourceStartEvent
+from fastapi import APIRouter
+
+from app.main import get_internal_sio, sio
+from app.socket.v4.resources.role_routes.types import RoleRoutesGenerationStartedEvent
+from app.socket.v4.resources.utils import resolve_resource_type
+
+internal_sio = get_internal_sio()
+
+server_router = APIRouter()
 
 
 async def handle_start(data: dict[str, Any]) -> None:
@@ -12,9 +19,8 @@ async def handle_start(data: dict[str, Any]) -> None:
     if not sid:
         return
 
-    event = ResourceStartEvent(
+    event = RoleRoutesGenerationStartedEvent(
         artifact_type=data.get("artifact_type", ""),
-        resource_type="role_routes",
         group_id=data.get("group_id", ""),
         run_id=data.get("run_id"),
         tool_call_id=data.get("tool_call_id"),
@@ -26,3 +32,31 @@ async def handle_start(data: dict[str, Any]) -> None:
         event.model_dump(mode="json"),
         room=sid,
     )
+
+
+# =============================================================================
+# Internal SIO listener
+# =============================================================================
+
+
+@internal_sio.on("generate_call_start")  # type: ignore
+async def role_routes_call_start_listener(data: dict[str, Any]) -> None:
+    """Listen for tool_call_start events targeting role_routes."""
+    if data.get("event_type") != "tool_call_start":
+        return
+    if resolve_resource_type(data) != "role_routes":
+        return
+    await handle_start(data)
+
+
+# =============================================================================
+# FastAPI endpoint for OpenAPI documentation
+# =============================================================================
+
+
+@server_router.post("/role_routes_generation_started")
+async def role_routes_generation_started_api(
+    request: RoleRoutesGenerationStartedEvent,
+) -> dict[str, bool]:
+    """Server-to-client event: RoleRoutes generation started."""
+    return {"success": True}

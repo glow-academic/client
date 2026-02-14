@@ -2,8 +2,15 @@
 
 from typing import Any
 
-from app.main import sio
-from app.socket.v4.resources.types import ResourceErrorEvent
+from fastapi import APIRouter
+
+from app.main import get_internal_sio, sio
+from app.socket.v4.resources.scenarios.types import ScenariosGenerationErrorEvent
+from app.socket.v4.resources.utils import resolve_resource_type
+
+internal_sio = get_internal_sio()
+
+server_router = APIRouter()
 
 
 async def handle_error(data: dict[str, Any]) -> None:
@@ -12,12 +19,10 @@ async def handle_error(data: dict[str, Any]) -> None:
     if not sid:
         return
 
-    event = ResourceErrorEvent(
+    event = ScenariosGenerationErrorEvent(
         artifact_type=data.get("artifact_type", ""),
-        resource_type="scenarios",
         group_id=data.get("group_id"),
         run_id=data.get("run_id"),
-        success=False,
         message=data.get("message") or data.get("error_message") or "Unknown error",
         error_stage=data.get("error_stage"),
         tool_name=data.get("tool_name"),
@@ -30,3 +35,29 @@ async def handle_error(data: dict[str, Any]) -> None:
         event.model_dump(mode="json"),
         room=sid,
     )
+
+
+# =============================================================================
+# Internal SIO listener
+# =============================================================================
+
+
+@internal_sio.on("generate_call_error")  # type: ignore
+async def scenarios_call_error_listener(data: dict[str, Any]) -> None:
+    """Listen for error events targeting scenarios."""
+    if resolve_resource_type(data) != "scenarios":
+        return
+    await handle_error(data)
+
+
+# =============================================================================
+# FastAPI endpoint for OpenAPI documentation
+# =============================================================================
+
+
+@server_router.post("/scenarios_generation_error")
+async def scenarios_generation_error_api(
+    request: ScenariosGenerationErrorEvent,
+) -> dict[str, bool]:
+    """Server-to-client event: Scenarios generation error."""
+    return {"success": True}

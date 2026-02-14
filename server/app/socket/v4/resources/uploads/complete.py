@@ -3,13 +3,20 @@
 import uuid
 from typing import Any
 
+from fastapi import APIRouter
+
 from app.api.v4.resources.uploads.get import get_uploads_internal
 from app.infra.v4.websocket.get_db_connection import get_db_connection
-from app.main import sio
+from app.main import get_internal_sio, sio
 from app.socket.v4.resources.uploads.types import UploadsGenerationCompleteEvent
+from app.socket.v4.resources.utils import resolve_resource_type
 from app.utils.logging.db_logger import get_logger
 
 logger = get_logger(__name__)
+
+internal_sio = get_internal_sio()
+
+server_router = APIRouter()
 
 
 async def handle_complete(data: dict[str, Any]) -> None:
@@ -43,7 +50,7 @@ async def handle_complete(data: dict[str, Any]) -> None:
         resource_id=resource_id_str,
         group_id=group_id_str,
         run_id=run_id,
-        data=resource_data,
+        **resource_data,
     )
 
     await sio.emit(
@@ -51,3 +58,31 @@ async def handle_complete(data: dict[str, Any]) -> None:
         event.model_dump(mode="json"),
         room=sid,
     )
+
+
+# =============================================================================
+# Internal SIO listener
+# =============================================================================
+
+
+@internal_sio.on("generate_call_complete")  # type: ignore
+async def uploads_call_complete_listener(data: dict[str, Any]) -> None:
+    """Listen for tool_result events targeting uploads."""
+    if data.get("event_type") != "tool_result":
+        return
+    if resolve_resource_type(data) != "uploads":
+        return
+    await handle_complete(data)
+
+
+# =============================================================================
+# FastAPI endpoint for OpenAPI documentation
+# =============================================================================
+
+
+@server_router.post("/uploads_generation_complete")
+async def uploads_generation_complete_api(
+    request: UploadsGenerationCompleteEvent,
+) -> dict[str, bool]:
+    """Server-to-client event: Uploads generation completed."""
+    return {"success": True}

@@ -2,8 +2,15 @@
 
 from typing import Any
 
-from app.main import sio
-from app.socket.v4.resources.types import ResourceStartEvent
+from fastapi import APIRouter
+
+from app.main import get_internal_sio, sio
+from app.socket.v4.resources.groups.types import GroupsGenerationStartedEvent
+from app.socket.v4.resources.utils import resolve_resource_type
+
+internal_sio = get_internal_sio()
+
+server_router = APIRouter()
 
 
 async def handle_start(data: dict[str, Any]) -> None:
@@ -12,9 +19,8 @@ async def handle_start(data: dict[str, Any]) -> None:
     if not sid:
         return
 
-    event = ResourceStartEvent(
+    event = GroupsGenerationStartedEvent(
         artifact_type=data.get("artifact_type", ""),
-        resource_type="groups",
         group_id=data.get("group_id", ""),
         run_id=data.get("run_id"),
         tool_call_id=data.get("tool_call_id"),
@@ -26,3 +32,31 @@ async def handle_start(data: dict[str, Any]) -> None:
         event.model_dump(mode="json"),
         room=sid,
     )
+
+
+# =============================================================================
+# Internal SIO listener
+# =============================================================================
+
+
+@internal_sio.on("generate_call_start")  # type: ignore
+async def groups_call_start_listener(data: dict[str, Any]) -> None:
+    """Listen for tool_call_start events targeting groups."""
+    if data.get("event_type") != "tool_call_start":
+        return
+    if resolve_resource_type(data) != "groups":
+        return
+    await handle_start(data)
+
+
+# =============================================================================
+# FastAPI endpoint for OpenAPI documentation
+# =============================================================================
+
+
+@server_router.post("/groups_generation_started")
+async def groups_generation_started_api(
+    request: GroupsGenerationStartedEvent,
+) -> dict[str, bool]:
+    """Server-to-client event: Groups generation started."""
+    return {"success": True}

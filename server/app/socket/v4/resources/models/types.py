@@ -1,8 +1,32 @@
-"""Typed event models for models resource generation."""
+"""Typed event models for models resource socket events."""
 
 from typing import Any
 
 from pydantic import BaseModel
+
+
+class ModelsGenerationStartedEvent(BaseModel):
+    """Server-to-client event: models_generation_started."""
+
+    artifact_type: str
+    resource_type: str = "models"
+    group_id: str
+    run_id: str | None = None
+    tool_call_id: str | None = None
+    tool_name: str | None = None
+
+
+class ModelsGenerationProgressEvent(BaseModel):
+    """Server-to-client event: models_generation_progress."""
+
+    artifact_type: str
+    resource_type: str = "models"
+    group_id: str | None = None
+    run_id: str | None = None
+    tool_call_id: str | None = None
+    tool_name: str | None = None
+    arguments_delta: str | None = None
+    arguments: dict[str, Any] | None = None
 
 
 class ModelsGenerationCompleteEvent(BaseModel):
@@ -14,4 +38,30 @@ class ModelsGenerationCompleteEvent(BaseModel):
     group_id: str
     run_id: str | None = None
     success: bool = True
-    data: dict[str, Any] | None = None
+    id: str | None = None
+    name: str | None = None
+    description: str | None = None
+    value: str | None = None
+    provider_id: str | None = None
+    modality_ids: list[str] | None = None
+    temperature_level_ids: list[str] | None = None
+    reasoning_level_ids: list[str] | None = None
+    quality_ids: list[str] | None = None
+    voice_ids: list[str] | None = None
+    active: bool | None = None
+    generated: bool | None = None
+
+
+class ModelsGenerationErrorEvent(BaseModel):
+    """Server-to-client event: models_generation_error."""
+
+    artifact_type: str
+    resource_type: str = "models"
+    group_id: str | None = None
+    run_id: str | None = None
+    success: bool = False
+    message: str = ""
+    error_stage: str | None = None
+    tool_name: str | None = None
+    tool_call_id: str | None = None
+    arguments: dict[str, Any] | None = None

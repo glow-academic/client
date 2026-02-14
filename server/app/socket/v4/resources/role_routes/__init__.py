@@ -1,44 +1,21 @@
-"""RoleRoutes resource socket events - OpenAPI schema endpoints."""
+"""RoleRoutes resource socket event handlers."""
 
 from fastapi import APIRouter
 
-from app.socket.v4.resources.role_routes.types import RoleRoutesGenerationCompleteEvent
-from app.socket.v4.resources.types import (
-    ResourceErrorEvent,
-    ResourceProgressEvent,
-    ResourceStartEvent,
-)
+from .complete import server_router as complete_router
+from .error import server_router as error_router
+from .progress import server_router as progress_router
+from .start import server_router as start_router
+
+# Import handler modules to register internal_sio listeners
+from . import complete as _complete  # noqa: F401
+from . import error as _error  # noqa: F401
+from . import progress as _progress  # noqa: F401
+from . import start as _start  # noqa: F401
 
 server_router = APIRouter()
 
-
-@server_router.post("/role_routes_generation_complete")
-async def role_routes_generation_complete_api(
-    request: RoleRoutesGenerationCompleteEvent,
-) -> dict[str, bool]:
-    """Server-to-client event: RoleRoutes generation completed."""
-    return {"success": True}
-
-
-@server_router.post("/role_routes_generation_started")
-async def role_routes_generation_started_api(
-    request: ResourceStartEvent,
-) -> dict[str, bool]:
-    """Server-to-client event: RoleRoutes generation started."""
-    return {"success": True}
-
-
-@server_router.post("/role_routes_generation_progress")
-async def role_routes_generation_progress_api(
-    request: ResourceProgressEvent,
-) -> dict[str, bool]:
-    """Server-to-client event: RoleRoutes generation progress."""
-    return {"success": True}
-
-
-@server_router.post("/role_routes_generation_error")
-async def role_routes_generation_error_api(
-    request: ResourceErrorEvent,
-) -> dict[str, bool]:
-    """Server-to-client event: RoleRoutes generation error."""
-    return {"success": True}
+server_router.include_router(start_router)
+server_router.include_router(progress_router)
+server_router.include_router(complete_router)
+server_router.include_router(error_router)

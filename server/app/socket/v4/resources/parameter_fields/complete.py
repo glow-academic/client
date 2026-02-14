@@ -1,17 +1,22 @@
-"""Parameter fields resource completion handler."""
+"""ParameterFields resource completion handler."""
 
 import uuid
 from typing import Any
 
+from fastapi import APIRouter
+
 from app.api.v4.resources.parameter_fields.get import get_parameter_fields_internal
 from app.infra.v4.websocket.get_db_connection import get_db_connection
-from app.main import sio
-from app.socket.v4.resources.parameter_fields.types import (
-    ParameterFieldsGenerationCompleteEvent,
-)
+from app.main import get_internal_sio, sio
+from app.socket.v4.resources.parameter_fields.types import ParameterFieldsGenerationCompleteEvent
+from app.socket.v4.resources.utils import resolve_resource_type
 from app.utils.logging.db_logger import get_logger
 
 logger = get_logger(__name__)
+
+internal_sio = get_internal_sio()
+
+server_router = APIRouter()
 
 
 async def handle_complete(data: dict[str, Any]) -> None:
@@ -45,13 +50,7 @@ async def handle_complete(data: dict[str, Any]) -> None:
         resource_id=resource_id_str,
         group_id=group_id_str,
         run_id=run_id,
-        id=resource_data.get("id"),
-        field_id=resource_data.get("field_id"),
-        parameter_id=resource_data.get("parameter_id"),
-        name=resource_data.get("name"),
-        description=resource_data.get("description"),
-        generated=resource_data.get("generated"),
-        conditional_parameter_id=resource_data.get("conditional_parameter_id"),
+        **resource_data,
     )
 
     await sio.emit(
@@ -59,3 +58,31 @@ async def handle_complete(data: dict[str, Any]) -> None:
         event.model_dump(mode="json"),
         room=sid,
     )
+
+
+# =============================================================================
+# Internal SIO listener
+# =============================================================================
+
+
+@internal_sio.on("generate_call_complete")  # type: ignore
+async def parameter_fields_call_complete_listener(data: dict[str, Any]) -> None:
+    """Listen for tool_result events targeting parameter_fields."""
+    if data.get("event_type") != "tool_result":
+        return
+    if resolve_resource_type(data) != "parameter_fields":
+        return
+    await handle_complete(data)
+
+
+# =============================================================================
+# FastAPI endpoint for OpenAPI documentation
+# =============================================================================
+
+
+@server_router.post("/parameter_fields_generation_complete")
+async def parameter_fields_generation_complete_api(
+    request: ParameterFieldsGenerationCompleteEvent,
+) -> dict[str, bool]:
+    """Server-to-client event: ParameterFields generation completed."""
+    return {"success": True}
