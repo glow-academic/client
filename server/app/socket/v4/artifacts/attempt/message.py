@@ -28,21 +28,21 @@ from app.api.v4.resources.prompts.get import get_prompts_internal
 from app.infra.v4.artifacts.discovery import extract_template_variable_name
 from app.infra.v4.generation import convert_tools_to_dict, render_developer_instructions
 from app.infra.v4.tools.render_tool_template import GET_OUTPUT_SCHEMA_FIELDS_SQL_PATH
-from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
-from app.infra.v4.websocket.get_db_connection import get_db_connection
-from app.infra.v4.websocket.typed_emit import emit_to_internal
-from app.main import get_internal_sio, get_pool, sio
-from app.socket.v4.artifacts.attempt.run_store import (
+from app.infra.v4.websocket.attempt.run_store import (
     ENTRY_TYPE_DISPLAY_COLUMNS,
     ToolStreamingMeta,
     set_run_context,
 )
-from app.socket.v4.artifacts.attempt.types import (
+from app.infra.v4.websocket.attempt.types import (
     ATTEMPT_MESSAGE_ENTRY_TYPES,
     AttemptAssistantStartEvent,
     AttemptMessagePayload,
     AttemptUserCompleteEvent,
 )
+from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
+from app.infra.v4.websocket.get_db_connection import get_db_connection
+from app.infra.v4.websocket.typed_emit import emit_to_internal
+from app.main import get_internal_sio, get_pool, sio
 from app.socket.v4.artifacts.types import GenerateErrorApiRequest
 from app.sql.types import (
     GetAgentEntryToolsSqlParams,

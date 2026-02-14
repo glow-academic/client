@@ -22,15 +22,15 @@ from app.api.v4.artifacts.attempt.types import GetAttemptWebsocketResponse
 from app.api.v4.resources.instructions.get import get_instructions_internal
 from app.api.v4.resources.prompts.get import get_prompts_internal
 from app.infra.v4.generation import convert_tools_to_dict, render_developer_instructions
-from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
-from app.infra.v4.websocket.get_db_connection import get_db_connection
-from app.infra.v4.websocket.typed_emit import emit_to_internal
-from app.main import get_internal_sio, get_pool, sio
-from app.socket.v4.artifacts.attempt.types import (
+from app.infra.v4.websocket.attempt.types import (
     ATTEMPT_GRADE_ENTRY_TYPES,
     AttemptGradedEvent,
     AttemptGradePayload,
 )
+from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
+from app.infra.v4.websocket.get_db_connection import get_db_connection
+from app.infra.v4.websocket.typed_emit import emit_to_internal
+from app.main import get_internal_sio, get_pool, sio
 from app.socket.v4.artifacts.types import GenerateErrorApiRequest
 from app.sql.types import (
     GetAgentEntryToolsSqlParams,

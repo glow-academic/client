@@ -32,26 +32,30 @@ from . import (
     audio,
     chat,
     complete,
-    control,
+    end,
+    end_all,
     error,
     grade,
     message,
     progress,
     responses,
     room,
+    stop,
 )
 
 __all__ = [
     "audio",
     "chat",
     "complete",
-    "control",
+    "end",
+    "end_all",
     "error",
     "grade",
     "message",
     "progress",
     "responses",
     "room",
+    "stop",
 ]
 
 # Export routers for inclusion in main router
@@ -62,7 +66,9 @@ server_router = APIRouter()
 client_router.include_router(message.client_router)
 client_router.include_router(grade.client_router)
 client_router.include_router(room.client_router)
-client_router.include_router(control.client_router)
+client_router.include_router(stop.client_router)
+client_router.include_router(end.client_router)
+client_router.include_router(end_all.client_router)
 client_router.include_router(audio.client_router)
 client_router.include_router(responses.client_router)
 
@@ -73,7 +79,9 @@ server_router.include_router(progress.server_router)
 server_router.include_router(complete.server_router)
 server_router.include_router(error.server_router)
 server_router.include_router(room.server_router)
-server_router.include_router(control.server_router)
+server_router.include_router(stop.server_router)
+server_router.include_router(end.server_router)
+server_router.include_router(end_all.server_router)
 server_router.include_router(audio.server_router)
 server_router.include_router(responses.server_router)
 server_router.include_router(chat.server_router)

@@ -36,7 +36,7 @@ from app.utils.auth.decrypt_api_key import decrypt_api_key
 from app.utils.sql_helper import execute_sql_typed
 
 internal_sio = get_internal_sio()
-from app.socket.v4.artifacts.attempt.types import (
+from app.infra.v4.websocket.attempt.types import (
     AttemptAssistantAudioEvent,
     AttemptAudioEndedEvent,
     AttemptAudioFramePayload,

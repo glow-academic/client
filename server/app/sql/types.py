@@ -25693,6 +25693,91 @@ class GetAnalyticsChatFactsViewApiResponse(BaseModel):
     items: list[QGetAnalyticsChatFactsViewV4Item] | None = None
 
 
+# Generated from: get_analytics_cohort_facts_view
+
+
+class GetAnalyticsCohortFactsViewSqlParams(BaseModel):
+    profile_id_filter: UUID | None = None
+    cohort_ids: list[UUID] | None = None
+    simulation_ids: list[UUID] | None = None
+    attempt_type_filter: str | None = None
+    is_archived_filter: bool | None = False
+    date_from: date | None = None
+    date_to: date | None = None
+    sort_by: str | None = None
+    sort_order: str | None = None
+    page_limit: int | None = 5000
+    page_offset: int | None = 0
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id_filter,
+            self.cohort_ids,
+            self.simulation_ids,
+            self.attempt_type_filter,
+            self.is_archived_filter,
+            self.date_from,
+            self.date_to,
+            self.sort_by,
+            self.sort_order,
+            self.page_limit,
+            self.page_offset,
+        )
+
+
+class QGetAnalyticsCohortFactsViewV4Item(BaseModel):
+    chat_id: UUID | None
+    attempt_id: UUID | None
+    profile_id: UUID | None
+    cohort_id: UUID | None
+    simulation_id: UUID | None
+    persona_id: UUID | None
+    attempt_date: str | None
+    attempt_number: int | None
+    grade_percent: float | None
+    passed: bool | None
+    completed: bool | None
+    time_taken_seconds: int | None
+    attempt_type: str | None
+    is_archived: bool | None
+
+
+class QGetAnalyticsCohortFactsViewV4Option(BaseModel):
+    value: str | None
+    label: str | None
+    count: int | None
+
+
+class GetAnalyticsCohortFactsViewSqlRow(BaseModel):
+    items: list[QGetAnalyticsCohortFactsViewV4Item] | None = None
+    total_count: int | None = None
+    cohort_options: list[QGetAnalyticsCohortFactsViewV4Option] | None = None
+    simulation_options: list[QGetAnalyticsCohortFactsViewV4Option] | None = None
+    persona_options: list[QGetAnalyticsCohortFactsViewV4Option] | None = None
+
+
+class GetAnalyticsCohortFactsViewApiRequest(BaseModel):
+    profile_id_filter: UUID | None = None
+    cohort_ids: list[UUID] | None = None
+    simulation_ids: list[UUID] | None = None
+    attempt_type_filter: str | None = None
+    is_archived_filter: bool | None = False
+    date_from: date | None = None
+    date_to: date | None = None
+    sort_by: str | None = None
+    sort_order: str | None = None
+    page_limit: int | None = 5000
+    page_offset: int | None = 0
+
+
+class GetAnalyticsCohortFactsViewApiResponse(BaseModel):
+    items: list[QGetAnalyticsCohortFactsViewV4Item] | None = None
+    total_count: int | None = None
+    cohort_options: list[QGetAnalyticsCohortFactsViewV4Option] | None = None
+    simulation_options: list[QGetAnalyticsCohortFactsViewV4Option] | None = None
+    persona_options: list[QGetAnalyticsCohortFactsViewV4Option] | None = None
+
+
 # Generated from: get_analytics_daily_metrics_view
 
 
@@ -30918,6 +31003,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetAnalyticsChatFactsViewApiRequest",
         "GetAnalyticsChatFactsViewApiResponse",
     ),
+    "app/sql/v4/queries/views/analytics/cohort_facts/get_analytics_cohort_facts_view_complete.sql": (
+        "GetAnalyticsCohortFactsViewSqlParams",
+        "GetAnalyticsCohortFactsViewSqlRow",
+        "GetAnalyticsCohortFactsViewApiRequest",
+        "GetAnalyticsCohortFactsViewApiResponse",
+    ),
     "app/sql/v4/queries/views/analytics/daily_metrics/get_analytics_daily_metrics_view_complete.sql": (
         "GetAnalyticsDailyMetricsViewSqlParams",
         "GetAnalyticsDailyMetricsViewSqlRow",
@@ -35084,6 +35175,13 @@ if TYPE_CHECKING:
     def load_sql_query(
         file_path: Literal[
             "app/sql/v4/queries/views/analytics/chat_facts/get_analytics_chat_facts_view_complete.sql"
+        ],
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal[
+            "app/sql/v4/queries/views/analytics/cohort_facts/get_analytics_cohort_facts_view_complete.sql"
         ],
     ) -> SqlString: ...
 

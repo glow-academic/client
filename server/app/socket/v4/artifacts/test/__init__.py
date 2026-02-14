@@ -11,43 +11,39 @@ from fastapi import APIRouter
 
 from . import (
     complete,
-    control,
     error,
     grade,
     invocation,
-    permissions,
     progress,
     room,
     run,
     run_all,
-    types,
+    stop,
 )
 
 __all__ = [
     "complete",
-    "control",
     "error",
     "grade",
     "invocation",
-    "permissions",
     "progress",
     "room",
     "run",
     "run_all",
-    "types",
+    "stop",
 ]
 
 client_router = APIRouter()
 server_router = APIRouter()
 
 client_router.include_router(room.client_router)
-client_router.include_router(control.client_router)
+client_router.include_router(stop.client_router)
 client_router.include_router(run.client_router)
 client_router.include_router(run_all.client_router)
 client_router.include_router(grade.client_router)
 
 server_router.include_router(room.server_router)
-server_router.include_router(control.server_router)
+server_router.include_router(stop.server_router)
 server_router.include_router(invocation.server_router)
 server_router.include_router(progress.server_router)
 server_router.include_router(complete.server_router)
