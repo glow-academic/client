@@ -41,15 +41,15 @@ BEGIN
     -- Get or create group
     IF p_group_id IS NOT NULL THEN
         SELECT g.id, g.trace_id INTO v_group_id, v_trace_id
-        FROM view_groups_entry g
+        FROM groups_entry g
         WHERE g.id = p_group_id
         LIMIT 1;
     END IF;
 
     IF v_group_id IS NULL THEN
-        INSERT INTO view_groups_entry (created_at, updated_at, session_id)
-        VALUES (NOW(), NOW(), (SELECT id FROM view_sessions_entry WHERE view_sessions_entry.profile_id = p_profile_id AND view_sessions_entry.active = true ORDER BY created_at DESC LIMIT 1))
-        RETURNING id, view_groups_entry.trace_id INTO v_group_id, v_trace_id;
+        INSERT INTO groups_entry (created_at, updated_at, session_id)
+        VALUES (NOW(), NOW(), (SELECT id FROM sessions_entry WHERE sessions_entry.profile_id = p_profile_id AND sessions_entry.active = true ORDER BY created_at DESC LIMIT 1))
+        RETURNING id, groups_entry.trace_id INTO v_group_id, v_trace_id;
     END IF;
 
     -- Fallback if group creation somehow failed

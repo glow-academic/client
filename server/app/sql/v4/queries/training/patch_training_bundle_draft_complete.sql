@@ -104,11 +104,11 @@ BEGIN
 
     -- Try to update existing draft
     IF input_draft_id IS NOT NULL THEN
-        SELECT group_id INTO v_group_id FROM view_drafts_entry WHERE id = input_draft_id;
+        SELECT group_id INTO v_group_id FROM drafts_entry WHERE id = input_draft_id;
 
         IF v_group_id IS NULL THEN
             INSERT INTO groups_entry (created_at, updated_at, session_id)
-            VALUES (NOW(), NOW(), (SELECT id FROM view_sessions_entry WHERE view_sessions_entry.profile_id = v_profile_id AND view_sessions_entry.active = true ORDER BY created_at DESC LIMIT 1))
+            VALUES (NOW(), NOW(), (SELECT id FROM sessions_entry WHERE sessions_entry.profile_id = v_profile_id AND sessions_entry.active = true ORDER BY created_at DESC LIMIT 1))
             RETURNING id INTO v_group_id;
         END IF;
 
@@ -227,7 +227,7 @@ BEGIN
     -- Create new draft if update failed or input_draft_id was NULL
     IF v_draft_id IS NULL THEN
         INSERT INTO groups_entry (created_at, updated_at, session_id)
-        VALUES (NOW(), NOW(), (SELECT id FROM view_sessions_entry WHERE view_sessions_entry.profile_id = v_profile_id AND view_sessions_entry.active = true ORDER BY created_at DESC LIMIT 1))
+        VALUES (NOW(), NOW(), (SELECT id FROM sessions_entry WHERE sessions_entry.profile_id = v_profile_id AND sessions_entry.active = true ORDER BY created_at DESC LIMIT 1))
         RETURNING id INTO v_group_id;
 
         INSERT INTO drafts_entry (artifact, group_id)

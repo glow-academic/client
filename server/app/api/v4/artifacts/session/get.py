@@ -15,15 +15,13 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 from app.api.v4.artifacts._shared.pricing import compute_costs_from_runs
 from app.api.v4.artifacts.session.types import (
+    ArtifactSessionAudit,
+    ArtifactSessionGroup,
     GetSessionDetailRequest,
     GetSessionDetailResponse,
 )
 from app.api.v4.auth.profile import get_auth_profile_internal
 from app.api.v4.resources.names.get import get_names_internal
-from app.api.v4.views.artifacts.session_detail.types import (
-    ArtifactSessionAudit,
-    ArtifactSessionGroup,
-)
 from app.api.v4.views.audit.list.get import get_audit_list_view_internal
 from app.api.v4.views.group.list.get import get_group_list_view_internal
 from app.api.v4.views.run.list.get import get_run_list_view_internal

@@ -102,7 +102,7 @@ BEGIN
     END IF;
 
     IF input_draft_id IS NOT NULL THEN
-        SELECT group_id INTO v_group_id FROM view_drafts_entry WHERE id = input_draft_id;
+        SELECT group_id INTO v_group_id FROM drafts_entry WHERE id = input_draft_id;
 
         IF v_group_id IS NULL THEN
             v_group_id := group_id;
@@ -113,7 +113,7 @@ BEGIN
             VALUES (
                 NOW(),
                 NOW(),
-                (SELECT id FROM view_sessions_entry WHERE view_sessions_entry.profile_id = v_profile_id AND view_sessions_entry.active = true ORDER BY created_at DESC LIMIT 1)
+                (SELECT id FROM sessions_entry WHERE sessions_entry.profile_id = v_profile_id AND sessions_entry.active = true ORDER BY created_at DESC LIMIT 1)
             )
             RETURNING id INTO v_group_id;
         END IF;
@@ -433,7 +433,7 @@ BEGIN
         VALUES (
             NOW(),
             NOW(),
-            (SELECT id FROM view_sessions_entry WHERE view_sessions_entry.profile_id = v_profile_id AND view_sessions_entry.active = true ORDER BY created_at DESC LIMIT 1)
+            (SELECT id FROM sessions_entry WHERE sessions_entry.profile_id = v_profile_id AND sessions_entry.active = true ORDER BY created_at DESC LIMIT 1)
         )
         RETURNING id INTO v_group_id;
     END IF;

@@ -11,12 +11,8 @@ from app.api.v4.artifacts.health.types import (
     HealthResponse,
     HealthViews,
 )
-from app.api.v4.views.health.metrics_hourly.get import (
-    get_health_metrics_hourly_internal,
-)
-from app.api.v4.views.health.service_hourly.get import (
-    get_health_service_hourly_internal,
-)
+from app.api.v4.views.health.list.get import get_health_list_view_internal
+from app.api.v4.views.metric.list.get import get_metric_list_view_internal
 from app.infra.v4.activity.audit import audit_activity
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
@@ -49,9 +45,9 @@ async def get_health(
 
         async def fetch_service_hourly():
             async with pool.acquire() as c:
-                return await get_health_service_hourly_internal(
+                return await get_health_list_view_internal(
                     conn=c,
-                    service=request.service,
+                    service_filter=request.service,
                     date_from=request.date_from,
                     date_to=request.date_to,
                     page_limit=request.page_limit,
@@ -61,7 +57,7 @@ async def get_health(
 
         async def fetch_metrics_hourly():
             async with pool.acquire() as c:
-                return await get_health_metrics_hourly_internal(
+                return await get_metric_list_view_internal(
                     conn=c,
                     date_from=request.date_from,
                     date_to=request.date_to,

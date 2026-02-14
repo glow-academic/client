@@ -1,4 +1,4 @@
--- Duplicate rubric with departments, standard view_groups_entry, and standards in a single transaction
+-- Duplicate rubric with departments, standard groups_entry, and standards in a single transaction
 -- Converted to function
 -- Uses safe drop/recreate pattern: drop function first, then recreate
 -- 1) Drop function first

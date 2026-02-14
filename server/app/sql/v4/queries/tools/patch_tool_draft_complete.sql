@@ -138,7 +138,7 @@ BEGIN
                 NOW(),
                 (
                     SELECT id
-                    FROM view_sessions_entry
+                    FROM sessions_entry
                     WHERE profile_id = api_patch_tool_draft_v4.profile_id
                       AND active = true
                     ORDER BY created_at DESC
@@ -178,7 +178,7 @@ BEGIN
                 NOW(),
                 (
                     SELECT id
-                    FROM view_sessions_entry
+                    FROM sessions_entry
                     WHERE profile_id = api_patch_tool_draft_v4.profile_id
                       AND active = true
                     ORDER BY created_at DESC

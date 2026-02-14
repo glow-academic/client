@@ -149,7 +149,7 @@ BEGIN
     IF input_draft_id IS NOT NULL THEN
         -- Resolve/ensure group_id for draft
         SELECT vde.group_id INTO v_group_id
-        FROM view_drafts_entry vde
+        FROM drafts_entry vde
         WHERE vde.id = input_draft_id;
 
         IF v_group_id IS NULL THEN
@@ -159,9 +159,9 @@ BEGIN
                 NOW(),
                 (
                     SELECT id
-                    FROM view_sessions_entry
-                    WHERE view_sessions_entry.profile_id = v_profile_id
-                      AND view_sessions_entry.active = true
+                    FROM sessions_entry
+                    WHERE sessions_entry.profile_id = v_profile_id
+                      AND sessions_entry.active = true
                     ORDER BY created_at DESC
                     LIMIT 1
                 )
@@ -402,9 +402,9 @@ BEGIN
             NOW(),
             (
                 SELECT id
-                FROM view_sessions_entry
-                WHERE view_sessions_entry.profile_id = v_profile_id
-                  AND view_sessions_entry.active = true
+                FROM sessions_entry
+                WHERE sessions_entry.profile_id = v_profile_id
+                  AND sessions_entry.active = true
                 ORDER BY created_at DESC
                 LIMIT 1
             )

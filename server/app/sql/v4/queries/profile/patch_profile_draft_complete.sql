@@ -146,9 +146,9 @@ BEGIN
     END IF;
 
     IF input_draft_id IS NOT NULL THEN
-        SELECT view_drafts_entry.group_id INTO v_group_id
-        FROM view_drafts_entry
-        WHERE view_drafts_entry.id = input_draft_id;
+        SELECT drafts_entry.group_id INTO v_group_id
+        FROM drafts_entry
+        WHERE drafts_entry.id = input_draft_id;
 
         IF v_group_id IS NULL THEN
             INSERT INTO groups_entry (created_at, updated_at, session_id)
@@ -157,9 +157,9 @@ BEGIN
                 NOW(),
                 (
                     SELECT id
-                    FROM view_sessions_entry
-                    WHERE view_sessions_entry.profile_id = v_profile_id
-                      AND view_sessions_entry.active = true
+                    FROM sessions_entry
+                    WHERE sessions_entry.profile_id = v_profile_id
+                      AND sessions_entry.active = true
                     ORDER BY created_at DESC
                     LIMIT 1
                 )
@@ -195,9 +195,9 @@ BEGIN
                 NOW(),
                 (
                     SELECT id
-                    FROM view_sessions_entry
-                    WHERE view_sessions_entry.profile_id = v_profile_id
-                      AND view_sessions_entry.active = true
+                    FROM sessions_entry
+                    WHERE sessions_entry.profile_id = v_profile_id
+                      AND sessions_entry.active = true
                     ORDER BY created_at DESC
                     LIMIT 1
                 )

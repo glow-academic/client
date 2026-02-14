@@ -94,6 +94,13 @@ async def initialize_test_db() -> AsyncGenerator[None, None]:
         await conn.execute(filtered_sql)
     print("🗄️  Test seed data applied to disposable database")
 
+    # Bootstrap all SQL views + query functions (dynamic discovery)
+    from tests.bootstrap_sql import bootstrap_all_sql
+
+    async with pool.acquire() as conn:
+        await bootstrap_all_sql(conn)
+    print("🗄️  SQL views and functions bootstrapped")
+
     try:
         yield
     finally:

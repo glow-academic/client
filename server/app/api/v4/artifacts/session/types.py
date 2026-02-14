@@ -6,10 +6,28 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-from app.api.v4.views.artifacts.session_detail.types import (
-    ArtifactSessionAudit,
-    ArtifactSessionGroup,
-)
+
+class ArtifactSessionAudit(BaseModel):
+    """Single audit entry for a session."""
+
+    id: UUID
+    created_at: datetime | None = None
+    message: str | None = None
+    endpoint: str | None = None
+    error: bool = False
+
+
+class ArtifactSessionGroup(BaseModel):
+    """Single group entry for a session."""
+
+    group_id: UUID
+    group_name: str | None = None
+    trace_id: str | None = None
+    first_run_at: datetime | None = None
+    last_run_at: datetime | None = None
+    run_count: int = 0
+    total_tokens: int = 0
+    total_cost: Decimal = Decimal("0")
 
 
 class SessionListItem(BaseModel):

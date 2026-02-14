@@ -4,8 +4,8 @@ from datetime import datetime
 
 from pydantic import BaseModel, Field
 
-from app.api.v4.views.health.metrics_hourly.types import HealthMetricsHourlyItem
-from app.api.v4.views.health.service_hourly.types import HealthServiceHourlyItem
+from app.api.v4.views.health.list.types import HealthViewItem
+from app.api.v4.views.metric.list.types import MetricViewItem
 
 
 class HealthRequest(BaseModel):
@@ -21,8 +21,8 @@ class HealthRequest(BaseModel):
 class HealthViews(BaseModel):
     """Health view data."""
 
-    service_hourly: list[HealthServiceHourlyItem] = Field(default_factory=list)
-    metrics_hourly: list[HealthMetricsHourlyItem] = Field(default_factory=list)
+    service_hourly: list[HealthViewItem] = Field(default_factory=list)
+    metrics_hourly: list[MetricViewItem] = Field(default_factory=list)
 
 
 class HealthResponse(BaseModel):
