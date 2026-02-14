@@ -21,7 +21,7 @@ from pydantic import BaseModel
 # Entry type constants (predefined per handler, not in payload)
 # =============================================================================
 
-TEST_RUN_ENTRY_TYPES = ["replays"]
+TEST_RUN_ENTRY_TYPES: list[str] = []
 TEST_GRADE_ENTRY_TYPES = ["grades", "feedbacks"]
 
 
@@ -37,6 +37,7 @@ class TestRunPayload(BaseModel):
     """
 
     chat_id: UUID
+    test_id: UUID
 
 
 class TestRunAllPayload(BaseModel):
@@ -46,6 +47,7 @@ class TestRunAllPayload(BaseModel):
     """
 
     chat_id: UUID
+    test_id: UUID
 
 
 class TestGradePayload(BaseModel):

@@ -12302,8 +12302,6 @@ export interface components {
         AttemptChatEndedEvent: {
             /** Chat Id */
             chat_id: string;
-            /** Next Chat Id */
-            next_chat_id?: string | null;
             /** Is Attempt Finished */
             is_attempt_finished?: boolean | null;
             /** Grade Id */
@@ -12395,7 +12393,7 @@ export interface components {
          * AttemptEndAllPayload
          * @description Request payload for attempt_end_all WebSocket event.
          *
-         *     Ends all chats in an attempt.
+         *     Ends all remaining chats in an attempt and creates stubs for missing scenarios.
          */
         AttemptEndAllPayload: {
             /**
@@ -12403,25 +12401,28 @@ export interface components {
              * Format: uuid
              */
             attempt_id: string;
-            /** Previous Chat Map */
-            previous_chat_map?: {
-                [key: string]: string;
-            } | null;
         };
         /**
          * AttemptEndPayload
          * @description Request payload for attempt_end WebSocket event.
          *
-         *     Ends a chat and moves to next chat or completes attempt.
+         *     Two modes:
+         *     1. Single chat end: { attempt_id, chat_id } — marks one chat as completed
+         *     2. Use Previous: { attempt_id, previous_chat_map } — creates skipped chats
+         *        with copied grades from previous attempt
          */
         AttemptEndPayload: {
             /**
-             * Chat Id
+             * Attempt Id
              * Format: uuid
              */
-            chat_id: string;
-            /** Previous Chat Id */
-            previous_chat_id?: string | null;
+            attempt_id: string;
+            /** Chat Id */
+            chat_id?: string | null;
+            /** Previous Chat Map */
+            previous_chat_map?: {
+                [key: string]: string;
+            } | null;
         };
         /**
          * AttemptEndedEvent
@@ -36170,6 +36171,11 @@ export interface components {
              * Format: uuid
              */
             chat_id: string;
+            /**
+             * Test Id
+             * Format: uuid
+             */
+            test_id: string;
         };
         /**
          * TestRunCompleteEvent
@@ -36236,6 +36242,11 @@ export interface components {
              * Format: uuid
              */
             chat_id: string;
+            /**
+             * Test Id
+             * Format: uuid
+             */
+            test_id: string;
         };
         /**
          * TestRunStartEvent

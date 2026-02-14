@@ -51537,17 +51537,6 @@
             "type": "string",
             "title": "Chat Id"
           },
-          "next_chat_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Next Chat Id"
-          },
           "is_attempt_finished": {
             "anyOf": [
               {
@@ -51796,6 +51785,33 @@
             "type": "string",
             "format": "uuid",
             "title": "Attempt Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "attempt_id"
+        ],
+        "title": "AttemptEndAllPayload",
+        "description": "Request payload for attempt_end_all WebSocket event.\n\nEnds all remaining chats in an attempt and creates stubs for missing scenarios."
+      },
+      "AttemptEndPayload": {
+        "properties": {
+          "attempt_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Attempt Id"
+          },
+          "chat_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Chat Id"
           },
           "previous_chat_map": {
             "anyOf": [
@@ -51816,35 +51832,8 @@
         "required": [
           "attempt_id"
         ],
-        "title": "AttemptEndAllPayload",
-        "description": "Request payload for attempt_end_all WebSocket event.\n\nEnds all chats in an attempt."
-      },
-      "AttemptEndPayload": {
-        "properties": {
-          "chat_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Chat Id"
-          },
-          "previous_chat_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Previous Chat Id"
-          }
-        },
-        "type": "object",
-        "required": [
-          "chat_id"
-        ],
         "title": "AttemptEndPayload",
-        "description": "Request payload for attempt_end WebSocket event.\n\nEnds a chat and moves to next chat or completes attempt."
+        "description": "Request payload for attempt_end WebSocket event.\n\nTwo modes:\n1. Single chat end: { attempt_id, chat_id } \u2014 marks one chat as completed\n2. Use Previous: { attempt_id, previous_chat_map } \u2014 creates skipped chats\n   with copied grades from previous attempt"
       },
       "AttemptEndedEvent": {
         "properties": {
@@ -133660,11 +133649,17 @@
             "type": "string",
             "format": "uuid",
             "title": "Chat Id"
+          },
+          "test_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Test Id"
           }
         },
         "type": "object",
         "required": [
-          "chat_id"
+          "chat_id",
+          "test_id"
         ],
         "title": "TestRunAllPayload",
         "description": "Request payload for test_run_all WebSocket event.\n\nRuns ALL remaining auto-regressive replays sequentially."
@@ -133836,11 +133831,17 @@
             "type": "string",
             "format": "uuid",
             "title": "Chat Id"
+          },
+          "test_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Test Id"
           }
         },
         "type": "object",
         "required": [
-          "chat_id"
+          "chat_id",
+          "test_id"
         ],
         "title": "TestRunPayload",
         "description": "Request payload for test_run WebSocket event.\n\nRuns ONE auto-regressive replay for the next pending run."

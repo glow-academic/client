@@ -80,11 +80,13 @@ async def handle_test_run_complete(data: dict[str, Any]) -> None:
         logger.info(
             f"Chaining to next run - chat_id={chat_id_str}, remaining={remaining_runs}"
         )
+        test_id = data.get("test_id")
         await internal_sio.emit(
             "test_run",
             {
                 "sid": sid,
                 "chat_id": chat_id_str,
+                "test_id": str(test_id) if test_id else chat_id_str,
                 "run_all": True,
             },
         )

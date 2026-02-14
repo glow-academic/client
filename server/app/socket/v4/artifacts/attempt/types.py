@@ -175,21 +175,24 @@ class AttemptStopPayload(BaseModel):
 class AttemptEndPayload(BaseModel):
     """Request payload for attempt_end WebSocket event.
 
-    Ends a chat and moves to next chat or completes attempt.
+    Two modes:
+    1. Single chat end: { attempt_id, chat_id } — marks one chat as completed
+    2. Use Previous: { attempt_id, previous_chat_map } — creates skipped chats
+       with copied grades from previous attempt
     """
 
-    chat_id: UUID
-    previous_chat_id: UUID | None = None  # Reuse grade from previous attempt's chat
+    attempt_id: UUID
+    chat_id: UUID | None = None  # Single chat end (0 messages)
+    previous_chat_map: dict[str, str] | None = None  # {scenario_id: previous_chat_id}
 
 
 class AttemptEndAllPayload(BaseModel):
     """Request payload for attempt_end_all WebSocket event.
 
-    Ends all chats in an attempt.
+    Ends all remaining chats in an attempt and creates stubs for missing scenarios.
     """
 
     attempt_id: UUID
-    previous_chat_map: dict[str, str] | None = None  # {scenario_id: previous_chat_id}
 
 
 class AttemptAudioStartPayload(BaseModel):
@@ -352,7 +355,6 @@ class AttemptChatEndedEvent(BaseModel):
     """
 
     chat_id: str
-    next_chat_id: str | None = None
     is_attempt_finished: bool | None = None
     grade_id: str | None = None
 
