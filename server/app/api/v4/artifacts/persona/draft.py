@@ -100,7 +100,7 @@ async def patch_persona_draft(
 
         async with conn.transaction():
             params = PatchPersonaDraftSqlParams.from_request(
-                request, profile_id=profile_id
+                request, profile_id=profile_id, group_id=None
             )
             sql_params = params.to_tuple()
 

@@ -46,7 +46,7 @@ import { useGenerationModal } from "@/hooks/use-generation-modal";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import {
   type ResourceConfig,
-  buildResourceActions,
+  buildDraftPayload,
   checkHasResourceIds,
   computeEffectiveFormState,
 } from "@/lib/resources/action-builders";
@@ -670,20 +670,18 @@ function PersonaComponent({
     ): Record<string, unknown> => {
       return {
         input_draft_id: draftId || null,
-        group_id: stablePersonaDataFields?.group_id ?? null,
-        ...buildResourceActions(PERSONA_RESOURCES, {
+        ...buildDraftPayload(PERSONA_RESOURCES, {
           formState: formStateRef.current,
           referenceState: lastPatchedFormStateRef.current as unknown as Record<
             string,
             unknown
           > | null,
           flushResults: (flushResults ?? {}) as Record<string, unknown>,
-          entityData: stablePersonaDataFields as Record<string, unknown> | null,
         }),
         expected_version: expectedVersion,
       };
     },
-    [stablePersonaDataFields],
+    [],
   );
 
   const draftVersion =
@@ -936,21 +934,27 @@ function PersonaComponent({
       }
 
       try {
-        const initialState = getInitialFormState();
-
         await savePersonaAction({
           body: {
             input_persona_id: isEditMode && personaId ? personaId : null,
-            group_id: personaData?.group_id ?? null,
-            ...buildResourceActions(PERSONA_RESOURCES, {
-              formState: formStateRef.current,
-              referenceState: initialState as unknown as Record<
-                string,
-                unknown
-              >,
-              flushResults: flushResults as Record<string, unknown>,
-              entityData: personaData as Record<string, unknown> | null,
-            }),
+            name_id: effectiveFormState.name_id!,
+            color_id: effectiveFormState.color_id!,
+            icon_id: effectiveFormState.icon_id!,
+            instructions_id: effectiveFormState.instructions_id!,
+            description_id: effectiveFormState.description_id ?? null,
+            active_flag_id: effectiveFormState.active_flag_id ?? null,
+            department_ids: effectiveFormState.department_ids?.length
+              ? effectiveFormState.department_ids
+              : null,
+            parameter_field_ids: effectiveFormState.parameter_field_ids?.length
+              ? effectiveFormState.parameter_field_ids
+              : null,
+            example_ids: effectiveFormState.example_ids?.length
+              ? effectiveFormState.example_ids
+              : null,
+            parameter_ids: effectiveFormState.parameter_ids?.length
+              ? effectiveFormState.parameter_ids
+              : null,
           },
         });
         toast.success(
@@ -967,7 +971,6 @@ function PersonaComponent({
     [
       isAutosaveEnabled,
       flushAllResources,
-      getInitialFormState,
       isEditMode,
       personaId,
       profile?.id,
@@ -1173,7 +1176,7 @@ function PersonaComponent({
                   isAutosaveEnabled={isAutosaveEnabled}
                   registerFlush={registerFlushCallbacks["names"]}
                   onGenerationComplete={makeOnGenerationComplete("names")}
-                  create_tool_id={s?.names?.create_tool_id ?? null}
+                  create_tool_id={s?.names?.tool_id ?? null}
                 />
               }
               resetFields={["name", "description", "department_ids", "active"]}
@@ -1229,7 +1232,7 @@ function PersonaComponent({
                   isAutosaveEnabled={isAutosaveEnabled}
                   registerFlush={registerFlushCallbacks["descriptions"]}
                   onGenerationComplete={makeOnGenerationComplete("descriptions")}
-                  create_tool_id={s?.descriptions?.create_tool_id ?? null}
+                  create_tool_id={s?.descriptions?.tool_id ?? null}
                 />
                 <Departments
                   department_ids={formState.department_ids ?? []}
@@ -1375,7 +1378,7 @@ function PersonaComponent({
                   isAutosaveEnabled={isAutosaveEnabled}
                   registerFlush={registerFlushCallbacks["parameter_fields"]}
                   onGenerationComplete={makeOnGenerationComplete("parameter_fields")}
-                  create_tool_id={s?.parameter_fields?.create_tool_id ?? null}
+                  create_tool_id={s?.parameter_fields?.tool_id ?? null}
                 />
               </div>
             </StepCard>
@@ -1457,7 +1460,7 @@ function PersonaComponent({
                 isAutosaveEnabled={isAutosaveEnabled}
                 registerFlush={registerFlushCallbacks["colors"]}
                 onGenerationComplete={makeOnGenerationComplete("colors")}
-                create_tool_id={s?.colors?.create_tool_id ?? null}
+                create_tool_id={s?.colors?.tool_id ?? null}
               />
             </StepCard>
           );
@@ -1606,7 +1609,7 @@ function PersonaComponent({
                 isAutosaveEnabled={isAutosaveEnabled}
                 registerFlush={registerFlushCallbacks["instructions"]}
                 onGenerationComplete={makeOnGenerationComplete("instructions")}
-                create_tool_id={s?.instructions?.create_tool_id ?? null}
+                create_tool_id={s?.instructions?.tool_id ?? null}
               />
               <Examples
                 example_ids={formState.example_ids ?? []}
@@ -1656,7 +1659,7 @@ function PersonaComponent({
                 isAutosaveEnabled={isAutosaveEnabled}
                 registerFlush={registerFlushCallbacks["examples"]}
                 onGenerationComplete={makeOnGenerationComplete("examples")}
-                create_tool_id={s?.examples?.create_tool_id ?? null}
+                create_tool_id={s?.examples?.tool_id ?? null}
               />
             </StepCard>
           );

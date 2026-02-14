@@ -1,10 +1,8 @@
 /**
- * Shared helpers for building resource action payloads with tool call tracking.
+ * Shared helpers for building resource action payloads.
  *
- * Each resource in a save/patch payload carries:
- * - resource_id / resource_ids — the actual ID(s)
- * - create_tool_id — set when the resource was freshly created (flushed)
- * - link_tool_id — set when the resource changed from its reference state
+ * For persona: save requests use flat IDs, draft uses buildDraftPayload.
+ * For other artifacts: buildResourceActions still provides nested action objects.
  */
 
 export type ResourceSection = {
@@ -55,12 +53,7 @@ export function buildMultiAction(opts: {
 
 /**
  * Build resource action objects for all configured resources.
- * Used by both patch (autosave) and save (manual submit) paths.
- *
- * For each resource, computes:
- * - effectiveValue: flushResults[flushKey] ?? formState[formKey]
- * - wasCreated: whether flush produced a new ID
- * - changed: whether effectiveValue differs from referenceState[formKey]
+ * Used by non-persona artifacts for both patch (autosave) and save paths.
  */
 export function buildResourceActions(
   resources: readonly ResourceConfig[],
@@ -116,6 +109,57 @@ export function buildResourceActions(
         changed,
         section,
       });
+    }
+  }
+
+  return result;
+}
+
+/**
+ * Build flat draft payload with only changed fields.
+ * Returns an object with formKey→value for fields that differ from reference state.
+ * Used by persona artifact for its simplified flat request format.
+ */
+export function buildDraftPayload(
+  resources: readonly ResourceConfig[],
+  opts: {
+    formState: Record<string, unknown>;
+    referenceState: Record<string, unknown> | null;
+    flushResults: Record<string, unknown>;
+  },
+): Record<string, unknown> {
+  const { formState, referenceState, flushResults } = opts;
+  const result: Record<string, unknown> = {};
+
+  for (const r of resources) {
+    if (r.type === "single") {
+      const effectiveId =
+        r.flushKey && flushResults[r.flushKey] !== undefined
+          ? (flushResults[r.flushKey] as string | null)
+          : (formState[r.formKey] as string | null);
+      const refId = referenceState
+        ? (referenceState[r.formKey] as string | null)
+        : null;
+      const changed = referenceState ? effectiveId !== refId : !!effectiveId;
+
+      if (changed) {
+        result[r.formKey] = effectiveId ?? null;
+      }
+    } else {
+      const ids = formState[r.formKey] as string[];
+      const effectiveIds =
+        r.flushKey && flushResults[r.flushKey] !== undefined
+          ? (flushResults[r.flushKey] as string[])
+          : ids;
+      const refIds = referenceState
+        ? (referenceState[r.formKey] as string[])
+        : [];
+      const changed = JSON.stringify(effectiveIds) !== JSON.stringify(refIds);
+
+      if (changed) {
+        result[r.formKey] =
+          effectiveIds && effectiveIds.length > 0 ? effectiveIds : null;
+      }
     }
   }
 

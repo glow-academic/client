@@ -57724,16 +57724,17 @@
             ],
             "title": "Arguments Raw"
           },
-          "tool_name": {
+          "tool_id": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "string",
+                "format": "uuid"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Tool Name"
+            "title": "Tool Id"
           }
         },
         "type": "object",
@@ -100404,7 +100405,12 @@
             ],
             "title": "Input Draft Id"
           },
-          "group_id": {
+          "expected_version": {
+            "type": "integer",
+            "title": "Expected Version",
+            "default": 0
+          },
+          "name_id": {
             "anyOf": [
               {
                 "type": "string",
@@ -100414,117 +100420,132 @@
                 "type": "null"
               }
             ],
-            "title": "Group Id"
+            "title": "Name Id"
           },
-          "expected_version": {
-            "type": "integer",
-            "title": "Expected Version",
-            "default": 0
-          },
-          "names": {
+          "description_id": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/PersonaResourceAction"
+                "type": "string",
+                "format": "uuid"
               },
               {
                 "type": "null"
               }
-            ]
+            ],
+            "title": "Description Id"
           },
-          "descriptions": {
+          "color_id": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/PersonaResourceAction"
+                "type": "string",
+                "format": "uuid"
               },
               {
                 "type": "null"
               }
-            ]
+            ],
+            "title": "Color Id"
           },
-          "colors": {
+          "icon_id": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/PersonaResourceAction"
+                "type": "string",
+                "format": "uuid"
               },
               {
                 "type": "null"
               }
-            ]
+            ],
+            "title": "Icon Id"
           },
-          "icons": {
+          "instructions_id": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/PersonaResourceAction"
+                "type": "string",
+                "format": "uuid"
               },
               {
                 "type": "null"
               }
-            ]
+            ],
+            "title": "Instructions Id"
           },
-          "instructions": {
+          "active_flag_id": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/PersonaResourceAction"
+                "type": "string",
+                "format": "uuid"
               },
               {
                 "type": "null"
               }
-            ]
+            ],
+            "title": "Active Flag Id"
           },
-          "flags": {
+          "department_ids": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/PersonaResourceAction"
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
               },
               {
                 "type": "null"
               }
-            ]
+            ],
+            "title": "Department Ids"
           },
-          "departments": {
+          "parameter_field_ids": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/PersonaMultiResourceAction"
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
               },
               {
                 "type": "null"
               }
-            ]
+            ],
+            "title": "Parameter Field Ids"
           },
-          "parameter_fields": {
+          "example_ids": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/PersonaMultiResourceAction"
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
               },
               {
                 "type": "null"
               }
-            ]
+            ],
+            "title": "Example Ids"
           },
-          "examples": {
+          "parameter_ids": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/PersonaMultiResourceAction"
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
               },
               {
                 "type": "null"
               }
-            ]
-          },
-          "parameters": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/PersonaMultiResourceAction"
-              },
-              {
-                "type": "null"
-              }
-            ]
+            ],
+            "title": "Parameter Ids"
           }
         },
         "type": "object",
         "title": "PatchPersonaDraftApiRequest",
-        "description": "Request model for patch persona draft endpoint - nested resource actions."
+        "description": "Request model for patch persona draft endpoint - flat resource IDs."
       },
       "PatchPersonaDraftApiResponse": {
         "properties": {
@@ -101987,7 +102008,7 @@
             "title": "Show Ai Generate",
             "default": false
           },
-          "create_tool_id": {
+          "tool_id": {
             "anyOf": [
               {
                 "type": "string",
@@ -101997,19 +102018,7 @@
                 "type": "null"
               }
             ],
-            "title": "Create Tool Id"
-          },
-          "link_tool_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Link Tool Id"
+            "title": "Tool Id"
           },
           "resource": {
             "anyOf": [
@@ -102071,7 +102080,7 @@
             "title": "Show Ai Generate",
             "default": false
           },
-          "create_tool_id": {
+          "tool_id": {
             "anyOf": [
               {
                 "type": "string",
@@ -102081,19 +102090,7 @@
                 "type": "null"
               }
             ],
-            "title": "Create Tool Id"
-          },
-          "link_tool_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Link Tool Id"
+            "title": "Tool Id"
           },
           "current": {
             "anyOf": [
@@ -102159,7 +102156,7 @@
             "title": "Show Ai Generate",
             "default": false
           },
-          "create_tool_id": {
+          "tool_id": {
             "anyOf": [
               {
                 "type": "string",
@@ -102169,19 +102166,7 @@
                 "type": "null"
               }
             ],
-            "title": "Create Tool Id"
-          },
-          "link_tool_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Link Tool Id"
+            "title": "Tool Id"
           },
           "resource": {
             "anyOf": [
@@ -102320,7 +102305,7 @@
             "title": "Show Ai Generate",
             "default": false
           },
-          "create_tool_id": {
+          "tool_id": {
             "anyOf": [
               {
                 "type": "string",
@@ -102330,19 +102315,7 @@
                 "type": "null"
               }
             ],
-            "title": "Create Tool Id"
-          },
-          "link_tool_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Link Tool Id"
+            "title": "Tool Id"
           },
           "current": {
             "anyOf": [
@@ -102482,7 +102455,7 @@
             "title": "Show Ai Generate",
             "default": false
           },
-          "create_tool_id": {
+          "tool_id": {
             "anyOf": [
               {
                 "type": "string",
@@ -102492,19 +102465,7 @@
                 "type": "null"
               }
             ],
-            "title": "Create Tool Id"
-          },
-          "link_tool_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Link Tool Id"
+            "title": "Tool Id"
           },
           "current": {
             "anyOf": [
@@ -102814,7 +102775,7 @@
             "title": "Show Ai Generate",
             "default": false
           },
-          "create_tool_id": {
+          "tool_id": {
             "anyOf": [
               {
                 "type": "string",
@@ -102824,19 +102785,7 @@
                 "type": "null"
               }
             ],
-            "title": "Create Tool Id"
-          },
-          "link_tool_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Link Tool Id"
+            "title": "Tool Id"
           },
           "resource": {
             "anyOf": [
@@ -102898,7 +102847,7 @@
             "title": "Show Ai Generate",
             "default": false
           },
-          "create_tool_id": {
+          "tool_id": {
             "anyOf": [
               {
                 "type": "string",
@@ -102908,19 +102857,7 @@
                 "type": "null"
               }
             ],
-            "title": "Create Tool Id"
-          },
-          "link_tool_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Link Tool Id"
+            "title": "Tool Id"
           },
           "resource": {
             "anyOf": [
@@ -102949,52 +102886,6 @@
         },
         "type": "object",
         "title": "PersonaInstructionSection"
-      },
-      "PersonaMultiResourceAction": {
-        "properties": {
-          "resource_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Resource Ids"
-          },
-          "create_tool_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Create Tool Id"
-          },
-          "link_tool_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Link Tool Id"
-          }
-        },
-        "type": "object",
-        "title": "PersonaMultiResourceAction",
-        "description": "Multi-select resource with tool call tracking."
       },
       "PersonaNameSection": {
         "properties": {
@@ -103028,7 +102919,7 @@
             "title": "Show Ai Generate",
             "default": false
           },
-          "create_tool_id": {
+          "tool_id": {
             "anyOf": [
               {
                 "type": "string",
@@ -103038,19 +102929,7 @@
                 "type": "null"
               }
             ],
-            "title": "Create Tool Id"
-          },
-          "link_tool_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Link Tool Id"
+            "title": "Tool Id"
           },
           "resource": {
             "anyOf": [
@@ -103112,7 +102991,7 @@
             "title": "Show Ai Generate",
             "default": false
           },
-          "create_tool_id": {
+          "tool_id": {
             "anyOf": [
               {
                 "type": "string",
@@ -103122,19 +103001,7 @@
                 "type": "null"
               }
             ],
-            "title": "Create Tool Id"
-          },
-          "link_tool_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Link Tool Id"
+            "title": "Tool Id"
           },
           "current": {
             "anyOf": [
@@ -103200,7 +103067,7 @@
             "title": "Show Ai Generate",
             "default": false
           },
-          "create_tool_id": {
+          "tool_id": {
             "anyOf": [
               {
                 "type": "string",
@@ -103210,19 +103077,7 @@
                 "type": "null"
               }
             ],
-            "title": "Create Tool Id"
-          },
-          "link_tool_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Link Tool Id"
+            "title": "Tool Id"
           },
           "current": {
             "anyOf": [
@@ -103255,49 +103110,6 @@
         },
         "type": "object",
         "title": "PersonaParameterSection"
-      },
-      "PersonaResourceAction": {
-        "properties": {
-          "resource_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Resource Id"
-          },
-          "create_tool_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Create Tool Id"
-          },
-          "link_tool_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Link Tool Id"
-          }
-        },
-        "type": "object",
-        "title": "PersonaResourceAction",
-        "description": "Single-select resource with tool call tracking."
       },
       "PersonaTrendPoint": {
         "properties": {
@@ -119771,7 +119583,27 @@
             ],
             "title": "Input Persona Id"
           },
-          "group_id": {
+          "name_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Name Id"
+          },
+          "color_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Color Id"
+          },
+          "icon_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Icon Id"
+          },
+          "instructions_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Instructions Id"
+          },
+          "description_id": {
             "anyOf": [
               {
                 "type": "string",
@@ -119781,54 +119613,90 @@
                 "type": "null"
               }
             ],
-            "title": "Group Id"
+            "title": "Description Id"
           },
-          "names": {
-            "$ref": "#/components/schemas/PersonaResourceAction"
+          "active_flag_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active Flag Id"
           },
-          "descriptions": {
-            "$ref": "#/components/schemas/PersonaResourceAction"
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
           },
-          "colors": {
-            "$ref": "#/components/schemas/PersonaResourceAction"
+          "parameter_field_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parameter Field Ids"
           },
-          "icons": {
-            "$ref": "#/components/schemas/PersonaResourceAction"
+          "example_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Example Ids"
           },
-          "instructions": {
-            "$ref": "#/components/schemas/PersonaResourceAction"
-          },
-          "flags": {
-            "$ref": "#/components/schemas/PersonaResourceAction"
-          },
-          "departments": {
-            "$ref": "#/components/schemas/PersonaMultiResourceAction"
-          },
-          "parameter_fields": {
-            "$ref": "#/components/schemas/PersonaMultiResourceAction"
-          },
-          "examples": {
-            "$ref": "#/components/schemas/PersonaMultiResourceAction"
-          },
-          "parameters": {
-            "$ref": "#/components/schemas/PersonaMultiResourceAction"
+          "parameter_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parameter Ids"
           }
         },
         "type": "object",
         "required": [
-          "names",
-          "descriptions",
-          "colors",
-          "icons",
-          "instructions",
-          "flags",
-          "departments",
-          "parameter_fields",
-          "examples",
-          "parameters"
+          "name_id",
+          "color_id",
+          "icon_id",
+          "instructions_id"
         ],
         "title": "SavePersonaApiRequest",
-        "description": "Request model for save persona endpoint - accepts nested resource actions."
+        "description": "Request model for save persona endpoint - flat resource IDs."
       },
       "SavePersonaApiResponse": {
         "properties": {

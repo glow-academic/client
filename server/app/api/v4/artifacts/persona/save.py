@@ -205,9 +205,14 @@ async def save_persona(
                 detail="You don't have permission to save this persona.",
             )
 
+        # Resolve group_id server-side from access check
+        group_id = getattr(access_result, "group_id", None)
+
         async with conn.transaction():
-            # Convert API request to SQL params (add profile_id from header)
-            params = SavePersonaSqlParams.from_request(request, profile_id=profile_id)
+            # Convert API request to SQL params (add profile_id and server-resolved group_id)
+            params = SavePersonaSqlParams.from_request(
+                request, profile_id=profile_id, group_id=group_id
+            )
             sql_params = params.to_tuple()
 
             # Execute SQL with typed helper - automatically detects and calls function if present

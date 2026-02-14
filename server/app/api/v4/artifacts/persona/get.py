@@ -286,21 +286,16 @@ async def get_persona_internal(
         require_mcp=False,
     )
 
-    # === BUILD TOOL_IDS MAPS FROM SELECTED AGENTS ===
-    # For each resource, find the selected agent and extract its tool IDs
-    create_tool_ids_map: dict[str, UUID | None] = {}
-    link_tool_ids_map: dict[str, UUID | None] = {}
+    # === BUILD TOOL_IDS MAP FROM SELECTED AGENTS ===
+    # For each resource, find the selected agent and extract its create tool ID
+    tool_ids_map: dict[str, UUID | None] = {}
 
     for resource in PERSONA_RESOURCES:
         selected_agent_id = agent_ids.get(resource)
         if selected_agent_id:
-            # Find the candidate agent with this ID
             for candidate in candidate_agents:
                 if candidate.agent_id == selected_agent_id:
-                    create_tool_ids_map[resource] = candidate.create_tool_ids.get(
-                        resource
-                    )
-                    link_tool_ids_map[resource] = candidate.link_tool_ids.get(resource)
+                    tool_ids_map[resource] = candidate.create_tool_ids.get(resource)
                     break
 
     # === COMPUTE SHOW_AI_GENERATE FLAGS (BFF pattern - server computes, client consumes) ===
@@ -801,8 +796,7 @@ async def get_persona_internal(
         # Resources
         resources_payload=resources_payload,
         # Per-resource tool IDs
-        create_tool_ids_map=create_tool_ids_map,
-        link_tool_ids_map=link_tool_ids_map,
+        tool_ids_map=tool_ids_map,
         # Config resources
         config_agent_resources=config_agents_result or None,
         config_model_resources=config_models_result or None,
@@ -929,8 +923,7 @@ async def get_persona_client(
             "required": data.required_flags_map.get(resource_key, False),
             "suggestions": data.suggestions_map.get(resource_key),
             "show_ai_generate": data.show_ai_generate_map.get(resource_key, False),
-            "create_tool_id": data.create_tool_ids_map.get(resource_key),
-            "link_tool_id": data.link_tool_ids_map.get(resource_key),
+            "tool_id": data.tool_ids_map.get(resource_key),
         }
 
     return GetPersonaApiResponse(
