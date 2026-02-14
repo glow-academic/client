@@ -332,12 +332,6 @@ name_suggestions_data AS (
                        OR
                        (
                            COALESCE(n.generated, false) = true
-                           AND EXISTS (
-                               SELECT 1 FROM view_calls_entry c
-                               JOIN view_runs_entry r ON r.id = c.run_id
-                               WHERE c.id IN (SELECT call_id FROM names_calls_connection WHERE names_id = n.id)
-                                 AND r.group_id = dgd.group_id
-                           )
                        )
                    )
                  GROUP BY dn.name_id
@@ -386,12 +380,6 @@ description_suggestions_data AS (
                        OR
                        (
                            COALESCE(d.generated, false) = true
-                           AND EXISTS (
-                               SELECT 1 FROM view_calls_entry c
-                               JOIN view_runs_entry r ON r.id = c.run_id
-                               WHERE c.id IN (SELECT call_id FROM descriptions_calls_connection WHERE descriptions_id = d.id)
-                                 AND r.group_id = dgd.group_id
-                           )
                        )
                    )
                  GROUP BY dd.description_id
@@ -893,7 +881,7 @@ model_key_associations AS (
 -- Additional detail endpoint CTEs
 runs_for_department_via_agents AS (
     SELECT DISTINCT mr.id as run_id
-    FROM view_runs_entry mr
+    FROM runs_entry mr
     JOIN config_entry ce ON ce.run_id = mr.id
     JOIN config_agents_connection cac ON cac.config_id = ce.id AND cac.active = true
     JOIN agent_departments_junction ad ON ad.agent_id = cac.agents_id AND ad.active = true
@@ -903,7 +891,7 @@ runs_for_department_via_agents AS (
 runs_for_department_via_profiles AS (
     SELECT DISTINCT mr.id as run_id
     FROM profiles_runs_connection prj
-    JOIN view_runs_entry mr ON mr.id = prj.run_id
+    JOIN runs_entry mr ON mr.id = prj.run_id
     JOIN profile_departments_junction pd ON pd.profile_id = prj.profiles_id AND pd.active = true
     WHERE pd.department_id = (SELECT department_id FROM params)
     AND (SELECT department_id FROM params) IS NOT NULL
@@ -921,7 +909,7 @@ model_run_costs AS (
         ), 0) as cost
     FROM view_run_pricing_entry rpu
     JOIN runs_for_department rfd ON rfd.run_id = rpu.run_id
-    JOIN view_runs_entry r ON r.id = rpu.run_id
+    JOIN runs_entry r ON r.id = rpu.run_id
     JOIN config_entry ce2 ON ce2.run_id = r.id
     JOIN config_agents_connection cac2 ON cac2.config_id = ce2.id AND cac2.active = true
     JOIN agent_models_junction am ON am.agent_id = cac2.agents_id AND am.active = true

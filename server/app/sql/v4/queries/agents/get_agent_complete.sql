@@ -613,12 +613,6 @@ name_suggestions_data AS (
                        (
                            an.generated = true
                            AND n.generated = true
-                           AND EXISTS (
-                               SELECT 1 FROM view_calls_entry c
-                               JOIN view_runs_entry r ON r.id = c.run_id
-                               WHERE c.id IN (SELECT call_id FROM names_calls_connection WHERE names_id = n.id)
-                                 AND r.group_id = dgd.group_id
-                           )
                        )
                    )
                  GROUP BY an.name_id
@@ -652,12 +646,6 @@ description_suggestions_data AS (
                        (
                            ad.generated = true
                            AND d.generated = true
-                           AND EXISTS (
-                               SELECT 1 FROM view_calls_entry c
-                               JOIN view_runs_entry r ON r.id = c.run_id
-                               WHERE c.id IN (SELECT call_id FROM descriptions_calls_connection WHERE descriptions_id = d.id)
-                                 AND r.group_id = dgd.group_id
-                           )
                        )
                    )
                  GROUP BY ad.description_id
@@ -692,12 +680,6 @@ instructions_suggestions_data AS (
                        (
                            ai.generated = true
                            AND i.generated = true
-                           AND EXISTS (
-                               SELECT 1 FROM view_calls_entry c
-                               JOIN view_runs_entry r ON r.id = c.run_id
-                               WHERE c.id IN (SELECT call_id FROM icons_calls_connection WHERE icons_id = i.id)
-                                 AND r.group_id = dgd.group_id
-                           )
                        )
                    )
                  GROUP BY ai.instruction_id
@@ -732,12 +714,6 @@ department_suggestions_data AS (
                        (
                            ad.generated = true
                            AND d.generated = true
-                           AND EXISTS (
-                               SELECT 1 FROM view_calls_entry c
-                               JOIN view_runs_entry r ON r.id = c.run_id
-                               WHERE c.id IN (SELECT call_id FROM descriptions_calls_connection WHERE descriptions_id = d.id)
-                                 AND r.group_id = dgd.group_id
-                           )
                        )
                    )
                  GROUP BY ad.department_id
@@ -905,12 +881,6 @@ names_data AS (
                 -- Option 2: Linked to same group with generated=true
                 (
                     n.generated = true
-                    AND EXISTS (
-                        SELECT 1 FROM view_calls_entry c
-                        JOIN view_runs_entry r ON r.id = c.run_id
-                        WHERE c.id IN (SELECT call_id FROM names_calls_connection WHERE names_id = n.id)
-                          AND r.group_id = dgd.group_id
-                    )
                 )
             )
             AND n.name IS NOT NULL
@@ -941,12 +911,6 @@ descriptions_data AS (
                 -- Option 2: Linked to same group with generated=true
                 (
                     d.generated = true
-                    AND EXISTS (
-                        SELECT 1 FROM view_calls_entry c
-                        JOIN view_runs_entry r ON r.id = c.run_id
-                        WHERE c.id IN (SELECT call_id FROM descriptions_calls_connection WHERE descriptions_id = d.id)
-                          AND r.group_id = dgd.group_id
-                    )
                 )
             )
             -- Search filter: if descriptions_search provided, match description text
@@ -982,12 +946,6 @@ instructions_data AS (
                     -- Option 2: Linked to same group with generated=true
                     (
                         i.generated = true
-                        AND EXISTS (
-                            SELECT 1 FROM view_calls_entry c
-                            JOIN view_runs_entry r ON r.id = c.run_id
-                            WHERE c.id IN (SELECT call_id FROM icons_calls_connection WHERE icons_id = i.id)
-                              AND r.group_id = dgd.group_id
-                        )
                     )
                 )
                 -- Search filter: if instructions_search provided, match template text
@@ -2168,12 +2126,6 @@ reasoning_level_suggestions_data AS (
                        (
                            arl.generated = true
                            AND rl.generated = true
-                           AND EXISTS (
-                               SELECT 1 FROM view_calls_entry c
-                               JOIN view_runs_entry r ON r.id = c.run_id
-                               WHERE c.id IN (SELECT call_id FROM reasoning_levels_calls_connection WHERE reasoning_levels_id = rl.id)
-                                 AND r.group_id = dgd.group_id
-                           )
                        )
                    )
                  GROUP BY arl.reasoning_level_id
@@ -2207,12 +2159,6 @@ temperature_level_suggestions_data AS (
                        (
                            atl.generated = true
                            AND tl.generated = true
-                           AND EXISTS (
-                               SELECT 1 FROM view_calls_entry c
-                               JOIN view_runs_entry r ON r.id = c.run_id
-                               WHERE c.id IN (SELECT call_id FROM temperature_levels_calls_connection WHERE temperature_levels_id = tl.id)
-                                 AND r.group_id = dgd.group_id
-                           )
                        )
                    )
                  GROUP BY atl.temperature_level_id
@@ -2247,12 +2193,6 @@ voice_suggestions_data AS (
                        (
                            av.generated = true
                            AND v.generated = true
-                           AND EXISTS (
-                               SELECT 1 FROM view_calls_entry c
-                               JOIN view_runs_entry r ON r.id = c.run_id
-                               WHERE c.id IN (SELECT call_id FROM values_calls_connection WHERE values_id = v.id)
-                                 AND r.group_id = dgd.group_id
-                           )
                        )
                    )
                  GROUP BY av.voice_id
@@ -2460,7 +2400,7 @@ debug_data AS (
     FROM params x
     LEFT JOIN config_agents_connection cac_debug ON cac_debug.agents_id = x.agent_id AND cac_debug.active = TRUE
     LEFT JOIN config_entry ce_debug ON ce_debug.id = cac_debug.config_id
-    LEFT JOIN view_runs_entry mr ON mr.id = ce_debug.run_id
+    LEFT JOIN runs_entry mr ON mr.id = ce_debug.run_id
     LEFT JOIN view_debug_info_entry di ON di.run_id = mr.id
     WHERE x.agent_id IS NOT NULL
     LIMIT 1

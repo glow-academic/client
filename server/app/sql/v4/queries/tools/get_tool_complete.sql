@@ -238,12 +238,6 @@ name_suggestions_data AS (
                        (
                            tn.generated = true
                            AND n.generated = true
-                           AND EXISTS (
-                               SELECT 1 FROM view_calls_entry c
-                               JOIN view_runs_entry r ON r.id = c.run_id
-                               WHERE c.id IN (SELECT call_id FROM names_calls_connection WHERE names_id = n.id)
-                                 AND r.group_id = dgd.group_id
-                           )
                        )
                    )
                  GROUP BY tn.name_id
@@ -323,12 +317,6 @@ description_suggestions_data AS (
                        (
                            td.generated = true
                            AND d.generated = true
-                           AND EXISTS (
-                               SELECT 1 FROM view_calls_entry c
-                               JOIN view_runs_entry r ON r.id = c.run_id
-                               WHERE c.id IN (SELECT call_id FROM descriptions_calls_connection WHERE descriptions_id = d.id)
-                                 AND r.group_id = dgd.group_id
-                           )
                        )
                    )
                  GROUP BY td.description_id
@@ -446,12 +434,6 @@ args_suggestions_data AS (
                        (
                            ta.generated = true
                            AND a.generated = true
-                           AND EXISTS (
-                               SELECT 1 FROM view_calls_entry c
-                               JOIN view_runs_entry r ON r.id = c.run_id
-                               WHERE c.id IN (SELECT call_id FROM args_calls_connection WHERE args_id = a.id)
-                                 AND r.group_id = dgd.group_id
-                           )
                        )
                    )
                  GROUP BY ta.args_id
@@ -481,7 +463,7 @@ args_mapping_data AS (
     JOIN args_resource a ON a.active = true
     LEFT JOIN tool_args_junction ta ON ta.args_id = a.id AND ta.tool_id = x.tool_id
     LEFT JOIN args_calls_connection acc ON acc.args_id = a.id LEFT JOIN view_calls_entry c ON c.id = acc.call_id
-    LEFT JOIN view_runs_entry r ON r.id = c.run_id
+    LEFT JOIN runs_entry r ON r.id = c.run_id
     WHERE x.tool_id IS NOT NULL OR TRUE  -- Include all args for new tools
 ),
 -- Args outputs IDs (selected args_outputs IDs for tool)
@@ -526,12 +508,6 @@ args_outputs_suggestions_data AS (
                        (
                            tao.generated = true
                            AND ao.generated = true
-                           AND EXISTS (
-                               SELECT 1 FROM view_calls_entry c
-                               JOIN view_runs_entry r ON r.id = c.run_id
-                               WHERE c.id IN (SELECT call_id FROM args_outputs_calls_connection WHERE args_outputs_id = ao.id)
-                                 AND r.group_id = dgd.group_id
-                           )
                        )
                    )
                  GROUP BY tao.args_outputs_id
@@ -558,7 +534,7 @@ args_outputs_mapping_data AS (
     JOIN args_outputs_resource ao ON ao.active = true
     LEFT JOIN tool_args_outputs_junction tao ON tao.args_outputs_id = ao.id AND tao.tool_id = x.tool_id
     LEFT JOIN args_outputs_calls_connection aocc ON aocc.args_outputs_id = ao.id LEFT JOIN view_calls_entry c ON c.id = aocc.call_id
-    LEFT JOIN view_runs_entry r ON r.id = c.run_id
+    LEFT JOIN runs_entry r ON r.id = c.run_id
     WHERE x.tool_id IS NOT NULL OR TRUE  -- Include all args_outputs for new tools
 ),
 -- Input args fields detail (for Args component - fields from selected args_ids)

@@ -345,12 +345,6 @@ name_suggestions_data AS (
                        OR
                        (
                            n.generated = true
-                           AND EXISTS (
-                               SELECT 1 FROM view_calls_entry c
-                               JOIN view_runs_entry r ON r.id = c.run_id
-                               WHERE c.id IN (SELECT call_id FROM names_calls_connection WHERE names_id = n.id)
-                                 AND r.group_id = dgd.group_id
-                           )
                        )
                    )
                  GROUP BY an.name_id
@@ -383,12 +377,6 @@ description_suggestions_data AS (
                        OR
                        (
                            d.generated = true
-                           AND EXISTS (
-                               SELECT 1 FROM view_calls_entry c
-                               JOIN view_runs_entry r ON r.id = c.run_id
-                               WHERE c.id IN (SELECT call_id FROM descriptions_calls_connection WHERE descriptions_id = d.id)
-                                 AND r.group_id = dgd.group_id
-                           )
                        )
                    )
                  GROUP BY ad.description_id
@@ -421,12 +409,6 @@ protocol_suggestions_data AS (
                        OR
                        (
                            p.generated = true
-                           AND EXISTS (
-                               SELECT 1 FROM view_calls_entry c
-                               JOIN view_runs_entry r ON r.id = c.run_id
-                               WHERE c.id IN (SELECT call_id FROM prompts_calls_connection WHERE prompts_id = p.id)
-                                 AND r.group_id = dgd.group_id
-                           )
                        )
                    )
                  GROUP BY ap.protocol_id
@@ -459,12 +441,6 @@ slug_suggestions_data AS (
                        OR
                        (
                            s.generated = true
-                           AND EXISTS (
-                               SELECT 1 FROM view_calls_entry c
-                               JOIN view_runs_entry r ON r.id = c.run_id
-                               WHERE c.id IN (SELECT call_id FROM slugs_calls_connection WHERE slugs_id = s.id)
-                                 AND r.group_id = dgd.group_id
-                           )
                        )
                    )
                  GROUP BY as_j.slug_id
@@ -498,12 +474,6 @@ flag_suggestions_data AS (
                        OR
                        (
                            f.generated = true
-                           AND EXISTS (
-                               SELECT 1 FROM view_calls_entry c
-                               JOIN view_runs_entry r ON r.id = c.run_id
-                               WHERE c.id IN (SELECT call_id FROM flags_calls_connection WHERE flags_id = f.id)
-                                 AND r.group_id = dgd.group_id
-                           )
                        )
                    )
                  GROUP BY af.flag_id

@@ -336,12 +336,6 @@ name_suggestions_data AS (
                        (
                            pn.generated = true
                            AND n.generated = true
-                           AND EXISTS (
-                               SELECT 1 FROM view_calls_entry c
-                               JOIN view_runs_entry r ON r.id = c.run_id
-                               WHERE c.id IN (SELECT call_id FROM names_calls_connection WHERE names_id = n.id)
-                                 AND r.group_id = gid.group_id
-                           )
                        )
                    )
                  GROUP BY pn.name_id
@@ -425,12 +419,6 @@ email_suggestions_data AS (
                        (
                            pe.generated = true
                            AND e.generated = true
-                           AND EXISTS (
-                               SELECT 1 FROM view_calls_entry c
-                               JOIN view_runs_entry r ON r.id = c.run_id
-                               WHERE c.id IN (SELECT call_id FROM examples_calls_connection WHERE examples_id = e.id)
-                                 AND r.group_id = gid.group_id
-                           )
                        )
                    )
                  GROUP BY pe.email_id
@@ -520,12 +508,6 @@ request_limit_suggestions_data AS (
                  -- Option 2: OR linked to same group with generated=true
                  (
                      rl.generated = true
-                     AND EXISTS (
-                         SELECT 1 FROM view_calls_entry c
-                         JOIN view_runs_entry r ON r.id = c.run_id
-                         WHERE c.id IN (SELECT call_id FROM reasoning_levels_calls_connection WHERE reasoning_levels_id = rl.id)
-                           AND r.group_id = gid.group_id
-                     )
                  )
              )
              LIMIT 20),
@@ -658,12 +640,6 @@ department_suggestions_data AS (
                    -- Option 2: OR linked to same group with generated=true
                    (
                        d.generated = true
-                       AND EXISTS (
-                           SELECT 1 FROM view_calls_entry c
-                           JOIN view_runs_entry r ON r.id = c.run_id
-                           WHERE c.id IN (SELECT call_id FROM descriptions_calls_connection WHERE descriptions_id = d.id)
-                             AND r.group_id = gid.group_id
-                       )
                    )
                )
              LIMIT 20),

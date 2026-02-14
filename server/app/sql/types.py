@@ -1404,6 +1404,187 @@ class GetAuthAccessApiResponse(BaseModel):
 
 
 
+# Generated from: get_auth
+
+class GetAuthSqlParams(BaseModel):
+
+    profile_id: UUID
+    auth_id: UUID | None = None
+    draft_id: UUID | None = None
+    mcp: bool | None = False
+    draft_group_id: UUID | None = None
+    draft_version: int | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.auth_id,
+            self.draft_id,
+            self.mcp,
+            self.draft_group_id,
+            self.draft_version,
+        )
+
+class QGetAuthV4AuthItem(BaseModel):
+
+    auth_item_id: UUID | None
+    name: str | None
+    description: str | None
+    position: int | None
+    active: bool | None
+    value_masked: str | None
+    key_id: str | None
+    encrypted: bool | None
+
+
+
+
+class QGetAuthV4DescriptionResource(BaseModel):
+
+    id: UUID | None
+    description: str | None
+    generated: bool | None
+
+
+
+
+class QGetAuthV4FlagResource(BaseModel):
+
+    id: UUID | None
+    name: str | None
+    description: str | None
+    icon: str | None
+    generated: bool | None
+
+
+
+
+class QGetAuthV4NameResource(BaseModel):
+
+    id: UUID | None
+    name: str | None
+    generated: bool | None
+
+
+
+
+class QGetAuthV4Protocol(BaseModel):
+
+    id: UUID | None
+    value: str | None
+    generated: bool | None
+
+
+
+
+class QGetAuthV4Slug(BaseModel):
+
+    id: UUID | None
+    value: str | None
+    generated: bool | None
+
+class GetAuthSqlRow(BaseModel):
+
+    auth_exists: bool | None = None
+    can_edit: bool | None = None
+    disabled_reason: str | None = None
+    group_id: UUID | None = None
+    name_id: UUID | None = None
+    name_resource: QGetAuthV4NameResource | None = None
+    show_name: bool | None = None
+    name_agent_id: UUID | None = None
+    name_required: bool | None = None
+    name_suggestions: list[UUID] | None = None
+    names: list[QGetAuthV4NameResource] | None = None
+    description_id: UUID | None = None
+    description_resource: QGetAuthV4DescriptionResource | None = None
+    show_description: bool | None = None
+    description_agent_id: UUID | None = None
+    description_required: bool | None = None
+    description_suggestions: list[UUID] | None = None
+    descriptions: list[QGetAuthV4DescriptionResource] | None = None
+    active_flag_id: UUID | None = None
+    flag_resource: QGetAuthV4FlagResource | None = None
+    show_flag: bool | None = None
+    flag_agent_id: UUID | None = None
+    flag_required: bool | None = None
+    flag_suggestions: list[UUID] | None = None
+    protocol_ids: list[UUID] | None = None
+    protocol_resources: list[QGetAuthV4Protocol] | None = None
+    show_protocols: bool | None = None
+    protocols_agent_id: UUID | None = None
+    protocols_required: bool | None = None
+    protocol_suggestions: list[UUID] | None = None
+    protocols: list[QGetAuthV4Protocol] | None = None
+    slug_ids: list[UUID] | None = None
+    slug_resources: list[QGetAuthV4Slug] | None = None
+    show_slugs: bool | None = None
+    slugs_agent_id: UUID | None = None
+    slugs_required: bool | None = None
+    slug_suggestions: list[UUID] | None = None
+    slugs: list[QGetAuthV4Slug] | None = None
+    auth_items_junction: list[QGetAuthV4AuthItem] | None = None
+    auth_item_ids: Any | None = None
+    auth_item_active_states: Any | None = None
+    auth_item_encrypted_states: Any | None = None
+    draft_version: int | None = None
+
+class GetAuthApiRequest(BaseModel):
+
+    auth_id: UUID | None = None
+    draft_id: UUID | None = None
+    mcp: bool | None = False
+    draft_group_id: UUID | None = None
+    draft_version: int | None = None
+
+class GetAuthApiResponse(BaseModel):
+
+    auth_exists: bool | None = None
+    can_edit: bool | None = None
+    disabled_reason: str | None = None
+    group_id: UUID | None = None
+    name_id: UUID | None = None
+    name_resource: QGetAuthV4NameResource | None = None
+    show_name: bool | None = None
+    name_agent_id: UUID | None = None
+    name_required: bool | None = None
+    name_suggestions: list[UUID] | None = None
+    names: list[QGetAuthV4NameResource] | None = None
+    description_id: UUID | None = None
+    description_resource: QGetAuthV4DescriptionResource | None = None
+    show_description: bool | None = None
+    description_agent_id: UUID | None = None
+    description_required: bool | None = None
+    description_suggestions: list[UUID] | None = None
+    descriptions: list[QGetAuthV4DescriptionResource] | None = None
+    active_flag_id: UUID | None = None
+    flag_resource: QGetAuthV4FlagResource | None = None
+    show_flag: bool | None = None
+    flag_agent_id: UUID | None = None
+    flag_required: bool | None = None
+    flag_suggestions: list[UUID] | None = None
+    protocol_ids: list[UUID] | None = None
+    protocol_resources: list[QGetAuthV4Protocol] | None = None
+    show_protocols: bool | None = None
+    protocols_agent_id: UUID | None = None
+    protocols_required: bool | None = None
+    protocol_suggestions: list[UUID] | None = None
+    protocols: list[QGetAuthV4Protocol] | None = None
+    slug_ids: list[UUID] | None = None
+    slug_resources: list[QGetAuthV4Slug] | None = None
+    show_slugs: bool | None = None
+    slugs_agent_id: UUID | None = None
+    slugs_required: bool | None = None
+    slug_suggestions: list[UUID] | None = None
+    slugs: list[QGetAuthV4Slug] | None = None
+    auth_items_junction: list[QGetAuthV4AuthItem] | None = None
+    auth_item_ids: Any | None = None
+    auth_item_active_states: Any | None = None
+    auth_item_encrypted_states: Any | None = None
+    draft_version: int | None = None
+
+
+
 # Generated from: get_auth_docs
 
 class GetAuthDocsSqlParams(BaseModel):
@@ -4313,6 +4494,174 @@ class GetFieldAccessApiResponse(BaseModel):
     effective_draft_version: int | None = None
     group_id: UUID | None = None
     field_department_ids: list[UUID] | None = None
+
+
+
+# Generated from: get_field
+
+class GetFieldSqlParams(BaseModel):
+
+    profile_id: UUID
+    field_id: UUID | None = None
+    description_search: str | None = None
+    parameter_search: str | None = None
+    parameter_show_selected: bool | None = None
+    draft_id: UUID | None = None
+    mcp: bool | None = False
+    draft_group_id: UUID | None = None
+    draft_version: int | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.field_id,
+            self.description_search,
+            self.parameter_search,
+            self.parameter_show_selected,
+            self.draft_id,
+            self.mcp,
+            self.draft_group_id,
+            self.draft_version,
+        )
+
+class QGetFieldV4Department(BaseModel):
+
+    department_id: UUID | None
+    name: str | None
+    description: str | None
+    generated: bool | None
+
+
+
+
+class QGetFieldV4DescriptionResource(BaseModel):
+
+    description_id: UUID | None
+    description: str | None
+    generated: bool | None
+
+
+
+
+class QGetFieldV4FlagResource(BaseModel):
+
+    flag_id: UUID | None
+    name: str | None
+    description: str | None
+    icon: str | None
+    generated: bool | None
+
+
+
+
+class QGetFieldV4NameResource(BaseModel):
+
+    name_id: UUID | None
+    name: str | None
+    generated: bool | None
+
+
+
+
+class QGetFieldV4Parameter(BaseModel):
+
+    parameter_id: UUID | None
+    name: str | None
+    description: str | None
+    generated: bool | None
+
+class GetFieldSqlRow(BaseModel):
+
+    field_exists: bool | None = None
+    can_edit: bool | None = None
+    disabled_reason: str | None = None
+    draft_version: int | None = None
+    group_id: UUID | None = None
+    name_id: UUID | None = None
+    name_resource: QGetFieldV4NameResource | None = None
+    show_name: bool | None = None
+    name_agent_id: UUID | None = None
+    name_required: bool | None = None
+    name_suggestions: list[UUID] | None = None
+    names: list[QGetFieldV4NameResource] | None = None
+    description_id: UUID | None = None
+    description_resource: QGetFieldV4DescriptionResource | None = None
+    show_description: bool | None = None
+    description_agent_id: UUID | None = None
+    description_required: bool | None = None
+    description_suggestions: list[UUID] | None = None
+    descriptions: list[QGetFieldV4DescriptionResource] | None = None
+    active_flag_id: UUID | None = None
+    active_flag_resource: QGetFieldV4FlagResource | None = None
+    show_active_flag: bool | None = None
+    active_flag_agent_id: UUID | None = None
+    active_flag_required: bool | None = None
+    department_ids: list[UUID] | None = None
+    department_resources: list[QGetFieldV4Department] | None = None
+    show_departments: bool | None = None
+    departments_agent_id: UUID | None = None
+    departments_required: bool | None = None
+    department_suggestions: list[UUID] | None = None
+    departments: list[QGetFieldV4Department] | None = None
+    parameter_ids: list[UUID] | None = None
+    parameter_resources: list[QGetFieldV4Parameter] | None = None
+    show_parameters: bool | None = None
+    parameters_agent_id: UUID | None = None
+    parameters_required: bool | None = None
+    parameter_suggestions: list[UUID] | None = None
+    parameters: list[QGetFieldV4Parameter] | None = None
+
+class GetFieldApiRequest(BaseModel):
+
+    field_id: UUID | None = None
+    description_search: str | None = None
+    parameter_search: str | None = None
+    parameter_show_selected: bool | None = None
+    draft_id: UUID | None = None
+    mcp: bool | None = False
+    draft_group_id: UUID | None = None
+    draft_version: int | None = None
+
+class GetFieldApiResponse(BaseModel):
+
+    field_exists: bool | None = None
+    can_edit: bool | None = None
+    disabled_reason: str | None = None
+    draft_version: int | None = None
+    group_id: UUID | None = None
+    name_id: UUID | None = None
+    name_resource: QGetFieldV4NameResource | None = None
+    show_name: bool | None = None
+    name_agent_id: UUID | None = None
+    name_required: bool | None = None
+    name_suggestions: list[UUID] | None = None
+    names: list[QGetFieldV4NameResource] | None = None
+    description_id: UUID | None = None
+    description_resource: QGetFieldV4DescriptionResource | None = None
+    show_description: bool | None = None
+    description_agent_id: UUID | None = None
+    description_required: bool | None = None
+    description_suggestions: list[UUID] | None = None
+    descriptions: list[QGetFieldV4DescriptionResource] | None = None
+    active_flag_id: UUID | None = None
+    active_flag_resource: QGetFieldV4FlagResource | None = None
+    show_active_flag: bool | None = None
+    active_flag_agent_id: UUID | None = None
+    active_flag_required: bool | None = None
+    department_ids: list[UUID] | None = None
+    department_resources: list[QGetFieldV4Department] | None = None
+    show_departments: bool | None = None
+    departments_agent_id: UUID | None = None
+    departments_required: bool | None = None
+    department_suggestions: list[UUID] | None = None
+    departments: list[QGetFieldV4Department] | None = None
+    parameter_ids: list[UUID] | None = None
+    parameter_resources: list[QGetFieldV4Parameter] | None = None
+    show_parameters: bool | None = None
+    parameters_agent_id: UUID | None = None
+    parameters_required: bool | None = None
+    parameter_suggestions: list[UUID] | None = None
+    parameters: list[QGetFieldV4Parameter] | None = None
 
 
 
@@ -7636,6 +7985,189 @@ class GetParameterAccessApiResponse(BaseModel):
 
 
 
+# Generated from: get_parameter
+
+class GetParameterSqlParams(BaseModel):
+
+    profile_id: UUID
+    parameter_id: UUID | None = None
+    field_search: str | None = None
+    field_show_selected: bool | None = None
+    draft_id: UUID | None = None
+    mcp: bool | None = False
+    draft_group_id: UUID | None = None
+    draft_version: int | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.parameter_id,
+            self.field_search,
+            self.field_show_selected,
+            self.draft_id,
+            self.mcp,
+            self.draft_group_id,
+            self.draft_version,
+        )
+
+class QGetParameterV4Department(BaseModel):
+
+    department_id: UUID | None
+    name: str | None
+    description: str | None
+    generated: bool | None
+
+
+
+
+class QGetParameterV4DescriptionResource(BaseModel):
+
+    description_id: UUID | None
+    description: str | None
+    generated: bool | None
+
+
+
+
+class QGetParameterV4Field(BaseModel):
+
+    field_id: UUID | None
+    name: str | None
+    description: str | None
+    usage_count: int | None
+    department_ids: list[str] | None
+    generated: bool | None
+
+
+
+
+class QGetParameterV4FlagResource(BaseModel):
+
+    flag_id: UUID | None
+    name: str | None
+    description: str | None
+    icon: str | None
+    generated: bool | None
+
+
+
+
+class QGetParameterV4NameResource(BaseModel):
+
+    name_id: UUID | None
+    name: str | None
+    generated: bool | None
+
+class GetParameterSqlRow(BaseModel):
+
+    parameter_exists: bool | None = None
+    can_edit: bool | None = None
+    disabled_reason: str | None = None
+    draft_version: int | None = None
+    group_id: UUID | None = None
+    name_id: UUID | None = None
+    name_resource: QGetParameterV4NameResource | None = None
+    show_name: bool | None = None
+    name_agent_id: UUID | None = None
+    name_required: bool | None = None
+    name_suggestions: list[UUID] | None = None
+    names: list[QGetParameterV4NameResource] | None = None
+    description_id: UUID | None = None
+    description_resource: QGetParameterV4DescriptionResource | None = None
+    show_description: bool | None = None
+    description_agent_id: UUID | None = None
+    description_required: bool | None = None
+    description_suggestions: list[UUID] | None = None
+    descriptions: list[QGetParameterV4DescriptionResource] | None = None
+    active_flag_id: UUID | None = None
+    active_flag_resource: QGetParameterV4FlagResource | None = None
+    show_active_flag: bool | None = None
+    active_flag_agent_id: UUID | None = None
+    active_flag_required: bool | None = None
+    name: str | None = None
+    description: str | None = None
+    active: bool | None = None
+    simulation_parameter: bool | None = None
+    document_parameter: bool | None = None
+    persona_parameter: bool | None = None
+    scenario_parameter: bool | None = None
+    video_parameter: bool | None = None
+    department_ids: list[UUID] | None = None
+    department_resources: list[QGetParameterV4Department] | None = None
+    show_departments: bool | None = None
+    departments_agent_id: UUID | None = None
+    departments_required: bool | None = None
+    department_suggestions: list[UUID] | None = None
+    departments: list[QGetParameterV4Department] | None = None
+    field_ids: list[UUID] | None = None
+    field_resources: list[QGetParameterV4Field] | None = None
+    show_fields: bool | None = None
+    fields_agent_id: UUID | None = None
+    fields_required: bool | None = None
+    field_suggestions: list[UUID] | None = None
+    fields: list[QGetParameterV4Field] | None = None
+
+class GetParameterApiRequest(BaseModel):
+
+    parameter_id: UUID | None = None
+    field_search: str | None = None
+    field_show_selected: bool | None = None
+    draft_id: UUID | None = None
+    mcp: bool | None = False
+    draft_group_id: UUID | None = None
+    draft_version: int | None = None
+
+class GetParameterApiResponse(BaseModel):
+
+    parameter_exists: bool | None = None
+    can_edit: bool | None = None
+    disabled_reason: str | None = None
+    draft_version: int | None = None
+    group_id: UUID | None = None
+    name_id: UUID | None = None
+    name_resource: QGetParameterV4NameResource | None = None
+    show_name: bool | None = None
+    name_agent_id: UUID | None = None
+    name_required: bool | None = None
+    name_suggestions: list[UUID] | None = None
+    names: list[QGetParameterV4NameResource] | None = None
+    description_id: UUID | None = None
+    description_resource: QGetParameterV4DescriptionResource | None = None
+    show_description: bool | None = None
+    description_agent_id: UUID | None = None
+    description_required: bool | None = None
+    description_suggestions: list[UUID] | None = None
+    descriptions: list[QGetParameterV4DescriptionResource] | None = None
+    active_flag_id: UUID | None = None
+    active_flag_resource: QGetParameterV4FlagResource | None = None
+    show_active_flag: bool | None = None
+    active_flag_agent_id: UUID | None = None
+    active_flag_required: bool | None = None
+    name: str | None = None
+    description: str | None = None
+    active: bool | None = None
+    simulation_parameter: bool | None = None
+    document_parameter: bool | None = None
+    persona_parameter: bool | None = None
+    scenario_parameter: bool | None = None
+    video_parameter: bool | None = None
+    department_ids: list[UUID] | None = None
+    department_resources: list[QGetParameterV4Department] | None = None
+    show_departments: bool | None = None
+    departments_agent_id: UUID | None = None
+    departments_required: bool | None = None
+    department_suggestions: list[UUID] | None = None
+    departments: list[QGetParameterV4Department] | None = None
+    field_ids: list[UUID] | None = None
+    field_resources: list[QGetParameterV4Field] | None = None
+    show_fields: bool | None = None
+    fields_agent_id: UUID | None = None
+    fields_required: bool | None = None
+    field_suggestions: list[UUID] | None = None
+    fields: list[QGetParameterV4Field] | None = None
+
+
+
 # Generated from: get_parameter_docs
 
 class GetParameterDocsSqlParams(BaseModel):
@@ -9084,6 +9616,254 @@ class DuplicateProfileApiResponse(BaseModel):
 
     new_profile_id: UUID | None = None
     original_name: str | None = None
+
+
+
+# Generated from: get_profile_access
+
+class GetProfileAccessSqlParams(BaseModel):
+
+    profile_id: UUID
+    target_profile_id: UUID | None = None
+    draft_id: UUID | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.target_profile_id,
+            self.draft_id,
+        )
+
+class QGetProfileV4RoleResource(BaseModel):
+
+    role: str | None
+    name: str | None
+    description: str | None
+    icon_value: str | None
+    color_hex: str | None
+
+class GetProfileAccessSqlRow(BaseModel):
+
+    profile_exists: bool | None = None
+    draft_version: int | None = None
+    group_id: UUID | None = None
+    resolved_target_profile_id: UUID | None = None
+    target_role: str | None = None
+    target_department_ids: list[UUID] | None = None
+    target_is_self: bool | None = None
+    role_options: list[str] | None = None
+    roles: list[QGetProfileV4RoleResource] | None = None
+
+class GetProfileAccessApiRequest(BaseModel):
+
+    target_profile_id: UUID | None = None
+    draft_id: UUID | None = None
+
+class GetProfileAccessApiResponse(BaseModel):
+
+    profile_exists: bool | None = None
+    draft_version: int | None = None
+    group_id: UUID | None = None
+    resolved_target_profile_id: UUID | None = None
+    target_role: str | None = None
+    target_department_ids: list[UUID] | None = None
+    target_is_self: bool | None = None
+    role_options: list[str] | None = None
+    roles: list[QGetProfileV4RoleResource] | None = None
+
+
+
+# Generated from: get_profile
+
+class GetProfileSqlParams(BaseModel):
+
+    profile_id: UUID
+    target_profile_id: UUID | None = None
+    draft_id: UUID | None = None
+    draft_group_id: UUID | None = None
+    draft_version: int | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.target_profile_id,
+            self.draft_id,
+            self.draft_group_id,
+            self.draft_version,
+        )
+
+class QGetProfileV4Cohort(BaseModel):
+
+    cohort_id: UUID | None
+    name: str | None
+    description: str | None
+    generated: bool | None
+
+
+
+
+class QGetProfileV4Department(BaseModel):
+
+    department_id: UUID | None
+    name: str | None
+    description: str | None
+    generated: bool | None
+
+
+
+
+class QGetProfileV4EmailResource(BaseModel):
+
+    id: UUID | None
+    email: str | None
+    generated: bool | None
+
+
+
+
+class QGetProfileV4FlagResource(BaseModel):
+
+    id: UUID | None
+    name: str | None
+    description: str | None
+    icon: str | None
+    generated: bool | None
+
+
+
+
+class QGetProfileV4NameResource(BaseModel):
+
+    id: UUID | None
+    name: str | None
+    generated: bool | None
+
+
+
+
+class QGetProfileV4RequestLimitResource(BaseModel):
+
+    id: UUID | None
+    requests_per_day: int | None
+    generated: bool | None
+
+
+
+
+class GetProfileSqlRow(BaseModel):
+
+    profile_exists: bool | None = None
+    can_edit: bool | None = None
+    disabled_reason: str | None = None
+    draft_version: int | None = None
+    group_id: UUID | None = None
+    profile_id: UUID | None = None
+    role: str | None = None
+    role_options: list[str] | None = None
+    roles: list[QGetProfileV4RoleResource] | None = None
+    name_id: UUID | None = None
+    name_resource: QGetProfileV4NameResource | None = None
+    show_name: bool | None = None
+    name_agent_id: UUID | None = None
+    name_required: bool | None = None
+    name_suggestions: list[UUID] | None = None
+    names: list[QGetProfileV4NameResource] | None = None
+    email_ids: list[UUID] | None = None
+    email_resources: list[QGetProfileV4EmailResource] | None = None
+    show_emails: bool | None = None
+    emails_agent_id: UUID | None = None
+    emails_required: bool | None = None
+    email_suggestions: list[UUID] | None = None
+    emails: list[QGetProfileV4EmailResource] | None = None
+    request_limit_id: UUID | None = None
+    request_limit_resource: QGetProfileV4RequestLimitResource | None = None
+    show_request_limit: bool | None = None
+    request_limit_agent_id: UUID | None = None
+    request_limit_required: bool | None = None
+    request_limit_suggestions: list[UUID] | None = None
+    request_limits: list[QGetProfileV4RequestLimitResource] | None = None
+    active_flag_id: UUID | None = None
+    flag_resource: QGetProfileV4FlagResource | None = None
+    show_flag: bool | None = None
+    flag_agent_id: UUID | None = None
+    flag_required: bool | None = None
+    department_ids: list[UUID] | None = None
+    department_resources: list[QGetProfileV4Department] | None = None
+    show_departments: bool | None = None
+    departments_agent_id: UUID | None = None
+    departments_required: bool | None = None
+    department_suggestions: list[UUID] | None = None
+    departments: list[QGetProfileV4Department] | None = None
+    cohort_ids: list[UUID] | None = None
+    cohort_resources: list[QGetProfileV4Cohort] | None = None
+    show_cohorts: bool | None = None
+    cohorts_agent_id: UUID | None = None
+    cohorts_required: bool | None = None
+    cohort_suggestions: list[UUID] | None = None
+    cohorts: list[QGetProfileV4Cohort] | None = None
+    basic_agent_id: UUID | None = None
+    general_agent_id: UUID | None = None
+
+class GetProfileApiRequest(BaseModel):
+
+    target_profile_id: UUID | None = None
+    draft_id: UUID | None = None
+    draft_group_id: UUID | None = None
+    draft_version: int | None = None
+
+class GetProfileApiResponse(BaseModel):
+
+    profile_exists: bool | None = None
+    can_edit: bool | None = None
+    disabled_reason: str | None = None
+    draft_version: int | None = None
+    group_id: UUID | None = None
+    profile_id: UUID | None = None
+    role: str | None = None
+    role_options: list[str] | None = None
+    roles: list[QGetProfileV4RoleResource] | None = None
+    name_id: UUID | None = None
+    name_resource: QGetProfileV4NameResource | None = None
+    show_name: bool | None = None
+    name_agent_id: UUID | None = None
+    name_required: bool | None = None
+    name_suggestions: list[UUID] | None = None
+    names: list[QGetProfileV4NameResource] | None = None
+    email_ids: list[UUID] | None = None
+    email_resources: list[QGetProfileV4EmailResource] | None = None
+    show_emails: bool | None = None
+    emails_agent_id: UUID | None = None
+    emails_required: bool | None = None
+    email_suggestions: list[UUID] | None = None
+    emails: list[QGetProfileV4EmailResource] | None = None
+    request_limit_id: UUID | None = None
+    request_limit_resource: QGetProfileV4RequestLimitResource | None = None
+    show_request_limit: bool | None = None
+    request_limit_agent_id: UUID | None = None
+    request_limit_required: bool | None = None
+    request_limit_suggestions: list[UUID] | None = None
+    request_limits: list[QGetProfileV4RequestLimitResource] | None = None
+    active_flag_id: UUID | None = None
+    flag_resource: QGetProfileV4FlagResource | None = None
+    show_flag: bool | None = None
+    flag_agent_id: UUID | None = None
+    flag_required: bool | None = None
+    department_ids: list[UUID] | None = None
+    department_resources: list[QGetProfileV4Department] | None = None
+    show_departments: bool | None = None
+    departments_agent_id: UUID | None = None
+    departments_required: bool | None = None
+    department_suggestions: list[UUID] | None = None
+    departments: list[QGetProfileV4Department] | None = None
+    cohort_ids: list[UUID] | None = None
+    cohort_resources: list[QGetProfileV4Cohort] | None = None
+    show_cohorts: bool | None = None
+    cohorts_agent_id: UUID | None = None
+    cohorts_required: bool | None = None
+    cohort_suggestions: list[UUID] | None = None
+    cohorts: list[QGetProfileV4Cohort] | None = None
+    basic_agent_id: UUID | None = None
+    general_agent_id: UUID | None = None
 
 
 
@@ -17949,6 +18729,250 @@ class GetRubricAccessApiResponse(BaseModel):
 
 
 
+# Generated from: get_rubric
+
+class GetRubricSqlParams(BaseModel):
+
+    profile_id: UUID
+    rubric_id: UUID | None = None
+    draft_id: UUID | None = None
+    description_search: str | None = None
+    standard_group_search: str | None = None
+    mcp: bool | None = False
+    draft_group_id: UUID | None = None
+    draft_version: int | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.rubric_id,
+            self.draft_id,
+            self.description_search,
+            self.standard_group_search,
+            self.mcp,
+            self.draft_group_id,
+            self.draft_version,
+        )
+
+class QGetRubricV4Department(BaseModel):
+
+    department_id: UUID | None
+    name: str | None
+    description: str | None
+    generated: bool | None
+
+
+
+
+class QGetRubricV4DescriptionResource(BaseModel):
+
+    id: UUID | None
+    description: str | None
+    generated: bool | None
+
+
+
+
+class QGetRubricV4FlagResource(BaseModel):
+
+    id: UUID | None
+    name: str | None
+    description: str | None
+    icon: str | None
+    generated: bool | None
+
+
+
+
+class QGetRubricV4NameResource(BaseModel):
+
+    id: UUID | None
+    name: str | None
+    generated: bool | None
+
+
+
+
+class QGetRubricV4PointsOption(BaseModel):
+
+    id: UUID | None
+    value: int | None
+    generated: bool | None
+
+
+
+
+class QGetRubricV4PointsResource(BaseModel):
+
+    id: UUID | None
+    value: int | None
+    generated: bool | None
+
+
+
+
+class QGetRubricV4StandardGroupResource(BaseModel):
+
+    standard_group_id: UUID | None
+    name: str | None
+    description: str | None
+    points: int | None
+    pass_points: int | None
+    position: int | None
+    active: bool | None
+    standard_ids: list[UUID] | None
+    generated: bool | None
+
+
+
+
+class QGetRubricV4StandardResource(BaseModel):
+
+    standard_id: UUID | None
+    standard_group_id: UUID | None
+    name: str | None
+    description: str | None
+    points: int | None
+    generated: bool | None
+
+class GetRubricSqlRow(BaseModel):
+
+    rubric_exists: bool | None = None
+    can_edit: bool | None = None
+    disabled_reason: str | None = None
+    draft_version: int | None = None
+    group_id: UUID | None = None
+    name_id: UUID | None = None
+    name_resource: QGetRubricV4NameResource | None = None
+    show_name: bool | None = None
+    name_agent_id: UUID | None = None
+    name_required: bool | None = None
+    name_suggestions: list[UUID] | None = None
+    names: list[QGetRubricV4NameResource] | None = None
+    description_id: UUID | None = None
+    description_resource: QGetRubricV4DescriptionResource | None = None
+    show_description: bool | None = None
+    description_agent_id: UUID | None = None
+    description_required: bool | None = None
+    description_suggestions: list[UUID] | None = None
+    descriptions: list[QGetRubricV4DescriptionResource] | None = None
+    department_ids: list[UUID] | None = None
+    department_resources: list[QGetRubricV4Department] | None = None
+    show_departments: bool | None = None
+    departments_agent_id: UUID | None = None
+    departments_required: bool | None = None
+    department_suggestions: list[UUID] | None = None
+    departments: list[QGetRubricV4Department] | None = None
+    active_flag_id: UUID | None = None
+    flag_resource: QGetRubricV4FlagResource | None = None
+    show_flag: bool | None = None
+    flag_agent_id: UUID | None = None
+    flag_required: bool | None = None
+    flags: list[QGetRubricV4FlagResource] | None = None
+    total_points_id: UUID | None = None
+    total_points_resource: QGetRubricV4PointsResource | None = None
+    show_points: bool | None = None
+    points_agent_id: UUID | None = None
+    points_required: bool | None = None
+    points_suggestions: list[UUID] | None = None
+    points: list[QGetRubricV4PointsOption] | None = None
+    pass_points_id: UUID | None = None
+    pass_points_resource: QGetRubricV4PointsResource | None = None
+    show_pass_points: bool | None = None
+    pass_points_agent_id: UUID | None = None
+    pass_points_required: bool | None = None
+    pass_points_suggestions: list[UUID] | None = None
+    pass_points: list[QGetRubricV4PointsOption] | None = None
+    standard_group_ids: list[UUID] | None = None
+    standard_group_resources: list[QGetRubricV4StandardGroupResource] | None = None
+    show_standard_groups: bool | None = None
+    standard_groups_agent_id: UUID | None = None
+    standard_groups_required: bool | None = None
+    standard_group_suggestions: list[UUID] | None = None
+    standard_groups: list[QGetRubricV4StandardGroupResource] | None = None
+    standard_ids: list[UUID] | None = None
+    standard_resources: list[QGetRubricV4StandardResource] | None = None
+    show_standards: bool | None = None
+    standards_agent_id: UUID | None = None
+    standards_required: bool | None = None
+    standard_suggestions: list[UUID] | None = None
+    standards: list[QGetRubricV4StandardResource] | None = None
+
+class GetRubricApiRequest(BaseModel):
+
+    rubric_id: UUID | None = None
+    draft_id: UUID | None = None
+    description_search: str | None = None
+    standard_group_search: str | None = None
+    mcp: bool | None = False
+    draft_group_id: UUID | None = None
+    draft_version: int | None = None
+
+class GetRubricApiResponse(BaseModel):
+
+    rubric_exists: bool | None = None
+    can_edit: bool | None = None
+    disabled_reason: str | None = None
+    draft_version: int | None = None
+    group_id: UUID | None = None
+    name_id: UUID | None = None
+    name_resource: QGetRubricV4NameResource | None = None
+    show_name: bool | None = None
+    name_agent_id: UUID | None = None
+    name_required: bool | None = None
+    name_suggestions: list[UUID] | None = None
+    names: list[QGetRubricV4NameResource] | None = None
+    description_id: UUID | None = None
+    description_resource: QGetRubricV4DescriptionResource | None = None
+    show_description: bool | None = None
+    description_agent_id: UUID | None = None
+    description_required: bool | None = None
+    description_suggestions: list[UUID] | None = None
+    descriptions: list[QGetRubricV4DescriptionResource] | None = None
+    department_ids: list[UUID] | None = None
+    department_resources: list[QGetRubricV4Department] | None = None
+    show_departments: bool | None = None
+    departments_agent_id: UUID | None = None
+    departments_required: bool | None = None
+    department_suggestions: list[UUID] | None = None
+    departments: list[QGetRubricV4Department] | None = None
+    active_flag_id: UUID | None = None
+    flag_resource: QGetRubricV4FlagResource | None = None
+    show_flag: bool | None = None
+    flag_agent_id: UUID | None = None
+    flag_required: bool | None = None
+    flags: list[QGetRubricV4FlagResource] | None = None
+    total_points_id: UUID | None = None
+    total_points_resource: QGetRubricV4PointsResource | None = None
+    show_points: bool | None = None
+    points_agent_id: UUID | None = None
+    points_required: bool | None = None
+    points_suggestions: list[UUID] | None = None
+    points: list[QGetRubricV4PointsOption] | None = None
+    pass_points_id: UUID | None = None
+    pass_points_resource: QGetRubricV4PointsResource | None = None
+    show_pass_points: bool | None = None
+    pass_points_agent_id: UUID | None = None
+    pass_points_required: bool | None = None
+    pass_points_suggestions: list[UUID] | None = None
+    pass_points: list[QGetRubricV4PointsOption] | None = None
+    standard_group_ids: list[UUID] | None = None
+    standard_group_resources: list[QGetRubricV4StandardGroupResource] | None = None
+    show_standard_groups: bool | None = None
+    standard_groups_agent_id: UUID | None = None
+    standard_groups_required: bool | None = None
+    standard_group_suggestions: list[UUID] | None = None
+    standard_groups: list[QGetRubricV4StandardGroupResource] | None = None
+    standard_ids: list[UUID] | None = None
+    standard_resources: list[QGetRubricV4StandardResource] | None = None
+    show_standards: bool | None = None
+    standards_agent_id: UUID | None = None
+    standards_required: bool | None = None
+    standard_suggestions: list[UUID] | None = None
+    standards: list[QGetRubricV4StandardResource] | None = None
+
+
+
 # Generated from: get_rubric_docs
 
 class GetRubricDocsSqlParams(BaseModel):
@@ -20658,6 +21682,201 @@ class GetToolAccessApiResponse(BaseModel):
 
 
 
+# Generated from: get_tool
+
+class GetToolSqlParams(BaseModel):
+
+    profile_id: UUID
+    tool_id: UUID | None = None
+    draft_id: UUID | None = None
+    mcp: bool | None = False
+    draft_group_id: UUID | None = None
+    draft_version: int | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.tool_id,
+            self.draft_id,
+            self.mcp,
+            self.draft_group_id,
+            self.draft_version,
+        )
+
+class QGetToolV4ArgsFieldDetail(BaseModel):
+
+    args_id: UUID | None
+    name: str | None
+    description: str | None
+    field_type: str | None
+    required: bool | None
+    default_value: str | None
+    position: int | None
+    generated: bool | None
+
+
+
+
+class QGetToolV4ArgsOutputsDetail(BaseModel):
+
+    args_outputs_id: UUID | None
+    args_id: UUID | None
+    name: str | None
+    template: str | None
+    generated: bool | None
+
+
+
+
+class QGetToolV4ArgsOutputsResource(BaseModel):
+
+    id: UUID | None
+    args_id: UUID | None
+    name: str | None
+    template: str | None
+    generated: bool | None
+    group_id: UUID | None
+
+
+
+
+class QGetToolV4ArgsResource(BaseModel):
+
+    id: UUID | None
+    name: str | None
+    description: str | None
+    field_type: str | None
+    required: bool | None
+    default_value: str | None
+    position: int | None
+    generated: bool | None
+    group_id: UUID | None
+
+
+
+
+class QGetToolV4DescriptionResource(BaseModel):
+
+    id: UUID | None
+    description: str | None
+    generated: bool | None
+
+
+
+
+class QGetToolV4Domain(BaseModel):
+
+    domain_id: UUID | None
+    resource: str | None
+    generated: bool | None
+
+
+
+
+class QGetToolV4NameResource(BaseModel):
+
+    id: UUID | None
+    name: str | None
+    generated: bool | None
+
+class GetToolSqlRow(BaseModel):
+
+    tool_exists: bool | None = None
+    can_edit: bool | None = None
+    disabled_reason: str | None = None
+    draft_version: int | None = None
+    group_id: UUID | None = None
+    name: str | None = None
+    description: str | None = None
+    active: bool | None = None
+    updated_at: datetime | None = None
+    name_id: UUID | None = None
+    name_resource: QGetToolV4NameResource | None = None
+    show_name: bool | None = None
+    name_agent_id: UUID | None = None
+    name_required: bool | None = None
+    name_suggestions: list[UUID] | None = None
+    names: list[QGetToolV4NameResource] | None = None
+    description_id: UUID | None = None
+    description_resource: QGetToolV4DescriptionResource | None = None
+    show_description: bool | None = None
+    description_agent_id: UUID | None = None
+    description_required: bool | None = None
+    description_suggestions: list[UUID] | None = None
+    descriptions: list[QGetToolV4DescriptionResource] | None = None
+    domain_ids: list[UUID] | None = None
+    domain_resources: list[QGetToolV4Domain] | None = None
+    args_ids: list[UUID] | None = None
+    args_resources: list[QGetToolV4ArgsResource] | None = None
+    show_args: bool | None = None
+    args_agent_id: UUID | None = None
+    args_required: bool | None = None
+    args_suggestions: list[UUID] | None = None
+    args: list[QGetToolV4ArgsResource] | None = None
+    args_outputs_ids: list[UUID] | None = None
+    args_outputs_resources: list[QGetToolV4ArgsOutputsResource] | None = None
+    show_args_outputs: bool | None = None
+    args_outputs_agent_id: UUID | None = None
+    args_outputs_required: bool | None = None
+    args_outputs_suggestions: list[UUID] | None = None
+    args_outputs: list[QGetToolV4ArgsOutputsResource] | None = None
+    input_args_fields: list[QGetToolV4ArgsFieldDetail] | None = None
+    output_args_outputs: list[QGetToolV4ArgsOutputsDetail] | None = None
+
+class GetToolApiRequest(BaseModel):
+
+    tool_id: UUID | None = None
+    draft_id: UUID | None = None
+    mcp: bool | None = False
+    draft_group_id: UUID | None = None
+    draft_version: int | None = None
+
+class GetToolApiResponse(BaseModel):
+
+    tool_exists: bool | None = None
+    can_edit: bool | None = None
+    disabled_reason: str | None = None
+    draft_version: int | None = None
+    group_id: UUID | None = None
+    name: str | None = None
+    description: str | None = None
+    active: bool | None = None
+    updated_at: datetime | None = None
+    name_id: UUID | None = None
+    name_resource: QGetToolV4NameResource | None = None
+    show_name: bool | None = None
+    name_agent_id: UUID | None = None
+    name_required: bool | None = None
+    name_suggestions: list[UUID] | None = None
+    names: list[QGetToolV4NameResource] | None = None
+    description_id: UUID | None = None
+    description_resource: QGetToolV4DescriptionResource | None = None
+    show_description: bool | None = None
+    description_agent_id: UUID | None = None
+    description_required: bool | None = None
+    description_suggestions: list[UUID] | None = None
+    descriptions: list[QGetToolV4DescriptionResource] | None = None
+    domain_ids: list[UUID] | None = None
+    domain_resources: list[QGetToolV4Domain] | None = None
+    args_ids: list[UUID] | None = None
+    args_resources: list[QGetToolV4ArgsResource] | None = None
+    show_args: bool | None = None
+    args_agent_id: UUID | None = None
+    args_required: bool | None = None
+    args_suggestions: list[UUID] | None = None
+    args: list[QGetToolV4ArgsResource] | None = None
+    args_outputs_ids: list[UUID] | None = None
+    args_outputs_resources: list[QGetToolV4ArgsOutputsResource] | None = None
+    show_args_outputs: bool | None = None
+    args_outputs_agent_id: UUID | None = None
+    args_outputs_required: bool | None = None
+    args_outputs_suggestions: list[UUID] | None = None
+    args_outputs: list[QGetToolV4ArgsOutputsResource] | None = None
+    input_args_fields: list[QGetToolV4ArgsFieldDetail] | None = None
+    output_args_outputs: list[QGetToolV4ArgsOutputsDetail] | None = None
+
+
+
 # Generated from: get_tool_docs
 
 class GetToolDocsSqlParams(BaseModel):
@@ -22935,6 +24154,62 @@ class GetGroupListViewApiResponse(BaseModel):
 
 
 
+# Generated from: get_health_list_view
+
+class GetHealthListViewSqlParams(BaseModel):
+
+    service_filter: str | None = None
+    date_from: datetime
+    date_to: datetime
+    sort_order_field: str | None = None
+    page_limit_val: int | None = 1000
+    page_offset_val: int | None = 0
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.service_filter,
+            self.date_from,
+            self.date_to,
+            self.sort_order_field,
+            self.page_limit_val,
+            self.page_offset_val,
+        )
+
+class QGetHealthListViewV4Item(BaseModel):
+
+    date_hour: datetime | None
+    service: str | None
+    check_count: int | None
+    ok_count: int | None
+    fail_count: int | None
+    uptime_percent: float | None
+    avg_latency_ms: float | None
+    min_latency_ms: float | None
+    max_latency_ms: float | None
+    latest_ok: bool | None
+    latest_error: str | None
+
+class GetHealthListViewSqlRow(BaseModel):
+
+    items: list[QGetHealthListViewV4Item] | None = None
+    total_count: int | None = None
+
+class GetHealthListViewApiRequest(BaseModel):
+
+    service_filter: str | None = None
+    date_from: datetime
+    date_to: datetime
+    sort_order_field: str | None = None
+    page_limit_val: int | None = 1000
+    page_offset_val: int | None = 0
+
+class GetHealthListViewApiResponse(BaseModel):
+
+    items: list[QGetHealthListViewV4Item] | None = None
+    total_count: int | None = None
+
+
+
 # Generated from: get_login_list_view
 
 class GetLoginListViewSqlParams(BaseModel):
@@ -23032,6 +24307,61 @@ class GetMessageListViewApiRequest(BaseModel):
 class GetMessageListViewApiResponse(BaseModel):
 
     items: list[QGetMessageListViewV4Item] | None = None
+    total_count: int | None = None
+
+
+
+# Generated from: get_metric_list_view
+
+class GetMetricListViewSqlParams(BaseModel):
+
+    date_from: datetime
+    date_to: datetime
+    sort_order_field: str | None = None
+    page_limit_val: int | None = 1000
+    page_offset_val: int | None = 0
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.date_from,
+            self.date_to,
+            self.sort_order_field,
+            self.page_limit_val,
+            self.page_offset_val,
+        )
+
+class QGetMetricListViewV4Item(BaseModel):
+
+    date_hour: datetime | None
+    sample_count: int | None
+    avg_cpu_percent: float | None
+    min_cpu_percent: float | None
+    max_cpu_percent: float | None
+    avg_latency_ms: float | None
+    min_latency_ms: float | None
+    max_latency_ms: float | None
+    avg_memory_bytes: int | None
+    min_memory_bytes: int | None
+    max_memory_bytes: int | None
+    max_requests_total: int | None
+    max_errors_total: int | None
+
+class GetMetricListViewSqlRow(BaseModel):
+
+    items: list[QGetMetricListViewV4Item] | None = None
+    total_count: int | None = None
+
+class GetMetricListViewApiRequest(BaseModel):
+
+    date_from: datetime
+    date_to: datetime
+    sort_order_field: str | None = None
+    page_limit_val: int | None = 1000
+    page_offset_val: int | None = 0
+
+class GetMetricListViewApiResponse(BaseModel):
+
+    items: list[QGetMetricListViewV4Item] | None = None
     total_count: int | None = None
 
 
@@ -23546,6 +24876,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetAuthAccessApiRequest",
         "GetAuthAccessApiResponse",
     ),
+    "app/sql/v4/queries/auth/get_auth_complete.sql": (
+        "GetAuthSqlParams",
+        "GetAuthSqlRow",
+        "GetAuthApiRequest",
+        "GetAuthApiResponse",
+    ),
     "app/sql/v4/queries/auth/get_auth_docs_complete.sql": (
         "GetAuthDocsSqlParams",
         "GetAuthDocsSqlRow",
@@ -23953,6 +25289,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetFieldAccessSqlRow",
         "GetFieldAccessApiRequest",
         "GetFieldAccessApiResponse",
+    ),
+    "app/sql/v4/queries/fields/get_field_complete.sql": (
+        "GetFieldSqlParams",
+        "GetFieldSqlRow",
+        "GetFieldApiRequest",
+        "GetFieldApiResponse",
     ),
     "app/sql/v4/queries/fields/get_field_docs_complete.sql": (
         "GetFieldDocsSqlParams",
@@ -24524,6 +25866,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetParameterAccessApiRequest",
         "GetParameterAccessApiResponse",
     ),
+    "app/sql/v4/queries/parameters/get_parameter_complete.sql": (
+        "GetParameterSqlParams",
+        "GetParameterSqlRow",
+        "GetParameterApiRequest",
+        "GetParameterApiResponse",
+    ),
     "app/sql/v4/queries/parameters/get_parameter_docs_complete.sql": (
         "GetParameterDocsSqlParams",
         "GetParameterDocsSqlRow",
@@ -24727,6 +26075,18 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "DuplicateProfileSqlRow",
         "DuplicateProfileApiRequest",
         "DuplicateProfileApiResponse",
+    ),
+    "app/sql/v4/queries/profile/get_profile_access_complete.sql": (
+        "GetProfileAccessSqlParams",
+        "GetProfileAccessSqlRow",
+        "GetProfileAccessApiRequest",
+        "GetProfileAccessApiResponse",
+    ),
+    "app/sql/v4/queries/profile/get_profile_complete.sql": (
+        "GetProfileSqlParams",
+        "GetProfileSqlRow",
+        "GetProfileApiRequest",
+        "GetProfileApiResponse",
     ),
     "app/sql/v4/queries/profile/get_profile_docs_complete.sql": (
         "GetProfileDocsSqlParams",
@@ -26102,6 +27462,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetRubricAccessApiRequest",
         "GetRubricAccessApiResponse",
     ),
+    "app/sql/v4/queries/rubrics/get_rubric_complete.sql": (
+        "GetRubricSqlParams",
+        "GetRubricSqlRow",
+        "GetRubricApiRequest",
+        "GetRubricApiResponse",
+    ),
     "app/sql/v4/queries/rubrics/get_rubric_docs_complete.sql": (
         "GetRubricDocsSqlParams",
         "GetRubricDocsSqlRow",
@@ -26438,6 +27804,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetToolAccessApiRequest",
         "GetToolAccessApiResponse",
     ),
+    "app/sql/v4/queries/tools/get_tool_complete.sql": (
+        "GetToolSqlParams",
+        "GetToolSqlRow",
+        "GetToolApiRequest",
+        "GetToolApiResponse",
+    ),
     "app/sql/v4/queries/tools/get_tool_docs_complete.sql": (
         "GetToolDocsSqlParams",
         "GetToolDocsSqlRow",
@@ -26726,6 +28098,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetGroupListViewApiRequest",
         "GetGroupListViewApiResponse",
     ),
+    "app/sql/v4/queries/views/health/list/get_health_list_view_complete.sql": (
+        "GetHealthListViewSqlParams",
+        "GetHealthListViewSqlRow",
+        "GetHealthListViewApiRequest",
+        "GetHealthListViewApiResponse",
+    ),
     "app/sql/v4/queries/views/login/list/get_login_list_view_complete.sql": (
         "GetLoginListViewSqlParams",
         "GetLoginListViewSqlRow",
@@ -26737,6 +28115,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetMessageListViewSqlRow",
         "GetMessageListViewApiRequest",
         "GetMessageListViewApiResponse",
+    ),
+    "app/sql/v4/queries/views/metric/list/get_metric_list_view_complete.sql": (
+        "GetMetricListViewSqlParams",
+        "GetMetricListViewSqlRow",
+        "GetMetricListViewApiRequest",
+        "GetMetricListViewApiResponse",
     ),
     "app/sql/v4/queries/views/problem/list/get_problem_list_view_complete.sql": (
         "GetProblemListViewSqlParams",
@@ -27003,6 +28387,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/queries/auth/get_auth_access_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/auth/get_auth_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -27343,6 +28732,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/queries/fields/get_field_access_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/fields/get_field_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -27822,6 +29216,11 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/parameters/get_parameter_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v4/queries/parameters/get_parameter_docs_complete.sql"]
     ) -> SqlString: ...
 
@@ -27988,6 +29387,16 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/queries/profile/duplicate_profile_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/profile/get_profile_access_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/profile/get_profile_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -29137,6 +30546,11 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/rubrics/get_rubric_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v4/queries/rubrics/get_rubric_docs_complete.sql"]
     ) -> SqlString: ...
 
@@ -29417,6 +30831,11 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/tools/get_tool_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v4/queries/tools/get_tool_docs_complete.sql"]
     ) -> SqlString: ...
 
@@ -29657,12 +31076,22 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/views/health/list/get_health_list_view_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v4/queries/views/login/list/get_login_list_view_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/queries/views/message/list/get_message_list_view_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/views/metric/list/get_metric_list_view_complete.sql"]
     ) -> SqlString: ...
 
     @overload

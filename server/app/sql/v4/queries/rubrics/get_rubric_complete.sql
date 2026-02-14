@@ -483,12 +483,6 @@ name_suggestions_data AS (
                        (
                            rn.generated = true
                            AND n.generated = true
-                           AND EXISTS (
-                               SELECT 1 FROM view_calls_entry c
-                               JOIN view_runs_entry r ON r.id = c.run_id
-                               WHERE c.id IN (SELECT call_id FROM names_calls_connection WHERE names_id = n.id)
-                                 AND r.group_id = dgd.group_id
-                           )
                        )
                    )
                  GROUP BY rn.name_id
@@ -526,12 +520,6 @@ description_suggestions_data AS (
                        (
                            rd.generated = true
                            AND d.generated = true
-                           AND EXISTS (
-                               SELECT 1 FROM view_calls_entry c
-                               JOIN view_runs_entry r ON r.id = c.run_id
-                               WHERE c.id IN (SELECT call_id FROM descriptions_calls_connection WHERE descriptions_id = d.id)
-                                 AND r.group_id = dgd.group_id
-                           )
                        )
                    )
                  GROUP BY rd.description_id
@@ -564,12 +552,6 @@ department_suggestions_data AS (
                        (
                            rd.generated = true
                            AND d.generated = true
-                           AND EXISTS (
-                               SELECT 1 FROM view_calls_entry c
-                               JOIN view_runs_entry r ON r.id = c.run_id
-                               WHERE c.id IN (SELECT call_id FROM descriptions_calls_connection WHERE descriptions_id = d.id)
-                                 AND r.group_id = dgd.group_id
-                           )
                        )
                    )
                  GROUP BY rd.department_id
@@ -601,12 +583,6 @@ points_suggestions_data AS (
                        (
                            rp.generated = true
                            AND p.generated = true
-                           AND EXISTS (
-                               SELECT 1 FROM view_calls_entry c
-                               JOIN view_runs_entry r ON r.id = c.run_id
-                               WHERE c.id IN (SELECT call_id FROM prompts_calls_connection WHERE prompts_id = p.id)
-                                 AND r.group_id = dgd.group_id
-                           )
                        )
                    )
                  GROUP BY rp.point_id
@@ -643,12 +619,6 @@ standard_group_suggestions_data AS (
                        (
                            rsg.generated = true
                            AND sg.generated = true
-                           AND EXISTS (
-                               SELECT 1 FROM view_calls_entry c
-                               JOIN view_runs_entry r ON r.id = c.run_id
-                               WHERE c.id IN (SELECT call_id FROM standard_groups_calls_connection WHERE standard_groups_id = sg.id)
-                                 AND r.group_id = dgd.group_id
-                           )
                        )
                    )
                  GROUP BY rsg.standard_group_id
@@ -682,12 +652,6 @@ standard_suggestions_data AS (
                        (
                            rs.generated = true
                            AND s.generated = true
-                           AND EXISTS (
-                               SELECT 1 FROM view_calls_entry c
-                               JOIN view_runs_entry r ON r.id = c.run_id
-                               WHERE c.id IN (SELECT call_id FROM slugs_calls_connection WHERE slugs_id = s.id)
-                                 AND r.group_id = dgd.group_id
-                           )
                        )
                    )
                  GROUP BY rs.standard_id

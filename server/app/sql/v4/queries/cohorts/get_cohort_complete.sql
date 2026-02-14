@@ -331,12 +331,6 @@ name_suggestions_data AS (
                        (
                            cn.generated = true
                            AND n.generated = true
-                           AND EXISTS (
-                               SELECT 1 FROM view_calls_entry c
-                               JOIN view_runs_entry r ON r.id = c.run_id
-                               WHERE c.id IN (SELECT call_id FROM names_calls_connection WHERE names_id = n.id)
-                                 AND r.group_id = dgd.group_id
-                           )
                        )
                    )
                  GROUP BY cn.name_id
@@ -368,12 +362,6 @@ description_suggestions_data AS (
                        (
                            cd.generated = true
                            AND d.generated = true
-                           AND EXISTS (
-                               SELECT 1 FROM view_calls_entry c
-                               JOIN view_runs_entry r ON r.id = c.run_id
-                               WHERE c.id IN (SELECT call_id FROM descriptions_calls_connection WHERE descriptions_id = d.id)
-                                 AND r.group_id = dgd.group_id
-                           )
                        )
                    )
                  GROUP BY cd.description_id
@@ -445,12 +433,6 @@ descriptions_data AS (
                 OR
                 (
                     d.generated = true
-                    AND EXISTS (
-                        SELECT 1 FROM view_calls_entry c
-                        JOIN view_runs_entry r ON r.id = c.run_id
-                        WHERE c.id IN (SELECT call_id FROM descriptions_calls_connection WHERE descriptions_id = d.id)
-                          AND r.group_id = dgd.group_id
-                    )
                 )
             )
             AND (p.descriptions_search IS NULL OR p.descriptions_search = '' OR
@@ -510,12 +492,6 @@ department_suggestions_data AS (
                        (
                            cd.generated = true
                            AND d.generated = true
-                           AND EXISTS (
-                               SELECT 1 FROM view_calls_entry c
-                               JOIN view_runs_entry r ON r.id = c.run_id
-                               WHERE c.id IN (SELECT call_id FROM descriptions_calls_connection WHERE descriptions_id = d.id)
-                                 AND r.group_id = dgd.group_id
-                           )
                        )
                    )
                  GROUP BY cd.department_id
@@ -663,15 +639,6 @@ simulation_suggestions_data AS (
                        -- Option 2: Linked to same group with generated=true
                        (
                            cs.generated = true
-                           AND EXISTS (
-                               SELECT 1 FROM simulations_resource sr
-                               JOIN simulation_simulations_junction ssj ON ssj.simulations_id = sr.id
-                               JOIN simulations_calls_connection srcc ON srcc.simulations_id = sr.id JOIN view_calls_entry c ON c.id = srcc.call_id
-                               JOIN view_runs_entry r ON r.id = c.run_id
-                               WHERE ssj.simulation_id = cs.simulation_id
-                                 AND sr.generated = true
-                                 AND r.group_id = dgd.group_id
-                           )
                        )
                    )
                  GROUP BY cs.simulation_id

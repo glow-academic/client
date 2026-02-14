@@ -1,4 +1,4 @@
--- Insert or update app view_metrics_entry snapshot
+-- Insert or update app metrics_entry snapshot
 -- Converted to function with composite types
 -- Uses safe drop/recreate pattern: drop function first, then recreate
 -- Drop function if exists (handle signature changes)

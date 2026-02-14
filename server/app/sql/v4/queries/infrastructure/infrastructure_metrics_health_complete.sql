@@ -1,4 +1,4 @@
--- Insert or update service view_health_entry check
+-- Insert or update service health_entry check
 -- Converted to function with composite types
 -- Uses safe drop/recreate pattern: drop function first, then recreate
 -- Drop function if exists (handle signature changes)

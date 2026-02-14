@@ -49,7 +49,7 @@ SELECT
     TRUNC(MAX(h.latency_ms)::numeric, 2) AS max_latency_ms,
     (ARRAY_AGG(h.ok ORDER BY h.ts DESC))[1] AS latest_ok,
     (ARRAY_AGG(h.error ORDER BY h.ts DESC))[1] AS latest_error
-FROM view_health_entry h
+FROM health_entry h
 WHERE h.service IN ('websocket', 'redis', 'tus', 'database', 'keycloak')
 GROUP BY date_trunc('hour', h.ts), h.service
 WITH NO DATA;

@@ -260,12 +260,6 @@ name_suggestions_data AS (
                        COALESCE(n.generated, false) = false
                        OR (
                            COALESCE(n.generated, false) = true
-                           AND EXISTS (
-                               SELECT 1 FROM view_calls_entry c
-                               JOIN view_runs_entry r ON r.id = c.run_id
-                               WHERE c.id IN (SELECT call_id FROM names_calls_connection WHERE names_id = n.id)
-                                 AND r.group_id = dgd.group_id
-                           )
                        )
                    )
                  GROUP BY pn.name_id
@@ -313,12 +307,6 @@ description_suggestions_data AS (
                        COALESCE(d.generated, false) = false
                        OR (
                            COALESCE(d.generated, false) = true
-                           AND EXISTS (
-                               SELECT 1 FROM view_calls_entry c
-                               JOIN view_runs_entry r ON r.id = c.run_id
-                               WHERE c.id IN (SELECT call_id FROM descriptions_calls_connection WHERE descriptions_id = d.id)
-                                 AND r.group_id = dgd.group_id
-                           )
                        )
                    )
                  GROUP BY pd.description_id
@@ -658,12 +646,6 @@ department_suggestions_data AS (
                        (
                            pd.generated = true
                            AND d.generated = true
-                           AND EXISTS (
-                               SELECT 1 FROM view_calls_entry c
-                               JOIN view_runs_entry r ON r.id = c.run_id
-                               WHERE c.id IN (SELECT call_id FROM descriptions_calls_connection WHERE descriptions_id = d.id)
-                                 AND r.group_id = dgd.group_id
-                           )
                        )
                    )
                  GROUP BY pd.department_id
@@ -694,12 +676,6 @@ field_suggestions_data AS (
                        (
                            pf.generated = true
                            AND f2.generated = true
-                           AND EXISTS (
-                               SELECT 1 FROM view_calls_entry c
-                               JOIN view_runs_entry r ON r.id = c.run_id
-                               WHERE c.id IN (SELECT call_id FROM fields_calls_connection WHERE fields_id = f2.id)
-                                 AND r.group_id = dgd.group_id
-                           )
                        )
                    )
                  GROUP BY pf.field_id

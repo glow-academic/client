@@ -51,7 +51,7 @@ SELECT
     MAX(m.memory_bytes)::bigint AS max_memory_bytes,
     MAX(m.requests_total)::int AS max_requests_total,
     MAX(m.errors_total)::int AS max_errors_total
-FROM view_metrics_entry m
+FROM metrics_entry m
 GROUP BY date_trunc('hour', m.ts)
 WITH NO DATA;
 
