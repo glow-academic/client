@@ -179,15 +179,13 @@ async def _persona_generate_impl(
         # Fallback: if no agent found for any resource type, pick first available
         if not agent_groups:
             # Try to find any agent_id from all available mappings
-            for rt, aid in resource_agent_ids.items():
+            for _rt, aid in resource_agent_ids.items():
                 if aid is not None:
                     agent_groups[aid] = resource_types
                     break
 
         # Use first agent_id for validation (all share same config chain)
-        agent_id: uuid.UUID | None = (
-            next(iter(agent_groups)) if agent_groups else None
-        )
+        agent_id: uuid.UUID | None = next(iter(agent_groups)) if agent_groups else None
 
         if not agent_id:
             await emit_to_internal(
@@ -423,7 +421,7 @@ async def _persona_generate_impl(
 
             run_id = prepare_row.run_id
             group_id = prepare_row.group_id
-            trace_id = prepare_row.trace_id
+            _trace_id = prepare_row.trace_id
             config_id = prepare_row.config_id
 
             jinja_context = persona_jinja_context
@@ -519,7 +517,7 @@ async def _persona_generate_impl(
             # Step 10: Dispatch to generate_artifact handler(s)
             # For multi-agent: each agent group gets its own emit with agent-specific tools
             # For single-agent (most common): one emit with all resource types
-            for agent_group_id, agent_resource_types in agent_groups.items():
+            for _agent_group_id, agent_resource_types in agent_groups.items():
                 # For now, all agent groups share the same tools/messages/config
                 # since tools are already filtered by resource_types in SQL
                 await internal_sio.emit(

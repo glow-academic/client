@@ -6,7 +6,7 @@ import asyncio
 import re
 import time
 from datetime import UTC, datetime
-from typing import Annotated
+from typing import Annotated, Any
 from uuid import UUID
 
 import asyncpg
@@ -86,7 +86,7 @@ async def get_auth_attempt(
         if not pool:
             return GetAuthAttemptApiResponse()
 
-        async def fetch_attempt() -> list:
+        async def fetch_attempt() -> Any:
             async with pool.acquire() as c:
                 return await get_attempt_list_internal(
                     conn=c,
@@ -106,10 +106,10 @@ async def get_auth_attempt(
             fetch_attempt(), fetch_chats()
         )
 
-        if not attempt_result:
+        if not attempt_result or not attempt_result.items:
             return GetAuthAttemptApiResponse()
 
-        attempt_item = attempt_result[0]
+        attempt_item = attempt_result.items[0]
 
         # 6. Ownership check
         is_own = (

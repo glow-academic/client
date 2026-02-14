@@ -9,7 +9,6 @@ from app.api.v4.artifacts.persona.types import GetPersonaApiRequest
 from app.socket.v4.artifacts.types import (
     GenerationCompleteEvent,
     GenerationErrorEvent,
-    PersonaGenerationStartedEvent,
 )
 
 # =============================================================================

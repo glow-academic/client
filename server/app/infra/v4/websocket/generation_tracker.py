@@ -93,9 +93,7 @@ async def record_agent_complete(
         is_complete = completed >= expected
         return (is_complete, existing_results)
     except Exception as e:
-        logger.error(
-            f"Redis error recording agent complete for run {run_id}: {e}"
-        )
+        logger.error(f"Redis error recording agent complete for run {run_id}: {e}")
         return (True, tool_results)
 
 

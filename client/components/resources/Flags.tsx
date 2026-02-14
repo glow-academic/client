@@ -84,6 +84,7 @@ export function Flags(props: FlagsProps) {
     label,
     disabled = false,
     showAiGenerate = false,
+    group_id,
     onChange,
     onGenerate,
     isGenerating = false,
@@ -119,14 +120,14 @@ export function Flags(props: FlagsProps) {
   useEffect(() => {
     if (!aiSocket || !aiIsConnected) return;
     const handleResourceComplete = (data: Record<string, unknown>) => {
-      if (data.resource_type !== "flags") return;
-      if (group_id && data.group_id !== group_id) return;
-      const resourceData = data.resource_data as
+      if (data["resource_type"] !== "flags") return;
+      if (group_id && data["group_id"] !== group_id) return;
+      const resourceData = data["resource_data"] as
         | Record<string, unknown>
         | undefined;
       if (resourceData) {
         setInternalAiFlagResources([
-          { id: resourceData.id as string, name: resourceData.name as string },
+          { id: resourceData["id"] as string, name: resourceData["name"] as string },
         ]);
       }
       onGenerationComplete?.();

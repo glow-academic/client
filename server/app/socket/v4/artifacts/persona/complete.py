@@ -144,9 +144,7 @@ async def _handle_persona_run_complete(sid: str, data: dict[str, Any]) -> None:
 
     # Multi-agent coordination via generation tracker
     tool_results = data.get("tool_results") or []
-    is_complete, all_tool_results = await record_agent_complete(
-        run_id, tool_results
-    )
+    is_complete, all_tool_results = await record_agent_complete(run_id, tool_results)
 
     if is_complete:
         # All agents finished - emit simplified persona_generation_complete

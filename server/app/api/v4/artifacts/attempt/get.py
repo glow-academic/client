@@ -407,7 +407,7 @@ async def get_attempt_internal(
             fetch_messages(attempt_id),
         )
 
-        if not attempt_result:
+        if not attempt_result or not attempt_result.items:
             return AttemptInternalData(
                 actor_name=None,
                 attempt_exists=False,
@@ -422,7 +422,7 @@ async def get_attempt_internal(
                 group_id=None,
             )
 
-        attempt_item = attempt_result[0] if attempt_result else None
+        attempt_item = attempt_result.items[0] if attempt_result.items else None
 
         if not attempt_item:
             return AttemptInternalData(
@@ -1186,14 +1186,16 @@ async def get_attempt_internal(
         continuation_options = None
         if is_lobby and not practice and attempt_item.profile_id:
             try:
-                prev_attempts = await get_attempt_list_internal(
+                prev_result = await get_attempt_list_internal(
                     conn,
                     profile_id_filter=attempt_item.profile_id,
                     simulation_id_filter=attempt_item.simulation_id,
                     practice_filter=False,
                 )
                 other_ids = [
-                    a.attempt_id for a in prev_attempts if a.attempt_id != attempt_id
+                    a.attempt_id
+                    for a in prev_result.items
+                    if a.attempt_id != attempt_id
                 ]
                 if other_ids:
                     async with pool.acquire() as c:

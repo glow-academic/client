@@ -127,10 +127,9 @@ export function Departments({
     if (!aiSocket || !aiIsConnected) return;
 
     const handleGenerationComplete = (data: Record<string, unknown>) => {
-      if (data.resource_type !== "departments") return;
-      if (data.group_id !== group_id) return;
-      const resourceData = data as { department_id?: string | null; name?: string | null };
-      setInternalAiDepartmentResources([{ department_id: resourceData.department_id, name: resourceData.name }]);
+      if (data["resource_type"] !== "departments") return;
+      if (data["group_id"] !== group_id) return;
+      setInternalAiDepartmentResources([{ department_id: data["department_id"] as string | null, name: data["name"] as string | null }]);
       onGenerationComplete?.();
     };
 

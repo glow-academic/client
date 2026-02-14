@@ -335,15 +335,12 @@ export function Examples({
   useEffect(() => {
     if (!aiSocket || !aiIsConnected || !group_id) return;
 
-    const handleGenerationComplete = (data: {
-      resource_type: string;
-      group_id: string;
-      id: string;
-      example: string;
-    }) => {
-      if (data.resource_type === "examples" && data.group_id === group_id) {
-        const resourceData = data;
-        setInternalAiExampleResources([{ id: resourceData.id, example: resourceData.example }]);
+    const handleGenerationComplete = (data: Record<string, unknown>) => {
+      if (data["resource_type"] === "examples" && data["group_id"] === group_id) {
+        const resourceData = data["resource_data"] as Record<string, unknown> | undefined;
+        if (resourceData) {
+          setInternalAiExampleResources([{ id: resourceData["id"] as string, example: resourceData["example"] as string }]);
+        }
         onGenerationComplete?.();
       }
     };

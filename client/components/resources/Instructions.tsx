@@ -406,7 +406,7 @@ export function Instructions({
       if (data.resource_type !== "instructions") return;
       if (data.group_id !== group_id) return;
       const { id, template } = data.resource_data ?? {};
-      setInternalAiResource({ id, template });
+      setInternalAiResource({ id: id ?? null, template: template ?? null });
       onGenerationComplete?.();
     };
 

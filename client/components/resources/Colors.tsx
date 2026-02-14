@@ -144,14 +144,14 @@ export function Colors({
   useEffect(() => {
     if (!aiSocket || !aiIsConnected) return;
     const handleResourceComplete = (data: Record<string, unknown>) => {
-      if (data.resource_type !== "colors") return;
-      if (group_id && data.group_id !== group_id) return;
-      const resourceData = data.resource_data as Record<string, unknown> | undefined;
+      if (data["resource_type"] !== "colors") return;
+      if (group_id && data["group_id"] !== group_id) return;
+      const resourceData = data["resource_data"] as Record<string, unknown> | undefined;
       if (resourceData) {
         setInternalAiResource({
-          id: resourceData.id as string | null,
-          name: resourceData.name as string | null,
-          hex_code: resourceData.hex_code as string | null,
+          id: resourceData["id"] as string | null,
+          name: resourceData["name"] as string | null,
+          hex_code: resourceData["hex_code"] as string | null,
         });
       }
       onGenerationComplete?.();

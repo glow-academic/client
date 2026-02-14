@@ -7,6 +7,7 @@
 
 "use client";
 
+import { useSocket } from "@/contexts/socket-context";
 import { SelectableGrid } from "@/components/common/forms/SelectableGrid";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -63,6 +64,7 @@ export interface ParametersProps {
   aiParameterResources?: Pick<ParameterResourceItem, "parameter_id" | "name">[] | null;
   onAccept?: () => void;
   onReject?: () => void;
+  onGenerationComplete?: () => void;
   /** When false, skip automatic resource creation (manual save mode) */
   isAutosaveEnabled?: boolean;
   /** Register a flush callback with parent for manual save - returns created ID */
@@ -96,6 +98,7 @@ export function Parameters({
   aiParameterResources,
   onAccept,
   onReject,
+  onGenerationComplete,
   isAutosaveEnabled = true,
   registerFlush,
 }: ParametersProps) {
@@ -131,32 +134,62 @@ export function Parameters({
     [parameter_suggestions]
   );
 
+  // Internal socket-based AI suggestion handling
+  const { socket: aiSocket, isConnected: aiIsConnected } = useSocket();
+  const [internalAiParameterResources, setInternalAiParameterResources] = useState<Pick<ParameterResourceItem, "parameter_id" | "name">[] | null>(null);
+
+  useEffect(() => {
+    if (!aiSocket || !aiIsConnected) return;
+    const handleResourceComplete = (data: Record<string, unknown>) => {
+      const resourceType = data["resource_type"] as string | undefined;
+      const dataGroupId = data["group_id"] as string | undefined;
+      if (resourceType !== "parameters" || dataGroupId !== group_id) return;
+
+      setInternalAiParameterResources([
+        {
+          parameter_id: data["parameter_id"] as string,
+          name: data["name"] as string,
+        },
+      ]);
+      onGenerationComplete?.();
+    };
+
+    aiSocket.on("resource_generation_complete", handleResourceComplete);
+    return () => {
+      aiSocket.off("resource_generation_complete", handleResourceComplete);
+    };
+  }, [aiSocket, aiIsConnected, group_id, onGenerationComplete]);
+
+  const effectiveAiParameterResources = internalAiParameterResources ?? aiParameterResources ?? null;
+
   // AI suggestion state
-  const showDiff = !!aiParameterResources?.length;
+  const showDiff = !!effectiveAiParameterResources?.length;
   const aiSuggestedIds = useMemo(
     () =>
       new Set(
-        aiParameterResources
+        effectiveAiParameterResources
           ?.map((p) => p.parameter_id)
           .filter(Boolean) as string[]
       ),
-    [aiParameterResources]
+    [effectiveAiParameterResources]
   );
 
   // Accept AI suggestion - add AI-suggested parameters to selection
   const handleAccept = useCallback(() => {
-    if (!aiParameterResources?.length) return;
-    const newIds = aiParameterResources
+    if (!effectiveAiParameterResources?.length) return;
+    const newIds = effectiveAiParameterResources
       .map((p) => p.parameter_id)
       .filter((id): id is string => !!id && !ids.includes(id));
     if (newIds.length > 0) {
       onChange([...ids, ...newIds]);
     }
+    setInternalAiParameterResources(null);
     onAccept?.();
-  }, [aiParameterResources, ids, onChange, onAccept]);
+  }, [effectiveAiParameterResources, ids, onChange, onAccept]);
 
   // Reject AI suggestion - just clear the pending state
   const handleReject = useCallback(() => {
+    setInternalAiParameterResources(null);
     onReject?.();
   }, [onReject]);
 

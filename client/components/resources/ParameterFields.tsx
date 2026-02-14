@@ -497,20 +497,15 @@ export function ParameterFields({
     if (!aiSocket || !aiIsConnected || !group_id) return;
 
     const handleGenerationComplete = (data: Record<string, unknown>) => {
-      const resourceType = data.resource_type as string | undefined;
-      const dataGroupId = data.group_id as string | undefined;
+      const resourceType = data["resource_type"] as string | undefined;
+      const dataGroupId = data["group_id"] as string | undefined;
       if (resourceType !== "parameter_fields" || dataGroupId !== group_id) return;
 
-      const resourceData = data as {
-        id?: string;
-        field_id?: string;
-        parameter_id?: string;
-      };
       setInternalAiParameterFieldResources([
         {
-          id: resourceData.id as string,
-          field_id: resourceData.field_id as string,
-          parameter_id: resourceData.parameter_id as string,
+          id: data["id"] as string,
+          field_id: data["field_id"] as string,
+          parameter_id: data["parameter_id"] as string,
         },
       ]);
       onGenerationComplete?.();

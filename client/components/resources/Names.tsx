@@ -119,15 +119,15 @@ export function Names({
   useEffect(() => {
     if (!aiSocket || !aiIsConnected) return;
     const handleResourceComplete = (data: Record<string, unknown>) => {
-      if (data.resource_type !== "names") return;
-      if (group_id && data.group_id !== group_id) return;
-      const resourceData = data.resource_data as
+      if (data["resource_type"] !== "names") return;
+      if (group_id && data["group_id"] !== group_id) return;
+      const resourceData = data["resource_data"] as
         | Record<string, unknown>
         | undefined;
       if (resourceData) {
         setInternalAiResource({
-          id: resourceData.id as string | null,
-          name: resourceData.name as string | null,
+          id: resourceData["id"] as string | null,
+          name: resourceData["name"] as string | null,
         });
       }
       onGenerationComplete?.();

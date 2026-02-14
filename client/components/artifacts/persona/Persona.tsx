@@ -39,7 +39,6 @@ import { useProfile } from "@/contexts/profile-context";
 import { useSocket } from "@/contexts/socket-context";
 import { useDrafts } from "@/contexts/draft-context";
 import { StepCardAiButton } from "@/components/common/forms/StepCardAiButton";
-import { useAiGeneration } from "@/hooks/use-ai-generation";
 import { useConditionalParameterToggle } from "@/hooks/use-conditional-parameter-toggle";
 import { useDraftLifecycle } from "@/hooks/use-draft-lifecycle";
 import { useFlushRegistry } from "@/hooks/use-flush-registry";
@@ -47,19 +46,12 @@ import { useGenerationModal } from "@/hooks/use-generation-modal";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import {
   type ResourceConfig,
-  type ResourceSection,
   buildResourceActions,
   checkHasResourceIds,
   computeEffectiveFormState,
 } from "@/lib/resources/action-builders";
 import type { ResourceType } from "@/lib/resources/types";
-import type { ServerToClientEvents } from "@/lib/ws/types";
 import { parseAsBoolean, parseAsString, type Parser } from "nuqs";
-
-// Socket event types (auto-generated from server)
-type PersonaGenerationCompletePayload = Parameters<
-  ServerToClientEvents["persona_generation_complete"]
->[0];
 
 // Types defined inline using InputOf/OutputOf
 type SavePersonaIn = InputOf<"/api/v4/artifacts/personas/save", "post">;
@@ -110,20 +102,6 @@ type FlushResult = {
   instructions_id?: string | null;
   example_ids?: string[];
   parameter_field_ids?: string[];
-};
-
-// AI form data shape for persona generation
-type PersonaAiFormData = {
-  name_resource?: PersonaGenerationCompletePayload["name_resource"];
-  description_resource?: PersonaGenerationCompletePayload["description_resource"];
-  color_resource?: PersonaGenerationCompletePayload["color_resource"];
-  icon_resource?: PersonaGenerationCompletePayload["icon_resource"];
-  instructions_resource?: PersonaGenerationCompletePayload["instructions_resource"];
-  flag_resource?: PersonaGenerationCompletePayload["flag_resource"];
-  department_resources?: PersonaGenerationCompletePayload["department_resources"];
-  parameter_field_resources?: PersonaGenerationCompletePayload["parameter_field_resources"];
-  example_resources?: PersonaGenerationCompletePayload["example_resources"];
-  parameter_resources?: PersonaGenerationCompletePayload["parameter_resources"];
 };
 
 type PersonaFormState = {
@@ -256,71 +234,81 @@ function PersonaComponent({
   const { flushRegistryRef, registerFlushCallbacks, flushAllResources } =
     useFlushRegistry<FlushResult>(FLUSH_KEYS);
 
-  // --- AI Generation ---
-  const onAiComplete = useCallback((data: Record<string, unknown>) => {
-    const aiUpdates: Partial<PersonaAiFormData> = {};
-    if (data["name_resource"])
-      aiUpdates.name_resource = data[
-        "name_resource"
-      ] as PersonaAiFormData["name_resource"];
-    if (data["description_resource"])
-      aiUpdates.description_resource = data[
-        "description_resource"
-      ] as PersonaAiFormData["description_resource"];
-    if (data["color_resource"])
-      aiUpdates.color_resource = data[
-        "color_resource"
-      ] as PersonaAiFormData["color_resource"];
-    if (data["icon_resource"])
-      aiUpdates.icon_resource = data[
-        "icon_resource"
-      ] as PersonaAiFormData["icon_resource"];
-    if (data["instructions_resource"])
-      aiUpdates.instructions_resource = data[
-        "instructions_resource"
-      ] as PersonaAiFormData["instructions_resource"];
-    if (data["flag_resource"])
-      aiUpdates.flag_resource = data[
-        "flag_resource"
-      ] as PersonaAiFormData["flag_resource"];
-    if (data["department_resources"])
-      aiUpdates.department_resources = data[
-        "department_resources"
-      ] as PersonaAiFormData["department_resources"];
-    if (data["parameter_field_resources"])
-      aiUpdates.parameter_field_resources = data[
-        "parameter_field_resources"
-      ] as PersonaAiFormData["parameter_field_resources"];
-    if (data["example_resources"])
-      aiUpdates.example_resources = data[
-        "example_resources"
-      ] as PersonaAiFormData["example_resources"];
-    if (data["parameter_resources"])
-      aiUpdates.parameter_resources = data[
-        "parameter_resources"
-      ] as PersonaAiFormData["parameter_resources"];
+  // --- AI Generation State ---
+  // Local generatingResources state (previously inside useAiGeneration)
+  const [generatingResources, setGeneratingResources] = useState<Set<ResourceType>>(
+    new Set(),
+  );
 
-    // Only name_resource auto-accepts (Names.tsx already implements diff workflow)
-    const formStateUpdates: Record<string, unknown> = {};
-    const nameRes = data["name_resource"] as { id?: string } | undefined;
-    if (nameRes?.id) formStateUpdates["name_id"] = nameRes.id;
-
-    return { aiUpdates, formStateUpdates };
-  }, []);
+  const isGenerating = useCallback(
+    (resourceType: string) => generatingResources.has(resourceType as ResourceType),
+    [generatingResources],
+  );
 
   // Top-level group_id from server response
   const groupId = personaData?.group_id;
 
-  const { setGeneratingResources, isGenerating, aiFormData, clearAiResource } =
-    useAiGeneration<ResourceType, PersonaAiFormData>({
-      socket,
-      isConnected,
-      artifactType: "persona",
-      groupId,
-      eventPrefix: "persona_generation",
-      validResourceTypes: VALID_RESOURCE_TYPES,
-      onComplete: onAiComplete,
-    });
+  // Socket listeners for coarse-grained persona events
+  useEffect(() => {
+    if (!socket || !isConnected) return;
+
+    const handleStarted = (data: Record<string, unknown>) => {
+      if (data["group_id"] !== groupId) return;
+      const resourceTypes = data["resource_types"] as string[] | undefined;
+      if (resourceTypes) {
+        setGeneratingResources((prev) => {
+          const next = new Set(prev);
+          resourceTypes.forEach((rt) => next.add(rt as ResourceType));
+          return next;
+        });
+      }
+    };
+
+    const handleError = (data: Record<string, unknown>) => {
+      if (data["group_id"] && data["group_id"] !== groupId) return;
+      const resourceTypes =
+        (data["resource_types"] as string[]) ||
+        (data["resource_type"] ? [data["resource_type"] as string] : []);
+      setGeneratingResources((prev) => {
+        const next = new Set(prev);
+        resourceTypes.forEach((rt) => {
+          if (VALID_RESOURCE_TYPES.includes(rt as ResourceType)) {
+            next.delete(rt as ResourceType);
+          }
+        });
+        return next;
+      });
+      toast.error((data["message"] as string) || "Generation failed");
+    };
+
+    const handleComplete = (data: Record<string, unknown>) => {
+      if (data["group_id"] && data["group_id"] !== groupId) return;
+      // All agents finished - clear all generating resources
+      setGeneratingResources(new Set());
+    };
+
+    socket.on("persona_generation_started", handleStarted);
+    socket.on("persona_generation_error", handleError);
+    socket.on("persona_generation_complete", handleComplete);
+
+    return () => {
+      socket.off("persona_generation_started", handleStarted);
+      socket.off("persona_generation_error", handleError);
+      socket.off("persona_generation_complete", handleComplete);
+    };
+  }, [socket, isConnected, groupId]);
+
+  // Callback for resource components to clear their generating state
+  const makeOnGenerationComplete = useCallback(
+    (resourceType: ResourceType) => () => {
+      setGeneratingResources((prev) => {
+        const next = new Set(prev);
+        next.delete(resourceType);
+        return next;
+      });
+    },
+    [],
+  );
 
   // nuqs parsers for URL-backed state (will be passed to GenericForm)
   const personaSearchParamsClient = useMemo(
@@ -382,7 +370,7 @@ function PersonaComponent({
   ]);
 
   const canRegenerate = useCallback(
-    (resourceType: ResourceType): boolean => {
+    (resourceType: string): boolean => {
       if (!stablePersonaDataFields) return false;
       switch (resourceType) {
         case "names":
@@ -499,17 +487,6 @@ function PersonaComponent({
   React.useEffect(() => {
     formStateRef.current = formState as unknown as Record<string, unknown>;
   }, [formState]);
-
-  // Auto-accept name from AI generation
-  const aiNameResource = aiFormData.name_resource;
-  React.useEffect(() => {
-    if (aiNameResource?.id) {
-      setFormState((prev) => ({
-        ...prev,
-        name_id: aiNameResource.id!,
-      }));
-    }
-  }, [aiNameResource]);
 
   // Memoize stringified array dependencies
   const departmentIdsStr = React.useMemo(() => {
@@ -1169,9 +1146,7 @@ function PersonaComponent({
                   }
                   isAutosaveEnabled={isAutosaveEnabled}
                   registerFlush={registerFlushCallbacks["names"]}
-                  aiResource={aiFormData.name_resource}
-                  onAccept={() => clearAiResource("name_resource")}
-                  onReject={() => clearAiResource("name_resource")}
+                  onGenerationComplete={makeOnGenerationComplete("names")}
                   create_tool_id={s?.names?.create_tool_id ?? null}
                 />
               }
@@ -1227,9 +1202,7 @@ function PersonaComponent({
                   createDescriptionsAction={createDescriptionsAction}
                   isAutosaveEnabled={isAutosaveEnabled}
                   registerFlush={registerFlushCallbacks["descriptions"]}
-                  aiResource={aiFormData.description_resource}
-                  onAccept={() => clearAiResource("description_resource")}
-                  onReject={() => clearAiResource("description_resource")}
+                  onGenerationComplete={makeOnGenerationComplete("descriptions")}
                   create_tool_id={s?.descriptions?.create_tool_id ?? null}
                 />
                 <Departments
@@ -1247,11 +1220,7 @@ function PersonaComponent({
                   required={s?.departments?.required ?? false}
                   group_id={s?.group_id ?? null}
                   showAiGenerate={s?.departments?.show_ai_generate ?? false}
-                  aiDepartmentResources={
-                    aiFormData.department_resources ?? null
-                  }
-                  onAccept={() => clearAiResource("department_resources")}
-                  onReject={() => clearAiResource("department_resources")}
+                  onGenerationComplete={makeOnGenerationComplete("departments")}
                 />
                 <Flags
                   flags={s?.flags?.resources ?? []}
@@ -1270,11 +1239,7 @@ function PersonaComponent({
                   }
                   onGenerate={generateHandlers["flags"]}
                   isGenerating={isGenerating("flags")}
-                  aiFlagResources={
-                    aiFormData.flag_resource ? [aiFormData.flag_resource] : null
-                  }
-                  onAccept={() => clearAiResource("flag_resource")}
-                  onReject={() => clearAiResource("flag_resource")}
+                  onGenerationComplete={makeOnGenerationComplete("flags")}
                 />
               </div>
             </StepCard>
@@ -1353,9 +1318,7 @@ function PersonaComponent({
                   showAiGenerate={s?.parameters?.show_ai_generate ?? false}
                   searchTerm={parameterSearchTerm}
                   showSelectedFilter={parameterShowSelected}
-                  aiParameterResources={aiFormData.parameter_resources ?? null}
-                  onAccept={() => clearAiResource("parameter_resources")}
-                  onReject={() => clearAiResource("parameter_resources")}
+                  onGenerationComplete={makeOnGenerationComplete("parameters")}
                 />
                 <ParameterFields
                   parameter_field_ids={formState.parameter_field_ids}
@@ -1385,11 +1348,7 @@ function PersonaComponent({
                   isGenerating={isGenerating("parameter_fields")}
                   isAutosaveEnabled={isAutosaveEnabled}
                   registerFlush={registerFlushCallbacks["parameter_fields"]}
-                  aiParameterFieldResources={
-                    aiFormData.parameter_field_resources ?? null
-                  }
-                  onAccept={() => clearAiResource("parameter_field_resources")}
-                  onReject={() => clearAiResource("parameter_field_resources")}
+                  onGenerationComplete={makeOnGenerationComplete("parameter_fields")}
                   create_tool_id={s?.parameter_fields?.create_tool_id ?? null}
                 />
               </div>
@@ -1471,9 +1430,7 @@ function PersonaComponent({
                 required={s?.colors?.required ?? false}
                 isAutosaveEnabled={isAutosaveEnabled}
                 registerFlush={registerFlushCallbacks["colors"]}
-                aiResource={aiFormData.color_resource}
-                onAccept={() => clearAiResource("color_resource")}
-                onReject={() => clearAiResource("color_resource")}
+                onGenerationComplete={makeOnGenerationComplete("colors")}
                 create_tool_id={s?.colors?.create_tool_id ?? null}
               />
             </StepCard>
@@ -1551,9 +1508,7 @@ function PersonaComponent({
                 group_id={s?.group_id ?? null}
                 showAiGenerate={s?.icons?.show_ai_generate ?? false}
                 required={s?.icons?.required ?? false}
-                aiResource={aiFormData.icon_resource}
-                onAccept={() => clearAiResource("icon_resource")}
-                onReject={() => clearAiResource("icon_resource")}
+                onGenerationComplete={makeOnGenerationComplete("icons")}
               />
             </StepCard>
           );
@@ -1624,9 +1579,7 @@ function PersonaComponent({
                 createInstructionsAction={createInstructionsAction}
                 isAutosaveEnabled={isAutosaveEnabled}
                 registerFlush={registerFlushCallbacks["instructions"]}
-                aiResource={aiFormData.instructions_resource}
-                onAccept={() => clearAiResource("instructions_resource")}
-                onReject={() => clearAiResource("instructions_resource")}
+                onGenerationComplete={makeOnGenerationComplete("instructions")}
                 create_tool_id={s?.instructions?.create_tool_id ?? null}
               />
               <Examples
@@ -1676,9 +1629,7 @@ function PersonaComponent({
                 }
                 isAutosaveEnabled={isAutosaveEnabled}
                 registerFlush={registerFlushCallbacks["examples"]}
-                aiExampleResources={aiFormData.example_resources ?? null}
-                onAccept={() => clearAiResource("example_resources")}
-                onReject={() => clearAiResource("example_resources")}
+                onGenerationComplete={makeOnGenerationComplete("examples")}
                 create_tool_id={s?.examples?.create_tool_id ?? null}
               />
             </StepCard>
@@ -1716,8 +1667,7 @@ function PersonaComponent({
       isAutosaveEnabled,
       registerFlushCallbacks,
       createParameterFieldsAction,
-      aiFormData,
-      clearAiResource,
+      makeOnGenerationComplete,
     ],
   );
 

@@ -96,9 +96,7 @@ async def handle_resource_generation_complete(data: dict[str, Any]) -> None:
             if items:
                 item = items[0]
                 resource_data = (
-                    item.model_dump(mode="json")
-                    if hasattr(item, "model_dump")
-                    else {}
+                    item.model_dump(mode="json") if hasattr(item, "model_dump") else {}
                 )
     except Exception as e:
         logger.exception(f"Failed to fetch resource {resource_type}/{resource_id}: {e}")

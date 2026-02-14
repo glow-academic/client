@@ -1,7 +1,8 @@
 """Attempt list endpoint for unified attempt history data."""
 
+from collections import defaultdict
 from datetime import datetime
-from typing import Annotated, Any, cast
+from typing import Annotated, Any
 from uuid import UUID
 
 import asyncpg
@@ -23,16 +24,16 @@ from app.api.v4.resources.personas.get import get_personas_internal
 from app.api.v4.resources.profiles.get import get_profiles_internal
 from app.api.v4.resources.scenarios.get import get_scenarios_internal
 from app.api.v4.resources.simulations.get import get_simulations_internal
-from app.api.v4.views.analytics.attempts.get import get_attempt_facts_internal
-from app.api.v4.views.analytics.attempts.types import AttemptFactsItem
+from app.api.v4.views.attempt.chats.get import get_attempt_chats_internal
+from app.api.v4.views.attempt.chats.types import ChatViewItem
+from app.api.v4.views.attempt.list.get import get_attempt_list_internal
+from app.api.v4.views.attempt.list.types import AttemptViewItem
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
 from app.sql.types import (
     GetHomeContextSqlParams,
-    GetHomeContextSqlRow,
     GetPracticeContextSqlParams,
-    GetPracticeContextSqlRow,
 )
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
@@ -55,8 +56,79 @@ def _parse_iso_datetime(value: str | None) -> datetime | None:
     return datetime.fromisoformat(value.replace("Z", "+00:00"))
 
 
+def _compute_chat_aggregates(
+    chats: list[ChatViewItem],
+) -> dict[str, Any]:
+    """Compute attempt-level aggregates from chat view items.
+
+    Args:
+        chats: List of ChatViewItem for a single attempt
+
+    Returns:
+        Dict with: num_scenarios, num_scenarios_completed, num_chats,
+                   num_chats_completed, score_percent, has_passed,
+                   total_time_seconds, rubric_total_points, rubric_pass_points,
+                   persona_ids, scenario_ids
+    """
+    num_chats = len(chats)
+    num_chats_completed = sum(1 for c in chats if c.completed)
+
+    scenario_ids_set: set[UUID] = set()
+    completed_scenario_ids: set[UUID] = set()
+    persona_ids_set: set[UUID] = set()
+
+    total_score = 0.0
+    total_possible = 0.0
+    has_passed = False
+    total_time_seconds = 0
+    rubric_total_points: int | None = None
+    rubric_pass_points: int | None = None
+
+    for chat in chats:
+        if chat.scenario_id:
+            scenario_ids_set.add(chat.scenario_id)
+            if chat.completed:
+                completed_scenario_ids.add(chat.scenario_id)
+        if chat.persona_ids:
+            persona_ids_set.update(chat.persona_ids)
+
+        if chat.grade:
+            if chat.grade.score is not None and chat.grade.total_points:
+                total_score += chat.grade.score
+                total_possible += chat.grade.total_points
+            if chat.grade.passed:
+                has_passed = True
+            if chat.grade.time_taken is not None:
+                total_time_seconds += chat.grade.time_taken
+            if chat.grade.total_points is not None:
+                rubric_total_points = (
+                    rubric_total_points or 0
+                ) + chat.grade.total_points
+            if chat.grade.pass_points is not None:
+                rubric_pass_points = (rubric_pass_points or 0) + chat.grade.pass_points
+
+    score_percent: float | None = None
+    if total_possible > 0:
+        score_percent = round((total_score / total_possible) * 100, 2)
+
+    return {
+        "num_scenarios": len(scenario_ids_set),
+        "num_scenarios_completed": len(completed_scenario_ids),
+        "num_chats": num_chats,
+        "num_chats_completed": num_chats_completed,
+        "score_percent": score_percent,
+        "has_passed": has_passed,
+        "total_time_seconds": total_time_seconds,
+        "rubric_total_points": rubric_total_points,
+        "rubric_pass_points": rubric_pass_points,
+        "persona_ids": list(persona_ids_set) if persona_ids_set else None,
+        "scenario_ids": list(scenario_ids_set) if scenario_ids_set else None,
+    }
+
+
 def _transform_attempt(
-    attempt: AttemptFactsItem,
+    attempt: AttemptViewItem,
+    aggregates: dict[str, Any],
     resource_meta: dict[str, dict[UUID, dict[str, Any]]],
     pass_threshold: float | None,
     practice: bool,
@@ -78,8 +150,9 @@ def _transform_attempt(
 
     persona_names: list[str] = []
     persona_colors: list[str] = []
-    if attempt.persona_ids:
-        for pid in attempt.persona_ids:
+    persona_ids = aggregates.get("persona_ids")
+    if persona_ids:
+        for pid in persona_ids:
             p_meta = resource_meta["personas"].get(pid, {})
             if p_meta.get("name"):
                 persona_names.append(p_meta["name"])
@@ -87,48 +160,54 @@ def _transform_attempt(
                 persona_colors.append(p_meta["color"])
 
     scenario_titles: list[str] = []
-    if attempt.scenario_ids:
-        for sid in attempt.scenario_ids:
+    scenario_ids = aggregates.get("scenario_ids") or (
+        list(attempt.scenario_ids) if attempt.scenario_ids else None
+    )
+    if scenario_ids:
+        for sid in scenario_ids:
             s_meta = resource_meta["scenarios"].get(sid, {})
             if s_meta.get("name"):
                 scenario_titles.append(s_meta["name"])
 
-    pass_pct = compute_pass_pct(attempt.rubric_total_points, attempt.rubric_pass_points)
-    score_status = compute_score_status(attempt.score_percent, pass_threshold)
-    score = round(attempt.score_percent) if attempt.score_percent is not None else None
+    score_percent = aggregates.get("score_percent")
+    pass_pct = compute_pass_pct(
+        aggregates.get("rubric_total_points"), aggregates.get("rubric_pass_points")
+    )
+    score_status = compute_score_status(score_percent, pass_threshold)
+    score = round(score_percent) if score_percent is not None else None
 
     is_archived = attempt.is_archived if practice else False
     show_view = compute_show_view(is_archived)
-    num_incomplete_chats = (attempt.num_chats or 0) - (attempt.num_chats_completed or 0)
+    num_incomplete_chats = (aggregates.get("num_chats") or 0) - (
+        aggregates.get("num_chats_completed") or 0
+    )
     show_continue = compute_show_continue(
         is_archived=is_archived,
         infinite_mode=attempt.infinite_mode,
-        num_scenarios=attempt.num_scenarios,
-        num_scenarios_completed=attempt.num_scenarios_completed,
+        num_scenarios=aggregates.get("num_scenarios"),
+        num_scenarios_completed=aggregates.get("num_scenarios_completed"),
         time_limit_seconds=time_limit,
-        elapsed_seconds=attempt.total_time_seconds,
+        elapsed_seconds=aggregates.get("total_time_seconds"),
         num_incomplete_chats=num_incomplete_chats,
     )
 
     department_ids = [str(attempt.department_id)] if attempt.department_id else None
-    practice_scenario_id = attempt.scenario_ids[0] if attempt.scenario_ids else None
+    practice_scenario_id = scenario_ids[0] if scenario_ids else None
 
     return AttemptListItem(
         attempt_id=attempt.attempt_id,
-        date=attempt.attempt_created_at.isoformat()
-        if attempt.attempt_created_at
-        else None,
+        date=attempt.created_at.isoformat() if attempt.created_at else None,
         profile_id=attempt.profile_id,
         profile_name=profile_name,
         simulation_id=attempt.simulation_id,
         simulation_name=simulation_name,
-        num_scenarios=attempt.num_scenarios,
-        num_scenarios_completed=attempt.num_scenarios_completed,
+        num_scenarios=aggregates.get("num_scenarios"),
+        num_scenarios_completed=aggregates.get("num_scenarios_completed"),
         infinite_mode=attempt.infinite_mode,
         time_limit=time_limit,
         persona_names_junction=persona_names if persona_names else None,
         persona_colors_junction=persona_colors if persona_colors else None,
-        scenario_ids=attempt.scenario_ids,
+        scenario_ids=scenario_ids,
         scenario_titles=scenario_titles if scenario_titles else None,
         department_ids=department_ids,
         cohort_names_junction=None,
@@ -206,7 +285,7 @@ async def _fetch_resource_metadata(
     return result
 
 
-async def get_attempt_list_internal(
+async def get_attempt_list_artifact_internal(
     conn: asyncpg.Connection,
     request: GetAttemptListRequest,
     profile_resource_id: UUID,
@@ -230,21 +309,20 @@ async def get_attempt_list_internal(
     page_size = request.page_size
     page_offset = page * page_size
     practice = request.practice
-    attempt_type = "practice" if practice else "general"
 
-    facts_result = await get_attempt_facts_internal(
+    # Step 1: Paginated attempts from mv_attempt_list (single query)
+    list_result = await get_attempt_list_internal(
         conn=conn,
-        profile_id=profile_resource_id,
-        attempt_type=attempt_type,
-        is_archived=request.show_archived if practice else False,
-        simulation_ids=request.simulation_ids,
+        profile_id_filter=profile_resource_id,
+        practice_filter=practice,
+        is_archived_filter=request.show_archived if practice else False,
+        simulation_id_filter=None,
         cohort_ids=request.cohort_ids,
         department_ids=request.department_ids,
-        scenario_ids=request.scenario_ids,
-        infinite_mode=request.infinite_mode,
+        scenario_ids_filter=request.scenario_ids,
+        infinite_mode_filter=request.infinite_mode,
         date_from=date_from,
         date_to=date_to,
-        search=request.search,
         sort_by=request.sort_by or "date",
         sort_order=request.sort_order or "desc",
         page_limit=page_size,
@@ -252,21 +330,46 @@ async def get_attempt_list_internal(
         bypass_cache=bypass_cache,
     )
 
+    # Step 2: Batch-fetch chats for paginated attempt_ids (single query)
+    paginated_ids = [item.attempt_id for item in list_result.items]
+
+    chats: list[ChatViewItem] = []
+    if paginated_ids:
+        chats = await get_attempt_chats_internal(
+            conn, attempt_ids=paginated_ids, bypass_cache=bypass_cache
+        )
+
+    # Step 3: Group chats by attempt_id
+    chats_by_attempt: dict[UUID, list[ChatViewItem]] = defaultdict(list)
+    for chat in chats:
+        if chat.attempt_id:
+            chats_by_attempt[chat.attempt_id].append(chat)
+
+    # Step 4: Compute aggregates per attempt and collect resource IDs
     all_simulation_ids: set[UUID] = set()
     all_profile_ids: set[UUID] = set()
     all_persona_ids: set[UUID] = set()
     all_scenario_ids: set[UUID] = set()
 
-    for item in facts_result.items:
+    aggregates_by_attempt: dict[UUID, dict[str, Any]] = {}
+    for item in list_result.items:
+        attempt_chats = chats_by_attempt.get(item.attempt_id, [])
+        agg = _compute_chat_aggregates(attempt_chats)
+        aggregates_by_attempt[item.attempt_id] = agg
+
         if item.simulation_id:
             all_simulation_ids.add(item.simulation_id)
         if item.profile_id:
             all_profile_ids.add(item.profile_id)
-        if item.persona_ids:
-            all_persona_ids.update(item.persona_ids)
-        if item.scenario_ids:
+        if agg.get("persona_ids"):
+            all_persona_ids.update(agg["persona_ids"])
+        # Collect scenario IDs from both MV and aggregates
+        if agg.get("scenario_ids"):
+            all_scenario_ids.update(agg["scenario_ids"])
+        elif item.scenario_ids:
             all_scenario_ids.update(item.scenario_ids)
 
+    # Step 5: Fetch resource metadata
     resource_meta = await _fetch_resource_metadata(
         conn=conn,
         simulation_ids=list(all_simulation_ids),
@@ -276,15 +379,23 @@ async def get_attempt_list_internal(
         bypass_cache=bypass_cache,
     )
 
+    # Step 6: Transform each attempt with aggregates
     attempts = [
-        _transform_attempt(item, resource_meta, pass_threshold, practice)
-        for item in facts_result.items
+        _transform_attempt(
+            item,
+            aggregates_by_attempt.get(item.attempt_id, {}),
+            resource_meta,
+            pass_threshold,
+            practice,
+        )
+        for item in list_result.items
     ]
 
+    # Step 7: Build filter options from view result
     simulation_options: list[AttemptListFilterOption] | None = None
-    if facts_result.simulation_options:
+    if list_result.simulation_options:
         simulation_options = []
-        for opt in facts_result.simulation_options:
+        for opt in list_result.simulation_options:
             if not opt.value:
                 continue
             try:
@@ -307,9 +418,9 @@ async def get_attempt_list_internal(
             ]
 
     scenario_options: list[AttemptListFilterOption] | None = None
-    if facts_result.scenario_options:
+    if list_result.scenario_options:
         scenario_options = []
-        for opt in facts_result.scenario_options:
+        for opt in list_result.scenario_options:
             if not opt.value:
                 continue
             try:
@@ -331,9 +442,9 @@ async def get_attempt_list_internal(
             ]
 
     profile_options: list[AttemptListFilterOption] | None = None
-    if practice and facts_result.profile_options:
+    if practice and list_result.profile_options:
         profile_options = []
-        for opt in facts_result.profile_options:
+        for opt in list_result.profile_options:
             if not opt.value:
                 continue
             try:
@@ -354,7 +465,7 @@ async def get_attempt_list_internal(
                 o for o in profile_options if q in (o.label or "").lower()
             ]
 
-    total_count = facts_result.total_count
+    total_count = list_result.total_count
     total_pages = (total_count + page_size - 1) // page_size if page_size > 0 else 0
 
     api_response = GetAttemptListResponse(
@@ -425,22 +536,16 @@ async def list_attempts(
         query_profile_id = request.target_profile_id or profile_resource_id
 
         if request.practice:
-            context = cast(
-                GetPracticeContextSqlRow,
-                await execute_sql_typed(
-                    conn,
-                    PRACTICE_CONTEXT_SQL_PATH,
-                    params=GetPracticeContextSqlParams(profile_id=profile_resource_id),
-                ),
+            context = await execute_sql_typed(
+                conn,
+                PRACTICE_CONTEXT_SQL_PATH,
+                params=GetPracticeContextSqlParams(profile_id=profile_resource_id),
             )
         else:
-            context = cast(
-                GetHomeContextSqlRow,
-                await execute_sql_typed(
-                    conn,
-                    HOME_CONTEXT_SQL_PATH,
-                    params=GetHomeContextSqlParams(profile_id=profile_resource_id),
-                ),
+            context = await execute_sql_typed(
+                conn,
+                HOME_CONTEXT_SQL_PATH,
+                params=GetHomeContextSqlParams(profile_id=profile_resource_id),
             )
 
         if context.actor_name:
@@ -448,7 +553,7 @@ async def list_attempts(
                 http_request, actor={"name": context.actor_name, "id": profile_id}
             )
 
-        result = await get_attempt_list_internal(
+        result = await get_attempt_list_artifact_internal(
             conn=conn,
             request=request,
             profile_resource_id=query_profile_id,
