@@ -18,11 +18,12 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useSocket } from "@/contexts/socket-context";
 import type { OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 import { getIconComponent } from "@/utils/icons";
 import { Check, Loader2, Power, Sparkles, X } from "lucide-react";
-import { useCallback, useMemo } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 // Derive resource item type from the GET endpoint response
 type FlagGetResponse = OutputOf<"/api/v4/resources/flags/get", "post">;
@@ -54,6 +55,7 @@ interface CommonFlagsProps {
   aiFlagResources?: Pick<FlagResourceItem, "id" | "name">[] | null;
   onAccept?: () => void;
   onReject?: () => void;
+  onGenerationComplete?: () => void;
 }
 
 // Single-flag mode props - uses flag_id (optional) without flag_ids
@@ -88,6 +90,7 @@ export function Flags(props: FlagsProps) {
     aiFlagResources,
     onAccept,
     onReject,
+    onGenerationComplete,
   } = props;
 
   // Determine mode based on props
@@ -107,14 +110,45 @@ export function Flags(props: FlagsProps) {
     [visibleFlags]
   );
 
+  // Socket-based AI suggestion handling
+  const { socket: aiSocket, isConnected: aiIsConnected } = useSocket();
+  const [internalAiFlagResources, setInternalAiFlagResources] = useState<
+    Pick<FlagResourceItem, "id" | "name">[] | null
+  >(null);
+
+  useEffect(() => {
+    if (!aiSocket || !aiIsConnected) return;
+    const handleResourceComplete = (data: Record<string, unknown>) => {
+      if (data.resource_type !== "flags") return;
+      if (group_id && data.group_id !== group_id) return;
+      const resourceData = data.resource_data as
+        | Record<string, unknown>
+        | undefined;
+      if (resourceData) {
+        setInternalAiFlagResources([
+          { id: resourceData.id as string, name: resourceData.name as string },
+        ]);
+      }
+      onGenerationComplete?.();
+    };
+    aiSocket.on("resource_generation_complete", handleResourceComplete);
+    return () => {
+      aiSocket.off("resource_generation_complete", handleResourceComplete);
+    };
+  }, [aiSocket, aiIsConnected, group_id, onGenerationComplete]);
+
+  // Effective AI flag resources: internal (socket) takes priority, then prop fallback
+  const effectiveAiFlagResources =
+    internalAiFlagResources ?? aiFlagResources ?? null;
+
   // AI suggestion state
-  const showDiff = !!aiFlagResources?.length;
+  const showDiff = !!effectiveAiFlagResources?.length;
   const aiSuggestedFlagIds = useMemo(
     () =>
       new Set(
-        aiFlagResources?.map((f) => f.id).filter(Boolean) as string[]
+        effectiveAiFlagResources?.map((f) => f.id).filter(Boolean) as string[]
       ),
-    [aiFlagResources]
+    [effectiveAiFlagResources]
   );
 
   // Get the checked state for a flag
@@ -147,9 +181,9 @@ export function Flags(props: FlagsProps) {
 
   // Accept AI suggestion - apply all AI-suggested flags
   const handleAccept = useCallback(() => {
-    if (!aiFlagResources?.length) return;
+    if (!effectiveAiFlagResources?.length) return;
 
-    for (const aiFlag of aiFlagResources) {
+    for (const aiFlag of effectiveAiFlagResources) {
       if (!aiFlag.id) continue;
       // Find which flag this applies to and set it
       const targetFlag = visibleFlags.find(
@@ -168,11 +202,13 @@ export function Flags(props: FlagsProps) {
         }
       }
     }
+    setInternalAiFlagResources(null);
     onAccept?.();
-  }, [aiFlagResources, visibleFlags, isMultiMode, onChange, onAccept]);
+  }, [effectiveAiFlagResources, visibleFlags, isMultiMode, onChange, onAccept]);
 
   // Reject AI suggestion - just clear the pending state
   const handleReject = useCallback(() => {
+    setInternalAiFlagResources(null);
     onReject?.();
   }, [onReject]);
 

@@ -16,10 +16,11 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useSocket } from "@/contexts/socket-context";
 import { cn } from "@/lib/utils";
 import type { OutputOf } from "@/lib/api/types";
 import { Check, Loader2, Sparkles, X } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 // Derive resource item type from the GET endpoint response
 type DepartmentsGetResponse = OutputOf<"/api/v4/resources/departments/get", "post">;
@@ -73,6 +74,7 @@ export interface DepartmentsProps {
   }> | null;
   onAccept?: () => void;
   onReject?: () => void;
+  onGenerationComplete?: () => void;
   // Legacy props for backward compatibility
   departmentIds?: string[];
 }
@@ -101,6 +103,7 @@ export function Departments({
   aiDepartmentResources,
   onAccept,
   onReject,
+  onGenerationComplete,
   // Legacy props for backward compatibility
   departmentIds,
 }: DepartmentsProps) {
@@ -116,16 +119,39 @@ export function Departments({
     [department_suggestions]
   );
 
+  // Internal socket-based AI suggestion handling
+  const { socket: aiSocket, isConnected: aiIsConnected } = useSocket();
+  const [internalAiDepartmentResources, setInternalAiDepartmentResources] = useState<Array<{ department_id?: string | null; name?: string | null }> | null>(null);
+
+  useEffect(() => {
+    if (!aiSocket || !aiIsConnected) return;
+
+    const handleGenerationComplete = (data: Record<string, unknown>) => {
+      if (data.resource_type !== "departments") return;
+      if (data.group_id !== group_id) return;
+      const resourceData = data as { department_id?: string | null; name?: string | null };
+      setInternalAiDepartmentResources([{ department_id: resourceData.department_id, name: resourceData.name }]);
+      onGenerationComplete?.();
+    };
+
+    aiSocket.on("resource_generation_complete", handleGenerationComplete);
+    return () => {
+      aiSocket.off("resource_generation_complete", handleGenerationComplete);
+    };
+  }, [aiSocket, aiIsConnected, group_id, onGenerationComplete]);
+
+  const effectiveAiDepartmentResources = internalAiDepartmentResources ?? aiDepartmentResources ?? null;
+
   // AI suggestion state
-  const showDiff = !!aiDepartmentResources?.length;
+  const showDiff = !!effectiveAiDepartmentResources?.length;
   const aiSuggestedIds = useMemo(
     () =>
       new Set(
-        aiDepartmentResources
+        effectiveAiDepartmentResources
           ?.map((d) => d.department_id)
           .filter(Boolean) as string[]
       ),
-    [aiDepartmentResources]
+    [effectiveAiDepartmentResources]
   );
 
   // Track which department IDs have already had resources created
@@ -233,18 +259,20 @@ export function Departments({
 
   // Accept AI suggestion - add AI-suggested departments to selection
   const handleAccept = useCallback(() => {
-    if (!aiDepartmentResources?.length) return;
-    const newIds = aiDepartmentResources
+    if (!effectiveAiDepartmentResources?.length) return;
+    const newIds = effectiveAiDepartmentResources
       .map((d) => d.department_id)
       .filter((id): id is string => !!id && !ids.includes(id));
     if (newIds.length > 0) {
       onChange([...ids, ...newIds]);
     }
+    setInternalAiDepartmentResources(null);
     onAccept?.();
-  }, [aiDepartmentResources, ids, onChange, onAccept]);
+  }, [effectiveAiDepartmentResources, ids, onChange, onAccept]);
 
   // Reject AI suggestion - just clear the pending state
   const handleReject = useCallback(() => {
+    setInternalAiDepartmentResources(null);
     onReject?.();
   }, [onReject]);
 

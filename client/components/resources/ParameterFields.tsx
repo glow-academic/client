@@ -16,6 +16,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useSocket } from "@/contexts/socket-context";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 import { Check, Loader2, Sparkles, X } from "lucide-react";
@@ -69,6 +70,7 @@ export interface ParameterFieldsProps {
       ) => Promise<CreateDraftParameterFieldsOut>)
     | undefined;
   onGenerate?: () => void | Promise<void>;
+  onGenerationComplete?: () => void;
   isGenerating?: boolean;
   /** When false, skip automatic resource creation (manual save mode) */
   isAutosaveEnabled?: boolean;
@@ -109,6 +111,7 @@ export function ParameterFields({
   showAiGenerate = false,
   createParameterFieldsAction,
   onGenerate,
+  onGenerationComplete,
   isGenerating = false,
   isAutosaveEnabled = true,
   registerFlush,

@@ -20,6 +20,7 @@ import { cn } from "@/lib/utils";
 import { Check, Loader2, Sparkles, X } from "lucide-react";
 import React, { useCallback, useEffect, useRef, useState, useMemo } from "react";
 import { GenericPicker } from "@/components/common/forms/GenericPicker";
+import { useSocket } from "@/contexts/socket-context";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 
 type CreateDraftInstructionsIn = InputOf<
@@ -182,6 +183,7 @@ export interface InstructionsProps {
   aiResource?: { id?: string | null; template?: string | null } | null | undefined;
   onAccept?: () => void;
   onReject?: () => void;
+  onGenerationComplete?: () => void;
 }
 
 export function Instructions({
@@ -217,6 +219,7 @@ export function Instructions({
   aiResource,
   onAccept,
   onReject,
+  onGenerationComplete,
 }: InstructionsProps) {
   // Use standardized props with fallback to legacy props
   const resource = instructions_resource ?? instructionsResource ?? null;
@@ -388,27 +391,56 @@ export function Instructions({
     isDirtyRef.current = newValue !== lastSavedValueRef.current;
   }, []);
 
+  // Internal socket-based AI suggestion handling
+  const { socket: aiSocket, isConnected: aiIsConnected } = useSocket();
+  const [internalAiResource, setInternalAiResource] = useState<{ id?: string | null; template?: string | null } | null>(null);
+
+  useEffect(() => {
+    if (!aiSocket || !aiIsConnected) return;
+
+    const handleGenerationComplete = (data: {
+      resource_type?: string;
+      group_id?: string | null;
+      resource_data?: { id?: string | null; template?: string | null };
+    }) => {
+      if (data.resource_type !== "instructions") return;
+      if (data.group_id !== group_id) return;
+      const { id, template } = data.resource_data ?? {};
+      setInternalAiResource({ id, template });
+      onGenerationComplete?.();
+    };
+
+    aiSocket.on("resource_generation_complete", handleGenerationComplete);
+    return () => {
+      aiSocket.off("resource_generation_complete", handleGenerationComplete);
+    };
+  }, [aiSocket, aiIsConnected, group_id, onGenerationComplete]);
+
+  const effectiveAiResource = internalAiResource ?? aiResource ?? null;
+
   // AI diff view state
-  const showDiff = !!aiResource?.template;
+  const showDiff = !!effectiveAiResource?.template;
   const currentText = internalValue || "";
-  const aiText = aiResource?.template || "";
+  const aiText = effectiveAiResource?.template || "";
 
   // Accept AI suggestion - update internal value and notify parent
   const handleAccept = useCallback(() => {
-    if (!aiResource?.id) return;
+    if (!effectiveAiResource?.id) return;
     if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
     saveSeqRef.current += 1;
-    const text = aiResource.template || "";
+    const text = effectiveAiResource.template || "";
     setInternalValue(text);
     lastSavedValueRef.current = text;
     lastServerTextRef.current = text;
     isDirtyRef.current = false;
-    onInstructionsIdChange(aiResource.id);
+    onInstructionsIdChange(effectiveAiResource.id);
+    setInternalAiResource(null);
     onAccept?.();
-  }, [aiResource, onInstructionsIdChange, onAccept]);
+  }, [effectiveAiResource, onInstructionsIdChange, onAccept]);
 
   // Reject AI suggestion - just clear the pending state
   const handleReject = useCallback(() => {
+    setInternalAiResource(null);
     onReject?.();
   }, [onReject]);
 
@@ -440,8 +472,8 @@ export function Instructions({
   }, [instructions, suggestionsList]);
   
   // Use instructions array for GenericPicker items if available
-  const pickerItems = instructions && instructions.length > 0 
-    ? instructions 
+  const pickerItems = instructions && instructions.length > 0
+    ? instructions
     : Object.values(suggestionsMapping);
 
   // Don't render if show_instructions is false (AFTER all hooks)

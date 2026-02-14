@@ -405,27 +405,54 @@ export function Descriptions({
     isDirtyRef.current = newValue !== lastSavedValueRef.current;
   }, []);
 
+  // Internal socket-based AI suggestion handling
+  const { socket: aiSocket, isConnected: aiIsConnected } = useSocket();
+  const [internalAiResource, setInternalAiResource] = useState<{ id?: string | null; description?: string | null } | null>(null);
+
+  useEffect(() => {
+    if (!aiSocket || !aiIsConnected) return;
+    const handleResourceComplete = (data: Record<string, unknown>) => {
+      if (data.resource_type !== "descriptions") return;
+      if (group_id && data.group_id !== group_id) return;
+      const resourceData = data.resource_data as Record<string, unknown> | undefined;
+      if (resourceData) {
+        setInternalAiResource({
+          id: resourceData.id as string | null,
+          description: resourceData.description as string | null,
+        });
+      }
+      onGenerationComplete?.();
+    };
+    aiSocket.on("resource_generation_complete", handleResourceComplete);
+    return () => { aiSocket.off("resource_generation_complete", handleResourceComplete); };
+  }, [aiSocket, aiIsConnected, group_id, onGenerationComplete]);
+
+  // Compute effective AI resource: internal socket state takes priority, then prop
+  const effectiveAiResource = internalAiResource ?? aiResource ?? null;
+
   // AI diff view state
-  const showDiff = !!aiResource?.description;
+  const showDiff = !!effectiveAiResource?.description;
   const currentText = internalValue || "";
-  const aiText = aiResource?.description || "";
+  const aiText = effectiveAiResource?.description || "";
 
   // Accept AI suggestion - update internal value and notify parent
   const handleAccept = useCallback(() => {
-    if (!aiResource?.id) return;
+    if (!effectiveAiResource?.id) return;
     if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
     saveSeqRef.current += 1;
-    const text = aiResource.description || "";
+    const text = effectiveAiResource.description || "";
     setInternalValue(text);
     lastSavedValueRef.current = text;
     lastServerTextRef.current = text;
     isDirtyRef.current = false;
-    onDescriptionIdChange(aiResource.id);
+    onDescriptionIdChange(effectiveAiResource.id);
+    setInternalAiResource(null);
     onAccept?.();
-  }, [aiResource, onDescriptionIdChange, onAccept]);
+  }, [effectiveAiResource, onDescriptionIdChange, onAccept]);
 
   // Reject AI suggestion - just clear the pending state
   const handleReject = useCallback(() => {
+    setInternalAiResource(null);
     onReject?.();
   }, [onReject]);
 

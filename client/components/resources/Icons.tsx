@@ -19,8 +19,9 @@ import {
 import type { OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 import { ICON_MAP } from "@/utils/icons";
+import { useSocket } from "@/contexts/socket-context";
 import { Check, Loader2, Sparkles, X } from "lucide-react";
-import { useCallback, useMemo } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 // Derive resource item type from the GET endpoint response
 type IconGetResponse = OutputOf<"/api/v4/resources/icons/get", "post">;
@@ -62,6 +63,7 @@ export interface IconsProps {
   aiResource?: Pick<IconResourceItem, "id" | "name" | "value"> | null | undefined;
   onAccept?: () => void;
   onReject?: () => void;
+  onGenerationComplete?: () => void;
 }
 
 export function Icons({
@@ -93,6 +95,7 @@ export function Icons({
   aiResource,
   onAccept,
   onReject,
+  onGenerationComplete,
 }: IconsProps) {
   // Use standardized props with fallback to legacy props
   const resource = icon_resource ?? iconResource ?? null;
@@ -104,19 +107,46 @@ export function Icons({
   );
   const allIconsArray = useMemo(() => icons ?? [], [icons]);
 
+  // Socket-based AI suggestion handling
+  const { socket: aiSocket, isConnected: aiIsConnected } = useSocket();
+  const [internalAiResource, setInternalAiResource] = useState<Pick<IconResourceItem, "id" | "name" | "value"> | null>(null);
+
+  useEffect(() => {
+    if (!aiSocket || !aiIsConnected) return;
+    const handleResourceComplete = (data: Record<string, unknown>) => {
+      if (data.resource_type !== "icons") return;
+      if (group_id && data.group_id !== group_id) return;
+      const resourceData = data.resource_data as Record<string, unknown> | undefined;
+      if (resourceData) {
+        setInternalAiResource({
+          id: (resourceData.id as string) ?? null,
+          name: (resourceData.name as string) ?? null,
+          value: (resourceData.value as string) ?? "",
+        });
+      }
+      onGenerationComplete?.();
+    };
+    aiSocket.on("resource_generation_complete", handleResourceComplete);
+    return () => { aiSocket.off("resource_generation_complete", handleResourceComplete); };
+  }, [aiSocket, aiIsConnected, group_id, onGenerationComplete]);
+
+  const effectiveAiResource = internalAiResource ?? aiResource ?? null;
+
   // AI suggestion state
-  const showDiff = !!aiResource?.id;
-  const aiSuggestedId = aiResource?.id || null;
+  const showDiff = !!effectiveAiResource?.id;
+  const aiSuggestedId = effectiveAiResource?.id || null;
 
   // Accept AI suggestion - update icon selection
   const handleAccept = useCallback(() => {
-    if (!aiResource?.id) return;
-    onIconIdChange(aiResource.id);
+    if (!effectiveAiResource?.id) return;
+    onIconIdChange(effectiveAiResource.id);
+    setInternalAiResource(null);
     onAccept?.();
-  }, [aiResource, onIconIdChange, onAccept]);
+  }, [effectiveAiResource, onIconIdChange, onAccept]);
 
   // Reject AI suggestion - just clear the pending state
   const handleReject = useCallback(() => {
+    setInternalAiResource(null);
     onReject?.();
   }, [onReject]);
 
