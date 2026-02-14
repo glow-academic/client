@@ -38523,6 +38523,109 @@
         ]
       }
     },
+    "/api/v4/views/analytics/simulation-facts/get": {
+      "post": {
+        "tags": [
+          "v4",
+          "views",
+          "views",
+          "analytics",
+          "simulation_facts"
+        ],
+        "summary": "Get Simulation Facts",
+        "description": "Get simulation facts data from mv_simulation_facts.\n\nThis endpoint fetches paginated per-chat simulation/scenario data\nfor the simulation dashboard section with:\n- Filtering (profile, cohort, simulation, scenario, attempt_type, archived, date range)\n- Sorting (date)\n- Pagination\n- Filter options (simulation_options, scenario_options)\n\nParameter resolution (scenario/persona/document parameter_field_ids) is done\nat runtime via hydrated resource handlers, not in the MV query.",
+        "operationId": "get_simulation_facts_api_v4_views_analytics_simulation_facts_get_post",
+        "parameters": [
+          {
+            "name": "X-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Session-Id"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GetSimulationFactsRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetSimulationFactsResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v4",
+          "views",
+          "views",
+          "analytics",
+          "simulation_facts"
+        ]
+      }
+    },
     "/api/v4/views/analytics/health/get": {
       "post": {
         "tags": [
@@ -82558,6 +82661,196 @@
         "type": "object",
         "title": "GetSimulationApiResponse",
         "description": "Section-first response for simulation editor."
+      },
+      "GetSimulationFactsRequest": {
+        "properties": {
+          "profile_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profile Id",
+            "description": "Filter by profile ID"
+          },
+          "cohort_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cohort Ids",
+            "description": "Filter by cohort IDs"
+          },
+          "simulation_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulation Ids",
+            "description": "Filter by simulation IDs"
+          },
+          "scenario_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scenario Ids",
+            "description": "Filter by scenario IDs"
+          },
+          "attempt_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Attempt Type",
+            "description": "Filter by attempt type: 'general' | 'practice'"
+          },
+          "is_archived": {
+            "type": "boolean",
+            "title": "Is Archived",
+            "description": "Include archived attempts",
+            "default": false
+          },
+          "date_from": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Date From",
+            "description": "Filter by date range start (inclusive)"
+          },
+          "date_to": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Date To",
+            "description": "Filter by date range end (inclusive)"
+          },
+          "sort_by": {
+            "type": "string",
+            "title": "Sort By",
+            "description": "Sort field: 'date'",
+            "default": "date"
+          },
+          "sort_order": {
+            "type": "string",
+            "title": "Sort Order",
+            "description": "Sort order: 'asc' | 'desc'",
+            "default": "desc"
+          },
+          "page_limit": {
+            "type": "integer",
+            "maximum": 50000.0,
+            "minimum": 1.0,
+            "title": "Page Limit",
+            "description": "Items per page",
+            "default": 10000
+          },
+          "page_offset": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Page Offset",
+            "description": "Pagination offset",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "title": "GetSimulationFactsRequest",
+        "description": "Request for getting simulation facts with filters and pagination."
+      },
+      "GetSimulationFactsResponse": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/SimulationFactsItem"
+            },
+            "type": "array",
+            "title": "Items",
+            "description": "Simulation facts items"
+          },
+          "total_count": {
+            "type": "integer",
+            "title": "Total Count",
+            "description": "Total count before pagination",
+            "default": 0
+          },
+          "simulation_options": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/app__api__v4__views__analytics__simulation_facts__types__FilterOption"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulation Options",
+            "description": "Available simulation filter options"
+          },
+          "scenario_options": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/app__api__v4__views__analytics__simulation_facts__types__FilterOption"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scenario Options",
+            "description": "Available scenario filter options"
+          }
+        },
+        "type": "object",
+        "title": "GetSimulationFactsResponse",
+        "description": "Response with simulation facts and pagination info."
       },
       "GetSimulationPositionsApiRequest": {
         "properties": {
@@ -132302,6 +132595,144 @@
         "type": "object",
         "title": "SimulationDescriptionSection"
       },
+      "SimulationFactsItem": {
+        "properties": {
+          "chat_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Chat Id"
+          },
+          "attempt_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Attempt Id"
+          },
+          "simulation_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Simulation Id"
+          },
+          "scenario_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scenario Id"
+          },
+          "persona_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Persona Id"
+          },
+          "document_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Document Ids"
+          },
+          "profile_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profile Id"
+          },
+          "cohort_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cohort Id"
+          },
+          "grade_percent": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Grade Percent"
+          },
+          "passed": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Passed"
+          },
+          "completed": {
+            "type": "boolean",
+            "title": "Completed",
+            "default": false
+          },
+          "attempt_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Attempt Date"
+          },
+          "attempt_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Attempt Type"
+          },
+          "is_archived": {
+            "type": "boolean",
+            "title": "Is Archived",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "chat_id",
+          "attempt_id",
+          "simulation_id"
+        ],
+        "title": "SimulationFactsItem",
+        "description": "Single chat row from mv_simulation_facts.\n\nContains simulation/scenario data with resource IDs only.\nParameter resolution done at runtime via hydrated scenario/persona/document\nresources (denormalized parameter_field_ids[]) and parameter_fields_resource."
+      },
       "SimulationFlagConfig": {
         "properties": {
           "key": {
@@ -139646,6 +140077,30 @@
         "description": "Filter option for dropdowns."
       },
       "app__api__v4__views__analytics__rubric_facts__types__FilterOption": {
+        "properties": {
+          "value": {
+            "type": "string",
+            "title": "Value"
+          },
+          "label": {
+            "type": "string",
+            "title": "Label"
+          },
+          "count": {
+            "type": "integer",
+            "title": "Count",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "required": [
+          "value",
+          "label"
+        ],
+        "title": "FilterOption",
+        "description": "Filter option for dropdowns."
+      },
+      "app__api__v4__views__analytics__simulation_facts__types__FilterOption": {
         "properties": {
           "value": {
             "type": "string",

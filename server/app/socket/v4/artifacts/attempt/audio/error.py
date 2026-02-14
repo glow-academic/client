@@ -6,8 +6,8 @@ Handles internal event:
 
 from typing import Any
 
-from app.main import get_internal_sio, sio
 from app.infra.v4.websocket.attempt.audio_helpers import get_session_for_group
+from app.main import get_internal_sio, sio
 from app.socket.v4.artifacts.attempt.types import AttemptUnifiedErrorEvent
 
 internal_sio = get_internal_sio()

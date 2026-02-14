@@ -7865,6 +7865,36 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/views/analytics/simulation-facts/get": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Simulation Facts
+         * @description Get simulation facts data from mv_simulation_facts.
+         *
+         *     This endpoint fetches paginated per-chat simulation/scenario data
+         *     for the simulation dashboard section with:
+         *     - Filtering (profile, cohort, simulation, scenario, attempt_type, archived, date range)
+         *     - Sorting (date)
+         *     - Pagination
+         *     - Filter options (simulation_options, scenario_options)
+         *
+         *     Parameter resolution (scenario/persona/document parameter_field_ids) is done
+         *     at runtime via hydrated resource handlers, not in the MV query.
+         */
+        post: operations["get_simulation_facts_api_v4_views_analytics_simulation_facts_get_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v4/views/analytics/health/get": {
         parameters: {
             query?: never;
@@ -21939,6 +21969,104 @@ export interface components {
             rubrics?: components["schemas"]["QGetRubricsV4Item"][] | null;
         };
         /**
+         * GetSimulationFactsRequest
+         * @description Request for getting simulation facts with filters and pagination.
+         */
+        GetSimulationFactsRequest: {
+            /**
+             * Profile Id
+             * @description Filter by profile ID
+             */
+            profile_id?: string | null;
+            /**
+             * Cohort Ids
+             * @description Filter by cohort IDs
+             */
+            cohort_ids?: string[] | null;
+            /**
+             * Simulation Ids
+             * @description Filter by simulation IDs
+             */
+            simulation_ids?: string[] | null;
+            /**
+             * Scenario Ids
+             * @description Filter by scenario IDs
+             */
+            scenario_ids?: string[] | null;
+            /**
+             * Attempt Type
+             * @description Filter by attempt type: 'general' | 'practice'
+             */
+            attempt_type?: string | null;
+            /**
+             * Is Archived
+             * @description Include archived attempts
+             * @default false
+             */
+            is_archived: boolean;
+            /**
+             * Date From
+             * @description Filter by date range start (inclusive)
+             */
+            date_from?: string | null;
+            /**
+             * Date To
+             * @description Filter by date range end (inclusive)
+             */
+            date_to?: string | null;
+            /**
+             * Sort By
+             * @description Sort field: 'date'
+             * @default date
+             */
+            sort_by: string;
+            /**
+             * Sort Order
+             * @description Sort order: 'asc' | 'desc'
+             * @default desc
+             */
+            sort_order: string;
+            /**
+             * Page Limit
+             * @description Items per page
+             * @default 10000
+             */
+            page_limit: number;
+            /**
+             * Page Offset
+             * @description Pagination offset
+             * @default 0
+             */
+            page_offset: number;
+        };
+        /**
+         * GetSimulationFactsResponse
+         * @description Response with simulation facts and pagination info.
+         */
+        GetSimulationFactsResponse: {
+            /**
+             * Items
+             * @description Simulation facts items
+             */
+            items?: components["schemas"]["SimulationFactsItem"][];
+            /**
+             * Total Count
+             * @description Total count before pagination
+             * @default 0
+             */
+            total_count: number;
+            /**
+             * Simulation Options
+             * @description Available simulation filter options
+             */
+            simulation_options?: components["schemas"]["app__api__v4__views__analytics__simulation_facts__types__FilterOption"][] | null;
+            /**
+             * Scenario Options
+             * @description Available scenario filter options
+             */
+            scenario_options?: components["schemas"]["app__api__v4__views__analytics__simulation_facts__types__FilterOption"][] | null;
+        };
+        /**
          * GetSimulationPositionsApiRequest
          * @description Request for getting simulation positions by simulation IDs.
          */
@@ -35806,6 +35934,59 @@ export interface components {
             resources?: components["schemas"]["QGetDescriptionsV4Item"][] | null;
         };
         /**
+         * SimulationFactsItem
+         * @description Single chat row from mv_simulation_facts.
+         *
+         *     Contains simulation/scenario data with resource IDs only.
+         *     Parameter resolution done at runtime via hydrated scenario/persona/document
+         *     resources (denormalized parameter_field_ids[]) and parameter_fields_resource.
+         */
+        SimulationFactsItem: {
+            /**
+             * Chat Id
+             * Format: uuid
+             */
+            chat_id: string;
+            /**
+             * Attempt Id
+             * Format: uuid
+             */
+            attempt_id: string;
+            /**
+             * Simulation Id
+             * Format: uuid
+             */
+            simulation_id: string;
+            /** Scenario Id */
+            scenario_id?: string | null;
+            /** Persona Id */
+            persona_id?: string | null;
+            /** Document Ids */
+            document_ids?: string[];
+            /** Profile Id */
+            profile_id?: string | null;
+            /** Cohort Id */
+            cohort_id?: string | null;
+            /** Grade Percent */
+            grade_percent?: number | null;
+            /** Passed */
+            passed?: boolean | null;
+            /**
+             * Completed
+             * @default false
+             */
+            completed: boolean;
+            /** Attempt Date */
+            attempt_date?: string | null;
+            /** Attempt Type */
+            attempt_type?: string | null;
+            /**
+             * Is Archived
+             * @default false
+             */
+            is_archived: boolean;
+        };
+        /**
          * SimulationFlagConfig
          * @description Enriched flag config for direct client consumption.
          */
@@ -38178,6 +38359,21 @@ export interface components {
          * @description Filter option for dropdowns.
          */
         app__api__v4__views__analytics__rubric_facts__types__FilterOption: {
+            /** Value */
+            value: string;
+            /** Label */
+            label: string;
+            /**
+             * Count
+             * @default 0
+             */
+            count: number;
+        };
+        /**
+         * FilterOption
+         * @description Filter option for dropdowns.
+         */
+        app__api__v4__views__analytics__simulation_facts__types__FilterOption: {
             /** Value */
             value: string;
             /** Label */
@@ -52868,6 +53064,43 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["GetRubricFactsResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_simulation_facts_api_v4_views_analytics_simulation_facts_get_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GetSimulationFactsRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetSimulationFactsResponse"];
                 };
             };
             /** @description Validation Error */

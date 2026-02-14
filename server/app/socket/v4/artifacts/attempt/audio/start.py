@@ -10,6 +10,10 @@ from typing import Any, cast
 from fastapi import APIRouter
 
 from app.infra.v4.activity.websocket_logger import log_websocket_activity
+from app.infra.v4.websocket.attempt.audio_helpers import (
+    SQL_PATH_VOICE_CONTEXT,
+    get_audio_adapter,
+)
 from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
 from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.infra.v4.websocket.session_store import (
@@ -19,10 +23,6 @@ from app.infra.v4.websocket.session_store import (
 from app.main import (
     _voice_sessions,
     sio,
-)
-from app.infra.v4.websocket.attempt.audio_helpers import (
-    SQL_PATH_VOICE_CONTEXT,
-    get_audio_adapter,
 )
 from app.socket.v4.artifacts.attempt.types import (
     AttemptAudioReadyEvent,

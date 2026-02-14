@@ -1,4 +1,4 @@
-.PHONY: help setup install clean format lint typecheck run run-test test test-unit test-integration test-cov cleanup generate-tests generate-test-schema stop stop-keycloak install-client install-e2e restore-db migrate-db migrate-db-all connect-db fresh-db export-schema export-modules build-test-seed typecheck-client build-client openapi-gen gen-client-types sql-compile sql-format watch-sql-types configure deploy deploy-clean
+.PHONY: help setup install clean format lint typecheck run run-test test test-unit test-integration test-cov cleanup generate-tests generate-test-schema stop stop-keycloak install-client install-e2e restore-db migrate-db migrate-db-only migrate-db-all connect-db fresh-db export-schema export-modules build-test-seed typecheck-client build-client openapi-gen gen-client-types sql-compile sql-format watch-sql-types configure deploy deploy-clean
 
 # Default Python interpreter
 PYTHON := python3.11
@@ -352,8 +352,21 @@ restore-db:
 	@cd database && yarn start
 	@echo "✅ Database restored"
 
-# Migrate database (most recent migration only)
+# Migrate database (most recent migration only) + regenerate everything
 migrate-db:
+	@echo "Running database migrations (most recent only)..."
+	@cd database && bash scripts/start.sh --migrate
+	@echo "✅ Database migrations completed"
+	@echo ""
+	@$(MAKE) export-schema
+	@$(MAKE) export-modules
+	@$(MAKE) generate-test-schema
+	@$(MAKE) sql-compile
+	@echo ""
+	@echo "✅ Migration + all regeneration steps complete"
+
+# Migrate database (most recent migration only, no regeneration)
+migrate-db-only:
 	@echo "Running database migrations (most recent only)..."
 	@cd database && bash scripts/start.sh --migrate
 	@echo "✅ Database migrations completed"

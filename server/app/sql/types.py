@@ -26093,6 +26093,92 @@ class GetAnalyticsRubricGroupScoresViewApiResponse(BaseModel):
     items: list[QGetAnalyticsRubricGroupScoresViewV4Item] | None = None
 
 
+# Generated from: get_analytics_simulation_facts_view
+
+
+class GetAnalyticsSimulationFactsViewSqlParams(BaseModel):
+    profile_id_filter: UUID | None = None
+    cohort_ids: list[UUID] | None = None
+    simulation_ids: list[UUID] | None = None
+    scenario_ids: list[UUID] | None = None
+    attempt_type_filter: str | None = None
+    is_archived_filter: bool | None = False
+    date_from: date | None = None
+    date_to: date | None = None
+    sort_by: str | None = None
+    sort_order: str | None = None
+    page_limit: int | None = 10000
+    page_offset: int | None = 0
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id_filter,
+            self.cohort_ids,
+            self.simulation_ids,
+            self.scenario_ids,
+            self.attempt_type_filter,
+            self.is_archived_filter,
+            self.date_from,
+            self.date_to,
+            self.sort_by,
+            self.sort_order,
+            self.page_limit,
+            self.page_offset,
+        )
+
+
+class QGetAnalyticsSimulationFactsViewV4Item(BaseModel):
+    chat_id: UUID | None
+    attempt_id: UUID | None
+    simulation_id: UUID | None
+    scenario_id: UUID | None
+    persona_id: UUID | None
+    document_ids: list[UUID] | None
+    profile_id: UUID | None
+    cohort_id: UUID | None
+    grade_percent: float | None
+    passed: bool | None
+    completed: bool | None
+    attempt_date: str | None
+    attempt_type: str | None
+    is_archived: bool | None
+
+
+class QGetAnalyticsSimulationFactsViewV4Option(BaseModel):
+    value: str | None
+    label: str | None
+    count: int | None
+
+
+class GetAnalyticsSimulationFactsViewSqlRow(BaseModel):
+    items: list[QGetAnalyticsSimulationFactsViewV4Item] | None = None
+    total_count: int | None = None
+    simulation_options: list[QGetAnalyticsSimulationFactsViewV4Option] | None = None
+    scenario_options: list[QGetAnalyticsSimulationFactsViewV4Option] | None = None
+
+
+class GetAnalyticsSimulationFactsViewApiRequest(BaseModel):
+    profile_id_filter: UUID | None = None
+    cohort_ids: list[UUID] | None = None
+    simulation_ids: list[UUID] | None = None
+    scenario_ids: list[UUID] | None = None
+    attempt_type_filter: str | None = None
+    is_archived_filter: bool | None = False
+    date_from: date | None = None
+    date_to: date | None = None
+    sort_by: str | None = None
+    sort_order: str | None = None
+    page_limit: int | None = 10000
+    page_offset: int | None = 0
+
+
+class GetAnalyticsSimulationFactsViewApiResponse(BaseModel):
+    items: list[QGetAnalyticsSimulationFactsViewV4Item] | None = None
+    total_count: int | None = None
+    simulation_options: list[QGetAnalyticsSimulationFactsViewV4Option] | None = None
+    scenario_options: list[QGetAnalyticsSimulationFactsViewV4Option] | None = None
+
+
 # Generated from: get_analytics_simulation_scenario_counts_view
 
 
@@ -31123,6 +31209,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetAnalyticsRubricGroupScoresViewApiRequest",
         "GetAnalyticsRubricGroupScoresViewApiResponse",
     ),
+    "app/sql/v4/queries/views/analytics/simulation_facts/get_analytics_simulation_facts_view_complete.sql": (
+        "GetAnalyticsSimulationFactsViewSqlParams",
+        "GetAnalyticsSimulationFactsViewSqlRow",
+        "GetAnalyticsSimulationFactsViewApiRequest",
+        "GetAnalyticsSimulationFactsViewApiResponse",
+    ),
     "app/sql/v4/queries/views/analytics/simulation_scenario_counts/get_analytics_simulation_scenario_counts_view_complete.sql": (
         "GetAnalyticsSimulationScenarioCountsViewSqlParams",
         "GetAnalyticsSimulationScenarioCountsViewSqlRow",
@@ -35307,6 +35399,13 @@ if TYPE_CHECKING:
     def load_sql_query(
         file_path: Literal[
             "app/sql/v4/queries/views/analytics/rubric_group_scores/get_analytics_rubric_group_scores_view_complete.sql"
+        ],
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal[
+            "app/sql/v4/queries/views/analytics/simulation_facts/get_analytics_simulation_facts_view_complete.sql"
         ],
     ) -> SqlString: ...
 
