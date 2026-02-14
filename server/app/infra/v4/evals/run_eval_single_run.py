@@ -22,10 +22,6 @@ from app.sql.types import (
     InfrastructureEvalsGetRubricDetailsSqlRow,
     InfrastructureEvalsGetRubricGradeAgentSqlParams,
     InfrastructureEvalsGetRubricGradeAgentSqlRow,
-    InfrastructureEvalsGetTestByTraceIdSqlParams,
-    InfrastructureEvalsGetTestByTraceIdSqlRow,
-    InfrastructureEvalsGetTestStatusSqlParams,
-    InfrastructureEvalsGetTestStatusSqlRow,
     InfrastructureEvalsLinkAttemptTestSqlParams,
     InfrastructureEvalsLinkTestRunSqlParams,
     InfrastructureEvalsMarkEvalRunCompleteSqlParams,
@@ -106,57 +102,11 @@ async def run_eval_single_run(
             logger.info(
                 f"Run {run_id} already completed for eval {eval_id}, skipping (idempotent)"
             )
-            # Return existing test_id if available
-            test_params = InfrastructureEvalsGetTestByTraceIdSqlParams(
-                attempt_id=uuid.UUID(attempt_id),
-                trace_id=f"eval_{attempt_id}_{run_id}",
-            )
-            test_result = cast(
-                InfrastructureEvalsGetTestByTraceIdSqlRow,
-                await execute_sql_typed(
-                    conn,
-                    "app/sql/v4/queries/infrastructure/evals/get_test_by_trace_id_v4_complete.sql",
-                    params=test_params,
-                ),
-            )
-            existing_test = {"test_id": test_result.test_id} if test_result else None
             return {
                 "success": True,
-                "test_id": existing_test["test_id"] if existing_test else None,
-                "eval_run_id": None,  # Already exists
-                "grade_id": None,  # Already exists
-            }
-
-        # Idempotency check: If test exists and is in progress, skip
-        test_status_params = InfrastructureEvalsGetTestStatusSqlParams(
-            attempt_id=uuid.UUID(attempt_id),
-            trace_id=f"eval_{attempt_id}_{run_id}",
-        )
-        test_status_result = cast(
-            InfrastructureEvalsGetTestStatusSqlRow,
-            await execute_sql_typed(
-                conn,
-                "app/sql/v4/queries/infrastructure/evals/get_test_status_v4_complete.sql",
-                params=test_status_params,
-            ),
-        )
-        test_check = (
-            {
-                "test_id": test_status_result.test_id,
-                "completed": test_status_result.completed,
-            }
-            if test_status_result
-            else None
-        )
-        if test_check:
-            logger.info(
-                f"Run {run_id} already in progress (test {test_check['test_id']}), skipping (idempotent)"
-            )
-            return {
-                "success": True,
-                "test_id": test_check["test_id"],
-                "eval_run_id": None,  # Already exists
-                "grade_id": None,  # Will be created when completed
+                "test_id": None,
+                "eval_run_id": None,
+                "grade_id": None,
             }
 
         # Emit progress event
