@@ -119,9 +119,6 @@ router.include_router(domains_search_router)
 from app.api.v4.resources.documents.get import router as documents_get_router
 
 router.include_router(documents_get_router)
-from app.api.v4.resources.documents.html import router as documents_html_router
-
-router.include_router(documents_html_router)
 from app.api.v4.resources.documents.search import router as documents_search_router
 
 router.include_router(documents_search_router)

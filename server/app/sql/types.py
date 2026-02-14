@@ -5121,9 +5121,10 @@ class QGetDocumentResourceV4Item(BaseModel):
     document_id: UUID | None
     name: str | None
     description: str | None
-    file_path: str | None
-    mime_type: str | None
     generated: bool | None
+    upload_id: UUID | None
+    text_id: UUID | None
+    image_ids: list[UUID] | None
 
 class GetDocumentResourceDataSqlRow(BaseModel):
 
@@ -14808,31 +14809,6 @@ class DescriptionsApiResponse(BaseModel):
 
 
 
-# Generated from: get_document_html
-
-class GetDocumentHtmlSqlParams(BaseModel):
-
-    p_id: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.p_id,
-        )
-
-class GetDocumentHtmlSqlRow(BaseModel):
-
-    html: str | None = None
-
-class GetDocumentHtmlApiRequest(BaseModel):
-
-    p_id: UUID
-
-class GetDocumentHtmlApiResponse(BaseModel):
-
-    html: str | None = None
-
-
-
 # Generated from: get_document_resource
 
 class GetDocumentResourceSqlParams(BaseModel):
@@ -14876,7 +14852,8 @@ class QGetDocumentsV4Item(BaseModel):
     description: str | None
     generated: bool | None
     upload_id: UUID | None
-    html: bool | None
+    text_id: UUID | None
+    image_ids: list[UUID] | None
 
 class GetDocumentsSqlRow(BaseModel):
 
@@ -14905,7 +14882,7 @@ class SearchDocumentsSqlParams(BaseModel):
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
     upload_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
     text_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    html: bool | None = None
+    image_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
     document: bool | None = False
     scenario: bool | None = False
 
@@ -14920,7 +14897,7 @@ class SearchDocumentsSqlParams(BaseModel):
             self.exclude_ids,
             self.upload_ids,
             self.text_ids,
-            self.html,
+            self.image_ids,
             self.document,
             self.scenario,
         )
@@ -14940,7 +14917,7 @@ class SearchDocumentsApiRequest(BaseModel):
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
     upload_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
     text_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    html: bool | None = None
+    image_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
     document: bool | None = False
     scenario: bool | None = False
 
@@ -30532,12 +30509,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "DescriptionsApiRequest",
         "DescriptionsApiResponse",
     ),
-    "app/sql/v4/queries/resources/documents/get_document_html_complete.sql": (
-        "GetDocumentHtmlSqlParams",
-        "GetDocumentHtmlSqlRow",
-        "GetDocumentHtmlApiRequest",
-        "GetDocumentHtmlApiResponse",
-    ),
     "app/sql/v4/queries/resources/documents/get_document_resource_complete.sql": (
         "GetDocumentResourceSqlParams",
         "GetDocumentResourceSqlRow",
@@ -34050,11 +34021,6 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/queries/resources/descriptions_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/queries/resources/documents/get_document_html_complete.sql"]
     ) -> SqlString: ...
 
     @overload

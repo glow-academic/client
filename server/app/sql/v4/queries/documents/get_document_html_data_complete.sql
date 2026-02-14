@@ -1,5 +1,6 @@
--- Get HTML content for an HTML document
--- Returns the HTML text content from the associated texts_entry
+-- Get HTML/text content for a template document
+-- Returns the text content from the associated texts_resource → texts_entry chain
+-- Uses template flag (via document_flags_junction) instead of dropped html column
 
 DO $$
 DECLARE
@@ -25,7 +26,10 @@ LANGUAGE sql
 STABLE
 AS $$
     SELECT COALESCE(te.content, '') as html
-    FROM documents_resource d
-    LEFT JOIN texts_entry te ON te.id = d.text_id AND te.active = true
-    WHERE d.id = p_id AND d.html = true;
+    FROM documents_resource dr
+    JOIN texts_resource tr ON tr.id = dr.text_id
+    JOIN texts_texts_connection ttc ON ttc.texts_id = tr.id AND ttc.active = true
+    JOIN texts_entry te ON te.id = ttc.text_id AND te.active = true
+    WHERE dr.id = p_id
+      AND dr.text_id IS NOT NULL;
 $$;

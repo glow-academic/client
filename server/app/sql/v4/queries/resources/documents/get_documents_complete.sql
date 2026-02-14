@@ -48,14 +48,15 @@ BEGIN
     END LOOP;
 END $$;
 
--- Create composite type for document item (no file_path/mime_type from view)
+-- Create composite type for document item (reads documents_resource only)
 CREATE TYPE types.q_get_documents_v4_item AS (
     document_id uuid,
     name text,
     description text,
     generated boolean,
     upload_id uuid,
-    html boolean
+    text_id uuid,
+    image_ids uuid[]
 );
 
 -- Create function - query documents_resource only
@@ -76,7 +77,8 @@ SELECT COALESCE(
             COALESCE(d.description, ''),
             COALESCE(d.generated, false),
             d.upload_id,
-            COALESCE(d.html, false)
+            d.text_id,
+            d.image_ids
         )::types.q_get_documents_v4_item
         ORDER BY array_position(p_ids, d.id)
     ),

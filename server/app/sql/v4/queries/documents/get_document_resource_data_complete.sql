@@ -1,7 +1,7 @@
 -- Get document resource by ID
--- Simple data fetching for scenario two-pass architecture
--- Parameters: id (uuid)
--- Returns: item (single document resource)
+-- CLEAN PATTERN: Query documents_resource only (Rule 6)
+-- Parameters: document_id (uuid)
+-- Returns: items (single document resource)
 
 -- Drop function if exists (handles signature variations)
 DO $$
@@ -38,9 +38,10 @@ CREATE TYPE types.q_get_document_resource_v4_item AS (
     document_id uuid,
     name text,
     description text,
-    file_path text,
-    mime_type text,
-    generated boolean
+    generated boolean,
+    upload_id uuid,
+    text_id uuid,
+    image_ids uuid[]
 );
 
 -- Create function — reads directly from documents_resource columns
@@ -59,15 +60,15 @@ SELECT COALESCE(
             d.id,
             COALESCE(d.name, ''),
             COALESCE(d.description, ''),
-            COALESCE(u.file_path, ''),
-            COALESCE(u.mime_type, ''),
-            COALESCE(d.generated, false)
+            COALESCE(d.generated, false),
+            d.upload_id,
+            d.text_id,
+            d.image_ids
         )::types.q_get_document_resource_v4_item
     ),
     ARRAY[]::types.q_get_document_resource_v4_item[]
 ) as items
 FROM documents_resource d
-LEFT JOIN view_uploads_entry u ON u.id = d.upload_id
 WHERE d.id = document_id
   AND d.active = true;
 $$;

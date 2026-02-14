@@ -1,7 +1,8 @@
 -- Search documents resources with optional context
--- CLEAN PATTERN: Query documents_resource only (no view_uploads_entry join)
--- Uses draft_id for suggest_source='draft' (efficient drafts_connection lookup)
--- Parameters: search (text), limit_count (int), offset_count (int), department_ids (uuid[]), draft_id (uuid), suggest_source (text), exclude_ids (uuid[])
+-- CLEAN PATTERN: Query documents_resource only + allowed junction/drafts tables
+-- Parameters: search (text), limit_count (int), offset_count (int), department_ids (uuid[]),
+--   draft_id (uuid), suggest_source (text), exclude_ids (uuid[]), upload_ids (uuid[]),
+--   text_ids (uuid[]), image_ids (uuid[]), document (boolean), scenario (boolean)
 -- Returns: items (array of document resources)
 
 -- Drop function if exists (handles signature variations)
@@ -30,7 +31,7 @@ CREATE OR REPLACE FUNCTION api_search_documents_v4(
     exclude_ids uuid[] DEFAULT ARRAY[]::uuid[],
     upload_ids uuid[] DEFAULT ARRAY[]::uuid[],
     text_ids uuid[] DEFAULT ARRAY[]::uuid[],
-    html boolean DEFAULT NULL,
+    image_ids uuid[] DEFAULT ARRAY[]::uuid[],
     -- Artifact boolean filters: when true, only return resources linked to that artifact type
     document boolean DEFAULT false,
     scenario boolean DEFAULT false
@@ -43,7 +44,7 @@ STABLE
 AS $$
 SELECT COALESCE(
     ARRAY_AGG(
-        (q.document_id, q.name, q.description, q.generated, q.upload_id, q.html)::types.q_get_documents_v4_item
+        (q.document_id, q.name, q.description, q.generated, q.upload_id, q.text_id, q.image_ids)::types.q_get_documents_v4_item
         ORDER BY q.name
     ),
     ARRAY[]::types.q_get_documents_v4_item[]
@@ -55,7 +56,8 @@ FROM (
         COALESCE(d.description, '') AS description,
         COALESCE(d.generated, false) AS generated,
         d.upload_id,
-        COALESCE(d.html, false) AS html
+        d.text_id,
+        d.image_ids
     FROM documents_resource d
     WHERE d.active = true
       AND d.name IS NOT NULL
@@ -85,7 +87,7 @@ FROM (
       AND (exclude_ids IS NULL OR NOT (d.id = ANY(exclude_ids)))
       AND (COALESCE(array_length(upload_ids, 1), 0) = 0 OR d.upload_id = ANY(upload_ids))
       AND (COALESCE(array_length(text_ids, 1), 0) = 0 OR d.text_id = ANY(text_ids))
-      AND (html IS NULL OR d.html = html)
+      AND (COALESCE(array_length(image_ids, 1), 0) = 0 OR d.image_ids && image_ids)
       -- Optional search filter
       AND (
           search IS NULL

@@ -387,7 +387,7 @@ async def get_document_internal(
             return (selected, suggestions)
 
     # Document-specific flag names (business logic)
-    DOCUMENT_FLAG_NAMES = {"document_active", "document_html"}
+    DOCUMENT_FLAG_NAMES = {"document_active"}
 
     async def fetch_flags():
         async with pool.acquire() as c:
