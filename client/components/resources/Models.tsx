@@ -16,45 +16,38 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { cn } from "@/lib/utils";
+import { useSocket } from "@/contexts/socket-context";
 import type { OutputOf } from "@/lib/api/types";
+import { cn } from "@/lib/utils";
 import { Check, X } from "lucide-react";
-import { useCallback, useEffect, useMemo } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 // Derive resource item type from the GET endpoint response
 type ModelsGetResponse = OutputOf<"/api/v4/resources/models/get", "post">;
 export type ModelResourceItem = NonNullable<ModelsGetResponse["items"]>[number];
 
 export interface ModelsProps {
-  model_id?: string | null; // Current model_id (standardized prop name)
-  model_resource?: ModelResourceItem | null; // Resource data from server (standardized prop name; includes generated field)
-  show_models?: boolean; // Whether to show this resource picker
-  model_suggestions?: string[]; // Array of suggested resource IDs (UUIDs)
-  models?: ModelResourceItem[]; // Array of all available model options
-  disabled?: boolean; // Based on can_edit flag
-  onModelIdChange: (modelId: string | null) => void; // Update model_id in parent form state
+  model_id?: string | null;
+  model_resource?: ModelResourceItem | null;
+  show_models?: boolean;
+  model_suggestions?: string[];
+  models?: ModelResourceItem[];
+  disabled?: boolean;
+  onModelIdChange: (modelId: string | null) => void;
   label?: string;
   required?: boolean;
   id?: string;
   helpText?: string;
-  searchTerm?: string; // Search term for filtering models
-  onSearchChange?: (term: string) => void; // Callback when search term changes
-  showSelectedFilter?: boolean; // Whether to show only selected models
-  onShowSelectedChange?: (value: boolean) => void; // Callback when show selected filter changes
-  // Legacy props for backward compatibility
-  modelResource?: {
-    id: string;
-    name: string;
-    description: string;
-    active?: boolean | null;
-    generated?: boolean | null;
-  } | null;
-  modelId?: string | null;
-  suggestions?: string[];
+  searchTerm?: string;
+  onSearchChange?: (term: string) => void;
+  showSelectedFilter?: boolean;
+  onShowSelectedChange?: (value: boolean) => void;
+  group_id?: string | null;
   // AI diff view props
   aiModelResources?: Array<Pick<ModelResourceItem, "id" | "name">> | null;
   onAccept?: () => void;
   onReject?: () => void;
+  onGenerationComplete?: () => void;
   showAiGenerate?: boolean;
   onGenerate?: () => void | Promise<void>;
   isGenerating?: boolean;
@@ -76,36 +69,61 @@ export function Models({
   onSearchChange,
   showSelectedFilter = false,
   onShowSelectedChange,
-  // Legacy props for backward compatibility
-  modelResource: _modelResource,
-  modelId: _modelId,
-  suggestions,
+  group_id,
   // AI diff view props
   aiModelResources,
   onAccept,
   onReject,
+  onGenerationComplete,
   showAiGenerate: _showAiGenerate = false,
   onGenerate: _onGenerate,
   isGenerating: _isGenerating = false,
 }: ModelsProps) {
-  // Use standardized props with fallback to legacy props
-  const resourceId = model_id ?? _modelId ?? null;
+  const resourceId = model_id ?? null;
   const show = show_models ?? true;
   const suggestionsList = useMemo(
-    () => model_suggestions ?? suggestions ?? [],
-    [model_suggestions, suggestions]
+    () => model_suggestions ?? [],
+    [model_suggestions]
   );
 
+  // Socket-based AI suggestion handling
+  const { socket: aiSocket, isConnected: aiIsConnected } = useSocket();
+  const [internalAiModelResources, setInternalAiModelResources] = useState<
+    Array<Pick<ModelResourceItem, "id" | "name">> | null
+  >(null);
+
+  useEffect(() => {
+    if (!aiSocket || !aiIsConnected) return;
+    const handleResourceComplete = (data: {
+      group_id?: string;
+      id?: string | null;
+      name?: string | null;
+    }) => {
+      if (group_id && data.group_id !== group_id) return;
+      if (data.id) {
+        setInternalAiModelResources([{ id: data.id, name: data.name ?? null }]);
+      }
+      onGenerationComplete?.();
+    };
+    aiSocket.on("models_generation_complete", handleResourceComplete);
+    return () => {
+      aiSocket.off("models_generation_complete", handleResourceComplete);
+    };
+  }, [aiSocket, aiIsConnected, group_id, onGenerationComplete]);
+
+  // Effective AI resources: internal (socket) takes priority, then prop fallback
+  const effectiveAiModelResources = internalAiModelResources ?? aiModelResources ?? null;
+
   // AI suggestion state
-  const showDiff = !!aiModelResources?.length;
+  const showDiff = !!effectiveAiModelResources?.length;
   const aiSuggestedIds = useMemo(
     () =>
       new Set(
-        aiModelResources
+        effectiveAiModelResources
           ?.map((m) => m.id)
           .filter(Boolean) as string[]
       ),
-    [aiModelResources]
+    [effectiveAiModelResources]
   );
 
   // Handle search term changes
@@ -177,18 +195,20 @@ export function Models({
     [resourceId, onModelIdChange]
   );
 
-  // Accept AI suggestion - set the AI-suggested model
+  // Accept AI suggestion - set the AI-suggested model and clear internal state
   const handleAccept = useCallback(() => {
-    if (!aiModelResources?.length) return;
-    const suggestedId = aiModelResources[0]?.id;
+    if (!effectiveAiModelResources?.length) return;
+    const suggestedId = effectiveAiModelResources[0]?.id;
     if (suggestedId && suggestedId !== resourceId) {
       onModelIdChange(suggestedId);
     }
     onAccept?.();
-  }, [aiModelResources, resourceId, onModelIdChange, onAccept]);
+    setInternalAiModelResources(null);
+  }, [effectiveAiModelResources, resourceId, onModelIdChange, onAccept]);
 
-  // Reject AI suggestion - just clear the pending state
+  // Reject AI suggestion - clear internal state
   const handleReject = useCallback(() => {
+    setInternalAiModelResources(null);
     onReject?.();
   }, [onReject]);
 

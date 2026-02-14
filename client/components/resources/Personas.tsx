@@ -19,8 +19,9 @@ import {
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 import { getIconComponent } from "@/utils/icons";
+import { useSocket } from "@/contexts/socket-context";
 import { Brain, Check, Loader2, Sparkles, X } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 // Utility function to generate gradient from hex color
 const generateGradientFromHex = (hexColor: string): string => {
@@ -88,6 +89,7 @@ export interface PersonasProps {
   aiPersonaResources?: Pick<PersonaResourceItem, "persona_id" | "name">[] | null;
   onAccept?: () => void;
   onReject?: () => void;
+  onGenerationComplete?: () => void;
 }
 
 export function Personas({
@@ -116,6 +118,7 @@ export function Personas({
   aiPersonaResources,
   onAccept,
   onReject,
+  onGenerationComplete,
 }: PersonasProps) {
   const ids = useMemo(() => persona_ids ?? [], [persona_ids]);
   const show = show_personas ?? false;
@@ -144,6 +147,37 @@ export function Personas({
     () => persona_suggestions ?? [],
     [persona_suggestions]
   );
+
+  // Socket-based AI suggestion handling
+  const { socket: aiSocket, isConnected: aiIsConnected } = useSocket();
+  const [internalAiPersonaResources, setInternalAiPersonaResources] = useState<
+    Pick<PersonaResourceItem, "persona_id" | "name">[] | null
+  >(null);
+
+  useEffect(() => {
+    if (!aiSocket || !aiIsConnected) return;
+    const handleResourceComplete = (data: {
+      group_id?: string;
+      persona_id?: string | null;
+      name?: string | null;
+    }) => {
+      if (group_id && data.group_id !== group_id) return;
+      if (data.persona_id) {
+        setInternalAiPersonaResources([
+          { persona_id: data.persona_id, name: data.name ?? null },
+        ]);
+      }
+      onGenerationComplete?.();
+    };
+    aiSocket.on("personas_generation_complete", handleResourceComplete);
+    return () => {
+      aiSocket.off("personas_generation_complete", handleResourceComplete);
+    };
+  }, [aiSocket, aiIsConnected, group_id, onGenerationComplete]);
+
+  // Effective AI resources: internal (socket) takes priority, then prop fallback
+  const effectiveAiPersonaResources =
+    internalAiPersonaResources ?? aiPersonaResources ?? null;
 
   // Track which persona IDs have already had resources created
   const createdPersonaIdsRef = useRef<Set<string>>(new Set());
@@ -256,31 +290,33 @@ export function Personas({
   }, [persona_resources]);
 
   // AI suggestion state
-  const showDiff = !!aiPersonaResources?.length;
+  const showDiff = !!effectiveAiPersonaResources?.length;
   const aiSuggestedIds = useMemo(
     () =>
       new Set(
-        aiPersonaResources
+        effectiveAiPersonaResources
           ?.map((p) => p.persona_id)
           .filter(Boolean) as string[]
       ),
-    [aiPersonaResources]
+    [effectiveAiPersonaResources]
   );
 
-  // Accept AI suggestion - add AI-suggested personas to selection
+  // Accept AI suggestion - add AI-suggested personas and clear internal state
   const handleAccept = useCallback(() => {
-    if (!aiPersonaResources?.length) return;
-    const newIds = aiPersonaResources
+    if (!effectiveAiPersonaResources?.length) return;
+    const newIds = effectiveAiPersonaResources
       .map((p) => p.persona_id)
       .filter((id): id is string => !!id && !ids.includes(id));
     if (newIds.length > 0) {
       onChange([...ids, ...newIds]);
     }
     onAccept?.();
-  }, [aiPersonaResources, ids, onChange, onAccept]);
+    setInternalAiPersonaResources(null);
+  }, [effectiveAiPersonaResources, ids, onChange, onAccept]);
 
-  // Reject AI suggestion - just clear the pending state
+  // Reject AI suggestion - clear internal state
   const handleReject = useCallback(() => {
+    setInternalAiPersonaResources(null);
     onReject?.();
   }, [onReject]);
 
