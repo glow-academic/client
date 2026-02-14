@@ -94,20 +94,19 @@ async def get_benchmark_invocations_internal(
                     else [],
                     run_ids=list(item.run_ids) if item.run_ids else [],
                     group_ids=list(item.group_ids) if item.group_ids else [],
-                    model_ids=list(item.model_ids) if item.model_ids else [],
-                    prompt_ids=list(item.prompt_ids) if item.prompt_ids else [],
                     instruction_ids=list(item.instruction_ids)
                     if item.instruction_ids
                     else [],
-                    voice_ids=list(item.voice_ids) if item.voice_ids else [],
-                    temperature_level_ids=list(item.temperature_level_ids)
-                    if item.temperature_level_ids
-                    else [],
-                    reasoning_level_ids=list(item.reasoning_level_ids)
-                    if item.reasoning_level_ids
-                    else [],
                     tool_ids=list(item.tool_ids) if item.tool_ids else [],
-                    key_ids=list(item.key_ids) if item.key_ids else [],
+                    model_id=item.model_id,
+                    prompt_id=item.prompt_id,
+                    voice_id=item.voice_id,
+                    temperature_level_id=item.temperature_level_id,
+                    reasoning_level_id=item.reasoning_level_id,
+                    key_id=item.key_id,
+                    historical_run_ids=list(item.historical_run_ids)
+                    if item.historical_run_ids
+                    else [],
                 )
             )
 

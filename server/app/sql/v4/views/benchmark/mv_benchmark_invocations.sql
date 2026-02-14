@@ -109,19 +109,23 @@ feedbacks_agg AS (
 bundle_snapshot AS (
     SELECT
         bbd.id AS benchmark_bundle_department_id,
-        -- Configured runs (template runs from bundle)
+        -- Configured runs (template runs from bundle) — array, multiple per department
         COALESCE(ARRAY_AGG(DISTINCT bbdr.runs_id ORDER BY bbdr.runs_id) FILTER (WHERE bbdr.runs_id IS NOT NULL), ARRAY[]::uuid[]) AS run_ids,
-        -- Configured groups
+        -- Configured groups — array, multiple per department
         COALESCE(ARRAY_AGG(DISTINCT bbdg.groups_id ORDER BY bbdg.groups_id) FILTER (WHERE bbdg.groups_id IS NOT NULL), ARRAY[]::uuid[]) AS group_ids,
-        -- Agent sub-resources
-        COALESCE(ARRAY_AGG(DISTINCT bbdm.models_id ORDER BY bbdm.models_id) FILTER (WHERE bbdm.models_id IS NOT NULL), ARRAY[]::uuid[]) AS model_ids,
-        COALESCE(ARRAY_AGG(DISTINCT bbdp.prompts_id ORDER BY bbdp.prompts_id) FILTER (WHERE bbdp.prompts_id IS NOT NULL), ARRAY[]::uuid[]) AS prompt_ids,
+        -- Agent sub-resources — singular (one per department entry)
+        (ARRAY_AGG(bbdm.models_id) FILTER (WHERE bbdm.models_id IS NOT NULL))[1] AS model_id,
+        (ARRAY_AGG(bbdp.prompts_id) FILTER (WHERE bbdp.prompts_id IS NOT NULL))[1] AS prompt_id,
+        -- Instructions — array, multiple per department
         COALESCE(ARRAY_AGG(DISTINCT bbdi.instructions_id ORDER BY bbdi.instructions_id) FILTER (WHERE bbdi.instructions_id IS NOT NULL), ARRAY[]::uuid[]) AS instruction_ids,
-        COALESCE(ARRAY_AGG(DISTINCT bbdv.voices_id ORDER BY bbdv.voices_id) FILTER (WHERE bbdv.voices_id IS NOT NULL), ARRAY[]::uuid[]) AS voice_ids,
-        COALESCE(ARRAY_AGG(DISTINCT bbdt.temperature_levels_id ORDER BY bbdt.temperature_levels_id) FILTER (WHERE bbdt.temperature_levels_id IS NOT NULL), ARRAY[]::uuid[]) AS temperature_level_ids,
-        COALESCE(ARRAY_AGG(DISTINCT bbdrl.reasoning_levels_id ORDER BY bbdrl.reasoning_levels_id) FILTER (WHERE bbdrl.reasoning_levels_id IS NOT NULL), ARRAY[]::uuid[]) AS reasoning_level_ids,
+        -- Singular sub-resources (one per department entry)
+        (ARRAY_AGG(bbdv.voices_id) FILTER (WHERE bbdv.voices_id IS NOT NULL))[1] AS voice_id,
+        (ARRAY_AGG(bbdt.temperature_levels_id) FILTER (WHERE bbdt.temperature_levels_id IS NOT NULL))[1] AS temperature_level_id,
+        (ARRAY_AGG(bbdrl.reasoning_levels_id) FILTER (WHERE bbdrl.reasoning_levels_id IS NOT NULL))[1] AS reasoning_level_id,
+        -- Tools — array, multiple per department
         COALESCE(ARRAY_AGG(DISTINCT bbdtl.tools_id ORDER BY bbdtl.tools_id) FILTER (WHERE bbdtl.tools_id IS NOT NULL), ARRAY[]::uuid[]) AS tool_ids,
-        COALESCE(ARRAY_AGG(DISTINCT bbdk.keys_id ORDER BY bbdk.keys_id) FILTER (WHERE bbdk.keys_id IS NOT NULL), ARRAY[]::uuid[]) AS key_ids
+        -- Key — singular (one per department entry)
+        (ARRAY_AGG(bbdk.keys_id) FILTER (WHERE bbdk.keys_id IS NOT NULL))[1] AS key_id
     FROM benchmark_bundle_departments_entry bbd
     LEFT JOIN benchmark_bundle_departments_runs_connection bbdr ON bbdr.benchmark_bundle_department_id = bbd.id AND bbdr.active = true
     LEFT JOIN benchmark_bundle_departments_groups_connection bbdg ON bbdg.benchmark_bundle_department_id = bbd.id AND bbdg.active = true
@@ -135,6 +139,18 @@ bundle_snapshot AS (
     LEFT JOIN benchmark_bundle_departments_keys_connection bbdk ON bbdk.benchmark_bundle_department_id = bbd.id AND bbdk.active = true
     WHERE bbd.active = true
     GROUP BY bbd.id
+),
+-- Historical runs: all runs in the invocation's group (for history building)
+historical_runs AS (
+    SELECT
+        i.id AS invocation_id,
+        ARRAY_AGG(rrc.runs_id ORDER BY re.created_at)
+            FILTER (WHERE rrc.runs_id IS NOT NULL) AS historical_run_ids
+    FROM benchmark_invocations_entry i
+    JOIN runs_entry re ON re.group_id = i.group_id
+    JOIN runs_runs_connection rrc ON rrc.run_id = re.id AND rrc.active = true
+    WHERE i.active = true AND i.group_id IS NOT NULL
+    GROUP BY i.id
 )
 SELECT
     -- Primary key
@@ -161,16 +177,21 @@ SELECT
     COALESCE(irl.invocation_run_ids, ARRAY[]::uuid[]) AS invocation_run_ids,
 
     -- Configured resource IDs (from bundle department snapshot)
+    -- Arrays (multiple per department)
     COALESCE(bs.run_ids, ARRAY[]::uuid[]) AS run_ids,
     COALESCE(bs.group_ids, ARRAY[]::uuid[]) AS group_ids,
-    COALESCE(bs.model_ids, ARRAY[]::uuid[]) AS model_ids,
-    COALESCE(bs.prompt_ids, ARRAY[]::uuid[]) AS prompt_ids,
     COALESCE(bs.instruction_ids, ARRAY[]::uuid[]) AS instruction_ids,
-    COALESCE(bs.voice_ids, ARRAY[]::uuid[]) AS voice_ids,
-    COALESCE(bs.temperature_level_ids, ARRAY[]::uuid[]) AS temperature_level_ids,
-    COALESCE(bs.reasoning_level_ids, ARRAY[]::uuid[]) AS reasoning_level_ids,
     COALESCE(bs.tool_ids, ARRAY[]::uuid[]) AS tool_ids,
-    COALESCE(bs.key_ids, ARRAY[]::uuid[]) AS key_ids
+    -- Singular (one per department entry)
+    bs.model_id,
+    bs.prompt_id,
+    bs.voice_id,
+    bs.temperature_level_id,
+    bs.reasoning_level_id,
+    bs.key_id,
+
+    -- Historical runs (all runs in invocation's group)
+    COALESCE(hr.historical_run_ids, ARRAY[]::uuid[]) AS historical_run_ids
 
 FROM benchmark_invocations_entry i
 LEFT JOIN invocation_run_links irl ON irl.invocation_id = i.id
@@ -178,6 +199,7 @@ LEFT JOIN latest_grade lg ON lg.invocation_id = i.id
 LEFT JOIN grade_rubric gr ON gr.invocation_id = i.id
 LEFT JOIN feedbacks_agg fa ON fa.grade_id = lg.grade_id
 LEFT JOIN bundle_snapshot bs ON bs.benchmark_bundle_department_id = i.benchmark_bundle_department_id
+LEFT JOIN historical_runs hr ON hr.invocation_id = i.id
 WHERE i.active = true
 WITH NO DATA;
 

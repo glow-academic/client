@@ -258,7 +258,9 @@ async def _attempt_message_impl(
         runs_today = context_row.runs_today or 0
 
         if requests_per_day is not None and runs_today >= requests_per_day:
-            error_msg = f"Rate limit exceeded ({runs_today}/{requests_per_day} requests today)"
+            error_msg = (
+                f"Rate limit exceeded ({runs_today}/{requests_per_day} requests today)"
+            )
             logger.error(
                 f"Attempt message rate limit exceeded - "
                 f"profile_id={profile_id}, chat_id={data.chat_id}, "
@@ -579,8 +581,7 @@ async def _attempt_message_impl(
         if result.views:
             if result.views.simulation_attempts:
                 views_data["simulation_attempts"] = [
-                    a.model_dump(mode="json")
-                    for a in result.views.simulation_attempts
+                    a.model_dump(mode="json") for a in result.views.simulation_attempts
                 ]
             if result.views.simulation_chats:
                 views_data["simulation_chats"] = [
@@ -588,8 +589,7 @@ async def _attempt_message_impl(
                 ]
             if result.views.simulation_messages:
                 views_data["simulation_messages"] = [
-                    m.model_dump(mode="json")
-                    for m in result.views.simulation_messages
+                    m.model_dump(mode="json") for m in result.views.simulation_messages
                 ]
         jinja_context["views"] = views_data
 
@@ -600,7 +600,12 @@ async def _attempt_message_impl(
         )
 
         # Step 11: Build model config
-        if data.voice_mode and agent_resource and hasattr(agent_resource, "voice") and agent_resource.voice:
+        if (
+            data.voice_mode
+            and agent_resource
+            and hasattr(agent_resource, "voice")
+            and agent_resource.voice
+        ):
             model_config = {
                 "model": model_name,
                 "api_key": api_key,
@@ -609,7 +614,9 @@ async def _attempt_message_impl(
                 "reasoning": reasoning,
                 "provider": provider_name,
                 "voice": agent_resource.voice,
-                "quality": agent_resource.quality if hasattr(agent_resource, "quality") else None,
+                "quality": agent_resource.quality
+                if hasattr(agent_resource, "quality")
+                else None,
                 "length_seconds": None,
             }
             resource_type = "voice"

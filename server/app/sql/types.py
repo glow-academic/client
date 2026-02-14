@@ -7503,66 +7503,67 @@ class GetTestRunContextApiResponse(BaseModel):
 
 
 
+# Generated from: get_tools_by_resource_ids
+
+class GetToolsByResourceIdsSqlParams(BaseModel):
+
+    p_tool_resource_ids: list[UUID]
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.p_tool_resource_ids,
+        )
+
+class GetToolsByResourceIdsSqlRow(BaseModel):
+
+    tools: list[IGetTextRunContextAndCreateRunV4Tool] | None = None
+
+class GetToolsByResourceIdsApiRequest(BaseModel):
+
+    p_tool_resource_ids: list[UUID]
+
+class GetToolsByResourceIdsApiResponse(BaseModel):
+
+    tools: list[IGetTextRunContextAndCreateRunV4Tool] | None = None
+
+
+
 # Generated from: prepare_test_run
 
 class PrepareTestRunSqlParams(BaseModel):
 
     p_profile_id: UUID
-    p_chat_id: UUID
-    p_run_resource_id: UUID
+    p_group_id: UUID
+    p_agents_resource_id: UUID | None = None
+    p_models_resource_id: UUID | None = None
+    p_providers_resource_id: UUID | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.p_profile_id,
-            self.p_chat_id,
-            self.p_run_resource_id,
+            self.p_group_id,
+            self.p_agents_resource_id,
+            self.p_models_resource_id,
+            self.p_providers_resource_id,
         )
 
 class PrepareTestRunSqlRow(BaseModel):
 
     run_id: UUID | None = None
-    group_id: UUID | None = None
-    trace_id: str | None = None
     created_at: datetime | None = None
-    system_prompt: str | None = None
-    model_name: str | None = None
-    api_key: str | None = None
-    base_url: str | None = None
-    temperature: float | None = None
-    reasoning: str | None = None
-    provider_name: str | None = None
-    tools: Any | None = None
-    developer_instruction_templates: list[str] | None = None
-    jinja_context: Any | None = None
-    original_conversation: Any | None = None
-    current_run: int | None = None
-    total_runs: int | None = None
 
 class PrepareTestRunApiRequest(BaseModel):
 
     p_profile_id: UUID
-    p_chat_id: UUID
-    p_run_resource_id: UUID
+    p_group_id: UUID
+    p_agents_resource_id: UUID | None = None
+    p_models_resource_id: UUID | None = None
+    p_providers_resource_id: UUID | None = None
 
 class PrepareTestRunApiResponse(BaseModel):
 
     run_id: UUID | None = None
-    group_id: UUID | None = None
-    trace_id: str | None = None
     created_at: datetime | None = None
-    system_prompt: str | None = None
-    model_name: str | None = None
-    api_key: str | None = None
-    base_url: str | None = None
-    temperature: float | None = None
-    reasoning: str | None = None
-    provider_name: str | None = None
-    tools: Any | None = None
-    developer_instruction_templates: list[str] | None = None
-    jinja_context: Any | None = None
-    original_conversation: Any | None = None
-    current_run: int | None = None
-    total_runs: int | None = None
 
 
 
@@ -27614,14 +27615,15 @@ class QGetBenchmarkInvocationsViewV4Item(BaseModel):
     invocation_run_ids: list[UUID] | None
     run_ids: list[UUID] | None
     group_ids: list[UUID] | None
-    model_ids: list[UUID] | None
-    prompt_ids: list[UUID] | None
     instruction_ids: list[UUID] | None
-    voice_ids: list[UUID] | None
-    temperature_level_ids: list[UUID] | None
-    reasoning_level_ids: list[UUID] | None
     tool_ids: list[UUID] | None
-    key_ids: list[UUID] | None
+    model_id: UUID | None
+    prompt_id: UUID | None
+    voice_id: UUID | None
+    temperature_level_id: UUID | None
+    reasoning_level_id: UUID | None
+    key_id: UUID | None
+    historical_run_ids: list[UUID] | None
 
 class GetBenchmarkInvocationsViewSqlRow(BaseModel):
 
@@ -29562,6 +29564,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetTestRunContextSqlRow",
         "GetTestRunContextApiRequest",
         "GetTestRunContextApiResponse",
+    ),
+    "app/sql/v4/queries/generate/test/get_tools_by_resource_ids_complete.sql": (
+        "GetToolsByResourceIdsSqlParams",
+        "GetToolsByResourceIdsSqlRow",
+        "GetToolsByResourceIdsApiRequest",
+        "GetToolsByResourceIdsApiResponse",
     ),
     "app/sql/v4/queries/generate/test/prepare_test_run_complete.sql": (
         "PrepareTestRunSqlParams",
@@ -33269,6 +33277,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/queries/generate/test/get_test_run_context_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/generate/test/get_tools_by_resource_ids_complete.sql"]
     ) -> SqlString: ...
 
     @overload

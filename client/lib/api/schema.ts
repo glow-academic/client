@@ -13929,22 +13929,24 @@ export interface components {
             run_ids?: string[];
             /** Group Ids */
             group_ids?: string[];
-            /** Model Ids */
-            model_ids?: string[];
-            /** Prompt Ids */
-            prompt_ids?: string[];
             /** Instruction Ids */
             instruction_ids?: string[];
-            /** Voice Ids */
-            voice_ids?: string[];
-            /** Temperature Level Ids */
-            temperature_level_ids?: string[];
-            /** Reasoning Level Ids */
-            reasoning_level_ids?: string[];
             /** Tool Ids */
             tool_ids?: string[];
-            /** Key Ids */
-            key_ids?: string[];
+            /** Model Id */
+            model_id?: string | null;
+            /** Prompt Id */
+            prompt_id?: string | null;
+            /** Voice Id */
+            voice_id?: string | null;
+            /** Temperature Level Id */
+            temperature_level_id?: string | null;
+            /** Reasoning Level Id */
+            reasoning_level_id?: string | null;
+            /** Key Id */
+            key_id?: string | null;
+            /** Historical Run Ids */
+            historical_run_ids?: string[];
         };
         /**
          * BenchmarkProgressEvent

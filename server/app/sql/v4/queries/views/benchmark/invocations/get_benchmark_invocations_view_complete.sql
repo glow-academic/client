@@ -81,16 +81,21 @@ CREATE TYPE types.q_get_benchmark_invocations_view_v4_item AS (
     invocation_run_ids uuid[],
 
     -- Configured resource IDs (from bundle department snapshot)
+    -- Arrays (multiple per department)
     run_ids uuid[],
     group_ids uuid[],
-    model_ids uuid[],
-    prompt_ids uuid[],
     instruction_ids uuid[],
-    voice_ids uuid[],
-    temperature_level_ids uuid[],
-    reasoning_level_ids uuid[],
     tool_ids uuid[],
-    key_ids uuid[]
+    -- Singular (one per department entry)
+    model_id uuid,
+    prompt_id uuid,
+    voice_id uuid,
+    temperature_level_id uuid,
+    reasoning_level_id uuid,
+    key_id uuid,
+
+    -- Historical runs (all runs in invocation's group)
+    historical_run_ids uuid[]
 );
 
 -- ============================================================================
@@ -156,14 +161,16 @@ AS $$
             -- Configured resource IDs (from bundle department snapshot)
             mv.run_ids,
             mv.group_ids,
-            mv.model_ids,
-            mv.prompt_ids,
             mv.instruction_ids,
-            mv.voice_ids,
-            mv.temperature_level_ids,
-            mv.reasoning_level_ids,
             mv.tool_ids,
-            mv.key_ids
+            mv.model_id,
+            mv.prompt_id,
+            mv.voice_id,
+            mv.temperature_level_id,
+            mv.reasoning_level_id,
+            mv.key_id,
+            -- Historical runs
+            mv.historical_run_ids
         FROM mv_data mv
         LEFT JOIN feedbacks_transformed ft ON ft.invocation_id = mv.invocation_id
     ),
@@ -187,14 +194,15 @@ AS $$
                     invocation_run_ids,
                     run_ids,
                     group_ids,
-                    model_ids,
-                    prompt_ids,
                     instruction_ids,
-                    voice_ids,
-                    temperature_level_ids,
-                    reasoning_level_ids,
                     tool_ids,
-                    key_ids
+                    model_id,
+                    prompt_id,
+                    voice_id,
+                    temperature_level_id,
+                    reasoning_level_id,
+                    key_id,
+                    historical_run_ids
                 )::types.q_get_benchmark_invocations_view_v4_item
                 ORDER BY created_at ASC
             ),

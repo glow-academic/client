@@ -45,16 +45,21 @@ class BenchmarkInvocationViewItem(BaseModel):
     invocation_run_ids: list[UUID] = Field(default_factory=list)
 
     # Configured resource IDs (from bundle department snapshot)
+    # Arrays (multiple per department)
     run_ids: list[UUID] = Field(default_factory=list)
     group_ids: list[UUID] = Field(default_factory=list)
-    model_ids: list[UUID] = Field(default_factory=list)
-    prompt_ids: list[UUID] = Field(default_factory=list)
     instruction_ids: list[UUID] = Field(default_factory=list)
-    voice_ids: list[UUID] = Field(default_factory=list)
-    temperature_level_ids: list[UUID] = Field(default_factory=list)
-    reasoning_level_ids: list[UUID] = Field(default_factory=list)
     tool_ids: list[UUID] = Field(default_factory=list)
-    key_ids: list[UUID] = Field(default_factory=list)
+    # Singular (one per department entry)
+    model_id: UUID | None = None
+    prompt_id: UUID | None = None
+    voice_id: UUID | None = None
+    temperature_level_id: UUID | None = None
+    reasoning_level_id: UUID | None = None
+    key_id: UUID | None = None
+
+    # Historical runs (all runs in invocation's group)
+    historical_run_ids: list[UUID] = Field(default_factory=list)
 
 
 class GetBenchmarkInvocationsRequest(BaseModel):
