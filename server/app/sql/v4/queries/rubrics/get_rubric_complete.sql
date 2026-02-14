@@ -102,7 +102,9 @@ CREATE OR REPLACE FUNCTION api_get_rubric_v4(
     draft_id uuid DEFAULT NULL,
     description_search text DEFAULT NULL,
     standard_group_search text DEFAULT NULL,
-    mcp boolean DEFAULT false
+    mcp boolean DEFAULT false,
+    draft_group_id uuid DEFAULT NULL,
+    draft_version int DEFAULT NULL
 )
 RETURNS TABLE (
     -- Required fields (first 5)
@@ -199,22 +201,12 @@ rubric_exists_check AS (
 draft_group_data AS (
     SELECT
         COALESCE(
-            d.group_id,
-            (SELECT id FROM view_groups_entry ORDER BY created_at DESC LIMIT 1)
+            draft_group_id,
+            (SELECT id FROM groups_entry ORDER BY created_at DESC LIMIT 1)
         ) as group_id
-    FROM params x
-    LEFT JOIN view_drafts_entry d ON d.id = x.draft_id
-    -- Always return at least one row (use COALESCE to handle NULL draft_id case)
-    WHERE TRUE
-    LIMIT 1
 ),
 draft_version_data AS (
-    -- Keep draft_version for client-side expected_version sync to avoid unintended draft forks.
-    SELECT d.version as draft_version
-    FROM params x
-    LEFT JOIN view_drafts_entry d ON d.id = x.draft_id
-    WHERE TRUE
-    LIMIT 1
+    SELECT draft_version as draft_version
 ),
 -- User context: actor_name comes from get_profile_context_internal() in Python
 user_profile AS (
@@ -418,7 +410,7 @@ pass_points_resource_data AS (
         ) as pass_points_resource
     FROM params
 ),
--- Standard view_groups_entry resource data (draft-first)
+-- Standard groups_entry resource data (draft-first)
 standard_group_links_data AS (
     SELECT 
         dsg.standard_groups_id as standard_group_id,
@@ -1389,7 +1381,7 @@ ui_flags AS (
             WHEN (SELECT COUNT(*) FROM department_mapping_data) > 0 THEN true
             ELSE false
         END as show_departments,
-        true as show_standard_groups,  -- Always show standard view_groups_entry picker
+        true as show_standard_groups,  -- Always show standard groups_entry picker
         CASE 
             WHEN COALESCE(array_length((SELECT standard_group_ids FROM standard_group_ids_data), 1), 0) > 0 THEN true
             ELSE false
@@ -1643,7 +1635,7 @@ points_agg AS (
     CROSS JOIN params
     LIMIT 1
 ),
--- Standard view_groups_entry data (for selected standard view_groups_entry - only when rubric_id provided)
+-- Standard groups_entry data (for selected standard groups_entry - only when rubric_id provided)
 standard_groups_selected_data AS (
     SELECT 
         sg.id as standard_group_id,
@@ -1660,7 +1652,7 @@ standard_groups_selected_data AS (
     LEFT JOIN standards_resource s ON s.standard_group_id = sg.id
     GROUP BY sg.id, sg.name, sg.description, sg.points, sg.pass_points, sgld.position, sgld.active, sgld.generated
 ),
--- Standard view_groups_entry data (all available standard view_groups_entry for options array)
+-- Standard groups_entry data (all available standard groups_entry for options array)
 standard_groups_all_data AS (
     SELECT 
         sg.id as standard_group_id,
@@ -1684,7 +1676,7 @@ standard_groups_all_data AS (
       )
     GROUP BY sg.id, sg.name, sg.description, sg.points, sg.pass_points, sgld.position, sgld.active, sg.generated
 ),
--- Standard view_groups_entry aggregated (selected view_groups_entry for standard_group_resources)
+-- Standard groups_entry aggregated (selected groups_entry for standard_group_resources)
 standard_groups_selected_aggregated AS (
     SELECT 
         COALESCE(
@@ -1698,7 +1690,7 @@ standard_groups_selected_aggregated AS (
     CROSS JOIN params
     LIMIT 1
 ),
--- Standard view_groups_entry aggregated (all available view_groups_entry for standard_groups array)
+-- Standard groups_entry aggregated (all available groups_entry for standard_groups array)
 standard_groups_all_aggregated AS (
     SELECT 
         COALESCE(
@@ -1728,7 +1720,7 @@ standards_selected_data AS (
     LEFT JOIN standard_groups_drafts_connection dsg ON dsg.draft_id = x.draft_id AND dsg.standard_groups_id = s.standard_group_id
     LEFT JOIN rubric_standards_junction rs ON rs.rubric_id = x.rubric_id AND rs.standard_id = s.id AND rs.active = true
 ),
--- Standards data (all available standards for selected view_groups_entry)
+-- Standards data (all available standards for selected groups_entry)
 standards_all_data AS (
     SELECT 
         s.id as standard_id,
@@ -1872,7 +1864,7 @@ SELECT
     (SELECT points FROM points_agg) as pass_points,
     -- Multi-select resources: standard_groups
     COALESCE((SELECT standard_group_ids FROM standard_group_ids_data), ARRAY[]::uuid[]) as standard_group_ids,
-    -- Standard group resources (selected standard view_groups_entry filtered by standard_group_ids)
+    -- Standard group resources (selected standard groups_entry filtered by standard_group_ids)
     COALESCE(
         (SELECT ARRAY_AGG(
             (sg.standard_group_id, sg.name, COALESCE(sg.description, ''), sg.points, sg.pass_points, sg.position, sg.active, COALESCE(sg.standard_ids, ARRAY[]::uuid[]), sg.generated)::types.q_get_rubric_v4_standard_group_resource
@@ -1892,7 +1884,7 @@ SELECT
         ELSE false
     END as standard_groups_required,
     COALESCE((SELECT standard_group_suggestions FROM standard_group_suggestions_data), ARRAY[]::uuid[]) as standard_group_suggestions,
-    -- Standard view_groups_entry array (all available standard view_groups_entry)
+    -- Standard groups_entry array (all available standard groups_entry)
     (SELECT standard_groups FROM standard_groups_all_aggregated) as standard_groups,
     -- Multi-select resources: standards
     COALESCE((SELECT standard_ids FROM standard_ids_data), ARRAY[]::uuid[]) as standard_ids,

@@ -75,7 +75,9 @@ CREATE OR REPLACE FUNCTION api_get_field_v4(
     parameter_search text DEFAULT NULL,
     parameter_show_selected boolean DEFAULT NULL,
     draft_id uuid DEFAULT NULL,
-    mcp boolean DEFAULT false
+    mcp boolean DEFAULT false,
+    draft_group_id uuid DEFAULT NULL,
+    draft_version int DEFAULT NULL
 )
 RETURNS TABLE (
     -- Required fields (first 5)
@@ -156,22 +158,12 @@ draft_payload_data AS (
 draft_group_data AS (
     SELECT
         COALESCE(
-            d.group_id,
-            (SELECT id FROM view_groups_entry ORDER BY created_at DESC LIMIT 1)
+            draft_group_id,
+            (SELECT id FROM groups_entry ORDER BY created_at DESC LIMIT 1)
         ) as group_id
-    FROM params x
-    LEFT JOIN view_drafts_entry d ON d.id = x.draft_id
-    -- Always return at least one row (use COALESCE to handle NULL draft_id case)
-    WHERE TRUE
-    LIMIT 1
 ),
 draft_version_data AS (
-    -- Keep draft_version for client-side expected_version sync to avoid unintended draft forks.
-    SELECT d.version as draft_version
-    FROM params x
-    LEFT JOIN view_drafts_entry d ON d.id = x.draft_id
-    WHERE TRUE
-    LIMIT 1
+    SELECT draft_version as draft_version
 ),
 -- User context: actor_name comes from get_profile_context_internal() in Python
 user_profile AS (

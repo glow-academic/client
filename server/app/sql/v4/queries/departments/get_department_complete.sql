@@ -101,7 +101,9 @@ CREATE OR REPLACE FUNCTION api_get_department_v4(
     profile_id uuid,
     department_id uuid DEFAULT NULL,
     draft_id uuid DEFAULT NULL,
-    mcp boolean DEFAULT false
+    mcp boolean DEFAULT false,
+    draft_group_id uuid DEFAULT NULL,
+    draft_version int DEFAULT NULL
 )
 RETURNS TABLE (
     -- Required fields (first 5)
@@ -207,25 +209,15 @@ department_exists_check AS (
 draft_payload_data AS (
     SELECT
         NULL::jsonb as payload,
-        d.version as draft_version
-    FROM params x
-    JOIN view_drafts_entry d ON d.id = x.draft_id
-    JOIN profiles_drafts_connection pdj ON pdj.draft_id = d.id AND pdj.profiles_id = x.profile_id
-    WHERE x.draft_id IS NOT NULL
-    LIMIT 1
+        draft_version as draft_version
 ),
 -- Get group_id from draft (should always exist after migration, but handle NULL case)
 draft_group_data AS (
     SELECT
         COALESCE(
-            d.group_id,
-            (SELECT id FROM view_groups_entry ORDER BY created_at DESC LIMIT 1)
+            draft_group_id,
+            (SELECT id FROM groups_entry ORDER BY created_at DESC LIMIT 1)
         ) as group_id
-    FROM params x
-    LEFT JOIN view_drafts_entry d ON d.id = x.draft_id
-    -- Always return at least one row
-    WHERE TRUE
-    LIMIT 1
 ),
 -- User context: actor_name comes from get_profile_context_internal() in Python
 user_profile AS (

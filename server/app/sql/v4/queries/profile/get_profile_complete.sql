@@ -102,7 +102,9 @@ CREATE TYPE types.q_get_profile_v4_role_resource AS (
 CREATE OR REPLACE FUNCTION api_get_profile_v4(
     profile_id uuid,
     target_profile_id uuid DEFAULT NULL,
-    draft_id uuid DEFAULT NULL
+    draft_id uuid DEFAULT NULL,
+    draft_group_id uuid DEFAULT NULL,
+    draft_version int DEFAULT NULL
 )
 RETURNS TABLE (
     -- Required fields (first 5)
@@ -177,12 +179,7 @@ WITH params AS (
            draft_id AS draft_id
 ),
 draft_version_data AS (
-    -- Keep draft_version for client-side expected_version sync to avoid unintended draft forks.
-    SELECT d.version as draft_version
-    FROM params x
-    LEFT JOIN view_drafts_entry d ON d.id = x.draft_id
-    WHERE TRUE
-    LIMIT 1
+    SELECT draft_version as draft_version
 ),
 -- Conditional: Only check profile existence if target_profile_id provided
 profile_exists_check AS (
@@ -287,7 +284,7 @@ roles_data AS (
 -- Get group_id from target profile or current profile
 group_id_data AS (
     SELECT
-        (SELECT d.group_id FROM view_drafts_entry d WHERE d.id = (SELECT draft_id FROM params)) as group_id
+        draft_group_id as group_id
     FROM params
     LIMIT 1
 ),

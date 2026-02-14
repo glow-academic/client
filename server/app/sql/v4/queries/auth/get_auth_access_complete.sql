@@ -60,18 +60,7 @@ auth_exists_check AS (
 ),
 -- Resolve group context (draft override handled in Python service layer)
 auth_group_data AS (
-    SELECT
-        COALESCE(
-            (
-                SELECT d.group_id
-                FROM view_drafts_entry d
-                WHERE d.id = (SELECT draft_id FROM params)
-                LIMIT 1
-            ),
-            (
-                SELECT id FROM view_groups_entry ORDER BY created_at DESC LIMIT 1
-            )
-        ) as group_id
+    SELECT NULL::uuid as group_id
 ),
 -- Draft version is resolved in Python via internal draft fetch layer
 draft_version_data AS (

@@ -247,7 +247,9 @@ CREATE OR REPLACE FUNCTION api_get_simulation_v4(
     scenario_search text DEFAULT NULL,
     scenario_show_selected boolean DEFAULT NULL,
     filter_scenario_ids uuid[] DEFAULT NULL,
-    mcp boolean DEFAULT false
+    mcp boolean DEFAULT false,
+    draft_group_id uuid DEFAULT NULL,
+    draft_version int DEFAULT NULL
 )
 RETURNS TABLE (
     -- Required fields (first 5) - following ARTIFACT.md
@@ -364,36 +366,22 @@ draft_scenario_ids_data AS (
 draft_payload_data AS (
     SELECT
         NULL::jsonb as payload,
-        d.version as draft_version,
+        draft_version as draft_version,
         (SELECT scenario_ids FROM draft_scenario_ids_data) as draft_scenario_ids
-    FROM params x
-    JOIN view_drafts_entry d ON d.id = x.draft_id
-    JOIN profiles_drafts_connection pdj ON pdj.draft_id = d.id AND pdj.profiles_id = x.profile_id
-    WHERE x.draft_id IS NOT NULL
-    LIMIT 1
 ),
 -- Get group_id from draft (should always exist after migration, but handle NULL case)
 -- For new simulations without a draft, create a temporary group for resource creation
 draft_group_data AS (
     SELECT
         COALESCE(
-            d.group_id,
+            draft_group_id,
             -- Fallback to most recent group for new simulations (same pattern as Cohort)
-            (SELECT id FROM view_groups_entry ORDER BY created_at DESC LIMIT 1)
+            (SELECT id FROM groups_entry ORDER BY created_at DESC LIMIT 1)
         ) as group_id
-    FROM params x
-    LEFT JOIN view_drafts_entry d ON d.id = x.draft_id
-    -- Always return at least one row (use COALESCE to handle NULL draft_id case)
-    WHERE TRUE
-    LIMIT 1
 ),
 -- Get draft_version for optimistic concurrency control
 draft_version_data AS (
-    SELECT d.version as draft_version
-    FROM params x
-    LEFT JOIN view_drafts_entry d ON d.id = x.draft_id
-    WHERE TRUE
-    LIMIT 1
+    SELECT draft_version as draft_version
 ),
 resolve_profile_id AS (
     SELECT 

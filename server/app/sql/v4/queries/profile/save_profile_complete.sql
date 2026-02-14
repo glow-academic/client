@@ -24,7 +24,8 @@ END $$;
 CREATE OR REPLACE FUNCTION api_save_profile_v4(
     draft_id uuid,
     actor_profile_id uuid DEFAULT NULL,
-    input_profile_id uuid DEFAULT NULL
+    input_profile_id uuid DEFAULT NULL,
+    draft_group_id uuid DEFAULT NULL
 )
 RETURNS TABLE (
     profile_id uuid,
@@ -68,11 +69,12 @@ BEGIN
         RAISE EXCEPTION 'Draft ID is required';
     END IF;
 
-    SELECT pdj.profiles_id, d.group_id
-    INTO v_draft_profile_id, v_group_id
-    FROM view_drafts_entry d
-    LEFT JOIN profiles_drafts_connection pdj ON pdj.draft_id = d.id
-    WHERE d.id = v_draft_id;
+    SELECT pdj.profiles_id
+    INTO v_draft_profile_id
+    FROM profiles_drafts_connection pdj
+    WHERE pdj.draft_id = v_draft_id;
+
+    v_group_id := draft_group_id;
 
     IF v_draft_profile_id IS NULL THEN
         RAISE EXCEPTION 'Draft not found: %', v_draft_id;

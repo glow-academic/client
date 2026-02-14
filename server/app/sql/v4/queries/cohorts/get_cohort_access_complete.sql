@@ -48,23 +48,11 @@ cohort_exists_check AS (
 ),
 -- Get group_id from draft
 draft_group_data AS (
-    SELECT
-        COALESCE(
-            d.group_id,
-            (SELECT id FROM view_groups_entry ORDER BY created_at DESC LIMIT 1)
-        ) as group_id
-    FROM params x
-    LEFT JOIN view_drafts_entry d ON d.id = x.draft_id
-    WHERE TRUE
-    LIMIT 1
+    SELECT NULL::uuid as group_id
 ),
 -- Get draft version
 draft_version_data AS (
-    SELECT d.version as draft_version
-    FROM params x
-    LEFT JOIN view_drafts_entry d ON d.id = x.draft_id
-    WHERE TRUE
-    LIMIT 1
+    SELECT NULL::int as draft_version
 ),
 -- Get cohort departments (for access check)
 cohort_departments_data AS (

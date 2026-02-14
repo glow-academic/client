@@ -113,18 +113,11 @@ target_departments_data AS (
 ),
 -- Get group_id from target profile or current profile
 group_id_data AS (
-    SELECT
-        (SELECT d.group_id FROM view_drafts_entry d WHERE d.id = (SELECT draft_id FROM params)) as group_id
-    FROM params
-    LIMIT 1
+    SELECT NULL::uuid as group_id
 ),
 -- Draft version
 draft_version_data AS (
-    SELECT d.version as draft_version
-    FROM params x
-    LEFT JOIN view_drafts_entry d ON d.id = x.draft_id
-    WHERE TRUE
-    LIMIT 1
+    SELECT NULL::int as draft_version
 ),
 -- Role options based on user role
 role_options_data AS (

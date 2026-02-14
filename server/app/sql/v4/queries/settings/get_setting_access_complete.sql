@@ -67,21 +67,10 @@ setting_exists_check AS (
         END AS setting_exists
 ),
 draft_data AS (
-    SELECT d.version AS draft_version
-    FROM view_drafts_entry d
-    JOIN params p ON p.draft_id = d.id
-    LIMIT 1
+    SELECT NULL::int AS draft_version
 ),
 group_data AS (
-    SELECT COALESCE(
-        (
-            SELECT d.group_id
-            FROM view_drafts_entry d
-            JOIN params p ON p.draft_id = d.id
-            LIMIT 1
-        ),
-        (SELECT id FROM view_groups_entry ORDER BY created_at DESC LIMIT 1)
-    ) AS group_id
+    SELECT NULL::uuid AS group_id
 )
 SELECT
     sd.department_ids AS setting_department_ids,

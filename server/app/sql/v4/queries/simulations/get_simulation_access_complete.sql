@@ -56,10 +56,9 @@ simulation_departments AS (
 ),
 simulation_data AS (
     SELECT
-        d.group_id,
-        d.version as draft_version
+        NULL::uuid as group_id,
+        NULL::int as draft_version
     FROM simulation_artifact sa
-    LEFT JOIN view_drafts_entry d ON d.id = (SELECT draft_id FROM params)
     WHERE sa.id = (SELECT simulation_id FROM params)
     LIMIT 1
 ),

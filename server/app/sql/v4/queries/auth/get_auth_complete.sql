@@ -82,7 +82,9 @@ CREATE OR REPLACE FUNCTION api_get_auth_v4(
     profile_id uuid,
     auth_id uuid DEFAULT NULL,
     draft_id uuid DEFAULT NULL,
-    mcp boolean DEFAULT false
+    mcp boolean DEFAULT false,
+    draft_group_id uuid DEFAULT NULL,
+    draft_version int DEFAULT NULL
 )
 RETURNS TABLE (
     -- Required fields (first 5)
@@ -178,14 +180,9 @@ draft_payload_data AS (
 draft_group_data AS (
     SELECT
         COALESCE(
-            d.group_id,
-            (SELECT id FROM view_groups_entry ORDER BY created_at DESC LIMIT 1)
+            draft_group_id,
+            (SELECT id FROM groups_entry ORDER BY created_at DESC LIMIT 1)
         ) as group_id
-    FROM params x
-    LEFT JOIN view_drafts_entry d ON d.id = x.draft_id
-    -- Always return at least one row (use COALESCE to handle NULL draft_id case)
-    WHERE TRUE
-    LIMIT 1
 ),
 -- User context: actor_name comes from get_profile_context_internal() in Python
 user_profile AS (
@@ -1230,7 +1227,7 @@ SELECT
         (SELECT COALESCE(jsonb_object_agg(aid.auth_item_id::text, aid.encrypted), '{}'::jsonb) FROM auth_items_data aid),
         '{}'::jsonb
     ) as auth_item_encrypted_states,
-    COALESCE((SELECT d.version FROM view_drafts_entry d WHERE d.id = (SELECT draft_id FROM params) LIMIT 1), 0) as draft_version
+    COALESCE(draft_version, 0) as draft_version
 FROM user_profile up
 CROSS JOIN permissions_final perm_final
 CROSS JOIN ui_flags uf
