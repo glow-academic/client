@@ -89,11 +89,12 @@ async def _attempt_grade_impl(
     2. Extracts LLM config from pre-fetched resources (agent/model/provider)
     3. Validates prerequisites (agent, model, provider, API key)
     4. Checks rate limit and simulation access via simplified context SQL
-    5. Parallel fetches tools, prompts, and instructions
-    6. Calls slim prepare SQL (mutations only: run/config/grade creation)
-    7. Builds jinja context in Python from views data
-    8. Renders developer instructions and persists messages
-    9. Emits to generate_artifact handler with grading tools
+    5. Resolves chat_id and group_id from websocket data
+    6. Parallel fetches tools, prompts, and instructions
+    7. Calls slim prepare SQL (mutations only: run/config/grade creation)
+    8. Builds jinja context in Python from views + resources
+    9. Renders developer instructions and persists messages
+    10. Emits to generate_artifact handler with grading tools
     """
     try:
         # Step 1: Fetch attempt data (includes pre-fetched config resources)
@@ -377,11 +378,46 @@ async def _attempt_grade_impl(
                 fetch_developer_instructions(),
             )
 
-            # Step 5: Prepare grade (mutations only: run/config/grade creation)
+            # Step 5: Resolve chat_id and group_id from websocket data
+            group_id = result.group_id
+            chat_id = data.chat_id
+            if not chat_id and result.views and result.views.simulation_chats:
+                # Use first chat from attempt (sorted by created_at)
+                chat_id = result.views.simulation_chats[0].id
+
+            if not group_id:
+                await emit_to_internal(
+                    "generate_call_error",
+                    GenerateErrorApiRequest(
+                        sid=sid,
+                        error_message="No group found for this attempt",
+                        artifact_type="attempt",
+                        group_id=None,
+                        resource_type="attempt",
+                    ),
+                    sid=sid,
+                )
+                return
+
+            if not chat_id:
+                await emit_to_internal(
+                    "generate_call_error",
+                    GenerateErrorApiRequest(
+                        sid=sid,
+                        error_message="No chat found for this attempt",
+                        artifact_type="attempt",
+                        group_id=str(group_id),
+                        resource_type="attempt",
+                    ),
+                    sid=sid,
+                )
+                return
+
+            # Step 6: Prepare grade (mutations only: run/config/grade)
             prepare_params = PrepareAttemptGradeSqlParams(
                 p_profile_id=profile_id,
-                p_attempt_id=data.attempt_id,
-                p_chat_id=data.chat_id,
+                p_group_id=group_id,
+                p_chat_id=chat_id,
                 p_agents_resource_id=agent_resource.id,
                 p_models_resource_id=model_resource.id,
                 p_providers_resource_id=provider_resource.id,
@@ -394,7 +430,8 @@ async def _attempt_grade_impl(
             if not prepare_row or not prepare_row.run_id:
                 logger.error(
                     f"Attempt grade preparation failed - "
-                    f"profile_id={profile_id}, attempt_id={data.attempt_id}"
+                    f"profile_id={profile_id}, "
+                    f"attempt_id={data.attempt_id}"
                 )
                 await emit_to_internal(
                     "generate_call_error",
@@ -402,7 +439,7 @@ async def _attempt_grade_impl(
                         sid=sid,
                         error_message="Failed to prepare grading",
                         artifact_type="attempt",
-                        group_id=None,
+                        group_id=str(group_id),
                         resource_type="attempt",
                     ),
                     sid=sid,
@@ -410,10 +447,9 @@ async def _attempt_grade_impl(
                 return
 
             run_id = prepare_row.run_id
-            group_id = prepare_row.group_id
             grade_id = prepare_row.grade_id
 
-            # Step 6: Build jinja context from resources + views (persona pattern)
+            # Step 7: Build jinja context from resources + views (persona pattern)
             jinja_context = _build_attempt_jinja_context(result)
 
             # Inject views into jinja context for template access
@@ -440,13 +476,13 @@ async def _attempt_grade_impl(
                 "id": str(grade_id) if grade_id else None,
             }
 
-            # Step 7: Render developer instructions with Jinja
+            # Step 8: Render developer instructions with Jinja
             rendered_developer_messages = render_developer_instructions(
                 templates=developer_instruction_templates,
                 jinja_context=jinja_context,
             )
 
-            # Step 8: Build messages for LLM AND persist to database
+            # Step 9: Build messages for LLM AND persist to database
             messages: list[dict[str, str]] = []
             create_message_sql = load_sql(SQL_PATH_CREATE_MESSAGE_WITH_TEXT)
 
@@ -474,7 +510,7 @@ async def _attempt_grade_impl(
                     False,
                 )
 
-            # Step 9: Emit to generate_artifact handler with grading tools
+            # Step 10: Emit to generate_artifact handler with grading tools
             await internal_sio.emit(
                 "generate_artifact",
                 {

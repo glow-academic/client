@@ -1,5 +1,6 @@
 -- Prepare attempt grade: mutations only (run/config/grade creation)
 -- All data fetching is now done in Python from pre-fetched resources
+-- group_id and chat_id are resolved in Python and passed directly
 -- 1) Drop function first
 DO $$
 DECLARE
@@ -18,51 +19,27 @@ END $$;
 -- 2) Create the function (mutations only)
 CREATE OR REPLACE FUNCTION socket_prepare_attempt_grade_v4(
     p_profile_id uuid,
-    p_attempt_id uuid,
-    p_chat_id uuid DEFAULT NULL,
+    p_group_id uuid,
+    p_chat_id uuid,
     p_agents_resource_id uuid DEFAULT NULL,
     p_models_resource_id uuid DEFAULT NULL,
     p_providers_resource_id uuid DEFAULT NULL
 )
 RETURNS TABLE (
     run_id uuid,
-    group_id uuid,
-    grade_id uuid,
-    trace_id text,
-    config_id uuid
+    grade_id uuid
 )
 LANGUAGE plpgsql
 VOLATILE
 AS $$
 DECLARE
     v_run_id uuid;
-    v_group_id uuid;
     v_grade_id uuid;
-    v_trace_id text;
-    v_chat_id uuid;
     v_config_id uuid;
 BEGIN
-    -- Resolve chat_id (use provided or first chat from attempt)
-    SELECT COALESCE(p_chat_id, c.id) INTO v_chat_id
-    FROM simulation_chats_entry c
-    WHERE c.attempt_id = p_attempt_id
-    ORDER BY c.created_at ASC
-    LIMIT 1;
-
-    -- Get group_id directly from simulation_chats_entry
-    SELECT sc.group_id INTO v_group_id
-    FROM simulation_chats_entry sc
-    WHERE sc.id = v_chat_id;
-
-    IF v_group_id IS NULL THEN
-        RAISE EXCEPTION 'No group_id found for chat_id %. Group should be set at training start time.', v_chat_id;
-    END IF;
-
-    SELECT ge.trace_id INTO v_trace_id FROM groups_entry ge WHERE ge.id = v_group_id;
-
     -- Create run
     INSERT INTO runs_entry (input_tokens, output_tokens, group_id)
-    VALUES (0, 0, v_group_id)
+    VALUES (0, 0, p_group_id)
     RETURNING id INTO v_run_id;
 
     -- Create config snapshot with run_id
@@ -95,9 +72,9 @@ BEGIN
 
     -- Create grade entry
     INSERT INTO simulation_grades_entry (chat_id, run_id, created_at, updated_at, score, passed)
-    VALUES (v_chat_id, v_run_id, NOW(), NOW(), 0, false)
+    VALUES (p_chat_id, v_run_id, NOW(), NOW(), 0, false)
     RETURNING id INTO v_grade_id;
 
-    RETURN QUERY SELECT v_run_id, v_group_id, v_grade_id, v_trace_id::text, v_config_id;
+    RETURN QUERY SELECT v_run_id, v_grade_id;
 END;
 $$;
