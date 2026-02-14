@@ -40,9 +40,6 @@ DECLARE
     refreshed text[] := ARRAY[]::text[];
 BEGIN
     -- Refresh session MVs (all independent, no ordering required)
-    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_artifact_session_list;
-    refreshed := array_append(refreshed, 'mv_artifact_session_list');
-
     REFRESH MATERIALIZED VIEW CONCURRENTLY mv_sessions;
     refreshed := array_append(refreshed, 'mv_sessions');
 

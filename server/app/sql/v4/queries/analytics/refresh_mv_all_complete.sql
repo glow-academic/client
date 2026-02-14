@@ -41,33 +41,6 @@ DECLARE
 BEGIN
     -- All MVs are independent — no ordering required
 
-    -- Analytics MVs
-    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_chat_facts;
-    refreshed := array_append(refreshed, 'mv_chat_facts');
-
-    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_attempt_facts;
-    refreshed := array_append(refreshed, 'mv_attempt_facts');
-
-    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_daily_metrics;
-    refreshed := array_append(refreshed, 'mv_daily_metrics');
-
-    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_profile_metrics;
-    refreshed := array_append(refreshed, 'mv_profile_metrics');
-
-    -- Pricing MVs
-    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_pricing_run_facts;
-    refreshed := array_append(refreshed, 'mv_pricing_run_facts');
-
-    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_pricing_group_summary;
-    refreshed := array_append(refreshed, 'mv_pricing_group_summary');
-
-    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_pricing_daily;
-    refreshed := array_append(refreshed, 'mv_pricing_daily');
-
-    -- Artifact MVs
-    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_artifact_session_list;
-    refreshed := array_append(refreshed, 'mv_artifact_session_list');
-
     -- Lean MVs (session/group pages)
     REFRESH MATERIALIZED VIEW CONCURRENTLY mv_sessions;
     refreshed := array_append(refreshed, 'mv_sessions');
@@ -101,49 +74,14 @@ BEGIN
     REFRESH MATERIALIZED VIEW CONCURRENTLY mv_benchmark;
     refreshed := array_append(refreshed, 'mv_benchmark');
 
-    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_benchmark_attempt_facts;
-    refreshed := array_append(refreshed, 'mv_benchmark_attempt_facts');
-
     REFRESH MATERIALIZED VIEW CONCURRENTLY mv_benchmark_bundle;
     refreshed := array_append(refreshed, 'mv_benchmark_bundle');
-
-    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_benchmark_eval_summary;
-    refreshed := array_append(refreshed, 'mv_benchmark_eval_summary');
 
     REFRESH MATERIALIZED VIEW CONCURRENTLY mv_benchmark_invocations;
     refreshed := array_append(refreshed, 'mv_benchmark_invocations');
 
     REFRESH MATERIALIZED VIEW CONCURRENTLY mv_benchmark_tests;
     refreshed := array_append(refreshed, 'mv_benchmark_tests');
-
-    -- Health MVs
-    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_health_metrics_hourly;
-    refreshed := array_append(refreshed, 'mv_health_metrics_hourly');
-
-    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_health_service_hourly;
-    refreshed := array_append(refreshed, 'mv_health_service_hourly');
-
-    -- Activity MVs
-    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_activity_audits;
-    refreshed := array_append(refreshed, 'mv_activity_audits');
-
-    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_activity_daily;
-    refreshed := array_append(refreshed, 'mv_activity_daily');
-
-    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_activity_feedbacks;
-    refreshed := array_append(refreshed, 'mv_activity_feedbacks');
-
-    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_activity_logins;
-    refreshed := array_append(refreshed, 'mv_activity_logins');
-
-    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_activity_problems;
-    refreshed := array_append(refreshed, 'mv_activity_problems');
-
-    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_activity_session_facts;
-    refreshed := array_append(refreshed, 'mv_activity_session_facts');
-
-    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_activity_summary;
-    refreshed := array_append(refreshed, 'mv_activity_summary');
 
     -- Training MVs
     REFRESH MATERIALIZED VIEW CONCURRENTLY mv_training;
