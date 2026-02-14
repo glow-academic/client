@@ -33,3 +33,4 @@ modules:
     cohorts: all
     profiles: all
     settings: all
+    themes: all

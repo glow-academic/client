@@ -97,6 +97,7 @@ EXCLUDED_JUNCTIONS = {
     "scenario_parameter_fields_junction",
     "simulation_scenarios_junction",  # Dead — all orphans; scenarios linked via simulations_resource.scenario_ids
     "scenario_tree_junction",  # Uses parent_id/child_id, not scenario_id; handled specially
+    "setting_colors_junction",  # Exported separately in themes/
 }
 
 # Sensitive columns: table -> column -> dummy value
@@ -418,6 +419,38 @@ async def export_table_full(
     return len(rows)
 
 
+async def export_table_filtered(
+    conn: asyncpg.Connection,
+    table: str,
+    f,
+    label: str | None = None,
+    *,
+    where: str = "",
+) -> int:
+    """Export rows from a table with an optional WHERE filter. Returns row count."""
+    cols = TABLE_COLUMNS.get(table)
+    if not cols:
+        return 0
+    pk_cols = TABLE_PKS.get(table, [])
+
+    col_list = ", ".join(cols)
+    order_col = "created_at" if "created_at" in cols else cols[0]
+    query = f"SELECT {col_list} FROM public.{table}"
+    if where:
+        query += f" WHERE {where}"
+    query += f" ORDER BY {order_col}"
+    rows = await conn.fetch(query)
+
+    if not rows:
+        f.write(f"\n-- {label or ('Table: ' + table)}\n-- (no rows)\n")
+        return 0
+
+    f.write(f"\n-- {label or ('Table: ' + table)}\n")
+    for row in rows:
+        f.write(make_insert(table, row, cols, pk_cols) + "\n")
+    return len(rows)
+
+
 async def _export_nested_resource_fks(
     conn: asyncpg.Connection,
     artifact_type: str,
@@ -700,8 +733,23 @@ async def export_resources(conn: asyncpg.Connection) -> None:
             old.unlink()
     res_dir.mkdir(parents=True, exist_ok=True)
 
+    # Export colors_resource filtered to exclude theme-specific "Custom" colors
+    colors_path = res_dir / "00-colors.sql"
+    with open(colors_path, "w") as f:
+        f.write("-- Module: colors\n")
+        f.write("-- Category: resources\n")
+        f.write("-- Description: colors resource data\n")
+        f.write("-- ============================================================\n")
+        n = await export_table_filtered(
+            conn,
+            "colors_resource",
+            f,
+            "Table: colors_resource",
+            where="name != 'Custom'",
+        )
+    print(f"    00-colors.sql ({n} inserts)")
+
     resource_files: list[tuple[str, str, list[str]]] = [
-        ("00-colors", "colors", ["colors_resource"]),
         ("01-icons", "icons", ["icons_resource"]),
         ("02-flags", "flags", ["flags_resource"]),
         (
@@ -1572,6 +1620,94 @@ async def export_setup_settings(conn: asyncpg.Connection) -> None:
         print(f"    {output_path.relative_to(MODULES_DIR)} ({count} inserts)")
 
 
+async def export_themes(conn: asyncpg.Connection) -> None:
+    """Export color theme assignments to themes/default.sql.
+
+    Collects setting_colors_junction entries for settings linked to departments,
+    along with any 'Custom' colors_resource rows they reference.
+    """
+    print("  Exporting themes/ ...")
+    out_dir = MODULES_DIR / "11-setups" / "university" / "themes"
+    if out_dir.exists():
+        for old in out_dir.glob("*.sql"):
+            old.unlink()
+    out_dir.mkdir(parents=True, exist_ok=True)
+    output_path = out_dir / "default.sql"
+
+    # Find settings linked to departments (same filter as export_setup_settings)
+    rows = await conn.fetch("""
+        SELECT sa.id
+        FROM setting_artifact sa
+        WHERE EXISTS (
+            SELECT 1 FROM setting_settings_junction ssj
+            JOIN departments_resource dr ON ssj.settings_id = ANY(dr.setting_ids)
+            WHERE ssj.setting_id = sa.id
+        )
+        ORDER BY sa.created_at
+    """)
+
+    junction_cols = TABLE_COLUMNS.get("setting_colors_junction", [])
+    junction_pks = TABLE_PKS.get("setting_colors_junction", [])
+    color_cols = TABLE_COLUMNS.get("colors_resource", [])
+    color_pks = TABLE_PKS.get("colors_resource", [])
+
+    color_inserts: list[str] = []
+    junction_inserts: list[str] = []
+    seen_color_ids: set[str] = set()
+
+    for r in rows:
+        setting_id = r["id"]
+
+        # Get setting_colors_junction rows for this setting
+        jc_col_list = ", ".join(junction_cols)
+        jc_rows = await conn.fetch(
+            f"SELECT {jc_col_list} FROM public.setting_colors_junction WHERE setting_id = $1",
+            setting_id,
+        )
+
+        for jc_row in jc_rows:
+            # Collect Custom colors_resource rows
+            color_id = jc_row["color_id"]
+            color_id_str = str(color_id)
+            if color_id_str not in seen_color_ids:
+                seen_color_ids.add(color_id_str)
+                c_col_list = ", ".join(color_cols)
+                c_row = await conn.fetchrow(
+                    f"SELECT {c_col_list} FROM public.colors_resource WHERE id = $1 AND name = 'Custom'",
+                    color_id,
+                )
+                if c_row:
+                    color_inserts.append(
+                        make_insert("colors_resource", c_row, color_cols, color_pks)
+                    )
+
+            # Collect junction rows
+            junction_inserts.append(
+                make_insert(
+                    "setting_colors_junction", jc_row, junction_cols, junction_pks
+                )
+            )
+
+    with open(output_path, "w") as f:
+        f.write("-- Module: default\n")
+        f.write("-- Category: theme\n")
+        f.write("-- Description: Default color theme assignments\n")
+        f.write("-- ============================================================\n")
+
+        if color_inserts:
+            f.write("\n-- colors_resource\n")
+            for stmt in color_inserts:
+                f.write(stmt + "\n")
+
+        if junction_inserts:
+            f.write("\n-- setting_colors_junction\n")
+            for stmt in junction_inserts:
+                f.write(stmt + "\n")
+
+    total = len(color_inserts) + len(junction_inserts)
+    print(f"    default.sql ({total} inserts)")
+
+
 async def _get_scenario_artifact_ids_for_simulation(
     conn: asyncpg.Connection, sim_id: str
 ) -> list[str]:
@@ -2118,6 +2254,7 @@ async def export_setup(conn: asyncpg.Connection) -> None:
     )
     await export_setup_profiles(conn)
     await export_setup_settings(conn)
+    await export_themes(conn)
 
 
 # ---------------------------------------------------------------------------
@@ -2158,6 +2295,7 @@ async def main() -> None:
             "settings": export_base_settings,
             "uploads": export_uploads,
             "texts": export_texts,
+            "themes": export_themes,
             "setup": export_setup,
         }
 

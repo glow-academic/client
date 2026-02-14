@@ -26261,6 +26261,136 @@ class GetBenchmarkBundleViewApiResponse(BaseModel):
     key_ids: list[UUID] | None = None
 
 
+# Generated from: get_benchmark_invocations_view
+
+
+class GetBenchmarkInvocationsViewSqlParams(BaseModel):
+    test_id_filter: UUID | None = None
+    invocation_ids_filter: list[UUID] | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.test_id_filter,
+            self.invocation_ids_filter,
+        )
+
+
+class QGetBenchmarkInvocationsViewV4Feedback(BaseModel):
+    id: UUID | None
+    total: int | None
+    feedback: str | None
+    total_points: int | None
+    pass_points: int | None
+
+
+class QGetBenchmarkInvocationsViewV4Item(BaseModel):
+    invocation_id: UUID | None
+    test_id: UUID | None
+    group_id: UUID | None
+    benchmark_bundle_department_id: UUID | None
+    created_at: datetime | None
+    title: str | None
+    invocation_completed: bool | None
+    grade_score: int | None
+    grade_passed: bool | None
+    grade_time_taken: int | None
+    rubric_id: UUID | None
+    feedbacks: list[QGetBenchmarkInvocationsViewV4Feedback] | None
+    invocation_run_ids: list[UUID] | None
+    run_ids: list[UUID] | None
+    group_ids: list[UUID] | None
+    model_ids: list[UUID] | None
+    prompt_ids: list[UUID] | None
+    instruction_ids: list[UUID] | None
+    voice_ids: list[UUID] | None
+    temperature_level_ids: list[UUID] | None
+    reasoning_level_ids: list[UUID] | None
+    tool_ids: list[UUID] | None
+    key_ids: list[UUID] | None
+
+
+class GetBenchmarkInvocationsViewSqlRow(BaseModel):
+    items: list[QGetBenchmarkInvocationsViewV4Item] | None = None
+
+
+class GetBenchmarkInvocationsViewApiRequest(BaseModel):
+    test_id_filter: UUID | None = None
+    invocation_ids_filter: list[UUID] | None = None
+
+
+class GetBenchmarkInvocationsViewApiResponse(BaseModel):
+    items: list[QGetBenchmarkInvocationsViewV4Item] | None = None
+
+
+# Generated from: get_benchmark_tests_view
+
+
+class GetBenchmarkTestsViewSqlParams(BaseModel):
+    test_ids: list[UUID] | None = None
+    eval_id_filter: UUID | None = None
+    eval_ids_filter: list[UUID] | None = None
+    profile_id_filter: UUID | None = None
+    archived_filter: bool | None = None
+    department_ids_filter: list[UUID] | None = None
+    date_from_filter: datetime
+    date_to_filter: datetime
+    sort_by_field: str | None = None
+    sort_order_field: str | None = None
+    page_limit_val: int | None = 50
+    page_offset_val: int | None = 0
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.test_ids,
+            self.eval_id_filter,
+            self.eval_ids_filter,
+            self.profile_id_filter,
+            self.archived_filter,
+            self.department_ids_filter,
+            self.date_from_filter,
+            self.date_to_filter,
+            self.sort_by_field,
+            self.sort_order_field,
+            self.page_limit_val,
+            self.page_offset_val,
+        )
+
+
+class QGetBenchmarkTestsViewV4Item(BaseModel):
+    test_id: UUID | None
+    eval_id: UUID | None
+    profile_id: UUID | None
+    department_ids: list[UUID] | None
+    infinite_mode: bool | None
+    archived: bool | None
+    created_at: datetime | None
+
+
+class GetBenchmarkTestsViewSqlRow(BaseModel):
+    items: list[QGetBenchmarkTestsViewV4Item] | None = None
+    total_count: int | None = None
+
+
+class GetBenchmarkTestsViewApiRequest(BaseModel):
+    test_ids: list[UUID] | None = None
+    eval_id_filter: UUID | None = None
+    eval_ids_filter: list[UUID] | None = None
+    profile_id_filter: UUID | None = None
+    archived_filter: bool | None = None
+    department_ids_filter: list[UUID] | None = None
+    date_from_filter: datetime
+    date_to_filter: datetime
+    sort_by_field: str | None = None
+    sort_order_field: str | None = None
+    page_limit_val: int | None = 50
+    page_offset_val: int | None = 0
+
+
+class GetBenchmarkTestsViewApiResponse(BaseModel):
+    items: list[QGetBenchmarkTestsViewV4Item] | None = None
+    total_count: int | None = None
+
+
 # Generated from: get_config_view
 
 
@@ -30798,6 +30928,18 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetBenchmarkBundleViewApiRequest",
         "GetBenchmarkBundleViewApiResponse",
     ),
+    "app/sql/v4/queries/views/benchmark/invocations/get_benchmark_invocations_view_complete.sql": (
+        "GetBenchmarkInvocationsViewSqlParams",
+        "GetBenchmarkInvocationsViewSqlRow",
+        "GetBenchmarkInvocationsViewApiRequest",
+        "GetBenchmarkInvocationsViewApiResponse",
+    ),
+    "app/sql/v4/queries/views/benchmark/tests/get_benchmark_tests_view_complete.sql": (
+        "GetBenchmarkTestsViewSqlParams",
+        "GetBenchmarkTestsViewSqlRow",
+        "GetBenchmarkTestsViewApiRequest",
+        "GetBenchmarkTestsViewApiResponse",
+    ),
     "app/sql/v4/queries/views/config/get_config_view_complete.sql": (
         "GetConfigViewSqlParams",
         "GetConfigViewSqlRow",
@@ -34934,6 +35076,20 @@ if TYPE_CHECKING:
     def load_sql_query(
         file_path: Literal[
             "app/sql/v4/queries/views/benchmark/bundle/get_benchmark_bundle_view_complete.sql"
+        ],
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal[
+            "app/sql/v4/queries/views/benchmark/invocations/get_benchmark_invocations_view_complete.sql"
+        ],
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal[
+            "app/sql/v4/queries/views/benchmark/tests/get_benchmark_tests_view_complete.sql"
         ],
     ) -> SqlString: ...
 

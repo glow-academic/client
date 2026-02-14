@@ -55788,6 +55788,69 @@
         "title": "BenchmarkEvalSummaryItem",
         "description": "Single eval from mv_benchmark_eval_summary."
       },
+      "BenchmarkFeedbackItem": {
+        "properties": {
+          "id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
+          "total": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total"
+          },
+          "feedback": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Feedback"
+          },
+          "total_points": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Points"
+          },
+          "pass_points": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pass Points"
+          }
+        },
+        "type": "object",
+        "title": "BenchmarkFeedbackItem",
+        "description": "Feedback item from benchmark grade."
+      },
       "BenchmarkInvocationViewItem": {
         "properties": {
           "invocation_id": {
@@ -55799,26 +55862,6 @@
             "type": "string",
             "format": "uuid",
             "title": "Test Id"
-          },
-          "eval_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Eval Id"
-          },
-          "run_ids": {
-            "items": {
-              "type": "string",
-              "format": "uuid"
-            },
-            "type": "array",
-            "title": "Run Ids"
           },
           "group_id": {
             "anyOf": [
@@ -55832,7 +55875,19 @@
             ],
             "title": "Group Id"
           },
-          "invocation_created_at": {
+          "benchmark_bundle_department_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Benchmark Bundle Department Id"
+          },
+          "created_at": {
             "anyOf": [
               {
                 "type": "string",
@@ -55842,21 +55897,9 @@
                 "type": "null"
               }
             ],
-            "title": "Invocation Created At"
+            "title": "Created At"
           },
-          "invocation_updated_at": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "date-time"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Invocation Updated At"
-          },
-          "invocation_title": {
+          "title": {
             "anyOf": [
               {
                 "type": "string"
@@ -55865,7 +55908,7 @@
                 "type": "null"
               }
             ],
-            "title": "Invocation Title"
+            "title": "Title"
           },
           "invocation_completed": {
             "type": "boolean",
@@ -55905,10 +55948,119 @@
             ],
             "title": "Grade Time Taken"
           },
-          "num_messages": {
-            "type": "integer",
-            "title": "Num Messages",
-            "default": 0
+          "rubric_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rubric Id"
+          },
+          "feedbacks": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/BenchmarkFeedbackItem"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Feedbacks"
+          },
+          "invocation_run_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Invocation Run Ids"
+          },
+          "run_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Run Ids"
+          },
+          "group_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Group Ids"
+          },
+          "model_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Model Ids"
+          },
+          "prompt_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Prompt Ids"
+          },
+          "instruction_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Instruction Ids"
+          },
+          "voice_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Voice Ids"
+          },
+          "temperature_level_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Temperature Level Ids"
+          },
+          "reasoning_level_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Reasoning Level Ids"
+          },
+          "tool_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Tool Ids"
+          },
+          "key_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Key Ids"
           }
         },
         "type": "object",
@@ -56439,7 +56591,7 @@
             "title": "Archived",
             "default": false
           },
-          "test_created_at": {
+          "created_at": {
             "anyOf": [
               {
                 "type": "string",
@@ -56449,70 +56601,7 @@
                 "type": "null"
               }
             ],
-            "title": "Test Created At"
-          },
-          "test_updated_at": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "date-time"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Test Updated At"
-          },
-          "num_chats": {
-            "type": "integer",
-            "title": "Num Chats",
-            "default": 0
-          },
-          "num_chats_completed": {
-            "type": "integer",
-            "title": "Num Chats Completed",
-            "default": 0
-          },
-          "num_messages": {
-            "type": "integer",
-            "title": "Num Messages",
-            "default": 0
-          },
-          "eval_name_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Eval Name Id"
-          },
-          "eval_description_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Eval Description Id"
-          },
-          "rubric_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Rubric Id"
+            "title": "Created At"
           }
         },
         "type": "object",
@@ -71659,6 +71748,21 @@
             ],
             "title": "Eval Id"
           },
+          "eval_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Eval Ids"
+          },
           "profile_id": {
             "anyOf": [
               {
@@ -71681,6 +71785,21 @@
               }
             ],
             "title": "Archived"
+          },
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
           },
           "date_from": {
             "anyOf": [
@@ -71709,7 +71828,6 @@
           "sort_by": {
             "type": "string",
             "title": "Sort By",
-            "description": "'date' | 'updated'",
             "default": "date"
           },
           "sort_order": {

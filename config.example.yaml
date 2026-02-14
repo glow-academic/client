@@ -190,3 +190,4 @@ modules:
     scenarios: all
     cohorts:
       - practice-cohort
+    themes: all

@@ -13850,6 +13850,22 @@ export interface components {
             status: string;
         };
         /**
+         * BenchmarkFeedbackItem
+         * @description Feedback item from benchmark grade.
+         */
+        BenchmarkFeedbackItem: {
+            /** Id */
+            id?: string | null;
+            /** Total */
+            total?: number | null;
+            /** Feedback */
+            feedback?: string | null;
+            /** Total Points */
+            total_points?: number | null;
+            /** Pass Points */
+            pass_points?: number | null;
+        };
+        /**
          * BenchmarkInvocationViewItem
          * @description Single benchmark invocation row from mv_benchmark_invocations.
          */
@@ -13864,18 +13880,14 @@ export interface components {
              * Format: uuid
              */
             test_id: string;
-            /** Eval Id */
-            eval_id?: string | null;
-            /** Run Ids */
-            run_ids?: string[];
             /** Group Id */
             group_id?: string | null;
-            /** Invocation Created At */
-            invocation_created_at?: string | null;
-            /** Invocation Updated At */
-            invocation_updated_at?: string | null;
-            /** Invocation Title */
-            invocation_title?: string | null;
+            /** Benchmark Bundle Department Id */
+            benchmark_bundle_department_id?: string | null;
+            /** Created At */
+            created_at?: string | null;
+            /** Title */
+            title?: string | null;
             /**
              * Invocation Completed
              * @default false
@@ -13887,11 +13899,32 @@ export interface components {
             grade_passed?: boolean | null;
             /** Grade Time Taken */
             grade_time_taken?: number | null;
-            /**
-             * Num Messages
-             * @default 0
-             */
-            num_messages: number;
+            /** Rubric Id */
+            rubric_id?: string | null;
+            /** Feedbacks */
+            feedbacks?: components["schemas"]["BenchmarkFeedbackItem"][] | null;
+            /** Invocation Run Ids */
+            invocation_run_ids?: string[];
+            /** Run Ids */
+            run_ids?: string[];
+            /** Group Ids */
+            group_ids?: string[];
+            /** Model Ids */
+            model_ids?: string[];
+            /** Prompt Ids */
+            prompt_ids?: string[];
+            /** Instruction Ids */
+            instruction_ids?: string[];
+            /** Voice Ids */
+            voice_ids?: string[];
+            /** Temperature Level Ids */
+            temperature_level_ids?: string[];
+            /** Reasoning Level Ids */
+            reasoning_level_ids?: string[];
+            /** Tool Ids */
+            tool_ids?: string[];
+            /** Key Ids */
+            key_ids?: string[];
         };
         /**
          * BenchmarkProgressEvent
@@ -14098,31 +14131,8 @@ export interface components {
              * @default false
              */
             archived: boolean;
-            /** Test Created At */
-            test_created_at?: string | null;
-            /** Test Updated At */
-            test_updated_at?: string | null;
-            /**
-             * Num Chats
-             * @default 0
-             */
-            num_chats: number;
-            /**
-             * Num Chats Completed
-             * @default 0
-             */
-            num_chats_completed: number;
-            /**
-             * Num Messages
-             * @default 0
-             */
-            num_messages: number;
-            /** Eval Name Id */
-            eval_name_id?: string | null;
-            /** Eval Description Id */
-            eval_description_id?: string | null;
-            /** Rubric Id */
-            rubric_id?: string | null;
+            /** Created At */
+            created_at?: string | null;
         };
         /** Body_token_default_idp_token_post */
         Body_token_default_idp_token_post: {
@@ -18872,17 +18882,20 @@ export interface components {
             test_ids?: string[];
             /** Eval Id */
             eval_id?: string | null;
+            /** Eval Ids */
+            eval_ids?: string[] | null;
             /** Profile Id */
             profile_id?: string | null;
             /** Archived */
             archived?: boolean | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
             /** Date From */
             date_from?: string | null;
             /** Date To */
             date_to?: string | null;
             /**
              * Sort By
-             * @description 'date' | 'updated'
              * @default date
              */
             sort_by: string;

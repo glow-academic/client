@@ -18,6 +18,7 @@ from typing import Any, cast
 from fastapi import APIRouter
 
 from app.api.v4.artifacts.attempt.get import get_attempt_websocket
+from app.api.v4.artifacts.attempt.types import GetAttemptWebsocketResponse
 from app.api.v4.resources.instructions.get import get_instructions_internal
 from app.api.v4.resources.prompts.get import get_prompts_internal
 from app.infra.v4.generation import convert_tools_to_dict, render_developer_instructions
@@ -65,30 +66,17 @@ SQL_PATH_CREATE_MESSAGE_WITH_TEXT = (
 
 
 def _build_attempt_jinja_context(
-    simulation_id: uuid.UUID | None,
-    simulation_name: str | None,
-    attempt_id: uuid.UUID,
-    grade_id: uuid.UUID | None,
-    chat_id: uuid.UUID | None,
-    messages: list[dict[str, Any]],
-    rubric: dict[str, Any],
+    result: GetAttemptWebsocketResponse,
 ) -> dict[str, Any]:
-    """Build Jinja context for attempt grading templates."""
-    return {
-        "simulation": {
-            "id": str(simulation_id) if simulation_id else None,
-            "name": simulation_name,
-        },
-        "attempt": {
-            "id": str(attempt_id),
-        },
-        "grade": {
-            "id": str(grade_id) if grade_id else None,
-        },
-        "chat_id": str(chat_id) if chat_id else None,
-        "messages": messages,
-        "rubric": rubric,
-    }
+    """Build Jinja context with resources as top-level variables.
+
+    Resources are the current selections (from get_attempt_internal's config chain).
+    Templates access resources directly: {{ rubrics }}, {{ agents[0].temperature }}
+    Views (e.g. simulation_messages) are injected separately after prepare.
+    """
+    if result.resources:
+        return result.resources.model_dump(mode="json")
+    return {}
 
 
 async def _attempt_grade_impl(
@@ -425,56 +413,32 @@ async def _attempt_grade_impl(
             group_id = prepare_row.group_id
             grade_id = prepare_row.grade_id
 
-            # Step 6: Build jinja context in Python from views data
-            # Convert simulation messages to role/content format for jinja templates
-            jinja_messages: list[dict[str, Any]] = []
-            if result.views and result.views.simulation_messages:
-                for msg in result.views.simulation_messages:
-                    if not msg.completed:
-                        continue
-                    # Filter by chat_id if specified
-                    if data.chat_id and msg.chat_id != data.chat_id:
-                        continue
-                    role = "user" if msg.type == "query" else "assistant"
-                    content = ""
-                    if msg.contents:
-                        content = "\n".join(
-                            c.content for c in msg.contents if c.content
-                        )
-                    jinja_messages.append(
-                        {
-                            "chat_id": str(msg.chat_id) if msg.chat_id else None,
-                            "role": role,
-                            "content": content,
-                            "created_at": msg.created_at,
-                        }
-                    )
+            # Step 6: Build jinja context from resources + views (persona pattern)
+            jinja_context = _build_attempt_jinja_context(result)
 
-            # Build rubric data from resources
-            rubric_data: dict[str, Any] = {}
-            if result.resources.rubrics:
-                first_rubric = next(iter(result.resources.rubrics.values()), None)
-                if first_rubric:
-                    rubric_data = {
-                        "id": (
-                            str(first_rubric.rubric_id)
-                            if first_rubric.rubric_id
-                            else None
-                        ),
-                        "name": first_rubric.name,
-                        "points": first_rubric.total_points,
-                        "pass_points": first_rubric.pass_points,
-                    }
+            # Inject views into jinja context for template access
+            views_data: dict[str, Any] = {}
+            if result.views:
+                if result.views.simulation_attempts:
+                    views_data["simulation_attempts"] = [
+                        a.model_dump(mode="json")
+                        for a in result.views.simulation_attempts
+                    ]
+                if result.views.simulation_chats:
+                    views_data["simulation_chats"] = [
+                        c.model_dump(mode="json") for c in result.views.simulation_chats
+                    ]
+                if result.views.simulation_messages:
+                    views_data["simulation_messages"] = [
+                        m.model_dump(mode="json")
+                        for m in result.views.simulation_messages
+                    ]
+            jinja_context["views"] = views_data
 
-            jinja_context = _build_attempt_jinja_context(
-                simulation_id=context_row.simulation_id,
-                simulation_name=context_row.simulation_name,
-                attempt_id=data.attempt_id,
-                grade_id=grade_id,
-                chat_id=data.chat_id,
-                messages=jinja_messages,
-                rubric=rubric_data,
-            )
+            # Inject grade data (created by prepare SQL, not in websocket response)
+            jinja_context["grade"] = {
+                "id": str(grade_id) if grade_id else None,
+            }
 
             # Step 7: Render developer instructions with Jinja
             rendered_developer_messages = render_developer_instructions(

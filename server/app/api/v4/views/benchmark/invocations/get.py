@@ -1,12 +1,13 @@
 """Get endpoint for benchmark invocations view (mv_benchmark_invocations)."""
 
-from typing import Annotated, Any
+from typing import Annotated
 from uuid import UUID
 
 import asyncpg
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 from app.api.v4.views.benchmark.invocations.types import (
+    BenchmarkFeedbackItem,
     BenchmarkInvocationViewItem,
     GetBenchmarkInvocationsRequest,
     GetBenchmarkInvocationsResponse,
@@ -17,6 +18,9 @@ from app.main import get_db
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
+from app.utils.sql_helper import execute_sql_typed
+
+SQL_PATH = "app/sql/v4/queries/views/benchmark/invocations/get_benchmark_invocations_view_complete.sql"
 
 router = APIRouter()
 
@@ -28,6 +32,8 @@ async def get_benchmark_invocations_internal(
     bypass_cache: bool = False,
 ) -> list[BenchmarkInvocationViewItem]:
     """Internal function for reading benchmark invocation rows."""
+    from app.sql.types import GetBenchmarkInvocationsViewSqlParams
+
     normalized_invocation_ids = invocation_ids or []
     cache_key_val = cache_key(
         "views/benchmark/invocations/get",
@@ -45,50 +51,65 @@ async def get_benchmark_invocations_internal(
                 for item in cached["items"]
             ]
 
-    conditions: list[str] = []
-    params: list[Any] = []
-    param_idx = 1
-
-    if test_id:
-        conditions.append(f"test_id = ${param_idx}")
-        params.append(test_id)
-        param_idx += 1
-
-    if normalized_invocation_ids:
-        conditions.append(f"invocation_id = ANY(${param_idx}::uuid[])")
-        params.append(normalized_invocation_ids)
-        param_idx += 1
-
-    where_clause = " AND ".join(conditions) if conditions else "TRUE"
-
-    rows = await conn.fetch(
-        f"""
-        SELECT *
-        FROM mv_benchmark_invocations
-        WHERE {where_clause}
-        ORDER BY invocation_created_at ASC
-        """,
-        *params,
+    params = GetBenchmarkInvocationsViewSqlParams(
+        test_id_filter=test_id,
+        invocation_ids_filter=normalized_invocation_ids or None,
     )
 
-    items = [
-        BenchmarkInvocationViewItem(
-            invocation_id=row["invocation_id"],
-            test_id=row["test_id"],
-            eval_id=row["eval_id"],
-            run_ids=row["run_ids"] or [],
-            group_id=row["group_id"],
-            invocation_created_at=row["invocation_created_at"],
-            invocation_updated_at=row["invocation_updated_at"],
-            invocation_title=row["invocation_title"],
-            invocation_completed=row["invocation_completed"] or False,
-            grade_score=row["grade_score"],
-            grade_passed=row["grade_passed"],
-            grade_time_taken=row["grade_time_taken"],
-            num_messages=row["num_messages"] or 0,
-        )
-        for row in rows
-    ]
+    result = await execute_sql_typed(conn, SQL_PATH, params=params)
+
+    items: list[BenchmarkInvocationViewItem] = []
+    if result and result.items:
+        for item in result.items:
+            # Transform feedbacks
+            feedbacks = None
+            if item.feedbacks:
+                feedbacks = [
+                    BenchmarkFeedbackItem(
+                        id=f.id,
+                        total=f.total,
+                        feedback=f.feedback,
+                        total_points=f.total_points,
+                        pass_points=f.pass_points,
+                    )
+                    for f in item.feedbacks
+                ]
+
+            items.append(
+                BenchmarkInvocationViewItem(
+                    invocation_id=item.invocation_id,
+                    test_id=item.test_id,
+                    group_id=item.group_id,
+                    benchmark_bundle_department_id=item.benchmark_bundle_department_id,
+                    created_at=item.created_at,
+                    title=item.title,
+                    invocation_completed=item.invocation_completed or False,
+                    grade_score=item.grade_score,
+                    grade_passed=item.grade_passed,
+                    grade_time_taken=item.grade_time_taken,
+                    rubric_id=item.rubric_id,
+                    feedbacks=feedbacks,
+                    invocation_run_ids=list(item.invocation_run_ids)
+                    if item.invocation_run_ids
+                    else [],
+                    run_ids=list(item.run_ids) if item.run_ids else [],
+                    group_ids=list(item.group_ids) if item.group_ids else [],
+                    model_ids=list(item.model_ids) if item.model_ids else [],
+                    prompt_ids=list(item.prompt_ids) if item.prompt_ids else [],
+                    instruction_ids=list(item.instruction_ids)
+                    if item.instruction_ids
+                    else [],
+                    voice_ids=list(item.voice_ids) if item.voice_ids else [],
+                    temperature_level_ids=list(item.temperature_level_ids)
+                    if item.temperature_level_ids
+                    else [],
+                    reasoning_level_ids=list(item.reasoning_level_ids)
+                    if item.reasoning_level_ids
+                    else [],
+                    tool_ids=list(item.tool_ids) if item.tool_ids else [],
+                    key_ids=list(item.key_ids) if item.key_ids else [],
+                )
+            )
 
     await set_cached(
         cache_key_val,
@@ -142,7 +163,3 @@ async def get_benchmark_invocations(
             operation="views_benchmark_invocations_get",
             request=http_request,
         )
-
-
-# Backward-compatible alias for existing internal imports
-get_benchmark_chats_internal = get_benchmark_invocations_internal

@@ -211,6 +211,7 @@ load_setup_categories() {
     "cohorts:08-cohorts"
     "profiles:09-profiles"
     "settings:10-settings"
+    "themes:themes"
   )
 
   for pair in "${categories[@]}"; do
