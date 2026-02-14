@@ -27,7 +27,8 @@ END $$;
 CREATE OR REPLACE FUNCTION api_duplicate_scenario_v4(
     scenario_id uuid,
     profile_id uuid,
-    group_id uuid DEFAULT NULL
+    group_id uuid DEFAULT NULL,
+    session_id uuid DEFAULT NULL
 )
 RETURNS TABLE (
     scenario_id uuid,
@@ -139,15 +140,15 @@ get_problem_statement_enabled_flag AS (
 -- Handle group
 ensure_group AS (
     INSERT INTO groups_entry (id, created_at, updated_at, session_id)
-    SELECT p.group_id, NOW(), NOW(), (SELECT id FROM view_sessions_entry WHERE view_sessions_entry.profile_id = api_duplicate_scenario_v4.profile_id AND view_sessions_entry.active = true ORDER BY created_at DESC LIMIT 1)
+    SELECT p.group_id, NOW(), NOW(), session_id
     FROM params p
     WHERE p.group_id IS NOT NULL
-      AND NOT EXISTS (SELECT 1 FROM view_groups_entry g WHERE g.id = p.group_id)
+      AND NOT EXISTS (SELECT 1 FROM groups_entry g WHERE g.id = p.group_id)
     RETURNING id
 ),
 new_group AS (
     INSERT INTO groups_entry (created_at, updated_at, session_id)
-    SELECT NOW(), NOW(), (SELECT id FROM view_sessions_entry WHERE view_sessions_entry.profile_id = api_duplicate_scenario_v4.profile_id AND view_sessions_entry.active = true ORDER BY created_at DESC LIMIT 1)
+    SELECT NOW(), NOW(), session_id
     FROM params p
     WHERE p.group_id IS NULL
     RETURNING id

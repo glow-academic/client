@@ -62,14 +62,17 @@ async def duplicate_cohort(
                     bypass_cache=False,
                 )
                 actor_name = profile_ctx.access.actor_name
+                session_id = profile_ctx.session_id
         else:
             actor_name = None
+            session_id = None
 
         async with conn.transaction():
             # Convert API request to SQL params (add profile_id from header)
             params = DuplicateCohortSqlParams(
                 cohort_id=request.cohort_id,
                 profile_id=uuid.UUID(profile_id),
+                session_id=session_id,
             )
             sql_params = params.to_tuple()
 

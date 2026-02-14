@@ -18,7 +18,8 @@ END $$;
 
 CREATE OR REPLACE FUNCTION api_duplicate_cohort_v4(
     cohort_id uuid,
-    profile_id uuid
+    profile_id uuid,
+    session_id uuid DEFAULT NULL
 )
 RETURNS TABLE (
     id uuid,
@@ -90,7 +91,7 @@ description_resource AS (
 ),
 new_group AS (
     INSERT INTO groups_entry (created_at, updated_at, session_id)
-    VALUES (NOW(), NOW(), (SELECT id FROM view_sessions_entry WHERE view_sessions_entry.profile_id = api_duplicate_cohort_v4.profile_id AND view_sessions_entry.active = true ORDER BY created_at DESC LIMIT 1))
+    VALUES (NOW(), NOW(), session_id)
     RETURNING id
 ),
 new_cohort AS (

@@ -42,8 +42,6 @@ CREATE TYPE types.q_search_simulatable_profiles_v4_profile AS (
     role text,
     active boolean,
     req_per_day integer,
-    last_login timestamptz,
-    last_active timestamptz,
     created_at timestamptz,
     updated_at timestamptz,
     primary_department_id uuid
@@ -96,8 +94,6 @@ simulatable_data AS (
          LIMIT 1) as role,
         EXISTS (SELECT 1 FROM profile_flags_junction pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.profile_id = p.id AND f.name = 'profile_active' AND pf.value = TRUE) as active,
         COALESCE(rl.requests_per_day, 0) as req_per_day,
-        (SELECT le.last_login FROM profiles_logins_connection plj JOIN view_logins_entry le ON le.id = plj.login_id WHERE plj.profiles_id = p.id ORDER BY le.created_at DESC LIMIT 1) as last_login,
-        pa.last_active,
         p.created_at,
         p.updated_at,
         pd.department_id as primary_department_id
@@ -108,14 +104,6 @@ simulatable_data AS (
     LEFT JOIN profile_departments_junction pd ON p.id = pd.profile_id AND pd.is_primary = TRUE
     LEFT JOIN profile_request_limits_junction prl ON prl.profile_id = p.id AND prl.active = true
     LEFT JOIN request_limits_resource rl ON prl.request_limit_id = rl.id
-    LEFT JOIN LATERAL (
-        SELECT ae.last_active
-        FROM profiles_activity_connection pactj
-        JOIN view_activity_entry ae ON ae.id = pactj.activity_id
-        WHERE pactj.profiles_id = p.id
-        ORDER BY ae.created_at DESC
-        LIMIT 1
-    ) pa ON true
     WHERE p.id != (SELECT profile_id FROM params)
       AND CASE 
         WHEN rr.role = 'superadmin'::profile_type THEN true
@@ -124,8 +112,8 @@ simulatable_data AS (
         ELSE false
       END
       AND ((SELECT query FROM params) IS NULL OR (SELECT query FROM params) = '' OR ((SELECT n.name FROM profile_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1) ILIKE '%' || (SELECT query FROM params) || '%' OR EXISTS (SELECT 1 FROM profile_emails_junction pe_search JOIN emails_resource e_search ON pe_search.email_id = e_search.id WHERE pe_search.profile_id = p.id AND pe_search.active = true AND e_search.email ILIKE '%' || (SELECT query FROM params) || '%') OR (SELECT r.role FROM profile_roles_junction pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = p.id LIMIT 1)::text ILIKE '%' || (SELECT query FROM params) || '%'))
-    GROUP BY p.id, (SELECT r.role FROM profile_roles_junction pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = p.id LIMIT 1), EXISTS (SELECT 1 FROM profile_flags_junction pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.profile_id = p.id AND f.name = 'profile_active' AND pf.value = TRUE), 
-             rl.requests_per_day, (SELECT le.last_login FROM profiles_logins_connection plj JOIN view_logins_entry le ON le.id = plj.login_id WHERE plj.profiles_id = p.id ORDER BY le.created_at DESC LIMIT 1), pa.last_active, 
+    GROUP BY p.id, (SELECT r.role FROM profile_roles_junction pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = p.id LIMIT 1), EXISTS (SELECT 1 FROM profile_flags_junction pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.profile_id = p.id AND f.name = 'profile_active' AND pf.value = TRUE),
+             rl.requests_per_day,
              p.created_at, p.updated_at, pd.department_id
     ORDER BY (SELECT n.name FROM profile_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1)
     LIMIT (SELECT limit_count FROM params)
@@ -134,7 +122,7 @@ SELECT
     (SELECT actor_name FROM requester_profile)::text as actor_name,
     COALESCE(
         ARRAY_AGG(
-            (sp.id, sp.name, COALESCE(sp.emails, ARRAY[]::text[]), sp.primary_email, sp.role, sp.active, sp.req_per_day, sp.last_login, sp.last_active, sp.created_at, sp.updated_at, sp.primary_department_id)::types.q_search_simulatable_profiles_v4_profile
+            (sp.id, sp.name, COALESCE(sp.emails, ARRAY[]::text[]), sp.primary_email, sp.role, sp.active, sp.req_per_day, sp.created_at, sp.updated_at, sp.primary_department_id)::types.q_search_simulatable_profiles_v4_profile
             ORDER BY sp.name NULLS LAST
         ),
         '{}'::types.q_search_simulatable_profiles_v4_profile[]

@@ -73,12 +73,14 @@ async def duplicate_scenario(
                 )
                 actor_name = profile_ctx.access.actor_name
                 user_role = profile_ctx.access.role
+                session_id = profile_ctx.session_id
                 user_department_ids = [
                     d.department_id for d in profile_ctx.departments if d.department_id
                 ]
         else:
             actor_name = None
             user_role = None
+            session_id = None
             user_department_ids = []
 
         # Permission check
@@ -125,7 +127,7 @@ async def duplicate_scenario(
 
         # Convert API request to SQL params (add profile_id from header)
         params = DuplicateScenarioSqlParams(
-            **request.model_dump(), profile_id=profile_id
+            **request.model_dump(), profile_id=profile_id, session_id=session_id
         )
         sql_params = params.to_tuple()
 

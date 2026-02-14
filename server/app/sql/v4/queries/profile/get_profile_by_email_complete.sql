@@ -33,8 +33,6 @@ RETURNS TABLE (
     role text,
     active boolean,
     req_per_day integer,
-    last_login timestamptz,
-    last_active timestamptz,
     created_at timestamptz,
     updated_at timestamptz,
     primary_department_id uuid,
@@ -71,8 +69,6 @@ target_profile AS (
          LIMIT 1) as role,
         EXISTS (SELECT 1 FROM profile_flags_junction pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.profile_id = p.id AND f.name = 'profile_active' AND pf.value = TRUE) as active,
         rl.requests_per_day as req_per_day,
-        (SELECT le.last_login FROM profiles_logins_connection plj JOIN view_logins_entry le ON le.id = plj.login_id WHERE plj.profiles_id = p.id ORDER BY le.created_at DESC LIMIT 1) as last_login,
-        pa.last_active,
         p.created_at,
         p.updated_at,
         pd.department_id as primary_department_id
@@ -84,16 +80,8 @@ target_profile AS (
     LEFT JOIN profile_departments_junction pd ON p.id = pd.profile_id AND pd.is_primary = TRUE AND pd.active = true
     LEFT JOIN profile_request_limits_junction prl ON prl.profile_id = p.id AND prl.active = true
     LEFT JOIN request_limits_resource rl ON prl.request_limit_id = rl.id
-    LEFT JOIN LATERAL (
-        SELECT ae.last_active
-        FROM profiles_activity_connection pactj
-        JOIN view_activity_entry ae ON ae.id = pactj.activity_id
-        WHERE pactj.profiles_id = p.id
-        ORDER BY ae.created_at DESC
-        LIMIT 1
-    ) pa ON true
-    GROUP BY p.id, (SELECT r.role FROM profile_roles_junction pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = p.id LIMIT 1), EXISTS (SELECT 1 FROM profile_flags_junction pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.profile_id = p.id AND f.name = 'profile_active' AND pf.value = TRUE), 
-             rl.requests_per_day, (SELECT le.last_login FROM profiles_logins_connection plj JOIN view_logins_entry le ON le.id = plj.login_id WHERE plj.profiles_id = p.id ORDER BY le.created_at DESC LIMIT 1), pa.last_active, 
+    GROUP BY p.id, (SELECT r.role FROM profile_roles_junction pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = p.id LIMIT 1), EXISTS (SELECT 1 FROM profile_flags_junction pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.profile_id = p.id AND f.name = 'profile_active' AND pf.value = TRUE),
+             rl.requests_per_day,
              p.created_at, p.updated_at, pd.department_id
 )
 SELECT 
@@ -104,8 +92,6 @@ SELECT
     tp.role,
     tp.active,
     tp.req_per_day,
-    tp.last_login,
-    tp.last_active,
     tp.created_at,
     tp.updated_at,
     tp.primary_department_id,

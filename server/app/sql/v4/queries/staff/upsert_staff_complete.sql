@@ -49,7 +49,8 @@ CREATE TYPE types.i_upsert_staff_v4_profile AS (
 -- Bulk upsert function - accepts array of profiles and processes them all
 CREATE OR REPLACE FUNCTION api_upsert_staff_v4(
     profiles types.i_upsert_staff_v4_profile[],  -- Array of profiles to upsert
-    current_profile_id uuid  -- current user's profile_id for role validation
+    current_profile_id uuid,  -- current user's profile_id for role validation
+    session_id uuid DEFAULT NULL  -- current user's session_id (resolved in Python)
 )
 RETURNS TABLE (
     profile_ids uuid[],
@@ -163,7 +164,7 @@ new_groups AS (
 ),
 insert_groups AS (
     INSERT INTO groups_entry (id, created_at, updated_at, session_id)
-    SELECT ng.group_id, NOW(), NOW(), (SELECT id FROM view_sessions_entry WHERE profile_id = current_profile_id AND active = true ORDER BY created_at DESC LIMIT 1)
+    SELECT ng.group_id, NOW(), NOW(), session_id
     FROM new_groups ng
     RETURNING id
 ),

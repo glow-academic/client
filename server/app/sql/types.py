@@ -2014,6 +2014,42 @@ class DeleteCohortApiResponse(BaseModel):
 
 
 
+# Generated from: duplicate_cohort
+
+class DuplicateCohortSqlParams(BaseModel):
+
+    cohort_id: UUID
+    profile_id: UUID
+    session_id: UUID | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.cohort_id,
+            self.profile_id,
+            self.session_id,
+        )
+
+class DuplicateCohortSqlRow(BaseModel):
+
+    id: UUID | None = None
+    title: str | None = None
+    original_title: str | None = None
+    actor_name: str | None = None
+
+class DuplicateCohortApiRequest(BaseModel):
+
+    cohort_id: UUID
+    session_id: UUID | None = None
+
+class DuplicateCohortApiResponse(BaseModel):
+
+    id: UUID | None = None
+    title: str | None = None
+    original_title: str | None = None
+    actor_name: str | None = None
+
+
+
 # Generated from: get_cohort_access
 
 class GetCohortAccessSqlParams(BaseModel):
@@ -6715,87 +6751,6 @@ class InfraToolsGetResourceTypeByToolIdApiRequest(BaseModel):
 class InfraToolsGetResourceTypeByToolIdApiResponse(BaseModel):
 
     resource_type: str | None = None
-
-
-
-# Generated from: infra_tools_get_schema_fields_v4
-
-class InfraToolsGetSchemaFieldsV4SqlParams(BaseModel):
-
-    schema_id: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.schema_id,
-        )
-
-class InfraToolsGetSchemaFieldsV4SqlRow(BaseModel):
-
-    id: UUID | None = None
-    name: str | None = None
-    field_type: str | None = None
-    template: str | None = None
-
-class InfraToolsGetSchemaFieldsV4ApiRequest(BaseModel):
-
-    schema_id: UUID
-
-class InfraToolsGetSchemaFieldsV4ApiResponse(BaseModel):
-
-    id: UUID | None = None
-    name: str | None = None
-    field_type: str | None = None
-    template: str | None = None
-
-
-
-# Generated from: infra_tools_get_schema_id_from_template_v4
-
-class InfraToolsGetSchemaIdFromTemplateV4SqlParams(BaseModel):
-
-    template_id: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.template_id,
-        )
-
-class InfraToolsGetSchemaIdFromTemplateV4SqlRow(BaseModel):
-
-    schema_id: UUID | None = None
-
-class InfraToolsGetSchemaIdFromTemplateV4ApiRequest(BaseModel):
-
-    template_id: UUID
-
-class InfraToolsGetSchemaIdFromTemplateV4ApiResponse(BaseModel):
-
-    schema_id: UUID | None = None
-
-
-
-# Generated from: infra_tools_get_template_id_v4
-
-class InfraToolsGetTemplateIdV4SqlParams(BaseModel):
-
-    tool_id: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.tool_id,
-        )
-
-class InfraToolsGetTemplateIdV4SqlRow(BaseModel):
-
-    template_id: UUID | None = None
-
-class InfraToolsGetTemplateIdV4ApiRequest(BaseModel):
-
-    tool_id: UUID
-
-class InfraToolsGetTemplateIdV4ApiResponse(BaseModel):
-
-    template_id: UUID | None = None
 
 
 
@@ -19309,6 +19264,43 @@ class DeleteScenarioApiResponse(BaseModel):
 
 
 
+# Generated from: duplicate_scenario
+
+class DuplicateScenarioSqlParams(BaseModel):
+
+    scenario_id: UUID
+    profile_id: UUID
+    group_id: UUID | None = None
+    session_id: UUID | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.scenario_id,
+            self.profile_id,
+            self.group_id,
+            self.session_id,
+        )
+
+class DuplicateScenarioSqlRow(BaseModel):
+
+    scenario_id: UUID | None = None
+    scenario_name: str | None = None
+    actor_name: str | None = None
+
+class DuplicateScenarioApiRequest(BaseModel):
+
+    scenario_id: UUID
+    group_id: UUID | None = None
+    session_id: UUID | None = None
+
+class DuplicateScenarioApiResponse(BaseModel):
+
+    scenario_id: UUID | None = None
+    scenario_name: str | None = None
+    actor_name: str | None = None
+
+
+
 # Generated from: get_scenario_by_id
 
 class GetScenarioByIdSqlParams(BaseModel):
@@ -21577,6 +21569,56 @@ class ProcessCsvApiResponse(BaseModel):
     success: bool | None = None
     headers: list[str] | None = None
     rows: list[QProcessCsvV4ProcessedRow] | None = None
+
+
+
+# Generated from: upsert_staff
+
+class IUpsertStaffV4Profile(BaseModel):
+
+    name: str | None
+    emails: list[str] | None
+    primary_email_index: int | None
+    role: str | None
+    active: bool | None
+    department_ids: list[UUID] | None
+    cohort_ids: list[UUID] | None
+
+class UpsertStaffSqlParams(BaseModel):
+
+    profiles: list[IUpsertStaffV4Profile]
+    current_profile_id: UUID
+    session_id: UUID | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        # Convert profiles composite array to tuples for asyncpg
+        profiles_tuples = [
+            (conn.name, conn.emails, conn.primary_email_index, conn.role, conn.active, conn.department_ids, conn.cohort_ids)
+            for conn in (self.profiles or [])
+        ]
+        return (
+            profiles_tuples,
+            self.current_profile_id,
+            self.session_id,
+        )
+
+class UpsertStaffSqlRow(BaseModel):
+
+    profile_ids: list[UUID] | None = None
+    created_count: int | None = None
+    updated_count: int | None = None
+
+class UpsertStaffApiRequest(BaseModel):
+
+    profiles: list[IUpsertStaffV4Profile]
+    current_profile_id: UUID
+    session_id: UUID | None = None
+
+class UpsertStaffApiResponse(BaseModel):
+
+    profile_ids: list[UUID] | None = None
+    created_count: int | None = None
+    updated_count: int | None = None
 
 
 
@@ -25015,6 +25057,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "DeleteCohortApiRequest",
         "DeleteCohortApiResponse",
     ),
+    "app/sql/v4/queries/cohorts/duplicate_cohort_complete.sql": (
+        "DuplicateCohortSqlParams",
+        "DuplicateCohortSqlRow",
+        "DuplicateCohortApiRequest",
+        "DuplicateCohortApiResponse",
+    ),
     "app/sql/v4/queries/cohorts/get_cohort_access_complete.sql": (
         "GetCohortAccessSqlParams",
         "GetCohortAccessSqlRow",
@@ -25734,24 +25782,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "InfraToolsGetResourceTypeByToolIdSqlRow",
         "InfraToolsGetResourceTypeByToolIdApiRequest",
         "InfraToolsGetResourceTypeByToolIdApiResponse",
-    ),
-    "app/sql/v4/queries/infrastructure/tools/get_schema_fields_v4_complete.sql": (
-        "InfraToolsGetSchemaFieldsV4SqlParams",
-        "InfraToolsGetSchemaFieldsV4SqlRow",
-        "InfraToolsGetSchemaFieldsV4ApiRequest",
-        "InfraToolsGetSchemaFieldsV4ApiResponse",
-    ),
-    "app/sql/v4/queries/infrastructure/tools/get_schema_id_from_template_v4_complete.sql": (
-        "InfraToolsGetSchemaIdFromTemplateV4SqlParams",
-        "InfraToolsGetSchemaIdFromTemplateV4SqlRow",
-        "InfraToolsGetSchemaIdFromTemplateV4ApiRequest",
-        "InfraToolsGetSchemaIdFromTemplateV4ApiResponse",
-    ),
-    "app/sql/v4/queries/infrastructure/tools/get_template_id_v4_complete.sql": (
-        "InfraToolsGetTemplateIdV4SqlParams",
-        "InfraToolsGetTemplateIdV4SqlRow",
-        "InfraToolsGetTemplateIdV4ApiRequest",
-        "InfraToolsGetTemplateIdV4ApiResponse",
     ),
     "app/sql/v4/queries/infrastructure/tools/get_tool_call_result_v4_complete.sql": (
         "InfraToolsGetToolCallResultV4SqlParams",
@@ -27589,6 +27619,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "DeleteScenarioApiRequest",
         "DeleteScenarioApiResponse",
     ),
+    "app/sql/v4/queries/scenario/duplicate_scenario_complete.sql": (
+        "DuplicateScenarioSqlParams",
+        "DuplicateScenarioSqlRow",
+        "DuplicateScenarioApiRequest",
+        "DuplicateScenarioApiResponse",
+    ),
     "app/sql/v4/queries/scenario/get_scenario_by_id_complete.sql": (
         "GetScenarioByIdSqlParams",
         "GetScenarioByIdSqlRow",
@@ -27852,6 +27888,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "ProcessCsvSqlRow",
         "ProcessCsvApiRequest",
         "ProcessCsvApiResponse",
+    ),
+    "app/sql/v4/queries/staff/upsert_staff_complete.sql": (
+        "UpsertStaffSqlParams",
+        "UpsertStaffSqlRow",
+        "UpsertStaffApiRequest",
+        "UpsertStaffApiResponse",
     ),
     "app/sql/v4/queries/tools/check_tool_delete_access_complete.sql": (
         "CheckToolDeleteAccessSqlParams",
@@ -28526,6 +28568,11 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/cohorts/duplicate_cohort_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v4/queries/cohorts/get_cohort_access_complete.sql"]
     ) -> SqlString: ...
 
@@ -29122,21 +29169,6 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/queries/infrastructure/tools/get_resource_type_by_tool_id_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/queries/infrastructure/tools/get_schema_fields_v4_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/queries/infrastructure/tools/get_schema_id_from_template_v4_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/queries/infrastructure/tools/get_template_id_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -30671,6 +30703,11 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/scenario/duplicate_scenario_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v4/queries/scenario/get_scenario_by_id_complete.sql"]
     ) -> SqlString: ...
 
@@ -30887,6 +30924,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/queries/staff/process_csv_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/staff/upsert_staff_complete.sql"]
     ) -> SqlString: ...
 
     @overload

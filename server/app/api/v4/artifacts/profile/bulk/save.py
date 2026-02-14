@@ -6,9 +6,10 @@ from typing import Annotated, Any, cast
 import asyncpg
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
+from app.api.v4.auth.profile import get_auth_profile_internal
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
-from app.main import get_db, transaction
+from app.main import get_db, get_pool, transaction
 from app.sql.types import (
     UpsertStaffApiRequest,
     UpsertStaffApiResponse,
@@ -54,6 +55,18 @@ async def save_staff(
                 detail="Profile ID is required. Please sign in again.",
             )
 
+        # Fetch user context for session_id
+        session_id = None
+        pool = get_pool()
+        if pool:
+            async with pool.acquire() as context_conn:
+                profile_ctx = await get_auth_profile_internal(
+                    conn=context_conn,
+                    profile_id=current_profile_id,
+                    bypass_cache=False,
+                )
+                session_id = profile_ctx.session_id
+
         # Validate all profiles before processing
         for i, profile_req in enumerate(request.profiles):
             if not profile_req.emails or len(profile_req.emails) == 0:
@@ -78,6 +91,7 @@ async def save_staff(
         params = UpsertStaffSqlParams(
             **request.model_dump(),
             current_profile_id=uuid.UUID(current_profile_id),
+            session_id=session_id,
         )
         sql_params = params.to_tuple()
 
