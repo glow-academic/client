@@ -45074,6 +45074,59 @@
         ]
       }
     },
+    "/socket/v4/server/attempt/chat": {
+      "post": {
+        "tags": [
+          "socket",
+          "socket-server"
+        ],
+        "summary": "Attempt Chat Api",
+        "description": "Internal event: Create attempt chat (not sent to client).",
+        "operationId": "attempt_chat_api_socket_v4_server_attempt_chat_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": true,
+                "type": "object",
+                "title": "Request"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Attempt Chat Api Socket V4 Server Attempt Chat Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server"
+        ]
+      }
+    },
     "/socket/v4/server/benchmark/started": {
       "post": {
         "tags": [
@@ -136999,17 +137052,6 @@
               }
             ],
             "title": "User Instructions"
-          },
-          "infinite": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Infinite"
           },
           "previous_chat_map": {
             "anyOf": [

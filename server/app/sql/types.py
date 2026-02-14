@@ -6699,6 +6699,37 @@ class SaveFieldApiResponse(BaseModel):
 
 
 
+# Generated from: create_attempt_chat
+
+class CreateAttemptChatSqlParams(BaseModel):
+
+    p_profile_id: UUID
+    p_attempt_id: UUID
+    p_training_bundle_department_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.p_profile_id,
+            self.p_attempt_id,
+            self.p_training_bundle_department_id,
+        )
+
+class CreateAttemptChatSqlRow(BaseModel):
+
+    chat_id: UUID | None = None
+
+class CreateAttemptChatApiRequest(BaseModel):
+
+    p_profile_id: UUID
+    p_attempt_id: UUID
+    p_training_bundle_department_id: UUID
+
+class CreateAttemptChatApiResponse(BaseModel):
+
+    chat_id: UUID | None = None
+
+
+
 # Generated from: get_agent_entry_tools
 
 class GetAgentEntryToolsSqlParams(BaseModel):
@@ -7920,8 +7951,6 @@ class PrepareTrainingStartSqlParams(BaseModel):
     p_training_bundle_entry_id: UUID
     p_department_id: UUID
     p_draft_id: UUID | None = None
-    p_infinite_mode: bool | None = None
-    p_attempt_id: UUID | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
@@ -7929,14 +7958,11 @@ class PrepareTrainingStartSqlParams(BaseModel):
             self.p_training_bundle_entry_id,
             self.p_department_id,
             self.p_draft_id,
-            self.p_infinite_mode,
-            self.p_attempt_id,
         )
 
 class PrepareTrainingStartSqlRow(BaseModel):
 
-    attempt_id: UUID | None = None
-    chat_id: UUID | None = None
+    training_bundle_department_id: UUID | None = None
     scenario_id: UUID | None = None
 
 class PrepareTrainingStartApiRequest(BaseModel):
@@ -7945,13 +7971,10 @@ class PrepareTrainingStartApiRequest(BaseModel):
     p_training_bundle_entry_id: UUID
     p_department_id: UUID
     p_draft_id: UUID | None = None
-    p_infinite_mode: bool | None = None
-    p_attempt_id: UUID | None = None
 
 class PrepareTrainingStartApiResponse(BaseModel):
 
-    attempt_id: UUID | None = None
-    chat_id: UUID | None = None
+    training_bundle_department_id: UUID | None = None
     scenario_id: UUID | None = None
 
 
@@ -29432,6 +29455,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "SaveFieldApiRequest",
         "SaveFieldApiResponse",
     ),
+    "app/sql/v4/queries/generate/attempt/create_attempt_chat_complete.sql": (
+        "CreateAttemptChatSqlParams",
+        "CreateAttemptChatSqlRow",
+        "CreateAttemptChatApiRequest",
+        "CreateAttemptChatApiResponse",
+    ),
     "app/sql/v4/queries/generate/attempt/get_agent_entry_tools_complete.sql": (
         "GetAgentEntryToolsSqlParams",
         "GetAgentEntryToolsSqlRow",
@@ -33150,6 +33179,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/queries/fields/save_field_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/generate/attempt/create_attempt_chat_complete.sql"]
     ) -> SqlString: ...
 
     @overload

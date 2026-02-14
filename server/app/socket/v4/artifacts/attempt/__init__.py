@@ -28,10 +28,11 @@ Event flow:
 
 from fastapi import APIRouter
 
-from . import audio, complete, control, error, grade, message, progress, responses, room
+from . import audio, chat, complete, control, error, grade, message, progress, responses, room
 
 __all__ = [
     "audio",
+    "chat",
     "complete",
     "control",
     "error",
@@ -64,3 +65,4 @@ server_router.include_router(room.server_router)
 server_router.include_router(control.server_router)
 server_router.include_router(audio.server_router)
 server_router.include_router(responses.server_router)
+server_router.include_router(chat.server_router)

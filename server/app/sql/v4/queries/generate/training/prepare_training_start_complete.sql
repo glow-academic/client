@@ -1,6 +1,7 @@
--- Prepare training start - creates attempt + chat entries.
+-- Prepare training start - resolves scope and ensures department-scoped bundle.
 -- Derives simulation/scenario/training scope from training_bundle_entry.
 -- Ensures department-scoped bundle exists at runtime (create-if-missing).
+-- Chat creation is handled separately by socket_create_attempt_chat_v4.
 
 DO $$
 DECLARE
@@ -20,21 +21,16 @@ CREATE OR REPLACE FUNCTION socket_prepare_training_start_v4(
     p_profile_id uuid,
     p_training_bundle_entry_id uuid,
     p_department_id uuid,
-    p_draft_id uuid DEFAULT NULL,
-    p_infinite_mode boolean DEFAULT NULL,
-    p_attempt_id uuid DEFAULT NULL
+    p_draft_id uuid DEFAULT NULL
 )
 RETURNS TABLE (
-    attempt_id uuid,
-    chat_id uuid,
+    training_bundle_department_id uuid,
     scenario_id uuid
 )
 LANGUAGE plpgsql
 VOLATILE
 AS $$
 DECLARE
-    v_attempt_id uuid;
-    v_chat_id uuid;
     v_training_id uuid;
     v_scenarios_resource_id uuid;
     v_scenario_artifact_id uuid;
@@ -57,12 +53,6 @@ DECLARE
     v_draft_persona_ids uuid[] := ARRAY[]::uuid[];
     v_draft_document_ids uuid[] := ARRAY[]::uuid[];
     v_draft_parameter_field_ids uuid[] := ARRAY[]::uuid[];
-
-    v_session_id uuid;
-    v_group_id uuid;
-    v_trace_id text;
-    v_config_id uuid;
-    v_entry RECORD;
 BEGIN
     -- Resolve profile resource and optional role.
     SELECT ppj.profiles_id INTO v_profiles_resource_id
@@ -368,106 +358,6 @@ BEGIN
         ON CONFLICT (training_bundle_department_id, standard_groups_id) DO NOTHING;
     END IF;
 
-    -- Create attempt entry (or use pre-created attempt from lobby flow).
-    IF p_attempt_id IS NOT NULL THEN
-        -- Lobby flow: attempt already created via REST, just use it
-        v_attempt_id := p_attempt_id;
-    ELSE
-        -- Legacy flow: create attempt inline
-        INSERT INTO simulation_attempts_entry (created_at, updated_at, practice, infinite_mode, training_id)
-        VALUES (NOW(), NOW(), v_is_practice, COALESCE(p_infinite_mode, false), v_training_id)
-        RETURNING id INTO v_attempt_id;
-
-        INSERT INTO simulation_attempts_simulations_connection (simulations_id, attempt_id, active)
-        VALUES (v_simulations_resource_id, v_attempt_id, true)
-        ON CONFLICT (attempt_id, simulations_id) DO NOTHING;
-
-        INSERT INTO simulation_attempts_profiles_connection (profiles_id, attempt_id, active)
-        VALUES (v_profiles_resource_id, v_attempt_id, true)
-        ON CONFLICT (attempt_id, profiles_id) DO NOTHING;
-
-        IF v_cohorts_resource_id IS NOT NULL THEN
-            INSERT INTO simulation_attempts_cohorts_connection (cohorts_id, attempt_id, active)
-            VALUES (v_cohorts_resource_id, v_attempt_id, true)
-            ON CONFLICT (attempt_id, cohorts_id) DO NOTHING;
-        END IF;
-
-        INSERT INTO simulation_attempts_departments_connection (departments_id, attempt_id, active)
-        VALUES (v_selected_department_id, v_attempt_id, true)
-        ON CONFLICT (attempt_id, departments_id) DO NOTHING;
-
-        IF v_roles_resource_id IS NOT NULL THEN
-            INSERT INTO simulation_attempts_roles_connection (roles_id, attempt_id, active)
-            VALUES (v_roles_resource_id, v_attempt_id, true)
-            ON CONFLICT (attempt_id, roles_id) DO NOTHING;
-        END IF;
-    END IF;
-
-    -- Create chat entry.
-    INSERT INTO simulation_chats_entry (attempt_id, created_at, updated_at, title, training_bundle_department_id)
-    VALUES (v_attempt_id, NOW(), NOW(), 'Chat', v_training_bundle_department_id)
-    RETURNING id INTO v_chat_id;
-
-    -- Chat scope now resolves from training_bundle_department_id via mv_attempt_chats.
-
-    -- Create per-entry config snapshots by resolving agents server-side.
-    SELECT id INTO v_session_id
-    FROM sessions_entry
-    WHERE profile_id = p_profile_id
-      AND active = true
-    ORDER BY created_at DESC
-    LIMIT 1;
-
-    FOR v_entry IN
-        SELECT *
-        FROM socket_resolve_attempt_entries_v4(
-            p_profile_id,
-            ARRAY['contents', 'hints', 'grades', 'feedbacks']::text[]
-        )
-    LOOP
-        IF v_entry.agent_id IS NULL THEN
-            CONTINUE;
-        END IF;
-
-        INSERT INTO groups_entry (created_at, updated_at, session_id)
-        VALUES (NOW(), NOW(), v_session_id)
-        RETURNING id, trace_id INTO v_group_id, v_trace_id;
-
-        UPDATE simulation_chats_entry
-        SET group_id = v_group_id
-        WHERE id = v_chat_id;
-
-        INSERT INTO config_entry (created_at, updated_at, generated, mcp, active)
-        VALUES (NOW(), NOW(), false, false, true)
-        RETURNING id INTO v_config_id;
-
-        INSERT INTO config_agents_connection (config_id, agents_id, created_at, active, generated, mcp)
-        SELECT v_config_id, aaj.agents_id, NOW(), true, false, false
-        FROM agent_agents_junction aaj
-        WHERE aaj.agent_id = v_entry.agent_id
-          AND aaj.active = true
-        ON CONFLICT (config_id, agents_id) DO NOTHING;
-
-        INSERT INTO config_models_connection (config_id, models_id, created_at, active, generated, mcp)
-        SELECT v_config_id, ar.model_id, NOW(), true, false, false
-        FROM agent_agents_junction aaj
-        JOIN agents_resource ar ON ar.id = aaj.agents_id
-        WHERE aaj.agent_id = v_entry.agent_id
-          AND aaj.active = true
-          AND ar.model_id IS NOT NULL
-        ON CONFLICT (config_id, models_id) DO NOTHING;
-
-        INSERT INTO config_providers_connection (config_id, providers_id, created_at, active, generated, mcp)
-        SELECT v_config_id, mr.provider_id, NOW(), true, false, false
-        FROM agent_agents_junction aaj
-        JOIN agents_resource ar ON ar.id = aaj.agents_id
-        JOIN models_resource mr ON mr.id = ar.model_id
-        WHERE aaj.agent_id = v_entry.agent_id
-          AND aaj.active = true
-          AND mr.provider_id IS NOT NULL
-        ON CONFLICT (config_id, providers_id) DO NOTHING;
-    END LOOP;
-
-    RETURN QUERY SELECT v_attempt_id, v_chat_id, v_scenario_artifact_id;
+    RETURN QUERY SELECT v_training_bundle_department_id, v_scenario_artifact_id;
 END;
 $$;

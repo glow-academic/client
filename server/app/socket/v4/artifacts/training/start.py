@@ -4,9 +4,9 @@ Handles the training_start WebSocket event with full orchestration:
 - Fetches context and validates prerequisites
 - Determines if generation is needed (internal)
 - If generation needed: prepares generation, renders Jinja, emits generate_artifact
-- If no generation needed: creates attempt + chat, emits training_started
+- If no generation needed: sets up scope, emits attempt_chat internally
 
-Note: Creates structural entries (attempts, chats), not creatable entries.
+Chat creation is handled by attempt/chat.py via the attempt_chat internal event.
 """
 
 import uuid
@@ -75,8 +75,8 @@ async def _training_start_impl(
        c. Emit generate_artifact (internal) with artifact_type="training"
        d. Return - complete.py will finish the flow
     5. IF no generation needed:
-       a. Create attempt + chat entries
-       b. Emit training_started with full scenario data
+       a. Set up training_bundle_dept scope (SQL)
+       b. Emit attempt_chat internally - chat.py finishes the flow
     """
     try:
         async with get_db_connection() as conn:
@@ -290,17 +290,15 @@ async def _training_start_impl(
                 return
 
             # =============================================
-            # NO GENERATION PATH - create attempt directly
+            # NO GENERATION PATH - set up scope, emit attempt_chat
             # =============================================
 
-            # Step 3: Create attempt + chat entries (with server-side entry resolution)
+            # Step 3: Set up training_bundle_dept scope
             prepare_params = PrepareTrainingStartSqlParams(
                 p_profile_id=profile_id,
                 p_training_bundle_entry_id=data.training_bundle_entry_id,
                 p_department_id=resolved_department_id,
                 p_draft_id=data.draft_id,
-                p_infinite_mode=data.infinite,
-                p_attempt_id=data.attempt_id,
             )
 
             prepare_row = cast(
@@ -310,7 +308,7 @@ async def _training_start_impl(
                 ),
             )
 
-            if not prepare_row or not prepare_row.attempt_id:
+            if not prepare_row or not prepare_row.training_bundle_department_id:
                 logger.error(
                     f"Training start preparation failed - "
                     f"profile_id={profile_id}, training_bundle_entry_id={data.training_bundle_entry_id}"
@@ -319,7 +317,7 @@ async def _training_start_impl(
                     "generate_call_error",
                     GenerateErrorApiRequest(
                         sid=sid,
-                        error_message="Failed to create training attempt",
+                        error_message="Failed to prepare training scope",
                         artifact_type="training",
                         group_id=None,
                         resource_type="training",
@@ -328,95 +326,25 @@ async def _training_start_impl(
                 )
                 return
 
-            # Step 5: Handle previous_chat_map ("Use Previous" flow)
-            # Creates completed chat entries with copied grades for skipped scenarios
-            if data.previous_chat_map and prepare_row.attempt_id:
-                for (
-                    prev_scenario_id_str,
-                    prev_chat_id_str,
-                ) in data.previous_chat_map.items():
-                    if not prev_chat_id_str:
-                        continue
-                    try:
-                        prev_chat_uuid = uuid.UUID(prev_chat_id_str)
-                        prev_scenario_uuid = uuid.UUID(prev_scenario_id_str)
+            if not data.attempt_id:
+                logger.error(
+                    f"No attempt_id provided - "
+                    f"profile_id={profile_id}, training_bundle_entry_id={data.training_bundle_entry_id}"
+                )
+                await emit_to_internal(
+                    "generate_call_error",
+                    GenerateErrorApiRequest(
+                        sid=sid,
+                        error_message="Missing attempt_id for training start",
+                        artifact_type="training",
+                        group_id=None,
+                        resource_type="training",
+                    ),
+                    sid=sid,
+                )
+                return
 
-                        # Create a chat entry for the skipped scenario
-                        skipped_chat_id = await conn.fetchval(
-                            """
-                            INSERT INTO simulation_chats_entry (attempt_id, active)
-                            VALUES ($1, true)
-                            RETURNING id
-                            """,
-                            prepare_row.attempt_id,
-                        )
-                        if not skipped_chat_id:
-                            continue
-
-                        # Link scenario to the skipped chat
-                        await conn.execute(
-                            """
-                            INSERT INTO simulation_chats_scenarios_connection
-                                (chat_id, scenarios_id, active)
-                            VALUES ($1, $2, true)
-                            ON CONFLICT DO NOTHING
-                            """,
-                            skipped_chat_id,
-                            prev_scenario_uuid,
-                        )
-
-                        # Mark as completed
-                        await conn.execute(
-                            """
-                            INSERT INTO simulation_completions_entry (chat_id)
-                            VALUES ($1)
-                            ON CONFLICT (chat_id) DO NOTHING
-                            """,
-                            skipped_chat_id,
-                        )
-
-                        # Copy grade from previous chat
-                        await conn.execute(
-                            """
-                            INSERT INTO simulation_grades_entry (
-                                chat_id, run_id, rubric_grade_agent_id, rubric_id,
-                                score, passed, time_taken, total_points, pass_points,
-                                generated, active
-                            )
-                            SELECT $2, g.run_id, g.rubric_grade_agent_id, g.rubric_id,
-                                   g.score, g.passed, g.time_taken, g.total_points, g.pass_points,
-                                   g.generated, true
-                            FROM simulation_grades_entry g
-                            WHERE g.chat_id = $1 AND g.active = true
-                            ORDER BY g.created_at DESC
-                            LIMIT 1
-                            """,
-                            prev_chat_uuid,
-                            skipped_chat_id,
-                        )
-
-                        # Copy feedbacks from previous chat
-                        await conn.execute(
-                            """
-                            INSERT INTO simulation_feedbacks_entry (
-                                chat_id, standard_id, total, feedback, active
-                            )
-                            SELECT $2, f.standard_id, f.total, f.feedback, true
-                            FROM simulation_feedbacks_entry f
-                            WHERE f.chat_id = $1 AND f.active = true
-                            """,
-                            prev_chat_uuid,
-                            skipped_chat_id,
-                        )
-
-                    except Exception as e:
-                        logger.warning(
-                            f"Failed to create skipped chat for scenario "
-                            f"{prev_scenario_id_str}: {e}"
-                        )
-                        continue
-
-            # Step 6: Build scenario data from context
+            # Step 4: Build scenario data from context
             scenario_data = None
             if scenario_id:
                 scenario_data = {
@@ -427,32 +355,29 @@ async def _training_start_impl(
                     "image_ids": context_row.image_ids,
                 }
 
-            # Step 7: Emit training_started event
-            started_event = TrainingStartedEvent(
-                simulation_id=str(context_row.simulation_id),
-                attempt_id=str(prepare_row.attempt_id),
-                chat_id=str(prepare_row.chat_id),
-                scenario_id=str(prepare_row.scenario_id)
-                if prepare_row.scenario_id
-                else None,
-                scenario_data=scenario_data,
-            )
-
-            # Step 8: Refresh MVs so attempt is immediately visible
-            await conn.execute("REFRESH MATERIALIZED VIEW mv_attempt_list")
-            await conn.execute("REFRESH MATERIALIZED VIEW mv_attempt_chats")
-
-            # Step 9: Emit training_started event (after MVs refreshed)
-            await sio.emit(
-                "training_started",
-                started_event.model_dump(mode="json"),
-                room=sid,
+            # Step 5: Emit attempt_chat internally - chat.py finishes the flow
+            await internal_sio.emit(
+                "attempt_chat",
+                {
+                    "sid": sid,
+                    "profile_id": str(profile_id),
+                    "attempt_id": str(data.attempt_id),
+                    "training_bundle_department_id": str(
+                        prepare_row.training_bundle_department_id
+                    ),
+                    "simulation_id": str(context_row.simulation_id),
+                    "scenario_id": str(prepare_row.scenario_id)
+                    if prepare_row.scenario_id
+                    else None,
+                    "scenario_data": scenario_data,
+                    "previous_chat_map": data.previous_chat_map,
+                },
             )
 
             logger.info(
-                f"Training session started (no generation) - "
+                f"Training start scope prepared (no generation) - "
                 f"profile_id={profile_id}, simulation_id={context_row.simulation_id}, "
-                f"attempt_id={prepare_row.attempt_id}, chat_id={prepare_row.chat_id}"
+                f"training_bundle_department_id={prepare_row.training_bundle_department_id}"
             )
 
     except Exception as e:

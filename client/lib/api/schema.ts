@@ -9649,6 +9649,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/socket/v4/server/attempt/chat": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Attempt Chat Api
+         * @description Internal event: Create attempt chat (not sent to client).
+         */
+        post: operations["attempt_chat_api_socket_v4_server_attempt_chat_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/socket/v4/server/benchmark/started": {
         parameters: {
             query?: never;
@@ -37241,8 +37261,6 @@ export interface components {
             attempt_id?: string | null;
             /** User Instructions */
             user_instructions?: string[] | null;
-            /** Infinite */
-            infinite?: boolean | null;
             /** Previous Chat Map */
             previous_chat_map?: {
                 [key: string]: string;
@@ -55522,6 +55540,43 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["AttemptResponseResultEvent"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    attempt_chat_api_socket_v4_server_attempt_chat_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    [key: string]: unknown;
+                };
             };
         };
         responses: {

@@ -2,8 +2,8 @@
 
 Listens to AI generation completion events and completes the training start flow:
 1. Fetch fresh scenario data from DB
-2. Create attempt + chat entries
-3. Emit training_started to client
+2. Set up training_bundle_dept scope
+3. Emit attempt_chat internally - chat.py finishes the flow
 
 This handler finishes the flow that start.py began when generation was needed.
 """
@@ -17,8 +17,7 @@ from app.api.v4.artifacts.training.get import get_training_websocket
 from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
 from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.infra.v4.websocket.typed_emit import emit_to_internal
-from app.main import get_internal_sio, sio
-from app.socket.v4.artifacts.training.types import TrainingStartedEvent
+from app.main import get_internal_sio
 from app.socket.v4.artifacts.types import GenerateErrorApiRequest
 from app.sql.types import (
     PrepareTrainingStartSqlParams,
@@ -46,8 +45,8 @@ async def handle_training_complete(data: dict[str, Any]) -> None:
 
     When generation completes, this handler:
     1. Fetches fresh scenario data from DB
-    2. Creates attempt + chat entries
-    3. Emits training_started to client
+    2. Sets up training_bundle_dept scope
+    3. Emits attempt_chat internally - chat.py finishes the flow
     """
     # Filter by artifact_type (early return for efficiency)
     artifact_type = data.get("artifact_type")
@@ -66,6 +65,7 @@ async def handle_training_complete(data: dict[str, Any]) -> None:
     training_bundle_entry_id_str = data.get("training_bundle_entry_id")
     department_id_str = data.get("department_id")
     draft_id_str = data.get("draft_id")
+    attempt_id_str = data.get("attempt_id")
 
     if not training_bundle_entry_id_str or not department_id_str:
         logger.error("Training complete missing training bundle context")
@@ -74,6 +74,21 @@ async def handle_training_complete(data: dict[str, Any]) -> None:
             GenerateErrorApiRequest(
                 sid=sid,
                 error_message="Training generation failed: missing context",
+                artifact_type="training",
+                group_id=data.get("group_id"),
+                resource_type="training",
+            ),
+            sid=sid,
+        )
+        return
+
+    if not attempt_id_str:
+        logger.error("Training complete missing attempt_id")
+        await emit_to_internal(
+            "generate_call_error",
+            GenerateErrorApiRequest(
+                sid=sid,
+                error_message="Training generation failed: missing attempt_id",
                 artifact_type="training",
                 group_id=data.get("group_id"),
                 resource_type="training",
@@ -113,7 +128,7 @@ async def handle_training_complete(data: dict[str, Any]) -> None:
                 )
                 return
 
-            # Step 2: Create attempt + chat entries
+            # Step 2: Set up training_bundle_dept scope
             prepare_params = PrepareTrainingStartSqlParams(
                 p_profile_id=profile_id,
                 p_training_bundle_entry_id=training_bundle_entry_id,
@@ -128,7 +143,7 @@ async def handle_training_complete(data: dict[str, Any]) -> None:
                 ),
             )
 
-            if not prepare_row or not prepare_row.attempt_id:
+            if not prepare_row or not prepare_row.training_bundle_department_id:
                 logger.error(
                     f"Training complete preparation failed - "
                     f"profile_id={profile_id}, training_bundle_entry_id={training_bundle_entry_id}"
@@ -137,7 +152,7 @@ async def handle_training_complete(data: dict[str, Any]) -> None:
                     "generate_call_error",
                     GenerateErrorApiRequest(
                         sid=sid,
-                        error_message="Failed to create training attempt after generation",
+                        error_message="Failed to prepare training scope after generation",
                         artifact_type="training",
                         group_id=data.get("group_id"),
                         resource_type="training",
@@ -157,32 +172,28 @@ async def handle_training_complete(data: dict[str, Any]) -> None:
                     "image_ids": context_row.image_ids,
                 }
 
-            # Step 4: Emit training_started event
-            started_event = TrainingStartedEvent(
-                simulation_id=str(context_row.simulation_id),
-                attempt_id=str(prepare_row.attempt_id),
-                chat_id=str(prepare_row.chat_id),
-                scenario_id=str(prepare_row.scenario_id)
-                if prepare_row.scenario_id
-                else None,
-                scenario_data=scenario_data,
-            )
-
-            # Step 5: Refresh MVs so attempt is immediately visible
-            await conn.execute("REFRESH MATERIALIZED VIEW mv_attempt_list")
-            await conn.execute("REFRESH MATERIALIZED VIEW mv_attempt_chats")
-
-            # Step 6: Emit training_started event (after MVs refreshed)
-            await sio.emit(
-                "training_started",
-                started_event.model_dump(mode="json"),
-                room=sid,
+            # Step 4: Emit attempt_chat internally - chat.py finishes the flow
+            await internal_sio.emit(
+                "attempt_chat",
+                {
+                    "sid": sid,
+                    "profile_id": str(profile_id),
+                    "attempt_id": attempt_id_str,
+                    "training_bundle_department_id": str(
+                        prepare_row.training_bundle_department_id
+                    ),
+                    "simulation_id": str(context_row.simulation_id),
+                    "scenario_id": str(prepare_row.scenario_id)
+                    if prepare_row.scenario_id
+                    else None,
+                    "scenario_data": scenario_data,
+                },
             )
 
             logger.info(
-                f"Training session started (after generation) - "
+                f"Training scope prepared (after generation) - "
                 f"profile_id={profile_id}, simulation_id={context_row.simulation_id}, "
-                f"attempt_id={prepare_row.attempt_id}, chat_id={prepare_row.chat_id}"
+                f"training_bundle_department_id={prepare_row.training_bundle_department_id}"
             )
 
     except Exception as e:
