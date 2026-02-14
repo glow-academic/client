@@ -38384,6 +38384,94 @@
         }
       }
     },
+    "/api/v4/views/benchmark/context/get": {
+      "post": {
+        "tags": [
+          "v4",
+          "views",
+          "views",
+          "benchmark",
+          "views",
+          "benchmark",
+          "context"
+        ],
+        "summary": "Get Benchmark Context View",
+        "description": "Get benchmark context view for current profile.",
+        "operationId": "get_benchmark_context_view_api_v4_views_benchmark_context_get_post",
+        "parameters": [
+          {
+            "name": "X-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Session-Id"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetBenchmarkContextViewResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v4/views/benchmark/tests/get": {
       "post": {
         "tags": [
@@ -40030,6 +40118,176 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/GetRunListViewResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v4/views/message/get": {
+      "post": {
+        "tags": [
+          "v4",
+          "views",
+          "views",
+          "message"
+        ],
+        "summary": "Get Messages",
+        "description": "Get message data from the materialized view.",
+        "operationId": "get_messages_api_v4_views_message_get_post",
+        "parameters": [
+          {
+            "name": "X-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Session-Id"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetMessageListViewResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v4/views/call/get": {
+      "post": {
+        "tags": [
+          "v4",
+          "views",
+          "views",
+          "call"
+        ],
+        "summary": "Get Calls",
+        "description": "Get call data from the materialized view.",
+        "operationId": "get_calls_api_v4_views_call_get_post",
+        "parameters": [
+          {
+            "name": "X-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Session-Id"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetCallListViewResponse"
                 }
               }
             }
@@ -55772,6 +56030,151 @@
         "title": "BenchmarkCompleteEvent",
         "description": "Server-to-client event: benchmark_complete.\n\nEmitted when all tests in benchmark are complete."
       },
+      "BenchmarkContextViewItem": {
+        "properties": {
+          "benchmark_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Benchmark Id"
+          },
+          "eval_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Eval Ids"
+          },
+          "benchmark_bundle_entry_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Benchmark Bundle Entry Ids"
+          },
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
+          },
+          "profile_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profile Ids"
+          },
+          "run_rubric_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Run Rubric Ids"
+          },
+          "group_rubric_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Group Rubric Ids"
+          },
+          "run_position_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Run Position Ids"
+          },
+          "group_position_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Group Position Ids"
+          },
+          "use_groups": {
+            "type": "boolean",
+            "title": "Use Groups",
+            "default": false
+          },
+          "dynamic": {
+            "type": "boolean",
+            "title": "Dynamic",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "benchmark_id"
+        ],
+        "title": "BenchmarkContextViewItem",
+        "description": "IDs-first benchmark item -- raw IDs only, no computed fields."
+      },
       "BenchmarkDepartmentItem": {
         "properties": {
           "department_id": {
@@ -57278,6 +57681,67 @@
         },
         "type": "object",
         "title": "BulkDeleteStaffApiResponse"
+      },
+      "CallViewItem": {
+        "properties": {
+          "call_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Call Id"
+          },
+          "run_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Run Id"
+          },
+          "call_created_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Call Created At"
+          },
+          "arguments_raw": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Arguments Raw"
+          },
+          "tool_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tool Name"
+          }
+        },
+        "type": "object",
+        "required": [
+          "call_id"
+        ],
+        "title": "CallViewItem",
+        "description": "Single call from the call list view."
       },
       "ChatData": {
         "properties": {
@@ -72543,11 +73007,49 @@
             },
             "type": "array",
             "title": "Key Ids"
+          },
+          "flag_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Flag Ids"
+          },
+          "name_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Name Ids"
+          },
+          "description_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Description Ids"
           }
         },
         "type": "object",
         "title": "GetBenchmarkBundleViewResponse",
         "description": "Thin MV-backed view response for a single benchmark bundle."
+      },
+      "GetBenchmarkContextViewResponse": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/BenchmarkContextViewItem"
+            },
+            "type": "array",
+            "title": "Items"
+          }
+        },
+        "type": "object",
+        "title": "GetBenchmarkContextViewResponse",
+        "description": "View-layer response for benchmark context."
       },
       "GetBenchmarkEvalSummaryRequest": {
         "properties": {
@@ -72857,6 +73359,27 @@
         },
         "type": "object",
         "title": "GetBindingsApiResponse"
+      },
+      "GetCallListViewResponse": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/CallViewItem"
+            },
+            "type": "array",
+            "title": "Items",
+            "description": "Call data items"
+          },
+          "total_count": {
+            "type": "integer",
+            "title": "Total Count",
+            "description": "Total count before pagination",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "title": "GetCallListViewResponse",
+        "description": "Response containing call list data."
       },
       "GetCertificateDataApiRequest": {
         "properties": {},
@@ -76301,6 +76824,27 @@
         "type": "object",
         "title": "GetLoginDataApiResponse"
       },
+      "GetMessageListViewResponse": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/app__api__v4__views__message__list__types__MessageViewItem"
+            },
+            "type": "array",
+            "title": "Items",
+            "description": "Message data items"
+          },
+          "total_count": {
+            "type": "integer",
+            "title": "Total Count",
+            "description": "Total count before pagination",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "title": "GetMessageListViewResponse",
+        "description": "Response containing message list data."
+      },
       "GetMessagesRequest": {
         "properties": {
           "attempt_id": {
@@ -76321,7 +76865,7 @@
         "properties": {
           "items": {
             "items": {
-              "$ref": "#/components/schemas/MessageViewItem"
+              "$ref": "#/components/schemas/app__api__v4__views__attempt__messages__types__MessageViewItem"
             },
             "type": "array",
             "title": "Items",
@@ -95345,152 +95889,6 @@
         "title": "MessageFeedbackEntry",
         "description": "Unified feedback entry for messages (strength or improvement).\n\nCombines strengths and improvements into a single type with a `type` field.\n- type=\"strength\": has highlights (sections to highlight as good)\n- type=\"improvement\": has replaces (sections to replace with suggestions)"
       },
-      "MessageViewItem": {
-        "properties": {
-          "message_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Message Id"
-          },
-          "chat_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Chat Id"
-          },
-          "attempt_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Attempt Id"
-          },
-          "type": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Type"
-          },
-          "created_at": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "date-time"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Created At"
-          },
-          "completed": {
-            "type": "boolean",
-            "title": "Completed",
-            "default": false
-          },
-          "runs_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Runs Id"
-          },
-          "history_content": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "History Content"
-          },
-          "contents": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/ContentItem"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Contents"
-          },
-          "strengths": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/StrengthItem"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Strengths"
-          },
-          "improvements": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/ImprovementItem"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Improvements"
-          },
-          "hints": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/HintItem"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Hints"
-          }
-        },
-        "type": "object",
-        "required": [
-          "message_id"
-        ],
-        "title": "MessageViewItem",
-        "description": "Single message from the attempt messages view.\n\nPosition derived in service layer, practice on attempt level."
-      },
       "ModelDepartmentSection": {
         "properties": {
           "show": {
@@ -108401,6 +108799,36 @@
               }
             ],
             "title": "Template"
+          },
+          "parameter_field_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parameter Field Ids"
+          },
+          "parameter_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parameter Ids"
           }
         },
         "type": "object",
@@ -108412,7 +108840,9 @@
           "upload_id",
           "text_id",
           "image_ids",
-          "template"
+          "template",
+          "parameter_field_ids",
+          "parameter_ids"
         ],
         "title": "QGetDocumentsV4Item"
       },
@@ -110313,6 +110743,36 @@
               }
             ],
             "title": "Generated"
+          },
+          "parameter_field_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parameter Field Ids"
+          },
+          "parameter_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parameter Ids"
           }
         },
         "type": "object",
@@ -110325,7 +110785,9 @@
           "image_model",
           "instructions",
           "examples",
-          "generated"
+          "generated",
+          "parameter_field_ids",
+          "parameter_ids"
         ],
         "title": "QGetPersonasV4Item"
       },
@@ -112630,6 +113092,36 @@
               }
             ],
             "title": "Persona Ids"
+          },
+          "parameter_field_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parameter Field Ids"
+          },
+          "parameter_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parameter Ids"
           }
         },
         "type": "object",
@@ -112643,7 +113135,9 @@
           "video_enabled",
           "images_enabled",
           "questions_enabled",
-          "persona_ids"
+          "persona_ids",
+          "parameter_field_ids",
+          "parameter_ids"
         ],
         "title": "QGetScenariosV4Item"
       },
@@ -141223,6 +141717,36 @@
               }
             ],
             "title": "Persona Ids"
+          },
+          "parameter_field_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parameter Field Ids"
+          },
+          "parameter_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parameter Ids"
           }
         },
         "type": "object",
@@ -141851,6 +142375,217 @@
         "title": "FilterOption",
         "description": "Filter option for dropdowns."
       },
+      "app__api__v4__views__attempt__messages__types__MessageViewItem": {
+        "properties": {
+          "message_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Message Id"
+          },
+          "chat_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Chat Id"
+          },
+          "attempt_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Attempt Id"
+          },
+          "type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Type"
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          },
+          "completed": {
+            "type": "boolean",
+            "title": "Completed",
+            "default": false
+          },
+          "runs_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Runs Id"
+          },
+          "history_content": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "History Content"
+          },
+          "contents": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/ContentItem"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Contents"
+          },
+          "strengths": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/StrengthItem"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Strengths"
+          },
+          "improvements": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/ImprovementItem"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Improvements"
+          },
+          "hints": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/HintItem"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hints"
+          }
+        },
+        "type": "object",
+        "required": [
+          "message_id"
+        ],
+        "title": "MessageViewItem",
+        "description": "Single message from the attempt messages view.\n\nPosition derived in service layer, practice on attempt level."
+      },
+      "app__api__v4__views__message__list__types__MessageViewItem": {
+        "properties": {
+          "message_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Message Id"
+          },
+          "run_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Run Id"
+          },
+          "role": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Role"
+          },
+          "message_created_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message Created At"
+          },
+          "contents": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Contents"
+          },
+          "call_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Call Ids"
+          }
+        },
+        "type": "object",
+        "required": [
+          "message_id"
+        ],
+        "title": "MessageViewItem",
+        "description": "Single message from the message list view."
+      },
       "app__api__v4__views__pricing__group_detail__get__GetGroupDetailRequest": {
         "properties": {
           "group_id": {
@@ -142286,6 +143021,36 @@
               }
             ],
             "title": "Persona Ids"
+          },
+          "parameter_field_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parameter Field Ids"
+          },
+          "parameter_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parameter Ids"
           }
         },
         "type": "object",
@@ -142299,7 +143064,9 @@
           "video_enabled",
           "images_enabled",
           "questions_enabled",
-          "persona_ids"
+          "persona_ids",
+          "parameter_field_ids",
+          "parameter_ids"
         ],
         "title": "QGetScenariosV4Item"
       },

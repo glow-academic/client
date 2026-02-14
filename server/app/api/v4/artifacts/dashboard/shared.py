@@ -50,6 +50,7 @@ from app.api.v4.views.analytics.rubric_group_scores.get import (
     get_rubric_group_scores_internal,
 )
 from app.api.v4.views.analytics.rubric_group_scores.types import RubricGroupScoreItem
+from app.api.v4.views.analytics.scenario_facts.types import GetScenarioFactsResponse
 from app.api.v4.views.analytics.simulation_facts.types import (
     GetSimulationFactsResponse,
 )
@@ -495,6 +496,33 @@ async def fetch_simulation_facts_data(
 
     async with pool.acquire() as c:
         return await get_simulation_facts_internal(
+            conn=c,
+            profile_id=request.target_profile_id,
+            cohort_ids=filters.cohort_ids,
+            department_ids=request.department_ids,
+            attempt_type=filters.attempt_type,
+            is_archived=filters.is_archived,
+            date_from=filters.parsed_start_date.date()
+            if filters.parsed_start_date
+            else None,
+            date_to=filters.parsed_end_date.date() if filters.parsed_end_date else None,
+            bypass_cache=bypass_cache,
+        )
+
+
+async def fetch_scenario_facts_data(
+    pool: asyncpg.Pool,
+    request: DashboardSectionRequest,
+    filters: ParsedFilters,
+    bypass_cache: bool = False,
+) -> "GetScenarioFactsResponse":
+    """Fetch scenario facts from mv_scenario_facts for footer section."""
+    from app.api.v4.views.analytics.scenario_facts.get import (
+        get_scenario_facts_internal,
+    )
+
+    async with pool.acquire() as c:
+        return await get_scenario_facts_internal(
             conn=c,
             profile_id=request.target_profile_id,
             cohort_ids=filters.cohort_ids,

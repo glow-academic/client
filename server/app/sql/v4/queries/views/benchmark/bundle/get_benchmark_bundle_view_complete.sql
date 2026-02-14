@@ -26,7 +26,7 @@ RETURNS TABLE (
     profile_has_access boolean,
     benchmark_bundle_entry_id uuid,
     benchmark_id uuid,
-    -- 9 bundle-level resource ID arrays
+    -- 12 bundle-level resource ID arrays
     department_ids uuid[],
     model_ids uuid[],
     prompt_ids uuid[],
@@ -35,7 +35,10 @@ RETURNS TABLE (
     temperature_level_ids uuid[],
     reasoning_level_ids uuid[],
     tool_ids uuid[],
-    key_ids uuid[]
+    key_ids uuid[],
+    flag_ids uuid[],
+    name_ids uuid[],
+    description_ids uuid[]
 )
 LANGUAGE sql
 STABLE
@@ -83,7 +86,10 @@ SELECT
     b.temperature_level_ids,
     b.reasoning_level_ids,
     b.tool_ids,
-    b.key_ids
+    b.key_ids,
+    b.flag_ids,
+    b.name_ids,
+    b.description_ids
 FROM bundle b
 LEFT JOIN access_check ac ON TRUE;
 $$;

@@ -40,7 +40,7 @@ STABLE
 AS $$
 SELECT COALESCE(
     ARRAY_AGG(
-        (q.persona_id, q.name, q.description, q.color, q.icon, q.image_model, q.instructions, q.examples, q.generated)::types.q_get_personas_v4_item
+        (q.persona_id, q.name, q.description, q.color, q.icon, q.image_model, q.instructions, q.examples, q.generated, q.parameter_field_ids, q.parameter_ids)::types.q_get_personas_v4_item
         ORDER BY q.name
     ),
     ARRAY[]::types.q_get_personas_v4_item[]
@@ -55,7 +55,9 @@ FROM (
         false AS image_model,
         COALESCE(p.instructions, '') AS instructions,
         COALESCE(p.examples, ARRAY[]::text[]) AS examples,
-        COALESCE(p.generated, false) AS generated
+        COALESCE(p.generated, false) AS generated,
+        COALESCE(p.parameter_field_ids, ARRAY[]::uuid[]) AS parameter_field_ids,
+        COALESCE(p.parameter_ids, ARRAY[]::uuid[]) AS parameter_ids
     FROM personas_resource p
     WHERE p.active = true
       AND p.name IS NOT NULL

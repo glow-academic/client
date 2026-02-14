@@ -98,6 +98,9 @@ BEGIN
     refreshed := array_append(refreshed, 'mv_attempt_messages');
 
     -- Benchmark MVs
+    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_benchmark;
+    refreshed := array_append(refreshed, 'mv_benchmark');
+
     REFRESH MATERIALIZED VIEW CONCURRENTLY mv_benchmark_attempt_facts;
     refreshed := array_append(refreshed, 'mv_benchmark_attempt_facts');
 

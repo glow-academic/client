@@ -11,7 +11,7 @@ class GetBenchmarkBundleViewResponse(BaseModel):
     profile_has_access: bool = False
     benchmark_bundle_entry_id: UUID | None = None
     benchmark_id: UUID | None = None
-    # 9 bundle-level resource ID arrays
+    # 12 bundle-level resource ID arrays
     department_ids: list[UUID] = Field(default_factory=list)
     model_ids: list[UUID] = Field(default_factory=list)
     prompt_ids: list[UUID] = Field(default_factory=list)
@@ -21,3 +21,6 @@ class GetBenchmarkBundleViewResponse(BaseModel):
     reasoning_level_ids: list[UUID] = Field(default_factory=list)
     tool_ids: list[UUID] = Field(default_factory=list)
     key_ids: list[UUID] = Field(default_factory=list)
+    flag_ids: list[UUID] = Field(default_factory=list)
+    name_ids: list[UUID] = Field(default_factory=list)
+    description_ids: list[UUID] = Field(default_factory=list)

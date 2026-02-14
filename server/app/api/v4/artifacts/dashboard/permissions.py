@@ -20,6 +20,7 @@ from app.api.v4.views.analytics.first_attempt_pass.types import FirstAttemptPass
 from app.api.v4.views.analytics.profile_metrics.types import ProfileMetricsItem
 from app.api.v4.views.analytics.rubric_facts.types import RubricFactsItem
 from app.api.v4.views.analytics.rubric_group_scores.types import RubricGroupScoreItem
+from app.api.v4.views.analytics.scenario_facts.types import ScenarioFactsItem
 from app.api.v4.views.analytics.simulation_facts.types import SimulationFactsItem
 
 
@@ -1580,6 +1581,439 @@ def compute_footer_metrics(
         if row.grade_percent is None:
             continue
         for pid, level, fid in scenario_numeric_map.get(str(row.scenario_id), []):
+            label = field_name_by_id.get(fid, str(level))
+            k = (pid, label, float(level))
+            numeric_acc[k]["scores"].append(float(row.grade_percent))
+            numeric_acc[k]["attempts"] += 1
+
+    numeric_attempt_facts = []
+    for (pid, label, level), d in sorted(
+        numeric_acc.items(), key=lambda x: (x[0][0], x[0][2])
+    ):
+        numeric_attempt_facts.append(
+            {
+                "parameter_id": pid,
+                "level_label": label,
+                "level_value": _round2(level),
+                "score": _round2(mean(d["scores"])) if d["scores"] else None,
+                "attempts": d["attempts"],
+            }
+        )
+
+    numeric_scenario_facts = []
+    for scenario_id, vals in sorted(scenario_numeric_map.items()):
+        for pid, level, fid in sorted(vals, key=lambda x: (x[0], x[1])):
+            numeric_scenario_facts.append(
+                {
+                    "parameter_id": pid,
+                    "scenario_id": scenario_id,
+                    "level_label": field_name_by_id.get(fid, str(level)),
+                    "level_value": _round2(float(level)),
+                }
+            )
+
+    valid_persona_doc_parameter_ids = sorted(
+        {f["parameter_id"] for f in numeric_attempt_facts}
+    )
+    num_avg = (
+        mean([f["score"] for f in numeric_attempt_facts if f["score"] is not None])
+        if numeric_attempt_facts
+        else None
+    )
+    if num_avg is None:
+        scenario_stats_status = "neutral"
+    elif num_avg >= success_threshold:
+        scenario_stats_status = "success"
+    elif num_avg >= warning_threshold:
+        scenario_stats_status = "warning"
+    else:
+        scenario_stats_status = "danger"
+
+    scenario_stats = {
+        "numeric_attempt_facts": numeric_attempt_facts,
+        "numeric_scenario_facts": numeric_scenario_facts,
+        "valid_numeric_parameter_ids": valid_persona_doc_parameter_ids,
+        "status": scenario_stats_status,
+    }
+
+    return DashboardFooterMetrics(
+        scenario_performance=scenario_performance,
+        scenario_stats=scenario_stats,
+        simulation_performance=simulation_performance,
+        simulation_composition=simulation_composition,
+    )
+
+
+def compute_footer_metrics_v2(
+    scenario_facts_items: list[ScenarioFactsItem],
+    scenarios: list[Any],
+    personas: list[Any],
+    documents: list[Any],
+    parameter_fields: list[Any] | None = None,
+    parameters: list[Any] | None = None,
+    fields: list[Any] | None = None,
+    simulation_name_map: dict[str, str] | None = None,
+    scenario_name_map: dict[str, str] | None = None,
+    thresholds: dict[str, int] | None = None,
+) -> DashboardFooterMetrics:
+    """Compute footer metrics from mv_scenario_facts + hydrated resources.
+
+    Resolves parameter_field_ids at runtime from hydrated scenario/persona/document
+    resources instead of from denormalized chat_rows fields.
+    """
+    success_threshold, warning_threshold, _danger_threshold = _thresholds(thresholds)
+    simulation_name_map = simulation_name_map or {}
+    scenario_name_map = scenario_name_map or {}
+
+    parameter_fields = parameter_fields or []
+    parameters = parameters or []
+    fields = fields or []
+
+    # --- Build lookups (same as v1) ---
+    pf_lookup: dict[str, tuple[str, str]] = {}
+    for pf in parameter_fields:
+        pf_id = getattr(pf, "id", None)
+        pid = getattr(pf, "parameter_id", None)
+        fid = getattr(pf, "field_id", None)
+        if pf_id and pid and fid:
+            pf_lookup[str(pf_id)] = (str(pid), str(fid))
+
+    field_name_by_id: dict[str, str] = {}
+    for f in fields:
+        field_id = getattr(f, "field_id", None)
+        name = getattr(f, "name", None)
+        if field_id and name:
+            field_name_by_id[str(field_id)] = str(name)
+
+    persona_doc_parameter_ids: set[str] = set()
+    for p in parameters:
+        pid = getattr(p, "parameter_id", None)
+        if not pid:
+            continue
+        if bool(getattr(p, "document_parameter", False)) or bool(
+            getattr(p, "persona_parameter", False)
+        ):
+            persona_doc_parameter_ids.add(str(pid))
+
+    # --- Build scenario_to_param_items from hydrated resources ---
+    # Scenario → persona mapping from scenario resources
+    scenario_persona_map: dict[str, set[str]] = {}
+    for s in scenarios:
+        sid = str(getattr(s, "scenario_id", None))
+        p_ids = getattr(s, "persona_ids", None) or []
+        scenario_persona_map[sid] = {str(pid) for pid in p_ids}
+
+    # Scenario → document mapping from scenario_facts rows
+    scenario_document_map: dict[str, set[str]] = defaultdict(set)
+    for row in scenario_facts_items:
+        if row.scenario_id:
+            for doc_id in row.document_ids or []:
+                scenario_document_map[str(row.scenario_id)].add(str(doc_id))
+
+    scenario_to_param_items: dict[str, set[tuple[str, str]]] = defaultdict(set)
+
+    # From scenario resource parameter_field_ids
+    for s in scenarios:
+        sid = str(getattr(s, "scenario_id", None))
+        for pfid in getattr(s, "parameter_field_ids", None) or []:
+            pair = pf_lookup.get(str(pfid))
+            if pair:
+                scenario_to_param_items[sid].add(pair)
+
+    # From persona resource parameter_field_ids → add to scenarios that use this persona
+    for p in personas:
+        pid = str(getattr(p, "persona_id", None))
+        pf_ids = getattr(p, "parameter_field_ids", None) or []
+        if not pf_ids:
+            continue
+        for sid, persona_set in scenario_persona_map.items():
+            if pid in persona_set:
+                for pfid in pf_ids:
+                    pair = pf_lookup.get(str(pfid))
+                    if pair:
+                        scenario_to_param_items[sid].add(pair)
+
+    # From document resource parameter_field_ids → add to scenarios that use this document
+    for d in documents:
+        did = str(getattr(d, "document_id", None))
+        pf_ids = getattr(d, "parameter_field_ids", None) or []
+        if not pf_ids:
+            continue
+        for sid, doc_set in scenario_document_map.items():
+            if did in doc_set:
+                for pfid in pf_ids:
+                    pair = pf_lookup.get(str(pfid))
+                    if pair:
+                        scenario_to_param_items[sid].add(pair)
+
+    valid_parameter_ids = sorted(
+        {
+            pid
+            for pairs in scenario_to_param_items.values()
+            for (pid, _fid) in pairs
+            if pid not in persona_doc_parameter_ids
+        }
+    )
+
+    # --- 1. Simulation performance by scenario ---
+    scenario_acc: dict[tuple[str, str], dict] = defaultdict(
+        lambda: {
+            "count": 0,
+            "completed": 0,
+            "passed": 0,
+            "sum_score": 0.0,
+            "score_count": 0,
+        }
+    )
+    valid_sim_ids: set[str] = set()
+    for row in scenario_facts_items:
+        sim_id = str(row.simulation_id)
+        scenario_id = str(row.scenario_id) if row.scenario_id else None
+        if not scenario_id:
+            continue
+        valid_sim_ids.add(sim_id)
+        k = (sim_id, scenario_id)
+        scenario_acc[k]["count"] += 1
+        scenario_acc[k]["completed"] += 1 if row.completed else 0
+        scenario_acc[k]["passed"] += 1 if row.passed else 0
+        if row.grade_percent is not None:
+            scenario_acc[k]["sum_score"] += float(row.grade_percent)
+            scenario_acc[k]["score_count"] += 1
+
+    scenario_facts_out = []
+    for (sim_id, scenario_id), d in sorted(scenario_acc.items()):
+        scenario_facts_out.append(
+            {
+                "simulation_id": sim_id,
+                "scenario_id": scenario_id,
+                "scenario_name": scenario_name_map.get(scenario_id, scenario_id),
+                "avg_score": _round2(
+                    d["sum_score"] / d["score_count"] if d["score_count"] else 0
+                ),
+                "success_rate": _round2(
+                    (d["passed"] / d["completed"] * 100) if d["completed"] else 0
+                ),
+                "total_attempts": d["count"],
+                "completed_attempts": d["completed"],
+            }
+        )
+
+    perf_score = (
+        mean(
+            [
+                (0.7 * (f["avg_score"] or 0)) + (0.3 * (f["success_rate"] or 0))
+                for f in scenario_facts_out
+            ]
+        )
+        if scenario_facts_out
+        else None
+    )
+    perf_status = (
+        "neutral"
+        if perf_score is None
+        else "success"
+        if perf_score >= success_threshold
+        else "warning"
+        if perf_score >= warning_threshold
+        else "danger"
+    )
+    simulation_performance = {
+        "scenario_facts": scenario_facts_out,
+        "valid_simulation_ids": sorted(valid_sim_ids),
+        "status": perf_status,
+    }
+
+    # --- 2. Simulation composition (derived from scenario_facts attempt grouping) ---
+    attempt_groups: dict[str, dict] = defaultdict(
+        lambda: {
+            "simulation_id": None,
+            "num_chats": 0,
+            "num_chats_completed": 0,
+            "sum_grade_percent": 0.0,
+            "grade_count": 0,
+            "scenario_ids": set(),
+        }
+    )
+    for row in scenario_facts_items:
+        aid = str(row.attempt_id)
+        a = attempt_groups[aid]
+        a["simulation_id"] = str(row.simulation_id)
+        a["num_chats"] += 1
+        a["num_chats_completed"] += 1 if row.completed else 0
+        if row.grade_percent is not None:
+            a["sum_grade_percent"] += float(row.grade_percent)
+            a["grade_count"] += 1
+        if row.scenario_id:
+            a["scenario_ids"].add(str(row.scenario_id))
+
+    attempt_by_sim: dict[str, dict] = defaultdict(
+        lambda: {
+            "count": 0,
+            "sum_score": 0.0,
+            "score_count": 0,
+            "sum_chats": 0,
+            "sum_chats_completed": 0,
+            "scenario_ids": set(),
+        }
+    )
+    for a in attempt_groups.values():
+        sim_id = a["simulation_id"]
+        if sim_id is None:
+            continue
+        d = attempt_by_sim[sim_id]
+        d["count"] += 1
+        d["sum_chats"] += a["num_chats"]
+        d["sum_chats_completed"] += a["num_chats_completed"]
+        if a["grade_count"] > 0:
+            avg_grade = a["sum_grade_percent"] / a["grade_count"]
+            d["sum_score"] += avg_grade
+            d["score_count"] += 1
+        d["scenario_ids"].update(a["scenario_ids"])
+
+    simulation_facts_out = []
+    for sim_id, d in sorted(attempt_by_sim.items()):
+        completion = (
+            (d["sum_chats_completed"] / d["sum_chats"] * 100) if d["sum_chats"] else 0
+        )
+        simulation_facts_out.append(
+            {
+                "simulation_id": sim_id,
+                "title": simulation_name_map.get(sim_id, sim_id),
+                "avg_score": _round2(
+                    d["sum_score"] / d["score_count"] if d["score_count"] else 0
+                ),
+                "completion_rate": _round2(completion),
+                "total_attempts": d["count"],
+                "scenario_count": len(d["scenario_ids"]),
+            }
+        )
+
+    # Parameter facts from scenario_to_param_items + scenario_facts
+    simulation_parameter_facts_categorical = []
+    param_sim_counts: dict[tuple[str, str, str], int] = defaultdict(int)
+    for row in scenario_facts_items:
+        sim_id = str(row.simulation_id)
+        scenario_id = str(row.scenario_id) if row.scenario_id else None
+        if scenario_id:
+            for pid, fid in scenario_to_param_items.get(scenario_id, set()):
+                param_sim_counts[(sim_id, pid, fid)] += 1
+    for (sim_id, pid, field_id), count in sorted(param_sim_counts.items()):
+        simulation_parameter_facts_categorical.append(
+            {
+                "simulation_id": sim_id,
+                "parameter_id": pid,
+                "parameter_item_id": field_id or None,
+                "scenario_count": count,
+            }
+        )
+
+    comp_status = "success" if simulation_facts_out else "neutral"
+    simulation_composition = {
+        "simulation_facts": simulation_facts_out,
+        "simulation_parameter_facts_categorical": simulation_parameter_facts_categorical,
+        "simulation_parameter_facts_numeric": [],
+        "valid_simulation_ids": sorted(valid_sim_ids),
+        "status": comp_status,
+    }
+
+    # --- 3. Scenario performance categorical facts ---
+    cat_map_seen = [
+        (pid, fid, scenario_id)
+        for scenario_id, pairs in scenario_to_param_items.items()
+        for (pid, fid) in sorted(pairs)
+        if pid not in persona_doc_parameter_ids
+    ]
+    attempt_daily: dict[tuple[str, str, str], dict] = defaultdict(
+        lambda: {"scores": [], "attempts": 0, "passed_attempts": 0}
+    )
+    for row in scenario_facts_items:
+        if row.grade_percent is None or row.attempt_date is None:
+            continue
+        day = _iso(row.attempt_date)
+        scenario_id = str(row.scenario_id) if row.scenario_id else None
+        if not scenario_id:
+            continue
+        for pid, fid in scenario_to_param_items.get(scenario_id, set()):
+            if pid in persona_doc_parameter_ids:
+                continue
+            k = (pid, fid, day)
+            attempt_daily[k]["scores"].append(float(row.grade_percent))
+            attempt_daily[k]["attempts"] += 1
+            attempt_daily[k]["passed_attempts"] += 1 if row.passed else 0
+
+    attribute_attempt_facts = []
+    for (pid, fid, day), d in sorted(attempt_daily.items()):
+        attribute_attempt_facts.append(
+            {
+                "parameter_id": pid,
+                "parameter_item_id": fid,
+                "date": day,
+                "timestamp": None,
+                "avg_score": _round2(mean(d["scores"])) if d["scores"] else None,
+                "attempts": d["attempts"],
+                "passed_attempts": d["passed_attempts"],
+            }
+        )
+
+    attribute_scenario_facts = [
+        {"parameter_id": pid, "parameter_item_id": fid, "scenario_id": scenario_id}
+        for (pid, fid, scenario_id) in cat_map_seen
+    ]
+
+    cat_avg = (
+        mean(
+            [
+                f["avg_score"]
+                for f in attribute_attempt_facts
+                if f["avg_score"] is not None
+            ]
+        )
+        if attribute_attempt_facts
+        else None
+    )
+    if cat_avg is None:
+        scenario_perf_status = "neutral"
+    elif cat_avg >= success_threshold:
+        scenario_perf_status = "success"
+    elif cat_avg >= warning_threshold:
+        scenario_perf_status = "warning"
+    else:
+        scenario_perf_status = "danger"
+
+    scenario_performance = {
+        "attribute_attempt_facts": attribute_attempt_facts,
+        "attribute_scenario_facts": attribute_scenario_facts,
+        "valid_parameter_ids": valid_parameter_ids,
+        "status": scenario_perf_status,
+    }
+
+    # --- 4. Scenario stats numeric level facts ---
+    param_levels: dict[str, list[str]] = defaultdict(list)
+    for pairs in scenario_to_param_items.values():
+        for pid, fid in pairs:
+            if pid in persona_doc_parameter_ids and fid not in param_levels[pid]:
+                param_levels[pid].append(fid)
+    for pid in param_levels:
+        param_levels[pid].sort()
+
+    scenario_numeric_map: dict[str, list[tuple[str, int, str]]] = defaultdict(list)
+    for scenario_id, pairs in scenario_to_param_items.items():
+        for pid, fid in pairs:
+            if pid not in persona_doc_parameter_ids:
+                continue
+            level = param_levels[pid].index(fid) + 1 if fid in param_levels[pid] else 1
+            scenario_numeric_map[scenario_id].append((pid, level, fid))
+
+    numeric_acc: dict[tuple[str, str, float], dict] = defaultdict(
+        lambda: {"scores": [], "attempts": 0}
+    )
+    for row in scenario_facts_items:
+        if row.grade_percent is None:
+            continue
+        scenario_id = str(row.scenario_id) if row.scenario_id else None
+        if not scenario_id:
+            continue
+        for pid, level, fid in scenario_numeric_map.get(scenario_id, []):
             label = field_name_by_id.get(fid, str(level))
             k = (pid, label, float(level))
             numeric_acc[k]["scores"].append(float(row.grade_percent))

@@ -1,25 +1,31 @@
 """Footer section endpoint for dashboard artifact."""
 
+import asyncio
 from typing import Annotated
 
 import asyncpg
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
-from app.api.v4.artifacts.dashboard.permissions import compute_footer_metrics
+from app.api.v4.artifacts.dashboard.permissions import compute_footer_metrics_v2
 from app.api.v4.artifacts.dashboard.shared import (
     build_field_meta,
     build_parameter_meta,
     build_simulation_meta,
-    collect_resource_ids,
-    fetch_base_mv_data,
+    fetch_scenario_facts_data,
     fetch_thresholds,
-    hydrate_resources,
     parse_dashboard_filters,
 )
 from app.api.v4.artifacts.dashboard.types import (
     DashboardFooterRequest,
     DashboardFooterResponse,
 )
+from app.api.v4.resources.documents.get import get_documents_internal
+from app.api.v4.resources.fields.get import get_fields_internal
+from app.api.v4.resources.parameter_fields.get import get_parameter_fields_internal
+from app.api.v4.resources.parameters.get import get_parameters_internal
+from app.api.v4.resources.personas.get import get_personas_internal
+from app.api.v4.resources.scenarios.get import get_scenarios_internal
+from app.api.v4.resources.simulations.get import get_simulations_internal
 from app.infra.v4.activity.audit import audit_activity
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
@@ -52,43 +58,140 @@ async def get_dashboard_footer(
         if not pool:
             raise RuntimeError("Database pool not initialized")
 
+        # 1. Parse filters
         filters = parse_dashboard_filters(request)
-        mv_data = await fetch_base_mv_data(
-            pool=pool,
-            request=request,
-            filters=filters,
-            bypass_cache=bypass_cache,
-            include_first_attempt=False,
-        )
-        thresholds = await fetch_thresholds(
-            pool=pool,
-            actor_profile_id=request.actor_profile_id,
-            target_profile_id=request.target_profile_id,
-            department_ids=request.department_ids,
+
+        # 2. Fetch scenario facts (single MV call) + thresholds in parallel
+        scenario_facts_result, thresholds = await asyncio.gather(
+            fetch_scenario_facts_data(
+                pool=pool,
+                request=request,
+                filters=filters,
+                bypass_cache=bypass_cache,
+            ),
+            fetch_thresholds(
+                pool=pool,
+                actor_profile_id=request.actor_profile_id,
+                target_profile_id=request.target_profile_id,
+                department_ids=request.department_ids,
+            ),
         )
 
-        resource_ids = collect_resource_ids(mv_data)
-        resources = await hydrate_resources(
-            pool=pool,
-            mv_data=mv_data,
-            resource_ids=resource_ids,
-            bypass_cache=bypass_cache,
-        )
+        scenario_facts_items = scenario_facts_result.items
 
-        footer_metrics = compute_footer_metrics(
-            attempts=mv_data.attempts,
-            daily_rows=mv_data.daily_rows,
-            chat_rows=mv_data.chat_rows,
-            profile_rows=mv_data.profile_rows,
-            parameter_fields=resources.parameter_fields,
-            parameters=resources.parameters,
-            fields=resources.fields,
-            simulation_name_map=resources.simulation_name_map,
-            scenario_name_map=resources.scenario_name_map,
+        # 3. Collect resource IDs from scenario_facts
+        simulation_ids_set: set = set()
+        scenario_ids_set: set = set()
+        persona_ids_set: set = set()
+        document_ids_set: set = set()
+        for row in scenario_facts_items:
+            simulation_ids_set.add(row.simulation_id)
+            if row.scenario_id:
+                scenario_ids_set.add(row.scenario_id)
+            if row.persona_id:
+                persona_ids_set.add(row.persona_id)
+            for doc_id in row.document_ids or []:
+                document_ids_set.add(doc_id)
+
+        # 4. Batch 1: Hydrate simulations, scenarios, personas, documents
+        async with pool.acquire() as c:
+            simulations, scenarios_list, personas, documents = await asyncio.gather(
+                get_simulations_internal(
+                    conn=c,
+                    ids=list(simulation_ids_set),
+                    bypass_cache=bypass_cache,
+                ),
+                get_scenarios_internal(
+                    conn=c,
+                    ids=list(scenario_ids_set),
+                    bypass_cache=bypass_cache,
+                ),
+                get_personas_internal(
+                    conn=c,
+                    ids=list(persona_ids_set),
+                    bypass_cache=bypass_cache,
+                ),
+                get_documents_internal(
+                    conn=c,
+                    ids=list(document_ids_set),
+                    bypass_cache=bypass_cache,
+                ),
+            )
+
+        # 5. Collect all parameter_field_ids from hydrated resources
+        all_pf_ids: set = set()
+        for s in scenarios_list:
+            for pfid in getattr(s, "parameter_field_ids", None) or []:
+                all_pf_ids.add(pfid)
+        for p in personas:
+            for pfid in getattr(p, "parameter_field_ids", None) or []:
+                all_pf_ids.add(pfid)
+        for d in documents:
+            for pfid in getattr(d, "parameter_field_ids", None) or []:
+                all_pf_ids.add(pfid)
+
+        # 6. Batch 2: Hydrate parameter_fields
+        async with pool.acquire() as c:
+            parameter_fields = await get_parameter_fields_internal(
+                conn=c,
+                ids=list(all_pf_ids),
+                bypass_cache=bypass_cache,
+            )
+
+        # 7. Derive parameter_ids, field_ids from parameter_fields
+        parameter_ids_set: set = set()
+        field_ids_set: set = set()
+        field_parameter_map: dict = {}
+        for pf in parameter_fields:
+            if pf.parameter_id:
+                parameter_ids_set.add(pf.parameter_id)
+            if pf.field_id:
+                field_ids_set.add(pf.field_id)
+                if pf.parameter_id:
+                    field_parameter_map[pf.field_id] = pf.parameter_id
+
+        # 8. Batch 3: Hydrate parameters and fields
+        async with pool.acquire() as c:
+            parameters, fields_list = await asyncio.gather(
+                get_parameters_internal(
+                    conn=c,
+                    ids=list(parameter_ids_set),
+                    bypass_cache=bypass_cache,
+                ),
+                get_fields_internal(
+                    conn=c,
+                    ids=list(field_ids_set),
+                    bypass_cache=bypass_cache,
+                ),
+            )
+
+        # 9. Build name maps
+        simulation_name_map = {
+            str(s.simulation_id): s.name
+            for s in simulations
+            if s.simulation_id and s.name
+        }
+        scenario_name_map = {
+            str(s.scenario_id): s.name
+            for s in scenarios_list
+            if s.scenario_id and s.name
+        }
+
+        # 10. Compute footer metrics
+        footer_metrics = compute_footer_metrics_v2(
+            scenario_facts_items=scenario_facts_items,
+            scenarios=scenarios_list,
+            personas=personas,
+            documents=documents,
+            parameter_fields=parameter_fields,
+            parameters=parameters,
+            fields=fields_list,
+            simulation_name_map=simulation_name_map,
+            scenario_name_map=scenario_name_map,
             thresholds=thresholds.as_dict(),
         )
 
-        # Apply picker filters (valid_*_ids stay intact for picker options)
+        # 11. Apply picker filters (valid_*_ids stay intact for picker options)
         if request.scenario_perf_parameter_ids:
             filter_set = {str(pid) for pid in request.scenario_perf_parameter_ids}
             footer_metrics.scenario_performance.attribute_attempt_facts = [
@@ -121,15 +224,16 @@ async def get_dashboard_footer(
                 if f.simulation_id in filter_set
             ]
 
-        simulations_meta = build_simulation_meta(resources.simulations)
-        parameters_meta = build_parameter_meta(resources.parameters)
+        # 12. Build metadata
+        simulations_meta = build_simulation_meta(simulations)
+        parameters_meta = build_parameter_meta(parameters)
         fields_meta = build_field_meta(
-            resources.fields,
-            resources.field_parameter_map,
-            resources.parameters,
+            fields_list,
+            field_parameter_map,
+            parameters,
         )
 
-        # Apply search filters to metadata lists
+        # 13. Apply search filters to metadata lists
         if request.sim_perf_simulation_search:
             q = request.sim_perf_simulation_search.lower()
             simulations_meta = [

@@ -208,6 +208,8 @@ class QGetScenariosV4Item(BaseModel):
     templates_enabled: bool | None = None
     # Denormalized persona_ids for list hydration
     persona_ids: list[UUID] | None = None
+    parameter_field_ids: list[UUID] | None = None
+    parameter_ids: list[UUID] | None = None
 
 
 class GetScenariosSqlParams(BaseModel):

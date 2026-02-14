@@ -45,7 +45,7 @@ STABLE
 AS $$
 SELECT COALESCE(
     ARRAY_AGG(
-        (q.document_id, q.name, q.description, q.generated, q.upload_id, q.text_id, q.image_ids, q.template)::types.q_get_documents_v4_item
+        (q.document_id, q.name, q.description, q.generated, q.upload_id, q.text_id, q.image_ids, q.template, q.parameter_field_ids, q.parameter_ids)::types.q_get_documents_v4_item
         ORDER BY q.name
     ),
     ARRAY[]::types.q_get_documents_v4_item[]
@@ -59,7 +59,9 @@ FROM (
         d.upload_id,
         d.text_id,
         d.image_ids,
-        d.template
+        d.template,
+        COALESCE(d.parameter_field_ids, ARRAY[]::uuid[]) AS parameter_field_ids,
+        COALESCE(d.parameter_ids, ARRAY[]::uuid[]) AS parameter_ids
     FROM documents_resource d
     WHERE d.active = true
       AND d.name IS NOT NULL

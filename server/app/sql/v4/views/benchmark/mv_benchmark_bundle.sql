@@ -2,7 +2,7 @@
 -- Benchmark-bundle-level denormalized context for bundle customization page.
 --
 -- Grain: One row per benchmark_bundle_entry.id
--- All resource IDs from benchmark_bundle_*_connection tables (9 resources).
+-- All resource IDs from benchmark_bundle_*_connection tables (12 resources).
 
 DO $$
 DECLARE
@@ -93,12 +93,36 @@ key_agg AS (
     FROM benchmark_bundle_keys_connection bbkc
     WHERE bbkc.active = true
     GROUP BY bbkc.benchmark_bundle_id
+),
+flag_agg AS (
+    SELECT
+        bbfc.benchmark_bundle_id,
+        ARRAY_AGG(DISTINCT bbfc.flags_id ORDER BY bbfc.flags_id) AS flag_ids
+    FROM benchmark_bundle_flags_connection bbfc
+    WHERE bbfc.active = true
+    GROUP BY bbfc.benchmark_bundle_id
+),
+name_agg AS (
+    SELECT
+        bbnc.benchmark_bundle_id,
+        ARRAY_AGG(DISTINCT bbnc.names_id ORDER BY bbnc.names_id) AS name_ids
+    FROM benchmark_bundle_names_connection bbnc
+    WHERE bbnc.active = true
+    GROUP BY bbnc.benchmark_bundle_id
+),
+description_agg AS (
+    SELECT
+        bbdc2.benchmark_bundle_id,
+        ARRAY_AGG(DISTINCT bbdc2.descriptions_id ORDER BY bbdc2.descriptions_id) AS description_ids
+    FROM benchmark_bundle_descriptions_connection bbdc2
+    WHERE bbdc2.active = true
+    GROUP BY bbdc2.benchmark_bundle_id
 )
 SELECT
     bbe.id AS benchmark_bundle_entry_id,
     bbe.benchmark_id,
 
-    -- Bundle-level resource ID arrays (9 resources)
+    -- Bundle-level resource ID arrays (12 resources)
     COALESCE(dep.department_ids, ARRAY[]::uuid[]) AS department_ids,
     COALESCE(mdl.model_ids, ARRAY[]::uuid[]) AS model_ids,
     COALESCE(pmt.prompt_ids, ARRAY[]::uuid[]) AS prompt_ids,
@@ -108,6 +132,9 @@ SELECT
     COALESCE(rsn.reasoning_level_ids, ARRAY[]::uuid[]) AS reasoning_level_ids,
     COALESCE(tol.tool_ids, ARRAY[]::uuid[]) AS tool_ids,
     COALESCE(ky.key_ids, ARRAY[]::uuid[]) AS key_ids,
+    COALESCE(flg.flag_ids, ARRAY[]::uuid[]) AS flag_ids,
+    COALESCE(nm.name_ids, ARRAY[]::uuid[]) AS name_ids,
+    COALESCE(dsc.description_ids, ARRAY[]::uuid[]) AS description_ids,
 
     bbe.created_at,
     bbe.updated_at,
@@ -123,6 +150,9 @@ LEFT JOIN temperature_level_agg tmp ON tmp.benchmark_bundle_id = bbe.id
 LEFT JOIN reasoning_level_agg rsn ON rsn.benchmark_bundle_id = bbe.id
 LEFT JOIN tool_agg tol ON tol.benchmark_bundle_id = bbe.id
 LEFT JOIN key_agg ky ON ky.benchmark_bundle_id = bbe.id
+LEFT JOIN flag_agg flg ON flg.benchmark_bundle_id = bbe.id
+LEFT JOIN name_agg nm ON nm.benchmark_bundle_id = bbe.id
+LEFT JOIN description_agg dsc ON dsc.benchmark_bundle_id = bbe.id
 WHERE bbe.active = true
 WITH NO DATA;
 

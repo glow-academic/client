@@ -8262,6 +8262,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/views/benchmark/context/get": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Benchmark Context View
+         * @description Get benchmark context view for current profile.
+         */
+        post: operations["get_benchmark_context_view_api_v4_views_benchmark_context_get_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v4/views/benchmark/tests/get": {
         parameters: {
             query?: never;
@@ -8616,6 +8636,46 @@ export interface paths {
          * @description Get run data from the materialized view.
          */
         post: operations["get_runs_api_v4_views_run_get_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/views/message/get": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Messages
+         * @description Get message data from the materialized view.
+         */
+        post: operations["get_messages_api_v4_views_message_get_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/views/call/get": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Calls
+         * @description Get call data from the materialized view.
+         */
+        post: operations["get_calls_api_v4_views_call_get_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -14856,6 +14916,43 @@ export interface components {
             passed_chats?: number | null;
         };
         /**
+         * BenchmarkContextViewItem
+         * @description IDs-first benchmark item -- raw IDs only, no computed fields.
+         */
+        BenchmarkContextViewItem: {
+            /**
+             * Benchmark Id
+             * Format: uuid
+             */
+            benchmark_id: string;
+            /** Eval Ids */
+            eval_ids?: string[] | null;
+            /** Benchmark Bundle Entry Ids */
+            benchmark_bundle_entry_ids?: string[] | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
+            /** Profile Ids */
+            profile_ids?: string[] | null;
+            /** Run Rubric Ids */
+            run_rubric_ids?: string[] | null;
+            /** Group Rubric Ids */
+            group_rubric_ids?: string[] | null;
+            /** Run Position Ids */
+            run_position_ids?: string[] | null;
+            /** Group Position Ids */
+            group_position_ids?: string[] | null;
+            /**
+             * Use Groups
+             * @default false
+             */
+            use_groups: boolean;
+            /**
+             * Dynamic
+             * @default false
+             */
+            dynamic: boolean;
+        };
+        /**
          * BenchmarkDepartmentItem
          * @description Department resource for benchmark.
          */
@@ -15356,6 +15453,25 @@ export interface components {
         BulkDeleteStaffApiResponse: {
             /** Deleted Count */
             deleted_count?: number | null;
+        };
+        /**
+         * CallViewItem
+         * @description Single call from the call list view.
+         */
+        CallViewItem: {
+            /**
+             * Call Id
+             * Format: uuid
+             */
+            call_id: string;
+            /** Run Id */
+            run_id?: string | null;
+            /** Call Created At */
+            call_created_at?: string | null;
+            /** Arguments Raw */
+            arguments_raw?: string | null;
+            /** Tool Name */
+            tool_name?: string | null;
         };
         /**
          * ChatData
@@ -20165,6 +20281,20 @@ export interface components {
             tool_ids?: string[];
             /** Key Ids */
             key_ids?: string[];
+            /** Flag Ids */
+            flag_ids?: string[];
+            /** Name Ids */
+            name_ids?: string[];
+            /** Description Ids */
+            description_ids?: string[];
+        };
+        /**
+         * GetBenchmarkContextViewResponse
+         * @description View-layer response for benchmark context.
+         */
+        GetBenchmarkContextViewResponse: {
+            /** Items */
+            items?: components["schemas"]["BenchmarkContextViewItem"][];
         };
         /**
          * GetBenchmarkEvalSummaryRequest
@@ -20294,6 +20424,23 @@ export interface components {
         GetBindingsApiResponse: {
             /** Items */
             items?: components["schemas"]["QGetBindingsV4Item"][] | null;
+        };
+        /**
+         * GetCallListViewResponse
+         * @description Response containing call list data.
+         */
+        GetCallListViewResponse: {
+            /**
+             * Items
+             * @description Call data items
+             */
+            items?: components["schemas"]["CallViewItem"][];
+            /**
+             * Total Count
+             * @description Total count before pagination
+             * @default 0
+             */
+            total_count: number;
         };
         /** GetCertificateDataApiRequest */
         GetCertificateDataApiRequest: Record<string, never>;
@@ -21250,6 +21397,23 @@ export interface components {
             organization_id?: string | null;
         };
         /**
+         * GetMessageListViewResponse
+         * @description Response containing message list data.
+         */
+        GetMessageListViewResponse: {
+            /**
+             * Items
+             * @description Message data items
+             */
+            items?: components["schemas"]["app__api__v4__views__message__list__types__MessageViewItem"][];
+            /**
+             * Total Count
+             * @description Total count before pagination
+             * @default 0
+             */
+            total_count: number;
+        };
+        /**
          * GetMessagesRequest
          * @description Request for getting message data.
          *
@@ -21272,7 +21436,7 @@ export interface components {
              * Items
              * @description Message data items
              */
-            items?: components["schemas"]["MessageViewItem"][];
+            items?: components["schemas"]["app__api__v4__views__attempt__messages__types__MessageViewItem"][];
         };
         /** GetModalitiesApiRequest */
         GetModalitiesApiRequest: {
@@ -26585,44 +26749,6 @@ export interface components {
             /** Replaces */
             replaces?: components["schemas"]["ReplacementEntry"][] | null;
         };
-        /**
-         * MessageViewItem
-         * @description Single message from the attempt messages view.
-         *
-         *     Position derived in service layer, practice on attempt level.
-         */
-        MessageViewItem: {
-            /**
-             * Message Id
-             * Format: uuid
-             */
-            message_id: string;
-            /** Chat Id */
-            chat_id?: string | null;
-            /** Attempt Id */
-            attempt_id?: string | null;
-            /** Type */
-            type?: string | null;
-            /** Created At */
-            created_at?: string | null;
-            /**
-             * Completed
-             * @default false
-             */
-            completed: boolean;
-            /** Runs Id */
-            runs_id?: string | null;
-            /** History Content */
-            history_content?: string | null;
-            /** Contents */
-            contents?: components["schemas"]["ContentItem"][] | null;
-            /** Strengths */
-            strengths?: components["schemas"]["StrengthItem"][] | null;
-            /** Improvements */
-            improvements?: components["schemas"]["ImprovementItem"][] | null;
-            /** Hints */
-            hints?: components["schemas"]["HintItem"][] | null;
-        };
         /** ModelDepartmentSection */
         ModelDepartmentSection: {
             /**
@@ -30443,6 +30569,10 @@ export interface components {
             image_ids: string[] | null;
             /** Template */
             template: boolean | null;
+            /** Parameter Field Ids */
+            parameter_field_ids: string[] | null;
+            /** Parameter Ids */
+            parameter_ids: string[] | null;
         };
         /** QGetDomainsV4Item */
         QGetDomainsV4Item: {
@@ -30793,6 +30923,10 @@ export interface components {
             examples: string[] | null;
             /** Generated */
             generated: boolean | null;
+            /** Parameter Field Ids */
+            parameter_field_ids: string[] | null;
+            /** Parameter Ids */
+            parameter_ids: string[] | null;
         };
         /** QGetPointsV4Item */
         QGetPointsV4Item: {
@@ -31218,6 +31352,10 @@ export interface components {
             questions_enabled: boolean | null;
             /** Persona Ids */
             persona_ids: string[] | null;
+            /** Parameter Field Ids */
+            parameter_field_ids: string[] | null;
+            /** Parameter Ids */
+            parameter_ids: string[] | null;
         };
         /**
          * QGetSettingsV4Provider
@@ -39933,6 +40071,10 @@ export interface components {
             templates_enabled?: boolean | null;
             /** Persona Ids */
             persona_ids?: string[] | null;
+            /** Parameter Field Ids */
+            parameter_field_ids?: string[] | null;
+            /** Parameter Ids */
+            parameter_ids?: string[] | null;
         };
         /**
          * FilterOption
@@ -40129,6 +40271,65 @@ export interface components {
             count: number;
         };
         /**
+         * MessageViewItem
+         * @description Single message from the attempt messages view.
+         *
+         *     Position derived in service layer, practice on attempt level.
+         */
+        app__api__v4__views__attempt__messages__types__MessageViewItem: {
+            /**
+             * Message Id
+             * Format: uuid
+             */
+            message_id: string;
+            /** Chat Id */
+            chat_id?: string | null;
+            /** Attempt Id */
+            attempt_id?: string | null;
+            /** Type */
+            type?: string | null;
+            /** Created At */
+            created_at?: string | null;
+            /**
+             * Completed
+             * @default false
+             */
+            completed: boolean;
+            /** Runs Id */
+            runs_id?: string | null;
+            /** History Content */
+            history_content?: string | null;
+            /** Contents */
+            contents?: components["schemas"]["ContentItem"][] | null;
+            /** Strengths */
+            strengths?: components["schemas"]["StrengthItem"][] | null;
+            /** Improvements */
+            improvements?: components["schemas"]["ImprovementItem"][] | null;
+            /** Hints */
+            hints?: components["schemas"]["HintItem"][] | null;
+        };
+        /**
+         * MessageViewItem
+         * @description Single message from the message list view.
+         */
+        app__api__v4__views__message__list__types__MessageViewItem: {
+            /**
+             * Message Id
+             * Format: uuid
+             */
+            message_id: string;
+            /** Run Id */
+            run_id?: string | null;
+            /** Role */
+            role?: string | null;
+            /** Message Created At */
+            message_created_at?: string | null;
+            /** Contents */
+            contents?: string[];
+            /** Call Ids */
+            call_ids?: string[];
+        };
+        /**
          * GetGroupDetailRequest
          * @description Request for group detail view endpoint.
          */
@@ -40239,6 +40440,10 @@ export interface components {
             questions_enabled: boolean | null;
             /** Persona Ids */
             persona_ids: string[] | null;
+            /** Parameter Field Ids */
+            parameter_field_ids: string[] | null;
+            /** Parameter Ids */
+            parameter_ids: string[] | null;
         };
         /** QGetSettingsV4Auth */
         app__sql__types__QGetSettingsV4Auth: {
@@ -55483,6 +55688,39 @@ export interface operations {
             };
         };
     };
+    get_benchmark_context_view_api_v4_views_benchmark_context_get_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetBenchmarkContextViewResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_benchmark_tests_api_v4_views_benchmark_tests_get_post: {
         parameters: {
             query?: never;
@@ -56102,6 +56340,72 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["GetRunListViewResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_messages_api_v4_views_message_get_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetMessageListViewResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_calls_api_v4_views_call_get_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetCallListViewResponse"];
                 };
             };
             /** @description Validation Error */

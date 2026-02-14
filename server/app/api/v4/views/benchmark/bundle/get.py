@@ -48,6 +48,9 @@ async def get_benchmark_bundle_view_internal(
         reasoning_level_ids=list(row.reasoning_level_ids or []),
         tool_ids=list(row.tool_ids or []),
         key_ids=list(row.key_ids or []),
+        flag_ids=list(row.flag_ids or []),
+        name_ids=list(row.name_ids or []),
+        description_ids=list(row.description_ids or []),
     )
 
 

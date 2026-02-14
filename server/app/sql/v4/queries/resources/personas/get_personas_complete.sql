@@ -58,7 +58,9 @@ CREATE TYPE types.q_get_personas_v4_item AS (
     image_model boolean,
     instructions text,
     examples text[],
-    generated boolean
+    generated boolean,
+    parameter_field_ids uuid[],
+    parameter_ids uuid[]
 );
 
 -- Create function
@@ -82,7 +84,9 @@ SELECT COALESCE(
             false,  -- image_model flag not stored in personas_resource
             COALESCE(p.instructions, ''),
             COALESCE(p.examples, ARRAY[]::text[]),
-            COALESCE(p.generated, false)
+            COALESCE(p.generated, false),
+            COALESCE(p.parameter_field_ids, ARRAY[]::uuid[]),
+            COALESCE(p.parameter_ids, ARRAY[]::uuid[])
         )::types.q_get_personas_v4_item
         ORDER BY array_position(p_ids, p.id)
     ),

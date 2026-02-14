@@ -45,7 +45,7 @@ STABLE
 AS $$
 SELECT COALESCE(
     ARRAY_AGG(
-        (q.scenario_id, q.name, q.description, q.generated, q.problem_statement_enabled, q.objectives_enabled, q.video_enabled, q.images_enabled, q.questions_enabled, q.persona_ids)::types.q_get_scenarios_v4_item
+        (q.scenario_id, q.name, q.description, q.generated, q.problem_statement_enabled, q.objectives_enabled, q.video_enabled, q.images_enabled, q.questions_enabled, q.persona_ids, q.parameter_field_ids, q.parameter_ids)::types.q_get_scenarios_v4_item
         ORDER BY q.name
     ),
     ARRAY[]::types.q_get_scenarios_v4_item[]
@@ -61,7 +61,9 @@ FROM (
         s.video_enabled,
         s.images_enabled,
         s.questions_enabled,
-        COALESCE(s.persona_ids, ARRAY[]::uuid[]) as persona_ids
+        COALESCE(s.persona_ids, ARRAY[]::uuid[]) as persona_ids,
+        COALESCE(s.parameter_field_ids, ARRAY[]::uuid[]) as parameter_field_ids,
+        COALESCE(s.parameter_ids, ARRAY[]::uuid[]) as parameter_ids
     FROM scenarios_resource s
     WHERE s.active = true
       -- Search filter
