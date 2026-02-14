@@ -5,7 +5,9 @@
 
 
 -- Resource rows
+INSERT INTO public.args_resource (id, name, description, field_type, required, default_value, created_at, active, generated, mcp) VALUES ('019bbf87-091e-786e-bbff-3e50b51a7cd1', 'question_id', '', 'string', false, '', '2026-01-06T15:55:22.226036+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.arg_positions_resource (id, args_id, value, created_at, active, generated, mcp) VALUES ('019c4e6b-2c29-7973-bd76-011a30319ae8', '019bbf87-091e-786e-bbff-3e50b51a7cd1', 0, '2026-02-11T20:36:12.457770+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.args_outputs_resource (id, args_id, name, template, created_at, active, generated, mcp) VALUES ('0e366f8e-b831-4ecf-bc12-e29bdd9375e3', '019bbf87-091e-786e-bbff-3e50b51a7cd1', 'id', '{{ question_id }}', '2026-01-31T02:04:17.083661+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.names_resource (id, name, created_at, active, generated, mcp) VALUES ('019c0a2d-fc39-7e8b-86f1-81e24a46cdcc', 'use_questions', '2026-01-29T14:35:11.795021+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.tools_resource (id, created_at, generated, mcp, active, name, description, department_ids, createable) VALUES ('019c0a2d-fc36-7ace-adde-c1e47bc14a89', '2026-01-29T14:35:11.795021+00:00', false, false, true, 'use_questions', 'Use an existing question resource instead of creating a new one', '{}', false) ON CONFLICT (id) DO NOTHING;
 

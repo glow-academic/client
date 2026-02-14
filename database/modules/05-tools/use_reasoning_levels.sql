@@ -5,6 +5,7 @@
 
 
 -- Resource rows
+INSERT INTO public.args_resource (id, name, description, field_type, required, default_value, created_at, active, generated, mcp) VALUES ('019bbf87-091f-743d-aaa1-fc3b2f0b8773', 'reasoning_level_id', '', 'string', true, '', '2026-01-13T04:12:23.636838+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.arg_positions_resource (id, args_id, value, created_at, active, generated, mcp) VALUES ('019c4f27-1782-7b3e-9f1d-c4373a660d3d', '019bbf87-091f-743d-aaa1-fc3b2f0b8773', 0, '2026-02-12T00:01:27.881501+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.descriptions_resource (id, description, created_at, active, generated, mcp) VALUES ('019c4f27-1782-79d9-95bc-1a91bfc6b6b8', 'Use an existing reasoning level resource instead of creating a new one', '2026-02-12T00:01:27.881501+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.names_resource (id, name, created_at, active, generated, mcp) VALUES ('019c4f27-1782-7930-ad92-64f36c520593', 'use_reasoning_levels', '2026-02-12T00:01:27.881501+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;

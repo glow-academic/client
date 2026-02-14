@@ -5,7 +5,9 @@
 
 
 -- Resource rows
+INSERT INTO public.args_resource (id, name, description, field_type, required, default_value, created_at, active, generated, mcp) VALUES ('019c06a8-2afd-7507-b94b-e23a4f7629cb', 'example_id', 'The ID of the example to link', 'string', true, '', '2026-01-28T22:10:10.283595+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.arg_positions_resource (id, args_id, value, created_at, active, generated, mcp) VALUES ('019c4e6b-2c29-796b-b697-bd4bf601d190', '019c06a8-2afd-7507-b94b-e23a4f7629cb', 0, '2026-02-11T20:36:12.457770+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.args_outputs_resource (id, args_id, name, template, created_at, active, generated, mcp) VALUES ('dda071e7-f216-436c-90ce-2ab8023e0322', '019c06a8-2afd-7507-b94b-e23a4f7629cb', 'id', '{{ example_id }}', '2026-01-30T14:58:36.217917+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.names_resource (id, name, created_at, active, generated, mcp) VALUES ('019c06a8-2af8-7da2-80e7-86545543e250', 'use_examples', '2026-01-28T22:10:10.283595+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.tools_resource (id, created_at, generated, mcp, active, name, description, department_ids, createable) VALUES ('019c06a8-2af5-747f-a440-a2a60dd205e1', '2026-01-28T22:10:10.283595+00:00', false, false, true, 'use_examples', 'Use an existing example resource instead of creating a new one', '{}', false) ON CONFLICT (id) DO NOTHING;
 

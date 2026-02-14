@@ -5,7 +5,9 @@
 
 
 -- Resource rows
+INSERT INTO public.args_resource (id, name, description, field_type, required, default_value, created_at, active, generated, mcp) VALUES ('019c0a2d-fc3b-7f11-89b0-3ed69b5c6760', 'problem_statement_id', 'The ID of the problem statement to link', 'string', true, '', '2026-01-29T14:35:11.795021+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.arg_positions_resource (id, args_id, value, created_at, active, generated, mcp) VALUES ('019c4e6b-2c29-7975-9a52-f7a9ea68d11d', '019c0a2d-fc3b-7f11-89b0-3ed69b5c6760', 0, '2026-02-11T20:36:12.457770+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.args_outputs_resource (id, args_id, name, template, created_at, active, generated, mcp) VALUES ('78849cf4-d4a2-4ada-85b0-64f5522f1fe3', '019c0a2d-fc3b-7f11-89b0-3ed69b5c6760', 'id', '{{ problem_statement_id }}', '2026-01-31T02:04:17.083661+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.names_resource (id, name, created_at, active, generated, mcp) VALUES ('019c0a2d-fc3a-7491-8919-790cc6e686a7', 'use_problem_statements', '2026-01-29T14:35:11.795021+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.tools_resource (id, created_at, generated, mcp, active, name, description, department_ids, createable) VALUES ('019c0a2d-fc36-7c0c-80c1-098a75897197', '2026-01-29T14:35:11.795021+00:00', false, false, true, 'use_problem_statements', 'Use an existing problem statement resource instead of creating a new one', '{}', false) ON CONFLICT (id) DO NOTHING;
 

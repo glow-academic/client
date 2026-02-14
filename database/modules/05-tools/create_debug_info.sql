@@ -5,7 +5,9 @@
 
 
 -- Resource rows
+INSERT INTO public.args_resource (id, name, description, field_type, required, default_value, created_at, active, generated, mcp) VALUES ('019bbf87-091e-768f-9c96-37941363873a', 'content', 'The text content of the assistant response message', 'string', true, '', '2026-01-06T15:55:22.222790+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.arg_positions_resource (id, args_id, value, created_at, active, generated, mcp) VALUES ('019c4e6b-2c29-76cd-be35-1941ea6fbb46', '019bbf87-091e-768f-9c96-37941363873a', 0, '2026-02-11T20:36:12.457770+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.args_outputs_resource (id, args_id, name, template, created_at, active, generated, mcp) VALUES ('019bbf87-0966-7327-b2a1-f5fbde584a12', '019bbf87-091e-768f-9c96-37941363873a', 'content', '{{ content }}', '2026-01-06T15:55:22.222222+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.descriptions_resource (id, description, created_at, active, generated, mcp) VALUES ('019bbabc-5a2e-78a5-b005-b2920ea64015', 'Provide debug information about the current state, context, or reasoning. Use this tool to output internal state, debugging details, or diagnostic information.', '2025-12-31T00:25:53.747819+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.names_resource (id, name, created_at, active, generated, mcp) VALUES ('019bbabc-5a2e-7779-92f8-5add97837e30', 'create_debug_info', '2025-12-31T00:25:53.747819+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
 
