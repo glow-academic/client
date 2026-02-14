@@ -5,6 +5,21 @@
 
 
 -- Resource rows
+INSERT INTO public.prompts_resource (created_at, system_prompt, name, description, active, id, generated, mcp) VALUES ('2026-01-13T13:54:04.534107+00:00', 'You are the Setting Artifact Generation Agent for v4.
+
+Generate or update only the requested setting resource_types:
+names, descriptions, flags, colors, departments, profiles, auths, keys, providers, thresholds, settings.
+
+Rules:
+- Operate only on requested resource_types.
+- Prefer existing suitable resources when available.
+- Create only what is needed for missing or weak selections.
+- Keep auth/provider/key/threshold configuration internally coherent.
+- Do not invent IDs; use IDs from context when linking.
+
+Output:
+- Return only valid tool calls and arguments.
+- Do not output narrative text.', 'Setting Agent System Prompt', 'System prompt for setting generation agents that create and manage setting resources', true, '77777777-1111-1111-1111-777777777777', false, false) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.agents_resource (created_at, active, generated, mcp, id, name, description, department_ids, temperature, reasoning, tool_ids, quality, voice, model_id, prompt_id, instruction_ids) VALUES ('2026-02-13T03:41:54.664757+00:00', true, false, false, '019c5517-4673-76c3-aefe-14e93c1ec6f5', 'Setting', 'AI agent for generating and managing setting resources', '{}', NULL, NULL, '{019bebc4-d436-7c75-ad20-e10da932e60b,019bebc4-d436-7c01-b86b-9483883762a6,019bebc4-d436-7c14-a42e-f45a12c4fdb0,019bebc4-d436-7c5e-b441-5b0c8673e4db,019bebc4-d436-7be1-9553-b722c5a74848,019bebc4-d436-7bee-9d95-c252a477881d,019bebc4-d436-7bf6-af0e-91e685a8f15e,019bebc4-d436-7c35-9f98-31957504bf95,019c06a8-2af6-727b-b94a-71bddc4d76de,019c06a8-2af4-7c97-ab30-1e863db0e8e3,019bebc4-d436-7c69-983a-589b59713462,019c06a8-2af4-765d-abe4-dc47e392ad30,019bebc4-d436-7c28-b7bf-f89de16c64d0,019c06a8-2af5-766c-9713-315ab9567235,019bebc4-d436-7c57-8749-ec4eb700f078,019c06a8-2af5-705d-ae92-7905a846a500}', NULL, NULL, '019bb25e-e5ff-76f6-90d4-830670bb5d82', '77777777-1111-1111-1111-777777777777', '{019bb7a2-9693-7069-8077-ed87670ef096}') ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.descriptions_resource (id, description, created_at, active, generated, mcp) VALUES ('019bb7a2-968c-7570-977d-7e6719faeda4', 'AI agent for generating and managing setting resources', '2026-01-13T13:54:04.539077+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.instructions_resource (id, template, active, created_at, generated, mcp) VALUES ('019bb7a2-9693-7069-8077-ed87670ef096', '## Current Draft Context
@@ -33,21 +48,6 @@ INSERT INTO public.instructions_resource (id, template, active, created_at, gene
 - Create resources only for missing or weak selections.
 - Keep auth/provider/key/threshold and role/route combinations coherent.', true, '2026-01-13T13:54:04.562409+00:00', false, false) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.names_resource (id, name, created_at, active, generated, mcp) VALUES ('019bb7a2-968a-707d-a734-49a824bb1dec', 'Setting', '2026-01-13T13:54:04.539077+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
-INSERT INTO public.prompts_resource (created_at, system_prompt, name, description, active, id, generated, mcp) VALUES ('2026-01-13T13:54:04.534107+00:00', 'You are the Setting Artifact Generation Agent for v4.
-
-Generate or update only the requested setting resource_types:
-names, descriptions, flags, colors, departments, profiles, auths, keys, providers, thresholds, settings.
-
-Rules:
-- Operate only on requested resource_types.
-- Prefer existing suitable resources when available.
-- Create only what is needed for missing or weak selections.
-- Keep auth/provider/key/threshold configuration internally coherent.
-- Do not invent IDs; use IDs from context when linking.
-
-Output:
-- Return only valid tool calls and arguments.
-- Do not output narrative text.', 'Setting Agent System Prompt', 'System prompt for setting generation agents that create and manage setting resources', true, '77777777-1111-1111-1111-777777777777', false, false) ON CONFLICT (id) DO NOTHING;
 
 -- Artifact
 -- agent_artifact

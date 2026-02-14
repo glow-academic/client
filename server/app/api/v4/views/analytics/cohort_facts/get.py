@@ -30,6 +30,7 @@ async def get_cohort_facts_internal(
     conn: asyncpg.Connection,
     profile_id: UUID | None = None,
     cohort_ids: list[UUID] | None = None,
+    department_ids: list[UUID] | None = None,
     simulation_ids: list[UUID] | None = None,
     attempt_type: str | None = None,
     is_archived: bool = False,
@@ -72,6 +73,9 @@ async def get_cohort_facts_internal(
         {
             "profile_id": str(profile_id) if profile_id else None,
             "cohort_ids": [str(c) for c in cohort_ids] if cohort_ids else None,
+            "department_ids": [str(d) for d in department_ids]
+            if department_ids
+            else None,
             "simulation_ids": [str(s) for s in simulation_ids]
             if simulation_ids
             else None,
@@ -95,6 +99,7 @@ async def get_cohort_facts_internal(
     params = GetAnalyticsCohortFactsViewSqlParams(
         profile_id_filter=profile_id,
         cohort_ids=cohort_ids,
+        department_ids=department_ids,
         simulation_ids=simulation_ids,
         attempt_type_filter=attempt_type,
         is_archived_filter=is_archived,
@@ -118,6 +123,7 @@ async def get_cohort_facts_internal(
                     attempt_id=item.attempt_id,
                     profile_id=item.profile_id,
                     cohort_id=item.cohort_id,
+                    department_id=item.department_id,
                     simulation_id=item.simulation_id,
                     persona_id=item.persona_id,
                     attempt_date=item.attempt_date,
@@ -143,6 +149,19 @@ async def get_cohort_facts_internal(
                 count=opt.count or 0,
             )
             for opt in result.cohort_options
+            if opt.value
+        ]
+
+    # Transform department filter options
+    department_options: list[FilterOption] | None = None
+    if result and result.department_options:
+        department_options = [
+            FilterOption(
+                value=opt.value or "",
+                label=opt.label or "",
+                count=opt.count or 0,
+            )
+            for opt in result.department_options
             if opt.value
         ]
 
@@ -176,6 +195,7 @@ async def get_cohort_facts_internal(
         items=items,
         total_count=result.total_count or 0 if result else 0,
         cohort_options=cohort_options,
+        department_options=department_options,
         simulation_options=simulation_options,
         persona_options=persona_options,
     )
@@ -231,6 +251,7 @@ async def get_cohort_facts(
             conn=conn,
             profile_id=request.profile_id,
             cohort_ids=request.cohort_ids,
+            department_ids=request.department_ids,
             simulation_ids=request.simulation_ids,
             attempt_type=request.attempt_type,
             is_archived=request.is_archived,

@@ -27,6 +27,7 @@ class RubricFactsItem(BaseModel):
     simulation_id: UUID | None = None
     profile_id: UUID | None = None
     cohort_id: UUID | None = None
+    department_id: UUID | None = None
 
     # Timestamps
     attempt_date: date | None = None
@@ -51,6 +52,9 @@ class GetRubricFactsRequest(BaseModel):
     profile_id: UUID | None = Field(default=None, description="Filter by profile ID")
     cohort_ids: list[UUID] | None = Field(
         default=None, description="Filter by cohort IDs"
+    )
+    department_ids: list[UUID] | None = Field(
+        default=None, description="Filter by department IDs"
     )
     simulation_ids: list[UUID] | None = Field(
         default=None, description="Filter by simulation IDs"
@@ -89,6 +93,9 @@ class GetRubricFactsResponse(BaseModel):
     # Filter options (for dropdowns)
     rubric_options: list[FilterOption] | None = Field(
         default=None, description="Available rubric filter options"
+    )
+    department_options: list[FilterOption] | None = Field(
+        default=None, description="Available department filter options"
     )
     simulation_options: list[FilterOption] | None = Field(
         default=None, description="Available simulation filter options"

@@ -5,6 +5,21 @@
 
 
 -- Resource rows
+INSERT INTO public.prompts_resource (created_at, system_prompt, name, description, active, id, generated, mcp) VALUES ('2026-02-01T01:37:01.720364+00:00', 'You are a grading agent responsible for providing detailed feedback on student performance in educational simulations.
+
+## Your Tools
+- **create_feedback**: Provide overall feedback summary for a grade
+- **create_analysis**: Write detailed analysis of performance
+- **create_strength**: Highlight specific things the student did well
+- **create_improvement**: Suggest specific areas for improvement
+- **create_highlight**: Mark notable text sections in messages (linked to strengths)
+- **create_replacement**: Suggest text replacements for improvements
+
+## Guidelines
+- Provide constructive, actionable feedback
+- Be specific - reference actual messages and content
+- Balance strengths with improvements
+- Highlights and replacements should reference specific text', 'Grade Agent System Prompt', 'System prompt for grading feedback agents', true, '019c16d8-a12e-7c64-89a1-74ced40a25f5', false, false) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.agents_resource (created_at, active, generated, mcp, id, name, description, department_ids, temperature, reasoning, tool_ids, quality, voice, model_id, prompt_id, instruction_ids) VALUES ('2026-02-03T19:33:56.323152+00:00', true, false, false, '019c24ff-49e3-7512-8173-2ea2ac8c3670', 'Grade Agent', 'Agent responsible for providing detailed feedback on student performance in educational simulations', '{}', NULL, NULL, '{019bebc4-d436-7bac-88c6-8d40538bcb49,019bebc4-d436-7bb7-964b-e3ad705be38d,019bebc4-d436-7bbb-bd65-5f158fd12e4d,019c16d8-a124-7d9a-8547-20d809a13daa,019c16d8-a125-7364-8818-8035df41de53,019bebc4-d436-7ba4-963e-758c7971447d}', NULL, NULL, '019bb25e-e5ff-76f6-90d4-830670bb5d82', '019c16d8-a12e-7c64-89a1-74ced40a25f5', '{019bcd1c-3357-7009-a18c-55604e211cac,019c16d8-a12e-7da6-ba14-f0c2cd75a4eb}') ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.descriptions_resource (id, description, created_at, active, generated, mcp) VALUES ('019bcd1c-3348-728b-aa5b-4687e69e40e9', 'AI agent for generating and managing field resources including names, descriptions, flags, departments, and conditional parameters using GPT-5.1', '2026-01-17T17:58:56.069266+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.names_resource (id, name, created_at, active, generated, mcp) VALUES ('019bcd1c-3348-701e-b254-b80e6423ffab', 'Field', '2026-01-17T17:58:56.069266+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;

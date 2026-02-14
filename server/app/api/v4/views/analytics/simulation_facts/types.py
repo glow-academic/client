@@ -25,6 +25,7 @@ class SimulationFactsItem(BaseModel):
     document_ids: list[UUID] = Field(default_factory=list)
     profile_id: UUID | None = None
     cohort_id: UUID | None = None
+    department_id: UUID | None = None
 
     # Measures
     grade_percent: float | None = None
@@ -54,6 +55,9 @@ class GetSimulationFactsRequest(BaseModel):
     profile_id: UUID | None = Field(default=None, description="Filter by profile ID")
     cohort_ids: list[UUID] | None = Field(
         default=None, description="Filter by cohort IDs"
+    )
+    department_ids: list[UUID] | None = Field(
+        default=None, description="Filter by department IDs"
     )
     simulation_ids: list[UUID] | None = Field(
         default=None, description="Filter by simulation IDs"
@@ -90,6 +94,9 @@ class GetSimulationFactsResponse(BaseModel):
     total_count: int = Field(default=0, description="Total count before pagination")
 
     # Filter options (for dropdowns)
+    department_options: list[FilterOption] | None = Field(
+        default=None, description="Available department filter options"
+    )
     simulation_options: list[FilterOption] | None = Field(
         default=None, description="Available simulation filter options"
     )

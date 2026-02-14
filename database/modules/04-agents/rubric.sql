@@ -5,6 +5,22 @@
 
 
 -- Resource rows
+INSERT INTO public.prompts_resource (created_at, system_prompt, name, description, active, id, generated, mcp) VALUES ('2025-12-19T19:02:10.222381+00:00', 'You are the Rubric Artifact Generation Agent for v4.
+
+Generate or update only the requested rubric resource_types:
+names, descriptions, departments, flags, points, pass_points, standard_groups, standards.
+
+Rules:
+- Operate only on requested resource_types.
+- Prefer existing suitable resources when available.
+- Create only what is needed for missing or weak selections.
+- Keep total points and pass points coherent.
+- Keep standard groups and standards consistent with rubric intent.
+- Do not invent IDs; use IDs from context when linking.
+
+Output:
+- Return only valid tool calls and arguments.
+- Do not output narrative text.', 'Rubric', 'System prompt for rubric generation agents', true, '019b3be4-36fe-7e8e-bdfd-05e834f7834d', false, false) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.agents_resource (created_at, active, generated, mcp, id, name, description, department_ids, temperature, reasoning, tool_ids, quality, voice, model_id, prompt_id, instruction_ids) VALUES ('2025-12-19T19:02:10.223443+00:00', true, false, false, '019bb25e-e5f2-7f73-abf4-164c630526b2', 'Rubric', 'Agent for generating rubric descriptions and grid cell content', '{}', NULL, NULL, '{019bebc4-d436-7c35-9f98-31957504bf95,019bebc4-d436-7bf6-af0e-91e685a8f15e,019bebc4-d436-7c14-a42e-f45a12c4fdb0,019bebc4-d436-7c48-bbb0-2700d1deb830,019bebc4-d436-7bc3-aadf-8fb01ebadfdb,019bebc4-d436-7c01-b86b-9483883762a6}', NULL, NULL, '019bb25e-e5ff-76f6-90d4-830670bb5d82', '019b3be4-36fe-7e8e-bdfd-05e834f7834d', '{019bcd1b-0c44-7d26-927b-8b7a081ffac3}') ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.descriptions_resource (id, description, created_at, active, generated, mcp) VALUES ('019b995c-8ea1-7cb0-9364-428e72031db8', 'Agent for generating rubric descriptions and grid cell content', '2025-12-19T19:02:10.223443+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.instructions_resource (id, template, active, created_at, generated, mcp) VALUES ('019bcd1b-0c44-7d26-927b-8b7a081ffac3', '## Current Draft Context
@@ -29,22 +45,6 @@ INSERT INTO public.instructions_resource (id, template, active, created_at, gene
 - Keep points and pass_points coherent.
 - Keep standard groups and standards mutually consistent.', true, '2026-01-17T17:57:40.543786+00:00', false, false) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.names_resource (id, name, created_at, active, generated, mcp) VALUES ('019b995c-8ea0-7d0b-b711-2e26a9a6ec65', 'Rubric', '2025-12-19T19:02:10.223443+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
-INSERT INTO public.prompts_resource (created_at, system_prompt, name, description, active, id, generated, mcp) VALUES ('2025-12-19T19:02:10.222381+00:00', 'You are the Rubric Artifact Generation Agent for v4.
-
-Generate or update only the requested rubric resource_types:
-names, descriptions, departments, flags, points, pass_points, standard_groups, standards.
-
-Rules:
-- Operate only on requested resource_types.
-- Prefer existing suitable resources when available.
-- Create only what is needed for missing or weak selections.
-- Keep total points and pass points coherent.
-- Keep standard groups and standards consistent with rubric intent.
-- Do not invent IDs; use IDs from context when linking.
-
-Output:
-- Return only valid tool calls and arguments.
-- Do not output narrative text.', 'Rubric', 'System prompt for rubric generation agents', true, '019b3be4-36fe-7e8e-bdfd-05e834f7834d', false, false) ON CONFLICT (id) DO NOTHING;
 
 -- Artifact
 -- agent_artifact

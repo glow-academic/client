@@ -30,6 +30,7 @@ async def get_simulation_facts_internal(
     conn: asyncpg.Connection,
     profile_id: UUID | None = None,
     cohort_ids: list[UUID] | None = None,
+    department_ids: list[UUID] | None = None,
     simulation_ids: list[UUID] | None = None,
     scenario_ids: list[UUID] | None = None,
     attempt_type: str | None = None,
@@ -74,6 +75,9 @@ async def get_simulation_facts_internal(
         {
             "profile_id": str(profile_id) if profile_id else None,
             "cohort_ids": [str(c) for c in cohort_ids] if cohort_ids else None,
+            "department_ids": [str(d) for d in department_ids]
+            if department_ids
+            else None,
             "simulation_ids": [str(s) for s in simulation_ids]
             if simulation_ids
             else None,
@@ -98,6 +102,7 @@ async def get_simulation_facts_internal(
     params = GetAnalyticsSimulationFactsViewSqlParams(
         profile_id_filter=profile_id,
         cohort_ids=cohort_ids,
+        department_ids=department_ids,
         simulation_ids=simulation_ids,
         scenario_ids=scenario_ids,
         attempt_type_filter=attempt_type,
@@ -126,6 +131,7 @@ async def get_simulation_facts_internal(
                     document_ids=list(item.document_ids) if item.document_ids else [],
                     profile_id=item.profile_id,
                     cohort_id=item.cohort_id,
+                    department_id=item.department_id,
                     grade_percent=float(item.grade_percent)
                     if item.grade_percent is not None
                     else None,
@@ -136,6 +142,19 @@ async def get_simulation_facts_internal(
                     is_archived=item.is_archived or False,
                 )
             )
+
+    # Transform department filter options
+    department_options: list[FilterOption] | None = None
+    if result and result.department_options:
+        department_options = [
+            FilterOption(
+                value=opt.value or "",
+                label=opt.label or "",
+                count=opt.count or 0,
+            )
+            for opt in result.department_options
+            if opt.value
+        ]
 
     # Transform simulation filter options
     simulation_options: list[FilterOption] | None = None
@@ -166,6 +185,7 @@ async def get_simulation_facts_internal(
     response = GetSimulationFactsResponse(
         items=items,
         total_count=result.total_count or 0 if result else 0,
+        department_options=department_options,
         simulation_options=simulation_options,
         scenario_options=scenario_options,
     )
@@ -222,6 +242,7 @@ async def get_simulation_facts(
             conn=conn,
             profile_id=request.profile_id,
             cohort_ids=request.cohort_ids,
+            department_ids=request.department_ids,
             simulation_ids=request.simulation_ids,
             scenario_ids=request.scenario_ids,
             attempt_type=request.attempt_type,

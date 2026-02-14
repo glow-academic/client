@@ -5,6 +5,27 @@
 
 
 -- Resource rows
+INSERT INTO public.prompts_resource (created_at, system_prompt, name, description, active, id, generated, mcp) VALUES ('2026-01-17T17:57:40.632192+00:00', 'You are a profile generation agent responsible for creating and managing profile resources for AI-powered training systems.
+
+## Operating Rules
+- Use only tools provided in this run.
+- Keep outputs consistent with the current draft and selected resources.
+- Avoid duplicate creation when a suitable resource already exists.
+
+## Resource Scope
+- names
+- flags
+- request_limits
+- departments
+- emails
+- cohorts
+
+## Quality Bar
+- Names should be clear and role-appropriate.
+- Department/cohort assignments should be coherent with intended profile scope.
+- Email and request-limit configuration should be precise and operationally safe.
+- Keep outputs concise, structured, and directly actionable.
+', 'Profile Agent System Prompt', 'System prompt for profile generation agents that create and manage profile resources', true, '33333333-4444-4444-4444-333333333333', false, false) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.agents_resource (created_at, active, generated, mcp, id, name, description, department_ids, temperature, reasoning, tool_ids, quality, voice, model_id, prompt_id, instruction_ids) VALUES ('2026-02-13T03:41:54.664757+00:00', true, false, false, '019c5517-4673-759e-81e6-40d247dea759', 'Profile', 'AI agent for generating and managing profile resources including names, descriptions, flags, departments, emails, cohorts, and request limits using GPT-5.1', '{}', NULL, NULL, '{019bebc4-d436-7be9-a1d4-e55d4017097e,019bebc4-d436-7bf6-af0e-91e685a8f15e,019bebc4-d436-7c14-a42e-f45a12c4fdb0,019bebc4-d436-7c35-9f98-31957504bf95,019bebc4-d436-7cb5-b393-0f9756ccc867,019bebc4-d436-7cbe-a7bf-4b364674f3e0,019bebc4-d436-7d28-8f22-23d852477486}', NULL, NULL, '019bb25e-e5ff-76f6-90d4-830670bb5d82', '33333333-4444-4444-4444-333333333333', '{019c2f11-4100-7c00-8000-000000000002}') ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.descriptions_resource (id, description, created_at, active, generated, mcp) VALUES ('019bcd1b-0c9b-745c-8a86-2c7fa4b8f759', 'AI agent for generating and managing profile resources including names, descriptions, flags, departments, emails, cohorts, and request limits using GPT-5.1', '2026-01-17T17:57:40.632192+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.instructions_resource (id, template, active, created_at, generated, mcp) VALUES ('019c2f11-4100-7c00-8000-000000000002', '## Current Form State
@@ -104,27 +125,6 @@ Use available resources to avoid unnecessary duplicates. Create only what is mis
 {% endif %}
 ', true, '2026-02-10T19:11:19.088528+00:00', false, false) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.names_resource (id, name, created_at, active, generated, mcp) VALUES ('019bb553-e78d-7ce8-b02f-e1450a346d66', 'Profile', '2026-01-13T03:08:53.512903+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
-INSERT INTO public.prompts_resource (created_at, system_prompt, name, description, active, id, generated, mcp) VALUES ('2026-01-17T17:57:40.632192+00:00', 'You are a profile generation agent responsible for creating and managing profile resources for AI-powered training systems.
-
-## Operating Rules
-- Use only tools provided in this run.
-- Keep outputs consistent with the current draft and selected resources.
-- Avoid duplicate creation when a suitable resource already exists.
-
-## Resource Scope
-- names
-- flags
-- request_limits
-- departments
-- emails
-- cohorts
-
-## Quality Bar
-- Names should be clear and role-appropriate.
-- Department/cohort assignments should be coherent with intended profile scope.
-- Email and request-limit configuration should be precise and operationally safe.
-- Keep outputs concise, structured, and directly actionable.
-', 'Profile Agent System Prompt', 'System prompt for profile generation agents that create and manage profile resources', true, '33333333-4444-4444-4444-333333333333', false, false) ON CONFLICT (id) DO NOTHING;
 
 -- Artifact
 -- agent_artifact

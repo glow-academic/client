@@ -78,6 +78,7 @@ SELECT
     asc_conn.simulations_id AS simulation_id,
     apc.profiles_id AS profile_id,
     acc.cohorts_id AS cohort_id,
+    adc.departments_id AS department_id,
 
     -- Timestamps
     (a.created_at AT TIME ZONE 'UTC')::date AS attempt_date,
@@ -93,6 +94,7 @@ JOIN simulation_attempts_entry a ON a.id = c.attempt_id
 JOIN simulation_attempts_simulations_connection asc_conn ON asc_conn.attempt_id = a.id
 JOIN simulation_attempts_profiles_connection apc ON apc.attempt_id = a.id
 LEFT JOIN simulation_attempts_cohorts_connection acc ON acc.attempt_id = a.id
+LEFT JOIN simulation_attempts_departments_connection adc ON adc.attempt_id = a.id
 JOIN simulation_feedbacks_entry fe ON fe.grade_id = lg.grade_id AND fe.active = TRUE
 JOIN feedbacks_standards_connection fsc ON fsc.feedbacks_id = fe.id
 JOIN standards_resource s ON s.id = fsc.standard_id
@@ -112,6 +114,7 @@ GROUP BY
     asc_conn.simulations_id,
     apc.profiles_id,
     acc.cohorts_id,
+    adc.departments_id,
     a.created_at,
     a.practice,
     a.archived
@@ -141,6 +144,10 @@ CREATE INDEX mv_rubric_facts_profile_id_idx
 CREATE INDEX mv_rubric_facts_cohort_id_idx
     ON mv_rubric_facts (cohort_id)
     WHERE cohort_id IS NOT NULL;
+
+CREATE INDEX mv_rubric_facts_department_id_idx
+    ON mv_rubric_facts (department_id)
+    WHERE department_id IS NOT NULL;
 
 CREATE INDEX mv_rubric_facts_standard_group_id_idx
     ON mv_rubric_facts (standard_group_id);

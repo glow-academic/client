@@ -5,6 +5,21 @@
 
 
 -- Resource rows
+INSERT INTO public.prompts_resource (created_at, system_prompt, name, description, active, id, generated, mcp) VALUES ('2026-01-17T17:57:40.643852+00:00', 'You are the Agent Artifact Generation Agent for v4.
+
+Generate or update only the requested resource_types for an agent artifact:
+names, descriptions, models, prompts, instructions, flags, departments, tools, temperature_levels, reasoning_levels, voices.
+
+Rules:
+- Operate only on requested resource_types.
+- Prefer using existing suitable resources before creating new ones.
+- Do not invent IDs. Use IDs provided in context.
+- Keep outputs deterministic, concise, and production-safe.
+- Keep model/prompt/instruction alignment coherent for the agent role.
+
+Output:
+- Return only valid tool calls and arguments.
+- Do not output narrative text.', 'Agent Agent System Prompt', 'System prompt for agent generation agents', true, '88888888-9999-9999-9999-888888888888', false, false) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.agents_resource (created_at, active, generated, mcp, id, name, description, department_ids, temperature, reasoning, tool_ids, quality, voice, model_id, prompt_id, instruction_ids) VALUES ('2026-02-13T03:41:54.664757+00:00', true, false, false, '019c5517-4670-7a06-8b57-8d054f851772', 'Agent', 'AI agent for generating and managing agent resources including names, descriptions, flags, departments, prompts, instructions, models, and tools using GPT-5.1', '{}', NULL, NULL, '{019bebc4-d436-7bc7-a392-37e8b4549478,019bebc4-d436-7bf6-af0e-91e685a8f15e,019bebc4-d436-7c01-b86b-9483883762a6,019bebc4-d436-7c14-a42e-f45a12c4fdb0,019bebc4-d436-7c20-b35a-73c9819b708a,019bebc4-d436-7c2e-af8f-40ed4aa3edaf,019bebc4-d436-7c35-9f98-31957504bf95,019bebc4-d436-7cc0-a482-5c0fad4f04e9,019bebc4-d436-7ccb-b52a-fa65793c95ce,019bebc4-d436-7ccc-9e9c-6f4b2a633f9d}', NULL, NULL, '019bb25e-e5ff-76f6-90d4-830670bb5d82', '88888888-9999-9999-9999-888888888888', '{019c2f13-4200-7c00-8000-000000000001}') ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.descriptions_resource (id, description, created_at, active, generated, mcp) VALUES ('019bcd1b-0ca6-789c-9a76-7890886df5e7', 'AI agent for generating and managing agent resources including names, descriptions, flags, departments, prompts, instructions, models, and tools using GPT-5.1', '2026-01-17T17:57:40.643852+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.instructions_resource (id, template, active, created_at, generated, mcp) VALUES ('019c2f13-4200-7c00-8000-000000000001', '## Current Draft Context
@@ -32,21 +47,6 @@ INSERT INTO public.instructions_resource (id, template, active, created_at, gene
 - Keep naming/description specific and non-generic.
 - Keep model/prompt/instruction consistency high.', true, '2026-02-10T19:12:47.645232+00:00', false, false) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.names_resource (id, name, created_at, active, generated, mcp) VALUES ('019bcd1b-0ca6-75a6-8b1c-c88ec47260b2', 'Agent', '2026-01-17T17:57:40.643852+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
-INSERT INTO public.prompts_resource (created_at, system_prompt, name, description, active, id, generated, mcp) VALUES ('2026-01-17T17:57:40.643852+00:00', 'You are the Agent Artifact Generation Agent for v4.
-
-Generate or update only the requested resource_types for an agent artifact:
-names, descriptions, models, prompts, instructions, flags, departments, tools, temperature_levels, reasoning_levels, voices.
-
-Rules:
-- Operate only on requested resource_types.
-- Prefer using existing suitable resources before creating new ones.
-- Do not invent IDs. Use IDs provided in context.
-- Keep outputs deterministic, concise, and production-safe.
-- Keep model/prompt/instruction alignment coherent for the agent role.
-
-Output:
-- Return only valid tool calls and arguments.
-- Do not output narrative text.', 'Agent Agent System Prompt', 'System prompt for agent generation agents', true, '88888888-9999-9999-9999-888888888888', false, false) ON CONFLICT (id) DO NOTHING;
 
 -- Artifact
 -- agent_artifact

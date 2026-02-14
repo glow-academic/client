@@ -20,6 +20,7 @@ class CohortFactsItem(BaseModel):
     attempt_id: UUID | None = None
     profile_id: UUID | None = None
     cohort_id: UUID | None = None
+    department_id: UUID | None = None
     simulation_id: UUID | None = None
     persona_id: UUID | None = None
 
@@ -56,6 +57,9 @@ class GetCohortFactsRequest(BaseModel):
     cohort_ids: list[UUID] | None = Field(
         default=None, description="Filter by cohort IDs"
     )
+    department_ids: list[UUID] | None = Field(
+        default=None, description="Filter by department IDs"
+    )
     simulation_ids: list[UUID] | None = Field(
         default=None, description="Filter by simulation IDs"
     )
@@ -90,6 +94,9 @@ class GetCohortFactsResponse(BaseModel):
     # Filter options (for dropdowns)
     cohort_options: list[FilterOption] | None = Field(
         default=None, description="Available cohort filter options"
+    )
+    department_options: list[FilterOption] | None = Field(
+        default=None, description="Available department filter options"
     )
     simulation_options: list[FilterOption] | None = Field(
         default=None, description="Available simulation filter options"

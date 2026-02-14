@@ -30,6 +30,7 @@ async def get_rubric_facts_internal(
     conn: asyncpg.Connection,
     profile_id: UUID | None = None,
     cohort_ids: list[UUID] | None = None,
+    department_ids: list[UUID] | None = None,
     simulation_ids: list[UUID] | None = None,
     rubric_ids: list[UUID] | None = None,
     attempt_type: str | None = None,
@@ -74,6 +75,9 @@ async def get_rubric_facts_internal(
         {
             "profile_id": str(profile_id) if profile_id else None,
             "cohort_ids": [str(c) for c in cohort_ids] if cohort_ids else None,
+            "department_ids": [str(d) for d in department_ids]
+            if department_ids
+            else None,
             "simulation_ids": [str(s) for s in simulation_ids]
             if simulation_ids
             else None,
@@ -98,6 +102,7 @@ async def get_rubric_facts_internal(
     params = GetAnalyticsRubricFactsViewSqlParams(
         profile_id_filter=profile_id,
         cohort_ids=cohort_ids,
+        department_ids=department_ids,
         simulation_ids=simulation_ids,
         rubric_ids=rubric_ids,
         attempt_type_filter=attempt_type,
@@ -127,6 +132,7 @@ async def get_rubric_facts_internal(
                     simulation_id=item.simulation_id,
                     profile_id=item.profile_id,
                     cohort_id=item.cohort_id,
+                    department_id=item.department_id,
                     attempt_date=item.attempt_date,
                     attempt_type=item.attempt_type,
                     is_archived=item.is_archived or False,
@@ -143,6 +149,19 @@ async def get_rubric_facts_internal(
                 count=opt.count or 0,
             )
             for opt in result.rubric_options
+            if opt.value
+        ]
+
+    # Transform department filter options
+    department_options: list[FilterOption] | None = None
+    if result and result.department_options:
+        department_options = [
+            FilterOption(
+                value=opt.value or "",
+                label=opt.label or "",
+                count=opt.count or 0,
+            )
+            for opt in result.department_options
             if opt.value
         ]
 
@@ -176,6 +195,7 @@ async def get_rubric_facts_internal(
         items=items,
         total_count=result.total_count or 0 if result else 0,
         rubric_options=rubric_options,
+        department_options=department_options,
         simulation_options=simulation_options,
         standard_group_options=standard_group_options,
     )
@@ -232,6 +252,7 @@ async def get_rubric_facts(
             conn=conn,
             profile_id=request.profile_id,
             cohort_ids=request.cohort_ids,
+            department_ids=request.department_ids,
             simulation_ids=request.simulation_ids,
             rubric_ids=request.rubric_ids,
             attempt_type=request.attempt_type,

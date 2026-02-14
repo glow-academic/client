@@ -96,6 +96,7 @@ SELECT
     cs.document_ids,
     apc.profiles_id AS profile_id,
     acc.cohorts_id AS cohort_id,
+    adc.departments_id AS department_id,
 
     -- Measures
     CASE
@@ -118,6 +119,7 @@ JOIN simulation_attempts_entry a ON a.id = c.attempt_id
 JOIN simulation_attempts_simulations_connection asc_conn ON asc_conn.attempt_id = a.id
 JOIN simulation_attempts_profiles_connection apc ON apc.attempt_id = a.id
 LEFT JOIN simulation_attempts_cohorts_connection acc ON acc.attempt_id = a.id
+LEFT JOIN simulation_attempts_departments_connection adc ON adc.attempt_id = a.id
 LEFT JOIN latest_grade lg ON lg.chat_id = c.id
 LEFT JOIN chat_scope cs ON cs.chat_id = c.id
 WHERE c.active = TRUE
@@ -149,6 +151,10 @@ CREATE INDEX mv_simulation_facts_profile_id_idx
 CREATE INDEX mv_simulation_facts_cohort_id_idx
     ON mv_simulation_facts (cohort_id)
     WHERE cohort_id IS NOT NULL;
+
+CREATE INDEX mv_simulation_facts_department_id_idx
+    ON mv_simulation_facts (department_id)
+    WHERE department_id IS NOT NULL;
 
 CREATE INDEX mv_simulation_facts_persona_id_idx
     ON mv_simulation_facts (persona_id)

@@ -66,6 +66,7 @@ CREATE TYPE types.q_get_analytics_simulation_facts_view_v4_item AS (
     document_ids uuid[],
     profile_id uuid,
     cohort_id uuid,
+    department_id uuid,
 
     -- Measures
     grade_percent numeric,
@@ -95,6 +96,7 @@ CREATE OR REPLACE FUNCTION api_get_analytics_simulation_facts_view_v4(
     -- Filters
     profile_id_filter uuid DEFAULT NULL,
     cohort_ids uuid[] DEFAULT NULL,
+    department_ids uuid[] DEFAULT NULL,
     simulation_ids uuid[] DEFAULT NULL,
     scenario_ids uuid[] DEFAULT NULL,
     attempt_type_filter text DEFAULT NULL,      -- 'general' | 'practice' | NULL (both)
@@ -111,6 +113,7 @@ CREATE OR REPLACE FUNCTION api_get_analytics_simulation_facts_view_v4(
 RETURNS TABLE (
     items types.q_get_analytics_simulation_facts_view_v4_item[],
     total_count int,
+    department_options types.q_get_analytics_simulation_facts_view_v4_option[],
     simulation_options types.q_get_analytics_simulation_facts_view_v4_option[],
     scenario_options types.q_get_analytics_simulation_facts_view_v4_option[]
 )
@@ -129,6 +132,7 @@ AS $$
             sf.document_ids,
             sf.profile_id,
             sf.cohort_id,
+            sf.department_id,
             sf.grade_percent,
             sf.passed,
             sf.completed,
@@ -141,6 +145,8 @@ AS $$
             (profile_id_filter IS NULL OR sf.profile_id = profile_id_filter)
             -- Cohort IDs filter
             AND (cohort_ids IS NULL OR cardinality(cohort_ids) = 0 OR sf.cohort_id = ANY(cohort_ids))
+            -- Department IDs filter
+            AND (department_ids IS NULL OR cardinality(department_ids) = 0 OR sf.department_id = ANY(department_ids))
             -- Simulation IDs filter
             AND (simulation_ids IS NULL OR cardinality(simulation_ids) = 0 OR sf.simulation_id = ANY(simulation_ids))
             -- Scenario IDs filter
@@ -184,6 +190,7 @@ AS $$
                     document_ids,
                     profile_id,
                     cohort_id,
+                    department_id,
                     grade_percent,
                     passed,
                     completed,
@@ -195,6 +202,26 @@ AS $$
             ARRAY[]::types.q_get_analytics_simulation_facts_view_v4_item[]
         ) AS items
         FROM sorted
+    ),
+    -- Department filter options (from filtered, not sorted)
+    department_options_cte AS (
+        SELECT
+            f.department_id::text AS value,
+            f.department_id::text AS label,  -- Label resolved by handler
+            COUNT(DISTINCT f.chat_id)::int AS count
+        FROM filtered f
+        WHERE f.department_id IS NOT NULL
+        GROUP BY f.department_id
+        ORDER BY count DESC, value
+    ),
+    department_options_agg AS (
+        SELECT COALESCE(
+            ARRAY_AGG(
+                (value, label, count)::types.q_get_analytics_simulation_facts_view_v4_option
+            ),
+            ARRAY[]::types.q_get_analytics_simulation_facts_view_v4_option[]
+        ) AS options
+        FROM department_options_cte
     ),
     -- Simulation filter options (from filtered, not sorted)
     simulation_options_cte AS (
@@ -239,6 +266,7 @@ AS $$
     SELECT
         (SELECT items FROM items_agg),
         (SELECT total FROM counted),
+        (SELECT options FROM department_options_agg),
         (SELECT options FROM simulation_options_agg),
         (SELECT options FROM scenario_options_agg);
 $$;

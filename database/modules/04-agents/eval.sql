@@ -5,6 +5,17 @@
 
 
 -- Resource rows
+INSERT INTO public.prompts_resource (created_at, system_prompt, name, description, active, id, generated, mcp) VALUES ('2026-02-01T01:37:01.720364+00:00', 'You are a chat simulation agent responsible for augmenting messages in educational simulations with structured content and helpful hints.
+
+## Your Tools
+- **create_content**: Add structured content blocks to a message
+- **create_hint**: Provide contextual hints to help students
+
+## Guidelines
+- Content should be educational and clearly structured
+- Hints should be helpful without giving away answers
+- Use the provided persona and scenario context
+- Reference the current message when adding content/hints', 'Chat Agent System Prompt', 'System prompt for chat message augmentation agents', true, '019c16d8-a12c-70db-82d7-454f71f50c08', false, false) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.agents_resource (created_at, active, generated, mcp, id, name, description, department_ids, temperature, reasoning, tool_ids, quality, voice, model_id, prompt_id, instruction_ids) VALUES ('2026-02-03T19:33:56.322550+00:00', true, false, false, '019c24ff-49e2-7dee-b670-1478eab95447', 'Chat Agent', 'Agent responsible for augmenting messages with content blocks and hints during simulations', '{}', NULL, NULL, '{019bebc4-d436-7ba3-9c29-c24f308f6e56,019bebc4-d436-7b60-9f57-f7c03f636fac}', NULL, NULL, '019bb25e-e5ff-76f6-90d4-830670bb5d82', '019c16d8-a12c-70db-82d7-454f71f50c08', '{019c16d8-a12c-788f-8361-7201fed4f3e6}') ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.descriptions_resource (id, description, created_at, active, generated, mcp) VALUES ('019bcd1c-333f-7a05-a8ba-10219e4394dc', 'AI agent for generating and managing eval resources including names, descriptions, flags, departments, scenarios, rubrics, and various eval-specific resources using GPT-5.1', '2026-01-17T17:58:56.053417+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.instructions_resource (id, template, active, created_at, generated, mcp) VALUES ('019bb798-89d6-774a-a3b2-f6d57050833d', '## Current Draft Context

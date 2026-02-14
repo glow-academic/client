@@ -61,6 +61,7 @@ CREATE TYPE types.q_get_analytics_cohort_facts_view_v4_item AS (
     attempt_id uuid,
     profile_id uuid,
     cohort_id uuid,
+    department_id uuid,
     simulation_id uuid,
     persona_id uuid,
 
@@ -96,6 +97,7 @@ CREATE OR REPLACE FUNCTION api_get_analytics_cohort_facts_view_v4(
     -- Filters
     profile_id_filter uuid DEFAULT NULL,
     cohort_ids uuid[] DEFAULT NULL,
+    department_ids uuid[] DEFAULT NULL,
     simulation_ids uuid[] DEFAULT NULL,
     attempt_type_filter text DEFAULT NULL,      -- 'general' | 'practice' | NULL (both)
     is_archived_filter boolean DEFAULT FALSE,
@@ -112,6 +114,7 @@ RETURNS TABLE (
     items types.q_get_analytics_cohort_facts_view_v4_item[],
     total_count int,
     cohort_options types.q_get_analytics_cohort_facts_view_v4_option[],
+    department_options types.q_get_analytics_cohort_facts_view_v4_option[],
     simulation_options types.q_get_analytics_cohort_facts_view_v4_option[],
     persona_options types.q_get_analytics_cohort_facts_view_v4_option[]
 )
@@ -126,6 +129,7 @@ AS $$
             cf.attempt_id,
             cf.profile_id,
             cf.cohort_id,
+            cf.department_id,
             cf.simulation_id,
             cf.persona_id,
             cf.attempt_date,
@@ -142,6 +146,8 @@ AS $$
             (profile_id_filter IS NULL OR cf.profile_id = profile_id_filter)
             -- Cohort IDs filter
             AND (cohort_ids IS NULL OR cardinality(cohort_ids) = 0 OR cf.cohort_id = ANY(cohort_ids))
+            -- Department IDs filter
+            AND (department_ids IS NULL OR cardinality(department_ids) = 0 OR cf.department_id = ANY(department_ids))
             -- Simulation IDs filter
             AND (simulation_ids IS NULL OR cardinality(simulation_ids) = 0 OR cf.simulation_id = ANY(simulation_ids))
             -- Attempt type filter
@@ -179,6 +185,7 @@ AS $$
                     attempt_id,
                     profile_id,
                     cohort_id,
+                    department_id,
                     simulation_id,
                     persona_id,
                     attempt_date,
@@ -214,6 +221,26 @@ AS $$
             ARRAY[]::types.q_get_analytics_cohort_facts_view_v4_option[]
         ) AS options
         FROM cohort_options_cte
+    ),
+    -- Department filter options (from filtered, not sorted)
+    department_options_cte AS (
+        SELECT
+            f.department_id::text AS value,
+            f.department_id::text AS label,  -- Label resolved by handler
+            COUNT(DISTINCT f.chat_id)::int AS count
+        FROM filtered f
+        WHERE f.department_id IS NOT NULL
+        GROUP BY f.department_id
+        ORDER BY count DESC, value
+    ),
+    department_options_agg AS (
+        SELECT COALESCE(
+            ARRAY_AGG(
+                (value, label, count)::types.q_get_analytics_cohort_facts_view_v4_option
+            ),
+            ARRAY[]::types.q_get_analytics_cohort_facts_view_v4_option[]
+        ) AS options
+        FROM department_options_cte
     ),
     -- Simulation filter options (from filtered, not sorted)
     simulation_options_cte AS (
@@ -259,6 +286,7 @@ AS $$
         (SELECT items FROM items_agg),
         (SELECT total FROM counted),
         (SELECT options FROM cohort_options_agg),
+        (SELECT options FROM department_options_agg),
         (SELECT options FROM simulation_options_agg),
         (SELECT options FROM persona_options_agg);
 $$;

@@ -5,6 +5,23 @@
 
 
 -- Resource rows
+INSERT INTO public.prompts_resource (created_at, system_prompt, name, description, active, id, generated, mcp) VALUES ('2025-12-02T13:15:00.683340+00:00', 'You are a document generation agent responsible for creating and managing document resources for AI-powered training content.
+
+## Operating Rules
+- Use only tools provided in this run.
+- Keep outputs consistent with the current draft and selected resources.
+- Avoid duplicate creation when a suitable resource already exists.
+
+## Document Quality
+- Produce clear, structured, and practical document content.
+- Ensure naming/description and supporting resources (fields/uploads/images/text) remain coherent.
+- Keep generated templates and schema definitions aligned with each other.
+
+## Tooling Expectations
+- When generating document templates, ensure template structure and variable definitions are consistent.
+- When creating supporting resources (fields/uploads/images/text), keep IDs and semantics stable for downstream save flows.
+- Prefer concise, deterministic outputs that are directly actionable.
+', 'Document Agent System Prompt', 'System prompt for document generation agents', true, '019b3be4-36fe-7be0-9e4c-1981f6603d55', false, false) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.agents_resource (created_at, active, generated, mcp, id, name, description, department_ids, temperature, reasoning, tool_ids, quality, voice, model_id, prompt_id, instruction_ids) VALUES ('2025-12-02T13:15:00.683340+00:00', true, false, false, '019bb25e-e5f2-7f7a-ba83-2e756143cec4', 'Document', 'Agent for generating and working with documents, templates, and structured content', '{}', NULL, NULL, '{019bebc4-d436-7c35-9f98-31957504bf95,019bebc4-d436-7c01-b86b-9483883762a6,019bebc4-d436-7c14-a42e-f45a12c4fdb0,019bebc4-d436-7b73-a506-0b196bce4ada,019bebc4-d436-7bcc-b38a-2799877eb259,019bebc4-d436-7bf6-af0e-91e685a8f15e,019bebc4-d436-7d16-8107-8dc0086e3182,019bebc4-d436-7d1d-9e14-3299c8677730,019bebc4-d436-78e3-ae05-f12509f43557,019bebc4-d436-7c3e-b71d-a48e787dafc1,019bebc4-d436-7d20-945d-557447e427bd}', NULL, NULL, '019bb25e-e5ff-7793-a3bb-74e2548d9062', '019b3be4-36fe-7be0-9e4c-1981f6603d55', '{019b8c1f-2a67-7352-9eb5-3bfe0b853b10}') ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.descriptions_resource (id, description, created_at, active, generated, mcp) VALUES ('019b995c-8ea1-7cc3-af43-22701005aebd', 'Agent for generating and working with documents, templates, and structured content', '2025-12-02T13:15:00.683340+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.instructions_resource (id, template, active, created_at, generated, mcp) VALUES ('019b8c1f-2a67-7352-9eb5-3bfe0b853b10', '## Current Form State
@@ -140,23 +157,6 @@ Use available resources to avoid unnecessary duplicates. Create only what is mis
 {% endif %}
 ', true, '2026-01-05T03:06:51.366493+00:00', false, false) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.names_resource (id, name, created_at, active, generated, mcp) VALUES ('019b995c-8ea0-7d03-a4e4-614e3dca72a2', 'Document', '2025-12-02T13:15:00.683340+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
-INSERT INTO public.prompts_resource (created_at, system_prompt, name, description, active, id, generated, mcp) VALUES ('2025-12-02T13:15:00.683340+00:00', 'You are a document generation agent responsible for creating and managing document resources for AI-powered training content.
-
-## Operating Rules
-- Use only tools provided in this run.
-- Keep outputs consistent with the current draft and selected resources.
-- Avoid duplicate creation when a suitable resource already exists.
-
-## Document Quality
-- Produce clear, structured, and practical document content.
-- Ensure naming/description and supporting resources (fields/uploads/images/text) remain coherent.
-- Keep generated templates and schema definitions aligned with each other.
-
-## Tooling Expectations
-- When generating document templates, ensure template structure and variable definitions are consistent.
-- When creating supporting resources (fields/uploads/images/text), keep IDs and semantics stable for downstream save flows.
-- Prefer concise, deterministic outputs that are directly actionable.
-', 'Document Agent System Prompt', 'System prompt for document generation agents', true, '019b3be4-36fe-7be0-9e4c-1981f6603d55', false, false) ON CONFLICT (id) DO NOTHING;
 
 -- Artifact
 -- agent_artifact

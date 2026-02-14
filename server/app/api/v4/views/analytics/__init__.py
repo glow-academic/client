@@ -8,6 +8,7 @@ from app.api.v4.views.analytics.cohort_facts import router as cohort_facts_route
 from app.api.v4.views.analytics.daily_metrics import router as daily_metrics_router
 from app.api.v4.views.analytics.health import router as health_router
 from app.api.v4.views.analytics.pricing import router as pricing_router
+from app.api.v4.views.analytics.profile_facts import router as profile_facts_router
 from app.api.v4.views.analytics.profile_metrics import router as profile_metrics_router
 from app.api.v4.views.analytics.rubric_facts import router as rubric_facts_router
 from app.api.v4.views.analytics.simulation_facts import (
@@ -27,6 +28,11 @@ router.include_router(
     daily_metrics_router,
     prefix="/daily-metrics",
     tags=["daily_metrics"],
+)
+router.include_router(
+    profile_facts_router,
+    prefix="/profile-facts",
+    tags=["profile_facts"],
 )
 router.include_router(
     profile_metrics_router,

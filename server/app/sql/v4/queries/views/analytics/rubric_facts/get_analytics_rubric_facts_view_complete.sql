@@ -68,6 +68,7 @@ CREATE TYPE types.q_get_analytics_rubric_facts_view_v4_item AS (
     simulation_id uuid,
     profile_id uuid,
     cohort_id uuid,
+    department_id uuid,
 
     -- Timestamps
     attempt_date date,
@@ -92,6 +93,7 @@ CREATE OR REPLACE FUNCTION api_get_analytics_rubric_facts_view_v4(
     -- Filters
     profile_id_filter uuid DEFAULT NULL,
     cohort_ids uuid[] DEFAULT NULL,
+    department_ids uuid[] DEFAULT NULL,
     simulation_ids uuid[] DEFAULT NULL,
     rubric_ids uuid[] DEFAULT NULL,
     attempt_type_filter text DEFAULT NULL,      -- 'general' | 'practice' | NULL (both)
@@ -109,6 +111,7 @@ RETURNS TABLE (
     items types.q_get_analytics_rubric_facts_view_v4_item[],
     total_count int,
     rubric_options types.q_get_analytics_rubric_facts_view_v4_option[],
+    department_options types.q_get_analytics_rubric_facts_view_v4_option[],
     simulation_options types.q_get_analytics_rubric_facts_view_v4_option[],
     standard_group_options types.q_get_analytics_rubric_facts_view_v4_option[]
 )
@@ -126,6 +129,7 @@ AS $$
             rf.simulation_id,
             rf.profile_id,
             rf.cohort_id,
+            rf.department_id,
             rf.attempt_date,
             rf.attempt_type,
             rf.is_archived
@@ -135,6 +139,8 @@ AS $$
             (profile_id_filter IS NULL OR rf.profile_id = profile_id_filter)
             -- Cohort IDs filter
             AND (cohort_ids IS NULL OR cardinality(cohort_ids) = 0 OR rf.cohort_id = ANY(cohort_ids))
+            -- Department IDs filter
+            AND (department_ids IS NULL OR cardinality(department_ids) = 0 OR rf.department_id = ANY(department_ids))
             -- Simulation IDs filter
             AND (simulation_ids IS NULL OR cardinality(simulation_ids) = 0 OR rf.simulation_id = ANY(simulation_ids))
             -- Rubric IDs filter
@@ -177,6 +183,7 @@ AS $$
                     simulation_id,
                     profile_id,
                     cohort_id,
+                    department_id,
                     attempt_date,
                     attempt_type,
                     is_archived
@@ -205,6 +212,26 @@ AS $$
             ARRAY[]::types.q_get_analytics_rubric_facts_view_v4_option[]
         ) AS options
         FROM rubric_options_cte
+    ),
+    -- Department filter options (from filtered, not sorted)
+    department_options_cte AS (
+        SELECT
+            f.department_id::text AS value,
+            f.department_id::text AS label,  -- Label resolved by handler
+            COUNT(DISTINCT f.chat_id)::int AS count
+        FROM filtered f
+        WHERE f.department_id IS NOT NULL
+        GROUP BY f.department_id
+        ORDER BY count DESC, value
+    ),
+    department_options_agg AS (
+        SELECT COALESCE(
+            ARRAY_AGG(
+                (value, label, count)::types.q_get_analytics_rubric_facts_view_v4_option
+            ),
+            ARRAY[]::types.q_get_analytics_rubric_facts_view_v4_option[]
+        ) AS options
+        FROM department_options_cte
     ),
     -- Simulation filter options (from filtered, not sorted)
     simulation_options_cte AS (
@@ -250,6 +277,7 @@ AS $$
         (SELECT items FROM items_agg),
         (SELECT total FROM counted),
         (SELECT options FROM rubric_options_agg),
+        (SELECT options FROM department_options_agg),
         (SELECT options FROM simulation_options_agg),
         (SELECT options FROM standard_group_options_agg);
 $$;

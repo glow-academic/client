@@ -5,6 +5,28 @@
 
 
 -- Resource rows
+INSERT INTO public.prompts_resource (created_at, system_prompt, name, description, active, id, generated, mcp) VALUES ('2026-01-30T03:00:52.718855+00:00', 'You are a simulation generation agent responsible for creating and managing simulation resources for AI-powered training simulations.
+
+## Operating Mode
+For each requested resource type, choose exactly one approach:
+1. Use existing resources with `use_*` tools when suitable items already exist.
+2. Create new resources with `create_*` tools only when suitable items do not exist.
+
+## Resource Rules
+- Reuse departments, flags, and scenarios when valid options exist.
+- Keep names/descriptions and scenario configuration resources consistent with current draft state.
+- For time configuration creation, `create_times` must reference the target `scenario_id` and produce `time_limit_seconds`.
+
+## Tooling Rules
+- Use only provided tools.
+- Prefer deterministic IDs from context for `use_*` tools.
+- Do not call both create and use for the same resource type unless required by dependencies.
+
+## Quality Bar
+- Names/descriptions should be specific and non-generic.
+- Scenario flags/positions/rubrics/time limits must be internally consistent with selected scenarios.
+- Keep outputs concise, structured, and directly actionable.
+', 'Simulation Agent System Prompt', 'System prompt for simulation generation agents that create and manage simulation resources', true, '019c0cd8-ad7d-79da-8469-639662fc6a3f', false, false) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.agents_resource (created_at, active, generated, mcp, id, name, description, department_ids, temperature, reasoning, tool_ids, quality, voice, model_id, prompt_id, instruction_ids) VALUES ('2026-02-13T03:41:54.664757+00:00', true, false, false, '019c5517-4673-775e-852f-114fee676a28', 'Simulation', 'AI agent for generating and managing simulation scenario resources including scenarios, scenario positions, scenario flags, and scenario rubric grade agents', '{}', NULL, NULL, '{019bebc4-d436-7c01-b86b-9483883762a6,019bebc4-d436-7cb0-a120-7762b81276c3,019bebc4-d436-7c7f-a1f3-9bc8a7bc70ba,019bebc4-d436-7c35-9f98-31957504bf95,019bebc4-d436-7d09-a5fb-d51eae133785,019c06a8-2af4-7c97-ab30-1e863db0e8e3,019c06a8-2af5-705d-ae92-7905a846a500,019c06a8-2af5-766c-9713-315ab9567235,019c06a8-2af6-727b-b94a-71bddc4d76de,019c0cd8-ad73-72dd-8a41-ea5b247384db,019c0cd8-ad73-7621-b92d-91764faa013e,019c0cd8-ad73-781f-a3aa-1f1049dd213c,019c0cd8-ad73-7a10-805f-28e22f591d29,019c0cd8-ad73-7b6f-b393-86ceeddd1beb}', NULL, NULL, '019bb25e-e5ff-7781-b262-7c33d17dec4f', '019c0cd8-ad7d-79da-8469-639662fc6a3f', '{019c0cd8-ad7e-785c-a3d5-6999d78c5b2c}') ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.descriptions_resource (id, description, created_at, active, generated, mcp) VALUES ('019bb544-1328-7d59-8ae7-68bea0af451c', 'AI agent for generating and managing simulation scenario resources including scenarios, scenario positions, scenario flags, and scenario rubric grade agents', '2026-01-13T02:51:36.094810+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.instructions_resource (id, template, active, created_at, generated, mcp) VALUES ('019c0cd8-ad7e-785c-a3d5-6999d78c5b2c', '## Current Form State
@@ -157,28 +179,6 @@ Choose one action per resource type:
 {% endif %}
 ', true, '2026-01-30T03:00:52.718855+00:00', false, false) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.names_resource (id, name, created_at, active, generated, mcp) VALUES ('019bb544-1328-7380-8dce-3092e322e289', 'Simulation', '2026-01-13T02:51:36.094810+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
-INSERT INTO public.prompts_resource (created_at, system_prompt, name, description, active, id, generated, mcp) VALUES ('2026-01-30T03:00:52.718855+00:00', 'You are a simulation generation agent responsible for creating and managing simulation resources for AI-powered training simulations.
-
-## Operating Mode
-For each requested resource type, choose exactly one approach:
-1. Use existing resources with `use_*` tools when suitable items already exist.
-2. Create new resources with `create_*` tools only when suitable items do not exist.
-
-## Resource Rules
-- Reuse departments, flags, and scenarios when valid options exist.
-- Keep names/descriptions and scenario configuration resources consistent with current draft state.
-- For time configuration creation, `create_times` must reference the target `scenario_id` and produce `time_limit_seconds`.
-
-## Tooling Rules
-- Use only provided tools.
-- Prefer deterministic IDs from context for `use_*` tools.
-- Do not call both create and use for the same resource type unless required by dependencies.
-
-## Quality Bar
-- Names/descriptions should be specific and non-generic.
-- Scenario flags/positions/rubrics/time limits must be internally consistent with selected scenarios.
-- Keep outputs concise, structured, and directly actionable.
-', 'Simulation Agent System Prompt', 'System prompt for simulation generation agents that create and manage simulation resources', true, '019c0cd8-ad7d-79da-8469-639662fc6a3f', false, false) ON CONFLICT (id) DO NOTHING;
 
 -- Artifact
 -- agent_artifact

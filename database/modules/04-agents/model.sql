@@ -5,6 +5,21 @@
 
 
 -- Resource rows
+INSERT INTO public.prompts_resource (created_at, system_prompt, name, description, active, id, generated, mcp) VALUES ('2026-01-17T17:57:40.647526+00:00', 'You are the Model Artifact Generation Agent for v4.
+
+Generate or update only the requested resource_types for a model artifact:
+names, descriptions, values, providers, flags, departments, modalities, temperature_levels, pricing, reasoning_levels, qualities, voices.
+
+Rules:
+- Operate only on requested resource_types.
+- Prefer using existing suitable resources before creating new ones.
+- Do not invent IDs. Use IDs provided in context.
+- Keep outputs deterministic, concise, and production-safe.
+- Keep value/provider/modalities/pricing/reasoning/quality settings internally coherent.
+
+Output:
+- Return only valid tool calls and arguments.
+- Do not output narrative text.', 'Model Agent System Prompt', 'System prompt for model generation agents', true, '99999999-aaaa-aaaa-aaaa-999999999999', false, false) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.agents_resource (created_at, active, generated, mcp, id, name, description, department_ids, temperature, reasoning, tool_ids, quality, voice, model_id, prompt_id, instruction_ids) VALUES ('2026-02-13T03:41:54.664757+00:00', true, false, false, '019c5517-4673-73a7-967b-11d2389f9cc5', 'Model', 'AI agent for generating and managing model resources including names, descriptions, flags, departments, endpoints, keys, modalities, and providers using GPT-5.1', '{}', NULL, NULL, '{019bebc4-d436-7bf6-af0e-91e685a8f15e,019bebc4-d436-7c01-b86b-9483883762a6,019bebc4-d436-7c14-a42e-f45a12c4fdb0,019bebc4-d436-7c35-9f98-31957504bf95,019bebc4-d436-7c5e-b441-5b0c8673e4db,019bebc4-d436-7cc0-a482-5c0fad4f04e9,019bebc4-d436-7ccb-b52a-fa65793c95ce,019bebc4-d436-7ccc-9e9c-6f4b2a633f9d,019bebc4-d436-7ce4-83f1-2299dc3bbd35,019bebc4-d436-7cec-b8a7-a31628d74ae4,019bebc4-d436-7cf0-9617-f44d4e7a6d71,019bebc4-d436-7d12-8233-8e29598e4620}', NULL, NULL, '019bb25e-e5ff-76f6-90d4-830670bb5d82', '99999999-aaaa-aaaa-aaaa-999999999999', '{019c2f13-4200-7c00-8000-000000000002}') ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.descriptions_resource (id, description, created_at, active, generated, mcp) VALUES ('019bcd1b-0ca8-79db-bc63-4cc38e3deb3c', 'AI agent for generating and managing model resources including names, descriptions, flags, departments, endpoints, keys, modalities, and providers using GPT-5.1', '2026-01-17T17:57:40.647526+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.instructions_resource (id, template, active, created_at, generated, mcp) VALUES ('019c2f13-4200-7c00-8000-000000000002', '## Current Draft Context
@@ -33,21 +48,6 @@ INSERT INTO public.instructions_resource (id, template, active, created_at, gene
 - Keep value/provider/modalities/pricing/reasoning coherence.
 - Keep names/descriptions explicit and non-generic.', true, '2026-02-10T19:12:47.645232+00:00', false, false) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.names_resource (id, name, created_at, active, generated, mcp) VALUES ('019bcd1b-0ca8-7707-aee4-65c33067f0bb', 'Model', '2026-01-17T17:57:40.647526+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
-INSERT INTO public.prompts_resource (created_at, system_prompt, name, description, active, id, generated, mcp) VALUES ('2026-01-17T17:57:40.647526+00:00', 'You are the Model Artifact Generation Agent for v4.
-
-Generate or update only the requested resource_types for a model artifact:
-names, descriptions, values, providers, flags, departments, modalities, temperature_levels, pricing, reasoning_levels, qualities, voices.
-
-Rules:
-- Operate only on requested resource_types.
-- Prefer using existing suitable resources before creating new ones.
-- Do not invent IDs. Use IDs provided in context.
-- Keep outputs deterministic, concise, and production-safe.
-- Keep value/provider/modalities/pricing/reasoning/quality settings internally coherent.
-
-Output:
-- Return only valid tool calls and arguments.
-- Do not output narrative text.', 'Model Agent System Prompt', 'System prompt for model generation agents', true, '99999999-aaaa-aaaa-aaaa-999999999999', false, false) ON CONFLICT (id) DO NOTHING;
 
 -- Artifact
 -- agent_artifact
