@@ -32,14 +32,13 @@ async def get_simulation_facts_internal(
     cohort_ids: list[UUID] | None = None,
     department_ids: list[UUID] | None = None,
     simulation_ids: list[UUID] | None = None,
-    scenario_ids: list[UUID] | None = None,
     attempt_type: str | None = None,
     is_archived: bool = False,
     date_from: date | None = None,
     date_to: date | None = None,
     sort_by: str = "date",
     sort_order: str = "desc",
-    page_limit: int = 10000,
+    page_limit: int = 5000,
     page_offset: int = 0,
     bypass_cache: bool = False,
 ) -> GetSimulationFactsResponse:
@@ -52,7 +51,6 @@ async def get_simulation_facts_internal(
         profile_id: Filter by single profile ID
         cohort_ids: Filter by cohort IDs
         simulation_ids: Filter by simulation IDs
-        scenario_ids: Filter by scenario IDs
         attempt_type: Filter by attempt type ('general' | 'practice')
         is_archived: Include archived attempts (default False)
         date_from: Filter by date range start (inclusive)
@@ -81,7 +79,6 @@ async def get_simulation_facts_internal(
             "simulation_ids": [str(s) for s in simulation_ids]
             if simulation_ids
             else None,
-            "scenario_ids": [str(s) for s in scenario_ids] if scenario_ids else None,
             "attempt_type": attempt_type,
             "is_archived": is_archived,
             "date_from": date_from.isoformat() if date_from else None,
@@ -104,7 +101,6 @@ async def get_simulation_facts_internal(
         cohort_ids=cohort_ids,
         department_ids=department_ids,
         simulation_ids=simulation_ids,
-        scenario_ids=scenario_ids,
         attempt_type_filter=attempt_type,
         is_archived_filter=is_archived,
         date_from=date_from,
@@ -125,23 +121,36 @@ async def get_simulation_facts_internal(
                 SimulationFactsItem(
                     chat_id=item.chat_id,
                     attempt_id=item.attempt_id,
-                    simulation_id=item.simulation_id,
-                    scenario_id=item.scenario_id,
-                    persona_id=item.persona_id,
-                    document_ids=list(item.document_ids) if item.document_ids else [],
                     profile_id=item.profile_id,
                     cohort_id=item.cohort_id,
                     department_id=item.department_id,
+                    simulation_id=item.simulation_id,
+                    persona_id=item.persona_id,
+                    attempt_date=item.attempt_date,
+                    attempt_number=item.attempt_number or 0,
                     grade_percent=float(item.grade_percent)
                     if item.grade_percent is not None
                     else None,
                     passed=item.passed,
                     completed=item.completed or False,
-                    attempt_date=item.attempt_date,
+                    time_taken_seconds=item.time_taken_seconds,
                     attempt_type=item.attempt_type,
                     is_archived=item.is_archived or False,
                 )
             )
+
+    # Transform cohort filter options
+    cohort_options: list[FilterOption] | None = None
+    if result and result.cohort_options:
+        cohort_options = [
+            FilterOption(
+                value=opt.value or "",
+                label=opt.label or "",
+                count=opt.count or 0,
+            )
+            for opt in result.cohort_options
+            if opt.value
+        ]
 
     # Transform department filter options
     department_options: list[FilterOption] | None = None
@@ -169,25 +178,26 @@ async def get_simulation_facts_internal(
             if opt.value
         ]
 
-    # Transform scenario filter options
-    scenario_options: list[FilterOption] | None = None
-    if result and result.scenario_options:
-        scenario_options = [
+    # Transform persona filter options
+    persona_options: list[FilterOption] | None = None
+    if result and result.persona_options:
+        persona_options = [
             FilterOption(
                 value=opt.value or "",
                 label=opt.label or "",
                 count=opt.count or 0,
             )
-            for opt in result.scenario_options
+            for opt in result.persona_options
             if opt.value
         ]
 
     response = GetSimulationFactsResponse(
         items=items,
         total_count=result.total_count or 0 if result else 0,
+        cohort_options=cohort_options,
         department_options=department_options,
         simulation_options=simulation_options,
-        scenario_options=scenario_options,
+        persona_options=persona_options,
     )
 
     # Cache the result
@@ -219,15 +229,15 @@ async def get_simulation_facts(
 ) -> GetSimulationFactsResponse:
     """Get simulation facts data from mv_simulation_facts.
 
-    This endpoint fetches paginated per-chat simulation/scenario data
-    for the simulation dashboard section with:
-    - Filtering (profile, cohort, simulation, scenario, attempt_type, archived, date range)
+    This endpoint fetches paginated chat-level data for the simulation/secondary
+    dashboard section with:
+    - Filtering (profile, cohort, simulation, attempt_type, archived, date range)
     - Sorting (date)
     - Pagination
-    - Filter options (simulation_options, scenario_options)
+    - Filter options (cohort_options, simulation_options, persona_options)
 
-    Parameter resolution (scenario/persona/document parameter_field_ids) is done
-    at runtime via hydrated resource handlers, not in the MV query.
+    Resource metadata (names, colors, icons) should be fetched separately
+    via internal resource handlers using the returned IDs.
     """
     tags = ["views", "analytics", "simulation_facts"]
 
@@ -244,7 +254,6 @@ async def get_simulation_facts(
             cohort_ids=request.cohort_ids,
             department_ids=request.department_ids,
             simulation_ids=request.simulation_ids,
-            scenario_ids=request.scenario_ids,
             attempt_type=request.attempt_type,
             is_archived=request.is_archived,
             date_from=request.date_from,

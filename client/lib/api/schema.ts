@@ -2943,6 +2943,13 @@ export interface paths {
         /**
          * Get Dashboard Primary
          * @description Get dashboard primary section data.
+         *
+         *     Primary section is rubric-focused:
+         *     - Rubric Heatmap (correlation matrix)
+         *     - Rubric Trend (score over time by standard group)
+         *     - Skill Performance (radar chart per rubric)
+         *
+         *     All sourced from mv_rubric_facts.
          */
         post: operations["get_dashboard_primary_api_v4_artifacts_dashboard_primary_post"];
         delete?: never;
@@ -2963,6 +2970,13 @@ export interface paths {
         /**
          * Get Dashboard Secondary
          * @description Get dashboard secondary section data.
+         *
+         *     Secondary section is simulation-focused:
+         *     - Persona Performance (avg score per persona, trend by date)
+         *     - Cohort Performance (pass rate, avg score per cohort x simulation)
+         *     - Attempt Improvement (score progression by attempt number)
+         *
+         *     All sourced from mv_simulation_facts (renamed from mv_cohort_facts).
          */
         post: operations["get_dashboard_secondary_api_v4_artifacts_dashboard_secondary_post"];
         delete?: never;
@@ -7766,7 +7780,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v4/views/analytics/cohort-facts/get": {
+    "/api/v4/views/analytics/scenario-facts/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -7776,19 +7790,20 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Get Cohort Facts
-         * @description Get cohort facts data from mv_cohort_facts.
+         * Get Scenario Facts
+         * @description Get scenario facts data from mv_scenario_facts.
          *
-         *     This endpoint fetches paginated chat-level data for the cohort dashboard section with:
-         *     - Filtering (profile, cohort, simulation, attempt_type, archived, date range)
+         *     This endpoint fetches paginated per-chat scenario data
+         *     for the footer dashboard section with:
+         *     - Filtering (profile, cohort, simulation, scenario, attempt_type, archived, date range)
          *     - Sorting (date)
          *     - Pagination
-         *     - Filter options (cohort_options, simulation_options, persona_options)
+         *     - Filter options (simulation_options, scenario_options)
          *
-         *     Resource metadata (names, colors, icons) should be fetched separately
-         *     via internal resource handlers using the returned IDs.
+         *     Parameter resolution (scenario/persona/document parameter_field_ids) is done
+         *     at runtime via hydrated resource handlers, not in the MV query.
          */
-        post: operations["get_cohort_facts_api_v4_views_analytics_cohort_facts_get_post"];
+        post: operations["get_scenario_facts_api_v4_views_analytics_scenario_facts_get_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7910,15 +7925,15 @@ export interface paths {
          * Get Simulation Facts
          * @description Get simulation facts data from mv_simulation_facts.
          *
-         *     This endpoint fetches paginated per-chat simulation/scenario data
-         *     for the simulation dashboard section with:
-         *     - Filtering (profile, cohort, simulation, scenario, attempt_type, archived, date range)
+         *     This endpoint fetches paginated chat-level data for the simulation/secondary
+         *     dashboard section with:
+         *     - Filtering (profile, cohort, simulation, attempt_type, archived, date range)
          *     - Sorting (date)
          *     - Pagination
-         *     - Filter options (simulation_options, scenario_options)
+         *     - Filter options (cohort_options, simulation_options, persona_options)
          *
-         *     Parameter resolution (scenario/persona/document parameter_field_ids) is done
-         *     at runtime via hydrated resource handlers, not in the MV query.
+         *     Resource metadata (names, colors, icons) should be fetched separately
+         *     via internal resource handlers using the returned IDs.
          */
         post: operations["get_simulation_facts_api_v4_views_analytics_simulation_facts_get_post"];
         delete?: never;
@@ -13223,6 +13238,13 @@ export interface components {
             infinite_mode: boolean;
             /** Created At */
             created_at?: string | null;
+            /**
+             * Is Archived
+             * @default false
+             */
+            is_archived: boolean;
+            /** Scenario Ids */
+            scenario_ids?: string[] | null;
         };
         /**
          * AttemptViews
@@ -14760,57 +14782,6 @@ export interface components {
             resources?: components["schemas"]["CohortDescriptionResource"][] | null;
         };
         /**
-         * CohortFactsItem
-         * @description Single chat row from mv_cohort_facts.
-         *
-         *     Contains all cohort-section data with resource IDs only.
-         *     Resource metadata (names, colors, etc.) fetched via internal handlers.
-         */
-        CohortFactsItem: {
-            /**
-             * Chat Id
-             * Format: uuid
-             */
-            chat_id: string;
-            /** Attempt Id */
-            attempt_id?: string | null;
-            /** Profile Id */
-            profile_id?: string | null;
-            /** Cohort Id */
-            cohort_id?: string | null;
-            /** Department Id */
-            department_id?: string | null;
-            /** Simulation Id */
-            simulation_id?: string | null;
-            /** Persona Id */
-            persona_id?: string | null;
-            /** Attempt Date */
-            attempt_date?: string | null;
-            /**
-             * Attempt Number
-             * @default 0
-             */
-            attempt_number: number;
-            /** Grade Percent */
-            grade_percent?: number | null;
-            /** Passed */
-            passed?: boolean | null;
-            /**
-             * Completed
-             * @default false
-             */
-            completed: boolean;
-            /** Time Taken Seconds */
-            time_taken_seconds?: number | null;
-            /** Attempt Type */
-            attempt_type?: string | null;
-            /**
-             * Is Archived
-             * @default false
-             */
-            is_archived: boolean;
-        };
-        /**
          * CohortFlagResource
          * @description Flag resource for cohort.
          */
@@ -15603,8 +15574,8 @@ export interface components {
         };
         /** DashboardInsights */
         DashboardInsights: {
-            /** Growth */
-            growth?: string | null;
+            /** Rubric Trend */
+            rubric_trend?: string | null;
             /** Rubric Heatmap */
             rubric_heatmap?: string | null;
             /** Attempt Improvement */
@@ -15645,9 +15616,9 @@ export interface components {
         };
         /** DashboardPrimaryMetrics */
         DashboardPrimaryMetrics: {
-            growth_data?: components["schemas"]["PrimaryGrowthData"];
-            persona_performance?: components["schemas"]["PrimaryPersonaPerformance"];
             rubric_heatmap?: components["schemas"]["PrimaryRubricHeatmap"];
+            rubric_trend?: components["schemas"]["PrimaryRubricTrend"];
+            skill_performance?: components["schemas"]["SecondarySkillPerformance"];
         };
         /**
          * DashboardPrimaryRequest
@@ -15680,14 +15651,18 @@ export interface components {
              * @default 0
              */
             page_offset: number;
-            /** Persona Simulation Ids */
-            persona_simulation_ids?: string[] | null;
-            /** Persona Simulations Search */
-            persona_simulations_search?: string | null;
             /** Heatmap Rubric Ids */
             heatmap_rubric_ids?: string[] | null;
             /** Heatmap Rubric Search */
             heatmap_rubric_search?: string | null;
+            /** Trend Rubric Ids */
+            trend_rubric_ids?: string[] | null;
+            /** Trend Rubric Search */
+            trend_rubric_search?: string | null;
+            /** Skill Rubric Ids */
+            skill_rubric_ids?: string[] | null;
+            /** Skill Rubric Search */
+            skill_rubric_search?: string | null;
         };
         /**
          * DashboardPrimaryResponse
@@ -15747,9 +15722,9 @@ export interface components {
         };
         /** DashboardSecondaryMetrics */
         DashboardSecondaryMetrics: {
+            persona_performance?: components["schemas"]["PrimaryPersonaPerformance"];
             cohort_performance?: components["schemas"]["SecondaryCohortPerformance"];
             attempt_improvement?: components["schemas"]["SecondaryAttemptImprovement"];
-            skill_performance?: components["schemas"]["SecondarySkillPerformance"];
         };
         /**
          * DashboardSecondaryRequest
@@ -15782,6 +15757,10 @@ export interface components {
              * @default 0
              */
             page_offset: number;
+            /** Persona Simulation Ids */
+            persona_simulation_ids?: string[] | null;
+            /** Persona Simulations Search */
+            persona_simulations_search?: string | null;
             /** Cohort Simulation Ids */
             cohort_simulation_ids?: string[] | null;
             /** Cohort Simulations Search */
@@ -15790,10 +15769,6 @@ export interface components {
             improvement_simulation_ids?: string[] | null;
             /** Improvement Simulations Search */
             improvement_simulations_search?: string | null;
-            /** Skill Rubric Ids */
-            skill_rubric_ids?: string[] | null;
-            /** Skill Rubric Search */
-            skill_rubric_search?: string | null;
         };
         /**
          * DashboardSecondaryResponse
@@ -18799,6 +18774,27 @@ export interface components {
              * @description Attempt data items
              */
             items?: components["schemas"]["AttemptViewItem"][];
+            /**
+             * Total Count
+             * @description Total count before pagination
+             * @default 0
+             */
+            total_count: number;
+            /**
+             * Simulation Options
+             * @description Available simulation filter options
+             */
+            simulation_options?: components["schemas"]["app__api__v4__views__attempt__list__types__FilterOption"][] | null;
+            /**
+             * Scenario Options
+             * @description Available scenario filter options
+             */
+            scenario_options?: components["schemas"]["app__api__v4__views__attempt__list__types__FilterOption"][] | null;
+            /**
+             * Profile Options
+             * @description Available profile filter options
+             */
+            profile_options?: components["schemas"]["app__api__v4__views__attempt__list__types__FilterOption"][] | null;
         };
         /**
          * GetAuthApiRequest
@@ -19356,114 +19352,6 @@ export interface components {
             departments?: components["schemas"]["CohortDepartmentSection"] | null;
             simulations?: components["schemas"]["CohortSimulationSection"] | null;
             simulation_positions?: components["schemas"]["CohortSimulationPositionSection"] | null;
-        };
-        /**
-         * GetCohortFactsRequest
-         * @description Request for getting cohort facts with filters and pagination.
-         */
-        GetCohortFactsRequest: {
-            /**
-             * Profile Id
-             * @description Filter by profile ID
-             */
-            profile_id?: string | null;
-            /**
-             * Cohort Ids
-             * @description Filter by cohort IDs
-             */
-            cohort_ids?: string[] | null;
-            /**
-             * Department Ids
-             * @description Filter by department IDs
-             */
-            department_ids?: string[] | null;
-            /**
-             * Simulation Ids
-             * @description Filter by simulation IDs
-             */
-            simulation_ids?: string[] | null;
-            /**
-             * Attempt Type
-             * @description Filter by attempt type: 'general' | 'practice'
-             */
-            attempt_type?: string | null;
-            /**
-             * Is Archived
-             * @description Include archived attempts
-             * @default false
-             */
-            is_archived: boolean;
-            /**
-             * Date From
-             * @description Filter by date range start (inclusive)
-             */
-            date_from?: string | null;
-            /**
-             * Date To
-             * @description Filter by date range end (inclusive)
-             */
-            date_to?: string | null;
-            /**
-             * Sort By
-             * @description Sort field: 'date'
-             * @default date
-             */
-            sort_by: string;
-            /**
-             * Sort Order
-             * @description Sort order: 'asc' | 'desc'
-             * @default desc
-             */
-            sort_order: string;
-            /**
-             * Page Limit
-             * @description Items per page
-             * @default 5000
-             */
-            page_limit: number;
-            /**
-             * Page Offset
-             * @description Pagination offset
-             * @default 0
-             */
-            page_offset: number;
-        };
-        /**
-         * GetCohortFactsResponse
-         * @description Response with cohort facts and pagination info.
-         */
-        GetCohortFactsResponse: {
-            /**
-             * Items
-             * @description Cohort facts items
-             */
-            items?: components["schemas"]["CohortFactsItem"][];
-            /**
-             * Total Count
-             * @description Total count before pagination
-             * @default 0
-             */
-            total_count: number;
-            /**
-             * Cohort Options
-             * @description Available cohort filter options
-             */
-            cohort_options?: components["schemas"]["app__api__v4__views__analytics__cohort_facts__types__FilterOption"][] | null;
-            /**
-             * Department Options
-             * @description Available department filter options
-             */
-            department_options?: components["schemas"]["app__api__v4__views__analytics__cohort_facts__types__FilterOption"][] | null;
-            /**
-             * Simulation Options
-             * @description Available simulation filter options
-             */
-            simulation_options?: components["schemas"]["app__api__v4__views__analytics__cohort_facts__types__FilterOption"][] | null;
-            /**
-             * Persona Options
-             * @description Available persona filter options
-             */
-            persona_options?: components["schemas"]["app__api__v4__views__analytics__cohort_facts__types__FilterOption"][] | null;
         };
         /**
          * GetCohortsApiRequest
@@ -21812,6 +21700,114 @@ export interface components {
             videos?: components["schemas"]["ScenarioVideoSection"] | null;
             questions?: components["schemas"]["ScenarioQuestionSection"] | null;
         };
+        /**
+         * GetScenarioFactsRequest
+         * @description Request for getting scenario facts with filters and pagination.
+         */
+        GetScenarioFactsRequest: {
+            /**
+             * Profile Id
+             * @description Filter by profile ID
+             */
+            profile_id?: string | null;
+            /**
+             * Cohort Ids
+             * @description Filter by cohort IDs
+             */
+            cohort_ids?: string[] | null;
+            /**
+             * Department Ids
+             * @description Filter by department IDs
+             */
+            department_ids?: string[] | null;
+            /**
+             * Simulation Ids
+             * @description Filter by simulation IDs
+             */
+            simulation_ids?: string[] | null;
+            /**
+             * Scenario Ids
+             * @description Filter by scenario IDs
+             */
+            scenario_ids?: string[] | null;
+            /**
+             * Attempt Type
+             * @description Filter by attempt type: 'general' | 'practice'
+             */
+            attempt_type?: string | null;
+            /**
+             * Is Archived
+             * @description Include archived attempts
+             * @default false
+             */
+            is_archived: boolean;
+            /**
+             * Date From
+             * @description Filter by date range start (inclusive)
+             */
+            date_from?: string | null;
+            /**
+             * Date To
+             * @description Filter by date range end (inclusive)
+             */
+            date_to?: string | null;
+            /**
+             * Sort By
+             * @description Sort field: 'date'
+             * @default date
+             */
+            sort_by: string;
+            /**
+             * Sort Order
+             * @description Sort order: 'asc' | 'desc'
+             * @default desc
+             */
+            sort_order: string;
+            /**
+             * Page Limit
+             * @description Items per page
+             * @default 10000
+             */
+            page_limit: number;
+            /**
+             * Page Offset
+             * @description Pagination offset
+             * @default 0
+             */
+            page_offset: number;
+        };
+        /**
+         * GetScenarioFactsResponse
+         * @description Response with scenario facts and pagination info.
+         */
+        GetScenarioFactsResponse: {
+            /**
+             * Items
+             * @description Scenario facts items
+             */
+            items?: components["schemas"]["ScenarioFactsItem"][];
+            /**
+             * Total Count
+             * @description Total count before pagination
+             * @default 0
+             */
+            total_count: number;
+            /**
+             * Department Options
+             * @description Available department filter options
+             */
+            department_options?: components["schemas"]["app__api__v4__views__analytics__scenario_facts__types__FilterOption"][] | null;
+            /**
+             * Simulation Options
+             * @description Available simulation filter options
+             */
+            simulation_options?: components["schemas"]["app__api__v4__views__analytics__scenario_facts__types__FilterOption"][] | null;
+            /**
+             * Scenario Options
+             * @description Available scenario filter options
+             */
+            scenario_options?: components["schemas"]["app__api__v4__views__analytics__scenario_facts__types__FilterOption"][] | null;
+        };
         /** GetScenarioFlagsApiRequest */
         GetScenarioFlagsApiRequest: {
             /** Ids */
@@ -22174,11 +22170,6 @@ export interface components {
              */
             simulation_ids?: string[] | null;
             /**
-             * Scenario Ids
-             * @description Filter by scenario IDs
-             */
-            scenario_ids?: string[] | null;
-            /**
              * Attempt Type
              * @description Filter by attempt type: 'general' | 'practice'
              */
@@ -22214,7 +22205,7 @@ export interface components {
             /**
              * Page Limit
              * @description Items per page
-             * @default 10000
+             * @default 5000
              */
             page_limit: number;
             /**
@@ -22241,6 +22232,11 @@ export interface components {
              */
             total_count: number;
             /**
+             * Cohort Options
+             * @description Available cohort filter options
+             */
+            cohort_options?: components["schemas"]["app__api__v4__views__analytics__simulation_facts__types__FilterOption"][] | null;
+            /**
              * Department Options
              * @description Available department filter options
              */
@@ -22251,10 +22247,10 @@ export interface components {
              */
             simulation_options?: components["schemas"]["app__api__v4__views__analytics__simulation_facts__types__FilterOption"][] | null;
             /**
-             * Scenario Options
-             * @description Available scenario filter options
+             * Persona Options
+             * @description Available persona filter options
              */
-            scenario_options?: components["schemas"]["app__api__v4__views__analytics__simulation_facts__types__FilterOption"][] | null;
+            persona_options?: components["schemas"]["app__api__v4__views__analytics__simulation_facts__types__FilterOption"][] | null;
         };
         /**
          * GetSimulationPositionsApiRequest
@@ -23249,52 +23245,6 @@ export interface components {
         GroupRubricsApiResponse: {
             /** Id */
             id?: string | null;
-        };
-        /** GrowthAvailableMetric */
-        GrowthAvailableMetric: {
-            /** Id */
-            id?: string | null;
-            /** Name */
-            name?: string | null;
-            /** Color */
-            color?: string | null;
-            /** Unit */
-            unit?: string | null;
-            /** Description */
-            description?: string | null;
-            /** Formatter Id */
-            formatter_id?: string | null;
-        };
-        /** GrowthChartPoint */
-        GrowthChartPoint: {
-            /** Date */
-            date?: string | null;
-            /** Average Score */
-            average_score?: number | null;
-            /** Completion Rate */
-            completion_rate?: number | null;
-            /** First Attempt Pass Rate */
-            first_attempt_pass_rate?: number | null;
-            /** Session Efficiency */
-            session_efficiency?: number | null;
-            /** Stagnation Rate */
-            stagnation_rate?: number | null;
-        };
-        /** GrowthWindowAverage */
-        GrowthWindowAverage: {
-            /**
-             * N
-             * @default 0
-             */
-            n: number;
-            /** Last */
-            last?: number | null;
-            /** Prev */
-            prev?: number | null;
-        };
-        /** GrowthWindowAverages */
-        GrowthWindowAverages: {
-            average_score?: components["schemas"]["GrowthWindowAverage"];
         };
         /** HTTPValidationError */
         HTTPValidationError: {
@@ -28036,19 +27986,6 @@ export interface components {
             /** Daily */
             daily?: components["schemas"]["PricingDailyItem"][];
         };
-        /** PrimaryGrowthData */
-        PrimaryGrowthData: {
-            /** Chart Data */
-            chart_data?: components["schemas"]["GrowthChartPoint"][];
-            /** Available Metrics */
-            available_metrics?: components["schemas"]["GrowthAvailableMetric"][];
-            window_averages?: components["schemas"]["GrowthWindowAverages"] | null;
-            /**
-             * Status
-             * @default neutral
-             */
-            status: string;
-        };
         /** PrimaryPersonaPerformance */
         PrimaryPersonaPerformance: {
             /** Chart Data */
@@ -28074,6 +28011,29 @@ export interface components {
              * @default neutral
              */
             status: string;
+        };
+        /** PrimaryRubricTrend */
+        PrimaryRubricTrend: {
+            /** Trend Data */
+            trend_data?: components["schemas"]["PrimaryRubricTrendPoint"][];
+            /** Valid Rubric Ids */
+            valid_rubric_ids?: string[];
+            /**
+             * Status
+             * @default neutral
+             */
+            status: string;
+        };
+        /** PrimaryRubricTrendPoint */
+        PrimaryRubricTrendPoint: {
+            /** Date */
+            date?: string | null;
+            /** Standard Group Id */
+            standard_group_id?: string | null;
+            /** Standard Group Name */
+            standard_group_name?: string | null;
+            /** Avg Pct */
+            avg_pct?: number | null;
         };
         /**
          * ProblemStatementEntry
@@ -32219,6 +32179,61 @@ export interface components {
             description?: string | null;
         };
         /**
+         * ScenarioFactsItem
+         * @description Single chat row from mv_scenario_facts.
+         *
+         *     Contains scenario/footer data with resource IDs only.
+         *     Parameter resolution done at runtime via hydrated scenario/persona/document
+         *     resources (denormalized parameter_field_ids[]) and parameter_fields_resource.
+         */
+        ScenarioFactsItem: {
+            /**
+             * Chat Id
+             * Format: uuid
+             */
+            chat_id: string;
+            /**
+             * Attempt Id
+             * Format: uuid
+             */
+            attempt_id: string;
+            /**
+             * Simulation Id
+             * Format: uuid
+             */
+            simulation_id: string;
+            /** Scenario Id */
+            scenario_id?: string | null;
+            /** Persona Id */
+            persona_id?: string | null;
+            /** Document Ids */
+            document_ids?: string[];
+            /** Profile Id */
+            profile_id?: string | null;
+            /** Cohort Id */
+            cohort_id?: string | null;
+            /** Department Id */
+            department_id?: string | null;
+            /** Grade Percent */
+            grade_percent?: number | null;
+            /** Passed */
+            passed?: boolean | null;
+            /**
+             * Completed
+             * @default false
+             */
+            completed: boolean;
+            /** Attempt Date */
+            attempt_date?: string | null;
+            /** Attempt Type */
+            attempt_type?: string | null;
+            /**
+             * Is Archived
+             * @default false
+             */
+            is_archived: boolean;
+        };
+        /**
          * ScenarioField
          * @description Field for scenario.
          */
@@ -35512,27 +35527,14 @@ export interface components {
              */
             status: string;
         };
-        /** SecondaryCohortFact */
-        SecondaryCohortFact: {
-            /** Cohort Id */
-            cohort_id?: string | null;
-            /** Simulation Id */
-            simulation_id?: string | null;
-            /** Pass Rate */
-            pass_rate?: number | null;
-            /** Avg Score */
-            avg_score?: number | null;
-            /** Attempts */
-            attempts?: number | null;
-        };
         /** SecondaryCohortPerformance */
         SecondaryCohortPerformance: {
             /** Cohort Data */
             cohort_data?: components["schemas"]["SecondaryCohortData"][];
             /** Daily Data */
             daily_data?: components["schemas"]["SecondaryCohortDaily"][];
-            /** Cohort Facts */
-            cohort_facts?: components["schemas"]["SecondaryCohortFact"][];
+            /** Simulation Facts */
+            simulation_facts?: components["schemas"]["SecondarySimulationFact"][];
             /** Daily Facts */
             daily_facts?: components["schemas"]["SecondaryDailyFact"][];
             /** Valid Simulation Ids */
@@ -35579,6 +35581,19 @@ export interface components {
             value?: number | null;
             /** Full Mark */
             full_mark?: number | null;
+        };
+        /** SecondarySimulationFact */
+        SecondarySimulationFact: {
+            /** Cohort Id */
+            cohort_id?: string | null;
+            /** Simulation Id */
+            simulation_id?: string | null;
+            /** Pass Rate */
+            pass_rate?: number | null;
+            /** Avg Score */
+            avg_score?: number | null;
+            /** Attempts */
+            attempts?: number | null;
         };
         /** SecondarySkillPackage */
         SecondarySkillPackage: {
@@ -36184,9 +36199,8 @@ export interface components {
          * SimulationFactsItem
          * @description Single chat row from mv_simulation_facts.
          *
-         *     Contains simulation/scenario data with resource IDs only.
-         *     Parameter resolution done at runtime via hydrated scenario/persona/document
-         *     resources (denormalized parameter_field_ids[]) and parameter_fields_resource.
+         *     Contains all simulation/secondary-section data with resource IDs only.
+         *     Resource metadata (names, colors, etc.) fetched via internal handlers.
          */
         SimulationFactsItem: {
             /**
@@ -36194,28 +36208,25 @@ export interface components {
              * Format: uuid
              */
             chat_id: string;
-            /**
-             * Attempt Id
-             * Format: uuid
-             */
-            attempt_id: string;
-            /**
-             * Simulation Id
-             * Format: uuid
-             */
-            simulation_id: string;
-            /** Scenario Id */
-            scenario_id?: string | null;
-            /** Persona Id */
-            persona_id?: string | null;
-            /** Document Ids */
-            document_ids?: string[];
+            /** Attempt Id */
+            attempt_id?: string | null;
             /** Profile Id */
             profile_id?: string | null;
             /** Cohort Id */
             cohort_id?: string | null;
             /** Department Id */
             department_id?: string | null;
+            /** Simulation Id */
+            simulation_id?: string | null;
+            /** Persona Id */
+            persona_id?: string | null;
+            /** Attempt Date */
+            attempt_date?: string | null;
+            /**
+             * Attempt Number
+             * @default 0
+             */
+            attempt_number: number;
             /** Grade Percent */
             grade_percent?: number | null;
             /** Passed */
@@ -36225,8 +36236,8 @@ export interface components {
              * @default false
              */
             completed: boolean;
-            /** Attempt Date */
-            attempt_date?: string | null;
+            /** Time Taken Seconds */
+            time_taken_seconds?: number | null;
             /** Attempt Type */
             attempt_type?: string | null;
             /**
@@ -38592,21 +38603,6 @@ export interface components {
          * FilterOption
          * @description Filter option for dropdowns.
          */
-        app__api__v4__views__analytics__cohort_facts__types__FilterOption: {
-            /** Value */
-            value: string;
-            /** Label */
-            label: string;
-            /**
-             * Count
-             * @default 0
-             */
-            count: number;
-        };
-        /**
-         * FilterOption
-         * @description Filter option for dropdowns.
-         */
         app__api__v4__views__analytics__profile_facts__types__FilterOption: {
             /** Value */
             value: string;
@@ -38637,7 +38633,37 @@ export interface components {
          * FilterOption
          * @description Filter option for dropdowns.
          */
+        app__api__v4__views__analytics__scenario_facts__types__FilterOption: {
+            /** Value */
+            value: string;
+            /** Label */
+            label: string;
+            /**
+             * Count
+             * @default 0
+             */
+            count: number;
+        };
+        /**
+         * FilterOption
+         * @description Filter option for dropdowns.
+         */
         app__api__v4__views__analytics__simulation_facts__types__FilterOption: {
+            /** Value */
+            value: string;
+            /** Label */
+            label: string;
+            /**
+             * Count
+             * @default 0
+             */
+            count: number;
+        };
+        /**
+         * FilterOption
+         * @description Filter option for dropdowns.
+         */
+        app__api__v4__views__attempt__list__types__FilterOption: {
             /** Value */
             value: string;
             /** Label */
@@ -53193,7 +53219,7 @@ export interface operations {
             };
         };
     };
-    get_cohort_facts_api_v4_views_analytics_cohort_facts_get_post: {
+    get_scenario_facts_api_v4_views_analytics_scenario_facts_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -53206,7 +53232,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["GetCohortFactsRequest"];
+                "application/json": components["schemas"]["GetScenarioFactsRequest"];
             };
         };
         responses: {
@@ -53216,7 +53242,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["GetCohortFactsResponse"];
+                    "application/json": components["schemas"]["GetScenarioFactsResponse"];
                 };
             };
             /** @description Validation Error */

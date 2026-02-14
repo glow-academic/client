@@ -13731,7 +13731,7 @@
           "dashboard"
         ],
         "summary": "Get Dashboard Primary",
-        "description": "Get dashboard primary section data.",
+        "description": "Get dashboard primary section data.\n\nPrimary section is rubric-focused:\n- Rubric Heatmap (correlation matrix)\n- Rubric Trend (score over time by standard group)\n- Skill Performance (radar chart per rubric)\n\nAll sourced from mv_rubric_facts.",
         "operationId": "get_dashboard_primary_api_v4_artifacts_dashboard_primary_post",
         "parameters": [
           {
@@ -13825,7 +13825,7 @@
           "dashboard"
         ],
         "summary": "Get Dashboard Secondary",
-        "description": "Get dashboard secondary section data.",
+        "description": "Get dashboard secondary section data.\n\nSecondary section is simulation-focused:\n- Persona Performance (avg score per persona, trend by date)\n- Cohort Performance (pass rate, avg score per cohort x simulation)\n- Attempt Improvement (score progression by attempt number)\n\nAll sourced from mv_simulation_facts (renamed from mv_cohort_facts).",
         "operationId": "get_dashboard_secondary_api_v4_artifacts_dashboard_secondary_post",
         "parameters": [
           {
@@ -36270,18 +36270,18 @@
         }
       }
     },
-    "/api/v4/views/analytics/cohort-facts/get": {
+    "/api/v4/views/analytics/scenario-facts/get": {
       "post": {
         "tags": [
           "v4",
           "views",
           "views",
           "analytics",
-          "cohort_facts"
+          "scenario_facts"
         ],
-        "summary": "Get Cohort Facts",
-        "description": "Get cohort facts data from mv_cohort_facts.\n\nThis endpoint fetches paginated chat-level data for the cohort dashboard section with:\n- Filtering (profile, cohort, simulation, attempt_type, archived, date range)\n- Sorting (date)\n- Pagination\n- Filter options (cohort_options, simulation_options, persona_options)\n\nResource metadata (names, colors, icons) should be fetched separately\nvia internal resource handlers using the returned IDs.",
-        "operationId": "get_cohort_facts_api_v4_views_analytics_cohort_facts_get_post",
+        "summary": "Get Scenario Facts",
+        "description": "Get scenario facts data from mv_scenario_facts.\n\nThis endpoint fetches paginated per-chat scenario data\nfor the footer dashboard section with:\n- Filtering (profile, cohort, simulation, scenario, attempt_type, archived, date range)\n- Sorting (date)\n- Pagination\n- Filter options (simulation_options, scenario_options)\n\nParameter resolution (scenario/persona/document parameter_field_ids) is done\nat runtime via hydrated resource handlers, not in the MV query.",
+        "operationId": "get_scenario_facts_api_v4_views_analytics_scenario_facts_get_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -36337,7 +36337,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/GetCohortFactsRequest"
+                "$ref": "#/components/schemas/GetScenarioFactsRequest"
               }
             }
           }
@@ -36348,7 +36348,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/GetCohortFactsResponse"
+                  "$ref": "#/components/schemas/GetScenarioFactsResponse"
                 }
               }
             }
@@ -36760,7 +36760,7 @@
           "simulation_facts"
         ],
         "summary": "Get Simulation Facts",
-        "description": "Get simulation facts data from mv_simulation_facts.\n\nThis endpoint fetches paginated per-chat simulation/scenario data\nfor the simulation dashboard section with:\n- Filtering (profile, cohort, simulation, scenario, attempt_type, archived, date range)\n- Sorting (date)\n- Pagination\n- Filter options (simulation_options, scenario_options)\n\nParameter resolution (scenario/persona/document parameter_field_ids) is done\nat runtime via hydrated resource handlers, not in the MV query.",
+        "description": "Get simulation facts data from mv_simulation_facts.\n\nThis endpoint fetches paginated chat-level data for the simulation/secondary\ndashboard section with:\n- Filtering (profile, cohort, simulation, attempt_type, archived, date range)\n- Sorting (date)\n- Pagination\n- Filter options (cohort_options, simulation_options, persona_options)\n\nResource metadata (names, colors, icons) should be fetched separately\nvia internal resource handlers using the returned IDs.",
         "operationId": "get_simulation_facts_api_v4_views_analytics_simulation_facts_get_post",
         "parameters": [
           {
@@ -51442,6 +51442,26 @@
               }
             ],
             "title": "Created At"
+          },
+          "is_archived": {
+            "type": "boolean",
+            "title": "Is Archived",
+            "default": false
+          },
+          "scenario_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scenario Ids"
           }
         },
         "type": "object",
@@ -56278,164 +56298,6 @@
         "type": "object",
         "title": "CohortDescriptionSection"
       },
-      "CohortFactsItem": {
-        "properties": {
-          "chat_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Chat Id"
-          },
-          "attempt_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Attempt Id"
-          },
-          "profile_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Profile Id"
-          },
-          "cohort_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Cohort Id"
-          },
-          "department_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Department Id"
-          },
-          "simulation_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Simulation Id"
-          },
-          "persona_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Persona Id"
-          },
-          "attempt_date": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "date"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Attempt Date"
-          },
-          "attempt_number": {
-            "type": "integer",
-            "title": "Attempt Number",
-            "default": 0
-          },
-          "grade_percent": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Grade Percent"
-          },
-          "passed": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Passed"
-          },
-          "completed": {
-            "type": "boolean",
-            "title": "Completed",
-            "default": false
-          },
-          "time_taken_seconds": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Time Taken Seconds"
-          },
-          "attempt_type": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Attempt Type"
-          },
-          "is_archived": {
-            "type": "boolean",
-            "title": "Is Archived",
-            "default": false
-          }
-        },
-        "type": "object",
-        "required": [
-          "chat_id"
-        ],
-        "title": "CohortFactsItem",
-        "description": "Single chat row from mv_cohort_facts.\n\nContains all cohort-section data with resource IDs only.\nResource metadata (names, colors, etc.) fetched via internal handlers."
-      },
       "CohortFlagResource": {
         "properties": {
           "id": {
@@ -59129,7 +58991,7 @@
       },
       "DashboardInsights": {
         "properties": {
-          "growth": {
+          "rubric_trend": {
             "anyOf": [
               {
                 "type": "string"
@@ -59138,7 +59000,7 @@
                 "type": "null"
               }
             ],
-            "title": "Growth"
+            "title": "Rubric Trend"
           },
           "rubric_heatmap": {
             "anyOf": [
@@ -59343,14 +59205,14 @@
       },
       "DashboardPrimaryMetrics": {
         "properties": {
-          "growth_data": {
-            "$ref": "#/components/schemas/PrimaryGrowthData"
-          },
-          "persona_performance": {
-            "$ref": "#/components/schemas/PrimaryPersonaPerformance"
-          },
           "rubric_heatmap": {
             "$ref": "#/components/schemas/PrimaryRubricHeatmap"
+          },
+          "rubric_trend": {
+            "$ref": "#/components/schemas/PrimaryRubricTrend"
+          },
+          "skill_performance": {
+            "$ref": "#/components/schemas/SecondarySkillPerformance"
           }
         },
         "type": "object",
@@ -59475,32 +59337,6 @@
             "title": "Page Offset",
             "default": 0
           },
-          "persona_simulation_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Persona Simulation Ids"
-          },
-          "persona_simulations_search": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Persona Simulations Search"
-          },
           "heatmap_rubric_ids": {
             "anyOf": [
               {
@@ -59526,6 +59362,58 @@
               }
             ],
             "title": "Heatmap Rubric Search"
+          },
+          "trend_rubric_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trend Rubric Ids"
+          },
+          "trend_rubric_search": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trend Rubric Search"
+          },
+          "skill_rubric_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Skill Rubric Ids"
+          },
+          "skill_rubric_search": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Skill Rubric Search"
           }
         },
         "type": "object",
@@ -59756,14 +59644,14 @@
       },
       "DashboardSecondaryMetrics": {
         "properties": {
+          "persona_performance": {
+            "$ref": "#/components/schemas/PrimaryPersonaPerformance"
+          },
           "cohort_performance": {
             "$ref": "#/components/schemas/SecondaryCohortPerformance"
           },
           "attempt_improvement": {
             "$ref": "#/components/schemas/SecondaryAttemptImprovement"
-          },
-          "skill_performance": {
-            "$ref": "#/components/schemas/SecondarySkillPerformance"
           }
         },
         "type": "object",
@@ -59888,6 +59776,32 @@
             "title": "Page Offset",
             "default": 0
           },
+          "persona_simulation_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Persona Simulation Ids"
+          },
+          "persona_simulations_search": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Persona Simulations Search"
+          },
           "cohort_simulation_ids": {
             "anyOf": [
               {
@@ -59939,32 +59853,6 @@
               }
             ],
             "title": "Improvement Simulations Search"
-          },
-          "skill_rubric_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Skill Rubric Ids"
-          },
-          "skill_rubric_search": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Skill Rubric Search"
           }
         },
         "type": "object",
@@ -68748,6 +68636,57 @@
             "type": "array",
             "title": "Items",
             "description": "Attempt data items"
+          },
+          "total_count": {
+            "type": "integer",
+            "title": "Total Count",
+            "description": "Total count before pagination",
+            "default": 0
+          },
+          "simulation_options": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/app__api__v4__views__attempt__list__types__FilterOption"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulation Options",
+            "description": "Available simulation filter options"
+          },
+          "scenario_options": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/app__api__v4__views__attempt__list__types__FilterOption"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scenario Options",
+            "description": "Available scenario filter options"
+          },
+          "profile_options": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/app__api__v4__views__attempt__list__types__FilterOption"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profile Options",
+            "description": "Available profile filter options"
           }
         },
         "type": "object",
@@ -70607,226 +70546,6 @@
         "type": "object",
         "title": "GetCohortApiResponse",
         "description": "Response for getting a single cohort."
-      },
-      "GetCohortFactsRequest": {
-        "properties": {
-          "profile_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Profile Id",
-            "description": "Filter by profile ID"
-          },
-          "cohort_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Cohort Ids",
-            "description": "Filter by cohort IDs"
-          },
-          "department_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Department Ids",
-            "description": "Filter by department IDs"
-          },
-          "simulation_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Simulation Ids",
-            "description": "Filter by simulation IDs"
-          },
-          "attempt_type": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Attempt Type",
-            "description": "Filter by attempt type: 'general' | 'practice'"
-          },
-          "is_archived": {
-            "type": "boolean",
-            "title": "Is Archived",
-            "description": "Include archived attempts",
-            "default": false
-          },
-          "date_from": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "date"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Date From",
-            "description": "Filter by date range start (inclusive)"
-          },
-          "date_to": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "date"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Date To",
-            "description": "Filter by date range end (inclusive)"
-          },
-          "sort_by": {
-            "type": "string",
-            "title": "Sort By",
-            "description": "Sort field: 'date'",
-            "default": "date"
-          },
-          "sort_order": {
-            "type": "string",
-            "title": "Sort Order",
-            "description": "Sort order: 'asc' | 'desc'",
-            "default": "desc"
-          },
-          "page_limit": {
-            "type": "integer",
-            "maximum": 10000.0,
-            "minimum": 1.0,
-            "title": "Page Limit",
-            "description": "Items per page",
-            "default": 5000
-          },
-          "page_offset": {
-            "type": "integer",
-            "minimum": 0.0,
-            "title": "Page Offset",
-            "description": "Pagination offset",
-            "default": 0
-          }
-        },
-        "type": "object",
-        "title": "GetCohortFactsRequest",
-        "description": "Request for getting cohort facts with filters and pagination."
-      },
-      "GetCohortFactsResponse": {
-        "properties": {
-          "items": {
-            "items": {
-              "$ref": "#/components/schemas/CohortFactsItem"
-            },
-            "type": "array",
-            "title": "Items",
-            "description": "Cohort facts items"
-          },
-          "total_count": {
-            "type": "integer",
-            "title": "Total Count",
-            "description": "Total count before pagination",
-            "default": 0
-          },
-          "cohort_options": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/app__api__v4__views__analytics__cohort_facts__types__FilterOption"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Cohort Options",
-            "description": "Available cohort filter options"
-          },
-          "department_options": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/app__api__v4__views__analytics__cohort_facts__types__FilterOption"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Department Options",
-            "description": "Available department filter options"
-          },
-          "simulation_options": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/app__api__v4__views__analytics__cohort_facts__types__FilterOption"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Simulation Options",
-            "description": "Available simulation filter options"
-          },
-          "persona_options": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/app__api__v4__views__analytics__cohort_facts__types__FilterOption"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Persona Options",
-            "description": "Available persona filter options"
-          }
-        },
-        "type": "object",
-        "title": "GetCohortFactsResponse",
-        "description": "Response with cohort facts and pagination info."
       },
       "GetCohortsApiRequest": {
         "properties": {
@@ -79291,6 +79010,227 @@
         "title": "GetScenarioApiResponse",
         "description": "Response for getting a single scenario."
       },
+      "GetScenarioFactsRequest": {
+        "properties": {
+          "profile_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profile Id",
+            "description": "Filter by profile ID"
+          },
+          "cohort_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cohort Ids",
+            "description": "Filter by cohort IDs"
+          },
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids",
+            "description": "Filter by department IDs"
+          },
+          "simulation_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulation Ids",
+            "description": "Filter by simulation IDs"
+          },
+          "scenario_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scenario Ids",
+            "description": "Filter by scenario IDs"
+          },
+          "attempt_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Attempt Type",
+            "description": "Filter by attempt type: 'general' | 'practice'"
+          },
+          "is_archived": {
+            "type": "boolean",
+            "title": "Is Archived",
+            "description": "Include archived attempts",
+            "default": false
+          },
+          "date_from": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Date From",
+            "description": "Filter by date range start (inclusive)"
+          },
+          "date_to": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Date To",
+            "description": "Filter by date range end (inclusive)"
+          },
+          "sort_by": {
+            "type": "string",
+            "title": "Sort By",
+            "description": "Sort field: 'date'",
+            "default": "date"
+          },
+          "sort_order": {
+            "type": "string",
+            "title": "Sort Order",
+            "description": "Sort order: 'asc' | 'desc'",
+            "default": "desc"
+          },
+          "page_limit": {
+            "type": "integer",
+            "maximum": 50000.0,
+            "minimum": 1.0,
+            "title": "Page Limit",
+            "description": "Items per page",
+            "default": 10000
+          },
+          "page_offset": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Page Offset",
+            "description": "Pagination offset",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "title": "GetScenarioFactsRequest",
+        "description": "Request for getting scenario facts with filters and pagination."
+      },
+      "GetScenarioFactsResponse": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ScenarioFactsItem"
+            },
+            "type": "array",
+            "title": "Items",
+            "description": "Scenario facts items"
+          },
+          "total_count": {
+            "type": "integer",
+            "title": "Total Count",
+            "description": "Total count before pagination",
+            "default": 0
+          },
+          "department_options": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/app__api__v4__views__analytics__scenario_facts__types__FilterOption"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Options",
+            "description": "Available department filter options"
+          },
+          "simulation_options": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/app__api__v4__views__analytics__scenario_facts__types__FilterOption"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulation Options",
+            "description": "Available simulation filter options"
+          },
+          "scenario_options": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/app__api__v4__views__analytics__scenario_facts__types__FilterOption"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scenario Options",
+            "description": "Available scenario filter options"
+          }
+        },
+        "type": "object",
+        "title": "GetScenarioFactsResponse",
+        "description": "Response with scenario facts and pagination info."
+      },
       "GetScenarioFlagsApiRequest": {
         "properties": {
           "ids": {
@@ -80523,22 +80463,6 @@
             "title": "Simulation Ids",
             "description": "Filter by simulation IDs"
           },
-          "scenario_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Scenario Ids",
-            "description": "Filter by scenario IDs"
-          },
           "attempt_type": {
             "anyOf": [
               {
@@ -80597,11 +80521,11 @@
           },
           "page_limit": {
             "type": "integer",
-            "maximum": 50000.0,
+            "maximum": 10000.0,
             "minimum": 1.0,
             "title": "Page Limit",
             "description": "Items per page",
-            "default": 10000
+            "default": 5000
           },
           "page_offset": {
             "type": "integer",
@@ -80630,6 +80554,21 @@
             "title": "Total Count",
             "description": "Total count before pagination",
             "default": 0
+          },
+          "cohort_options": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/app__api__v4__views__analytics__simulation_facts__types__FilterOption"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cohort Options",
+            "description": "Available cohort filter options"
           },
           "department_options": {
             "anyOf": [
@@ -80661,7 +80600,7 @@
             "title": "Simulation Options",
             "description": "Available simulation filter options"
           },
-          "scenario_options": {
+          "persona_options": {
             "anyOf": [
               {
                 "items": {
@@ -80673,8 +80612,8 @@
                 "type": "null"
               }
             ],
-            "title": "Scenario Options",
-            "description": "Available scenario filter options"
+            "title": "Persona Options",
+            "description": "Available persona filter options"
           }
         },
         "type": "object",
@@ -83794,192 +83733,6 @@
         },
         "type": "object",
         "title": "GroupRubricsApiResponse"
-      },
-      "GrowthAvailableMetric": {
-        "properties": {
-          "id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Id"
-          },
-          "name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Name"
-          },
-          "color": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Color"
-          },
-          "unit": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Unit"
-          },
-          "description": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Description"
-          },
-          "formatter_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Formatter Id"
-          }
-        },
-        "type": "object",
-        "title": "GrowthAvailableMetric"
-      },
-      "GrowthChartPoint": {
-        "properties": {
-          "date": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Date"
-          },
-          "average_score": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Average Score"
-          },
-          "completion_rate": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Completion Rate"
-          },
-          "first_attempt_pass_rate": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "First Attempt Pass Rate"
-          },
-          "session_efficiency": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Session Efficiency"
-          },
-          "stagnation_rate": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Stagnation Rate"
-          }
-        },
-        "type": "object",
-        "title": "GrowthChartPoint"
-      },
-      "GrowthWindowAverage": {
-        "properties": {
-          "n": {
-            "type": "integer",
-            "title": "N",
-            "default": 0
-          },
-          "last": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Last"
-          },
-          "prev": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Prev"
-          }
-        },
-        "type": "object",
-        "title": "GrowthWindowAverage"
-      },
-      "GrowthWindowAverages": {
-        "properties": {
-          "average_score": {
-            "$ref": "#/components/schemas/GrowthWindowAverage"
-          }
-        },
-        "type": "object",
-        "title": "GrowthWindowAverages"
       },
       "HTTPValidationError": {
         "properties": {
@@ -101012,41 +100765,6 @@
         "title": "PricingViews",
         "description": "Pricing view data."
       },
-      "PrimaryGrowthData": {
-        "properties": {
-          "chart_data": {
-            "items": {
-              "$ref": "#/components/schemas/GrowthChartPoint"
-            },
-            "type": "array",
-            "title": "Chart Data"
-          },
-          "available_metrics": {
-            "items": {
-              "$ref": "#/components/schemas/GrowthAvailableMetric"
-            },
-            "type": "array",
-            "title": "Available Metrics"
-          },
-          "window_averages": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/GrowthWindowAverages"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "status": {
-            "type": "string",
-            "title": "Status",
-            "default": "neutral"
-          }
-        },
-        "type": "object",
-        "title": "PrimaryGrowthData"
-      },
       "PrimaryPersonaPerformance": {
         "properties": {
           "chart_data": {
@@ -101103,6 +100821,81 @@
         },
         "type": "object",
         "title": "PrimaryRubricHeatmap"
+      },
+      "PrimaryRubricTrend": {
+        "properties": {
+          "trend_data": {
+            "items": {
+              "$ref": "#/components/schemas/PrimaryRubricTrendPoint"
+            },
+            "type": "array",
+            "title": "Trend Data"
+          },
+          "valid_rubric_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Valid Rubric Ids"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status",
+            "default": "neutral"
+          }
+        },
+        "type": "object",
+        "title": "PrimaryRubricTrend"
+      },
+      "PrimaryRubricTrendPoint": {
+        "properties": {
+          "date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Date"
+          },
+          "standard_group_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Standard Group Id"
+          },
+          "standard_group_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Standard Group Name"
+          },
+          "avg_pct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Avg Pct"
+          }
+        },
+        "type": "object",
+        "title": "PrimaryRubricTrendPoint"
       },
       "ProblemStatementEntry": {
         "properties": {
@@ -116876,6 +116669,156 @@
         "title": "ScenarioEntry",
         "description": "Scenario entry with resource metadata."
       },
+      "ScenarioFactsItem": {
+        "properties": {
+          "chat_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Chat Id"
+          },
+          "attempt_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Attempt Id"
+          },
+          "simulation_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Simulation Id"
+          },
+          "scenario_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scenario Id"
+          },
+          "persona_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Persona Id"
+          },
+          "document_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Document Ids"
+          },
+          "profile_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profile Id"
+          },
+          "cohort_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cohort Id"
+          },
+          "department_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Id"
+          },
+          "grade_percent": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Grade Percent"
+          },
+          "passed": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Passed"
+          },
+          "completed": {
+            "type": "boolean",
+            "title": "Completed",
+            "default": false
+          },
+          "attempt_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Attempt Date"
+          },
+          "attempt_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Attempt Type"
+          },
+          "is_archived": {
+            "type": "boolean",
+            "title": "Is Archived",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "chat_id",
+          "attempt_id",
+          "simulation_id"
+        ],
+        "title": "ScenarioFactsItem",
+        "description": "Single chat row from mv_scenario_facts.\n\nContains scenario/footer data with resource IDs only.\nParameter resolution done at runtime via hydrated scenario/persona/document\nresources (denormalized parameter_field_ids[]) and parameter_fields_resource."
+      },
       "ScenarioField": {
         "properties": {
           "field_id": {
@@ -128254,67 +128197,6 @@
         "type": "object",
         "title": "SecondaryCohortData"
       },
-      "SecondaryCohortFact": {
-        "properties": {
-          "cohort_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Cohort Id"
-          },
-          "simulation_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Simulation Id"
-          },
-          "pass_rate": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Pass Rate"
-          },
-          "avg_score": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Avg Score"
-          },
-          "attempts": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Attempts"
-          }
-        },
-        "type": "object",
-        "title": "SecondaryCohortFact"
-      },
       "SecondaryCohortPerformance": {
         "properties": {
           "cohort_data": {
@@ -128331,12 +128213,12 @@
             "type": "array",
             "title": "Daily Data"
           },
-          "cohort_facts": {
+          "simulation_facts": {
             "items": {
-              "$ref": "#/components/schemas/SecondaryCohortFact"
+              "$ref": "#/components/schemas/SecondarySimulationFact"
             },
             "type": "array",
-            "title": "Cohort Facts"
+            "title": "Simulation Facts"
           },
           "daily_facts": {
             "items": {
@@ -128532,6 +128414,67 @@
         },
         "type": "object",
         "title": "SecondaryRadarPoint"
+      },
+      "SecondarySimulationFact": {
+        "properties": {
+          "cohort_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cohort Id"
+          },
+          "simulation_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulation Id"
+          },
+          "pass_rate": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pass Rate"
+          },
+          "avg_score": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Avg Score"
+          },
+          "attempts": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Attempts"
+          }
+        },
+        "type": "object",
+        "title": "SecondarySimulationFact"
       },
       "SecondarySkillPackage": {
         "properties": {
@@ -130456,46 +130399,16 @@
             "title": "Chat Id"
           },
           "attempt_id": {
-            "type": "string",
-            "format": "uuid",
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Attempt Id"
-          },
-          "simulation_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Simulation Id"
-          },
-          "scenario_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Scenario Id"
-          },
-          "persona_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Persona Id"
-          },
-          "document_ids": {
-            "items": {
-              "type": "string",
-              "format": "uuid"
-            },
-            "type": "array",
-            "title": "Document Ids"
           },
           "profile_id": {
             "anyOf": [
@@ -130533,6 +130446,47 @@
             ],
             "title": "Department Id"
           },
+          "simulation_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulation Id"
+          },
+          "persona_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Persona Id"
+          },
+          "attempt_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Attempt Date"
+          },
+          "attempt_number": {
+            "type": "integer",
+            "title": "Attempt Number",
+            "default": 0
+          },
           "grade_percent": {
             "anyOf": [
               {
@@ -130560,17 +130514,16 @@
             "title": "Completed",
             "default": false
           },
-          "attempt_date": {
+          "time_taken_seconds": {
             "anyOf": [
               {
-                "type": "string",
-                "format": "date"
+                "type": "integer"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Attempt Date"
+            "title": "Time Taken Seconds"
           },
           "attempt_type": {
             "anyOf": [
@@ -130591,12 +130544,10 @@
         },
         "type": "object",
         "required": [
-          "chat_id",
-          "attempt_id",
-          "simulation_id"
+          "chat_id"
         ],
         "title": "SimulationFactsItem",
-        "description": "Single chat row from mv_simulation_facts.\n\nContains simulation/scenario data with resource IDs only.\nParameter resolution done at runtime via hydrated scenario/persona/document\nresources (denormalized parameter_field_ids[]) and parameter_fields_resource."
+        "description": "Single chat row from mv_simulation_facts.\n\nContains all simulation/secondary-section data with resource IDs only.\nResource metadata (names, colors, etc.) fetched via internal handlers."
       },
       "SimulationFlagConfig": {
         "properties": {
@@ -137917,30 +137868,6 @@
         "title": "FilterOption",
         "description": "Filter option for dropdowns."
       },
-      "app__api__v4__views__analytics__cohort_facts__types__FilterOption": {
-        "properties": {
-          "value": {
-            "type": "string",
-            "title": "Value"
-          },
-          "label": {
-            "type": "string",
-            "title": "Label"
-          },
-          "count": {
-            "type": "integer",
-            "title": "Count",
-            "default": 0
-          }
-        },
-        "type": "object",
-        "required": [
-          "value",
-          "label"
-        ],
-        "title": "FilterOption",
-        "description": "Filter option for dropdowns."
-      },
       "app__api__v4__views__analytics__profile_facts__types__FilterOption": {
         "properties": {
           "value": {
@@ -137989,7 +137916,55 @@
         "title": "FilterOption",
         "description": "Filter option for dropdowns."
       },
+      "app__api__v4__views__analytics__scenario_facts__types__FilterOption": {
+        "properties": {
+          "value": {
+            "type": "string",
+            "title": "Value"
+          },
+          "label": {
+            "type": "string",
+            "title": "Label"
+          },
+          "count": {
+            "type": "integer",
+            "title": "Count",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "required": [
+          "value",
+          "label"
+        ],
+        "title": "FilterOption",
+        "description": "Filter option for dropdowns."
+      },
       "app__api__v4__views__analytics__simulation_facts__types__FilterOption": {
+        "properties": {
+          "value": {
+            "type": "string",
+            "title": "Value"
+          },
+          "label": {
+            "type": "string",
+            "title": "Label"
+          },
+          "count": {
+            "type": "integer",
+            "title": "Count",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "required": [
+          "value",
+          "label"
+        ],
+        "title": "FilterOption",
+        "description": "Filter option for dropdowns."
+      },
+      "app__api__v4__views__attempt__list__types__FilterOption": {
         "properties": {
           "value": {
             "type": "string",

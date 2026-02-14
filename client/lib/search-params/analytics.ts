@@ -64,18 +64,20 @@ export const historySearchParams = {
  * Each chart's picker state is synced to URL params so sections refetch with filtered data.
  */
 export const dashboardSectionSearchParams = {
-  // Primary: persona chart + heatmap chart
-  personaSimulationIds: parseAsCommaSeparatedArray,
-  personaSimulationsSearch: parseAsString,
+  // Primary: RubricHeatmap + RubricTrend + SkillPerformance (all rubric pickers)
   heatmapRubricIds: parseAsCommaSeparatedArray,
   heatmapRubricSearch: parseAsString,
-  // Secondary: cohort chart + improvement chart + skill chart
+  trendRubricIds: parseAsCommaSeparatedArray,
+  trendRubricSearch: parseAsString,
+  skillRubricIds: parseAsCommaSeparatedArray,
+  skillRubricSearch: parseAsString,
+  // Secondary: PersonaPerformance + CohortPerformance + AttemptImprovement (all simulation pickers)
+  personaSimulationIds: parseAsCommaSeparatedArray,
+  personaSimulationsSearch: parseAsString,
   cohortSimulationIds: parseAsCommaSeparatedArray,
   cohortSimulationsSearch: parseAsString,
   improvementSimulationIds: parseAsCommaSeparatedArray,
   improvementSimulationsSearch: parseAsString,
-  skillRubricIds: parseAsCommaSeparatedArray,
-  skillRubricSearch: parseAsString,
   // Footer: scenario perf + scenario stats + sim perf
   scenarioPerfParameterIds: parseAsCommaSeparatedArray,
   scenarioPerfParamSearch: parseAsString,

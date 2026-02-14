@@ -9,31 +9,32 @@ from pydantic import BaseModel, Field
 class SimulationFactsItem(BaseModel):
     """Single chat row from mv_simulation_facts.
 
-    Contains simulation/scenario data with resource IDs only.
-    Parameter resolution done at runtime via hydrated scenario/persona/document
-    resources (denormalized parameter_field_ids[]) and parameter_fields_resource.
+    Contains all simulation/secondary-section data with resource IDs only.
+    Resource metadata (names, colors, etc.) fetched via internal handlers.
     """
 
     # Primary key
     chat_id: UUID
 
-    # Resource IDs
-    attempt_id: UUID
-    simulation_id: UUID
-    scenario_id: UUID | None = None
-    persona_id: UUID | None = None
-    document_ids: list[UUID] = Field(default_factory=list)
+    # Resource IDs (metadata fetched via internal handlers)
+    attempt_id: UUID | None = None
     profile_id: UUID | None = None
     cohort_id: UUID | None = None
     department_id: UUID | None = None
+    simulation_id: UUID | None = None
+    persona_id: UUID | None = None
+
+    # Timestamps
+    attempt_date: date | None = None
+
+    # Pre-computed
+    attempt_number: int = 0
 
     # Measures
     grade_percent: float | None = None
     passed: bool | None = None
     completed: bool = False
-
-    # Timestamps
-    attempt_date: date | None = None
+    time_taken_seconds: int | None = None
 
     # Filters
     attempt_type: str | None = None  # 'general' | 'practice'
@@ -62,9 +63,6 @@ class GetSimulationFactsRequest(BaseModel):
     simulation_ids: list[UUID] | None = Field(
         default=None, description="Filter by simulation IDs"
     )
-    scenario_ids: list[UUID] | None = Field(
-        default=None, description="Filter by scenario IDs"
-    )
     attempt_type: str | None = Field(
         default=None, description="Filter by attempt type: 'general' | 'practice'"
     )
@@ -81,7 +79,7 @@ class GetSimulationFactsRequest(BaseModel):
     sort_order: str = Field(default="desc", description="Sort order: 'asc' | 'desc'")
 
     # Pagination
-    page_limit: int = Field(default=10000, description="Items per page", ge=1, le=50000)
+    page_limit: int = Field(default=5000, description="Items per page", ge=1, le=10000)
     page_offset: int = Field(default=0, description="Pagination offset", ge=0)
 
 
@@ -94,12 +92,15 @@ class GetSimulationFactsResponse(BaseModel):
     total_count: int = Field(default=0, description="Total count before pagination")
 
     # Filter options (for dropdowns)
+    cohort_options: list[FilterOption] | None = Field(
+        default=None, description="Available cohort filter options"
+    )
     department_options: list[FilterOption] | None = Field(
         default=None, description="Available department filter options"
     )
     simulation_options: list[FilterOption] | None = Field(
         default=None, description="Available simulation filter options"
     )
-    scenario_options: list[FilterOption] | None = Field(
-        default=None, description="Available scenario filter options"
+    persona_options: list[FilterOption] | None = Field(
+        default=None, description="Available persona filter options"
     )

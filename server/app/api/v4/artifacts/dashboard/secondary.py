@@ -5,14 +5,11 @@ from typing import Annotated
 import asyncpg
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
-from app.api.v4.artifacts.dashboard.permissions import compute_secondary_metrics
+from app.api.v4.artifacts.dashboard.permissions import compute_secondary_metrics_v2
 from app.api.v4.artifacts.dashboard.shared import (
-    build_rubric_meta,
     build_simulation_meta,
-    collect_resource_ids,
-    fetch_base_mv_data,
+    fetch_simulation_facts_data,
     fetch_thresholds,
-    hydrate_resources,
     parse_dashboard_filters,
 )
 from app.api.v4.artifacts.dashboard.types import (
@@ -42,7 +39,15 @@ async def get_dashboard_secondary(
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> DashboardSecondaryResponse:
-    """Get dashboard secondary section data."""
+    """Get dashboard secondary section data.
+
+    Secondary section is simulation-focused:
+    - Persona Performance (avg score per persona, trend by date)
+    - Cohort Performance (pass rate, avg score per cohort x simulation)
+    - Attempt Improvement (score progression by attempt number)
+
+    All sourced from mv_simulation_facts (renamed from mv_cohort_facts).
+    """
     tags = ["artifacts", "dashboard", "views", "analytics", "secondary"]
     bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
 
@@ -52,13 +57,15 @@ async def get_dashboard_secondary(
             raise RuntimeError("Database pool not initialized")
 
         filters = parse_dashboard_filters(request)
-        mv_data = await fetch_base_mv_data(
+
+        # Single MV call: fetch simulation facts
+        sim_facts_response = await fetch_simulation_facts_data(
             pool=pool,
             request=request,
             filters=filters,
             bypass_cache=bypass_cache,
-            include_first_attempt=False,
         )
+
         thresholds = await fetch_thresholds(
             pool=pool,
             actor_profile_id=request.actor_profile_id,
@@ -66,30 +73,72 @@ async def get_dashboard_secondary(
             department_ids=request.department_ids,
         )
 
-        resource_ids = collect_resource_ids(mv_data)
-        resources = await hydrate_resources(
-            pool=pool,
-            mv_data=mv_data,
-            resource_ids=resource_ids,
-            bypass_cache=bypass_cache,
+        # Collect unique IDs for hydration
+        persona_ids = list(
+            {item.persona_id for item in sim_facts_response.items if item.persona_id}
+        )
+        simulation_ids = list(
+            {
+                item.simulation_id
+                for item in sim_facts_response.items
+                if item.simulation_id
+            }
+        )
+        cohort_ids = list(
+            {item.cohort_id for item in sim_facts_response.items if item.cohort_id}
         )
 
-        secondary_metrics = compute_secondary_metrics(
-            attempts=mv_data.attempts,
-            daily_rows=mv_data.daily_rows,
-            chat_rows=mv_data.chat_rows,
-            profile_rows=mv_data.profile_rows,
-            cohort_name_map=resources.cohort_name_map,
-            rubric_group_scores=resources.rubric_group_scores,
+        # Hydrate resources
+        from app.api.v4.resources.personas.get import get_personas_internal
+        from app.api.v4.resources.simulations.get import get_simulations_internal
+
+        async with pool.acquire() as c:
+            personas = await get_personas_internal(
+                conn=c, ids=persona_ids, bypass_cache=bypass_cache
+            )
+            simulations = await get_simulations_internal(
+                conn=c, ids=simulation_ids, bypass_cache=bypass_cache
+            )
+            cohort_name_rows = (
+                await c.fetch(
+                    """
+                SELECT id, name FROM cohorts_resource
+                WHERE id = ANY($1::uuid[])
+                """,
+                    cohort_ids,
+                )
+                if cohort_ids
+                else []
+            )
+
+        persona_name_map = {
+            str(p.persona_id): p.name for p in personas if p.persona_id and p.name
+        }
+        cohort_name_map = {
+            str(r["id"]): r["name"] for r in cohort_name_rows if r["id"] and r["name"]
+        }
+
+        # Compute secondary metrics from simulation facts
+        secondary_metrics = compute_secondary_metrics_v2(
+            simulation_facts=sim_facts_response.items,
+            persona_name_map=persona_name_map,
+            cohort_name_map=cohort_name_map,
             thresholds=thresholds.as_dict(),
         )
 
         # Apply picker filters (valid_*_ids stay intact for picker options)
+        if request.persona_simulation_ids:
+            filter_set = {str(sid) for sid in request.persona_simulation_ids}
+            secondary_metrics.persona_performance.chart_data = [
+                row
+                for row in secondary_metrics.persona_performance.chart_data
+                if any(sid in filter_set for sid in (row.simulation_ids or []))
+            ]
         if request.cohort_simulation_ids:
             filter_set = {str(sid) for sid in request.cohort_simulation_ids}
-            secondary_metrics.cohort_performance.cohort_facts = [
+            secondary_metrics.cohort_performance.simulation_facts = [
                 f
-                for f in secondary_metrics.cohort_performance.cohort_facts
+                for f in secondary_metrics.cohort_performance.simulation_facts
                 if f.simulation_id in filter_set
             ]
             secondary_metrics.cohort_performance.daily_facts = [
@@ -104,37 +153,28 @@ async def get_dashboard_secondary(
                 for f in secondary_metrics.attempt_improvement.facts
                 if f.simulation_id in filter_set
             ]
-        if request.skill_rubric_ids:
-            filter_set = {str(rid) for rid in request.skill_rubric_ids}
-            secondary_metrics.skill_performance.packages = [
-                p
-                for p in secondary_metrics.skill_performance.packages
-                if p.rubric_id in filter_set
-            ]
 
-        simulations_meta = build_simulation_meta(resources.simulations)
-        rubrics_meta = build_rubric_meta(resources.rubrics)
+        simulations_meta = build_simulation_meta(simulations)
 
         # Apply search filters to metadata lists
-        if request.cohort_simulations_search or request.improvement_simulations_search:
+        if (
+            request.persona_simulations_search
+            or request.cohort_simulations_search
+            or request.improvement_simulations_search
+        ):
             q = (
-                request.cohort_simulations_search
+                request.persona_simulations_search
+                or request.cohort_simulations_search
                 or request.improvement_simulations_search
                 or ""
             ).lower()
             simulations_meta = [
                 s for s in simulations_meta if q in (s.get("name") or "").lower()
             ]
-        if request.skill_rubric_search:
-            q = request.skill_rubric_search.lower()
-            rubrics_meta = [
-                r for r in rubrics_meta if q in (r.get("name") or "").lower()
-            ]
 
         result = DashboardSecondaryResponse(
             secondary_metrics=secondary_metrics,
             simulations=simulations_meta,
-            rubrics=rubrics_meta,
             thresholds=thresholds.as_dict(),
         )
 

@@ -9,7 +9,7 @@ import { useDashboardSectionParams } from "@/hooks/use-dashboard-section-params"
 
 import AttemptImprovement from "./secondary/AttemptImprovement";
 import CohortPerformance from "./secondary/CohortPerformance";
-import SkillPerformance from "./secondary/SkillPerformance";
+import PersonaPerformance from "./secondary/PersonaPerformance";
 
 export type SecondaryOut = OutputOf<"/api/v4/artifacts/dashboard/secondary", "post">;
 
@@ -27,6 +27,10 @@ function validateStatus(
 export interface DashboardSecondaryProps {
   data: SecondaryOut;
   profileId?: string | undefined;
+  initialPersonaSimulations?: string[] | undefined;
+  onPersonaSimulationChange?: ((ids: string[]) => void) | undefined;
+  personaSimulationsSearch?: string | undefined;
+  onPersonaSimulationsSearchChange?: ((term: string) => void) | undefined;
   initialCohortSimulations?: string[] | undefined;
   onCohortSimulationChange?: ((ids: string[]) => void) | undefined;
   cohortSimulationsSearch?: string | undefined;
@@ -35,15 +39,15 @@ export interface DashboardSecondaryProps {
   onImprovementSimulationChange?: ((ids: string[]) => void) | undefined;
   improvementSimulationsSearch?: string | undefined;
   onImprovementSimulationsSearchChange?: ((term: string) => void) | undefined;
-  initialSkillRubrics?: string[] | undefined;
-  onSkillRubricChange?: ((ids: string[]) => void) | undefined;
-  skillRubricSearch?: string | undefined;
-  onSkillRubricSearchChange?: ((term: string) => void) | undefined;
 }
 
 export default function DashboardSecondary({
   data,
   profileId,
+  initialPersonaSimulations,
+  onPersonaSimulationChange,
+  personaSimulationsSearch,
+  onPersonaSimulationsSearchChange,
   initialCohortSimulations,
   onCohortSimulationChange,
   cohortSimulationsSearch,
@@ -52,20 +56,20 @@ export default function DashboardSecondary({
   onImprovementSimulationChange,
   improvementSimulationsSearch,
   onImprovementSimulationsSearchChange,
-  initialSkillRubrics,
-  onSkillRubricChange,
-  skillRubricSearch,
-  onSkillRubricSearchChange,
 }: DashboardSecondaryProps) {
   const {
     params: sectionParams,
+    setPersonaSimulationIds,
+    setPersonaSimulationsSearch,
     setCohortSimulationIds,
     setCohortSimulationsSearch,
     setImprovementSimulationIds,
     setImprovementSimulationsSearch,
-    setSkillRubricIds,
-    setSkillRubricSearch,
   } = useDashboardSectionParams();
+
+  const effectiveOnPersonaChange = onPersonaSimulationChange ?? setPersonaSimulationIds;
+  const effectiveOnPersonaSearch = onPersonaSimulationsSearchChange ?? setPersonaSimulationsSearch;
+  const effectivePersonaSearch = personaSimulationsSearch ?? sectionParams.personaSimulationsSearch ?? undefined;
 
   const effectiveOnCohortChange = onCohortSimulationChange ?? setCohortSimulationIds;
   const effectiveOnCohortSearch = onCohortSimulationsSearchChange ?? setCohortSimulationsSearch;
@@ -75,21 +79,32 @@ export default function DashboardSecondary({
   const effectiveOnImprovementSearch = onImprovementSimulationsSearchChange ?? setImprovementSimulationsSearch;
   const effectiveImprovementSearch = improvementSimulationsSearch ?? sectionParams.improvementSimulationsSearch ?? undefined;
 
-  const effectiveOnSkillChange = onSkillRubricChange ?? setSkillRubricIds;
-  const effectiveOnSkillSearch = onSkillRubricSearchChange ?? setSkillRubricSearch;
-  const effectiveSkillSearch = skillRubricSearch ?? sectionParams.skillRubricSearch ?? undefined;
-
   const [secondaryCarouselIndex, setSecondaryCarouselIndex] = useState(0);
   const [isSecondaryHovered, setIsSecondaryHovered] = useState(false);
 
   const secondaryComponents = useMemo(() => {
     if (!data?.secondary_metrics) return [];
 
+    const personaPerformance = data.secondary_metrics.persona_performance;
     const cohortPerformance = data.secondary_metrics.cohort_performance;
     const attemptImprovement = data.secondary_metrics.attempt_improvement;
-    const skillPerformance = data.secondary_metrics.skill_performance;
 
-    if (!cohortPerformance || !attemptImprovement || !skillPerformance) return [];
+    if (!personaPerformance || !cohortPerformance || !attemptImprovement) return [];
+
+    const normalizedPersonaChartData = (personaPerformance.chart_data || []).map((persona) => ({
+      name: persona.name || "",
+      score: persona.score ?? 0,
+      sessions: persona.sessions ?? 0,
+      color: persona.color || "",
+      trendData: (persona.trend_data || []).map((td) => ({
+        date: td.date || "",
+        score: td.score ?? null,
+        timestamp: td.timestamp ?? 0,
+        simulationId: td.simulation_id || "",
+      })),
+      simulationIds: persona.simulation_ids || [],
+      status: validateStatus(persona.status),
+    }));
 
     const normalizedDailyData = (cohortPerformance.daily_data || []).map((d) => ({
       date: d.date,
@@ -97,13 +112,44 @@ export default function DashboardSecondary({
       cohortId: d.cohort_id ?? undefined,
     }));
 
-    const normalizedSkillPackages = (skillPerformance.packages || []).map((pkg) => ({
-      rubric_id: pkg.rubric_id,
-      radar_data: pkg.radar_data,
-      group_facts: pkg.group_facts,
-    }));
-
     return [
+      <PersonaPerformance
+        key="persona-performance"
+        chartData={normalizedPersonaChartData}
+        simulations={(data.simulations || []).map((s) => ({
+          simulation_id: s.simulation_id || "",
+          name: s.name || "",
+          description: s.description || "",
+          department_ids: s.department_ids || null,
+          time_limit: s.time_limit ?? null,
+        }))}
+        validSimulationIds={personaPerformance.valid_simulation_ids || []}
+        personaColors={(personaPerformance.persona_colors_junction || []).reduce((acc: Record<string, string>, p: { persona_name?: string | null; color?: string | null }) => {
+          if (p.persona_name) {
+            acc[p.persona_name] = p.color || "";
+          }
+          return acc;
+        }, {} as Record<string, string>)}
+        hasDataAvailable={(personaPerformance.chart_data || []).length > 0}
+        {...(data.insights?.persona ? {
+          actionableInsights: Object.fromEntries(
+            Object.entries(data.insights.persona).map(([k, v]) => {
+              const insight = typeof v === "object" && v !== null && "insight" in v ? (v as { insight: string | null }).insight : (typeof v === "string" ? v : null);
+              return [k, insight];
+            })
+          ) as Record<string, string | null>
+        } : {})}
+        performanceStatus="neutral"
+        thresholds={data.thresholds ? {
+          success: data.thresholds.success ?? 0,
+          warning: data.thresholds.warning ?? 0,
+          danger: data.thresholds.danger ?? 0,
+        } : { success: 0, warning: 0, danger: 0 }}
+        initialSelectedSimulations={initialPersonaSimulations}
+        onSimulationSelect={effectiveOnPersonaChange}
+        simulationSearchValue={effectivePersonaSearch}
+        onSimulationSearchChange={effectiveOnPersonaSearch}
+      />,
       <CohortPerformance
         key="cohort-performance"
         cohortData={(cohortPerformance.cohort_data || []).map((c) => ({
@@ -124,7 +170,7 @@ export default function DashboardSecondary({
           avgScore: d.avgScore ?? 0,
           cohortId: d.cohortId,
         }))}
-        cohortFacts={(cohortPerformance.cohort_facts || []).map((f) => ({
+        cohortFacts={(cohortPerformance.simulation_facts || []).map((f) => ({
           cohortId: f.cohort_id || "",
           simulationId: f.simulation_id || "",
           passRate: f.pass_rate ?? 0,
@@ -187,46 +233,8 @@ export default function DashboardSecondary({
         simulationSearchValue={effectiveImprovementSearch}
         onSimulationSearchChange={effectiveOnImprovementSearch}
       />,
-      <SkillPerformance
-        key="skill-performance"
-        packages={normalizedSkillPackages.map((pkg) => ({
-          rubricId: pkg.rubric_id || "",
-          radarData: (pkg.radar_data || []).map((rd) => ({
-            metric: rd.metric || "",
-            description: rd.description ?? undefined,
-            value: rd.value ?? 0,
-            fullMark: rd.full_mark ?? 0,
-          })),
-          groupFacts: (pkg.group_facts || []).map((gf) => ({
-            groupId: gf.group_id || "",
-            groupName: gf.group_name || "",
-            groupDescription: gf.group_description ?? undefined,
-            simulationId: gf.simulation_id || "",
-            score: gf.score ?? 0,
-            points: gf.points ?? 0,
-            avgPct: gf.avg_pct ?? 0,
-          })),
-        }))}
-        rubrics={(data.rubrics || []).filter((r) => r.rubric_id && r.name).map((r) => {
-          const rubricId = r.rubric_id;
-          const name = r.name;
-          if (!rubricId || !name) return null;
-          return {
-            rubric_id: String(rubricId),
-            name: String(name),
-            description: r.description || "",
-          };
-        }).filter((r): r is { rubric_id: string; name: string; description: string } => r !== null)}
-        validRubricIds={skillPerformance.valid_rubric_ids || []}
-        actionableInsight={data.insights?.skill_performance ?? null}
-        status={validateStatus(skillPerformance.status)}
-        initialSelectedRubrics={initialSkillRubrics}
-        onRubricSelect={effectiveOnSkillChange}
-        rubricSearchValue={effectiveSkillSearch}
-        onRubricSearchChange={effectiveOnSkillSearch}
-      />,
     ];
-  }, [data, profileId, initialCohortSimulations, effectiveOnCohortChange, effectiveCohortSearch, effectiveOnCohortSearch, initialImprovementSimulations, effectiveOnImprovementChange, effectiveImprovementSearch, effectiveOnImprovementSearch, initialSkillRubrics, effectiveOnSkillChange, effectiveSkillSearch, effectiveOnSkillSearch]);
+  }, [data, profileId, initialPersonaSimulations, effectiveOnPersonaChange, effectivePersonaSearch, effectiveOnPersonaSearch, initialCohortSimulations, effectiveOnCohortChange, effectiveCohortSearch, effectiveOnCohortSearch, initialImprovementSimulations, effectiveOnImprovementChange, effectiveImprovementSearch, effectiveOnImprovementSearch]);
 
   const navigateSecondary = (direction: "prev" | "next") => {
     const length = secondaryComponents.length;

@@ -118,16 +118,20 @@ export default async function DashboardPage({
   const filters = resolveAnalyticsFilters(q, defaults, profileContext);
 
   // Section picker params
-  const personaSimulationIds = q.personaSimulationIds ?? undefined;
-  const personaSimulationsSearch = q.personaSimulationsSearch ?? undefined;
+  // Primary: all rubric pickers
   const heatmapRubricIds = q.heatmapRubricIds ?? undefined;
   const heatmapRubricSearch = q.heatmapRubricSearch ?? undefined;
+  const trendRubricIds = q.trendRubricIds ?? undefined;
+  const trendRubricSearch = q.trendRubricSearch ?? undefined;
+  const skillRubricIds = q.skillRubricIds ?? undefined;
+  const skillRubricSearch = q.skillRubricSearch ?? undefined;
+  // Secondary: all simulation pickers
+  const personaSimulationIds = q.personaSimulationIds ?? undefined;
+  const personaSimulationsSearch = q.personaSimulationsSearch ?? undefined;
   const cohortSimulationIds = q.cohortSimulationIds ?? undefined;
   const cohortSimulationsSearch = q.cohortSimulationsSearch ?? undefined;
   const improvementSimulationIds = q.improvementSimulationIds ?? undefined;
   const improvementSimulationsSearch = q.improvementSimulationsSearch ?? undefined;
-  const skillRubricIds = q.skillRubricIds ?? undefined;
-  const skillRubricSearch = q.skillRubricSearch ?? undefined;
   const scenarioPerfParameterIds = q.scenarioPerfParameterIds ?? undefined;
   const scenarioPerfParamSearch = q.scenarioPerfParamSearch ?? undefined;
   const scenarioStatsParameterIds = q.scenarioStatsParameterIds ?? undefined;
@@ -174,9 +178,9 @@ export default async function DashboardPage({
 
   const headerKey = `header|${filterKey}`;
 
-  const primaryKey = `primary|${filterKey}|${(personaSimulationIds || []).join(",")}|${personaSimulationsSearch || ""}|${(heatmapRubricIds || []).join(",")}|${heatmapRubricSearch || ""}`;
+  const primaryKey = `primary|${filterKey}|${(heatmapRubricIds || []).join(",")}|${heatmapRubricSearch || ""}|${(trendRubricIds || []).join(",")}|${trendRubricSearch || ""}|${(skillRubricIds || []).join(",")}|${skillRubricSearch || ""}`;
 
-  const secondaryKey = `secondary|${filterKey}|${(cohortSimulationIds || []).join(",")}|${cohortSimulationsSearch || ""}|${(improvementSimulationIds || []).join(",")}|${improvementSimulationsSearch || ""}|${(skillRubricIds || []).join(",")}|${skillRubricSearch || ""}`;
+  const secondaryKey = `secondary|${filterKey}|${(personaSimulationIds || []).join(",")}|${personaSimulationsSearch || ""}|${(cohortSimulationIds || []).join(",")}|${cohortSimulationsSearch || ""}|${(improvementSimulationIds || []).join(",")}|${improvementSimulationsSearch || ""}`;
 
   const footerKey = `footer|${filterKey}|${(scenarioPerfParameterIds || []).join(",")}|${scenarioPerfParamSearch || ""}|${(scenarioStatsParameterIds || []).join(",")}|${scenarioStatsParamSearch || ""}|${(simPerfSimulationIds || []).join(",")}|${simPerfSimulationSearch || ""}`;
 
@@ -216,21 +220,23 @@ export default async function DashboardPage({
         <Suspense key={primaryKey} fallback={<PrimarySkeleton />}>
           <DashboardPrimarySection
             commonBody={commonBody}
-            personaSimulationIds={personaSimulationIds}
-            personaSimulationsSearch={personaSimulationsSearch}
             heatmapRubricIds={heatmapRubricIds}
             heatmapRubricSearch={heatmapRubricSearch}
+            trendRubricIds={trendRubricIds}
+            trendRubricSearch={trendRubricSearch}
+            skillRubricIds={skillRubricIds}
+            skillRubricSearch={skillRubricSearch}
           />
         </Suspense>
         <Suspense key={secondaryKey} fallback={<SecondarySkeleton />}>
           <DashboardSecondarySection
             commonBody={commonBody}
+            personaSimulationIds={personaSimulationIds}
+            personaSimulationsSearch={personaSimulationsSearch}
             cohortSimulationIds={cohortSimulationIds}
             cohortSimulationsSearch={cohortSimulationsSearch}
             improvementSimulationIds={improvementSimulationIds}
             improvementSimulationsSearch={improvementSimulationsSearch}
-            skillRubricIds={skillRubricIds}
-            skillRubricSearch={skillRubricSearch}
           />
         </Suspense>
       </div>
@@ -327,18 +333,75 @@ async function DashboardHeaderSection({
 
 async function DashboardPrimarySection({
   commonBody,
-  personaSimulationIds,
-  personaSimulationsSearch,
   heatmapRubricIds,
   heatmapRubricSearch,
+  trendRubricIds,
+  trendRubricSearch,
+  skillRubricIds,
+  skillRubricSearch,
+}: {
+  commonBody: CommonBody;
+  heatmapRubricIds?: string[] | undefined;
+  heatmapRubricSearch?: string | undefined;
+  trendRubricIds?: string[] | undefined;
+  trendRubricSearch?: string | undefined;
+  skillRubricIds?: string[] | undefined;
+  skillRubricSearch?: string | undefined;
+}) {
+  const data = await getDashboardPrimary({
+    body: {
+      ...commonBody,
+      ...(heatmapRubricIds?.length && {
+        heatmap_rubric_ids: heatmapRubricIds,
+      }),
+      ...(heatmapRubricSearch && {
+        heatmap_rubric_search: heatmapRubricSearch,
+      }),
+      ...(trendRubricIds?.length && {
+        trend_rubric_ids: trendRubricIds,
+      }),
+      ...(trendRubricSearch && {
+        trend_rubric_search: trendRubricSearch,
+      }),
+      ...(skillRubricIds?.length && {
+        skill_rubric_ids: skillRubricIds,
+      }),
+      ...(skillRubricSearch && {
+        skill_rubric_search: skillRubricSearch,
+      }),
+    },
+  });
+  return (
+    <DashboardPrimary
+      data={data}
+      initialHeatmapRubrics={heatmapRubricIds}
+      heatmapRubricSearch={heatmapRubricSearch}
+      initialTrendRubrics={trendRubricIds}
+      trendRubricSearch={trendRubricSearch}
+      initialSkillRubrics={skillRubricIds}
+      skillRubricSearch={skillRubricSearch}
+    />
+  );
+}
+
+async function DashboardSecondarySection({
+  commonBody,
+  personaSimulationIds,
+  personaSimulationsSearch,
+  cohortSimulationIds,
+  cohortSimulationsSearch,
+  improvementSimulationIds,
+  improvementSimulationsSearch,
 }: {
   commonBody: CommonBody;
   personaSimulationIds?: string[] | undefined;
   personaSimulationsSearch?: string | undefined;
-  heatmapRubricIds?: string[] | undefined;
-  heatmapRubricSearch?: string | undefined;
+  cohortSimulationIds?: string[] | undefined;
+  cohortSimulationsSearch?: string | undefined;
+  improvementSimulationIds?: string[] | undefined;
+  improvementSimulationsSearch?: string | undefined;
 }) {
-  const data = await getDashboardPrimary({
+  const data = await getDashboardSecondary({
     body: {
       ...commonBody,
       ...(personaSimulationIds?.length && {
@@ -347,45 +410,6 @@ async function DashboardPrimarySection({
       ...(personaSimulationsSearch && {
         persona_simulations_search: personaSimulationsSearch,
       }),
-      ...(heatmapRubricIds?.length && {
-        heatmap_rubric_ids: heatmapRubricIds,
-      }),
-      ...(heatmapRubricSearch && {
-        heatmap_rubric_search: heatmapRubricSearch,
-      }),
-    },
-  });
-  return (
-    <DashboardPrimary
-      data={data}
-      initialPersonaSimulations={personaSimulationIds}
-      personaSimulationsSearch={personaSimulationsSearch}
-      initialHeatmapRubrics={heatmapRubricIds}
-      heatmapRubricSearch={heatmapRubricSearch}
-    />
-  );
-}
-
-async function DashboardSecondarySection({
-  commonBody,
-  cohortSimulationIds,
-  cohortSimulationsSearch,
-  improvementSimulationIds,
-  improvementSimulationsSearch,
-  skillRubricIds,
-  skillRubricSearch,
-}: {
-  commonBody: CommonBody;
-  cohortSimulationIds?: string[] | undefined;
-  cohortSimulationsSearch?: string | undefined;
-  improvementSimulationIds?: string[] | undefined;
-  improvementSimulationsSearch?: string | undefined;
-  skillRubricIds?: string[] | undefined;
-  skillRubricSearch?: string | undefined;
-}) {
-  const data = await getDashboardSecondary({
-    body: {
-      ...commonBody,
       ...(cohortSimulationIds?.length && {
         cohort_simulation_ids: cohortSimulationIds,
       }),
@@ -398,23 +422,17 @@ async function DashboardSecondarySection({
       ...(improvementSimulationsSearch && {
         improvement_simulations_search: improvementSimulationsSearch,
       }),
-      ...(skillRubricIds?.length && {
-        skill_rubric_ids: skillRubricIds,
-      }),
-      ...(skillRubricSearch && {
-        skill_rubric_search: skillRubricSearch,
-      }),
     },
   });
   return (
     <DashboardSecondary
       data={data}
+      initialPersonaSimulations={personaSimulationIds}
+      personaSimulationsSearch={personaSimulationsSearch}
       initialCohortSimulations={cohortSimulationIds}
       cohortSimulationsSearch={cohortSimulationsSearch}
       initialImprovementSimulations={improvementSimulationIds}
       improvementSimulationsSearch={improvementSimulationsSearch}
-      initialSkillRubrics={skillRubricIds}
-      skillRubricSearch={skillRubricSearch}
     />
   );
 }

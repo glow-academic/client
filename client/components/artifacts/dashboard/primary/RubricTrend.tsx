@@ -1,12 +1,12 @@
 /**
- * Growth.tsx
- * Fast and dumb UI component for displaying growth analytics.
+ * RubricTrend.tsx
+ * Multi-line chart showing rubric score trends over time by standard group.
+ * Each standard group is rendered as a separate line.
  * All data processing is handled externally via props.
- * @AshokSaravanan222 & @siladiea
- * 07/23/2025
  */
 "use client";
 
+import { GenericPicker } from "@/components/common/forms/GenericPicker";
 import {
   Card,
   CardContent,
@@ -14,43 +14,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { TruncatedInsight } from "../TruncatedInsight";
-
-type GrowthDataPoint = {
-  date: string;
-  averageScore: number | null;
-  completionRate: number | null;
-  firstAttemptPassRate: number | null;
-  sessionEfficiency: number | null;
-  stagnationRate: number | null;
-};
-
-type GrowthMetric = {
-  id: string;
-  name: string;
-  color: string;
-  unit: string;
-  description: string;
-  formatterId: "percent" | "int" | "sec" | "min" | "hours" | "minutes";
-};
-
-type GrowthWindowAverage = {
-  n: number;
-  last: number | null;
-  prev: number | null;
-};
-
-type GrowthWindowAverages = {
-  averageScore: GrowthWindowAverage;
-};
-
-type GrowthDataResponse = {
-  chartData: GrowthDataPoint[];
-  availableMetrics: GrowthMetric[];
-  windowAverages: GrowthWindowAverages;
-};
-
-import { GenericPicker } from "@/components/common/forms/GenericPicker";
 import { useChartColors } from "@/lib/utils/chartColors";
 import { TrendingUp } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
@@ -65,23 +28,25 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import { TruncatedInsight } from "../TruncatedInsight";
 
-// Custom tooltip component with liquid glass styling
+type RubricTrendPoint = {
+  date: string | null;
+  standard_group_id: string | null;
+  standard_group_name: string | null;
+  avg_pct: number | null;
+};
+
 function CustomLineTooltip({
   active,
   payload,
   label,
-  metricsWithFormatters,
+  groupColors,
 }: TooltipProps<number, string> & {
-  metricsWithFormatters: Array<{
-    id: string;
-    name: string;
-    formatter: (value: number) => string;
-  }>;
+  groupColors: Record<string, string>;
 }) {
   if (!active || !payload || !payload.length || !label) return null;
 
-  // Format date label
   const formatDate = (date: string) => {
     const parts = date.split("-");
     if (parts.length === 3) {
@@ -95,14 +60,11 @@ function CustomLineTooltip({
       <div className="font-medium">{formatDate(label)}</div>
       <div className="mt-1 text-xs space-y-1">
         {payload.map((item, index) => {
-          const dataKey = String(item.dataKey ?? "");
-          const metric = metricsWithFormatters.find((m) => m.id === dataKey);
-          const formattedValue = metric?.formatter
-            ? metric.formatter(Number(item.value))
-            : `${Math.round(Number(item.value))}%`;
+          const name = String(item.name ?? item.dataKey ?? "");
+          const color = groupColors[name] || item.color || "";
           return (
-            <div key={index}>
-              {metric?.name ?? dataKey}: {formattedValue}
+            <div key={index} style={{ color }}>
+              {name}: {Math.round(Number(item.value))}%
             </div>
           );
         })}
@@ -111,120 +73,90 @@ function CustomLineTooltip({
   );
 }
 
-// Type for metrics with formatter functions
-type GrowthMetricWithFormatter = GrowthMetric & {
-  formatter: (value: number) => string;
-};
-
-export interface GrowthProps {
-  chartData: GrowthDataResponse["chartData"];
-  availableMetrics: GrowthMetric[];
-  windowAverages: GrowthDataResponse["windowAverages"];
+export interface RubricTrendProps {
+  trendData: RubricTrendPoint[];
+  rubrics: Array<{
+    rubric_id: string;
+    name: string;
+    description: string;
+  }>;
+  validRubricIds: string[];
   hasDataAvailable: boolean;
   actionableInsight: string | null;
   status: "success" | "warning" | "danger" | "neutral";
+  initialSelectedRubrics?: string[] | undefined;
+  onRubricSelect?: ((ids: string[]) => void) | undefined;
+  rubricSearchValue?: string | undefined;
+  onRubricSearchChange?: ((term: string) => void) | undefined;
 }
 
-export default function Growth({
-  chartData,
-  availableMetrics,
-  windowAverages: _windowAverages,
+export default function RubricTrend({
+  trendData,
+  rubrics,
+  validRubricIds,
   hasDataAvailable,
   actionableInsight,
   status,
-}: GrowthProps) {
-  const [selectedMetrics, setSelectedMetrics] = useState<string[]>([
-    "averageScore",
-  ]);
+  initialSelectedRubrics,
+  onRubricSelect,
+  rubricSearchValue,
+  onRubricSearchChange,
+}: RubricTrendProps) {
   const [isMobile, setIsMobile] = useState(false);
-
-  // Get chart colors 1-5 from CSS variables
   const chartColors = useChartColors();
 
   useEffect(() => {
     const checkMobile = () => {
-      setIsMobile(window.innerWidth < 1024); // lg breakpoint
+      setIsMobile(window.innerWidth < 1024);
     };
     checkMobile();
     window.addEventListener("resize", checkMobile);
     return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
-  // Transform availableMetrics to include formatter functions and chart colors
-  const metricsWithFormatters = useMemo(() => {
-    const fmt = {
-      percent: (v: number) => `${Math.round(v)}%`,
-      int: (v: number) => `${Math.round(v)}`,
-      sec: (v: number) => `${Math.round(v)} sec`,
-      min: (v: number) => `${Math.round(v)} min`,
-      hours: (v: number) => `${Math.round(v)}h`,
-      minutes: (v: number) => {
-        const totalMinutes = Math.round(v);
-        const hours = Math.floor(totalMinutes / 60);
-        const minutes = totalMinutes % 60;
-        if (hours > 0) {
-          return minutes > 0 ? `${hours}h ${minutes}m` : `${hours}h`;
-        }
-        return `${minutes}m`;
-      },
-    };
+  // Extract unique standard groups and assign colors
+  const { groupNames, groupColors } = useMemo(() => {
+    const names = Array.from(
+      new Set(
+        trendData
+          .map((p) => p.standard_group_name)
+          .filter((n): n is string => !!n),
+      ),
+    );
+    const colors: Record<string, string> = {};
+    names.forEach((name, i) => {
+      colors[name] = chartColors[i % chartColors.length] ?? "#888";
+    });
+    return { groupNames: names, groupColors: colors };
+  }, [trendData, chartColors]);
 
-    return availableMetrics.map(({ formatterId, ...rest }, index) => ({
-      ...rest,
-      formatter: fmt[formatterId],
-      // Override color with chart colors 1-5, cycling if more than 5 metrics
-      color: chartColors[index % chartColors.length],
-    })) as GrowthMetricWithFormatter[];
-  }, [availableMetrics, chartColors]);
+  // Pivot trend data: { date, [groupName]: avg_pct }
+  const chartData = useMemo(() => {
+    const dateMap = new Map<string, Record<string, number>>();
+    for (const point of trendData) {
+      if (!point.date || !point.standard_group_name || point.avg_pct == null)
+        continue;
+      if (!dateMap.has(point.date)) {
+        dateMap.set(point.date, {});
+      }
+      dateMap.get(point.date)![point.standard_group_name] = point.avg_pct;
+    }
+    return Array.from(dateMap.entries())
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([date, values]) => ({ date, ...values }));
+  }, [trendData]);
 
-  // Build metric mapping for RubricPicker
-  const metricMapping = useMemo(() => {
+  // Rubric picker mapping
+  const rubricMapping = useMemo(() => {
     const mapping: Record<string, { name: string; description: string }> = {};
-    metricsWithFormatters.forEach((metric) => {
-      mapping[metric.id] = {
-        name: metric.name,
-        description: metric.description || `${metric.name} (${metric.unit})`,
-      };
+    rubrics.forEach((r) => {
+      mapping[r.rubric_id] = { name: r.name, description: r.description };
     });
     return mapping;
-  }, [metricsWithFormatters]);
+  }, [rubrics]);
 
-  const validMetricIds = useMemo(() => {
-    return metricsWithFormatters.map((m) => m.id);
-  }, [metricsWithFormatters]);
-
-  // Ensure at least one metric is always selected
-  useEffect(() => {
-    if (
-      selectedMetrics.length === 0 &&
-      metricsWithFormatters.length > 0 &&
-      metricsWithFormatters[0]
-    ) {
-      setSelectedMetrics([metricsWithFormatters[0].id]);
-    }
-  }, [selectedMetrics.length, metricsWithFormatters]);
-
-  // Handle metric selection with validation (prevent deselecting all)
-  const handleMetricsSelect = (ids: string[]) => {
-    // If "Clear All" is clicked (empty array), reset to just the first metric
-    if (ids.length === 0 && metricsWithFormatters.length > 0) {
-      setSelectedMetrics([metricsWithFormatters[0]!.id]);
-      return;
-    }
-    setSelectedMetrics(ids);
-  };
-
-  // Get selected metric objects
-  const selectedMetricObjects = useMemo(() => {
-    return metricsWithFormatters.filter((metric) =>
-      selectedMetrics.includes(metric.id),
-    );
-  }, [metricsWithFormatters, selectedMetrics]);
-
-  // Use status from server
   const thresholdStatus = status;
 
-  // Normalize to a string once
   const normalizedInsight = useMemo(
     () => (actionableInsight ?? "").trim(),
     [actionableInsight],
@@ -238,10 +170,10 @@ export default function Growth({
             <div className="flex flex-col items-start">
               <CardTitle className="flex items-center gap-2">
                 <TrendingUp className="h-5 w-5" />
-                Platform Growth
+                Rubric Trend
               </CardTitle>
               <CardDescription className="text-sm line-clamp-2">
-                Platform-wide performance metrics over time
+                Average rubric scores over time by standard group
               </CardDescription>
             </div>
           </div>
@@ -272,33 +204,34 @@ export default function Growth({
         <div className="flex items-start justify-between">
           <div className="flex flex-col items-start">
             <CardTitle className="flex items-center gap-2">
-              <TrendingUp className="h-5 w-5" data-testid="trending-up-icon" />
-              Platform Growth
+              <TrendingUp className="h-5 w-5" />
+              Rubric Trend
             </CardTitle>
             <CardDescription className="text-sm line-clamp-2">
-              Platform-wide performance metrics over time
+              Average rubric scores over time by standard group
             </CardDescription>
           </div>
           <GenericPicker
-            items={metricMapping}
-            itemIds={validMetricIds}
-            selectedIds={selectedMetrics}
-            onSelect={handleMetricsSelect}
-            getId={(metric) => (metric as unknown as { id: string }).id}
-            getLabel={(metric) => metric.name || ""}
-            getSearchText={(metric) =>
-              `${metric.name} ${metric.description || ""}`
+            items={rubricMapping}
+            itemIds={validRubricIds}
+            selectedIds={initialSelectedRubrics || []}
+            onSelect={onRubricSelect || (() => {})}
+            getId={(item) => (item as unknown as { id: string }).id}
+            getLabel={(item) => item.name || ""}
+            getSearchText={(item) =>
+              `${item.name} ${item.description || ""}`
             }
             multiSelect={true}
-            placeholder="Select metrics..."
+            placeholder="Filter rubrics..."
             hideSelectedChips={true}
             buttonClassName="w-48"
+            {...(rubricSearchValue !== undefined && { searchValue: rubricSearchValue })}
+            {...(onRubricSearchChange !== undefined && { onSearchChange: onRubricSearchChange })}
           />
         </div>
       </CardHeader>
       <CardContent className="flex-1 flex flex-col overflow-hidden">
         <div className="flex-1 flex flex-col space-y-4">
-          {/* Multi-line Chart */}
           <div
             className="flex-1 min-h-0"
             style={
@@ -309,7 +242,10 @@ export default function Growth({
           >
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={chartData} margin={{ bottom: 20 }}>
-                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                <CartesianGrid
+                  strokeDasharray="3 3"
+                  className="stroke-muted"
+                />
                 <XAxis
                   dataKey="date"
                   className="text-xs"
@@ -317,7 +253,6 @@ export default function Growth({
                   textAnchor="end"
                   height={60}
                   tickFormatter={(value: string) => {
-                    // Format YYYY-MM-DD to MM-DD
                     const parts = value.split("-");
                     if (parts.length === 3) {
                       return `${parts[1]}-${parts[2]}`;
@@ -341,30 +276,33 @@ export default function Growth({
                           }>
                         }
                         label={props.label}
-                        metricsWithFormatters={metricsWithFormatters}
+                        groupColors={groupColors}
                       />
                     );
                   }}
                 />
                 <Legend />
-                {selectedMetricObjects.map((metric) => (
+                {groupNames.map((name) => (
                   <Line
-                    key={metric.id}
+                    key={name}
                     type="monotone"
-                    dataKey={metric.id}
-                    stroke={metric.color}
+                    dataKey={name}
+                    stroke={groupColors[name]}
                     strokeWidth={2}
                     dot={{ r: 4 }}
-                    name={metric.name}
+                    name={name}
+                    connectNulls
                   />
                 ))}
               </LineChart>
             </ResponsiveContainer>
           </div>
 
-          {/* Actionable Insights */}
           {normalizedInsight && (
-            <div className="flex-shrink-0 w-full" data-testid="growth-insight">
+            <div
+              className="flex-shrink-0 w-full"
+              data-testid="rubric-trend-insight"
+            >
               <TruncatedInsight text={normalizedInsight} isMobile={isMobile} />
             </div>
           )}

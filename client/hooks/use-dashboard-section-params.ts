@@ -26,21 +26,24 @@ const parseAsCommaSeparatedArray = createParser({
 });
 
 const dashboardSectionParamsClient = {
-  // Primary: PersonaPerformance
-  personaSimulationIds: parseAsCommaSeparatedArray,
-  personaSimulationsSearch: parseAsString,
   // Primary: RubricHeatmap
   heatmapRubricIds: parseAsCommaSeparatedArray,
   heatmapRubricSearch: parseAsString,
+  // Primary: RubricTrend
+  trendRubricIds: parseAsCommaSeparatedArray,
+  trendRubricSearch: parseAsString,
+  // Primary: SkillPerformance
+  skillRubricIds: parseAsCommaSeparatedArray,
+  skillRubricSearch: parseAsString,
+  // Secondary: PersonaPerformance
+  personaSimulationIds: parseAsCommaSeparatedArray,
+  personaSimulationsSearch: parseAsString,
   // Secondary: CohortPerformance
   cohortSimulationIds: parseAsCommaSeparatedArray,
   cohortSimulationsSearch: parseAsString,
   // Secondary: AttemptImprovement
   improvementSimulationIds: parseAsCommaSeparatedArray,
   improvementSimulationsSearch: parseAsString,
-  // Secondary: SkillPerformance
-  skillRubricIds: parseAsCommaSeparatedArray,
-  skillRubricSearch: parseAsString,
   // Footer: ScenarioPerformance
   scenarioPerfParameterIds: parseAsCommaSeparatedArray,
   scenarioPerfParamSearch: parseAsString,
@@ -58,20 +61,6 @@ export function useDashboardSectionParams() {
     history: "replace",
   });
 
-  // Primary: PersonaPerformance
-  const setPersonaSimulationIds = useCallback(
-    (ids: string[]) => {
-      setParams({ personaSimulationIds: ids.length > 0 ? ids : null });
-    },
-    [setParams],
-  );
-  const setPersonaSimulationsSearch = useCallback(
-    (term: string) => {
-      setParams({ personaSimulationsSearch: term || null });
-    },
-    [setParams],
-  );
-
   // Primary: RubricHeatmap
   const setHeatmapRubricIds = useCallback(
     (ids: string[]) => {
@@ -82,6 +71,48 @@ export function useDashboardSectionParams() {
   const setHeatmapRubricSearch = useCallback(
     (term: string) => {
       setParams({ heatmapRubricSearch: term || null });
+    },
+    [setParams],
+  );
+
+  // Primary: RubricTrend
+  const setTrendRubricIds = useCallback(
+    (ids: string[]) => {
+      setParams({ trendRubricIds: ids.length > 0 ? ids : null });
+    },
+    [setParams],
+  );
+  const setTrendRubricSearch = useCallback(
+    (term: string) => {
+      setParams({ trendRubricSearch: term || null });
+    },
+    [setParams],
+  );
+
+  // Primary: SkillPerformance
+  const setSkillRubricIds = useCallback(
+    (ids: string[]) => {
+      setParams({ skillRubricIds: ids.length > 0 ? ids : null });
+    },
+    [setParams],
+  );
+  const setSkillRubricSearch = useCallback(
+    (term: string) => {
+      setParams({ skillRubricSearch: term || null });
+    },
+    [setParams],
+  );
+
+  // Secondary: PersonaPerformance
+  const setPersonaSimulationIds = useCallback(
+    (ids: string[]) => {
+      setParams({ personaSimulationIds: ids.length > 0 ? ids : null });
+    },
+    [setParams],
+  );
+  const setPersonaSimulationsSearch = useCallback(
+    (term: string) => {
+      setParams({ personaSimulationsSearch: term || null });
     },
     [setParams],
   );
@@ -110,20 +141,6 @@ export function useDashboardSectionParams() {
   const setImprovementSimulationsSearch = useCallback(
     (term: string) => {
       setParams({ improvementSimulationsSearch: term || null });
-    },
-    [setParams],
-  );
-
-  // Secondary: SkillPerformance
-  const setSkillRubricIds = useCallback(
-    (ids: string[]) => {
-      setParams({ skillRubricIds: ids.length > 0 ? ids : null });
-    },
-    [setParams],
-  );
-  const setSkillRubricSearch = useCallback(
-    (term: string) => {
-      setParams({ skillRubricSearch: term || null });
     },
     [setParams],
   );
@@ -172,21 +189,24 @@ export function useDashboardSectionParams() {
 
   return {
     params,
-    // Primary: PersonaPerformance
-    setPersonaSimulationIds,
-    setPersonaSimulationsSearch,
     // Primary: RubricHeatmap
     setHeatmapRubricIds,
     setHeatmapRubricSearch,
+    // Primary: RubricTrend
+    setTrendRubricIds,
+    setTrendRubricSearch,
+    // Primary: SkillPerformance
+    setSkillRubricIds,
+    setSkillRubricSearch,
+    // Secondary: PersonaPerformance
+    setPersonaSimulationIds,
+    setPersonaSimulationsSearch,
     // Secondary: CohortPerformance
     setCohortSimulationIds,
     setCohortSimulationsSearch,
     // Secondary: AttemptImprovement
     setImprovementSimulationIds,
     setImprovementSimulationsSearch,
-    // Secondary: SkillPerformance
-    setSkillRubricIds,
-    setSkillRubricSearch,
     // Footer: ScenarioPerformance
     setScenarioPerfParameterIds,
     setScenarioPerfParamSearch,

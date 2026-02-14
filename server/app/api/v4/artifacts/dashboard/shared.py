@@ -45,10 +45,14 @@ from app.api.v4.views.analytics.profile_metrics.types import (
     GetProfileMetricsRequest,
     ProfileMetricsItem,
 )
+from app.api.v4.views.analytics.rubric_facts.types import GetRubricFactsResponse
 from app.api.v4.views.analytics.rubric_group_scores.get import (
     get_rubric_group_scores_internal,
 )
 from app.api.v4.views.analytics.rubric_group_scores.types import RubricGroupScoreItem
+from app.api.v4.views.analytics.simulation_facts.types import (
+    GetSimulationFactsResponse,
+)
 from app.api.v4.views.analytics.simulation_scenario_counts.get import (
     get_simulation_scenario_counts_internal,
 )
@@ -451,6 +455,88 @@ async def hydrate_resources(
         result.rubric_group_scores = rgs.items
 
     return result
+
+
+async def fetch_rubric_facts_data(
+    pool: asyncpg.Pool,
+    request: DashboardSectionRequest,
+    filters: ParsedFilters,
+    bypass_cache: bool = False,
+) -> "GetRubricFactsResponse":
+    """Fetch rubric facts from mv_rubric_facts for primary section."""
+    from app.api.v4.views.analytics.rubric_facts.get import get_rubric_facts_internal
+
+    async with pool.acquire() as c:
+        return await get_rubric_facts_internal(
+            conn=c,
+            profile_id=request.target_profile_id,
+            cohort_ids=filters.cohort_ids,
+            department_ids=request.department_ids,
+            attempt_type=filters.attempt_type,
+            is_archived=filters.is_archived,
+            date_from=filters.parsed_start_date.date()
+            if filters.parsed_start_date
+            else None,
+            date_to=filters.parsed_end_date.date() if filters.parsed_end_date else None,
+            bypass_cache=bypass_cache,
+        )
+
+
+async def fetch_simulation_facts_data(
+    pool: asyncpg.Pool,
+    request: DashboardSectionRequest,
+    filters: ParsedFilters,
+    bypass_cache: bool = False,
+) -> "GetSimulationFactsResponse":
+    """Fetch simulation facts from mv_simulation_facts for secondary section."""
+    from app.api.v4.views.analytics.simulation_facts.get import (
+        get_simulation_facts_internal,
+    )
+
+    async with pool.acquire() as c:
+        return await get_simulation_facts_internal(
+            conn=c,
+            profile_id=request.target_profile_id,
+            cohort_ids=filters.cohort_ids,
+            department_ids=request.department_ids,
+            attempt_type=filters.attempt_type,
+            is_archived=filters.is_archived,
+            date_from=filters.parsed_start_date.date()
+            if filters.parsed_start_date
+            else None,
+            date_to=filters.parsed_end_date.date() if filters.parsed_end_date else None,
+            bypass_cache=bypass_cache,
+        )
+
+
+async def hydrate_rubric_resources(
+    pool: asyncpg.Pool,
+    rubric_ids: list,
+    bypass_cache: bool = False,
+) -> tuple[list[Any], dict[str, str]]:
+    """Hydrate rubric metadata and build standard_group_name_map.
+
+    Returns:
+        (rubrics, standard_group_name_map)
+    """
+    async with pool.acquire() as c:
+        rubrics = await get_rubrics_batch_internal(
+            conn=c,
+            ids=rubric_ids,
+            bypass_cache=bypass_cache,
+        )
+
+    # Build standard_group_name_map from rubric standard_groups
+    standard_group_name_map: dict[str, str] = {}
+    for rubric in rubrics:
+        standard_groups = getattr(rubric, "standard_groups", None) or []
+        for sg in standard_groups:
+            sg_id = getattr(sg, "id", None) or getattr(sg, "standard_group_id", None)
+            sg_name = getattr(sg, "name", None)
+            if sg_id and sg_name:
+                standard_group_name_map[str(sg_id)] = sg_name
+
+    return rubrics, standard_group_name_map
 
 
 def build_simulation_meta(simulations: list[Any]) -> list[dict]:

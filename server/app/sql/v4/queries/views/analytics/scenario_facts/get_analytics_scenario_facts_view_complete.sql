@@ -1,15 +1,16 @@
 -- ============================================================================
--- Query: get_analytics_cohort_facts_view
--- Purpose: Fetch paginated cohort-level data from mv_cohort_facts
--- Section: VIEWS/ANALYTICS/COHORT_FACTS
+-- Query: get_analytics_scenario_facts_view
+-- Purpose: Fetch paginated simulation-level data from mv_scenario_facts
+-- Section: VIEWS/ANALYTICS/SIMULATION_FACTS
 --
 -- Includes:
--- - Filtering (profile, cohort, simulation, attempt_type, archived, date range)
+-- - Filtering (profile, cohort, simulation, scenario, attempt_type, archived, date range)
 -- - Sorting (date)
 -- - Pagination
--- - Filter options (cohort_options, simulation_options, persona_options)
+-- - Filter options (simulation_options, scenario_options)
 --
--- Note: Returns resource IDs only. Metadata (names, colors) fetched via internal handlers.
+-- Note: Returns resource IDs only. Parameter resolution done at runtime via
+-- hydrated scenario/persona/document resources (denormalized parameter_field_ids[]).
 -- ============================================================================
 
 -- ============================================================================
@@ -23,10 +24,10 @@ BEGIN
     FOR r IN
         SELECT oidvectortypes(proargtypes) as sig
         FROM pg_proc
-        WHERE proname = 'api_get_analytics_cohort_facts_view_v4'
+        WHERE proname = 'api_get_analytics_scenario_facts_view_v4'
           AND pronamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'public')
     LOOP
-        EXECUTE format('DROP FUNCTION IF EXISTS api_get_analytics_cohort_facts_view_v4(%s)', r.sig);
+        EXECUTE format('DROP FUNCTION IF EXISTS api_get_analytics_scenario_facts_view_v4(%s)', r.sig);
     END LOOP;
 END $$;
 
@@ -41,7 +42,7 @@ BEGIN
     FOR r IN
         SELECT typname
         FROM pg_type
-        WHERE typname LIKE 'q_get_analytics_cohort_facts_view_v4_%'
+        WHERE typname LIKE 'q_get_analytics_scenario_facts_view_v4_%'
           AND typnamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'types')
     LOOP
         EXECUTE format('DROP TYPE IF EXISTS types.%I CASCADE', r.typname);
@@ -52,30 +53,28 @@ END $$;
 -- Step 3: Create composite types
 -- ============================================================================
 
--- Cohort facts item with all MV columns
-CREATE TYPE types.q_get_analytics_cohort_facts_view_v4_item AS (
+-- Simulation facts item with all MV columns
+CREATE TYPE types.q_get_analytics_scenario_facts_view_v4_item AS (
     -- Primary key
     chat_id uuid,
 
     -- Resource IDs (metadata fetched via internal handlers)
     attempt_id uuid,
+    simulation_id uuid,
+    scenario_id uuid,
+    persona_id uuid,
+    document_ids uuid[],
     profile_id uuid,
     cohort_id uuid,
     department_id uuid,
-    simulation_id uuid,
-    persona_id uuid,
-
-    -- Timestamps
-    attempt_date date,
-
-    -- Pre-computed
-    attempt_number int,
 
     -- Measures
     grade_percent numeric,
     passed boolean,
     completed boolean,
-    time_taken_seconds int,
+
+    -- Timestamps
+    attempt_date date,
 
     -- Filters
     attempt_type text,              -- 'general' | 'practice'
@@ -83,7 +82,7 @@ CREATE TYPE types.q_get_analytics_cohort_facts_view_v4_item AS (
 );
 
 -- Filter option type for dropdowns
-CREATE TYPE types.q_get_analytics_cohort_facts_view_v4_option AS (
+CREATE TYPE types.q_get_analytics_scenario_facts_view_v4_option AS (
     value text,
     label text,
     count int
@@ -93,12 +92,13 @@ CREATE TYPE types.q_get_analytics_cohort_facts_view_v4_option AS (
 -- Step 4: Create function
 -- ============================================================================
 
-CREATE OR REPLACE FUNCTION api_get_analytics_cohort_facts_view_v4(
+CREATE OR REPLACE FUNCTION api_get_analytics_scenario_facts_view_v4(
     -- Filters
     profile_id_filter uuid DEFAULT NULL,
     cohort_ids uuid[] DEFAULT NULL,
     department_ids uuid[] DEFAULT NULL,
     simulation_ids uuid[] DEFAULT NULL,
+    scenario_ids uuid[] DEFAULT NULL,
     attempt_type_filter text DEFAULT NULL,      -- 'general' | 'practice' | NULL (both)
     is_archived_filter boolean DEFAULT FALSE,
     date_from date DEFAULT NULL,
@@ -107,56 +107,57 @@ CREATE OR REPLACE FUNCTION api_get_analytics_cohort_facts_view_v4(
     sort_by text DEFAULT 'date',
     sort_order text DEFAULT 'desc',
     -- Pagination
-    page_limit int DEFAULT 5000,
+    page_limit int DEFAULT 10000,
     page_offset int DEFAULT 0
 )
 RETURNS TABLE (
-    items types.q_get_analytics_cohort_facts_view_v4_item[],
+    items types.q_get_analytics_scenario_facts_view_v4_item[],
     total_count int,
-    cohort_options types.q_get_analytics_cohort_facts_view_v4_option[],
-    department_options types.q_get_analytics_cohort_facts_view_v4_option[],
-    simulation_options types.q_get_analytics_cohort_facts_view_v4_option[],
-    persona_options types.q_get_analytics_cohort_facts_view_v4_option[]
+    department_options types.q_get_analytics_scenario_facts_view_v4_option[],
+    simulation_options types.q_get_analytics_scenario_facts_view_v4_option[],
+    scenario_options types.q_get_analytics_scenario_facts_view_v4_option[]
 )
 LANGUAGE sql
 STABLE
 AS $$
     WITH
-    -- Apply all filters to mv_cohort_facts
+    -- Apply all filters to mv_scenario_facts
     filtered AS (
         SELECT
-            cf.chat_id,
-            cf.attempt_id,
-            cf.profile_id,
-            cf.cohort_id,
-            cf.department_id,
-            cf.simulation_id,
-            cf.persona_id,
-            cf.attempt_date,
-            cf.attempt_number,
-            cf.grade_percent,
-            cf.passed,
-            cf.completed,
-            cf.time_taken_seconds,
-            cf.attempt_type,
-            cf.is_archived
-        FROM mv_cohort_facts cf
+            sf.chat_id,
+            sf.attempt_id,
+            sf.simulation_id,
+            sf.scenario_id,
+            sf.persona_id,
+            sf.document_ids,
+            sf.profile_id,
+            sf.cohort_id,
+            sf.department_id,
+            sf.grade_percent,
+            sf.passed,
+            sf.completed,
+            sf.attempt_date,
+            sf.attempt_type,
+            sf.is_archived
+        FROM mv_scenario_facts sf
         WHERE
             -- Profile filter
-            (profile_id_filter IS NULL OR cf.profile_id = profile_id_filter)
+            (profile_id_filter IS NULL OR sf.profile_id = profile_id_filter)
             -- Cohort IDs filter
-            AND (cohort_ids IS NULL OR cardinality(cohort_ids) = 0 OR cf.cohort_id = ANY(cohort_ids))
+            AND (cohort_ids IS NULL OR cardinality(cohort_ids) = 0 OR sf.cohort_id = ANY(cohort_ids))
             -- Department IDs filter
-            AND (department_ids IS NULL OR cardinality(department_ids) = 0 OR cf.department_id = ANY(department_ids))
+            AND (department_ids IS NULL OR cardinality(department_ids) = 0 OR sf.department_id = ANY(department_ids))
             -- Simulation IDs filter
-            AND (simulation_ids IS NULL OR cardinality(simulation_ids) = 0 OR cf.simulation_id = ANY(simulation_ids))
+            AND (simulation_ids IS NULL OR cardinality(simulation_ids) = 0 OR sf.simulation_id = ANY(simulation_ids))
+            -- Scenario IDs filter
+            AND (scenario_ids IS NULL OR cardinality(scenario_ids) = 0 OR sf.scenario_id = ANY(scenario_ids))
             -- Attempt type filter
-            AND (attempt_type_filter IS NULL OR cf.attempt_type = attempt_type_filter)
+            AND (attempt_type_filter IS NULL OR sf.attempt_type = attempt_type_filter)
             -- Archived filter (default excludes archived)
-            AND cf.is_archived = COALESCE(is_archived_filter, FALSE)
+            AND sf.is_archived = COALESCE(is_archived_filter, FALSE)
             -- Date range filter
-            AND (date_from IS NULL OR cf.attempt_date >= date_from)
-            AND (date_to IS NULL OR cf.attempt_date <= date_to)
+            AND (date_from IS NULL OR sf.attempt_date >= date_from)
+            AND (date_to IS NULL OR sf.attempt_date <= date_to)
     ),
     -- Count total before pagination
     counted AS (
@@ -183,44 +184,24 @@ AS $$
                 (
                     chat_id,
                     attempt_id,
+                    simulation_id,
+                    scenario_id,
+                    persona_id,
+                    document_ids,
                     profile_id,
                     cohort_id,
                     department_id,
-                    simulation_id,
-                    persona_id,
-                    attempt_date,
-                    attempt_number,
                     grade_percent,
                     passed,
                     completed,
-                    time_taken_seconds,
+                    attempt_date,
                     attempt_type,
                     is_archived
-                )::types.q_get_analytics_cohort_facts_view_v4_item
+                )::types.q_get_analytics_scenario_facts_view_v4_item
             ),
-            ARRAY[]::types.q_get_analytics_cohort_facts_view_v4_item[]
+            ARRAY[]::types.q_get_analytics_scenario_facts_view_v4_item[]
         ) AS items
         FROM sorted
-    ),
-    -- Cohort filter options (from filtered, not sorted)
-    cohort_options_cte AS (
-        SELECT
-            f.cohort_id::text AS value,
-            f.cohort_id::text AS label,  -- Label resolved by handler
-            COUNT(DISTINCT f.chat_id)::int AS count
-        FROM filtered f
-        WHERE f.cohort_id IS NOT NULL
-        GROUP BY f.cohort_id
-        ORDER BY count DESC, value
-    ),
-    cohort_options_agg AS (
-        SELECT COALESCE(
-            ARRAY_AGG(
-                (value, label, count)::types.q_get_analytics_cohort_facts_view_v4_option
-            ),
-            ARRAY[]::types.q_get_analytics_cohort_facts_view_v4_option[]
-        ) AS options
-        FROM cohort_options_cte
     ),
     -- Department filter options (from filtered, not sorted)
     department_options_cte AS (
@@ -236,9 +217,9 @@ AS $$
     department_options_agg AS (
         SELECT COALESCE(
             ARRAY_AGG(
-                (value, label, count)::types.q_get_analytics_cohort_facts_view_v4_option
+                (value, label, count)::types.q_get_analytics_scenario_facts_view_v4_option
             ),
-            ARRAY[]::types.q_get_analytics_cohort_facts_view_v4_option[]
+            ARRAY[]::types.q_get_analytics_scenario_facts_view_v4_option[]
         ) AS options
         FROM department_options_cte
     ),
@@ -256,37 +237,36 @@ AS $$
     simulation_options_agg AS (
         SELECT COALESCE(
             ARRAY_AGG(
-                (value, label, count)::types.q_get_analytics_cohort_facts_view_v4_option
+                (value, label, count)::types.q_get_analytics_scenario_facts_view_v4_option
             ),
-            ARRAY[]::types.q_get_analytics_cohort_facts_view_v4_option[]
+            ARRAY[]::types.q_get_analytics_scenario_facts_view_v4_option[]
         ) AS options
         FROM simulation_options_cte
     ),
-    -- Persona filter options (from filtered, not sorted)
-    persona_options_cte AS (
+    -- Scenario filter options (from filtered, not sorted)
+    scenario_options_cte AS (
         SELECT
-            f.persona_id::text AS value,
-            f.persona_id::text AS label,  -- Label resolved by handler
+            f.scenario_id::text AS value,
+            f.scenario_id::text AS label,  -- Label resolved by handler
             COUNT(DISTINCT f.chat_id)::int AS count
         FROM filtered f
-        WHERE f.persona_id IS NOT NULL
-        GROUP BY f.persona_id
+        WHERE f.scenario_id IS NOT NULL
+        GROUP BY f.scenario_id
         ORDER BY count DESC, value
     ),
-    persona_options_agg AS (
+    scenario_options_agg AS (
         SELECT COALESCE(
             ARRAY_AGG(
-                (value, label, count)::types.q_get_analytics_cohort_facts_view_v4_option
+                (value, label, count)::types.q_get_analytics_scenario_facts_view_v4_option
             ),
-            ARRAY[]::types.q_get_analytics_cohort_facts_view_v4_option[]
+            ARRAY[]::types.q_get_analytics_scenario_facts_view_v4_option[]
         ) AS options
-        FROM persona_options_cte
+        FROM scenario_options_cte
     )
     SELECT
         (SELECT items FROM items_agg),
         (SELECT total FROM counted),
-        (SELECT options FROM cohort_options_agg),
         (SELECT options FROM department_options_agg),
         (SELECT options FROM simulation_options_agg),
-        (SELECT options FROM persona_options_agg);
+        (SELECT options FROM scenario_options_agg);
 $$;

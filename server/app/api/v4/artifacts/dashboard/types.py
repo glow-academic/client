@@ -170,12 +170,25 @@ class PrimaryRubricHeatmap(BaseModel):
     status: str = "neutral"
 
 
+class PrimaryRubricTrendPoint(BaseModel):
+    date: str | None = None
+    standard_group_id: str | None = None
+    standard_group_name: str | None = None
+    avg_pct: float | None = None
+
+
+class PrimaryRubricTrend(BaseModel):
+    trend_data: list[PrimaryRubricTrendPoint] = Field(default_factory=list)
+    valid_rubric_ids: list[str] = Field(default_factory=list)
+    status: str = "neutral"
+
+
 class DashboardPrimaryMetrics(BaseModel):
-    growth_data: PrimaryGrowthData = Field(default_factory=PrimaryGrowthData)
-    persona_performance: PrimaryPersonaPerformance = Field(
-        default_factory=PrimaryPersonaPerformance
-    )
     rubric_heatmap: PrimaryRubricHeatmap = Field(default_factory=PrimaryRubricHeatmap)
+    rubric_trend: PrimaryRubricTrend = Field(default_factory=PrimaryRubricTrend)
+    skill_performance: "SecondarySkillPerformance" = Field(
+        default_factory=lambda: SecondarySkillPerformance()
+    )
 
 
 class SecondaryCohortData(BaseModel):
@@ -198,7 +211,7 @@ class SecondaryCohortDaily(BaseModel):
     cohort_id: str | None = None
 
 
-class SecondaryCohortFact(BaseModel):
+class SecondarySimulationFact(BaseModel):
     cohort_id: str | None = None
     simulation_id: str | None = None
     pass_rate: float | None = None
@@ -215,7 +228,7 @@ class SecondaryDailyFact(BaseModel):
 class SecondaryCohortPerformance(BaseModel):
     cohort_data: list[SecondaryCohortData] = Field(default_factory=list)
     daily_data: list[SecondaryCohortDaily] = Field(default_factory=list)
-    cohort_facts: list[SecondaryCohortFact] = Field(default_factory=list)
+    simulation_facts: list[SecondarySimulationFact] = Field(default_factory=list)
     daily_facts: list[SecondaryDailyFact] = Field(default_factory=list)
     valid_simulation_ids: list[str] = Field(default_factory=list)
     status: str = "neutral"
@@ -273,14 +286,14 @@ class SecondarySkillPerformance(BaseModel):
 
 
 class DashboardSecondaryMetrics(BaseModel):
+    persona_performance: PrimaryPersonaPerformance = Field(
+        default_factory=PrimaryPersonaPerformance
+    )
     cohort_performance: SecondaryCohortPerformance = Field(
         default_factory=SecondaryCohortPerformance
     )
     attempt_improvement: SecondaryAttemptImprovement = Field(
         default_factory=SecondaryAttemptImprovement
-    )
-    skill_performance: SecondarySkillPerformance = Field(
-        default_factory=SecondarySkillPerformance
     )
 
 
@@ -436,7 +449,7 @@ class DashboardInsightObject(BaseModel):
 
 
 class DashboardInsights(BaseModel):
-    growth: str | None = None
+    rubric_trend: str | None = None
     rubric_heatmap: str | None = None
     attempt_improvement: str | None = None
     skill_performance: str | None = None
@@ -516,21 +529,23 @@ class DashboardHeaderRequest(DashboardSectionRequest):
 class DashboardPrimaryRequest(DashboardSectionRequest):
     """Request for primary section."""
 
-    persona_simulation_ids: list[UUID] | None = None
-    persona_simulations_search: str | None = None
     heatmap_rubric_ids: list[UUID] | None = None
     heatmap_rubric_search: str | None = None
+    trend_rubric_ids: list[UUID] | None = None
+    trend_rubric_search: str | None = None
+    skill_rubric_ids: list[UUID] | None = None
+    skill_rubric_search: str | None = None
 
 
 class DashboardSecondaryRequest(DashboardSectionRequest):
     """Request for secondary section."""
 
+    persona_simulation_ids: list[UUID] | None = None
+    persona_simulations_search: str | None = None
     cohort_simulation_ids: list[UUID] | None = None
     cohort_simulations_search: str | None = None
     improvement_simulation_ids: list[UUID] | None = None
     improvement_simulations_search: str | None = None
-    skill_rubric_ids: list[UUID] | None = None
-    skill_rubric_search: str | None = None
 
 
 class DashboardFooterRequest(DashboardSectionRequest):
@@ -598,3 +613,7 @@ class DashboardFooterResponse(BaseModel):
     fields: list[DashboardFieldMeta] = Field(default_factory=list)
     thresholds: DashboardThresholds | None = None
     insights: DashboardInsights | None = None
+
+
+# Resolve forward reference for DashboardPrimaryMetrics.skill_performance
+DashboardPrimaryMetrics.model_rebuild()
