@@ -27,6 +27,7 @@ from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.infra.v4.websocket.typed_emit import emit_to_internal
 from app.main import get_internal_sio, get_pool, sio
 from app.socket.v4.artifacts.attempt.types import (
+    ATTEMPT_GRADE_ENTRY_TYPES,
     AttemptGradedEvent,
     AttemptGradePayload,
 )
@@ -332,7 +333,7 @@ async def _attempt_grade_impl(
                 async with pool.acquire() as c:
                     tools_params = GetAgentEntryToolsSqlParams(
                         p_agent_id=agent_id,
-                        p_entry_types=None,  # All tools, no filtering
+                        p_entry_types=ATTEMPT_GRADE_ENTRY_TYPES,
                     )
                     tools_row = cast(
                         GetAgentEntryToolsSqlRow,

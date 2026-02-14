@@ -16,6 +16,8 @@ INSERT INTO public.items_resource (id, name, description, encrypted, position, a
 INSERT INTO public.items_resource (id, name, description, encrypted, position, active, created_at, generated, mcp) VALUES ('019b3be4-3119-7fed-b752-bf6209d31c1d', 'clientId', 'Microsoft Entra ID Client ID', true, 2, true, '2025-11-23T01:06:57.192515+00:00', false, false) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.items_resource (id, name, description, encrypted, position, active, created_at, generated, mcp) VALUES ('019b3be4-3119-7feb-9764-0741b7080380', 'clientSecret', 'Microsoft Entra ID Client Secret', true, 1, true, '2025-11-23T01:06:57.192515+00:00', false, false) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.names_resource (id, name, created_at, active, generated, mcp) VALUES ('019b995c-8eae-7e90-976b-9e2caf5a6853', 'Microsoft', '2025-11-23T01:06:57.190112+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.protocols_resource (id, value, created_at, generated, mcp) VALUES ('019b9fb7-4439-79ef-9aeb-a1a40b9c22b9', 'oidc', '2026-01-08T22:25:46.553408+00:00', false, false) ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.slugs_resource (id, value, created_at, generated, mcp) VALUES ('019b9fb7-4447-767f-b8cb-05c87cf64788', 'microsoft', '2026-01-08T22:25:46.566757+00:00', false, false) ON CONFLICT (id) DO NOTHING;
 
 -- Artifact
 -- auth_artifact

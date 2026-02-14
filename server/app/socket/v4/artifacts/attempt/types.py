@@ -26,6 +26,14 @@ from app.socket.v4.artifacts.types import (
 # =============================================================================
 
 ATTEMPT_MESSAGE_ENTRY_TYPES = ["contents", "hints"]
+ATTEMPT_GRADE_ENTRY_TYPES = [
+    "feedbacks",
+    "strengths",
+    "improvements",
+    "analyses",
+    "highlights",
+    "replacements",
+]
 
 
 # =============================================================================
