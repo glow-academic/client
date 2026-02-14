@@ -19,7 +19,7 @@ import {
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 import { Check, Loader2, Sparkles, X } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 type CreateDraftParametersIn = InputOf<"/api/v4/resources/parameters", "post">;
 type CreateDraftParametersOut = OutputOf<"/api/v4/resources/parameters", "post">;
