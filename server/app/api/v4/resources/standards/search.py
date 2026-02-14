@@ -109,6 +109,7 @@ async def search_standards(
             request.limit_count,
             request.offset_count,
             request.exclude_ids,
+            standard_group_ids=request.standard_group_ids,
             bypass_cache=bypass_cache,
         )
         response.headers["X-Cache-Tags"] = ",".join(tags)

@@ -2,6 +2,7 @@
 -- Training-bundle-level denormalized context for the customize/start page.
 --
 -- Grain: One row per training_bundle_entry.id
+-- Training bundle = scenario-level parameters.
 -- All resource IDs from training_bundle_*_connection tables.
 -- Scenario flags resolved from scenario_flags_junction via flags_resource.
 
@@ -23,15 +24,16 @@ DROP MATERIALIZED VIEW IF EXISTS mv_training_bundle CASCADE;
 
 CREATE MATERIALIZED VIEW mv_training_bundle AS
 WITH
--- training_bundle_entry level connections
-scenario_agg AS (
-    SELECT
+-- Resolve single scenario_id from training_bundle_scenarios_connection
+scenario_single AS (
+    SELECT DISTINCT ON (tbsc.training_bundle_id)
         tbsc.training_bundle_id,
-        ARRAY_AGG(DISTINCT tbsc.scenarios_id ORDER BY tbsc.scenarios_id) AS scenario_ids
+        tbsc.scenarios_id AS scenario_id
     FROM training_bundle_scenarios_connection tbsc
     WHERE tbsc.active = true
-    GROUP BY tbsc.training_bundle_id
+    ORDER BY tbsc.training_bundle_id, tbsc.scenarios_id
 ),
+-- training_bundle_entry level connections
 department_agg AS (
     SELECT
         tbdc.training_bundle_id,
@@ -71,14 +73,6 @@ parameter_agg AS (
     FROM training_bundle_parameters_connection tbpc
     WHERE tbpc.active = true
     GROUP BY tbpc.training_bundle_id
-),
-field_agg AS (
-    SELECT
-        tbfc.training_bundle_id,
-        ARRAY_AGG(DISTINCT tbfc.fields_id ORDER BY tbfc.fields_id) AS field_ids
-    FROM training_bundle_fields_connection tbfc
-    WHERE tbfc.active = true
-    GROUP BY tbfc.training_bundle_id
 ),
 question_agg AS (
     SELECT
@@ -128,54 +122,82 @@ objective_agg AS (
     WHERE tboc.active = true
     GROUP BY tboc.training_bundle_id
 ),
+flag_agg AS (
+    SELECT
+        tbfc.training_bundle_id,
+        ARRAY_AGG(DISTINCT tbfc.flags_id ORDER BY tbfc.flags_id) AS flag_ids
+    FROM training_bundle_flags_connection tbfc
+    WHERE tbfc.active = true
+    GROUP BY tbfc.training_bundle_id
+),
+name_agg AS (
+    SELECT
+        tbnc.training_bundle_id,
+        ARRAY_AGG(DISTINCT tbnc.names_id ORDER BY tbnc.names_id) AS name_ids
+    FROM training_bundle_names_connection tbnc
+    WHERE tbnc.active = true
+    GROUP BY tbnc.training_bundle_id
+),
+description_agg AS (
+    SELECT
+        tbdc.training_bundle_id,
+        ARRAY_AGG(DISTINCT tbdc.descriptions_id ORDER BY tbdc.descriptions_id) AS description_ids
+    FROM training_bundle_descriptions_connection tbdc
+    WHERE tbdc.active = true
+    GROUP BY tbdc.training_bundle_id
+),
 -- Scenario flags: resolved from scenario_flags_junction via scenario_scenarios_junction.
--- Each bundle has one scenarios_id; we resolve scenario_artifact via scenario_scenarios_junction
+-- Each bundle has one scenario (via training_bundle_scenarios_connection);
+-- we resolve scenario_artifact via scenario_scenarios_junction
 -- then pivot the 5 flags into boolean columns.
 flag_pivot AS (
     SELECT
-        tbe.id AS training_bundle_id,
+        ss.training_bundle_id,
         COALESCE(BOOL_OR(CASE WHEN fr.name = 'video_enabled' THEN sfj.value END), false) AS video_enabled,
         COALESCE(BOOL_OR(CASE WHEN fr.name = 'problem_statement_enabled' THEN sfj.value END), false) AS problem_statement_enabled,
         COALESCE(BOOL_OR(CASE WHEN fr.name = 'objectives_enabled' THEN sfj.value END), false) AS objectives_enabled,
         COALESCE(BOOL_OR(CASE WHEN fr.name = 'images_enabled' THEN sfj.value END), false) AS images_enabled,
         COALESCE(BOOL_OR(CASE WHEN fr.name = 'questions_enabled' THEN sfj.value END), false) AS questions_enabled
-    FROM training_bundle_entry tbe
+    FROM scenario_single ss
     JOIN scenario_scenarios_junction ssj
-      ON ssj.scenarios_id = tbe.scenarios_id AND ssj.active = true
+      ON ssj.scenarios_id = ss.scenario_id AND ssj.active = true
     JOIN scenario_flags_junction sfj
       ON sfj.scenario_id = ssj.scenario_id AND sfj.active = true
     JOIN flags_resource fr
       ON fr.id = sfj.flag_id
-    WHERE tbe.active = true
-      AND fr.name IN (
+    WHERE fr.name IN (
           'video_enabled',
           'problem_statement_enabled',
           'objectives_enabled',
           'images_enabled',
           'questions_enabled'
       )
-    GROUP BY tbe.id
+    GROUP BY ss.training_bundle_id
 )
 SELECT
     tbe.id AS training_bundle_entry_id,
     tbe.training_id,
 
+    -- Single scenario_id (from connection, not direct FK)
+    ss.scenario_id,
+
     -- Bundle-level resource ID arrays
-    COALESCE(scn.scenario_ids, ARRAY[]::uuid[]) AS scenario_ids,
     COALESCE(dep.department_ids, ARRAY[]::uuid[]) AS department_ids,
     COALESCE(per.persona_ids, ARRAY[]::uuid[]) AS persona_ids,
     COALESCE(doc.document_ids, ARRAY[]::uuid[]) AS document_ids,
     COALESCE(pf.parameter_field_ids, ARRAY[]::uuid[]) AS parameter_field_ids,
     COALESCE(par.parameter_ids, ARRAY[]::uuid[]) AS parameter_ids,
-    COALESCE(fld.field_ids, ARRAY[]::uuid[]) AS field_ids,
     COALESCE(que.question_ids, ARRAY[]::uuid[]) AS question_ids,
     COALESCE(opt.option_ids, ARRAY[]::uuid[]) AS option_ids,
     COALESCE(vid.video_ids, ARRAY[]::uuid[]) AS video_ids,
     COALESCE(img.image_ids, ARRAY[]::uuid[]) AS image_ids,
     COALESCE(ps.problem_statement_ids, ARRAY[]::uuid[]) AS problem_statement_ids,
     COALESCE(obj.objective_ids, ARRAY[]::uuid[]) AS objective_ids,
+    COALESCE(flg.flag_ids, ARRAY[]::uuid[]) AS flag_ids,
+    COALESCE(nm.name_ids, ARRAY[]::uuid[]) AS name_ids,
+    COALESCE(dsc.description_ids, ARRAY[]::uuid[]) AS description_ids,
 
-    -- Scenario flags (resolved from scenario_flags_junction)
+    -- Scenario flags (resolved from scenario_flags_junction — fixed booleans)
     COALESCE(fp.video_enabled, false) AS video_enabled,
     COALESCE(fp.problem_statement_enabled, false) AS problem_statement_enabled,
     COALESCE(fp.objectives_enabled, false) AS objectives_enabled,
@@ -187,19 +209,21 @@ SELECT
     tbe.active
 
 FROM training_bundle_entry tbe
-LEFT JOIN scenario_agg scn ON scn.training_bundle_id = tbe.id
+LEFT JOIN scenario_single ss ON ss.training_bundle_id = tbe.id
 LEFT JOIN department_agg dep ON dep.training_bundle_id = tbe.id
 LEFT JOIN persona_agg per ON per.training_bundle_id = tbe.id
 LEFT JOIN document_agg doc ON doc.training_bundle_id = tbe.id
 LEFT JOIN parameter_field_agg pf ON pf.training_bundle_id = tbe.id
 LEFT JOIN parameter_agg par ON par.training_bundle_id = tbe.id
-LEFT JOIN field_agg fld ON fld.training_bundle_id = tbe.id
 LEFT JOIN question_agg que ON que.training_bundle_id = tbe.id
 LEFT JOIN option_agg opt ON opt.training_bundle_id = tbe.id
 LEFT JOIN video_agg vid ON vid.training_bundle_id = tbe.id
 LEFT JOIN image_agg img ON img.training_bundle_id = tbe.id
 LEFT JOIN problem_statement_agg ps ON ps.training_bundle_id = tbe.id
 LEFT JOIN objective_agg obj ON obj.training_bundle_id = tbe.id
+LEFT JOIN flag_agg flg ON flg.training_bundle_id = tbe.id
+LEFT JOIN name_agg nm ON nm.training_bundle_id = tbe.id
+LEFT JOIN description_agg dsc ON dsc.training_bundle_id = tbe.id
 LEFT JOIN flag_pivot fp ON fp.training_bundle_id = tbe.id
 WHERE tbe.active = true
 WITH NO DATA;
@@ -210,8 +234,8 @@ CREATE UNIQUE INDEX mv_training_bundle_pk
 CREATE INDEX mv_training_bundle_training_id_idx
     ON mv_training_bundle (training_id);
 
-CREATE INDEX mv_training_bundle_scenario_ids_gin_idx
-    ON mv_training_bundle USING GIN (scenario_ids);
+CREATE INDEX mv_training_bundle_scenario_id_idx
+    ON mv_training_bundle (scenario_id);
 
 CREATE INDEX mv_training_bundle_department_ids_gin_idx
     ON mv_training_bundle USING GIN (department_ids);

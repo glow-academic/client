@@ -24,8 +24,6 @@ from app.api.v4.artifacts.training.types import (
     GetTrainingGetRequest,
     GetTrainingGetResponse,
     GetTrainingWebsocketResponse,
-    StandardGroupMapping,
-    StandardMapping,
     TrainingSimulationOperational,
     TrainingWebsocketResources,
     TrainingWebsocketViews,
@@ -34,8 +32,6 @@ from app.api.v4.auth.profile import get_auth_profile_internal
 from app.api.v4.resources.cohorts.get import get_cohorts_internal
 from app.api.v4.resources.personas.get import get_personas_internal
 from app.api.v4.resources.simulations.get import get_simulations_internal
-from app.api.v4.resources.standard_groups.get import get_standard_groups_internal
-from app.api.v4.resources.standards.get import get_standards_internal
 from app.api.v4.views.analytics.attempts.get import get_attempt_facts_internal
 from app.api.v4.views.analytics.attempts.types import (
     AttemptFactsItem,
@@ -258,15 +254,6 @@ async def get_training_internal(
                 if item.simulation_id:
                     simulation_cohort_map[item.simulation_id] = list(item.cohort_ids)
 
-    standard_group_ids = (
-        list(context.standard_group_ids)
-        if context and context.standard_group_ids
-        else []
-    )
-    standard_ids = (
-        list(context.standard_ids) if context and context.standard_ids else []
-    )
-
     cohort_ids_list = list(all_cohort_ids)
 
     # --- Phase 2: Parallel resource hydration + conditional instructional data ---
@@ -286,18 +273,6 @@ async def get_training_internal(
         async with pool.acquire() as c:
             return await get_cohorts_internal(
                 c, cohort_ids_list, bypass_cache=bypass_cache
-            )
-
-    async def fetch_standard_groups() -> list:
-        async with pool.acquire() as c:
-            return await get_standard_groups_internal(
-                c, standard_group_ids, bypass_cache=bypass_cache
-            )
-
-    async def fetch_standards() -> list:
-        async with pool.acquire() as c:
-            return await get_standards_internal(
-                c, standard_ids, bypass_cache=bypass_cache
             )
 
     async def fetch_cohort_attempt_facts() -> list:

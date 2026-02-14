@@ -3,7 +3,8 @@
 --
 -- Grain: One row per training_entry.id
 -- All resource IDs from connection tables, never direct FKs.
--- Cross-level resources (persona_ids, scenario_ids) aggregated UP from
+-- Training = simulation-level parameters.
+-- Cross-level resources (scenario_ids) aggregated UP from
 -- training_bundle level connections at MV join layer.
 
 DO $$
@@ -73,21 +74,30 @@ time_limit_agg AS (
     WHERE ttlc.active = true
     GROUP BY ttlc.training_id
 ),
-standard_group_agg AS (
+-- Simulation-level scenario resource connections
+flag_agg AS (
     SELECT
-        tsgc.training_id,
-        ARRAY_AGG(DISTINCT tsgc.standard_groups_id ORDER BY tsgc.standard_groups_id) AS standard_group_ids
-    FROM training_standard_groups_connection tsgc
-    WHERE tsgc.active = true
-    GROUP BY tsgc.training_id
+        tsfc.training_id,
+        ARRAY_AGG(DISTINCT tsfc.scenario_flags_id ORDER BY tsfc.scenario_flags_id) AS flag_ids
+    FROM training_scenario_flags_connection tsfc
+    WHERE tsfc.active = true
+    GROUP BY tsfc.training_id
 ),
-standard_agg AS (
+position_agg AS (
     SELECT
-        tsc.training_id,
-        ARRAY_AGG(DISTINCT tsc.standards_id ORDER BY tsc.standards_id) AS standard_ids
-    FROM training_standards_connection tsc
-    WHERE tsc.active = true
-    GROUP BY tsc.training_id
+        tspc.training_id,
+        ARRAY_AGG(DISTINCT tspc.scenario_positions_id ORDER BY tspc.scenario_positions_id) AS position_ids
+    FROM training_scenario_positions_connection tspc
+    WHERE tspc.active = true
+    GROUP BY tspc.training_id
+),
+persona_agg AS (
+    SELECT
+        tspc.training_id,
+        ARRAY_AGG(DISTINCT tspc.scenario_personas_id ORDER BY tspc.scenario_personas_id) AS persona_ids
+    FROM training_scenario_personas_connection tspc
+    WHERE tspc.active = true
+    GROUP BY tspc.training_id
 ),
 -- training_bundle level connections (aggregated UP to training_entry)
 bundle_agg AS (
@@ -107,29 +117,12 @@ scenario_agg AS (
       ON tbsc.training_bundle_id = tb.id AND tbsc.active = true
     WHERE tb.active = true
     GROUP BY tb.training_id
-),
-persona_agg AS (
-    SELECT
-        tb.training_id,
-        ARRAY_AGG(DISTINCT tbpc.personas_id ORDER BY tbpc.personas_id) AS persona_ids
-    FROM training_bundle_entry tb
-    JOIN training_bundle_personas_connection tbpc
-      ON tbpc.training_bundle_id = tb.id AND tbpc.active = true
-    WHERE tb.active = true
-    GROUP BY tb.training_id
 )
 SELECT
     te.id AS training_id,
 
-    -- Behavior flags
+    -- Filter flag
     te.practice,
-    te.audio_enabled,
-    te.text_enabled,
-    te.hints_enabled,
-    te.copy_paste_allowed,
-    te.show_images,
-    te.show_objectives,
-    te.show_problem_statement,
 
     -- training_entry level connections
     COALESCE(sim.simulation_ids, ARRAY[]::uuid[]) AS simulation_ids,
@@ -138,13 +131,15 @@ SELECT
     COALESCE(prof.profile_ids, ARRAY[]::uuid[]) AS profile_ids,
     COALESCE(rub.rubric_ids, ARRAY[]::uuid[]) AS rubric_ids,
     COALESCE(tl.time_limit_ids, ARRAY[]::uuid[]) AS time_limit_ids,
-    COALESCE(sg.standard_group_ids, ARRAY[]::uuid[]) AS standard_group_ids,
-    COALESCE(std.standard_ids, ARRAY[]::uuid[]) AS standard_ids,
+
+    -- Simulation-level scenario resource connections
+    COALESCE(flg.flag_ids, ARRAY[]::uuid[]) AS flag_ids,
+    COALESCE(pos.position_ids, ARRAY[]::uuid[]) AS position_ids,
+    COALESCE(per.persona_ids, ARRAY[]::uuid[]) AS persona_ids,
 
     -- Aggregated UP from training_bundle level
     COALESCE(bun.training_bundle_entry_ids, ARRAY[]::uuid[]) AS training_bundle_entry_ids,
     COALESCE(scn.scenario_ids, ARRAY[]::uuid[]) AS scenario_ids,
-    COALESCE(per.persona_ids, ARRAY[]::uuid[]) AS persona_ids,
 
     te.created_at,
     te.updated_at,
@@ -157,11 +152,11 @@ LEFT JOIN department_agg dep ON dep.training_id = te.id
 LEFT JOIN profile_agg prof ON prof.training_id = te.id
 LEFT JOIN rubric_agg rub ON rub.training_id = te.id
 LEFT JOIN time_limit_agg tl ON tl.training_id = te.id
-LEFT JOIN standard_group_agg sg ON sg.training_id = te.id
-LEFT JOIN standard_agg std ON std.training_id = te.id
+LEFT JOIN flag_agg flg ON flg.training_id = te.id
+LEFT JOIN position_agg pos ON pos.training_id = te.id
+LEFT JOIN persona_agg per ON per.training_id = te.id
 LEFT JOIN bundle_agg bun ON bun.training_id = te.id
 LEFT JOIN scenario_agg scn ON scn.training_id = te.id
-LEFT JOIN persona_agg per ON per.training_id = te.id
 WHERE te.active = true
 WITH NO DATA;
 

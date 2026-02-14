@@ -39,7 +39,8 @@ CREATE TYPE types.q_get_rubrics_batch_v4_item AS (
     name text,
     description text,
     total_points float,
-    pass_points float
+    pass_points float,
+    standard_group_ids uuid[]
 );
 
 -- Create function
@@ -59,7 +60,8 @@ SELECT COALESCE(
             r.name,
             r.description,
             r.total_points,
-            r.pass_points
+            r.pass_points,
+            COALESCE(r.standard_group_ids, ARRAY[]::uuid[])
         )::types.q_get_rubrics_batch_v4_item
         ORDER BY array_position(p_ids, r.id)
     ),

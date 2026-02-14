@@ -38,8 +38,6 @@ CREATE TYPE types.q_get_training_context_view_v4_item AS (
     scenario_ids uuid[],
     cohort_ids uuid[],
     persona_ids uuid[],
-    standard_group_ids uuid[],
-    standard_ids uuid[],
     rubric_ids uuid[]
 );
 
@@ -48,9 +46,7 @@ CREATE OR REPLACE FUNCTION api_get_training_context_view_v4(
     practice_filter boolean DEFAULT FALSE
 )
 RETURNS TABLE (
-    items types.q_get_training_context_view_v4_item[],
-    standard_group_ids uuid[],
-    standard_ids uuid[]
+    items types.q_get_training_context_view_v4_item[]
 )
 LANGUAGE sql
 STABLE
@@ -108,10 +104,6 @@ simulation_scope AS (
             FILTER (WHERE coid.cohort_id IS NOT NULL) AS cohort_ids,
         ARRAY_AGG(DISTINCT pid.persona_id ORDER BY pid.persona_id)
             FILTER (WHERE pid.persona_id IS NOT NULL) AS persona_ids,
-        ARRAY_AGG(DISTINCT sgid.standard_group_id ORDER BY sgid.standard_group_id)
-            FILTER (WHERE sgid.standard_group_id IS NOT NULL) AS standard_group_ids,
-        ARRAY_AGG(DISTINCT stid.standard_id ORDER BY stid.standard_id)
-            FILTER (WHERE stid.standard_id IS NOT NULL) AS standard_ids,
         ARRAY_AGG(DISTINCT rid.rubric_id ORDER BY rid.rubric_id)
             FILTER (WHERE rid.rubric_id IS NOT NULL) AS rubric_ids
     FROM active_simulations asim
@@ -121,8 +113,6 @@ simulation_scope AS (
     LEFT JOIN LATERAL unnest(at2.scenario_ids) scid(scenario_id) ON TRUE
     LEFT JOIN LATERAL unnest(at2.cohort_ids) coid(cohort_id) ON TRUE
     LEFT JOIN LATERAL unnest(at2.persona_ids) pid(persona_id) ON TRUE
-    LEFT JOIN LATERAL unnest(at2.standard_group_ids) sgid(standard_group_id) ON TRUE
-    LEFT JOIN LATERAL unnest(at2.standard_ids) stid(standard_id) ON TRUE
     LEFT JOIN LATERAL unnest(at2.rubric_ids) rid(rubric_id) ON TRUE
     GROUP BY asim.simulation_id
 )
@@ -136,8 +126,6 @@ SELECT
                     ss.scenario_ids,
                     ss.cohort_ids,
                     ss.persona_ids,
-                    ss.standard_group_ids,
-                    ss.standard_ids,
                     ss.rubric_ids
                 )::types.q_get_training_context_view_v4_item
                 ORDER BY ss.simulation_id
@@ -147,24 +135,5 @@ SELECT
               AND ARRAY_LENGTH(ss.scenario_ids, 1) > 0
         ),
         ARRAY[]::types.q_get_training_context_view_v4_item[]
-    ) AS items,
-    COALESCE(
-        (
-            SELECT ARRAY_AGG(DISTINCT sgid.standard_group_id ORDER BY sgid.standard_group_id)
-            FROM simulation_scope ss
-            CROSS JOIN LATERAL unnest(COALESCE(ss.standard_group_ids, ARRAY[]::uuid[])) sgid(standard_group_id)
-            WHERE sgid.standard_group_id IS NOT NULL
-        ),
-        ARRAY[]::uuid[]
-    ) AS standard_group_ids,
-    COALESCE(
-        (
-            SELECT ARRAY_AGG(DISTINCT stid.standard_id ORDER BY stid.standard_id)
-            FROM simulation_scope ss
-            CROSS JOIN LATERAL unnest(COALESCE(ss.standard_ids, ARRAY[]::uuid[])) stid(standard_id)
-            WHERE stid.standard_id IS NOT NULL
-        ),
-        ARRAY[]::uuid[]
-    ) AS standard_ids;
+    ) AS items;
 $$;
-

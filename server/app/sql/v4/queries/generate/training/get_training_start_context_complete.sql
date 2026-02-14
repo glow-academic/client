@@ -62,7 +62,7 @@ scope AS (
     SELECT
         tb.id AS training_bundle_entry_id,
         tb.training_id,
-        tb.scenarios_id,
+        scj_conn.scenarios_id,
         t.simulations_id,
         t.cohorts_id,
         t.active AS training_active,
@@ -77,6 +77,9 @@ scope AS (
     JOIN training_entry t
       ON t.id = tb.training_id
      AND t.active = true
+    LEFT JOIN training_bundle_scenarios_connection scj_conn
+      ON scj_conn.training_bundle_id = tb.id
+     AND scj_conn.active = true
     LEFT JOIN simulation_simulations_junction ssj
       ON ssj.simulations_id = t.simulations_id
      AND ssj.active = true
@@ -85,7 +88,7 @@ scope AS (
     LEFT JOIN simulations_resource s
       ON s.id = t.simulations_id
     LEFT JOIN scenario_scenarios_junction scj
-      ON scj.scenarios_id = tb.scenarios_id
+      ON scj.scenarios_id = scj_conn.scenarios_id
      AND scj.active = true
     LEFT JOIN scenario_artifact sc
       ON sc.id = scj.scenario_id

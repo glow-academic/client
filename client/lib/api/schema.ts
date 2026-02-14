@@ -22718,8 +22718,8 @@ export interface components {
             training_bundle_entry_id?: string | null;
             /** Training Id */
             training_id?: string | null;
-            /** Scenario Ids */
-            scenario_ids?: string[];
+            /** Scenario Id */
+            scenario_id?: string | null;
             /** Department Ids */
             department_ids?: string[];
             /** Persona Ids */
@@ -22730,8 +22730,6 @@ export interface components {
             parameter_field_ids?: string[];
             /** Parameter Ids */
             parameter_ids?: string[];
-            /** Field Ids */
-            field_ids?: string[];
             /** Question Ids */
             question_ids?: string[];
             /** Option Ids */
@@ -22744,6 +22742,12 @@ export interface components {
             problem_statement_ids?: string[];
             /** Objective Ids */
             objective_ids?: string[];
+            /** Flag Ids */
+            flag_ids?: string[];
+            /** Name Ids */
+            name_ids?: string[];
+            /** Description Ids */
+            description_ids?: string[];
             /**
              * Video Enabled
              * @default false
@@ -22781,10 +22785,6 @@ export interface components {
             user_role?: string | null;
             /** Items */
             items?: components["schemas"]["TrainingContextViewItem"][];
-            /** Standard Group Ids */
-            standard_group_ids?: string[];
-            /** Standard Ids */
-            standard_ids?: string[];
         };
         /**
          * GetTrainingGetRequest
@@ -29730,6 +29730,8 @@ export interface components {
             total_points: number | null;
             /** Pass Points */
             pass_points: number | null;
+            /** Standard Group Ids */
+            standard_group_ids: string[] | null;
         };
         /** QGetRubricsV4Item */
         QGetRubricsV4Item: {
@@ -29739,6 +29741,8 @@ export interface components {
             name: string | null;
             /** Description */
             description: string | null;
+            /** Standard Group Ids */
+            standard_group_ids: string[] | null;
         };
         /** QGetRunPositionsV4Item */
         QGetRunPositionsV4Item: {
@@ -34809,6 +34813,8 @@ export interface components {
             simulation_rubric?: boolean | null;
             /** Video Rubric */
             video_rubric?: boolean | null;
+            /** Standard Group Ids */
+            standard_group_ids?: string[] | null;
             /**
              * Rubric
              * @default false
@@ -38002,10 +38008,6 @@ export interface components {
             cohort_ids?: string[] | null;
             /** Persona Ids */
             persona_ids?: string[] | null;
-            /** Standard Group Ids */
-            standard_group_ids?: string[] | null;
-            /** Standard Ids */
-            standard_ids?: string[] | null;
             /** Rubric Ids */
             rubric_ids?: string[] | null;
         };

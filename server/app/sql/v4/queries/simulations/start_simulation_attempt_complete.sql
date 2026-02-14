@@ -214,8 +214,11 @@ selected_training_bundle_department AS (
     CROSS JOIN profile_resources pr
     JOIN training_bundle_entry tb
       ON tb.training_id = ts.training_id
-     AND tb.scenarios_id = csi.scenarios_resource_id
      AND tb.active = true
+    JOIN training_bundle_scenarios_connection tbsc
+      ON tbsc.training_bundle_id = tb.id
+     AND tbsc.scenarios_id = csi.scenarios_resource_id
+     AND tbsc.active = true
     JOIN training_bundle_departments_entry tbd
       ON tbd.training_bundle_id = tb.id
      AND tbd.departments_id = pr.departments_resource_id

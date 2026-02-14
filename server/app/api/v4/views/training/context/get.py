@@ -66,14 +66,6 @@ async def get_training_context_view_internal(
                     scenario_ids=list(item.scenario_ids) if item.scenario_ids else None,
                     cohort_ids=list(item.cohort_ids) if item.cohort_ids else None,
                     persona_ids=(list(item.persona_ids) if item.persona_ids else None),
-                    standard_group_ids=(
-                        list(item.standard_group_ids)
-                        if item.standard_group_ids
-                        else None
-                    ),
-                    standard_ids=(
-                        list(item.standard_ids) if item.standard_ids else None
-                    ),
                     rubric_ids=(list(item.rubric_ids) if item.rubric_ids else None),
                 )
             )
@@ -82,12 +74,6 @@ async def get_training_context_view_internal(
     # artifact layer, not from this SQL query.
     response = GetTrainingContextViewResponse(
         items=items,
-        standard_group_ids=list(result.standard_group_ids)
-        if result and result.standard_group_ids
-        else [],
-        standard_ids=list(result.standard_ids)
-        if result and result.standard_ids
-        else [],
     )
 
     await set_cached(

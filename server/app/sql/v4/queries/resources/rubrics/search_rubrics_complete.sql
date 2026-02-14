@@ -26,6 +26,7 @@ CREATE OR REPLACE FUNCTION api_search_rubrics_v4(
     department_ids uuid[] DEFAULT ARRAY[]::uuid[],
     simulation_rubric boolean DEFAULT NULL,
     video_rubric boolean DEFAULT NULL,
+    standard_group_ids uuid[] DEFAULT ARRAY[]::uuid[],
     -- Artifact boolean filters: when true, only return resources linked to that artifact type
     rubric boolean DEFAULT false
 )
@@ -37,7 +38,7 @@ STABLE
 AS $$
 SELECT COALESCE(
     ARRAY_AGG(
-        (q.id, q.name, q.description)::types.q_get_rubrics_v4_item
+        (q.id, q.name, q.description, q.standard_group_ids)::types.q_get_rubrics_v4_item
         ORDER BY q.name
     ),
     ARRAY[]::types.q_get_rubrics_v4_item[]
@@ -46,7 +47,8 @@ FROM (
     SELECT
         r.id,
         COALESCE(r.name, '') AS name,
-        COALESCE(r.description, '') AS description
+        COALESCE(r.description, '') AS description,
+        COALESCE(r.standard_group_ids, ARRAY[]::uuid[]) AS standard_group_ids
     FROM rubrics_resource r
     WHERE r.active = true
       AND (search IS NULL OR search = '' OR LOWER(r.name) LIKE '%' || LOWER(search) || '%' OR LOWER(COALESCE(r.description, '')) LIKE '%' || LOWER(search) || '%')
@@ -54,6 +56,7 @@ FROM (
       AND (COALESCE(array_length(department_ids, 1), 0) = 0 OR r.department_ids && department_ids)
       AND (simulation_rubric IS NULL OR r.simulation_rubric = simulation_rubric)
       AND (video_rubric IS NULL OR r.video_rubric = video_rubric)
+      AND (COALESCE(array_length(standard_group_ids, 1), 0) = 0 OR r.standard_group_ids && standard_group_ids)
       -- Artifact boolean filters (each filters to resources linked to at least one of that artifact type)
       AND (NOT rubric OR EXISTS (SELECT 1 FROM rubric_rubrics_junction j WHERE j.rubric_id = r.id AND j.active = true))
     ORDER BY r.name

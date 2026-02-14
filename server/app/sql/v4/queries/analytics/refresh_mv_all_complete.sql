@@ -130,9 +130,6 @@ BEGIN
     REFRESH MATERIALIZED VIEW CONCURRENTLY mv_training_bundle;
     refreshed := array_append(refreshed, 'mv_training_bundle');
 
-    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_training_context;
-    refreshed := array_append(refreshed, 'mv_training_context');
-
     -- Config MV
     REFRESH MATERIALIZED VIEW CONCURRENTLY mv_config;
     refreshed := array_append(refreshed, 'mv_config');

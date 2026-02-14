@@ -75,7 +75,7 @@ AS $$
 WITH scope AS (
     SELECT
         tb.id AS training_bundle_entry_id,
-        tb.scenarios_id AS scenarios_resource_id,
+        scj_conn.scenarios_id AS scenarios_resource_id,
         t.simulations_id,
         (
             SELECT ssj.simulation_id
@@ -87,7 +87,7 @@ WITH scope AS (
         (
             SELECT scj.scenario_id
             FROM scenario_scenarios_junction scj
-            WHERE scj.scenarios_id = tb.scenarios_id
+            WHERE scj.scenarios_id = scj_conn.scenarios_id
               AND scj.active = true
             LIMIT 1
         ) AS scenario_artifact_id
@@ -95,6 +95,9 @@ WITH scope AS (
     JOIN training_entry t
       ON t.id = tb.training_id
      AND t.active = true
+    LEFT JOIN training_bundle_scenarios_connection scj_conn
+      ON scj_conn.training_bundle_id = tb.id
+     AND scj_conn.active = true
     WHERE tb.id = p_training_bundle_entry_id
       AND tb.active = true
     LIMIT 1

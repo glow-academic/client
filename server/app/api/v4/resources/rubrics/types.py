@@ -14,6 +14,7 @@ class SearchRubricsParams(BaseModel):
     department_ids: list[UUID] = []
     simulation_rubric: bool | None = None
     video_rubric: bool | None = None
+    standard_group_ids: list[UUID] = []
     # Artifact boolean filters
     rubric: bool = False
 
@@ -26,5 +27,6 @@ class SearchRubricsParams(BaseModel):
             self.department_ids,
             self.simulation_rubric,
             self.video_rubric,
+            self.standard_group_ids,
             self.rubric,
         )

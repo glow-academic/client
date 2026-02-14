@@ -13,8 +13,6 @@ class TrainingContextViewItem(BaseModel):
     scenario_ids: list[UUID] | None = None
     cohort_ids: list[UUID] | None = None
     persona_ids: list[UUID] | None = None
-    standard_group_ids: list[UUID] | None = None
-    standard_ids: list[UUID] | None = None
     rubric_ids: list[UUID] | None = None
 
 
@@ -24,5 +22,3 @@ class GetTrainingContextViewResponse(BaseModel):
     actor_name: str | None = None
     user_role: str | None = None
     items: list[TrainingContextViewItem] = Field(default_factory=list)
-    standard_group_ids: list[UUID] = Field(default_factory=list)
-    standard_ids: list[UUID] = Field(default_factory=list)

@@ -36,6 +36,7 @@ async def search_rubrics_internal(
     department_ids: list[UUID] | None = None,
     simulation_rubric: bool | None = None,
     video_rubric: bool | None = None,
+    standard_group_ids: list[UUID] | None = None,
     bypass_cache: bool = False,
     *,
     rubric: bool = False,
@@ -55,6 +56,7 @@ async def search_rubrics_internal(
             "department_ids": sorted(str(i) for i in (department_ids or [])),
             "simulation_rubric": simulation_rubric,
             "video_rubric": video_rubric,
+            "standard_group_ids": sorted(str(i) for i in (standard_group_ids or [])),
             "rubric": rubric,
         },
     )
@@ -75,6 +77,7 @@ async def search_rubrics_internal(
         department_ids=department_ids or [],
         simulation_rubric=simulation_rubric,
         video_rubric=video_rubric,
+        standard_group_ids=standard_group_ids or [],
         rubric=rubric,
     )
     result = cast(

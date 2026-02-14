@@ -36,7 +36,8 @@ END $$;
 CREATE TYPE types.q_get_rubrics_v4_item AS (
     id uuid,
     name text,
-    description text
+    description text,
+    standard_group_ids uuid[]
 );
 
 CREATE OR REPLACE FUNCTION api_get_rubrics_v4(
@@ -50,7 +51,7 @@ STABLE
 AS $$
 SELECT COALESCE(
     ARRAY_AGG(
-        (r.id, COALESCE(r.name, ''), COALESCE(r.description, ''))::types.q_get_rubrics_v4_item
+        (r.id, COALESCE(r.name, ''), COALESCE(r.description, ''), COALESCE(r.standard_group_ids, ARRAY[]::uuid[]))::types.q_get_rubrics_v4_item
         ORDER BY r.name
     ),
     '{}'::types.q_get_rubrics_v4_item[]
