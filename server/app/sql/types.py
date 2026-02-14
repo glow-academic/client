@@ -7153,6 +7153,53 @@ class GetToolsByResourceIdsApiResponse(BaseModel):
     tools: list[IGetTextRunContextAndCreateRunV4Tool] | None = None
 
 
+# Generated from: prepare_test_grade
+
+
+class PrepareTestGradeSqlParams(BaseModel):
+    p_profile_id: UUID
+    p_group_id: UUID
+    p_invocation_id: UUID
+    p_run_id: UUID
+    p_rubric_id: UUID | None = None
+    p_agents_resource_id: UUID | None = None
+    p_models_resource_id: UUID | None = None
+    p_providers_resource_id: UUID | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.p_profile_id,
+            self.p_group_id,
+            self.p_invocation_id,
+            self.p_run_id,
+            self.p_rubric_id,
+            self.p_agents_resource_id,
+            self.p_models_resource_id,
+            self.p_providers_resource_id,
+        )
+
+
+class PrepareTestGradeSqlRow(BaseModel):
+    grade_run_id: UUID | None = None
+    grade_id: UUID | None = None
+
+
+class PrepareTestGradeApiRequest(BaseModel):
+    p_profile_id: UUID
+    p_group_id: UUID
+    p_invocation_id: UUID
+    p_run_id: UUID
+    p_rubric_id: UUID | None = None
+    p_agents_resource_id: UUID | None = None
+    p_models_resource_id: UUID | None = None
+    p_providers_resource_id: UUID | None = None
+
+
+class PrepareTestGradeApiResponse(BaseModel):
+    grade_run_id: UUID | None = None
+    grade_id: UUID | None = None
+
+
 # Generated from: prepare_test_run
 
 
@@ -28177,6 +28224,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetToolsByResourceIdsApiRequest",
         "GetToolsByResourceIdsApiResponse",
     ),
+    "app/sql/v4/queries/generate/test/prepare_test_grade_complete.sql": (
+        "PrepareTestGradeSqlParams",
+        "PrepareTestGradeSqlRow",
+        "PrepareTestGradeApiRequest",
+        "PrepareTestGradeApiResponse",
+    ),
     "app/sql/v4/queries/generate/test/prepare_test_run_complete.sql": (
         "PrepareTestRunSqlParams",
         "PrepareTestRunSqlRow",
@@ -32096,6 +32149,13 @@ if TYPE_CHECKING:
     def load_sql_query(
         file_path: Literal[
             "app/sql/v4/queries/generate/test/get_tools_by_resource_ids_complete.sql"
+        ],
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal[
+            "app/sql/v4/queries/generate/test/prepare_test_grade_complete.sql"
         ],
     ) -> SqlString: ...
 

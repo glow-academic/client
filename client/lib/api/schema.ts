@@ -9068,6 +9068,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/socket/v4/client/test/grade": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Test Grade Api
+         * @description Client-to-server event: Grade test run.
+         */
+        post: operations["test_grade_api_socket_v4_client_test_grade_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/socket/v4/server/connection_confirmed": {
         parameters: {
             query?: never;
@@ -9903,6 +9923,26 @@ export interface paths {
          * @description Server-to-client event: All test runs completed.
          */
         post: operations["test_all_complete_api_socket_v4_server_test_all_complete_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v4/server/test/graded": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Test Graded Api
+         * @description Server-to-client event: Test grading completed.
+         */
+        post: operations["test_graded_api_socket_v4_server_test_graded_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -36037,6 +36077,47 @@ export interface components {
             error_type?: string | null;
         };
         /**
+         * TestGradePayload
+         * @description Request payload for test_grade WebSocket event.
+         *
+         *     Triggers grading via rubric after runs complete.
+         */
+        TestGradePayload: {
+            /**
+             * Chat Id
+             * Format: uuid
+             */
+            chat_id: string;
+            /**
+             * Test Id
+             * Format: uuid
+             */
+            test_id: string;
+            /**
+             * Run Id
+             * Format: uuid
+             */
+            run_id: string;
+        };
+        /**
+         * TestGradedEvent
+         * @description Server-to-client event: test_graded.
+         *
+         *     Emitted when grading completes.
+         */
+        TestGradedEvent: {
+            /** Chat Id */
+            chat_id: string;
+            /** Grade Id */
+            grade_id?: string | null;
+            /** Score */
+            score?: number | null;
+            /** Passed */
+            passed?: boolean | null;
+            /** Feedback */
+            feedback?: string | null;
+        };
+        /**
          * TestJoinPayload
          * @description Request payload for test_join WebSocket event.
          *
@@ -54582,6 +54663,41 @@ export interface operations {
             };
         };
     };
+    test_grade_api_socket_v4_client_test_grade_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TestGradePayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     connection_confirmed_api_socket_v4_server_connection_confirmed_post: {
         parameters: {
             query?: never;
@@ -56031,6 +56147,41 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["TestAllCompleteEvent"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    test_graded_api_socket_v4_server_test_graded_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TestGradedEvent"];
             };
         };
         responses: {

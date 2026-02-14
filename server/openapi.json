@@ -43594,6 +43594,57 @@
         ]
       }
     },
+    "/socket/v4/client/test/grade": {
+      "post": {
+        "tags": [
+          "socket",
+          "socket-client"
+        ],
+        "summary": "Test Grade Api",
+        "description": "Client-to-server event: Grade test run.",
+        "operationId": "test_grade_api_socket_v4_client_test_grade_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TestGradePayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Test Grade Api Socket V4 Client Test Grade Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-client"
+        ]
+      }
+    },
     "/socket/v4/server/connection_confirmed": {
       "post": {
         "tags": [
@@ -45718,6 +45769,57 @@
                   },
                   "type": "object",
                   "title": "Response Test All Complete Api Socket V4 Server Test All Complete Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server"
+        ]
+      }
+    },
+    "/socket/v4/server/test/graded": {
+      "post": {
+        "tags": [
+          "socket",
+          "socket-server"
+        ],
+        "summary": "Test Graded Api",
+        "description": "Server-to-client event: Test grading completed.",
+        "operationId": "test_graded_api_socket_v4_server_test_graded_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TestGradedEvent"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Test Graded Api Socket V4 Server Test Graded Post"
                 }
               }
             }
@@ -133395,6 +133497,91 @@
         ],
         "title": "TestErrorEvent",
         "description": "Server-to-client event: test_error.\n\nEmitted on errors."
+      },
+      "TestGradePayload": {
+        "properties": {
+          "chat_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Chat Id"
+          },
+          "test_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Test Id"
+          },
+          "run_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Run Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "chat_id",
+          "test_id",
+          "run_id"
+        ],
+        "title": "TestGradePayload",
+        "description": "Request payload for test_grade WebSocket event.\n\nTriggers grading via rubric after runs complete."
+      },
+      "TestGradedEvent": {
+        "properties": {
+          "chat_id": {
+            "type": "string",
+            "title": "Chat Id"
+          },
+          "grade_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Grade Id"
+          },
+          "score": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Score"
+          },
+          "passed": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Passed"
+          },
+          "feedback": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Feedback"
+          }
+        },
+        "type": "object",
+        "required": [
+          "chat_id"
+        ],
+        "title": "TestGradedEvent",
+        "description": "Server-to-client event: test_graded.\n\nEmitted when grading completes."
       },
       "TestJoinPayload": {
         "properties": {

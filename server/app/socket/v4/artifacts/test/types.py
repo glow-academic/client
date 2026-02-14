@@ -57,7 +57,9 @@ class TestGradePayload(BaseModel):
     Triggers grading via rubric after runs complete.
     """
 
-    chat_id: UUID
+    chat_id: UUID  # invocation_id (which invocation)
+    test_id: UUID  # for get_test_websocket()
+    run_id: UUID  # the replay run being graded
 
 
 class TestJoinPayload(BaseModel):
