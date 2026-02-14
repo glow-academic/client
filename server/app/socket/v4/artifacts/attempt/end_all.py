@@ -4,7 +4,7 @@ Handles WebSocket events for ending all chats:
 - attempt_end_all: End all chats in an attempt
 """
 
-from typing import Any
+from typing import Any, cast
 
 from fastapi import APIRouter
 
@@ -16,12 +16,21 @@ from app.socket.v4.artifacts.attempt.types import (
     AttemptEndedEvent,
     AttemptUnifiedErrorEvent,
 )
+from app.sql.types import (
+    EndAllAttemptChatsSqlParams,
+    EndAllAttemptChatsSqlRow,
+)
 from app.utils.logging.db_logger import get_logger
+from app.utils.sql_helper import execute_sql_typed
 
 logger = get_logger(__name__)
 
 client_router = APIRouter()
 server_router = APIRouter()
+
+SQL_PATH_END_ALL = (
+    "app/sql/v4/queries/generate/attempt/end_all_attempt_chats_complete.sql"
+)
 
 
 async def _attempt_end_all_impl(sid: str, data: AttemptEndAllPayload) -> None:
@@ -31,100 +40,22 @@ async def _attempt_end_all_impl(sid: str, data: AttemptEndAllPayload) -> None:
         attempt_id_uuid = data.attempt_id
 
         async with get_db_connection() as conn:
-            # Get all existing chats for this attempt
-            existing_chats = await conn.fetch(
-                """
-                SELECT c.id
-                FROM simulation_chats_entry c
-                WHERE c.attempt_id = $1 AND c.active = TRUE
-                """,
-                attempt_id_uuid,
+            # End all chats and create stubs via typed SQL
+            result_row = cast(
+                EndAllAttemptChatsSqlRow,
+                await execute_sql_typed(
+                    conn,
+                    SQL_PATH_END_ALL,
+                    params=EndAllAttemptChatsSqlParams(
+                        p_attempt_id=attempt_id_uuid,
+                    ),
+                ),
             )
 
-            # Mark all existing incomplete chats as completed
-            for chat in existing_chats:
-                await conn.execute(
-                    """
-                    INSERT INTO simulation_completions_entry (chat_id)
-                    VALUES ($1)
-                    ON CONFLICT (chat_id) DO NOTHING
-                    """,
-                    chat["id"],
-                )
-
-            # Find expected scenarios for this attempt's simulation
-            expected_scenarios = await conn.fetch(
-                """
-                SELECT DISTINCT ss.scenario_id
-                FROM simulation_scenarios_junction ss
-                JOIN simulation_simulations_junction ssj ON ssj.simulation_id = ss.simulation_id
-                    AND ssj.active = true
-                JOIN training_entry t ON t.simulations_id = ssj.simulations_id
-                    AND t.active = true
-                JOIN simulation_attempts_entry a ON a.training_id = t.id
-                WHERE a.id = $1 AND ss.active = true
-                """,
-                attempt_id_uuid,
+            logger.info(
+                f"End all: completed={result_row.chats_completed if result_row else 0}, "
+                f"stubs={result_row.stubs_created if result_row else 0}"
             )
-
-            # Get existing chat scenario IDs from MV
-            existing_scenario_rows = await conn.fetch(
-                """
-                SELECT DISTINCT scenario_id
-                FROM mv_attempt_chats
-                WHERE attempt_id = $1 AND scenario_id IS NOT NULL
-                """,
-                attempt_id_uuid,
-            )
-            existing_scenario_ids = {
-                row["scenario_id"] for row in existing_scenario_rows
-            }
-
-            # Create stub chats for missing scenarios
-            for scenario_row in expected_scenarios:
-                scenario_id = scenario_row["scenario_id"]
-                if scenario_id in existing_scenario_ids:
-                    continue
-
-                try:
-                    # Create stub chat
-                    stub_chat_id = await conn.fetchval(
-                        """
-                        INSERT INTO simulation_chats_entry (attempt_id, active)
-                        VALUES ($1, true)
-                        RETURNING id
-                        """,
-                        attempt_id_uuid,
-                    )
-                    if not stub_chat_id:
-                        continue
-
-                    # Link scenario to stub chat
-                    await conn.execute(
-                        """
-                        INSERT INTO simulation_chats_scenarios_connection
-                            (chat_id, scenarios_id, active)
-                        VALUES ($1, $2, true)
-                        ON CONFLICT DO NOTHING
-                        """,
-                        stub_chat_id,
-                        scenario_id,
-                    )
-
-                    # Mark as completed
-                    await conn.execute(
-                        """
-                        INSERT INTO simulation_completions_entry (chat_id)
-                        VALUES ($1)
-                        ON CONFLICT (chat_id) DO NOTHING
-                        """,
-                        stub_chat_id,
-                    )
-                except Exception as e:
-                    logger.warning(
-                        f"Failed to create stub chat for scenario {scenario_id}: {e}"
-                    )
-                    continue
 
             # Refresh MVs
             await conn.execute("REFRESH MATERIALIZED VIEW mv_attempt_list")

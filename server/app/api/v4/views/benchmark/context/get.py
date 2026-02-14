@@ -65,9 +65,7 @@ async def get_benchmark_context_view_internal(
                     department_ids=(
                         list(item.department_ids) if item.department_ids else None
                     ),
-                    profile_ids=(
-                        list(item.profile_ids) if item.profile_ids else None
-                    ),
+                    profile_ids=(list(item.profile_ids) if item.profile_ids else None),
                     run_rubric_ids=(
                         list(item.run_rubric_ids) if item.run_rubric_ids else None
                     ),

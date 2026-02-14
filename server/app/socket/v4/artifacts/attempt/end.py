@@ -5,7 +5,7 @@ Handles WebSocket events for ending chats:
 """
 
 import uuid
-from typing import Any
+from typing import Any, cast
 
 from fastapi import APIRouter
 
@@ -18,12 +18,24 @@ from app.socket.v4.artifacts.attempt.types import (
     AttemptEndPayload,
     AttemptUnifiedErrorEvent,
 )
+from app.sql.types import (
+    EndAttemptChatSqlParams,
+    EndAttemptChatSqlRow,
+    UsePreviousAttemptGradesSqlParams,
+    UsePreviousAttemptGradesSqlRow,
+)
 from app.utils.logging.db_logger import get_logger
+from app.utils.sql_helper import execute_sql_typed
 
 logger = get_logger(__name__)
 
 client_router = APIRouter()
 server_router = APIRouter()
+
+SQL_PATH_END_CHAT = "app/sql/v4/queries/generate/attempt/end_attempt_chat_complete.sql"
+SQL_PATH_USE_PREVIOUS = (
+    "app/sql/v4/queries/generate/attempt/use_previous_attempt_grades_complete.sql"
+)
 
 
 async def _attempt_end_impl(
@@ -57,24 +69,23 @@ async def _attempt_end_impl(
 
             # Mode 1: Single chat end (End Session with 0 messages)
             if data.chat_id:
-                chat_id_uuid = data.chat_id
-                chat_id = str(chat_id_uuid)
-
-                # Verify chat exists and belongs to this attempt
-                chat = await conn.fetchrow(
-                    """
-                    SELECT c.id, c.attempt_id
-                    FROM simulation_chats_entry c
-                    WHERE c.id = $1 AND c.attempt_id = $2 AND c.active = TRUE
-                    """,
-                    chat_id_uuid,
-                    attempt_id_uuid,
+                end_row = cast(
+                    EndAttemptChatSqlRow,
+                    await execute_sql_typed(
+                        conn,
+                        SQL_PATH_END_CHAT,
+                        params=EndAttemptChatSqlParams(
+                            p_attempt_id=attempt_id_uuid,
+                            p_chat_id=data.chat_id,
+                        ),
+                    ),
                 )
-                if not chat:
+
+                if not end_row or not end_row.success:
                     await sio.emit(
                         "attempt_error",
                         AttemptUnifiedErrorEvent(
-                            chat_id=chat_id,
+                            chat_id=str(data.chat_id),
                             type="end",
                             message="Chat not found",
                         ).model_dump(mode="json"),
@@ -82,16 +93,7 @@ async def _attempt_end_impl(
                     )
                     return
 
-                # Mark chat as completed
-                await conn.execute(
-                    """
-                    INSERT INTO simulation_completions_entry (chat_id)
-                    VALUES ($1)
-                    ON CONFLICT (chat_id) DO NOTHING
-                    """,
-                    chat_id_uuid,
-                )
-                last_chat_id = chat_id
+                last_chat_id = str(end_row.chat_id) if end_row.chat_id else None
 
             # Mode 2: Use Previous — create skipped chats with copied grades
             if data.previous_chat_map:
@@ -102,75 +104,21 @@ async def _attempt_end_impl(
                         prev_chat_uuid = uuid.UUID(prev_chat_id_str)
                         prev_scenario_uuid = uuid.UUID(scenario_id_str)
 
-                        # Create a chat entry for the skipped scenario
-                        skipped_chat_id = await conn.fetchval(
-                            """
-                            INSERT INTO simulation_chats_entry (attempt_id, active)
-                            VALUES ($1, true)
-                            RETURNING id
-                            """,
-                            attempt_id_uuid,
-                        )
-                        if not skipped_chat_id:
-                            continue
-
-                        # Link scenario to the skipped chat
-                        await conn.execute(
-                            """
-                            INSERT INTO simulation_chats_scenarios_connection
-                                (chat_id, scenarios_id, active)
-                            VALUES ($1, $2, true)
-                            ON CONFLICT DO NOTHING
-                            """,
-                            skipped_chat_id,
-                            prev_scenario_uuid,
+                        result_row = cast(
+                            UsePreviousAttemptGradesSqlRow,
+                            await execute_sql_typed(
+                                conn,
+                                SQL_PATH_USE_PREVIOUS,
+                                params=UsePreviousAttemptGradesSqlParams(
+                                    p_attempt_id=attempt_id_uuid,
+                                    p_scenario_id=prev_scenario_uuid,
+                                    p_previous_chat_id=prev_chat_uuid,
+                                ),
+                            ),
                         )
 
-                        # Mark as completed
-                        await conn.execute(
-                            """
-                            INSERT INTO simulation_completions_entry (chat_id)
-                            VALUES ($1)
-                            ON CONFLICT (chat_id) DO NOTHING
-                            """,
-                            skipped_chat_id,
-                        )
-
-                        # Copy grade from previous chat
-                        await conn.execute(
-                            """
-                            INSERT INTO simulation_grades_entry (
-                                chat_id, run_id, rubric_grade_agent_id, rubric_id,
-                                score, passed, time_taken, total_points, pass_points,
-                                generated, active
-                            )
-                            SELECT $2, g.run_id, g.rubric_grade_agent_id, g.rubric_id,
-                                   g.score, g.passed, g.time_taken, g.total_points, g.pass_points,
-                                   g.generated, true
-                            FROM simulation_grades_entry g
-                            WHERE g.chat_id = $1 AND g.active = true
-                            ORDER BY g.created_at DESC
-                            LIMIT 1
-                            """,
-                            prev_chat_uuid,
-                            skipped_chat_id,
-                        )
-
-                        # Copy feedbacks from previous chat
-                        await conn.execute(
-                            """
-                            INSERT INTO simulation_feedbacks_entry (
-                                chat_id, standard_id, total, feedback, active
-                            )
-                            SELECT $2, f.standard_id, f.total, f.feedback, true
-                            FROM simulation_feedbacks_entry f
-                            WHERE f.chat_id = $1 AND f.active = true
-                            """,
-                            prev_chat_uuid,
-                            skipped_chat_id,
-                        )
-
-                        last_chat_id = str(skipped_chat_id)
+                        if result_row and result_row.skipped_chat_id:
+                            last_chat_id = str(result_row.skipped_chat_id)
 
                     except Exception as e:
                         logger.warning(

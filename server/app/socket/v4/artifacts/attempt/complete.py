@@ -9,7 +9,7 @@ Handles both message completion and grade completion:
 """
 
 import uuid
-from typing import Any
+from typing import Any, cast
 
 from fastapi import APIRouter
 
@@ -25,8 +25,17 @@ from app.socket.v4.artifacts.attempt.types import (
     AttemptGradingProgressEvent,
     AttemptHintProgressEvent,
 )
+from app.sql.types import (
+    CompleteAttemptGradeSqlParams,
+    CompleteAttemptMessageSqlParams,
+    CompleteAttemptMessageSqlRow,
+    GetAttemptGradeCompletionContextSqlParams,
+    GetAttemptGradeCompletionContextSqlRow,
+    GetAttemptMessageCompletionContextSqlParams,
+    GetAttemptMessageCompletionContextSqlRow,
+)
 from app.utils.logging.db_logger import get_logger
-from app.utils.sql_helper import load_sql
+from app.utils.sql_helper import execute_sql_typed
 
 logger = get_logger(__name__)
 
@@ -36,6 +45,12 @@ server_router = APIRouter()
 
 SQL_PATH_GET_MESSAGE_CONTEXT = "app/sql/v4/queries/generate/attempt/get_attempt_message_completion_context_complete.sql"
 SQL_PATH_GET_GRADE_CONTEXT = "app/sql/v4/queries/generate/attempt/get_attempt_grade_completion_context_complete.sql"
+SQL_PATH_COMPLETE_MESSAGE = (
+    "app/sql/v4/queries/generate/attempt/complete_attempt_message_complete.sql"
+)
+SQL_PATH_COMPLETE_GRADE = (
+    "app/sql/v4/queries/generate/attempt/complete_attempt_grade_complete.sql"
+)
 
 
 @internal_sio.on("generate_call_complete")  # type: ignore
@@ -101,59 +116,46 @@ async def _handle_message_complete(sid: str, data: dict[str, Any]) -> None:
     try:
         run_uuid = uuid.UUID(run_id)
         async with get_db_connection() as conn:
-            context_row = await conn.fetchrow(
-                load_sql(SQL_PATH_GET_MESSAGE_CONTEXT),
-                run_uuid,
+            # Fetch message context via typed SQL
+            context_row = cast(
+                GetAttemptMessageCompletionContextSqlRow,
+                await execute_sql_typed(
+                    conn,
+                    SQL_PATH_GET_MESSAGE_CONTEXT,
+                    params=GetAttemptMessageCompletionContextSqlParams(
+                        p_run_id=run_uuid
+                    ),
+                ),
             )
-            if not context_row:
+            if not context_row or not context_row.message_id:
                 return
 
-            message_id = context_row["message_id"]
-            chat_id = context_row["chat_id"]
+            message_id = context_row.message_id
+            chat_id = context_row.chat_id
 
-            # Content is already inserted by the create_content tool call
-            # (via api_create_entry_record_v4) with proper persona_id.
-            # Here we only: mark the message as completed (audit) and
-            # update token usage on the run.
-            await conn.execute(
-                """
-                UPDATE messages_entry
-                SET completed = true, updated_at = NOW()
-                WHERE id = $1
-                """,
-                message_id,
-            )
-            await conn.execute(
-                """
-                UPDATE runs_entry
-                SET input_tokens = COALESCE($2, input_tokens),
-                    output_tokens = COALESCE($3, output_tokens),
-                    updated_at = NOW()
-                WHERE id = $1
-                """,
-                run_uuid,
-                input_tokens,
-                output_tokens,
+            # Mark message completed, update tokens, get persona_id
+            complete_row = cast(
+                CompleteAttemptMessageSqlRow,
+                await execute_sql_typed(
+                    conn,
+                    SQL_PATH_COMPLETE_MESSAGE,
+                    params=CompleteAttemptMessageSqlParams(
+                        p_message_id=message_id,
+                        p_run_id=run_uuid,
+                        p_input_tokens=input_tokens,
+                        p_output_tokens=output_tokens,
+                    ),
+                ),
             )
 
-            # Fetch persona_id from the content entry (inserted by create_content tool)
-            persona_id = await conn.fetchval(
-                """
-                SELECT persona_id::text
-                FROM simulation_contents_entry
-                WHERE message_id = $1 AND active = true AND persona_id IS NOT NULL
-                ORDER BY created_at DESC
-                LIMIT 1
-                """,
-                message_id,
-            )
+            persona_id = complete_row.persona_id if complete_row else None
 
         assistant_event = AttemptAssistantCompleteEvent(
             chat_id=str(chat_id),
             message_id=str(message_id),
             content=final_content,
-            created_at=context_row["created_at"].isoformat()
-            if context_row.get("created_at")
+            created_at=context_row.created_at.isoformat()
+            if context_row.created_at
             else None,
             persona_id=persona_id,
         )
@@ -224,43 +226,36 @@ async def _handle_grade_complete(sid: str, data: dict[str, Any]) -> None:
     feedback = _extract_grade_feedback(tool_results)
 
     async with get_db_connection() as conn:
-        context_row = await conn.fetchrow(
-            load_sql(SQL_PATH_GET_GRADE_CONTEXT), run_uuid
+        # Fetch grade context via typed SQL
+        context_row = cast(
+            GetAttemptGradeCompletionContextSqlRow,
+            await execute_sql_typed(
+                conn,
+                SQL_PATH_GET_GRADE_CONTEXT,
+                params=GetAttemptGradeCompletionContextSqlParams(p_run_id=run_uuid),
+            ),
         )
-        if not context_row:
+        if not context_row or not context_row.grade_id:
             return
 
-        grade_id = context_row["grade_id"]
-        chat_id = context_row["chat_id"]
-        attempt_id = context_row["attempt_id"]
-        simulation_id = context_row["simulation_id"]
+        grade_id = context_row.grade_id
+        chat_id = context_row.chat_id
+        attempt_id = context_row.attempt_id
+        simulation_id = context_row.simulation_id
 
-        await conn.execute(
-            """
-            UPDATE runs_entry
-            SET input_tokens = COALESCE($2, input_tokens),
-                output_tokens = COALESCE($3, output_tokens),
-                updated_at = NOW()
-            WHERE id = $1
-            """,
-            run_uuid,
-            input_tokens,
-            output_tokens,
+        # Update tokens and grade via typed SQL
+        await execute_sql_typed(
+            conn,
+            SQL_PATH_COMPLETE_GRADE,
+            params=CompleteAttemptGradeSqlParams(
+                p_grade_id=grade_id,
+                p_run_id=run_uuid,
+                p_score=score,
+                p_passed=passed,
+                p_input_tokens=input_tokens,
+                p_output_tokens=output_tokens,
+            ),
         )
-
-        if score is not None or passed is not None:
-            await conn.execute(
-                """
-                UPDATE simulation_grades_entry
-                SET score = COALESCE($2, score),
-                    passed = COALESCE($3, passed),
-                    updated_at = NOW()
-                WHERE id = $1
-                """,
-                grade_id,
-                score,
-                passed,
-            )
 
     # Emit attempt_graded event
     event = AttemptGradedEvent(
@@ -358,16 +353,23 @@ async def _handle_tool_complete(sid: str, data: dict[str, Any]) -> None:
 async def _get_message_context_by_run_id(run_id: str) -> dict[str, str] | None:
     """Resolve chat/message identifiers for attempt message stream events."""
     try:
+        run_uuid = uuid.UUID(run_id)
         async with get_db_connection() as conn:
-            context_row = await conn.fetchrow(
-                load_sql(SQL_PATH_GET_MESSAGE_CONTEXT),
-                uuid.UUID(run_id),
+            context_row = cast(
+                GetAttemptMessageCompletionContextSqlRow,
+                await execute_sql_typed(
+                    conn,
+                    SQL_PATH_GET_MESSAGE_CONTEXT,
+                    params=GetAttemptMessageCompletionContextSqlParams(
+                        p_run_id=run_uuid
+                    ),
+                ),
             )
-            if not context_row:
+            if not context_row or not context_row.message_id:
                 return None
             return {
-                "chat_id": str(context_row["chat_id"]),
-                "message_id": str(context_row["message_id"]),
+                "chat_id": str(context_row.chat_id),
+                "message_id": str(context_row.message_id),
             }
     except Exception:
         return None

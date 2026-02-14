@@ -16,11 +16,6 @@ from app.main import (
 
 internal_sio = get_internal_sio()
 
-# SQL path for voice session context
-SQL_PATH_VOICE_CONTEXT = (
-    "app/sql/v4/queries/audio/get_voice_session_context_complete.sql"
-)
-
 # Global adapter instance (singleton)
 _audio_adapter: OpenAIRealtimeAdapter | None = None
 

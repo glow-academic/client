@@ -4,7 +4,8 @@ Handles WebSocket events for stopping message generation:
 - attempt_stop: Stop message generation
 """
 
-from typing import Any
+import uuid
+from typing import Any, cast
 
 from fastapi import APIRouter
 
@@ -17,13 +18,16 @@ from app.socket.v4.artifacts.attempt.types import (
     AttemptStoppedEvent,
     AttemptUnifiedErrorEvent,
 )
+from app.sql.types import SimulationTextStopRunSqlParams, SimulationTextStopRunSqlRow
 from app.utils.logging.db_logger import get_logger
-from app.utils.sql_helper import load_sql
+from app.utils.sql_helper import execute_sql_typed
 
 logger = get_logger(__name__)
 
 client_router = APIRouter()
 server_router = APIRouter()
+
+SQL_PATH_STOP = "app/sql/v4/queries/simulations/simulation_text_stop_run_complete.sql"
 
 
 async def _attempt_stop_impl(sid: str, data: AttemptStopPayload) -> None:
@@ -51,26 +55,20 @@ async def _attempt_stop_impl(sid: str, data: AttemptStopPayload) -> None:
             # Then set cooperative cancel flag (Redis)
             await cancel_active_run(chat_id)
 
-            # Stop simulation and mark message complete using SQL
-            sql = load_sql(
-                "app/sql/v4/queries/simulations/simulation_text_stop_run_complete.sql"
+            # Stop simulation and mark message complete using typed SQL
+            row = cast(
+                SimulationTextStopRunSqlRow,
+                await execute_sql_typed(
+                    conn,
+                    SQL_PATH_STOP,
+                    params=SimulationTextStopRunSqlParams(chat_id=uuid.UUID(chat_id)),
+                ),
             )
-            row = await conn.fetchrow(sql, chat_id)
 
-            if not row:
-                result = {
-                    "success": False,
-                    "cancelled_message_id": None,
-                    "final_content": "",
-                }
-            else:
-                result = {
-                    "success": row["success"],
-                    "cancelled_message_id": row["cancelled_message_id"],
-                    "final_content": row["final_content"],
-                }
+            success = row.success if row else False
+            cancelled_message_id = row.cancelled_message_id if row else None
 
-            if result["success"] and result["cancelled_message_id"]:
+            if success and cancelled_message_id:
                 # Emit attempt_stopped event
                 await sio.emit(
                     "attempt_stopped",
