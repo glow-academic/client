@@ -147,17 +147,6 @@ type FlushResult = {
   parameter_field_ids?: string[];
 };
 
-function getSelectedScenarioFlagIds(state: ScenarioFormState): string[] {
-  return [
-    state.active_flag_id,
-    state.objectives_enabled_flag_id,
-    state.images_enabled_flag_id,
-    state.video_enabled_flag_id,
-    state.questions_enabled_flag_id,
-    state.problem_statement_enabled_flag_id,
-  ].filter((id): id is string => !!id);
-}
-
 export interface ScenarioProps {
   scenarioId?: string;
   // Server-provided data (for server-side rendering)
@@ -1504,7 +1493,7 @@ function ScenarioComponent({
             objective_ids: effectiveFormState.objective_ids?.length ? effectiveFormState.objective_ids : null,
             video_ids: effectiveFormState.video_ids?.length ? effectiveFormState.video_ids : null,
             question_ids: effectiveFormState.question_ids?.length ? effectiveFormState.question_ids : null,
-          } as SaveScenarioIn["body"],
+          } as unknown as SaveScenarioIn["body"],
         });
 
         toast.success(

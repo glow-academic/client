@@ -8,7 +8,9 @@ from fastapi import APIRouter
 from app.api.v4.resources.temperature_levels.get import get_temperature_levels_internal
 from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.main import get_internal_sio, sio
-from app.socket.v4.resources.temperature_levels.types import TemperatureLevelsGenerationCompleteEvent
+from app.socket.v4.resources.temperature_levels.types import (
+    TemperatureLevelsGenerationCompleteEvent,
+)
 from app.socket.v4.resources.utils import resolve_resource_type
 from app.utils.logging.db_logger import get_logger
 

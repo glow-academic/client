@@ -8,7 +8,9 @@ from fastapi import APIRouter
 from app.api.v4.resources.run_positions.get import get_run_positions_internal
 from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.main import get_internal_sio, sio
-from app.socket.v4.resources.run_positions.types import RunPositionsGenerationCompleteEvent
+from app.socket.v4.resources.run_positions.types import (
+    RunPositionsGenerationCompleteEvent,
+)
 from app.socket.v4.resources.utils import resolve_resource_type
 from app.utils.logging.db_logger import get_logger
 

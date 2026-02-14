@@ -5,7 +5,9 @@ from typing import Any
 from fastapi import APIRouter
 
 from app.main import get_internal_sio, sio
-from app.socket.v4.resources.provider_keys.types import ProviderKeysGenerationProgressEvent
+from app.socket.v4.resources.provider_keys.types import (
+    ProviderKeysGenerationProgressEvent,
+)
 from app.socket.v4.resources.utils import resolve_resource_type
 
 internal_sio = get_internal_sio()

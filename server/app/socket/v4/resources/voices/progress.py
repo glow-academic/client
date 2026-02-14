@@ -5,8 +5,8 @@ from typing import Any
 from fastapi import APIRouter
 
 from app.main import get_internal_sio, sio
-from app.socket.v4.resources.voices.types import VoicesGenerationProgressEvent
 from app.socket.v4.resources.utils import resolve_resource_type
+from app.socket.v4.resources.voices.types import VoicesGenerationProgressEvent
 
 internal_sio = get_internal_sio()
 

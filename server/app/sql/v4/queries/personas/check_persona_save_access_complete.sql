@@ -30,7 +30,7 @@ RETURNS TABLE (
     group_id uuid
 )
 LANGUAGE sql
-STABLE
+VOLATILE
 AS $$
 -- User context (actor_name, user_role, department_ids) comes from get_profile_context_internal() in Python
 WITH params AS (
@@ -38,22 +38,34 @@ WITH params AS (
         profile_id AS profile_id,
         persona_id AS persona_id
 ),
--- Get persona edit state (for update mode)
-persona_edit_state AS (
-    SELECT * FROM view_persona_edit_state WHERE persona_id = (SELECT persona_id FROM params)
+-- Get persona departments (for update mode)
+persona_departments_data AS (
+    SELECT COALESCE(
+        ARRAY_AGG(pd.department_id::text ORDER BY pd.created_at) FILTER (WHERE pd.department_id IS NOT NULL),
+        ARRAY[]::text[]
+    ) as department_ids
+    FROM params x
+    LEFT JOIN persona_departments_junction pd ON pd.persona_id = x.persona_id AND pd.active = true
+    WHERE x.persona_id IS NOT NULL
 ),
--- Resolve group_id (most recent active group)
-persona_group_data AS (
-    SELECT gr.id as group_id
-    FROM groups_resource gr
-    WHERE gr.active = true
-    ORDER BY gr.created_at DESC
-    LIMIT 1
+-- Get persona edit state (active_scenario_count via scenario_personas_junction)
+persona_edit_state AS (
+    SELECT
+        COALESCE(COUNT(DISTINCT spj.scenario_id), 0)::bigint as active_scenario_count
+    FROM params x
+    LEFT JOIN scenario_personas_junction spj ON spj.persona_id = x.persona_id AND spj.active = true
+    WHERE x.persona_id IS NOT NULL
+),
+-- Create a new group (guarantees group_id is always returned for save)
+ensure_group AS (
+    INSERT INTO groups_entry (created_at, updated_at)
+    VALUES (NOW(), NOW())
+    RETURNING id
 )
 SELECT
-    (SELECT department_ids FROM persona_edit_state) as persona_department_ids,
+    COALESCE((SELECT department_ids FROM persona_departments_data), ARRAY[]::text[]) as persona_department_ids,
     COALESCE((SELECT active_scenario_count FROM persona_edit_state), 0)::bigint as active_scenario_count,
-    (SELECT group_id FROM persona_group_data) as group_id
+    (SELECT id FROM ensure_group) as group_id
 FROM params x
 $$;
 

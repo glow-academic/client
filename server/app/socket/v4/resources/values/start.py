@@ -5,8 +5,8 @@ from typing import Any
 from fastapi import APIRouter
 
 from app.main import get_internal_sio, sio
-from app.socket.v4.resources.values.types import ValuesGenerationStartedEvent
 from app.socket.v4.resources.utils import resolve_resource_type
+from app.socket.v4.resources.values.types import ValuesGenerationStartedEvent
 
 internal_sio = get_internal_sio()
 

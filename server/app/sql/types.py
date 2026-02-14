@@ -1320,6 +1320,40 @@ class DuplicateAuthApiResponse(BaseModel):
 
 
 
+# Generated from: get_auth_access
+
+class GetAuthAccessSqlParams(BaseModel):
+
+    profile_id: UUID
+    auth_id: UUID | None = None
+    draft_id: UUID | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.auth_id,
+            self.draft_id,
+        )
+
+class GetAuthAccessSqlRow(BaseModel):
+
+    auth_exists: bool | None = None
+    draft_version: int | None = None
+    group_id: UUID | None = None
+
+class GetAuthAccessApiRequest(BaseModel):
+
+    auth_id: UUID | None = None
+    draft_id: UUID | None = None
+
+class GetAuthAccessApiResponse(BaseModel):
+
+    auth_exists: bool | None = None
+    draft_version: int | None = None
+    group_id: UUID | None = None
+
+
+
 # Generated from: get_auth_docs
 
 class GetAuthDocsSqlParams(BaseModel):
@@ -1746,6 +1780,44 @@ class DeleteCohortApiResponse(BaseModel):
     deleted: bool | None = None
     title: str | None = None
     actor_name: str | None = None
+
+
+
+# Generated from: get_cohort_access
+
+class GetCohortAccessSqlParams(BaseModel):
+
+    profile_id: UUID
+    cohort_id: UUID | None = None
+    draft_id: UUID | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.cohort_id,
+            self.draft_id,
+        )
+
+class GetCohortAccessSqlRow(BaseModel):
+
+    cohort_exists: bool | None = None
+    draft_version: int | None = None
+    group_id: UUID | None = None
+    cohort_department_ids: list[UUID] | None = None
+    usage_count: int | None = None
+
+class GetCohortAccessApiRequest(BaseModel):
+
+    cohort_id: UUID | None = None
+    draft_id: UUID | None = None
+
+class GetCohortAccessApiResponse(BaseModel):
+
+    cohort_exists: bool | None = None
+    draft_version: int | None = None
+    group_id: UUID | None = None
+    cohort_department_ids: list[UUID] | None = None
+    usage_count: int | None = None
 
 
 
@@ -3621,6 +3693,44 @@ class DuplicateEvalApiResponse(BaseModel):
 
     new_eval_id: UUID | None = None
     original_name: str | None = None
+
+
+
+# Generated from: get_eval_access
+
+class GetEvalAccessSqlParams(BaseModel):
+
+    profile_id: UUID
+    eval_id: UUID | None = None
+    draft_id: UUID | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.eval_id,
+            self.draft_id,
+        )
+
+class GetEvalAccessSqlRow(BaseModel):
+
+    eval_exists: bool | None = None
+    draft_version: int | None = None
+    group_id: UUID | None = None
+    eval_department_ids: list[UUID] | None = None
+    active_usage_count: int | None = None
+
+class GetEvalAccessApiRequest(BaseModel):
+
+    eval_id: UUID | None = None
+    draft_id: UUID | None = None
+
+class GetEvalAccessApiResponse(BaseModel):
+
+    eval_exists: bool | None = None
+    draft_version: int | None = None
+    group_id: UUID | None = None
+    eval_department_ids: list[UUID] | None = None
+    active_usage_count: int | None = None
 
 
 
@@ -7776,6 +7886,37 @@ class CheckPersonaDuplicateAccessApiResponse(BaseModel):
 
 
 
+# Generated from: check_persona_save_access
+
+class CheckPersonaSaveAccessSqlParams(BaseModel):
+
+    profile_id: UUID
+    persona_id: UUID | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.persona_id,
+        )
+
+class CheckPersonaSaveAccessSqlRow(BaseModel):
+
+    persona_department_ids: list[str] | None = None
+    active_scenario_count: int | None = None
+    group_id: UUID | None = None
+
+class CheckPersonaSaveAccessApiRequest(BaseModel):
+
+    persona_id: UUID | None = None
+
+class CheckPersonaSaveAccessApiResponse(BaseModel):
+
+    persona_department_ids: list[str] | None = None
+    active_scenario_count: int | None = None
+    group_id: UUID | None = None
+
+
+
 # Generated from: delete_persona
 
 class DeletePersonaSqlParams(BaseModel):
@@ -7836,6 +7977,50 @@ class DuplicatePersonaApiResponse(BaseModel):
 
     new_persona_id: UUID | None = None
     original_name: str | None = None
+
+
+
+# Generated from: get_persona_access
+
+class GetPersonaAccessSqlParams(BaseModel):
+
+    profile_id: UUID
+    persona_id: UUID | None = None
+    draft_id: UUID | None = None
+    draft_group_id: UUID | None = None
+    draft_version: int | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.persona_id,
+            self.draft_id,
+            self.draft_group_id,
+            self.draft_version,
+        )
+
+class GetPersonaAccessSqlRow(BaseModel):
+
+    persona_exists: bool | None = None
+    effective_draft_version: int | None = None
+    group_id: UUID | None = None
+    persona_department_ids: list[UUID] | None = None
+    active_scenario_count: int | None = None
+
+class GetPersonaAccessApiRequest(BaseModel):
+
+    persona_id: UUID | None = None
+    draft_id: UUID | None = None
+    draft_group_id: UUID | None = None
+    draft_version: int | None = None
+
+class GetPersonaAccessApiResponse(BaseModel):
+
+    persona_exists: bool | None = None
+    effective_draft_version: int | None = None
+    group_id: UUID | None = None
+    persona_department_ids: list[UUID] | None = None
+    active_scenario_count: int | None = None
 
 
 
@@ -9037,12 +9222,14 @@ class SaveProfileSqlParams(BaseModel):
     draft_id: UUID
     actor_profile_id: UUID | None = None
     input_profile_id: UUID | None = None
+    draft_group_id: UUID | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.draft_id,
             self.actor_profile_id,
             self.input_profile_id,
+            self.draft_group_id,
         )
 
 class SaveProfileSqlRow(BaseModel):
@@ -9055,6 +9242,7 @@ class SaveProfileApiRequest(BaseModel):
     draft_id: UUID
     actor_profile_id: UUID | None = None
     input_profile_id: UUID | None = None
+    draft_group_id: UUID | None = None
 
 class SaveProfileApiResponse(BaseModel):
 
@@ -18953,6 +19141,42 @@ class GetActiveSettingsApiResponse(BaseModel):
 
 
 
+# Generated from: get_setting_access
+
+class GetSettingAccessSqlParams(BaseModel):
+
+    profile_id: UUID
+    setting_id: UUID | None = None
+    draft_id: UUID | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.setting_id,
+            self.draft_id,
+        )
+
+class GetSettingAccessSqlRow(BaseModel):
+
+    setting_department_ids: list[UUID] | None = None
+    setting_exists: bool | None = None
+    draft_version: int | None = None
+    group_id: UUID | None = None
+
+class GetSettingAccessApiRequest(BaseModel):
+
+    setting_id: UUID | None = None
+    draft_id: UUID | None = None
+
+class GetSettingAccessApiResponse(BaseModel):
+
+    setting_department_ids: list[UUID] | None = None
+    setting_exists: bool | None = None
+    draft_version: int | None = None
+    group_id: UUID | None = None
+
+
+
 # Generated from: get_setting_ids
 
 class GetSettingIdsSqlParams(BaseModel):
@@ -19473,6 +19697,44 @@ class GetNameByIdApiRequest(BaseModel):
 class GetNameByIdApiResponse(BaseModel):
 
     name: str | None = None
+
+
+
+# Generated from: get_simulation_access
+
+class GetSimulationAccessSqlParams(BaseModel):
+
+    profile_id: UUID
+    simulation_id: UUID | None = None
+    draft_id: UUID | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.simulation_id,
+            self.draft_id,
+        )
+
+class GetSimulationAccessSqlRow(BaseModel):
+
+    simulation_department_ids: list[UUID] | None = None
+    simulation_exists: bool | None = None
+    group_id: UUID | None = None
+    draft_version: int | None = None
+    cohort_usage_count: int | None = None
+
+class GetSimulationAccessApiRequest(BaseModel):
+
+    simulation_id: UUID | None = None
+    draft_id: UUID | None = None
+
+class GetSimulationAccessApiResponse(BaseModel):
+
+    simulation_department_ids: list[UUID] | None = None
+    simulation_exists: bool | None = None
+    group_id: UUID | None = None
+    draft_version: int | None = None
+    cohort_usage_count: int | None = None
 
 
 
@@ -23112,6 +23374,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "DuplicateAuthApiRequest",
         "DuplicateAuthApiResponse",
     ),
+    "app/sql/v4/queries/auth/get_auth_access_complete.sql": (
+        "GetAuthAccessSqlParams",
+        "GetAuthAccessSqlRow",
+        "GetAuthAccessApiRequest",
+        "GetAuthAccessApiResponse",
+    ),
     "app/sql/v4/queries/auth/get_auth_docs_complete.sql": (
         "GetAuthDocsSqlParams",
         "GetAuthDocsSqlRow",
@@ -23165,6 +23433,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "DeleteCohortSqlRow",
         "DeleteCohortApiRequest",
         "DeleteCohortApiResponse",
+    ),
+    "app/sql/v4/queries/cohorts/get_cohort_access_complete.sql": (
+        "GetCohortAccessSqlParams",
+        "GetCohortAccessSqlRow",
+        "GetCohortAccessApiRequest",
+        "GetCohortAccessApiResponse",
     ),
     "app/sql/v4/queries/cohorts/get_cohort_docs_complete.sql": (
         "GetCohortDocsSqlParams",
@@ -23441,6 +23715,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "DuplicateEvalSqlRow",
         "DuplicateEvalApiRequest",
         "DuplicateEvalApiResponse",
+    ),
+    "app/sql/v4/queries/evals/get_eval_access_complete.sql": (
+        "GetEvalAccessSqlParams",
+        "GetEvalAccessSqlRow",
+        "GetEvalAccessApiRequest",
+        "GetEvalAccessApiResponse",
     ),
     "app/sql/v4/queries/evals/get_eval_docs_complete.sql": (
         "GetEvalDocsSqlParams",
@@ -24120,6 +24400,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "CheckPersonaDuplicateAccessApiRequest",
         "CheckPersonaDuplicateAccessApiResponse",
     ),
+    "app/sql/v4/queries/personas/check_persona_save_access_complete.sql": (
+        "CheckPersonaSaveAccessSqlParams",
+        "CheckPersonaSaveAccessSqlRow",
+        "CheckPersonaSaveAccessApiRequest",
+        "CheckPersonaSaveAccessApiResponse",
+    ),
     "app/sql/v4/queries/personas/delete_persona_complete.sql": (
         "DeletePersonaSqlParams",
         "DeletePersonaSqlRow",
@@ -24131,6 +24417,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "DuplicatePersonaSqlRow",
         "DuplicatePersonaApiRequest",
         "DuplicatePersonaApiResponse",
+    ),
+    "app/sql/v4/queries/personas/get_persona_access_complete.sql": (
+        "GetPersonaAccessSqlParams",
+        "GetPersonaAccessSqlRow",
+        "GetPersonaAccessApiRequest",
+        "GetPersonaAccessApiResponse",
     ),
     "app/sql/v4/queries/personas/get_persona_docs_columns_complete.sql": (
         "GetPersonaDocsColumnsSqlParams",
@@ -25794,6 +26086,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetActiveSettingsApiRequest",
         "GetActiveSettingsApiResponse",
     ),
+    "app/sql/v4/queries/settings/get_setting_access_complete.sql": (
+        "GetSettingAccessSqlParams",
+        "GetSettingAccessSqlRow",
+        "GetSettingAccessApiRequest",
+        "GetSettingAccessApiResponse",
+    ),
     "app/sql/v4/queries/settings/get_setting_ids_complete.sql": (
         "GetSettingIdsSqlParams",
         "GetSettingIdsSqlRow",
@@ -25859,6 +26157,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetNameByIdSqlRow",
         "GetNameByIdApiRequest",
         "GetNameByIdApiResponse",
+    ),
+    "app/sql/v4/queries/simulations/get_simulation_access_complete.sql": (
+        "GetSimulationAccessSqlParams",
+        "GetSimulationAccessSqlRow",
+        "GetSimulationAccessApiRequest",
+        "GetSimulationAccessApiResponse",
     ),
     "app/sql/v4/queries/simulations/get_simulation_docs_complete.sql": (
         "GetSimulationDocsSqlParams",
@@ -26521,6 +26825,11 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/auth/get_auth_access_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v4/queries/auth/get_auth_docs_complete.sql"]
     ) -> SqlString: ...
 
@@ -26562,6 +26871,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/queries/cohorts/delete_cohort_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/cohorts/get_cohort_access_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -26792,6 +27106,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/queries/evals/duplicate_eval_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/evals/get_eval_access_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -27361,12 +27680,22 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/personas/check_persona_save_access_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v4/queries/personas/delete_persona_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/queries/personas/duplicate_persona_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/personas/get_persona_access_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -28756,6 +29085,11 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/settings/get_setting_access_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v4/queries/settings/get_setting_ids_complete.sql"]
     ) -> SqlString: ...
 
@@ -28807,6 +29141,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/queries/simulations/get_name_by_id_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/simulations/get_simulation_access_complete.sql"]
     ) -> SqlString: ...
 
     @overload

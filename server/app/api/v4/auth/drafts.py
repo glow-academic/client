@@ -90,7 +90,9 @@ def _resolve_artifact_type(pathname: str) -> str | None:
     return None
 
 
-def _convert_draft(item: DraftViewItemBase, artifact_type: str) -> QGetProfileContextV4Draft:
+def _convert_draft(
+    item: DraftViewItemBase, artifact_type: str
+) -> QGetProfileContextV4Draft:
     """Convert a DraftViewItemBase to the API response format."""
     return QGetProfileContextV4Draft(
         id=item.draft_id,

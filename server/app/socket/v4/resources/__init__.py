@@ -15,7 +15,9 @@ from .auths import server_router as auths_server_router
 from .bindings import server_router as bindings_server_router
 from .cohorts import server_router as cohorts_server_router
 from .colors import server_router as colors_server_router
-from .conditional_parameters import server_router as conditional_parameters_server_router
+from .conditional_parameters import (
+    server_router as conditional_parameters_server_router,
+)
 from .departments import server_router as departments_server_router
 from .descriptions import server_router as descriptions_server_router
 from .documents import server_router as documents_server_router

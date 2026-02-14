@@ -73,22 +73,23 @@ persona_departments_data AS (
     LEFT JOIN persona_departments_junction pd ON pd.persona_id = x.persona_id AND pd.active = true
     WHERE x.persona_id IS NOT NULL
 ),
--- Get persona edit state (for active_scenario_count)
+-- Get persona edit state (active_scenario_count via scenario_personas_junction)
 persona_edit_state AS (
-    SELECT * FROM view_persona_edit_state WHERE persona_id = (SELECT persona_id FROM params)
+    SELECT
+        COALESCE(COUNT(DISTINCT spj.scenario_id), 0)::int as active_scenario_count
+    FROM params x
+    LEFT JOIN scenario_personas_junction spj ON spj.persona_id = x.persona_id AND spj.active = true
+    WHERE x.persona_id IS NOT NULL
 )
 SELECT
     -- Basic metadata
     (SELECT persona_exists FROM persona_exists_check) as persona_exists,
-    (SELECT draft_version FROM draft_version_data) as draft_version,
-    pgd.group_id,
-
-    -- User context for Python permission logic
+    draft_version as effective_draft_version,
+    (SELECT group_id FROM effective_group) as group_id,
 
     -- Persona state for Python permission logic
     COALESCE((SELECT department_ids FROM persona_departments_data), ARRAY[]::uuid[]) as persona_department_ids,
     COALESCE((SELECT active_scenario_count FROM persona_edit_state), 0) as active_scenario_count
-FROM params x
-CROSS JOIN persona_group_data pgd;
+FROM params x;
 $$;
 

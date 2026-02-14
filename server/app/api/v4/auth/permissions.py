@@ -128,7 +128,6 @@ def convert_cohort(item: QGetCohortsV4Item) -> QGetProfileContextV4Cohort:
     )
 
 
-
 def convert_role(role: Any) -> QGetProfileContextV4RoleResource:
     return QGetProfileContextV4RoleResource(
         role=role.role,
