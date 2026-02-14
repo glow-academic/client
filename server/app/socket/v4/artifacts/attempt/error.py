@@ -9,9 +9,9 @@ from typing import Any
 from fastapi import APIRouter
 
 from app.infra.v4.websocket.attempt.run_store import remove_run_context
-from app.socket.v4.artifacts.attempt.types import AttemptErrorEvent
 from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
 from app.main import get_internal_sio, sio
+from app.socket.v4.artifacts.attempt.types import AttemptErrorEvent
 from app.utils.logging.db_logger import get_logger
 
 logger = get_logger(__name__)

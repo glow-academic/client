@@ -28,12 +28,12 @@ from app.api.v4.resources.temperature_levels.get import get_temperature_levels_i
 from app.infra.v4.generation import convert_tools_to_dict, render_developer_instructions
 from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
 from app.infra.v4.websocket.get_db_connection import get_db_connection
+from app.main import get_internal_sio, get_pool, sio
 from app.socket.v4.artifacts.test.types import (
     TestErrorEvent,
     TestRunPayload,
     TestRunStartEvent,
 )
-from app.main import get_internal_sio, get_pool, sio
 from app.sql.types import (
     GetToolsByResourceIdsSqlParams,
     GetToolsByResourceIdsSqlRow,

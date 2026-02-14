@@ -6,11 +6,11 @@ Outbound audio is handled via internal_sio events (see documentation below).
 
 from typing import Any
 
-from app.main import sio
 from app.infra.v4.websocket.session_store import (
     get_session_by_group_id,
     get_session_by_sid,
 )
+from app.main import sio
 
 
 @sio.event  # type: ignore

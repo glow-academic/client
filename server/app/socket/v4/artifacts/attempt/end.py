@@ -10,14 +10,14 @@ from typing import Any
 from fastapi import APIRouter
 
 from app.infra.v4.activity.websocket_logger import log_websocket_activity
+from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
+from app.infra.v4.websocket.get_db_connection import get_db_connection
+from app.main import sio
 from app.socket.v4.artifacts.attempt.types import (
     AttemptChatEndedEvent,
     AttemptEndPayload,
     AttemptUnifiedErrorEvent,
 )
-from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
-from app.infra.v4.websocket.get_db_connection import get_db_connection
-from app.main import sio
 from app.utils.logging.db_logger import get_logger
 
 logger = get_logger(__name__)

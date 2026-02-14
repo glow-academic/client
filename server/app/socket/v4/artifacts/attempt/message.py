@@ -33,16 +33,16 @@ from app.infra.v4.websocket.attempt.run_store import (
     ToolStreamingMeta,
     set_run_context,
 )
+from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
+from app.infra.v4.websocket.get_db_connection import get_db_connection
+from app.infra.v4.websocket.typed_emit import emit_to_internal
+from app.main import get_internal_sio, get_pool, sio
 from app.socket.v4.artifacts.attempt.types import (
     ATTEMPT_MESSAGE_ENTRY_TYPES,
     AttemptAssistantStartEvent,
     AttemptMessagePayload,
     AttemptUserCompleteEvent,
 )
-from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
-from app.infra.v4.websocket.get_db_connection import get_db_connection
-from app.infra.v4.websocket.typed_emit import emit_to_internal
-from app.main import get_internal_sio, get_pool, sio
 from app.socket.v4.artifacts.types import GenerateErrorApiRequest
 from app.sql.types import (
     GetAgentEntryToolsSqlParams,

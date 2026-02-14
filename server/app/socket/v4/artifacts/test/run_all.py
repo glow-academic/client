@@ -13,13 +13,13 @@ from fastapi import APIRouter
 
 from app.api.v4.artifacts.test.get import get_test_websocket
 from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
+from app.main import get_internal_sio, get_pool, sio
 from app.socket.v4.artifacts.test.types import (
     TestAllCompleteEvent,
     TestErrorEvent,
     TestProgressEvent,
     TestRunAllPayload,
 )
-from app.main import get_internal_sio, get_pool, sio
 from app.utils.logging.db_logger import get_logger
 
 logger = get_logger(__name__)

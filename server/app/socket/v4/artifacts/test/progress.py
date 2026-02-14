@@ -7,8 +7,8 @@ from typing import Any
 
 from fastapi import APIRouter
 
-from app.socket.v4.artifacts.test.types import TestProgressEvent
 from app.main import get_internal_sio, sio
+from app.socket.v4.artifacts.test.types import TestProgressEvent
 
 internal_sio = get_internal_sio()
 

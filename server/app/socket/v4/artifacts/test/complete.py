@@ -12,12 +12,12 @@ from fastapi import APIRouter
 
 from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
 from app.infra.v4.websocket.get_db_connection import get_db_connection
+from app.main import get_internal_sio, sio
 from app.socket.v4.artifacts.test.types import (
     TestAllCompleteEvent,
     TestGradedEvent,
     TestRunCompleteEvent,
 )
-from app.main import get_internal_sio, sio
 from app.utils.logging.db_logger import get_logger
 
 logger = get_logger(__name__)

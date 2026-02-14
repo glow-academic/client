@@ -8,12 +8,12 @@ from typing import Any
 
 from fastapi import APIRouter
 
+from app.main import sio
 from app.socket.v4.artifacts.test.types import (
     TestErrorEvent,
     TestStopPayload,
     TestStoppedEvent,
 )
-from app.main import sio
 from app.utils.logging.db_logger import get_logger
 
 logger = get_logger(__name__)

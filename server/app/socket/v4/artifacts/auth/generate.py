@@ -7,15 +7,15 @@ from fastapi import APIRouter
 
 from app.api.v4.artifacts.auth.get import get_auth_websocket
 from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
+from app.infra.v4.websocket.generation_common import (
+    emit_generate_artifact,
+    emit_generation_error,
+)
 from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.main import sio
 from app.socket.v4.artifacts.auth.types import (
     AUTH_GENERATE_RESOURCE_TYPES,
     GenerateAuthPayload,
-)
-from app.infra.v4.websocket.generation_common import (
-    emit_generate_artifact,
-    emit_generation_error,
 )
 
 client_router = APIRouter()

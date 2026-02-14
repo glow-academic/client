@@ -4,8 +4,8 @@ from typing import Any
 
 from fastapi import APIRouter
 
-from app.main import get_internal_sio
 from app.infra.v4.websocket.tool_registry import resolve_tool_result
+from app.main import get_internal_sio
 
 internal_sio = get_internal_sio()
 
