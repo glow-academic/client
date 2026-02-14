@@ -17,12 +17,17 @@ from app.api.v4.auth.profile import get_auth_profile_internal
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
-from app.sql.types import load_sql_query
+from app.sql.types import (
+    GetScenarioAccessSqlParams,
+    GetScenarioAccessSqlRow,
+    load_sql_query,
+)
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.sql_helper import execute_sql_typed
 
 # Load SQL with types at module level - makes it clear what SQL file is used
 SQL_PATH = "app/sql/v4/queries/scenarios/save_scenario_complete.sql"
+ACCESS_SQL_PATH = "app/sql/v4/queries/scenarios/get_scenario_access_complete.sql"
 
 
 router = APIRouter()
@@ -72,10 +77,28 @@ async def save_scenario(
         else:
             actor_name = None
 
+        # Resolve group_id server-side via access check
+        group_id = None
+        if pool:
+            async with pool.acquire() as access_conn:
+                access_params = GetScenarioAccessSqlParams(
+                    profile_id=profile_id,
+                    scenario_id=request.input_scenario_id,
+                    draft_id=None,
+                )
+                access_result = cast(
+                    GetScenarioAccessSqlRow,
+                    await execute_sql_typed(
+                        access_conn, ACCESS_SQL_PATH, params=access_params
+                    ),
+                )
+                group_id = getattr(access_result, "group_id", None)
+
         async with conn.transaction():
-            # Convert API request to SQL params (add profile_id from header)
-            # Map input_scenario_id from API request (already correct field name)
-            params = SaveScenarioSqlParams.from_request(request, profile_id=profile_id)
+            # Convert API request to SQL params (add profile_id and server-resolved group_id)
+            params = SaveScenarioSqlParams.from_request(
+                request, profile_id=profile_id, group_id=group_id
+            )
             sql_params = params.to_tuple()
 
             # Execute SQL with typed helper - automatically detects and calls function if present
@@ -97,16 +120,12 @@ async def save_scenario(
             # Set audit context with data from SQL query
             if actor_name:
                 audit_ctx = {"actor": {"name": actor_name, "id": profile_id}}
-                # Only add scenario to audit context if input_scenario_id was provided (update mode)
-                # For create mode, we'll use the request name if available
                 if request.input_scenario_id:
-                    # Update mode: use request name (from request body)
                     audit_ctx["scenario"] = {
                         "name": getattr(request, "name", "Scenario"),
                         "id": str(result.scenario_id),
                     }
                 else:
-                    # Create mode: use request name
                     audit_ctx["scenario"] = {
                         "name": getattr(request, "name", "Scenario"),
                         "id": str(result.scenario_id),
@@ -114,10 +133,14 @@ async def save_scenario(
                 audit_set(http_request, **audit_ctx)
 
         # Convert SQL result to API response
+        is_update = request.input_scenario_id is not None
         api_response = SaveScenarioApiResponse.model_validate(
             {
+                "success": True,
                 "scenario_id": str(result.scenario_id),
-                "actor_name": actor_name,
+                "message": "Scenario updated successfully"
+                if is_update
+                else "Scenario created successfully",
             }
         )
 

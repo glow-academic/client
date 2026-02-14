@@ -49,7 +49,7 @@ async def patch_scenario_draft(
 
         async with conn.transaction():
             params = PatchScenarioDraftSqlParams.from_request(
-                request, profile_id=profile_id
+                request, profile_id=profile_id, group_id=None
             )
             sql_params = params.to_tuple()
 
@@ -67,7 +67,17 @@ async def patch_scenario_draft(
                 draft={"id": str(result.draft_id)},
             )
 
-        api_response = PatchScenarioDraftApiResponse.model_validate(result.model_dump())
+        is_update = request.input_draft_id is not None
+        api_response = PatchScenarioDraftApiResponse.model_validate(
+            {
+                "success": True,
+                "draft_id": str(result.draft_id),
+                "new_version": result.new_version,
+                "message": "Draft updated successfully"
+                if is_update
+                else "Draft created successfully",
+            }
+        )
 
         await invalidate_tags(tags)
         response.headers["X-Invalidate-Tags"] = ",".join(tags)

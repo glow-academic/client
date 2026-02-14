@@ -41,20 +41,17 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { useProfile } from "@/contexts/profile-context";
 import { useSocket } from "@/contexts/socket-context";
 import { useDrafts } from "@/contexts/draft-context";
-import { useAiGeneration } from "@/hooks/use-ai-generation";
 import { useConditionalParameterToggle } from "@/hooks/use-conditional-parameter-toggle";
 import { useDraftLifecycle } from "@/hooks/use-draft-lifecycle";
 import { useFlushRegistry } from "@/hooks/use-flush-registry";
 import { useGenerationModal } from "@/hooks/use-generation-modal";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import {
-  buildMultiAction,
-  buildResourceActions,
+  buildDraftPayload,
   checkHasResourceIds,
   computeEffectiveFormState,
   type ResourceConfig,
 } from "@/lib/resources/action-builders";
-import type { ServerToClientEvents } from "@/lib/ws/types";
 import { parseAsBoolean, parseAsString, type Parser } from "nuqs";
 
 // Types defined inline using InputOf/OutputOf
@@ -101,11 +98,6 @@ type CreateDraftVideosIn = InputOf<"/api/v4/resources/videos", "post">;
 type CreateDraftVideosOut = OutputOf<"/api/v4/resources/videos", "post">;
 type CreateDraftQuestionsIn = InputOf<"/api/v4/resources/questions", "post">;
 type CreateDraftQuestionsOut = OutputOf<"/api/v4/resources/questions", "post">;
-
-// Socket event types (auto-generated from server)
-type ScenarioGenerationCompletePayload = Parameters<
-  ServerToClientEvents["scenario_generation_complete"]
->[0];
 
 type ScenarioResourceType =
   | "names"
@@ -165,24 +157,6 @@ function getSelectedScenarioFlagIds(state: ScenarioFormState): string[] {
     state.problem_statement_enabled_flag_id,
   ].filter((id): id is string => !!id);
 }
-
-// AI form data shape for scenario generation
-type ScenarioAiFormData = {
-  name_resource?: ScenarioGenerationCompletePayload["name_resource"];
-  description_resource?: ScenarioGenerationCompletePayload["description_resource"];
-  problem_statement_resource?: ScenarioGenerationCompletePayload["problem_statement_resource"];
-  department_resources?: ScenarioGenerationCompletePayload["department_resources"];
-  persona_resources?: ScenarioGenerationCompletePayload["persona_resources"];
-  document_resources?: ScenarioGenerationCompletePayload["document_resources"];
-  objective_resources?: ScenarioGenerationCompletePayload["objective_resources"];
-  question_resources?: ScenarioGenerationCompletePayload["question_resources"];
-  image_resources?: ScenarioGenerationCompletePayload["image_resources"];
-  video_resources?: ScenarioGenerationCompletePayload["video_resources"];
-  parameter_resources?: ScenarioGenerationCompletePayload["parameter_resources"];
-  parameter_field_resources?: ScenarioGenerationCompletePayload["parameter_field_resources"];
-  // Flags use a different structure for AI suggestions (id + key)
-  flag_resources?: Array<{ id?: string | null; key?: string | null }>;
-};
 
 export interface ScenarioProps {
   scenarioId?: string;
@@ -333,47 +307,91 @@ function ScenarioComponent({
   const { flushRegistryRef, registerFlushCallbacks, flushAllResources } =
     useFlushRegistry<FlushResult>(FLUSH_KEYS);
 
-  // --- AI Generation ---
-  const onAiComplete = useCallback(
-    (data: Record<string, unknown>) => {
-      const aiUpdates: Partial<ScenarioAiFormData> = {};
-      if (data["name_resource"]) aiUpdates.name_resource = data["name_resource"] as ScenarioAiFormData["name_resource"];
-      if (data["description_resource"]) aiUpdates.description_resource = data["description_resource"] as ScenarioAiFormData["description_resource"];
-      if (data["problem_statement_resource"]) aiUpdates.problem_statement_resource = data["problem_statement_resource"] as ScenarioAiFormData["problem_statement_resource"];
-      if (data["department_resources"]) aiUpdates.department_resources = data["department_resources"] as ScenarioAiFormData["department_resources"];
-      if (data["persona_resources"]) aiUpdates.persona_resources = data["persona_resources"] as ScenarioAiFormData["persona_resources"];
-      if (data["document_resources"]) aiUpdates.document_resources = data["document_resources"] as ScenarioAiFormData["document_resources"];
-      if (data["objective_resources"]) aiUpdates.objective_resources = data["objective_resources"] as ScenarioAiFormData["objective_resources"];
-      if (data["question_resources"]) aiUpdates.question_resources = data["question_resources"] as ScenarioAiFormData["question_resources"];
-      if (data["image_resources"]) aiUpdates.image_resources = data["image_resources"] as ScenarioAiFormData["image_resources"];
-      if (data["video_resources"]) aiUpdates.video_resources = data["video_resources"] as ScenarioAiFormData["video_resources"];
-      if (data["parameter_resources"]) aiUpdates.parameter_resources = data["parameter_resources"] as ScenarioAiFormData["parameter_resources"];
-      if (data["parameter_field_resources"]) aiUpdates.parameter_field_resources = data["parameter_field_resources"] as ScenarioAiFormData["parameter_field_resources"];
+  // --- AI Generation State ---
+  const [generatingResources, setGeneratingResources] = useState<Set<ScenarioResourceType>>(
+    new Set(),
+  );
+  const [_generationProgress, setGenerationProgress] = useState<number>(0);
 
-      // Only name_resource auto-accepts (names are auto-applied without user confirmation)
-      const formStateUpdates: Record<string, unknown> = {};
-      const nameRes = data["name_resource"] as { id?: string } | undefined;
-      if (nameRes?.id) formStateUpdates["name_id"] = String(nameRes.id);
-
-      return { aiUpdates, formStateUpdates };
-    },
-    []
+  const isGenerating = useCallback(
+    (resourceType: string) => generatingResources.has(resourceType as ScenarioResourceType),
+    [generatingResources],
   );
 
-  const {
-    setGeneratingResources,
-    isGenerating,
-    aiFormData,
-    clearAiResource,
-  } = useAiGeneration<ScenarioResourceType, ScenarioAiFormData>({
-    socket,
-    isConnected,
-    artifactType: "scenario",
-    groupId: scenarioData?.group_id,
-    eventPrefix: "scenario_generation",
-    validResourceTypes: VALID_RESOURCE_TYPES,
-    onComplete: onAiComplete,
-  });
+  const groupId = scenarioData?.group_id;
+
+  // Socket listeners for scenario generation events
+  useEffect(() => {
+    if (!socket || !isConnected) return;
+
+    const handleStarted = (data: {
+      group_id?: string;
+      resource_types?: string[];
+    }) => {
+      if (data.group_id !== groupId) return;
+      if (data.resource_types) {
+        setGeneratingResources((prev) => {
+          const next = new Set(prev);
+          data.resource_types!.forEach((rt) => next.add(rt as ScenarioResourceType));
+          return next;
+        });
+      }
+      setGenerationProgress(0);
+    };
+
+    const handleError = (data: {
+      artifact_type: string;
+      group_id?: string | null;
+      resource_types?: string[] | null;
+      resource_type?: string | null;
+      resource_id?: string | null;
+      run_id?: string | null;
+      success: boolean;
+      message: string;
+      trace_id?: string | null;
+    }) => {
+      if (data.group_id && data.group_id !== groupId) return;
+      const resourceTypes =
+        data.resource_types ||
+        (data.resource_type ? [data.resource_type] : []);
+      setGeneratingResources((prev) => {
+        const next = new Set(prev);
+        resourceTypes.forEach((rt) => {
+          if (VALID_RESOURCE_TYPES.includes(rt as ScenarioResourceType)) {
+            next.delete(rt as ScenarioResourceType);
+          }
+        });
+        return next;
+      });
+      toast.error(data.message || "Generation failed");
+    };
+
+    const handleComplete = (data: { group_id?: string }) => {
+      if (data.group_id && data.group_id !== groupId) return;
+      setGeneratingResources(new Set());
+      setGenerationProgress(0);
+    };
+
+    const handleProgress = (data: {
+      group_id?: string;
+      percentage?: number;
+    }) => {
+      if (data.group_id !== groupId) return;
+      setGenerationProgress(data.percentage ?? 0);
+    };
+
+    socket.on("scenario_generation_started", handleStarted);
+    socket.on("scenario_generation_error", handleError);
+    socket.on("scenario_generation_complete", handleComplete);
+    socket.on("scenario_generation_progress", handleProgress);
+
+    return () => {
+      socket.off("scenario_generation_started", handleStarted);
+      socket.off("scenario_generation_error", handleError);
+      socket.off("scenario_generation_complete", handleComplete);
+      socket.off("scenario_generation_progress", handleProgress);
+    };
+  }, [socket, isConnected, groupId]);
 
   // nuqs parsers for URL-backed state (search/filter params only)
   const scenarioSearchParamsClient = useMemo(
@@ -495,17 +513,6 @@ function ScenarioComponent({
   useEffect(() => {
     formStateRef.current = formState as unknown as Record<string, unknown>;
   }, [formState]);
-
-  // Separate effect to auto-accept name from AI generation
-  const aiNameResource = aiFormData.name_resource;
-  React.useEffect(() => {
-    if (aiNameResource?.id) {
-      setFormState((prev) => ({
-        ...prev,
-        name_id: String(aiNameResource.id!),
-      }));
-    }
-  }, [aiNameResource]);
 
   // Memoize stringified array dependencies
   const departmentIdsStr = useMemo(
@@ -769,29 +776,40 @@ function ScenarioComponent({
         (flushResults ?? {}) as Record<string, unknown>,
       ) as unknown as ScenarioFormState;
       const referenceState = lastPatchedFormStateRef.current;
-      const effectiveFlagIds = getSelectedScenarioFlagIds(effectiveState);
-      const referenceFlagIds = referenceState
-        ? getSelectedScenarioFlagIds(referenceState)
-        : [];
+
+      // Build flat draft payload for standard resources
+      const resourcePayload = buildDraftPayload(SCENARIO_RESOURCES, {
+        formState: formStateRef.current,
+        referenceState: referenceState as unknown as Record<string, unknown> | null,
+        flushResults: (flushResults ?? {}) as Record<string, unknown>,
+      });
+
+      // Build flag fields separately (individual flag fields)
+      const FLAG_FIELDS = [
+        "active_flag_id",
+        "objectives_enabled_flag_id",
+        "images_enabled_flag_id",
+        "video_enabled_flag_id",
+        "questions_enabled_flag_id",
+        "problem_statement_enabled_flag_id",
+      ] as const;
+      const flagPayload: Record<string, string | null> = {};
+      for (const field of FLAG_FIELDS) {
+        const effectiveVal = effectiveState[field] ?? null;
+        const refVal = referenceState?.[field] ?? null;
+        if (effectiveVal !== refVal) {
+          flagPayload[field] = effectiveVal;
+        }
+      }
+
       return {
         input_draft_id: draftId || null,
-        group_id: scenarioData?.group_id ?? null,
-        ...buildResourceActions(SCENARIO_RESOURCES, {
-          formState: formStateRef.current,
-          referenceState: referenceState as unknown as Record<string, unknown> | null,
-          flushResults: (flushResults ?? {}) as Record<string, unknown>,
-          entityData: scenarioData as Record<string, unknown> | null,
-        }),
-        flags: buildMultiAction({
-          resourceIds: effectiveFlagIds,
-          wasCreated: false,
-          changed: JSON.stringify(effectiveFlagIds) !== JSON.stringify(referenceFlagIds),
-          section: scenarioData?.flags ?? undefined,
-        }),
+        ...resourcePayload,
+        ...flagPayload,
         expected_version: expectedVersion,
       };
     },
-    [scenarioData]
+    []
   );
 
   const draftVersion =
@@ -1446,11 +1464,6 @@ function ScenarioComponent({
         throw new Error("Save action not available");
       }
 
-      if (!scenarioData?.group_id) {
-        toast.error("Group not found. Please try again.");
-        throw new Error("Group ID is required for save");
-      }
-
       if (!formState.name_id) {
         toast.error("Scenario name is required");
         throw new Error("Scenario name is required");
@@ -1470,42 +1483,28 @@ function ScenarioComponent({
       ) as unknown as ScenarioFormState;
 
       try {
-        const initialState = getInitialFormState();
-        const effectiveFlagIds = getSelectedScenarioFlagIds(effectiveFormState);
-        const initialFlagIds = getSelectedScenarioFlagIds(initialState);
-
-        const resourceActions = buildResourceActions(SCENARIO_RESOURCES, {
-          formState: formStateRef.current,
-          referenceState: initialState as unknown as Record<string, unknown>,
-          flushResults: flushResults as Record<string, unknown>,
-          entityData: scenarioData as Record<string, unknown> | null,
-        });
-        const saveBody: SaveScenarioIn["body"] = {
-          input_scenario_id: isEditMode && scenarioId ? scenarioId : null,
-          group_id: scenarioData.group_id,
-          names: resourceActions["names"] as SaveScenarioIn["body"]["names"],
-          descriptions: resourceActions["descriptions"] as SaveScenarioIn["body"]["descriptions"],
-          problem_statements: resourceActions["problem_statements"] as SaveScenarioIn["body"]["problem_statements"],
-          departments: resourceActions["departments"] as SaveScenarioIn["body"]["departments"],
-          personas: resourceActions["personas"] as SaveScenarioIn["body"]["personas"],
-          documents: resourceActions["documents"] as SaveScenarioIn["body"]["documents"],
-          parameters: resourceActions["parameters"] as SaveScenarioIn["body"]["parameters"],
-          parameter_fields: resourceActions["parameter_fields"] as SaveScenarioIn["body"]["parameter_fields"],
-          images: resourceActions["images"] as SaveScenarioIn["body"]["images"],
-          objectives: resourceActions["objectives"] as SaveScenarioIn["body"]["objectives"],
-          videos: resourceActions["videos"] as SaveScenarioIn["body"]["videos"],
-          questions: resourceActions["questions"] as SaveScenarioIn["body"]["questions"],
-          flags: buildMultiAction({
-            resourceIds: effectiveFlagIds,
-            wasCreated: false,
-            changed:
-              JSON.stringify(effectiveFlagIds) !== JSON.stringify(initialFlagIds),
-            section: scenarioData.flags ?? undefined,
-          }) as SaveScenarioIn["body"]["flags"],
-        };
-
         await saveScenarioAction({
-          body: saveBody,
+          body: {
+            input_scenario_id: isEditMode && scenarioId ? scenarioId : null,
+            name_id: effectiveFormState.name_id!,
+            description_id: effectiveFormState.description_id ?? null,
+            problem_statement_id: effectiveFormState.problem_statement_id ?? null,
+            active_flag_id: effectiveFormState.active_flag_id ?? null,
+            objectives_enabled_flag_id: effectiveFormState.objectives_enabled_flag_id ?? null,
+            images_enabled_flag_id: effectiveFormState.images_enabled_flag_id ?? null,
+            video_enabled_flag_id: effectiveFormState.video_enabled_flag_id ?? null,
+            questions_enabled_flag_id: effectiveFormState.questions_enabled_flag_id ?? null,
+            problem_statement_enabled_flag_id: effectiveFormState.problem_statement_enabled_flag_id ?? null,
+            department_ids: effectiveFormState.department_ids?.length ? effectiveFormState.department_ids : null,
+            persona_ids: effectiveFormState.persona_ids?.length ? effectiveFormState.persona_ids : null,
+            document_ids: effectiveFormState.document_ids?.length ? effectiveFormState.document_ids : null,
+            parameter_ids: effectiveFormState.parameter_ids?.length ? effectiveFormState.parameter_ids : null,
+            parameter_field_ids: effectiveFormState.parameter_field_ids?.length ? effectiveFormState.parameter_field_ids : null,
+            image_ids: effectiveFormState.image_ids?.length ? effectiveFormState.image_ids : null,
+            objective_ids: effectiveFormState.objective_ids?.length ? effectiveFormState.objective_ids : null,
+            video_ids: effectiveFormState.video_ids?.length ? effectiveFormState.video_ids : null,
+            question_ids: effectiveFormState.question_ids?.length ? effectiveFormState.question_ids : null,
+          } as SaveScenarioIn["body"],
         });
 
         toast.success(
@@ -1539,8 +1538,6 @@ function ScenarioComponent({
       router,
       isAutosaveEnabled,
       flushAllResources,
-      getInitialFormState,
-      scenarioData,
     ]
   );
 
@@ -1673,9 +1670,6 @@ function ScenarioComponent({
                         ) => Promise<CreateDraftNamesOut>)
                       | undefined
                   }
-                  aiResource={aiFormData.name_resource ?? null}
-                  onAccept={() => clearAiResource("name_resource")}
-                  onReject={() => clearAiResource("name_resource")}
                 />
               }
               resetFields={["name", "description", "departments"]}
@@ -1731,9 +1725,6 @@ function ScenarioComponent({
                         ) => Promise<CreateDraftDescriptionsOut>)
                       | undefined
                   }
-                  aiResource={aiFormData.description_resource}
-                  onAccept={() => clearAiResource("description_resource")}
-                  onReject={() => clearAiResource("description_resource")}
                 />
 
                 <Departments
@@ -1757,9 +1748,6 @@ function ScenarioComponent({
                   group_id={s?.group_id ?? null}
                   onGenerate={generateHandlers["departments"]}
                   isGenerating={isGenerating("departments")}
-                  aiDepartmentResources={aiFormData.department_resources ?? null}
-                  onAccept={() => clearAiResource("department_resources")}
-                  onReject={() => clearAiResource("department_resources")}
                 />
 
                 {/* Server-driven Flags - single component for all flags */}
@@ -1800,9 +1788,6 @@ function ScenarioComponent({
                   }}
                   onGenerate={generateHandlers["scenario_flags"]}
                   isGenerating={isGenerating("scenario_flags")}
-                  aiFlagResources={aiFormData.flag_resources ?? null}
-                  onAccept={() => clearAiResource("flag_resources")}
-                  onReject={() => clearAiResource("flag_resources")}
                 />
               </div>
             </StepCard>
@@ -1871,9 +1856,6 @@ function ScenarioComponent({
                       ) => Promise<CreateDraftProblemStatementsOut>)
                     | undefined
                 }
-                aiResource={aiFormData.problem_statement_resource ?? null}
-                onAccept={() => clearAiResource("problem_statement_resource")}
-                onReject={() => clearAiResource("problem_statement_resource")}
               />
             </StepCard>
           );
@@ -1931,9 +1913,6 @@ function ScenarioComponent({
                 isGenerating={isGenerating("objectives")}
                 isAutosaveEnabled={isAutosaveEnabled}
                 registerFlush={registerFlushCallbacks["objectives"]}
-                aiObjectiveResources={aiFormData.objective_resources ?? null}
-                onAccept={() => clearAiResource("objective_resources")}
-                onReject={() => clearAiResource("objective_resources")}
               />
             </StepCard>
           );
@@ -1997,9 +1976,6 @@ function ScenarioComponent({
                   onGenerate={generateHandlers["personas"]}
                   isGenerating={isGenerating("personas")}
                   videoEnabled={videoEnabled}
-                  aiPersonaResources={aiFormData.persona_resources ?? null}
-                  onAccept={() => clearAiResource("persona_resources")}
-                  onReject={() => clearAiResource("persona_resources")}
                 />
               </div>
             </StepCard>
@@ -2064,9 +2040,6 @@ function ScenarioComponent({
                   onGenerate={generateHandlers["documents"]}
                   isGenerating={isGenerating("documents")}
                   videoEnabled={videoEnabled}
-                  aiDocumentResources={aiFormData.document_resources ?? null}
-                  onAccept={() => clearAiResource("document_resources")}
-                  onReject={() => clearAiResource("document_resources")}
                 />
               </div>
             </StepCard>
@@ -2138,9 +2111,6 @@ function ScenarioComponent({
                   onGenerate={generateHandlers["parameters"]}
                   isGenerating={isGenerating("parameters")}
                   videoEnabled={videoEnabled}
-                  aiParameterResources={aiFormData.parameter_resources ?? null}
-                  onAccept={() => clearAiResource("parameter_resources")}
-                  onReject={() => clearAiResource("parameter_resources")}
                 />
                 <ParameterFields
                   parameter_field_ids={formState.parameter_field_ids}
@@ -2173,9 +2143,6 @@ function ScenarioComponent({
                   createParameterFieldsAction={createParameterFieldsAction}
                   isAutosaveEnabled={isAutosaveEnabled}
                   registerFlush={registerFlushCallbacks["parameter_fields"]}
-                  aiParameterFieldResources={aiFormData.parameter_field_resources ?? null}
-                  onAccept={() => clearAiResource("parameter_field_resources")}
-                  onReject={() => clearAiResource("parameter_field_resources")}
                 />
               </div>
             </StepCard>
@@ -2230,9 +2197,6 @@ function ScenarioComponent({
                 maxImages={3}
                 isAutosaveEnabled={isAutosaveEnabled}
                 registerFlush={registerFlushCallbacks["images"]}
-                aiImageResources={aiFormData.image_resources ?? null}
-                onAccept={() => clearAiResource("image_resources")}
-                onReject={() => clearAiResource("image_resources")}
               />
             </StepCard>
           );
@@ -2284,9 +2248,6 @@ function ScenarioComponent({
                 isGenerating={isGenerating("videos")}
                 isAutosaveEnabled={isAutosaveEnabled}
                 registerFlush={registerFlushCallbacks["videos"]}
-                aiVideoResources={aiFormData.video_resources ?? null}
-                onAccept={() => clearAiResource("video_resources")}
-                onReject={() => clearAiResource("video_resources")}
               />
             </StepCard>
           );
@@ -2344,9 +2305,6 @@ function ScenarioComponent({
                 isGenerating={isGenerating("questions")}
                 isAutosaveEnabled={isAutosaveEnabled}
                 registerFlush={registerFlushCallbacks["questions"]}
-                aiQuestionResources={aiFormData.question_resources ?? null}
-                onAccept={() => clearAiResource("question_resources")}
-                onReject={() => clearAiResource("question_resources")}
               />
             </StepCard>
           );
@@ -2381,8 +2339,6 @@ function ScenarioComponent({
       handleConditionalParameterToggle,
       showObjectivesSection,
       showProblemStatementSection,
-      aiFormData,
-      clearAiResource,
       videoEnabled,
     ]
   );

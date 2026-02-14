@@ -266,8 +266,7 @@ class BaseResourceSection(BaseModel):
     required: bool = False
     suggestions: list[UUID] | None = None
     show_ai_generate: bool = False
-    create_tool_id: UUID | None = None
-    link_tool_id: UUID | None = None
+    tool_id: UUID | None = None
 
 
 class ScenarioNameSection(BaseResourceSection):
@@ -523,32 +522,41 @@ class ListScenarioApiResponse(BaseModel):
 
 
 class SaveScenarioApiRequest(BaseModel):
-    """Request for saving a scenario - nested resource actions with tool tracking."""
+    """Request for saving a scenario - flat resource IDs."""
 
     input_scenario_id: UUID | None = None
-    group_id: UUID | None = None
-    names: "ScenarioResourceAction"
-    descriptions: "ScenarioResourceAction"
-    problem_statements: "ScenarioResourceAction"
-    flags: "ScenarioMultiResourceAction"
-    departments: "ScenarioMultiResourceAction"
-    personas: "ScenarioMultiResourceAction"
-    documents: "ScenarioMultiResourceAction"
-    parameters: "ScenarioMultiResourceAction"
-    parameter_fields: "ScenarioMultiResourceAction"
-    images: "ScenarioMultiResourceAction"
-    objectives: "ScenarioMultiResourceAction"
-    videos: "ScenarioMultiResourceAction"
-    questions: "ScenarioMultiResourceAction"
+    # No group_id — server-resolved
+    name_id: UUID | None = None
+    description_id: UUID | None = None
+    problem_statement_id: UUID | None = None
+    active_flag_id: UUID | None = None
+    objectives_enabled_flag_id: UUID | None = None
+    images_enabled_flag_id: UUID | None = None
+    video_enabled_flag_id: UUID | None = None
+    questions_enabled_flag_id: UUID | None = None
+    problem_statement_enabled_flag_id: UUID | None = None
+    department_ids: list[UUID] | None = None
+    persona_ids: list[UUID] | None = None
+    document_ids: list[UUID] | None = None
+    parameter_ids: list[UUID] | None = None
+    parameter_field_ids: list[UUID] | None = None
+    image_ids: list[UUID] | None = None
+    objective_ids: list[UUID] | None = None
+    video_ids: list[UUID] | None = None
+    question_ids: list[UUID] | None = None
 
 
 class ScenarioResourceAction(BaseModel):
+    """Internal type for SQL composite serialization."""
+
     resource_id: UUID | None = None
     create_tool_id: UUID | None = None
     link_tool_id: UUID | None = None
 
 
 class ScenarioMultiResourceAction(BaseModel):
+    """Internal type for SQL composite serialization."""
+
     resource_ids: list[UUID] | None = None
     create_tool_id: UUID | None = None
     link_tool_id: UUID | None = None
@@ -557,8 +565,9 @@ class ScenarioMultiResourceAction(BaseModel):
 class SaveScenarioApiResponse(BaseModel):
     """Response for saving a scenario."""
 
+    success: bool = False
     scenario_id: UUID | None = None
-    actor_name: str | None = None
+    message: str | None = None
 
 
 # =============================================================================
@@ -609,32 +618,38 @@ class DuplicateScenarioApiResponse(BaseModel):
 
 
 class PatchScenarioDraftApiRequest(BaseModel):
-    """Request for patching a scenario draft - nested resource actions."""
+    """Request for patching a scenario draft - flat resource IDs."""
 
     input_draft_id: UUID | None = None
-    group_id: UUID | None = None
     expected_version: int = 0
-    names: ScenarioResourceAction | None = None
-    descriptions: ScenarioResourceAction | None = None
-    problem_statements: ScenarioResourceAction | None = None
-    flags: ScenarioMultiResourceAction | None = None
-    departments: ScenarioMultiResourceAction | None = None
-    personas: ScenarioMultiResourceAction | None = None
-    documents: ScenarioMultiResourceAction | None = None
-    parameters: ScenarioMultiResourceAction | None = None
-    parameter_fields: ScenarioMultiResourceAction | None = None
-    images: ScenarioMultiResourceAction | None = None
-    objectives: ScenarioMultiResourceAction | None = None
-    videos: ScenarioMultiResourceAction | None = None
-    questions: ScenarioMultiResourceAction | None = None
+    # No group_id — server-resolved
+    name_id: UUID | None = None
+    description_id: UUID | None = None
+    problem_statement_id: UUID | None = None
+    active_flag_id: UUID | None = None
+    objectives_enabled_flag_id: UUID | None = None
+    images_enabled_flag_id: UUID | None = None
+    video_enabled_flag_id: UUID | None = None
+    questions_enabled_flag_id: UUID | None = None
+    problem_statement_enabled_flag_id: UUID | None = None
+    department_ids: list[UUID] | None = None
+    persona_ids: list[UUID] | None = None
+    document_ids: list[UUID] | None = None
+    parameter_ids: list[UUID] | None = None
+    parameter_field_ids: list[UUID] | None = None
+    image_ids: list[UUID] | None = None
+    objective_ids: list[UUID] | None = None
+    video_ids: list[UUID] | None = None
+    question_ids: list[UUID] | None = None
 
 
 class PatchScenarioDraftApiResponse(BaseModel):
     """Response for patching a scenario draft."""
 
+    success: bool = False
     draft_id: UUID | None = None
     new_version: int | None = None
-    draft_exists: bool | None = None
+    message: str | None = None
 
 
 # =============================================================================
@@ -914,9 +929,49 @@ class SaveScenarioSqlParams(BaseModel):
 
     @classmethod
     def from_request(
-        cls, request: SaveScenarioApiRequest, profile_id: UUID
+        cls,
+        request: SaveScenarioApiRequest,
+        profile_id: UUID,
+        group_id: UUID | None,
     ) -> "SaveScenarioSqlParams":
-        return cls(profile_id=profile_id, **request.model_dump())
+        flag_ids = [
+            fid
+            for fid in [
+                request.active_flag_id,
+                request.objectives_enabled_flag_id,
+                request.images_enabled_flag_id,
+                request.video_enabled_flag_id,
+                request.questions_enabled_flag_id,
+                request.problem_statement_enabled_flag_id,
+            ]
+            if fid is not None
+        ]
+        return cls(
+            profile_id=profile_id,
+            input_scenario_id=request.input_scenario_id,
+            group_id=group_id,
+            names=ScenarioResourceAction(resource_id=request.name_id),
+            descriptions=ScenarioResourceAction(resource_id=request.description_id),
+            problem_statements=ScenarioResourceAction(
+                resource_id=request.problem_statement_id
+            ),
+            flags=ScenarioMultiResourceAction(
+                resource_ids=flag_ids or None,
+            ),
+            departments=ScenarioMultiResourceAction(
+                resource_ids=request.department_ids
+            ),
+            personas=ScenarioMultiResourceAction(resource_ids=request.persona_ids),
+            documents=ScenarioMultiResourceAction(resource_ids=request.document_ids),
+            parameters=ScenarioMultiResourceAction(resource_ids=request.parameter_ids),
+            parameter_fields=ScenarioMultiResourceAction(
+                resource_ids=request.parameter_field_ids
+            ),
+            images=ScenarioMultiResourceAction(resource_ids=request.image_ids),
+            objectives=ScenarioMultiResourceAction(resource_ids=request.objective_ids),
+            videos=ScenarioMultiResourceAction(resource_ids=request.video_ids),
+            questions=ScenarioMultiResourceAction(resource_ids=request.question_ids),
+        )
 
     def to_tuple(self) -> tuple[Any, ...]:
         def single(a: ScenarioResourceAction) -> tuple[Any, Any, Any]:
@@ -1024,27 +1079,114 @@ class PatchScenarioDraftSqlParams(BaseModel):
 
     @classmethod
     def from_request(
-        cls, request: PatchScenarioDraftApiRequest, profile_id: UUID
+        cls,
+        request: PatchScenarioDraftApiRequest,
+        profile_id: UUID,
+        group_id: UUID | None,
     ) -> "PatchScenarioDraftSqlParams":
         empty_single = ScenarioResourceAction()
         empty_multi = ScenarioMultiResourceAction()
+
+        # Build names/descriptions/problem_statements from flat fields
+        names = (
+            ScenarioResourceAction(resource_id=request.name_id)
+            if request.name_id is not None
+            else empty_single
+        )
+        descriptions = (
+            ScenarioResourceAction(resource_id=request.description_id)
+            if request.description_id is not None
+            else empty_single
+        )
+        problem_statements = (
+            ScenarioResourceAction(resource_id=request.problem_statement_id)
+            if request.problem_statement_id is not None
+            else empty_single
+        )
+
+        # Build flags from individual flag fields
+        flag_ids = [
+            fid
+            for fid in [
+                request.active_flag_id,
+                request.objectives_enabled_flag_id,
+                request.images_enabled_flag_id,
+                request.video_enabled_flag_id,
+                request.questions_enabled_flag_id,
+                request.problem_statement_enabled_flag_id,
+            ]
+            if fid is not None
+        ]
+        has_any_flag_field = any(
+            getattr(request, f) is not None
+            for f in [
+                "active_flag_id",
+                "objectives_enabled_flag_id",
+                "images_enabled_flag_id",
+                "video_enabled_flag_id",
+                "questions_enabled_flag_id",
+                "problem_statement_enabled_flag_id",
+            ]
+        )
+        flags = (
+            ScenarioMultiResourceAction(resource_ids=flag_ids or None)
+            if has_any_flag_field
+            else empty_multi
+        )
+
         return cls(
             profile_id=profile_id,
             input_draft_id=request.input_draft_id,
-            group_id=request.group_id,
-            names=request.names or empty_single,
-            descriptions=request.descriptions or empty_single,
-            problem_statements=request.problem_statements or empty_single,
-            flags=request.flags or empty_multi,
-            departments=request.departments or empty_multi,
-            personas=request.personas or empty_multi,
-            documents=request.documents or empty_multi,
-            parameters=request.parameters or empty_multi,
-            parameter_fields=request.parameter_fields or empty_multi,
-            images=request.images or empty_multi,
-            objectives=request.objectives or empty_multi,
-            videos=request.videos or empty_multi,
-            questions=request.questions or empty_multi,
+            group_id=group_id,
+            names=names,
+            descriptions=descriptions,
+            problem_statements=problem_statements,
+            flags=flags,
+            departments=(
+                ScenarioMultiResourceAction(resource_ids=request.department_ids)
+                if request.department_ids is not None
+                else empty_multi
+            ),
+            personas=(
+                ScenarioMultiResourceAction(resource_ids=request.persona_ids)
+                if request.persona_ids is not None
+                else empty_multi
+            ),
+            documents=(
+                ScenarioMultiResourceAction(resource_ids=request.document_ids)
+                if request.document_ids is not None
+                else empty_multi
+            ),
+            parameters=(
+                ScenarioMultiResourceAction(resource_ids=request.parameter_ids)
+                if request.parameter_ids is not None
+                else empty_multi
+            ),
+            parameter_fields=(
+                ScenarioMultiResourceAction(resource_ids=request.parameter_field_ids)
+                if request.parameter_field_ids is not None
+                else empty_multi
+            ),
+            images=(
+                ScenarioMultiResourceAction(resource_ids=request.image_ids)
+                if request.image_ids is not None
+                else empty_multi
+            ),
+            objectives=(
+                ScenarioMultiResourceAction(resource_ids=request.objective_ids)
+                if request.objective_ids is not None
+                else empty_multi
+            ),
+            videos=(
+                ScenarioMultiResourceAction(resource_ids=request.video_ids)
+                if request.video_ids is not None
+                else empty_multi
+            ),
+            questions=(
+                ScenarioMultiResourceAction(resource_ids=request.question_ids)
+                if request.question_ids is not None
+                else empty_multi
+            ),
             expected_version=request.expected_version,
         )
 

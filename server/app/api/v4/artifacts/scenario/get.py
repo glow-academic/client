@@ -216,8 +216,7 @@ class ScenarioInternalData:
     resource_group_ids: dict[str, UUID | None]
 
     # Per-resource tool IDs (from selected agents)
-    create_tool_ids_map: dict[str, UUID | None]
-    link_tool_ids_map: dict[str, UUID | None]
+    tool_ids_map: dict[str, UUID | None]
 
     # Config resources (for websocket generation context)
     config_agent_resources: list[Any] | None
@@ -368,19 +367,15 @@ async def get_scenario_internal(
         require_mcp=False,
     )
 
-    # === BUILD TOOL_IDS MAPS FROM SELECTED AGENTS ===
-    create_tool_ids_map: dict[str, UUID | None] = {}
-    link_tool_ids_map: dict[str, UUID | None] = {}
+    # === BUILD TOOL_IDS MAP FROM SELECTED AGENTS ===
+    tool_ids_map: dict[str, UUID | None] = {}
 
     for resource in SCENARIO_RESOURCES:
         selected_agent_id = agent_ids.get(resource)
         if selected_agent_id:
             for candidate in candidate_agents:
                 if candidate.agent_id == selected_agent_id:
-                    create_tool_ids_map[resource] = candidate.create_tool_ids.get(
-                        resource
-                    )
-                    link_tool_ids_map[resource] = candidate.link_tool_ids.get(resource)
+                    tool_ids_map[resource] = candidate.create_tool_ids.get(resource)
                     break
 
     # === EXTRACT DOMAIN IDS FROM QUERY 2 ===
@@ -1160,8 +1155,7 @@ async def get_scenario_internal(
         # Per-resource group IDs
         resource_group_ids=resource_group_ids,
         # Per-resource tool IDs
-        create_tool_ids_map=create_tool_ids_map,
-        link_tool_ids_map=link_tool_ids_map,
+        tool_ids_map=tool_ids_map,
         # Config resources
         config_agent_resources=config_agents_result or None,
         config_model_resources=config_models_result or None,
@@ -1325,8 +1319,7 @@ async def get_scenario_client(
             "required": data.required_flags_map.get(resource_key, False),
             "suggestions": data.suggestions_map.get(resource_key, []),
             "show_ai_generate": data.show_ai_generate_map.get(resource_key, False),
-            "create_tool_id": data.create_tool_ids_map.get(resource_key),
-            "link_tool_id": data.link_tool_ids_map.get(resource_key),
+            "tool_id": data.tool_ids_map.get(resource_key),
         }
 
     return GetScenarioApiResponse(

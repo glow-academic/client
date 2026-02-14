@@ -21,11 +21,13 @@ END $$;
 CREATE OR REPLACE FUNCTION api_get_persona_access_v4(
     profile_id uuid,
     persona_id uuid DEFAULT NULL,
-    draft_id uuid DEFAULT NULL
+    draft_id uuid DEFAULT NULL,
+    draft_group_id uuid DEFAULT NULL,
+    draft_version int DEFAULT NULL
 )
 RETURNS TABLE (
     persona_exists boolean,
-    draft_version int,
+    effective_draft_version int,
     group_id uuid,
 
 
@@ -34,7 +36,7 @@ RETURNS TABLE (
     active_scenario_count int
 )
 LANGUAGE sql
-STABLE
+VOLATILE
 AS $$
 -- User context (actor_name, user_role, department_ids) comes from get_profile_context_internal() in Python
 WITH params AS (
@@ -51,23 +53,15 @@ persona_exists_check AS (
             ELSE EXISTS(SELECT 1 FROM persona_artifact WHERE id = (SELECT persona_id FROM params))::boolean
         END as persona_exists
 ),
--- Resolve canonical persona group context (draft override handled in Python service layer)
-persona_group_data AS (
-    SELECT
-        (
-            SELECT gr.id
-            FROM groups_resource gr
-            WHERE gr.active = true
-            ORDER BY gr.created_at DESC
-            LIMIT 1
-        ) as group_id
-    FROM params x
-    WHERE TRUE
-    LIMIT 1
+-- Create a new group if no draft_group_id provided (guarantees group_id is always returned)
+ensure_group AS (
+    INSERT INTO groups_entry (created_at, updated_at)
+    SELECT NOW(), NOW()
+    WHERE draft_group_id IS NULL
+    RETURNING id
 ),
--- Draft version is resolved in Python via internal draft fetch layer
-draft_version_data AS (
-    SELECT NULL::int as draft_version
+effective_group AS (
+    SELECT COALESCE(draft_group_id, (SELECT id FROM ensure_group)) as group_id
 ),
 -- Get persona departments (for access check)
 persona_departments_data AS (
