@@ -9,6 +9,7 @@ from app.api.v4.views.analytics.daily_metrics import router as daily_metrics_rou
 from app.api.v4.views.analytics.health import router as health_router
 from app.api.v4.views.analytics.pricing import router as pricing_router
 from app.api.v4.views.analytics.profile_metrics import router as profile_metrics_router
+from app.api.v4.views.analytics.rubric_facts import router as rubric_facts_router
 
 router = APIRouter(prefix="/analytics", tags=["views", "analytics"])
 
@@ -28,6 +29,11 @@ router.include_router(
     profile_metrics_router,
     prefix="/profile-metrics",
     tags=["profile_metrics"],
+)
+router.include_router(
+    rubric_facts_router,
+    prefix="/rubric-facts",
+    tags=["rubric_facts"],
 )
 router.include_router(health_router, prefix="/health", tags=["health"])
 router.include_router(pricing_router, prefix="/pricing", tags=["pricing"])

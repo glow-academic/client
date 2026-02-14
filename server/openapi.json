@@ -38420,6 +38420,109 @@
         ]
       }
     },
+    "/api/v4/views/analytics/rubric-facts/get": {
+      "post": {
+        "tags": [
+          "v4",
+          "views",
+          "views",
+          "analytics",
+          "rubric_facts"
+        ],
+        "summary": "Get Rubric Facts",
+        "description": "Get rubric facts data from mv_rubric_facts.\n\nThis endpoint fetches paginated per-chat standard-group score data\nfor the rubric dashboard section with:\n- Filtering (profile, cohort, simulation, rubric, attempt_type, archived, date range)\n- Sorting (date)\n- Pagination\n- Filter options (rubric_options, simulation_options, standard_group_options)\n\nResource metadata (names, colors, icons) should be fetched separately\nvia internal resource handlers using the returned IDs.",
+        "operationId": "get_rubric_facts_api_v4_views_analytics_rubric_facts_get_post",
+        "parameters": [
+          {
+            "name": "X-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Session-Id"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GetRubricFactsRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetRubricFactsResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v4",
+          "views",
+          "views",
+          "analytics",
+          "rubric_facts"
+        ]
+      }
+    },
     "/api/v4/views/analytics/health/get": {
       "post": {
         "tags": [
@@ -80316,6 +80419,211 @@
         "type": "object",
         "title": "GetRubricApiResponse"
       },
+      "GetRubricFactsRequest": {
+        "properties": {
+          "profile_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profile Id",
+            "description": "Filter by profile ID"
+          },
+          "cohort_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cohort Ids",
+            "description": "Filter by cohort IDs"
+          },
+          "simulation_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulation Ids",
+            "description": "Filter by simulation IDs"
+          },
+          "rubric_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rubric Ids",
+            "description": "Filter by rubric IDs"
+          },
+          "attempt_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Attempt Type",
+            "description": "Filter by attempt type: 'general' | 'practice'"
+          },
+          "is_archived": {
+            "type": "boolean",
+            "title": "Is Archived",
+            "description": "Include archived attempts",
+            "default": false
+          },
+          "date_from": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Date From",
+            "description": "Filter by date range start (inclusive)"
+          },
+          "date_to": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Date To",
+            "description": "Filter by date range end (inclusive)"
+          },
+          "sort_by": {
+            "type": "string",
+            "title": "Sort By",
+            "description": "Sort field: 'date'",
+            "default": "date"
+          },
+          "sort_order": {
+            "type": "string",
+            "title": "Sort Order",
+            "description": "Sort order: 'asc' | 'desc'",
+            "default": "desc"
+          },
+          "page_limit": {
+            "type": "integer",
+            "maximum": 50000.0,
+            "minimum": 1.0,
+            "title": "Page Limit",
+            "description": "Items per page",
+            "default": 10000
+          },
+          "page_offset": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Page Offset",
+            "description": "Pagination offset",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "title": "GetRubricFactsRequest",
+        "description": "Request for getting rubric facts with filters and pagination."
+      },
+      "GetRubricFactsResponse": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/RubricFactsItem"
+            },
+            "type": "array",
+            "title": "Items",
+            "description": "Rubric facts items"
+          },
+          "total_count": {
+            "type": "integer",
+            "title": "Total Count",
+            "description": "Total count before pagination",
+            "default": 0
+          },
+          "rubric_options": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/app__api__v4__views__analytics__rubric_facts__types__FilterOption"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rubric Options",
+            "description": "Available rubric filter options"
+          },
+          "simulation_options": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/app__api__v4__views__analytics__rubric_facts__types__FilterOption"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulation Options",
+            "description": "Available simulation filter options"
+          },
+          "standard_group_options": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/app__api__v4__views__analytics__rubric_facts__types__FilterOption"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Standard Group Options",
+            "description": "Available standard group filter options"
+          }
+        },
+        "type": "object",
+        "title": "GetRubricFactsResponse",
+        "description": "Response with rubric facts and pagination info."
+      },
       "GetRubricsApiRequest": {
         "properties": {
           "ids": {
@@ -114992,6 +115300,114 @@
         "title": "RubricEntry",
         "description": "Rubric entry with resource metadata."
       },
+      "RubricFactsItem": {
+        "properties": {
+          "chat_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Chat Id"
+          },
+          "standard_group_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Standard Group Id"
+          },
+          "rubric_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rubric Id"
+          },
+          "score_percent": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Score Percent"
+          },
+          "simulation_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulation Id"
+          },
+          "profile_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profile Id"
+          },
+          "cohort_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cohort Id"
+          },
+          "attempt_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Attempt Date"
+          },
+          "attempt_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Attempt Type"
+          },
+          "is_archived": {
+            "type": "boolean",
+            "title": "Is Archived",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "chat_id",
+          "standard_group_id"
+        ],
+        "title": "RubricFactsItem",
+        "description": "Single (chat, standard_group) row from mv_rubric_facts.\n\nContains rubric-section data with resource IDs only.\nResource metadata (names, colors, etc.) fetched via internal handlers."
+      },
       "RubricFlagConfig": {
         "properties": {
           "key": {
@@ -139206,6 +139622,30 @@
         "description": "Filter option for dropdowns."
       },
       "app__api__v4__views__analytics__cohort_facts__types__FilterOption": {
+        "properties": {
+          "value": {
+            "type": "string",
+            "title": "Value"
+          },
+          "label": {
+            "type": "string",
+            "title": "Label"
+          },
+          "count": {
+            "type": "integer",
+            "title": "Count",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "required": [
+          "value",
+          "label"
+        ],
+        "title": "FilterOption",
+        "description": "Filter option for dropdowns."
+      },
+      "app__api__v4__views__analytics__rubric_facts__types__FilterOption": {
         "properties": {
           "value": {
             "type": "string",

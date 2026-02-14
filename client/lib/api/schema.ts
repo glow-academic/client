@@ -7835,6 +7835,36 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/views/analytics/rubric-facts/get": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Rubric Facts
+         * @description Get rubric facts data from mv_rubric_facts.
+         *
+         *     This endpoint fetches paginated per-chat standard-group score data
+         *     for the rubric dashboard section with:
+         *     - Filtering (profile, cohort, simulation, rubric, attempt_type, archived, date range)
+         *     - Sorting (date)
+         *     - Pagination
+         *     - Filter options (rubric_options, simulation_options, standard_group_options)
+         *
+         *     Resource metadata (names, colors, icons) should be fetched separately
+         *     via internal resource handlers using the returned IDs.
+         */
+        post: operations["get_rubric_facts_api_v4_views_analytics_rubric_facts_get_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v4/views/analytics/health/get": {
         parameters: {
             query?: never;
@@ -21318,6 +21348,109 @@ export interface components {
             standard_groups?: components["schemas"]["RubricStandardGroupsSection"] | null;
             standards?: components["schemas"]["RubricStandardsSection"] | null;
         };
+        /**
+         * GetRubricFactsRequest
+         * @description Request for getting rubric facts with filters and pagination.
+         */
+        GetRubricFactsRequest: {
+            /**
+             * Profile Id
+             * @description Filter by profile ID
+             */
+            profile_id?: string | null;
+            /**
+             * Cohort Ids
+             * @description Filter by cohort IDs
+             */
+            cohort_ids?: string[] | null;
+            /**
+             * Simulation Ids
+             * @description Filter by simulation IDs
+             */
+            simulation_ids?: string[] | null;
+            /**
+             * Rubric Ids
+             * @description Filter by rubric IDs
+             */
+            rubric_ids?: string[] | null;
+            /**
+             * Attempt Type
+             * @description Filter by attempt type: 'general' | 'practice'
+             */
+            attempt_type?: string | null;
+            /**
+             * Is Archived
+             * @description Include archived attempts
+             * @default false
+             */
+            is_archived: boolean;
+            /**
+             * Date From
+             * @description Filter by date range start (inclusive)
+             */
+            date_from?: string | null;
+            /**
+             * Date To
+             * @description Filter by date range end (inclusive)
+             */
+            date_to?: string | null;
+            /**
+             * Sort By
+             * @description Sort field: 'date'
+             * @default date
+             */
+            sort_by: string;
+            /**
+             * Sort Order
+             * @description Sort order: 'asc' | 'desc'
+             * @default desc
+             */
+            sort_order: string;
+            /**
+             * Page Limit
+             * @description Items per page
+             * @default 10000
+             */
+            page_limit: number;
+            /**
+             * Page Offset
+             * @description Pagination offset
+             * @default 0
+             */
+            page_offset: number;
+        };
+        /**
+         * GetRubricFactsResponse
+         * @description Response with rubric facts and pagination info.
+         */
+        GetRubricFactsResponse: {
+            /**
+             * Items
+             * @description Rubric facts items
+             */
+            items?: components["schemas"]["RubricFactsItem"][];
+            /**
+             * Total Count
+             * @description Total count before pagination
+             * @default 0
+             */
+            total_count: number;
+            /**
+             * Rubric Options
+             * @description Available rubric filter options
+             */
+            rubric_options?: components["schemas"]["app__api__v4__views__analytics__rubric_facts__types__FilterOption"][] | null;
+            /**
+             * Simulation Options
+             * @description Available simulation filter options
+             */
+            simulation_options?: components["schemas"]["app__api__v4__views__analytics__rubric_facts__types__FilterOption"][] | null;
+            /**
+             * Standard Group Options
+             * @description Available standard group filter options
+             */
+            standard_group_options?: components["schemas"]["app__api__v4__views__analytics__rubric_facts__types__FilterOption"][] | null;
+        };
         /** GetRubricsApiRequest */
         GetRubricsApiRequest: {
             /** Ids */
@@ -30611,6 +30744,44 @@ export interface components {
             pass_points?: number | null;
         };
         /**
+         * RubricFactsItem
+         * @description Single (chat, standard_group) row from mv_rubric_facts.
+         *
+         *     Contains rubric-section data with resource IDs only.
+         *     Resource metadata (names, colors, etc.) fetched via internal handlers.
+         */
+        RubricFactsItem: {
+            /**
+             * Chat Id
+             * Format: uuid
+             */
+            chat_id: string;
+            /**
+             * Standard Group Id
+             * Format: uuid
+             */
+            standard_group_id: string;
+            /** Rubric Id */
+            rubric_id?: string | null;
+            /** Score Percent */
+            score_percent?: number | null;
+            /** Simulation Id */
+            simulation_id?: string | null;
+            /** Profile Id */
+            profile_id?: string | null;
+            /** Cohort Id */
+            cohort_id?: string | null;
+            /** Attempt Date */
+            attempt_date?: string | null;
+            /** Attempt Type */
+            attempt_type?: string | null;
+            /**
+             * Is Archived
+             * @default false
+             */
+            is_archived: boolean;
+        };
+        /**
          * RubricFlagConfig
          * @description Enriched flag config for direct client consumption.
          */
@@ -37992,6 +38163,21 @@ export interface components {
          * @description Filter option for dropdowns.
          */
         app__api__v4__views__analytics__cohort_facts__types__FilterOption: {
+            /** Value */
+            value: string;
+            /** Label */
+            label: string;
+            /**
+             * Count
+             * @default 0
+             */
+            count: number;
+        };
+        /**
+         * FilterOption
+         * @description Filter option for dropdowns.
+         */
+        app__api__v4__views__analytics__rubric_facts__types__FilterOption: {
             /** Value */
             value: string;
             /** Label */
@@ -52645,6 +52831,43 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["GetProfileMetricsResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_rubric_facts_api_v4_views_analytics_rubric_facts_get_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GetRubricFactsRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetRubricFactsResponse"];
                 };
             };
             /** @description Validation Error */
