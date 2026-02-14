@@ -6645,34 +6645,6 @@ class InfrastructureMetricsSnapshotApiResponse(BaseModel):
 
 
 
-# Generated from: infrastructure_profile_resolve_from_department
-
-class InfrastructureProfileResolveFromDepartmentSqlParams(BaseModel):
-
-    department_id: str
-    auth_mode: str
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.department_id,
-            self.auth_mode,
-        )
-
-class InfrastructureProfileResolveFromDepartmentSqlRow(BaseModel):
-
-    resolved_profile_id: UUID | None = None
-
-class InfrastructureProfileResolveFromDepartmentApiRequest(BaseModel):
-
-    department_id: str
-    auth_mode: str
-
-class InfrastructureProfileResolveFromDepartmentApiResponse(BaseModel):
-
-    resolved_profile_id: UUID | None = None
-
-
-
 # Generated from: infra_tools_create_call_for_tool
 
 class InfraToolsCreateCallForToolSqlParams(BaseModel):
@@ -9628,6 +9600,53 @@ class GetProfileAccessApiResponse(BaseModel):
 
 
 
+# Generated from: get_profile_by_email
+
+class GetProfileByEmailSqlParams(BaseModel):
+
+    email: str
+    profile_id: UUID | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.email,
+            self.profile_id,
+        )
+
+class GetProfileByEmailSqlRow(BaseModel):
+
+    profile_id: UUID | None = None
+    name: str | None = None
+    emails: list[str] | None = None
+    primary_email: str | None = None
+    role: str | None = None
+    active: bool | None = None
+    req_per_day: int | None = None
+    created_at: datetime | None = None
+    updated_at: datetime | None = None
+    primary_department_id: UUID | None = None
+    actor_name: str | None = None
+
+class GetProfileByEmailApiRequest(BaseModel):
+
+    email: str
+
+class GetProfileByEmailApiResponse(BaseModel):
+
+    profile_id: UUID | None = None
+    name: str | None = None
+    emails: list[str] | None = None
+    primary_email: str | None = None
+    role: str | None = None
+    active: bool | None = None
+    req_per_day: int | None = None
+    created_at: datetime | None = None
+    updated_at: datetime | None = None
+    primary_department_id: UUID | None = None
+    actor_name: str | None = None
+
+
+
 # Generated from: get_profile
 
 class GetProfileSqlParams(BaseModel):
@@ -10075,6 +10094,51 @@ class SaveProfileApiResponse(BaseModel):
 
     profile_id: UUID | None = None
     actor_name: str | None = None
+
+
+
+# Generated from: search_simulatable_profiles
+
+class SearchSimulatableProfilesSqlParams(BaseModel):
+
+    profile_id: UUID
+    limit_count: int
+    query: str
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.limit_count,
+            self.query,
+        )
+
+class QSearchSimulatableProfilesV4Profile(BaseModel):
+
+    profile_id: UUID | None
+    name: str | None
+    emails: list[str] | None
+    primary_email: str | None
+    role: str | None
+    active: bool | None
+    req_per_day: int | None
+    created_at: datetime | None
+    updated_at: datetime | None
+    primary_department_id: UUID | None
+
+class SearchSimulatableProfilesSqlRow(BaseModel):
+
+    actor_name: str | None = None
+    profiles: list[QSearchSimulatableProfilesV4Profile] | None = None
+
+class SearchSimulatableProfilesApiRequest(BaseModel):
+
+    limit_count: int
+    query: str
+
+class SearchSimulatableProfilesApiResponse(BaseModel):
+
+    actor_name: str | None = None
+    profiles: list[QSearchSimulatableProfilesV4Profile] | None = None
 
 
 
@@ -25759,12 +25823,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "InfrastructureMetricsSnapshotApiRequest",
         "InfrastructureMetricsSnapshotApiResponse",
     ),
-    "app/sql/v4/queries/infrastructure/infrastructure_profile_resolve_from_department_complete.sql": (
-        "InfrastructureProfileResolveFromDepartmentSqlParams",
-        "InfrastructureProfileResolveFromDepartmentSqlRow",
-        "InfrastructureProfileResolveFromDepartmentApiRequest",
-        "InfrastructureProfileResolveFromDepartmentApiResponse",
-    ),
     "app/sql/v4/queries/infrastructure/tools/create_call_for_tool_complete.sql": (
         "InfraToolsCreateCallForToolSqlParams",
         "InfraToolsCreateCallForToolSqlRow",
@@ -26191,6 +26249,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetProfileAccessApiRequest",
         "GetProfileAccessApiResponse",
     ),
+    "app/sql/v4/queries/profile/get_profile_by_email_complete.sql": (
+        "GetProfileByEmailSqlParams",
+        "GetProfileByEmailSqlRow",
+        "GetProfileByEmailApiRequest",
+        "GetProfileByEmailApiResponse",
+    ),
     "app/sql/v4/queries/profile/get_profile_complete.sql": (
         "GetProfileSqlParams",
         "GetProfileSqlRow",
@@ -26226,6 +26290,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "SaveProfileSqlRow",
         "SaveProfileApiRequest",
         "SaveProfileApiResponse",
+    ),
+    "app/sql/v4/queries/profile/search_simulatable_profiles_complete.sql": (
+        "SearchSimulatableProfilesSqlParams",
+        "SearchSimulatableProfilesSqlRow",
+        "SearchSimulatableProfilesApiRequest",
+        "SearchSimulatableProfilesApiResponse",
     ),
     "app/sql/v4/queries/profile/update_profile_to_active_complete.sql": (
         "UpdateProfileToActiveSqlParams",
@@ -29153,11 +29223,6 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/queries/infrastructure/infrastructure_profile_resolve_from_department_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
         file_path: Literal["app/sql/v4/queries/infrastructure/tools/create_call_for_tool_complete.sql"]
     ) -> SqlString: ...
 
@@ -29513,6 +29578,11 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/profile/get_profile_by_email_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v4/queries/profile/get_profile_complete.sql"]
     ) -> SqlString: ...
 
@@ -29539,6 +29609,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/queries/profile/save_profile_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/profile/search_simulatable_profiles_complete.sql"]
     ) -> SqlString: ...
 
     @overload

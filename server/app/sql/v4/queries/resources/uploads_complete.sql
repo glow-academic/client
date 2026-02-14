@@ -38,7 +38,7 @@ DECLARE
     v_call_id uuid;
 BEGIN
     -- Validate upload_id exists
-    IF NOT EXISTS (SELECT 1 FROM view_uploads_entry WHERE id = upload_id) THEN
+    IF NOT EXISTS (SELECT 1 FROM uploads_entry WHERE id = upload_id) THEN
         RAISE EXCEPTION 'Upload % does not exist', upload_id;
     END IF;
 
