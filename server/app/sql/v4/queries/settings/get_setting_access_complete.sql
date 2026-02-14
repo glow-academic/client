@@ -17,16 +17,18 @@ END $$;
 CREATE OR REPLACE FUNCTION api_get_setting_access_v4(
     profile_id uuid,
     setting_id uuid DEFAULT NULL,
-    draft_id uuid DEFAULT NULL
+    draft_id uuid DEFAULT NULL,
+    draft_group_id uuid DEFAULT NULL,
+    draft_version int DEFAULT NULL
 )
 RETURNS TABLE (
     setting_department_ids uuid[],
     setting_exists boolean,
-    draft_version int,
+    effective_draft_version int,
     group_id uuid
 )
 LANGUAGE sql
-STABLE
+VOLATILE
 AS $$
 WITH params AS (
     SELECT profile_id, setting_id, draft_id
@@ -66,21 +68,23 @@ setting_exists_check AS (
             )::boolean
         END AS setting_exists
 ),
-draft_data AS (
-    SELECT NULL::int AS draft_version
+-- Create a new group if no draft_group_id provided (guarantees group_id is always returned)
+ensure_group AS (
+    INSERT INTO groups_entry (created_at, updated_at)
+    SELECT NOW(), NOW()
+    WHERE draft_group_id IS NULL
+    RETURNING id
 ),
-group_data AS (
-    SELECT NULL::uuid AS group_id
+effective_group AS (
+    SELECT COALESCE(draft_group_id, (SELECT id FROM ensure_group)) as group_id
 )
 SELECT
     sd.department_ids AS setting_department_ids,
     sec.setting_exists,
-    dd.draft_version,
-    gd.group_id
+    draft_version as effective_draft_version,
+    (SELECT group_id FROM effective_group) as group_id
 FROM user_profile up
 CROSS JOIN setting_departments sd
-CROSS JOIN setting_exists_check sec
-LEFT JOIN draft_data dd ON true
-CROSS JOIN group_data gd;
+CROSS JOIN setting_exists_check sec;
 $$;
 

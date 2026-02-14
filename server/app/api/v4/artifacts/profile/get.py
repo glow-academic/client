@@ -197,6 +197,8 @@ async def get_profile_internal(
             profile_id=profile_id,
             target_profile_id=target_profile_id,
             draft_id=draft_id,
+            draft_group_id=draft_item.group_id if draft_item is not None else None,
+            draft_version=draft_item.version if draft_item is not None else None,
         )
 
         access_result = cast(
@@ -224,16 +226,9 @@ async def get_profile_internal(
                     detail="You don't have access to this profile. It may be restricted to other departments.",
                 )
 
-        effective_group_id = (
-            draft_item.group_id
-            if draft_item is not None and draft_item.group_id is not None
-            else access_result.group_id
-        )
-        effective_draft_version = (
-            draft_item.version
-            if draft_item is not None
-            else access_result.draft_version
-        )
+        # group_id is guaranteed by SQL (created inline if no draft)
+        effective_group_id = access_result.group_id
+        effective_draft_version = access_result.effective_draft_version
 
         # Parse roles from access result
         roles: list[ProfileRoleResource] = []

@@ -21,11 +21,13 @@ END $$;
 CREATE OR REPLACE FUNCTION api_get_department_access_v4(
     profile_id uuid,
     department_id uuid DEFAULT NULL,
-    draft_id uuid DEFAULT NULL
+    draft_id uuid DEFAULT NULL,
+    draft_group_id uuid DEFAULT NULL,
+    draft_version int DEFAULT NULL
 )
 RETURNS TABLE (
     department_exists boolean,
-    draft_version int,
+    effective_draft_version int,
     group_id uuid,
 
 
@@ -34,7 +36,7 @@ RETURNS TABLE (
     usage_count bigint
 )
 LANGUAGE sql
-STABLE
+VOLATILE
 AS $$
 -- User context (actor_name, user_role, department_ids) comes from get_profile_context_internal() in Python
 WITH params AS (
@@ -51,23 +53,15 @@ department_exists_check AS (
             ELSE EXISTS(SELECT 1 FROM department_artifact WHERE id = (SELECT department_id FROM params))::boolean
         END as department_exists
 ),
--- Resolve canonical department group context (draft override handled in Python service layer)
-department_group_data AS (
-    SELECT
-        (
-            SELECT gr.id
-            FROM groups_resource gr
-            WHERE gr.active = true
-            ORDER BY gr.created_at DESC
-            LIMIT 1
-        ) as group_id
-    FROM params x
-    WHERE TRUE
-    LIMIT 1
+-- Create a new group if no draft_group_id provided (guarantees group_id is always returned)
+ensure_group AS (
+    INSERT INTO groups_entry (created_at, updated_at)
+    SELECT NOW(), NOW()
+    WHERE draft_group_id IS NULL
+    RETURNING id
 ),
--- Draft version is resolved in Python via internal draft fetch layer
-draft_version_data AS (
-    SELECT NULL::int as draft_version
+effective_group AS (
+    SELECT COALESCE(draft_group_id, (SELECT id FROM ensure_group)) as group_id
 ),
 -- Get department's parent departments (for access check - departments don't have parent departments like personas)
 department_departments_data AS (
@@ -91,15 +85,14 @@ department_usage_data AS (
 SELECT
     -- Basic metadata
     (SELECT department_exists FROM department_exists_check) as department_exists,
-    (SELECT draft_version FROM draft_version_data) as draft_version,
-    dgd.group_id,
+    draft_version as effective_draft_version,
+    (SELECT group_id FROM effective_group) as group_id,
 
     -- User context for Python permission logic
 
     -- Department state for Python permission logic
     (SELECT department_ids FROM department_departments_data) as department_department_ids,
     (SELECT usage_count FROM department_usage_data) as usage_count
-FROM params x
-CROSS JOIN department_group_data dgd;
+FROM params x;
 $$;
 

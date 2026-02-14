@@ -119,6 +119,50 @@ class DuplicateAgentApiResponse(BaseModel):
 
 
 
+# Generated from: get_agent_access
+
+class GetAgentAccessSqlParams(BaseModel):
+
+    profile_id: UUID
+    agent_id: UUID | None = None
+    draft_id: UUID | None = None
+    draft_group_id: UUID | None = None
+    draft_version: int | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.agent_id,
+            self.draft_id,
+            self.draft_group_id,
+            self.draft_version,
+        )
+
+class GetAgentAccessSqlRow(BaseModel):
+
+    agent_exists: bool | None = None
+    effective_draft_version: int | None = None
+    group_id: UUID | None = None
+    agent_department_ids: list[UUID] | None = None
+    active_usage_count: int | None = None
+
+class GetAgentAccessApiRequest(BaseModel):
+
+    agent_id: UUID | None = None
+    draft_id: UUID | None = None
+    draft_group_id: UUID | None = None
+    draft_version: int | None = None
+
+class GetAgentAccessApiResponse(BaseModel):
+
+    agent_exists: bool | None = None
+    effective_draft_version: int | None = None
+    group_id: UUID | None = None
+    agent_department_ids: list[UUID] | None = None
+    active_usage_count: int | None = None
+
+
+
 # Generated from: get_agent_docs
 
 class GetAgentDocsSqlParams(BaseModel):
@@ -1327,29 +1371,35 @@ class GetAuthAccessSqlParams(BaseModel):
     profile_id: UUID
     auth_id: UUID | None = None
     draft_id: UUID | None = None
+    draft_group_id: UUID | None = None
+    draft_version: int | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.profile_id,
             self.auth_id,
             self.draft_id,
+            self.draft_group_id,
+            self.draft_version,
         )
 
 class GetAuthAccessSqlRow(BaseModel):
 
     auth_exists: bool | None = None
-    draft_version: int | None = None
+    effective_draft_version: int | None = None
     group_id: UUID | None = None
 
 class GetAuthAccessApiRequest(BaseModel):
 
     auth_id: UUID | None = None
     draft_id: UUID | None = None
+    draft_group_id: UUID | None = None
+    draft_version: int | None = None
 
 class GetAuthAccessApiResponse(BaseModel):
 
     auth_exists: bool | None = None
-    draft_version: int | None = None
+    effective_draft_version: int | None = None
     group_id: UUID | None = None
 
 
@@ -1790,18 +1840,22 @@ class GetCohortAccessSqlParams(BaseModel):
     profile_id: UUID
     cohort_id: UUID | None = None
     draft_id: UUID | None = None
+    draft_group_id: UUID | None = None
+    draft_version: int | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.profile_id,
             self.cohort_id,
             self.draft_id,
+            self.draft_group_id,
+            self.draft_version,
         )
 
 class GetCohortAccessSqlRow(BaseModel):
 
     cohort_exists: bool | None = None
-    draft_version: int | None = None
+    effective_draft_version: int | None = None
     group_id: UUID | None = None
     cohort_department_ids: list[UUID] | None = None
     usage_count: int | None = None
@@ -1810,11 +1864,13 @@ class GetCohortAccessApiRequest(BaseModel):
 
     cohort_id: UUID | None = None
     draft_id: UUID | None = None
+    draft_group_id: UUID | None = None
+    draft_version: int | None = None
 
 class GetCohortAccessApiResponse(BaseModel):
 
     cohort_exists: bool | None = None
-    draft_version: int | None = None
+    effective_draft_version: int | None = None
     group_id: UUID | None = None
     cohort_department_ids: list[UUID] | None = None
     usage_count: int | None = None
@@ -2354,18 +2410,22 @@ class GetDepartmentAccessSqlParams(BaseModel):
     profile_id: UUID
     department_id: UUID | None = None
     draft_id: UUID | None = None
+    draft_group_id: UUID | None = None
+    draft_version: int | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.profile_id,
             self.department_id,
             self.draft_id,
+            self.draft_group_id,
+            self.draft_version,
         )
 
 class GetDepartmentAccessSqlRow(BaseModel):
 
     department_exists: bool | None = None
-    draft_version: int | None = None
+    effective_draft_version: int | None = None
     group_id: UUID | None = None
     department_department_ids: list[UUID] | None = None
     usage_count: int | None = None
@@ -2374,11 +2434,13 @@ class GetDepartmentAccessApiRequest(BaseModel):
 
     department_id: UUID | None = None
     draft_id: UUID | None = None
+    draft_group_id: UUID | None = None
+    draft_version: int | None = None
 
 class GetDepartmentAccessApiResponse(BaseModel):
 
     department_exists: bool | None = None
-    draft_version: int | None = None
+    effective_draft_version: int | None = None
     group_id: UUID | None = None
     department_department_ids: list[UUID] | None = None
     usage_count: int | None = None
@@ -2987,18 +3049,22 @@ class GetDocumentAccessSqlParams(BaseModel):
     profile_id: UUID
     document_id: UUID | None = None
     draft_id: UUID | None = None
+    draft_group_id: UUID | None = None
+    draft_version: int | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.profile_id,
             self.document_id,
             self.draft_id,
+            self.draft_group_id,
+            self.draft_version,
         )
 
 class GetDocumentAccessSqlRow(BaseModel):
 
     document_exists: bool | None = None
-    draft_version: int | None = None
+    effective_draft_version: int | None = None
     group_id: UUID | None = None
     document_department_ids: list[UUID] | None = None
     active_scenario_count: int | None = None
@@ -3008,11 +3074,13 @@ class GetDocumentAccessApiRequest(BaseModel):
 
     document_id: UUID | None = None
     draft_id: UUID | None = None
+    draft_group_id: UUID | None = None
+    draft_version: int | None = None
 
 class GetDocumentAccessApiResponse(BaseModel):
 
     document_exists: bool | None = None
-    draft_version: int | None = None
+    effective_draft_version: int | None = None
     group_id: UUID | None = None
     document_department_ids: list[UUID] | None = None
     active_scenario_count: int | None = None
@@ -3703,18 +3771,22 @@ class GetEvalAccessSqlParams(BaseModel):
     profile_id: UUID
     eval_id: UUID | None = None
     draft_id: UUID | None = None
+    draft_group_id: UUID | None = None
+    draft_version: int | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.profile_id,
             self.eval_id,
             self.draft_id,
+            self.draft_group_id,
+            self.draft_version,
         )
 
 class GetEvalAccessSqlRow(BaseModel):
 
     eval_exists: bool | None = None
-    draft_version: int | None = None
+    effective_draft_version: int | None = None
     group_id: UUID | None = None
     eval_department_ids: list[UUID] | None = None
     active_usage_count: int | None = None
@@ -3723,11 +3795,13 @@ class GetEvalAccessApiRequest(BaseModel):
 
     eval_id: UUID | None = None
     draft_id: UUID | None = None
+    draft_group_id: UUID | None = None
+    draft_version: int | None = None
 
 class GetEvalAccessApiResponse(BaseModel):
 
     eval_exists: bool | None = None
-    draft_version: int | None = None
+    effective_draft_version: int | None = None
     group_id: UUID | None = None
     eval_department_ids: list[UUID] | None = None
     active_usage_count: int | None = None
@@ -4207,18 +4281,22 @@ class GetFieldAccessSqlParams(BaseModel):
     profile_id: UUID
     field_id: UUID | None = None
     draft_id: UUID | None = None
+    draft_group_id: UUID | None = None
+    draft_version: int | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.profile_id,
             self.field_id,
             self.draft_id,
+            self.draft_group_id,
+            self.draft_version,
         )
 
 class GetFieldAccessSqlRow(BaseModel):
 
     field_exists: bool | None = None
-    draft_version: int | None = None
+    effective_draft_version: int | None = None
     group_id: UUID | None = None
     field_department_ids: list[UUID] | None = None
 
@@ -4226,11 +4304,13 @@ class GetFieldAccessApiRequest(BaseModel):
 
     field_id: UUID | None = None
     draft_id: UUID | None = None
+    draft_group_id: UUID | None = None
+    draft_version: int | None = None
 
 class GetFieldAccessApiResponse(BaseModel):
 
     field_exists: bool | None = None
-    draft_version: int | None = None
+    effective_draft_version: int | None = None
     group_id: UUID | None = None
     field_department_ids: list[UUID] | None = None
 
@@ -6964,18 +7044,22 @@ class GetModelAccessSqlParams(BaseModel):
     profile_id: UUID
     model_id: UUID | None = None
     draft_id: UUID | None = None
+    draft_group_id: UUID | None = None
+    draft_version: int | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.profile_id,
             self.model_id,
             self.draft_id,
+            self.draft_group_id,
+            self.draft_version,
         )
 
 class GetModelAccessSqlRow(BaseModel):
 
     model_exists: bool | None = None
-    draft_version: int | None = None
+    effective_draft_version: int | None = None
     group_id: UUID | None = None
     model_department_ids: list[UUID] | None = None
     active_persona_count: int | None = None
@@ -6984,11 +7068,13 @@ class GetModelAccessApiRequest(BaseModel):
 
     model_id: UUID | None = None
     draft_id: UUID | None = None
+    draft_group_id: UUID | None = None
+    draft_version: int | None = None
 
 class GetModelAccessApiResponse(BaseModel):
 
     model_exists: bool | None = None
-    draft_version: int | None = None
+    effective_draft_version: int | None = None
     group_id: UUID | None = None
     model_department_ids: list[UUID] | None = None
     active_persona_count: int | None = None
@@ -7513,18 +7599,22 @@ class GetParameterAccessSqlParams(BaseModel):
     profile_id: UUID
     parameter_id: UUID | None = None
     draft_id: UUID | None = None
+    draft_group_id: UUID | None = None
+    draft_version: int | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.profile_id,
             self.parameter_id,
             self.draft_id,
+            self.draft_group_id,
+            self.draft_version,
         )
 
 class GetParameterAccessSqlRow(BaseModel):
 
     parameter_exists: bool | None = None
-    draft_version: int | None = None
+    effective_draft_version: int | None = None
     group_id: UUID | None = None
     parameter_department_ids: list[UUID] | None = None
     active_scenario_count: int | None = None
@@ -7533,11 +7623,13 @@ class GetParameterAccessApiRequest(BaseModel):
 
     parameter_id: UUID | None = None
     draft_id: UUID | None = None
+    draft_group_id: UUID | None = None
+    draft_version: int | None = None
 
 class GetParameterAccessApiResponse(BaseModel):
 
     parameter_exists: bool | None = None
-    draft_version: int | None = None
+    effective_draft_version: int | None = None
     group_id: UUID | None = None
     parameter_department_ids: list[UUID] | None = None
     active_scenario_count: int | None = None
@@ -9530,18 +9622,22 @@ class GetProviderAccessSqlParams(BaseModel):
     profile_id: UUID
     provider_id: UUID | None = None
     draft_id: UUID | None = None
+    draft_group_id: UUID | None = None
+    draft_version: int | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.profile_id,
             self.provider_id,
             self.draft_id,
+            self.draft_group_id,
+            self.draft_version,
         )
 
 class GetProviderAccessSqlRow(BaseModel):
 
     provider_exists: bool | None = None
-    draft_version: int | None = None
+    effective_draft_version: int | None = None
     group_id: UUID | None = None
     provider_department_ids: list[UUID] | None = None
     model_usage_count: int | None = None
@@ -9550,11 +9646,13 @@ class GetProviderAccessApiRequest(BaseModel):
 
     provider_id: UUID | None = None
     draft_id: UUID | None = None
+    draft_group_id: UUID | None = None
+    draft_version: int | None = None
 
 class GetProviderAccessApiResponse(BaseModel):
 
     provider_exists: bool | None = None
-    draft_version: int | None = None
+    effective_draft_version: int | None = None
     group_id: UUID | None = None
     provider_department_ids: list[UUID] | None = None
     model_usage_count: int | None = None
@@ -17814,18 +17912,22 @@ class GetRubricAccessSqlParams(BaseModel):
     profile_id: UUID
     rubric_id: UUID | None = None
     draft_id: UUID | None = None
+    draft_group_id: UUID | None = None
+    draft_version: int | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.profile_id,
             self.rubric_id,
             self.draft_id,
+            self.draft_group_id,
+            self.draft_version,
         )
 
 class GetRubricAccessSqlRow(BaseModel):
 
     rubric_exists: bool | None = None
-    draft_version: int | None = None
+    effective_draft_version: int | None = None
     group_id: UUID | None = None
     rubric_department_ids: list[UUID] | None = None
     active_simulation_count: int | None = None
@@ -17834,11 +17936,13 @@ class GetRubricAccessApiRequest(BaseModel):
 
     rubric_id: UUID | None = None
     draft_id: UUID | None = None
+    draft_group_id: UUID | None = None
+    draft_version: int | None = None
 
 class GetRubricAccessApiResponse(BaseModel):
 
     rubric_exists: bool | None = None
-    draft_version: int | None = None
+    effective_draft_version: int | None = None
     group_id: UUID | None = None
     rubric_department_ids: list[UUID] | None = None
     active_simulation_count: int | None = None
@@ -18407,6 +18511,50 @@ class InsertScenarioVariantApiResponse(BaseModel):
     updated_at: datetime | None = None
     profile_id: UUID | None = None
     department_id: UUID | None = None
+
+
+
+# Generated from: get_scenario_access
+
+class GetScenarioAccessSqlParams(BaseModel):
+
+    profile_id: UUID
+    scenario_id: UUID | None = None
+    draft_id: UUID | None = None
+    draft_group_id: UUID | None = None
+    draft_version: int | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.scenario_id,
+            self.draft_id,
+            self.draft_group_id,
+            self.draft_version,
+        )
+
+class GetScenarioAccessSqlRow(BaseModel):
+
+    scenario_exists: bool | None = None
+    effective_draft_version: int | None = None
+    group_id: UUID | None = None
+    scenario_department_ids: list[UUID] | None = None
+    active_simulation_count: int | None = None
+
+class GetScenarioAccessApiRequest(BaseModel):
+
+    scenario_id: UUID | None = None
+    draft_id: UUID | None = None
+    draft_group_id: UUID | None = None
+    draft_version: int | None = None
+
+class GetScenarioAccessApiResponse(BaseModel):
+
+    scenario_exists: bool | None = None
+    effective_draft_version: int | None = None
+    group_id: UUID | None = None
+    scenario_department_ids: list[UUID] | None = None
+    active_simulation_count: int | None = None
 
 
 
@@ -19148,31 +19296,37 @@ class GetSettingAccessSqlParams(BaseModel):
     profile_id: UUID
     setting_id: UUID | None = None
     draft_id: UUID | None = None
+    draft_group_id: UUID | None = None
+    draft_version: int | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.profile_id,
             self.setting_id,
             self.draft_id,
+            self.draft_group_id,
+            self.draft_version,
         )
 
 class GetSettingAccessSqlRow(BaseModel):
 
     setting_department_ids: list[UUID] | None = None
     setting_exists: bool | None = None
-    draft_version: int | None = None
+    effective_draft_version: int | None = None
     group_id: UUID | None = None
 
 class GetSettingAccessApiRequest(BaseModel):
 
     setting_id: UUID | None = None
     draft_id: UUID | None = None
+    draft_group_id: UUID | None = None
+    draft_version: int | None = None
 
 class GetSettingAccessApiResponse(BaseModel):
 
     setting_department_ids: list[UUID] | None = None
     setting_exists: bool | None = None
-    draft_version: int | None = None
+    effective_draft_version: int | None = None
     group_id: UUID | None = None
 
 
@@ -20469,18 +20623,22 @@ class GetToolAccessSqlParams(BaseModel):
     profile_id: UUID
     tool_id: UUID | None = None
     draft_id: UUID | None = None
+    draft_group_id: UUID | None = None
+    draft_version: int | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.profile_id,
             self.tool_id,
             self.draft_id,
+            self.draft_group_id,
+            self.draft_version,
         )
 
 class GetToolAccessSqlRow(BaseModel):
 
     tool_exists: bool | None = None
-    draft_version: int | None = None
+    effective_draft_version: int | None = None
     group_id: UUID | None = None
     active_usage_count: int | None = None
 
@@ -20488,11 +20646,13 @@ class GetToolAccessApiRequest(BaseModel):
 
     tool_id: UUID | None = None
     draft_id: UUID | None = None
+    draft_group_id: UUID | None = None
+    draft_version: int | None = None
 
 class GetToolAccessApiResponse(BaseModel):
 
     tool_exists: bool | None = None
-    draft_version: int | None = None
+    effective_draft_version: int | None = None
     group_id: UUID | None = None
     active_usage_count: int | None = None
 
@@ -23187,6 +23347,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "DuplicateAgentSqlRow",
         "DuplicateAgentApiRequest",
         "DuplicateAgentApiResponse",
+    ),
+    "app/sql/v4/queries/agents/get_agent_access_complete.sql": (
+        "GetAgentAccessSqlParams",
+        "GetAgentAccessSqlRow",
+        "GetAgentAccessApiRequest",
+        "GetAgentAccessApiResponse",
     ),
     "app/sql/v4/queries/agents/get_agent_docs_complete.sql": (
         "GetAgentDocsSqlParams",
@@ -26002,6 +26168,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "InsertScenarioVariantApiRequest",
         "InsertScenarioVariantApiResponse",
     ),
+    "app/sql/v4/queries/scenarios/get_scenario_access_complete.sql": (
+        "GetScenarioAccessSqlParams",
+        "GetScenarioAccessSqlRow",
+        "GetScenarioAccessApiRequest",
+        "GetScenarioAccessApiResponse",
+    ),
     "app/sql/v4/queries/scenarios/get_scenario_docs_complete.sql": (
         "GetScenarioDocsSqlParams",
         "GetScenarioDocsSqlRow",
@@ -26666,6 +26838,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/queries/agents/duplicate_agent_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/agents/get_agent_access_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -29011,6 +29188,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/queries/scenario/insert_scenario_variant_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/scenarios/get_scenario_access_complete.sql"]
     ) -> SqlString: ...
 
     @overload

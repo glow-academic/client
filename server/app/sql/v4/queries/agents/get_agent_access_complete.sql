@@ -21,11 +21,13 @@ END $$;
 CREATE OR REPLACE FUNCTION api_get_agent_access_v4(
     profile_id uuid,
     agent_id uuid DEFAULT NULL,
-    draft_id uuid DEFAULT NULL
+    draft_id uuid DEFAULT NULL,
+    draft_group_id uuid DEFAULT NULL,
+    draft_version int DEFAULT NULL
 )
 RETURNS TABLE (
     agent_exists boolean,
-    draft_version int,
+    effective_draft_version int,
     group_id uuid,
 
 
@@ -34,7 +36,7 @@ RETURNS TABLE (
     active_usage_count int
 )
 LANGUAGE sql
-STABLE
+VOLATILE
 AS $$
 -- User context (actor_name, user_role, department_ids) comes from get_profile_context_internal() in Python
 WITH params AS (
@@ -51,6 +53,16 @@ agent_exists_check AS (
             ELSE EXISTS(SELECT 1 FROM agent_artifact WHERE id = (SELECT agent_id FROM params))::boolean
         END as agent_exists
 ),
+-- Create a new group if no draft_group_id provided (guarantees group_id is always returned)
+ensure_group AS (
+    INSERT INTO groups_entry (created_at, updated_at)
+    SELECT NOW(), NOW()
+    WHERE draft_group_id IS NULL
+    RETURNING id
+),
+effective_group AS (
+    SELECT COALESCE(draft_group_id, (SELECT id FROM ensure_group)) as group_id
+),
 -- Get agent's departments (only if agent_id provided)
 agent_departments_data AS (
     SELECT COALESCE(
@@ -60,30 +72,12 @@ agent_departments_data AS (
     FROM params x
     LEFT JOIN agent_departments_junction ad ON ad.agent_id = x.agent_id AND ad.active = true
     WHERE x.agent_id IS NOT NULL
-),
--- Get group_id from draft or fallback to most recent group
-draft_group_data AS (
-    SELECT
-        COALESCE(
-            (SELECT d.group_id FROM view_drafts_entry d WHERE d.id = (SELECT draft_id FROM params)),
-            (SELECT id FROM view_groups_entry ORDER BY created_at DESC LIMIT 1)
-        ) as group_id
-    FROM params
-    LIMIT 1
-),
--- Draft version
-draft_version_data AS (
-    SELECT d.version as draft_version
-    FROM params x
-    LEFT JOIN view_drafts_entry d ON d.id = x.draft_id
-    WHERE TRUE
-    LIMIT 1
 )
 SELECT
     -- Basic metadata
     (SELECT agent_exists FROM agent_exists_check) as agent_exists,
-    (SELECT draft_version FROM draft_version_data) as draft_version,
-    dgd.group_id,
+    draft_version as effective_draft_version,
+    (SELECT group_id FROM effective_group) as group_id,
 
     -- User context for Python permission logic
 
@@ -93,7 +87,5 @@ SELECT
         (SELECT COUNT(*)::int FROM agent_departments_junction adj WHERE adj.agent_id = (SELECT agent_id FROM params) AND adj.active = true),
         0
     ) as active_usage_count
-FROM params x
-CROSS JOIN draft_group_data dgd;
+FROM params x;
 $$;
-

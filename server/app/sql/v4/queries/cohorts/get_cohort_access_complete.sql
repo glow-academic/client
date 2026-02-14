@@ -19,11 +19,13 @@ END $$;
 CREATE OR REPLACE FUNCTION api_get_cohort_access_v4(
     profile_id uuid,
     cohort_id uuid DEFAULT NULL,
-    draft_id uuid DEFAULT NULL
+    draft_id uuid DEFAULT NULL,
+    draft_group_id uuid DEFAULT NULL,
+    draft_version int DEFAULT NULL
 )
 RETURNS TABLE (
     cohort_exists boolean,
-    draft_version int,
+    effective_draft_version int,
     group_id uuid,
 
 
@@ -32,7 +34,7 @@ RETURNS TABLE (
     usage_count int
 )
 LANGUAGE sql
-STABLE
+VOLATILE
 AS $$
 -- User context (actor_name, user_role, department_ids) comes from get_profile_context_internal() in Python
 WITH params AS (
@@ -46,13 +48,15 @@ cohort_exists_check AS (
             ELSE EXISTS(SELECT 1 FROM cohort_artifact WHERE id = (SELECT cohort_id FROM params))::boolean
         END as cohort_exists
 ),
--- Get group_id from draft
-draft_group_data AS (
-    SELECT NULL::uuid as group_id
+-- Create a new group if no draft_group_id provided (guarantees group_id is always returned)
+ensure_group AS (
+    INSERT INTO groups_entry (created_at, updated_at)
+    SELECT NOW(), NOW()
+    WHERE draft_group_id IS NULL
+    RETURNING id
 ),
--- Get draft version
-draft_version_data AS (
-    SELECT NULL::int as draft_version
+effective_group AS (
+    SELECT COALESCE(draft_group_id, (SELECT id FROM ensure_group)) as group_id
 ),
 -- Get cohort departments (for access check)
 cohort_departments_data AS (
@@ -74,15 +78,14 @@ usage_count_data AS (
 SELECT
     -- Basic metadata
     (SELECT cohort_exists FROM cohort_exists_check) as cohort_exists,
-    (SELECT draft_version FROM draft_version_data) as draft_version,
-    dgd.group_id,
+    draft_version as effective_draft_version,
+    (SELECT group_id FROM effective_group) as group_id,
 
     -- User context for Python permission logic
 
     -- Cohort state for Python permission logic
     COALESCE((SELECT department_ids FROM cohort_departments_data), ARRAY[]::uuid[]) as cohort_department_ids,
     COALESCE((SELECT usage_count FROM usage_count_data), 0) as usage_count
-FROM params x
-CROSS JOIN draft_group_data dgd;
+FROM params x;
 $$;
 

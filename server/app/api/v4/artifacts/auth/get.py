@@ -176,6 +176,8 @@ async def get_auth_internal(
                     profile_id=profile_id,
                     auth_id=auth_id,
                     draft_id=draft_id,
+                    draft_group_id=draft_item.group_id if draft_item is not None else None,
+                    draft_version=draft_item.version if draft_item is not None else None,
                 ),
             ),
         )
@@ -183,16 +185,9 @@ async def get_auth_internal(
         if auth_id is not None and access_result.auth_exists is False:
             raise HTTPException(status_code=404, detail=f"Auth {auth_id} not found")
 
-        effective_group_id = (
-            draft_item.group_id
-            if draft_item is not None and draft_item.group_id is not None
-            else access_result.group_id
-        )
-        effective_draft_version = (
-            draft_item.version
-            if draft_item is not None
-            else access_result.draft_version
-        )
+        # group_id is guaranteed by SQL (created inline if no draft)
+        effective_group_id = access_result.group_id
+        effective_draft_version = access_result.effective_draft_version
 
         ids_result = cast(
             GetAuthIdsSqlRow,

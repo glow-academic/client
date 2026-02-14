@@ -21,16 +21,18 @@ END $$;
 CREATE OR REPLACE FUNCTION api_get_auth_access_v4(
     profile_id uuid,
     auth_id uuid DEFAULT NULL,
-    draft_id uuid DEFAULT NULL
+    draft_id uuid DEFAULT NULL,
+    draft_group_id uuid DEFAULT NULL,
+    draft_version int DEFAULT NULL
 )
 RETURNS TABLE (
     auth_exists boolean,
-    draft_version int,
+    effective_draft_version int,
     group_id uuid
 
 )
 LANGUAGE sql
-STABLE
+VOLATILE
 AS $$
 -- User context (actor_name, user_role, department_ids) comes from get_profile_context_internal() in Python
 WITH params AS (
@@ -58,20 +60,21 @@ auth_exists_check AS (
             ELSE EXISTS(SELECT 1 FROM auths_resource WHERE id = (SELECT auth_id FROM params))::boolean
         END as auth_exists
 ),
--- Resolve group context (draft override handled in Python service layer)
-auth_group_data AS (
-    SELECT NULL::uuid as group_id
+-- Create a new group if no draft_group_id provided (guarantees group_id is always returned)
+ensure_group AS (
+    INSERT INTO groups_entry (created_at, updated_at)
+    SELECT NOW(), NOW()
+    WHERE draft_group_id IS NULL
+    RETURNING id
 ),
--- Draft version is resolved in Python via internal draft fetch layer
-draft_version_data AS (
-    SELECT NULL::int as draft_version
+effective_group AS (
+    SELECT COALESCE(draft_group_id, (SELECT id FROM ensure_group)) as group_id
 )
 SELECT
     -- Basic metadata
     (SELECT auth_exists FROM auth_exists_check) as auth_exists,
-    (SELECT draft_version FROM draft_version_data) as draft_version,
-    agd.group_id
-FROM params x
-CROSS JOIN auth_group_data agd;
+    draft_version as effective_draft_version,
+    (SELECT group_id FROM effective_group) as group_id
+FROM params x;
 $$;
 

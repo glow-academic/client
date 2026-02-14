@@ -220,11 +220,24 @@ async def get_cohort_internal(
         d.department_id for d in profile_ctx.departments if d.department_id
     ]
 
+    draft_item = None
+    if draft_id is not None:
+        async with pool.acquire() as draft_conn:
+            draft_items = await get_draft_cohort_internal(
+                conn=draft_conn,
+                draft_ids=[draft_id],
+                bypass_cache=bypass_cache,
+            )
+            if draft_items:
+                draft_item = draft_items[0]
+
     async with pool.acquire() as conn:
         query1_params = GetCohortAccessSqlParams(
             profile_id=profile_id,
             cohort_id=cohort_id,
             draft_id=draft_id,
+            draft_group_id=draft_item.group_id if draft_item is not None else None,
+            draft_version=draft_item.version if draft_item is not None else None,
         )
 
         access_result = cast(
@@ -653,7 +666,7 @@ async def get_cohort_internal(
         cohort_exists=access_result.cohort_exists,
         can_edit=can_edit,
         disabled_reason=disabled_reason,
-        draft_version=access_result.draft_version,
+        draft_version=access_result.effective_draft_version,
         group_id=effective_group_id,
         # Generation mapping
         agent_ids=agent_ids,
