@@ -67,7 +67,7 @@ async def get_call_list_view_internal(
                     run_id=item.run_id,
                     call_created_at=item.call_created_at,
                     arguments_raw=item.arguments_raw,
-                    tool_name=item.tool_name,
+                    tool_id=item.tool_id,
                 )
             )
 

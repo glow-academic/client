@@ -8,7 +8,7 @@
 -- - Ordering (by run_id, then created_at)
 -- - Pagination
 --
--- Note: Returns pre-resolved tool_name from mv_calls.
+-- Note: Returns tool_id (resource ID) — name resolved in hydration layer.
 -- ============================================================================
 
 -- ============================================================================
@@ -56,7 +56,7 @@ CREATE TYPE types.q_get_call_list_view_v4_item AS (
     run_id uuid,
     call_created_at timestamptz,
     arguments_raw text,
-    tool_name text
+    tool_id uuid
 );
 
 -- ============================================================================
@@ -104,7 +104,7 @@ AS $$
                     run_id,
                     call_created_at,
                     arguments_raw,
-                    tool_name
+                    tool_id
                 )::types.q_get_call_list_view_v4_item
                 ORDER BY run_id, call_created_at
             ),

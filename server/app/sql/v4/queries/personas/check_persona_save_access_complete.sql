@@ -26,7 +26,8 @@ CREATE OR REPLACE FUNCTION api_check_persona_save_access_v4(
 RETURNS TABLE (
     -- Persona state for Python permission logic (NULL for create mode)
     persona_department_ids text[],
-    active_scenario_count bigint
+    active_scenario_count bigint,
+    group_id uuid
 )
 LANGUAGE sql
 STABLE
@@ -40,10 +41,19 @@ WITH params AS (
 -- Get persona edit state (for update mode)
 persona_edit_state AS (
     SELECT * FROM view_persona_edit_state WHERE persona_id = (SELECT persona_id FROM params)
+),
+-- Resolve group_id (most recent active group)
+persona_group_data AS (
+    SELECT gr.id as group_id
+    FROM groups_resource gr
+    WHERE gr.active = true
+    ORDER BY gr.created_at DESC
+    LIMIT 1
 )
 SELECT
     (SELECT department_ids FROM persona_edit_state) as persona_department_ids,
-    COALESCE((SELECT active_scenario_count FROM persona_edit_state), 0)::bigint as active_scenario_count
+    COALESCE((SELECT active_scenario_count FROM persona_edit_state), 0)::bigint as active_scenario_count,
+    (SELECT group_id FROM persona_group_data) as group_id
 FROM params x
 $$;
 

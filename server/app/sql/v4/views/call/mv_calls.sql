@@ -4,10 +4,10 @@
 -- Grain: One row per call (with run_id)
 -- Filter: run_id IS NOT NULL
 --
--- Purpose: Pre-resolves tool_name via junction tables
+-- Purpose: Exposes tool_id (resource ID) — name resolved in hydration layer
 -- Section: CALL (lean MV - used by group detail artifact)
 --
--- Dependencies: calls_entry, tool_calls_junction, tool_names_junction, names_resource
+-- Dependencies: calls_entry, tools_calls_connection
 -- ============================================================================
 -- Step 1: Drop all indexes on mv_calls materialized view (if it exists)
 -- ============================================================================
@@ -42,11 +42,9 @@ SELECT
     c.run_id,
     c.created_at AS call_created_at,
     c.arguments_raw,
-    n.name AS tool_name
+    tcc.tools_id AS tool_id
 FROM calls_entry c
 LEFT JOIN tools_calls_connection tcc ON tcc.call_id = c.id
-LEFT JOIN tool_names_junction tnj ON tnj.tool_id = tcc.tools_id
-LEFT JOIN names_resource n ON n.id = tnj.name_id
 WHERE c.run_id IS NOT NULL
 WITH NO DATA;
 

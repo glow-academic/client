@@ -13,7 +13,7 @@ class CallViewItem(BaseModel):
     run_id: UUID | None = None
     call_created_at: datetime | None = None
     arguments_raw: str | None = None
-    tool_name: str | None = None
+    tool_id: UUID | None = None
 
 
 class GetCallListViewResponse(BaseModel):

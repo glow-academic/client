@@ -50,8 +50,7 @@ class BaseResourceSection(BaseModel):
     required: bool = False
     suggestions: list[UUID] | None = None
     show_ai_generate: bool = False
-    create_tool_id: UUID | None = None
-    link_tool_id: UUID | None = None
+    tool_id: UUID | None = None
 
 
 # Single-select sections (resource = singular current, resources = all options)
@@ -259,8 +258,7 @@ class PersonaInternalData:
     resources_payload: PersonaResources
 
     # Per-resource tool IDs (from selected agents)
-    create_tool_ids_map: dict[str, UUID | None]
-    link_tool_ids_map: dict[str, UUID | None]
+    tool_ids_map: dict[str, UUID | None]
 
     # Config resources (from denormalized chain, for generation)
     config_agent_resources: list[QGetAgentsV4Item] | None
@@ -352,20 +350,22 @@ class PersonaMultiResourceAction(BaseModel):
 
 
 class SavePersonaApiRequest(BaseModel):
-    """Request model for save persona endpoint - accepts nested resource actions."""
+    """Request model for save persona endpoint - flat resource IDs."""
 
     input_persona_id: UUID | None = None
-    group_id: UUID | None = None
-    names: PersonaResourceAction
-    descriptions: PersonaResourceAction
-    colors: PersonaResourceAction
-    icons: PersonaResourceAction
-    instructions: PersonaResourceAction
-    flags: PersonaResourceAction
-    departments: PersonaMultiResourceAction
-    parameter_fields: PersonaMultiResourceAction
-    examples: PersonaMultiResourceAction
-    parameters: PersonaMultiResourceAction
+    # Required single-select
+    name_id: UUID
+    color_id: UUID
+    icon_id: UUID
+    instructions_id: UUID
+    # Optional single-select
+    description_id: UUID | None = None
+    active_flag_id: UUID | None = None
+    # Optional multi-select
+    department_ids: list[UUID] | None = None
+    parameter_field_ids: list[UUID] | None = None
+    example_ids: list[UUID] | None = None
+    parameter_ids: list[UUID] | None = None
 
 
 class SavePersonaApiResponse(BaseModel):
@@ -377,7 +377,7 @@ class SavePersonaApiResponse(BaseModel):
 
 
 class SavePersonaSqlParams(BaseModel):
-    """SQL parameters for save persona - nested resource actions with tool call tracking."""
+    """SQL parameters for save persona - builds composites from flat IDs."""
 
     profile_id: UUID
     input_persona_id: UUID | None = None
@@ -395,9 +395,28 @@ class SavePersonaSqlParams(BaseModel):
 
     @classmethod
     def from_request(
-        cls, request: SavePersonaApiRequest, profile_id: UUID
+        cls,
+        request: SavePersonaApiRequest,
+        profile_id: UUID,
+        group_id: UUID | None,
     ) -> SavePersonaSqlParams:
-        return cls(profile_id=profile_id, **request.model_dump())
+        return cls(
+            profile_id=profile_id,
+            input_persona_id=request.input_persona_id,
+            group_id=group_id,
+            names=PersonaResourceAction(resource_id=request.name_id),
+            descriptions=PersonaResourceAction(resource_id=request.description_id),
+            colors=PersonaResourceAction(resource_id=request.color_id),
+            icons=PersonaResourceAction(resource_id=request.icon_id),
+            instructions=PersonaResourceAction(resource_id=request.instructions_id),
+            flags=PersonaResourceAction(resource_id=request.active_flag_id),
+            departments=PersonaMultiResourceAction(resource_ids=request.department_ids),
+            parameter_fields=PersonaMultiResourceAction(
+                resource_ids=request.parameter_field_ids
+            ),
+            examples=PersonaMultiResourceAction(resource_ids=request.example_ids),
+            parameters=PersonaMultiResourceAction(resource_ids=request.parameter_ids),
+        )
 
     def to_tuple(self) -> tuple:
         """Convert to tuple for SQL execution."""
@@ -469,21 +488,21 @@ class DuplicatePersonaApiResponse(BaseModel):
 
 
 class PatchPersonaDraftApiRequest(BaseModel):
-    """Request model for patch persona draft endpoint - nested resource actions."""
+    """Request model for patch persona draft endpoint - flat resource IDs."""
 
     input_draft_id: UUID | None = None
-    group_id: UUID | None = None
     expected_version: int = 0
-    names: PersonaResourceAction | None = None
-    descriptions: PersonaResourceAction | None = None
-    colors: PersonaResourceAction | None = None
-    icons: PersonaResourceAction | None = None
-    instructions: PersonaResourceAction | None = None
-    flags: PersonaResourceAction | None = None
-    departments: PersonaMultiResourceAction | None = None
-    parameter_fields: PersonaMultiResourceAction | None = None
-    examples: PersonaMultiResourceAction | None = None
-    parameters: PersonaMultiResourceAction | None = None
+    # All optional (partial update)
+    name_id: UUID | None = None
+    description_id: UUID | None = None
+    color_id: UUID | None = None
+    icon_id: UUID | None = None
+    instructions_id: UUID | None = None
+    active_flag_id: UUID | None = None
+    department_ids: list[UUID] | None = None
+    parameter_field_ids: list[UUID] | None = None
+    example_ids: list[UUID] | None = None
+    parameter_ids: list[UUID] | None = None
 
 
 class PatchPersonaDraftApiResponse(BaseModel):
@@ -496,7 +515,7 @@ class PatchPersonaDraftApiResponse(BaseModel):
 
 
 class PatchPersonaDraftSqlParams(BaseModel):
-    """SQL parameters for patch persona draft - nested resource actions."""
+    """SQL parameters for patch persona draft - builds composites from flat IDs."""
 
     profile_id: UUID
     input_draft_id: UUID | None = None
@@ -515,24 +534,27 @@ class PatchPersonaDraftSqlParams(BaseModel):
 
     @classmethod
     def from_request(
-        cls, request: PatchPersonaDraftApiRequest, profile_id: UUID
+        cls,
+        request: PatchPersonaDraftApiRequest,
+        profile_id: UUID,
+        group_id: UUID | None = None,
     ) -> PatchPersonaDraftSqlParams:
-        _empty_single = PersonaResourceAction()
-        _empty_multi = PersonaMultiResourceAction()
         return cls(
             profile_id=profile_id,
             input_draft_id=request.input_draft_id,
-            group_id=request.group_id,
-            names=request.names or _empty_single,
-            descriptions=request.descriptions or _empty_single,
-            colors=request.colors or _empty_single,
-            icons=request.icons or _empty_single,
-            instructions=request.instructions or _empty_single,
-            flags=request.flags or _empty_single,
-            departments=request.departments or _empty_multi,
-            parameter_fields=request.parameter_fields or _empty_multi,
-            examples=request.examples or _empty_multi,
-            parameters=request.parameters or _empty_multi,
+            group_id=group_id,
+            names=PersonaResourceAction(resource_id=request.name_id),
+            descriptions=PersonaResourceAction(resource_id=request.description_id),
+            colors=PersonaResourceAction(resource_id=request.color_id),
+            icons=PersonaResourceAction(resource_id=request.icon_id),
+            instructions=PersonaResourceAction(resource_id=request.instructions_id),
+            flags=PersonaResourceAction(resource_id=request.active_flag_id),
+            departments=PersonaMultiResourceAction(resource_ids=request.department_ids),
+            parameter_fields=PersonaMultiResourceAction(
+                resource_ids=request.parameter_field_ids
+            ),
+            examples=PersonaMultiResourceAction(resource_ids=request.example_ids),
+            parameters=PersonaMultiResourceAction(resource_ids=request.parameter_ids),
             expected_version=request.expected_version,
         )
 

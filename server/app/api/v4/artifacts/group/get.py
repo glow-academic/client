@@ -25,6 +25,7 @@ from app.api.v4.artifacts.group.types import (
     GroupDetailRunWithMessages,
 )
 from app.api.v4.resources.names.get import get_names_internal
+from app.api.v4.resources.tools.get import get_tools_internal
 from app.api.v4.views.call.list.get import get_call_list_view_internal
 from app.api.v4.views.group.list.get import get_group_list_view_internal
 from app.api.v4.views.message.list.get import get_message_list_view_internal
@@ -146,24 +147,30 @@ async def get_group(
             if call.call_id not in linked_call_ids and call.run_id:
                 orphan_calls_by_run[call.run_id].append(call)
 
-        # Collect name IDs for hydration
+        # Collect IDs for hydration
         all_model_ids: set[UUID] = set()
         all_agent_ids: set[UUID] = set()
         all_profile_ids: set[UUID] = set()
+        all_tool_ids: set[UUID] = set()
         for r in runs_result.items:
             if r.model_ids:
                 all_model_ids.update(r.model_ids)
             if r.agent_ids:
                 all_agent_ids.update(r.agent_ids)
+        for c in calls_result.items:
+            if c.tool_id:
+                all_tool_ids.add(c.tool_id)
 
-        # Fetch names via resource layer
+        # Fetch names + tools via resource layer (both handle empty lists)
         all_name_ids = list(all_model_ids | all_agent_ids | all_profile_ids)
-        name_items = (
-            await get_names_internal(conn, all_name_ids, bypass_cache)
-            if all_name_ids
-            else []
+        name_items, tool_items = await asyncio.gather(
+            get_names_internal(conn, all_name_ids, bypass_cache),
+            get_tools_internal(conn, list(all_tool_ids), bypass_cache),
         )
         name_map = {item.id: item.name for item in name_items if item.id and item.name}
+        tool_name_map: dict[UUID, str] = {
+            item.id: item.name for item in tool_items if item.id and item.name
+        }
 
         # Build runs with messages
         runs: list[GroupDetailRunWithMessages] = []
@@ -195,7 +202,9 @@ async def get_group(
                         msg_calls.append(
                             GroupDetailCallItem(
                                 id=call.call_id,
-                                template_name=call.tool_name,
+                                template_name=tool_name_map.get(call.tool_id)
+                                if call.tool_id
+                                else None,
                                 arguments=call.arguments_raw,
                                 created_at=call.call_created_at,
                             )
@@ -223,7 +232,9 @@ async def get_group(
                     messages[-1].calls.append(
                         GroupDetailCallItem(
                             id=call.call_id,
-                            template_name=call.tool_name,
+                            template_name=tool_name_map.get(call.tool_id)
+                            if call.tool_id
+                            else None,
                             arguments=call.arguments_raw,
                             created_at=call.call_created_at,
                         )

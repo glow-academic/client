@@ -10600,34 +10600,6 @@ class CheckPersonaDuplicateAccessApiResponse(BaseModel):
     original_name: str | None = None
 
 
-# Generated from: check_persona_save_access
-
-
-class CheckPersonaSaveAccessSqlParams(BaseModel):
-    profile_id: UUID
-    persona_id: UUID | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.profile_id,
-            self.persona_id,
-        )
-
-
-class CheckPersonaSaveAccessSqlRow(BaseModel):
-    persona_department_ids: list[str] | None = None
-    active_scenario_count: int | None = None
-
-
-class CheckPersonaSaveAccessApiRequest(BaseModel):
-    persona_id: UUID | None = None
-
-
-class CheckPersonaSaveAccessApiResponse(BaseModel):
-    persona_department_ids: list[str] | None = None
-    active_scenario_count: int | None = None
-
-
 # Generated from: delete_persona
 
 
@@ -27206,7 +27178,7 @@ class QGetCallListViewV4Item(BaseModel):
     run_id: UUID | None
     call_created_at: datetime | None
     arguments_raw: str | None
-    tool_name: str | None
+    tool_id: UUID | None
 
 
 class GetCallListViewSqlRow(BaseModel):
@@ -29843,12 +29815,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "CheckPersonaDuplicateAccessSqlRow",
         "CheckPersonaDuplicateAccessApiRequest",
         "CheckPersonaDuplicateAccessApiResponse",
-    ),
-    "app/sql/v4/queries/personas/check_persona_save_access_complete.sql": (
-        "CheckPersonaSaveAccessSqlParams",
-        "CheckPersonaSaveAccessSqlRow",
-        "CheckPersonaSaveAccessApiRequest",
-        "CheckPersonaSaveAccessApiResponse",
     ),
     "app/sql/v4/queries/personas/delete_persona_complete.sql": (
         "DeletePersonaSqlParams",
@@ -33954,13 +33920,6 @@ if TYPE_CHECKING:
     def load_sql_query(
         file_path: Literal[
             "app/sql/v4/queries/personas/check_persona_duplicate_access_complete.sql"
-        ],
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal[
-            "app/sql/v4/queries/personas/check_persona_save_access_complete.sql"
         ],
     ) -> SqlString: ...
 
