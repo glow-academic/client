@@ -2138,7 +2138,9 @@ async def export_uploads(conn: asyncpg.Connection) -> None:
     with open(output_path, "w") as f:
         f.write("-- Module: uploads\n")
         f.write("-- Category: uploads\n")
-        f.write("-- Description: Upload entries and connections for document and video uploads\n")
+        f.write(
+            "-- Description: Upload entries and connections for document and video uploads\n"
+        )
         f.write("-- ============================================================\n")
 
         if entry_inserts:

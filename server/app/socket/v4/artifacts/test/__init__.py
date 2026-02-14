@@ -9,7 +9,18 @@ Handles WebSocket events for benchmark test interactions:
 
 from fastapi import APIRouter
 
-from . import complete, control, error, invocation, permissions, progress, room, run, run_all, types
+from . import (
+    complete,
+    control,
+    error,
+    invocation,
+    permissions,
+    progress,
+    room,
+    run,
+    run_all,
+    types,
+)
 
 __all__ = [
     "complete",

@@ -1,12 +1,11 @@
 """Benchmark start handler.
 
-Creates benchmark attempt structure and returns it to client.
+Creates benchmark attempt structure and emits internal event for invocation creation.
 Client controls test execution via test/run.py handlers.
 
 Entry point for benchmark:
 - Creates benchmark_tests_entry (attempt)
-- Creates benchmark_chats_entry for each run/group
-- Returns structure to client
+- Emits test_invocation internally (invocation.py creates invocations + emits benchmark_started)
 - Does NOT auto-trigger any test runs
 """
 
@@ -23,7 +22,6 @@ from app.socket.v4.artifacts.benchmark.permissions import (
     validate_benchmark_access,
 )
 from app.socket.v4.artifacts.benchmark.types import (
-    BenchmarkChatInfo,
     BenchmarkErrorEvent,
     BenchmarkStartedEvent,
     BenchmarkStartPayload,
@@ -47,12 +45,12 @@ SQL_PATH_START = (
 async def _benchmark_start_impl(
     sid: str, data: BenchmarkStartPayload, profile_id: uuid.UUID
 ) -> None:
-    """Handle benchmark_start - create structure and return to client.
+    """Handle benchmark_start - create test entry and emit for invocation creation.
 
     This function:
-    1. Creates benchmark_tests_entry (attempt)
-    2. Creates benchmark_chats_entry for each run/group
-    3. Returns structure with chat_ids for client to control
+    1. Creates benchmark_tests_entry (attempt) + links to profile/eval
+    2. Validates the result
+    3. Emits test_invocation internally for invocation.py to finish the flow
     """
     try:
         async with get_db_connection() as conn:
@@ -84,42 +82,19 @@ async def _benchmark_start_impl(
                 )
                 return
 
-            # Build chat info list from SQL result
-            chats: list[BenchmarkChatInfo] = []
-            if result.chats:
-                for chat_data in result.chats:
-                    chats.append(
-                        BenchmarkChatInfo(
-                            chat_id=str(chat_data.get("chat_id")),
-                            run_resource_id=str(chat_data.get("run_resource_id"))
-                            if chat_data.get("run_resource_id")
-                            else None,
-                            group_resource_id=str(chat_data.get("group_resource_id"))
-                            if chat_data.get("group_resource_id")
-                            else None,
-                            status="pending",
-                            total_runs=chat_data.get("total_runs", 1),
-                            completed_runs=0,
-                        )
-                    )
-
-            started_event = BenchmarkStartedEvent(
-                message="Benchmark attempt created",
-                attempt_id=str(result.attempt_id),
-                eval_id=str(result.eval_id),
-                use_groups=result.use_groups or False,
-                chats=chats,
-            )
-
-            await sio.emit(
-                "benchmark_started",
-                started_event.model_dump(mode="json"),
-                room=sid,
+            # Emit internal event - invocation.py creates invocations and emits benchmark_started
+            await internal_sio.emit(
+                "test_invocation",
+                {
+                    "sid": sid,
+                    "attempt_id": str(result.attempt_id),
+                    "eval_id": str(result.eval_id),
+                },
             )
 
             logger.info(
-                f"Benchmark started - attempt_id={result.attempt_id}, "
-                f"eval_id={result.eval_id}, chats={len(chats)}"
+                f"Benchmark test created - attempt_id={result.attempt_id}, "
+                f"eval_id={result.eval_id}"
             )
 
     except Exception as e:

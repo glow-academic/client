@@ -70,9 +70,7 @@ async def handle_test_invocation(data: dict[str, Any]) -> None:
                             run_resource_id=str(chat_data.get("run_resource_id"))
                             if chat_data.get("run_resource_id")
                             else None,
-                            group_resource_id=str(
-                                chat_data.get("group_resource_id")
-                            )
+                            group_resource_id=str(chat_data.get("group_resource_id"))
                             if chat_data.get("group_resource_id")
                             else None,
                             status="pending",
