@@ -37279,10 +37279,6 @@ export interface components {
             attempt_id?: string | null;
             /** User Instructions */
             user_instructions?: string[] | null;
-            /** Previous Chat Map */
-            previous_chat_map?: {
-                [key: string]: string;
-            } | null;
         };
         /**
          * TrainingStartedEvent
