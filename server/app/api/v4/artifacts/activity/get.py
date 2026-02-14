@@ -16,24 +16,16 @@ from app.api.v4.artifacts.activity.types import (
     ActivityResponse,
     ActivityViews,
 )
-from app.api.v4.views.activity.audits.get import get_activity_audits_internal
-from app.api.v4.views.activity.audits.types import GetActivityAuditsResponse
-from app.api.v4.views.activity.daily.get import get_activity_daily_internal
-from app.api.v4.views.activity.daily.types import GetActivityDailyResponse
-from app.api.v4.views.activity.feedbacks.get import get_activity_feedbacks_internal
-from app.api.v4.views.activity.feedbacks.types import GetActivityFeedbacksResponse
-from app.api.v4.views.activity.logins.get import get_activity_logins_internal
-from app.api.v4.views.activity.logins.types import GetActivityLoginsResponse
-from app.api.v4.views.activity.problems.get import get_activity_problems_internal
-from app.api.v4.views.activity.problems.types import GetActivityProblemsResponse
-from app.api.v4.views.activity.session_facts.get import (
-    get_activity_session_facts_internal,
-)
-from app.api.v4.views.activity.session_facts.types import (
-    GetActivitySessionFactsResponse,
-)
-from app.api.v4.views.activity.summary.get import get_activity_summary_internal
-from app.api.v4.views.activity.summary.types import GetActivitySummaryResponse
+from app.api.v4.views.activity.list.get import get_activity_list_view_internal
+from app.api.v4.views.activity.list.types import GetActivityListViewResponse
+from app.api.v4.views.audit.list.get import get_audit_list_view_internal
+from app.api.v4.views.audit.list.types import GetAuditListViewResponse
+from app.api.v4.views.login.list.get import get_login_list_view_internal
+from app.api.v4.views.login.list.types import GetLoginListViewResponse
+from app.api.v4.views.problem.list.get import get_problem_list_view_internal
+from app.api.v4.views.problem.list.types import GetProblemListViewResponse
+from app.api.v4.views.session.list.get import get_session_list_view_internal
+from app.api.v4.views.session.list.types import GetSessionListViewResponse
 from app.infra.v4.activity.audit import audit_activity
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
@@ -72,6 +64,14 @@ async def resolve_profile_ids_for_filters(
     return [row["id"] for row in rows]
 
 
+async def get_drafts_count(conn: asyncpg.Connection) -> int:
+    """Get total count of active drafts across all artifact types."""
+    count = await conn.fetchval(
+        "SELECT COUNT(*) FROM drafts_entry WHERE active = true"
+    )
+    return count or 0
+
+
 @router.post(
     "/get",
     response_model=ActivityResponse,
@@ -104,12 +104,22 @@ async def get_activity(
                     roles=request.roles or None,
                 )
 
-        async def fetch_session_facts() -> GetActivitySessionFactsResponse:
+        async def fetch_activity() -> GetActivityListViewResponse:
             async with pool.acquire() as c:
-                return await get_activity_session_facts_internal(
+                return await get_activity_list_view_internal(
                     conn=c,
-                    profile_id=request.profile_id,
-                    profile_ids=filter_profile_ids,
+                    date_from=request.date_from.date() if request.date_from else None,
+                    date_to=request.date_to.date() if request.date_to else None,
+                    page_limit=1000,
+                    bypass_cache=bypass_cache,
+                )
+
+        async def fetch_sessions() -> GetSessionListViewResponse:
+            async with pool.acquire() as c:
+                return await get_session_list_view_internal(
+                    conn=c,
+                    profile_id_filter=request.profile_id,
+                    profile_ids_filter=filter_profile_ids,
                     date_from=request.date_from,
                     date_to=request.date_to,
                     page_limit=request.page_limit,
@@ -117,125 +127,70 @@ async def get_activity(
                     bypass_cache=bypass_cache,
                 )
 
-        async def fetch_daily() -> GetActivityDailyResponse:
+        async def fetch_logins() -> GetLoginListViewResponse:
             async with pool.acquire() as c:
-                return await get_activity_daily_internal(
+                return await get_login_list_view_internal(
                     conn=c,
-                    date_from=request.date_from.date() if request.date_from else None,
-                    date_to=request.date_to.date() if request.date_to else None,
-                    page_limit=30,
-                    bypass_cache=bypass_cache,
-                )
-
-        async def fetch_summary() -> GetActivitySummaryResponse:
-            async with pool.acquire() as c:
-                return await get_activity_summary_internal(
-                    conn=c,
-                    bypass_cache=bypass_cache,
-                )
-
-        async def fetch_logins() -> GetActivityLoginsResponse:
-            async with pool.acquire() as c:
-                return await get_activity_logins_internal(
-                    conn=c,
-                    profile_id=request.profile_id,
-                    profile_ids=filter_profile_ids,
+                    profile_id_filter=request.profile_id,
                     date_from=request.date_from,
                     date_to=request.date_to,
                     bypass_cache=bypass_cache,
                 )
 
-        async def fetch_audits() -> GetActivityAuditsResponse:
+        async def fetch_audits() -> GetAuditListViewResponse:
             async with pool.acquire() as c:
-                return await get_activity_audits_internal(
+                return await get_audit_list_view_internal(
                     conn=c,
-                    profile_id=request.profile_id,
-                    profile_ids=filter_profile_ids,
                     date_from=request.date_from,
                     date_to=request.date_to,
                     bypass_cache=bypass_cache,
                 )
 
-        async def fetch_feedbacks() -> GetActivityFeedbacksResponse:
+        async def fetch_problems() -> GetProblemListViewResponse:
             async with pool.acquire() as c:
-                return await get_activity_feedbacks_internal(
+                return await get_problem_list_view_internal(
                     conn=c,
-                    profile_id=request.profile_id,
-                    profile_ids=filter_profile_ids,
+                    profile_id_filter=request.profile_id,
                     date_from=request.date_from,
                     date_to=request.date_to,
                     bypass_cache=bypass_cache,
                 )
 
-        async def fetch_problems() -> GetActivityProblemsResponse:
+        async def fetch_drafts_count() -> int:
             async with pool.acquire() as c:
-                return await get_activity_problems_internal(
-                    conn=c,
-                    profile_id=request.profile_id,
-                    profile_ids=filter_profile_ids,
-                    date_from=request.date_from,
-                    date_to=request.date_to,
-                    bypass_cache=bypass_cache,
-                )
+                return await get_drafts_count(c)
 
         (
-            session_facts_result,
-            daily_result,
-            summary_result,
+            activity_result,
+            sessions_result,
             logins_result,
             audits_result,
-            feedbacks_result,
             problems_result,
+            drafts_count,
         ) = await asyncio.gather(
-            fetch_session_facts(),
-            fetch_daily(),
-            fetch_summary(),
+            fetch_activity(),
+            fetch_sessions(),
             fetch_logins(),
             fetch_audits(),
-            fetch_feedbacks(),
             fetch_problems(),
+            fetch_drafts_count(),
         )
 
-        profile_ids: set[str] = set()
-        for item in session_facts_result.items:
-            if item.profile_id:
-                profile_ids.add(str(item.profile_id))
-        for item in logins_result.items:
-            if item.profile_id:
-                profile_ids.add(str(item.profile_id))
-        for item in audits_result.items:
-            if item.profile_id:
-                profile_ids.add(str(item.profile_id))
-        for item in feedbacks_result.items:
-            if item.profile_id:
-                profile_ids.add(str(item.profile_id))
-
-        views = ActivityViews(
-            session_facts=session_facts_result.items,
-            daily=daily_result.items,
-            summary=summary_result.summary,
-            logins=logins_result.items,
-            audits=audits_result.items,
-            feedbacks=feedbacks_result.items,
-        )
-        resources = ActivityResources(
-            profiles={pid: {} for pid in profile_ids},
-        )
-
-        # Compute flat chart_data from daily items
+        # Build chart_data from activity view (date_key + event_type + event_count)
         chart_data = [
             ActivityChartPoint(
                 date=str(item.date_key),
-                event_id=item.event_type,
+                event_id=item.event_type or "",
                 count=item.event_count,
             )
-            for item in daily_result.items
+            for item in activity_result.items
         ]
 
-        # Compute available_events by aggregating daily items by event_type
+        # Build available_events by aggregating activity items by event_type
         event_totals: dict[str, int] = defaultdict(int)
-        for item in daily_result.items:
-            event_totals[item.event_type] += item.event_count
+        for item in activity_result.items:
+            if item.event_type:
+                event_totals[item.event_type] += item.event_count
         available_events = sorted(
             [
                 ActivityAvailableEvent(
@@ -249,12 +204,31 @@ async def get_activity(
             reverse=True,
         )
 
-        # Flatten summary metrics
-        summary = summary_result.summary
-        sessions_count = summary.total_sessions if summary else 0
-        active_profiles_count = summary.total_active_profiles if summary else 0
-        logins_count = summary.total_logins if summary else 0
-        drafts_count = summary.total_drafts if summary else 0
+        # Derive header metrics from view total_counts
+        sessions_count = sessions_result.total_count
+        active_profiles_count = activity_result.total_count
+        logins_count = logins_result.total_count
+
+        # Build views container
+        views = ActivityViews(
+            sessions=sessions_result.items,
+            activity=activity_result.items,
+            logins=logins_result.items,
+            audits=audits_result.items,
+            problems=problems_result.items,
+        )
+
+        # Collect profile_ids for resources
+        profile_ids: set[str] = set()
+        for item in sessions_result.items:
+            if item.profile_id:
+                profile_ids.add(str(item.profile_id))
+        for item in logins_result.items:
+            if item.profile_id:
+                profile_ids.add(str(item.profile_id))
+        resources = ActivityResources(
+            profiles={pid: {} for pid in profile_ids},
+        )
 
         response.headers["X-Cache-Tags"] = ",".join(tags)
         return ActivityResponse(
@@ -267,7 +241,7 @@ async def get_activity(
             problems=problems_result.items,
             views=views,
             resources=resources,
-            total_count=session_facts_result.total_count,
+            total_count=sessions_result.total_count,
         )
 
     except HTTPException:

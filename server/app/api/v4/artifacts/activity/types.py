@@ -5,13 +5,11 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-from app.api.v4.views.activity.audits.types import ActivityAuditItem
-from app.api.v4.views.activity.daily.types import ActivityDailyItem
-from app.api.v4.views.activity.feedbacks.types import ActivityFeedbackItem
-from app.api.v4.views.activity.logins.types import ActivityLoginItem
-from app.api.v4.views.activity.problems.types import ActivityProblemItem
-from app.api.v4.views.activity.session_facts.types import ActivitySessionFactsItem
-from app.api.v4.views.activity.summary.types import ActivitySummaryItem
+from app.api.v4.views.activity.list.types import ActivityViewItem
+from app.api.v4.views.audit.list.types import AuditViewItem
+from app.api.v4.views.login.list.types import LoginViewItem
+from app.api.v4.views.problem.list.types import ProblemViewItem
+from app.api.v4.views.session.list.types import SessionViewItem
 
 
 class ActivityRequest(BaseModel):
@@ -29,12 +27,11 @@ class ActivityRequest(BaseModel):
 class ActivityViews(BaseModel):
     """Activity view data."""
 
-    session_facts: list[ActivitySessionFactsItem] = Field(default_factory=list)
-    daily: list[ActivityDailyItem] = Field(default_factory=list)
-    summary: ActivitySummaryItem | None = None
-    logins: list[ActivityLoginItem] = Field(default_factory=list)
-    audits: list[ActivityAuditItem] = Field(default_factory=list)
-    feedbacks: list[ActivityFeedbackItem] = Field(default_factory=list)
+    sessions: list[SessionViewItem] = Field(default_factory=list)
+    activity: list[ActivityViewItem] = Field(default_factory=list)
+    logins: list[LoginViewItem] = Field(default_factory=list)
+    audits: list[AuditViewItem] = Field(default_factory=list)
+    problems: list[ProblemViewItem] = Field(default_factory=list)
 
 
 class ActivityResources(BaseModel):
@@ -71,7 +68,7 @@ class ActivityResponse(BaseModel):
     chart_data: list[ActivityChartPoint] = Field(default_factory=list)
     available_events: list[ActivityAvailableEvent] = Field(default_factory=list)
     # Problems
-    problems: list[ActivityProblemItem] = Field(default_factory=list)
+    problems: list[ProblemViewItem] = Field(default_factory=list)
     # Keep views/resources for any other consumers
     views: ActivityViews = Field(default_factory=ActivityViews)
     resources: ActivityResources = Field(default_factory=ActivityResources)
