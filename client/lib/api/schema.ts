@@ -7815,6 +7815,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/views/analytics/profile-facts/get": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Profile Facts
+         * @description Get profile facts data from mv_profile_facts.
+         *
+         *     This endpoint fetches profile-level aggregated metrics computed from
+         *     chat-grain data for the dashboard header, leaderboard, and reports with:
+         *     - Filtering (profile, cohort, department, simulation, attempt_type, archived, date range)
+         *     - 12 profile metrics (avg_score, total_attempts, completion_pct, etc.)
+         *     - Daily trend arrays (daily_dates, daily_avg_scores, etc.)
+         *     - Sorting (avg_score, total_attempts, highest_score)
+         *     - Pagination
+         *     - Filter options (simulation_options, cohort_options, department_options)
+         *
+         *     Resource metadata (names, avatars) should be fetched separately
+         *     via internal resource handlers using the returned profile IDs.
+         */
+        post: operations["get_profile_facts_api_v4_views_analytics_profile_facts_get_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v4/views/analytics/profile-metrics/get": {
         parameters: {
             query?: never;
@@ -10101,6 +10133,29 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/socket/v4/server/resource_generation_complete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Resource Generation Complete Api
+         * @description Server-to-client event: Resource generation completed.
+         *
+         *     Emitted when a single resource is successfully generated.
+         *     Contains the hydrated resource data for immediate frontend use.
+         */
+        post: operations["resource_generation_complete_api_socket_v4_server_resource_generation_complete_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/socket/v4/server/scenario_generation_progress": {
         parameters: {
             query?: never;
@@ -10347,7 +10402,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v4/server/persona_generation_progress": {
+    "/socket/v4/server/persona_generation_started": {
         parameters: {
             query?: never;
             header?: never;
@@ -10357,12 +10412,12 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Persona Generation Progress Api
-         * @description Server-to-client event: Persona generation progress.
+         * Persona Generation Started Api
+         * @description Server-to-client event: Persona generation started.
          *
-         *     Emitted during persona resource generation to show progress.
+         *     Emitted when persona generation begins, listing resource types being generated.
          */
-        post: operations["persona_generation_progress_api_socket_v4_server_persona_generation_progress_post"];
+        post: operations["persona_generation_started_api_socket_v4_server_persona_generation_started_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -10382,8 +10437,8 @@ export interface paths {
          * Persona Generation Complete Api
          * @description Server-to-client event: Persona generation completed.
          *
-         *     Emitted when a persona resource is successfully generated.
-         *     Contains full resource objects for immediate frontend use.
+         *     Emitted when all agents have finished generating persona resources.
+         *     Contains optional persona_id if auto-save succeeded.
          */
         post: operations["persona_generation_complete_api_socket_v4_server_persona_generation_complete_post"];
         delete?: never;
@@ -14723,6 +14778,8 @@ export interface components {
             profile_id?: string | null;
             /** Cohort Id */
             cohort_id?: string | null;
+            /** Department Id */
+            department_id?: string | null;
             /** Simulation Id */
             simulation_id?: string | null;
             /** Persona Id */
@@ -19316,6 +19373,11 @@ export interface components {
              */
             cohort_ids?: string[] | null;
             /**
+             * Department Ids
+             * @description Filter by department IDs
+             */
+            department_ids?: string[] | null;
+            /**
              * Simulation Ids
              * @description Filter by simulation IDs
              */
@@ -19387,6 +19449,11 @@ export interface components {
              * @description Available cohort filter options
              */
             cohort_options?: components["schemas"]["app__api__v4__views__analytics__cohort_facts__types__FilterOption"][] | null;
+            /**
+             * Department Options
+             * @description Available department filter options
+             */
+            department_options?: components["schemas"]["app__api__v4__views__analytics__cohort_facts__types__FilterOption"][] | null;
             /**
              * Simulation Options
              * @description Available simulation filter options
@@ -21089,6 +21156,109 @@ export interface components {
             page_metadata?: components["schemas"]["PageMetadata"] | null;
         };
         /**
+         * GetProfileFactsRequest
+         * @description Request for getting profile facts with filters and pagination.
+         */
+        GetProfileFactsRequest: {
+            /**
+             * Profile Id
+             * @description Filter by profile ID
+             */
+            profile_id?: string | null;
+            /**
+             * Cohort Ids
+             * @description Filter by cohort IDs
+             */
+            cohort_ids?: string[] | null;
+            /**
+             * Department Ids
+             * @description Filter by department IDs
+             */
+            department_ids?: string[] | null;
+            /**
+             * Simulation Ids
+             * @description Filter by simulation IDs
+             */
+            simulation_ids?: string[] | null;
+            /**
+             * Attempt Type
+             * @description Filter by attempt type: 'general' | 'practice'
+             */
+            attempt_type?: string | null;
+            /**
+             * Is Archived
+             * @description Include archived attempts
+             * @default false
+             */
+            is_archived: boolean;
+            /**
+             * Date From
+             * @description Filter by date range start (inclusive)
+             */
+            date_from?: string | null;
+            /**
+             * Date To
+             * @description Filter by date range end (inclusive)
+             */
+            date_to?: string | null;
+            /**
+             * Sort By
+             * @description Sort field: 'avg_score' | 'total_attempts' | 'highest_score'
+             * @default avg_score
+             */
+            sort_by: string;
+            /**
+             * Sort Order
+             * @description Sort order: 'asc' | 'desc'
+             * @default desc
+             */
+            sort_order: string;
+            /**
+             * Page Limit
+             * @description Items per page
+             * @default 5000
+             */
+            page_limit: number;
+            /**
+             * Page Offset
+             * @description Pagination offset
+             * @default 0
+             */
+            page_offset: number;
+        };
+        /**
+         * GetProfileFactsResponse
+         * @description Response with profile-level aggregated metrics and pagination info.
+         */
+        GetProfileFactsResponse: {
+            /**
+             * Items
+             * @description Profile facts items (one per profile)
+             */
+            items?: components["schemas"]["ProfileFactsItem"][];
+            /**
+             * Total Count
+             * @description Total profile count before pagination
+             * @default 0
+             */
+            total_count: number;
+            /**
+             * Simulation Options
+             * @description Available simulation filter options
+             */
+            simulation_options?: components["schemas"]["app__api__v4__views__analytics__profile_facts__types__FilterOption"][] | null;
+            /**
+             * Cohort Options
+             * @description Available cohort filter options
+             */
+            cohort_options?: components["schemas"]["app__api__v4__views__analytics__profile_facts__types__FilterOption"][] | null;
+            /**
+             * Department Options
+             * @description Available department filter options
+             */
+            department_options?: components["schemas"]["app__api__v4__views__analytics__profile_facts__types__FilterOption"][] | null;
+        };
+        /**
          * GetProfileMetricsRequest
          * @description Request for filtering mv_profile_metrics.
          */
@@ -21394,6 +21564,11 @@ export interface components {
              */
             cohort_ids?: string[] | null;
             /**
+             * Department Ids
+             * @description Filter by department IDs
+             */
+            department_ids?: string[] | null;
+            /**
              * Simulation Ids
              * @description Filter by simulation IDs
              */
@@ -21470,6 +21645,11 @@ export interface components {
              * @description Available rubric filter options
              */
             rubric_options?: components["schemas"]["app__api__v4__views__analytics__rubric_facts__types__FilterOption"][] | null;
+            /**
+             * Department Options
+             * @description Available department filter options
+             */
+            department_options?: components["schemas"]["app__api__v4__views__analytics__rubric_facts__types__FilterOption"][] | null;
             /**
              * Simulation Options
              * @description Available simulation filter options
@@ -21984,6 +22164,11 @@ export interface components {
              */
             cohort_ids?: string[] | null;
             /**
+             * Department Ids
+             * @description Filter by department IDs
+             */
+            department_ids?: string[] | null;
+            /**
              * Simulation Ids
              * @description Filter by simulation IDs
              */
@@ -22055,6 +22240,11 @@ export interface components {
              * @default 0
              */
             total_count: number;
+            /**
+             * Department Options
+             * @description Available department filter options
+             */
+            department_options?: components["schemas"]["app__api__v4__views__analytics__simulation_facts__types__FilterOption"][] | null;
             /**
              * Simulation Options
              * @description Available simulation filter options
@@ -27016,8 +27206,9 @@ export interface components {
          * PersonaGenerationCompleteEvent
          * @description Server-to-client event: persona_generation_complete.
          *
-         *     Emitted when a persona resource generation completes successfully.
-         *     Contains full resource objects (not just IDs) for immediate frontend use.
+         *     Emitted when all agents have finished generating persona resources.
+         *     Contains optional persona_id if auto-save succeeded.
+         *     Resource-level data is now sent via resource_generation_complete events.
          */
         PersonaGenerationCompleteEvent: {
             /**
@@ -27037,20 +27228,8 @@ export interface components {
             message: string;
             /** Type */
             type?: string | null;
-            name_resource?: components["schemas"]["QGetNamesV4Item"] | null;
-            description_resource?: components["schemas"]["QGetDescriptionsV4Item"] | null;
-            color_resource?: components["schemas"]["QGetColorsV4Item"] | null;
-            icon_resource?: components["schemas"]["QGetIconsV4Item"] | null;
-            instructions_resource?: components["schemas"]["QGetInstructionsV4Item"] | null;
-            flag_resource?: components["schemas"]["QGetFlagsV4Item"] | null;
-            /** Department Resources */
-            department_resources?: components["schemas"]["QGetDepartmentsV4Item"][] | null;
-            /** Parameter Field Resources */
-            parameter_field_resources?: components["schemas"]["QGetParameterFieldsV4Item"][] | null;
-            /** Example Resources */
-            example_resources?: components["schemas"]["QGetExamplesV4Item"][] | null;
-            /** Parameter Resources */
-            parameter_resources?: components["schemas"]["QGetParametersV4Item"][] | null;
+            /** Persona Id */
+            persona_id?: string | null;
         };
         /**
          * PersonaGenerationErrorEvent
@@ -27085,43 +27264,24 @@ export interface components {
             trace_id?: string | null;
         };
         /**
-         * PersonaGenerationProgressEvent
-         * @description Server-to-client event: persona_generation_progress.
+         * PersonaGenerationStartedEvent
+         * @description Server-to-client event: persona_generation_started.
          *
-         *     Emitted during persona resource generation to show progress.
+         *     Emitted when persona generation begins, listing which resource types
+         *     will be generated.
          */
-        PersonaGenerationProgressEvent: {
+        PersonaGenerationStartedEvent: {
             /**
              * Artifact Type
              * @default persona
              */
             artifact_type: string;
             /** Group Id */
-            group_id?: string | null;
-            /** Resource Type */
-            resource_type?: string | null;
-            /** Resource Id */
-            resource_id?: string | null;
+            group_id: string;
             /** Run Id */
-            run_id?: string | null;
-            /** Modality */
-            modality?: string | null;
-            /** Type */
-            type?: string | null;
-            /** Event Type */
-            event_type?: string | null;
-            /** Tool Call Id */
-            tool_call_id?: string | null;
-            /** Tool Name */
-            tool_name?: string | null;
-            /** Arguments */
-            arguments?: {
-                [key: string]: unknown;
-            } | null;
-            /** Arguments Delta */
-            arguments_delta?: string | null;
-            /** Trace Id */
-            trace_id?: string | null;
+            run_id: string;
+            /** Resource Types */
+            resource_types: string[];
         };
         /** PersonaIconSection */
         PersonaIconSection: {
@@ -28061,6 +28221,63 @@ export interface components {
             current?: components["schemas"]["QGetEmailsV4Item"][] | null;
             /** Resources */
             resources?: components["schemas"]["QGetEmailsV4Item"][] | null;
+        };
+        /**
+         * ProfileFactsItem
+         * @description Profile-level aggregated metrics from mv_profile_facts.
+         *
+         *     The query function filters at chat grain then GROUP BY profile_id
+         *     to produce these 12 metrics + daily trend arrays.
+         */
+        ProfileFactsItem: {
+            /**
+             * Profile Id
+             * Format: uuid
+             */
+            profile_id: string;
+            /**
+             * Total Attempts
+             * @default 0
+             */
+            total_attempts: number;
+            /** Avg Score */
+            avg_score?: number | null;
+            /** Highest Score */
+            highest_score?: number | null;
+            /** Completion Pct */
+            completion_pct?: number | null;
+            /** First Attempt Pass Rate */
+            first_attempt_pass_rate?: number | null;
+            /** Avg Messages Per Session */
+            avg_messages_per_session?: number | null;
+            /** Avg Persona Response Sec */
+            avg_persona_response_sec?: number | null;
+            /** Session Efficiency */
+            session_efficiency?: number | null;
+            /** Total Time Minutes */
+            total_time_minutes?: number | null;
+            /**
+             * Improvement Rate
+             * @default 0
+             */
+            improvement_rate: number;
+            /**
+             * Perfect Score Count
+             * @default 0
+             */
+            perfect_score_count: number;
+            /** Quickest Pass Minutes */
+            quickest_pass_minutes?: number | null;
+            /** Daily Dates */
+            daily_dates?: string[];
+            /** Daily Avg Scores */
+            daily_avg_scores?: (number | null)[];
+            /** Daily Attempt Counts */
+            daily_attempt_counts?: number[];
+            /** Daily Completed Counts */
+            daily_completed_counts?: number[];
+            /** Daily Time Minutes */
+            daily_time_minutes?: (number | null)[];
         };
         /**
          * ProfileFlagConfig
@@ -30760,6 +30977,34 @@ export interface components {
             updated_at: string;
         };
         /**
+         * ResourceGenerationCompleteEvent
+         * @description Server-to-client event: resource_generation_complete.
+         *
+         *     Emitted when a single resource finishes generating.
+         *     Contains the hydrated resource data for immediate frontend use.
+         */
+        ResourceGenerationCompleteEvent: {
+            /** Artifact Type */
+            artifact_type: string;
+            /** Resource Type */
+            resource_type: string;
+            /** Resource Id */
+            resource_id: string;
+            /** Group Id */
+            group_id: string;
+            /** Run Id */
+            run_id?: string | null;
+            /** Success */
+            success: boolean;
+            /**
+             * Resource Data
+             * @default {}
+             */
+            resource_data: {
+                [key: string]: unknown;
+            };
+        };
+        /**
          * ResponseItem
          * @description Quiz response item (no response_id - not a resource).
          */
@@ -30899,6 +31144,8 @@ export interface components {
             profile_id?: string | null;
             /** Cohort Id */
             cohort_id?: string | null;
+            /** Department Id */
+            department_id?: string | null;
             /** Attempt Date */
             attempt_date?: string | null;
             /** Attempt Type */
@@ -35967,6 +36214,8 @@ export interface components {
             profile_id?: string | null;
             /** Cohort Id */
             cohort_id?: string | null;
+            /** Department Id */
+            department_id?: string | null;
             /** Grade Percent */
             grade_percent?: number | null;
             /** Passed */
@@ -38344,6 +38593,21 @@ export interface components {
          * @description Filter option for dropdowns.
          */
         app__api__v4__views__analytics__cohort_facts__types__FilterOption: {
+            /** Value */
+            value: string;
+            /** Label */
+            label: string;
+            /**
+             * Count
+             * @default 0
+             */
+            count: number;
+        };
+        /**
+         * FilterOption
+         * @description Filter option for dropdowns.
+         */
+        app__api__v4__views__analytics__profile_facts__types__FilterOption: {
             /** Value */
             value: string;
             /** Label */
@@ -53003,6 +53267,43 @@ export interface operations {
             };
         };
     };
+    get_profile_facts_api_v4_views_analytics_profile_facts_get_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GetProfileFactsRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetProfileFactsResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_profile_metrics_api_v4_views_analytics_profile_metrics_get_post: {
         parameters: {
             query?: never;
@@ -57000,6 +57301,41 @@ export interface operations {
             };
         };
     };
+    resource_generation_complete_api_socket_v4_server_resource_generation_complete_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ResourceGenerationCompleteEvent"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     scenario_generation_progress_api_socket_v4_server_scenario_generation_progress_post: {
         parameters: {
             query?: never;
@@ -57438,7 +57774,7 @@ export interface operations {
             };
         };
     };
-    persona_generation_progress_api_socket_v4_server_persona_generation_progress_post: {
+    persona_generation_started_api_socket_v4_server_persona_generation_started_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -57447,7 +57783,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["PersonaGenerationProgressEvent"];
+                "application/json": components["schemas"]["PersonaGenerationStartedEvent"];
             };
         };
         responses: {

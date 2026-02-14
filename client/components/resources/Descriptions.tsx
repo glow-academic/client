@@ -17,6 +17,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useSocket } from "@/contexts/socket-context";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 import { Check, Loader2, Sparkles, X } from "lucide-react";
@@ -190,6 +191,7 @@ export interface DescriptionsProps {
   aiResource?: { id?: string | null; description?: string | null } | null | undefined;
   onAccept?: () => void;
   onReject?: () => void;
+  onGenerationComplete?: () => void;
 }
 
 export function Descriptions({
@@ -225,6 +227,7 @@ export function Descriptions({
   aiResource,
   onAccept,
   onReject,
+  onGenerationComplete,
 }: DescriptionsProps) {
   // Use standardized props with fallback to legacy props
   const resource = description_resource ?? descriptionResource ?? null;

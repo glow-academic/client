@@ -23,11 +23,15 @@ from app.api.v4.resources.prompts.get import get_prompts_internal
 from app.api.v4.views.config.get import get_config_internal
 from app.infra.v4.generation import convert_tools_to_dict, render_developer_instructions
 from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
+from app.infra.v4.websocket.generation_tracker import init_generation
 from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.infra.v4.websocket.typed_emit import emit_to_internal
 from app.main import get_internal_sio, get_pool, sio
 from app.socket.v4.artifacts.persona.types import GeneratePersonaPayload
-from app.socket.v4.artifacts.types import GenerateErrorApiRequest
+from app.socket.v4.artifacts.types import (
+    GenerateErrorApiRequest,
+    PersonaGenerationStartedEvent,
+)
 from app.sql.types import (
     GetAgentToolsSqlParams,
     GetAgentToolsSqlRow,
@@ -162,14 +166,28 @@ async def _persona_generate_impl(
             draft_id=data.draft_id,
         )
 
-        # Get agent_id from the first resource type that has an agent assigned
+        # Group resource_types by agent_id for multi-agent dispatch
         resource_agent_ids = result.resource_agent_ids or {}
-        agent_id: uuid.UUID | None = None
+
+        # Build agent_groups: {agent_id: [resource_types]}
+        agent_groups: dict[uuid.UUID, list[str]] = {}
         for rt in resource_types:
             aid = resource_agent_ids.get(rt)
             if aid is not None:
-                agent_id = aid
-                break
+                agent_groups.setdefault(aid, []).append(rt)
+
+        # Fallback: if no agent found for any resource type, pick first available
+        if not agent_groups:
+            # Try to find any agent_id from all available mappings
+            for rt, aid in resource_agent_ids.items():
+                if aid is not None:
+                    agent_groups[aid] = resource_types
+                    break
+
+        # Use first agent_id for validation (all share same config chain)
+        agent_id: uuid.UUID | None = (
+            next(iter(agent_groups)) if agent_groups else None
+        )
 
         if not agent_id:
             await emit_to_internal(
@@ -482,32 +500,55 @@ async def _persona_generate_impl(
                         False,
                     )
 
-            # Step 9: Emit simplified payload to generate_artifact handler
-            await internal_sio.emit(
-                "generate_artifact",
+            # Step 9: Initialize generation tracker for multi-agent support
+            num_agents = len(agent_groups)
+            await init_generation(str(run_id), num_agents)
+
+            # Emit persona_generation_started to client
+            await sio.emit(
+                "persona_generation_started",
                 {
-                    "sid": sid,
                     "artifact_type": "persona",
-                    "resource_type": resource_types[0] if resource_types else "persona",
+                    "group_id": str(group_id) if group_id else "",
                     "run_id": str(run_id),
-                    "group_id": str(group_id) if group_id else None,
-                    "message_id": None,
-                    "messages": messages,
-                    "llm_config": {
-                        "model": model_name,
-                        "api_key": api_key,
-                        "base_url": base_url,
-                        "temperature": temperature,
-                        "reasoning": reasoning,
-                        "provider": provider_name,
-                        "voice": voice,
-                        "quality": quality,
-                        "length_seconds": None,
-                        "tool_choice": "required",
-                    },
-                    "tools": convert_tools_to_dict(tools),
+                    "resource_types": resource_types,
                 },
+                room=sid,
             )
+
+            # Step 10: Dispatch to generate_artifact handler(s)
+            # For multi-agent: each agent group gets its own emit with agent-specific tools
+            # For single-agent (most common): one emit with all resource types
+            for agent_group_id, agent_resource_types in agent_groups.items():
+                # For now, all agent groups share the same tools/messages/config
+                # since tools are already filtered by resource_types in SQL
+                await internal_sio.emit(
+                    "generate_artifact",
+                    {
+                        "sid": sid,
+                        "artifact_type": "persona",
+                        "resource_type": agent_resource_types[0]
+                        if agent_resource_types
+                        else "persona",
+                        "run_id": str(run_id),
+                        "group_id": str(group_id) if group_id else None,
+                        "message_id": None,
+                        "messages": messages,
+                        "llm_config": {
+                            "model": model_name,
+                            "api_key": api_key,
+                            "base_url": base_url,
+                            "temperature": temperature,
+                            "reasoning": reasoning,
+                            "provider": provider_name,
+                            "voice": voice,
+                            "quality": quality,
+                            "length_seconds": None,
+                            "tool_choice": "required",
+                        },
+                        "tools": convert_tools_to_dict(tools),
+                    },
+                )
 
     except Exception as e:
         logger.exception(f"Failed to generate persona resources: {str(e)}")
@@ -597,3 +638,19 @@ async def persona_generate_internal(data: dict[str, Any]) -> None:
             ),
             sid=sid,
         )
+
+
+# =============================================================================
+# FastAPI endpoint for OpenAPI documentation
+# =============================================================================
+
+
+@server_router.post("/persona_generation_started")
+async def persona_generation_started_api(
+    request: PersonaGenerationStartedEvent,
+) -> dict[str, bool]:
+    """Server-to-client event: Persona generation started.
+
+    Emitted when persona generation begins, listing resource types being generated.
+    """
+    return {"success": True}

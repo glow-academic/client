@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "GLOW API",
-    "description": "Auto-generated OpenAPI schema from FastAPI v4 API",
+    "description": "Auto-generated OpenAPI schema",
     "version": "0.1.0"
   },
   "paths": {
@@ -97,12 +97,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "personas"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/personas/list": {
@@ -196,12 +191,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "personas"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/personas/save": {
@@ -295,12 +285,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "personas"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/personas/duplicate": {
@@ -394,12 +379,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "personas"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/personas/delete": {
@@ -493,12 +473,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "personas"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/personas/draft": {
@@ -592,12 +567,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "personas"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/personas/docs": {
@@ -690,12 +660,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "personas"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/scenarios/get": {
@@ -789,12 +754,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "scenarios"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/scenarios/list": {
@@ -888,12 +848,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "scenarios"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/scenarios/save": {
@@ -987,12 +942,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "scenarios"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/scenarios/duplicate": {
@@ -1086,12 +1036,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "scenarios"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/scenarios/delete": {
@@ -1185,12 +1130,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "scenarios"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/scenarios/draft": {
@@ -1284,12 +1224,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "scenarios"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/scenarios/docs": {
@@ -1382,12 +1317,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "scenarios"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/simulations/get": {
@@ -1481,12 +1411,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "simulations"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/simulations/list": {
@@ -1580,12 +1505,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "simulations"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/simulations/save": {
@@ -1679,12 +1599,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "simulations"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/simulations/duplicate": {
@@ -1778,12 +1693,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "simulations"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/simulations/delete": {
@@ -1877,12 +1787,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "simulations"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/simulations/draft": {
@@ -1976,12 +1881,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "simulations"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/simulations/docs": {
@@ -2074,12 +1974,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "simulations"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/documents/list": {
@@ -2173,12 +2068,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "documents"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/documents/get": {
@@ -2272,12 +2162,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "documents"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/documents/save": {
@@ -2371,12 +2256,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "documents"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/documents/duplicate": {
@@ -2470,12 +2350,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "documents"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/documents/delete": {
@@ -2569,12 +2444,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "documents"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/documents/draft": {
@@ -2668,12 +2538,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "documents"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/documents/bulk/process": {
@@ -2769,14 +2634,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "documents",
-          "documents",
-          "bulk"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/documents/bulk/search": {
@@ -2872,14 +2730,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "documents",
-          "documents",
-          "bulk"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/documents/bulk/save": {
@@ -2975,14 +2826,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "documents",
-          "documents",
-          "bulk"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/documents/bulk/delete": {
@@ -3078,14 +2922,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "documents",
-          "documents",
-          "bulk"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/documents/docs": {
@@ -3178,12 +3015,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "documents"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/departments/get": {
@@ -3277,12 +3109,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "departments"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/departments/list": {
@@ -3376,12 +3203,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "departments"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/departments/save": {
@@ -3475,12 +3297,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "departments"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/departments/duplicate": {
@@ -3574,12 +3391,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "departments"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/departments/delete": {
@@ -3673,12 +3485,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "departments"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/departments/draft": {
@@ -3772,12 +3579,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "departments"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/departments/docs": {
@@ -3870,12 +3672,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "departments"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/cohorts/list": {
@@ -3969,12 +3766,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "cohorts"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/cohorts/get": {
@@ -4068,12 +3860,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "cohorts"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/cohorts/save": {
@@ -4167,12 +3954,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "cohorts"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/cohorts/duplicate": {
@@ -4266,12 +4048,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "cohorts"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/cohorts/delete": {
@@ -4365,12 +4142,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "cohorts"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/cohorts/draft": {
@@ -4464,12 +4236,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "cohorts"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/cohorts/docs": {
@@ -4562,12 +4329,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "cohorts"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/evals/list": {
@@ -4661,12 +4423,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "evals"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/evals/get": {
@@ -4760,12 +4517,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "evals"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/evals/save": {
@@ -4859,12 +4611,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "evals"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/evals/duplicate": {
@@ -4958,12 +4705,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "evals"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/evals/delete": {
@@ -5057,12 +4799,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "evals"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/evals/draft": {
@@ -5156,12 +4893,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "evals"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/evals/docs": {
@@ -5254,12 +4986,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "evals"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/rubrics/get": {
@@ -5353,12 +5080,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "rubrics"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/rubrics/list": {
@@ -5452,12 +5174,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "rubrics"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/rubrics/save": {
@@ -5551,12 +5268,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "rubrics"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/rubrics/duplicate": {
@@ -5650,12 +5362,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "rubrics"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/rubrics/delete": {
@@ -5749,12 +5456,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "rubrics"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/rubrics/draft": {
@@ -5848,12 +5550,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "rubrics"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/rubrics/docs": {
@@ -5946,12 +5643,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "rubrics"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/settings/list": {
@@ -6045,12 +5737,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "settings"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/settings/get": {
@@ -6144,12 +5831,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "settings"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/settings/save": {
@@ -6243,12 +5925,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "settings"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/settings/duplicate": {
@@ -6342,12 +6019,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "settings"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/settings/delete": {
@@ -6441,12 +6113,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "settings"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/settings/draft": {
@@ -6540,12 +6207,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "settings"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/settings/docs": {
@@ -6638,12 +6300,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "settings"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/agents/get": {
@@ -6737,12 +6394,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "agents"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/agents/list": {
@@ -6836,12 +6488,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "agents"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/agents/save": {
@@ -6935,12 +6582,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "agents"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/agents/duplicate": {
@@ -7034,12 +6676,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "agents"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/agents/delete": {
@@ -7133,12 +6770,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "agents"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/agents/draft": {
@@ -7232,12 +6864,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "agents"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/agents/docs": {
@@ -7330,12 +6957,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "agents"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/models/get": {
@@ -7429,12 +7051,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "models"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/models/list": {
@@ -7528,12 +7145,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "models"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/models/save": {
@@ -7627,12 +7239,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "models"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/models/duplicate": {
@@ -7726,12 +7333,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "models"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/models/delete": {
@@ -7825,12 +7427,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "models"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/models/draft": {
@@ -7924,12 +7521,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "models"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/models/docs": {
@@ -8022,12 +7614,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "models"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/providers/list": {
@@ -8121,12 +7708,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "providers"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/providers/get": {
@@ -8220,12 +7802,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "providers"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/providers/save": {
@@ -8319,12 +7896,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "providers"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/providers/duplicate": {
@@ -8418,12 +7990,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "providers"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/providers/delete": {
@@ -8517,12 +8084,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "providers"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/providers/draft": {
@@ -8616,12 +8178,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "providers"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/providers/docs": {
@@ -8714,12 +8271,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "providers"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/parameters/get": {
@@ -8813,12 +8365,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "parameters"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/parameters/list": {
@@ -8912,12 +8459,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "parameters"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/parameters/save": {
@@ -9011,12 +8553,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "parameters"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/parameters/duplicate": {
@@ -9110,12 +8647,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "parameters"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/parameters/delete": {
@@ -9209,12 +8741,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "parameters"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/parameters/draft": {
@@ -9308,12 +8835,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "parameters"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/parameters/docs": {
@@ -9406,12 +8928,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "parameters"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/fields/get": {
@@ -9504,12 +9021,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "fields"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/fields/list": {
@@ -9603,12 +9115,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "fields"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/fields/save": {
@@ -9702,12 +9209,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "fields"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/fields/duplicate": {
@@ -9801,12 +9303,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "fields"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/fields/delete": {
@@ -9900,12 +9397,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "fields"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/fields/draft": {
@@ -9999,12 +9491,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "fields"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/fields/docs": {
@@ -10097,12 +9584,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "fields"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/profiles/get": {
@@ -10196,12 +9678,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "profiles"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/profiles/list": {
@@ -10295,12 +9772,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "profiles"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/profiles/save": {
@@ -10394,12 +9866,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "profiles"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/profiles/duplicate": {
@@ -10493,12 +9960,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "profiles"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/profiles/draft": {
@@ -10592,12 +10054,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "profiles"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/profiles/delete": {
@@ -10691,12 +10148,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "profiles"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/profiles/bulk/process": {
@@ -10792,14 +10244,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "profiles",
-          "profiles",
-          "bulk"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/profiles/bulk/search": {
@@ -10895,14 +10340,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "profiles",
-          "profiles",
-          "bulk"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/profiles/bulk/save": {
@@ -10998,14 +10436,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "profiles",
-          "profiles",
-          "bulk"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/profiles/bulk/delete": {
@@ -11101,14 +10532,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "profiles",
-          "profiles",
-          "bulk"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/profiles/docs": {
@@ -11201,12 +10625,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "profiles"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/auths/get": {
@@ -11300,12 +10719,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "auths"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/auths/list": {
@@ -11399,12 +10813,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "auths"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/auths/save": {
@@ -11498,12 +10907,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "auths"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/auths/duplicate": {
@@ -11597,12 +11001,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "auths"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/auths/delete": {
@@ -11696,12 +11095,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "auths"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/auths/draft": {
@@ -11795,12 +11189,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "auths"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/auths/docs": {
@@ -11893,12 +11282,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "auths"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/tools/list": {
@@ -11992,12 +11376,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "tools"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/tools/get": {
@@ -12091,12 +11470,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "tools"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/tools/save": {
@@ -12190,12 +11564,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "tools"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/tools/duplicate": {
@@ -12289,12 +11658,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "tools"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/tools/delete": {
@@ -12388,12 +11752,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "tools"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/tools/draft": {
@@ -12487,12 +11846,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "tools"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/tools/docs": {
@@ -12585,12 +11939,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "tools"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/group/get": {
@@ -12685,13 +12034,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "artifacts",
-          "group"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/group/list": {
@@ -12786,13 +12129,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "artifacts",
-          "group"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/group/docs": {
@@ -12878,13 +12215,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "artifacts",
-          "group"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/session/get": {
@@ -12979,13 +12310,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "artifacts",
-          "session"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/session/list": {
@@ -13080,13 +12405,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "artifacts",
-          "session"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/session/docs": {
@@ -13172,13 +12491,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "artifacts",
-          "session"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/training/get": {
@@ -13273,13 +12586,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "artifacts",
-          "training"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/training/bundle/get": {
@@ -13374,13 +12681,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "artifacts",
-          "training"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/training/draft": {
@@ -13475,13 +12776,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "artifacts",
-          "training"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/training/refresh": {
@@ -13576,13 +12871,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "artifacts",
-          "training"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/training/docs": {
@@ -13676,13 +12965,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "artifacts",
-          "training"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/attempt/get": {
@@ -13777,13 +13060,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "artifacts",
-          "attempt"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/attempt/list": {
@@ -13878,13 +13155,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "artifacts",
-          "attempt"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/attempt/create": {
@@ -13979,13 +13250,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "artifacts",
-          "attempt"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/attempt/archive": {
@@ -14080,13 +13345,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "artifacts",
-          "attempt"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/attempt/certificate": {
@@ -14179,13 +13438,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "artifacts",
-          "attempt"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/attempt/docs": {
@@ -14279,13 +13532,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "artifacts",
-          "attempt"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/dashboard/get": {
@@ -14379,12 +13626,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "dashboard"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/dashboard/header": {
@@ -14478,12 +13720,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "dashboard"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/dashboard/primary": {
@@ -14577,12 +13814,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "dashboard"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/dashboard/secondary": {
@@ -14676,12 +13908,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "dashboard"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/dashboard/footer": {
@@ -14775,12 +14002,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "dashboard"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/dashboard/refresh": {
@@ -14874,12 +14096,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "dashboard"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/dashboard/docs": {
@@ -14972,12 +14189,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "dashboard"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/reports/export": {
@@ -15070,13 +14282,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "reports",
-          "reports"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/reports/get": {
@@ -15170,12 +14376,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "reports"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/reports/refresh": {
@@ -15269,12 +14470,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "reports"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/reports/docs": {
@@ -15367,12 +14563,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "reports"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/leaderboard/get": {
@@ -15466,12 +14657,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "leaderboard"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/leaderboard/refresh": {
@@ -15565,12 +14751,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "leaderboard"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/leaderboard/docs": {
@@ -15663,12 +14844,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "leaderboard"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/pricing/get": {
@@ -15762,12 +14938,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "pricing"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/pricing/refresh": {
@@ -15861,12 +15032,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "pricing"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/pricing/docs": {
@@ -15959,12 +15125,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "pricing"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/activity/get": {
@@ -16058,12 +15219,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "activity"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/activity/problem": {
@@ -16158,13 +15314,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "activity",
-          "activity"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/activity/refresh": {
@@ -16258,12 +15408,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "activity"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/activity/resolve": {
@@ -16358,13 +15503,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "activity",
-          "activity"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/activity/docs": {
@@ -16457,12 +15596,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "activity"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/health/get": {
@@ -16556,12 +15690,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "health"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/health/refresh": {
@@ -16655,12 +15784,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "health"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/health/docs": {
@@ -16745,12 +15869,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "health"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/benchmark/get": {
@@ -16844,12 +15963,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "benchmark"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/benchmark/refresh": {
@@ -16943,12 +16057,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "benchmark"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/benchmark/docs": {
@@ -17041,12 +16150,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "benchmark"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/benchmark/bundle/get": {
@@ -17140,12 +16244,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "benchmark"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/test/get": {
@@ -17240,13 +16339,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "artifacts",
-          "test"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/test/list": {
@@ -17341,13 +16434,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "artifacts",
-          "test"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/test/archive": {
@@ -17442,13 +16529,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "artifacts",
-          "test"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/test/docs": {
@@ -17534,13 +16615,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "artifacts",
-          "test"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/test/create": {
@@ -17635,13 +16710,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "artifacts",
-          "test"
-        ]
+        }
       }
     },
     "/api/v4/resources/agents/get": {
@@ -17734,11 +16803,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/agents/search": {
@@ -17831,11 +16896,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/args": {
@@ -17928,11 +16989,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/args/get": {
@@ -18025,11 +17082,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/args/search": {
@@ -18122,11 +17175,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/arg_positions": {
@@ -18219,11 +17268,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/arg_positions/get": {
@@ -18316,11 +17361,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/arg_positions/search": {
@@ -18413,11 +17454,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/args_outputs": {
@@ -18510,11 +17547,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/args_outputs/get": {
@@ -18607,11 +17640,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/args_outputs/search": {
@@ -18704,11 +17733,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/auth_item_keys": {
@@ -18801,11 +17826,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/auth_item_keys/get": {
@@ -18898,11 +17919,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/auth_item_keys/search": {
@@ -18994,11 +18011,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/auths/get": {
@@ -19091,11 +18104,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/auths/search": {
@@ -19188,11 +18197,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/bindings/get": {
@@ -19285,11 +18290,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/bindings/search": {
@@ -19382,11 +18383,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/cohorts/get": {
@@ -19479,11 +18476,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/cohorts/search": {
@@ -19576,11 +18569,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/colors": {
@@ -19673,11 +18662,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/colors/get": {
@@ -19770,11 +18755,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/colors/search": {
@@ -19866,11 +18847,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/conditional_parameters/get": {
@@ -19963,11 +18940,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/conditional_parameters/search": {
@@ -20060,11 +19033,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/departments/get": {
@@ -20157,11 +19126,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/departments/search": {
@@ -20253,11 +19218,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/descriptions": {
@@ -20350,11 +19311,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/descriptions/get": {
@@ -20447,11 +19404,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/descriptions/search": {
@@ -20543,11 +19496,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/domains/get": {
@@ -20640,11 +19589,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/domains/search": {
@@ -20736,11 +19681,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/documents/get": {
@@ -20833,11 +19774,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/documents/search": {
@@ -20929,11 +19866,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/emails": {
@@ -21026,11 +19959,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/emails/get": {
@@ -21123,11 +20052,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/emails/search": {
@@ -21220,11 +20145,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/endpoints": {
@@ -21317,11 +20238,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/endpoints/get": {
@@ -21414,11 +20331,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/endpoints/search": {
@@ -21511,11 +20424,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/evals/get": {
@@ -21608,11 +20517,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/evals/search": {
@@ -21704,11 +20609,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/examples": {
@@ -21801,11 +20702,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/examples/get": {
@@ -21898,11 +20795,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/examples/search": {
@@ -21994,11 +20887,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/fields/get": {
@@ -22091,11 +20980,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/fields/search": {
@@ -22187,11 +21072,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/parameter_fields": {
@@ -22284,11 +21165,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/parameter_fields/get": {
@@ -22381,11 +21258,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/parameter_fields/search": {
@@ -22478,11 +21351,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/flags/get": {
@@ -22575,11 +21444,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/flags/search": {
@@ -22671,11 +21536,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/group_positions": {
@@ -22768,11 +21629,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/group_positions/get": {
@@ -22865,11 +21722,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/group_positions/search": {
@@ -22962,11 +21815,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/group_rubrics": {
@@ -23059,11 +21908,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/group_rubrics/get": {
@@ -23156,11 +22001,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/group_rubrics/search": {
@@ -23253,11 +22094,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/groups/get": {
@@ -23350,11 +22187,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/groups/search": {
@@ -23446,11 +22279,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/icons/get": {
@@ -23543,11 +22372,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/icons/search": {
@@ -23639,11 +22464,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/images": {
@@ -23736,11 +22557,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/images/get": {
@@ -23833,11 +22650,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/images/search": {
@@ -23929,11 +22742,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/instructions": {
@@ -24026,11 +22835,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/instructions/get": {
@@ -24123,11 +22928,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/instructions/search": {
@@ -24219,11 +23020,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/items": {
@@ -24316,11 +23113,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/items/get": {
@@ -24413,11 +23206,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/items/search": {
@@ -24510,11 +23299,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/keys": {
@@ -24607,11 +23392,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/keys/decrypt": {
@@ -24704,11 +23485,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/keys/get": {
@@ -24801,11 +23578,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/keys/search": {
@@ -24898,11 +23671,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/provider_keys": {
@@ -24995,11 +23764,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/provider_keys/get": {
@@ -25092,11 +23857,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/provider_keys/search": {
@@ -25188,11 +23949,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/modalities/get": {
@@ -25285,11 +24042,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/modalities/search": {
@@ -25382,11 +24135,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/models/get": {
@@ -25479,11 +24228,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/models/search": {
@@ -25576,11 +24321,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/names": {
@@ -25673,11 +24414,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/names/get": {
@@ -25770,11 +24507,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/names/search": {
@@ -25867,11 +24600,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/objectives": {
@@ -25964,11 +24693,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/objectives/get": {
@@ -26061,11 +24786,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/objectives/search": {
@@ -26158,11 +24879,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/options": {
@@ -26255,11 +24972,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/options/get": {
@@ -26352,11 +25065,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/options/search": {
@@ -26449,11 +25158,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/parameters/get": {
@@ -26546,11 +25251,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/parameters/search": {
@@ -26642,11 +25343,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/personas/get": {
@@ -26739,11 +25436,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/personas/search": {
@@ -26835,11 +25528,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/points": {
@@ -26932,11 +25621,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/points/get": {
@@ -27029,11 +25714,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/points/search": {
@@ -27126,11 +25807,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/pricing": {
@@ -27223,11 +25900,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/pricing/get": {
@@ -27320,11 +25993,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/pricing/search": {
@@ -27417,11 +26086,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/problem_statements": {
@@ -27514,11 +26179,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/problem_statements/get": {
@@ -27611,11 +26272,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/profiles/get": {
@@ -27708,11 +26365,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/profiles/search": {
@@ -27805,11 +26458,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/prompts": {
@@ -27902,11 +26551,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/prompts/get": {
@@ -27999,11 +26644,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/prompts/search": {
@@ -28096,11 +26737,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/protocols": {
@@ -28193,11 +26830,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/protocols/get": {
@@ -28290,11 +26923,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/protocols/search": {
@@ -28386,11 +27015,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/providers/get": {
@@ -28483,11 +27108,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/providers/search": {
@@ -28580,11 +27201,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/qualities/get": {
@@ -28677,11 +27294,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/qualities/search": {
@@ -28774,11 +27387,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/questions": {
@@ -28871,11 +27480,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/questions/get": {
@@ -28968,11 +27573,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/reasoning_levels/get": {
@@ -29065,11 +27666,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/reasoning_levels/search": {
@@ -29162,11 +27759,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/request_limits": {
@@ -29259,11 +27852,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/request_limits/get": {
@@ -29356,11 +27945,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/request_limits/search": {
@@ -29453,11 +28038,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/roles/get": {
@@ -29550,11 +28131,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/roles/search": {
@@ -29647,11 +28224,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/routes/get": {
@@ -29744,11 +28317,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/routes/search": {
@@ -29841,11 +28410,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/rubrics/get": {
@@ -29938,11 +28503,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/rubrics/search": {
@@ -30035,11 +28596,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/run_positions": {
@@ -30132,11 +28689,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/run_positions/get": {
@@ -30229,11 +28782,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/run_positions/search": {
@@ -30326,11 +28875,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/run_rubrics": {
@@ -30423,11 +28968,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/run_rubrics/get": {
@@ -30520,11 +29061,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/run_rubrics/search": {
@@ -30617,11 +29154,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/runs/get": {
@@ -30714,11 +29247,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/runs/search": {
@@ -30811,11 +29340,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/scenario_flags/get": {
@@ -30908,11 +29433,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/scenario_flags/search": {
@@ -31005,11 +29526,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/role_routes": {
@@ -31102,11 +29619,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/role_routes/get": {
@@ -31199,11 +29712,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/role_routes/search": {
@@ -31296,11 +29805,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/scenario_personas": {
@@ -31393,11 +29898,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/scenario_personas/get": {
@@ -31490,11 +29991,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/scenario_personas/search": {
@@ -31587,11 +30084,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/scenario_positions": {
@@ -31684,11 +30177,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/scenario_positions/get": {
@@ -31781,11 +30270,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/scenario_positions/search": {
@@ -31878,11 +30363,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/scenario_rubrics": {
@@ -31975,11 +30456,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/scenario_rubrics/get": {
@@ -32072,11 +30549,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/scenario_rubrics/search": {
@@ -32169,11 +30642,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/scenario_time_limits": {
@@ -32266,11 +30735,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/scenario_time_limits/get": {
@@ -32363,11 +30828,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/scenario_time_limits/search": {
@@ -32460,11 +30921,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/scenarios/get": {
@@ -32557,11 +31014,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/scenarios/search": {
@@ -32654,11 +31107,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/settings/get": {
@@ -32751,11 +31200,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/settings/search": {
@@ -32848,11 +31293,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/simulation_positions": {
@@ -32945,11 +31386,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/simulation_positions/get": {
@@ -33042,11 +31479,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/simulation_positions/search": {
@@ -33139,11 +31572,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/simulations/get": {
@@ -33236,11 +31665,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/simulations/search": {
@@ -33333,11 +31758,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/slugs": {
@@ -33430,11 +31851,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/slugs/get": {
@@ -33527,11 +31944,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/slugs/search": {
@@ -33623,11 +32036,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/standard_groups": {
@@ -33720,11 +32129,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/standard_groups/get": {
@@ -33817,11 +32222,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/standard_groups/search": {
@@ -33914,11 +32315,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/standards/get": {
@@ -34011,11 +32408,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/standards/search": {
@@ -34108,11 +32501,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/temperature_levels/get": {
@@ -34205,11 +32594,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/temperature_levels/search": {
@@ -34302,11 +32687,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/thresholds/get": {
@@ -34399,11 +32780,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/thresholds/search": {
@@ -34496,11 +32873,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/tools/get": {
@@ -34593,11 +32966,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/tools/search": {
@@ -34690,11 +33059,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/values": {
@@ -34787,11 +33152,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/values/get": {
@@ -34884,11 +33245,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/values/search": {
@@ -34980,11 +33337,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/videos": {
@@ -35077,11 +33430,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/videos/get": {
@@ -35174,11 +33523,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/voices": {
@@ -35271,11 +33616,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/voices/get": {
@@ -35368,11 +33709,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/voices/search": {
@@ -35465,11 +33802,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/texts": {
@@ -35562,11 +33895,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/texts/get": {
@@ -35659,11 +33988,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/texts/search": {
@@ -35755,11 +34080,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/uploads": {
@@ -35852,11 +34173,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/uploads/download/{upload_id}": {
@@ -35958,11 +34275,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/uploads/get": {
@@ -36055,11 +34368,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/uploads/search": {
@@ -36152,11 +34461,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/uploads/upload": {
@@ -36237,11 +34542,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       },
       "post": {
         "tags": [
@@ -36320,11 +34621,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/uploads/upload/{upload_id}": {
@@ -36414,11 +34711,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       },
       "head": {
         "tags": [
@@ -36506,11 +34799,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       },
       "patch": {
         "tags": [
@@ -36598,11 +34887,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/uploads/upload/{upload_id}/finalize": {
@@ -36694,11 +34979,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/views/attempt/list/get": {
@@ -36796,16 +35077,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "views",
-          "views",
-          "attempt",
-          "views",
-          "attempt",
-          "list"
-        ]
+        }
       }
     },
     "/api/v4/views/attempt/list/refresh": {
@@ -36893,16 +35165,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "views",
-          "views",
-          "attempt",
-          "views",
-          "attempt",
-          "list"
-        ]
+        }
       }
     },
     "/api/v4/views/attempt/list/recreate": {
@@ -36990,16 +35253,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "views",
-          "views",
-          "attempt",
-          "views",
-          "attempt",
-          "list"
-        ]
+        }
       }
     },
     "/api/v4/views/attempt/chats/get": {
@@ -37097,16 +35351,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "views",
-          "views",
-          "attempt",
-          "views",
-          "attempt",
-          "chats"
-        ]
+        }
       }
     },
     "/api/v4/views/attempt/chats/refresh": {
@@ -37194,16 +35439,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "views",
-          "views",
-          "attempt",
-          "views",
-          "attempt",
-          "chats"
-        ]
+        }
       }
     },
     "/api/v4/views/attempt/chats/recreate": {
@@ -37291,16 +35527,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "views",
-          "views",
-          "attempt",
-          "views",
-          "attempt",
-          "chats"
-        ]
+        }
       }
     },
     "/api/v4/views/attempt/messages/get": {
@@ -37398,16 +35625,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "views",
-          "views",
-          "attempt",
-          "views",
-          "attempt",
-          "messages"
-        ]
+        }
       }
     },
     "/api/v4/views/attempt/messages/refresh": {
@@ -37495,16 +35713,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "views",
-          "views",
-          "attempt",
-          "views",
-          "attempt",
-          "messages"
-        ]
+        }
       }
     },
     "/api/v4/views/attempt/messages/recreate": {
@@ -37592,16 +35801,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "views",
-          "views",
-          "attempt",
-          "views",
-          "attempt",
-          "messages"
-        ]
+        }
       }
     },
     "/api/v4/views/attempt/overview/get": {
@@ -37699,16 +35899,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "views",
-          "views",
-          "attempt",
-          "views",
-          "attempt",
-          "overview"
-        ]
+        }
       }
     },
     "/api/v4/views/attempt/overview/refresh": {
@@ -37796,16 +35987,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "views",
-          "views",
-          "attempt",
-          "views",
-          "attempt",
-          "overview"
-        ]
+        }
       }
     },
     "/api/v4/views/attempt/overview/recreate": {
@@ -37893,16 +36075,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "views",
-          "views",
-          "attempt",
-          "views",
-          "attempt",
-          "overview"
-        ]
+        }
       }
     },
     "/api/v4/views/analytics/attempts/get": {
@@ -37998,14 +36171,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "views",
-          "views",
-          "analytics",
-          "attempts"
-        ]
+        }
       }
     },
     "/api/v4/views/analytics/chat-facts/get": {
@@ -38101,14 +36267,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "views",
-          "views",
-          "analytics",
-          "chat_facts"
-        ]
+        }
       }
     },
     "/api/v4/views/analytics/cohort-facts/get": {
@@ -38204,14 +36363,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "views",
-          "views",
-          "analytics",
-          "cohort_facts"
-        ]
+        }
       }
     },
     "/api/v4/views/analytics/daily-metrics/get": {
@@ -38307,14 +36459,103 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
+        }
+      }
+    },
+    "/api/v4/views/analytics/profile-facts/get": {
+      "post": {
+        "tags": [
           "v4",
           "views",
           "views",
           "analytics",
-          "daily_metrics"
-        ]
+          "profile_facts"
+        ],
+        "summary": "Get Profile Facts",
+        "description": "Get profile facts data from mv_profile_facts.\n\nThis endpoint fetches profile-level aggregated metrics computed from\nchat-grain data for the dashboard header, leaderboard, and reports with:\n- Filtering (profile, cohort, department, simulation, attempt_type, archived, date range)\n- 12 profile metrics (avg_score, total_attempts, completion_pct, etc.)\n- Daily trend arrays (daily_dates, daily_avg_scores, etc.)\n- Sorting (avg_score, total_attempts, highest_score)\n- Pagination\n- Filter options (simulation_options, cohort_options, department_options)\n\nResource metadata (names, avatars) should be fetched separately\nvia internal resource handlers using the returned profile IDs.",
+        "operationId": "get_profile_facts_api_v4_views_analytics_profile_facts_get_post",
+        "parameters": [
+          {
+            "name": "X-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Session-Id"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GetProfileFactsRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetProfileFactsResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/api/v4/views/analytics/profile-metrics/get": {
@@ -38410,14 +36651,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "views",
-          "views",
-          "analytics",
-          "profile_metrics"
-        ]
+        }
       }
     },
     "/api/v4/views/analytics/rubric-facts/get": {
@@ -38513,14 +36747,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "views",
-          "views",
-          "analytics",
-          "rubric_facts"
-        ]
+        }
       }
     },
     "/api/v4/views/analytics/simulation-facts/get": {
@@ -38616,14 +36843,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "views",
-          "views",
-          "analytics",
-          "simulation_facts"
-        ]
+        }
       }
     },
     "/api/v4/views/analytics/health/get": {
@@ -38719,14 +36939,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "views",
-          "views",
-          "analytics",
-          "health"
-        ]
+        }
       }
     },
     "/api/v4/views/analytics/pricing/get": {
@@ -38822,14 +37035,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "views",
-          "views",
-          "analytics",
-          "pricing"
-        ]
+        }
       }
     },
     "/api/v4/views/analytics/pricing/list": {
@@ -38925,14 +37131,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "views",
-          "views",
-          "analytics",
-          "pricing"
-        ]
+        }
       }
     },
     "/api/v4/views/pricing/run-facts/get": {
@@ -39028,14 +37227,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "views",
-          "views",
-          "pricing",
-          "run_facts"
-        ]
+        }
       }
     },
     "/api/v4/views/pricing/group-summary/get": {
@@ -39131,14 +37323,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "views",
-          "views",
-          "pricing",
-          "group_summary"
-        ]
+        }
       }
     },
     "/api/v4/views/pricing/daily/get": {
@@ -39234,14 +37419,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "views",
-          "views",
-          "pricing",
-          "daily"
-        ]
+        }
       }
     },
     "/api/v4/views/pricing/group-detail/get": {
@@ -39337,14 +37515,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "views",
-          "views",
-          "pricing",
-          "group_detail"
-        ]
+        }
       }
     },
     "/api/v4/views/activity/session-facts/get": {
@@ -39440,14 +37611,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "views",
-          "views",
-          "activity",
-          "session_facts"
-        ]
+        }
       }
     },
     "/api/v4/views/activity/daily/get": {
@@ -39543,14 +37707,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "views",
-          "views",
-          "activity",
-          "daily"
-        ]
+        }
       }
     },
     "/api/v4/views/activity/logins/logins/get": {
@@ -39649,17 +37806,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "views",
-          "views",
-          "activity",
-          "logins",
-          "views",
-          "activity",
-          "logins"
-        ]
+        }
       }
     },
     "/api/v4/views/activity/audits/audits/get": {
@@ -39758,17 +37905,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "views",
-          "views",
-          "activity",
-          "audits",
-          "views",
-          "activity",
-          "audits"
-        ]
+        }
       }
     },
     "/api/v4/views/activity/feedbacks/feedbacks/get": {
@@ -39867,17 +38004,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "views",
-          "views",
-          "activity",
-          "feedbacks",
-          "views",
-          "activity",
-          "feedbacks"
-        ]
+        }
       }
     },
     "/api/v4/views/activity/problems/problems/get": {
@@ -39976,17 +38103,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "views",
-          "views",
-          "activity",
-          "problems",
-          "views",
-          "activity",
-          "problems"
-        ]
+        }
       }
     },
     "/api/v4/views/activity/summary/get": {
@@ -40072,14 +38189,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "views",
-          "views",
-          "activity",
-          "summary"
-        ]
+        }
       }
     },
     "/api/v4/views/health/service-hourly/get": {
@@ -40175,14 +38285,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "views",
-          "views",
-          "health",
-          "service_hourly"
-        ]
+        }
       }
     },
     "/api/v4/views/health/metrics-hourly/get": {
@@ -40278,14 +38381,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "views",
-          "views",
-          "health",
-          "metrics_hourly"
-        ]
+        }
       }
     },
     "/api/v4/views/benchmark/tests/get": {
@@ -40383,16 +38479,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "views",
-          "views",
-          "benchmark",
-          "views",
-          "benchmark",
-          "tests"
-        ]
+        }
       }
     },
     "/api/v4/views/benchmark/tests/refresh": {
@@ -40484,16 +38571,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "views",
-          "views",
-          "benchmark",
-          "views",
-          "benchmark",
-          "tests"
-        ]
+        }
       }
     },
     "/api/v4/views/benchmark/invocations/get": {
@@ -40591,16 +38669,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "views",
-          "views",
-          "benchmark",
-          "views",
-          "benchmark",
-          "invocations"
-        ]
+        }
       }
     },
     "/api/v4/views/benchmark/invocations/refresh": {
@@ -40692,16 +38761,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "views",
-          "views",
-          "benchmark",
-          "views",
-          "benchmark",
-          "invocations"
-        ]
+        }
       }
     },
     "/api/v4/views/benchmark/bundle/get": {
@@ -40799,16 +38859,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "views",
-          "views",
-          "benchmark",
-          "views",
-          "benchmark",
-          "bundle"
-        ]
+        }
       }
     },
     "/api/v4/views/benchmark/attempt-facts/get": {
@@ -40904,14 +38955,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "views",
-          "views",
-          "benchmark",
-          "attempt_facts"
-        ]
+        }
       }
     },
     "/api/v4/views/benchmark/eval-summary/get": {
@@ -41007,14 +39051,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "views",
-          "views",
-          "benchmark",
-          "eval_summary"
-        ]
+        }
       }
     },
     "/api/v4/views/artifacts/session-list/get": {
@@ -41110,14 +39147,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "views",
-          "views",
-          "artifacts",
-          "session_list"
-        ]
+        }
       }
     },
     "/api/v4/views/artifacts/session-detail/get": {
@@ -41213,14 +39243,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "views",
-          "views",
-          "artifacts",
-          "session_detail"
-        ]
+        }
       }
     },
     "/api/v4/views/config/get": {
@@ -41315,13 +39338,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "views",
-          "views",
-          "config"
-        ]
+        }
       }
     },
     "/api/v4/views/config/refresh": {
@@ -41406,13 +39423,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "views",
-          "views",
-          "config"
-        ]
+        }
       }
     },
     "/api/v4/views/config/recreate": {
@@ -41497,13 +39508,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "views",
-          "views",
-          "config"
-        ]
+        }
       }
     },
     "/api/v4/views/training/context/get": {
@@ -41601,16 +39606,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "views",
-          "views",
-          "training",
-          "views",
-          "training",
-          "context"
-        ]
+        }
       }
     },
     "/api/v4/views/training/bundle/get": {
@@ -41708,16 +39704,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "views",
-          "views",
-          "training",
-          "views",
-          "training",
-          "bundle"
-        ]
+        }
       }
     },
     "/api/v4/auth/login": {
@@ -41810,11 +39797,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "auth"
-        ]
+        }
       }
     },
     "/api/v4/auth/attempt": {
@@ -41907,11 +39890,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "auth"
-        ]
+        }
       }
     },
     "/api/v4/auth/context": {
@@ -42004,11 +39983,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "auth"
-        ]
+        }
       }
     },
     "/api/v4/auth/profile": {
@@ -42101,11 +40076,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "auth"
-        ]
+        }
       }
     },
     "/api/v4/auth/settings": {
@@ -42198,11 +40169,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "auth"
-        ]
+        }
       }
     },
     "/api/v4/auth/page": {
@@ -42295,11 +40262,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "auth"
-        ]
+        }
       }
     },
     "/api/v4/auth/analytics": {
@@ -42390,11 +40353,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "auth"
-        ]
+        }
       }
     },
     "/api/v4/auth/drafts": {
@@ -42477,11 +40436,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "auth"
-        ]
+        }
       }
     },
     "/api/v4/auth/email": {
@@ -42574,11 +40529,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "auth"
-        ]
+        }
       }
     },
     "/api/v4/auth/upsert": {
@@ -42671,11 +40622,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "auth"
-        ]
+        }
       }
     },
     "/api/v4/auth/simulatable": {
@@ -42768,11 +40715,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "auth"
-        ]
+        }
       }
     },
     "/api/v4/auth/emulate": {
@@ -42865,11 +40808,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "auth"
-        ]
+        }
       }
     },
     "/socket/v4/client/connect": {
@@ -42896,11 +40835,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v4/client/disconnect": {
@@ -42927,11 +40862,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v4/client/training/start": {
@@ -42978,11 +40909,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v4/client/attempt/message": {
@@ -43029,11 +40956,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v4/client/attempt/grade": {
@@ -43080,11 +41003,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v4/client/attempt/join": {
@@ -43131,11 +41050,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v4/client/attempt/leave": {
@@ -43182,11 +41097,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v4/client/attempt/stop": {
@@ -43233,11 +41144,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v4/client/attempt/end": {
@@ -43284,11 +41191,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v4/client/attempt/end_all": {
@@ -43335,11 +41238,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v4/client/attempt/audio_start": {
@@ -43386,11 +41285,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v4/client/attempt/audio_stop": {
@@ -43437,11 +41332,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v4/client/attempt/audio_frame": {
@@ -43488,11 +41379,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v4/client/attempt/mic_mute": {
@@ -43539,11 +41426,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v4/client/attempt/response_submit": {
@@ -43590,11 +41473,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v4/client/benchmark/start": {
@@ -43641,11 +41520,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v4/client/test/join": {
@@ -43692,11 +41567,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v4/client/test/leave": {
@@ -43743,11 +41614,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v4/client/test/stop": {
@@ -43794,11 +41661,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v4/client/test/run": {
@@ -43845,11 +41708,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v4/client/test/run_all": {
@@ -43896,11 +41755,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v4/client/test/grade": {
@@ -43947,11 +41802,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v4/server/connection_confirmed": {
@@ -43998,11 +41849,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/auth_generation_progress": {
@@ -44049,11 +41896,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/auth_generation_complete": {
@@ -44099,11 +41942,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/auth_generation_error": {
@@ -44150,11 +41989,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/training/started": {
@@ -44201,11 +42036,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/training/progress": {
@@ -44252,11 +42083,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/training/complete": {
@@ -44305,11 +42132,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/training/error": {
@@ -44356,11 +42179,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/attempt/user_complete": {
@@ -44407,11 +42226,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/attempt/assistant_start": {
@@ -44458,11 +42273,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/attempt/graded": {
@@ -44509,11 +42320,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/attempt/progress": {
@@ -44560,11 +42367,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/attempt/assistant/delta": {
@@ -44611,11 +42414,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/attempt/complete": {
@@ -44662,11 +42461,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/attempt/assistant_complete": {
@@ -44713,11 +42508,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/attempt/content_progress": {
@@ -44764,11 +42555,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/attempt/hint_progress": {
@@ -44815,11 +42602,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/attempt/grading_progress": {
@@ -44866,11 +42649,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/attempt/error": {
@@ -44917,11 +42696,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/attempt/joined": {
@@ -44968,11 +42743,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/attempt/stopped": {
@@ -45019,11 +42790,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/attempt/chat_ended": {
@@ -45070,11 +42837,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/attempt/ended": {
@@ -45121,11 +42884,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/attempt/audio_ready": {
@@ -45172,11 +42931,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/attempt/audio_ended": {
@@ -45223,11 +42978,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/attempt/assistant_audio": {
@@ -45274,11 +43025,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/attempt/user_start": {
@@ -45325,11 +43072,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/attempt/user_delta": {
@@ -45376,11 +43119,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/attempt/response_result": {
@@ -45427,11 +43166,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/attempt/chat": {
@@ -45480,11 +43215,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/benchmark/started": {
@@ -45531,11 +43262,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/benchmark/progress": {
@@ -45582,11 +43309,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/benchmark/complete": {
@@ -45633,11 +43356,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/benchmark/error": {
@@ -45684,11 +43403,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/test/joined": {
@@ -45735,11 +43450,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/test/stopped": {
@@ -45786,11 +43497,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/test/invocation/started": {
@@ -45837,11 +43544,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/test/progress": {
@@ -45888,11 +43591,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/test/run_complete": {
@@ -45939,11 +43638,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/test/error": {
@@ -45990,11 +43685,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/test/run_start": {
@@ -46041,11 +43732,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/test/all_complete": {
@@ -46092,11 +43779,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/test/graded": {
@@ -46143,11 +43826,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/simulation_generation_progress": {
@@ -46196,11 +43875,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/simulation_generation_complete": {
@@ -46247,11 +43922,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/simulation_generation_error": {
@@ -46300,11 +43971,54 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
+        }
+      }
+    },
+    "/socket/v4/server/resource_generation_complete": {
+      "post": {
+        "tags": [
           "socket",
           "socket-server"
-        ]
+        ],
+        "summary": "Resource Generation Complete Api",
+        "description": "Server-to-client event: Resource generation completed.\n\nEmitted when a single resource is successfully generated.\nContains the hydrated resource data for immediate frontend use.",
+        "operationId": "resource_generation_complete_api_socket_v4_server_resource_generation_complete_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResourceGenerationCompleteEvent"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Resource Generation Complete Api Socket V4 Server Resource Generation Complete Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/socket/v4/server/scenario_generation_progress": {
@@ -46353,11 +44067,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/scenario_generation_complete": {
@@ -46404,11 +44114,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/scenario_generation_error": {
@@ -46457,11 +44163,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/rubric_generation_progress": {
@@ -46510,11 +44212,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/rubric_generation_complete": {
@@ -46561,11 +44259,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/rubric_generation_error": {
@@ -46614,11 +44308,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/document_generation_progress": {
@@ -46667,11 +44357,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/document_generation_complete": {
@@ -46718,11 +44404,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/document_generation_error": {
@@ -46771,11 +44453,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/agent_generation_progress": {
@@ -46824,11 +44502,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/agent_generation_complete": {
@@ -46877,11 +44551,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/agent_generation_error": {
@@ -46930,27 +44600,23 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server"
-        ]
+        }
       }
     },
-    "/socket/v4/server/persona_generation_progress": {
+    "/socket/v4/server/persona_generation_started": {
       "post": {
         "tags": [
           "socket",
           "socket-server"
         ],
-        "summary": "Persona Generation Progress Api",
-        "description": "Server-to-client event: Persona generation progress.\n\nEmitted during persona resource generation to show progress.",
-        "operationId": "persona_generation_progress_api_socket_v4_server_persona_generation_progress_post",
+        "summary": "Persona Generation Started Api",
+        "description": "Server-to-client event: Persona generation started.\n\nEmitted when persona generation begins, listing resource types being generated.",
+        "operationId": "persona_generation_started_api_socket_v4_server_persona_generation_started_post",
         "requestBody": {
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/PersonaGenerationProgressEvent"
+                "$ref": "#/components/schemas/PersonaGenerationStartedEvent"
               }
             }
           },
@@ -46966,7 +44632,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Persona Generation Progress Api Socket V4 Server Persona Generation Progress Post"
+                  "title": "Response Persona Generation Started Api Socket V4 Server Persona Generation Started Post"
                 }
               }
             }
@@ -46981,11 +44647,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/persona_generation_complete": {
@@ -46995,7 +44657,7 @@
           "socket-server"
         ],
         "summary": "Persona Generation Complete Api",
-        "description": "Server-to-client event: Persona generation completed.\n\nEmitted when a persona resource is successfully generated.\nContains full resource objects for immediate frontend use.",
+        "description": "Server-to-client event: Persona generation completed.\n\nEmitted when all agents have finished generating persona resources.\nContains optional persona_id if auto-save succeeded.",
         "operationId": "persona_generation_complete_api_socket_v4_server_persona_generation_complete_post",
         "requestBody": {
           "content": {
@@ -47032,11 +44694,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/persona_generation_error": {
@@ -47083,11 +44741,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/cohort_generation_progress": {
@@ -47134,11 +44788,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/cohort_generation_complete": {
@@ -47185,11 +44835,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/cohort_generation_error": {
@@ -47236,11 +44882,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/profile_generation_progress": {
@@ -47287,11 +44929,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/profile_generation_complete": {
@@ -47338,11 +44976,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/profile_generation_error": {
@@ -47389,11 +45023,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/parameter_generation_progress": {
@@ -47441,11 +45071,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/parameter_generation_complete": {
@@ -47492,11 +45118,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/parameter_generation_error": {
@@ -47544,11 +45166,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/field_generation_progress": {
@@ -47595,11 +45213,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/field_generation_complete": {
@@ -47646,11 +45260,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/field_generation_error": {
@@ -47697,11 +45307,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/model_generation_progress": {
@@ -47749,11 +45355,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/model_generation_complete": {
@@ -47800,11 +45402,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/model_generation_error": {
@@ -47852,11 +45450,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/tool_generation_progress": {
@@ -47903,11 +45497,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/tool_generation_complete": {
@@ -47954,11 +45544,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/tool_generation_error": {
@@ -48005,11 +45591,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/department_generation_progress": {
@@ -48057,11 +45639,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/department_generation_complete": {
@@ -48109,11 +45687,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/department_generation_error": {
@@ -48161,11 +45735,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/provider_generation_progress": {
@@ -48213,11 +45783,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/provider_generation_complete": {
@@ -48264,11 +45830,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/provider_generation_error": {
@@ -48316,11 +45878,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/eval_generation_progress": {
@@ -48368,11 +45926,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/eval_generation_complete": {
@@ -48419,11 +45973,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/eval_generation_error": {
@@ -48471,11 +46021,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/setting_generation_progress": {
@@ -48523,11 +46069,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/setting_generation_complete": {
@@ -48574,11 +46116,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/setting_generation_error": {
@@ -48626,11 +46164,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server"
-        ]
+        }
       }
     },
     "/default-idp/.well-known/openid-configuration": {
@@ -48654,10 +46188,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "default-idp"
-        ]
+        }
       }
     },
     "/default-idp/authorize": {
@@ -48801,10 +46332,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "default-idp"
-        ]
+        }
       }
     },
     "/default-idp/token": {
@@ -48848,10 +46376,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "default-idp"
-        ]
+        }
       }
     },
     "/default-idp/userinfo": {
@@ -48903,10 +46428,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "default-idp"
-        ]
+        }
       }
     },
     "/default-idp/jwks": {
@@ -48926,10 +46448,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "default-idp"
-        ]
+        }
       }
     },
     "/.well-known/oauth-authorization-server": {
@@ -58801,6 +56320,18 @@
               }
             ],
             "title": "Cohort Id"
+          },
+          "department_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Id"
           },
           "simulation_id": {
             "anyOf": [
@@ -73108,6 +70639,22 @@
             "title": "Cohort Ids",
             "description": "Filter by cohort IDs"
           },
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids",
+            "description": "Filter by department IDs"
+          },
           "simulation_ids": {
             "anyOf": [
               {
@@ -73230,6 +70777,21 @@
             ],
             "title": "Cohort Options",
             "description": "Available cohort filter options"
+          },
+          "department_options": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/app__api__v4__views__analytics__cohort_facts__types__FilterOption"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Options",
+            "description": "Available department filter options"
           },
           "simulation_options": {
             "anyOf": [
@@ -79412,6 +76974,211 @@
         "title": "GetProfileContextApiResponse",
         "description": "Slim profile context response \u2014 only fields the client needs."
       },
+      "GetProfileFactsRequest": {
+        "properties": {
+          "profile_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profile Id",
+            "description": "Filter by profile ID"
+          },
+          "cohort_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cohort Ids",
+            "description": "Filter by cohort IDs"
+          },
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids",
+            "description": "Filter by department IDs"
+          },
+          "simulation_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulation Ids",
+            "description": "Filter by simulation IDs"
+          },
+          "attempt_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Attempt Type",
+            "description": "Filter by attempt type: 'general' | 'practice'"
+          },
+          "is_archived": {
+            "type": "boolean",
+            "title": "Is Archived",
+            "description": "Include archived attempts",
+            "default": false
+          },
+          "date_from": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Date From",
+            "description": "Filter by date range start (inclusive)"
+          },
+          "date_to": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Date To",
+            "description": "Filter by date range end (inclusive)"
+          },
+          "sort_by": {
+            "type": "string",
+            "title": "Sort By",
+            "description": "Sort field: 'avg_score' | 'total_attempts' | 'highest_score'",
+            "default": "avg_score"
+          },
+          "sort_order": {
+            "type": "string",
+            "title": "Sort Order",
+            "description": "Sort order: 'asc' | 'desc'",
+            "default": "desc"
+          },
+          "page_limit": {
+            "type": "integer",
+            "maximum": 10000.0,
+            "minimum": 1.0,
+            "title": "Page Limit",
+            "description": "Items per page",
+            "default": 5000
+          },
+          "page_offset": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Page Offset",
+            "description": "Pagination offset",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "title": "GetProfileFactsRequest",
+        "description": "Request for getting profile facts with filters and pagination."
+      },
+      "GetProfileFactsResponse": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ProfileFactsItem"
+            },
+            "type": "array",
+            "title": "Items",
+            "description": "Profile facts items (one per profile)"
+          },
+          "total_count": {
+            "type": "integer",
+            "title": "Total Count",
+            "description": "Total profile count before pagination",
+            "default": 0
+          },
+          "simulation_options": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/app__api__v4__views__analytics__profile_facts__types__FilterOption"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulation Options",
+            "description": "Available simulation filter options"
+          },
+          "cohort_options": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/app__api__v4__views__analytics__profile_facts__types__FilterOption"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cohort Options",
+            "description": "Available cohort filter options"
+          },
+          "department_options": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/app__api__v4__views__analytics__profile_facts__types__FilterOption"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Options",
+            "description": "Available department filter options"
+          }
+        },
+        "type": "object",
+        "title": "GetProfileFactsResponse",
+        "description": "Response with profile-level aggregated metrics and pagination info."
+      },
       "GetProfileMetricsRequest": {
         "properties": {
           "profile_id": {
@@ -80553,6 +78320,22 @@
             "title": "Cohort Ids",
             "description": "Filter by cohort IDs"
           },
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids",
+            "description": "Filter by department IDs"
+          },
           "simulation_ids": {
             "anyOf": [
               {
@@ -80691,6 +78474,21 @@
             ],
             "title": "Rubric Options",
             "description": "Available rubric filter options"
+          },
+          "department_options": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/app__api__v4__views__analytics__rubric_facts__types__FilterOption"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Options",
+            "description": "Available department filter options"
           },
           "simulation_options": {
             "anyOf": [
@@ -82693,6 +80491,22 @@
             "title": "Cohort Ids",
             "description": "Filter by cohort IDs"
           },
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids",
+            "description": "Filter by department IDs"
+          },
           "simulation_ids": {
             "anyOf": [
               {
@@ -82816,6 +80630,21 @@
             "title": "Total Count",
             "description": "Total count before pagination",
             "default": 0
+          },
+          "department_options": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/app__api__v4__views__analytics__simulation_facts__types__FilterOption"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Options",
+            "description": "Available department filter options"
           },
           "simulation_options": {
             "anyOf": [
@@ -101106,121 +98935,16 @@
             ],
             "title": "Type"
           },
-          "name_resource": {
+          "persona_id": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/QGetNamesV4Item"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "description_resource": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/QGetDescriptionsV4Item"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "color_resource": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/QGetColorsV4Item"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "icon_resource": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/QGetIconsV4Item"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "instructions_resource": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/QGetInstructionsV4Item"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "flag_resource": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/QGetFlagsV4Item"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "department_resources": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/QGetDepartmentsV4Item"
-                },
-                "type": "array"
+                "type": "string"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Department Resources"
-          },
-          "parameter_field_resources": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/QGetParameterFieldsV4Item"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Parameter Field Resources"
-          },
-          "example_resources": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/QGetExamplesV4Item"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Example Resources"
-          },
-          "parameter_resources": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/QGetParametersV4Item"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Parameter Resources"
+            "title": "Persona Id"
           }
         },
         "type": "object",
@@ -101231,7 +98955,7 @@
           "message"
         ],
         "title": "PersonaGenerationCompleteEvent",
-        "description": "Server-to-client event: persona_generation_complete.\n\nEmitted when a persona resource generation completes successfully.\nContains full resource objects (not just IDs) for immediate frontend use."
+        "description": "Server-to-client event: persona_generation_complete.\n\nEmitted when all agents have finished generating persona resources.\nContains optional persona_id if auto-save succeeded.\nResource-level data is now sent via resource_generation_complete events."
       },
       "PersonaGenerationErrorEvent": {
         "properties": {
@@ -101326,7 +99050,7 @@
         "title": "PersonaGenerationErrorEvent",
         "description": "Server-to-client event: persona_generation_error.\n\nEmitted when persona resource generation fails."
       },
-      "PersonaGenerationProgressEvent": {
+      "PersonaGenerationStartedEvent": {
         "properties": {
           "artifact_type": {
             "type": "string",
@@ -101334,142 +99058,29 @@
             "default": "persona"
           },
           "group_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
+            "type": "string",
             "title": "Group Id"
           },
-          "resource_type": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Resource Type"
-          },
-          "resource_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Resource Id"
-          },
           "run_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
+            "type": "string",
             "title": "Run Id"
           },
-          "modality": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Modality"
-          },
-          "type": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Type"
-          },
-          "event_type": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Event Type"
-          },
-          "tool_call_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Tool Call Id"
-          },
-          "tool_name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Tool Name"
-          },
-          "arguments": {
-            "anyOf": [
-              {
-                "additionalProperties": true,
-                "type": "object"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Arguments"
-          },
-          "arguments_delta": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Arguments Delta"
-          },
-          "trace_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Trace Id"
+          "resource_types": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Resource Types"
           }
         },
         "type": "object",
-        "title": "PersonaGenerationProgressEvent",
-        "description": "Server-to-client event: persona_generation_progress.\n\nEmitted during persona resource generation to show progress."
+        "required": [
+          "group_id",
+          "run_id",
+          "resource_types"
+        ],
+        "title": "PersonaGenerationStartedEvent",
+        "description": "Server-to-client event: persona_generation_started.\n\nEmitted when persona generation begins, listing which resource types\nwill be generated."
       },
       "PersonaIconSection": {
         "properties": {
@@ -103990,6 +101601,185 @@
         },
         "type": "object",
         "title": "ProfileEmailSection"
+      },
+      "ProfileFactsItem": {
+        "properties": {
+          "profile_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Profile Id"
+          },
+          "total_attempts": {
+            "type": "integer",
+            "title": "Total Attempts",
+            "default": 0
+          },
+          "avg_score": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Avg Score"
+          },
+          "highest_score": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Highest Score"
+          },
+          "completion_pct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Completion Pct"
+          },
+          "first_attempt_pass_rate": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "First Attempt Pass Rate"
+          },
+          "avg_messages_per_session": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Avg Messages Per Session"
+          },
+          "avg_persona_response_sec": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Avg Persona Response Sec"
+          },
+          "session_efficiency": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Session Efficiency"
+          },
+          "total_time_minutes": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Time Minutes"
+          },
+          "improvement_rate": {
+            "type": "number",
+            "title": "Improvement Rate",
+            "default": 0.0
+          },
+          "perfect_score_count": {
+            "type": "integer",
+            "title": "Perfect Score Count",
+            "default": 0
+          },
+          "quickest_pass_minutes": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Quickest Pass Minutes"
+          },
+          "daily_dates": {
+            "items": {
+              "type": "string",
+              "format": "date"
+            },
+            "type": "array",
+            "title": "Daily Dates"
+          },
+          "daily_avg_scores": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Daily Avg Scores"
+          },
+          "daily_attempt_counts": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array",
+            "title": "Daily Attempt Counts"
+          },
+          "daily_completed_counts": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array",
+            "title": "Daily Completed Counts"
+          },
+          "daily_time_minutes": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Daily Time Minutes"
+          }
+        },
+        "type": "object",
+        "required": [
+          "profile_id"
+        ],
+        "title": "ProfileFactsItem",
+        "description": "Profile-level aggregated metrics from mv_profile_facts.\n\nThe query function filters at chat grain then GROUP BY profile_id\nto produce these 12 metrics + daily trend arrays."
       },
       "ProfileFlagConfig": {
         "properties": {
@@ -115230,6 +113020,57 @@
         ],
         "title": "ResolveProblemResponse"
       },
+      "ResourceGenerationCompleteEvent": {
+        "properties": {
+          "artifact_type": {
+            "type": "string",
+            "title": "Artifact Type"
+          },
+          "resource_type": {
+            "type": "string",
+            "title": "Resource Type"
+          },
+          "resource_id": {
+            "type": "string",
+            "title": "Resource Id"
+          },
+          "group_id": {
+            "type": "string",
+            "title": "Group Id"
+          },
+          "run_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Run Id"
+          },
+          "success": {
+            "type": "boolean",
+            "title": "Success"
+          },
+          "resource_data": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Resource Data",
+            "default": {}
+          }
+        },
+        "type": "object",
+        "required": [
+          "artifact_type",
+          "resource_type",
+          "resource_id",
+          "group_id",
+          "success"
+        ],
+        "title": "ResourceGenerationCompleteEvent",
+        "description": "Server-to-client event: resource_generation_complete.\n\nEmitted when a single resource finishes generating.\nContains the hydrated resource data for immediate frontend use."
+      },
       "ResponseItem": {
         "properties": {
           "question_id": {
@@ -115663,6 +113504,18 @@
               }
             ],
             "title": "Cohort Id"
+          },
+          "department_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Id"
           },
           "attempt_date": {
             "anyOf": [
@@ -132668,6 +130521,18 @@
             ],
             "title": "Cohort Id"
           },
+          "department_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Id"
+          },
           "grade_percent": {
             "anyOf": [
               {
@@ -140053,6 +137918,30 @@
         "description": "Filter option for dropdowns."
       },
       "app__api__v4__views__analytics__cohort_facts__types__FilterOption": {
+        "properties": {
+          "value": {
+            "type": "string",
+            "title": "Value"
+          },
+          "label": {
+            "type": "string",
+            "title": "Label"
+          },
+          "count": {
+            "type": "integer",
+            "title": "Count",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "required": [
+          "value",
+          "label"
+        ],
+        "title": "FilterOption",
+        "description": "Filter option for dropdowns."
+      },
+      "app__api__v4__views__analytics__profile_facts__types__FilterOption": {
         "properties": {
           "value": {
             "type": "string",

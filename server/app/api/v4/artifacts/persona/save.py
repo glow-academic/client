@@ -2,6 +2,7 @@
 Unified endpoint that handles both create (persona_id = NULL) and update (persona_id provided).
 """
 
+import uuid
 from typing import Annotated, Any, cast
 
 import asyncpg  # type: ignore
@@ -12,6 +13,8 @@ from app.api.v4.artifacts.persona.permissions import (
     compute_can_save,
 )
 from app.api.v4.artifacts.persona.types import (
+    PersonaMultiResourceAction,
+    PersonaResourceAction,
     SavePersonaApiRequest,
     SavePersonaApiResponse,
     SavePersonaSqlParams,
@@ -27,7 +30,10 @@ from app.sql.types import (
     load_sql_query,
 )
 from app.utils.cache.invalidate_tags import invalidate_tags
+from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import execute_sql_typed
+
+logger = get_logger(__name__)
 
 # SQL paths
 ACCESS_CHECK_SQL_PATH = (
@@ -37,6 +43,71 @@ SQL_PATH = "app/sql/v4/queries/personas/save_persona_complete.sql"
 
 
 router = APIRouter()
+
+
+async def save_persona_internal(
+    conn: asyncpg.Connection,
+    profile_id: uuid.UUID,
+    group_id: uuid.UUID | None,
+    resource_actions: dict[str, Any],
+    persona_id: uuid.UUID | None = None,
+) -> uuid.UUID | None:
+    """Save a persona from resource actions dict (used by generation complete handler).
+
+    Builds SavePersonaSqlParams from a flat resource_actions dict, executes the
+    save SQL in a transaction, and invalidates cache.
+
+    Returns the persona_id on success, None on failure.
+    """
+    try:
+        # Build resource action objects from dict
+        def _single(key: str) -> PersonaResourceAction:
+            val = resource_actions.get(key, {})
+            if isinstance(val, dict):
+                return PersonaResourceAction(
+                    resource_id=val.get("resource_id"),
+                )
+            return PersonaResourceAction()
+
+        def _multi(key: str) -> PersonaMultiResourceAction:
+            val = resource_actions.get(key, {})
+            if isinstance(val, dict):
+                return PersonaMultiResourceAction(
+                    resource_ids=val.get("resource_ids"),
+                )
+            return PersonaMultiResourceAction()
+
+        params = SavePersonaSqlParams(
+            profile_id=profile_id,
+            input_persona_id=persona_id,
+            group_id=group_id,
+            names=_single("names"),
+            descriptions=_single("descriptions"),
+            colors=_single("colors"),
+            icons=_single("icons"),
+            instructions=_single("instructions"),
+            flags=_single("flags"),
+            departments=_multi("departments"),
+            parameter_fields=_multi("parameter_fields"),
+            examples=_multi("examples"),
+            parameters=_multi("parameters"),
+        )
+
+        async with conn.transaction():
+            result = cast(
+                SavePersonaSqlRow,
+                await execute_sql_typed(conn, SQL_PATH, params=params),
+            )
+
+            if not result or not result.persona_id:
+                return None
+
+        await invalidate_tags(["personas"])
+        return result.persona_id
+
+    except Exception as e:
+        logger.exception(f"save_persona_internal failed: {e}")
+        return None
 
 
 @router.post(

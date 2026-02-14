@@ -14,6 +14,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useSocket } from "@/contexts/socket-context";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { Check, Loader2, Sparkles, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -63,6 +64,7 @@ export interface NamesProps {
   aiResource?: { id?: string | null; name?: string | null } | null | undefined;
   onAccept?: () => void;
   onReject?: () => void;
+  onGenerationComplete?: () => void;
 }
 
 export function Names({
@@ -95,6 +97,7 @@ export function Names({
   aiResource,
   onAccept,
   onReject,
+  onGenerationComplete,
 }: NamesProps) {
   // Use standardized props with fallback to legacy props
   const resource = name_resource ?? nameResource ?? null;
@@ -106,8 +109,40 @@ export function Names({
   );
   const namesArray = useMemo(() => names ?? [], [names]);
 
+  // Socket-based AI suggestion handling
+  const { socket: aiSocket, isConnected: aiIsConnected } = useSocket();
+  const [internalAiResource, setInternalAiResource] = useState<{
+    id?: string | null;
+    name?: string | null;
+  } | null>(null);
+
+  useEffect(() => {
+    if (!aiSocket || !aiIsConnected) return;
+    const handleResourceComplete = (data: Record<string, unknown>) => {
+      if (data.resource_type !== "names") return;
+      if (group_id && data.group_id !== group_id) return;
+      const resourceData = data.resource_data as
+        | Record<string, unknown>
+        | undefined;
+      if (resourceData) {
+        setInternalAiResource({
+          id: resourceData.id as string | null,
+          name: resourceData.name as string | null,
+        });
+      }
+      onGenerationComplete?.();
+    };
+    aiSocket.on("resource_generation_complete", handleResourceComplete);
+    return () => {
+      aiSocket.off("resource_generation_complete", handleResourceComplete);
+    };
+  }, [aiSocket, aiIsConnected, group_id, onGenerationComplete]);
+
+  // Effective AI resource: internal (socket) takes priority, then prop fallback
+  const effectiveAiResource = internalAiResource ?? aiResource ?? null;
+
   // AI suggestion state
-  const showDiff = !!aiResource?.name;
+  const showDiff = !!effectiveAiResource?.name;
 
   // Handle nullable resource properties
   const resourceName = resource?.name ?? null;
@@ -338,17 +373,19 @@ export function Names({
 
   // Accept AI suggestion - update internal value and notify parent
   const handleAccept = useCallback(() => {
-    if (!aiResource?.id) return;
+    if (!effectiveAiResource?.id) return;
     if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
-    const text = aiResource.name || "";
+    const text = effectiveAiResource.name || "";
     setInternalValue(text);
     lastSavedValueRef.current = text;
-    onNameIdChange(aiResource.id);
+    onNameIdChange(effectiveAiResource.id);
     onAccept?.();
-  }, [aiResource, onNameIdChange, onAccept]);
+    setInternalAiResource(null);
+  }, [effectiveAiResource, onNameIdChange, onAccept]);
 
   // Reject AI suggestion - just clear the pending state
   const handleReject = useCallback(() => {
+    setInternalAiResource(null);
     onReject?.();
   }, [onReject]);
 
@@ -362,7 +399,7 @@ export function Names({
   const displayValue = internalValue || defaultName || "";
 
   // AI suggestion text
-  const aiName = aiResource?.name || "";
+  const aiName = effectiveAiResource?.name || "";
 
   return (
     <div className="flex-1 items-end">

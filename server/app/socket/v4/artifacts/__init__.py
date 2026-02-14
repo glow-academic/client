@@ -9,6 +9,7 @@ from . import (
     benchmark,
     generate,
     mic_set_muted,
+    resource_complete,
     simulation,
     test,
     tool_call,
@@ -23,6 +24,7 @@ __all__ = [
     "benchmark",
     "generate",
     "mic_set_muted",
+    "resource_complete",
     "simulation",
     "test",
     "tool_call",
@@ -50,3 +52,4 @@ server_router.include_router(test.server_router)
 server_router.include_router(simulation.server_router)
 server_router.include_router(tool_call.server_router)
 server_router.include_router(tool_result.server_router)
+server_router.include_router(resource_complete.server_router)

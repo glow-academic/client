@@ -9,19 +9,7 @@ from app.api.v4.artifacts.persona.types import GetPersonaApiRequest
 from app.socket.v4.artifacts.types import (
     GenerationCompleteEvent,
     GenerationErrorEvent,
-    GenerationProgressEvent,
-)
-from app.sql.types import (
-    QGetColorsV4Item,
-    QGetDepartmentsV4Item,
-    QGetDescriptionsV4Item,
-    QGetExamplesV4Item,
-    QGetFlagsV4Item,
-    QGetIconsV4Item,
-    QGetInstructionsV4Item,
-    QGetNamesV4Item,
-    QGetParameterFieldsV4Item,
-    QGetParametersV4Item,
+    PersonaGenerationStartedEvent,
 )
 
 # =============================================================================
@@ -54,34 +42,13 @@ class GeneratePersonaPayload(GetPersonaApiRequest):
 class PersonaGenerationCompleteEvent(GenerationCompleteEvent):
     """Server-to-client event: persona_generation_complete.
 
-    Emitted when a persona resource generation completes successfully.
-    Contains full resource objects (not just IDs) for immediate frontend use.
+    Emitted when all agents have finished generating persona resources.
+    Contains optional persona_id if auto-save succeeded.
+    Resource-level data is now sent via resource_generation_complete events.
     """
 
     artifact_type: str = "persona"
-
-    # Single-select resources (full objects, not IDs)
-    name_resource: QGetNamesV4Item | None = None
-    description_resource: QGetDescriptionsV4Item | None = None
-    color_resource: QGetColorsV4Item | None = None
-    icon_resource: QGetIconsV4Item | None = None
-    instructions_resource: QGetInstructionsV4Item | None = None
-    flag_resource: QGetFlagsV4Item | None = None
-
-    # Multi-select resources (arrays of full objects)
-    department_resources: list[QGetDepartmentsV4Item] | None = None
-    parameter_field_resources: list[QGetParameterFieldsV4Item] | None = None
-    example_resources: list[QGetExamplesV4Item] | None = None
-    parameter_resources: list[QGetParametersV4Item] | None = None
-
-
-class PersonaGenerationProgressEvent(GenerationProgressEvent):
-    """Server-to-client event: persona_generation_progress.
-
-    Emitted during persona resource generation to show progress.
-    """
-
-    artifact_type: str = "persona"
+    persona_id: str | None = None
 
 
 class PersonaGenerationErrorEvent(GenerationErrorEvent):
