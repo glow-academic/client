@@ -25,7 +25,6 @@ from app.api.v4.artifacts.profile.types import (
     ListStaffApiDepartment,
     ListStaffApiResponse,
     ListStaffApiStaff,
-    ListStaffApiTrendData,
 )
 from app.api.v4.auth.profile import get_auth_profile_internal
 from app.api.v4.resources.cohorts.get import get_cohorts_internal
@@ -166,14 +165,10 @@ async def get_profile_list(
                     name=s.name,
                     role=target_role,
                     initials=s.initials,
-                    active=s.active,
-                    last_active=s.last_active,
                     cohort_ids=s.cohort_ids,
                     department_ids=s.department_ids,
                     primary_department_id=s.primary_department_id,
                     requests_per_day=s.requests_per_day,
-                    total_requests=s.total_requests,
-                    requests_in_last_day=s.requests_in_last_day,
                     can_edit=can_edit_val,
                     can_duplicate=can_duplicate_val,
                     can_delete=can_delete_val,
@@ -269,41 +264,13 @@ async def get_profile_list(
             )
         ]
 
-        # Build trend data
-        trend_data_active = [
-            ListStaffApiTrendData(date=t.date, value=t.value, count=t.count)
-            for t in (result.trend_data_active or [])
-        ]
-        trend_data_admin = [
-            ListStaffApiTrendData(date=t.date, value=t.value, count=t.count)
-            for t in (result.trend_data_admin or [])
-        ]
-        trend_data_instructional = [
-            ListStaffApiTrendData(date=t.date, value=t.value, count=t.count)
-            for t in (result.trend_data_instructional or [])
-        ]
-        trend_data_member = [
-            ListStaffApiTrendData(date=t.date, value=t.value, count=t.count)
-            for t in (result.trend_data_member or [])
-        ]
-        trend_data_total_requests = [
-            ListStaffApiTrendData(date=t.date, value=t.value, count=t.count)
-            for t in (result.trend_data_total_requests or [])
-        ]
-
         # Build API response with computed permissions and hydrated names
         api_response = ListStaffApiResponse(
             actor_name=actor_name,
             staff=staff_with_permissions,
             cohorts=cohorts,
             departments=departments,
-            trend_data_active=trend_data_active,
-            trend_data_admin=trend_data_admin,
-            trend_data_instructional=trend_data_instructional,
-            trend_data_member=trend_data_member,
-            trend_data_total_requests=trend_data_total_requests,
             role_options=result.role_options,
-            last_active_options=result.last_active_options,
             total_count=result.total_count,
         )
 

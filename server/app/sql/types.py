@@ -21440,6 +21440,85 @@ class BulkDeleteStaffApiResponse(BaseModel):
 
 
 
+# Generated from: get_staff_list
+
+class GetStaffListSqlParams(BaseModel):
+
+    profile_id: UUID
+    search: str | None = None
+    cohort_ids: list[UUID] | None = None
+    filter_department_ids: list[UUID] | None = None
+    role_filter: str | None = None
+    cohort_search: str | None = None
+    department_search: str | None = None
+    page_size: int | None = 12
+    page_offset: int | None = 0
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.search,
+            self.cohort_ids,
+            self.filter_department_ids,
+            self.role_filter,
+            self.cohort_search,
+            self.department_search,
+            self.page_size,
+            self.page_offset,
+        )
+
+class QListStaffV4OptionId(BaseModel):
+
+    id: UUID | None
+    count: int | None
+
+
+
+
+class QListStaffV4Staff(BaseModel):
+
+    profile_id: UUID | None
+    emails: list[str] | None
+    primary_email: str | None
+    name: str | None
+    role: str | None
+    initials: str | None
+    cohort_ids: list[str] | None
+    department_ids: list[str] | None
+    primary_department_id: str | None
+    requests_per_day: int | None
+    target_is_self: bool | None
+    total_cohort_links: int | None
+
+class GetStaffListSqlRow(BaseModel):
+
+    staff: list[QListStaffV4Staff] | None = None
+    cohort_option_ids: list[QListStaffV4OptionId] | None = None
+    department_option_ids: list[QListStaffV4OptionId] | None = None
+    role_options: list[str] | None = None
+    total_count: int | None = None
+
+class GetStaffListApiRequest(BaseModel):
+
+    search: str | None = None
+    cohort_ids: list[UUID] | None = None
+    filter_department_ids: list[UUID] | None = None
+    role_filter: str | None = None
+    cohort_search: str | None = None
+    department_search: str | None = None
+    page_size: int | None = 12
+    page_offset: int | None = 0
+
+class GetStaffListApiResponse(BaseModel):
+
+    staff: list[QListStaffV4Staff] | None = None
+    cohort_option_ids: list[QListStaffV4OptionId] | None = None
+    department_option_ids: list[QListStaffV4OptionId] | None = None
+    role_options: list[str] | None = None
+    total_count: int | None = None
+
+
+
 # Generated from: process_csv
 
 class IProcessCsvV4ColumnMapping(BaseModel):
@@ -27762,6 +27841,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "BulkDeleteStaffApiRequest",
         "BulkDeleteStaffApiResponse",
     ),
+    "app/sql/v4/queries/staff/get_staff_list_complete.sql": (
+        "GetStaffListSqlParams",
+        "GetStaffListSqlRow",
+        "GetStaffListApiRequest",
+        "GetStaffListApiResponse",
+    ),
     "app/sql/v4/queries/staff/process_csv_complete.sql": (
         "ProcessCsvSqlParams",
         "ProcessCsvSqlRow",
@@ -30792,6 +30877,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/queries/staff/bulk_delete_staff_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/staff/get_staff_list_complete.sql"]
     ) -> SqlString: ...
 
     @overload

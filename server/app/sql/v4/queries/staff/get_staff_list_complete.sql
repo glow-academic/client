@@ -45,14 +45,10 @@ CREATE TYPE types.q_list_staff_v4_staff AS (
     name text,
     role text,
     initials text,
-    active boolean,
-    last_active timestamptz,
     cohort_ids text[],
     department_ids text[],
     primary_department_id text,
     requests_per_day integer,
-    total_requests bigint,
-    requests_in_last_day integer,
     target_is_self boolean,
     total_cohort_links bigint
 );
@@ -61,13 +57,6 @@ CREATE TYPE types.q_list_staff_v4_staff AS (
 CREATE TYPE types.q_list_staff_v4_option_id AS (
     id uuid,
     count bigint
-);
-
--- Trend data: unchanged
-CREATE TYPE types.q_list_staff_v4_trend_data AS (
-    date date,
-    value double precision,
-    count integer
 );
 
 -- 4) Recreate function
@@ -86,13 +75,7 @@ RETURNS TABLE (
     staff types.q_list_staff_v4_staff[],
     cohort_option_ids types.q_list_staff_v4_option_id[],
     department_option_ids types.q_list_staff_v4_option_id[],
-    trend_data_active types.q_list_staff_v4_trend_data[],
-    trend_data_admin types.q_list_staff_v4_trend_data[],
-    trend_data_instructional types.q_list_staff_v4_trend_data[],
-    trend_data_member types.q_list_staff_v4_trend_data[],
-    trend_data_total_requests types.q_list_staff_v4_trend_data[],
     role_options text[],
-    last_active_options text[],
     total_count bigint
 )
 LANGUAGE sql
@@ -149,24 +132,6 @@ profile_primary_department AS (
     FROM profile_departments_junction pd
     WHERE pd.active = true AND pd.is_primary = true
 ),
--- Request counts
-recent_runs AS (
-    SELECT
-        prj.profiles_id,
-        COUNT(*) as run_count
-    FROM profiles_runs_connection prj
-    JOIN view_runs_entry mr ON mr.id = prj.run_id
-    WHERE mr.created_at >= NOW() - INTERVAL '24 hours'
-    GROUP BY prj.profiles_id
-),
-profile_total_runs AS (
-    SELECT
-        prj.profiles_id,
-        COUNT(*) as total_requests
-    FROM profiles_runs_connection prj
-    JOIN view_runs_entry mr ON mr.id = prj.run_id
-    GROUP BY prj.profiles_id
-),
 -- Base staff data: profile's own junctions only
 staff_rows AS (
     SELECT DISTINCT ON (p.id)
@@ -195,14 +160,10 @@ staff_rows AS (
          LIMIT 1) as role,
         COALESCE(SUBSTRING((SELECT n.name FROM profile_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1) FROM 1 FOR 1), '') ||
         COALESCE(NULLIF(SUBSTRING(SPLIT_PART((SELECT n.name FROM profile_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1), ' ', 2) FROM 1 FOR 1), ''), '') as initials,
-        EXISTS (SELECT 1 FROM profile_flags_junction pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.profile_id = p.id AND f.name = 'profile_active' AND pf.value = TRUE) as active,
-        pa.last_active,
         rl.requests_per_day,
-        COALESCE(rr.run_count::int, 0) as requests_in_last_day,
         COALESCE(pc.cohort_ids, ARRAY[]::text[]) as cohort_ids,
         COALESCE(pda.department_ids, ARRAY[]::text[]) as department_ids,
         COALESCE(ppd.department_id, '') as primary_department_id,
-        COALESCE(ptr.total_requests, 0) as total_requests,
         -- For Python permission computation
         p.id = (SELECT profile_id FROM params) as target_is_self,
         COALESCE(pacl_all.total_cohort_links, 0) as total_cohort_links,
@@ -212,19 +173,9 @@ staff_rows AS (
     LEFT JOIN profile_cohorts_data pc ON pc.profile_id = p.id
     LEFT JOIN profile_departments_agg pda ON pda.profile_id = p.id
     LEFT JOIN profile_primary_department ppd ON ppd.profile_id = p.id
-    LEFT JOIN profile_total_runs ptr ON ptr.profiles_id = p.id
     LEFT JOIN profile_all_cohort_links pacl_all ON pacl_all.profile_id = p.id
-    LEFT JOIN recent_runs rr ON rr.profiles_id = p.id
     LEFT JOIN profile_request_limits_junction prl ON prl.profile_id = p.id AND prl.active = true
     LEFT JOIN request_limits_resource rl ON prl.request_limit_id = rl.id
-    LEFT JOIN LATERAL (
-        SELECT ae.last_active
-        FROM profiles_activity_connection pactj
-        JOIN view_activity_entry ae ON ae.id = pactj.activity_id
-        WHERE pactj.profiles_id = p.id
-        ORDER BY ae.created_at DESC
-        LIMIT 1
-    ) pa ON true
     CROSS JOIN user_profile up
     WHERE (
         -- Superadmins see all profiles (bypass department filter)
@@ -241,10 +192,9 @@ staff_rows AS (
     )
     GROUP BY p.id, p.updated_at,
         (SELECT r.role FROM profile_roles_junction pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = p.id LIMIT 1),
-        EXISTS (SELECT 1 FROM profile_flags_junction pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.profile_id = p.id AND f.name = 'profile_active' AND pf.value = TRUE),
-        pa.last_active, rl.requests_per_day,
-        pc.cohort_ids, pda.department_ids, ppd.department_id, ptr.total_requests,
-        pacl_all.total_cohort_links, rr.run_count, up.role
+        rl.requests_per_day,
+        pc.cohort_ids, pda.department_ids, ppd.department_id,
+        pacl_all.total_cohort_links, up.role
     ORDER BY p.id, (SELECT n.name FROM profile_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1)
 ),
 -- Apply server-side filters
@@ -297,94 +247,12 @@ department_option_data AS (
         (SELECT COUNT(*) FROM staff_rows sr WHERE dr.id::text = ANY(sr.department_ids)) as count
     FROM departments_resource dr
     WHERE dr.id IN (SELECT department_id FROM all_department_ids)
-),
--- Trend data CTEs (analytics, no resource equivalent — kept in SQL)
-active_users_count AS (
-    SELECT COUNT(DISTINCT p.id) as count
-    FROM profile_artifact p
-    JOIN profile_departments_junction pd ON pd.profile_id = p.id AND pd.active = true
-    WHERE pd.department_id IN (SELECT department_id FROM user_departments)
-    AND EXISTS (SELECT 1 FROM profile_flags_junction pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.profile_id = p.id AND f.name = 'profile_active' AND pf.value = true)
-),
-admin_users_by_date AS (
-    SELECT
-        DATE(p.created_at) as date,
-        COUNT(DISTINCT p.id) as count
-    FROM profile_artifact p
-    JOIN profile_departments_junction pd ON pd.profile_id = p.id AND pd.active = true
-    WHERE pd.department_id IN (SELECT department_id FROM user_departments)
-    AND (SELECT r.role FROM profile_roles_junction pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = p.id LIMIT 1) IN ('admin'::profile_type, 'superadmin'::profile_type)
-    GROUP BY DATE(p.created_at)
-),
-admin_users_cumulative AS (
-    SELECT
-        date,
-        SUM(count) OVER (ORDER BY date) as cumulative_count,
-        count as daily_count
-    FROM admin_users_by_date
-),
-instructional_users_by_date AS (
-    SELECT
-        DATE(p.created_at) as date,
-        COUNT(DISTINCT p.id) as count
-    FROM profile_artifact p
-    JOIN profile_departments_junction pd ON pd.profile_id = p.id AND pd.active = true
-    WHERE pd.department_id IN (SELECT department_id FROM user_departments)
-    AND EXISTS (SELECT 1 FROM profile_roles_junction pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = p.id AND r.role = 'instructional'::profile_type)
-    GROUP BY DATE(p.created_at)
-),
-instructional_users_cumulative AS (
-    SELECT
-        date,
-        SUM(count) OVER (ORDER BY date) as cumulative_count,
-        count as daily_count
-    FROM instructional_users_by_date
-),
-member_users_by_date AS (
-    SELECT
-        DATE(p.created_at) as date,
-        COUNT(DISTINCT p.id) as count
-    FROM profile_artifact p
-    JOIN profile_departments_junction pd ON pd.profile_id = p.id AND pd.active = true
-    WHERE pd.department_id IN (SELECT department_id FROM user_departments)
-    AND EXISTS (SELECT 1 FROM profile_roles_junction pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = p.id AND r.role = 'member'::profile_type)
-    GROUP BY DATE(p.created_at)
-),
-member_users_cumulative AS (
-    SELECT
-        date,
-        SUM(count) OVER (ORDER BY date) as cumulative_count,
-        count as daily_count
-    FROM member_users_by_date
-),
-total_requests_by_date AS (
-    SELECT
-        DATE(mr.created_at) as date,
-        COUNT(*) as count
-    FROM profiles_runs_connection prj
-    JOIN view_runs_entry mr ON mr.id = prj.run_id
-    JOIN profile_departments_junction pd ON pd.profile_id = prj.profiles_id AND pd.active = true
-    WHERE pd.department_id IN (SELECT department_id FROM user_departments)
-    GROUP BY DATE(mr.created_at)
-),
-total_requests_cumulative AS (
-    SELECT
-        date,
-        SUM(count) OVER (ORDER BY date) as cumulative_count,
-        count as daily_count
-    FROM total_requests_by_date
-),
-earliest_date AS (
-    SELECT MIN(DATE(p.created_at)) as date
-    FROM profile_artifact p
-    JOIN profile_departments_junction pd ON pd.profile_id = p.id AND pd.active = true
-    WHERE pd.department_id IN (SELECT department_id FROM user_departments)
 )
 SELECT
     -- Aggregate paginated staff (no can_edit/can_delete — computed in Python)
     COALESCE(
         (SELECT ARRAY_AGG(
-            (sr.profile_id, sr.emails, sr.primary_email, sr.name, sr.role, sr.initials, sr.active, sr.last_active, sr.cohort_ids, sr.department_ids, sr.primary_department_id, sr.requests_per_day, sr.total_requests, sr.requests_in_last_day,
+            (sr.profile_id, sr.emails, sr.primary_email, sr.name, sr.role, sr.initials, sr.cohort_ids, sr.department_ids, sr.primary_department_id, sr.requests_per_day,
              sr.target_is_self, sr.total_cohort_links
             )::types.q_list_staff_v4_staff
             ORDER BY sr.name ASC NULLS LAST
@@ -406,59 +274,11 @@ SELECT
         ) FROM department_option_data dod),
         '{}'::types.q_list_staff_v4_option_id[]
     ) as department_option_ids,
-    -- Trend data (analytics — kept in SQL)
-    COALESCE(
-        (SELECT ARRAY_AGG(
-            (active_trend.date, active_trend.count::double precision, 0)::types.q_list_staff_v4_trend_data
-            ORDER BY active_trend.date
-        )
-        FROM (
-            SELECT
-                COALESCE((SELECT date FROM earliest_date), CURRENT_DATE) as date,
-                (SELECT count FROM active_users_count) as count
-            UNION ALL
-            SELECT CURRENT_DATE as date, (SELECT count FROM active_users_count) as count
-        ) active_trend),
-        '{}'::types.q_list_staff_v4_trend_data[]
-    ) as trend_data_active,
-    COALESCE(
-        (SELECT ARRAY_AGG(
-            (auc.date, auc.cumulative_count::double precision, auc.daily_count)::types.q_list_staff_v4_trend_data
-            ORDER BY auc.date
-        )
-        FROM admin_users_cumulative auc),
-        '{}'::types.q_list_staff_v4_trend_data[]
-    ) as trend_data_admin,
-    COALESCE(
-        (SELECT ARRAY_AGG(
-            (iuc.date, iuc.cumulative_count::double precision, iuc.daily_count)::types.q_list_staff_v4_trend_data
-            ORDER BY iuc.date
-        )
-        FROM instructional_users_cumulative iuc),
-        '{}'::types.q_list_staff_v4_trend_data[]
-    ) as trend_data_instructional,
-    COALESCE(
-        (SELECT ARRAY_AGG(
-            (muc.date, muc.cumulative_count::double precision, muc.daily_count)::types.q_list_staff_v4_trend_data
-            ORDER BY muc.date
-        )
-        FROM member_users_cumulative muc),
-        '{}'::types.q_list_staff_v4_trend_data[]
-    ) as trend_data_member,
-    COALESCE(
-        (SELECT ARRAY_AGG(
-            (trc.date, trc.cumulative_count::double precision, trc.daily_count)::types.q_list_staff_v4_trend_data
-            ORDER BY trc.date
-        )
-        FROM total_requests_cumulative trc),
-        '{}'::types.q_list_staff_v4_trend_data[]
-    ) as trend_data_total_requests,
     CASE
         WHEN up.role = 'superadmin' THEN ARRAY['superadmin', 'admin', 'instructional', 'member', 'guest', 'custom']::text[]
         WHEN up.role = 'admin' THEN ARRAY['admin', 'instructional', 'member', 'guest', 'custom']::text[]
         ELSE ARRAY['instructional', 'member', 'guest']::text[]
     END as role_options,
-    ARRAY['recent', 'moderate', 'old', 'never']::text[] as last_active_options,
     -- Total count of filtered staff (before pagination)
     (SELECT total_count FROM filtered_count) as total_count
 FROM user_profile up

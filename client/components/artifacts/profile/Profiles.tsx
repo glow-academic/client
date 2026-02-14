@@ -92,7 +92,6 @@ import {
   Check,
   CheckCircle2,
   ChevronsUpDown,
-  Clock,
   Download,
   Edit,
   Eye,
@@ -190,28 +189,6 @@ const getRoleDisplayName = (role: string): string => {
     default:
       return role.charAt(0).toUpperCase() + role.slice(1);
   }
-};
-
-const formatLastActive = (timestamp: string | null): string => {
-  if (!timestamp) return "Never";
-
-  const date = new Date(timestamp);
-  const now = new Date();
-  const diffInMinutes = Math.floor(
-    (now.getTime() - date.getTime()) / (1000 * 60)
-  );
-
-  if (diffInMinutes < 1) return "Just now";
-  if (diffInMinutes < 60) return `${diffInMinutes}m ago`;
-
-  const diffInHours = Math.floor(diffInMinutes / 60);
-  if (diffInHours < 24) return `${diffInHours}h ago`;
-
-  const diffInDays = Math.floor(diffInHours / 24);
-  if (diffInDays < 30) return `${diffInDays}d ago`;
-
-  const diffInMonths = Math.floor(diffInDays / 30);
-  return `${diffInMonths}mo ago`;
 };
 
 // CSV Import constants and helpers
@@ -390,13 +367,6 @@ function ColumnPicker({
   );
 }
 
-// KPI Components
-import ActiveUsersKPI from "./kpis/ActiveUsersKPI";
-import AdminUsersKPI from "./kpis/AdminUsersKPI";
-import InstructionalUsersKPI from "./kpis/InstructionalUsersKPI";
-import TAUsersKPI from "./kpis/TAUsersKPI";
-import TotalRequestsKPI from "./kpis/TotalRequestsKPI";
-
 export default function Staff({
   listData: serverListData,
   initialCreateStaffData,
@@ -447,15 +417,12 @@ export default function Staff({
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({
     name: true,
     search: false,
-    active: false,
-    lastActive: false,
     department_ids: true,
     cohort_ids: false,
-    total_requests: true,
   });
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [sorting, setSorting] = useState<SortingState>([
-    { id: "last_active", desc: true },
+    { id: "name", desc: false },
   ]);
 
   // Extract data from server-provided data
@@ -471,87 +438,6 @@ export default function Staff({
     () => serverListData?.departments || [],
     [serverListData?.departments]
   );
-  const trendData = useMemo(
-    () => ({
-      active: (serverListData?.trend_data_active || [])
-        .filter(
-          (item) =>
-            item.date !== null && item.value !== null && item.count !== null
-        )
-        .map((item) => ({
-          date: item.date!,
-          value: item.value!,
-          count: item.count!,
-        })),
-      admin: (serverListData?.trend_data_admin || [])
-        .filter(
-          (item) =>
-            item.date !== null && item.value !== null && item.count !== null
-        )
-        .map((item) => ({
-          date: item.date!,
-          value: item.value!,
-          count: item.count!,
-        })),
-      instructional: (serverListData?.trend_data_instructional || [])
-        .filter(
-          (item) =>
-            item.date !== null && item.value !== null && item.count !== null
-        )
-        .map((item) => ({
-          date: item.date!,
-          value: item.value!,
-          count: item.count!,
-        })),
-      member: (serverListData?.trend_data_member || [])
-        .filter(
-          (item) =>
-            item.date !== null && item.value !== null && item.count !== null
-        )
-        .map((item) => ({
-          date: item.date!,
-          value: item.value!,
-          count: item.count!,
-        })),
-      total_requests: (serverListData?.trend_data_total_requests || [])
-        .filter(
-          (item) =>
-            item.date !== null && item.value !== null && item.count !== null
-        )
-        .map((item) => ({
-          date: item.date!,
-          value: item.value!,
-          count: item.count!,
-        })),
-    }),
-    [
-      serverListData?.trend_data_active,
-      serverListData?.trend_data_admin,
-      serverListData?.trend_data_instructional,
-      serverListData?.trend_data_member,
-      serverListData?.trend_data_total_requests,
-    ]
-  );
-
-  // Calculate counts for KPI cards
-  const counts = useMemo(() => {
-    const activeStaff = staff.filter((s) => s.active);
-    const inactiveStaff = staff.filter((s) => !s.active);
-
-    return {
-      total: staff.length,
-      active: activeStaff.length,
-      inactive: inactiveStaff.length,
-      instructional: staff.filter((s) => s.role === "instructional").length,
-      member: staff.filter((s) => s.role === "member").length,
-      admin: staff.filter((s) => s.role === "admin").length,
-      superadmin: staff.filter((s) => s.role === "superadmin").length,
-      guest: staff.filter((s) => s.role === "guest").length,
-      custom: staff.filter((s) => s.role === "custom").length,
-      totalRequests: staff.reduce((sum, s) => sum + (s.total_requests || 0), 0),
-    };
-  }, [staff]);
-
   // Refresh data by revalidating server-side data
   const handleRefresh = async () => {
     setIsRefreshing(true);
@@ -589,30 +475,6 @@ export default function Staff({
           opt !== null && !!opt.value && !!opt.label
       );
   }, [serverListData?.role_options]);
-
-  const lastActiveOptions = useMemo(() => {
-    const options = serverListData?.last_active_options;
-    if (!options || !Array.isArray(options)) return [];
-    return options
-      .map((opt: unknown) => {
-        if (
-          opt &&
-          typeof opt === "object" &&
-          "value" in opt &&
-          "label" in opt
-        ) {
-          return {
-            value: String(opt.value),
-            label: String(opt.label),
-          };
-        }
-        return null;
-      })
-      .filter(
-        (opt): opt is { value: string; label: string } =>
-          opt !== null && !!opt.value && !!opt.label
-      );
-  }, [serverListData?.last_active_options]);
 
   // Transform mappings for CSV import
   const departmentMappingForCSV = useMemo(() => {
@@ -1161,33 +1023,25 @@ export default function Staff({
         cell: ({ row }) => {
           const staff = row.original;
           return (
-            <div className="flex items-center justify-between gap-3">
-              <div className="flex items-center gap-3">
-                <div
-                  className="h-8 w-8 rounded-full outline outline-muted-foreground flex items-center justify-center text-xs font-medium"
-                  style={{ outlineWidth: "1px", outlineStyle: "solid" }}
-                >
-                  {getInitials(staff.name ?? "")}
-                </div>
-                <div className="text-left">
-                  <div className="flex items-center gap-2">
-                    <p className="font-medium text-sm">
-                      {staff.name}
-                    </p>
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    {staff.emails && staff.emails.length > 0
-                      ? staff.emails.join(", ")
-                      : staff.primary_email || "No email"}
+            <div className="flex items-center gap-3">
+              <div
+                className="h-8 w-8 rounded-full outline outline-muted-foreground flex items-center justify-center text-xs font-medium"
+                style={{ outlineWidth: "1px", outlineStyle: "solid" }}
+              >
+                {getInitials(staff.name ?? "")}
+              </div>
+              <div className="text-left">
+                <div className="flex items-center gap-2">
+                  <p className="font-medium text-sm">
+                    {staff.name}
                   </p>
                 </div>
+                <p className="text-xs text-muted-foreground">
+                  {staff.emails && staff.emails.length > 0
+                    ? staff.emails.join(", ")
+                    : staff.primary_email || "No email"}
+                </p>
               </div>
-              <div
-                className={`w-2 h-2 rounded-full ${
-                  staff.active ? "bg-green-500" : "bg-gray-400"
-                }`}
-                title={staff.active ? "Active" : "Inactive"}
-              />
             </div>
           );
         },
@@ -1246,14 +1100,6 @@ export default function Staff({
           if (!value || value.length === 0) return true;
           return value.includes(staff.role);
         },
-      },
-      {
-        id: "active",
-        accessorFn: (row: ProfileListItem) => (row.active ? "true" : "false"),
-        header: "Active",
-        cell: () => null,
-        enableHiding: false,
-        enableSorting: false,
       },
       {
         id: "cohort_ids",
@@ -1319,103 +1165,6 @@ export default function Staff({
               ))}
             </div>
           );
-        },
-      },
-      {
-        id: "lastActive",
-        accessorFn: (row: ProfileListItem) => {
-          const lastActive = row.last_active;
-          if (!lastActive) return "never";
-
-          const date = new Date(lastActive);
-          const now = new Date();
-          const diffInDays = Math.floor(
-            (now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24)
-          );
-
-          if (diffInDays < 7) return "recent";
-          if (diffInDays <= 30) return "moderate";
-          return "old";
-        },
-        header: "Last Active Category",
-        cell: () => null,
-        enableHiding: false,
-        enableSorting: false,
-      },
-      {
-        accessorKey: "last_active",
-        header: ({ column }) => (
-          <DataTableColumnHeader column={column} title="Last Active" />
-        ),
-        cell: ({ row }) => {
-          const lastActive = row.getValue("last_active") as string | null;
-          const formatted = formatLastActive(lastActive);
-          return (
-            <div className="flex items-center gap-2">
-              <Clock className="h-3 w-3 text-muted-foreground" />
-              <span
-                className={`text-sm ${!lastActive ? "text-muted-foreground" : ""}`}
-              >
-                {formatted}
-              </span>
-            </div>
-          );
-        },
-        enableSorting: true,
-        sortingFn: "datetime",
-      },
-      {
-        id: "requests",
-        accessorFn: (row) => row.requests_in_last_day ?? 0,
-        header: ({ column }) => (
-          <DataTableColumnHeader column={column} title="Requests / Day" />
-        ),
-        cell: ({ row }) => {
-          const staff = row.original;
-          const used = staff.requests_in_last_day ?? 0;
-          const limit = staff.requests_per_day;
-          const limitText =
-            limit === null || limit === undefined ? "∞" : String(limit);
-          return (
-            <div className="flex flex-col items-center">
-              <span className="text-sm font-medium">
-                {used}/{limitText}
-              </span>
-              <span className="text-xs text-muted-foreground">used</span>
-            </div>
-          );
-        },
-        enableSorting: true,
-        enableColumnFilter: false,
-      },
-      {
-        id: "total_requests",
-        accessorFn: (row) => row.total_requests ?? 0,
-        header: ({ column }) => (
-          <DataTableColumnHeader column={column} title="Total Requests" />
-        ),
-        cell: ({ row }) => {
-          const staff = row.original;
-          const total = staff.total_requests ?? 0;
-          return (
-            <div className="flex items-center justify-center">
-              <span className="text-sm font-medium">{total}</span>
-            </div>
-          );
-        },
-        enableSorting: true,
-        enableColumnFilter: true,
-        filterFn: (row, _, value: string[]) => {
-          const total = row.getValue("total_requests") as number;
-          if (value.length === 0) return true;
-          return value.some((category) => {
-            if (category === "0") return total === 0;
-            if (category === "1-10") return total >= 1 && total <= 10;
-            if (category === "11-50") return total >= 11 && total <= 50;
-            if (category === "51-100") return total >= 51 && total <= 100;
-            if (category === "100+") return total > 100;
-            return false;
-          });
         },
       },
     ],
@@ -1617,20 +1366,8 @@ export default function Staff({
   const isFiltered = table.getState().columnFilters.length > 0;
   const nameColumn = table.getColumn("search");
   const roleColumn = table.getColumn("role");
-  const lastActiveColumn = table.getColumn("lastActive");
   const departmentIdsColumn = table.getColumn("department_ids");
   const selectedCount = selectedStaffIds.length;
-
-  const filteredLastActiveOptions = useMemo(() => {
-    if (!lastActiveColumn) return [];
-    const facets = lastActiveColumn.getFacetedUniqueValues();
-    if (!facets) return [];
-
-    return lastActiveOptions.filter((option) => {
-      const count = facets.get(option.value) || 0;
-      return count > 0;
-    });
-  }, [lastActiveColumn, lastActiveOptions]);
 
   const deletableCount = useMemo(() => {
     return selectedStaffIds.filter((id) => {
@@ -1642,34 +1379,6 @@ export default function Staff({
   return (
     <TooltipProvider>
       <div className="space-y-6" data-page="staff-index">
-        {/* Header with summary stats - 5 KPI cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-          <ActiveUsersKPI
-            currentValue={counts.active}
-            trendData={trendData["active"] || []}
-          />
-          <AdminUsersKPI
-            currentValue={
-              profile?.role === "superadmin"
-                ? (counts.superadmin || 0) + (counts.admin || 0)
-                : counts.admin
-            }
-            trendData={trendData["admin"] || []}
-          />
-          <InstructionalUsersKPI
-            currentValue={counts.instructional}
-            trendData={trendData["instructional"] || []}
-          />
-          <TAUsersKPI
-            currentValue={counts.member}
-            trendData={trendData["member"] || []}
-          />
-          <TotalRequestsKPI
-            currentValue={counts.totalRequests}
-            trendData={trendData["total_requests"] || []}
-          />
-        </div>
-
         {/* Staff Data Table */}
         <div className="space-y-2">
           {/* Toolbar */}
@@ -1697,15 +1406,6 @@ export default function Staff({
                     column={roleColumn}
                     title="Role"
                     options={roleOptions}
-                  />
-                )}
-
-                {/* Last Active Filter */}
-                {lastActiveColumn && filteredLastActiveOptions.length > 0 && (
-                  <DataTableFacetedFilter
-                    column={lastActiveColumn}
-                    title="Last Active"
-                    options={filteredLastActiveOptions}
                   />
                 )}
 
