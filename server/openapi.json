@@ -45433,6 +45433,57 @@
         ]
       }
     },
+    "/socket/v4/server/test/invocation/started": {
+      "post": {
+        "tags": [
+          "socket",
+          "socket-server"
+        ],
+        "summary": "Test Invocation Started Api",
+        "description": "Server-to-client event: Test invocations created, benchmark started.",
+        "operationId": "test_invocation_started_api_socket_v4_server_test_invocation_started_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BenchmarkStartedEvent"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Test Invocation Started Api Socket V4 Server Test Invocation Started Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server"
+        ]
+      }
+    },
     "/socket/v4/server/test/progress": {
       "post": {
         "tags": [

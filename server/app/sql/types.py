@@ -7091,8 +7091,6 @@ class StartBenchmarkAttemptSqlRow(BaseModel):
 
     attempt_id: UUID | None = None
     eval_id: UUID | None = None
-    use_groups: bool | None = None
-    chats: Any | None = None
 
 class StartBenchmarkAttemptApiRequest(BaseModel):
 
@@ -7104,8 +7102,6 @@ class StartBenchmarkAttemptApiResponse(BaseModel):
 
     attempt_id: UUID | None = None
     eval_id: UUID | None = None
-    use_groups: bool | None = None
-    chats: Any | None = None
 
 
 
@@ -7428,6 +7424,36 @@ class GetGenerationRunContextAndCreateRunApiResponse(BaseModel):
     trace_id: str | None = None
     message_ids: list[UUID] | None = None
     output_modalities: list[str] | None = None
+
+
+
+# Generated from: create_test_invocations
+
+class CreateTestInvocationsSqlParams(BaseModel):
+
+    p_test_id: UUID
+    p_eval_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.p_test_id,
+            self.p_eval_id,
+        )
+
+class CreateTestInvocationsSqlRow(BaseModel):
+
+    use_groups: bool | None = None
+    chats: Any | None = None
+
+class CreateTestInvocationsApiRequest(BaseModel):
+
+    p_test_id: UUID
+    p_eval_id: UUID
+
+class CreateTestInvocationsApiResponse(BaseModel):
+
+    use_groups: bool | None = None
+    chats: Any | None = None
 
 
 
@@ -29559,6 +29585,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetGenerationRunContextAndCreateRunApiRequest",
         "GetGenerationRunContextAndCreateRunApiResponse",
     ),
+    "app/sql/v4/queries/generate/test/create_test_invocations_complete.sql": (
+        "CreateTestInvocationsSqlParams",
+        "CreateTestInvocationsSqlRow",
+        "CreateTestInvocationsApiRequest",
+        "CreateTestInvocationsApiResponse",
+    ),
     "app/sql/v4/queries/generate/test/get_test_run_context_complete.sql": (
         "GetTestRunContextSqlParams",
         "GetTestRunContextSqlRow",
@@ -33272,6 +33304,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/queries/generate/start/get_generation_run_context_and_create_run_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/generate/test/create_test_invocations_complete.sql"]
     ) -> SqlString: ...
 
     @overload

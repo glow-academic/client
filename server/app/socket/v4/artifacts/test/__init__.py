@@ -9,12 +9,13 @@ Handles WebSocket events for benchmark test interactions:
 
 from fastapi import APIRouter
 
-from . import complete, control, error, permissions, progress, room, run, run_all, types
+from . import complete, control, error, invocation, permissions, progress, room, run, run_all, types
 
 __all__ = [
     "complete",
     "control",
     "error",
+    "invocation",
     "permissions",
     "progress",
     "room",
@@ -33,6 +34,7 @@ client_router.include_router(run_all.client_router)
 
 server_router.include_router(room.server_router)
 server_router.include_router(control.server_router)
+server_router.include_router(invocation.server_router)
 server_router.include_router(progress.server_router)
 server_router.include_router(complete.server_router)
 server_router.include_router(error.server_router)

@@ -2085,16 +2085,11 @@ async def export_uploads(conn: asyncpg.Connection) -> None:
             files_dir,
         )
 
-    # --- Pass 2: Image uploads via document_images_junction → images_resource ---
+    # --- Pass 2: Image uploads via images_resource ---
     img_rows = await conn.fetch("""
         SELECT DISTINCT ir.upload_id AS uploads_id
-        FROM document_artifact da
-        JOIN document_images_junction dij ON dij.document_id = da.id AND dij.active = true
-        JOIN images_resource ir ON ir.id = dij.images_id
-        WHERE NOT EXISTS (
-            SELECT 1 FROM document_departments_junction ddj WHERE ddj.document_id = da.id
-        )
-        AND ir.upload_id IS NOT NULL
+        FROM images_resource ir
+        WHERE ir.upload_id IS NOT NULL
     """)
 
     for r in img_rows:
