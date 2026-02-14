@@ -6,8 +6,8 @@ Defines payload and event types for the attempt simulation WebSocket handlers:
 - AttemptSendPayload: Simplified send message (new - server looks up context from chat_id)
 
 Entry types are predefined per handler (not in payload):
-- message.py: ['messages', 'contents', 'hints'] - Message response tools
-- grade.py: ['grades', 'feedbacks'] - Grading tools
+- message.py: ['contents', 'hints'] - Message response tools
+- grade.py: All tools from agent's config chain (no client-side filtering)
 """
 
 from typing import Any
@@ -26,7 +26,6 @@ from app.socket.v4.artifacts.types import (
 # =============================================================================
 
 ATTEMPT_MESSAGE_ENTRY_TYPES = ["contents", "hints"]
-ATTEMPT_GRADE_ENTRY_TYPES = ["grades", "feedbacks"]
 
 
 # =============================================================================

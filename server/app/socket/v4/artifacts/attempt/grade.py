@@ -3,38 +3,43 @@
 Handles the attempt_grade WebSocket event to complete a simulation and trigger grading.
 Creates grade entry + run and routes to generate_artifact handler for grading.
 
-Entry types: ['grades', 'feedbacks'] - Grading tools
+Follows the persona generation pattern:
+1. get_attempt_websocket() resolves config chain (agent/model/provider)
+2. Python validates prerequisites and extracts LLM config
+3. Parallel fetch for tools/prompts/instructions
+4. Slim SQL handles mutations only (run/config/grade creation)
+5. Jinja rendering in Python
 """
 
+import asyncio
 import uuid
 from typing import Any, cast
 
 from fastapi import APIRouter
 
+from app.api.v4.artifacts.attempt.get import get_attempt_websocket
+from app.api.v4.resources.instructions.get import get_instructions_internal
+from app.api.v4.resources.prompts.get import get_prompts_internal
 from app.infra.v4.generation import convert_tools_to_dict, render_developer_instructions
 from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
 from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.infra.v4.websocket.typed_emit import emit_to_internal
-from app.main import get_internal_sio, sio
-from app.socket.v4.artifacts.attempt.permissions import (
-    AttemptGenerationContext,
-    format_generation_error,
-    validate_attempt_grade_access,
-)
+from app.main import get_internal_sio, get_pool, sio
 from app.socket.v4.artifacts.attempt.types import (
-    ATTEMPT_GRADE_ENTRY_TYPES,
     AttemptGradedEvent,
     AttemptGradePayload,
 )
 from app.socket.v4.artifacts.types import GenerateErrorApiRequest
 from app.sql.types import (
+    GetAgentEntryToolsSqlParams,
+    GetAgentEntryToolsSqlRow,
     GetAttemptGradeContextSqlParams,
     GetAttemptGradeContextSqlRow,
     PrepareAttemptGradeSqlParams,
     PrepareAttemptGradeSqlRow,
 )
 from app.utils.logging.db_logger import get_logger
-from app.utils.sql_helper import execute_sql_typed
+from app.utils.sql_helper import execute_sql_typed, load_sql
 
 logger = get_logger(__name__)
 
@@ -51,6 +56,39 @@ SQL_PATH_CONTEXT = (
 SQL_PATH_PREPARE = (
     "app/sql/v4/queries/generate/attempt/prepare_attempt_grade_complete.sql"
 )
+SQL_PATH_AGENT_ENTRY_TOOLS = (
+    "app/sql/v4/queries/generate/attempt/get_agent_entry_tools_complete.sql"
+)
+SQL_PATH_CREATE_MESSAGE_WITH_TEXT = (
+    "app/sql/v4/queries/messages/create_message_with_text_complete.sql"
+)
+
+
+def _build_attempt_jinja_context(
+    simulation_id: uuid.UUID | None,
+    simulation_name: str | None,
+    attempt_id: uuid.UUID,
+    grade_id: uuid.UUID | None,
+    chat_id: uuid.UUID | None,
+    messages: list[dict[str, Any]],
+    rubric: dict[str, Any],
+) -> dict[str, Any]:
+    """Build Jinja context for attempt grading templates."""
+    return {
+        "simulation": {
+            "id": str(simulation_id) if simulation_id else None,
+            "name": simulation_name,
+        },
+        "attempt": {
+            "id": str(attempt_id),
+        },
+        "grade": {
+            "id": str(grade_id) if grade_id else None,
+        },
+        "chat_id": str(chat_id) if chat_id else None,
+        "messages": messages,
+        "rubric": rubric,
+    }
 
 
 async def _attempt_grade_impl(
@@ -59,25 +97,157 @@ async def _attempt_grade_impl(
     """Handle attempt grade with all business logic.
 
     This function:
-    1. Fetches context and validates prerequisites
-    2. Creates grade entry + run
-    3. Fetches full attempt data from views (messages, rubric)
-    4. Builds jinja context with full simulation context
-    5. Emits to generate_artifact handler with grading tools
-    6. Completion handler will emit attempt_graded
+    1. Fetches attempt data via get_attempt_websocket() (cached, includes config chain)
+    2. Extracts LLM config from pre-fetched resources (agent/model/provider)
+    3. Validates prerequisites (agent, model, provider, API key)
+    4. Checks rate limit and simulation access via simplified context SQL
+    5. Parallel fetches tools, prompts, and instructions
+    6. Calls slim prepare SQL (mutations only: run/config/grade creation)
+    7. Builds jinja context in Python from views data
+    8. Renders developer instructions and persists messages
+    9. Emits to generate_artifact handler with grading tools
     """
     try:
+        # Step 1: Fetch attempt data (includes pre-fetched config resources)
+        pool = get_pool()
+        if not pool:
+            raise RuntimeError("Database pool not initialized")
+
+        async with pool.acquire() as conn:
+            result = await get_attempt_websocket(
+                conn=conn,
+                profile_id=profile_id,
+                attempt_id=data.attempt_id,
+            )
+
+        if not result.resources:
+            await emit_to_internal(
+                "generate_call_error",
+                GenerateErrorApiRequest(
+                    sid=sid,
+                    error_message="Failed to fetch attempt data",
+                    artifact_type="attempt",
+                    group_id=None,
+                    resource_type="attempt",
+                ),
+                sid=sid,
+            )
+            return
+
+        # Get agent_id from resource_agent_ids
+        resource_agent_ids = result.resource_agent_ids or {}
+        agent_id: uuid.UUID | None = resource_agent_ids.get("primary")
+
+        if not agent_id:
+            await emit_to_internal(
+                "generate_call_error",
+                GenerateErrorApiRequest(
+                    sid=sid,
+                    error_message="No agent found for this attempt",
+                    artifact_type="attempt",
+                    group_id=None,
+                    resource_type="attempt",
+                ),
+                sid=sid,
+            )
+            return
+
+        # Step 2: Extract LLM config from pre-fetched resources
+        config_agents = result.resources.agents or []
+        config_models = result.resources.models or []
+        config_providers = result.resources.providers or []
+
+        agent_resource = config_agents[0] if config_agents else None
+        model_resource = config_models[0] if config_models else None
+        provider_resource = config_providers[0] if config_providers else None
+
+        # Validate: agent resource must exist
+        if not agent_resource:
+            await emit_to_internal(
+                "generate_call_error",
+                GenerateErrorApiRequest(
+                    sid=sid,
+                    error_message="No agent configuration found. Check simulation settings.",
+                    artifact_type="attempt",
+                    group_id=None,
+                    resource_type="attempt",
+                ),
+                sid=sid,
+            )
+            return
+
+        # Validate: model resource must exist
+        if not model_resource:
+            await emit_to_internal(
+                "generate_call_error",
+                GenerateErrorApiRequest(
+                    sid=sid,
+                    error_message=f"Agent '{agent_resource.name}' has no model configured",
+                    artifact_type="attempt",
+                    group_id=None,
+                    resource_type="attempt",
+                ),
+                sid=sid,
+            )
+            return
+
+        # Validate: provider resource must exist
+        if not provider_resource:
+            await emit_to_internal(
+                "generate_call_error",
+                GenerateErrorApiRequest(
+                    sid=sid,
+                    error_message=f"Model '{model_resource.name}' has no provider configured",
+                    artifact_type="attempt",
+                    group_id=None,
+                    resource_type="attempt",
+                ),
+                sid=sid,
+            )
+            return
+
+        # Extract LLM config fields from resources
+        model_name = (
+            model_resource.value
+            if hasattr(model_resource, "value")
+            else model_resource.name
+        )
+        base_url = (
+            provider_resource.endpoint if hasattr(provider_resource, "endpoint") else ""
+        )
+        api_key = provider_resource.key if hasattr(provider_resource, "key") else ""
+        temperature = (
+            agent_resource.temperature
+            if hasattr(agent_resource, "temperature")
+            else 0.0
+        )
+        reasoning = (
+            agent_resource.reasoning if hasattr(agent_resource, "reasoning") else None
+        )
+        provider_name = provider_resource.value or provider_resource.name or ""
+
+        # Validate: API key must exist
+        if not api_key:
+            await emit_to_internal(
+                "generate_call_error",
+                GenerateErrorApiRequest(
+                    sid=sid,
+                    error_message=f"No API key configured for provider '{provider_name}'",
+                    artifact_type="attempt",
+                    group_id=None,
+                    resource_type="attempt",
+                ),
+                sid=sid,
+            )
+            return
+
+        # Step 3: Check rate limit + simulation access (the only things still in SQL)
         async with get_db_connection() as conn:
-            # Step 1: Fetch context and validate prerequisites
-            # Agent is resolved from pre-stored group (created at training start)
             context_params = GetAttemptGradeContextSqlParams(
                 p_profile_id=profile_id,
                 p_simulation_id=data.simulation_id,
                 p_attempt_id=data.attempt_id,
-                p_chat_id=data.chat_id,
-                p_entry_types=ATTEMPT_GRADE_ENTRY_TYPES,
             )
-
             context_row = cast(
                 GetAttemptGradeContextSqlRow,
                 await execute_sql_typed(conn, SQL_PATH_CONTEXT, params=context_params),
@@ -97,38 +267,59 @@ async def _attempt_grade_impl(
                 )
                 return
 
-            # Build context dataclass for validation
-            ctx = AttemptGenerationContext(
-                # Base GenerationContext fields
-                agent_exists=context_row.agent_exists or False,
-                agent_name=context_row.agent_name,
-                agent_is_active=context_row.agent_is_active or False,
-                model_id=context_row.model_id,
-                model_name=context_row.model_name,
-                provider_id=context_row.provider_id,
-                provider_name=context_row.provider_name,
-                has_api_key=context_row.has_api_key or False,
-                requests_per_day=context_row.requests_per_day,
-                runs_today=context_row.runs_today or 0,
-                # Attempt-specific fields
-                simulation_exists=context_row.simulation_exists or False,
-                simulation_is_active=context_row.simulation_is_active or False,
-                simulation_id=context_row.simulation_id,
-                simulation_name=context_row.simulation_name,
-                profile_has_access=context_row.profile_has_access or False,
-                attempt_exists=context_row.attempt_exists or False,
-                attempt_id=context_row.attempt_id,
-                requested_entry_types=ATTEMPT_GRADE_ENTRY_TYPES,
-                valid_entry_types=context_row.valid_entry_types or [],
-            )
+            # Validate simulation access
+            if not context_row.simulation_exists:
+                await emit_to_internal(
+                    "generate_call_error",
+                    GenerateErrorApiRequest(
+                        sid=sid,
+                        error_message="Simulation does not exist",
+                        artifact_type="attempt",
+                        group_id=None,
+                        resource_type="attempt",
+                    ),
+                    sid=sid,
+                )
+                return
 
-            # Validate using business logic
-            is_valid, failures = validate_attempt_grade_access(ctx)
+            if not context_row.attempt_exists:
+                await emit_to_internal(
+                    "generate_call_error",
+                    GenerateErrorApiRequest(
+                        sid=sid,
+                        error_message="Attempt does not exist",
+                        artifact_type="attempt",
+                        group_id=None,
+                        resource_type="attempt",
+                    ),
+                    sid=sid,
+                )
+                return
 
-            if not is_valid:
-                error_msg = format_generation_error(failures)
+            # Check cohort access (skip if attempt exists — implies access was granted)
+            if not context_row.profile_has_access and not context_row.attempt_exists:
+                sim_name = context_row.simulation_name or "unknown"
+                await emit_to_internal(
+                    "generate_call_error",
+                    GenerateErrorApiRequest(
+                        sid=sid,
+                        error_message=f"You do not have access to simulation '{sim_name}'",
+                        artifact_type="attempt",
+                        group_id=None,
+                        resource_type="attempt",
+                    ),
+                    sid=sid,
+                )
+                return
+
+            # Rate limit validation
+            requests_per_day = context_row.requests_per_day
+            runs_today = context_row.runs_today or 0
+
+            if requests_per_day is not None and runs_today >= requests_per_day:
+                error_msg = f"Rate limit exceeded ({runs_today}/{requests_per_day} requests today)"
                 logger.error(
-                    f"Attempt grade validation failed - "
+                    f"Attempt grade rate limit exceeded - "
                     f"profile_id={profile_id}, attempt_id={data.attempt_id}, "
                     f"reason: {error_msg}"
                 )
@@ -138,21 +329,75 @@ async def _attempt_grade_impl(
                         sid=sid,
                         error_message=f"Cannot grade attempt: {error_msg}",
                         artifact_type="attempt",
-                        group_id=None,
+                        group_id=str(result.group_id) if result.group_id else None,
                         resource_type="attempt",
                     ),
                     sid=sid,
                 )
                 return
 
-            # Step 2: Create grade entry + run
+        # Step 4: Parallel fetch tools, prompts, and instructions
+        async with get_db_connection() as conn:
+
+            async def fetch_tools():
+                async with pool.acquire() as c:
+                    tools_params = GetAgentEntryToolsSqlParams(
+                        p_agent_id=agent_id,
+                        p_entry_types=None,  # All tools, no filtering
+                    )
+                    tools_row = cast(
+                        GetAgentEntryToolsSqlRow,
+                        await execute_sql_typed(
+                            c, SQL_PATH_AGENT_ENTRY_TOOLS, params=tools_params
+                        ),
+                    )
+                    return tools_row.tools if tools_row else []
+
+            async def fetch_system_prompt():
+                prompt_id = (
+                    agent_resource.prompt_id
+                    if hasattr(agent_resource, "prompt_id")
+                    else None
+                )
+                if not prompt_id:
+                    return ""
+                async with pool.acquire() as c:
+                    prompts = await get_prompts_internal(c, [prompt_id])
+                    if prompts and prompts[0].system_prompt:
+                        return prompts[0].system_prompt
+                    return ""
+
+            async def fetch_developer_instructions():
+                instruction_ids = (
+                    agent_resource.instruction_ids
+                    if hasattr(agent_resource, "instruction_ids")
+                    else []
+                )
+                if not instruction_ids:
+                    return []
+                async with pool.acquire() as c:
+                    instructions = await get_instructions_internal(c, instruction_ids)
+                    return [inst.template for inst in instructions if inst.template]
+
+            (
+                tools,
+                system_prompt,
+                developer_instruction_templates,
+            ) = await asyncio.gather(
+                fetch_tools(),
+                fetch_system_prompt(),
+                fetch_developer_instructions(),
+            )
+
+            # Step 5: Prepare grade (mutations only: run/config/grade creation)
             prepare_params = PrepareAttemptGradeSqlParams(
                 p_profile_id=profile_id,
                 p_attempt_id=data.attempt_id,
                 p_chat_id=data.chat_id,
-                p_entry_types=ATTEMPT_GRADE_ENTRY_TYPES,
+                p_agents_resource_id=agent_resource.id,
+                p_models_resource_id=model_resource.id,
+                p_providers_resource_id=provider_resource.id,
             )
-
             prepare_row = cast(
                 PrepareAttemptGradeSqlRow,
                 await execute_sql_typed(conn, SQL_PATH_PREPARE, params=prepare_params),
@@ -176,44 +421,96 @@ async def _attempt_grade_impl(
                 )
                 return
 
-            run_id = str(prepare_row.run_id)
-            group_id = str(prepare_row.group_id) if prepare_row.group_id else None
-            grade_id = str(prepare_row.grade_id) if prepare_row.grade_id else None
+            run_id = prepare_row.run_id
+            group_id = prepare_row.group_id
+            grade_id = prepare_row.grade_id
 
-            # Step 3: Build model config
-            model_config = {
-                "model": prepare_row.model_name,
-                "api_key": prepare_row.api_key,
-                "base_url": prepare_row.base_url,
-                "temperature": prepare_row.temperature,
-                "reasoning": prepare_row.reasoning,
-                "provider": prepare_row.provider_name,
-                "voice": None,
-                "quality": None,
-                "length_seconds": None,
-                "tool_choice": "required",  # Force tool calls for grading
-            }
+            # Step 6: Build jinja context in Python from views data
+            # Convert simulation messages to role/content format for jinja templates
+            jinja_messages: list[dict[str, Any]] = []
+            if result.views and result.views.simulation_messages:
+                for msg in result.views.simulation_messages:
+                    if not msg.completed:
+                        continue
+                    # Filter by chat_id if specified
+                    if data.chat_id and msg.chat_id != data.chat_id:
+                        continue
+                    role = "user" if msg.type == "query" else "assistant"
+                    content = ""
+                    if msg.contents:
+                        content = "\n".join(
+                            c.content for c in msg.contents if c.content
+                        )
+                    jinja_messages.append(
+                        {
+                            "chat_id": str(msg.chat_id) if msg.chat_id else None,
+                            "role": role,
+                            "content": content,
+                            "created_at": msg.created_at,
+                        }
+                    )
 
-            # Step 4: Render developer instructions with Jinja
-            rendered_developer_messages = render_developer_instructions(
-                templates=prepare_row.developer_instruction_templates,
-                jinja_context=prepare_row.jinja_context,
+            # Build rubric data from resources
+            rubric_data: dict[str, Any] = {}
+            if result.resources.rubrics:
+                first_rubric = next(iter(result.resources.rubrics.values()), None)
+                if first_rubric:
+                    rubric_data = {
+                        "id": (
+                            str(first_rubric.rubric_id)
+                            if first_rubric.rubric_id
+                            else None
+                        ),
+                        "name": first_rubric.name,
+                        "points": first_rubric.total_points,
+                        "pass_points": first_rubric.pass_points,
+                    }
+
+            jinja_context = _build_attempt_jinja_context(
+                simulation_id=context_row.simulation_id,
+                simulation_name=context_row.simulation_name,
+                attempt_id=data.attempt_id,
+                grade_id=grade_id,
+                chat_id=data.chat_id,
+                messages=jinja_messages,
+                rubric=rubric_data,
             )
 
-            # Step 5: Build messages array
-            messages: list[dict[str, str]] = []
+            # Step 7: Render developer instructions with Jinja
+            rendered_developer_messages = render_developer_instructions(
+                templates=developer_instruction_templates,
+                jinja_context=jinja_context,
+            )
 
-            # Add system prompt
-            if prepare_row.system_prompt:
-                messages.append(
-                    {"role": "system", "content": prepare_row.system_prompt}
+            # Step 8: Build messages for LLM AND persist to database
+            messages: list[dict[str, str]] = []
+            create_message_sql = load_sql(SQL_PATH_CREATE_MESSAGE_WITH_TEXT)
+
+            # Insert system prompt
+            if system_prompt:
+                messages.append({"role": "system", "content": system_prompt})
+                await conn.fetchval(
+                    create_message_sql,
+                    run_id,
+                    "system",
+                    system_prompt,
+                    True,
+                    False,
                 )
 
-            # Add rendered developer instructions (contains rubric, messages, etc.)
-            for dm in rendered_developer_messages:
-                messages.append({"role": "developer", "content": dm})
+            # Insert developer instructions
+            for m in rendered_developer_messages:
+                messages.append({"role": "developer", "content": m})
+                await conn.fetchval(
+                    create_message_sql,
+                    run_id,
+                    "developer",
+                    m,
+                    True,
+                    False,
+                )
 
-            # Step 6: Emit to generate_artifact handler with grading tools
+            # Step 9: Emit to generate_artifact handler with grading tools
             await internal_sio.emit(
                 "generate_artifact",
                 {
@@ -221,15 +518,26 @@ async def _attempt_grade_impl(
                     "artifact_type": "attempt",
                     "resource_type": "grade",
                     "modality": "call",
-                    "run_id": run_id,
-                    "group_id": group_id,
+                    "run_id": str(run_id),
+                    "group_id": str(group_id) if group_id else None,
                     "attempt_id": str(data.attempt_id),
                     "chat_id": str(data.chat_id) if data.chat_id else None,
-                    "grade_id": grade_id,
+                    "grade_id": str(grade_id) if grade_id else None,
                     "message_id": None,
                     "messages": messages,
-                    "llm_config": model_config,
-                    "tools": convert_tools_to_dict(prepare_row.tools),
+                    "llm_config": {
+                        "model": model_name,
+                        "api_key": api_key,
+                        "base_url": base_url,
+                        "temperature": temperature,
+                        "reasoning": reasoning,
+                        "provider": provider_name,
+                        "voice": None,
+                        "quality": None,
+                        "length_seconds": None,
+                        "tool_choice": "required",
+                    },
+                    "tools": convert_tools_to_dict(tools),
                 },
             )
 
