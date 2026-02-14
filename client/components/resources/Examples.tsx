@@ -16,6 +16,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import type { OutputOf } from "@/lib/api/types";
+import { useSocket } from "@/contexts/socket-context";
 import { cn } from "@/lib/utils";
 import { Check, Loader2, Sparkles, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -65,6 +66,7 @@ export interface ExamplesProps {
   aiExampleResources?: Pick<ExampleResourceItem, "id" | "example">[] | null;
   onAccept?: () => void;
   onReject?: () => void;
+  onGenerationComplete?: () => void;
 }
 
 export function Examples({
@@ -97,6 +99,7 @@ export function Examples({
   aiExampleResources,
   onAccept,
   onReject,
+  onGenerationComplete,
 }: ExamplesProps) {
   // Use standardized props with fallback to legacy props
   const ids = useMemo(
@@ -325,35 +328,65 @@ export function Examples({
     setInternalTexts(items.length > 0 ? items : [""]);
   }, []);
 
+  // Socket-based AI suggestion handling
+  const { socket: aiSocket, isConnected: aiIsConnected } = useSocket();
+  const [internalAiExampleResources, setInternalAiExampleResources] = useState<Pick<ExampleResourceItem, "id" | "example">[] | null>(null);
+
+  useEffect(() => {
+    if (!aiSocket || !aiIsConnected || !group_id) return;
+
+    const handleGenerationComplete = (data: {
+      resource_type: string;
+      group_id: string;
+      id: string;
+      example: string;
+    }) => {
+      if (data.resource_type === "examples" && data.group_id === group_id) {
+        const resourceData = data;
+        setInternalAiExampleResources([{ id: resourceData.id, example: resourceData.example }]);
+        onGenerationComplete?.();
+      }
+    };
+
+    aiSocket.on("resource_generation_complete", handleGenerationComplete);
+    return () => {
+      aiSocket.off("resource_generation_complete", handleGenerationComplete);
+    };
+  }, [aiSocket, aiIsConnected, group_id, onGenerationComplete]);
+
+  const effectiveAiExampleResources = internalAiExampleResources ?? aiExampleResources ?? null;
+
   // Check if any example resource is generated (must be before early return)
   const hasGenerated = useMemo(() => {
     return _example_resources?.some((e) => e.generated) ?? false;
   }, [_example_resources]);
 
   // AI suggestion state
-  const showDiff = !!aiExampleResources?.length;
+  const showDiff = !!effectiveAiExampleResources?.length;
 
   // Accept AI suggestion - add AI-suggested examples to internal texts
   const handleAccept = useCallback(() => {
-    if (!aiExampleResources?.length) return;
+    if (!effectiveAiExampleResources?.length) return;
     // Add AI examples to internal texts
-    const newTexts = aiExampleResources
+    const newTexts = effectiveAiExampleResources
       .map((e) => e.example)
       .filter((text): text is string => !!text);
     if (newTexts.length > 0) {
       setInternalTexts((prev) => [...prev.filter((t) => t.trim()), ...newTexts]);
       // Map the new example IDs
-      aiExampleResources.forEach((e) => {
+      effectiveAiExampleResources.forEach((e) => {
         if (e.id && e.example) {
           exampleIdMapRef.current.set(e.example, e.id);
         }
       });
     }
+    setInternalAiExampleResources(null);
     onAccept?.();
-  }, [aiExampleResources, onAccept]);
+  }, [effectiveAiExampleResources, onAccept]);
 
   // Reject AI suggestion - just clear the pending state
   const handleReject = useCallback(() => {
+    setInternalAiExampleResources(null);
     onReject?.();
   }, [onReject]);
 
@@ -434,11 +467,11 @@ export function Examples({
         </div>
       )}
       {/* AI-suggested examples preview */}
-      {showDiff && aiExampleResources && aiExampleResources.length > 0 && (
+      {showDiff && effectiveAiExampleResources && effectiveAiExampleResources.length > 0 && (
         <div className="mb-4 space-y-2">
           <p className="text-sm font-medium text-success">AI Suggested Examples</p>
           <div className="space-y-2">
-            {aiExampleResources.map((item, idx) => (
+            {effectiveAiExampleResources.map((item, idx) => (
               <div
                 key={item.id || idx}
                 className={cn(

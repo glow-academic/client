@@ -489,6 +489,41 @@ export function ParameterFields({
     [selectedFieldKeyToResourceId, localKeyToResourceId, resourceIds, pendingSelections]
   );
 
+  // Internal socket-based AI suggestion handling
+  const { socket: aiSocket, isConnected: aiIsConnected } = useSocket();
+  const [internalAiParameterFieldResources, setInternalAiParameterFieldResources] = useState<Pick<ParameterFieldResourceItem, "id" | "field_id" | "parameter_id">[] | null>(null);
+
+  useEffect(() => {
+    if (!aiSocket || !aiIsConnected || !group_id) return;
+
+    const handleGenerationComplete = (data: Record<string, unknown>) => {
+      const resourceType = data.resource_type as string | undefined;
+      const dataGroupId = data.group_id as string | undefined;
+      if (resourceType !== "parameter_fields" || dataGroupId !== group_id) return;
+
+      const resourceData = data as {
+        id?: string;
+        field_id?: string;
+        parameter_id?: string;
+      };
+      setInternalAiParameterFieldResources([
+        {
+          id: resourceData.id as string,
+          field_id: resourceData.field_id as string,
+          parameter_id: resourceData.parameter_id as string,
+        },
+      ]);
+      onGenerationComplete?.();
+    };
+
+    aiSocket.on("resource_generation_complete", handleGenerationComplete);
+    return () => {
+      aiSocket.off("resource_generation_complete", handleGenerationComplete);
+    };
+  }, [aiSocket, aiIsConnected, group_id, onGenerationComplete]);
+
+  const effectiveAiParameterFieldResources = internalAiParameterFieldResources ?? aiParameterFieldResources ?? null;
+
   // Group available fields by parameter_id
   const fieldOptionsByParameter = useMemo(() => {
     const map = new Map<string, AvailableFieldOption[]>();
@@ -517,32 +552,32 @@ export function ParameterFields({
   }, [selectedResources]);
 
   // AI suggestion state
-  const showDiff = !!aiParameterFieldResources?.length;
+  const showDiff = !!effectiveAiParameterFieldResources?.length;
   const aiSuggestedIds = useMemo(
     () =>
       new Set(
-        aiParameterFieldResources
+        effectiveAiParameterFieldResources
           ?.map((f) => f.id)
           .filter(Boolean) as string[]
       ),
-    [aiParameterFieldResources]
+    [effectiveAiParameterFieldResources]
   );
 
   // Also track by field_id for matching during rendering
   const aiSuggestedFieldIds = useMemo(
     () =>
       new Set(
-        aiParameterFieldResources
+        effectiveAiParameterFieldResources
           ?.map((f) => f.field_id)
           .filter(Boolean) as string[]
       ),
-    [aiParameterFieldResources]
+    [effectiveAiParameterFieldResources]
   );
 
   // Accept AI suggestion - add AI-suggested parameter fields to selection
   const handleAcceptAi = useCallback(() => {
-    if (!aiParameterFieldResources?.length) return;
-    const newIds = aiParameterFieldResources
+    if (!effectiveAiParameterFieldResources?.length) return;
+    const newIds = effectiveAiParameterFieldResources
       .map((f) => f.id)
       .filter((id): id is string => !!id && !resourceIds.has(id));
     if (newIds.length > 0) {
@@ -552,11 +587,13 @@ export function ParameterFields({
         return next;
       });
     }
+    setInternalAiParameterFieldResources(null);
     onAccept?.();
-  }, [aiParameterFieldResources, resourceIds, onAccept]);
+  }, [effectiveAiParameterFieldResources, resourceIds, onAccept]);
 
   // Reject AI suggestion - just clear the pending state
   const handleRejectAi = useCallback(() => {
+    setInternalAiParameterFieldResources(null);
     onReject?.();
   }, [onReject]);
 
