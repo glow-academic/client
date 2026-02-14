@@ -24,6 +24,8 @@ from app.api.v4.artifacts.training.types import (
     GetTrainingGetRequest,
     GetTrainingGetResponse,
     GetTrainingWebsocketResponse,
+    StandardGroupMapping,
+    StandardMapping,
     TrainingSimulationOperational,
     TrainingWebsocketResources,
     TrainingWebsocketViews,
@@ -31,7 +33,10 @@ from app.api.v4.artifacts.training.types import (
 from app.api.v4.auth.profile import get_auth_profile_internal
 from app.api.v4.resources.cohorts.get import get_cohorts_internal
 from app.api.v4.resources.personas.get import get_personas_internal
+from app.api.v4.resources.rubrics.get import get_rubrics_internal
 from app.api.v4.resources.simulations.get import get_simulations_internal
+from app.api.v4.resources.standard_groups.get import get_standard_groups_internal
+from app.api.v4.resources.standards.search import search_standards_internal
 from app.api.v4.views.analytics.attempts.get import get_attempt_facts_internal
 from app.api.v4.views.analytics.attempts.types import (
     AttemptFactsItem,
@@ -186,13 +191,17 @@ async def get_training_internal(
 ) -> GetTrainingGetResponse:
     """Dashboard-style parallel fetch for training operational data.
 
-    Phase 1: Two parallel view fetches (always)
+    Phase 1: Three parallel view fetches (always)
       - get_training_context_view_internal → mv_training (card defs + user_role)
       - get_attempt_facts_internal(profile_id=user) → mv_attempt_facts (personal stats)
+      - get_auth_profile_internal → profile context (role)
 
-    Phase 2: Conditional + resource hydration (parallel, after Phase 1)
-      - Resource hydration (simulations, personas, cohorts, standard_groups, standards)
+    Phase 2a: Parallel resource hydration (after Phase 1)
+      - simulations, personas, cohorts, rubrics
       - [if instructional] cohort-wide attempt facts + cohort member counts
+
+    Phase 2b: Sequential — derive standard_group_ids from rubrics
+      - standard_groups + standards (parallel, after rubrics)
 
     Phase 3: Stitch + business logic (Python)
     """
@@ -241,6 +250,7 @@ async def get_training_internal(
     simulation_ids: list[UUID] = []
     all_persona_ids: set[UUID] = set()
     all_cohort_ids: set[UUID] = set()
+    all_rubric_ids: set[UUID] = set()
     simulation_cohort_map: dict[UUID, list[UUID]] = {}
 
     if context and context.items:
@@ -253,10 +263,13 @@ async def get_training_internal(
                 all_cohort_ids.update(item.cohort_ids)
                 if item.simulation_id:
                     simulation_cohort_map[item.simulation_id] = list(item.cohort_ids)
+            if item.rubric_ids:
+                all_rubric_ids.update(item.rubric_ids)
 
     cohort_ids_list = list(all_cohort_ids)
+    rubric_ids_list = list(all_rubric_ids)
 
-    # --- Phase 2: Parallel resource hydration + conditional instructional data ---
+    # --- Phase 2a: Parallel resource hydration + conditional instructional data ---
     async def fetch_simulations() -> list:
         async with pool.acquire() as c:
             return await get_simulations_internal(
@@ -273,6 +286,12 @@ async def get_training_internal(
         async with pool.acquire() as c:
             return await get_cohorts_internal(
                 c, cohort_ids_list, bypass_cache=bypass_cache
+            )
+
+    async def fetch_rubrics() -> list:
+        async with pool.acquire() as c:
+            return await get_rubrics_internal(
+                c, rubric_ids_list, bypass_cache=bypass_cache
             )
 
     async def fetch_cohort_attempt_facts() -> list:
@@ -292,30 +311,60 @@ async def get_training_internal(
     async def fetch_cohort_members() -> dict[UUID, set[UUID]]:
         return await _fetch_cohort_member_profiles(pool, cohort_ids_list)
 
-    tasks: list[Any] = [
+    tasks_2a: list[Any] = [
         fetch_simulations(),
         fetch_personas(),
         fetch_cohorts(),
-        fetch_standard_groups(),
-        fetch_standards(),
+        fetch_rubrics(),
     ]
     if is_instructional:
-        tasks.append(fetch_cohort_attempt_facts())
-        tasks.append(fetch_cohort_members())
+        tasks_2a.append(fetch_cohort_attempt_facts())
+        tasks_2a.append(fetch_cohort_members())
 
-    results = await asyncio.gather(*tasks)
+    results_2a = await asyncio.gather(*tasks_2a)
 
-    sim_list = results[0]
-    persona_list = results[1]
-    cohort_list = results[2]
-    sg_list = results[3]
-    std_list = results[4]
+    sim_list = results_2a[0]
+    persona_list = results_2a[1]
+    cohort_list = results_2a[2]
+    rubric_list = results_2a[3]
 
     cohort_facts_items: list[AttemptFactsItem] | None = None
     cohort_member_profiles: dict[UUID, set[UUID]] | None = None
     if is_instructional:
-        cohort_facts_items = results[5]
-        cohort_member_profiles = results[6]
+        cohort_facts_items = results_2a[4]
+        cohort_member_profiles = results_2a[5]
+
+    # --- Phase 2b: Sequential — derive standard_group_ids from rubrics ---
+    rubric_map = {r.id: r for r in rubric_list if r.id}
+
+    all_standard_group_ids: set[UUID] = set()
+    for r in rubric_list:
+        if r.standard_group_ids:
+            all_standard_group_ids.update(r.standard_group_ids)
+
+    standard_group_ids_list = list(all_standard_group_ids)
+
+    async def fetch_standard_groups() -> list:
+        if not standard_group_ids_list:
+            return []
+        async with pool.acquire() as c:
+            return await get_standard_groups_internal(
+                c, standard_group_ids_list, bypass_cache=bypass_cache
+            )
+
+    async def fetch_standards() -> list:
+        if not standard_group_ids_list:
+            return []
+        async with pool.acquire() as c:
+            return await search_standards_internal(
+                c,
+                standard_group_ids=standard_group_ids_list,
+                bypass_cache=bypass_cache,
+            )
+
+    sg_list, std_list = await asyncio.gather(
+        fetch_standard_groups(), fetch_standards()
+    )
 
     # Build lookup maps
     simulation_map = {
@@ -326,7 +375,6 @@ async def get_training_internal(
     standard_groups_map = {
         item.standard_group_id: item for item in sg_list if item.standard_group_id
     }
-    standards_map = {item.standard_id: item for item in std_list if item.standard_id}
 
     # Aggregate stats
     personal_stats = _aggregate_personal_stats(personal_facts.items)
@@ -360,15 +408,22 @@ async def get_training_internal(
                     color = persona.color
                     icon = persona.icon
 
+            # Derive standard_group_ids from rubrics
+            item_sg_ids: list[UUID] = []
+            if item.rubric_ids:
+                for rid in item.rubric_ids:
+                    rubric = rubric_map.get(rid)
+                    if rubric and rubric.standard_group_ids:
+                        item_sg_ids.extend(rubric.standard_group_ids)
+
             # Rubric points from standard_groups resource
             rubric_total_points = 0
             rubric_pass_points = 0
-            if item.standard_group_ids:
-                for sgid in item.standard_group_ids:
-                    sg = standard_groups_map.get(sgid)
-                    if sg:
-                        rubric_total_points += sg.points or 0
-                        rubric_pass_points += sg.pass_points or 0
+            for sgid in item_sg_ids:
+                sg = standard_groups_map.get(sgid)
+                if sg:
+                    rubric_total_points += sg.points or 0
+                    rubric_pass_points += sg.pass_points or 0
 
             pass_pct = compute_pass_pct(
                 rubric_total_points if rubric_total_points > 0 else None,
@@ -393,9 +448,7 @@ async def get_training_internal(
             )
 
             standard_groups_strs = (
-                [str(sg_id) for sg_id in item.standard_group_ids]
-                if item.standard_group_ids
-                else None
+                [str(sg_id) for sg_id in item_sg_ids] if item_sg_ids else None
             )
 
             training_bundle_entry_id = (
@@ -450,7 +503,7 @@ async def get_training_internal(
 
     # Build standard group/standard mappings
     standard_groups: list[StandardGroupMapping] | None = None
-    if standard_group_ids:
+    if standard_group_ids_list:
         standard_groups = [
             StandardGroupMapping(
                 standard_group_id=sg.standard_group_id,  # type: ignore[arg-type]
@@ -459,13 +512,13 @@ async def get_training_internal(
                 points=sg.points,
                 pass_points=sg.pass_points,
             )
-            for sgid in standard_group_ids
+            for sgid in standard_group_ids_list
             for sg in [standard_groups_map.get(sgid)]
             if sg and sg.standard_group_id
         ]
 
     standards: list[StandardMapping] | None = None
-    if standard_ids:
+    if std_list:
         standards = [
             StandardMapping(
                 standard_id=st.standard_id,  # type: ignore[arg-type]
@@ -474,9 +527,8 @@ async def get_training_internal(
                 description=st.description,
                 points=st.points,
             )
-            for sid in standard_ids
-            for st in [standards_map.get(sid)]
-            if st and st.standard_id
+            for st in std_list
+            if st.standard_id
         ]
 
     return GetTrainingGetResponse(

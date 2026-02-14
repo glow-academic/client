@@ -24,7 +24,6 @@ from app.api.v4.artifacts.training.types import (
     GetTrainingBundleWebsocketResponse,
     TrainingBundleDepartmentSection,
     TrainingBundleDocumentSection,
-    TrainingBundleFieldSection,
     TrainingBundleImageSection,
     TrainingBundleObjectiveSection,
     TrainingBundleOptionSection,
@@ -42,7 +41,6 @@ from app.api.v4.artifacts.training.types import (
 from app.api.v4.resources.agents.get import get_agents_internal
 from app.api.v4.resources.departments.get import get_departments_internal
 from app.api.v4.resources.documents.get import get_documents_internal
-from app.api.v4.resources.fields.get import get_fields_internal
 from app.api.v4.resources.images.get import get_images_internal
 from app.api.v4.resources.models.get import get_models_internal
 from app.api.v4.resources.objectives.get import get_objectives_internal
@@ -104,6 +102,16 @@ class TrainingBundleInternalData:
 T = TypeVar("T")
 
 
+def _ids_from_attr(obj: Any, attr: str) -> list[UUID]:
+    """Extract IDs from a view_data attribute — handles both list and single UUID."""
+    val = getattr(obj, attr, None)
+    if val is None:
+        return []
+    if isinstance(val, list):
+        return list(val)
+    return [val]
+
+
 def _filter_by_ids(items: list[T], ids: list[UUID], id_attr: str) -> list[T]:
     if not items or not ids:
         return []
@@ -140,7 +148,7 @@ RESOURCE_CONFIG: list[tuple[str, str, str, Any, str]] = [
         get_parameter_fields_internal,
         "field_id",
     ),
-    ("scenarios", "scenario_ids", None, get_scenarios_internal, "scenario_id"),
+    ("scenarios", "scenario_id", None, get_scenarios_internal, "scenario_id"),
     (
         "parameters",
         "parameter_ids",
@@ -148,7 +156,6 @@ RESOURCE_CONFIG: list[tuple[str, str, str, Any, str]] = [
         get_parameters_internal,
         "parameter_id",
     ),
-    ("fields", "field_ids", "field_ids", get_fields_internal, "field_id"),
     (
         "questions",
         "question_ids",
@@ -230,7 +237,7 @@ async def get_training_bundle_internal(
     # 4. Draft override for all 13 customizable resource ID arrays
     selected_ids: dict[str, list[UUID]] = {}
     for resource_key, view_attr, draft_attr, _fetch_fn, _id_attr in RESOURCE_CONFIG:
-        mv_ids = list(getattr(view_data, view_attr, []) or [])
+        mv_ids = _ids_from_attr(view_data, view_attr)
         if draft_attr and draft_item:
             draft_val = getattr(draft_item, draft_attr, None)
             selected_ids[resource_key] = list(draft_val) if draft_val else mv_ids
@@ -245,7 +252,7 @@ async def get_training_bundle_internal(
         view_attr: str,
         fetch_fn: FetchFn,
     ) -> tuple[str, list[Any]]:
-        all_ids = list(getattr(view_data, view_attr, []) or [])
+        all_ids = _ids_from_attr(view_data, view_attr)
         if not all_ids:
             return (resource_key, [])
         async with pool.acquire() as c:
@@ -405,7 +412,6 @@ async def get_training_bundle_websocket(
             parameter_fields=data.current_resources.get("parameter_fields") or None,
             scenarios=data.current_resources.get("scenarios") or None,
             parameters=data.current_resources.get("parameters") or None,
-            fields=data.current_resources.get("fields") or None,
             questions=data.current_resources.get("questions") or None,
             options=data.current_resources.get("options") or None,
             videos=data.current_resources.get("videos") or None,
@@ -435,7 +441,6 @@ _SECTION_CLASSES: dict[str, type] = {
     "parameter_fields": TrainingBundleParameterFieldSection,
     "scenarios": TrainingBundleScenarioSection,
     "parameters": TrainingBundleParameterSection,
-    "fields": TrainingBundleFieldSection,
     "questions": TrainingBundleQuestionSection,
     "options": TrainingBundleOptionSection,
     "videos": TrainingBundleVideoSection,
@@ -487,7 +492,6 @@ async def get_training_bundle_client(
         parameter_fields=_section("parameter_fields"),
         scenarios=_section("scenarios"),
         parameters=_section("parameters"),
-        fields=_section("fields"),
         questions=_section("questions"),
         options=_section("options"),
         videos=_section("videos"),

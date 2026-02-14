@@ -20,7 +20,6 @@ from app.sql.types import (
     QGetAgentsV4Item,
     QGetDepartmentsV4Item,
     QGetDocumentsV4Item,
-    QGetFieldsV4Item,
     QGetImagesV4Item,
     QGetModelsV4Item,
     QGetObjectivesV4Item,
@@ -334,11 +333,6 @@ class TrainingBundleParameterSection(BaseTrainingBundleSection):
     resources: list[QGetParametersV4Item] | None = None
 
 
-class TrainingBundleFieldSection(BaseTrainingBundleSection):
-    current: list[QGetFieldsV4Item] | None = None
-    resources: list[QGetFieldsV4Item] | None = None
-
-
 class TrainingBundleQuestionSection(BaseTrainingBundleSection):
     current: list[QGetQuestionsV4Item] | None = None
     resources: list[QGetQuestionsV4Item] | None = None
@@ -405,7 +399,6 @@ class GetTrainingBundleResponse(BaseModel):
     parameter_fields: TrainingBundleParameterFieldSection | None = None
     scenarios: TrainingBundleScenarioSection | None = None
     parameters: TrainingBundleParameterSection | None = None
-    fields: TrainingBundleFieldSection | None = None
     questions: TrainingBundleQuestionSection | None = None
     options: TrainingBundleOptionSection | None = None
     videos: TrainingBundleVideoSection | None = None
@@ -440,7 +433,6 @@ class TrainingBundleWebsocketResources(BaseModel):
     parameter_fields: list[QGetParameterFieldsV4Item] | None = None
     scenarios: list[QGetScenariosV4Item] | None = None
     parameters: list[QGetParametersV4Item] | None = None
-    fields: list[QGetFieldsV4Item] | None = None
     questions: list[QGetQuestionsV4Item] | None = None
     options: list[QGetOptionsV4Item] | None = None
     videos: list[QGetVideosV4Item] | None = None
