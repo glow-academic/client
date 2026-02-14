@@ -1,10 +1,12 @@
 """Session list endpoint - POST /artifacts/session/list.
 
-Uses lean mv_sessions view + batch aggregation from mv_groups, mv_audits, mv_runs
-to compute group_count, audit_count, error_count, run_count, total_tokens, total_cost.
+Uses view internals only — no raw SQL in artifact layer.
+Fetches from mv_sessions, mv_groups, mv_audits, mv_runs via view layer,
+then aggregates in Python.
 """
 
 import asyncio
+from collections import defaultdict
 from decimal import Decimal
 from typing import Annotated
 from uuid import UUID
@@ -12,12 +14,17 @@ from uuid import UUID
 import asyncpg
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
+from app.api.v4.artifacts._shared.pricing import compute_costs_from_runs
 from app.api.v4.artifacts.activity.get import resolve_profile_ids_for_filters
 from app.api.v4.artifacts.session.types import (
     GetSessionListRequest,
     GetSessionListResponse,
     SessionListItem,
 )
+from app.api.v4.resources.names.get import get_names_internal
+from app.api.v4.views.audit.list.get import get_audit_list_view_internal
+from app.api.v4.views.group.list.get import get_group_list_view_internal
+from app.api.v4.views.run.list.get import get_run_list_view_internal
 from app.api.v4.views.session.list.get import get_session_list_view_internal
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
@@ -27,183 +34,6 @@ from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
 
 router = APIRouter()
-
-
-async def _batch_group_counts(
-    conn: asyncpg.Connection, session_ids: list[UUID]
-) -> dict[UUID, int]:
-    """Get group count per session from mv_groups."""
-    if not session_ids:
-        return {}
-    rows = await conn.fetch(
-        "SELECT session_id, COUNT(*)::int AS cnt FROM mv_groups WHERE session_id = ANY($1) GROUP BY session_id",
-        session_ids,
-    )
-    return {row["session_id"]: row["cnt"] for row in rows}
-
-
-async def _batch_audit_stats(
-    conn: asyncpg.Connection, session_ids: list[UUID]
-) -> dict[UUID, dict]:
-    """Get audit count, error count, last_audit_at per session from mv_audits."""
-    if not session_ids:
-        return {}
-    rows = await conn.fetch(
-        """
-        SELECT
-            session_id,
-            COUNT(*)::int AS audit_count,
-            COUNT(*) FILTER (WHERE error = TRUE)::int AS error_count,
-            MAX(audit_created_at) AS last_audit_at
-        FROM mv_audits
-        WHERE session_id = ANY($1)
-        GROUP BY session_id
-        """,
-        session_ids,
-    )
-    return {
-        row["session_id"]: {
-            "audit_count": row["audit_count"],
-            "error_count": row["error_count"],
-            "last_audit_at": row["last_audit_at"],
-        }
-        for row in rows
-    }
-
-
-async def _batch_run_stats(
-    conn: asyncpg.Connection, session_ids: list[UUID]
-) -> dict[UUID, dict]:
-    """Get run_count, total_tokens, first/last run_at, total_cost per session.
-
-    Joins mv_runs with mv_groups to get session_id, then batch-fetches
-    pricing_resource and artifact_units_relation for cost computation.
-    """
-    if not session_ids:
-        return {}
-
-    # Get per-session run aggregates + pricing data
-    rows = await conn.fetch(
-        """
-        SELECT
-            g.session_id,
-            COUNT(*)::int AS run_count,
-            SUM(r.input_tokens + r.output_tokens + r.cached_input_tokens)::bigint AS total_tokens,
-            MIN(r.run_created_at) AS first_run_at,
-            MAX(r.run_created_at) AS last_run_at,
-            -- Collect pricing IDs for cost computation
-            ARRAY_AGG(r.input_pricing_pricing_id) FILTER (WHERE r.input_pricing_pricing_id IS NOT NULL) AS input_pricing_ids,
-            ARRAY_AGG(r.input_pricing_count) FILTER (WHERE r.input_pricing_pricing_id IS NOT NULL) AS input_pricing_counts,
-            ARRAY_AGG(r.input_pricing_unit_id) FILTER (WHERE r.input_pricing_pricing_id IS NOT NULL) AS input_unit_ids,
-            ARRAY_AGG(r.output_pricing_pricing_id) FILTER (WHERE r.output_pricing_pricing_id IS NOT NULL) AS output_pricing_ids,
-            ARRAY_AGG(r.output_pricing_count) FILTER (WHERE r.output_pricing_pricing_id IS NOT NULL) AS output_pricing_counts,
-            ARRAY_AGG(r.output_pricing_unit_id) FILTER (WHERE r.output_pricing_pricing_id IS NOT NULL) AS output_unit_ids,
-            ARRAY_AGG(r.cached_pricing_pricing_id) FILTER (WHERE r.cached_pricing_pricing_id IS NOT NULL) AS cached_pricing_ids,
-            ARRAY_AGG(r.cached_pricing_count) FILTER (WHERE r.cached_pricing_pricing_id IS NOT NULL) AS cached_pricing_counts,
-            ARRAY_AGG(r.cached_pricing_unit_id) FILTER (WHERE r.cached_pricing_pricing_id IS NOT NULL) AS cached_unit_ids
-        FROM mv_runs r
-        JOIN mv_groups g ON g.group_id = r.group_id
-        WHERE g.session_id = ANY($1)
-        GROUP BY g.session_id
-        """,
-        session_ids,
-    )
-
-    if not rows:
-        return {}
-
-    # Collect all unique pricing_ids and unit_ids for batch fetch
-    all_pricing_ids: set[UUID] = set()
-    all_unit_ids: set[UUID] = set()
-    for row in rows:
-        for ids in [
-            row["input_pricing_ids"],
-            row["output_pricing_ids"],
-            row["cached_pricing_ids"],
-        ]:
-            if ids:
-                all_pricing_ids.update(ids)
-        for ids in [
-            row["input_unit_ids"],
-            row["output_unit_ids"],
-            row["cached_unit_ids"],
-        ]:
-            if ids:
-                all_unit_ids.update(ids)
-
-    # Batch fetch pricing and units
-    pricing_map: dict[UUID, Decimal] = {}
-    unit_map: dict[UUID, Decimal] = {}
-
-    if all_pricing_ids:
-        pricing_rows = await conn.fetch(
-            "SELECT id, price FROM pricing_resource WHERE id = ANY($1) AND active = TRUE",
-            list(all_pricing_ids),
-        )
-        pricing_map = {r["id"]: Decimal(str(r["price"])) for r in pricing_rows}
-
-    if all_unit_ids:
-        unit_rows = await conn.fetch(
-            "SELECT id, value FROM artifact_units_relation WHERE id = ANY($1) AND active = TRUE",
-            list(all_unit_ids),
-        )
-        unit_map = {r["id"]: Decimal(str(r["value"])) for r in unit_rows}
-
-    # Compute total cost per session
-    result: dict[UUID, dict] = {}
-    for row in rows:
-        total_cost = Decimal("0")
-        for pricing_ids, counts, unit_ids in [
-            (
-                row["input_pricing_ids"],
-                row["input_pricing_counts"],
-                row["input_unit_ids"],
-            ),
-            (
-                row["output_pricing_ids"],
-                row["output_pricing_counts"],
-                row["output_unit_ids"],
-            ),
-            (
-                row["cached_pricing_ids"],
-                row["cached_pricing_counts"],
-                row["cached_unit_ids"],
-            ),
-        ]:
-            if pricing_ids and counts and unit_ids:
-                for pid, cnt, uid in zip(pricing_ids, counts, unit_ids, strict=False):
-                    price = pricing_map.get(pid, Decimal("0"))
-                    unit_val = unit_map.get(uid, Decimal("1"))
-                    if unit_val > 0:
-                        total_cost += (Decimal(str(cnt)) / unit_val) * price
-
-        result[row["session_id"]] = {
-            "run_count": row["run_count"],
-            "total_tokens": row["total_tokens"] or 0,
-            "first_run_at": row["first_run_at"],
-            "last_run_at": row["last_run_at"],
-            "total_cost": total_cost,
-        }
-
-    return result
-
-
-async def _batch_profile_names(
-    conn: asyncpg.Connection, profile_ids: list[UUID]
-) -> dict[UUID, str]:
-    """Get profile names via naming junction."""
-    if not profile_ids:
-        return {}
-    rows = await conn.fetch(
-        """
-        SELECT pn.profile_id, n.name
-        FROM profile_names_junction pn
-        JOIN names_resource n ON pn.name_id = n.id
-        WHERE pn.profile_id = ANY($1)
-        """,
-        profile_ids,
-    )
-    return {row["profile_id"]: row["name"] for row in rows if row["name"]}
 
 
 async def get_session_list_internal(
@@ -259,24 +89,99 @@ async def get_session_list_internal(
             total_pages=total_pages,
         )
 
-    # Pass 2: Batch aggregation in parallel
+    # Pass 2: Batch fetch groups, audits via view internals (with session_ids filter)
     all_profile_ids = list(
         {item.profile_id for item in view_result.items if item.profile_id}
     )
 
-    group_counts, audit_stats, run_stats, profile_names = await asyncio.gather(
-        _batch_group_counts(conn, session_ids),
-        _batch_audit_stats(conn, session_ids),
-        _batch_run_stats(conn, session_ids),
-        _batch_profile_names(conn, all_profile_ids),
+    groups_result, audits_result, profile_name_items = await asyncio.gather(
+        get_group_list_view_internal(
+            conn=conn,
+            session_ids=session_ids,
+            page_limit=10000,
+            bypass_cache=bypass_cache,
+        ),
+        get_audit_list_view_internal(
+            conn=conn,
+            session_ids=session_ids,
+            page_limit=10000,
+            bypass_cache=bypass_cache,
+        ),
+        get_names_internal(conn, all_profile_ids, bypass_cache),
     )
+
+    # Build profile name lookup
+    profile_names = {
+        item.id: item.name for item in profile_name_items if item.id and item.name
+    }
+
+    # Compute group counts per session
+    group_counts: dict[UUID, int] = defaultdict(int)
+    group_ids: list[UUID] = []
+    for g in groups_result.items:
+        if g.session_id:
+            group_counts[g.session_id] += 1
+            group_ids.append(g.group_id)
+
+    # Compute audit stats per session
+    audit_counts: dict[UUID, int] = defaultdict(int)
+    error_counts: dict[UUID, int] = defaultdict(int)
+    last_audit_at: dict[UUID, object] = {}
+    for a in audits_result.items:
+        if a.session_id:
+            audit_counts[a.session_id] += 1
+            if a.error:
+                error_counts[a.session_id] += 1
+            existing = last_audit_at.get(a.session_id)
+            if a.audit_created_at and (
+                existing is None or a.audit_created_at > existing
+            ):
+                last_audit_at[a.session_id] = a.audit_created_at
+
+    # Fetch runs for these groups
+    runs_result = await get_run_list_view_internal(
+        conn=conn,
+        group_ids=group_ids if group_ids else None,
+        page_limit=10000,
+        bypass_cache=bypass_cache,
+    )
+
+    # Compute costs from runs
+    run_costs = await compute_costs_from_runs(conn, runs_result.items, bypass_cache)
+
+    # Build group_id → session_id mapping
+    group_to_session: dict[UUID, UUID] = {}
+    for g in groups_result.items:
+        if g.session_id:
+            group_to_session[g.group_id] = g.session_id
+
+    # Aggregate run stats per session
+    run_counts: dict[UUID, int] = defaultdict(int)
+    total_tokens_map: dict[UUID, int] = defaultdict(int)
+    total_cost_map: dict[UUID, Decimal] = defaultdict(Decimal)
+    first_run_at: dict[UUID, object] = {}
+    last_run_at: dict[UUID, object] = {}
+    for run in runs_result.items:
+        sid = group_to_session.get(run.group_id) if run.group_id else None
+        if not sid:
+            continue
+        run_counts[sid] += 1
+        total_tokens_map[sid] += (
+            run.input_tokens + run.output_tokens + run.cached_input_tokens
+        )
+        total_cost_map[sid] += run_costs.get(run.run_id, Decimal("0"))
+        if run.run_created_at:
+            existing_first = first_run_at.get(sid)
+            if existing_first is None or run.run_created_at < existing_first:
+                first_run_at[sid] = run.run_created_at
+            existing_last = last_run_at.get(sid)
+            if existing_last is None or run.run_created_at > existing_last:
+                last_run_at[sid] = run.run_created_at
 
     # Assemble items
     items = []
     for view_item in view_result.items:
         sid = view_item.session_id
-        audit = audit_stats.get(sid, {})
-        runs = run_stats.get(sid, {})
 
         items.append(
             SessionListItem(
@@ -288,14 +193,14 @@ async def get_session_list_internal(
                 session_created_at=view_item.session_created_at,
                 active=view_item.active,
                 group_count=group_counts.get(sid, 0),
-                run_count=runs.get("run_count", 0),
-                first_run_at=runs.get("first_run_at"),
-                last_run_at=runs.get("last_run_at"),
-                total_tokens=runs.get("total_tokens", 0),
-                total_cost=runs.get("total_cost", Decimal("0")),
-                audit_count=audit.get("audit_count", 0),
-                last_audit_at=audit.get("last_audit_at"),
-                error_count=audit.get("error_count", 0),
+                run_count=run_counts.get(sid, 0),
+                first_run_at=first_run_at.get(sid),
+                last_run_at=last_run_at.get(sid),
+                total_tokens=total_tokens_map.get(sid, 0),
+                total_cost=total_cost_map.get(sid, Decimal("0")),
+                audit_count=audit_counts.get(sid, 0),
+                last_audit_at=last_audit_at.get(sid),
+                error_count=error_counts.get(sid, 0),
             )
         )
 
@@ -352,16 +257,8 @@ async def list_sessions(
             )
 
         # Get actor name for audit
-        actor_name = await conn.fetchval(
-            """
-            SELECT n.name
-            FROM profile_names_junction pn
-            JOIN names_resource n ON pn.name_id = n.id
-            WHERE pn.profile_id = $1
-            LIMIT 1
-            """,
-            profile_id,
-        )
+        actor_name_items = await get_names_internal(conn, [profile_id], bypass_cache)
+        actor_name = actor_name_items[0].name if actor_name_items else None
 
         if actor_name:
             audit_set(http_request, actor={"name": actor_name, "id": profile_id})

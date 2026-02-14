@@ -67,6 +67,7 @@ CREATE TYPE types.q_get_group_list_view_v4_item AS (
 CREATE OR REPLACE FUNCTION api_get_group_list_view_v4(
     group_ids uuid[] DEFAULT NULL,
     session_id_filter uuid DEFAULT NULL,
+    session_ids uuid[] DEFAULT NULL,
     date_from timestamptz DEFAULT NULL,
     date_to timestamptz DEFAULT NULL,
     sort_by_field text DEFAULT 'date',
@@ -88,6 +89,7 @@ AS $$
         WHERE
             (group_ids IS NULL OR mv.group_id = ANY(group_ids))
             AND (session_id_filter IS NULL OR mv.session_id = session_id_filter)
+            AND (session_ids IS NULL OR mv.session_id = ANY(session_ids))
             AND (date_from IS NULL OR mv.group_created_at >= date_from)
             AND (date_to IS NULL OR mv.group_created_at < date_to)
     ),

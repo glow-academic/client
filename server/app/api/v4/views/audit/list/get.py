@@ -27,6 +27,7 @@ router = APIRouter()
 async def get_audit_list_view_internal(
     conn: asyncpg.Connection,
     session_id_filter: UUID | None = None,
+    session_ids: list[UUID] | None = None,
     error_filter: bool | None = None,
     date_from: datetime | None = None,
     date_to: datetime | None = None,
@@ -42,6 +43,7 @@ async def get_audit_list_view_internal(
         "views/audit/list/get",
         {
             "session_id_filter": str(session_id_filter) if session_id_filter else None,
+            "session_ids": [str(s) for s in session_ids] if session_ids else None,
             "error_filter": error_filter,
             "date_from": date_from.isoformat() if date_from else None,
             "date_to": date_to.isoformat() if date_to else None,
@@ -58,6 +60,7 @@ async def get_audit_list_view_internal(
 
     params = GetAuditListViewSqlParams(
         session_id_filter=session_id_filter,
+        session_ids=session_ids,
         error_filter=error_filter,
         date_from=date_from or datetime.min,
         date_to=date_to or datetime.max,

@@ -28,6 +28,7 @@ async def get_group_list_view_internal(
     conn: asyncpg.Connection,
     group_ids: list[UUID] | None = None,
     session_id_filter: UUID | None = None,
+    session_ids: list[UUID] | None = None,
     date_from: datetime | None = None,
     date_to: datetime | None = None,
     sort_by: str = "date",
@@ -44,6 +45,7 @@ async def get_group_list_view_internal(
         {
             "group_ids": [str(g) for g in group_ids] if group_ids else None,
             "session_id_filter": str(session_id_filter) if session_id_filter else None,
+            "session_ids": [str(s) for s in session_ids] if session_ids else None,
             "date_from": date_from.isoformat() if date_from else None,
             "date_to": date_to.isoformat() if date_to else None,
             "sort_by": sort_by,
@@ -61,6 +63,7 @@ async def get_group_list_view_internal(
     params = GetGroupListViewSqlParams(
         group_ids=group_ids,
         session_id_filter=session_id_filter,
+        session_ids=session_ids,
         date_from=date_from or datetime.min,
         date_to=date_to or datetime.max,
         sort_by_field=sort_by,

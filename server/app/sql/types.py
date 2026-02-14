@@ -26661,6 +26661,7 @@ class GetAttemptOverviewViewApiResponse(BaseModel):
 
 class GetAuditListViewSqlParams(BaseModel):
     session_id_filter: UUID | None = None
+    session_ids: list[UUID] | None = None
     error_filter: bool | None = None
     date_from: datetime
     date_to: datetime
@@ -26671,6 +26672,7 @@ class GetAuditListViewSqlParams(BaseModel):
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.session_id_filter,
+            self.session_ids,
             self.error_filter,
             self.date_from,
             self.date_to,
@@ -26696,6 +26698,7 @@ class GetAuditListViewSqlRow(BaseModel):
 
 class GetAuditListViewApiRequest(BaseModel):
     session_id_filter: UUID | None = None
+    session_ids: list[UUID] | None = None
     error_filter: bool | None = None
     date_from: datetime
     date_to: datetime
@@ -26886,6 +26889,49 @@ class GetBenchmarkTestsViewApiRequest(BaseModel):
 
 class GetBenchmarkTestsViewApiResponse(BaseModel):
     items: list[QGetBenchmarkTestsViewV4Item] | None = None
+    total_count: int | None = None
+
+
+# Generated from: get_call_list_view
+
+
+class GetCallListViewSqlParams(BaseModel):
+    run_id_filter: UUID | None = None
+    run_ids: list[UUID] | None = None
+    page_limit_val: int | None = 10000
+    page_offset_val: int | None = 0
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.run_id_filter,
+            self.run_ids,
+            self.page_limit_val,
+            self.page_offset_val,
+        )
+
+
+class QGetCallListViewV4Item(BaseModel):
+    call_id: UUID | None
+    run_id: UUID | None
+    call_created_at: datetime | None
+    arguments_raw: str | None
+    tool_name: str | None
+
+
+class GetCallListViewSqlRow(BaseModel):
+    items: list[QGetCallListViewV4Item] | None = None
+    total_count: int | None = None
+
+
+class GetCallListViewApiRequest(BaseModel):
+    run_id_filter: UUID | None = None
+    run_ids: list[UUID] | None = None
+    page_limit_val: int | None = 10000
+    page_offset_val: int | None = 0
+
+
+class GetCallListViewApiResponse(BaseModel):
+    items: list[QGetCallListViewV4Item] | None = None
     total_count: int | None = None
 
 
@@ -27664,6 +27710,7 @@ class GetDraftTrainingViewApiResponse(BaseModel):
 class GetGroupListViewSqlParams(BaseModel):
     group_ids: list[UUID] | None = None
     session_id_filter: UUID | None = None
+    session_ids: list[UUID] | None = None
     date_from: datetime
     date_to: datetime
     sort_by_field: str | None = None
@@ -27675,6 +27722,7 @@ class GetGroupListViewSqlParams(BaseModel):
         return (
             self.group_ids,
             self.session_id_filter,
+            self.session_ids,
             self.date_from,
             self.date_to,
             self.sort_by_field,
@@ -27701,6 +27749,7 @@ class GetGroupListViewSqlRow(BaseModel):
 class GetGroupListViewApiRequest(BaseModel):
     group_ids: list[UUID] | None = None
     session_id_filter: UUID | None = None
+    session_ids: list[UUID] | None = None
     date_from: datetime
     date_to: datetime
     sort_by_field: str | None = None
@@ -27711,6 +27760,50 @@ class GetGroupListViewApiRequest(BaseModel):
 
 class GetGroupListViewApiResponse(BaseModel):
     items: list[QGetGroupListViewV4Item] | None = None
+    total_count: int | None = None
+
+
+# Generated from: get_message_list_view
+
+
+class GetMessageListViewSqlParams(BaseModel):
+    run_id_filter: UUID | None = None
+    run_ids: list[UUID] | None = None
+    page_limit_val: int | None = 10000
+    page_offset_val: int | None = 0
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.run_id_filter,
+            self.run_ids,
+            self.page_limit_val,
+            self.page_offset_val,
+        )
+
+
+class QGetMessageListViewV4Item(BaseModel):
+    message_id: UUID | None
+    run_id: UUID | None
+    role: str | None
+    message_created_at: datetime | None
+    contents: list[str] | None
+    call_ids: list[UUID] | None
+
+
+class GetMessageListViewSqlRow(BaseModel):
+    items: list[QGetMessageListViewV4Item] | None = None
+    total_count: int | None = None
+
+
+class GetMessageListViewApiRequest(BaseModel):
+    run_id_filter: UUID | None = None
+    run_ids: list[UUID] | None = None
+    page_limit_val: int | None = 10000
+    page_offset_val: int | None = 0
+
+
+class GetMessageListViewApiResponse(BaseModel):
+    items: list[QGetMessageListViewV4Item] | None = None
     total_count: int | None = None
 
 
@@ -31674,6 +31767,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetBenchmarkTestsViewApiRequest",
         "GetBenchmarkTestsViewApiResponse",
     ),
+    "app/sql/v4/queries/views/call/list/get_call_list_view_complete.sql": (
+        "GetCallListViewSqlParams",
+        "GetCallListViewSqlRow",
+        "GetCallListViewApiRequest",
+        "GetCallListViewApiResponse",
+    ),
     "app/sql/v4/queries/views/config/get_config_view_complete.sql": (
         "GetConfigViewSqlParams",
         "GetConfigViewSqlRow",
@@ -31793,6 +31892,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetGroupListViewSqlRow",
         "GetGroupListViewApiRequest",
         "GetGroupListViewApiResponse",
+    ),
+    "app/sql/v4/queries/views/message/list/get_message_list_view_complete.sql": (
+        "GetMessageListViewSqlParams",
+        "GetMessageListViewSqlRow",
+        "GetMessageListViewApiRequest",
+        "GetMessageListViewApiResponse",
     ),
     "app/sql/v4/queries/views/run/list/get_run_list_view_complete.sql": (
         "GetRunListViewSqlParams",
@@ -35911,6 +36016,13 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal[
+            "app/sql/v4/queries/views/call/list/get_call_list_view_complete.sql"
+        ],
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal[
             "app/sql/v4/queries/views/config/get_config_view_complete.sql"
         ],
     ) -> SqlString: ...
@@ -36045,6 +36157,13 @@ if TYPE_CHECKING:
     def load_sql_query(
         file_path: Literal[
             "app/sql/v4/queries/views/group/list/get_group_list_view_complete.sql"
+        ],
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal[
+            "app/sql/v4/queries/views/message/list/get_message_list_view_complete.sql"
         ],
     ) -> SqlString: ...
 

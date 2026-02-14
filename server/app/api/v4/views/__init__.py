@@ -12,9 +12,11 @@ from app.api.v4.views.artifacts import router as artifacts_router
 from app.api.v4.views.attempt import router as attempt_router
 from app.api.v4.views.audit import router as audit_router
 from app.api.v4.views.benchmark import router as benchmark_router
+from app.api.v4.views.call import router as call_router
 from app.api.v4.views.config import router as config_router
 from app.api.v4.views.group import router as group_router
 from app.api.v4.views.health import router as health_router
+from app.api.v4.views.message import router as message_router
 from app.api.v4.views.pricing import router as pricing_router
 from app.api.v4.views.run import router as run_router
 from app.api.v4.views.session import router as session_router
@@ -35,3 +37,5 @@ router.include_router(session_router)
 router.include_router(group_router)
 router.include_router(audit_router)
 router.include_router(run_router)
+router.include_router(message_router)
+router.include_router(call_router)

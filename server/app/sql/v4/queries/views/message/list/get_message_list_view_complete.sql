@@ -1,14 +1,14 @@
 -- ============================================================================
--- Query: get_audit_list_view
--- Purpose: Fetch audit-level data from mv_audits with declarative filters
--- Section: VIEWS/AUDIT/LIST
+-- Query: get_message_list_view
+-- Purpose: Fetch message-level data from mv_messages with declarative filters
+-- Section: VIEWS/MESSAGE/LIST
 --
 -- Includes:
--- - Filtering (session_id, error, date range)
--- - Sorting (date asc/desc)
+-- - Filtering (run_id, run_ids batch)
+-- - Ordering (by run_id, role precedence, then created_at)
 -- - Pagination
 --
--- Note: Returns audit data for session detail pages.
+-- Note: Returns pre-aggregated contents and call_ids from mv_messages.
 -- ============================================================================
 
 -- ============================================================================
@@ -22,10 +22,10 @@ BEGIN
     FOR r IN
         SELECT oidvectortypes(proargtypes) as sig
         FROM pg_proc
-        WHERE proname = 'api_get_audit_list_view_v4'
+        WHERE proname = 'api_get_message_list_view_v4'
           AND pronamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'public')
     LOOP
-        EXECUTE format('DROP FUNCTION IF EXISTS api_get_audit_list_view_v4(%s)', r.sig);
+        EXECUTE format('DROP FUNCTION IF EXISTS api_get_message_list_view_v4(%s)', r.sig);
     END LOOP;
 END $$;
 
@@ -40,7 +40,7 @@ BEGIN
     FOR r IN
         SELECT typname
         FROM pg_type
-        WHERE typname LIKE 'q_get_audit_list_view_v4_%'
+        WHERE typname LIKE 'q_get_message_list_view_v4_%'
           AND typnamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'types')
     LOOP
         EXECUTE format('DROP TYPE IF EXISTS types.%I CASCADE', r.typname);
@@ -51,31 +51,27 @@ END $$;
 -- Step 3: Create composite types
 -- ============================================================================
 
-CREATE TYPE types.q_get_audit_list_view_v4_item AS (
-    audit_id uuid,
-    session_id uuid,
-    audit_created_at timestamptz,
-    message text,
-    endpoint text,
-    error boolean
+CREATE TYPE types.q_get_message_list_view_v4_item AS (
+    message_id uuid,
+    run_id uuid,
+    role text,
+    message_created_at timestamptz,
+    contents text[],
+    call_ids uuid[]
 );
 
 -- ============================================================================
 -- Step 4: Create function
 -- ============================================================================
 
-CREATE OR REPLACE FUNCTION api_get_audit_list_view_v4(
-    session_id_filter uuid DEFAULT NULL,
-    session_ids uuid[] DEFAULT NULL,
-    error_filter boolean DEFAULT NULL,
-    date_from timestamptz DEFAULT NULL,
-    date_to timestamptz DEFAULT NULL,
-    sort_order_field text DEFAULT 'desc',
-    page_limit_val int DEFAULT 50,
+CREATE OR REPLACE FUNCTION api_get_message_list_view_v4(
+    run_id_filter uuid DEFAULT NULL,
+    run_ids uuid[] DEFAULT NULL,
+    page_limit_val int DEFAULT 10000,
     page_offset_val int DEFAULT 0
 )
 RETURNS TABLE (
-    items types.q_get_audit_list_view_v4_item[],
+    items types.q_get_message_list_view_v4_item[],
     total_count int
 )
 LANGUAGE sql
@@ -84,13 +80,10 @@ AS $$
     WITH
     filtered AS (
         SELECT mv.*
-        FROM mv_audits mv
+        FROM mv_messages mv
         WHERE
-            (session_id_filter IS NULL OR mv.session_id = session_id_filter)
-            AND (session_ids IS NULL OR mv.session_id = ANY(session_ids))
-            AND (error_filter IS NULL OR mv.error = error_filter)
-            AND (date_from IS NULL OR mv.audit_created_at >= date_from)
-            AND (date_to IS NULL OR mv.audit_created_at < date_to)
+            (run_id_filter IS NULL OR mv.run_id = run_id_filter)
+            AND (run_ids IS NULL OR mv.run_id = ANY(run_ids))
     ),
     counted AS (
         SELECT COUNT(*)::int AS total FROM filtered
@@ -99,11 +92,15 @@ AS $$
         SELECT *
         FROM filtered
         ORDER BY
-            CASE WHEN sort_order_field = 'desc'
-                 THEN audit_created_at END DESC NULLS LAST,
-            CASE WHEN sort_order_field = 'asc'
-                 THEN audit_created_at END ASC NULLS LAST,
-            audit_id DESC
+            run_id,
+            CASE role
+                WHEN 'system' THEN 1
+                WHEN 'developer' THEN 2
+                WHEN 'user' THEN 3
+                WHEN 'assistant' THEN 4
+                ELSE 5
+            END,
+            message_created_at
         LIMIT page_limit_val
         OFFSET page_offset_val
     ),
@@ -111,16 +108,25 @@ AS $$
         SELECT COALESCE(
             ARRAY_AGG(
                 (
-                    audit_id,
-                    session_id,
-                    audit_created_at,
-                    message,
-                    endpoint,
-                    error
-                )::types.q_get_audit_list_view_v4_item
-                ORDER BY audit_created_at DESC
+                    message_id,
+                    run_id,
+                    role,
+                    message_created_at,
+                    contents,
+                    call_ids
+                )::types.q_get_message_list_view_v4_item
+                ORDER BY
+                    run_id,
+                    CASE role
+                        WHEN 'system' THEN 1
+                        WHEN 'developer' THEN 2
+                        WHEN 'user' THEN 3
+                        WHEN 'assistant' THEN 4
+                        ELSE 5
+                    END,
+                    message_created_at
             ),
-            ARRAY[]::types.q_get_audit_list_view_v4_item[]
+            ARRAY[]::types.q_get_message_list_view_v4_item[]
         ) AS items
         FROM sorted
     )
