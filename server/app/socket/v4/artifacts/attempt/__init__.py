@@ -28,7 +28,18 @@ Event flow:
 
 from fastapi import APIRouter
 
-from . import audio, chat, complete, control, error, grade, message, progress, responses, room
+from . import (
+    audio,
+    chat,
+    complete,
+    control,
+    error,
+    grade,
+    message,
+    progress,
+    responses,
+    room,
+)
 
 __all__ = [
     "audio",

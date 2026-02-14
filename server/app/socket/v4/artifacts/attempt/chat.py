@@ -60,9 +60,7 @@ async def handle_attempt_chat(data: dict[str, Any]) -> None:
     try:
         profile_id = uuid.UUID(data["profile_id"])
         attempt_id = uuid.UUID(data["attempt_id"])
-        training_bundle_department_id = uuid.UUID(
-            data["training_bundle_department_id"]
-        )
+        training_bundle_department_id = uuid.UUID(data["training_bundle_department_id"])
         simulation_id = data["simulation_id"]
         scenario_id = data.get("scenario_id")
         scenario_data = data.get("scenario_data")
@@ -78,9 +76,7 @@ async def handle_attempt_chat(data: dict[str, Any]) -> None:
 
             chat_row = cast(
                 CreateAttemptChatSqlRow,
-                await execute_sql_typed(
-                    conn, SQL_PATH_CREATE_CHAT, params=chat_params
-                ),
+                await execute_sql_typed(conn, SQL_PATH_CREATE_CHAT, params=chat_params),
             )
 
             if not chat_row or not chat_row.chat_id:
