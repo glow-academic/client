@@ -129,10 +129,12 @@ async def load_metadata(conn: asyncpg.Connection) -> None:
     """Load all table columns, PKs, and FK mappings from pg_catalog."""
 
     # 1. All columns for public tables (ordered by ordinal_position)
+    #    Exclude generated columns (e.g., content_hash) — Postgres rejects INSERTs into them
     rows = await conn.fetch("""
         SELECT table_name, column_name
         FROM information_schema.columns
         WHERE table_schema = 'public'
+          AND is_generated = 'NEVER'
         ORDER BY table_name, ordinal_position
     """)
     for r in rows:

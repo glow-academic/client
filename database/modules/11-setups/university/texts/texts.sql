@@ -4,7 +4,7 @@
 -- ============================================================
 
 -- texts_entry
-INSERT INTO public.texts_entry (id, content, content_hash, created_at, updated_at, active, generated, mcp) VALUES ('019c29d6-003a-7f3d-9c60-a6c537f708ce', '<!DOCTYPE html>
+INSERT INTO public.texts_entry (id, content, created_at, updated_at, active, generated, mcp) VALUES ('019c29d6-003a-7f3d-9c60-a6c537f708ce', '<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -161,8 +161,8 @@ INSERT INTO public.texts_entry (id, content, content_hash, created_at, updated_a
     </footer>
 </body>
 </html>
-', 'f00bc10d10db2ba0292316a875c1a05d', '2025-12-06T02:59:23.893847+00:00', '2025-12-06T02:59:23.893847+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
-INSERT INTO public.texts_entry (id, content, content_hash, created_at, updated_at, active, generated, mcp) VALUES ('019c29d6-003a-7541-984b-5374263aa03b', '<!DOCTYPE html>
+', '2025-12-06T02:59:23.893847+00:00', '2025-12-06T02:59:23.893847+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.texts_entry (id, content, created_at, updated_at, active, generated, mcp) VALUES ('019c29d6-003a-7541-984b-5374263aa03b', '<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -314,8 +314,8 @@ INSERT INTO public.texts_entry (id, content, content_hash, created_at, updated_a
     </footer>
 </body>
 </html>
-', 'a2d19faa2ac59a14cb0a9a01392ea7f3', '2025-12-06T02:59:23.893847+00:00', '2025-12-06T02:59:23.893847+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
-INSERT INTO public.texts_entry (id, content, content_hash, created_at, updated_at, active, generated, mcp) VALUES ('019c29d6-003b-71b1-bfa5-69ef5f636751', '<!DOCTYPE html>
+', '2025-12-06T02:59:23.893847+00:00', '2025-12-06T02:59:23.893847+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.texts_entry (id, content, created_at, updated_at, active, generated, mcp) VALUES ('019c29d6-003b-71b1-bfa5-69ef5f636751', '<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -473,8 +473,8 @@ INSERT INTO public.texts_entry (id, content, content_hash, created_at, updated_a
     </footer>
 </body>
 </html>
-', '6d86801ce52ecbb89db00d008e57ea9b', '2025-12-06T02:59:23.893847+00:00', '2025-12-06T02:59:23.893847+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
-INSERT INTO public.texts_entry (id, content, content_hash, created_at, updated_at, active, generated, mcp) VALUES ('019c29d6-003a-731f-b918-64b6c99d0464', '<!DOCTYPE html>
+', '2025-12-06T02:59:23.893847+00:00', '2025-12-06T02:59:23.893847+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.texts_entry (id, content, created_at, updated_at, active, generated, mcp) VALUES ('019c29d6-003a-731f-b918-64b6c99d0464', '<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -647,8 +647,8 @@ INSERT INTO public.texts_entry (id, content, content_hash, created_at, updated_a
     </footer>
 </body>
 </html>
-', 'aa5b00e4c52b003ae6a89f9163142074', '2025-12-06T02:59:23.893847+00:00', '2025-12-06T02:59:23.893847+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
-INSERT INTO public.texts_entry (id, content, content_hash, created_at, updated_at, active, generated, mcp) VALUES ('019c29d6-003a-740e-8854-4d9ee26d34a6', '<!DOCTYPE html>
+', '2025-12-06T02:59:23.893847+00:00', '2025-12-06T02:59:23.893847+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.texts_entry (id, content, created_at, updated_at, active, generated, mcp) VALUES ('019c29d6-003a-740e-8854-4d9ee26d34a6', '<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -781,8 +781,8 @@ INSERT INTO public.texts_entry (id, content, content_hash, created_at, updated_a
     </footer>
 </body>
 </html>
-', 'f2bd2f1cc3507d19b376149b56d6b399', '2025-12-06T02:59:23.893847+00:00', '2025-12-06T02:59:23.893847+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
-INSERT INTO public.texts_entry (id, content, content_hash, created_at, updated_at, active, generated, mcp) VALUES ('019c29d6-003b-7026-b46a-5def99ec275a', '<!DOCTYPE html>
+', '2025-12-06T02:59:23.893847+00:00', '2025-12-06T02:59:23.893847+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.texts_entry (id, content, created_at, updated_at, active, generated, mcp) VALUES ('019c29d6-003b-7026-b46a-5def99ec275a', '<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -912,8 +912,8 @@ INSERT INTO public.texts_entry (id, content, content_hash, created_at, updated_a
     </footer>
 </body>
 </html>
-', '4b580db9b061e12e419a6dbf460ff653', '2025-12-06T02:59:23.893847+00:00', '2025-12-06T02:59:23.893847+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
-INSERT INTO public.texts_entry (id, content, content_hash, created_at, updated_at, active, generated, mcp) VALUES ('019c29d6-003a-7647-aa7f-b9baebd83bf3', '<!DOCTYPE html>
+', '2025-12-06T02:59:23.893847+00:00', '2025-12-06T02:59:23.893847+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.texts_entry (id, content, created_at, updated_at, active, generated, mcp) VALUES ('019c29d6-003a-7647-aa7f-b9baebd83bf3', '<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -1087,8 +1087,8 @@ INSERT INTO public.texts_entry (id, content, content_hash, created_at, updated_a
     </footer>
 </body>
 </html>
-', '8281feef8a15f157dc90225a16c474ed', '2025-12-06T02:59:23.893847+00:00', '2025-12-06T02:59:23.893847+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
-INSERT INTO public.texts_entry (id, content, content_hash, created_at, updated_at, active, generated, mcp) VALUES ('019c5ad4-73da-75a6-a9bf-5c4c5e79178e', 'Academic Integrity
+', '2025-12-06T02:59:23.893847+00:00', '2025-12-06T02:59:23.893847+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.texts_entry (id, content, created_at, updated_at, active, generated, mcp) VALUES ('019c5ad4-73da-75a6-a9bf-5c4c5e79178e', 'Academic Integrity
 Academic Integrity
 A new phone number and email address have been established to facilitate the reporting of
 student academic integrity issues.
@@ -1237,8 +1237,8 @@ found guilty, possible penalties include a warning, probation, probated suspensi
 expulsion.
 Feel free to make a print of this brochure for yourself. Copies of this brochure are available through
 the Office of Student Rights and Responsibilities at no cost, 765-494-1250.
-ACADEMIC INTEGRITY', '651151a3bad69a8dd4891932605429bf', '2026-02-14T06:26:38.435028+00:00', '2026-02-14T06:26:38.435028+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
-INSERT INTO public.texts_entry (id, content, content_hash, created_at, updated_at, active, generated, mcp) VALUES ('019c5ad4-7a52-7a69-b03d-b31104496c0c', ' 
+ACADEMIC INTEGRITY', '2026-02-14T06:26:38.435028+00:00', '2026-02-14T06:26:38.435028+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.texts_entry (id, content, created_at, updated_at, active, generated, mcp) VALUES ('019c5ad4-7a52-7a69-b03d-b31104496c0c', ' 
  
 UNITED STATES DEPARTMENT OF EDUCATION 
 STUDENT PRIVACY POLICY OFFICE 
@@ -1498,8 +1498,8 @@ additional guidance at the following address:
 Student Privacy Policy Office 
 U.S. Department of Education  
 400 Maryland Avenue, SW 
-Washington, DC 20202-8520 ', 'f16fadab0c0461cdc7f88fd8502ef834', '2026-02-14T06:26:38.435028+00:00', '2026-02-14T06:26:38.435028+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
-INSERT INTO public.texts_entry (id, content, content_hash, created_at, updated_at, active, generated, mcp) VALUES ('97b50025-177e-4376-9bb0-997373e7bb40', '<!DOCTYPE html>
+Washington, DC 20202-8520 ', '2026-02-14T06:26:38.435028+00:00', '2026-02-14T06:26:38.435028+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.texts_entry (id, content, created_at, updated_at, active, generated, mcp) VALUES ('97b50025-177e-4376-9bb0-997373e7bb40', '<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -1890,8 +1890,8 @@ INSERT INTO public.texts_entry (id, content, content_hash, created_at, updated_a
     </footer>
 </body>
 </html>
-', '05a2073597c9e5a8225428ec5826352e', '2026-02-11T23:50:02.269303+00:00', '2026-02-11T23:50:02.269303+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
-INSERT INTO public.texts_entry (id, content, content_hash, created_at, updated_at, active, generated, mcp) VALUES ('8a823596-f02f-4836-ab23-983c706ce7a2', '<!DOCTYPE html>
+', '2026-02-11T23:50:02.269303+00:00', '2026-02-11T23:50:02.269303+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.texts_entry (id, content, created_at, updated_at, active, generated, mcp) VALUES ('8a823596-f02f-4836-ab23-983c706ce7a2', '<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -2305,7 +2305,7 @@ INSERT INTO public.texts_entry (id, content, content_hash, created_at, updated_a
     </footer>
 </body>
 </html>
-', 'b8d610feb56fd75185898314227bb760', '2026-02-11T23:50:02.269303+00:00', '2026-02-11T23:50:02.269303+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
+', '2026-02-11T23:50:02.269303+00:00', '2026-02-11T23:50:02.269303+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
 
 -- texts_texts_connection
 INSERT INTO public.texts_texts_connection (texts_id, text_id, active, created_at, updated_at) VALUES ('019c29d6-005b-7e73-92cf-45f8bfca8d76', '019c29d6-003a-7f3d-9c60-a6c537f708ce', true, '2026-02-04T18:06:56.587632+00:00', '2026-02-04T18:06:56.587632+00:00') ON CONFLICT (texts_id, text_id) DO NOTHING;
