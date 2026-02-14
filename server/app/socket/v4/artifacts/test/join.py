@@ -1,8 +1,7 @@
-"""Test room management handler.
+"""Test join handler.
 
-Handles WebSocket events for joining/leaving test rooms:
+Handles WebSocket event:
 - test_join: Join a test room for real-time updates
-- test_leave: Leave a test room
 """
 
 from typing import Any
@@ -15,7 +14,6 @@ from app.socket.v4.artifacts.test.types import (
     TestErrorEvent,
     TestJoinedEvent,
     TestJoinPayload,
-    TestLeavePayload,
 )
 from app.utils.logging.db_logger import get_logger
 
@@ -65,19 +63,6 @@ async def test_join(sid: str, data: dict[str, Any]) -> None:
         )
 
 
-@sio.event  # type: ignore
-async def test_leave(sid: str, data: dict[str, Any]) -> None:
-    """Handle test_leave event - leave a test room."""
-    try:
-        payload = TestLeavePayload(**data)
-        chat_id_str = str(payload.chat_id)
-        room_name = f"test_{chat_id_str}"
-        await sio.leave_room(sid, room_name)
-        logger.info(f"Client {sid} left room {room_name}")
-    except Exception as e:
-        logger.exception(f"Error in test_leave: {str(e)}")
-
-
 # =============================================================================
 # FastAPI endpoints for OpenAPI documentation
 # =============================================================================
@@ -86,12 +71,6 @@ async def test_leave(sid: str, data: dict[str, Any]) -> None:
 @client_router.post("/test/join", response_model=dict[str, bool])
 async def test_join_api(request: TestJoinPayload) -> dict[str, bool]:
     """Client-to-server event: Join a test room for real-time updates."""
-    return {"success": True}
-
-
-@client_router.post("/test/leave", response_model=dict[str, bool])
-async def test_leave_api(request: TestLeavePayload) -> dict[str, bool]:
-    """Client-to-server event: Leave a test room."""
     return {"success": True}
 
 

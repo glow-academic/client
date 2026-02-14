@@ -9648,6 +9648,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/socket/v4/server/attempt/assistant_audio": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Attempt Assistant Audio Api
+         * @description Server-to-client event: Audio chunk from assistant in voice mode.
+         */
+        post: operations["attempt_assistant_audio_api_socket_v4_server_attempt_assistant_audio_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/socket/v4/server/attempt/user_start": {
         parameters: {
             query?: never;
@@ -9682,26 +9702,6 @@ export interface paths {
          * @description Server-to-client event: Voice transcription delta.
          */
         post: operations["attempt_user_delta_api_socket_v4_server_attempt_user_delta_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/socket/v4/server/attempt/assistant_audio": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Attempt Assistant Audio Api
-         * @description Server-to-client event: Audio chunk from assistant in voice mode.
-         */
-        post: operations["attempt_assistant_audio_api_socket_v4_server_attempt_assistant_audio_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -56026,6 +56026,41 @@ export interface operations {
             };
         };
     };
+    attempt_assistant_audio_api_socket_v4_server_attempt_assistant_audio_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AttemptAssistantAudioEvent"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     attempt_user_start_api_socket_v4_server_attempt_user_start_post: {
         parameters: {
             query?: never;
@@ -56071,41 +56106,6 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["AttemptUserDeltaEvent"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: boolean;
-                    };
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    attempt_assistant_audio_api_socket_v4_server_attempt_assistant_audio_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["AttemptAssistantAudioEvent"];
             };
         };
         responses: {

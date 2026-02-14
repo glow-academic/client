@@ -4,10 +4,11 @@ from fastapi import APIRouter
 
 from . import (
     attempt,
+    audio_frame_send,
     auth,
     benchmark,
-    frames,
     generate,
+    mic_set_muted,
     simulation,
     test,
     tool_call,
@@ -17,10 +18,11 @@ from . import (
 
 __all__ = [
     "attempt",
+    "audio_frame_send",
     "auth",
     "benchmark",
-    "frames",
     "generate",
+    "mic_set_muted",
     "simulation",
     "test",
     "tool_call",

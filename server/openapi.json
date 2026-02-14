@@ -45127,6 +45127,57 @@
         ]
       }
     },
+    "/socket/v4/server/attempt/assistant_audio": {
+      "post": {
+        "tags": [
+          "socket",
+          "socket-server"
+        ],
+        "summary": "Attempt Assistant Audio Api",
+        "description": "Server-to-client event: Audio chunk from assistant in voice mode.",
+        "operationId": "attempt_assistant_audio_api_socket_v4_server_attempt_assistant_audio_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AttemptAssistantAudioEvent"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Attempt Assistant Audio Api Socket V4 Server Attempt Assistant Audio Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server"
+        ]
+      }
+    },
     "/socket/v4/server/attempt/user_start": {
       "post": {
         "tags": [
@@ -45208,57 +45259,6 @@
                   },
                   "type": "object",
                   "title": "Response Attempt User Delta Api Socket V4 Server Attempt User Delta Post"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server"
-        ]
-      }
-    },
-    "/socket/v4/server/attempt/assistant_audio": {
-      "post": {
-        "tags": [
-          "socket",
-          "socket-server"
-        ],
-        "summary": "Attempt Assistant Audio Api",
-        "description": "Server-to-client event: Audio chunk from assistant in voice mode.",
-        "operationId": "attempt_assistant_audio_api_socket_v4_server_attempt_assistant_audio_post",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/AttemptAssistantAudioEvent"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "additionalProperties": {
-                    "type": "boolean"
-                  },
-                  "type": "object",
-                  "title": "Response Attempt Assistant Audio Api Socket V4 Server Attempt Assistant Audio Post"
                 }
               }
             }

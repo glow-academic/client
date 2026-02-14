@@ -14,8 +14,9 @@ from . import (
     error,
     grade,
     invocation,
+    join,
+    leave,
     progress,
-    room,
     run,
     run_all,
     stop,
@@ -26,8 +27,9 @@ __all__ = [
     "error",
     "grade",
     "invocation",
+    "join",
+    "leave",
     "progress",
-    "room",
     "run",
     "run_all",
     "stop",
@@ -36,13 +38,14 @@ __all__ = [
 client_router = APIRouter()
 server_router = APIRouter()
 
-client_router.include_router(room.client_router)
+client_router.include_router(join.client_router)
+client_router.include_router(leave.client_router)
 client_router.include_router(stop.client_router)
 client_router.include_router(run.client_router)
 client_router.include_router(run_all.client_router)
 client_router.include_router(grade.client_router)
 
-server_router.include_router(room.server_router)
+server_router.include_router(join.server_router)
 server_router.include_router(stop.server_router)
 server_router.include_router(invocation.server_router)
 server_router.include_router(progress.server_router)

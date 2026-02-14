@@ -20,12 +20,12 @@ from typing import Any, Literal
 import websockets
 from websockets.asyncio.client import ClientConnection
 
-from app.infra.v4.websocket.session_store import AudioSession
-from app.main import get_internal_sio
-from app.socket.v4.artifacts.adapters.audio.base import (
+from app.infra.v4.websocket.adapters.audio.base import (
     AudioSessionConfig,
     BaseAudioAdapter,
 )
+from app.infra.v4.websocket.session_store import AudioSession
+from app.main import get_internal_sio
 
 logger = logging.getLogger(__name__)
 
