@@ -3,8 +3,9 @@
 Backfill text and page images for PDF-based documents.
 
 For each document with an upload (PDF) but no text:
-  1. Extract text from PDF using pypdf → texts_entry + texts_resource + connections
-  2. Render each page as PNG using pymupdf → uploads_entry + images_resource + junctions
+  1. Extract text from PDF using pypdf → texts_entry + texts_resource + texts_texts_connection
+  2. Render each page as PNG using pymupdf → uploads_entry + uploads_resource +
+     uploads_uploads_connection + images_resource + document_images_junction
   3. Update documents_resource.text_id and image_ids
 
 Usage:
@@ -194,13 +195,27 @@ async def backfill(conn: asyncpg.Connection) -> None:
                     RETURNING id
                 """, rel_path, len(png_bytes))
 
-                # Create images_resource
+                # Create uploads_resource (wraps the entry)
+                upload_res_id = await conn.fetchval("""
+                    INSERT INTO uploads_resource (active, generated, mcp, upload_id)
+                    VALUES (true, false, false, $1)
+                    RETURNING id
+                """, upload_entry_id)
+
+                # Create uploads_uploads_connection (links resource ↔ entry)
+                await conn.execute("""
+                    INSERT INTO uploads_uploads_connection (uploads_id, upload_id, active)
+                    VALUES ($1, $2, true)
+                    ON CONFLICT (uploads_id, upload_id) DO NOTHING
+                """, upload_res_id, upload_entry_id)
+
+                # Create images_resource (upload_id → uploads_resource)
                 img_name = f"{doc_name} Page {page_num}"
                 image_res_id = await conn.fetchval("""
                     INSERT INTO images_resource (name, description, upload_id, completed, active, generated, mcp)
                     VALUES ($1, $1, $2, true, true, false, false)
                     RETURNING id
-                """, img_name, upload_entry_id)
+                """, img_name, upload_res_id)
 
                 # Create document_images_junction
                 await conn.execute("""

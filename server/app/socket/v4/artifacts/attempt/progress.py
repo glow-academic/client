@@ -70,34 +70,30 @@ async def handle_attempt_progress(data: dict[str, Any]) -> None:
         room=sid,
     )
 
-    # Also emit attempt_assistant_delta for client-side message streaming
-    run_id = data.get("run_id")
-    if run_id:
-        ctx = get_run_context(run_id)
-        if ctx:
-            content: str | None = None
-            event_type = data.get("event_type")
-
-            if event_type == "text_delta":
-                # Direct text streaming — use accumulated content
-                content = data.get("accumulated_content")
-            elif event_type == "tool_call_delta":
-                # Tool call streaming — extract content from parsed arguments
+    # Also emit attempt_assistant_delta for client-side message streaming.
+    # Only stream tool_call_delta — the actual displayable content comes from
+    # tool calls (e.g. create_content's `content` argument), not from the
+    # model's direct text output which is intermediate reasoning.
+    event_type = data.get("event_type")
+    if event_type == "tool_call_delta":
+        run_id = data.get("run_id")
+        if run_id:
+            ctx = get_run_context(run_id)
+            if ctx:
                 arguments = data.get("arguments")
                 if isinstance(arguments, dict):
                     content = arguments.get("content")
-
-            if content:
-                delta_event = AttemptAssistantDeltaEvent(
-                    chat_id=ctx.chat_id,
-                    message_id=ctx.message_id,
-                    content=content,
-                )
-                await sio.emit(
-                    "attempt_assistant_delta",
-                    delta_event.model_dump(mode="json"),
-                    room=sid,
-                )
+                    if content:
+                        delta_event = AttemptAssistantDeltaEvent(
+                            chat_id=ctx.chat_id,
+                            message_id=ctx.message_id,
+                            content=content,
+                        )
+                        await sio.emit(
+                            "attempt_assistant_delta",
+                            delta_event.model_dump(mode="json"),
+                            room=sid,
+                        )
 
 
 # =============================================================================
