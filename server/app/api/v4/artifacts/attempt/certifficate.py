@@ -5,13 +5,18 @@ import os
 import subprocess
 import tempfile
 import uuid
+from collections import defaultdict
+from dataclasses import dataclass, field
 from typing import Annotated, Any, cast
+from uuid import UUID
 
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import Response
 
 from app.api.v4.auth.profile import get_auth_profile_internal
+from app.api.v4.views.attempt.chats.get import get_attempt_chats_internal
+from app.api.v4.views.attempt.list.get import get_attempt_list_internal
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.main import get_db, get_pool
 from app.sql.types import (
@@ -26,6 +31,147 @@ logger = get_logger(__name__)
 
 # Load SQL with types at module level - makes it clear what SQL file is used
 SQL_PATH = "app/sql/v4/queries/documents/get_certificate_data_complete.sql"
+
+
+@dataclass
+class SimulationResult:
+    """Simulation result for certificate rendering."""
+
+    name: str
+    score: int
+    passed: bool
+
+
+@dataclass
+class CohortResult:
+    """Cohort result for certificate rendering."""
+
+    name: str
+    passed: bool
+    simulations: list[SimulationResult] = field(default_factory=list)
+
+
+async def _compute_certificate_scores(
+    conn: asyncpg.Connection,
+    profile_id: UUID,
+    structure_rows: list[GetCertificateDataSqlRow],
+) -> list[CohortResult]:
+    """Compute certificate scores using attempt view internals.
+
+    Fetches attempt/chat data via view internal APIs, computes per-simulation
+    scores, and builds cohort/simulation results for rendering.
+    """
+    if not structure_rows:
+        return []
+
+    # Extract simulation_ids and build lookup maps
+    simulation_ids = list(
+        {row.simulation_id for row in structure_rows if row.simulation_id}
+    )
+    expected_scenarios: dict[UUID, int] = {}
+    pass_thresholds: dict[UUID, float] = {}
+    for row in structure_rows:
+        if row.simulation_id:
+            expected_scenarios[row.simulation_id] = row.expected_scenarios or 0
+            pass_thresholds[row.simulation_id] = float(row.pass_threshold_percent or 70)
+
+    # Fetch non-practice, non-archived attempts for this profile
+    attempts_response = await get_attempt_list_internal(
+        conn=conn,
+        profile_id_filter=profile_id,
+        practice_filter=False,
+        is_archived_filter=False,
+        page_limit=10000,
+        bypass_cache=True,
+    )
+
+    # Filter to only relevant simulations
+    relevant_attempts = [
+        a
+        for a in attempts_response.items
+        if a.simulation_id and a.simulation_id in simulation_ids
+    ]
+
+    # Fetch chats for those attempts
+    chats = []
+    if relevant_attempts:
+        attempt_ids = [a.attempt_id for a in relevant_attempts]
+        chats = await get_attempt_chats_internal(
+            conn=conn,
+            attempt_ids=attempt_ids,
+            bypass_cache=True,
+        )
+
+    # Map attempt_id -> simulation_id
+    sim_by_attempt: dict[UUID, UUID] = {}
+    for a in relevant_attempts:
+        if a.simulation_id:
+            sim_by_attempt[a.attempt_id] = a.simulation_id
+
+    # Group chats by attempt_id
+    chats_by_attempt: dict[UUID, list[Any]] = defaultdict(list)
+    for chat in chats:
+        if chat.attempt_id:
+            chats_by_attempt[chat.attempt_id].append(chat)
+
+    # Compute per-attempt, per-simulation scores
+    # For each attempt: sum grade_score of completed chats / expected_scenarios
+    sim_attempt_scores: dict[UUID, list[float]] = defaultdict(list)
+    for attempt_id, attempt_chats in chats_by_attempt.items():
+        sim_id = sim_by_attempt.get(attempt_id)
+        if not sim_id:
+            continue
+        sum_completed_pct = sum(
+            (chat.grade.score or 0)
+            for chat in attempt_chats
+            if chat.completed and chat.grade and chat.grade.score is not None
+        )
+        expected = expected_scenarios.get(sim_id, 0)
+        avg_pct = sum_completed_pct / expected if expected > 0 else 0
+        sim_attempt_scores[sim_id].append(avg_pct)
+
+    # Per simulation: best attempt score and pass check
+    sim_results: dict[UUID, tuple[int, bool]] = {}
+    for sim_id, scores in sim_attempt_scores.items():
+        best = max(scores) if scores else 0
+        threshold = pass_thresholds.get(sim_id, 70)
+        passed = any(s >= threshold for s in scores)
+        sim_results[sim_id] = (round(best), passed)
+
+    # Build cohort -> simulation nested structure
+    cohort_map: dict[UUID, CohortResult] = {}
+    cohort_order: list[UUID] = []
+    for row in structure_rows:
+        cid = row.cohort_id
+        if not cid:
+            continue
+        if cid not in cohort_map:
+            cohort_map[cid] = CohortResult(
+                name=row.cohort_name or "Unknown Cohort",
+                passed=False,
+                simulations=[],
+            )
+            cohort_order.append(cid)
+
+        sim_id = row.simulation_id
+        if sim_id:
+            score, passed = sim_results.get(sim_id, (0, False))
+            cohort_map[cid].simulations.append(
+                SimulationResult(
+                    name=row.simulation_name or "Unknown Simulation",
+                    score=score,
+                    passed=passed,
+                )
+            )
+
+    # Determine cohort pass status
+    for cohort in cohort_map.values():
+        cohort.passed = (
+            all(s.passed for s in cohort.simulations) if cohort.simulations else False
+        )
+
+    # Sort by cohort name
+    return sorted(cohort_map.values(), key=lambda c: c.name)
 
 
 router = APIRouter()
@@ -68,28 +214,29 @@ async def export_certificate(
         else:
             actor_name = None
 
-        # Convert API request to SQL params (add profile_id from header)
+        # Fetch cohort/simulation structure from SQL (flat rows)
         params = GetCertificateDataSqlParams(
             **request.model_dump(), profile_id=profile_id
         )
-
-        # Execute SQL with typed helper - automatically detects and calls function if present
-        result = cast(
-            GetCertificateDataSqlRow,
+        structure_rows = cast(
+            list[GetCertificateDataSqlRow],
             await execute_sql_typed(
                 conn,
                 SQL_PATH,
                 params=params,
+                multi_row=True,
             ),
         )
 
-        if not result or not result.profile_name:
+        if not structure_rows:
             raise HTTPException(
                 status_code=404, detail="Profile not found or no cohort data available"
             )
 
-        # Parse JSON response
-        profile_name = result.profile_name
+        profile_name = structure_rows[0].profile_name or "Unknown"
+
+        # Compute scores via attempt view internals
+        cohorts = await _compute_certificate_scores(conn, profile_id, structure_rows)
 
         # Set audit context
         if actor_name:
@@ -98,8 +245,6 @@ async def export_certificate(
                 actor={"name": actor_name, "id": profile_id},
                 document={"name": "Certificate", "id": ""},
             )
-        # cohorts is already parsed by execute_sql_typed as list[QGetCertificateDataV3Cohort]
-        cohorts = result.cohorts or []
 
         # Try to generate PDF using reportlab
         try:
