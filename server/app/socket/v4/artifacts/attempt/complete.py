@@ -16,6 +16,7 @@ from fastapi import APIRouter
 from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
 from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.main import get_internal_sio, sio
+from app.socket.v4.artifacts.attempt.run_store import remove_run_context
 from app.socket.v4.artifacts.attempt.types import (
     AttemptAssistantCompleteEvent,
     AttemptCompleteEvent,
@@ -182,6 +183,7 @@ async def _handle_message_complete(sid: str, data: dict[str, Any]) -> None:
         )
 
         logger.info(f"Attempt message complete - run_id={run_id}")
+        remove_run_context(run_id)
 
         # Refresh MVs so the new message is immediately visible
         try:
@@ -194,6 +196,7 @@ async def _handle_message_complete(sid: str, data: dict[str, Any]) -> None:
 
     except Exception as e:
         logger.exception(f"Failed to save attempt message: {str(e)}")
+        remove_run_context(run_id)
         await sio.emit(
             "attempt_error",
             {

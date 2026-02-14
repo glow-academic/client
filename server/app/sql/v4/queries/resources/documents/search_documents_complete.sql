@@ -32,6 +32,7 @@ CREATE OR REPLACE FUNCTION api_search_documents_v4(
     upload_ids uuid[] DEFAULT ARRAY[]::uuid[],
     text_ids uuid[] DEFAULT ARRAY[]::uuid[],
     image_ids uuid[] DEFAULT ARRAY[]::uuid[],
+    template boolean DEFAULT NULL,
     -- Artifact boolean filters: when true, only return resources linked to that artifact type
     document boolean DEFAULT false,
     scenario boolean DEFAULT false
@@ -44,7 +45,7 @@ STABLE
 AS $$
 SELECT COALESCE(
     ARRAY_AGG(
-        (q.document_id, q.name, q.description, q.generated, q.upload_id, q.text_id, q.image_ids)::types.q_get_documents_v4_item
+        (q.document_id, q.name, q.description, q.generated, q.upload_id, q.text_id, q.image_ids, q.template)::types.q_get_documents_v4_item
         ORDER BY q.name
     ),
     ARRAY[]::types.q_get_documents_v4_item[]
@@ -57,7 +58,8 @@ FROM (
         COALESCE(d.generated, false) AS generated,
         d.upload_id,
         d.text_id,
-        d.image_ids
+        d.image_ids,
+        d.template
     FROM documents_resource d
     WHERE d.active = true
       AND d.name IS NOT NULL
@@ -88,6 +90,7 @@ FROM (
       AND (COALESCE(array_length(upload_ids, 1), 0) = 0 OR d.upload_id = ANY(upload_ids))
       AND (COALESCE(array_length(text_ids, 1), 0) = 0 OR d.text_id = ANY(text_ids))
       AND (COALESCE(array_length(image_ids, 1), 0) = 0 OR d.image_ids && image_ids)
+      AND (template IS NULL OR d.template = template)
       -- Optional search filter
       AND (
           search IS NULL

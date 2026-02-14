@@ -4215,26 +4215,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/documents/html": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Document Html
-         * @description Get document HTML by ID.
-         */
-        post: operations["get_document_html_api_v4_resources_documents_html_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v4/resources/documents/search": {
         parameters: {
             query?: never;
@@ -9329,6 +9309,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/socket/v4/server/attempt/assistant/delta": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Attempt Assistant Delta Api
+         * @description Server-to-client event: Streaming text delta for assistant message.
+         */
+        post: operations["attempt_assistant_delta_api_socket_v4_server_attempt_assistant_delta_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/socket/v4/server/attempt/complete": {
         parameters: {
             query?: never;
@@ -12175,6 +12175,20 @@ export interface components {
             created_at?: string | null;
             /** Persona Id */
             persona_id?: string | null;
+        };
+        /**
+         * AttemptAssistantDeltaEvent
+         * @description Server-to-client event: attempt_assistant_delta.
+         *
+         *     Emitted during message generation with accumulated content.
+         */
+        AttemptAssistantDeltaEvent: {
+            /** Chat Id */
+            chat_id: string;
+            /** Message Id */
+            message_id: string;
+            /** Content */
+            content: string;
         };
         /**
          * AttemptAssistantStartEvent
@@ -19296,25 +19310,6 @@ export interface components {
             uploads?: components["schemas"]["DocumentUploadSection"] | null;
             images?: components["schemas"]["DocumentImageSection"] | null;
             texts?: components["schemas"]["DocumentTextSection"] | null;
-        };
-        /**
-         * GetDocumentHtmlApiRequest
-         * @description Request for getting document HTML by ID.
-         */
-        GetDocumentHtmlApiRequest: {
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-        };
-        /**
-         * GetDocumentHtmlApiResponse
-         * @description Response for getting document HTML.
-         */
-        GetDocumentHtmlApiResponse: {
-            /** Html */
-            html?: string | null;
         };
         /** GetDocumentResourceApiRequest */
         GetDocumentResourceApiRequest: {
@@ -28345,12 +28340,16 @@ export interface components {
             name: string | null;
             /** Description */
             description: string | null;
-            /** File Path */
-            file_path: string | null;
-            /** Mime Type */
-            mime_type: string | null;
             /** Generated */
             generated: boolean | null;
+            /** Upload Id */
+            upload_id: string | null;
+            /** Text Id */
+            text_id: string | null;
+            /** Image Ids */
+            image_ids: string[] | null;
+            /** Template */
+            template: boolean | null;
         };
         /** QGetDocumentsV4Item */
         QGetDocumentsV4Item: {
@@ -28364,8 +28363,12 @@ export interface components {
             generated: boolean | null;
             /** Upload Id */
             upload_id: string | null;
-            /** Html */
-            html: boolean | null;
+            /** Text Id */
+            text_id: string | null;
+            /** Image Ids */
+            image_ids: string[] | null;
+            /** Template */
+            template: boolean | null;
         };
         /** QGetDomainsV4Item */
         QGetDomainsV4Item: {
@@ -32604,8 +32607,10 @@ export interface components {
             upload_ids?: string[] | null;
             /** Text Ids */
             text_ids?: string[] | null;
-            /** Html */
-            html?: boolean | null;
+            /** Image Ids */
+            image_ids?: string[] | null;
+            /** Template */
+            template?: boolean | null;
             /**
              * Document
              * @default false
@@ -45630,43 +45635,6 @@ export interface operations {
             };
         };
     };
-    get_document_html_api_v4_resources_documents_html_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["GetDocumentHtmlApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GetDocumentHtmlApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     search_documents_api_v4_resources_documents_search_post: {
         parameters: {
             query?: never;
@@ -54910,6 +54878,41 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["AttemptProgressEvent"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    attempt_assistant_delta_api_socket_v4_server_attempt_assistant_delta_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AttemptAssistantDeltaEvent"];
             };
         };
         responses: {

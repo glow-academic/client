@@ -10,7 +10,9 @@ from fastapi import APIRouter
 
 from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
 from app.main import get_internal_sio, sio
+from app.socket.v4.artifacts.attempt.run_store import get_run_context
 from app.socket.v4.artifacts.attempt.types import (
+    AttemptAssistantDeltaEvent,
     AttemptProgressEvent,
 )
 from app.utils.logging.db_logger import get_logger
@@ -68,6 +70,35 @@ async def handle_attempt_progress(data: dict[str, Any]) -> None:
         room=sid,
     )
 
+    # Also emit attempt_assistant_delta for client-side message streaming
+    run_id = data.get("run_id")
+    if run_id:
+        ctx = get_run_context(run_id)
+        if ctx:
+            content: str | None = None
+            event_type = data.get("event_type")
+
+            if event_type == "text_delta":
+                # Direct text streaming — use accumulated content
+                content = data.get("accumulated_content")
+            elif event_type == "tool_call_delta":
+                # Tool call streaming — extract content from parsed arguments
+                arguments = data.get("arguments")
+                if isinstance(arguments, dict):
+                    content = arguments.get("content")
+
+            if content:
+                delta_event = AttemptAssistantDeltaEvent(
+                    chat_id=ctx.chat_id,
+                    message_id=ctx.message_id,
+                    content=content,
+                )
+                await sio.emit(
+                    "attempt_assistant_delta",
+                    delta_event.model_dump(mode="json"),
+                    room=sid,
+                )
+
 
 # =============================================================================
 # FastAPI endpoints for OpenAPI documentation
@@ -77,4 +108,12 @@ async def handle_attempt_progress(data: dict[str, Any]) -> None:
 @server_router.post("/attempt/progress", response_model=dict[str, bool])
 async def attempt_progress_api(request: AttemptProgressEvent) -> dict[str, bool]:
     """Server-to-client event: Attempt generation progress update."""
+    return {"success": True}
+
+
+@server_router.post("/attempt/assistant/delta", response_model=dict[str, bool])
+async def attempt_assistant_delta_api(
+    request: AttemptAssistantDeltaEvent,
+) -> dict[str, bool]:
+    """Server-to-client event: Streaming text delta for assistant message."""
     return {"success": True}

@@ -10,6 +10,7 @@ from fastapi import APIRouter
 
 from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
 from app.main import get_internal_sio, sio
+from app.socket.v4.artifacts.attempt.run_store import remove_run_context
 from app.socket.v4.artifacts.attempt.types import AttemptErrorEvent
 from app.utils.logging.db_logger import get_logger
 
@@ -61,6 +62,8 @@ async def handle_attempt_error(data: dict[str, Any]) -> None:
         event.model_dump(mode="json"),
         room=sid,
     )
+
+    remove_run_context(data.get("run_id"))
 
     logger.error(
         f"Attempt generation error - "

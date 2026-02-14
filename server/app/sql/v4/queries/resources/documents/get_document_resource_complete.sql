@@ -41,7 +41,8 @@ CREATE TYPE types.q_get_document_resource_v4_item AS (
     generated boolean,
     upload_id uuid,
     text_id uuid,
-    image_ids uuid[]
+    image_ids uuid[],
+    template boolean
 );
 
 -- Create function — reads directly from documents_resource columns
@@ -63,7 +64,8 @@ SELECT COALESCE(
             COALESCE(d.generated, false),
             d.upload_id,
             d.text_id,
-            d.image_ids
+            d.image_ids,
+            d.template
         )::types.q_get_document_resource_v4_item
     ),
     ARRAY[]::types.q_get_document_resource_v4_item[]

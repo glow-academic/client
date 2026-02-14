@@ -23,6 +23,7 @@ from app.socket.v4.artifacts.attempt.permissions import (
     format_generation_error,
     validate_attempt_message_access,
 )
+from app.socket.v4.artifacts.attempt.run_store import set_run_context
 from app.socket.v4.artifacts.attempt.types import (
     ATTEMPT_MESSAGE_ENTRY_TYPES,
     AttemptAssistantStartEvent,
@@ -228,6 +229,9 @@ async def _attempt_message_impl(
             run_id = str(prepare_row.run_id)
             group_id = str(prepare_row.group_id) if prepare_row.group_id else None
             trace_id = prepare_row.trace_id
+
+            # Cache run context for streaming deltas (avoids DB query per delta)
+            set_run_context(run_id, str(data.chat_id), assistant_message_id)
 
             # Ensure MV is fresh before building developer context
             await conn.execute("REFRESH MATERIALIZED VIEW mv_attempt_messages")

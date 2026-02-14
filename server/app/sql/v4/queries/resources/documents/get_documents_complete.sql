@@ -56,7 +56,8 @@ CREATE TYPE types.q_get_documents_v4_item AS (
     generated boolean,
     upload_id uuid,
     text_id uuid,
-    image_ids uuid[]
+    image_ids uuid[],
+    template boolean
 );
 
 -- Create function - query documents_resource only
@@ -78,7 +79,8 @@ SELECT COALESCE(
             COALESCE(d.generated, false),
             d.upload_id,
             d.text_id,
-            d.image_ids
+            d.image_ids,
+            d.template
         )::types.q_get_documents_v4_item
         ORDER BY array_position(p_ids, d.id)
     ),

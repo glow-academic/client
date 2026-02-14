@@ -17,6 +17,7 @@ class SearchDocumentsParams(BaseModel):
     upload_ids: list[UUID] = []
     text_ids: list[UUID] = []
     image_ids: list[UUID] = []
+    template: bool | None = None
     # Artifact boolean filters
     document: bool = False
     scenario: bool = False
@@ -33,6 +34,7 @@ class SearchDocumentsParams(BaseModel):
             self.upload_ids,
             self.text_ids,
             self.image_ids,
+            self.template,
             self.document,
             self.scenario,
         )

@@ -5125,6 +5125,7 @@ class QGetDocumentResourceV4Item(BaseModel):
     upload_id: UUID | None
     text_id: UUID | None
     image_ids: list[UUID] | None
+    template: bool | None
 
 class GetDocumentResourceDataSqlRow(BaseModel):
 
@@ -14854,6 +14855,7 @@ class QGetDocumentsV4Item(BaseModel):
     upload_id: UUID | None
     text_id: UUID | None
     image_ids: list[UUID] | None
+    template: bool | None
 
 class GetDocumentsSqlRow(BaseModel):
 
@@ -14883,6 +14885,7 @@ class SearchDocumentsSqlParams(BaseModel):
     upload_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
     text_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
     image_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    template: bool | None = None
     document: bool | None = False
     scenario: bool | None = False
 
@@ -14898,6 +14901,7 @@ class SearchDocumentsSqlParams(BaseModel):
             self.upload_ids,
             self.text_ids,
             self.image_ids,
+            self.template,
             self.document,
             self.scenario,
         )
@@ -14918,6 +14922,7 @@ class SearchDocumentsApiRequest(BaseModel):
     upload_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
     text_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
     image_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    template: bool | None = None
     document: bool | None = False
     scenario: bool | None = False
 
