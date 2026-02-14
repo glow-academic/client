@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import type { components } from "@/lib/api/schema";
 import type { OutputOf } from "@/lib/api/types";
+import { useAttemptMessages } from "@/hooks/use-attempt-messages";
 import type { ClientToServerEvents, ServerToClientEvents } from "@/lib/ws/types";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -91,17 +92,10 @@ type AttemptAudioFramePayload = Parameters<ClientToServerEvents["attempt_audio_f
 type AttemptMicMutePayload = Parameters<ClientToServerEvents["attempt_mic_mute"]>[0];
 type AttemptResponseSubmitPayload = Parameters<ClientToServerEvents["attempt_response_submit"]>[0];
 
-// Server-to-Client event payloads
-type AttemptJoinedEvent = Parameters<ServerToClientEvents["attempt_joined"]>[0];
+// Server-to-Client event payloads (message streaming types are in useAttemptMessages hook)
 type AttemptUserStartEvent = Parameters<ServerToClientEvents["attempt_user_start"]>[0];
 type AttemptUserDeltaEvent = Parameters<ServerToClientEvents["attempt_user_delta"]>[0];
-type AttemptUserCompleteEvent = Parameters<ServerToClientEvents["attempt_user_complete"]>[0];
-type AttemptAssistantStartEvent = Parameters<ServerToClientEvents["attempt_assistant_start"]>[0];
-type AttemptAssistantDeltaEvent = Parameters<ServerToClientEvents["attempt_assistant_delta"]>[0];
 type AttemptAssistantAudioEvent = Parameters<ServerToClientEvents["attempt_assistant_audio"]>[0];
-type AttemptAssistantCompleteEvent = Parameters<ServerToClientEvents["attempt_assistant_complete"]>[0];
-type AttemptCompleteEvent = Parameters<ServerToClientEvents["attempt_complete"]>[0];
-type AttemptStoppedEvent = Parameters<ServerToClientEvents["attempt_stopped"]>[0];
 type AttemptChatEndedEvent = Parameters<ServerToClientEvents["attempt_chat_ended"]>[0];
 type AttemptEndedEvent = Parameters<ServerToClientEvents["attempt_ended"]>[0];
 type AttemptAudioReadyEvent = Parameters<ServerToClientEvents["attempt_audio_ready"]>[0];
@@ -110,7 +104,6 @@ type AttemptGradingProgressEvent = Parameters<ServerToClientEvents["attempt_grad
 type AttemptGradedEvent = Parameters<ServerToClientEvents["attempt_graded"]>[0];
 type AttemptHintProgressEvent = Parameters<ServerToClientEvents["attempt_hint_progress"]>[0];
 type AttemptResponseResultEvent = Parameters<ServerToClientEvents["attempt_response_result"]>[0];
-type AttemptErrorEvent = Parameters<ServerToClientEvents["attempt_error"]>[0];
 
 /** Props for the AttemptChat component */
 export interface AttemptChatProps {
@@ -168,8 +161,6 @@ export function AttemptChat({
   const [questionIndex, setQuestionIndex] = useState(0);
   const [selectedDocumentId, setSelectedDocumentId] = useState<string | null>(null);
   const [inputPanelHeight, setInputPanelHeight] = useState<number>(70);
-  const [isSendingMessage, setIsSendingMessage] = useState(false);
-  const [isStoppingMessage, setIsStoppingMessage] = useState(false);
   const [messagesWithNewHints, setMessagesWithNewHints] = useState<Set<string>>(
     new Set()
   );
@@ -189,14 +180,6 @@ export function AttemptChat({
     phase: "tools" | "summary" | null;
   } | null>(null);
   const [isGrading, setIsGrading] = useState(false);
-
-  // Streaming and optimistic state
-  const [streamingContent, setStreamingContent] = useState<Map<string, string>>(
-    new Map()
-  );
-  const [optimisticMessages, setOptimisticMessages] = useState<
-    Map<string, MessageData>
-  >(new Map());
 
   const groupMessagesByChat = useCallback(
     (messages?: MessageData[] | null) => {
@@ -225,7 +208,6 @@ export function AttemptChat({
   const hasInitializedFromServerRef = useRef(false);
   const pendingNextChatIdRef = useRef<string | null>(null);
   const freshlyCompletedChatsRef = useRef<Set<string>>(new Set());
-  const refreshTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const transcriptDeltasRef = useRef<Map<string, string>>(new Map());
   const itemIdToOptimisticIdRef = useRef<Map<string, string>>(new Map());
   const voiceInputRef = useRef<HybridInputHandle | null>(null);
@@ -237,6 +219,88 @@ export function AttemptChat({
     phase: "tools" | "summary" | null;
   } | null>(null);
   const isGradingRef = useRef(false);
+
+  // Attempt message streaming hook
+  const handleUserCompleteVoiceCleanup = useCallback(
+    (data: Parameters<import("@/lib/ws/types").ServerToClientEvents["attempt_user_complete"]>[0]) => {
+      // Clean up voice optimistic messages matching this user message
+      setOptimisticMessages((prev) => {
+        const newMap = new Map(prev);
+        const normalizedContent = data.content.trim().toLowerCase();
+        let matchedOptimisticId: string | null = null;
+
+        for (const [tempId, optMsg] of newMap.entries()) {
+          if (
+            optMsg.type === "query" &&
+            (tempId.startsWith("optimistic-user-") ||
+              tempId.startsWith("optimistic-user-voice-"))
+          ) {
+            const optContent = optMsg.contents?.[0]?.content || "";
+            const optNormalized = optContent.trim().toLowerCase();
+            if (optNormalized === normalizedContent) {
+              matchedOptimisticId = tempId;
+              break;
+            }
+            if (
+              optNormalized.length > 5 &&
+              normalizedContent.length > 5 &&
+              (optNormalized.includes(normalizedContent) ||
+                normalizedContent.includes(optNormalized))
+            ) {
+              if (!matchedOptimisticId || tempId.startsWith("optimistic-user-voice-")) {
+                matchedOptimisticId = tempId;
+              }
+            }
+          }
+        }
+
+        if (!matchedOptimisticId) {
+          for (const [tempId, optMsg] of newMap.entries()) {
+            if (optMsg.type === "query" && tempId.startsWith("optimistic-user-voice-")) {
+              matchedOptimisticId = tempId;
+              break;
+            }
+          }
+        }
+
+        if (matchedOptimisticId) {
+          newMap.delete(matchedOptimisticId);
+          let matchedItemId: string | null = null;
+          for (const [itemId, optId] of itemIdToOptimisticIdRef.current.entries()) {
+            if (optId === matchedOptimisticId) {
+              matchedItemId = itemId;
+              itemIdToOptimisticIdRef.current.delete(itemId);
+              break;
+            }
+          }
+          if (matchedItemId) {
+            transcriptDeltasRef.current.delete(matchedItemId);
+          }
+        }
+
+        return newMap;
+      });
+    },
+    []
+  );
+
+  const {
+    streamingContent,
+    setStreamingContent,
+    optimisticMessages,
+    setOptimisticMessages,
+    isSending: isSendingMessage,
+    isStopping: isStoppingMessage,
+    setIsSending: setIsSendingMessage,
+    setIsStopping: setIsStoppingMessage,
+    clearStreamingState,
+  } = useAttemptMessages({
+    socket,
+    chatIdRef: currentChatIdRef,
+    personas: attemptData?.resources?.personas,
+    onRefresh: useCallback(() => router.refresh(), [router]),
+    onUserComplete: handleUserCompleteVoiceCleanup,
+  });
 
   // ---------------------------------------------------------------------------
   // SYNC WITH INITIAL DATA
@@ -569,14 +633,13 @@ export function AttemptChat({
   useEffect(() => {
     const chatId = currentChat?.id ?? null;
     if (prevChatIdRef.current !== null && prevChatIdRef.current !== chatId) {
-      setStreamingContent(new Map());
-      setOptimisticMessages(new Map());
+      clearStreamingState();
       setMessagesWithNewHints(new Set());
       transcriptDeltasRef.current.clear();
       itemIdToOptimisticIdRef.current = new Map();
     }
     prevChatIdRef.current = chatId;
-  }, [currentChat?.id]);
+  }, [currentChat?.id, clearStreamingState]);
 
   useEffect(() => {
     const currentChatId = currentChat?.id ? String(currentChat.id) : "";
@@ -614,7 +677,7 @@ export function AttemptChat({
     }, 500);
 
     return () => clearTimeout(gracePeriodTimeout);
-  }, [attemptData, currentChatIndex]);
+  }, [attemptData, currentChatIndex, setStreamingContent, setOptimisticMessages]);
 
   // Auto-show grades/rubric or responses when all chats are completed
   useEffect(() => {
@@ -741,8 +804,6 @@ export function AttemptChat({
     () => Array.from(messagesWithNewHints),
     [messagesWithNewHints]
   );
-
-  const normalizeMessageContent = (content: string) => content.trim().toLowerCase();
 
   // ---------------------------------------------------------------------------
   // PUBLIC HANDLERS
@@ -884,167 +945,15 @@ export function AttemptChat({
   );
 
   // ---------------------------------------------------------------------------
-  // WEBSOCKET EVENT HANDLERS
+  // WEBSOCKET EVENT HANDLERS (voice, navigation, grading, hints, quiz)
+  // Message streaming events are handled by useAttemptMessages hook.
   // ---------------------------------------------------------------------------
 
   useEffect(() => {
     if (!socket) return;
 
-    // Assistant message streaming (text delta)
-    const handleAssistantDelta = (data: AttemptAssistantDeltaEvent) => {
-      if (data.chat_id === currentChatIdRef.current && data.content !== undefined) {
-        setStreamingContent((prev) => {
-          const newMap = new Map(prev);
-          newMap.set(data.message_id, data.content);
-          return newMap;
-        });
-      }
-    };
-
-    // Assistant message complete
-    const handleAssistantComplete = (data: AttemptAssistantCompleteEvent) => {
-      if (data.chat_id !== currentChatIdRef.current) return;
-
-      const persona =
-        data.persona_id && attemptData?.resources?.personas
-          ? attemptData.resources.personas[data.persona_id]
-          : null;
-
-      if (data.content !== undefined) {
-        setStreamingContent((prev) => {
-          const newMap = new Map(prev);
-          newMap.set(data.message_id, data.content);
-          return newMap;
-        });
-      }
-
-      setOptimisticMessages((prev) => {
-        const newMap = new Map(prev);
-        const existingMessage = newMap.get(data.message_id);
-        const existingContent = existingMessage?.contents?.[0];
-
-        newMap.set(data.message_id, {
-          id: data.message_id,
-          type: "response",
-          created_at:
-            data.created_at || existingMessage?.created_at || new Date().toISOString(),
-          completed: true,
-          contents: [
-            {
-              content:
-                data.content ?? existingContent?.content ?? "",
-              name: persona?.name ?? existingContent?.name ?? null,
-              color: persona?.color ?? existingContent?.color ?? null,
-              icon: persona?.icon ?? existingContent?.icon ?? null,
-            },
-          ],
-        });
-        return newMap;
-      });
-
-      if (refreshTimeoutRef.current) {
-        clearTimeout(refreshTimeoutRef.current);
-      }
-      refreshTimeoutRef.current = setTimeout(() => {
-        router.refresh();
-        refreshTimeoutRef.current = null;
-      }, 500);
-    };
-
-    // User message complete (unified for text and voice)
-    const handleUserComplete = (data: AttemptUserCompleteEvent) => {
-      if (data.chat_id !== currentChatIdRef.current) return;
-
-      setOptimisticMessages((prev) => {
-        const newMap = new Map(prev);
-        let matchedOptimisticId: string | null = null;
-
-        const normalizedContent = normalizeMessageContent(data.content);
-
-        for (const [tempId, optMsg] of newMap.entries()) {
-          if (
-            optMsg.type === "query" &&
-            (tempId.startsWith("optimistic-user-") ||
-              tempId.startsWith("optimistic-user-voice-"))
-          ) {
-            // Get content from first contents entry
-            const optContent = optMsg.contents?.[0]?.content || "";
-            const optNormalized = normalizeMessageContent(optContent);
-            if (optNormalized === normalizedContent) {
-              matchedOptimisticId = tempId;
-              break;
-            }
-            if (
-              optNormalized.length > 5 &&
-              normalizedContent.length > 5 &&
-              (optNormalized.includes(normalizedContent) ||
-                normalizedContent.includes(optNormalized))
-            ) {
-              if (!matchedOptimisticId || tempId.startsWith("optimistic-user-voice-")) {
-                matchedOptimisticId = tempId;
-              }
-            }
-          }
-        }
-
-        if (!matchedOptimisticId) {
-          for (const [tempId, optMsg] of newMap.entries()) {
-            if (optMsg.type === "query" && tempId.startsWith("optimistic-user-voice-")) {
-              matchedOptimisticId = tempId;
-              break;
-            }
-          }
-        }
-
-        if (matchedOptimisticId) {
-          newMap.delete(matchedOptimisticId);
-          let matchedItemId: string | null = null;
-          for (const [itemId, optId] of itemIdToOptimisticIdRef.current.entries()) {
-            if (optId === matchedOptimisticId) {
-              matchedItemId = itemId;
-              itemIdToOptimisticIdRef.current.delete(itemId);
-              break;
-            }
-          }
-          if (matchedItemId) {
-            transcriptDeltasRef.current.delete(matchedItemId);
-          }
-        }
-
-        newMap.set(data.message_id, {
-          id: data.message_id,
-          type: "query",
-          created_at: data.created_at,
-          completed: true,
-          contents: [{ content: data.content, name: "You" }],
-        });
-
-        return newMap;
-      });
-    };
-
-    // Assistant message started
-    const handleAssistantStart = (data: AttemptAssistantStartEvent) => {
-      if (data.chat_id !== currentChatIdRef.current) return;
-
-      setIsSendingMessage(true);
-
-      setOptimisticMessages((prev) => {
-        const newMap = new Map(prev);
-        newMap.set(data.message_id, {
-          id: data.message_id,
-          type: "response",
-          created_at: data.created_at,
-          completed: false,
-          contents: [{ content: "" }],
-        });
-        return newMap;
-      });
-    };
-
     // User started speaking (voice)
     const handleUserStart = (data: AttemptUserStartEvent) => {
-      // Filter by chat_id (BFF translation layer returns chat_id)
       if (data.chat_id !== currentChatIdRef.current) return;
 
       const optimisticMessageId = `optimistic-user-voice-${Date.now()}-${Math.random()}`;
@@ -1052,7 +961,6 @@ export function AttemptChat({
       setOptimisticMessages((prev) => {
         const newMap = new Map(prev);
         for (const [id, msg] of newMap.entries()) {
-          // Get content from first contents entry
           const msgContent = msg.contents?.[0]?.content || "";
           if (
             id.startsWith("optimistic-user-voice-") &&
@@ -1086,7 +994,6 @@ export function AttemptChat({
 
     // User transcript delta (voice)
     const handleUserDelta = (data: AttemptUserDeltaEvent) => {
-      // Filter by chat_id (BFF translation layer returns chat_id)
       if (data.chat_id !== currentChatIdRef.current) return;
 
       transcriptDeltasRef.current.set(data.item_id, data.transcript);
@@ -1109,29 +1016,8 @@ export function AttemptChat({
 
     // Assistant audio chunk
     const handleAssistantAudio = (data: AttemptAssistantAudioEvent) => {
-      // Filter by chat_id (BFF translation layer returns chat_id)
       if (data.chat_id !== currentChatIdRef.current) return;
       voiceInputRef.current?.enqueue_audio_delta(data.audio);
-    };
-
-    // Generation turn complete (terminal event — clears sending state)
-    const handleAttemptComplete = (data: AttemptCompleteEvent) => {
-      if (data.chat_id !== currentChatIdRef.current) return;
-      setIsSendingMessage(false);
-    };
-
-    // Response stopped
-    const handleStopped = (data: AttemptStoppedEvent) => {
-      if (data.chat_id === currentChatIdRef.current) {
-        setIsSendingMessage(false);
-        setIsStoppingMessage(false);
-      }
-
-      if (data.success && data.message) {
-        toast.success(data.message);
-      } else if (!data.success) {
-        toast.error(data.message);
-      }
     };
 
     // Chat ended
@@ -1319,9 +1205,6 @@ export function AttemptChat({
           }
         }
       }
-
-      // Note: summary_recorded and complete events previously set grade_description
-      // which has been moved to analyses. The summary will be available after attempt refresh.
     };
 
     // Grading complete
@@ -1385,62 +1268,37 @@ export function AttemptChat({
       }
     };
 
-    // Unified error
-    const handleError = (data: AttemptErrorEvent) => {
-      setIsSendingMessage(false);
-      setIsStoppingMessage(false);
-      toast.error(data.message);
-    };
-
     // Subscribe to events
-    socket.on("attempt_assistant_delta", handleAssistantDelta);
-    socket.on("attempt_assistant_complete", handleAssistantComplete);
-    socket.on("attempt_assistant_start", handleAssistantStart);
     socket.on("attempt_assistant_audio", handleAssistantAudio);
     socket.on("attempt_user_start", handleUserStart);
     socket.on("attempt_user_delta", handleUserDelta);
-    socket.on("attempt_user_complete", handleUserComplete);
-    socket.on("attempt_complete", handleAttemptComplete);
-    socket.on("attempt_stopped", handleStopped);
     socket.on("attempt_chat_ended", handleChatEnded);
     socket.on("attempt_ended", handleAttemptEnded);
     socket.on("attempt_grading_progress", handleGrading);
     socket.on("attempt_graded", handleGraded);
     socket.on("attempt_hint_progress", handleHint);
     socket.on("attempt_response_result", handleQuizResult);
-    socket.on("attempt_error", handleError);
 
     return () => {
-      socket.off("attempt_assistant_delta", handleAssistantDelta);
-      socket.off("attempt_assistant_complete", handleAssistantComplete);
-      socket.off("attempt_assistant_start", handleAssistantStart);
       socket.off("attempt_assistant_audio", handleAssistantAudio);
       socket.off("attempt_user_start", handleUserStart);
       socket.off("attempt_user_delta", handleUserDelta);
-      socket.off("attempt_user_complete", handleUserComplete);
-      socket.off("attempt_complete", handleAttemptComplete);
-      socket.off("attempt_stopped", handleStopped);
       socket.off("attempt_chat_ended", handleChatEnded);
       socket.off("attempt_ended", handleAttemptEnded);
       socket.off("attempt_grading_progress", handleGrading);
       socket.off("attempt_graded", handleGraded);
       socket.off("attempt_hint_progress", handleHint);
       socket.off("attempt_response_result", handleQuizResult);
-      socket.off("attempt_error", handleError);
-
-      if (refreshTimeoutRef.current) {
-        clearTimeout(refreshTimeoutRef.current);
-      }
     };
   }, [
     socket,
+    setOptimisticMessages,
     router,
     attempt_id,
     chats,
     rubricStructure,
     isGrading,
     gradingProgress,
-    attemptData?.resources?.personas,
   ]);
 
   // ---------------------------------------------------------------------------
