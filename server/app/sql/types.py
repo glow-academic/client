@@ -1221,6 +1221,37 @@ class CheckAuthSaveAccessApiResponse(BaseModel):
 
 
 
+# Generated from: consume_emulation_grant
+
+class ConsumeEmulationGrantSqlParams(BaseModel):
+
+    grant_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.grant_id,
+        )
+
+class ConsumeEmulationGrantSqlRow(BaseModel):
+
+    ok: bool | None = None
+    reason: str | None = None
+    actor_profile_id: UUID | None = None
+    target_profile_id: UUID | None = None
+
+class ConsumeEmulationGrantApiRequest(BaseModel):
+
+    grant_id: UUID
+
+class ConsumeEmulationGrantApiResponse(BaseModel):
+
+    ok: bool | None = None
+    reason: str | None = None
+    actor_profile_id: UUID | None = None
+    target_profile_id: UUID | None = None
+
+
+
 # Generated from: create_emulation_grant
 
 class CreateEmulationGrantSqlParams(BaseModel):
@@ -5187,6 +5218,53 @@ class GetAttemptGradeCompletionContextApiResponse(BaseModel):
 
 
 
+# Generated from: get_attempt_grade_context
+
+class GetAttemptGradeContextSqlParams(BaseModel):
+
+    p_profile_id: UUID
+    p_simulation_id: UUID
+    p_attempt_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.p_profile_id,
+            self.p_simulation_id,
+            self.p_attempt_id,
+        )
+
+class GetAttemptGradeContextSqlRow(BaseModel):
+
+    requests_per_day: int | None = None
+    runs_today: int | None = None
+    simulation_exists: bool | None = None
+    simulation_is_active: bool | None = None
+    simulation_id: UUID | None = None
+    simulation_name: str | None = None
+    profile_has_access: bool | None = None
+    attempt_exists: bool | None = None
+    attempt_id: UUID | None = None
+
+class GetAttemptGradeContextApiRequest(BaseModel):
+
+    p_profile_id: UUID
+    p_simulation_id: UUID
+    p_attempt_id: UUID
+
+class GetAttemptGradeContextApiResponse(BaseModel):
+
+    requests_per_day: int | None = None
+    runs_today: int | None = None
+    simulation_exists: bool | None = None
+    simulation_is_active: bool | None = None
+    simulation_id: UUID | None = None
+    simulation_name: str | None = None
+    profile_has_access: bool | None = None
+    attempt_exists: bool | None = None
+    attempt_id: UUID | None = None
+
+
+
 # Generated from: get_attempt_message_completion_context
 
 class GetAttemptMessageCompletionContextSqlParams(BaseModel):
@@ -5571,6 +5649,139 @@ class StartBenchmarkAttemptApiResponse(BaseModel):
 
 
 
+# Generated from: get_parameter_generation_context
+
+class GetParameterGenerationContextSqlParams(BaseModel):
+
+    p_profile_id: UUID
+    p_agent_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.p_profile_id,
+            self.p_agent_id,
+        )
+
+class GetParameterGenerationContextSqlRow(BaseModel):
+
+    agent_exists: bool | None = None
+    agent_name: str | None = None
+    agent_is_active: bool | None = None
+    model_id: UUID | None = None
+    model_name: str | None = None
+    provider_id: UUID | None = None
+    provider_name: str | None = None
+    has_api_key: bool | None = None
+    requests_per_day: int | None = None
+    runs_today: int | None = None
+
+class GetParameterGenerationContextApiRequest(BaseModel):
+
+    p_profile_id: UUID
+    p_agent_id: UUID
+
+class GetParameterGenerationContextApiResponse(BaseModel):
+
+    agent_exists: bool | None = None
+    agent_name: str | None = None
+    agent_is_active: bool | None = None
+    model_id: UUID | None = None
+    model_name: str | None = None
+    provider_id: UUID | None = None
+    provider_name: str | None = None
+    has_api_key: bool | None = None
+    requests_per_day: int | None = None
+    runs_today: int | None = None
+
+
+
+# Generated from: prepare_parameter_generation
+
+class IPersonaResourceV4(BaseModel):
+
+    resource_type: str | None
+    resource_ids: list[UUID] | None
+
+class PrepareParameterGenerationSqlParams(BaseModel):
+
+    p_profile_id: UUID
+    p_agent_id: UUID
+    p_group_id: UUID | None = None
+    p_resources: list[IPersonaResourceV4] | None = None
+    p_current_resources: list[IPersonaResourceV4] | None = None
+    p_resource_types: list[str] | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        # Convert p_resources composite array to tuples for asyncpg
+        p_resources_tuples = [
+            (conn.resource_type, conn.resource_ids)
+            for conn in (self.p_resources or [])
+        ]
+        # Convert p_current_resources composite array to tuples for asyncpg
+        p_current_resources_tuples = [
+            (conn.resource_type, conn.resource_ids)
+            for conn in (self.p_current_resources or [])
+        ]
+        return (
+            self.p_profile_id,
+            self.p_agent_id,
+            self.p_group_id,
+            p_resources_tuples,
+            p_current_resources_tuples,
+            self.p_resource_types,
+        )
+
+class PrepareParameterGenerationSqlRow(BaseModel):
+
+    run_id: UUID | None = None
+    group_id: UUID | None = None
+    trace_id: str | None = None
+    agent_name: str | None = None
+    system_prompt: str | None = None
+    model_name: str | None = None
+    provider_name: str | None = None
+    base_url: str | None = None
+    api_key: str | None = None
+    temperature: float | None = None
+    reasoning: str | None = None
+    voice: str | None = None
+    quality: str | None = None
+    tools: list[IGetTextRunContextAndCreateRunV4Tool] | None = None
+    developer_instruction_templates: list[str] | None = None
+    jinja_context: Any | None = None
+    output_modalities: list[str] | None = None
+
+class PrepareParameterGenerationApiRequest(BaseModel):
+
+    p_profile_id: UUID
+    p_agent_id: UUID
+    p_group_id: UUID | None = None
+    p_resources: list[IPersonaResourceV4] | None = None
+    p_current_resources: list[IPersonaResourceV4] | None = None
+    p_resource_types: list[str] | None = None
+
+class PrepareParameterGenerationApiResponse(BaseModel):
+
+    run_id: UUID | None = None
+    group_id: UUID | None = None
+    trace_id: str | None = None
+    agent_name: str | None = None
+    system_prompt: str | None = None
+    model_name: str | None = None
+    provider_name: str | None = None
+    base_url: str | None = None
+    api_key: str | None = None
+    temperature: float | None = None
+    reasoning: str | None = None
+    voice: str | None = None
+    quality: str | None = None
+    tools: list[IGetTextRunContextAndCreateRunV4Tool] | None = None
+    developer_instruction_templates: list[str] | None = None
+    jinja_context: Any | None = None
+    output_modalities: list[str] | None = None
+
+
+
 # Generated from: get_agent_tools
 
 class GetAgentToolsSqlParams(BaseModel):
@@ -5596,6 +5807,33 @@ class GetAgentToolsApiRequest(BaseModel):
 class GetAgentToolsApiResponse(BaseModel):
 
     tools: list[IGetTextRunContextAndCreateRunV4Tool] | None = None
+
+
+
+# Generated from: get_persona_generation_context
+
+class GetPersonaGenerationContextSqlParams(BaseModel):
+
+    p_profile_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.p_profile_id,
+        )
+
+class GetPersonaGenerationContextSqlRow(BaseModel):
+
+    requests_per_day: int | None = None
+    runs_today: int | None = None
+
+class GetPersonaGenerationContextApiRequest(BaseModel):
+
+    p_profile_id: UUID
+
+class GetPersonaGenerationContextApiResponse(BaseModel):
+
+    requests_per_day: int | None = None
+    runs_today: int | None = None
 
 
 
@@ -5639,6 +5877,64 @@ class PreparePersonaGenerationApiResponse(BaseModel):
     group_id: UUID | None = None
     trace_id: str | None = None
     config_id: UUID | None = None
+
+
+
+# Generated from: get_generation_run_context_and_create_run
+
+class GetGenerationRunContextAndCreateRunSqlParams(BaseModel):
+
+    agent_id: UUID
+    profile_id: UUID
+    message_ids: list[UUID] | None = None
+    department_id: UUID | None = None
+    group_id: UUID | None = None
+    developer_instructions: list[str] | None = None
+    user_instructions: list[str] | None = None
+    resources: list[IPersonaResourceV4] | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        # Convert resources composite array to tuples for asyncpg
+        resources_tuples = [
+            (conn.resource_type, conn.resource_ids)
+            for conn in (self.resources or [])
+        ]
+        return (
+            self.agent_id,
+            self.profile_id,
+            self.message_ids,
+            self.department_id,
+            self.group_id,
+            self.developer_instructions,
+            self.user_instructions,
+            resources_tuples,
+        )
+
+class GetGenerationRunContextAndCreateRunSqlRow(BaseModel):
+
+    run_id: str | None = None
+    group_id: UUID | None = None
+    trace_id: str | None = None
+    message_ids: list[UUID] | None = None
+    output_modalities: list[str] | None = None
+
+class GetGenerationRunContextAndCreateRunApiRequest(BaseModel):
+
+    agent_id: UUID
+    message_ids: list[UUID] | None = None
+    department_id: UUID | None = None
+    group_id: UUID | None = None
+    developer_instructions: list[str] | None = None
+    user_instructions: list[str] | None = None
+    resources: list[IPersonaResourceV4] | None = None
+
+class GetGenerationRunContextAndCreateRunApiResponse(BaseModel):
+
+    run_id: str | None = None
+    group_id: UUID | None = None
+    trace_id: str | None = None
+    message_ids: list[UUID] | None = None
+    output_modalities: list[str] | None = None
 
 
 
@@ -5824,6 +6120,94 @@ class PrepareTestRunApiResponse(BaseModel):
 
 
 
+# Generated from: get_text_run_context_for_existing_run
+
+class GetTextRunContextForExistingRunSqlParams(BaseModel):
+
+    run_id: UUID
+    agent_id: UUID
+    message_ids: list[UUID] | None = None
+    group_id: UUID | None = None
+    resources: list[IPersonaResourceV4] | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        # Convert resources composite array to tuples for asyncpg
+        resources_tuples = [
+            (conn.resource_type, conn.resource_ids)
+            for conn in (self.resources or [])
+        ]
+        return (
+            self.run_id,
+            self.agent_id,
+            self.message_ids,
+            self.group_id,
+            resources_tuples,
+        )
+
+class GetTextRunContextForExistingRunSqlRow(BaseModel):
+
+    agent_id: str | None = None
+    agent_name: str | None = None
+    agent_role: str | None = None
+    system_prompt: str | None = None
+    temperature: float | None = None
+    reasoning: str | None = None
+    model_id: str | None = None
+    model_name: str | None = None
+    provider: str | None = None
+    base_url: str | None = None
+    api_key: str | None = None
+    profile_id: str | None = None
+    req_per_day: int | None = None
+    runs_today_count: int | None = None
+    earliest_run_created_at: datetime | None = None
+    group_id: UUID | None = None
+    trace_id: str | None = None
+    tools: list[IGetTextRunContextAndCreateRunV4Tool] | None = None
+    developer_instruction_templates: list[str] | None = None
+    context: Any | None = None
+    department_name: str | None = None
+    upload_id: UUID | None = None
+    file_path: str | None = None
+    mime_type: str | None = None
+
+class GetTextRunContextForExistingRunApiRequest(BaseModel):
+
+    run_id: UUID
+    agent_id: UUID
+    message_ids: list[UUID] | None = None
+    group_id: UUID | None = None
+    resources: list[IPersonaResourceV4] | None = None
+
+class GetTextRunContextForExistingRunApiResponse(BaseModel):
+
+    agent_id: str | None = None
+    agent_name: str | None = None
+    agent_role: str | None = None
+    system_prompt: str | None = None
+    temperature: float | None = None
+    reasoning: str | None = None
+    model_id: str | None = None
+    model_name: str | None = None
+    provider: str | None = None
+    base_url: str | None = None
+    api_key: str | None = None
+    profile_id: str | None = None
+    req_per_day: int | None = None
+    runs_today_count: int | None = None
+    earliest_run_created_at: datetime | None = None
+    group_id: UUID | None = None
+    trace_id: str | None = None
+    tools: list[IGetTextRunContextAndCreateRunV4Tool] | None = None
+    developer_instruction_templates: list[str] | None = None
+    context: Any | None = None
+    department_name: str | None = None
+    upload_id: UUID | None = None
+    file_path: str | None = None
+    mime_type: str | None = None
+
+
+
 # Generated from: get_training_simulations
 
 class GetTrainingSimulationsSqlParams(BaseModel):
@@ -5867,6 +6251,153 @@ class GetTrainingSimulationsApiResponse(BaseModel):
     items: list[QGetTrainingSimulationsV4Item] | None = None
     standard_group_ids: list[UUID] | None = None
     standard_ids: list[UUID] | None = None
+
+
+
+# Generated from: get_training_start_context
+
+class GetTrainingStartContextSqlParams(BaseModel):
+
+    p_profile_id: UUID
+    p_training_bundle_entry_id: UUID
+    p_department_id: UUID
+    p_draft_id: UUID | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.p_profile_id,
+            self.p_training_bundle_entry_id,
+            self.p_department_id,
+            self.p_draft_id,
+        )
+
+class GetTrainingStartContextSqlRow(BaseModel):
+
+    agent_id: UUID | None = None
+    agent_exists: bool | None = None
+    agent_name: str | None = None
+    agent_is_active: bool | None = None
+    model_id: UUID | None = None
+    model_name: str | None = None
+    provider_id: UUID | None = None
+    provider_name: str | None = None
+    has_api_key: bool | None = None
+    requests_per_day: int | None = None
+    runs_today: int | None = None
+    simulation_exists: bool | None = None
+    simulation_is_active: bool | None = None
+    simulation_id: UUID | None = None
+    simulation_name: str | None = None
+    profile_has_access: bool | None = None
+    scenario_id: UUID | None = None
+    has_problem_statement: bool | None = None
+    has_persona: bool | None = None
+    problem_statement: str | None = None
+    objectives: Any | None = None
+    persona: Any | None = None
+    video_ids: list[UUID] | None = None
+    image_ids: list[UUID] | None = None
+    valid_entry_types: list[str] | None = None
+
+class GetTrainingStartContextApiRequest(BaseModel):
+
+    p_profile_id: UUID
+    p_training_bundle_entry_id: UUID
+    p_department_id: UUID
+    p_draft_id: UUID | None = None
+
+class GetTrainingStartContextApiResponse(BaseModel):
+
+    agent_id: UUID | None = None
+    agent_exists: bool | None = None
+    agent_name: str | None = None
+    agent_is_active: bool | None = None
+    model_id: UUID | None = None
+    model_name: str | None = None
+    provider_id: UUID | None = None
+    provider_name: str | None = None
+    has_api_key: bool | None = None
+    requests_per_day: int | None = None
+    runs_today: int | None = None
+    simulation_exists: bool | None = None
+    simulation_is_active: bool | None = None
+    simulation_id: UUID | None = None
+    simulation_name: str | None = None
+    profile_has_access: bool | None = None
+    scenario_id: UUID | None = None
+    has_problem_statement: bool | None = None
+    has_persona: bool | None = None
+    problem_statement: str | None = None
+    objectives: Any | None = None
+    persona: Any | None = None
+    video_ids: list[UUID] | None = None
+    image_ids: list[UUID] | None = None
+    valid_entry_types: list[str] | None = None
+
+
+
+# Generated from: prepare_training_generation
+
+class PrepareTrainingGenerationSqlParams(BaseModel):
+
+    p_profile_id: UUID
+    p_training_bundle_entry_id: UUID
+    p_department_id: UUID
+    p_draft_id: UUID | None = None
+    p_resource_types: list[str] | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.p_profile_id,
+            self.p_training_bundle_entry_id,
+            self.p_department_id,
+            self.p_draft_id,
+            self.p_resource_types,
+        )
+
+class PrepareTrainingGenerationSqlRow(BaseModel):
+
+    run_id: UUID | None = None
+    group_id: UUID | None = None
+    trace_id: str | None = None
+    scenario_id: UUID | None = None
+    agent_name: str | None = None
+    system_prompt: str | None = None
+    model_name: str | None = None
+    provider_name: str | None = None
+    base_url: str | None = None
+    api_key: str | None = None
+    temperature: float | None = None
+    reasoning: str | None = None
+    tools: list[IGetTextRunContextAndCreateRunV4Tool] | None = None
+    developer_instruction_templates: list[str] | None = None
+    jinja_context: Any | None = None
+
+class PrepareTrainingGenerationApiRequest(BaseModel):
+
+    p_profile_id: UUID
+    p_training_bundle_entry_id: UUID
+    p_department_id: UUID
+    p_draft_id: UUID | None = None
+    p_resource_types: list[str] | None = None
+
+class PrepareTrainingGenerationApiResponse(BaseModel):
+
+    run_id: UUID | None = None
+    group_id: UUID | None = None
+    trace_id: str | None = None
+    scenario_id: UUID | None = None
+    agent_name: str | None = None
+    system_prompt: str | None = None
+    model_name: str | None = None
+    provider_name: str | None = None
+    base_url: str | None = None
+    api_key: str | None = None
+    temperature: float | None = None
+    reasoning: str | None = None
+    tools: list[IGetTextRunContextAndCreateRunV4Tool] | None = None
+    developer_instruction_templates: list[str] | None = None
+    jinja_context: Any | None = None
 
 
 
@@ -6220,6 +6751,31 @@ class InfraEvalsCreateTestV4ApiResponse(BaseModel):
 
 
 
+# Generated from: infra_evals_get_department_from_run_v4
+
+class InfraEvalsGetDepartmentFromRunV4SqlParams(BaseModel):
+
+    run_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.run_id,
+        )
+
+class InfraEvalsGetDepartmentFromRunV4SqlRow(BaseModel):
+
+    department_id: str | None = None
+
+class InfraEvalsGetDepartmentFromRunV4ApiRequest(BaseModel):
+
+    run_id: UUID
+
+class InfraEvalsGetDepartmentFromRunV4ApiResponse(BaseModel):
+
+    department_id: str | None = None
+
+
+
 # Generated from: infra_evals_get_eval_run_status_v4
 
 class InfraEvalsGetEvalRunStatusV4SqlParams(BaseModel):
@@ -6331,6 +6887,34 @@ class InfraEvalsLinkAttemptTestV4ApiRequest(BaseModel):
 class InfraEvalsLinkAttemptTestV4ApiResponse(BaseModel):
 
     infrastructure_evals_link_attempt_test_v4: Any
+
+
+
+# Generated from: infra_evals_link_test_run_v4
+
+class InfraEvalsLinkTestRunV4SqlParams(BaseModel):
+
+    run_id: UUID
+    test_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.run_id,
+            self.test_id,
+        )
+
+class InfraEvalsLinkTestRunV4SqlRow(BaseModel):
+
+    infrastructure_evals_link_test_run_v4: Any
+
+class InfraEvalsLinkTestRunV4ApiRequest(BaseModel):
+
+    run_id: UUID
+    test_id: UUID
+
+class InfraEvalsLinkTestRunV4ApiResponse(BaseModel):
+
+    infrastructure_evals_link_test_run_v4: Any
 
 
 
@@ -8694,35 +9278,6 @@ class GetPersonaDocsJunctionsApiResponse(BaseModel):
 
 
 # Generated from: get_persona_generation_context
-
-class GetPersonaGenerationContextSqlParams(BaseModel):
-
-    profile_id: UUID
-    persona_id: UUID | None = None
-    draft_id: UUID | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.profile_id,
-            self.persona_id,
-            self.draft_id,
-        )
-
-class GetPersonaGenerationContextSqlRow(BaseModel):
-
-    domain_id: UUID | None = None
-    agent_id: UUID | None = None
-
-class GetPersonaGenerationContextApiRequest(BaseModel):
-
-    persona_id: UUID | None = None
-    draft_id: UUID | None = None
-
-class GetPersonaGenerationContextApiResponse(BaseModel):
-
-    domain_id: UUID | None = None
-    agent_id: UUID | None = None
-
 
 
 # Generated from: get_persona_ids
@@ -21575,6 +22130,83 @@ class GetStaffListApiResponse(BaseModel):
 
 
 
+# Generated from: get_staff_search
+
+class GetStaffSearchSqlParams(BaseModel):
+
+    query: str
+    profile_id: UUID
+    cohort_ids: list[UUID]
+    department_ids: list[UUID]
+    limit_count: int | None = 200
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.query,
+            self.profile_id,
+            self.cohort_ids,
+            self.department_ids,
+            self.limit_count,
+        )
+
+class QSearchStaffV4Cohort(BaseModel):
+
+    cohort_id: UUID | None
+    name: str | None
+    description: str | None
+
+
+
+
+class QSearchStaffV4Department(BaseModel):
+
+    department_id: UUID | None
+    name: str | None
+    description: str | None
+
+
+
+
+class QSearchStaffV4Staff(BaseModel):
+
+    profile_id: UUID | None
+    emails: list[str] | None
+    primary_email: str | None
+    name: str | None
+    role: str | None
+    initials: str | None
+    active: bool | None
+    last_active: datetime | None
+    cohort_ids: list[str] | None
+    department_ids: list[str] | None
+    primary_department_id: str | None
+    requests_per_day: int | None
+    total_requests: int | None
+    requests_in_last_day: int | None
+    can_edit: bool | None
+    can_delete: bool | None
+
+class GetStaffSearchSqlRow(BaseModel):
+
+    staff: list[QSearchStaffV4Staff] | None = None
+    cohorts: list[QSearchStaffV4Cohort] | None = None
+    departments: list[QSearchStaffV4Department] | None = None
+
+class GetStaffSearchApiRequest(BaseModel):
+
+    query: str
+    cohort_ids: list[UUID]
+    department_ids: list[UUID]
+    limit_count: int | None = 200
+
+class GetStaffSearchApiResponse(BaseModel):
+
+    staff: list[QSearchStaffV4Staff] | None = None
+    cohorts: list[QSearchStaffV4Cohort] | None = None
+    departments: list[QSearchStaffV4Department] | None = None
+
+
+
 # Generated from: process_csv
 
 class IProcessCsvV4ColumnMapping(BaseModel):
@@ -22437,6 +23069,43 @@ class FinalizeUploadApiResponse(BaseModel):
     success: bool | None = None
     message: str | None = None
     status: str | None = None
+
+
+
+# Generated from: get_upload_file_info
+
+class GetUploadFileInfoSqlParams(BaseModel):
+
+    upload_id: UUID
+    profile_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.upload_id,
+            self.profile_id,
+        )
+
+class GetUploadFileInfoSqlRow(BaseModel):
+
+    upload_exists: bool | None = None
+    upload_id: UUID | None = None
+    file_path: str | None = None
+    mime_type: str | None = None
+    size: int | None = None
+    actor_name: str | None = None
+
+class GetUploadFileInfoApiRequest(BaseModel):
+
+    upload_id: UUID
+
+class GetUploadFileInfoApiResponse(BaseModel):
+
+    upload_exists: bool | None = None
+    upload_id: UUID | None = None
+    file_path: str | None = None
+    mime_type: str | None = None
+    size: int | None = None
+    actor_name: str | None = None
 
 
 
@@ -25037,6 +25706,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "CheckAuthSaveAccessApiRequest",
         "CheckAuthSaveAccessApiResponse",
     ),
+    "app/sql/v4/queries/auth/consume_emulation_grant_complete.sql": (
+        "ConsumeEmulationGrantSqlParams",
+        "ConsumeEmulationGrantSqlRow",
+        "ConsumeEmulationGrantApiRequest",
+        "ConsumeEmulationGrantApiResponse",
+    ),
     "app/sql/v4/queries/auth/create_emulation_grant_complete.sql": (
         "CreateEmulationGrantSqlParams",
         "CreateEmulationGrantSqlRow",
@@ -25559,6 +26234,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetAttemptGradeCompletionContextApiRequest",
         "GetAttemptGradeCompletionContextApiResponse",
     ),
+    "app/sql/v4/queries/generate/attempt/get_attempt_grade_context_complete.sql": (
+        "GetAttemptGradeContextSqlParams",
+        "GetAttemptGradeContextSqlRow",
+        "GetAttemptGradeContextApiRequest",
+        "GetAttemptGradeContextApiResponse",
+    ),
     "app/sql/v4/queries/generate/attempt/get_attempt_message_completion_context_complete.sql": (
         "GetAttemptMessageCompletionContextSqlParams",
         "GetAttemptMessageCompletionContextSqlRow",
@@ -25619,17 +26300,41 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "StartBenchmarkAttemptApiRequest",
         "StartBenchmarkAttemptApiResponse",
     ),
+    "app/sql/v4/queries/generate/parameter/get_parameter_generation_context_complete.sql": (
+        "GetParameterGenerationContextSqlParams",
+        "GetParameterGenerationContextSqlRow",
+        "GetParameterGenerationContextApiRequest",
+        "GetParameterGenerationContextApiResponse",
+    ),
+    "app/sql/v4/queries/generate/parameter/prepare_parameter_generation_complete.sql": (
+        "PrepareParameterGenerationSqlParams",
+        "PrepareParameterGenerationSqlRow",
+        "PrepareParameterGenerationApiRequest",
+        "PrepareParameterGenerationApiResponse",
+    ),
     "app/sql/v4/queries/generate/persona/get_agent_tools_complete.sql": (
         "GetAgentToolsSqlParams",
         "GetAgentToolsSqlRow",
         "GetAgentToolsApiRequest",
         "GetAgentToolsApiResponse",
     ),
+    "app/sql/v4/queries/generate/persona/get_persona_generation_context_complete.sql": (
+        "GetPersonaGenerationContextSqlParams",
+        "GetPersonaGenerationContextSqlRow",
+        "GetPersonaGenerationContextApiRequest",
+        "GetPersonaGenerationContextApiResponse",
+    ),
     "app/sql/v4/queries/generate/persona/prepare_persona_generation_complete.sql": (
         "PreparePersonaGenerationSqlParams",
         "PreparePersonaGenerationSqlRow",
         "PreparePersonaGenerationApiRequest",
         "PreparePersonaGenerationApiResponse",
+    ),
+    "app/sql/v4/queries/generate/start/get_generation_run_context_and_create_run_complete.sql": (
+        "GetGenerationRunContextAndCreateRunSqlParams",
+        "GetGenerationRunContextAndCreateRunSqlRow",
+        "GetGenerationRunContextAndCreateRunApiRequest",
+        "GetGenerationRunContextAndCreateRunApiResponse",
     ),
     "app/sql/v4/queries/generate/test/complete_test_grade_complete.sql": (
         "CompleteTestGradeSqlParams",
@@ -25661,11 +26366,29 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "PrepareTestRunApiRequest",
         "PrepareTestRunApiResponse",
     ),
+    "app/sql/v4/queries/generate/text/get_text_run_context_for_existing_run_complete.sql": (
+        "GetTextRunContextForExistingRunSqlParams",
+        "GetTextRunContextForExistingRunSqlRow",
+        "GetTextRunContextForExistingRunApiRequest",
+        "GetTextRunContextForExistingRunApiResponse",
+    ),
     "app/sql/v4/queries/generate/training/get_training_simulations_complete.sql": (
         "GetTrainingSimulationsSqlParams",
         "GetTrainingSimulationsSqlRow",
         "GetTrainingSimulationsApiRequest",
         "GetTrainingSimulationsApiResponse",
+    ),
+    "app/sql/v4/queries/generate/training/get_training_start_context_complete.sql": (
+        "GetTrainingStartContextSqlParams",
+        "GetTrainingStartContextSqlRow",
+        "GetTrainingStartContextApiRequest",
+        "GetTrainingStartContextApiResponse",
+    ),
+    "app/sql/v4/queries/generate/training/prepare_training_generation_complete.sql": (
+        "PrepareTrainingGenerationSqlParams",
+        "PrepareTrainingGenerationSqlRow",
+        "PrepareTrainingGenerationApiRequest",
+        "PrepareTrainingGenerationApiResponse",
     ),
     "app/sql/v4/queries/generate/training/prepare_training_start_complete.sql": (
         "PrepareTrainingStartSqlParams",
@@ -25739,6 +26462,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "InfraEvalsCreateTestV4ApiRequest",
         "InfraEvalsCreateTestV4ApiResponse",
     ),
+    "app/sql/v4/queries/infrastructure/evals/get_department_from_run_v4_complete.sql": (
+        "InfraEvalsGetDepartmentFromRunV4SqlParams",
+        "InfraEvalsGetDepartmentFromRunV4SqlRow",
+        "InfraEvalsGetDepartmentFromRunV4ApiRequest",
+        "InfraEvalsGetDepartmentFromRunV4ApiResponse",
+    ),
     "app/sql/v4/queries/infrastructure/evals/get_eval_run_status_v4_complete.sql": (
         "InfraEvalsGetEvalRunStatusV4SqlParams",
         "InfraEvalsGetEvalRunStatusV4SqlRow",
@@ -25762,6 +26491,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "InfraEvalsLinkAttemptTestV4SqlRow",
         "InfraEvalsLinkAttemptTestV4ApiRequest",
         "InfraEvalsLinkAttemptTestV4ApiResponse",
+    ),
+    "app/sql/v4/queries/infrastructure/evals/link_test_run_v4_complete.sql": (
+        "InfraEvalsLinkTestRunV4SqlParams",
+        "InfraEvalsLinkTestRunV4SqlRow",
+        "InfraEvalsLinkTestRunV4ApiRequest",
+        "InfraEvalsLinkTestRunV4ApiResponse",
     ),
     "app/sql/v4/queries/infrastructure/evals/mark_eval_run_complete_v4_complete.sql": (
         "InfraEvalsMarkEvalRunCompleteV4SqlParams",
@@ -27953,6 +28688,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetStaffListApiRequest",
         "GetStaffListApiResponse",
     ),
+    "app/sql/v4/queries/staff/get_staff_search_complete.sql": (
+        "GetStaffSearchSqlParams",
+        "GetStaffSearchSqlRow",
+        "GetStaffSearchApiRequest",
+        "GetStaffSearchApiResponse",
+    ),
     "app/sql/v4/queries/staff/process_csv_complete.sql": (
         "ProcessCsvSqlParams",
         "ProcessCsvSqlRow",
@@ -28048,6 +28789,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "FinalizeUploadSqlRow",
         "FinalizeUploadApiRequest",
         "FinalizeUploadApiResponse",
+    ),
+    "app/sql/v4/queries/uploads/get_upload_file_info_complete.sql": (
+        "GetUploadFileInfoSqlParams",
+        "GetUploadFileInfoSqlRow",
+        "GetUploadFileInfoApiRequest",
+        "GetUploadFileInfoApiResponse",
     ),
     "app/sql/v4/queries/uploads/insert_upload_complete.sql": (
         "InsertUploadSqlParams",
@@ -28568,6 +29315,11 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/auth/consume_emulation_grant_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v4/queries/auth/create_emulation_grant_complete.sql"]
     ) -> SqlString: ...
 
@@ -29003,6 +29755,11 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/generate/attempt/get_attempt_grade_context_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v4/queries/generate/attempt/get_attempt_message_completion_context_complete.sql"]
     ) -> SqlString: ...
 
@@ -29053,12 +29810,32 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/generate/parameter/get_parameter_generation_context_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/generate/parameter/prepare_parameter_generation_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v4/queries/generate/persona/get_agent_tools_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/generate/persona/get_persona_generation_context_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v4/queries/generate/persona/prepare_persona_generation_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/generate/start/get_generation_run_context_and_create_run_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -29088,7 +29865,22 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/generate/text/get_text_run_context_for_existing_run_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v4/queries/generate/training/get_training_simulations_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/generate/training/get_training_start_context_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/generate/training/prepare_training_generation_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -29153,6 +29945,11 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/infrastructure/evals/get_department_from_run_v4_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v4/queries/infrastructure/evals/get_eval_run_status_v4_complete.sql"]
     ) -> SqlString: ...
 
@@ -29169,6 +29966,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/queries/infrastructure/evals/link_attempt_test_v4_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/infrastructure/evals/link_test_run_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -30998,6 +31800,11 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/staff/get_staff_search_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v4/queries/staff/process_csv_complete.sql"]
     ) -> SqlString: ...
 
@@ -31074,6 +31881,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/queries/uploads/finalize_upload_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/uploads/get_upload_file_info_complete.sql"]
     ) -> SqlString: ...
 
     @overload

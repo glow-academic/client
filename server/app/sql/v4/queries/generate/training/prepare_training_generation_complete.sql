@@ -173,11 +173,11 @@ selected_agent AS (
 ),
 -- Create new group for training generation
 create_group AS (
-    INSERT INTO view_groups_entry (created_at, updated_at, session_id)
+    INSERT INTO groups_entry (created_at, updated_at, session_id)
     SELECT NOW(), NOW(), (
-        SELECT id FROM view_sessions_entry
-        WHERE view_sessions_entry.profile_id = p_profile_id
-          AND view_sessions_entry.active = true
+        SELECT id FROM sessions_entry
+        WHERE sessions_entry.profile_id = p_profile_id
+          AND sessions_entry.active = true
         ORDER BY created_at DESC
         LIMIT 1
     )

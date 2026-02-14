@@ -39,7 +39,7 @@ CREATE OR REPLACE FUNCTION socket_get_generation_run_context_and_create_run_v4(
     message_ids uuid[] DEFAULT NULL,  -- Context message IDs (e.g., hint agent needs message_id)
     department_id uuid DEFAULT NULL,
     group_id uuid DEFAULT NULL,  -- Optional: for regeneration (uses existing group)
-    developer_instructions text[] DEFAULT NULL,  -- Optional: array of developer instruction view_messages_entry
+    developer_instructions text[] DEFAULT NULL,  -- Optional: array of developer instruction messages_entry
     user_instructions text[] DEFAULT NULL,  -- Optional: array of user instructions for regeneration
     resources types.i_persona_resource_v4[] DEFAULT NULL  -- Optional: array of (resource_type, resource_ids) for fetching whitelisted resources
 )
@@ -91,14 +91,14 @@ agent_model_modalities AS (
 existing_group_from_param AS (
     SELECT g.id as group_id, g.trace_id
     FROM params p
-    JOIN view_groups_entry g ON g.id = p.group_id
+    JOIN groups_entry g ON g.id = p.group_id
     WHERE p.group_id IS NOT NULL
     LIMIT 1
 ),
 create_group_if_needed AS (
     -- Create new group if needed (only if group_id not provided)
     INSERT INTO groups_entry (created_at, updated_at, session_id)
-    SELECT NOW(), NOW(), (SELECT id FROM view_sessions_entry WHERE view_sessions_entry.profile_id = socket_get_generation_run_context_and_create_run_v4.profile_id AND view_sessions_entry.active = true ORDER BY created_at DESC LIMIT 1)
+    SELECT NOW(), NOW(), (SELECT id FROM sessions_entry WHERE sessions_entry.profile_id = socket_get_generation_run_context_and_create_run_v4.profile_id AND sessions_entry.active = true ORDER BY created_at DESC LIMIT 1)
     FROM params p
     WHERE p.group_id IS NULL
     RETURNING id as group_id, trace_id
@@ -134,12 +134,12 @@ link_run_to_profile AS (
     CROSS JOIN create_run cr
     WHERE p.profile_id IS NOT NULL
 ),
--- Dummy CTE to maintain compatibility (view_runs_entry now have group_id directly)
+-- Dummy CTE to maintain compatibility (runs_entry now have group_id directly)
 link_group AS (
     SELECT cr.run_id
     FROM create_run cr
 ),
--- Create developer view_messages_entry from developer_instructions array
+-- Create developer messages_entry from developer_instructions array
 developer_message_content_array AS (
     SELECT 
         t.content,
@@ -164,7 +164,7 @@ existing_developer_messages AS (
         m.id as message_id,
         dmh.run_id,
         dmh.hash
-    FROM view_messages_entry m
+    FROM messages_entry m
     JOIN LATERAL (
         SELECT content
         FROM simulation_contents_entry ce
@@ -238,12 +238,12 @@ update_existing_developer_messages_run AS (
     RETURNING m.id as message_id, m.run_id
 ),
 link_developer_messages_to_run AS (
-    -- Combine existing (updated) and new developer view_messages_entry
+    -- Combine existing (updated) and new developer messages_entry
     SELECT message_id, run_id FROM update_existing_developer_messages_run
     UNION ALL
     SELECT message_id, run_id FROM new_developer_messages_matched
 ),
--- Create user view_messages_entry from user_instructions array
+-- Create user messages_entry from user_instructions array
 user_message_content_array AS (
     SELECT 
         t.content,
@@ -268,7 +268,7 @@ existing_user_messages AS (
         m.id as message_id,
         umh.run_id,
         umh.hash
-    FROM view_messages_entry m
+    FROM messages_entry m
     JOIN LATERAL (
         SELECT content
         FROM simulation_contents_entry ce
@@ -342,26 +342,26 @@ update_existing_user_messages_run AS (
     RETURNING m.id as message_id, m.run_id
 ),
 link_user_messages_to_run AS (
-    -- Combine existing (updated) and new user view_messages_entry
+    -- Combine existing (updated) and new user messages_entry
     SELECT message_id, run_id FROM update_existing_user_messages_run
     UNION ALL
     SELECT message_id, run_id FROM new_user_messages_matched
 ),
--- Link existing system/developer view_messages_entry from previous view_runs_entry (if group_id provided for regeneration)
--- Note: Messages now have direct run_id. For regeneration we copy view_messages_entry from previous view_runs_entry in group
+-- Link existing system/developer messages_entry from previous runs_entry (if group_id provided for regeneration)
+-- Note: Messages now have direct run_id. For regeneration we copy messages_entry from previous runs_entry in group
 previous_runs_in_group AS (
     SELECT DISTINCT r.id as run_id
-    FROM view_runs_entry r
+    FROM runs_entry r
     CROSS JOIN params p
     WHERE r.group_id = p.group_id
       AND p.group_id IS NOT NULL
 ),
 -- Messages are linked via run_id; we don't need to copy them for regeneration
--- The view_messages_entry from previous view_runs_entry remain linked to their original view_runs_entry
+-- The messages_entry from previous runs_entry remain linked to their original runs_entry
 link_existing_messages AS (
     SELECT NULL::uuid as message_id WHERE false -- no-op placeholder to maintain CTE chain
 ),
--- Build message_ids array: includes all developer view_messages_entry + all user view_messages_entry + context message_ids
+-- Build message_ids array: includes all developer messages_entry + all user messages_entry + context message_ids
 final_message_ids AS (
     SELECT 
         COALESCE(
@@ -369,12 +369,12 @@ final_message_ids AS (
             ARRAY[]::uuid[]
         ) as message_ids
     FROM (
-        -- Developer view_messages_entry (if created)
+        -- Developer messages_entry (if created)
         SELECT ldmm.message_id as msg_id
         FROM link_developer_messages_to_run ldmm
         WHERE ldmm.message_id IS NOT NULL
         UNION ALL
-        -- User view_messages_entry (if created)
+        -- User messages_entry (if created)
         SELECT lumm.message_id as msg_id
         FROM link_user_messages_to_run lumm
         WHERE lumm.message_id IS NOT NULL

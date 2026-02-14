@@ -123,7 +123,7 @@ recent_runs AS (
         prj.profiles_id,
         COUNT(*) as run_count
     FROM profiles_runs_connection prj
-    JOIN view_runs_entry r ON r.id = prj.run_id
+    JOIN runs_entry r ON r.id = prj.run_id
     WHERE r.created_at >= NOW() - INTERVAL '24 hours'
     GROUP BY prj.profiles_id
 ),
@@ -132,7 +132,7 @@ profile_total_runs AS (
         prj.profiles_id,
         COUNT(*) as total_requests
     FROM profiles_runs_connection prj
-    JOIN view_runs_entry r ON r.id = prj.run_id
+    JOIN runs_entry r ON r.id = prj.run_id
     GROUP BY prj.profiles_id
 ),
 all_cohort_ids AS (
@@ -210,7 +210,7 @@ staff_rows AS (
     LEFT JOIN LATERAL (
         SELECT ae.last_active
         FROM profiles_activity_connection pactj
-        JOIN view_activity_entry ae ON ae.id = pactj.activity_id
+        JOIN activity_entry ae ON ae.id = pactj.activity_id
         WHERE pactj.profiles_id = p.id
         ORDER BY ae.created_at DESC
         LIMIT 1

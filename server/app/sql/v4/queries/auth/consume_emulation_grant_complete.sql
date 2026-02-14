@@ -31,7 +31,7 @@ WITH params AS (
 ),
 grant_row AS (
     SELECT *
-    FROM view_grants_entry eg
+    FROM grants_entry eg
     WHERE eg.id = (SELECT grant_id FROM params)
 ),
 validity AS (
@@ -66,5 +66,5 @@ SELECT
     (SELECT ok FROM validity) as ok,
     (SELECT reason FROM reason_computed) as reason,
     (SELECT pgj.profiles_id FROM profiles_grants_connection pgj WHERE pgj.grant_id = (SELECT id FROM grant_consumed) LIMIT 1) as actor_profile_id,
-    (SELECT pej.profiles_id FROM view_emulations_entry em JOIN profiles_emulations_connection pej ON pej.emulation_id = em.id WHERE em.grant_id = (SELECT id FROM grant_consumed) LIMIT 1) as target_profile_id
+    (SELECT pej.profiles_id FROM emulations_entry em JOIN profiles_emulations_connection pej ON pej.emulation_id = em.id WHERE em.grant_id = (SELECT id FROM grant_consumed) LIMIT 1) as target_profile_id
 $$;

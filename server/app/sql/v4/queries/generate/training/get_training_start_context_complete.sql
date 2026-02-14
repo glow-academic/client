@@ -184,7 +184,7 @@ runs_today_data AS (
     SELECT COUNT(*)::bigint AS runs_today
     FROM params p
     JOIN profiles_runs_connection prj ON prj.profiles_id = p.profile_id
-    JOIN view_runs_entry vr ON vr.id = prj.run_id
+    JOIN runs_entry vr ON vr.id = prj.run_id
     WHERE vr.created_at >= date_trunc('day', NOW() AT TIME ZONE 'UTC') AT TIME ZONE 'UTC'
 ),
 simulation_data AS (

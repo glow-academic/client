@@ -42,7 +42,7 @@ upload_exists_check AS (
 ),
 upload_info AS (
     SELECT
-        u.upload_id as id,
+        u.id,
         u.file_path,
         u.mime_type,
         u.size
