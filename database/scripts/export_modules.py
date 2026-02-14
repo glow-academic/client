@@ -2234,12 +2234,15 @@ async def export_texts(conn: asyncpg.Connection) -> None:
 
 
 async def export_setup(conn: asyncpg.Connection) -> None:
+    """Export setup modules.
+
+    Note: documents, uploads, and texts are exported separately
+    (make export-modules ARGS=documents/uploads/texts) since they
+    include binary files (PDFs, page images) managed outside the DB.
+    """
     print("Exporting 11-setups/ ...")
     await export_setup_departments(conn)
     await export_setup_per_artifact(conn, "persona", "02-personas", "persona")
-    await export_setup_documents(conn)
-    await export_uploads(conn)
-    await export_texts(conn)
     await export_setup_fields(conn)
     await export_setup_per_artifact(conn, "parameter", "05-parameters", "parameter")
     await export_rubrics(conn)
@@ -2289,6 +2292,7 @@ async def main() -> None:
             "evals": export_evals,
             "profiles": export_base_profiles,
             "settings": export_base_settings,
+            "documents": export_setup_documents,
             "uploads": export_uploads,
             "texts": export_texts,
             "themes": export_themes,

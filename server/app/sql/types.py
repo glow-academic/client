@@ -6793,26 +6793,16 @@ class GetAttemptMessageContextSqlParams(BaseModel):
     p_profile_id: UUID
     p_simulation_id: UUID
     p_chat_id: UUID
-    p_entry_types: list[str] | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.p_profile_id,
             self.p_simulation_id,
             self.p_chat_id,
-            self.p_entry_types,
         )
 
 class GetAttemptMessageContextSqlRow(BaseModel):
 
-    agent_exists: bool | None = None
-    agent_name: str | None = None
-    agent_is_active: bool | None = None
-    model_id: UUID | None = None
-    model_name: str | None = None
-    provider_id: UUID | None = None
-    provider_name: str | None = None
-    has_api_key: bool | None = None
     requests_per_day: int | None = None
     runs_today: int | None = None
     simulation_exists: bool | None = None
@@ -6826,26 +6816,17 @@ class GetAttemptMessageContextSqlRow(BaseModel):
     chat_exists: bool | None = None
     chat_is_completed: bool | None = None
     chat_id: UUID | None = None
+    group_id: UUID | None = None
     hints_enabled: bool | None = None
-    valid_entry_types: list[str] | None = None
 
 class GetAttemptMessageContextApiRequest(BaseModel):
 
     p_profile_id: UUID
     p_simulation_id: UUID
     p_chat_id: UUID
-    p_entry_types: list[str] | None = None
 
 class GetAttemptMessageContextApiResponse(BaseModel):
 
-    agent_exists: bool | None = None
-    agent_name: str | None = None
-    agent_is_active: bool | None = None
-    model_id: UUID | None = None
-    model_name: str | None = None
-    provider_id: UUID | None = None
-    provider_name: str | None = None
-    has_api_key: bool | None = None
     requests_per_day: int | None = None
     runs_today: int | None = None
     simulation_exists: bool | None = None
@@ -6859,8 +6840,8 @@ class GetAttemptMessageContextApiResponse(BaseModel):
     chat_exists: bool | None = None
     chat_is_completed: bool | None = None
     chat_id: UUID | None = None
+    group_id: UUID | None = None
     hints_enabled: bool | None = None
-    valid_entry_types: list[str] | None = None
 
 
 
@@ -6916,7 +6897,9 @@ class PrepareAttemptMessageSqlParams(BaseModel):
     p_voice_mode: bool | None = False
     p_upload_id: UUID | None = None
     p_group_id: UUID | None = None
-    p_entry_types: list[str] | None = None
+    p_agents_resource_id: UUID | None = None
+    p_models_resource_id: UUID | None = None
+    p_providers_resource_id: UUID | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
@@ -6926,45 +6909,17 @@ class PrepareAttemptMessageSqlParams(BaseModel):
             self.p_voice_mode,
             self.p_upload_id,
             self.p_group_id,
-            self.p_entry_types,
+            self.p_agents_resource_id,
+            self.p_models_resource_id,
+            self.p_providers_resource_id,
         )
-
-class IAttemptMessageToolV4(BaseModel):
-
-    id: UUID | None
-    name: str | None
-    description: str | None
-    resource: str | None
-    artifact: str | None
-    arguments: Any | None
-    argument_descriptions: Any | None
-    argument_defaults: Any | None
-    active: bool | None
 
 class PrepareAttemptMessageSqlRow(BaseModel):
 
     user_message_id: UUID | None = None
     assistant_message_id: UUID | None = None
     run_id: UUID | None = None
-    group_id: UUID | None = None
-    trace_id: str | None = None
     created_at: datetime | None = None
-    model_name: str | None = None
-    provider_name: str | None = None
-    base_url: str | None = None
-    api_key: str | None = None
-    temperature: float | None = None
-    reasoning: str | None = None
-    system_prompt: str | None = None
-    voice_model_name: str | None = None
-    voice_provider: str | None = None
-    voice_base_url: str | None = None
-    voice_api_key: str | None = None
-    voice_temperature: float | None = None
-    voice_reasoning: str | None = None
-    tools: list[IAttemptMessageToolV4] | None = None
-    developer_instruction_templates: list[str] | None = None
-    chat_history: Any | None = None
 
 class PrepareAttemptMessageApiRequest(BaseModel):
 
@@ -6974,32 +6929,16 @@ class PrepareAttemptMessageApiRequest(BaseModel):
     p_voice_mode: bool | None = False
     p_upload_id: UUID | None = None
     p_group_id: UUID | None = None
-    p_entry_types: list[str] | None = None
+    p_agents_resource_id: UUID | None = None
+    p_models_resource_id: UUID | None = None
+    p_providers_resource_id: UUID | None = None
 
 class PrepareAttemptMessageApiResponse(BaseModel):
 
     user_message_id: UUID | None = None
     assistant_message_id: UUID | None = None
     run_id: UUID | None = None
-    group_id: UUID | None = None
-    trace_id: str | None = None
     created_at: datetime | None = None
-    model_name: str | None = None
-    provider_name: str | None = None
-    base_url: str | None = None
-    api_key: str | None = None
-    temperature: float | None = None
-    reasoning: str | None = None
-    system_prompt: str | None = None
-    voice_model_name: str | None = None
-    voice_provider: str | None = None
-    voice_base_url: str | None = None
-    voice_api_key: str | None = None
-    voice_temperature: float | None = None
-    voice_reasoning: str | None = None
-    tools: list[IAttemptMessageToolV4] | None = None
-    developer_instruction_templates: list[str] | None = None
-    chat_history: Any | None = None
 
 
 

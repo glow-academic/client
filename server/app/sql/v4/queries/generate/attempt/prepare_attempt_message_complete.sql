@@ -1,6 +1,6 @@
--- Prepare attempt message - creates user message, assistant placeholder, run
--- Returns all context needed for generation including model config, tools, chat history
--- Groups are pre-created at training start time - this function reads them.
+-- Prepare attempt message: mutations only (run/config/messages creation)
+-- All data fetching is now done in Python from pre-fetched resources
+-- group_id and resolved resource IDs are passed directly
 
 -- 1) Drop function first
 DO $$
@@ -17,29 +17,7 @@ BEGIN
     END LOOP;
 END $$;
 
--- 2) Create composite type for tools if not exists
-DO $$
-BEGIN
-    IF NOT EXISTS (
-        SELECT 1 FROM pg_type
-        WHERE typname = 'i_attempt_message_tool_v4'
-        AND typnamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'types')
-    ) THEN
-        CREATE TYPE types.i_attempt_message_tool_v4 AS (
-            id uuid,
-            name text,
-            description text,
-            resource text,
-            artifact text,
-            arguments jsonb,
-            argument_descriptions jsonb,
-            argument_defaults jsonb,
-            active boolean
-        );
-    END IF;
-END $$;
-
--- 3) Create the function
+-- 2) Create the function (mutations only)
 CREATE OR REPLACE FUNCTION socket_prepare_attempt_message_v4(
     p_profile_id uuid,
     p_chat_id uuid,
@@ -47,38 +25,15 @@ CREATE OR REPLACE FUNCTION socket_prepare_attempt_message_v4(
     p_voice_mode boolean DEFAULT false,
     p_upload_id uuid DEFAULT NULL,
     p_group_id uuid DEFAULT NULL,
-    p_entry_types text[] DEFAULT NULL
+    p_agents_resource_id uuid DEFAULT NULL,
+    p_models_resource_id uuid DEFAULT NULL,
+    p_providers_resource_id uuid DEFAULT NULL
 )
 RETURNS TABLE (
-    -- Message IDs
     user_message_id uuid,
     assistant_message_id uuid,
     run_id uuid,
-    group_id uuid,
-    trace_id text,
-    created_at timestamptz,
-
-    -- Model config
-    model_name text,
-    provider_name text,
-    base_url text,
-    api_key text,
-    temperature real,
-    reasoning text,
-    system_prompt text,
-
-    -- Voice model config
-    voice_model_name text,
-    voice_provider text,
-    voice_base_url text,
-    voice_api_key text,
-    voice_temperature real,
-    voice_reasoning text,
-
-    -- Tools and context
-    tools types.i_attempt_message_tool_v4[],
-    developer_instruction_templates text[],
-    chat_history jsonb
+    created_at timestamptz
 )
 LANGUAGE plpgsql
 VOLATILE
@@ -89,10 +44,8 @@ DECLARE
     v_assistant_message_id uuid;
     v_run_id uuid;
     v_group_id uuid;
-    v_trace_id text;
-    v_created_at timestamptz;
-    v_agent_id uuid;
     v_config_id uuid;
+    v_created_at timestamptz;
 BEGIN
 
     -- Get group_id directly from simulation_chats_entry
@@ -109,45 +62,33 @@ BEGIN
         RAISE EXCEPTION 'No group_id found for chat_id %. Group should be set at training start time.', p_chat_id;
     END IF;
 
-    SELECT trace_id INTO v_trace_id FROM groups_entry WHERE id = v_group_id;
-
-    -- Resolve agent_id from latest run's config (or from agent junctions directly for first run)
-    SELECT aaj.agent_id INTO v_agent_id
-    FROM runs_entry r
-    JOIN config_entry ce ON ce.run_id = r.id
-    JOIN config_agents_connection cac ON cac.config_id = ce.id AND cac.active = true
-    JOIN agent_agents_junction aaj ON aaj.agents_id = cac.agents_id AND aaj.active = true
-    WHERE r.group_id = v_group_id
-    ORDER BY r.created_at DESC
-    LIMIT 1;
-
-    -- Fallback: if no prior run (shouldn't happen, but safety), resolve from group's first config
-    IF v_agent_id IS NULL THEN
-        -- Get from any config linked to a run in this group
-        SELECT aaj.agent_id INTO v_agent_id
-        FROM config_entry ce
-        JOIN config_agents_connection cac ON cac.config_id = ce.id AND cac.active = true
-        JOIN agent_agents_junction aaj ON aaj.agents_id = cac.agents_id AND aaj.active = true
-        WHERE ce.run_id IN (SELECT r.id FROM runs_entry r WHERE r.group_id = v_group_id)
-        LIMIT 1;
-    END IF;
-
-    -- Create run first (no config_id column)
+    -- Create run
     INSERT INTO runs_entry (input_tokens, output_tokens, group_id)
     VALUES (0, 0, v_group_id)
     RETURNING id INTO v_run_id;
 
-    -- Create fresh config_entry with run_id
+    -- Create config snapshot with run_id
     INSERT INTO config_entry (created_at, updated_at, generated, mcp, active, run_id)
     VALUES (NOW(), NOW(), false, false, true, v_run_id)
     RETURNING id INTO v_config_id;
 
-    -- Snapshot agent config into config_*_connection tables
-    IF v_agent_id IS NOT NULL THEN
+    -- Config connections (agents, models, providers)
+    IF p_agents_resource_id IS NOT NULL THEN
         INSERT INTO config_agents_connection (config_id, agents_id, created_at, active, generated, mcp)
-        SELECT v_config_id, aaj.agents_id, NOW(), true, false, false
-        FROM agent_agents_junction aaj WHERE aaj.agent_id = v_agent_id AND aaj.active = true
+        VALUES (v_config_id, p_agents_resource_id, NOW(), true, false, false)
         ON CONFLICT (config_id, agents_id) DO NOTHING;
+    END IF;
+
+    IF p_models_resource_id IS NOT NULL THEN
+        INSERT INTO config_models_connection (config_id, models_id, created_at, active, generated, mcp)
+        VALUES (v_config_id, p_models_resource_id, NOW(), true, false, false)
+        ON CONFLICT (config_id, models_id) DO NOTHING;
+    END IF;
+
+    IF p_providers_resource_id IS NOT NULL THEN
+        INSERT INTO config_providers_connection (config_id, providers_id, created_at, active, generated, mcp)
+        VALUES (v_config_id, p_providers_resource_id, NOW(), true, false, false)
+        ON CONFLICT (config_id, providers_id) DO NOTHING;
     END IF;
 
     -- Link run to profile
@@ -179,160 +120,6 @@ BEGIN
     INSERT INTO simulation_messages_entry (id, chat_id)
     VALUES (v_assistant_message_id, p_chat_id);
 
-    -- Return all data (using v_agent_id resolved from stored group)
-    RETURN QUERY
-    WITH agent_config AS (
-        SELECT
-            (SELECT pr.system_prompt FROM agent_prompts_junction ap JOIN prompts_resource pr ON ap.prompt_id = pr.id WHERE ap.agent_id = v_agent_id AND ap.active = true LIMIT 1) as system_prompt,
-            (SELECT ar.temperature FROM agent_agents_junction aaj JOIN agents_resource ar ON ar.id = aaj.agents_id WHERE aaj.agent_id = v_agent_id AND aaj.active = true LIMIT 1) as temperature,
-            (SELECT ar.reasoning FROM agent_agents_junction aaj JOIN agents_resource ar ON ar.id = aaj.agents_id WHERE aaj.agent_id = v_agent_id AND aaj.active = true LIMIT 1) as reasoning
-    ),
-    model_config AS (
-        SELECT
-            m.value as model_name,
-            m.id as model_id,
-            (SELECT n.name FROM provider_providers_junction ppj JOIN provider_names_junction pn ON pn.provider_id = ppj.provider_id JOIN names_resource n ON pn.name_id = n.id WHERE ppj.providers_id = pr.id LIMIT 1) as provider_name,
-            COALESCE(pr.endpoint, '') as base_url,
-            pr.key as api_key
-        FROM agent_agents_junction aaj
-        JOIN agents_resource ar ON ar.id = aaj.agents_id
-        JOIN models_resource m ON m.id = ar.model_id
-        LEFT JOIN providers_resource pr ON pr.id = m.provider_id
-        WHERE aaj.agent_id = v_agent_id AND aaj.active = true
-        LIMIT 1
-    ),
-    tool_schema_data AS (
-        SELECT
-            t.id as tool_id,
-            COALESCE(
-                jsonb_object_agg(
-                    ar.name,
-                    jsonb_build_object(
-                        'type', CASE ar.field_type
-                            WHEN 'string' THEN 'string'
-                            WHEN 'number' THEN 'number'
-                            WHEN 'boolean' THEN 'boolean'
-                            WHEN 'array' THEN 'array'
-                            ELSE 'string'
-                        END,
-                        'required', ar.required
-                    )
-                    ORDER BY ar.name
-                ) FILTER (WHERE ar.name IS NOT NULL),
-                '{}'::jsonb
-            ) as arguments,
-            COALESCE(
-                jsonb_object_agg(
-                    ar.name,
-                    ar.description
-                    ORDER BY ar.name
-                ) FILTER (WHERE ar.name IS NOT NULL AND ar.description != ''),
-                '{}'::jsonb
-            ) as argument_descriptions,
-            COALESCE(
-                jsonb_object_agg(
-                    ar.name,
-                    CASE
-                        WHEN ar.default_value = '' THEN NULL
-                        WHEN ar.field_type = 'number' THEN
-                            CASE
-                                WHEN ar.default_value ~ '^-?[0-9]+\\.?[0-9]*$' THEN to_jsonb(ar.default_value::numeric)
-                                ELSE NULL
-                            END
-                        WHEN ar.field_type = 'boolean' THEN
-                            CASE
-                                WHEN LOWER(ar.default_value) IN ('true', '1', 'yes') THEN 'true'::jsonb
-                                WHEN LOWER(ar.default_value) IN ('false', '0', 'no') THEN 'false'::jsonb
-                                ELSE NULL
-                            END
-                        WHEN ar.field_type = 'array' THEN
-                            CASE
-                                WHEN ar.default_value ~ '^\\[.*\\]$' THEN ar.default_value::jsonb
-                                ELSE NULL
-                            END
-                        ELSE ar.default_value::jsonb
-                    END
-                    ORDER BY ar.name
-                ) FILTER (WHERE ar.name IS NOT NULL AND ar.default_value != ''),
-                '{}'::jsonb
-            ) as argument_defaults
-        FROM tool_artifact t
-        LEFT JOIN tool_args_junction ta ON ta.tool_id = t.id
-        LEFT JOIN args_resource ar ON ar.id = ta.args_id AND ar.active = true
-        GROUP BY t.id
-    ),
-    tools_data AS (
-        SELECT ARRAY_AGG(
-            (t.id,
-             (SELECT n.name FROM tool_names_junction tn JOIN names_resource n ON tn.name_id = n.id WHERE tn.tool_id = t.id LIMIT 1),
-             COALESCE((SELECT d.description FROM tool_descriptions_junction td JOIN descriptions_resource d ON td.description_id = d.id WHERE td.tool_id = t.id LIMIT 1), ''),
-             COALESCE(br.entry::text, ''),
-             '',
-             COALESCE(tsd.arguments, '{}'::jsonb),
-             COALESCE(tsd.argument_descriptions, '{}'::jsonb),
-             COALESCE(tsd.argument_defaults, '{}'::jsonb),
-             true
-            )::types.i_attempt_message_tool_v4
-        ) as tools
-        FROM agent_tools_junction at
-        JOIN tools_resource tr ON tr.id = at.tool_id AND at.active = true
-        JOIN tool_tools_junction ttj ON ttj.tools_id = tr.id
-        JOIN tool_artifact t ON t.id = ttj.tool_id
-        LEFT JOIN tool_bindings_junction tbj ON tbj.tool_id = t.id AND tbj.active = true
-        LEFT JOIN bindings_resource br ON br.id = tbj.binding_id AND br.active = true
-        LEFT JOIN tool_schema_data tsd ON tsd.tool_id = t.id
-        WHERE at.agent_id = v_agent_id
-          AND (p_entry_types IS NULL OR br.entry::text = ANY(p_entry_types))
-          AND br.id IS NOT NULL
-    ),
-    developer_instructions AS (
-        SELECT ARRAY_AGG(i.template ORDER BY i.created_at) as templates
-        FROM agent_instructions_junction ai
-        JOIN instructions_resource i ON i.id = ai.instruction_id AND i.active = true
-        WHERE ai.agent_id = v_agent_id
-    ),
-    chat_messages AS (
-        SELECT jsonb_agg(
-            jsonb_build_object(
-                'role', me.role::text,
-                'content', COALESCE(ce.content, '')
-            ) ORDER BY me.created_at
-        ) as history
-        FROM simulation_messages_entry sm
-        JOIN messages_entry me ON me.id = sm.id
-        LEFT JOIN simulation_contents_entry ce ON ce.message_id = sm.id
-        WHERE sm.chat_id = p_chat_id
-          AND me.completed = true
-          AND sm.id != v_user_message_id
-          AND sm.id != v_assistant_message_id
-    )
-    SELECT
-        v_user_message_id,
-        v_assistant_message_id,
-        v_run_id,
-        v_group_id,
-        v_trace_id,
-        v_created_at,
-        mc.model_name,
-        mc.provider_name,
-        mc.base_url,
-        mc.api_key,
-        ac.temperature,
-        ac.reasoning,
-        ac.system_prompt,
-        NULL::text,  -- voice_model_name (TODO)
-        NULL::text,  -- voice_provider
-        NULL::text,  -- voice_base_url
-        NULL::text,  -- voice_api_key
-        NULL::real, -- voice_temperature
-        NULL::text,  -- voice_reasoning
-        td.tools,
-        di.templates,
-        cm.history
-    FROM agent_config ac
-    LEFT JOIN model_config mc ON TRUE
-    LEFT JOIN tools_data td ON TRUE
-    LEFT JOIN developer_instructions di ON TRUE
-    LEFT JOIN chat_messages cm ON TRUE;
+    RETURN QUERY SELECT v_user_message_id, v_assistant_message_id, v_run_id, v_created_at;
 END;
 $$;
