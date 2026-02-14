@@ -20,7 +20,7 @@ from app.main import (
     _voice_sessions,
     sio,
 )
-from app.socket.v4.artifacts.attempt.audio._helpers import (
+from app.infra.v4.websocket.attempt.audio_helpers import (
     SQL_PATH_VOICE_CONTEXT,
     get_audio_adapter,
 )

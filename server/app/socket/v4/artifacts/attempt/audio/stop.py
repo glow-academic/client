@@ -19,7 +19,7 @@ from app.main import (
     _voice_sessions,
     sio,
 )
-from app.socket.v4.artifacts.attempt.audio._helpers import get_audio_adapter
+from app.infra.v4.websocket.attempt.audio_helpers import get_audio_adapter
 from app.socket.v4.artifacts.attempt.types import (
     AttemptAudioEndedEvent,
     AttemptAudioStopPayload,
