@@ -54,9 +54,6 @@ class TrainingStartPayload(BaseModel):
     )
     attempt_id: UUID | None = None  # Pre-created attempt ID (lobby flow)
     user_instructions: list[str] | None = None  # Optional generation hints
-    previous_chat_map: dict[str, str] | None = (
-        None  # {scenario_resource_id: previous_chat_id} for "use previous"
-    )
 
 
 # =============================================================================

@@ -38,6 +38,7 @@ class TestRunPayload(BaseModel):
 
     chat_id: UUID
     test_id: UUID
+    run_all: bool = False
 
 
 class TestRunAllPayload(BaseModel):

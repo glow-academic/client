@@ -36247,6 +36247,11 @@ export interface components {
              * Format: uuid
              */
             test_id: string;
+            /**
+             * Run All
+             * @default false
+             */
+            run_all: boolean;
         };
         /**
          * TestRunStartEvent

@@ -12,7 +12,6 @@ Follows the attempt/grade.py pattern:
 """
 
 import asyncio
-import json
 import uuid
 from typing import Any, cast
 
@@ -40,6 +39,8 @@ from app.sql.types import (
     GetToolsByResourceIdsSqlRow,
     PrepareTestRunSqlParams,
     PrepareTestRunSqlRow,
+    QGetModelsV4Item,
+    QGetProvidersV4Item,
 )
 from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import execute_sql_typed
@@ -130,7 +131,9 @@ def _determine_next_run(
     if completed_runs >= total_runs:
         return None, total_runs, total_runs
 
-    next_run_resource_id = run_ids[completed_runs] if completed_runs < total_runs else None
+    next_run_resource_id = (
+        run_ids[completed_runs] if completed_runs < total_runs else None
+    )
     current_run = completed_runs + 1
 
     return next_run_resource_id, current_run, total_runs
@@ -281,7 +284,8 @@ async def _test_run_impl(sid: str, data: TestRunPayload, profile_id: uuid.UUID) 
         api_key = provider_resource.key or ""
         temperature: float = (
             agent_resource.temperature
-            if hasattr(agent_resource, "temperature") and agent_resource.temperature is not None
+            if hasattr(agent_resource, "temperature")
+            and agent_resource.temperature is not None
             else 0.0
         )
         reasoning = (
@@ -316,14 +320,16 @@ async def _test_run_impl(sid: str, data: TestRunPayload, profile_id: uuid.UUID) 
 
         # Step 4: Parallel fetch resources from invocation's singular IDs
         # These override the base config from the agent
-        async def fetch_override_model() -> Any:
+        async def fetch_override_model() -> QGetModelsV4Item | None:
             if not invocation.model_id:
                 return None
             async with pool.acquire() as c:
                 models = await get_models_internal(c, [invocation.model_id])
                 return models[0] if models else None
 
-        async def fetch_override_provider(mid: uuid.UUID | None) -> Any:
+        async def fetch_override_provider(
+            mid: uuid.UUID | None,
+        ) -> QGetProvidersV4Item | None:
             """Fetch provider for the invocation's model (if overridden)."""
             if not mid:
                 return None
@@ -441,8 +447,7 @@ async def _test_run_impl(sid: str, data: TestRunPayload, profile_id: uuid.UUID) 
                     row["runs_entry_id"],
                 )
                 return [
-                    {"role": r["role"], "content": r["content"]}
-                    for r in messages_rows
+                    {"role": r["role"], "content": r["content"]} for r in messages_rows
                 ]
 
         # Run all fetches in parallel
@@ -581,6 +586,12 @@ async def _test_run_impl(sid: str, data: TestRunPayload, profile_id: uuid.UUID) 
                 "modality": "text",
                 "run_id": run_id,
                 "group_id": str(group_id),
+                "chat_id": chat_id_str,
+                "test_id": str(data.test_id),
+                "original_run_resource_id": str(next_run_resource_id),
+                "current_run": current_run,
+                "total_runs": total_runs,
+                "run_all": data.run_all,
                 "messages": messages,
                 "llm_config": llm_config,
                 "tools": convert_tools_to_dict(tools),

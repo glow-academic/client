@@ -1024,22 +1024,7 @@ export function AttemptChat({
     const handleChatEnded = async (data: AttemptChatEndedEvent) => {
       if (data.chat_id === currentChatIdRef.current) {
         freshlyCompletedChatsRef.current.add(data.chat_id);
-        await router.refresh();
-
-        if (data.next_chat_id && !data.is_attempt_finished) {
-          pendingNextChatIdRef.current = data.next_chat_id;
-          const nextChatExists = chats?.some((c) => c.id === data.next_chat_id);
-          if (nextChatExists) {
-            const sortedChats = [...(chats || [])].sort(
-              (a, b) => (a.position ?? 0) - (b.position ?? 0)
-            );
-            const nextIndex = sortedChats.findIndex((c) => c.id === data.next_chat_id);
-            if (nextIndex !== -1) {
-              setCurrentChatIndex(nextIndex);
-              pendingNextChatIdRef.current = null;
-            }
-          }
-        }
+        router.refresh();
       }
     };
 

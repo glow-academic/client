@@ -21,9 +21,6 @@ internal_sio = get_internal_sio()
 
 server_router = APIRouter()
 
-# SQL path for context check
-SQL_PATH_CONTEXT = "app/sql/v4/queries/generate/test/get_test_run_context_complete.sql"
-
 
 @internal_sio.on("test_run_done")  # type: ignore
 async def handle_test_run_complete(data: dict[str, Any]) -> None:

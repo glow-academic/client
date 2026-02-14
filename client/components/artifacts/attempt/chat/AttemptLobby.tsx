@@ -54,7 +54,7 @@ export function AttemptLobby({
     [continuationOptions],
   );
 
-  // Listen for training_started to refresh the page (chat will appear)
+  // Listen for training_started or attempt_chat_ended to refresh the page
   useEffect(() => {
     if (!socket) return;
 
@@ -76,63 +76,76 @@ export function AttemptLobby({
       toast.error(data.message || "Failed to start training.");
     };
 
+    const handleChatEnded = () => {
+      if (!isStarting) return;
+      setIsStarting(false);
+      router.refresh();
+    };
+
+    const handleAttemptError = (data: { type: string; message: string }) => {
+      if (!isStarting) return;
+      if (data.type === "end") {
+        setIsStarting(false);
+        toast.error(data.message || "Failed to use previous scores.");
+      }
+    };
+
     socket.on("training_started", handleStarted);
     socket.on("training_error", handleError);
+    socket.on("attempt_chat_ended", handleChatEnded);
+    socket.on("attempt_error", handleAttemptError);
 
     return () => {
       socket.off("training_started", handleStarted);
       socket.off("training_error", handleError);
+      socket.off("attempt_chat_ended", handleChatEnded);
+      socket.off("attempt_error", handleAttemptError);
     };
   }, [socket, isStarting, attemptId, router]);
 
-  const emitStart = useCallback(
-    (previousChatMap?: Record<string, string>) => {
-      if (!socket || !isConnected) {
-        toast.error("WebSocket not connected. Please refresh the page.");
-        return;
-      }
-
-      setIsStarting(true);
-
-      const payload: Record<string, unknown> = {
-        training_bundle_entry_id: trainingBundleEntryId,
-        attempt_id: attemptId,
-      };
-
-      if (draftId) {
-        payload.draft_id = draftId;
-      }
-      if (infiniteMode) {
-        payload.infinite = true;
-      }
-      if (userInstructions?.trim()) {
-        payload.user_instructions = [userInstructions.trim()];
-      }
-      if (previousChatMap && Object.keys(previousChatMap).length > 0) {
-        payload.previous_chat_map = previousChatMap;
-      }
-
-      socket.emit("training_start", payload);
-    },
-    [
-      socket,
-      isConnected,
-      trainingBundleEntryId,
-      attemptId,
-      draftId,
-      infiniteMode,
-      userInstructions,
-    ],
-  );
-
   const handleStart = useCallback(() => {
-    emitStart();
-  }, [emitStart]);
+    if (!socket || !isConnected) {
+      toast.error("WebSocket not connected. Please refresh the page.");
+      return;
+    }
+
+    setIsStarting(true);
+
+    const payload: Record<string, unknown> = {
+      training_bundle_entry_id: trainingBundleEntryId,
+      attempt_id: attemptId,
+    };
+
+    if (draftId) {
+      payload.draft_id = draftId;
+    }
+    if (infiniteMode) {
+      payload.infinite = true;
+    }
+    if (userInstructions?.trim()) {
+      payload.user_instructions = [userInstructions.trim()];
+    }
+
+    socket.emit("training_start", payload);
+  }, [
+    socket,
+    isConnected,
+    trainingBundleEntryId,
+    attemptId,
+    draftId,
+    infiniteMode,
+    userInstructions,
+  ]);
 
   const handleUsePrevious = useCallback(() => {
     const idx = parseInt(selectedOptionIndex, 10);
     const selected = options[idx];
     if (!selected) return;
+
+    if (!socket || !isConnected) {
+      toast.error("WebSocket not connected. Please refresh the page.");
+      return;
+    }
 
     // Build previous_chat_map from selected option's scenarios
     const previousChatMap: Record<string, string> = {};
@@ -142,8 +155,15 @@ export function AttemptLobby({
       }
     }
 
-    emitStart(previousChatMap);
-  }, [selectedOptionIndex, options, emitStart]);
+    setIsStarting(true);
+
+    // Emit attempt_end with previous_chat_map — server creates skipped chats
+    // with copied grades, then client refreshes on attempt_chat_ended
+    socket.emit("attempt_end", {
+      attempt_id: attemptId,
+      previous_chat_map: previousChatMap,
+    });
+  }, [selectedOptionIndex, options, socket, isConnected, attemptId]);
 
   const handleCustomize = useCallback(() => {
     const basePath = mode === "practice" ? "/practice" : "/home";

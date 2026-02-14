@@ -2114,12 +2114,36 @@ async def export_uploads(conn: asyncpg.Connection) -> None:
             files_dir,
         )
 
+    # --- Pass 3: Video uploads via scenario_videos_junction → videos_resource ---
+    vid_rows = await conn.fetch("""
+        SELECT DISTINCT vr.upload_id AS uploads_id
+        FROM videos_resource vr
+        WHERE vr.upload_id IS NOT NULL
+    """)
+
+    for r in vid_rows:
+        await _collect_upload_chain(
+            conn,
+            r["uploads_id"],
+            entry_cols,
+            entry_pks,
+            conn_cols,
+            conn_pks,
+            entry_inserts,
+            conn_inserts,
+            seen_entry_ids,
+            seen_conn_keys,
+            copied_files,
+            upload_source,
+            files_dir,
+        )
+
     # --- Write output ---
     output_path = out_dir / "uploads.sql"
     with open(output_path, "w") as f:
         f.write("-- Module: uploads\n")
         f.write("-- Category: uploads\n")
-        f.write("-- Description: Upload entries and connections for document uploads\n")
+        f.write("-- Description: Upload entries and connections for document and video uploads\n")
         f.write("-- ============================================================\n")
 
         if entry_inserts:

@@ -133836,6 +133836,11 @@
             "type": "string",
             "format": "uuid",
             "title": "Test Id"
+          },
+          "run_all": {
+            "type": "boolean",
+            "title": "Run All",
+            "default": false
           }
         },
         "type": "object",
@@ -137085,20 +137090,6 @@
               }
             ],
             "title": "User Instructions"
-          },
-          "previous_chat_map": {
-            "anyOf": [
-              {
-                "additionalProperties": {
-                  "type": "string"
-                },
-                "type": "object"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Previous Chat Map"
           }
         },
         "type": "object",

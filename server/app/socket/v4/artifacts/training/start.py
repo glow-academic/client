@@ -370,7 +370,6 @@ async def _training_start_impl(
                     if prepare_row.scenario_id
                     else None,
                     "scenario_data": scenario_data,
-                    "previous_chat_map": data.previous_chat_map,
                 },
             )
 

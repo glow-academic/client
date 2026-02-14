@@ -2,9 +2,8 @@
 
 Listens to the internal attempt_chat event and completes the training start flow:
 1. Creates chat entry + config snapshots via SQL
-2. Handles previous_chat_map ("Use Previous" flow)
-3. Refreshes MVs
-4. Emits training_started to client
+2. Refreshes MVs
+3. Emits training_started to client
 
 This handler is the final step in both the generation and no-generation paths
 of training start. It is always invoked via internal event from either
@@ -51,7 +50,6 @@ async def handle_attempt_chat(data: dict[str, Any]) -> None:
         simulation_id: Simulation UUID string (passthrough for client event)
         scenario_id: Scenario UUID string (passthrough for client event)
         scenario_data: Scenario data dict (passthrough for client event)
-        previous_chat_map: Optional {scenario_resource_id: previous_chat_id}
     """
     sid = data.get("sid", "")
     if not sid:
@@ -64,7 +62,6 @@ async def handle_attempt_chat(data: dict[str, Any]) -> None:
         simulation_id = data["simulation_id"]
         scenario_id = data.get("scenario_id")
         scenario_data = data.get("scenario_data")
-        previous_chat_map: dict[str, str] | None = data.get("previous_chat_map")
 
         async with get_db_connection() as conn:
             # Step 1: Create chat + config snapshots
@@ -98,98 +95,11 @@ async def handle_attempt_chat(data: dict[str, Any]) -> None:
                 )
                 return
 
-            # Step 2: Handle previous_chat_map ("Use Previous" flow)
-            if previous_chat_map:
-                for (
-                    prev_scenario_id_str,
-                    prev_chat_id_str,
-                ) in previous_chat_map.items():
-                    if not prev_chat_id_str:
-                        continue
-                    try:
-                        prev_chat_uuid = uuid.UUID(prev_chat_id_str)
-                        prev_scenario_uuid = uuid.UUID(prev_scenario_id_str)
-
-                        # Create a chat entry for the skipped scenario
-                        skipped_chat_id = await conn.fetchval(
-                            """
-                            INSERT INTO simulation_chats_entry (attempt_id, active)
-                            VALUES ($1, true)
-                            RETURNING id
-                            """,
-                            attempt_id,
-                        )
-                        if not skipped_chat_id:
-                            continue
-
-                        # Link scenario to the skipped chat
-                        await conn.execute(
-                            """
-                            INSERT INTO simulation_chats_scenarios_connection
-                                (chat_id, scenarios_id, active)
-                            VALUES ($1, $2, true)
-                            ON CONFLICT DO NOTHING
-                            """,
-                            skipped_chat_id,
-                            prev_scenario_uuid,
-                        )
-
-                        # Mark as completed
-                        await conn.execute(
-                            """
-                            INSERT INTO simulation_completions_entry (chat_id)
-                            VALUES ($1)
-                            ON CONFLICT (chat_id) DO NOTHING
-                            """,
-                            skipped_chat_id,
-                        )
-
-                        # Copy grade from previous chat
-                        await conn.execute(
-                            """
-                            INSERT INTO simulation_grades_entry (
-                                chat_id, run_id, rubric_grade_agent_id, rubric_id,
-                                score, passed, time_taken, total_points, pass_points,
-                                generated, active
-                            )
-                            SELECT $2, g.run_id, g.rubric_grade_agent_id, g.rubric_id,
-                                   g.score, g.passed, g.time_taken, g.total_points, g.pass_points,
-                                   g.generated, true
-                            FROM simulation_grades_entry g
-                            WHERE g.chat_id = $1 AND g.active = true
-                            ORDER BY g.created_at DESC
-                            LIMIT 1
-                            """,
-                            prev_chat_uuid,
-                            skipped_chat_id,
-                        )
-
-                        # Copy feedbacks from previous chat
-                        await conn.execute(
-                            """
-                            INSERT INTO simulation_feedbacks_entry (
-                                chat_id, standard_id, total, feedback, active
-                            )
-                            SELECT $2, f.standard_id, f.total, f.feedback, true
-                            FROM simulation_feedbacks_entry f
-                            WHERE f.chat_id = $1 AND f.active = true
-                            """,
-                            prev_chat_uuid,
-                            skipped_chat_id,
-                        )
-
-                    except Exception as e:
-                        logger.warning(
-                            f"Failed to create skipped chat for scenario "
-                            f"{prev_scenario_id_str}: {e}"
-                        )
-                        continue
-
-            # Step 3: Refresh MVs so attempt is immediately visible
+            # Step 2: Refresh MVs so attempt is immediately visible
             await conn.execute("REFRESH MATERIALIZED VIEW mv_attempt_list")
             await conn.execute("REFRESH MATERIALIZED VIEW mv_attempt_chats")
 
-            # Step 4: Emit training_started event to client
+            # Step 3: Emit training_started event to client
             started_event = TrainingStartedEvent(
                 simulation_id=str(simulation_id),
                 attempt_id=str(attempt_id),
