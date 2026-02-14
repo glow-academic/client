@@ -36,34 +36,16 @@ async def get_profile_facts_internal(
     is_archived: bool = False,
     date_from: date | None = None,
     date_to: date | None = None,
-    sort_by: str = "avg_score",
+    sort_by: str = "date",
     sort_order: str = "desc",
-    page_limit: int = 5000,
+    page_limit: int = 10000,
     page_offset: int = 0,
     bypass_cache: bool = False,
 ) -> GetProfileFactsResponse:
     """Internal function for fetching profile facts data.
 
     This can be reused by dashboard artifact endpoints, leaderboard, and reports.
-
-    Args:
-        conn: Database connection
-        profile_id: Filter by single profile ID
-        cohort_ids: Filter by cohort IDs
-        department_ids: Filter by department IDs
-        simulation_ids: Filter by simulation IDs
-        attempt_type: Filter by attempt type ('general' | 'practice')
-        is_archived: Include archived attempts (default False)
-        date_from: Filter by date range start (inclusive)
-        date_to: Filter by date range end (inclusive)
-        sort_by: Sort field ('avg_score' | 'total_attempts' | 'highest_score')
-        sort_order: Sort order ('asc' | 'desc')
-        page_limit: Items per page
-        page_offset: Pagination offset
-        bypass_cache: Skip cache lookup
-
-    Returns:
-        GetProfileFactsResponse with profile-level items, total_count, and filter options
+    Returns chat-grain rows from mv_profile_facts with filtering and pagination.
     """
     from app.sql.types import (
         GetAnalyticsProfileFactsViewSqlParams,
@@ -120,58 +102,27 @@ async def get_profile_facts_internal(
         for item in result.items:
             items.append(
                 ProfileFactsItem(
+                    chat_id=item.chat_id,
+                    attempt_id=item.attempt_id,
                     profile_id=item.profile_id,
-                    total_attempts=item.total_attempts or 0,
-                    avg_score=float(item.avg_score)
-                    if item.avg_score is not None
+                    cohort_id=item.cohort_id,
+                    department_id=item.department_id,
+                    simulation_id=item.simulation_id,
+                    scenario_id=item.scenario_id,
+                    attempt_date=item.attempt_date,
+                    grade_percent=float(item.grade_percent)
+                    if item.grade_percent is not None
                     else None,
-                    highest_score=float(item.highest_score)
-                    if item.highest_score is not None
+                    passed=item.passed,
+                    completed=item.completed or False,
+                    time_taken_seconds=item.time_taken_seconds,
+                    num_messages_total=item.num_messages_total or 0,
+                    avg_response_sec=float(item.avg_response_sec)
+                    if item.avg_response_sec is not None
                     else None,
-                    completion_pct=float(item.completion_pct)
-                    if item.completion_pct is not None
-                    else None,
-                    first_attempt_pass_rate=float(item.first_attempt_pass_rate)
-                    if item.first_attempt_pass_rate is not None
-                    else None,
-                    avg_messages_per_session=float(item.avg_messages_per_session)
-                    if item.avg_messages_per_session is not None
-                    else None,
-                    avg_persona_response_sec=float(item.avg_persona_response_sec)
-                    if item.avg_persona_response_sec is not None
-                    else None,
-                    session_efficiency=float(item.session_efficiency)
-                    if item.session_efficiency is not None
-                    else None,
-                    total_time_minutes=float(item.total_time_minutes)
-                    if item.total_time_minutes is not None
-                    else None,
-                    improvement_rate=float(item.improvement_rate)
-                    if item.improvement_rate is not None
-                    else 0.0,
-                    perfect_score_count=item.perfect_score_count or 0,
-                    quickest_pass_minutes=float(item.quickest_pass_minutes)
-                    if item.quickest_pass_minutes is not None
-                    else None,
-                    daily_dates=list(item.daily_dates) if item.daily_dates else [],
-                    daily_avg_scores=[
-                        float(s) if s is not None else None
-                        for s in item.daily_avg_scores
-                    ]
-                    if item.daily_avg_scores
-                    else [],
-                    daily_attempt_counts=list(item.daily_attempt_counts)
-                    if item.daily_attempt_counts
-                    else [],
-                    daily_completed_counts=list(item.daily_completed_counts)
-                    if item.daily_completed_counts
-                    else [],
-                    daily_time_minutes=[
-                        float(t) if t is not None else None
-                        for t in item.daily_time_minutes
-                    ]
-                    if item.daily_time_minutes
-                    else [],
+                    attempt_type=item.attempt_type,
+                    is_archived=item.is_archived or False,
+                    infinite_mode=item.infinite_mode or False,
                 )
             )
 
@@ -251,17 +202,15 @@ async def get_profile_facts(
 ) -> GetProfileFactsResponse:
     """Get profile facts data from mv_profile_facts.
 
-    This endpoint fetches profile-level aggregated metrics computed from
-    chat-grain data for the dashboard header, leaderboard, and reports with:
+    This endpoint fetches filtered chat-grain rows for the dashboard
+    header, leaderboard, and reports with:
     - Filtering (profile, cohort, department, simulation, attempt_type, archived, date range)
-    - 12 profile metrics (avg_score, total_attempts, completion_pct, etc.)
-    - Daily trend arrays (daily_dates, daily_avg_scores, etc.)
-    - Sorting (avg_score, total_attempts, highest_score)
+    - Sorting (date)
     - Pagination
     - Filter options (simulation_options, cohort_options, department_options)
 
-    Resource metadata (names, avatars) should be fetched separately
-    via internal resource handlers using the returned profile IDs.
+    All aggregation (profile metrics, daily trends, etc.) is done in Python
+    by the consuming artifact endpoints.
     """
     tags = ["views", "analytics", "profile_facts"]
 

@@ -773,6 +773,7 @@ function PersonaComponent({
           (formData["iconShowSelected"] as boolean | undefined) ?? false,
         mcp: false,
         persona_id: personaId || null,
+        save: false,
       });
     },
     [

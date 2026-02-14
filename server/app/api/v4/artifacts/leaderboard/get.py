@@ -8,8 +8,8 @@ import asyncpg
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 from app.api.v4.artifacts.leaderboard.permissions import (
-    build_leaderboard_rows,
-    build_leaderboard_sections,
+    build_leaderboard_rows_v2,
+    build_leaderboard_sections_v2,
 )
 from app.api.v4.artifacts.leaderboard.types import (
     LeaderboardProfileResource,
@@ -25,13 +25,7 @@ from app.api.v4.artifacts.types import FilterOption
 from app.api.v4.resources.profiles.get import get_profiles_internal
 from app.api.v4.resources.scenarios.get import get_scenarios_internal
 from app.api.v4.resources.simulations.get import get_simulations_internal
-from app.api.v4.views.analytics.attempts.get import get_attempt_facts_internal
-from app.api.v4.views.analytics.chat_facts.get import get_chat_facts_internal
-from app.api.v4.views.analytics.chat_facts.types import GetChatFactsRequest
-from app.api.v4.views.analytics.daily_metrics.get import get_daily_metrics_internal
-from app.api.v4.views.analytics.daily_metrics.types import GetDailyMetricsRequest
-from app.api.v4.views.analytics.profile_metrics.get import get_profile_metrics_internal
-from app.api.v4.views.analytics.profile_metrics.types import GetProfileMetricsRequest
+from app.api.v4.views.analytics.profile_facts.get import get_profile_facts_internal
 from app.infra.v4.activity.audit import audit_activity
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
@@ -62,8 +56,8 @@ async def get_leaderboard(
 ) -> LeaderboardResponse:
     """Get leaderboard artifact data.
 
-    Pulls four analytics MV slices in parallel and computes leaderboard
-    section skeletons.
+    Fetches chat-grain rows from mv_profile_facts via get_profile_facts_internal()
+    and aggregates to profile-level leaderboard rows in Python.
     """
     tags = ["artifacts", "leaderboard", "views", "analytics"]
     bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
@@ -107,116 +101,28 @@ async def get_leaderboard(
         else:
             attempt_type = "general"
 
-        async def fetch_attempts() -> tuple[list, int]:
-            async with pool.acquire() as c:
-                result = await get_attempt_facts_internal(
-                    conn=c,
-                    profile_id=request.target_profile_id,
-                    attempt_type=attempt_type,
-                    is_archived=is_archived,
-                    simulation_ids=simulation_ids_filter,
-                    cohort_ids=cohort_ids_filter,
-                    department_ids=request.department_ids,
-                    scenario_ids=request.scenario_ids,
-                    date_from=parsed_start_date,
-                    date_to=parsed_end_date,
-                    search=request.search,
-                    sort_by=request.sort_by
-                    if request.sort_by in {"date", "score"}
-                    else "score",
-                    sort_order=request.sort_order,
-                    page_limit=request.page_limit,
-                    page_offset=request.page_offset,
-                    bypass_cache=bypass_cache,
-                )
-                return result.items, result.total_count
+        # --- Single MV fetch: mv_profile_facts ---
+        async with pool.acquire() as c:
+            profile_facts_result = await get_profile_facts_internal(
+                conn=c,
+                profile_id=request.target_profile_id,
+                cohort_ids=cohort_ids_filter,
+                department_ids=request.department_ids,
+                simulation_ids=simulation_ids_filter,
+                attempt_type=attempt_type,
+                is_archived=is_archived,
+                date_from=parsed_start_day,
+                date_to=parsed_end_day,
+                sort_by="date",
+                sort_order=request.sort_order or "desc",
+                page_limit=request.page_limit * 50,
+                page_offset=0,
+                bypass_cache=bypass_cache,
+            )
 
-        async def fetch_chat_facts() -> list:
-            async with pool.acquire() as c:
-                result = await get_chat_facts_internal(
-                    conn=c,
-                    request=GetChatFactsRequest(
-                        profile_id=request.target_profile_id,
-                        profile_ids=request.profile_ids,
-                        simulation_ids=simulation_ids_filter,
-                        cohort_ids=cohort_ids_filter,
-                        department_ids=request.department_ids,
-                        scenario_ids=request.scenario_ids,
-                        attempt_type=attempt_type,
-                        is_archived=is_archived,
-                        date_from=parsed_start_date,
-                        date_to=parsed_end_date,
-                        search=request.search,
-                        sort_by="date",
-                        sort_order=request.sort_order,
-                        page_limit=request.page_limit,
-                        page_offset=request.page_offset,
-                    ),
-                    bypass_cache=bypass_cache,
-                )
-                return result.items
+        profile_facts_items = profile_facts_result.items
 
-        async def fetch_daily_metrics() -> list:
-            async with pool.acquire() as c:
-                result = await get_daily_metrics_internal(
-                    conn=c,
-                    request=GetDailyMetricsRequest(
-                        cohort_ids=cohort_ids_filter,
-                        simulation_ids=simulation_ids_filter,
-                        attempt_type=attempt_type,
-                        is_archived=is_archived,
-                        date_from=parsed_start_day,
-                        date_to=parsed_end_day,
-                    ),
-                    bypass_cache=bypass_cache,
-                )
-                return result.items
-
-        async def fetch_profile_metrics() -> tuple[list, int]:
-            async with pool.acquire() as c:
-                profile_sort_by = (
-                    request.sort_by
-                    if request.sort_by
-                    in {
-                        "avg_score",
-                        "highest_score",
-                        "total_attempts",
-                        "improvement",
-                        "last_attempt_at",
-                    }
-                    else "highest_score"
-                )
-                result = await get_profile_metrics_internal(
-                    conn=c,
-                    request=GetProfileMetricsRequest(
-                        profile_id=request.target_profile_id,
-                        profile_ids=request.profile_ids,
-                        cohort_ids=cohort_ids_filter,
-                        simulation_ids=simulation_ids_filter,
-                        scenario_ids=request.scenario_ids,
-                        attempt_type=attempt_type,
-                        is_archived=is_archived,
-                        sort_by=profile_sort_by,
-                        sort_order=request.sort_order,
-                        page_limit=request.page_limit,
-                        page_offset=request.page_offset,
-                    ),
-                    bypass_cache=bypass_cache,
-                )
-                return result.items, result.total_count
-
-        (
-            (attempts, _attempt_total_count),
-            chat_rows,
-            daily_rows,
-            (profile_rows, profile_total_count),
-        ) = await asyncio.gather(
-            fetch_attempts(),
-            fetch_chat_facts(),
-            fetch_daily_metrics(),
-            fetch_profile_metrics(),
-        )
-
+        # --- Fetch settings (same as before) ---
         primary_color = "#171717"
         accent_color = "#f5f5f5"
         actor_profile_for_settings = (
@@ -241,32 +147,16 @@ async def get_leaderboard(
                     primary_color = settings.primary_color or primary_color
                     accent_color = settings.accent or accent_color
 
-        profile_id_set = {row.profile_id for row in profile_rows}
-        simulation_id_set = {
-            simulation_id
-            for row in profile_rows
-            for simulation_id in row.simulation_ids
-        }
+        # --- Collect resource IDs from profile_facts_items ---
+        profile_id_set = {item.profile_id for item in profile_facts_items}
+        simulation_id_set = {item.simulation_id for item in profile_facts_items}
         scenario_id_set = {
-            scenario_id for row in profile_rows for scenario_id in row.scenario_ids
+            item.scenario_id
+            for item in profile_facts_items
+            if item.scenario_id is not None
         }
 
-        for item in attempts:
-            if item.profile_id:
-                profile_id_set.add(item.profile_id)
-            if item.simulation_id:
-                simulation_id_set.add(item.simulation_id)
-            if item.scenario_ids:
-                for scenario_id in item.scenario_ids:
-                    scenario_id_set.add(scenario_id)
-        for item in chat_rows:
-            if item.profile_id:
-                profile_id_set.add(item.profile_id)
-            if item.simulation_id:
-                simulation_id_set.add(item.simulation_id)
-            if item.scenario_id:
-                scenario_id_set.add(item.scenario_id)
-
+        # --- Hydrate resources in parallel ---
         async def fetch_profiles() -> list:
             async with pool.acquire() as c:
                 return await get_profiles_internal(
@@ -302,29 +192,33 @@ async def get_leaderboard(
             for item in profiles
             if item.profile_id is not None
         }
-        data = build_leaderboard_rows(
-            profile_rows,
+
+        # --- Build leaderboard rows and sections from profile_facts ---
+        data = build_leaderboard_rows_v2(
+            profile_facts_items,
             profile_name_by_id=profile_name_by_id,
-            attempts=attempts,
-            chat_rows=chat_rows,
             sort_by=request.sort_by,
             sort_order=request.sort_order,
             rank_offset=request.page_offset,
         )
 
-        sections: LeaderboardSections = build_leaderboard_sections(
-            attempts=attempts,
-            chat_rows=chat_rows,
-            daily_rows=daily_rows,
-            profile_rows=profile_rows,
-            rows=data,
+        # Paginate the profile-level rows
+        page_start = request.page_offset
+        page_end = request.page_offset + request.page_limit
+        total_count = len(data)
+        data_page = data[page_start:page_end]
+
+        sections: LeaderboardSections = build_leaderboard_sections_v2(
+            profile_facts_items=profile_facts_items,
+            rows=data_page,
         )
 
+        # Views: set to empty lists since we no longer fetch the 4 separate MVs
         views = LeaderboardViews(
-            attempt_facts=attempts,
-            chat_facts=chat_rows,
-            daily_metrics=daily_rows,
-            profile_metrics=profile_rows,
+            attempt_facts=[],
+            chat_facts=[],
+            daily_metrics=[],
+            profile_metrics=[],
         )
 
         profile_resources = {
@@ -375,12 +269,12 @@ async def get_leaderboard(
         response.headers["X-Cache-Tags"] = ",".join(tags)
         return LeaderboardResponse(
             sections=sections,
-            data=data,
+            data=data_page,
             views=views,
             resources=resources,
             primary_color=primary_color,
             accent_color=accent_color,
-            total_count=profile_total_count,
+            total_count=total_count,
             simulation_options=simulation_options,
             profile_options=profile_options,
         )

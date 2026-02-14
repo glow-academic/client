@@ -3075,7 +3075,7 @@ export interface paths {
          * Get Reports
          * @description Get reports artifact data.
          *
-         *     Pulls four analytics MV slices in parallel and computes section skeletons.
+         *     Pulls mv_profile_facts as sole data source and computes section skeletons.
          */
         post: operations["get_reports_api_v4_artifacts_reports_get_post"];
         delete?: never;
@@ -3134,8 +3134,8 @@ export interface paths {
          * Get Leaderboard
          * @description Get leaderboard artifact data.
          *
-         *     Pulls four analytics MV slices in parallel and computes leaderboard
-         *     section skeletons.
+         *     Fetches chat-grain rows from mv_profile_facts via get_profile_facts_internal()
+         *     and aggregates to profile-level leaderboard rows in Python.
          */
         post: operations["get_leaderboard_api_v4_artifacts_leaderboard_get_post"];
         delete?: never;
@@ -7843,17 +7843,15 @@ export interface paths {
          * Get Profile Facts
          * @description Get profile facts data from mv_profile_facts.
          *
-         *     This endpoint fetches profile-level aggregated metrics computed from
-         *     chat-grain data for the dashboard header, leaderboard, and reports with:
+         *     This endpoint fetches filtered chat-grain rows for the dashboard
+         *     header, leaderboard, and reports with:
          *     - Filtering (profile, cohort, department, simulation, attempt_type, archived, date range)
-         *     - 12 profile metrics (avg_score, total_attempts, completion_pct, etc.)
-         *     - Daily trend arrays (daily_dates, daily_avg_scores, etc.)
-         *     - Sorting (avg_score, total_attempts, highest_score)
+         *     - Sorting (date)
          *     - Pagination
          *     - Filter options (simulation_options, cohort_options, department_options)
          *
-         *     Resource metadata (names, avatars) should be fetched separately
-         *     via internal resource handlers using the returned profile IDs.
+         *     All aggregation (profile metrics, daily trends, etc.) is done in Python
+         *     by the consuming artifact endpoints.
          */
         post: operations["get_profile_facts_api_v4_views_analytics_profile_facts_get_post"];
         delete?: never;
@@ -22355,8 +22353,8 @@ export interface components {
             date_to?: string | null;
             /**
              * Sort By
-             * @description Sort field: 'avg_score' | 'total_attempts' | 'highest_score'
-             * @default avg_score
+             * @description Sort field: 'date'
+             * @default date
              */
             sort_by: string;
             /**
@@ -22368,7 +22366,7 @@ export interface components {
             /**
              * Page Limit
              * @description Items per page
-             * @default 5000
+             * @default 10000
              */
             page_limit: number;
             /**
@@ -22380,17 +22378,17 @@ export interface components {
         };
         /**
          * GetProfileFactsResponse
-         * @description Response with profile-level aggregated metrics and pagination info.
+         * @description Response with chat-grain profile facts and pagination info.
          */
         GetProfileFactsResponse: {
             /**
              * Items
-             * @description Profile facts items (one per profile)
+             * @description Profile facts items (one per chat)
              */
             items?: components["schemas"]["ProfileFactsItem"][];
             /**
              * Total Count
-             * @description Total profile count before pagination
+             * @description Total count before pagination
              * @default 0
              */
             total_count: number;
@@ -29670,60 +29668,70 @@ export interface components {
         };
         /**
          * ProfileFactsItem
-         * @description Profile-level aggregated metrics from mv_profile_facts.
+         * @description Single chat row from mv_profile_facts.
          *
-         *     The query function filters at chat grain then GROUP BY profile_id
-         *     to produce these 12 metrics + daily trend arrays.
+         *     Contains chat-grain data with resource IDs and measures.
+         *     All aggregation (profile metrics, daily trends, etc.) is done in Python.
          */
         ProfileFactsItem: {
+            /**
+             * Chat Id
+             * Format: uuid
+             */
+            chat_id: string;
+            /**
+             * Attempt Id
+             * Format: uuid
+             */
+            attempt_id: string;
             /**
              * Profile Id
              * Format: uuid
              */
             profile_id: string;
+            /** Cohort Id */
+            cohort_id?: string | null;
+            /** Department Id */
+            department_id?: string | null;
             /**
-             * Total Attempts
+             * Simulation Id
+             * Format: uuid
+             */
+            simulation_id: string;
+            /** Scenario Id */
+            scenario_id?: string | null;
+            /** Attempt Date */
+            attempt_date?: string | null;
+            /** Grade Percent */
+            grade_percent?: number | null;
+            /** Passed */
+            passed?: boolean | null;
+            /**
+             * Completed
+             * @default false
+             */
+            completed: boolean;
+            /** Time Taken Seconds */
+            time_taken_seconds?: number | null;
+            /**
+             * Num Messages Total
              * @default 0
              */
-            total_attempts: number;
-            /** Avg Score */
-            avg_score?: number | null;
-            /** Highest Score */
-            highest_score?: number | null;
-            /** Completion Pct */
-            completion_pct?: number | null;
-            /** First Attempt Pass Rate */
-            first_attempt_pass_rate?: number | null;
-            /** Avg Messages Per Session */
-            avg_messages_per_session?: number | null;
-            /** Avg Persona Response Sec */
-            avg_persona_response_sec?: number | null;
-            /** Session Efficiency */
-            session_efficiency?: number | null;
-            /** Total Time Minutes */
-            total_time_minutes?: number | null;
+            num_messages_total: number;
+            /** Avg Response Sec */
+            avg_response_sec?: number | null;
+            /** Attempt Type */
+            attempt_type?: string | null;
             /**
-             * Improvement Rate
-             * @default 0
+             * Is Archived
+             * @default false
              */
-            improvement_rate: number;
+            is_archived: boolean;
             /**
-             * Perfect Score Count
-             * @default 0
+             * Infinite Mode
+             * @default false
              */
-            perfect_score_count: number;
-            /** Quickest Pass Minutes */
-            quickest_pass_minutes?: number | null;
-            /** Daily Dates */
-            daily_dates?: string[];
-            /** Daily Avg Scores */
-            daily_avg_scores?: (number | null)[];
-            /** Daily Attempt Counts */
-            daily_attempt_counts?: number[];
-            /** Daily Completed Counts */
-            daily_completed_counts?: number[];
-            /** Daily Time Minutes */
-            daily_time_minutes?: (number | null)[];
+            infinite_mode: boolean;
         };
         /**
          * ProfileFlagConfig

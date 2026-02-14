@@ -1,6 +1,5 @@
 """Get endpoint for reports artifact."""
 
-import asyncio
 from datetime import datetime
 from typing import Annotated
 from uuid import UUID
@@ -8,15 +7,13 @@ from uuid import UUID
 import asyncpg
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
-from app.api.v4.artifacts.reports.permissions import build_reports_sections
+from app.api.v4.artifacts.reports.permissions import build_reports_sections_v2
 from app.api.v4.artifacts.reports.types import (
     ReportsCohortResource,
-    ReportsPersonaResource,
     ReportsProfileResource,
     ReportsRequest,
     ReportsResources,
     ReportsResponse,
-    ReportsRubricResource,
     ReportsScenarioResource,
     ReportsSections,
     ReportsSimulationResource,
@@ -24,20 +21,10 @@ from app.api.v4.artifacts.reports.types import (
 )
 from app.api.v4.artifacts.types import FilterOption
 from app.api.v4.resources.cohorts.get import get_cohorts_internal
-from app.api.v4.resources.personas.get import get_personas_internal
 from app.api.v4.resources.profiles.get import get_profiles_internal
-from app.api.v4.resources.rubrics.get import get_rubrics_batch_internal
 from app.api.v4.resources.scenarios.get import get_scenarios_internal
 from app.api.v4.resources.simulations.get import get_simulations_internal
-from app.api.v4.views.analytics.attempts.get import get_attempt_facts_internal
-from app.api.v4.views.analytics.chat_facts.get import get_chat_facts_internal
-from app.api.v4.views.analytics.chat_facts.types import GetChatFactsRequest
-from app.api.v4.views.analytics.daily_metrics.get import get_daily_metrics_internal
-from app.api.v4.views.analytics.daily_metrics.types import GetDailyMetricsRequest
-from app.api.v4.views.analytics.profile_metrics.get import (
-    get_profile_metrics_internal,
-)
-from app.api.v4.views.analytics.profile_metrics.types import GetProfileMetricsRequest
+from app.api.v4.views.analytics.profile_facts.get import get_profile_facts_internal
 from app.infra.v4.activity.audit import audit_activity
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
@@ -68,7 +55,7 @@ async def get_reports(
 ) -> ReportsResponse:
     """Get reports artifact data.
 
-    Pulls four analytics MV slices in parallel and computes section skeletons.
+    Pulls mv_profile_facts as sole data source and computes section skeletons.
     """
     tags = ["artifacts", "reports", "views", "analytics"]
     bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
@@ -100,127 +87,30 @@ async def get_reports(
             attempt_type = "practice"
         else:
             attempt_type = None
-        profile_sort_map = {
-            "averageScore": "avg_score",
-            "avg_score": "avg_score",
-            "highestScore": "highest_score",
-            "highest_score": "highest_score",
-            "completionPercentage": "completion_pct",
-            "completion_pct": "completion_pct",
-            "firstAttemptPassRate": "first_attempt_pass_rate",
-            "first_attempt_pass_rate": "first_attempt_pass_rate",
-            "messagesPerSession": "avg_messages_per_session",
-            "avg_messages_per_session": "avg_messages_per_session",
-            "personaResponseTimes": "avg_persona_response_sec",
-            "avg_persona_response_sec": "avg_persona_response_sec",
-            "sessionEfficiency": "session_efficiency",
-            "session_efficiency": "session_efficiency",
-            "timeSpent": "total_time_minutes",
-            "total_time_minutes": "total_time_minutes",
-            "improvement": "improvement",
-            "lastAttemptAt": "last_attempt_at",
-            "last_attempt_at": "last_attempt_at",
-            "totalAttempts": "total_attempts",
-            "total_attempts": "total_attempts",
-        }
-        profile_sort_by = profile_sort_map.get(request.sort_by, "avg_score")
 
-        async def fetch_attempts() -> tuple[list, int]:
-            async with pool.acquire() as c:
-                result = await get_attempt_facts_internal(
-                    conn=c,
-                    profile_id=request.target_profile_id,
-                    attempt_type=attempt_type,
-                    is_archived=is_archived,
-                    simulation_ids=request.simulation_ids,
-                    cohort_ids=request.cohort_ids,
-                    department_ids=request.department_ids,
-                    scenario_ids=request.scenario_ids,
-                    date_from=parsed_start_date,
-                    date_to=parsed_end_date,
-                    search=request.search,
-                    sort_by=request.sort_by,
-                    sort_order=request.sort_order,
-                    page_limit=request.page_limit,
-                    page_offset=request.page_offset,
-                    bypass_cache=bypass_cache,
-                )
-                return result.items, result.total_count
+        # Fetch profile facts — single MV call
+        async with pool.acquire() as c:
+            profile_facts_result = await get_profile_facts_internal(
+                conn=c,
+                profile_id=request.target_profile_id,
+                cohort_ids=request.cohort_ids,
+                department_ids=request.department_ids,
+                simulation_ids=request.simulation_ids,
+                attempt_type=attempt_type,
+                is_archived=is_archived,
+                date_from=parsed_start_day,
+                date_to=parsed_end_day,
+                sort_by=request.sort_by,
+                sort_order=request.sort_order,
+                page_limit=request.page_limit,
+                page_offset=request.page_offset,
+                bypass_cache=bypass_cache,
+            )
 
-        async def fetch_chat_facts() -> list:
-            async with pool.acquire() as c:
-                result = await get_chat_facts_internal(
-                    conn=c,
-                    request=GetChatFactsRequest(
-                        profile_id=request.target_profile_id,
-                        profile_ids=request.profile_ids,
-                        simulation_ids=request.simulation_ids,
-                        cohort_ids=request.cohort_ids,
-                        department_ids=request.department_ids,
-                        scenario_ids=request.scenario_ids,
-                        attempt_type=attempt_type,
-                        is_archived=is_archived,
-                        date_from=parsed_start_date,
-                        date_to=parsed_end_date,
-                        search=request.search,
-                        sort_by=request.sort_by,
-                        sort_order=request.sort_order,
-                        page_limit=request.page_limit,
-                        page_offset=request.page_offset,
-                    ),
-                    bypass_cache=bypass_cache,
-                )
-                return result.items
+        profile_facts_items = profile_facts_result.items
+        total_count = profile_facts_result.total_count
 
-        async def fetch_daily_metrics() -> list:
-            async with pool.acquire() as c:
-                result = await get_daily_metrics_internal(
-                    conn=c,
-                    request=GetDailyMetricsRequest(
-                        cohort_ids=request.cohort_ids,
-                        simulation_ids=request.simulation_ids,
-                        attempt_type=attempt_type,
-                        is_archived=is_archived,
-                        date_from=parsed_start_day,
-                        date_to=parsed_end_day,
-                    ),
-                    bypass_cache=bypass_cache,
-                )
-                return result.items
-
-        async def fetch_profile_metrics() -> list:
-            async with pool.acquire() as c:
-                result = await get_profile_metrics_internal(
-                    conn=c,
-                    request=GetProfileMetricsRequest(
-                        profile_id=request.target_profile_id,
-                        profile_ids=request.profile_ids,
-                        cohort_ids=request.cohort_ids,
-                        simulation_ids=request.simulation_ids,
-                        scenario_ids=request.scenario_ids,
-                        attempt_type=attempt_type,
-                        is_archived=is_archived,
-                        sort_by=profile_sort_by,
-                        sort_order=request.sort_order,
-                        page_limit=request.page_limit,
-                        page_offset=request.page_offset,
-                    ),
-                    bypass_cache=bypass_cache,
-                )
-                return result.items
-
-        (
-            (attempts, total_count),
-            chat_rows,
-            daily_rows,
-            profile_rows,
-        ) = await asyncio.gather(
-            fetch_attempts(),
-            fetch_chat_facts(),
-            fetch_daily_metrics(),
-            fetch_profile_metrics(),
-        )
-
+        # Fetch thresholds from settings
         threshold_success = 85
         threshold_warning = 80
         threshold_danger = 70
@@ -247,11 +137,8 @@ async def get_reports(
                     threshold_warning = settings.warning_threshold or threshold_warning
                     threshold_danger = settings.danger_threshold or threshold_danger
 
-        sections: ReportsSections = build_reports_sections(
-            attempts=attempts,
-            chat_rows=chat_rows,
-            daily_rows=daily_rows,
-            profile_rows=profile_rows,
+        sections: ReportsSections = build_reports_sections_v2(
+            profile_facts_items=profile_facts_items,
             total_count=total_count,
             thresholds={
                 "success": threshold_success,
@@ -261,59 +148,25 @@ async def get_reports(
         )
 
         views = ReportsViews(
-            attempt_facts=attempts,
-            chat_facts=chat_rows,
-            daily_metrics=daily_rows,
-            profile_metrics=profile_rows,
+            attempt_facts=[],
+            chat_facts=[],
+            daily_metrics=[],
+            profile_metrics=[],
         )
 
+        # Collect resource IDs from profile_facts items
         simulation_ids: set[str] = set()
         profile_ids: set[str] = set()
         scenario_ids: set[str] = set()
         cohort_ids: set[str] = set()
-        persona_ids: set[str] = set()
-        rubric_ids: set[str] = set()
 
-        for item in attempts:
-            if item.simulation_id:
-                simulation_ids.add(str(item.simulation_id))
-            if item.profile_id:
-                profile_ids.add(str(item.profile_id))
+        for item in profile_facts_items:
+            simulation_ids.add(str(item.simulation_id))
+            profile_ids.add(str(item.profile_id))
             if item.cohort_id:
                 cohort_ids.add(str(item.cohort_id))
-            if item.scenario_ids:
-                for scenario_id in item.scenario_ids:
-                    scenario_ids.add(str(scenario_id))
-            if item.persona_ids:
-                for persona_id in item.persona_ids:
-                    persona_ids.add(str(persona_id))
-
-        for row in profile_rows:
-            if row.profile_id:
-                profile_ids.add(str(row.profile_id))
-            if row.simulation_ids:
-                for simulation_id in row.simulation_ids:
-                    simulation_ids.add(str(simulation_id))
-            if row.scenario_ids:
-                for scenario_id in row.scenario_ids:
-                    scenario_ids.add(str(scenario_id))
-            if row.cohort_ids:
-                for cohort_id in row.cohort_ids:
-                    cohort_ids.add(str(cohort_id))
-
-        for row in chat_rows:
-            if row.profile_id:
-                profile_ids.add(str(row.profile_id))
-            if row.simulation_id:
-                simulation_ids.add(str(row.simulation_id))
-            if row.cohort_id:
-                cohort_ids.add(str(row.cohort_id))
-            if row.scenario_id:
-                scenario_ids.add(str(row.scenario_id))
-            if row.persona_id:
-                persona_ids.add(str(row.persona_id))
-            if row.rubric_id:
-                rubric_ids.add(str(row.rubric_id))
+            if item.scenario_id:
+                scenario_ids.add(str(item.scenario_id))
 
         resources = ReportsResources(
             simulations={
@@ -332,14 +185,8 @@ async def get_reports(
                 cohort_id: ReportsCohortResource(cohort_id=cohort_id)
                 for cohort_id in cohort_ids
             },
-            personas={
-                persona_id: ReportsPersonaResource(persona_id=persona_id)
-                for persona_id in persona_ids
-            },
-            rubrics={
-                rubric_id: ReportsRubricResource(rubric_id=rubric_id)
-                for rubric_id in rubric_ids
-            },
+            personas={},
+            rubrics={},
         )
 
         # Hydrate minimal metadata for normalized resources
@@ -362,16 +209,6 @@ async def get_reports(
             cohorts = await get_cohorts_internal(
                 conn=c,
                 ids=[UUID(cohort_id) for cohort_id in cohort_ids],
-                bypass_cache=bypass_cache,
-            )
-            personas = await get_personas_internal(
-                conn=c,
-                ids=[UUID(persona_id) for persona_id in persona_ids],
-                bypass_cache=bypass_cache,
-            )
-            rubrics = await get_rubrics_batch_internal(
-                conn=c,
-                ids=[UUID(rubric_id) for rubric_id in rubric_ids],
                 bypass_cache=bypass_cache,
             )
 
@@ -410,25 +247,6 @@ async def get_reports(
                 resources.cohorts[key] = ReportsCohortResource(
                     cohort_id=key,
                     name=item.title,
-                )
-
-        for item in personas:
-            if item.persona_id:
-                key = str(item.persona_id)
-                resources.personas[key] = ReportsPersonaResource(
-                    persona_id=key,
-                    name=item.name,
-                    color=item.color,
-                    icon=item.icon,
-                )
-
-        for item in rubrics:
-            if item.rubric_id:
-                key = str(item.rubric_id)
-                resources.rubrics[key] = ReportsRubricResource(
-                    rubric_id=key,
-                    name=item.name,
-                    description=item.description,
                 )
 
         simulation_options = [

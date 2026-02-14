@@ -14293,7 +14293,7 @@
           "reports"
         ],
         "summary": "Get Reports",
-        "description": "Get reports artifact data.\n\nPulls four analytics MV slices in parallel and computes section skeletons.",
+        "description": "Get reports artifact data.\n\nPulls mv_profile_facts as sole data source and computes section skeletons.",
         "operationId": "get_reports_api_v4_artifacts_reports_get_post",
         "parameters": [
           {
@@ -14574,7 +14574,7 @@
           "leaderboard"
         ],
         "summary": "Get Leaderboard",
-        "description": "Get leaderboard artifact data.\n\nPulls four analytics MV slices in parallel and computes leaderboard\nsection skeletons.",
+        "description": "Get leaderboard artifact data.\n\nFetches chat-grain rows from mv_profile_facts via get_profile_facts_internal()\nand aggregates to profile-level leaderboard rows in Python.",
         "operationId": "get_leaderboard_api_v4_artifacts_leaderboard_get_post",
         "parameters": [
           {
@@ -36472,7 +36472,7 @@
           "profile_facts"
         ],
         "summary": "Get Profile Facts",
-        "description": "Get profile facts data from mv_profile_facts.\n\nThis endpoint fetches profile-level aggregated metrics computed from\nchat-grain data for the dashboard header, leaderboard, and reports with:\n- Filtering (profile, cohort, department, simulation, attempt_type, archived, date range)\n- 12 profile metrics (avg_score, total_attempts, completion_pct, etc.)\n- Daily trend arrays (daily_dates, daily_avg_scores, etc.)\n- Sorting (avg_score, total_attempts, highest_score)\n- Pagination\n- Filter options (simulation_options, cohort_options, department_options)\n\nResource metadata (names, avatars) should be fetched separately\nvia internal resource handlers using the returned profile IDs.",
+        "description": "Get profile facts data from mv_profile_facts.\n\nThis endpoint fetches filtered chat-grain rows for the dashboard\nheader, leaderboard, and reports with:\n- Filtering (profile, cohort, department, simulation, attempt_type, archived, date range)\n- Sorting (date)\n- Pagination\n- Filter options (simulation_options, cohort_options, department_options)\n\nAll aggregation (profile metrics, daily trends, etc.) is done in Python\nby the consuming artifact endpoints.",
         "operationId": "get_profile_facts_api_v4_views_analytics_profile_facts_get_post",
         "parameters": [
           {
@@ -80161,8 +80161,8 @@
           "sort_by": {
             "type": "string",
             "title": "Sort By",
-            "description": "Sort field: 'avg_score' | 'total_attempts' | 'highest_score'",
-            "default": "avg_score"
+            "description": "Sort field: 'date'",
+            "default": "date"
           },
           "sort_order": {
             "type": "string",
@@ -80172,11 +80172,11 @@
           },
           "page_limit": {
             "type": "integer",
-            "maximum": 10000.0,
+            "maximum": 50000.0,
             "minimum": 1.0,
             "title": "Page Limit",
             "description": "Items per page",
-            "default": 5000
+            "default": 10000
           },
           "page_offset": {
             "type": "integer",
@@ -80198,12 +80198,12 @@
             },
             "type": "array",
             "title": "Items",
-            "description": "Profile facts items (one per profile)"
+            "description": "Profile facts items (one per chat)"
           },
           "total_count": {
             "type": "integer",
             "title": "Total Count",
-            "description": "Total profile count before pagination",
+            "description": "Total count before pagination",
             "default": 0
           },
           "simulation_options": {
@@ -80254,7 +80254,7 @@
         },
         "type": "object",
         "title": "GetProfileFactsResponse",
-        "description": "Response with profile-level aggregated metrics and pagination info."
+        "description": "Response with chat-grain profile facts and pagination info."
       },
       "GetProfileMetricsRequest": {
         "properties": {
@@ -105344,17 +105344,118 @@
       },
       "ProfileFactsItem": {
         "properties": {
+          "chat_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Chat Id"
+          },
+          "attempt_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Attempt Id"
+          },
           "profile_id": {
             "type": "string",
             "format": "uuid",
             "title": "Profile Id"
           },
-          "total_attempts": {
+          "cohort_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cohort Id"
+          },
+          "department_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Id"
+          },
+          "simulation_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Simulation Id"
+          },
+          "scenario_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scenario Id"
+          },
+          "attempt_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Attempt Date"
+          },
+          "grade_percent": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Grade Percent"
+          },
+          "passed": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Passed"
+          },
+          "completed": {
+            "type": "boolean",
+            "title": "Completed",
+            "default": false
+          },
+          "time_taken_seconds": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Time Taken Seconds"
+          },
+          "num_messages_total": {
             "type": "integer",
-            "title": "Total Attempts",
+            "title": "Num Messages Total",
             "default": 0
           },
-          "avg_score": {
+          "avg_response_sec": {
             "anyOf": [
               {
                 "type": "number"
@@ -105363,163 +105464,39 @@
                 "type": "null"
               }
             ],
-            "title": "Avg Score"
+            "title": "Avg Response Sec"
           },
-          "highest_score": {
+          "attempt_type": {
             "anyOf": [
               {
-                "type": "number"
+                "type": "string"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Highest Score"
+            "title": "Attempt Type"
           },
-          "completion_pct": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Completion Pct"
+          "is_archived": {
+            "type": "boolean",
+            "title": "Is Archived",
+            "default": false
           },
-          "first_attempt_pass_rate": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "First Attempt Pass Rate"
-          },
-          "avg_messages_per_session": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Avg Messages Per Session"
-          },
-          "avg_persona_response_sec": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Avg Persona Response Sec"
-          },
-          "session_efficiency": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Session Efficiency"
-          },
-          "total_time_minutes": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Total Time Minutes"
-          },
-          "improvement_rate": {
-            "type": "number",
-            "title": "Improvement Rate",
-            "default": 0.0
-          },
-          "perfect_score_count": {
-            "type": "integer",
-            "title": "Perfect Score Count",
-            "default": 0
-          },
-          "quickest_pass_minutes": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Quickest Pass Minutes"
-          },
-          "daily_dates": {
-            "items": {
-              "type": "string",
-              "format": "date"
-            },
-            "type": "array",
-            "title": "Daily Dates"
-          },
-          "daily_avg_scores": {
-            "items": {
-              "anyOf": [
-                {
-                  "type": "number"
-                },
-                {
-                  "type": "null"
-                }
-              ]
-            },
-            "type": "array",
-            "title": "Daily Avg Scores"
-          },
-          "daily_attempt_counts": {
-            "items": {
-              "type": "integer"
-            },
-            "type": "array",
-            "title": "Daily Attempt Counts"
-          },
-          "daily_completed_counts": {
-            "items": {
-              "type": "integer"
-            },
-            "type": "array",
-            "title": "Daily Completed Counts"
-          },
-          "daily_time_minutes": {
-            "items": {
-              "anyOf": [
-                {
-                  "type": "number"
-                },
-                {
-                  "type": "null"
-                }
-              ]
-            },
-            "type": "array",
-            "title": "Daily Time Minutes"
+          "infinite_mode": {
+            "type": "boolean",
+            "title": "Infinite Mode",
+            "default": false
           }
         },
         "type": "object",
         "required": [
-          "profile_id"
+          "chat_id",
+          "attempt_id",
+          "profile_id",
+          "simulation_id"
         ],
         "title": "ProfileFactsItem",
-        "description": "Profile-level aggregated metrics from mv_profile_facts.\n\nThe query function filters at chat grain then GROUP BY profile_id\nto produce these 12 metrics + daily trend arrays."
+        "description": "Single chat row from mv_profile_facts.\n\nContains chat-grain data with resource IDs and measures.\nAll aggregation (profile metrics, daily trends, etc.) is done in Python."
       },
       "ProfileFlagConfig": {
         "properties": {

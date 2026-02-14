@@ -7,7 +7,8 @@ shapes that can be expanded without changing route wiring.
 
 import json
 from collections import defaultdict
-from datetime import datetime
+from datetime import date, datetime
+from statistics import mean
 
 from app.api.v4.artifacts.leaderboard.types import (
     LeaderboardAccoladeWinner,
@@ -22,6 +23,7 @@ from app.api.v4.artifacts.leaderboard.types import (
 from app.api.v4.views.analytics.attempts.types import AttemptFactsItem
 from app.api.v4.views.analytics.chat_facts.types import ChatFactsItem
 from app.api.v4.views.analytics.daily_metrics.types import DailyMetricsItem
+from app.api.v4.views.analytics.profile_facts.types import ProfileFactsItem
 from app.api.v4.views.analytics.profile_metrics.types import ProfileMetricsItem
 
 
@@ -493,5 +495,374 @@ def build_leaderboard_sections(
             bool(attempts) or bool(profile_rows),
             "Filter IDs sourced from mv_attempt_facts and mv_profile_metrics",
         ),
+        accolade_winners=compute_accolade_winners(row_data),
+    )
+
+
+# ---------------------------------------------------------------------------
+# v2 functions — operate on ProfileFactsItem (chat-grain from mv_profile_facts)
+# ---------------------------------------------------------------------------
+
+
+def _format_date(d: date | None) -> str | None:
+    """Format a date as ISO string."""
+    if d is None:
+        return None
+    return d.isoformat()
+
+
+def build_leaderboard_rows_v2(
+    profile_facts_items: list[ProfileFactsItem],
+    profile_name_by_id: dict[str, str | None] | None = None,
+    sort_by: str = "highest_score",
+    sort_order: str = "desc",
+    rank_offset: int = 0,
+) -> list[LeaderboardDataRow]:
+    """Build leaderboard rows from chat-grain profile facts (mv_profile_facts).
+
+    Aggregates chat-level rows to profile-level metrics entirely in Python.
+    """
+    rows: list[LeaderboardDataRow] = []
+    profile_name_by_id = profile_name_by_id or {}
+
+    # Group items by profile_id
+    items_by_profile: dict[str, list[ProfileFactsItem]] = defaultdict(list)
+    for item in profile_facts_items:
+        items_by_profile[str(item.profile_id)].append(item)
+
+    for profile_id, items in items_by_profile.items():
+        # Sort items chronologically by attempt_date
+        sorted_items = sorted(items, key=lambda x: x.attempt_date or date.min)
+
+        # --- Aggregate profile-level metrics ---
+        attempt_ids = {item.attempt_id for item in items}
+        total_attempts = len(attempt_ids)
+
+        grade_values = [
+            item.grade_percent for item in items if item.grade_percent is not None
+        ]
+        highest_score = max(grade_values) if grade_values else None
+        avg_score = mean(grade_values) if grade_values else None
+
+        msg_counts = [item.num_messages_total for item in items]
+        avg_messages_per_session = mean(msg_counts) if msg_counts else None
+
+        response_secs = [
+            item.avg_response_sec for item in items if item.avg_response_sec is not None
+        ]
+        avg_persona_response_sec = mean(response_secs) if response_secs else None
+
+        time_values = [
+            item.time_taken_seconds
+            for item in items
+            if item.time_taken_seconds is not None
+        ]
+        total_time_minutes = sum(time_values) / 60.0 if time_values else None
+
+        # Improvement rate: compare first half vs second half of grade_percents
+        improvement_rate: float | None = None
+        if len(grade_values) >= 2:
+            # Use sorted_items order (chronological) for grade values
+            chrono_grades = [
+                item.grade_percent
+                for item in sorted_items
+                if item.grade_percent is not None
+            ]
+            if len(chrono_grades) >= 2:
+                mid_g = len(chrono_grades) // 2
+                first_half = chrono_grades[:mid_g]
+                second_half = chrono_grades[mid_g:]
+                if first_half and second_half:
+                    improvement_rate = mean(second_half) - mean(first_half)
+
+        perfect_score_count = sum(
+            1
+            for item in items
+            if item.grade_percent is not None and item.grade_percent >= 100
+        )
+
+        passed_with_time = [
+            item.time_taken_seconds / 60.0
+            for item in items
+            if item.passed and item.time_taken_seconds is not None
+        ]
+        quickest_pass_minutes = min(passed_with_time) if passed_with_time else None
+
+        simulation_ids = list({str(item.simulation_id) for item in items})
+        scenario_ids = list(
+            {str(item.scenario_id) for item in items if item.scenario_id is not None}
+        )
+
+        # --- Build trend data points (chronological) ---
+        score_points = [
+            _json_point(
+                date=_format_date(item.attempt_date),
+                value=_round_int(item.grade_percent),
+                chat_id=str(item.chat_id),
+            )
+            for item in sorted_items
+            if item.grade_percent is not None
+        ]
+        score_trend = list(score_points[-12:])
+
+        top_score = max(
+            (
+                _round_int(item.grade_percent)
+                for item in items
+                if item.grade_percent is not None
+            ),
+            default=0,
+        )
+
+        chat_message_points = [
+            _json_point(
+                date=_format_date(item.attempt_date),
+                value=item.num_messages_total,
+                chat_id=str(item.chat_id),
+            )
+            for item in sorted_items
+            if item.num_messages_total is not None
+        ]
+        chat_message_trend = list(chat_message_points[-12:])
+
+        response_mean = int(round(mean(response_secs))) if response_secs else 0
+        response_points = [
+            _json_point(
+                date=_format_date(item.attempt_date),
+                value=int(round(item.avg_response_sec))
+                if item.avg_response_sec is not None
+                else 0,
+                chat_id=str(item.chat_id),
+            )
+            for item in sorted_items
+        ]
+        response_trend = list(response_points[-12:])
+
+        time_points = [
+            _json_point(
+                date=_format_date(item.attempt_date),
+                value=(
+                    int(round((item.time_taken_seconds or 0) / 60.0))
+                    if item.time_taken_seconds is not None
+                    else 0
+                ),
+                chat_id=str(item.chat_id),
+            )
+            for item in sorted_items
+        ]
+        time_trend = list(time_points[-12:])
+
+        improvement_points = [
+            _json_point(
+                date=_format_date(item.attempt_date),
+                value=_round_int(item.grade_percent),
+                chat_id=str(item.chat_id),
+            )
+            for item in sorted_items
+            if item.grade_percent is not None
+        ]
+        improvement_trend = list(improvement_points[-12:])
+
+        perfect_points = [
+            _json_point(
+                date=_format_date(item.attempt_date),
+                value=1,
+                chat_id=str(item.chat_id),
+            )
+            for item in sorted_items
+            if item.grade_percent is not None and item.grade_percent >= 100
+        ]
+        perfect_trend = list(perfect_points[-12:])
+
+        quickest_points = [
+            _json_point(
+                date=_format_date(item.attempt_date),
+                value=int(round((item.time_taken_seconds or 0) / 60.0)),
+                chat_id=str(item.chat_id),
+            )
+            for item in sorted_items
+            if item.passed and item.time_taken_seconds is not None
+        ]
+        quickest_trend = list(quickest_points[-12:])
+
+        # --- Build metrics entry ---
+        highest_score_avg = (
+            _round_int(highest_score)
+            if highest_score is not None
+            else (_round_int(avg_score) if avg_score is not None else None)
+        )
+        metrics_entry = LeaderboardMetricsEntry(
+            total_attempts=_metric(
+                total_attempts,
+                method="countDistinct",
+                key_field="total_attempts",
+                trend_data=[],
+                data_points=[
+                    _json_point(
+                        date=_format_date(item.attempt_date),
+                        value=1,
+                        attempt_id=str(item.attempt_id),
+                    )
+                    for item in sorted_items
+                ],
+                hover=f"attempts={total_attempts}",
+            ),
+            highest_score_avg=_metric(
+                highest_score_avg,
+                method="max",
+                key_field="highest_score",
+                trend_data=score_trend,
+                data_points=score_points,
+                hover=f"top={top_score}%",
+            ),
+            messages_per_session=_metric(
+                _round_int(avg_messages_per_session)
+                if avg_messages_per_session is not None
+                else None,
+                method="avg",
+                key_field="avg_messages_per_session",
+                trend_data=chat_message_trend,
+                data_points=chat_message_points,
+                hover=f"samples={len(chat_message_points)}",
+            ),
+            persona_response_seconds=_metric(
+                _round_int(avg_persona_response_sec)
+                if avg_persona_response_sec is not None
+                else None,
+                method="avg",
+                key_field="avg_persona_response_sec",
+                trend_data=response_trend,
+                data_points=response_points,
+                hover=f"mean={response_mean}s; lower=better",
+            ),
+            time_spent_minutes=_metric(
+                _round_int(total_time_minutes)
+                if total_time_minutes is not None
+                else None,
+                method="sum",
+                key_field="total_time_minutes",
+                trend_data=time_trend,
+                data_points=time_points,
+                hover=f"total={_round_int(total_time_minutes) or 0} min",
+            ),
+            improvement_rate_per_day=_metric(
+                _round_int(improvement_rate) if improvement_rate is not None else None,
+                method="delta/day",
+                key_field="improvement_rate",
+                trend_data=improvement_trend,
+                data_points=improvement_points,
+                hover="based on best-grade deltas over time",
+            ),
+            perfect_score_count=_metric(
+                perfect_score_count,
+                method="count",
+                key_field="perfect_score_count",
+                trend_data=perfect_trend,
+                data_points=perfect_points,
+                hover=f"perfect={perfect_score_count}",
+            ),
+            quickest_pass_minutes=_metric(
+                _round_int(quickest_pass_minutes)
+                if quickest_pass_minutes is not None
+                else None,
+                method="min",
+                key_field="quickest_pass_minutes",
+                trend_data=quickest_trend,
+                data_points=quickest_points,
+                hover="lower is better",
+            ),
+        )
+        rows.append(
+            LeaderboardDataRow(
+                profile_id=profile_id,
+                name=profile_name_by_id.get(profile_id),
+                simulation_ids=simulation_ids,
+                scenario_ids=scenario_ids,
+                metrics_entry=metrics_entry,
+            )
+        )
+
+    # --- Sort ---
+    sort_key_map = {
+        "highest_score": "highest_score_avg",
+        "highestScore": "highest_score_avg",
+        "total_attempts": "total_attempts",
+        "totalAttempts": "total_attempts",
+        "avg_messages": "messages_per_session",
+        "messagesPerSession": "messages_per_session",
+        "persona_response_seconds": "persona_response_seconds",
+        "personaResponseTimes": "persona_response_seconds",
+        "time_spent_minutes": "time_spent_minutes",
+        "timeSpent": "time_spent_minutes",
+        "improvement_rate_per_day": "improvement_rate_per_day",
+        "improvement": "improvement_rate_per_day",
+        "perfect_score_count": "perfect_score_count",
+        "quickest_pass_minutes": "quickest_pass_minutes",
+    }
+    selected_metric = sort_key_map.get(sort_by, "highest_score_avg")
+    reverse = sort_order.lower() != "asc"
+
+    def _sort_value(row: LeaderboardDataRow) -> float:
+        raw = _metric_value(row, selected_metric)
+        if raw is None:
+            return float("-inf")
+        return float(raw)
+
+    rows.sort(
+        key=lambda r: (
+            _sort_value(r),
+            float(_metric_value(r, "highest_score_avg") or 0),
+            float(_metric_value(r, "total_attempts") or 0),
+            r.profile_id or "",
+        ),
+        reverse=reverse,
+    )
+
+    for i, row in enumerate(rows, start=1):
+        row.rank = rank_offset + i
+    return rows
+
+
+def _compute_header_metrics_v2(
+    profile_facts_items: list[ProfileFactsItem],
+) -> LeaderboardHeaderMetrics:
+    """Compute header metrics from chat-grain profile facts."""
+    total_profiles = len({item.profile_id for item in profile_facts_items})
+    total_attempts = len({item.attempt_id for item in profile_facts_items})
+
+    grade_values = [
+        float(item.grade_percent)
+        for item in profile_facts_items
+        if item.grade_percent is not None
+    ]
+    average_score = round(mean(grade_values), 2) if grade_values else None
+
+    perfect_scores = sum(
+        1
+        for item in profile_facts_items
+        if item.grade_percent is not None and item.grade_percent >= 100
+    )
+
+    return LeaderboardHeaderMetrics(
+        total_profiles=_metric(total_profiles, key_field="profile_id"),
+        total_attempts=_metric(total_attempts, key_field="total_attempts"),
+        average_score=_metric(average_score, key_field="avg_score"),
+        perfect_scores=_metric(perfect_scores, key_field="perfect_score_count"),
+    )
+
+
+def build_leaderboard_sections_v2(
+    profile_facts_items: list[ProfileFactsItem],
+    rows: list[LeaderboardDataRow] | None = None,
+) -> LeaderboardSections:
+    """Build leaderboard section skeleton from mv_profile_facts chat-grain rows."""
+    row_data = rows or []
+    has_data = bool(profile_facts_items)
+    return LeaderboardSections(
+        header_metrics=_compute_header_metrics_v2(profile_facts_items),
+        rankings=_section(has_data, "Derived from mv_profile_facts"),
+        accolades=_section(has_data, "Derived from mv_profile_facts rank metrics"),
+        trends=_section(has_data, "Derived from mv_profile_facts"),
+        filters=_section(has_data, "Filter IDs sourced from mv_profile_facts"),
         accolade_winners=compute_accolade_winners(row_data),
     )

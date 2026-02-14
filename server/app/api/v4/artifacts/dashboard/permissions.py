@@ -17,6 +17,7 @@ from app.api.v4.views.analytics.attempts.types import AttemptFactsItem
 from app.api.v4.views.analytics.chat_facts.types import ChatFactsItem
 from app.api.v4.views.analytics.daily_metrics.types import DailyMetricsItem
 from app.api.v4.views.analytics.first_attempt_pass.types import FirstAttemptPassItem
+from app.api.v4.views.analytics.profile_facts.types import ProfileFactsItem
 from app.api.v4.views.analytics.profile_metrics.types import ProfileMetricsItem
 from app.api.v4.views.analytics.rubric_facts.types import RubricFactsItem
 from app.api.v4.views.analytics.rubric_group_scores.types import RubricGroupScoreItem
@@ -563,6 +564,461 @@ def compute_header_metrics(
             trend_data=total_attempts_trend,
             success_threshold=1,
             warning_threshold=1,
+        ),
+    )
+
+
+def compute_header_metrics_v2(
+    profile_facts_items: list[ProfileFactsItem],
+    simulation_scenario_counts: dict[str, int] | None = None,
+    thresholds: dict[str, int] | None = None,
+) -> DashboardHeaderMetrics:
+    """Compute header metrics from profile_facts chat-grain rows.
+
+    This is the v2 replacement for compute_header_metrics() that derives all
+    10 header metrics from a single mv_profile_facts data source instead of
+    5 separate MVs (attempt_facts, chat_facts, daily_metrics, profile_metrics,
+    first_attempt_pass).
+    """
+    if not profile_facts_items:
+        return DashboardHeaderMetrics(
+            average_score=_empty_header_metric(),
+            completion_percentage=_empty_header_metric(),
+            first_attempt_pass_rate=_empty_header_metric(),
+            highest_score=_empty_header_metric(),
+            messages_per_session=_empty_header_metric(),
+            persona_response_times=_empty_header_metric(),
+            session_efficiency=_empty_header_metric(),
+            stagnation_rate=_empty_header_metric(),
+            time_spent=_empty_header_metric(),
+            total_attempts=_empty_header_metric(),
+        )
+
+    success_threshold, warning_threshold, danger_threshold = _thresholds(thresholds)
+    simulation_scenario_counts = simulation_scenario_counts or {}
+
+    # ── Data preparation ──────────────────────────────────────────────
+
+    # Group items by attempt_date
+    items_by_date: dict[date, list[ProfileFactsItem]] = defaultdict(list)
+    for item in profile_facts_items:
+        if item.attempt_date is not None:
+            items_by_date[item.attempt_date].append(item)
+
+    # Group items by attempt_id for normalized avg score
+    attempt_chat_agg: dict[str, dict[str, Any]] = defaultdict(
+        lambda: {
+            "attempt_date": None,
+            "simulation_id": None,
+            "completed_chats": 0,
+            "graded_chats": 0,
+            "chats_in_attempt": 0,
+            "sum_grade_percent": 0.0,
+        }
+    )
+    for item in profile_facts_items:
+        aid = str(item.attempt_id)
+        a = attempt_chat_agg[aid]
+        a["attempt_date"] = item.attempt_date
+        a["simulation_id"] = str(item.simulation_id)
+        a["chats_in_attempt"] += 1
+        if item.completed:
+            a["completed_chats"] += 1
+        if item.completed and item.grade_percent is not None:
+            a["graded_chats"] += 1
+        if item.grade_percent is not None:
+            a["sum_grade_percent"] += float(item.grade_percent)
+
+    # Normalized avg score per attempt, grouped by date
+    attempt_norm_by_date: dict[date, list[float]] = defaultdict(list)
+    for a in attempt_chat_agg.values():
+        attempt_date = a["attempt_date"]
+        simulation_id = a["simulation_id"]
+        if attempt_date is None or simulation_id is None:
+            continue
+        expected_from_sim = int(simulation_scenario_counts.get(simulation_id, 0))
+        chats_in_attempt = int(a["chats_in_attempt"])
+        expected = max(expected_from_sim, chats_in_attempt)
+        completed_chats = int(a["completed_chats"])
+        graded_chats = int(a["graded_chats"])
+        if expected > 0 and completed_chats > 0 and completed_chats == graded_chats:
+            norm = float(a["sum_grade_percent"]) / float(expected)
+            attempt_norm_by_date[attempt_date].append(norm)
+
+    # First attempt pass: for each profile, find earliest completed chat
+    profile_first_attempts: dict[str, ProfileFactsItem] = {}
+    for item in profile_facts_items:
+        if not item.completed:
+            continue
+        pid = str(item.profile_id)
+        existing = profile_first_attempts.get(pid)
+        if existing is None:
+            profile_first_attempts[pid] = item
+        else:
+            # Compare by attempt_date first, then chat_id for tie-breaking
+            if item.attempt_date is not None and (
+                existing.attempt_date is None
+                or item.attempt_date < existing.attempt_date
+                or (
+                    item.attempt_date == existing.attempt_date
+                    and str(item.chat_id) < str(existing.chat_id)
+                )
+            ):
+                profile_first_attempts[pid] = item
+
+    # First attempt pass by date
+    first_attempt_by_date: dict[date, dict[str, float]] = defaultdict(
+        lambda: {"passed": 0.0, "total": 0.0}
+    )
+    for item in profile_first_attempts.values():
+        if item.attempt_date is not None:
+            d = item.attempt_date
+            first_attempt_by_date[d]["total"] += 1.0
+            if item.passed:
+                first_attempt_by_date[d]["passed"] += 1.0
+
+    # ── Build trend data ──────────────────────────────────────────────
+
+    all_dates = sorted(items_by_date.keys())
+
+    avg_score_trend = []
+    completion_trend = []
+    first_pass_trend = []
+    messages_trend = []
+    session_efficiency_trend = []
+    time_spent_trend = []
+    total_attempts_trend = []
+    highest_score_trend = []
+    response_time_trend = []
+
+    for d in all_dates:
+        day_items = items_by_date[d]
+
+        # total_attempts: count distinct attempt_ids this date
+        day_attempt_ids = {str(item.attempt_id) for item in day_items}
+        attempts_count = len(day_attempt_ids)
+
+        # completion: count completed / total chats
+        completed_count = sum(1 for item in day_items if item.completed)
+        completion_val = (
+            (completed_count / len(day_items)) * 100 if len(day_items) > 0 else None
+        )
+
+        # avg_score: from normalized attempt scores
+        avg_score_vals = attempt_norm_by_date.get(d, [])
+        avg_score_val = mean(avg_score_vals) if avg_score_vals else None
+
+        # first_attempt_pass_rate
+        first_day = first_attempt_by_date.get(d)
+        first_pass_val = (
+            (first_day["passed"] / first_day["total"]) * 100
+            if first_day and first_day["total"] > 0
+            else None
+        )
+
+        # highest_score: max grade_percent for this date
+        day_grades = [
+            float(item.grade_percent)
+            for item in day_items
+            if item.grade_percent is not None
+        ]
+        highest_score_val = max(day_grades) if day_grades else None
+
+        # messages_per_session: avg num_messages_total
+        day_messages = [float(item.num_messages_total) for item in day_items]
+        avg_messages_val = mean(day_messages) if day_messages else None
+
+        # persona_response_times: avg of avg_response_sec
+        day_response_secs = [
+            float(item.avg_response_sec)
+            for item in day_items
+            if item.avg_response_sec is not None
+        ]
+        response_time_val = mean(day_response_secs) if day_response_secs else None
+
+        # session_efficiency: avg_score * (1 - min(1, avg_minutes / 120)), clamped 0..100
+        day_scores = [
+            float(item.grade_percent)
+            for item in day_items
+            if item.grade_percent is not None
+        ]
+        day_minutes = [
+            float(item.time_taken_seconds) / 60.0
+            for item in day_items
+            if item.time_taken_seconds is not None
+        ]
+        session_efficiency_val = None
+        if day_scores and day_minutes:
+            avg_score_day = mean(day_scores)
+            avg_min_day = mean(day_minutes)
+            session_efficiency_val = max(
+                0.0,
+                min(100.0, avg_score_day * (1.0 - min(1.0, avg_min_day / 120.0))),
+            )
+
+        # time_spent: avg(min(time_taken_seconds/60, 30))
+        time_spent_min_val = (
+            mean([min(m, 30.0) for m in day_minutes]) if day_minutes else None
+        )
+
+        avg_score_trend.append(
+            {
+                "date": _iso(d),
+                "value": _round2(avg_score_val),
+                "count": len(avg_score_vals),
+            }
+        )
+        completion_trend.append(
+            {
+                "date": _iso(d),
+                "value": _round2(completion_val),
+                "count": len(day_items),
+            }
+        )
+        first_pass_trend.append(
+            {
+                "date": _iso(d),
+                "value": _round2(first_pass_val),
+                "count": completed_count,
+            }
+        )
+        messages_trend.append(
+            {
+                "date": _iso(d),
+                "value": _round2(avg_messages_val),
+                "count": len(day_items),
+            }
+        )
+        session_efficiency_trend.append(
+            {
+                "date": _iso(d),
+                "value": _round2(session_efficiency_val),
+                "count": attempts_count,
+            }
+        )
+        time_spent_trend.append(
+            {
+                "date": _iso(d),
+                "value": _round2(time_spent_min_val),
+                "count": attempts_count,
+            }
+        )
+        total_attempts_trend.append(
+            {"date": _iso(d), "value": float(attempts_count), "count": attempts_count}
+        )
+        highest_score_trend.append(
+            {
+                "date": _iso(d),
+                "value": _round2(highest_score_val),
+                "count": attempts_count,
+            }
+        )
+        response_time_trend.append(
+            {
+                "date": _iso(d),
+                "value": _round2(response_time_val),
+                "count": len(day_response_secs),
+            }
+        )
+
+    # Stagnation trend: compare consecutive avg_score trend points
+    stagnation_trend = []
+    prev_score: float | None = None
+    for point in avg_score_trend:
+        cur = point["value"]
+        if cur is None or prev_score is None:
+            stagnation_val = None
+        else:
+            stagnation_val = 100.0 if cur <= prev_score else 0.0
+        stagnation_trend.append(
+            {"date": point["date"], "value": _round2(stagnation_val), "count": 1}
+        )
+        if cur is not None:
+            prev_score = cur
+
+    # ── Overall values ────────────────────────────────────────────────
+
+    # 1. total_attempts
+    total_attempts_value = len({str(item.attempt_id) for item in profile_facts_items})
+
+    # 2. average_score (normalized)
+    all_norms = [v for vals in attempt_norm_by_date.values() for v in vals]
+    average_score_value = _round2(mean(all_norms)) if all_norms else None
+
+    # 3. completion_percentage
+    completion_pct_value = _round2(
+        (
+            sum(1 for item in profile_facts_items if item.completed)
+            / len(profile_facts_items)
+        )
+        * 100
+    )
+
+    # 4. first_attempt_pass_rate
+    first_total = len(profile_first_attempts)
+    first_passed = sum(1 for item in profile_first_attempts.values() if item.passed)
+    first_attempt_pass_rate_value = _round2(
+        (first_passed / first_total * 100.0) if first_total > 0 else None
+    )
+
+    # 5. highest_score
+    highest_score_value = _round2(
+        max(
+            (
+                float(item.grade_percent)
+                for item in profile_facts_items
+                if item.grade_percent is not None
+            ),
+            default=None,
+        )
+    )
+
+    # 6. messages_per_session
+    messages_per_session_value = _round2(
+        mean([float(item.num_messages_total) for item in profile_facts_items])
+        if profile_facts_items
+        else None
+    )
+
+    # 7. persona_response_times
+    response_secs = [
+        float(item.avg_response_sec)
+        for item in profile_facts_items
+        if item.avg_response_sec is not None
+    ]
+    persona_response_time_value = _round2(
+        mean(response_secs) if response_secs else None
+    )
+
+    # 8. session_efficiency
+    all_scores = [
+        float(item.grade_percent)
+        for item in profile_facts_items
+        if item.grade_percent is not None
+    ]
+    all_minutes = [
+        float(item.time_taken_seconds) / 60.0
+        for item in profile_facts_items
+        if item.time_taken_seconds is not None
+    ]
+    session_efficiency_value = None
+    if all_scores and all_minutes:
+        avg_score_all = mean(all_scores)
+        avg_minutes_per_session = mean(all_minutes)
+        session_efficiency_value = _round2(
+            max(
+                0.0,
+                min(
+                    100.0,
+                    avg_score_all * (1.0 - min(1.0, avg_minutes_per_session / 120.0)),
+                ),
+            )
+        )
+
+    # 9. time_spent: avg(min(time_taken_seconds/60, 30))
+    time_spent_minutes_value = _round2(
+        mean([min(m, 30.0) for m in all_minutes]) if all_minutes else None
+    )
+
+    # 10. stagnation_rate
+    stagnation_rate_value = _round2(
+        mean([p["value"] for p in stagnation_trend if p["value"] is not None])
+        if any(p["value"] is not None for p in stagnation_trend)
+        else None
+    )
+
+    # ── Build metric objects ──────────────────────────────────────────
+
+    def metric(
+        value: float | int | None,
+        trend_data: list[dict],
+        success_threshold_val: float,
+        warning_threshold_val: float,
+        lower_is_better: bool = False,
+    ) -> DashboardHeaderMetric:
+        trend_values = [p["value"] for p in trend_data]
+        has_data = value is not None and any(v is not None for v in trend_values)
+        return DashboardHeaderMetric(
+            current_value=value if value is not None else 0,
+            trend_data=trend_data,
+            has_data=has_data,
+            trend_analysis=_build_trend_analysis(
+                trend_values=trend_values, lower_is_better=lower_is_better
+            ),
+            status=(
+                _status_from_thresholds(
+                    value=value,
+                    success_threshold=success_threshold_val,
+                    warning_threshold=warning_threshold_val,
+                    lower_is_better=lower_is_better,
+                )
+                if value is not None
+                else "neutral"
+            ),
+        )
+
+    return DashboardHeaderMetrics(
+        average_score=metric(
+            value=average_score_value,
+            trend_data=avg_score_trend,
+            success_threshold_val=success_threshold,
+            warning_threshold_val=warning_threshold,
+        ),
+        completion_percentage=metric(
+            value=completion_pct_value,
+            trend_data=completion_trend,
+            success_threshold_val=success_threshold,
+            warning_threshold_val=warning_threshold,
+        ),
+        first_attempt_pass_rate=metric(
+            value=first_attempt_pass_rate_value,
+            trend_data=first_pass_trend,
+            success_threshold_val=success_threshold,
+            warning_threshold_val=warning_threshold,
+        ),
+        highest_score=metric(
+            value=highest_score_value,
+            trend_data=highest_score_trend,
+            success_threshold_val=success_threshold,
+            warning_threshold_val=warning_threshold,
+        ),
+        messages_per_session=metric(
+            value=messages_per_session_value,
+            trend_data=messages_trend,
+            success_threshold_val=success_threshold,
+            warning_threshold_val=warning_threshold,
+        ),
+        persona_response_times=metric(
+            value=persona_response_time_value,
+            trend_data=response_time_trend,
+            success_threshold_val=danger_threshold,
+            warning_threshold_val=warning_threshold,
+            lower_is_better=True,
+        ),
+        session_efficiency=metric(
+            value=session_efficiency_value,
+            trend_data=session_efficiency_trend,
+            success_threshold_val=success_threshold,
+            warning_threshold_val=warning_threshold,
+        ),
+        stagnation_rate=metric(
+            value=stagnation_rate_value,
+            trend_data=stagnation_trend,
+            success_threshold_val=danger_threshold,
+            warning_threshold_val=warning_threshold,
+            lower_is_better=True,
+        ),
+        time_spent=metric(
+            value=time_spent_minutes_value,
+            trend_data=time_spent_trend,
+            success_threshold_val=success_threshold,
+            warning_threshold_val=warning_threshold,
+        ),
+        total_attempts=metric(
+            value=total_attempts_value,
+            trend_data=total_attempts_trend,
+            success_threshold_val=1,
+            warning_threshold_val=1,
         ),
     )
 

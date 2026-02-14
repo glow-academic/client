@@ -26081,7 +26081,7 @@ class GetAnalyticsProfileFactsViewSqlParams(BaseModel):
     date_to: date | None = None
     sort_by: str | None = None
     sort_order: str | None = None
-    page_limit: int | None = 5000
+    page_limit: int | None = 10000
     page_offset: int | None = 0
 
     def to_tuple(self) -> tuple[Any, ...]:
@@ -26102,24 +26102,23 @@ class GetAnalyticsProfileFactsViewSqlParams(BaseModel):
 
 
 class QGetAnalyticsProfileFactsViewV4Item(BaseModel):
+    chat_id: UUID | None
+    attempt_id: UUID | None
     profile_id: UUID | None
-    total_attempts: int | None
-    avg_score: float | None
-    highest_score: float | None
-    completion_pct: float | None
-    first_attempt_pass_rate: float | None
-    avg_messages_per_session: float | None
-    avg_persona_response_sec: float | None
-    session_efficiency: float | None
-    total_time_minutes: float | None
-    improvement_rate: float | None
-    perfect_score_count: int | None
-    quickest_pass_minutes: float | None
-    daily_dates: list[str] | None
-    daily_avg_scores: list[float] | None
-    daily_attempt_counts: list[int] | None
-    daily_completed_counts: list[int] | None
-    daily_time_minutes: list[float] | None
+    cohort_id: UUID | None
+    department_id: UUID | None
+    simulation_id: UUID | None
+    scenario_id: UUID | None
+    attempt_date: str | None
+    grade_percent: float | None
+    passed: bool | None
+    completed: bool | None
+    time_taken_seconds: int | None
+    num_messages_total: int | None
+    avg_response_sec: float | None
+    attempt_type: str | None
+    is_archived: bool | None
+    infinite_mode: bool | None
 
 
 class QGetAnalyticsProfileFactsViewV4Option(BaseModel):
@@ -26147,7 +26146,7 @@ class GetAnalyticsProfileFactsViewApiRequest(BaseModel):
     date_to: date | None = None
     sort_by: str | None = None
     sort_order: str | None = None
-    page_limit: int | None = 5000
+    page_limit: int | None = 10000
     page_offset: int | None = 0
 
 

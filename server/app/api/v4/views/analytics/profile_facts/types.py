@@ -7,35 +7,38 @@ from pydantic import BaseModel, Field
 
 
 class ProfileFactsItem(BaseModel):
-    """Profile-level aggregated metrics from mv_profile_facts.
+    """Single chat row from mv_profile_facts.
 
-    The query function filters at chat grain then GROUP BY profile_id
-    to produce these 12 metrics + daily trend arrays.
+    Contains chat-grain data with resource IDs and measures.
+    All aggregation (profile metrics, daily trends, etc.) is done in Python.
     """
 
-    # Profile key
+    # Primary key
+    chat_id: UUID
+
+    # Resource IDs
+    attempt_id: UUID
     profile_id: UUID
+    cohort_id: UUID | None = None
+    department_id: UUID | None = None
+    simulation_id: UUID
+    scenario_id: UUID | None = None
 
-    # 12 profile metrics
-    total_attempts: int = 0
-    avg_score: float | None = None
-    highest_score: float | None = None
-    completion_pct: float | None = None
-    first_attempt_pass_rate: float | None = None
-    avg_messages_per_session: float | None = None
-    avg_persona_response_sec: float | None = None
-    session_efficiency: float | None = None
-    total_time_minutes: float | None = None
-    improvement_rate: float = 0.0
-    perfect_score_count: int = 0
-    quickest_pass_minutes: float | None = None
+    # Timestamps
+    attempt_date: date | None = None
 
-    # Daily trend arrays
-    daily_dates: list[date] = Field(default_factory=list)
-    daily_avg_scores: list[float | None] = Field(default_factory=list)
-    daily_attempt_counts: list[int] = Field(default_factory=list)
-    daily_completed_counts: list[int] = Field(default_factory=list)
-    daily_time_minutes: list[float | None] = Field(default_factory=list)
+    # Measures
+    grade_percent: float | None = None
+    passed: bool | None = None
+    completed: bool = False
+    time_taken_seconds: int | None = None
+    num_messages_total: int = 0
+    avg_response_sec: float | None = None
+
+    # Filters
+    attempt_type: str | None = None  # 'general' | 'practice'
+    is_archived: bool = False
+    infinite_mode: bool = False
 
 
 class FilterOption(BaseModel):
@@ -72,26 +75,21 @@ class GetProfileFactsRequest(BaseModel):
     )
 
     # Sorting
-    sort_by: str = Field(
-        default="avg_score",
-        description="Sort field: 'avg_score' | 'total_attempts' | 'highest_score'",
-    )
+    sort_by: str = Field(default="date", description="Sort field: 'date'")
     sort_order: str = Field(default="desc", description="Sort order: 'asc' | 'desc'")
 
     # Pagination
-    page_limit: int = Field(default=5000, description="Items per page", ge=1, le=10000)
+    page_limit: int = Field(default=10000, description="Items per page", ge=1, le=50000)
     page_offset: int = Field(default=0, description="Pagination offset", ge=0)
 
 
 class GetProfileFactsResponse(BaseModel):
-    """Response with profile-level aggregated metrics and pagination info."""
+    """Response with chat-grain profile facts and pagination info."""
 
     items: list[ProfileFactsItem] = Field(
-        default_factory=list, description="Profile facts items (one per profile)"
+        default_factory=list, description="Profile facts items (one per chat)"
     )
-    total_count: int = Field(
-        default=0, description="Total profile count before pagination"
-    )
+    total_count: int = Field(default=0, description="Total count before pagination")
 
     # Filter options (for dropdowns)
     simulation_options: list[FilterOption] | None = Field(

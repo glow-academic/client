@@ -1,15 +1,16 @@
 -- ============================================================================
 -- Query: get_analytics_profile_facts_view
--- Purpose: Fetch profile-level aggregated metrics from mv_profile_facts
+-- Purpose: Fetch filtered chat-grain rows from mv_profile_facts
 -- Section: VIEWS/ANALYTICS/PROFILE_FACTS
 --
 -- Includes:
--- - Filtering at chat grain (profile, cohort, department, simulation, attempt_type, archived, date range)
--- - GROUP BY profile_id to produce 12 profile metrics
--- - Daily trend arrays (daily_dates, daily_avg_scores, daily_attempt_counts, daily_completed_counts, daily_time_minutes)
+-- - Filtering (profile, cohort, department, simulation, attempt_type, archived, date range)
+-- - Sorting (date)
+-- - Pagination
 -- - Filter options (simulation_options, cohort_options, department_options)
 --
--- Note: Returns resource IDs only. Metadata (names, avatars) fetched via internal handlers.
+-- Note: Returns chat-grain rows with resource IDs only.
+-- All aggregation (profile metrics, daily trends, etc.) is done in Python.
 -- ============================================================================
 
 -- ============================================================================
@@ -52,31 +53,34 @@ END $$;
 -- Step 3: Create composite types
 -- ============================================================================
 
--- Profile-level aggregated metrics item
+-- Chat-grain profile facts item with all MV columns
 CREATE TYPE types.q_get_analytics_profile_facts_view_v4_item AS (
-    -- Profile key
+    -- Primary key
+    chat_id uuid,
+
+    -- Resource IDs
+    attempt_id uuid,
     profile_id uuid,
+    cohort_id uuid,
+    department_id uuid,
+    simulation_id uuid,
+    scenario_id uuid,
 
-    -- 12 profile metrics
-    total_attempts int,
-    avg_score numeric,
-    highest_score numeric,
-    completion_pct numeric,
-    first_attempt_pass_rate numeric,
-    avg_messages_per_session numeric,
-    avg_persona_response_sec numeric,
-    session_efficiency numeric,
-    total_time_minutes numeric,
-    improvement_rate numeric,
-    perfect_score_count int,
-    quickest_pass_minutes numeric,
+    -- Timestamps
+    attempt_date date,
 
-    -- Daily trend arrays
-    daily_dates date[],
-    daily_avg_scores numeric[],
-    daily_attempt_counts int[],
-    daily_completed_counts int[],
-    daily_time_minutes numeric[]
+    -- Measures
+    grade_percent numeric,
+    passed boolean,
+    completed boolean,
+    time_taken_seconds int,
+    num_messages_total int,
+    avg_response_sec numeric,
+
+    -- Filters
+    attempt_type text,
+    is_archived boolean,
+    infinite_mode boolean
 );
 
 -- Filter option type for dropdowns
@@ -101,10 +105,10 @@ CREATE OR REPLACE FUNCTION api_get_analytics_profile_facts_view_v4(
     date_from date DEFAULT NULL,
     date_to date DEFAULT NULL,
     -- Sorting
-    sort_by text DEFAULT 'avg_score',
+    sort_by text DEFAULT 'date',
     sort_order text DEFAULT 'desc',
     -- Pagination
-    page_limit int DEFAULT 5000,
+    page_limit int DEFAULT 10000,
     page_offset int DEFAULT 0
 )
 RETURNS TABLE (
@@ -118,7 +122,7 @@ LANGUAGE sql
 STABLE
 AS $$
     WITH
-    -- Apply all filters at chat grain
+    -- Apply all filters to mv_profile_facts
     filtered AS (
         SELECT
             pf.chat_id,
@@ -127,6 +131,7 @@ AS $$
             pf.cohort_id,
             pf.department_id,
             pf.simulation_id,
+            pf.scenario_id,
             pf.attempt_date,
             pf.grade_percent,
             pf.passed,
@@ -135,7 +140,8 @@ AS $$
             pf.num_messages_total,
             pf.avg_response_sec,
             pf.attempt_type,
-            pf.is_archived
+            pf.is_archived,
+            pf.infinite_mode
         FROM mv_profile_facts pf
         WHERE
             -- Profile filter
@@ -154,175 +160,21 @@ AS $$
             AND (date_from IS NULL OR pf.attempt_date >= date_from)
             AND (date_to IS NULL OR pf.attempt_date <= date_to)
     ),
-    -- First attempt per profile (for first_attempt_pass_rate)
-    first_attempts AS (
-        SELECT DISTINCT ON (f.profile_id)
-            f.profile_id,
-            f.passed AS first_attempt_passed
-        FROM filtered f
-        WHERE f.completed = TRUE
-        ORDER BY f.profile_id, f.attempt_date, f.chat_id
-    ),
-    -- Quickest passing attempt per profile
-    quickest_pass AS (
-        SELECT DISTINCT ON (f.profile_id)
-            f.profile_id,
-            f.time_taken_seconds AS quickest_pass_seconds
-        FROM filtered f
-        WHERE f.passed = TRUE
-          AND f.time_taken_seconds IS NOT NULL
-          AND f.time_taken_seconds > 0
-        ORDER BY f.profile_id, f.time_taken_seconds
-    ),
-    -- Improvement rate: comparing first half vs second half of attempts
-    improvement_calc AS (
-        SELECT
-            profile_id,
-            ROUND(
-                AVG(CASE WHEN rn > cnt / 2 THEN grade_percent ELSE NULL END) -
-                AVG(CASE WHEN rn <= cnt / 2 THEN grade_percent ELSE NULL END),
-                2
-            ) AS improvement_rate
-        FROM (
-            SELECT
-                f.profile_id,
-                f.grade_percent,
-                ROW_NUMBER() OVER (
-                    PARTITION BY f.profile_id
-                    ORDER BY f.attempt_date, f.chat_id
-                ) AS rn,
-                COUNT(*) OVER (
-                    PARTITION BY f.profile_id
-                ) AS cnt
-            FROM filtered f
-            WHERE f.grade_percent IS NOT NULL
-        ) ranked
-        WHERE cnt >= 2
-        GROUP BY profile_id
-    ),
-    -- Session efficiency: score per minute
-    efficiency_calc AS (
-        SELECT
-            f.profile_id,
-            ROUND(
-                AVG(
-                    CASE
-                        WHEN f.time_taken_seconds > 0 AND f.grade_percent IS NOT NULL
-                        THEN f.grade_percent / (f.time_taken_seconds / 60.0)
-                        ELSE NULL
-                    END
-                ),
-                2
-            ) AS session_efficiency
-        FROM filtered f
-        WHERE f.time_taken_seconds > 0
-        GROUP BY f.profile_id
-    ),
-    -- Daily trend data per profile
-    daily_trends AS (
-        SELECT
-            f.profile_id,
-            ARRAY_AGG(d.day ORDER BY d.day) AS daily_dates,
-            ARRAY_AGG(d.avg_score ORDER BY d.day) AS daily_avg_scores,
-            ARRAY_AGG(d.attempt_count ORDER BY d.day) AS daily_attempt_counts,
-            ARRAY_AGG(d.completed_count ORDER BY d.day) AS daily_completed_counts,
-            ARRAY_AGG(d.time_minutes ORDER BY d.day) AS daily_time_minutes
-        FROM (SELECT DISTINCT profile_id FROM filtered) f
-        CROSS JOIN LATERAL (
-            SELECT
-                fd.attempt_date AS day,
-                ROUND(AVG(fd.grade_percent) FILTER (WHERE fd.grade_percent IS NOT NULL), 2) AS avg_score,
-                COUNT(DISTINCT fd.attempt_id)::int AS attempt_count,
-                COUNT(*) FILTER (WHERE fd.completed = TRUE)::int AS completed_count,
-                ROUND(COALESCE(SUM(fd.time_taken_seconds) FILTER (WHERE fd.time_taken_seconds IS NOT NULL), 0)::numeric / 60, 2) AS time_minutes
-            FROM filtered fd
-            WHERE fd.profile_id = f.profile_id
-              AND fd.attempt_date IS NOT NULL
-            GROUP BY fd.attempt_date
-        ) d
-        GROUP BY f.profile_id
-    ),
-    -- Aggregate to profile level
-    profile_agg AS (
-        SELECT
-            f.profile_id,
-
-            -- 12 profile metrics
-            COUNT(DISTINCT f.attempt_id)::int AS total_attempts,
-            ROUND(AVG(f.grade_percent) FILTER (WHERE f.grade_percent IS NOT NULL), 2) AS avg_score,
-            MAX(f.grade_percent) AS highest_score,
-            ROUND(
-                (COUNT(*) FILTER (WHERE f.completed = TRUE)::numeric /
-                 NULLIF(COUNT(*)::numeric, 0)) * 100,
-                2
-            ) AS completion_pct,
-            CASE
-                WHEN fa.first_attempt_passed = TRUE THEN 100.0
-                WHEN fa.first_attempt_passed = FALSE THEN 0.0
-                ELSE NULL
-            END AS first_attempt_pass_rate,
-            ROUND(AVG(f.num_messages_total)::numeric, 2) AS avg_messages_per_session,
-            ROUND(
-                AVG(f.avg_response_sec) FILTER (WHERE f.avg_response_sec IS NOT NULL),
-                2
-            ) AS avg_persona_response_sec,
-            ec.session_efficiency,
-            ROUND(
-                COALESCE(SUM(f.time_taken_seconds) FILTER (WHERE f.time_taken_seconds IS NOT NULL), 0)::numeric / 60,
-                2
-            ) AS total_time_minutes,
-            COALESCE(ic.improvement_rate, 0) AS improvement_rate,
-            COUNT(*) FILTER (WHERE f.grade_percent = 100)::int AS perfect_score_count,
-            ROUND(qp.quickest_pass_seconds::numeric / 60, 2) AS quickest_pass_minutes,
-
-            -- Daily trends
-            dt.daily_dates,
-            dt.daily_avg_scores,
-            dt.daily_attempt_counts,
-            dt.daily_completed_counts,
-            dt.daily_time_minutes
-
-        FROM filtered f
-        LEFT JOIN first_attempts fa ON fa.profile_id = f.profile_id
-        LEFT JOIN quickest_pass qp ON qp.profile_id = f.profile_id
-        LEFT JOIN improvement_calc ic ON ic.profile_id = f.profile_id
-        LEFT JOIN efficiency_calc ec ON ec.profile_id = f.profile_id
-        LEFT JOIN daily_trends dt ON dt.profile_id = f.profile_id
-        GROUP BY
-            f.profile_id,
-            fa.first_attempt_passed,
-            ec.session_efficiency,
-            ic.improvement_rate,
-            qp.quickest_pass_seconds,
-            dt.daily_dates,
-            dt.daily_avg_scores,
-            dt.daily_attempt_counts,
-            dt.daily_completed_counts,
-            dt.daily_time_minutes
-    ),
-    -- Count total profiles before pagination
+    -- Count total before pagination
     counted AS (
-        SELECT COUNT(*)::int AS total FROM profile_agg
+        SELECT COUNT(*)::int AS total FROM filtered
     ),
-    -- Sort and paginate profiles
+    -- Sort and paginate
     sorted AS (
         SELECT *
-        FROM profile_agg
+        FROM filtered
         ORDER BY
-            CASE WHEN sort_by = 'avg_score' AND sort_order = 'desc'
-                 THEN avg_score END DESC NULLS LAST,
-            CASE WHEN sort_by = 'avg_score' AND sort_order = 'asc'
-                 THEN avg_score END ASC NULLS LAST,
-            CASE WHEN sort_by = 'total_attempts' AND sort_order = 'desc'
-                 THEN total_attempts END DESC NULLS LAST,
-            CASE WHEN sort_by = 'total_attempts' AND sort_order = 'asc'
-                 THEN total_attempts END ASC NULLS LAST,
-            CASE WHEN sort_by = 'highest_score' AND sort_order = 'desc'
-                 THEN highest_score END DESC NULLS LAST,
-            CASE WHEN sort_by = 'highest_score' AND sort_order = 'asc'
-                 THEN highest_score END ASC NULLS LAST,
-            -- Secondary sort by profile_id for stability
-            profile_id
+            CASE WHEN sort_by = 'date' AND sort_order = 'desc'
+                 THEN attempt_date END DESC NULLS LAST,
+            CASE WHEN sort_by = 'date' AND sort_order = 'asc'
+                 THEN attempt_date END ASC NULLS LAST,
+            -- Secondary sort by chat_id for stability
+            chat_id DESC
         LIMIT page_limit
         OFFSET page_offset
     ),
@@ -331,24 +183,23 @@ AS $$
         SELECT COALESCE(
             ARRAY_AGG(
                 (
+                    chat_id,
+                    attempt_id,
                     profile_id,
-                    total_attempts,
-                    avg_score,
-                    highest_score,
-                    completion_pct,
-                    first_attempt_pass_rate,
-                    avg_messages_per_session,
-                    avg_persona_response_sec,
-                    session_efficiency,
-                    total_time_minutes,
-                    improvement_rate,
-                    perfect_score_count,
-                    quickest_pass_minutes,
-                    daily_dates,
-                    daily_avg_scores,
-                    daily_attempt_counts,
-                    daily_completed_counts,
-                    daily_time_minutes
+                    cohort_id,
+                    department_id,
+                    simulation_id,
+                    scenario_id,
+                    attempt_date,
+                    grade_percent,
+                    passed,
+                    completed,
+                    time_taken_seconds,
+                    num_messages_total,
+                    avg_response_sec,
+                    attempt_type,
+                    is_archived,
+                    infinite_mode
                 )::types.q_get_analytics_profile_facts_view_v4_item
             ),
             ARRAY[]::types.q_get_analytics_profile_facts_view_v4_item[]

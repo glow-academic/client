@@ -5,8 +5,7 @@
 -- Filter: None at MV level - all data included (filtering done at query time)
 --
 -- Purpose: Supports header metrics, leaderboard, and report sections.
---   The query function aggregates to profile level (GROUP BY profile_id)
---   to compute 12 profile metrics + daily trend arrays.
+--   Consumers fetch filtered chat-grain rows and aggregate in Python.
 --
 -- Unique value vs other facts MVs: joins to simulation_messages_entry + messages_entry
 --   to provide num_messages_total and avg_response_sec per chat.
@@ -56,6 +55,19 @@ latest_grade AS (
     WHERE g.active = TRUE
     ORDER BY g.chat_id, g.created_at DESC
 ),
+chat_scope AS (
+    SELECT
+        c.id AS chat_id,
+        (ARRAY_AGG(tsc.scenarios_id ORDER BY tsc.created_at)
+            FILTER (WHERE tsc.scenarios_id IS NOT NULL))[1] AS scenario_id
+    FROM simulation_chats_entry c
+    LEFT JOIN training_bundle_departments_entry tbd
+        ON tbd.id = c.training_bundle_department_id AND tbd.active = TRUE
+    LEFT JOIN training_bundle_departments_scenarios_connection tsc
+        ON tsc.training_bundle_department_id = tbd.id AND tsc.active = TRUE
+    WHERE c.active = TRUE
+    GROUP BY c.id
+),
 message_stats AS (
     SELECT
         sm.chat_id,
@@ -82,6 +94,7 @@ SELECT
     acc.cohorts_id AS cohort_id,
     adc.departments_id AS department_id,
     asc_conn.simulations_id AS simulation_id,
+    cs.scenario_id,
 
     -- Timestamps
     (a.created_at AT TIME ZONE 'UTC')::date AS attempt_date,
@@ -102,7 +115,8 @@ SELECT
 
     -- Filters
     CASE WHEN COALESCE(a.practice, FALSE) THEN 'practice' ELSE 'general' END AS attempt_type,
-    COALESCE(a.archived, FALSE) AS is_archived
+    COALESCE(a.archived, FALSE) AS is_archived,
+    COALESCE(a.infinite_mode, FALSE) AS infinite_mode
 
 FROM simulation_chats_entry c
 JOIN simulation_attempts_entry a ON a.id = c.attempt_id
@@ -110,6 +124,7 @@ JOIN simulation_attempts_simulations_connection asc_conn ON asc_conn.attempt_id 
 JOIN simulation_attempts_profiles_connection apc ON apc.attempt_id = a.id
 LEFT JOIN simulation_attempts_cohorts_connection acc ON acc.attempt_id = a.id
 LEFT JOIN simulation_attempts_departments_connection adc ON adc.attempt_id = a.id
+LEFT JOIN chat_scope cs ON cs.chat_id = c.id
 LEFT JOIN latest_grade lg ON lg.chat_id = c.id
 LEFT JOIN message_stats ms ON ms.chat_id = c.id
 WHERE c.active = TRUE

@@ -150,9 +150,10 @@ async def _handle_persona_run_complete(sid: str, data: dict[str, Any]) -> None:
         # All agents finished - emit simplified persona_generation_complete
         persona_id: str | None = None
 
-        # Auto-save persona if we have a profile
+        # Auto-save persona if save=True (default) and we have a profile
+        should_save = data.get("save", True)
         profile_id_str = await find_profile_by_socket(sid)
-        if profile_id_str and group_id_str:
+        if should_save and profile_id_str and group_id_str:
             try:
                 profile_id = uuid.UUID(profile_id_str)
                 group_id = uuid.UUID(group_id_str)

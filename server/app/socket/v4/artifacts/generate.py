@@ -81,6 +81,7 @@ class GenerateArtifactPayload(BaseModel):
     tools: list[dict[str, Any]] | None = None
     tool_timeout_seconds: float = 60.0
     file_path: str | None = None
+    save: bool = True
     mime_type: str | None = None
     file_size: int | None = None
     upload_id: str | None = None
@@ -897,6 +898,7 @@ async def _generate_artifact_impl(
                 "output_text_tokens": total_output_tokens,
                 "assistant_output": final_assistant_output,
                 "tool_results": all_tool_results,
+                "save": data.save,
             },
         )
 

@@ -38,6 +38,7 @@ from app.api.v4.views.analytics.first_attempt_pass.types import (
     FirstAttemptPassItem,
     GetFirstAttemptPassRequest,
 )
+from app.api.v4.views.analytics.profile_facts.types import GetProfileFactsResponse
 from app.api.v4.views.analytics.profile_metrics.get import (
     get_profile_metrics_internal,
 )
@@ -500,6 +501,34 @@ async def fetch_simulation_facts_data(
             profile_id=request.target_profile_id,
             cohort_ids=filters.cohort_ids,
             department_ids=request.department_ids,
+            attempt_type=filters.attempt_type,
+            is_archived=filters.is_archived,
+            date_from=filters.parsed_start_date.date()
+            if filters.parsed_start_date
+            else None,
+            date_to=filters.parsed_end_date.date() if filters.parsed_end_date else None,
+            bypass_cache=bypass_cache,
+        )
+
+
+async def fetch_profile_facts_data(
+    pool: asyncpg.Pool,
+    request: DashboardSectionRequest,
+    filters: ParsedFilters,
+    bypass_cache: bool = False,
+) -> "GetProfileFactsResponse":
+    """Fetch profile facts from mv_profile_facts for header/leaderboard/reports."""
+    from app.api.v4.views.analytics.profile_facts.get import (
+        get_profile_facts_internal,
+    )
+
+    async with pool.acquire() as c:
+        return await get_profile_facts_internal(
+            conn=c,
+            profile_id=request.target_profile_id,
+            cohort_ids=filters.cohort_ids,
+            department_ids=request.department_ids,
+            simulation_ids=filters.simulation_ids,
             attempt_type=filters.attempt_type,
             is_archived=filters.is_archived,
             date_from=filters.parsed_start_date.date()

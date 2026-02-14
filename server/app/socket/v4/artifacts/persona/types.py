@@ -30,6 +30,7 @@ class GeneratePersonaPayload(GetPersonaApiRequest):
         str
     ]  # Required: which resource types to generate (e.g. ["names", "descriptions"])
     user_instructions: list[str] | None = None  # Optional: user instructions
+    save: bool = True  # Whether to auto-save persona on completion
 
     # Note: current selections are derived from draft-backed API response.
     # The server resolves assigned agents internally from resource_types.

@@ -161,6 +161,7 @@ export default function Personas({
         user_instructions: instructions.trim() ? [instructions.trim()] : null,
         persona_id: null,
         mcp: false,
+        save: true,
       });
       setShowGenerateModal(false);
       setIsGenerating(false);
