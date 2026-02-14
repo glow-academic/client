@@ -82358,6 +82358,26 @@
                 "type": "null"
               }
             ]
+          },
+          "views": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TestViews"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "resources": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TestResources"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "type": "object",
@@ -133498,6 +133518,57 @@
         "title": "TestProgressEvent",
         "description": "Server-to-client event: test_progress.\n\nEmitted during test execution."
       },
+      "TestResources": {
+        "properties": {
+          "evals": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "additionalProperties": true,
+                  "type": "object"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Evals"
+          },
+          "rubrics": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "additionalProperties": true,
+                  "type": "object"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rubrics"
+          },
+          "names": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "type": "string"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Names"
+          }
+        },
+        "type": "object",
+        "title": "TestResources",
+        "description": "Content resource maps keyed by ID string."
+      },
       "TestRunAllPayload": {
         "properties": {
           "chat_id": {
@@ -133804,6 +133875,41 @@
         ],
         "title": "TestStoppedEvent",
         "description": "Server-to-client event: test_stopped.\n\nEmitted when generation is stopped."
+      },
+      "TestViews": {
+        "properties": {
+          "benchmark_tests": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/BenchmarkTestViewItem"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Benchmark Tests"
+          },
+          "benchmark_invocations": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/BenchmarkInvocationViewItem"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Benchmark Invocations"
+          }
+        },
+        "type": "object",
+        "title": "TestViews",
+        "description": "View payloads grouped by view type."
       },
       "TextsApiRequest": {
         "properties": {

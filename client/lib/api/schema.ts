@@ -21786,6 +21786,8 @@ export interface components {
             /** Runs */
             runs?: components["schemas"]["TestRunItem"][];
             status_summary?: components["schemas"]["TestStatusSummary"] | null;
+            views?: components["schemas"]["TestViews"] | null;
+            resources?: components["schemas"]["TestResources"] | null;
         };
         /**
          * GetTestListRequest
@@ -36113,6 +36115,28 @@ export interface components {
             message?: string | null;
         };
         /**
+         * TestResources
+         * @description Content resource maps keyed by ID string.
+         */
+        TestResources: {
+            /** Evals */
+            evals?: {
+                [key: string]: {
+                    [key: string]: unknown;
+                };
+            } | null;
+            /** Rubrics */
+            rubrics?: {
+                [key: string]: {
+                    [key: string]: unknown;
+                };
+            } | null;
+            /** Names */
+            names?: {
+                [key: string]: string;
+            } | null;
+        };
+        /**
          * TestRunAllPayload
          * @description Request payload for test_run_all WebSocket event.
          *
@@ -36263,6 +36287,16 @@ export interface components {
             success: boolean;
             /** Message */
             message?: string | null;
+        };
+        /**
+         * TestViews
+         * @description View payloads grouped by view type.
+         */
+        TestViews: {
+            /** Benchmark Tests */
+            benchmark_tests?: components["schemas"]["BenchmarkTestViewItem"][] | null;
+            /** Benchmark Invocations */
+            benchmark_invocations?: components["schemas"]["BenchmarkInvocationViewItem"][] | null;
         };
         /** TextsApiRequest */
         TextsApiRequest: {

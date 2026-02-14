@@ -1,11 +1,30 @@
-"""Types for benchmark test artifacts endpoints."""
+"""Types for benchmark test artifacts endpoints.
 
+Three-layer BFF pattern types:
+- GetTestArtifactResponse: HTTP client response
+- TestInternalData: Core data container (internal layer)
+- GetTestWebsocketResponse: WebSocket response with config resources
+"""
+
+from __future__ import annotations
+
+from dataclasses import dataclass, field
 from uuid import UUID
 
 from pydantic import BaseModel, Field
 
 from app.api.v4.views.benchmark.invocations.types import BenchmarkInvocationViewItem
 from app.api.v4.views.benchmark.tests.types import BenchmarkTestViewItem
+from app.sql.types import (
+    QGetAgentsV4Item,
+    QGetModelsV4Item,
+    QGetProvidersV4Item,
+    QGetToolsV4Item,
+)
+
+# =============================================================================
+# Client-facing types
+# =============================================================================
 
 
 class GetTestArtifactRequest(BaseModel):
@@ -37,6 +56,21 @@ class TestStatusSummary(BaseModel):
     not_started: int = 0
 
 
+class TestViews(BaseModel):
+    """View payloads grouped by view type."""
+
+    benchmark_tests: list[BenchmarkTestViewItem] | None = None
+    benchmark_invocations: list[BenchmarkInvocationViewItem] | None = None
+
+
+class TestResources(BaseModel):
+    """Content resource maps keyed by ID string."""
+
+    evals: dict[str, dict] | None = None
+    rubrics: dict[str, dict] | None = None
+    names: dict[str, str] | None = None
+
+
 class GetTestArtifactResponse(BaseModel):
     """Response for benchmark test artifact detail."""
 
@@ -55,6 +89,88 @@ class GetTestArtifactResponse(BaseModel):
 
     # Status summary
     status_summary: TestStatusSummary | None = None
+
+    # Normalized views and resources
+    views: TestViews | None = None
+    resources: TestResources | None = None
+
+
+# =============================================================================
+# Internal data (three-layer BFF pattern)
+# =============================================================================
+
+
+@dataclass
+class TestInternalData:
+    """Core data container returned by get_test_internal().
+
+    Contains all fetched and computed values. Consumer layers
+    (get_test_client, get_test_websocket) reshape this
+    into their specific response types.
+    """
+
+    # Raw MV results
+    test: BenchmarkTestViewItem | None = None
+    invocations: list[BenchmarkInvocationViewItem] = field(default_factory=list)
+
+    # Config chain
+    group_id: UUID | None = None
+    agent_ids: dict[str, UUID | None] = field(default_factory=dict)
+
+    # Hydrated eval info
+    eval_name: str | None = None
+    eval_description: str | None = None
+
+    # Rubric info (collected from invocations)
+    rubric_name_map: dict[UUID, str] = field(default_factory=dict)
+
+    # Run-level hydration
+    run_name_map: dict[UUID, tuple[UUID | None, UUID | None]] = field(
+        default_factory=dict
+    )
+    run_bundle_map: dict[UUID, UUID] = field(default_factory=dict)
+    name_map: dict[UUID, str] = field(default_factory=dict)
+
+    # Computed
+    runs: list[TestRunItem] = field(default_factory=list)
+    status: str = "pending"
+    status_summary: TestStatusSummary = field(default_factory=TestStatusSummary)
+
+    # Resources payload
+    resources_payload: TestResources = field(default_factory=TestResources)
+
+    # Config resources (from group -> config chain)
+    config_agent_resources: list[QGetAgentsV4Item] | None = None
+    config_model_resources: list[QGetModelsV4Item] | None = None
+    config_provider_resources: list[QGetProvidersV4Item] | None = None
+
+
+# =============================================================================
+# WebSocket response types (three-layer BFF pattern)
+# =============================================================================
+
+
+class TestWebsocketResources(BaseModel):
+    """Content resources + config resources for websocket."""
+
+    # Content resources
+    evals: dict[str, dict] | None = None
+    rubrics: dict[str, dict] | None = None
+    names: dict[str, str] | None = None
+    # Config resources
+    agents: list[QGetAgentsV4Item] | None = None
+    models: list[QGetModelsV4Item] | None = None
+    providers: list[QGetProvidersV4Item] | None = None
+    tools: list[QGetToolsV4Item] | None = None
+
+
+class GetTestWebsocketResponse(BaseModel):
+    """Minimal response for WebSocket handlers."""
+
+    views: TestViews | None = None
+    resources: TestWebsocketResources | None = None
+    resource_agent_ids: dict[str, UUID | None] | None = None
+    group_id: UUID | None = None
 
 
 class GetTestListRequest(BaseModel):

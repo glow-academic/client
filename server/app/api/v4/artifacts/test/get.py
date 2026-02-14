@@ -1,7 +1,19 @@
-"""Benchmark test artifact detail endpoint."""
+"""Benchmark test artifact detail endpoint.
+
+Three-layer BFF pattern:
+- get_test_internal(): Core data fetcher, returns TestInternalData
+- get_test_client(): HTTP response layer with caching
+- get_test_websocket(): WebSocket response layer with config resources
+
+Uses view internal handlers with parallel query execution:
+1. Query 1 (Tests): Test-level data via benchmark_tests view
+2. Query 2 (Invocations): Invocation-level data via benchmark_invocations view
+
+Each query runs on its own connection from the pool for true parallelism.
+"""
 
 import asyncio
-from typing import Annotated
+from typing import Annotated, Any
 from uuid import UUID
 
 import asyncpg
@@ -11,12 +23,21 @@ from app.api.v4.artifacts.test.permissions import compute_test_status
 from app.api.v4.artifacts.test.types import (
     GetTestArtifactRequest,
     GetTestArtifactResponse,
+    GetTestWebsocketResponse,
+    TestInternalData,
+    TestResources,
     TestRunItem,
     TestStatusSummary,
+    TestViews,
+    TestWebsocketResources,
 )
-from app.api.v4.resources.descriptions.get import get_descriptions_internal
+from app.api.v4.resources.agents.get import get_agents_internal
+from app.api.v4.resources.evals.get import get_evals_internal
+from app.api.v4.resources.models.get import get_models_internal
 from app.api.v4.resources.names.get import get_names_internal
+from app.api.v4.resources.providers.get import get_providers_internal
 from app.api.v4.resources.rubrics.get import get_rubrics_batch_internal
+from app.api.v4.resources.tools.get import get_tools_internal
 from app.api.v4.views.benchmark.invocations.get import (
     get_benchmark_invocations_internal,
 )
@@ -24,40 +45,39 @@ from app.api.v4.views.benchmark.tests.get import get_benchmark_tests_internal
 from app.infra.v4.activity.audit import audit_activity
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
+from app.utils.cache.cache_key import cache_key
+from app.utils.cache.get_cached import get_cached
+from app.utils.cache.set_cached import set_cached
 
 router = APIRouter()
 
 
-@router.post(
-    "/get",
-    response_model=GetTestArtifactResponse,
-    dependencies=[
-        audit_activity(
-            "artifacts.test.get",
-            "{{ actor.name }} fetched test artifact data",
-        )
-    ],
-)
-async def get_test_artifact(
-    request: GetTestArtifactRequest,
-    http_request: Request,
-    response: Response,
-    conn: Annotated[asyncpg.Connection, Depends(get_db)],
-) -> GetTestArtifactResponse:
-    """Get benchmark test artifact details with tests/invocations in parallel."""
-    tags = ["artifacts", "test"]
-    bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
+# =============================================================================
+# Layer 1: Core data fetcher (no caching, no HTTP concerns)
+# =============================================================================
 
+
+async def get_test_internal(
+    conn: asyncpg.Connection,
+    test_id: UUID,
+    bypass_cache: bool = False,
+) -> TestInternalData:
+    """Core test artifact detail fetcher.
+
+    Fetches all data, computes business logic, and returns TestInternalData.
+    No caching — consumer layers handle their own caching.
+    """
     try:
         pool = get_pool()
         if not pool:
             raise RuntimeError("Database pool not initialized")
 
+        # === PARALLEL FETCH: Tests + Invocations ===
         async def fetch_tests() -> list:
             async with pool.acquire() as c:
                 result = await get_benchmark_tests_internal(
                     conn=c,
-                    test_ids=[request.test_id],
+                    test_ids=[test_id],
                     bypass_cache=bypass_cache,
                     page_limit=1,
                     page_offset=0,
@@ -68,7 +88,7 @@ async def get_test_artifact(
             async with pool.acquire() as c:
                 return await get_benchmark_invocations_internal(
                     conn=c,
-                    test_id=request.test_id,
+                    test_id=test_id,
                     bypass_cache=bypass_cache,
                 )
 
@@ -76,31 +96,93 @@ async def get_test_artifact(
 
         test = tests[0] if tests else None
         if not test:
-            raise HTTPException(status_code=404, detail="Benchmark test not found")
+            return TestInternalData()
 
-        status = compute_test_status(test.num_chats, test.num_chats_completed)
+        # === DERIVE STATUS FROM INVOCATIONS ===
+        num_invocations = len(invocations)
+        num_completed = sum(1 for inv in invocations if inv.invocation_completed)
+        status = compute_test_status(num_invocations, num_completed)
 
-        # --- Hydration: collect IDs ---
+        # === RESOLVE CONFIG CHAIN (group_id -> agent/model/provider) ===
+        first_invocation = invocations[0] if invocations else None
+        group_id = first_invocation.group_id if first_invocation else None
+
+        agent_ids: dict[str, UUID | None] = {}
+        config_agent_resources = None
+        config_model_resources = None
+        config_provider_resources = None
+
+        if group_id:
+            config_row = await conn.fetchrow(
+                """
+                SELECT aaj.agent_id, ar.model_id, mr.provider_id
+                FROM runs_entry r
+                JOIN config_entry ce ON ce.run_id = r.id
+                JOIN config_agents_connection cac ON cac.config_id = ce.id AND cac.active = true
+                JOIN agent_agents_junction aaj ON aaj.agents_id = cac.agents_id AND aaj.active = true
+                JOIN agents_resource ar ON ar.id = aaj.agents_id
+                LEFT JOIN models_resource mr ON mr.id = ar.model_id
+                WHERE r.group_id = $1
+                ORDER BY r.created_at DESC
+                LIMIT 1
+                """,
+                group_id,
+            )
+            if config_row:
+                agent_id = config_row["agent_id"]
+                model_id = config_row["model_id"]
+                provider_id = config_row["provider_id"]
+                agent_ids["primary"] = agent_id
+
+                # Fetch config resources in parallel
+                async def fetch_config_agents() -> Any:
+                    if not agent_id:
+                        return None
+                    async with pool.acquire() as c:
+                        return await get_agents_internal(
+                            c, [agent_id], bypass_cache=bypass_cache
+                        )
+
+                async def fetch_config_models() -> Any:
+                    if not model_id:
+                        return None
+                    async with pool.acquire() as c:
+                        return await get_models_internal(
+                            c, [model_id], bypass_cache=bypass_cache
+                        )
+
+                async def fetch_config_providers() -> Any:
+                    if not provider_id:
+                        return None
+                    async with pool.acquire() as c:
+                        return await get_providers_internal(
+                            c, [provider_id], bypass_cache=bypass_cache
+                        )
+
+                (
+                    config_agent_resources,
+                    config_model_resources,
+                    config_provider_resources,
+                ) = await asyncio.gather(
+                    fetch_config_agents(),
+                    fetch_config_models(),
+                    fetch_config_providers(),
+                )
+
+        # === HYDRATION: collect IDs ===
         eval_name_ids: set[UUID] = set()
-        eval_description_ids: set[UUID] = set()
         rubric_ids: set[UUID] = set()
-
-        if test.eval_name_id:
-            eval_name_ids.add(test.eval_name_id)
-        if test.eval_description_id:
-            eval_description_ids.add(test.eval_description_id)
-        if test.rubric_id:
-            rubric_ids.add(test.rubric_id)
 
         # Collect all run_ids from invocations for model/agent name resolution
         all_run_ids: list[UUID] = []
         for invocation in invocations:
             if invocation.run_ids:
                 all_run_ids.extend(invocation.run_ids)
+            if invocation.rubric_id:
+                rubric_ids.add(invocation.rubric_id)
 
-        # Resolve run_ids → model/agent name_ids
+        # Resolve run_ids -> model/agent name_ids and bundle entry IDs
         run_name_map: dict[UUID, tuple[UUID | None, UUID | None]] = {}
-        # Resolve run_ids → benchmark_bundle_entry_id
         run_bundle_map: dict[UUID, UUID] = {}
         if all_run_ids:
             async with pool.acquire() as c:
@@ -129,7 +211,7 @@ async def get_test_artifact(
                     if agent_nid:
                         eval_name_ids.add(agent_nid)
 
-                # Resolve run_ids → benchmark_bundle_entry_id
+                # Resolve run_ids -> benchmark_bundle_entry_id
                 bundle_rows = await c.fetch(
                     """
                     SELECT bbrc.runs_id, bbrc.benchmark_bundle_id
@@ -142,42 +224,50 @@ async def get_test_artifact(
                 for brow in bundle_rows:
                     run_bundle_map[brow["runs_id"]] = brow["benchmark_bundle_id"]
 
-        # Batch resolve names, descriptions, rubrics
-        async with pool.acquire() as c:
-            names_list = await get_names_internal(
-                c, list(eval_name_ids), bypass_cache=bypass_cache
-            )
-            desc_list = await get_descriptions_internal(
-                c, list(eval_description_ids), bypass_cache=bypass_cache
-            )
-            rubrics_list = await get_rubrics_batch_internal(
-                c, list(rubric_ids), bypass_cache=bypass_cache
-            )
-
-        # Build lookup maps
-        name_map: dict[UUID, str] = {}
-        for n in names_list:
-            if n.id and n.name:
-                name_map[n.id] = n.name
-
-        desc_map: dict[UUID, str] = {}
-        for d in desc_list:
-            if d.id and d.description:
-                desc_map[d.id] = d.description
-
+        # === BATCH RESOLVE: evals, names, rubrics ===
+        eval_name: str | None = None
+        eval_description: str | None = None
         rubric_name_map: dict[UUID, str] = {}
-        for r in rubrics_list:
-            if r.rubric_id and r.name:
-                rubric_name_map[r.rubric_id] = r.name
+        name_map: dict[UUID, str] = {}
 
-        # Hydrated eval info
-        eval_name = name_map.get(test.eval_name_id) if test.eval_name_id else None
-        eval_description = (
-            desc_map.get(test.eval_description_id) if test.eval_description_id else None
+        async def fetch_eval_info() -> tuple[str | None, str | None]:
+            if not test.eval_id:
+                return None, None
+            async with pool.acquire() as c:
+                evals = await get_evals_internal(
+                    c, [test.eval_id], bypass_cache=bypass_cache
+                )
+                if evals and evals[0]:
+                    return evals[0].name, evals[0].description
+            return None, None
+
+        async def fetch_names() -> dict[UUID, str]:
+            if not eval_name_ids:
+                return {}
+            async with pool.acquire() as c:
+                names_list = await get_names_internal(
+                    c, list(eval_name_ids), bypass_cache=bypass_cache
+                )
+                return {n.id: n.name for n in names_list if n.id and n.name}
+
+        async def fetch_rubrics() -> dict[UUID, str]:
+            if not rubric_ids:
+                return {}
+            async with pool.acquire() as c:
+                rubrics_list = await get_rubrics_batch_internal(
+                    c, list(rubric_ids), bypass_cache=bypass_cache
+                )
+                return {
+                    r.rubric_id: r.name for r in rubrics_list if r.rubric_id and r.name
+                }
+
+        (eval_name, eval_description), name_map, rubric_name_map = await asyncio.gather(
+            fetch_eval_info(),
+            fetch_names(),
+            fetch_rubrics(),
         )
-        rubric_name = rubric_name_map.get(test.rubric_id) if test.rubric_id else None
 
-        # Build runs list from invocations
+        # === BUILD RUNS LIST FROM INVOCATIONS ===
         runs: list[TestRunItem] = []
         completed_count = 0
         in_progress_count = 0
@@ -230,18 +320,227 @@ async def get_test_artifact(
             not_started=not_started_count,
         )
 
-        response.headers["X-Cache-Tags"] = ",".join(tags)
-        return GetTestArtifactResponse(
+        # === BUILD RESOURCES PAYLOAD ===
+        resources_payload = TestResources(
+            evals={
+                str(test.eval_id): {
+                    "name": eval_name,
+                    "description": eval_description,
+                }
+            }
+            if test.eval_id and (eval_name or eval_description)
+            else None,
+            rubrics={
+                str(rid): {"name": rname} for rid, rname in rubric_name_map.items()
+            }
+            if rubric_name_map
+            else None,
+            names={str(nid): nname for nid, nname in name_map.items()}
+            if name_map
+            else None,
+        )
+
+        return TestInternalData(
             test=test,
             invocations=invocations,
-            status=status,
+            group_id=group_id,
+            agent_ids=agent_ids,
             eval_name=eval_name,
             eval_description=eval_description,
-            rubric_name=rubric_name,
-            infinite_mode=test.infinite_mode,
+            rubric_name_map=rubric_name_map,
+            run_name_map=run_name_map,
+            run_bundle_map=run_bundle_map,
+            name_map=name_map,
             runs=runs,
+            status=status,
             status_summary=status_summary,
+            resources_payload=resources_payload,
+            config_agent_resources=config_agent_resources,
+            config_model_resources=config_model_resources,
+            config_provider_resources=config_provider_resources,
         )
+
+    except HTTPException:
+        raise
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
+    except Exception as e:
+        handle_route_error(
+            error=e,
+            route_path="/api/v4/artifacts/test/get",
+            operation="test_get_internal",
+            sql_query="view_internals: tests, invocations",
+            sql_params=None,
+        )
+        raise  # pragma: no cover
+
+
+# =============================================================================
+# Layer 2a: HTTP client response (with caching)
+# =============================================================================
+
+
+async def get_test_client(
+    conn: asyncpg.Connection,
+    test_id: UUID,
+    bypass_cache: bool = False,
+    cache_key_path: str = "/api/v4/artifacts/test/get",
+) -> tuple[GetTestArtifactResponse, bool]:
+    """HTTP response layer with caching.
+
+    Calls get_test_internal() and assembles GetTestArtifactResponse.
+    Returns (response, cache_hit).
+    """
+    tags = ["artifacts", "test"]
+    body_dict = GetTestArtifactRequest(test_id=test_id).model_dump(mode="json")
+    cache_key_val = cache_key(cache_key_path, body_dict)
+
+    if not bypass_cache:
+        cached = await get_cached(cache_key_val)
+        if cached:
+            return GetTestArtifactResponse.model_validate(cached["data"]), True
+
+    data = await get_test_internal(
+        conn=conn,
+        test_id=test_id,
+        bypass_cache=bypass_cache,
+    )
+
+    if not data.test:
+        raise HTTPException(status_code=404, detail="Benchmark test not found")
+
+    # Get first rubric name from map for backward compat
+    rubric_name: str | None = None
+    if data.rubric_name_map:
+        rubric_name = next(iter(data.rubric_name_map.values()), None)
+
+    api_response = GetTestArtifactResponse(
+        test=data.test,
+        invocations=data.invocations,
+        status=data.status,
+        eval_name=data.eval_name,
+        eval_description=data.eval_description,
+        rubric_name=rubric_name,
+        infinite_mode=data.test.infinite_mode,
+        runs=data.runs,
+        status_summary=data.status_summary,
+        views=TestViews(
+            benchmark_tests=[data.test],
+            benchmark_invocations=data.invocations,
+        ),
+        resources=data.resources_payload,
+    )
+
+    await set_cached(
+        cache_key_val,
+        {"data": api_response.model_dump(mode="json")},
+        ttl=300,
+        tags=tags,
+    )
+
+    return api_response, False
+
+
+# =============================================================================
+# Layer 2b: WebSocket response (config resources + tools)
+# =============================================================================
+
+
+async def get_test_websocket(
+    conn: asyncpg.Connection,
+    test_id: UUID,
+    bypass_cache: bool = False,
+) -> GetTestWebsocketResponse:
+    """WebSocket response layer with config resources.
+
+    Calls get_test_internal() and assembles GetTestWebsocketResponse
+    with content resources + config resources (agents, models, providers, tools).
+    """
+    data = await get_test_internal(
+        conn=conn,
+        test_id=test_id,
+        bypass_cache=bypass_cache,
+    )
+
+    if not data.test:
+        return GetTestWebsocketResponse()
+
+    # Hydrate tools from config agent's tool_ids
+    config_tools = None
+    if data.config_agent_resources:
+        tool_ids: list[UUID] = []
+        for agent in data.config_agent_resources:
+            if agent.tool_ids:
+                tool_ids.extend(agent.tool_ids)
+        if tool_ids:
+            pool = get_pool()
+            if pool:
+                async with pool.acquire() as c:
+                    config_tools = await get_tools_internal(
+                        c, list(set(tool_ids)), bypass_cache=bypass_cache
+                    )
+
+    # Build websocket resources (content + config)
+    ws_resources = TestWebsocketResources(
+        # Content resources
+        evals=data.resources_payload.evals,
+        rubrics=data.resources_payload.rubrics,
+        names=data.resources_payload.names,
+        # Config resources
+        agents=data.config_agent_resources,
+        models=data.config_model_resources,
+        providers=data.config_provider_resources,
+        tools=config_tools,
+    )
+
+    return GetTestWebsocketResponse(
+        views=TestViews(
+            benchmark_tests=[data.test],
+            benchmark_invocations=data.invocations,
+        ),
+        resources=ws_resources,
+        resource_agent_ids=data.agent_ids if data.agent_ids else None,
+        group_id=data.group_id,
+    )
+
+
+# =============================================================================
+# HTTP Route Handler
+# =============================================================================
+
+
+@router.post(
+    "/get",
+    response_model=GetTestArtifactResponse,
+    dependencies=[
+        audit_activity(
+            "artifacts.test.get",
+            "{{ actor.name }} fetched test artifact data",
+        )
+    ],
+)
+async def get_test_artifact(
+    request: GetTestArtifactRequest,
+    http_request: Request,
+    response: Response,
+    conn: Annotated[asyncpg.Connection, Depends(get_db)],
+) -> GetTestArtifactResponse:
+    """Get benchmark test artifact details with tests/invocations in parallel."""
+    tags = ["artifacts", "test"]
+    bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
+
+    try:
+        response_data, cache_hit = await get_test_client(
+            conn=conn,
+            test_id=request.test_id,
+            bypass_cache=bypass_cache,
+            cache_key_path=http_request.url.path,
+        )
+
+        response.headers["X-Cache-Tags"] = ",".join(tags)
+        response.headers["X-Cache-Hit"] = "1" if cache_hit else "0"
+
+        return response_data
     except HTTPException:
         raise
     except Exception as e:
