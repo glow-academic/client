@@ -3290,6 +3290,43 @@ class DuplicateDocumentApiResponse(BaseModel):
 
 
 
+# Generated from: get_certificate_data
+
+class GetCertificateDataSqlParams(BaseModel):
+
+    profile_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+        )
+
+class GetCertificateDataSqlRow(BaseModel):
+
+    profile_name: str | None = None
+    cohort_id: UUID | None = None
+    cohort_name: str | None = None
+    simulation_id: UUID | None = None
+    simulation_name: str | None = None
+    expected_scenarios: int | None = None
+    pass_threshold_percent: float | None = None
+
+class GetCertificateDataApiRequest(BaseModel):
+
+    pass
+
+class GetCertificateDataApiResponse(BaseModel):
+
+    profile_name: str | None = None
+    cohort_id: UUID | None = None
+    cohort_name: str | None = None
+    simulation_id: UUID | None = None
+    simulation_name: str | None = None
+    expected_scenarios: int | None = None
+    pass_threshold_percent: float | None = None
+
+
+
 # Generated from: get_document_access
 
 class GetDocumentAccessSqlParams(BaseModel):
@@ -25988,6 +26025,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "DuplicateDocumentApiRequest",
         "DuplicateDocumentApiResponse",
     ),
+    "app/sql/v4/queries/documents/get_certificate_data_complete.sql": (
+        "GetCertificateDataSqlParams",
+        "GetCertificateDataSqlRow",
+        "GetCertificateDataApiRequest",
+        "GetCertificateDataApiResponse",
+    ),
     "app/sql/v4/queries/documents/get_document_access_complete.sql": (
         "GetDocumentAccessSqlParams",
         "GetDocumentAccessSqlRow",
@@ -29546,6 +29589,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/queries/documents/duplicate_document_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/documents/get_certificate_data_complete.sql"]
     ) -> SqlString: ...
 
     @overload
