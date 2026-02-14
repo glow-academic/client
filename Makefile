@@ -362,6 +362,8 @@ migrate-db:
 	@$(MAKE) export-modules
 	@$(MAKE) generate-test-schema
 	@$(MAKE) sql-compile
+	@$(MAKE) openapi-gen
+	@$(MAKE) gen-client-types
 	@echo ""
 	@echo "✅ Migration + all regeneration steps complete"
 
