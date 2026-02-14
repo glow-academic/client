@@ -4,7 +4,6 @@ from fastapi import APIRouter
 
 from app.api.v4.auth.analytics import router as analytics_router
 from app.api.v4.auth.attempt import router as attempt_router
-from app.api.v4.auth.context import router as context_router
 from app.api.v4.auth.drafts import router as drafts_router
 from app.api.v4.auth.email import router as email_router
 from app.api.v4.auth.emulate import router as emulate_router
@@ -20,7 +19,6 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 # Include all auth endpoint routers
 router.include_router(login_router)
 router.include_router(attempt_router)
-router.include_router(context_router)
 router.include_router(profile_router)
 router.include_router(settings_router)
 router.include_router(page_router)

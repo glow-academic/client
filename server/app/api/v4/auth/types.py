@@ -21,10 +21,19 @@ from app.api.v4.resources.tools.get import QGetToolsV4Item
 from app.sql.types import (
     GetProfileContextAccessSqlRow,
     GetSettingsThemeDataSqlRow,
-    QGetProfileContextV4Draft,
     QGetProfileContextV4RoleResource,
     QGetProfileContextV4ThemeTokens,
 )
+
+
+class QGetProfileContextV4Draft(BaseModel):
+    """Draft item returned by /auth/drafts endpoint."""
+
+    id: UUID | None = None
+    artifact_type: str | None = None
+    payload: dict | None = None
+    version: int | None = None
+    updated_at: str | None = None
 
 
 @dataclass

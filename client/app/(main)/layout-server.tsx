@@ -83,7 +83,8 @@ export const getAuthPage = cache(
 /** ---- Cached drafts fetch (parallel with context) ---- */
 export const getDrafts = cache(
   async (): Promise<DraftsOut> => {
-    return api.post("/auth/drafts", { body: {} } as DraftsIn);
+    const extraHeaders = await buildAuthHeaders();
+    return api.post("/auth/drafts", { body: {} } as DraftsIn, { headers: extraHeaders });
   }
 );
 

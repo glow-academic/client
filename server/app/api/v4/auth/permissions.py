@@ -6,12 +6,10 @@ from typing import Any
 
 from app.api.v4.resources.cohorts.types import QGetCohortsV4Item
 from app.api.v4.resources.departments.get import QGetDepartmentsV4Item
-from app.infra.v4.drafts.get import QGetDraftsV4Item
 from app.sql.types import (
     QGetProfileContextAccessV4ArtifactAgent,
     QGetProfileContextV4Cohort,
     QGetProfileContextV4Department,
-    QGetProfileContextV4Draft,
     QGetProfileContextV4RoleResource,
     QGetProfileContextV4ThemeTokens,
 )
@@ -129,15 +127,6 @@ def convert_cohort(item: QGetCohortsV4Item) -> QGetProfileContextV4Cohort:
         department_ids=item.department_ids,
     )
 
-
-def convert_draft(item: QGetDraftsV4Item) -> QGetProfileContextV4Draft:
-    return QGetProfileContextV4Draft(
-        id=item.id,
-        artifact_type=item.artifact_type,
-        payload=item.payload,
-        version=item.version,
-        updated_at=item.updated_at,
-    )
 
 
 def convert_role(role: Any) -> QGetProfileContextV4RoleResource:
