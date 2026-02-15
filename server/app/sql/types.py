@@ -1788,15 +1788,16 @@ class QGetAuthListV4Auth(BaseModel):
 
 
 
-class QGetAuthListV4OptionId(BaseModel):
+class QGetAuthListV4Option(BaseModel):
 
-    id: UUID | None
+    value: str | None
+    label: str | None
     count: int | None
 
 class GetAuthListSqlRow(BaseModel):
 
     auths: list[QGetAuthListV4Auth] | None = None
-    department_option_ids: list[QGetAuthListV4OptionId] | None = None
+    department_options: list[QGetAuthListV4Option] | None = None
     total_count: int | None = None
 
 class GetAuthListApiRequest(BaseModel):
@@ -1810,7 +1811,7 @@ class GetAuthListApiRequest(BaseModel):
 class GetAuthListApiResponse(BaseModel):
 
     auths: list[QGetAuthListV4Auth] | None = None
-    department_option_ids: list[QGetAuthListV4OptionId] | None = None
+    department_options: list[QGetAuthListV4Option] | None = None
     total_count: int | None = None
 
 
@@ -5867,6 +5868,76 @@ class PrepareCohortGenerationApiRequest(BaseModel):
     p_providers_resource_id: UUID | None = None
 
 class PrepareCohortGenerationApiResponse(BaseModel):
+
+    run_id: UUID | None = None
+    group_id: UUID | None = None
+    trace_id: str | None = None
+    config_id: UUID | None = None
+
+
+
+# Generated from: get_document_generation_context
+
+class GetDocumentGenerationContextSqlParams(BaseModel):
+
+    p_profile_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.p_profile_id,
+        )
+
+class GetDocumentGenerationContextSqlRow(BaseModel):
+
+    requests_per_day: int | None = None
+    runs_today: int | None = None
+
+class GetDocumentGenerationContextApiRequest(BaseModel):
+
+    p_profile_id: UUID
+
+class GetDocumentGenerationContextApiResponse(BaseModel):
+
+    requests_per_day: int | None = None
+    runs_today: int | None = None
+
+
+
+# Generated from: prepare_document_generation
+
+class PrepareDocumentGenerationSqlParams(BaseModel):
+
+    p_profile_id: UUID
+    p_group_id: UUID | None = None
+    p_agents_resource_id: UUID | None = None
+    p_models_resource_id: UUID | None = None
+    p_providers_resource_id: UUID | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.p_profile_id,
+            self.p_group_id,
+            self.p_agents_resource_id,
+            self.p_models_resource_id,
+            self.p_providers_resource_id,
+        )
+
+class PrepareDocumentGenerationSqlRow(BaseModel):
+
+    run_id: UUID | None = None
+    group_id: UUID | None = None
+    trace_id: str | None = None
+    config_id: UUID | None = None
+
+class PrepareDocumentGenerationApiRequest(BaseModel):
+
+    p_profile_id: UUID
+    p_group_id: UUID | None = None
+    p_agents_resource_id: UUID | None = None
+    p_models_resource_id: UUID | None = None
+    p_providers_resource_id: UUID | None = None
+
+class PrepareDocumentGenerationApiResponse(BaseModel):
 
     run_id: UUID | None = None
     group_id: UUID | None = None
@@ -19767,9 +19838,10 @@ class GetRubricsListSqlParams(BaseModel):
             self.page_offset,
         )
 
-class QGetRubricsListV4OptionId(BaseModel):
+class QGetRubricsListV4Option(BaseModel):
 
-    id: UUID | None
+    value: str | None
+    label: str | None
     count: int | None
 
 
@@ -19816,8 +19888,8 @@ class GetRubricsListSqlRow(BaseModel):
     rubrics: list[QGetRubricsListV4Rubric] | None = None
     standard_groups: list[QGetRubricsListV4StandardGroup] | None = None
     standards: list[QGetRubricsListV4Standard] | None = None
-    department_option_ids: list[QGetRubricsListV4OptionId] | None = None
-    simulation_option_ids: list[QGetRubricsListV4OptionId] | None = None
+    department_options: list[QGetRubricsListV4Option] | None = None
+    simulation_options: list[QGetRubricsListV4Option] | None = None
     total_count: int | None = None
 
 class GetRubricsListApiRequest(BaseModel):
@@ -19835,8 +19907,8 @@ class GetRubricsListApiResponse(BaseModel):
     rubrics: list[QGetRubricsListV4Rubric] | None = None
     standard_groups: list[QGetRubricsListV4StandardGroup] | None = None
     standards: list[QGetRubricsListV4Standard] | None = None
-    department_option_ids: list[QGetRubricsListV4OptionId] | None = None
-    simulation_option_ids: list[QGetRubricsListV4OptionId] | None = None
+    department_options: list[QGetRubricsListV4Option] | None = None
+    simulation_options: list[QGetRubricsListV4Option] | None = None
     total_count: int | None = None
 
 
@@ -27376,6 +27448,18 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "PrepareCohortGenerationApiRequest",
         "PrepareCohortGenerationApiResponse",
     ),
+    "app/sql/v4/queries/generate/document/get_document_generation_context_complete.sql": (
+        "GetDocumentGenerationContextSqlParams",
+        "GetDocumentGenerationContextSqlRow",
+        "GetDocumentGenerationContextApiRequest",
+        "GetDocumentGenerationContextApiResponse",
+    ),
+    "app/sql/v4/queries/generate/document/prepare_document_generation_complete.sql": (
+        "PrepareDocumentGenerationSqlParams",
+        "PrepareDocumentGenerationSqlRow",
+        "PrepareDocumentGenerationApiRequest",
+        "PrepareDocumentGenerationApiResponse",
+    ),
     "app/sql/v4/queries/generate/parameter/get_parameter_generation_context_complete.sql": (
         "GetParameterGenerationContextSqlParams",
         "GetParameterGenerationContextSqlRow",
@@ -30978,6 +31062,16 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/queries/generate/cohort/prepare_cohort_generation_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/generate/document/get_document_generation_context_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/generate/document/prepare_document_generation_complete.sql"]
     ) -> SqlString: ...
 
     @overload

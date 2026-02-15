@@ -8,9 +8,7 @@ Filter option names hydrated from cached *_internal() functions.
 Search filtering applied in Python for option names.
 """
 
-import asyncio
 from typing import Annotated, Any, cast
-from uuid import UUID
 
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
@@ -22,11 +20,10 @@ from app.api.v4.artifacts.auth.permissions import (
 )
 from app.api.v4.artifacts.auth.types import (
     ListAuthApiAuth,
-    ListAuthApiDepartment,
     ListAuthApiResponse,
 )
 from app.api.v4.auth.profile import get_auth_profile_internal
-from app.api.v4.resources.departments.get import get_departments_internal
+from app.api.v4.types import ListFilterSection
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
@@ -153,59 +150,15 @@ async def get_auth_list(
                 )
             )
 
-        # --- Python hydration: filter option names from cached *_internal() ---
-        department_option_ids = getattr(result, "department_option_ids", None) or []
-
-        # Build ID -> count map
-        department_count_map: dict[UUID, int] = {}
-        department_ids_to_fetch: list[UUID] = []
-        for opt in department_option_ids:
-            opt_id = getattr(opt, "id", None)
-            opt_count = getattr(opt, "count", 0)
-            if opt_id:
-                uid = UUID(str(opt_id)) if not isinstance(opt_id, UUID) else opt_id
-                department_count_map[uid] = int(opt_count or 0)
-                department_ids_to_fetch.append(uid)
-
-        # Parallel fetch names from cached *_internal() functions
-        departments_data = []
-
-        pool = get_pool()
-        if pool and department_ids_to_fetch:
-
-            async def fetch_departments() -> list:
-                if not department_ids_to_fetch:
-                    return []
-                async with pool.acquire() as c:
-                    return await get_departments_internal(
-                        c, department_ids_to_fetch, bypass_cache
-                    )
-
-            (departments_data,) = await asyncio.gather(fetch_departments())
-
-        # Merge names with counts, apply search filtering in Python
-        department_search = request.department_search
-        departments: list[ListAuthApiDepartment] = [
-            ListAuthApiDepartment(
-                department_id=d.department_id,
-                name=d.name,
-                description=d.description or "",
-                count=department_count_map.get(d.department_id, 0)
-                if d.department_id
-                else 0,
-            )
-            for d in departments_data
-            if d.department_id
-            and (
-                department_search is None
-                or department_search.lower() in (d.name or "").lower()
-            )
-        ]
-
+        # Build API response with ListFilterSection pattern (names resolved in SQL)
         api_response = ListAuthApiResponse(
             actor_name=actor_name,
             auths=auths_list,
-            departments=departments,
+            department_filter=ListFilterSection.from_sql_options(
+                getattr(result, "department_options", None),
+                getattr(request, "filter_department_ids", None),
+                getattr(request, "department_search", None),
+            ),
             total_count=result.total_count,
         )
 

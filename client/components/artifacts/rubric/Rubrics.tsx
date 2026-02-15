@@ -97,34 +97,31 @@ export default function Rubrics({
     () => rubricsData?.standards || [],
     [rubricsData],
   );
-  const departments = useMemo(
-    () => rubricsData?.departments || [],
-    [rubricsData],
+
+  // Filter options from server-provided ListFilterSection
+  const departmentOptions = useMemo(
+    () =>
+      (rubricsData?.department_filter?.options || [])
+        .map((opt) => ({
+          value: opt.id as string,
+          label: opt.name as string,
+          count: opt.count ?? 0,
+        }))
+        .filter((opt) => opt.value && opt.label),
+    [rubricsData?.department_filter]
   );
 
-  // Build filter options - filter to only show options that have actual data
-  const departmentOptions = useMemo(() => {
-    const allDepartmentIds = new Set<string>();
-    rubrics.forEach((rubric) => {
-      if (rubric.department_ids) {
-        rubric.department_ids.forEach((id) => allDepartmentIds.add(id));
-      }
-    });
-    return departments
-      .filter((dept) => dept.department_id && allDepartmentIds.has(String(dept.department_id)))
-      .map((dept) => ({
-        value: String(dept.department_id),
-        label: dept.name || String(dept.department_id),
-      }));
-  }, [departments, rubrics]);
-
-  // Use server-provided simulation options (SQL handles filtering and disambiguation)
-  const simulationOptions = useMemo(() => {
-    return (rubricsData?.simulation_options || []).map((opt) => ({
-      value: String(opt.simulation_id),
-      label: opt.name || String(opt.simulation_id),
-    }));
-  }, [rubricsData?.simulation_options]);
+  const simulationOptions = useMemo(
+    () =>
+      (rubricsData?.simulation_filter?.options || [])
+        .map((opt) => ({
+          value: opt.id as string,
+          label: opt.name as string,
+          count: opt.count ?? 0,
+        }))
+        .filter((opt) => opt.value && opt.label),
+    [rubricsData?.simulation_filter]
+  );
 
   // Filter pass percentage options to only show ranges that have actual data
   const passPercentageOptions = useMemo(() => {
@@ -189,35 +186,25 @@ export default function Rubrics({
           });
         },
       },
-      // Hidden faceting column for Simulation (array of IDs)
+      // Hidden faceting column for Simulation (server-driven)
       {
         id: "simulations",
         header: () => null,
         cell: () => null,
         enableHiding: true,
         enableSorting: false,
-        accessorFn: (row: (typeof rubrics)[number]) => row.simulation_ids ?? [],
-        filterFn: (row, _id, value: string[]) => {
-          const rowIds = (row.getValue("simulations") as string[]) ?? [];
-          if (value.length === 0) return true;
-          if (rowIds.length === 0) return true; // Show rubrics with no simulations when no filter
-          return value.some((v) => rowIds.includes(v));
-        },
+        accessorFn: () => [] as string[],
+        filterFn: () => true,
       },
-      // Hidden faceting column for Departments (array of IDs)
+      // Hidden faceting column for Departments (server-driven)
       {
         id: "departments",
         header: () => null,
         cell: () => null,
         enableHiding: true,
         enableSorting: false,
-        accessorFn: (row: (typeof rubrics)[number]) => row.department_ids ?? [],
-        filterFn: (row, _id, value: string[]) => {
-          const rowIds = (row.getValue("departments") as string[]) ?? [];
-          if (value.length === 0) return true;
-          if (rowIds.length === 0) return true; // Show cross-department items when no filter
-          return value.some((v) => rowIds.includes(v));
-        },
+        accessorFn: () => [] as string[],
+        filterFn: () => true,
       },
     ],
     [],
@@ -547,6 +534,7 @@ export default function Rubrics({
                   column={departmentsColumn}
                   title="Department"
                   options={departmentOptions}
+                  isServerDriven
                 />
               )}
 
@@ -555,6 +543,7 @@ export default function Rubrics({
                   column={simulationsColumn}
                   title="Simulation"
                   options={simulationOptions}
+                  isServerDriven
                 />
               )}
 

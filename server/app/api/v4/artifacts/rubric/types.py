@@ -6,7 +6,7 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
-from app.api.v4.types import BaseResourceSection
+from app.api.v4.types import BaseResourceSection, ListFilterSection
 from app.api.v4.views.drafts.types import DraftRubricViewItem
 from app.sql.types import (
     QGetAgentsV4Item,
@@ -333,20 +333,6 @@ class ListRubricApiRubric(BaseModel):
     standard_group_ids: list[UUID] | None = None
 
 
-class ListRubricApiDepartment(BaseModel):
-    department_id: UUID | None = None
-    name: str | None = None
-    description: str | None = None
-    count: int | None = None
-
-
-class ListRubricApiSimulationOption(BaseModel):
-    simulation_id: UUID | None = None
-    name: str | None = None
-    description: str | None = None
-    count: int | None = None
-
-
 class ListRubricApiStandardGroup(BaseModel):
     standard_group_id: UUID | None = None
     rubric_id: UUID | None = None
@@ -369,6 +355,6 @@ class ListRubricApiResponse(BaseModel):
     rubrics: list[ListRubricApiRubric] | None = None
     standard_groups: list[ListRubricApiStandardGroup] | None = None
     standards: list[ListRubricApiStandard] | None = None
-    departments: list[ListRubricApiDepartment] | None = None
-    simulation_options: list[ListRubricApiSimulationOption] | None = None
+    department_filter: ListFilterSection | None = None
+    simulation_filter: ListFilterSection | None = None
     total_count: int | None = None

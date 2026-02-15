@@ -546,15 +546,14 @@ function SimulationComponent({
       const currentFormState =
         formStateRef.current as unknown as SimulationFormState;
       const fr = (flushResults ?? {}) as Record<string, unknown>;
-      const resourceActions = buildResourceActions(SIMULATION_RESOURCES, {
+      const draftPayload = buildDraftPayload(SIMULATION_RESOURCES, {
         formState: currentFormState as unknown as Record<string, unknown>,
         referenceState: null,
         flushResults: fr,
-        entityData: stableSimulationDataFields ?? null,
       });
       return {
         input_draft_id: draftId || null,
-        ...resourceActions,
+        ...draftPayload,
         expected_version: expectedVersion,
       };
     },
@@ -838,20 +837,21 @@ function SimulationComponent({
       }
 
       try {
-        const resourceActions = buildResourceActions(SIMULATION_RESOURCES, {
-          formState: effectiveFormState as unknown as Record<string, unknown>,
-          referenceState: null,
-          flushResults: flushResults as Record<string, unknown>,
-          entityData: stableSimulationDataFields ?? null,
-        });
-
         await saveSimulationAction({
           body: {
-            group_id: stableSimulationDataFields.group_id as string,
             input_simulation_id:
               isEditMode && simulationId ? simulationId : null,
-            ...resourceActions,
-          } as SaveSimulationIn["body"],
+            name_id: effectiveFormState.name_id!,
+            description_id: effectiveFormState.description_id || null,
+            flag_ids: effectiveFormState.flag_ids.length > 0 ? effectiveFormState.flag_ids : null,
+            department_ids: effectiveFormState.department_ids.length > 0 ? effectiveFormState.department_ids : null,
+            scenario_ids: effectiveFormState.scenario_ids.length > 0 ? effectiveFormState.scenario_ids : null,
+            scenario_flag_ids: effectiveFormState.scenario_flag_ids.length > 0 ? effectiveFormState.scenario_flag_ids : null,
+            scenario_position_ids: effectiveFormState.scenario_position_ids.length > 0 ? effectiveFormState.scenario_position_ids : null,
+            scenario_rubric_ids: effectiveFormState.scenario_rubric_ids.length > 0 ? effectiveFormState.scenario_rubric_ids : null,
+            scenario_time_limit_ids: effectiveFormState.scenario_time_limit_ids.length > 0 ? effectiveFormState.scenario_time_limit_ids : null,
+            scenario_persona_ids: effectiveFormState.scenario_persona_ids.length > 0 ? effectiveFormState.scenario_persona_ids : null,
+          },
         });
         toast.success(
           `Simulation ${isEditMode ? "updated" : "created"} successfully!`,

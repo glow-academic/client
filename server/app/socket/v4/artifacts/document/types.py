@@ -27,6 +27,7 @@ class GenerateDocumentPayload(GetDocumentApiRequest):
     # Generation-specific fields - resource_types API (gold standard pattern)
     resource_types: list[str]  # Required: which resource types to generate
     user_instructions: list[str] | None = None  # Optional: user instructions
+    save: bool = True  # Whether to auto-save document on completion
 
 
 # =============================================================================

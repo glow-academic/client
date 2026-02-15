@@ -52,9 +52,10 @@ CREATE TYPE types.q_get_auth_list_v4_auth AS (
     active_settings_count bigint
 );
 
--- Filter option type: id + count only (names hydrated in Python from cache)
-CREATE TYPE types.q_get_auth_list_v4_option_id AS (
-    id uuid,
+-- Filter option type: value/label/count (names resolved in SQL, no Python hydration needed)
+CREATE TYPE types.q_get_auth_list_v4_option AS (
+    value text,
+    label text,
     count bigint
 );
 
@@ -69,7 +70,7 @@ CREATE OR REPLACE FUNCTION api_get_auth_list_v4(
 )
 RETURNS TABLE (
     auths types.q_get_auth_list_v4_auth[],
-    department_option_ids types.q_get_auth_list_v4_option_id[],
+    department_options types.q_get_auth_list_v4_option[],
     total_count bigint
 )
 LANGUAGE sql
@@ -184,13 +185,16 @@ paginated_auths AS (
     ORDER BY fa.updated_at DESC NULLS LAST
     LIMIT page_size OFFSET page_offset
 ),
--- Department filter option IDs with counts (names hydrated in Python)
+-- Department options with names resolved in SQL (ListFilterSection pattern)
 department_option_data AS (
     SELECT
-        dr.id,
-        (SELECT COUNT(*) FROM auth_data) as count
+        dr.id::text as value,
+        (SELECT n.name FROM department_names_junction dn JOIN names_resource n ON n.id = dn.name_id WHERE dn.department_id = dd.department_id LIMIT 1) as label,
+        (SELECT COUNT(*) FROM auth_data ad WHERE ad.department_ids IS NOT NULL AND dr.id::text = ANY(ad.department_ids)) as count
     FROM departments_resource dr
+    JOIN department_departments_junction dd ON dd.departments_id = dr.id
     WHERE dr.id IN (SELECT department_id FROM user_departments)
+      AND (department_search IS NULL OR LOWER((SELECT n.name FROM department_names_junction dn JOIN names_resource n ON n.id = dn.name_id WHERE dn.department_id = dd.department_id LIMIT 1)) LIKE '%' || LOWER(department_search) || '%')
 )
 SELECT
     -- Aggregate paginated auths
@@ -206,13 +210,14 @@ SELECT
         ) FROM paginated_auths pa),
         '{}'::types.q_get_auth_list_v4_auth[]
     ) as auths,
-    -- Department option IDs with counts (names hydrated in Python)
+    -- Department options (names resolved in SQL)
     COALESCE(
         (SELECT ARRAY_AGG(
-            (dod.id, dod.count)::types.q_get_auth_list_v4_option_id
+            (dod.value, dod.label, dod.count)::types.q_get_auth_list_v4_option
+            ORDER BY dod.label
         ) FROM department_option_data dod),
-        '{}'::types.q_get_auth_list_v4_option_id[]
-    ) as department_option_ids,
+        '{}'::types.q_get_auth_list_v4_option[]
+    ) as department_options,
     -- Total count of filtered auths (before pagination)
     (SELECT total_count FROM filtered_count) as total_count
 FROM params

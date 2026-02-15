@@ -9953,6 +9953,28 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/socket/v4/server/document_generation_started": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Document Generation Started Api
+         * @description Server-to-client event: Document generation started.
+         *
+         *     Emitted when document generation begins, listing resource types being generated.
+         */
+        post: operations["document_generation_started_api_socket_v4_server_document_generation_started_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/socket/v4/server/document_generation_progress": {
         parameters: {
             query?: never;
@@ -22574,6 +22596,26 @@ export interface components {
             /** Type */
             type?: string | null;
         };
+        /**
+         * DocumentGenerationStartedEvent
+         * @description Server-to-client event: document_generation_started.
+         *
+         *     Emitted when document generation begins, listing which resource types
+         *     will be generated.
+         */
+        DocumentGenerationStartedEvent: {
+            /**
+             * Artifact Type
+             * @default document
+             */
+            artifact_type: string;
+            /** Group Id */
+            group_id: string;
+            /** Run Id */
+            run_id: string;
+            /** Resource Types */
+            resource_types: string[];
+        };
         /** DocumentImageSection */
         DocumentImageSection: {
             /**
@@ -30620,20 +30662,6 @@ export interface components {
             can_delete?: boolean | null;
         };
         /**
-         * ListAuthApiDepartment
-         * @description Department filter option for list endpoint.
-         */
-        ListAuthApiDepartment: {
-            /** Department Id */
-            department_id?: string | null;
-            /** Name */
-            name?: string | null;
-            /** Description */
-            description?: string | null;
-            /** Count */
-            count?: number | null;
-        };
-        /**
          * ListAuthApiResponse
          * @description Response model for list auth endpoint with computed permissions.
          */
@@ -30642,8 +30670,7 @@ export interface components {
             actor_name?: string | null;
             /** Auths */
             auths?: components["schemas"]["ListAuthApiAuth"][] | null;
-            /** Departments */
-            departments?: components["schemas"]["ListAuthApiDepartment"][] | null;
+            department_filter?: components["schemas"]["ListFilterSection"] | null;
             /** Total Count */
             total_count?: number | null;
         };
@@ -31137,17 +31164,6 @@ export interface components {
             /** Total Count */
             total_count?: number | null;
         };
-        /** ListRubricApiDepartment */
-        ListRubricApiDepartment: {
-            /** Department Id */
-            department_id?: string | null;
-            /** Name */
-            name?: string | null;
-            /** Description */
-            description?: string | null;
-            /** Count */
-            count?: number | null;
-        };
         /** ListRubricApiResponse */
         ListRubricApiResponse: {
             /** Actor Name */
@@ -31158,10 +31174,8 @@ export interface components {
             standard_groups?: components["schemas"]["ListRubricApiStandardGroup"][] | null;
             /** Standards */
             standards?: components["schemas"]["ListRubricApiStandard"][] | null;
-            /** Departments */
-            departments?: components["schemas"]["ListRubricApiDepartment"][] | null;
-            /** Simulation Options */
-            simulation_options?: components["schemas"]["ListRubricApiSimulationOption"][] | null;
+            department_filter?: components["schemas"]["ListFilterSection"] | null;
+            simulation_filter?: components["schemas"]["ListFilterSection"] | null;
             /** Total Count */
             total_count?: number | null;
         };
@@ -31193,17 +31207,6 @@ export interface components {
             can_duplicate?: boolean | null;
             /** Standard Group Ids */
             standard_group_ids?: string[] | null;
-        };
-        /** ListRubricApiSimulationOption */
-        ListRubricApiSimulationOption: {
-            /** Simulation Id */
-            simulation_id?: string | null;
-            /** Name */
-            name?: string | null;
-            /** Description */
-            description?: string | null;
-            /** Count */
-            count?: number | null;
         };
         /** ListRubricApiStandard */
         ListRubricApiStandard: {
@@ -67957,6 +67960,41 @@ export interface operations {
                 "application/json": {
                     [key: string]: unknown;
                 };
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    document_generation_started_api_socket_v4_server_document_generation_started_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DocumentGenerationStartedEvent"];
             };
         };
         responses: {

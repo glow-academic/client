@@ -144,3 +144,16 @@ class CohortGenerationStartedEvent(BaseModel):
     group_id: str
     run_id: str
     resource_types: list[str]
+
+
+class DocumentGenerationStartedEvent(BaseModel):
+    """Server-to-client event: document_generation_started.
+
+    Emitted when document generation begins, listing which resource types
+    will be generated.
+    """
+
+    artifact_type: str = "document"
+    group_id: str
+    run_id: str
+    resource_types: list[str]

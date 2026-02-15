@@ -40,7 +40,7 @@ import { useFlushRegistry } from "@/hooks/use-flush-registry";
 import { useGenerationModal } from "@/hooks/use-generation-modal";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import {
-  buildResourceActions,
+  buildDraftPayload,
   checkHasResourceIds,
   computeEffectiveFormState,
   type ResourceConfig,
@@ -451,14 +451,13 @@ function CohortComponent({
       return {
         input_draft_id: draftId || null,
         group_id: stableCohortDataFields?.group_id ?? null,
-        ...buildResourceActions(COHORT_RESOURCES, {
+        ...buildDraftPayload(COHORT_RESOURCES, {
           formState: currentFormState as unknown as Record<string, unknown>,
           referenceState: lastPatchedFormStateRef.current as unknown as Record<
             string,
             unknown
           >,
           flushResults: (flushResults ?? {}) as Record<string, unknown>,
-          entityData: stableCohortDataFields as Record<string, unknown> | null,
         }),
         simulation_position_values:
           currentFormState.simulation_positions.length > 0
@@ -701,27 +700,15 @@ function CohortComponent({
       }
 
       try {
-        const initialState = getInitialFormState();
-
         await saveCohortAction({
           body: {
-            // Context
-            group_id: cohortData.group_id,
             input_cohort_id: isEditMode && cohortId ? cohortId : null,
-            ...buildResourceActions(COHORT_RESOURCES, {
-              formState: formStateRef.current as unknown as Record<
-                string,
-                unknown
-              >,
-              referenceState: initialState as unknown as Record<
-                string,
-                unknown
-              >,
-              flushResults: flushResults as Record<string, unknown>,
-              entityData: cohortData as Record<string, unknown> | null,
-            }),
-
-            // Special: simulation position values
+            name_id: effectiveFormState.name_id!,
+            description_id: effectiveFormState.description_id || null,
+            flag_id: effectiveFormState.active_flag_id || null,
+            department_ids: effectiveFormState.department_ids.length > 0 ? effectiveFormState.department_ids : null,
+            simulation_ids: effectiveFormState.simulation_ids.length > 0 ? effectiveFormState.simulation_ids : null,
+            simulation_position_ids: null,
             simulation_position_values:
               effectiveFormState.simulation_positions.length > 0
                 ? effectiveFormState.simulation_ids.map(
@@ -731,7 +718,7 @@ function CohortComponent({
                       )?.value ?? index + 1,
                   )
                 : undefined,
-          } as SaveCohortIn["body"],
+          },
         } as SaveCohortIn);
         toast.success(
           `Cohort ${isEditMode ? "updated" : "created"} successfully!`,
@@ -747,7 +734,6 @@ function CohortComponent({
     [
       isAutosaveEnabled,
       flushAllResources,
-      getInitialFormState,
       isEditMode,
       cohortId,
       cohortData,

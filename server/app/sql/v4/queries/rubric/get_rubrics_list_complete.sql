@@ -67,9 +67,10 @@ CREATE TYPE types.q_get_rubrics_list_v4_standard AS (
     points int
 );
 
--- Filter option type: id + count only (names hydrated in Python from cache)
-CREATE TYPE types.q_get_rubrics_list_v4_option_id AS (
-    id uuid,
+-- Filter option type: value/label/count (names resolved in SQL, no Python hydration needed)
+CREATE TYPE types.q_get_rubrics_list_v4_option AS (
+    value text,
+    label text,
     count bigint
 );
 
@@ -88,8 +89,8 @@ RETURNS TABLE (
     rubrics types.q_get_rubrics_list_v4_rubric[],
     standard_groups types.q_get_rubrics_list_v4_standard_group[],
     standards types.q_get_rubrics_list_v4_standard[],
-    department_option_ids types.q_get_rubrics_list_v4_option_id[],
-    simulation_option_ids types.q_get_rubrics_list_v4_option_id[],
+    department_options types.q_get_rubrics_list_v4_option[],
+    simulation_options types.q_get_rubrics_list_v4_option[],
     total_count bigint
 )
 LANGUAGE sql
@@ -253,27 +254,26 @@ standards_aggregated AS (
         ) as standards
     FROM standards_distinct sd
 ),
--- Filter option IDs with counts (names hydrated in Python from cached *_internal() functions)
--- Department options: all departments the user has access to, with count of rubrics in each
+-- Department options with names resolved in SQL (ListFilterSection pattern)
 department_option_data AS (
     SELECT
-        dr.id,
+        dr.id::text as value,
+        (SELECT n.name FROM department_names_junction dn JOIN names_resource n ON n.id = dn.name_id WHERE dn.department_id = dd.department_id LIMIT 1) as label,
         (SELECT COUNT(*) FROM rubric_data rd WHERE rd.department_ids IS NOT NULL AND dr.id::text = ANY(rd.department_ids)) as count
     FROM departments_resource dr
+    JOIN department_departments_junction dd ON dd.departments_id = dr.id
     WHERE dr.id IN (SELECT department_id FROM user_departments)
+      AND (department_search IS NULL OR LOWER((SELECT n.name FROM department_names_junction dn JOIN names_resource n ON n.id = dn.name_id WHERE dn.department_id = dd.department_id LIMIT 1)) LIKE '%' || LOWER(department_search) || '%')
 ),
--- Simulation options: all simulations linked to visible rubrics, with count of rubrics linked
-assigned_simulation_ids AS (
-    SELECT DISTINCT unnest(simulation_ids)::uuid as simulation_id
-    FROM rubric_data
-    WHERE simulation_ids IS NOT NULL AND COALESCE(array_length(simulation_ids, 1), 0) > 0
-),
+-- Simulation options with names resolved in SQL
 simulation_option_data AS (
     SELECT
-        rsd.simulation_id as id,
+        rsd.simulation_id::text as value,
+        (SELECT n.name FROM simulation_names_junction sn JOIN names_resource n ON n.id = sn.name_id WHERE sn.simulation_id = rsd.simulation_id LIMIT 1) as label,
         COUNT(DISTINCT rsd.rubric_id) as count
     FROM rubric_simulations_distinct rsd
     WHERE rsd.rubric_id IN (SELECT rubric_id FROM rubric_data)
+      AND (simulation_search IS NULL OR LOWER((SELECT n.name FROM simulation_names_junction sn JOIN names_resource n ON n.id = sn.name_id WHERE sn.simulation_id = rsd.simulation_id LIMIT 1)) LIKE '%' || LOWER(simulation_search) || '%')
     GROUP BY rsd.simulation_id
 )
 SELECT
@@ -300,20 +300,22 @@ SELECT
     (SELECT standard_groups FROM standard_groups_aggregated) as standard_groups,
     -- Standards for paginated rubrics
     (SELECT standards FROM standards_aggregated) as standards,
-    -- Department option IDs with counts (names hydrated in Python)
+    -- Department options (names resolved in SQL)
     COALESCE(
         (SELECT ARRAY_AGG(
-            (dod.id, dod.count)::types.q_get_rubrics_list_v4_option_id
+            (dod.value, dod.label, dod.count)::types.q_get_rubrics_list_v4_option
+            ORDER BY dod.label
         ) FROM department_option_data dod),
-        '{}'::types.q_get_rubrics_list_v4_option_id[]
-    ) as department_option_ids,
-    -- Simulation option IDs with counts (names hydrated in Python)
+        '{}'::types.q_get_rubrics_list_v4_option[]
+    ) as department_options,
+    -- Simulation options (names resolved in SQL)
     COALESCE(
         (SELECT ARRAY_AGG(
-            (sod.id, sod.count)::types.q_get_rubrics_list_v4_option_id
+            (sod.value, sod.label, sod.count)::types.q_get_rubrics_list_v4_option
+            ORDER BY sod.label
         ) FROM simulation_option_data sod),
-        '{}'::types.q_get_rubrics_list_v4_option_id[]
-    ) as simulation_option_ids,
+        '{}'::types.q_get_rubrics_list_v4_option[]
+    ) as simulation_options,
     -- Total count of filtered rubrics (before pagination)
     (SELECT total_count FROM filtered_count) as total_count
 FROM params

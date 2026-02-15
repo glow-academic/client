@@ -6,7 +6,7 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
-from app.api.v4.types import BaseResourceSection
+from app.api.v4.types import BaseResourceSection, ListFilterSection
 from app.api.v4.views.drafts.types import DraftAuthViewItem
 from app.sql.types import (
     QGetAgentsV4Item,
@@ -390,19 +390,10 @@ class ListAuthApiAuth(BaseModel):
     can_delete: bool | None = None
 
 
-class ListAuthApiDepartment(BaseModel):
-    """Department filter option for list endpoint."""
-
-    department_id: UUID | None = None
-    name: str | None = None
-    description: str | None = None
-    count: int | None = None
-
-
 class ListAuthApiResponse(BaseModel):
     """Response model for list auth endpoint with computed permissions."""
 
     actor_name: str | None = None
     auths: list[ListAuthApiAuth] | None = None
-    departments: list[ListAuthApiDepartment] | None = None
+    department_filter: ListFilterSection | None = None
     total_count: int | None = None
