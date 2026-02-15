@@ -1,5 +1,6 @@
 config.yaml
 install-config.yaml
+keys.txt
 .env
 .env.prod
 .env.beta

@@ -110,6 +110,7 @@ class TestSettingGetExisting:
         )
 
         # Assert
+        # Assert
         assert response.status_code == 200
         data = response.json()
         assert data["setting_exists"] is True
