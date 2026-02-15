@@ -239,21 +239,21 @@ def compute_disabled_reason(
 def compute_can_delete(
     user_role: str | None,
     scenario_department_ids: list[str] | list[UUID] | None,
-    total_simulation_links: int,
+    active_simulation_count: int,
 ) -> bool:
     """Compute can_delete permission.
 
     Business logic:
     - Default scenarios (no departments) cannot be deleted except by superadmin
-    - Scenarios linked to ANY simulation (active or not) cannot be deleted
+    - Scenarios linked to active simulations cannot be deleted
     - Only admins, instructional, and superadmins can delete
     """
     # Default scenarios can only be deleted by superadmin
     if not scenario_department_ids and user_role != "superadmin":
         return False
 
-    # Scenarios with any simulation links cannot be deleted
-    if total_simulation_links > 0:
+    # Scenarios with active simulation links cannot be deleted
+    if active_simulation_count > 0:
         return False
 
     # Only admins, instructional, and superadmins can delete

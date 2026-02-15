@@ -425,7 +425,6 @@ class ListScenarioApiScenario(BaseModel):
     simulation_ids: list[str] | None = None
     num_simulations: int | None = None
     active_simulation_count: int | None = None
-    total_simulation_links: int | None = None
     can_edit: bool | None = None
     can_delete: bool | None = None
     can_duplicate: bool | None = None
@@ -658,7 +657,6 @@ class ListScenarioSqlScenario(BaseModel):
     simulation_ids: list[str] | None = None
     num_simulations: int | None = None
     active_simulation_count: int | None = None
-    total_simulation_links: int | None = None
     cohort_ids: list[str] | None = None
     updated_at: datetime | None = None
 

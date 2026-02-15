@@ -253,21 +253,21 @@ def compute_parameters_required() -> bool:
 def compute_can_delete(
     user_role: str | None,
     persona_department_ids: list[str] | list[UUID] | None,
-    total_scenario_links: int,
+    active_scenario_count: int,
 ) -> bool:
     """Compute can_delete permission.
 
     Business logic:
     - Default personas (no departments) cannot be deleted except by superadmin
-    - Personas linked to ANY scenario (active or not) cannot be deleted
+    - Personas linked to active scenarios cannot be deleted
     - Only admins, instructional, and superadmins can delete
     """
     # Default personas can only be deleted by superadmin
     if not persona_department_ids and user_role != "superadmin":
         return False
 
-    # Personas with any scenario links cannot be deleted
-    if total_scenario_links > 0:
+    # Personas with active scenario links cannot be deleted
+    if active_scenario_count > 0:
         return False
 
     # Only admins, instructional, and superadmins can delete

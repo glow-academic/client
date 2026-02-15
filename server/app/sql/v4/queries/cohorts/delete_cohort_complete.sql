@@ -1,6 +1,6 @@
 -- Delete cohort with usage check - returns usage_count and deleted (boolean)
 -- Converted to function
--- Note: Prevents deletion if ANY cohort_profile links exist (active or inactive) for historical data preservation
+-- Note: Prevents deletion if active profile links exist
 -- 1) Drop function first (breaks dependency on types)
 -- Drop all versions of the function using DO block to handle signature variations
 DO $$
@@ -45,7 +45,7 @@ actor_profile AS (
 usage_check AS (
     SELECT COUNT(*) as usage_count
     FROM params x
-    JOIN profile_cohorts_junction cp ON cp.cohort_id = x.cohort_id
+    JOIN profile_cohorts_junction cp ON cp.cohort_id = x.cohort_id AND cp.active = true
 ),
 cohort_name AS (
     -- Get cohort name before deletion

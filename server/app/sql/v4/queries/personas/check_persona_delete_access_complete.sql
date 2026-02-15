@@ -24,7 +24,7 @@ CREATE OR REPLACE FUNCTION api_check_persona_delete_access_v4(
 RETURNS TABLE (
     -- Persona state for Python permission logic
     persona_department_ids text[],
-    total_scenario_links bigint
+    active_scenario_count bigint
 )
 LANGUAGE sql
 STABLE
@@ -44,17 +44,17 @@ persona_departments_data AS (
     FROM params x
     LEFT JOIN persona_departments_junction pd ON pd.persona_id = x.persona_id
 ),
--- Count total scenario links (active or not)
+-- Count active scenario links only
 -- NOTE: Must use COUNT(column) not COUNT(*) with LEFT JOIN, as COUNT(*)
 -- counts the NULL row when there are no matches
 scenario_links AS (
-    SELECT COUNT(sp.persona_id)::bigint as total_links
+    SELECT COUNT(sp.persona_id)::bigint as active_count
     FROM params x
-    LEFT JOIN scenario_personas_junction sp ON sp.persona_id = x.persona_id
+    LEFT JOIN scenario_personas_junction sp ON sp.persona_id = x.persona_id AND sp.active = true
 )
 SELECT
     (SELECT department_ids FROM persona_departments_data) as persona_department_ids,
-    (SELECT total_links FROM scenario_links) as total_scenario_links
+    (SELECT active_count FROM scenario_links) as active_scenario_count
 FROM params x
 $$;
 

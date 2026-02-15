@@ -329,7 +329,7 @@ async def get_scenario_list(
             can_delete_val = compute_can_delete(
                 user_role=user_role,
                 scenario_department_ids=s.department_ids,
-                total_simulation_links=s.total_simulation_links or 0,
+                active_simulation_count=s.active_simulation_count or 0,
             )
             can_duplicate_val = compute_can_duplicate(user_role)
 
@@ -348,7 +348,6 @@ async def get_scenario_list(
                     simulation_ids=s.simulation_ids,
                     num_simulations=s.num_simulations,
                     active_simulation_count=s.active_simulation_count,
-                    total_simulation_links=s.total_simulation_links,
                     can_edit=can_edit_val,
                     can_delete=can_delete_val,
                     can_duplicate=can_duplicate_val,

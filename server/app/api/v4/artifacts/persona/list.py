@@ -1,7 +1,7 @@
 """Personas list endpoint - v4 API following DHH principles.
 
 Two-pass architecture:
-1. SQL returns raw data with active_scenario_count and total_scenario_links
+1. SQL returns raw data with active_scenario_count
 2. Python computes permissions (can_edit, can_delete, can_duplicate)
 
 Filter option names hydrated from cached *_internal() functions.
@@ -150,7 +150,7 @@ async def get_persona_list(
             can_delete_val = compute_can_delete(
                 user_role=user_role,
                 persona_department_ids=persona.department_ids,
-                total_scenario_links=persona.total_scenario_links or 0,
+                active_scenario_count=persona.active_scenario_count or 0,
             )
             can_duplicate_val = compute_can_duplicate(user_role)
 

@@ -47,7 +47,6 @@ CREATE TYPE types.q_list_personas_v4_persona AS (
     is_inactive boolean,
     num_scenarios int,
     active_scenario_count int,
-    total_scenario_links int,
     updated_at timestamptz
 );
 
@@ -132,9 +131,8 @@ persona_data_base AS (
         COALESCE(ps.scenario_ids, ARRAY[]::uuid[]) as scenario_ids,
         COALESCE(pfd.field_ids, ARRAY[]::uuid[]) as field_ids,
         COALESCE(ps.num_scenarios, 0) as num_scenarios,
-        -- active_scenario_count and total_scenario_links from inline scenario count
-        COALESCE(ps.num_scenarios, 0) as active_scenario_count,
-        COALESCE(ps.num_scenarios, 0) as total_scenario_links
+        -- active_scenario_count from inline scenario count
+        COALESCE(ps.num_scenarios, 0) as active_scenario_count
     FROM persona_artifact p
     LEFT JOIN persona_scenarios ps ON ps.persona_id = p.id
     LEFT JOIN persona_departments_data pdd ON pdd.persona_id = p.id
@@ -221,7 +219,6 @@ SELECT
              pd.department_ids, pd.scenario_ids, pd.field_ids,
              NOT pd.active, pd.num_scenarios,
              pd.active_scenario_count,
-             pd.total_scenario_links,
              pd.updated_at
             )::types.q_list_personas_v4_persona
             ORDER BY pd.updated_at DESC NULLS LAST

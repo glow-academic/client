@@ -8659,7 +8659,7 @@ class CheckPersonaDeleteAccessSqlParams(BaseModel):
 
 class CheckPersonaDeleteAccessSqlRow(BaseModel):
     persona_department_ids: list[str] | None = None
-    total_scenario_links: int | None = None
+    active_scenario_count: int | None = None
 
 
 class CheckPersonaDeleteAccessApiRequest(BaseModel):
@@ -8668,7 +8668,7 @@ class CheckPersonaDeleteAccessApiRequest(BaseModel):
 
 class CheckPersonaDeleteAccessApiResponse(BaseModel):
     persona_department_ids: list[str] | None = None
-    total_scenario_links: int | None = None
+    active_scenario_count: int | None = None
 
 
 # Generated from: check_persona_duplicate_access
@@ -9168,7 +9168,6 @@ class QListPersonasV4Persona(BaseModel):
     is_inactive: bool | None
     num_scenarios: int | None
     active_scenario_count: int | None
-    total_scenario_links: int | None
     updated_at: datetime | None
 
 
@@ -19412,7 +19411,6 @@ class QListScenariosV4Scenario(BaseModel):
     simulation_ids: list[str] | None
     num_simulations: int | None
     active_simulation_count: int | None
-    total_simulation_links: int | None
     cohort_ids: list[str] | None
     updated_at: datetime | None
 

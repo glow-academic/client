@@ -31596,8 +31596,6 @@ export interface components {
             num_simulations?: number | null;
             /** Active Simulation Count */
             active_simulation_count?: number | null;
-            /** Total Simulation Links */
-            total_simulation_links?: number | null;
             /** Can Edit */
             can_edit?: boolean | null;
             /** Can Delete */

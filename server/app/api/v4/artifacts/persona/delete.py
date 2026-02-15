@@ -102,7 +102,7 @@ async def delete_persona(
         can_delete = compute_can_delete(
             user_role=user_role,
             persona_department_ids=access_result.persona_department_ids,
-            total_scenario_links=access_result.total_scenario_links or 0,
+            active_scenario_count=access_result.active_scenario_count or 0,
         )
 
         if not can_delete:

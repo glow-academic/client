@@ -48,7 +48,6 @@ CREATE TYPE types.q_list_scenarios_v4_scenario AS (
     simulation_ids text[],
     num_simulations int,
     active_simulation_count int,
-    total_simulation_links int,
     cohort_ids text[],
     updated_at timestamptz
 );
@@ -154,21 +153,11 @@ scenario_departments_data AS (
     GROUP BY sd.scenario_id
 ),
 -- Usage data (replaces view_scenario_edit_state) — computed from resource tables
--- active_usage_count: simulation count only when scenario has scenario_active flag
--- total_simulation_links: total simulation references
+-- active_simulation_count: active simulation links
 scenario_usage AS (
     SELECT
         ssj.scenario_id,
-        COUNT(DISTINCT sim_r.id)::int as total_simulation_links,
-        CASE WHEN EXISTS(
-            SELECT 1 FROM scenario_flags_junction sf
-            JOIN flags_resource f ON f.id = sf.flag_id
-            WHERE sf.scenario_id = ssj.scenario_id
-              AND f.name = 'scenario_active'
-              AND sf.value = true
-        ) THEN COUNT(DISTINCT sim_r.id)::int
-        ELSE 0
-        END as active_usage_count
+        COUNT(DISTINCT sim_r.id)::int as active_simulation_count
     FROM scenario_scenarios_junction ssj
     LEFT JOIN simulations_resource sim_r ON ssj.scenarios_id = ANY(sim_r.scenario_ids) AND sim_r.active = true
     GROUP BY ssj.scenario_id
@@ -191,8 +180,7 @@ scenario_data AS (
         COALESCE(ss.num_simulations, 0) as num_simulations,
         COALESCE(sc.cohort_ids, ARRAY[]::text[]) as cohort_ids,
         -- Raw data for Python permission computation
-        COALESCE(su.active_usage_count, 0) as active_simulation_count,
-        COALESCE(su.total_simulation_links, 0) as total_simulation_links
+        COALESCE(su.active_simulation_count, 0) as active_simulation_count
     FROM scenario_artifact s
     -- Bridge to scenarios_resource for denormalized persona_ids + root check + parent linkage
     JOIN scenario_scenarios_junction ssj ON ssj.scenario_id = s.id
@@ -218,7 +206,7 @@ scenario_data AS (
         s.generated, s.updated_at, sr.parent_id, sr.persona_ids,
         sdd.department_ids, so.objective_ids, sfd.field_ids,
         ss.simulation_ids, ss.num_simulations, sc.cohort_ids,
-        su.active_usage_count, su.total_simulation_links, up.role
+        su.active_simulation_count, up.role
     HAVING
         -- Department scoping: include if has matching department link OR has no department links at all
         COUNT(sd.scenario_id) FILTER (WHERE sd.department_id IN (SELECT department_id FROM user_departments)) > 0
@@ -270,7 +258,7 @@ SELECT
             (sd.scenario_id, sd.name, sd.problem_statement, sd.is_inactive, sd.generated,
              sd.parent_scenario_id, sd.department_ids, sd.objective_ids, sd.persona_ids,
              sd.field_ids, sd.simulation_ids, sd.num_simulations,
-             sd.active_simulation_count, sd.total_simulation_links,
+             sd.active_simulation_count,
              sd.cohort_ids, sd.updated_at)::types.q_list_scenarios_v4_scenario
             ORDER BY sd.parent_scenario_id NULLS FIRST, sd.updated_at DESC NULLS LAST
         ),
