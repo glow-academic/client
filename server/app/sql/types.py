@@ -5105,6 +5105,76 @@ class SaveFieldApiResponse(BaseModel):
 
 
 
+# Generated from: get_agent_generation_context
+
+class GetAgentGenerationContextSqlParams(BaseModel):
+
+    p_profile_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.p_profile_id,
+        )
+
+class GetAgentGenerationContextSqlRow(BaseModel):
+
+    requests_per_day: int | None = None
+    runs_today: int | None = None
+
+class GetAgentGenerationContextApiRequest(BaseModel):
+
+    p_profile_id: UUID
+
+class GetAgentGenerationContextApiResponse(BaseModel):
+
+    requests_per_day: int | None = None
+    runs_today: int | None = None
+
+
+
+# Generated from: prepare_agent_generation
+
+class PrepareAgentGenerationSqlParams(BaseModel):
+
+    p_profile_id: UUID
+    p_group_id: UUID | None = None
+    p_agents_resource_id: UUID | None = None
+    p_models_resource_id: UUID | None = None
+    p_providers_resource_id: UUID | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.p_profile_id,
+            self.p_group_id,
+            self.p_agents_resource_id,
+            self.p_models_resource_id,
+            self.p_providers_resource_id,
+        )
+
+class PrepareAgentGenerationSqlRow(BaseModel):
+
+    run_id: UUID | None = None
+    group_id: UUID | None = None
+    trace_id: str | None = None
+    config_id: UUID | None = None
+
+class PrepareAgentGenerationApiRequest(BaseModel):
+
+    p_profile_id: UUID
+    p_group_id: UUID | None = None
+    p_agents_resource_id: UUID | None = None
+    p_models_resource_id: UUID | None = None
+    p_providers_resource_id: UUID | None = None
+
+class PrepareAgentGenerationApiResponse(BaseModel):
+
+    run_id: UUID | None = None
+    group_id: UUID | None = None
+    trace_id: str | None = None
+    config_id: UUID | None = None
+
+
+
 # Generated from: complete_attempt_grade
 
 class CompleteAttemptGradeSqlParams(BaseModel):
@@ -6008,6 +6078,76 @@ class PrepareFieldGenerationApiRequest(BaseModel):
     p_providers_resource_id: UUID | None = None
 
 class PrepareFieldGenerationApiResponse(BaseModel):
+
+    run_id: UUID | None = None
+    group_id: UUID | None = None
+    trace_id: str | None = None
+    config_id: UUID | None = None
+
+
+
+# Generated from: get_model_generation_context
+
+class GetModelGenerationContextSqlParams(BaseModel):
+
+    p_profile_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.p_profile_id,
+        )
+
+class GetModelGenerationContextSqlRow(BaseModel):
+
+    requests_per_day: int | None = None
+    runs_today: int | None = None
+
+class GetModelGenerationContextApiRequest(BaseModel):
+
+    p_profile_id: UUID
+
+class GetModelGenerationContextApiResponse(BaseModel):
+
+    requests_per_day: int | None = None
+    runs_today: int | None = None
+
+
+
+# Generated from: prepare_model_generation
+
+class PrepareModelGenerationSqlParams(BaseModel):
+
+    p_profile_id: UUID
+    p_group_id: UUID | None = None
+    p_agents_resource_id: UUID | None = None
+    p_models_resource_id: UUID | None = None
+    p_providers_resource_id: UUID | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.p_profile_id,
+            self.p_group_id,
+            self.p_agents_resource_id,
+            self.p_models_resource_id,
+            self.p_providers_resource_id,
+        )
+
+class PrepareModelGenerationSqlRow(BaseModel):
+
+    run_id: UUID | None = None
+    group_id: UUID | None = None
+    trace_id: str | None = None
+    config_id: UUID | None = None
+
+class PrepareModelGenerationApiRequest(BaseModel):
+
+    p_profile_id: UUID
+    p_group_id: UUID | None = None
+    p_agents_resource_id: UUID | None = None
+    p_models_resource_id: UUID | None = None
+    p_providers_resource_id: UUID | None = None
+
+class PrepareModelGenerationApiResponse(BaseModel):
 
     run_id: UUID | None = None
     group_id: UUID | None = None
@@ -27404,6 +27544,18 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "SaveFieldApiRequest",
         "SaveFieldApiResponse",
     ),
+    "app/sql/v4/queries/generate/agent/get_agent_generation_context_complete.sql": (
+        "GetAgentGenerationContextSqlParams",
+        "GetAgentGenerationContextSqlRow",
+        "GetAgentGenerationContextApiRequest",
+        "GetAgentGenerationContextApiResponse",
+    ),
+    "app/sql/v4/queries/generate/agent/prepare_agent_generation_complete.sql": (
+        "PrepareAgentGenerationSqlParams",
+        "PrepareAgentGenerationSqlRow",
+        "PrepareAgentGenerationApiRequest",
+        "PrepareAgentGenerationApiResponse",
+    ),
     "app/sql/v4/queries/generate/attempt/complete_attempt_grade_complete.sql": (
         "CompleteAttemptGradeSqlParams",
         "CompleteAttemptGradeSqlRow",
@@ -27553,6 +27705,18 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "PrepareFieldGenerationSqlRow",
         "PrepareFieldGenerationApiRequest",
         "PrepareFieldGenerationApiResponse",
+    ),
+    "app/sql/v4/queries/generate/model/get_model_generation_context_complete.sql": (
+        "GetModelGenerationContextSqlParams",
+        "GetModelGenerationContextSqlRow",
+        "GetModelGenerationContextApiRequest",
+        "GetModelGenerationContextApiResponse",
+    ),
+    "app/sql/v4/queries/generate/model/prepare_model_generation_complete.sql": (
+        "PrepareModelGenerationSqlParams",
+        "PrepareModelGenerationSqlRow",
+        "PrepareModelGenerationApiRequest",
+        "PrepareModelGenerationApiResponse",
     ),
     "app/sql/v4/queries/generate/parameter/get_parameter_generation_context_complete.sql": (
         "GetParameterGenerationContextSqlParams",
@@ -31067,6 +31231,16 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/generate/agent/get_agent_generation_context_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/generate/agent/prepare_agent_generation_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v4/queries/generate/attempt/complete_attempt_grade_complete.sql"]
     ) -> SqlString: ...
 
@@ -31188,6 +31362,16 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/queries/generate/field/prepare_field_generation_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/generate/model/get_model_generation_context_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/generate/model/prepare_model_generation_complete.sql"]
     ) -> SqlString: ...
 
     @overload

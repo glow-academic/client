@@ -1,12 +1,14 @@
 /**
  * Agents.tsx
- * Used to display the agents page.
+ * Used to display the agents page with server-side filtering.
  * @AshokSaravanan222 & @siladiea
  * 07/20/2025
  */
 "use client";
 import { Brain, Copy, Edit, Eye, Thermometer, Trash2, X } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useCallback, useMemo, useRef, useState } from "react";
+import { toast } from "sonner";
 
 import type {
   AgentsListOut,
@@ -37,15 +39,9 @@ import {
   SortingState,
   VisibilityState,
   getCoreRowModel,
-  getFacetedRowModel,
-  getFacetedUniqueValues,
-  getFilteredRowModel,
-  getPaginationRowModel,
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table";
-import { useMemo, useState } from "react";
-import { toast } from "sonner";
 import { useProfile } from "@/contexts/profile-context";
 
 export interface AgentsProps {
@@ -56,15 +52,31 @@ export interface AgentsProps {
     input: DuplicateAgentIn,
   ) => Promise<DuplicateAgentOut>;
   deleteAgentAction?: (input: DeleteAgentIn) => Promise<DeleteAgentOut>;
+  // Server-side pagination
+  pageIndex: number;
+  pageSize: number;
+  totalCount: number;
+  // Server-side filter search terms
+  departmentSearch: string;
+  modelSearch: string;
+  toolSearch: string;
 }
 
 export default function Agents({
   listData: serverListData,
   duplicateAgentAction,
   deleteAgentAction,
+  pageIndex,
+  pageSize,
+  totalCount,
+  departmentSearch,
+  modelSearch,
+  toolSearch,
 }: AgentsProps) {
   const { profile } = useProfile();
   const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
 
   // Delete dialog state
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -74,10 +86,25 @@ export default function Agents({
   } | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
+  // Local search state for debouncing
+  const [searchTerm, setSearchTerm] = useState(
+    searchParams?.get("search") ?? ""
+  );
+  const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   // Table state
   const [rowSelection, setRowSelection] = useState({});
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
-  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
+  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>(() => {
+    const filters: ColumnFiltersState = [];
+    const deptIds = searchParams?.getAll("departmentIds") ?? [];
+    const mIds = searchParams?.getAll("modelIds") ?? [];
+    const tIds = searchParams?.getAll("toolIds") ?? [];
+    if (deptIds.length > 0) filters.push({ id: "departments", value: deptIds });
+    if (mIds.length > 0) filters.push({ id: "model_id", value: mIds });
+    if (tIds.length > 0) filters.push({ id: "tools", value: tIds });
+    return filters;
+  });
   const [sorting, setSorting] = useState<SortingState>([
     { id: "updated_at", desc: true },
   ]);
@@ -87,9 +114,7 @@ export default function Agents({
 
   // Extract data from response - agents is now an array (composite types)
   const agents = useMemo(() => {
-    // API now returns agents as an array directly (no dict conversion needed)
     const agentsArray = agentsData?.agents || [];
-    // Sort by updated_at descending (most recent first) if present
     return agentsArray.sort((a, b) => {
       if (a.updated_at && b.updated_at) {
         return new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime();
@@ -97,7 +122,7 @@ export default function Agents({
       return 0;
     });
   }, [agentsData?.agents]);
-  
+
   // Build model mapping from agents array (for per-card model name display)
   const modelMapping = useMemo(() => {
     const mapping: Record<string, { name: string; description: string }> = {};
@@ -122,7 +147,7 @@ export default function Agents({
         .map((opt) => ({
           value: opt.id as string,
           label: opt.name as string,
-          count: opt.count ?? 0,
+          count: opt.count ?? undefined,
         }))
         .filter((opt) => opt.value && opt.label),
     [agentsData?.department_filter],
@@ -134,7 +159,7 @@ export default function Agents({
         .map((opt) => ({
           value: opt.id as string,
           label: opt.name as string,
-          count: opt.count ?? 0,
+          count: opt.count ?? undefined,
         }))
         .filter((opt) => opt.value && opt.label),
     [agentsData?.model_filter],
@@ -146,20 +171,198 @@ export default function Agents({
         .map((opt) => ({
           value: opt.id as string,
           label: opt.name as string,
-          count: opt.count ?? 0,
+          count: opt.count ?? undefined,
         }))
         .filter((opt) => opt.value && opt.label),
     [agentsData?.tool_filter],
   );
 
-  // Build department name mapping from filter options (for badge display)
-  const departmentMapping = useMemo(() => {
-    const mapping: Record<string, string> = {};
-    (agentsData?.department_filter?.options || []).forEach((opt) => {
-      if (opt.id && opt.name) mapping[opt.id] = opt.name;
-    });
-    return mapping;
-  }, [agentsData?.department_filter]);
+  // Helper to update URL search params
+  const updateAgentsParams = useCallback(
+    (updates: {
+      page?: number;
+      pageSize?: number;
+      search?: string;
+      departmentIds?: string[];
+      modelIds?: string[];
+      toolIds?: string[];
+      departmentSearch?: string;
+      modelSearch?: string;
+      toolSearch?: string;
+    }) => {
+      const params = new URLSearchParams(searchParams?.toString() || "");
+
+      if (updates.page !== undefined) {
+        if (updates.page === 0) params.delete("page");
+        else params.set("page", updates.page.toString());
+      }
+
+      if (updates.pageSize !== undefined) {
+        if (updates.pageSize === 12) params.delete("pageSize");
+        else params.set("pageSize", updates.pageSize.toString());
+      }
+
+      if (updates.search !== undefined) {
+        if (updates.search === "") params.delete("search");
+        else params.set("search", updates.search);
+      }
+
+      if (updates.departmentIds !== undefined) {
+        params.delete("departmentIds");
+        updates.departmentIds.forEach((id) => params.append("departmentIds", id));
+      }
+
+      if (updates.modelIds !== undefined) {
+        params.delete("modelIds");
+        updates.modelIds.forEach((id) => params.append("modelIds", id));
+      }
+
+      if (updates.toolIds !== undefined) {
+        params.delete("toolIds");
+        updates.toolIds.forEach((id) => params.append("toolIds", id));
+      }
+
+      if (updates.departmentSearch !== undefined) {
+        if (updates.departmentSearch === "") params.delete("departmentSearch");
+        else params.set("departmentSearch", updates.departmentSearch);
+      }
+
+      if (updates.modelSearch !== undefined) {
+        if (updates.modelSearch === "") params.delete("modelSearch");
+        else params.set("modelSearch", updates.modelSearch);
+      }
+
+      if (updates.toolSearch !== undefined) {
+        if (updates.toolSearch === "") params.delete("toolSearch");
+        else params.set("toolSearch", updates.toolSearch);
+      }
+
+      const qs = params.toString();
+      router.push(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
+    },
+    [pathname, router, searchParams]
+  );
+
+  // Commit search to URL
+  const commitSearch = useCallback(
+    (value: string) => {
+      updateAgentsParams({ page: 0, search: value.trim() || "" });
+    },
+    [updateAgentsParams]
+  );
+
+  // Handle search input change with debounce
+  const handleSearchChange = useCallback(
+    (value: string) => {
+      setSearchTerm(value);
+      if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
+      if (value === "") { commitSearch(""); return; }
+      searchTimeoutRef.current = setTimeout(() => { commitSearch(value); }, 500);
+    },
+    [commitSearch]
+  );
+
+  const handleSearchBlur = useCallback(() => {
+    if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
+    commitSearch(searchTerm);
+  }, [commitSearch, searchTerm]);
+
+  const handleSearchKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLInputElement>) => {
+      if (e.key === "Enter") {
+        if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
+        commitSearch(searchTerm);
+      }
+    },
+    [commitSearch, searchTerm]
+  );
+
+  // Handle filter option search changes (debounced)
+  const departmentSearchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const modelSearchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const toolSearchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const [localDepartmentSearch, setLocalDepartmentSearch] = useState(departmentSearch);
+  const [localModelSearch, setLocalModelSearch] = useState(modelSearch);
+  const [localToolSearch, setLocalToolSearch] = useState(toolSearch);
+
+  const handleDepartmentSearchChange = useCallback(
+    (value: string) => {
+      setLocalDepartmentSearch(value);
+      if (departmentSearchTimeoutRef.current) clearTimeout(departmentSearchTimeoutRef.current);
+      departmentSearchTimeoutRef.current = setTimeout(() => {
+        updateAgentsParams({ departmentSearch: value });
+      }, 300);
+    },
+    [updateAgentsParams]
+  );
+
+  const handleModelSearchChange = useCallback(
+    (value: string) => {
+      setLocalModelSearch(value);
+      if (modelSearchTimeoutRef.current) clearTimeout(modelSearchTimeoutRef.current);
+      modelSearchTimeoutRef.current = setTimeout(() => {
+        updateAgentsParams({ modelSearch: value });
+      }, 300);
+    },
+    [updateAgentsParams]
+  );
+
+  const handleToolSearchChange = useCallback(
+    (value: string) => {
+      setLocalToolSearch(value);
+      if (toolSearchTimeoutRef.current) clearTimeout(toolSearchTimeoutRef.current);
+      toolSearchTimeoutRef.current = setTimeout(() => {
+        updateAgentsParams({ toolSearch: value });
+      }, 300);
+    },
+    [updateAgentsParams]
+  );
+
+  // Sync column filters to URL when they change
+  const handleColumnFiltersChange = useCallback(
+    (updater: ColumnFiltersState | ((prev: ColumnFiltersState) => ColumnFiltersState)) => {
+      const newFilters = typeof updater === "function" ? updater(columnFilters) : updater;
+      setColumnFilters(newFilters);
+
+      const departmentFilter = newFilters.find((f) => f.id === "departments");
+      const modelFilter = newFilters.find((f) => f.id === "model_id");
+      const toolFilter = newFilters.find((f) => f.id === "tools");
+
+      updateAgentsParams({
+        page: 0,
+        departmentIds: (departmentFilter?.value as string[]) || [],
+        modelIds: (modelFilter?.value as string[]) || [],
+        toolIds: (toolFilter?.value as string[]) || [],
+      });
+    },
+    [columnFilters, updateAgentsParams]
+  );
+
+  // Handle pagination change
+  const handlePaginationChange = useCallback(
+    (
+      updater:
+        | { pageIndex: number; pageSize: number }
+        | ((prev: { pageIndex: number; pageSize: number }) => {
+            pageIndex: number;
+            pageSize: number;
+          })
+    ) => {
+      const newPagination =
+        typeof updater === "function"
+          ? updater({ pageIndex, pageSize })
+          : updater;
+      updateAgentsParams({
+        page: newPagination.pageIndex,
+        pageSize: newPagination.pageSize,
+      });
+    },
+    [pageIndex, pageSize, updateAgentsParams]
+  );
+
+  // Compute page count from total
+  const pageCount = Math.ceil(totalCount / pageSize);
 
   // Define table columns inline
   const columns: ColumnDef<(typeof agents)[number]>[] = useMemo(
@@ -219,7 +422,7 @@ export default function Agents({
     [modelMapping],
   );
 
-  // Create table instance
+  // Create table instance with manual pagination and filtering
   const table = useReactTable({
     data: agents,
     columns,
@@ -228,44 +431,30 @@ export default function Agents({
       columnVisibility,
       rowSelection,
       columnFilters,
+      pagination: {
+        pageIndex,
+        pageSize,
+      },
     },
     enableRowSelection: true,
     onRowSelectionChange: setRowSelection,
     onSortingChange: setSorting,
-    onColumnFiltersChange: setColumnFilters,
+    onColumnFiltersChange: handleColumnFiltersChange,
     onColumnVisibilityChange: setColumnVisibility,
+    onPaginationChange: handlePaginationChange,
     getCoreRowModel: getCoreRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
     getSortedRowModel: getSortedRowModel(),
-    getFacetedRowModel: getFacetedRowModel(),
-    getFacetedUniqueValues: getFacetedUniqueValues(),
-    initialState: {
-      pagination: {
-        pageSize: 12,
-      },
-    },
+    manualPagination: true,
+    manualFiltering: true,
+    pageCount,
   });
 
-  // Memoize table rows to avoid calling getRowModel() multiple times and prevent re-render issues
-  // Extract pagination primitives directly to avoid object reference issues
-  const pageIndex = table.getState().pagination.pageIndex;
-  const pageSize = table.getState().pagination.pageSize;
-  // Stringify arrays for stable comparison (arrays are compared by reference)
+  // Memoize table rows
   const sortingKey = JSON.stringify(sorting);
-  const columnFiltersKey = JSON.stringify(columnFilters);
   const tableRows = useMemo(() => {
     return table.getRowModel().rows;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [
-    // Use JSON.stringify for arrays to ensure stable comparison (arrays are compared by reference)
-    sortingKey,
-    columnFiltersKey,
-    agents.length,
-    // Use pagination primitives directly (not object references)
-    pageIndex,
-    pageSize,
-  ]);
+  }, [sortingKey, agents.length, pageIndex, pageSize]);
 
   const handleEdit = (id: string) => {
     router.push(`/intelligence/agents/${id}`);
@@ -385,7 +574,7 @@ export default function Agents({
                 variant="outline"
                 size="sm"
                 onClick={() => handleDuplicate(agent.agent_id!)}
-                disabled={false} // No loading state for server action
+                disabled={false}
                 aria-label={`Duplicate agent ${agent.name ?? "Unnamed Agent"}`}
                 data-testid="btn-duplicate-agent"
                 title={`Duplicate agent ${agent.name ?? "Unnamed Agent"}`}
@@ -429,11 +618,12 @@ export default function Agents({
   );
 
   // Get column references for toolbar
-  const nameColumn = table.getColumn("name");
   const modelColumn = table.getColumn("model_id");
   const departmentsColumn = table.getColumn("departments");
   const toolsColumn = table.getColumn("tools");
-  const isFiltered = table.getState().columnFilters.length > 0;
+  const isFiltered =
+    table.getState().columnFilters.length > 0 ||
+    searchTerm.length > 0;
 
   return (
     <div className="space-y-8">
@@ -448,10 +638,10 @@ export default function Agents({
               <Input
                 data-testid="agents-search"
                 placeholder="Search system agents..."
-                value={(nameColumn?.getFilterValue() as string) ?? ""}
-                onChange={(event) =>
-                  nameColumn?.setFilterValue(event.target.value)
-                }
+                value={searchTerm}
+                onChange={(event) => handleSearchChange(event.target.value)}
+                onBlur={handleSearchBlur}
+                onKeyDown={handleSearchKeyDown}
                 className="h-8 w-full md:w-[150px] lg:w-[250px]"
                 aria-label="Search agents by name"
                 aria-controls="agents-grid"
@@ -460,39 +650,55 @@ export default function Agents({
 
             <div className="flex items-center space-x-2 flex-wrap">
               {/* Department Filter */}
-              {departmentsColumn && departmentOptions.length > 0 && (
-                <DataTableFacetedFilter
-                  column={departmentsColumn}
-                  title="Department"
-                  options={departmentOptions}
-                  isServerDriven
-                />
-              )}
+              <DataTableFacetedFilter
+                column={departmentsColumn}
+                title="Department"
+                options={departmentOptions}
+                isServerDriven={true}
+                onSearchChange={handleDepartmentSearchChange}
+                searchValue={localDepartmentSearch}
+              />
 
               {/* Model Filter */}
-              {modelColumn && modelOptions.length > 0 && (
-                <DataTableFacetedFilter
-                  column={modelColumn}
-                  title="Model"
-                  options={modelOptions}
-                  isServerDriven
-                />
-              )}
+              <DataTableFacetedFilter
+                column={modelColumn}
+                title="Model"
+                options={modelOptions}
+                isServerDriven={true}
+                onSearchChange={handleModelSearchChange}
+                searchValue={localModelSearch}
+              />
 
               {/* Tool Filter */}
-              {toolsColumn && toolOptions.length > 0 && (
-                <DataTableFacetedFilter
-                  column={toolsColumn}
-                  title="Tool"
-                  options={toolOptions}
-                  isServerDriven
-                />
-              )}
+              <DataTableFacetedFilter
+                column={toolsColumn}
+                title="Tool"
+                options={toolOptions}
+                isServerDriven={true}
+                onSearchChange={handleToolSearchChange}
+                searchValue={localToolSearch}
+              />
 
               {isFiltered && (
                 <Button
                   variant="ghost"
-                  onClick={() => table.resetColumnFilters()}
+                  onClick={() => {
+                    setSearchTerm("");
+                    setLocalDepartmentSearch("");
+                    setLocalModelSearch("");
+                    setLocalToolSearch("");
+                    table.resetColumnFilters();
+                    updateAgentsParams({
+                      page: 0,
+                      search: "",
+                      departmentIds: [],
+                      modelIds: [],
+                      toolIds: [],
+                      departmentSearch: "",
+                      modelSearch: "",
+                      toolSearch: "",
+                    });
+                  }}
                   className="h-8 px-2 lg:px-3 hidden md:flex"
                 >
                   Reset

@@ -1,14 +1,14 @@
 /**
  * Evals.tsx
- * Evals list component with card-based layout and faceted filters
+ * Evals list component with card-based layout and server-side filtering
  * @AshokSaravanan222
  * 01/26/2025
  */
 "use client";
 
 import { Edit, Eye, Trash2, X } from "lucide-react";
-import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import type {
@@ -39,10 +39,6 @@ import {
   SortingState,
   VisibilityState,
   getCoreRowModel,
-  getFacetedRowModel,
-  getFacetedUniqueValues,
-  getFilteredRowModel,
-  getPaginationRowModel,
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table";
@@ -50,13 +46,25 @@ import {
 export interface EvalsProps {
   listData: EvalsListOut;
   deleteEvalAction?: (input: DeleteEvalIn) => Promise<DeleteEvalOut>;
+  // Server-side pagination
+  pageIndex: number;
+  pageSize: number;
+  totalCount: number;
+  // Server-side filter search terms
+  departmentSearch: string;
 }
 
 export default function Evals({
   listData: serverListData,
   deleteEvalAction,
+  pageIndex,
+  pageSize,
+  totalCount,
+  departmentSearch,
 }: EvalsProps) {
   const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const { socket } = useSocket();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [deleteItem, setDeleteItem] = useState<{
@@ -64,10 +72,21 @@ export default function Evals({
     name: string;
   } | null>(null);
 
+  // Local search state for debouncing
+  const [searchTerm, setSearchTerm] = useState(
+    searchParams?.get("search") ?? ""
+  );
+  const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   // Table state
   const [rowSelection, setRowSelection] = useState({});
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
-  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
+  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>(() => {
+    const filters: ColumnFiltersState = [];
+    const deptIds = searchParams?.getAll("departmentIds") ?? [];
+    if (deptIds.length > 0) filters.push({ id: "departments", value: deptIds });
+    return filters;
+  });
   const [sorting, setSorting] = useState<SortingState>([
     { id: "updated_at", desc: true },
   ]);
@@ -92,7 +111,7 @@ export default function Evals({
         .map((opt) => ({
           value: opt.id as string,
           label: opt.name as string,
-          count: opt.count ?? 0,
+          count: opt.count ?? undefined,
         }))
         .filter((opt) => opt.value && opt.label),
     [evalsData?.department_filter]
@@ -106,7 +125,6 @@ export default function Evals({
       eval_id: string;
       message: string;
     }) => {
-      // Refresh the page to get updated eval data
       if (data.eval_id) {
         router.refresh();
       }
@@ -119,16 +137,147 @@ export default function Evals({
     };
   }, [socket, router]);
 
+  // Helper to update URL search params
+  const updateEvalsParams = useCallback(
+    (updates: {
+      page?: number;
+      pageSize?: number;
+      search?: string;
+      departmentIds?: string[];
+      departmentSearch?: string;
+    }) => {
+      const params = new URLSearchParams(searchParams?.toString() || "");
+
+      if (updates.page !== undefined) {
+        if (updates.page === 0) params.delete("page");
+        else params.set("page", updates.page.toString());
+      }
+
+      if (updates.pageSize !== undefined) {
+        if (updates.pageSize === 12) params.delete("pageSize");
+        else params.set("pageSize", updates.pageSize.toString());
+      }
+
+      if (updates.search !== undefined) {
+        if (updates.search === "") params.delete("search");
+        else params.set("search", updates.search);
+      }
+
+      if (updates.departmentIds !== undefined) {
+        params.delete("departmentIds");
+        updates.departmentIds.forEach((id) => params.append("departmentIds", id));
+      }
+
+      if (updates.departmentSearch !== undefined) {
+        if (updates.departmentSearch === "") params.delete("departmentSearch");
+        else params.set("departmentSearch", updates.departmentSearch);
+      }
+
+      const qs = params.toString();
+      router.push(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
+    },
+    [pathname, router, searchParams]
+  );
+
+  // Commit search to URL
+  const commitSearch = useCallback(
+    (value: string) => {
+      updateEvalsParams({ page: 0, search: value.trim() || "" });
+    },
+    [updateEvalsParams]
+  );
+
+  // Handle search input change with debounce
+  const handleSearchChange = useCallback(
+    (value: string) => {
+      setSearchTerm(value);
+      if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
+      if (value === "") { commitSearch(""); return; }
+      searchTimeoutRef.current = setTimeout(() => { commitSearch(value); }, 500);
+    },
+    [commitSearch]
+  );
+
+  const handleSearchBlur = useCallback(() => {
+    if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
+    commitSearch(searchTerm);
+  }, [commitSearch, searchTerm]);
+
+  const handleSearchKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLInputElement>) => {
+      if (e.key === "Enter") {
+        if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
+        commitSearch(searchTerm);
+      }
+    },
+    [commitSearch, searchTerm]
+  );
+
+  // Handle filter option search changes (debounced)
+  const departmentSearchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [localDepartmentSearch, setLocalDepartmentSearch] = useState(departmentSearch);
+
+  const handleDepartmentSearchChange = useCallback(
+    (value: string) => {
+      setLocalDepartmentSearch(value);
+      if (departmentSearchTimeoutRef.current) clearTimeout(departmentSearchTimeoutRef.current);
+      departmentSearchTimeoutRef.current = setTimeout(() => {
+        updateEvalsParams({ departmentSearch: value });
+      }, 300);
+    },
+    [updateEvalsParams]
+  );
+
+  // Sync column filters to URL when they change
+  const handleColumnFiltersChange = useCallback(
+    (updater: ColumnFiltersState | ((prev: ColumnFiltersState) => ColumnFiltersState)) => {
+      const newFilters = typeof updater === "function" ? updater(columnFilters) : updater;
+      setColumnFilters(newFilters);
+
+      const departmentFilter = newFilters.find((f) => f.id === "departments");
+
+      updateEvalsParams({
+        page: 0,
+        departmentIds: (departmentFilter?.value as string[]) || [],
+      });
+    },
+    [columnFilters, updateEvalsParams]
+  );
+
+  // Handle pagination change
+  const handlePaginationChange = useCallback(
+    (
+      updater:
+        | { pageIndex: number; pageSize: number }
+        | ((prev: { pageIndex: number; pageSize: number }) => {
+            pageIndex: number;
+            pageSize: number;
+          })
+    ) => {
+      const newPagination =
+        typeof updater === "function"
+          ? updater({ pageIndex, pageSize })
+          : updater;
+      updateEvalsParams({
+        page: newPagination.pageIndex,
+        pageSize: newPagination.pageSize,
+      });
+    },
+    [pageIndex, pageSize, updateEvalsParams]
+  );
+
+  // Compute page count from total
+  const pageCount = Math.ceil(totalCount / pageSize);
+
   const handleDelete = async () => {
     if (!deleteItem || !deleteEvalAction) return;
 
     try {
       await deleteEvalAction({
         body: {
-          eval_id: deleteItem.id, // Convert camelCase to snake_case
+          eval_id: deleteItem.id,
         },
       });
-      // profileId comes from X-Profile-Id header automatically
       toast.success(`Eval "${deleteItem.name}" deleted successfully`);
       setShowDeleteDialog(false);
       setDeleteItem(null);
@@ -173,7 +322,7 @@ export default function Evals({
     []
   );
 
-  // Create table instance
+  // Create table instance with manual pagination and filtering
   const table = useReactTable({
     data: evalsListArray,
     columns,
@@ -182,40 +331,30 @@ export default function Evals({
       columnVisibility,
       rowSelection,
       columnFilters,
+      pagination: {
+        pageIndex,
+        pageSize,
+      },
     },
     enableRowSelection: true,
     onRowSelectionChange: setRowSelection,
     onSortingChange: setSorting,
-    onColumnFiltersChange: setColumnFilters,
+    onColumnFiltersChange: handleColumnFiltersChange,
     onColumnVisibilityChange: setColumnVisibility,
+    onPaginationChange: handlePaginationChange,
     getCoreRowModel: getCoreRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
     getSortedRowModel: getSortedRowModel(),
-    getFacetedRowModel: getFacetedRowModel(),
-    getFacetedUniqueValues: getFacetedUniqueValues(),
-    initialState: {
-      pagination: {
-        pageSize: 12,
-      },
-    },
+    manualPagination: true,
+    manualFiltering: true,
+    pageCount,
   });
 
   // Memoize table rows
-  const pageIndex = table.getState().pagination.pageIndex;
-  const pageSize = table.getState().pagination.pageSize;
   const sortingKey = JSON.stringify(sorting);
-  const columnFiltersKey = JSON.stringify(columnFilters);
   const tableRows = useMemo(() => {
     return table.getRowModel().rows;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [
-    sortingKey,
-    columnFiltersKey,
-    evalsListArray.length,
-    pageIndex,
-    pageSize,
-  ]);
+  }, [sortingKey, evalsListArray.length, pageIndex, pageSize]);
 
   const renderEvalCard = (evalItem: (typeof evalsListArray)[number]) => {
     const evalId = evalItem.eval_id ?? "";
@@ -305,82 +444,87 @@ export default function Evals({
   };
 
   // Get column references for toolbar
-  const nameColumn = table.getColumn("name");
   const departmentsColumn = table.getColumn("departments");
-  const isFiltered = table.getState().columnFilters.length > 0;
+  const isFiltered =
+    table.getState().columnFilters.length > 0 ||
+    searchTerm.length > 0;
 
   return (
     <div className="space-y-6" data-page="evals-index">
-      {evalsListArray.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-12">
-          <p className="text-muted-foreground">No evals found</p>
-        </div>
-      ) : (
-        <div className="space-y-4">
-          {/* Toolbar */}
-          <div
-            className="flex flex-col md:flex-row md:items-center md:justify-between gap-2"
-            data-testid="evals-toolbar"
-          >
-            <div className="flex flex-col md:flex-row md:flex-1 md:items-center md:space-x-2 gap-2 md:gap-0">
-              <div className="w-full md:w-auto">
-                <Input
-                  data-testid="evals-search"
-                  placeholder="Search evals..."
-                  value={(nameColumn?.getFilterValue() as string) ?? ""}
-                  onChange={(event) =>
-                    nameColumn?.setFilterValue(event.target.value)
-                  }
-                  className="h-8 w-full md:w-[150px] lg:w-[250px]"
-                  aria-label="Search evals by name"
-                  aria-controls="evals-grid"
-                />
-              </div>
+      <div className="space-y-4">
+        {/* Toolbar */}
+        <div
+          className="flex flex-col md:flex-row md:items-center md:justify-between gap-2"
+          data-testid="evals-toolbar"
+        >
+          <div className="flex flex-col md:flex-row md:flex-1 md:items-center md:space-x-2 gap-2 md:gap-0">
+            <div className="w-full md:w-auto">
+              <Input
+                data-testid="evals-search"
+                placeholder="Search evals..."
+                value={searchTerm}
+                onChange={(event) => handleSearchChange(event.target.value)}
+                onBlur={handleSearchBlur}
+                onKeyDown={handleSearchKeyDown}
+                className="h-8 w-full md:w-[150px] lg:w-[250px]"
+                aria-label="Search evals by name"
+                aria-controls="evals-grid"
+              />
+            </div>
 
-              <div className="flex items-center space-x-2 flex-wrap">
-                {departmentsColumn && departmentOptions.length > 0 && (
-                  <DataTableFacetedFilter
-                    column={departmentsColumn}
-                    title="Department"
-                    options={departmentOptions}
-                    isServerDriven
-                  />
-                )}
+            <div className="flex items-center space-x-2 flex-wrap">
+              <DataTableFacetedFilter
+                column={departmentsColumn}
+                title="Department"
+                options={departmentOptions}
+                isServerDriven={true}
+                onSearchChange={handleDepartmentSearchChange}
+                searchValue={localDepartmentSearch}
+              />
 
-                {isFiltered && (
-                  <Button
-                    variant="ghost"
-                    onClick={() => table.resetColumnFilters()}
-                    className="h-8 px-2 lg:px-3 hidden md:flex"
-                  >
-                    Reset
-                    <X className="ml-2 h-4 w-4" />
-                  </Button>
-                )}
-              </div>
+              {isFiltered && (
+                <Button
+                  variant="ghost"
+                  onClick={() => {
+                    setSearchTerm("");
+                    setLocalDepartmentSearch("");
+                    table.resetColumnFilters();
+                    updateEvalsParams({
+                      page: 0,
+                      search: "",
+                      departmentIds: [],
+                      departmentSearch: "",
+                    });
+                  }}
+                  className="h-8 px-2 lg:px-3 hidden md:flex"
+                >
+                  Reset
+                  <X className="ml-2 h-4 w-4" />
+                </Button>
+              )}
             </div>
           </div>
-
-          {/* Cards Grid */}
-          <div
-            className="grid gap-4 md:grid-cols-2 lg:grid-cols-3"
-            role="grid"
-            aria-label="evals grid"
-            data-testid="evals-grid"
-          >
-            {tableRows.length ? (
-              tableRows.map((row) => renderEvalCard(row.original))
-            ) : (
-              <div className="col-span-full text-center py-8 text-muted-foreground">
-                No evals match the current filters.
-              </div>
-            )}
-          </div>
-
-          {/* Pagination */}
-          <DataTablePagination table={table} card={true} />
         </div>
-      )}
+
+        {/* Cards Grid */}
+        <div
+          className="grid gap-4 md:grid-cols-2 lg:grid-cols-3"
+          role="grid"
+          aria-label="evals grid"
+          data-testid="evals-grid"
+        >
+          {tableRows.length ? (
+            tableRows.map((row) => renderEvalCard(row.original))
+          ) : (
+            <div className="col-span-full text-center py-8 text-muted-foreground">
+              No evals match the current filters.
+            </div>
+          )}
+        </div>
+
+        {/* Pagination */}
+        <DataTablePagination table={table} card={true} />
+      </div>
 
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <AlertDialogContent>

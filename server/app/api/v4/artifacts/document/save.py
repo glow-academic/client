@@ -2,6 +2,7 @@
 Unified endpoint that handles both create (document_id = NULL) and update (document_id provided).
 """
 
+import uuid
 from typing import Annotated, Any, cast
 
 import asyncpg  # type: ignore
@@ -12,6 +13,8 @@ from app.api.v4.artifacts.document.permissions import (
     compute_can_edit,
 )
 from app.api.v4.artifacts.document.types import (
+    DocumentMultiResourceAction,
+    DocumentResourceAction,
     SaveDocumentApiRequest,
     SaveDocumentApiResponse,
     SaveDocumentSqlParams,
@@ -27,7 +30,10 @@ from app.sql.types import (
     load_sql_query,
 )
 from app.utils.cache.invalidate_tags import invalidate_tags
+from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import execute_sql_typed
+
+logger = get_logger(__name__)
 
 # SQL paths
 ACCESS_CHECK_SQL_PATH = (
@@ -37,6 +43,69 @@ SQL_PATH = "app/sql/v4/queries/documents/save_document_complete.sql"
 
 
 router = APIRouter()
+
+
+async def save_document_internal(
+    conn: asyncpg.Connection,
+    profile_id: uuid.UUID,
+    group_id: uuid.UUID,
+    resource_actions: dict[str, Any],
+    document_id: uuid.UUID | None = None,
+) -> uuid.UUID | None:
+    """Save a document from resource actions dict (used by generation complete handler).
+
+    Builds SaveDocumentSqlParams from a flat resource_actions dict, executes the
+    save SQL in a transaction, and invalidates cache.
+
+    Returns the document_id on success, None on failure.
+    """
+    try:
+
+        def _single(key: str) -> DocumentResourceAction:
+            val = resource_actions.get(key, {})
+            if isinstance(val, dict):
+                return DocumentResourceAction(
+                    resource_id=val.get("resource_id"),
+                )
+            return DocumentResourceAction()
+
+        def _multi(key: str) -> DocumentMultiResourceAction:
+            val = resource_actions.get(key, {})
+            if isinstance(val, dict):
+                return DocumentMultiResourceAction(
+                    resource_ids=val.get("resource_ids"),
+                )
+            return DocumentMultiResourceAction()
+
+        params = SaveDocumentSqlParams(
+            profile_id=profile_id,
+            input_document_id=document_id,
+            group_id=group_id,
+            names=_single("names"),
+            descriptions=_single("descriptions"),
+            flags=_single("flags"),
+            departments=_multi("departments"),
+            fields=_multi("fields"),
+            uploads=_multi("uploads"),
+            images=_multi("images"),
+            texts=_multi("texts"),
+        )
+
+        async with conn.transaction():
+            result = cast(
+                SaveDocumentSqlRow,
+                await execute_sql_typed(conn, SQL_PATH, params=params),
+            )
+
+            if not result or not result.document_id:
+                return None
+
+        await invalidate_tags(["documents"])
+        return result.document_id
+
+    except Exception as e:
+        logger.exception(f"save_document_internal failed: {e}")
+        return None
 
 
 @router.post(

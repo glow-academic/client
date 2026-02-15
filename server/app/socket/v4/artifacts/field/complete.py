@@ -11,6 +11,8 @@ from typing import Any
 
 from fastapi import APIRouter
 
+from app.api.v4.artifacts.field.save import save_field_internal
+from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
 from app.infra.v4.websocket.generation_tracker import (
     cleanup_generation,
     record_agent_complete,
@@ -142,7 +144,41 @@ async def _handle_field_run_complete(sid: str, data: dict[str, Any]) -> None:
     is_complete, _all_tool_results = await record_agent_complete(run_id, tool_results)
 
     if is_complete:
-        # All agents finished - emit field_generation_complete
+        # All agents finished - auto-save field if save=True (default)
+        field_id: str | None = None
+
+        should_save = data.get("save", True)
+        profile_id_str = await find_profile_by_socket(sid)
+        if should_save and profile_id_str and group_id_str:
+            try:
+                profile_id = uuid.UUID(profile_id_str)
+                group_id = uuid.UUID(group_id_str)
+
+                # Build resource_actions from all_tool_results
+                resource_actions: dict[str, Any] = {}
+                for tr in _all_tool_results:
+                    if isinstance(tr, dict):
+                        rt = tr.get("resource_type")
+                        rid = tr.get("resource_id")
+                        rids = tr.get("resource_ids")
+                        if rt and rid:
+                            resource_actions[rt] = {"resource_id": rid}
+                        elif rt and rids:
+                            resource_actions[rt] = {"resource_ids": rids}
+
+                async with get_db_connection() as conn:
+                    saved_id = await save_field_internal(
+                        conn=conn,
+                        profile_id=profile_id,
+                        group_id=group_id,
+                        resource_actions=resource_actions,
+                    )
+                    if saved_id:
+                        field_id = str(saved_id)
+            except Exception as e:
+                logger.exception(f"Failed to auto-save field: {str(e)}")
+
+        # Emit field_generation_complete
         event = FieldGenerationCompleteEvent(
             artifact_type="field",
             group_id=group_id_str or "",
@@ -150,6 +186,7 @@ async def _handle_field_run_complete(sid: str, data: dict[str, Any]) -> None:
             run_id=run_id,
             success=True,
             message="Field generation completed",
+            field_id=field_id,
         )
 
         await sio.emit(

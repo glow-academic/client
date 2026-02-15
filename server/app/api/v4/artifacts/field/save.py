@@ -2,6 +2,7 @@
 Unified endpoint that handles both create (field_id = NULL) and update (field_id provided).
 """
 
+import uuid
 from typing import Annotated, Any, cast
 
 import asyncpg  # type: ignore
@@ -12,6 +13,8 @@ from app.api.v4.artifacts.field.permissions import (
     compute_can_edit,
 )
 from app.api.v4.artifacts.field.types import (
+    FieldMultiResourceAction,
+    FieldResourceAction,
     SaveFieldApiRequest,
     SaveFieldApiResponse,
     SaveFieldSqlParams,
@@ -27,7 +30,10 @@ from app.sql.types import (
     load_sql_query,
 )
 from app.utils.cache.invalidate_tags import invalidate_tags
+from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import execute_sql_typed
+
+logger = get_logger(__name__)
 
 # SQL paths
 ACCESS_CHECK_SQL_PATH = "app/sql/v4/queries/fields/check_field_save_access_complete.sql"
@@ -35,6 +41,66 @@ SQL_PATH = "app/sql/v4/queries/fields/save_field_complete.sql"
 
 
 router = APIRouter()
+
+
+async def save_field_internal(
+    conn: asyncpg.Connection,
+    profile_id: uuid.UUID,
+    group_id: uuid.UUID,
+    resource_actions: dict[str, Any],
+    field_id: uuid.UUID | None = None,
+) -> uuid.UUID | None:
+    """Save a field from resource actions dict (used by generation complete handler).
+
+    Builds SaveFieldSqlParams from a flat resource_actions dict, executes the
+    save SQL in a transaction, and invalidates cache.
+
+    Returns the field_id on success, None on failure.
+    """
+    try:
+
+        def _single(key: str) -> FieldResourceAction:
+            val = resource_actions.get(key, {})
+            if isinstance(val, dict):
+                return FieldResourceAction(
+                    resource_id=val.get("resource_id"),
+                )
+            return FieldResourceAction()
+
+        def _multi(key: str) -> FieldMultiResourceAction:
+            val = resource_actions.get(key, {})
+            if isinstance(val, dict):
+                return FieldMultiResourceAction(
+                    resource_ids=val.get("resource_ids"),
+                )
+            return FieldMultiResourceAction()
+
+        params = SaveFieldSqlParams(
+            profile_id=profile_id,
+            input_field_id=field_id,
+            group_id=group_id,
+            names=_single("names"),
+            descriptions=_single("descriptions"),
+            flags=_single("flags"),
+            departments=_multi("departments"),
+            conditional_parameters=_multi("conditional_parameters"),
+        )
+
+        async with conn.transaction():
+            result = cast(
+                SaveFieldSqlRow,
+                await execute_sql_typed(conn, SQL_PATH, params=params),
+            )
+
+            if not result or not result.field_id:
+                return None
+
+        await invalidate_tags(["fields"])
+        return result.field_id
+
+    except Exception as e:
+        logger.exception(f"save_field_internal failed: {e}")
+        return None
 
 
 @router.post(

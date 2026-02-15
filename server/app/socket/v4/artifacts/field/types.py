@@ -21,9 +21,11 @@ class FieldGenerationCompleteEvent(GenerationCompleteEvent):
 
     Emitted when field generation completes. Resource-level data is now
     sent via resource_generation_complete events from the shared handler.
+    Contains optional field_id if auto-save succeeded.
     """
 
     artifact_type: str = "field"
+    field_id: str | None = None
 
 
 class FieldGenerationProgressEvent(GenerationProgressEvent):

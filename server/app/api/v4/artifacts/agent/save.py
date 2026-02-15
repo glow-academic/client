@@ -2,6 +2,7 @@
 Unified endpoint that handles both create (agent_id = NULL) and update (agent_id provided).
 """
 
+import uuid
 from typing import Annotated, Any, cast
 
 import asyncpg  # type: ignore
@@ -28,7 +29,10 @@ from app.sql.types import (
     load_sql_query,
 )
 from app.utils.cache.invalidate_tags import invalidate_tags
+from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import execute_sql_typed
+
+logger = get_logger(__name__)
 
 # Load SQL with types at module level - makes it clear what SQL file is used
 ACCESS_SQL_PATH = "app/sql/v4/queries/agents/get_agent_access_complete.sql"
@@ -36,6 +40,70 @@ SQL_PATH = "app/sql/v4/queries/agents/save_agent_complete.sql"
 
 
 router = APIRouter()
+
+
+async def save_agent_internal(
+    conn: asyncpg.Connection,
+    profile_id: uuid.UUID,
+    group_id: uuid.UUID | None,
+    resource_actions: dict[str, Any],
+    agent_id: uuid.UUID | None = None,
+) -> uuid.UUID | None:
+    """Save an agent from resource actions dict (used by generation complete handler).
+
+    Agent uses auto-generated SaveAgentSqlParams which takes flat IDs and strings
+    (not resource action composites). Maps resource_actions keys to the flat params.
+
+    Returns the agent_id on success, None on failure.
+    """
+    try:
+
+        def _single_id(key: str) -> uuid.UUID | None:
+            val = resource_actions.get(key, {})
+            if isinstance(val, dict):
+                rid = val.get("resource_id")
+                return uuid.UUID(str(rid)) if rid else None
+            return None
+
+        def _multi_ids(key: str) -> list[uuid.UUID] | None:
+            val = resource_actions.get(key, {})
+            if isinstance(val, dict):
+                rids = val.get("resource_ids")
+                if rids:
+                    return [uuid.UUID(str(r)) for r in rids]
+            return None
+
+        params = SaveAgentSqlParams(
+            profile_id=profile_id,
+            input_agent_id=agent_id,
+            name_id=_single_id("names"),
+            model_id=_single_id("models"),
+            description_id=_single_id("descriptions"),
+            prompt_id=_single_id("prompts"),
+            instructions_id=_single_id("instructions"),
+            active_flag_id=_single_id("flags"),
+            temperature_level_id=_single_id("temperature_levels"),
+            reasoning_level_id=_single_id("reasoning_levels"),
+            department_ids=_multi_ids("departments"),
+            tool_ids=_multi_ids("tools"),
+            voice_ids=_multi_ids("voices"),
+        )
+
+        async with conn.transaction():
+            result = cast(
+                SaveAgentSqlRow,
+                await execute_sql_typed(conn, SQL_PATH, params=params),
+            )
+
+            if not result or not result.agent_id:
+                return None
+
+        await invalidate_tags(["agents"])
+        return result.agent_id
+
+    except Exception as e:
+        logger.exception(f"save_agent_internal failed: {e}")
+        return None
 
 
 @router.post(

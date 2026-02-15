@@ -40,6 +40,7 @@ class GenerateAgentPayload(GetAgentApiRequest):
     # Generation-specific fields - resource-type API
     resource_types: list[str]  # Required: which resources to generate
     user_instructions: list[str] | None = None  # Optional: user instructions
+    save: bool = True  # Whether to auto-save on completion
 
 
 # =============================================================================
@@ -52,9 +53,11 @@ class AgentGenerationCompleteEvent(GenerationCompleteEvent):
 
     Emitted when an agent resource generation completes successfully.
     Contains full resource objects (not just IDs) for immediate frontend use.
+    Contains optional agent_id if auto-save succeeded.
     """
 
     artifact_type: str = "agent"
+    agent_id: str | None = None
 
     # Single-select resources (full objects)
     name_resource: QGetNamesV4Item | None = None

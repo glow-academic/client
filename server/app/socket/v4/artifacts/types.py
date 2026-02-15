@@ -196,3 +196,29 @@ class FieldGenerationStartedEvent(BaseModel):
     group_id: str
     run_id: str
     resource_types: list[str]
+
+
+class AgentGenerationStartedEvent(BaseModel):
+    """Server-to-client event: agent_generation_started.
+
+    Emitted when agent generation begins, listing which resource types
+    will be generated.
+    """
+
+    artifact_type: str = "agent"
+    group_id: str
+    run_id: str
+    resource_types: list[str]
+
+
+class ModelGenerationStartedEvent(BaseModel):
+    """Server-to-client event: model_generation_started.
+
+    Emitted when model generation begins, listing which resource types
+    will be generated.
+    """
+
+    artifact_type: str = "model"
+    group_id: str
+    run_id: str
+    resource_types: list[str]

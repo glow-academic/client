@@ -10035,6 +10035,28 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/socket/v4/server/agent_generation_started": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Agent Generation Started Api
+         * @description Server-to-client event: Agent generation started.
+         *
+         *     Emitted when agent generation begins, listing resource types being generated.
+         */
+        post: operations["agent_generation_started_api_socket_v4_server_agent_generation_started_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/socket/v4/server/agent_generation_progress": {
         parameters: {
             query?: never;
@@ -10066,7 +10088,7 @@ export interface paths {
         put?: never;
         /**
          * Agent Generation Complete Api
-         * @description Server-to-client event: agent generation complete.
+         * @description Server-to-client event: Agent generation completed.
          */
         post: operations["agent_generation_complete_api_socket_v4_server_agent_generation_complete_post"];
         delete?: never;
@@ -10419,6 +10441,28 @@ export interface paths {
         put?: never;
         /** Parameter Generation Error Api */
         post: operations["parameter_generation_error_api_socket_v4_server_parameter_generation_error_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v4/server/field_generation_started": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Field Generation Started Api
+         * @description Server-to-client event: Field generation started.
+         *
+         *     Emitted when field generation begins, listing resource types being generated.
+         */
+        post: operations["field_generation_started_api_socket_v4_server_field_generation_started_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -17164,6 +17208,66 @@ export interface components {
             /** Resources */
             resources?: components["schemas"]["AgentFlagConfig"][] | null;
         };
+        /**
+         * AgentGenerationCompleteEvent
+         * @description Server-to-client event: agent_generation_complete.
+         *
+         *     Emitted when an agent resource generation completes successfully.
+         *     Contains full resource objects (not just IDs) for immediate frontend use.
+         */
+        AgentGenerationCompleteEvent: {
+            /**
+             * Artifact Type
+             * @default agent
+             */
+            artifact_type: string;
+            /** Group Id */
+            group_id: string;
+            /** Resource Type */
+            resource_type: string;
+            /** Run Id */
+            run_id?: string | null;
+            /** Success */
+            success: boolean;
+            /** Message */
+            message: string;
+            /** Type */
+            type?: string | null;
+            name_resource?: components["schemas"]["QGetNamesV4Item"] | null;
+            description_resource?: components["schemas"]["QGetDescriptionsV4Item"] | null;
+            model_resource?: components["schemas"]["QGetModelsV4Item"] | null;
+            prompt_resource?: components["schemas"]["QGetPromptsV4Item"] | null;
+            instructions_resource?: components["schemas"]["QGetInstructionsV4Item"] | null;
+            flag_resource?: components["schemas"]["QGetFlagsV4Item"] | null;
+            temperature_level_resource?: components["schemas"]["QGetTemperatureLevelsV4Item"] | null;
+            reasoning_level_resource?: components["schemas"]["QGetReasoningLevelsV4Item"] | null;
+            /** Department Resources */
+            department_resources?: components["schemas"]["QGetDepartmentsV4Item"][] | null;
+            /** Tool Resources */
+            tool_resources?: components["schemas"]["QGetToolsV4Item"][] | null;
+            /** Voice Resources */
+            voice_resources?: components["schemas"]["QGetVoicesV4Item"][] | null;
+        };
+        /**
+         * AgentGenerationStartedEvent
+         * @description Server-to-client event: agent_generation_started.
+         *
+         *     Emitted when agent generation begins, listing which resource types
+         *     will be generated.
+         */
+        AgentGenerationStartedEvent: {
+            /**
+             * Artifact Type
+             * @default agent
+             */
+            artifact_type: string;
+            /** Group Id */
+            group_id: string;
+            /** Run Id */
+            run_id: string;
+            /** Resource Types */
+            resource_types: string[];
+        };
         /** AgentInstructionSection */
         AgentInstructionSection: {
             /**
@@ -22623,6 +22727,7 @@ export interface components {
          *
          *     Emitted when document generation completes. Resource-level data is now
          *     sent via resource_generation_complete events from the shared handler.
+         *     Contains optional document_id if auto-save succeeded.
          */
         DocumentGenerationCompleteEvent: {
             /**
@@ -22642,6 +22747,8 @@ export interface components {
             message: string;
             /** Type */
             type?: string | null;
+            /** Document Id */
+            document_id?: string | null;
         };
         /**
          * DocumentGenerationStartedEvent
@@ -24534,6 +24641,7 @@ export interface components {
          *
          *     Emitted when field generation completes. Resource-level data is now
          *     sent via resource_generation_complete events from the shared handler.
+         *     Contains optional field_id if auto-save succeeded.
          */
         FieldGenerationCompleteEvent: {
             /**
@@ -24553,6 +24661,8 @@ export interface components {
             message: string;
             /** Type */
             type?: string | null;
+            /** Field Id */
+            field_id?: string | null;
         };
         /** FieldGenerationErrorEvent */
         FieldGenerationErrorEvent: {
@@ -24614,6 +24724,26 @@ export interface components {
             arguments_delta?: string | null;
             /** Trace Id */
             trace_id?: string | null;
+        };
+        /**
+         * FieldGenerationStartedEvent
+         * @description Server-to-client event: field_generation_started.
+         *
+         *     Emitted when field generation begins, listing which resource types
+         *     will be generated.
+         */
+        FieldGenerationStartedEvent: {
+            /**
+             * Artifact Type
+             * @default field
+             */
+            artifact_type: string;
+            /** Group Id */
+            group_id: string;
+            /** Run Id */
+            run_id: string;
+            /** Resource Types */
+            resource_types: string[];
         };
         /** FieldNameSection */
         FieldNameSection: {
@@ -33147,6 +33277,7 @@ export interface components {
          *
          *     Emitted when parameter generation completes. Resource-level data is now
          *     sent via resource_generation_complete events from the shared handler.
+         *     Contains optional parameter_id if auto-save succeeded.
          */
         ParameterGenerationCompleteEvent: {
             /**
@@ -33166,6 +33297,8 @@ export interface components {
             message: string;
             /** Type */
             type?: string | null;
+            /** Parameter Id */
+            parameter_id?: string | null;
         };
         /**
          * ParameterGenerationStartedEvent
@@ -68224,6 +68357,41 @@ export interface operations {
             };
         };
     };
+    agent_generation_started_api_socket_v4_server_agent_generation_started_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AgentGenerationStartedEvent"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     agent_generation_progress_api_socket_v4_server_agent_generation_progress_post: {
         parameters: {
             query?: never;
@@ -68270,9 +68438,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": {
-                    [key: string]: unknown;
-                };
+                "application/json": components["schemas"]["AgentGenerationCompleteEvent"];
             };
         };
         responses: {
@@ -68874,6 +69040,41 @@ export interface operations {
                 "application/json": {
                     [key: string]: unknown;
                 };
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    field_generation_started_api_socket_v4_server_field_generation_started_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FieldGenerationStartedEvent"];
             };
         };
         responses: {

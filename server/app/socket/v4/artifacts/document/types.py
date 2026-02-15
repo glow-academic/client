@@ -40,9 +40,11 @@ class DocumentGenerationCompleteEvent(GenerationCompleteEvent):
 
     Emitted when document generation completes. Resource-level data is now
     sent via resource_generation_complete events from the shared handler.
+    Contains optional document_id if auto-save succeeded.
     """
 
     artifact_type: str = "document"
+    document_id: str | None = None
 
 
 class DocumentGenerationProgressEvent(GenerationProgressEvent):

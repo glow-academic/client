@@ -41,9 +41,11 @@ class ParameterGenerationCompleteEvent(GenerationCompleteEvent):
 
     Emitted when parameter generation completes. Resource-level data is now
     sent via resource_generation_complete events from the shared handler.
+    Contains optional parameter_id if auto-save succeeded.
     """
 
     artifact_type: str = "parameter"
+    parameter_id: str | None = None
 
 
 class ParameterGenerationProgressEvent(GenerationProgressEvent):
