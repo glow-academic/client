@@ -27,6 +27,7 @@ END $$;
 CREATE OR REPLACE FUNCTION api_duplicate_scenario_v4(
     scenario_id uuid,
     profile_id uuid,
+    name_resource_id uuid DEFAULT NULL,
     group_id uuid DEFAULT NULL,
     session_id uuid DEFAULT NULL
 )
@@ -109,15 +110,6 @@ source_questions AS (
     FROM params x
     JOIN scenario_questions_junction sq ON sq.scenario_id = x.scenario_id AND sq.active = true
 ),
--- Create new name with " Copy" suffix
-get_or_create_name AS (
-    INSERT INTO names_resource (name, created_at)
-    SELECT ss.name || ' Copy', NOW()
-    FROM source_scenario ss
-    WHERE ss.name IS NOT NULL
-    ON CONFLICT (name) DO UPDATE SET created_at = EXCLUDED.created_at
-    RETURNING id as name_id
-),
 -- Get flag IDs
 get_active_flag AS (
     SELECT id as flag_id FROM flags_resource WHERE name = 'active' LIMIT 1
@@ -171,13 +163,12 @@ new_scenario AS (
     CROSS JOIN group_target gt
     RETURNING id
 ),
--- Link name (new name with " Copy" suffix)
+-- Link name (name resource created by Python)
 link_name AS (
     INSERT INTO scenario_names_junction (scenario_id, name_id, created_at)
-    SELECT ns.id, gocn.name_id, NOW()
+    SELECT ns.id, name_resource_id, NOW()
     FROM new_scenario ns
-    CROSS JOIN get_or_create_name gocn
-    WHERE gocn.name_id IS NOT NULL
+    WHERE name_resource_id IS NOT NULL
 ),
 -- Link existing description
 link_description AS (

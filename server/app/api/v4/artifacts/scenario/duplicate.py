@@ -14,7 +14,8 @@ from app.api.v4.artifacts.scenario.types import (
     DuplicateScenarioApiResponse,
 )
 from app.api.v4.auth.profile import get_auth_profile_internal
-from app.infra.v4.activity.audit import audit_set
+from app.api.v4.resources.names.create import create_names_internal
+from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
 from app.sql.types import (
@@ -40,6 +41,12 @@ router = APIRouter()
 @router.post(
     "/duplicate",
     response_model=DuplicateScenarioApiResponse,
+    dependencies=[
+        audit_activity(
+            "scenario.duplicated",
+            "{{ actor.name }} duplicated scenario '{{ scenario.name }}'",
+        )
+    ],
 )
 async def duplicate_scenario(
     request: DuplicateScenarioApiRequest,
@@ -125,34 +132,42 @@ async def duplicate_scenario(
                 detail="You don't have permission to duplicate scenarios.",
             )
 
-        # Convert API request to SQL params (add profile_id from header)
-        params = DuplicateScenarioSqlParams(
-            **request.model_dump(), profile_id=profile_id, session_id=session_id
-        )
-        sql_params = params.to_tuple()
+        # Phase 1: Python creates name resource
+        original_name = access_result.scenario_name or "Unknown"
+        new_name = f"{original_name} Copy"
+        name_resource_id = await create_names_internal(conn, new_name)
 
-        # Execute SQL with typed helper (single row result)
-        result = cast(
-            DuplicateScenarioSqlRow,
-            await execute_sql_typed(
-                conn,
-                SQL_PATH,
-                params=params,
-            ),
-        )
-
-        if not result.scenario_id:
-            raise ValueError(f"Scenario not found: {request.scenario_id}")
-
-        scenario_name = result.scenario_name or "Unknown"
-
-        # Set audit context with data from SQL query
-        if actor_name:
-            audit_set(
-                http_request,
-                actor={"name": actor_name, "id": profile_id},
-                scenario={"name": scenario_name, "id": str(result.scenario_id)},
+        # Phase 2: SQL creates artifact + links junctions (inside transaction)
+        async with conn.transaction():
+            params = DuplicateScenarioSqlParams(
+                scenario_id=request.scenario_id,
+                profile_id=profile_id,
+                name_resource_id=name_resource_id,
+                group_id=request.group_id,
+                session_id=session_id,
             )
+            sql_params = params.to_tuple()
+
+            # Execute SQL with typed helper (single row result)
+            result = cast(
+                DuplicateScenarioSqlRow,
+                await execute_sql_typed(
+                    conn,
+                    SQL_PATH,
+                    params=params,
+                ),
+            )
+
+            if not result.scenario_id:
+                raise ValueError(f"Scenario not found: {request.scenario_id}")
+
+            # Set audit context with data from SQL query
+            if actor_name:
+                audit_set(
+                    http_request,
+                    actor={"name": actor_name, "id": profile_id},
+                    scenario={"name": original_name, "id": str(result.scenario_id)},
+                )
 
         # Convert SQL result to API response
         api_response = DuplicateScenarioApiResponse.model_validate(result.model_dump())

@@ -1944,6 +1944,66 @@ class SaveAuthApiResponse(BaseModel):
     auth_id: UUID | None = None
 
 
+# Generated from: check_cohort_delete_access
+
+
+class CheckCohortDeleteAccessSqlParams(BaseModel):
+    profile_id: UUID
+    cohort_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.cohort_id,
+        )
+
+
+class CheckCohortDeleteAccessSqlRow(BaseModel):
+    cohort_exists: bool | None = None
+    cohort_department_ids: list[str] | None = None
+    usage_count: int | None = None
+
+
+class CheckCohortDeleteAccessApiRequest(BaseModel):
+    cohort_id: UUID
+
+
+class CheckCohortDeleteAccessApiResponse(BaseModel):
+    cohort_exists: bool | None = None
+    cohort_department_ids: list[str] | None = None
+    usage_count: int | None = None
+
+
+# Generated from: check_cohort_duplicate_access
+
+
+class CheckCohortDuplicateAccessSqlParams(BaseModel):
+    profile_id: UUID
+    cohort_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.cohort_id,
+        )
+
+
+class CheckCohortDuplicateAccessSqlRow(BaseModel):
+    cohort_exists: bool | None = None
+    original_title: str | None = None
+    cohort_department_ids: list[str] | None = None
+
+
+class CheckCohortDuplicateAccessApiRequest(BaseModel):
+    cohort_id: UUID
+
+
+class CheckCohortDuplicateAccessApiResponse(BaseModel):
+    cohort_exists: bool | None = None
+    original_title: str | None = None
+    cohort_department_ids: list[str] | None = None
+
+
 # Generated from: delete_cohort
 
 
@@ -1982,12 +2042,14 @@ class DeleteCohortApiResponse(BaseModel):
 class DuplicateCohortSqlParams(BaseModel):
     cohort_id: UUID
     profile_id: UUID
+    name_resource_id: UUID | None = None
     session_id: UUID | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.cohort_id,
             self.profile_id,
+            self.name_resource_id,
             self.session_id,
         )
 
@@ -2001,6 +2063,7 @@ class DuplicateCohortSqlRow(BaseModel):
 
 class DuplicateCohortApiRequest(BaseModel):
     cohort_id: UUID
+    name_resource_id: UUID | None = None
     session_id: UUID | None = None
 
 
@@ -19228,6 +19291,7 @@ class DeleteScenarioApiResponse(BaseModel):
 class DuplicateScenarioSqlParams(BaseModel):
     scenario_id: UUID
     profile_id: UUID
+    name_resource_id: UUID | None = None
     group_id: UUID | None = None
     session_id: UUID | None = None
 
@@ -19235,6 +19299,7 @@ class DuplicateScenarioSqlParams(BaseModel):
         return (
             self.scenario_id,
             self.profile_id,
+            self.name_resource_id,
             self.group_id,
             self.session_id,
         )
@@ -19248,6 +19313,7 @@ class DuplicateScenarioSqlRow(BaseModel):
 
 class DuplicateScenarioApiRequest(BaseModel):
     scenario_id: UUID
+    name_resource_id: UUID | None = None
     group_id: UUID | None = None
     session_id: UUID | None = None
 
@@ -20670,11 +20736,13 @@ class DeleteSimulationApiResponse(BaseModel):
 class DuplicateSimulationSqlParams(BaseModel):
     simulation_id: UUID
     profile_id: UUID
+    name_resource_id: UUID | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.simulation_id,
             self.profile_id,
+            self.name_resource_id,
         )
 
 
@@ -20686,6 +20754,7 @@ class DuplicateSimulationSqlRow(BaseModel):
 
 class DuplicateSimulationApiRequest(BaseModel):
     simulation_id: UUID
+    name_resource_id: UUID | None = None
 
 
 class DuplicateSimulationApiResponse(BaseModel):
@@ -25162,6 +25231,18 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "SaveAuthApiRequest",
         "SaveAuthApiResponse",
     ),
+    "app/sql/v4/queries/cohorts/check_cohort_delete_access_complete.sql": (
+        "CheckCohortDeleteAccessSqlParams",
+        "CheckCohortDeleteAccessSqlRow",
+        "CheckCohortDeleteAccessApiRequest",
+        "CheckCohortDeleteAccessApiResponse",
+    ),
+    "app/sql/v4/queries/cohorts/check_cohort_duplicate_access_complete.sql": (
+        "CheckCohortDuplicateAccessSqlParams",
+        "CheckCohortDuplicateAccessSqlRow",
+        "CheckCohortDuplicateAccessApiRequest",
+        "CheckCohortDuplicateAccessApiResponse",
+    ),
     "app/sql/v4/queries/cohorts/delete_cohort_complete.sql": (
         "DeleteCohortSqlParams",
         "DeleteCohortSqlRow",
@@ -28856,6 +28937,20 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/queries/auth/save_auth_complete.sql"],
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal[
+            "app/sql/v4/queries/cohorts/check_cohort_delete_access_complete.sql"
+        ],
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal[
+            "app/sql/v4/queries/cohorts/check_cohort_duplicate_access_complete.sql"
+        ],
     ) -> SqlString: ...
 
     @overload

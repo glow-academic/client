@@ -19,6 +19,7 @@ END $$;
 CREATE OR REPLACE FUNCTION api_duplicate_cohort_v4(
     cohort_id uuid,
     profile_id uuid,
+    name_resource_id uuid DEFAULT NULL,
     session_id uuid DEFAULT NULL
 )
 RETURNS TABLE (
@@ -56,16 +57,6 @@ default_call AS (
     FROM view_calls_entry
     LIMIT 1
 ),
--- Insert title INTO names_resource table
-new_title_resource AS (
-    INSERT INTO names_resource (name, created_at)
-    SELECT title || ' Copy', NOW()
-    FROM original_cohort
-    CROSS JOIN default_call dc
-    WHERE title IS NOT NULL
-    ON CONFLICT (name) DO UPDATE SET created_at = EXCLUDED.created_at
-    RETURNING id as name_id, name
-),
 -- Insert description INTO descriptions_resource table
 existing_description_resource AS (
     SELECT d.id as description_id, d.description
@@ -100,15 +91,15 @@ new_cohort AS (
     VALUES (NOW(), NOW())
     RETURNING id
 ),
--- Link cohort to title
+-- Link cohort to title (name resource created by Python)
 link_cohort_title AS (
     INSERT INTO cohort_names_junction (cohort_id, name_id, created_at)
-    SELECT 
+    SELECT
         nc.id,
-        ntr.name_id,
+        name_resource_id,
         NOW()
     FROM new_cohort nc
-    CROSS JOIN new_title_resource ntr
+    WHERE name_resource_id IS NOT NULL
 ),
 -- Link cohort to description
 link_cohort_description AS (
@@ -131,12 +122,12 @@ link_cohort_active_flag AS (
     WHERE f.name = 'cohort_active'
 ),
 cohort_with_title AS (
-    -- Get cohort with title for return
-    SELECT 
+    -- Get cohort with title for return (name from names_resource via name_resource_id)
+    SELECT
         nc.id,
-        ntr.name as title
+        n.name as title
     FROM new_cohort nc
-    LEFT JOIN new_title_resource ntr ON true
+    LEFT JOIN names_resource n ON n.id = name_resource_id
 ),
 copy_simulations AS (
     -- Copy simulation relationships (positions linked via cohort_simulation_positions_junction)

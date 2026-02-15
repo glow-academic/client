@@ -157,22 +157,36 @@ List endpoints must support pagination via:
 
 ### Rule 12: Response shape
 
-The list response must contain:
+The list response uses standardized `ListFilterSection` types for each filter dimension. Each section contains filter options, echoed `selected_ids`, and echoed `search` from the request.
 
-- `items` — list of items with computed permissions (`can_edit`, `can_delete`, `can_duplicate`)
-- `filter_options` — per dimension, each option has `id`, `name`, `description`, `count`
-- `total_count` — total number of items matching the query
+**Shared filter types** (from `server/app/api/v4/types.py`):
+
+```python
+class ListFilterOption(BaseModel):
+    id: str | None = None
+    name: str | None = None
+    count: int | None = None
+
+class ListFilterSection(BaseModel):
+    options: list[ListFilterOption] | None = None
+    selected_ids: list[str] | None = None
+    search: str | None = None
+```
+
+**Response shape** — each artifact defines its own response with `ListFilterSection` per dimension:
 
 ```python
 class ListPersonasApiResponse(BaseModel):
-    items: list[PersonaListItem]
-    scenario_options: list[FilterOption]
-    field_options: list[FilterOption]
-    department_options: list[FilterOption]
+    personas: list[PersonaListItem]
+    scenario_filter: ListFilterSection | None = None
+    field_filter: ListFilterSection | None = None
+    department_filter: ListFilterSection | None = None
     total_count: int
 ```
 
-Reference: `server/app/api/v4/artifacts/persona/types.py`
+Each filter dimension echoes back `selected_ids` and `search` from the request, enabling the client to confirm which filters are active. Options contain hydrated `id`, `name`, and `count`.
+
+Reference: `server/app/api/v4/types.py`, `server/app/api/v4/artifacts/persona/types.py`
 
 ---
 

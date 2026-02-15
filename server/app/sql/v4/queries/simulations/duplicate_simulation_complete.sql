@@ -20,7 +20,8 @@ END $$;
 -- 2) Recreate function
 CREATE OR REPLACE FUNCTION api_duplicate_simulation_v4(
     simulation_id uuid,
-    profile_id uuid
+    profile_id uuid,
+    name_resource_id uuid DEFAULT NULL
 )
 RETURNS TABLE (
     simulation_id uuid,
@@ -31,7 +32,8 @@ LANGUAGE sql
 AS $$
 WITH params AS (
     SELECT simulation_id AS simulation_id,
-           profile_id AS profile_id
+           profile_id AS profile_id,
+           name_resource_id AS name_resource_id
 ),
 actor_profile AS (
     SELECT 
@@ -52,15 +54,6 @@ default_call AS (
     SELECT id as call_id
     FROM view_calls_entry
     LIMIT 1
-),
-get_or_create_name AS (
-    INSERT INTO names_resource (name, created_at)
-    SELECT ss.title || ' Copy', NOW()
-    FROM source_simulation ss
-    CROSS JOIN default_call dc
-    WHERE ss.title IS NOT NULL
-    ON CONFLICT (name) DO UPDATE SET created_at = EXCLUDED.created_at
-    RETURNING id as name_id, name as name_value
 ),
 get_or_create_description AS (
     INSERT INTO descriptions_resource (description, created_at)
@@ -86,10 +79,10 @@ new_simulation AS (
 ),
 link_name AS (
     INSERT INTO simulation_names_junction (simulation_id, name_id, created_at)
-    SELECT ns.simulation_id, gocn.name_id, NOW()
+    SELECT ns.simulation_id, x.name_resource_id, NOW()
     FROM new_simulation ns
-    CROSS JOIN get_or_create_name gocn
-    WHERE gocn.name_id IS NOT NULL
+    CROSS JOIN params x
+    WHERE x.name_resource_id IS NOT NULL
 ),
 link_description AS (
     INSERT INTO simulation_descriptions_junction (simulation_id, description_id, created_at)
@@ -164,12 +157,11 @@ copy_departments AS (
     JOIN simulation_departments_junction sd ON sd.simulation_id = ssim.source_id AND sd.active = true
     CROSS JOIN new_simulation ns
 )
-SELECT 
+SELECT
     ns.simulation_id,
-    COALESCE(gocn.name_value, '')::text as simulation_name,
+    COALESCE(ss.title, '')::text as simulation_name,
     ap.actor_name::text as actor_name
 FROM new_simulation ns
 CROSS JOIN source_simulation ss
-LEFT JOIN get_or_create_name gocn ON gocn.name_id IS NOT NULL
 CROSS JOIN actor_profile ap
 $$;

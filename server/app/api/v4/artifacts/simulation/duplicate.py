@@ -13,6 +13,7 @@ from app.api.v4.artifacts.simulation.permissions import (
     has_access,
 )
 from app.api.v4.auth.profile import get_auth_profile_internal
+from app.api.v4.resources.names.create import create_names_internal
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
@@ -131,38 +132,46 @@ async def duplicate_simulation(
                     detail="You don't have permission to duplicate simulations.",
                 )
 
-        # Pass 2: Execute duplicate
-        # Convert API request to SQL params (add profile_id from header)
-        params = DuplicateSimulationSqlParams(
-            simulation_id=request.simulation_id,
-            profile_id=profile_id,
-        )
-        sql_params = params.to_tuple()
+        # Phase 1: Python creates name resource
+        original_name = getattr(access_result, "simulation_name", None) or "Unknown"
+        new_name = f"{original_name} Copy"
+        name_resource_id = await create_names_internal(conn, new_name)
 
-        # Execute query with typed helper
-        result = cast(
-            DuplicateSimulationSqlRow,
-            await execute_sql_typed(
-                conn,
-                SQL_PATH,
-                params=params,
-            ),
-        )
+        # Phase 2: SQL creates artifact + links junctions (inside transaction)
+        async with conn.transaction():
+            params = DuplicateSimulationSqlParams(
+                simulation_id=request.simulation_id,
+                profile_id=profile_id,
+                name_resource_id=name_resource_id,
+            )
+            sql_params = params.to_tuple()
 
-        if not result or not result.simulation_id:
-            raise HTTPException(
-                status_code=404, detail=f"Simulation {request.simulation_id} not found"
+            # Execute query with typed helper
+            result = cast(
+                DuplicateSimulationSqlRow,
+                await execute_sql_typed(
+                    conn,
+                    SQL_PATH,
+                    params=params,
+                ),
             )
 
-        simulation_name = result.simulation_name or "Unknown"
+            if not result or not result.simulation_id:
+                raise HTTPException(
+                    status_code=404,
+                    detail=f"Simulation {request.simulation_id} not found",
+                )
 
-        # Set audit context with data from SQL query
-        if actor_name:
-            audit_set(
-                http_request,
-                actor={"name": actor_name, "id": profile_id},
-                simulation={"name": simulation_name, "id": str(request.simulation_id)},
-            )
+            # Set audit context with data from SQL query
+            if actor_name:
+                audit_set(
+                    http_request,
+                    actor={"name": actor_name, "id": profile_id},
+                    simulation={
+                        "name": original_name,
+                        "id": str(request.simulation_id),
+                    },
+                )
 
         # Convert SQL result to API response
         api_response = DuplicateSimulationApiResponse.model_validate(

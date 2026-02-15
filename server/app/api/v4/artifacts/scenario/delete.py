@@ -132,41 +132,44 @@ async def delete_scenario(
                 detail="You don't have permission to delete this scenario.",
             )
 
-        # Convert API request to SQL params (add profile_id from header)
-        params = DeleteScenarioSqlParams(**request.model_dump(), profile_id=profile_id)
-        sql_params = params.to_tuple()
+        # Execute delete (inside transaction)
+        async with conn.transaction():
+            # Convert API request to SQL params (add profile_id from header)
+            params = DeleteScenarioSqlParams(
+                **request.model_dump(), profile_id=profile_id
+            )
+            sql_params = params.to_tuple()
 
-        # Execute SQL with typed helper (single row result)
-        result = cast(
-            DeleteScenarioSqlRow,
-            await execute_sql_typed(
-                conn,
-                SQL_PATH,
-                params=params,
-            ),
-        )
-
-        # Check if scenario was deleted or is in use
-        if not result.deleted:
-            # Scenario exists but is in use
-            usage_count = result.usage_count
-            raise HTTPException(
-                status_code=400,
-                detail=f"Cannot delete scenario that is in use by {usage_count} simulation(s)",
+            # Execute SQL with typed helper (single row result)
+            result = cast(
+                DeleteScenarioSqlRow,
+                await execute_sql_typed(
+                    conn,
+                    SQL_PATH,
+                    params=params,
+                ),
             )
 
-        scenario_name = result.name
+            # Check if scenario was deleted or is in use
+            if not result.deleted:
+                # Scenario exists but is in use
+                usage_count = result.usage_count
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Cannot delete scenario that is in use by {usage_count} simulation(s)",
+                )
 
-        # Set audit context with data from SQL query
-        if actor_name:
-            audit_set(
-                http_request,
-                actor={"name": actor_name, "id": profile_id},
-                scenario={"name": scenario_name, "id": str(request.scenario_id)},
-            )
+            scenario_name = result.name
+
+            # Set audit context with data from SQL query
+            if actor_name:
+                audit_set(
+                    http_request,
+                    actor={"name": actor_name, "id": profile_id},
+                    scenario={"name": scenario_name, "id": str(request.scenario_id)},
+                )
 
         # Convert SQL result to API response
-        # Note: API response matches SQL response structure (scenario_exists, scenario_id, name, usage_count, deleted, actor_name)
         api_response = DeleteScenarioApiResponse.model_validate(result.model_dump())
 
         # Invalidate cache after mutation

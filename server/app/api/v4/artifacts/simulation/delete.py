@@ -140,47 +140,52 @@ async def delete_simulation(
                         detail="You don't have permission to delete this simulation.",
                     )
 
-        # Pass 2: Execute delete
-        # Convert API request to SQL params (add profile_id from header)
-        params = DeleteSimulationSqlParams(
-            **request.model_dump(), profile_id=profile_id
-        )
-        sql_params = params.to_tuple()
+        # Pass 2: Execute delete (inside transaction)
+        async with conn.transaction():
+            # Convert API request to SQL params (add profile_id from header)
+            params = DeleteSimulationSqlParams(
+                **request.model_dump(), profile_id=profile_id
+            )
+            sql_params = params.to_tuple()
 
-        # Execute query with typed helper
-        result = cast(
-            DeleteSimulationSqlRow,
-            await execute_sql_typed(
-                conn,
-                SQL_PATH,
-                params=params,
-            ),
-        )
-
-        if not result:
-            # Simulation doesn't exist
-            raise HTTPException(
-                status_code=404, detail=f"Simulation {request.simulation_id} not found"
+            # Execute query with typed helper
+            result = cast(
+                DeleteSimulationSqlRow,
+                await execute_sql_typed(
+                    conn,
+                    SQL_PATH,
+                    params=params,
+                ),
             )
 
-        # Check if simulation was deleted or is in use
-        if not result.deleted:
-            # Simulation exists but is in use
-            usage_count = result.usage_count or 0
-            raise HTTPException(
-                status_code=400,
-                detail=f"Cannot delete simulation: in use by {usage_count} cohort(s)",
-            )
+            if not result:
+                # Simulation doesn't exist
+                raise HTTPException(
+                    status_code=404,
+                    detail=f"Simulation {request.simulation_id} not found",
+                )
 
-        simulation_name = result.title or "Unknown"
+            # Check if simulation was deleted or is in use
+            if not result.deleted:
+                # Simulation exists but is in use
+                usage_count = result.usage_count or 0
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Cannot delete simulation: in use by {usage_count} cohort(s)",
+                )
 
-        # Set audit context with data from SQL query
-        if actor_name:
-            audit_set(
-                http_request,
-                actor={"name": actor_name, "id": profile_id},
-                simulation={"name": simulation_name, "id": str(request.simulation_id)},
-            )
+            simulation_name = result.title or "Unknown"
+
+            # Set audit context with data from SQL query
+            if actor_name:
+                audit_set(
+                    http_request,
+                    actor={"name": actor_name, "id": profile_id},
+                    simulation={
+                        "name": simulation_name,
+                        "id": str(request.simulation_id),
+                    },
+                )
 
         # Convert SQL result to API response
         api_response = DeleteSimulationApiResponse.model_validate(result.model_dump())

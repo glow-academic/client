@@ -23097,6 +23097,8 @@ export interface components {
              * Format: uuid
              */
             cohort_id: string;
+            /** Name Resource Id */
+            name_resource_id?: string | null;
             /** Session Id */
             session_id?: string | null;
         };
@@ -23393,6 +23395,8 @@ export interface components {
              * Format: uuid
              */
             simulation_id: string;
+            /** Name Resource Id */
+            name_resource_id?: string | null;
         };
         /** DuplicateSimulationApiResponse */
         DuplicateSimulationApiResponse: {
