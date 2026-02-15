@@ -232,9 +232,7 @@ class SaveToolSqlParams(BaseModel):
             arg_positions=ToolMultiResourceAction(
                 resource_ids=request.arg_position_ids
             ),
-            args_outputs=ToolMultiResourceAction(
-                resource_ids=request.args_output_ids
-            ),
+            args_outputs=ToolMultiResourceAction(resource_ids=request.args_output_ids),
         )
 
     def to_tuple(self) -> tuple:
@@ -329,9 +327,7 @@ class PatchToolDraftSqlParams(BaseModel):
             arg_positions=ToolMultiResourceAction(
                 resource_ids=request.arg_position_ids
             ),
-            args_outputs=ToolMultiResourceAction(
-                resource_ids=request.args_output_ids
-            ),
+            args_outputs=ToolMultiResourceAction(resource_ids=request.args_output_ids),
             expected_version=request.expected_version,
         )
 

@@ -14,13 +14,6 @@ from app.socket.v4.artifacts.types import (
     GenerationErrorEvent,
     GenerationProgressEvent,
 )
-from app.sql.types import (
-    QGetDepartmentsV4Item,
-    QGetDescriptionsV4Item,
-    QGetFlagsV4Item,
-    QGetNamesV4Item,
-    QGetParameterFieldsV4Item,
-)
 
 # =============================================================================
 # Client-to-Server Events (parameter_generate)
@@ -45,20 +38,11 @@ class GenerateParameterPayload(BaseModel):
 class ParameterGenerationCompleteEvent(GenerationCompleteEvent):
     """Server-to-client event: parameter_generation_complete.
 
-    Emitted when a parameter resource generation completes successfully.
-    Contains full resource objects (not just IDs) for immediate frontend use.
+    Emitted when parameter generation completes. Resource-level data is now
+    sent via resource_generation_complete events from the shared handler.
     """
 
     artifact_type: str = "parameter"
-
-    # Single-select resources (full objects, not IDs)
-    name_resource: QGetNamesV4Item | None = None
-    description_resource: QGetDescriptionsV4Item | None = None
-    flag_resource: QGetFlagsV4Item | None = None
-
-    # Multi-select resources (arrays of full objects)
-    department_resources: list[QGetDepartmentsV4Item] | None = None
-    field_resources: list[QGetParameterFieldsV4Item] | None = None
 
 
 class ParameterGenerationProgressEvent(GenerationProgressEvent):

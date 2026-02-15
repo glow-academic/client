@@ -10,8 +10,6 @@
 
 import { useRouter } from "next/navigation";
 import React, {
-  type Dispatch,
-  type SetStateAction,
   useCallback,
   useEffect,
   useMemo,
@@ -57,7 +55,7 @@ import type { ResourceType } from "@/lib/resources/types";
 import { getDefaultDepartmentIds } from "@/utils/department-picker-helpers";
 import { parseAsString, type Parser } from "nuqs";
 
-import { useAiGeneration } from "@/hooks/use-ai-generation";
+import { useArtifactGeneration } from "@/hooks/use-artifact-generation";
 
 const MODEL_VALID_RESOURCE_TYPES: ResourceType[] = [
   "names",
@@ -191,62 +189,6 @@ function ModelComponent({
   const { flushRegistryRef, registerFlushCallbacks, flushAllResources } =
     useFlushRegistry<FlushResult>(FLUSH_KEYS);
 
-  // AI generation completion handler - uses formStateUpdater for complex array dedup
-  const onAiComplete = useCallback((data: Record<string, unknown>) => {
-    return {
-      aiUpdates: {} as Record<string, unknown>,
-      formStateUpdater: (prev: Record<string, unknown>) => {
-        const updates: Record<string, unknown> = {};
-
-        // Single-value fields
-        if (data["name_id"]) updates["name_id"] = data["name_id"];
-        if (data["description_id"])
-          updates["description_id"] = data["description_id"];
-        if (data["value_id"]) updates["value_id"] = data["value_id"];
-        if (data["active_flag_id"])
-          updates["active_flag_id"] = data["active_flag_id"];
-        if (data["modalities_enabled_flag_id"])
-          updates["modalities_enabled_flag_id"] =
-            data["modalities_enabled_flag_id"];
-        if (data["temperature_enabled_flag_id"])
-          updates["temperature_enabled_flag_id"] =
-            data["temperature_enabled_flag_id"];
-        if (data["pricing_enabled_flag_id"])
-          updates["pricing_enabled_flag_id"] = data["pricing_enabled_flag_id"];
-        if (data["voices_enabled_flag_id"])
-          updates["voices_enabled_flag_id"] = data["voices_enabled_flag_id"];
-        if (data["reasoning_levels_enabled_flag_id"])
-          updates["reasoning_levels_enabled_flag_id"] =
-            data["reasoning_levels_enabled_flag_id"];
-        if (data["qualities_enabled_flag_id"])
-          updates["qualities_enabled_flag_id"] =
-            data["qualities_enabled_flag_id"];
-
-        // Array fields with dedup
-        const arrayFields = [
-          { key: "modality_ids" },
-          { key: "temperature_level_ids" },
-          { key: "reasoning_level_ids" },
-          { key: "quality_ids" },
-          { key: "pricing_ids" },
-          { key: "voice_ids" },
-        ];
-        for (const { key } of arrayFields) {
-          const newIds = data[key] as string[] | undefined;
-          if (newIds && newIds.length > 0) {
-            const prevIds = (prev[key] as string[]) ?? [];
-            updates[key] = [
-              ...prevIds,
-              ...newIds.filter((id: string) => !prevIds.includes(id)),
-            ];
-          }
-        }
-
-        return { ...prev, ...updates };
-      },
-    };
-  }, []);
-
   // nuqs parsers for URL-backed state (will be passed to GenericForm)
   const modelSearchParamsClient = useMemo(
     () => ({
@@ -371,21 +313,10 @@ function ModelComponent({
   const [formState, setFormState] = useState(getInitialFormState);
 
   // AI generation via shared hook
-  const {
-    generatingResources: _generatingResources,
-    setGeneratingResources,
-    isGenerating,
-  } = useAiGeneration<ResourceType, Record<string, unknown>>({
-    socket,
-    isConnected,
+  const { isGenerating, startGenerating } = useArtifactGeneration({
     artifactType: "model",
     groupId: s?.group_id,
-    eventPrefix: "model_generation",
-    validResourceTypes: MODEL_VALID_RESOURCE_TYPES,
-    onComplete: onAiComplete,
-    setFormState: setFormState as Dispatch<
-      SetStateAction<Record<string, unknown>>
-    >,
+    validResourceTypes: MODEL_VALID_RESOURCE_TYPES as string[],
   });
 
   const formStateRef = React.useRef(formState);
@@ -641,11 +572,7 @@ function ModelComponent({
         return;
       }
 
-      setGeneratingResources((prev) => {
-        const next = new Set(prev);
-        resourceTypes.forEach((rt) => next.add(rt));
-        return next;
-      });
+      startGenerating(resourceTypes);
 
       let currentDraftId =
         (formDataRef.current["draftId"] as string | undefined) ?? null;
@@ -665,7 +592,7 @@ function ModelComponent({
         model_id: modelId || null,
       });
     },
-    [socket, isConnected, modelId, setGeneratingResources, flushAllAndSave],
+    [socket, isConnected, modelId, startGenerating, flushAllAndSave],
   );
 
   const handleGenerateName = useCallback(

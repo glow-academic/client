@@ -1,14 +1,6 @@
 """WebSocket-specific types for cohort generation."""
 
-from app.api.v4.artifacts.cohort.types import (
-    CohortDepartment,
-    CohortDescriptionResource,
-    CohortFlagResource,
-    CohortNameResource,
-    CohortSimulation,
-    CohortSimulationPosition,
-    GetCohortApiRequest,
-)
+from app.api.v4.artifacts.cohort.types import GetCohortApiRequest
 from app.socket.v4.artifacts.types import (
     GenerationCompleteEvent,
     GenerationErrorEvent,
@@ -24,15 +16,13 @@ class GenerateCohortPayload(GetCohortApiRequest):
 
 
 class CohortGenerationCompleteEvent(GenerationCompleteEvent):
-    """Server-to-client cohort_generation_complete event."""
+    """Server-to-client event: cohort_generation_complete.
+
+    Emitted when cohort generation completes. Resource-level data is now
+    sent via resource_generation_complete events from the shared handler.
+    """
 
     artifact_type: str = "cohort"
-    name_resource: CohortNameResource | None = None
-    description_resource: CohortDescriptionResource | None = None
-    flag_resource: CohortFlagResource | None = None
-    department_resources: list[CohortDepartment] | None = None
-    simulation_resources: list[CohortSimulation] | None = None
-    simulation_positions: list[CohortSimulationPosition] | None = None
 
 
 class CohortGenerationProgressEvent(GenerationProgressEvent):

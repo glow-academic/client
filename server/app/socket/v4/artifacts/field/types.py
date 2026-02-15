@@ -6,13 +6,6 @@ from app.socket.v4.artifacts.types import (
     GenerationErrorEvent,
     GenerationProgressEvent,
 )
-from app.sql.types import (
-    QGetDepartmentsV4Item,
-    QGetDescriptionsV4Item,
-    QGetFlagsV4Item,
-    QGetNamesV4Item,
-    QGetParametersV4Item,
-)
 
 
 class GenerateFieldPayload(GetFieldApiRequest):
@@ -23,14 +16,13 @@ class GenerateFieldPayload(GetFieldApiRequest):
 
 
 class FieldGenerationCompleteEvent(GenerationCompleteEvent):
+    """Server-to-client event: field_generation_complete.
+
+    Emitted when field generation completes. Resource-level data is now
+    sent via resource_generation_complete events from the shared handler.
+    """
+
     artifact_type: str = "field"
-
-    name_resource: QGetNamesV4Item | None = None
-    description_resource: QGetDescriptionsV4Item | None = None
-    flag_resource: QGetFlagsV4Item | None = None
-
-    department_resources: list[QGetDepartmentsV4Item] | None = None
-    conditional_parameter_resources: list[QGetParametersV4Item] | None = None
 
 
 class FieldGenerationProgressEvent(GenerationProgressEvent):

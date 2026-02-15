@@ -31,7 +31,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { useProfile } from "@/contexts/profile-context";
 import { useDrafts } from "@/contexts/draft-context";
 import { useSocket } from "@/contexts/socket-context";
-import { useAiGeneration } from "@/hooks/use-ai-generation";
+import { useArtifactGeneration } from "@/hooks/use-artifact-generation";
 import { useDraftLifecycle } from "@/hooks/use-draft-lifecycle";
 import { useFlushRegistry } from "@/hooks/use-flush-registry";
 import { useGenerationModal } from "@/hooks/use-generation-modal";
@@ -44,7 +44,6 @@ import {
 } from "@/lib/resources/action-builders";
 import type { ResourceType } from "@/lib/resources/types";
 import { parseAsBoolean, parseAsString, type Parser } from "nuqs";
-import type { Dispatch, SetStateAction } from "react";
 
 const VALID_RESOURCE_TYPES = [
   "names",
@@ -375,123 +374,10 @@ function DocumentComponent({
   });
 
   // AI generation via shared hook
-  const onAiComplete = useCallback((data: Record<string, unknown>) => {
-    return {
-      aiUpdates: {} as Record<string, unknown>,
-      formStateUpdater: (prev: Record<string, unknown>) => {
-        const updates: Record<string, unknown> = {};
-        const nameRes = data["name_resource"] as
-          | { id?: string | null }
-          | null
-          | undefined;
-        const descRes = data["description_resource"] as
-          | { id?: string | null }
-          | null
-          | undefined;
-        const flagRes = data["flag_resource"] as
-          | { id?: string | null }
-          | null
-          | undefined;
-        const nameId = nameRes?.id ?? null;
-        const descriptionId = descRes?.id ?? null;
-        const flagId = flagRes?.id ?? null;
-        const deptResources = data["department_resources"] as
-          | Array<{ department_id?: string | null }>
-          | null
-          | undefined;
-        const fieldResources = data["field_resources"] as
-          | Array<{ id?: string | null }>
-          | null
-          | undefined;
-        const uploadResources = data["upload_resources"] as
-          | Array<{ id?: string | null }>
-          | null
-          | undefined;
-        const imageResources = data["image_resources"] as
-          | Array<{ image_id?: string | null }>
-          | null
-          | undefined;
-        const textResources = data["text_resources"] as
-          | Array<{ texts_id?: string | null }>
-          | null
-          | undefined;
-        const deptIds =
-          deptResources
-            ?.map((d) => d.department_id)
-            .filter((x): x is string => x != null) ?? [];
-        const fieldIds =
-          fieldResources
-            ?.map((f) => f.id)
-            .filter((x): x is string => x != null) ?? [];
-        const uploadIds =
-          uploadResources
-            ?.map((u) => u.id)
-            .filter((x): x is string => x != null) ?? [];
-        const imageIds =
-          imageResources
-            ?.map((i) => i.image_id)
-            .filter((x): x is string => x != null) ?? [];
-        const textIds =
-          textResources
-            ?.map((t) => t.texts_id)
-            .filter((x): x is string => x != null) ?? [];
-        if (nameId) updates["name_id"] = nameId;
-        if (descriptionId) updates["description_id"] = descriptionId;
-        if (flagId) updates["active_flag_id"] = flagId;
-        if (fieldIds.length > 0) {
-          const prevFieldIds = (prev["field_ids"] as string[]) ?? [];
-          updates["field_ids"] = [
-            ...prevFieldIds,
-            ...fieldIds.filter((id: string) => !prevFieldIds.includes(id)),
-          ];
-        }
-        if (deptIds.length > 0) {
-          const prevDeptIds = (prev["department_ids"] as string[]) ?? [];
-          updates["department_ids"] = [
-            ...prevDeptIds,
-            ...deptIds.filter((id: string) => !prevDeptIds.includes(id)),
-          ];
-        }
-        if (uploadIds.length > 0) {
-          const prevUploadIds = (prev["upload_ids"] as string[]) ?? [];
-          updates["upload_ids"] = [
-            ...prevUploadIds,
-            ...uploadIds.filter((id: string) => !prevUploadIds.includes(id)),
-          ];
-        }
-        if (imageIds.length > 0) {
-          const prevImageIds = (prev["image_ids"] as string[]) ?? [];
-          updates["image_ids"] = [
-            ...prevImageIds,
-            ...imageIds.filter((id: string) => !prevImageIds.includes(id)),
-          ];
-        }
-        if (textIds.length > 0) {
-          const prevTextIds = (prev["text_ids"] as string[]) ?? [];
-          updates["text_ids"] = [
-            ...prevTextIds,
-            ...textIds.filter((id: string) => !prevTextIds.includes(id)),
-          ];
-        }
-        return { ...prev, ...updates };
-      },
-    };
-  }, []);
-
-  const { isGenerating, setGeneratingResources } = useAiGeneration<
-    ResourceType,
-    Record<string, unknown>
-  >({
-    socket,
-    isConnected,
+  const { isGenerating, startGenerating } = useArtifactGeneration({
     artifactType: "document",
     groupId: documentDetail?.group_id,
-    eventPrefix: "document_generation",
     validResourceTypes: [...VALID_RESOURCE_TYPES],
-    onComplete: onAiComplete,
-    setFormState: setFormState as Dispatch<
-      SetStateAction<Record<string, unknown>>
-    >,
   });
 
   const handleGenerateResources = useCallback(
@@ -505,11 +391,7 @@ function DocumentComponent({
       }
 
       // Set all resources as generating
-      setGeneratingResources((prev) => {
-        const next = new Set(prev);
-        resourceTypes.forEach((rt) => next.add(rt as DocumentResourceType));
-        return next;
-      });
+      startGenerating(resourceTypes);
 
       // Read search params from formData
       const formData = formDataRef.current;
@@ -534,7 +416,7 @@ function DocumentComponent({
       socket,
       isConnected,
       documentId,
-      setGeneratingResources,
+      startGenerating,
       flushAllAndSave,
     ],
   );

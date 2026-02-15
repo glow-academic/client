@@ -18897,6 +18897,9 @@ export interface components {
         /**
          * AuthGenerationCompleteEvent
          * @description Server-to-client event: auth_generation_complete.
+         *
+         *     Emitted when auth generation completes. Resource-level data is now
+         *     sent via resource_generation_complete events from the shared handler.
          */
         AuthGenerationCompleteEvent: {
             /**
@@ -18916,15 +18919,6 @@ export interface components {
             message: string;
             /** Type */
             type?: string | null;
-            name_resource?: components["schemas"]["QGetNamesV4Item"] | null;
-            description_resource?: components["schemas"]["QGetDescriptionsV4Item"] | null;
-            flag_resource?: components["schemas"]["AuthFlagConfig"] | null;
-            /** Protocol Resources */
-            protocol_resources?: components["schemas"]["QGetProtocolsV4Item"][] | null;
-            /** Slug Resources */
-            slug_resources?: components["schemas"]["QGetSlugsV4Item"][] | null;
-            /** Item Resources */
-            item_resources?: components["schemas"]["QGetItemsV4Item"][] | null;
         };
         /**
          * AuthGenerationErrorEvent
@@ -20461,7 +20455,10 @@ export interface components {
         };
         /**
          * CohortGenerationCompleteEvent
-         * @description Server-to-client cohort_generation_complete event.
+         * @description Server-to-client event: cohort_generation_complete.
+         *
+         *     Emitted when cohort generation completes. Resource-level data is now
+         *     sent via resource_generation_complete events from the shared handler.
          */
         CohortGenerationCompleteEvent: {
             /**
@@ -20481,15 +20478,6 @@ export interface components {
             message: string;
             /** Type */
             type?: string | null;
-            name_resource?: components["schemas"]["CohortNameResource"] | null;
-            description_resource?: components["schemas"]["CohortDescriptionResource"] | null;
-            flag_resource?: components["schemas"]["CohortFlagResource"] | null;
-            /** Department Resources */
-            department_resources?: components["schemas"]["CohortDepartment"][] | null;
-            /** Simulation Resources */
-            simulation_resources?: components["schemas"]["CohortSimulation"][] | null;
-            /** Simulation Positions */
-            simulation_positions?: components["schemas"]["CohortSimulationPosition"][] | null;
         };
         /**
          * CohortGenerationErrorEvent
@@ -22543,8 +22531,8 @@ export interface components {
          * DocumentGenerationCompleteEvent
          * @description Server-to-client event: document_generation_complete.
          *
-         *     Emitted when a document resource generation completes successfully.
-         *     Contains full resource objects (not just IDs) for immediate frontend use.
+         *     Emitted when document generation completes. Resource-level data is now
+         *     sent via resource_generation_complete events from the shared handler.
          */
         DocumentGenerationCompleteEvent: {
             /**
@@ -22564,19 +22552,6 @@ export interface components {
             message: string;
             /** Type */
             type?: string | null;
-            name_resource?: components["schemas"]["QGetNamesV4Item"] | null;
-            description_resource?: components["schemas"]["QGetDescriptionsV4Item"] | null;
-            flag_resource?: components["schemas"]["QGetFlagsV4Item"] | null;
-            /** Department Resources */
-            department_resources?: components["schemas"]["QGetDepartmentsV4Item"][] | null;
-            /** Field Resources */
-            field_resources?: components["schemas"]["QGetParameterFieldsV4Item"][] | null;
-            /** Upload Resources */
-            upload_resources?: components["schemas"]["QGetUploadsV4Item"][] | null;
-            /** Image Resources */
-            image_resources?: components["schemas"]["QGetImagesV4Item"][] | null;
-            /** Text Resources */
-            text_resources?: components["schemas"]["QGetTextsV4Item"][] | null;
         };
         /** DocumentImageSection */
         DocumentImageSection: {
@@ -23824,6 +23799,9 @@ export interface components {
         /**
          * EvalGenerationCompleteEvent
          * @description Server-to-client event: eval_generation_complete.
+         *
+         *     Emitted when eval generation completes. Resource-level data is now
+         *     sent via resource_generation_complete events from the shared handler.
          */
         EvalGenerationCompleteEvent: {
             /**
@@ -23843,23 +23821,6 @@ export interface components {
             message: string;
             /** Type */
             type?: string | null;
-            name_resource?: components["schemas"]["QGetNamesV4Item"] | null;
-            description_resource?: components["schemas"]["QGetDescriptionsV4Item"] | null;
-            flag_resource?: components["schemas"]["QGetFlagsV4Item"] | null;
-            /** Department Resources */
-            department_resources?: components["schemas"]["QGetDepartmentsV4Item"][] | null;
-            /** Agent Resources */
-            agent_resources?: components["schemas"]["QGetAgentsV4Item"][] | null;
-            /** Rubric Resources */
-            rubric_resources?: components["schemas"]["QGetRubricsBatchV4Item"][] | null;
-            /** Run Position Resources */
-            run_position_resources?: components["schemas"]["QGetRunPositionsV4Item"][] | null;
-            /** Group Position Resources */
-            group_position_resources?: components["schemas"]["QGetGroupPositionsV4Item"][] | null;
-            /** Run Rubric Resources */
-            run_rubric_resources?: components["schemas"]["QGetRunRubricsV4Item"][] | null;
-            /** Group Rubric Resources */
-            group_rubric_resources?: components["schemas"]["QGetGroupRubricsV4Item"][] | null;
         };
         /**
          * EvalGroupRubricMapping
@@ -24475,7 +24436,13 @@ export interface components {
             /** Resources */
             resources?: components["schemas"]["FieldFlagConfig"][] | null;
         };
-        /** FieldGenerationCompleteEvent */
+        /**
+         * FieldGenerationCompleteEvent
+         * @description Server-to-client event: field_generation_complete.
+         *
+         *     Emitted when field generation completes. Resource-level data is now
+         *     sent via resource_generation_complete events from the shared handler.
+         */
         FieldGenerationCompleteEvent: {
             /**
              * Artifact Type
@@ -24494,13 +24461,6 @@ export interface components {
             message: string;
             /** Type */
             type?: string | null;
-            name_resource?: components["schemas"]["QGetNamesV4Item"] | null;
-            description_resource?: components["schemas"]["QGetDescriptionsV4Item"] | null;
-            flag_resource?: components["schemas"]["QGetFlagsV4Item"] | null;
-            /** Department Resources */
-            department_resources?: components["schemas"]["QGetDepartmentsV4Item"][] | null;
-            /** Conditional Parameter Resources */
-            conditional_parameter_resources?: components["schemas"]["QGetParametersV4Item"][] | null;
         };
         /** FieldGenerationErrorEvent */
         FieldGenerationErrorEvent: {
@@ -33200,8 +33160,8 @@ export interface components {
          * ParameterGenerationCompleteEvent
          * @description Server-to-client event: parameter_generation_complete.
          *
-         *     Emitted when a parameter resource generation completes successfully.
-         *     Contains full resource objects (not just IDs) for immediate frontend use.
+         *     Emitted when parameter generation completes. Resource-level data is now
+         *     sent via resource_generation_complete events from the shared handler.
          */
         ParameterGenerationCompleteEvent: {
             /**
@@ -33221,13 +33181,6 @@ export interface components {
             message: string;
             /** Type */
             type?: string | null;
-            name_resource?: components["schemas"]["QGetNamesV4Item"] | null;
-            description_resource?: components["schemas"]["QGetDescriptionsV4Item"] | null;
-            flag_resource?: components["schemas"]["QGetFlagsV4Item"] | null;
-            /** Department Resources */
-            department_resources?: components["schemas"]["QGetDepartmentsV4Item"][] | null;
-            /** Field Resources */
-            field_resources?: components["schemas"]["QGetParameterFieldsV4Item"][] | null;
         };
         /** ParameterNameSection */
         ParameterNameSection: {
@@ -35547,6 +35500,9 @@ export interface components {
         /**
          * ProfileGenerationCompleteEvent
          * @description Server-to-client event: profile generation complete.
+         *
+         *     Emitted when profile generation completes. Resource-level data is now
+         *     sent via resource_generation_complete events from the shared handler.
          */
         ProfileGenerationCompleteEvent: {
             /**
@@ -35566,15 +35522,6 @@ export interface components {
             message: string;
             /** Type */
             type?: string | null;
-            name_resource?: components["schemas"]["QGetNamesV4Item"] | null;
-            request_limit_resource?: components["schemas"]["QGetRequestLimitsV4Item"] | null;
-            /** Email Resources */
-            email_resources?: components["schemas"]["QGetEmailsV4Item"][] | null;
-            /** Department Resources */
-            department_resources?: components["schemas"]["QGetDepartmentsV4Item"][] | null;
-            /** Cohort Resources */
-            cohort_resources?: components["schemas"]["QGetCohortsV4Item"][] | null;
-            flag_resource?: components["schemas"]["ProfileFlagConfig"] | null;
         };
         /** ProfileGenerationErrorEvent */
         ProfileGenerationErrorEvent: {
@@ -36230,8 +36177,8 @@ export interface components {
          * ProviderGenerationCompleteEvent
          * @description Server-to-client event: provider_generation_complete.
          *
-         *     Emitted when a provider resource generation completes successfully.
-         *     Contains full resource objects (not just IDs) for immediate frontend use.
+         *     Emitted when provider generation completes. Resource-level data is now
+         *     sent via resource_generation_complete events from the shared handler.
          */
         ProviderGenerationCompleteEvent: {
             /**
@@ -36251,14 +36198,6 @@ export interface components {
             message: string;
             /** Type */
             type?: string | null;
-            name_resource?: components["schemas"]["QGetNamesV4Item"] | null;
-            description_resource?: components["schemas"]["QGetDescriptionsV4Item"] | null;
-            flag_resource?: components["schemas"]["QGetFlagsV4Item"] | null;
-            value_resource?: components["schemas"]["QGetValuesV4Item"] | null;
-            endpoint_resource?: components["schemas"]["QGetEndpointsV4Item"] | null;
-            key_resource?: components["schemas"]["QGetKeysV4Item"] | null;
-            /** Department Resources */
-            department_resources?: components["schemas"]["QGetDepartmentsV4Item"][] | null;
         };
         /** ProviderKeySection */
         ProviderKeySection: {
@@ -37448,21 +37387,6 @@ export interface components {
             /** Generated */
             generated: boolean | null;
         };
-        /** QGetRolesV4Item */
-        "QGetRolesV4Item-Input": {
-            /** Id */
-            id: string | null;
-            /** Role */
-            role: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-            /** Icon Value */
-            icon_value: string | null;
-            /** Color Hex */
-            color_hex: string | null;
-        };
         /** QGetRoutesV4Item */
         QGetRoutesV4Item: {
             /** Id */
@@ -37471,21 +37395,6 @@ export interface components {
             route: string | null;
             /** Generated */
             generated: boolean | null;
-        };
-        /** QGetRubricsBatchV4Item */
-        QGetRubricsBatchV4Item: {
-            /** Rubric Id */
-            rubric_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-            /** Total Points */
-            total_points: number | null;
-            /** Pass Points */
-            pass_points: number | null;
-            /** Standard Group Ids */
-            standard_group_ids: string[] | null;
         };
         /** QGetRubricsV4Item */
         QGetRubricsV4Item: {
@@ -37589,33 +37498,6 @@ export interface components {
             time_limit_seconds: number | null;
             /** Generated */
             generated: boolean | null;
-        };
-        /** QGetScenariosV4Item */
-        "QGetScenariosV4Item-Input": {
-            /** Scenario Id */
-            scenario_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-            /** Generated */
-            generated: boolean | null;
-            /** Problem Statement Enabled */
-            problem_statement_enabled: boolean | null;
-            /** Objectives Enabled */
-            objectives_enabled: boolean | null;
-            /** Video Enabled */
-            video_enabled: boolean | null;
-            /** Images Enabled */
-            images_enabled: boolean | null;
-            /** Questions Enabled */
-            questions_enabled: boolean | null;
-            /** Persona Ids */
-            persona_ids: string[] | null;
-            /** Parameter Field Ids */
-            parameter_field_ids: string[] | null;
-            /** Parameter Ids */
-            parameter_ids: string[] | null;
         };
         /** QGetSettingsV4Auth */
         "QGetSettingsV4Auth-Input": {
@@ -39670,8 +39552,8 @@ export interface components {
          * RubricGenerationCompleteEvent
          * @description Server-to-client event: rubric_generation_complete.
          *
-         *     Emitted when a rubric resource generation completes successfully.
-         *     Contains full resource objects (not just IDs) for immediate frontend use.
+         *     Emitted when rubric generation completes. Resource-level data is now
+         *     sent via resource_generation_complete events from the shared handler.
          */
         RubricGenerationCompleteEvent: {
             /**
@@ -39691,17 +39573,6 @@ export interface components {
             message: string;
             /** Type */
             type?: string | null;
-            name_resource?: components["schemas"]["QGetNamesV4Item"] | null;
-            description_resource?: components["schemas"]["QGetDescriptionsV4Item"] | null;
-            flag_resource?: components["schemas"]["QGetFlagsV4Item"] | null;
-            points_resource?: components["schemas"]["QGetPointsV4Item"] | null;
-            pass_points_resource?: components["schemas"]["QGetPointsV4Item"] | null;
-            /** Department Resources */
-            department_resources?: components["schemas"]["QGetDepartmentsV4Item"][] | null;
-            /** Standard Group Resources */
-            standard_group_resources?: components["schemas"]["QGetStandardGroupsV4Item"][] | null;
-            /** Standard Resources */
-            standard_resources?: components["schemas"]["QGetStandardsV4Item"][] | null;
         };
         /** RubricHeatmapCell */
         RubricHeatmapCell: {
@@ -41449,8 +41320,10 @@ export interface components {
          * ScenarioGenerationCompleteEvent
          * @description Server-to-client event: scenario_generation_complete.
          *
-         *     Emitted when a scenario resource generation completes successfully.
-         *     Contains full resource objects (not just IDs) for immediate frontend use.
+         *     Emitted when scenario generation completes. Resource-level data is now
+         *     sent via resource_generation_complete events from the shared handler.
+         *     Media resources (images/videos) are still sent here as they require
+         *     special upload linking not covered by the resource layer.
          */
         ScenarioGenerationCompleteEvent: {
             /**
@@ -41470,29 +41343,10 @@ export interface components {
             message: string;
             /** Type */
             type?: string | null;
-            name_resource?: components["schemas"]["QGetNamesV4Item"] | null;
-            description_resource?: components["schemas"]["QGetDescriptionsV4Item"] | null;
-            problem_statement_resource?: components["schemas"]["QGetProblemStatementsV4Item"] | null;
-            /** Flag Resources */
-            flag_resources?: components["schemas"]["QGetFlagsV4Item"][] | null;
-            /** Department Resources */
-            department_resources?: components["schemas"]["QGetDepartmentsV4Item"][] | null;
-            /** Persona Resources */
-            persona_resources?: components["schemas"]["QGetPersonasV4Item"][] | null;
-            /** Document Resources */
-            document_resources?: components["schemas"]["QGetDocumentsV4Item"][] | null;
-            /** Objective Resources */
-            objective_resources?: components["schemas"]["QGetObjectivesV4Item"][] | null;
-            /** Question Resources */
-            question_resources?: components["schemas"]["QGetQuestionsV4Item"][] | null;
             /** Image Resources */
             image_resources?: components["schemas"]["QGetImagesV4Item"][] | null;
             /** Video Resources */
             video_resources?: components["schemas"]["QGetVideosV4Item"][] | null;
-            /** Parameter Resources */
-            parameter_resources?: components["schemas"]["QGetParametersV4Item"][] | null;
-            /** Parameter Field Resources */
-            parameter_field_resources?: components["schemas"]["QGetParameterFieldsV4Item"][] | null;
         };
         /**
          * ScenarioImage
@@ -45573,8 +45427,8 @@ export interface components {
          * SettingGenerationCompleteEvent
          * @description Server-to-client event: setting_generation_complete.
          *
-         *     Emitted when a setting resource generation completes successfully.
-         *     Contains full resource objects (not just IDs) for immediate frontend use.
+         *     Emitted when setting generation completes. Resource-level data is now
+         *     sent via resource_generation_complete events from the shared handler.
          */
         SettingGenerationCompleteEvent: {
             /**
@@ -45594,25 +45448,6 @@ export interface components {
             message: string;
             /** Type */
             type?: string | null;
-            name_resource?: components["schemas"]["QGetNamesV4Item"] | null;
-            description_resource?: components["schemas"]["QGetDescriptionsV4Item"] | null;
-            flag_resource?: components["schemas"]["QGetFlagsV4Item"] | null;
-            /** Color Resources */
-            color_resources?: components["schemas"]["QGetColorsV4Item"][] | null;
-            /** Department Resources */
-            department_resources?: components["schemas"]["QGetDepartmentsV4Item"][] | null;
-            /** Profile Resources */
-            profile_resources?: components["schemas"]["QGetProfilesV4Item"][] | null;
-            /** Auth Resources */
-            auth_resources?: components["schemas"]["QGetAuthsV4Item"][] | null;
-            /** Provider Key Resources */
-            provider_key_resources?: components["schemas"]["QGetProviderKeysV4Item"][] | null;
-            /** Auth Item Key Resources */
-            auth_item_key_resources?: components["schemas"]["QGetAuthItemKeysV4Item"][] | null;
-            /** Role Resources */
-            role_resources?: components["schemas"]["QGetRolesV4Item-Input"][] | null;
-            /** Role Route Resources */
-            role_route_resources?: components["schemas"]["QGetRoleRoutesV4Item"][] | null;
         };
         /**
          * SettingMultiResourceAction
@@ -46145,8 +45980,8 @@ export interface components {
          * SimulationGenerationCompleteEvent
          * @description Server-to-client event: simulation_generation_complete.
          *
-         *     Emitted when a simulation resource generation completes successfully.
-         *     Contains full resource objects (not just IDs) for immediate frontend use.
+         *     Emitted when simulation generation completes. Resource-level data is now
+         *     sent via resource_generation_complete events from the shared handler.
          */
         SimulationGenerationCompleteEvent: {
             /**
@@ -46166,24 +46001,6 @@ export interface components {
             message: string;
             /** Type */
             type?: string | null;
-            name_resource?: components["schemas"]["QGetNamesV4Item"] | null;
-            description_resource?: components["schemas"]["QGetDescriptionsV4Item"] | null;
-            /** Flag Resources */
-            flag_resources?: components["schemas"]["SimulationFlagConfig"][] | null;
-            /** Department Resources */
-            department_resources?: components["schemas"]["QGetDepartmentsV4Item"][] | null;
-            /** Scenario Resources */
-            scenario_resources?: components["schemas"]["QGetScenariosV4Item-Input"][] | null;
-            /** Scenario Flag Resources */
-            scenario_flag_resources?: components["schemas"]["QGetScenarioFlagsV4Item"][] | null;
-            /** Scenario Persona Resources */
-            scenario_persona_resources?: components["schemas"]["QGetScenarioPersonasV4Item"][] | null;
-            /** Scenario Position Resources */
-            scenario_position_resources?: components["schemas"]["QGetScenarioPositionsV4Item"][] | null;
-            /** Scenario Rubric Resources */
-            scenario_rubric_resources?: components["schemas"]["QGetScenarioRubricsV4Item"][] | null;
-            /** Scenario Time Limit Resources */
-            scenario_time_limit_resources?: components["schemas"]["QGetScenarioTimeLimitsV4Item"][] | null;
         };
         /**
          * SimulationMultiResourceAction
@@ -48141,8 +47958,8 @@ export interface components {
          * ToolGenerationCompleteEvent
          * @description Server-to-client event: tool_generation_complete.
          *
-         *     Emitted when a tool resource generation completes successfully.
-         *     Contains full resource objects (not just IDs) for immediate frontend use.
+         *     Emitted when tool generation completes. Resource-level data is now
+         *     sent via resource_generation_complete events from the shared handler.
          */
         ToolGenerationCompleteEvent: {
             /**
@@ -48162,15 +47979,6 @@ export interface components {
             message: string;
             /** Type */
             type?: string | null;
-            name_resource?: components["schemas"]["QGetNamesV4Item"] | null;
-            description_resource?: components["schemas"]["QGetDescriptionsV4Item"] | null;
-            flag_resource?: components["schemas"]["QGetFlagsV4Item"] | null;
-            /** Args Resources */
-            args_resources?: components["schemas"]["QGetArgsV4Item"][] | null;
-            /** Arg Position Resources */
-            arg_position_resources?: components["schemas"]["QGetArgPositionsV4Item"][] | null;
-            /** Args Outputs Resources */
-            args_outputs_resources?: components["schemas"]["QGetArgsOutputsV4Item"][] | null;
         };
         /**
          * ToolGenerationErrorEvent

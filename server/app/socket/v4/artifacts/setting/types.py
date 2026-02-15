@@ -11,19 +11,6 @@ from app.socket.v4.artifacts.types import (
     GenerationErrorEvent,
     GenerationProgressEvent,
 )
-from app.sql.types import (
-    QGetAuthItemKeysV4Item,
-    QGetAuthsV4Item,
-    QGetColorsV4Item,
-    QGetDepartmentsV4Item,
-    QGetDescriptionsV4Item,
-    QGetFlagsV4Item,
-    QGetNamesV4Item,
-    QGetProfilesV4Item,
-    QGetProviderKeysV4Item,
-    QGetRoleRoutesV4Item,
-    QGetRolesV4Item,
-)
 
 # =============================================================================
 # Client-to-Server Events (setting_generate)
@@ -49,26 +36,11 @@ class GenerateSettingPayload(GetSettingApiRequest):
 class SettingGenerationCompleteEvent(GenerationCompleteEvent):
     """Server-to-client event: setting_generation_complete.
 
-    Emitted when a setting resource generation completes successfully.
-    Contains full resource objects (not just IDs) for immediate frontend use.
+    Emitted when setting generation completes. Resource-level data is now
+    sent via resource_generation_complete events from the shared handler.
     """
 
     artifact_type: str = "setting"
-
-    # Single-select resources
-    name_resource: QGetNamesV4Item | None = None
-    description_resource: QGetDescriptionsV4Item | None = None
-    flag_resource: QGetFlagsV4Item | None = None
-
-    # Multi-select resources
-    color_resources: list[QGetColorsV4Item] | None = None
-    department_resources: list[QGetDepartmentsV4Item] | None = None
-    profile_resources: list[QGetProfilesV4Item] | None = None
-    auth_resources: list[QGetAuthsV4Item] | None = None
-    provider_key_resources: list[QGetProviderKeysV4Item] | None = None
-    auth_item_key_resources: list[QGetAuthItemKeysV4Item] | None = None
-    role_resources: list[QGetRolesV4Item] | None = None
-    role_route_resources: list[QGetRoleRoutesV4Item] | None = None
 
 
 class SettingGenerationProgressEvent(GenerationProgressEvent):

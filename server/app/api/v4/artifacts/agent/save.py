@@ -149,9 +149,7 @@ async def save_agent(
             raise HTTPException(status_code=400, detail="name_id is required")
 
         if not model_id:
-            raise HTTPException(
-                status_code=400, detail="model_id is required"
-            )
+            raise HTTPException(status_code=400, detail="model_id is required")
 
         async with conn.transaction():
             # Server-resolved group_id

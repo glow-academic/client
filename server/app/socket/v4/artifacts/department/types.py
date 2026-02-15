@@ -1,16 +1,10 @@
 """WebSocket-specific types for department generation."""
 
 from app.api.v4.artifacts.department.types import GetDepartmentApiRequest
-from app.api.v4.resources.settings.types import QGetSettingsV4Item
 from app.socket.v4.artifacts.types import (
     GenerationCompleteEvent,
     GenerationErrorEvent,
     GenerationProgressEvent,
-)
-from app.sql.types import (
-    QGetDescriptionsV4Item,
-    QGetFlagsV4Item,
-    QGetNamesV4Item,
 )
 
 # =============================================================================
@@ -38,19 +32,11 @@ class GenerateDepartmentPayload(GetDepartmentApiRequest):
 class DepartmentGenerationCompleteEvent(GenerationCompleteEvent):
     """Server-to-client event: department_generation_complete.
 
-    Emitted when a department resource generation completes successfully.
-    Contains full resource objects (not just IDs) for immediate frontend use.
+    Emitted when department generation completes. Resource-level data is now
+    sent via resource_generation_complete events from the shared handler.
     """
 
     artifact_type: str = "department"
-
-    # Single-select resources (full objects, not IDs)
-    name_resource: QGetNamesV4Item | None = None
-    description_resource: QGetDescriptionsV4Item | None = None
-    flag_resource: QGetFlagsV4Item | None = None
-
-    # Multi-select resources (arrays of full objects)
-    settings_resources: list[QGetSettingsV4Item] | None = None
 
 
 class DepartmentGenerationProgressEvent(GenerationProgressEvent):

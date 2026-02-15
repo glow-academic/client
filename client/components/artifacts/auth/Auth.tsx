@@ -25,7 +25,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { useProfile } from "@/contexts/profile-context";
 import { useDrafts } from "@/contexts/draft-context";
 import { useSocket } from "@/contexts/socket-context";
-import { useAiGeneration } from "@/hooks/use-ai-generation";
+import { useArtifactGeneration } from "@/hooks/use-artifact-generation";
 import { useDraftLifecycle } from "@/hooks/use-draft-lifecycle";
 import { useFlushRegistry } from "@/hooks/use-flush-registry";
 import { useGenerationModal } from "@/hooks/use-generation-modal";
@@ -168,97 +168,10 @@ function AuthComponent({
   const { flushRegistryRef, registerFlushCallbacks, flushAllResources } =
     useFlushRegistry<FlushResult>(FLUSH_KEYS);
 
-  const onAiComplete = useCallback((data: Record<string, unknown>) => {
-    return {
-      aiUpdates: {} as Record<string, unknown>,
-      formStateUpdater: (prev: Record<string, unknown>) => {
-        const updates: Record<string, unknown> = {};
-        const nameRes = data["name_resource"] as { id?: string | null } | null;
-        const descRes = data["description_resource"] as
-          | { id?: string | null }
-          | null;
-        const flagRes = data["flag_resource"] as
-          | { id?: string | null; flag_option_id?: string | null }
-          | null;
-        const protocolRes = data["protocol_resources"] as
-          | Array<{ id?: string | null }>
-          | null;
-        const slugRes = data["slug_resources"] as Array<{ id?: string | null }> | null;
-        const itemRes = data["item_resources"] as
-          | Array<{
-              id?: string | null;
-              name?: string | null;
-              description?: string | null;
-              encrypted?: boolean | null;
-              position?: number | null;
-            }>
-          | null;
-
-        if (nameRes?.id) updates["name_id"] = nameRes.id;
-        if (descRes?.id) updates["description_id"] = descRes.id;
-        if (flagRes?.id || flagRes?.flag_option_id) {
-          updates["active_flag_id"] = flagRes.id ?? flagRes.flag_option_id;
-        }
-        if (protocolRes?.length) {
-          const nextIds = protocolRes
-            .map((x) => x.id)
-            .filter((x): x is string => !!x);
-          const prevIds = (prev["protocol_ids"] as string[]) ?? [];
-          updates["protocol_ids"] = [
-            ...prevIds,
-            ...nextIds.filter((id) => !prevIds.includes(id)),
-          ];
-        }
-        if (slugRes?.length) {
-          const nextIds = slugRes.map((x) => x.id).filter((x): x is string => !!x);
-          const prevIds = (prev["slug_ids"] as string[]) ?? [];
-          updates["slug_ids"] = [
-            ...prevIds,
-            ...nextIds.filter((id) => !prevIds.includes(id)),
-          ];
-        }
-        if (itemRes?.length) {
-          const prevItems =
-            (prev["items"] as Array<{
-              name: string;
-              description: string;
-              encrypted: boolean;
-              position: number;
-              active: boolean;
-              key_id: string | null;
-            }>) ?? [];
-          const nextItems = itemRes
-            .filter((x) => !!x.id || !!x.name)
-            .map((x, index) => ({
-              name: x.name ?? "",
-              description: x.description ?? "",
-              encrypted: x.encrypted ?? true,
-              position: x.position ?? prevItems.length + index + 1,
-              active: true,
-              key_id: null,
-            }));
-          updates["items"] = [...prevItems, ...nextItems];
-        }
-
-        return { ...prev, ...updates };
-      },
-    };
-  }, []);
-
-  const { setGeneratingResources, isGenerating } = useAiGeneration<
-    AuthResourceType,
-    Record<string, unknown>
-  >({
-    socket,
-    isConnected,
+  const { isGenerating, startGenerating } = useArtifactGeneration({
     artifactType: "auth",
     groupId: s?.group_id,
-    eventPrefix: "auth_generation",
-    validResourceTypes: VALID_RESOURCE_TYPES,
-    onComplete: onAiComplete,
-    setFormState: setFormState as React.Dispatch<
-      React.SetStateAction<Record<string, unknown>>
-    >,
+    validResourceTypes: VALID_RESOURCE_TYPES as string[],
   });
 
   const getInitialFormState = useCallback((): AuthFormState => {
@@ -377,11 +290,7 @@ function AuthComponent({
         toast.error("WebSocket not connected");
         return;
       }
-      setGeneratingResources((prev) => {
-        const next = new Set(prev);
-        resourceTypes.forEach((rt) => next.add(rt));
-        return next;
-      });
+      startGenerating(resourceTypes);
       let currentDraftId =
         (formDataRef.current["draftId"] as string | undefined) ?? null;
       if (!currentDraftId) currentDraftId = await flushAllAndSave();
@@ -400,7 +309,7 @@ function AuthComponent({
       socket,
       isConnected,
       authId,
-      setGeneratingResources,
+      startGenerating,
       formDataRef,
       flushAllAndSave,
     ],

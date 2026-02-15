@@ -24,7 +24,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { useProfile } from "@/contexts/profile-context";
 import { useDrafts } from "@/contexts/draft-context";
 import { useSocket } from "@/contexts/socket-context";
-import { useAiGeneration } from "@/hooks/use-ai-generation";
+import { useArtifactGeneration } from "@/hooks/use-artifact-generation";
 import { useDraftLifecycle } from "@/hooks/use-draft-lifecycle";
 import { useFlushRegistry } from "@/hooks/use-flush-registry";
 import { useGenerationModal } from "@/hooks/use-generation-modal";
@@ -141,55 +141,10 @@ function DepartmentComponent({
   const { flushRegistryRef, registerFlushCallbacks, flushAllResources } =
     useFlushRegistry<FlushResult>(FLUSH_KEYS);
 
-  const onAiComplete = useCallback((data: Record<string, unknown>) => {
-    return {
-      aiUpdates: {} as Record<string, unknown>,
-      formStateUpdater: (prev: Record<string, unknown>) => {
-        const updates: Record<string, unknown> = {};
-        const nameRes = data["name_resource"] as { id?: string | null } | null;
-        const descRes = data["description_resource"] as
-          | { id?: string | null }
-          | null;
-        const flagRes = data["flag_resource"] as
-          | { flag_option_id?: string | null }
-          | null;
-        const settingsRes = data["settings_resources"] as
-          | Array<{ settings_id?: string | null }>
-          | null;
-
-        if (nameRes?.id) updates["name_id"] = nameRes.id;
-        if (descRes?.id) updates["description_id"] = descRes.id;
-        if (flagRes?.flag_option_id) updates["active_flag_id"] = flagRes.flag_option_id;
-        if (settingsRes?.length) {
-          const nextIds = settingsRes
-            .map((x) => x.settings_id)
-            .filter((x): x is string => !!x);
-          const prevIds = (prev["settings_ids"] as string[]) ?? [];
-          updates["settings_ids"] = [
-            ...prevIds,
-            ...nextIds.filter((id) => !prevIds.includes(id)),
-          ];
-        }
-
-        return { ...prev, ...updates };
-      },
-    };
-  }, []);
-
-  const { setGeneratingResources, isGenerating } = useAiGeneration<
-    ResourceType,
-    Record<string, unknown>
-  >({
-    socket,
-    isConnected,
+  const { isGenerating, startGenerating } = useArtifactGeneration({
     artifactType: "department",
     groupId: s?.group_id,
-    eventPrefix: "department_generation",
-    validResourceTypes: VALID_RESOURCE_TYPES,
-    onComplete: onAiComplete,
-    setFormState: setFormState as React.Dispatch<
-      React.SetStateAction<Record<string, unknown>>
-    >,
+    validResourceTypes: VALID_RESOURCE_TYPES as string[],
   });
 
   const getInitialFormState = useCallback((): DepartmentFormState => {
@@ -289,11 +244,7 @@ function DepartmentComponent({
         toast.error("WebSocket not connected");
         return;
       }
-      setGeneratingResources((prev) => {
-        const next = new Set(prev);
-        resourceTypes.forEach((rt) => next.add(rt));
-        return next;
-      });
+      startGenerating(resourceTypes);
       let currentDraftId =
         (formDataRef.current["draftId"] as string | undefined) ?? null;
       if (!currentDraftId) currentDraftId = await flushAllAndSave();
@@ -312,7 +263,7 @@ function DepartmentComponent({
       socket,
       isConnected,
       departmentId,
-      setGeneratingResources,
+      startGenerating,
       formDataRef,
       flushAllAndSave,
     ],

@@ -70,7 +70,6 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { useProfile } from "@/contexts/profile-context";
 import { useRouter } from "next/navigation";
 
 // Helper function to truncate text
@@ -124,8 +123,6 @@ export default function Documents({
   deleteDocumentAction,
 }: DocumentsProps) {
   const router = useRouter();
-  const { departmentIds } = useProfile();
-
   // Table state for filtering
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [sorting, setSorting] = useState<SortingState>([
@@ -212,7 +209,7 @@ export default function Documents({
         .map((opt) => ({
           value: opt.id as string,
           label: opt.name as string,
-          count: opt.count ?? undefined,
+          count: opt.count ?? 0,
         }))
         .filter((opt) => opt.value && opt.label),
     [documentsData?.scenario_filter],
@@ -223,7 +220,7 @@ export default function Documents({
         .map((opt) => ({
           value: opt.id as string,
           label: opt.name as string,
-          count: opt.count ?? undefined,
+          count: opt.count ?? 0,
         }))
         .filter((opt) => opt.value && opt.label),
     [documentsData?.field_filter],
@@ -234,7 +231,7 @@ export default function Documents({
         .map((opt) => ({
           value: opt.id as string,
           label: opt.name as string,
-          count: opt.count ?? undefined,
+          count: opt.count ?? 0,
         }))
         .filter((opt) => opt.value && opt.label),
     [documentsData?.department_filter],

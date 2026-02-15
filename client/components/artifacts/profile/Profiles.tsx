@@ -378,7 +378,6 @@ export default function Staff({
   const router = useRouter();
   const {
     profile,
-    departmentIds: profileDepartmentIds,
     roleResources,
   } = useProfile();
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -466,7 +465,7 @@ export default function Staff({
         .map((opt) => ({
           value: opt.id as string,
           label: opt.name as string,
-          count: opt.count ?? undefined,
+          count: opt.count ?? 0,
         }))
         .filter((opt) => opt.value && opt.label),
     [serverListData?.cohort_filter],
@@ -477,7 +476,7 @@ export default function Staff({
         .map((opt) => ({
           value: opt.id as string,
           label: opt.name as string,
-          count: opt.count ?? undefined,
+          count: opt.count ?? 0,
         }))
         .filter((opt) => opt.value && opt.label),
     [serverListData?.department_filter],
@@ -488,7 +487,7 @@ export default function Staff({
         .map((opt) => ({
           value: opt.id as string,
           label: opt.name as string,
-          count: opt.count ?? undefined,
+          count: opt.count ?? 0,
         }))
         .filter((opt) => opt.value && opt.label),
     [serverListData?.role_filter],

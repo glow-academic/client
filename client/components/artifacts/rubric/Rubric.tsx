@@ -27,7 +27,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { useProfile } from "@/contexts/profile-context";
 import { useSocket } from "@/contexts/socket-context";
 import { useDrafts } from "@/contexts/draft-context";
-import { useAiGeneration } from "@/hooks/use-ai-generation";
+import { useArtifactGeneration } from "@/hooks/use-artifact-generation";
 import { useDraftLifecycle } from "@/hooks/use-draft-lifecycle";
 import { useFlushRegistry } from "@/hooks/use-flush-registry";
 import { useGenerationModal } from "@/hooks/use-generation-modal";
@@ -198,96 +198,10 @@ function RubricComponent({
   const { flushRegistryRef, registerFlushCallbacks } =
     useFlushRegistry<Record<string, unknown>>(FLUSH_KEYS);
 
-  const onAiComplete = useCallback((data: Record<string, unknown>) => {
-    return {
-      aiUpdates: {} as Record<string, unknown>,
-      formStateUpdater: (prev: Record<string, unknown>) => {
-        const updates: Record<string, unknown> = {};
-        const nameRes = data["name_resource"] as { id?: string | null } | null;
-        const descRes = data["description_resource"] as
-          | { id?: string | null }
-          | null;
-        const flagRes = data["flag_resource"] as
-          | { id?: string | null; flag_option_id?: string | null }
-          | null;
-        const deptRes = data["department_resources"] as
-          | Array<{ department_id?: string | null }>
-          | null;
-        const pointsRes = data["points_resource"] as { id?: string | null } | null;
-        const passPointsRes = data["pass_points_resource"] as
-          | { id?: string | null }
-          | null;
-        const standardGroupRes = data["standard_group_resources"] as
-          | Array<{ standard_group_id?: string | null }>
-          | null;
-        const standardRes = data["standard_resources"] as
-          | Array<{ standard_id?: string | null }>
-          | null;
-
-        if (nameRes?.id) updates["name_id"] = nameRes.id;
-        if (descRes?.id) updates["description_id"] = descRes.id;
-        if (flagRes?.flag_option_id || flagRes?.id) {
-          updates["active_flag_id"] = flagRes.flag_option_id ?? flagRes.id;
-        }
-        if (pointsRes?.id) updates["total_points_id"] = pointsRes.id;
-        if (passPointsRes?.id) updates["pass_points_id"] = passPointsRes.id;
-
-        if (deptRes?.length) {
-          const nextIds = deptRes
-            .map((x) => x.department_id)
-            .filter((x): x is string => !!x);
-          const prevIds = (prev["department_ids"] as string[]) ?? [];
-          updates["department_ids"] = [
-            ...prevIds,
-            ...nextIds.filter((id) => !prevIds.includes(id)),
-          ];
-        }
-
-        if (standardGroupRes?.length) {
-          const nextIds = standardGroupRes
-            .map((x) => x.standard_group_id)
-            .filter((x): x is string => !!x);
-          const prevIds = (prev["standard_group_ids"] as string[]) ?? [];
-          updates["standard_group_ids"] = [
-            ...prevIds,
-            ...nextIds.filter((id) => !prevIds.includes(id)),
-          ];
-        }
-
-        if (standardRes?.length) {
-          const nextIds = standardRes
-            .map((x) => x.standard_id)
-            .filter((x): x is string => !!x);
-          const prevIds = (prev["standard_ids"] as string[]) ?? [];
-          updates["standard_ids"] = [
-            ...prevIds,
-            ...nextIds.filter((id) => !prevIds.includes(id)),
-          ];
-        }
-
-        if (data["active_flag_id"]) updates["active_flag_id"] = data["active_flag_id"];
-        if (data["total_points_id"]) updates["total_points_id"] = data["total_points_id"];
-        if (data["pass_points_id"]) updates["pass_points_id"] = data["pass_points_id"];
-
-        return { ...prev, ...updates };
-      },
-    };
-  }, []);
-
-  const { setGeneratingResources, isGenerating } = useAiGeneration<
-    RubricResourceType,
-    Record<string, unknown>
-  >({
-    socket,
-    isConnected,
+  const { isGenerating, startGenerating } = useArtifactGeneration({
     artifactType: "rubric",
     groupId: s?.group_id,
-    eventPrefix: "rubric_generation",
-    validResourceTypes: VALID_RESOURCE_TYPES,
-    onComplete: onAiComplete,
-    setFormState: setFormState as React.Dispatch<
-      React.SetStateAction<Record<string, unknown>>
-    >,
+    validResourceTypes: VALID_RESOURCE_TYPES as string[],
   });
 
   const getInitialFormState = useCallback((): RubricFormState => {
@@ -402,11 +316,7 @@ function RubricComponent({
         toast.error("WebSocket not connected");
         return;
       }
-      setGeneratingResources((prev) => {
-        const next = new Set(prev);
-        resourceTypes.forEach((rt) => next.add(rt));
-        return next;
-      });
+      startGenerating(resourceTypes);
       let currentDraftId =
         (formDataRef.current["draftId"] as string | undefined) ?? null;
       if (!currentDraftId) currentDraftId = await flushAllAndSave();
@@ -425,7 +335,7 @@ function RubricComponent({
       socket,
       isConnected,
       rubricId,
-      setGeneratingResources,
+      startGenerating,
       formDataRef,
       flushAllAndSave,
     ],

@@ -142,9 +142,7 @@ async def _handle_rubric_run_complete(sid: str, data: dict[str, Any]) -> None:
         logger.exception(f"Failed to save rubric run complete: {str(e)}")
 
 
-async def _handle_rubric_standard_description(
-    sid: str, data: dict[str, Any]
-) -> None:
+async def _handle_rubric_standard_description(sid: str, data: dict[str, Any]) -> None:
     """Handle special rubric standard_description tool - fetch and emit descriptions."""
     run_id = data.get("run_id")
     resource_id = data.get("resource_id")
@@ -157,7 +155,9 @@ async def _handle_rubric_standard_description(
             params = GetRubricToolCallResultsSqlParams(run_id=uuid.UUID(run_id))
             result = cast(
                 GetRubricToolCallResultsSqlRow,
-                await execute_sql_typed(conn, SQL_PATH_RUBRIC_TOOL_RESULTS, params=params),
+                await execute_sql_typed(
+                    conn, SQL_PATH_RUBRIC_TOOL_RESULTS, params=params
+                ),
             )
 
             if result and result.descriptions:

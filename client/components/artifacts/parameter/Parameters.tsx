@@ -110,7 +110,7 @@ export default function Parameters({
         .map((opt) => ({
           value: opt.id as string,
           label: opt.name as string,
-          count: opt.count ?? undefined,
+          count: opt.count ?? 0,
         }))
         .filter((opt) => opt.value && opt.label),
     [parametersData?.scenario_filter],
@@ -121,7 +121,7 @@ export default function Parameters({
         .map((opt) => ({
           value: opt.id as string,
           label: opt.name as string,
-          count: opt.count ?? undefined,
+          count: opt.count ?? 0,
         }))
         .filter((opt) => opt.value && opt.label),
     [parametersData?.field_filter],
@@ -132,7 +132,7 @@ export default function Parameters({
         .map((opt) => ({
           value: opt.id as string,
           label: opt.name as string,
-          count: opt.count ?? undefined,
+          count: opt.count ?? 0,
         }))
         .filter((opt) => opt.value && opt.label),
     [parametersData?.department_filter],

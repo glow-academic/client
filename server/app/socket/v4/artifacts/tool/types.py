@@ -11,14 +11,6 @@ from app.socket.v4.artifacts.types import (
     GenerationErrorEvent,
     GenerationProgressEvent,
 )
-from app.sql.types import (
-    QGetArgPositionsV4Item,
-    QGetArgsOutputsV4Item,
-    QGetArgsV4Item,
-    QGetDescriptionsV4Item,
-    QGetFlagsV4Item,
-    QGetNamesV4Item,
-)
 
 # =============================================================================
 # Client-to-Server Events (tool_generate)
@@ -45,21 +37,11 @@ class GenerateToolPayload(GetToolApiRequest):
 class ToolGenerationCompleteEvent(GenerationCompleteEvent):
     """Server-to-client event: tool_generation_complete.
 
-    Emitted when a tool resource generation completes successfully.
-    Contains full resource objects (not just IDs) for immediate frontend use.
+    Emitted when tool generation completes. Resource-level data is now
+    sent via resource_generation_complete events from the shared handler.
     """
 
     artifact_type: str = "tool"
-
-    # Single-select resources (full objects, not IDs)
-    name_resource: QGetNamesV4Item | None = None
-    description_resource: QGetDescriptionsV4Item | None = None
-    flag_resource: QGetFlagsV4Item | None = None
-
-    # Multi-select resources (arrays of full objects)
-    args_resources: list[QGetArgsV4Item] | None = None
-    arg_position_resources: list[QGetArgPositionsV4Item] | None = None
-    args_outputs_resources: list[QGetArgsOutputsV4Item] | None = None
 
 
 class ToolGenerationProgressEvent(GenerationProgressEvent):

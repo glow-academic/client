@@ -190,9 +190,7 @@ async def save_model(
                 if request.input_model_id:
                     model_name = "Model"
                     if request.name_id:
-                        name_params = GetNameByIdSqlParams(
-                            name_id=request.name_id
-                        )
+                        name_params = GetNameByIdSqlParams(name_id=request.name_id)
                         name_result = cast(
                             GetNameByIdSqlRow,
                             await execute_sql_typed(

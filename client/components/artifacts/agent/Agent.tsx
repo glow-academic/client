@@ -8,8 +8,6 @@
 
 import { useRouter } from "next/navigation";
 import React, {
-  type Dispatch,
-  type SetStateAction,
   useCallback,
   useEffect,
   useMemo,
@@ -40,18 +38,17 @@ import { Voices } from "@/components/resources/Voices";
 import { useProfile } from "@/contexts/profile-context";
 import { useDrafts } from "@/contexts/draft-context";
 import { useSocket } from "@/contexts/socket-context";
-import { useAiGeneration } from "@/hooks/use-ai-generation";
+import { useArtifactGeneration } from "@/hooks/use-artifact-generation";
 import { useDraftLifecycle } from "@/hooks/use-draft-lifecycle";
 import { useFlushRegistry } from "@/hooks/use-flush-registry";
 import { useGenerationModal } from "@/hooks/use-generation-modal";
 import {
-  buildResourceActions,
+  buildDraftPayload,
   checkHasResourceIds,
   computeEffectiveFormState,
   type ResourceConfig,
 } from "@/lib/resources/action-builders";
 import type { ResourceType } from "@/lib/resources/types";
-import type { ServerToClientEvents } from "@/lib/ws/types";
 import {
   getDefaultDepartmentIds,
   transformDepartmentIdsForSubmit,
@@ -79,25 +76,6 @@ type CreateDraftVoicesIn = InputOf<"/api/v4/resources/voices", "post">;
 type CreateDraftVoicesOut = OutputOf<"/api/v4/resources/voices", "post">;
 type CreateDraftPromptsIn = InputOf<"/api/v4/resources/prompts", "post">;
 type CreateDraftPromptsOut = OutputOf<"/api/v4/resources/prompts", "post">;
-type AgentGenerationCompletePayload = Parameters<
-  ServerToClientEvents["agent_generation_complete"]
->[0];
-
-type AgentAiFormData = {
-  name_resource?: AgentGenerationCompletePayload["name_resource"];
-  description_resource?: AgentGenerationCompletePayload["description_resource"];
-  model_resource?: AgentGenerationCompletePayload["model_resource"];
-  prompt_resource?: AgentGenerationCompletePayload["prompt_resource"];
-  instructions_resource?: AgentGenerationCompletePayload["instructions_resource"];
-  flag_resource?: AgentGenerationCompletePayload["flag_resource"];
-  temperature_level_resource?: AgentGenerationCompletePayload["temperature_level_resource"];
-  reasoning_level_resource?: AgentGenerationCompletePayload["reasoning_level_resource"];
-  department_resources?: AgentGenerationCompletePayload["department_resources"];
-  tool_resources?: AgentGenerationCompletePayload["tool_resources"];
-  voice_resources?: AgentGenerationCompletePayload["voice_resources"];
-};
-
-type SaveAgentBody = SaveAgentIn extends { body: infer B } ? B : never;
 
 type FlushResult = {
   prompt_id?: string | null;
@@ -466,20 +444,17 @@ export default function Agent({
       expectedVersion: number,
       flushResults: Record<string, unknown> = {},
     ) => {
-      const effective = computeEffectiveFormState(
-        AGENT_RESOURCES,
-        draftState as Record<string, unknown>,
-        flushResults,
-      );
-
       return {
         input_draft_id: nextDraftId,
         group_id: sectionData?.group_id ?? null,
-        ...buildResourceActions(AGENT_RESOURCES, {
-          formState: effective,
+        ...buildDraftPayload(AGENT_RESOURCES, {
+          formState: computeEffectiveFormState(
+            AGENT_RESOURCES,
+            draftState as Record<string, unknown>,
+            flushResults,
+          ),
           referenceState: lastPatchedFormStateRef.current,
           flushResults,
-          entityData: (sectionData as Record<string, unknown> | undefined) ?? null,
         }),
         expected_version: expectedVersion,
       };
@@ -509,11 +484,11 @@ export default function Agent({
 
   // Use server actions directly (no mutations needed)
   const handleSaveAgent = useCallback(
-    async (body: SaveAgentBody) => {
+    async (body: Record<string, unknown>) => {
       if (!saveAgentAction) {
         throw new Error("saveAgentAction is required");
       }
-      await saveAgentAction({ body });
+      await saveAgentAction({ body } as SaveAgentIn);
     },
     [saveAgentAction],
   );
@@ -729,16 +704,10 @@ export default function Agent({
           isSuperadmin,
           validDepartmentIds,
         );
-        const normalizedFormState = {
+        const efs = {
           ...effectiveFormState,
           departmentIds: finalDepartmentIds,
-        };
-        const saveActions = buildResourceActions(AGENT_RESOURCES, {
-          formState: normalizedFormState,
-          referenceState: lastPatchedFormStateRef.current,
-          flushResults,
-          entityData: (sectionData as Record<string, unknown> | undefined) ?? null,
-        });
+        } as Record<string, unknown>;
 
         // Save agent using unified v4 API (handles both create and update)
         if (!profile?.id) {
@@ -747,10 +716,25 @@ export default function Agent({
         }
 
         const savePayload = {
-          group_id: sectionData?.group_id ?? "",
           input_agent_id: isEditMode ? agentId : null,
-          ...saveActions,
-        } as SaveAgentBody;
+          name_id: efs["name_id"] as string,
+          model_id: efs["modelId"] as string,
+          description_id: (efs["description_id"] as string) ?? null,
+          prompt_id: (efs["prompt_id"] as string) ?? null,
+          instructions_id: (efs["instructions_id"] as string) ?? null,
+          active_flag_id: (efs["active_flag_id"] as string) ?? null,
+          temperature_level_id: (efs["temperature_level_id"] as string) ?? null,
+          reasoning_level_id: (efs["reasoning_level_id"] as string) ?? null,
+          department_ids: (efs["departmentIds"] as string[])?.length
+            ? (efs["departmentIds"] as string[])
+            : null,
+          tool_ids: (efs["tool_ids"] as string[])?.length
+            ? (efs["tool_ids"] as string[])
+            : null,
+          voice_ids: (efs["voice_ids"] as string[])?.length
+            ? (efs["voice_ids"] as string[])
+            : null,
+        };
         await handleSaveAgent(savePayload);
         toast.success(
           `Agent ${isEditMode ? "updated" : "created"} successfully!`,
@@ -905,144 +889,11 @@ export default function Agent({
     [],
   );
 
-  // AI generation completion handler
-  const onAiComplete = useCallback((data: Record<string, unknown>) => {
-    const aiUpdates: Partial<AgentAiFormData> = {};
-    if (data["name_resource"]) {
-      aiUpdates.name_resource = data[
-        "name_resource"
-      ] as AgentAiFormData["name_resource"];
-    }
-    if (data["description_resource"]) {
-      aiUpdates.description_resource = data[
-        "description_resource"
-      ] as AgentAiFormData["description_resource"];
-    }
-    if (data["model_resource"]) {
-      aiUpdates.model_resource = data[
-        "model_resource"
-      ] as AgentAiFormData["model_resource"];
-    }
-    if (data["prompt_resource"]) {
-      aiUpdates.prompt_resource = data[
-        "prompt_resource"
-      ] as AgentAiFormData["prompt_resource"];
-    }
-    if (data["instructions_resource"]) {
-      aiUpdates.instructions_resource = data[
-        "instructions_resource"
-      ] as AgentAiFormData["instructions_resource"];
-    }
-    if (data["flag_resource"]) {
-      aiUpdates.flag_resource = data["flag_resource"] as AgentAiFormData["flag_resource"];
-    }
-    if (data["temperature_level_resource"]) {
-      aiUpdates.temperature_level_resource = data[
-        "temperature_level_resource"
-      ] as AgentAiFormData["temperature_level_resource"];
-    }
-    if (data["reasoning_level_resource"]) {
-      aiUpdates.reasoning_level_resource = data[
-        "reasoning_level_resource"
-      ] as AgentAiFormData["reasoning_level_resource"];
-    }
-    if (data["department_resources"]) {
-      aiUpdates.department_resources = data[
-        "department_resources"
-      ] as AgentAiFormData["department_resources"];
-    }
-    if (data["tool_resources"]) {
-      aiUpdates.tool_resources = data[
-        "tool_resources"
-      ] as AgentAiFormData["tool_resources"];
-    }
-    if (data["voice_resources"]) {
-      aiUpdates.voice_resources = data[
-        "voice_resources"
-      ] as AgentAiFormData["voice_resources"];
-    }
-
-    const formStateUpdates: Record<string, unknown> = {};
-    const nameResource = data["name_resource"] as { id?: string } | undefined;
-    if (nameResource?.id) formStateUpdates["name_id"] = nameResource.id;
-    const descriptionResource = data["description_resource"] as
-      | { id?: string }
-      | undefined;
-    if (descriptionResource?.id) {
-      formStateUpdates["description_id"] = descriptionResource.id;
-    }
-    const modelResource = data["model_resource"] as { id?: string } | undefined;
-    if (modelResource?.id) formStateUpdates["modelId"] = modelResource.id;
-    const promptResource = data["prompt_resource"] as { id?: string } | undefined;
-    if (promptResource?.id) formStateUpdates["prompt_id"] = promptResource.id;
-    const instructionsResource = data["instructions_resource"] as
-      | { id?: string }
-      | undefined;
-    if (instructionsResource?.id) {
-      formStateUpdates["instructions_id"] = instructionsResource.id;
-    }
-    const flagResource = data["flag_resource"] as { id?: string } | undefined;
-    if (flagResource?.id) {
-      formStateUpdates["active_flag_id"] = flagResource.id;
-    }
-    const tempLevelResource = data["temperature_level_resource"] as
-      | { id?: string }
-      | undefined;
-    if (tempLevelResource?.id) {
-      formStateUpdates["temperature_level_id"] = tempLevelResource.id;
-    }
-    const reasoningLevelResource = data["reasoning_level_resource"] as
-      | { id?: string }
-      | undefined;
-    if (reasoningLevelResource?.id) {
-      formStateUpdates["reasoning_level_id"] = reasoningLevelResource.id;
-    }
-
-    const departmentResources = data["department_resources"] as
-      | Array<{ department_id?: string | null }>
-      | undefined;
-    if (departmentResources?.length) {
-      formStateUpdates["departmentIds"] = departmentResources
-        .map((item) => item.department_id)
-        .filter((id): id is string => !!id);
-    }
-
-    const toolResources = data["tool_resources"] as
-      | Array<{ id?: string | null }>
-      | undefined;
-    if (toolResources?.length) {
-      formStateUpdates["tool_ids"] = toolResources
-        .map((item) => item.id)
-        .filter((id): id is string => !!id);
-    }
-
-    const voiceResources = data["voice_resources"] as
-      | Array<{ id?: string | null }>
-      | undefined;
-    if (voiceResources?.length) {
-      formStateUpdates["voice_ids"] = voiceResources
-        .map((item) => item.id)
-        .filter((id): id is string => !!id);
-    }
-
-    return { aiUpdates, formStateUpdates };
-  }, []);
-
-  // AI generation hook (replaces WebSocket useEffect + generatingResources state)
-  const { setGeneratingResources, isGenerating, aiFormData } = useAiGeneration<
-    ResourceType,
-    AgentAiFormData
-  >({
-    socket,
-    isConnected,
+  // AI generation hook
+  const { isGenerating, startGenerating } = useArtifactGeneration({
     artifactType: "agent",
     groupId: sectionData?.group_id,
-    eventPrefix: "agent_generation",
     validResourceTypes: AGENT_VALID_RESOURCE_TYPES,
-    onComplete: onAiComplete,
-    setFormState: setDraftState as Dispatch<
-      SetStateAction<Record<string, unknown>>
-    >,
   });
   const isGeneratingForStepCard = useCallback(
     (resourceType: string) => isGenerating(resourceType as ResourceType),
@@ -1061,11 +912,7 @@ export default function Agent({
       }
 
       // Set all resources as generating
-      setGeneratingResources((prev) => {
-        const next = new Set(prev);
-        resourceTypes.forEach((rt) => next.add(rt));
-        return next;
-      });
+      startGenerating(resourceTypes);
 
       let currentDraftId =
         (formDataRef.current["draftId"] as string | undefined) ?? null;
@@ -1088,7 +935,7 @@ export default function Agent({
       socket,
       isConnected,
       agentId,
-      setGeneratingResources,
+      startGenerating,
       formDataRef,
       flushAllAndSave,
     ],
@@ -1220,58 +1067,16 @@ export default function Agent({
     [],
   );
 
-  const aiNameResource = aiFormData.name_resource;
-  const aiDescriptionResource = aiFormData.description_resource;
-  const aiModelResource = aiFormData.model_resource;
-  const aiPromptResource = aiFormData.prompt_resource;
-  const aiInstructionsResource = aiFormData.instructions_resource;
-  const aiTemperatureResource = aiFormData.temperature_level_resource;
-  const aiReasoningResource = aiFormData.reasoning_level_resource;
-
-  const mergedNames = mergeById(
-    namesSection?.resources ?? [],
-    aiNameResource ? [aiNameResource as { id?: string | null }] : [],
-  );
-  const mergedDescriptions = mergeById(
-    descriptionsSection?.resources ?? [],
-    aiDescriptionResource
-      ? [aiDescriptionResource as { id?: string | null }]
-      : [],
-  );
-  const mergedModels = mergeById(
-    modelsSection?.resources ?? [],
-    aiModelResource ? [aiModelResource] : [],
-  );
-  const mergedPrompts = mergeById(
-    promptsSection?.resources ?? [],
-    aiPromptResource ? [aiPromptResource] : [],
-  );
-  const mergedInstructions = mergeById(
-    instructionsSection?.resources ?? [],
-    aiInstructionsResource ? [aiInstructionsResource] : [],
-  );
-  const mergedTemperatureLevels = mergeById(
-    temperatureLevelsSection?.resources ?? [],
-    aiTemperatureResource ? [aiTemperatureResource] : [],
-  );
-  const mergedReasoningLevels = mergeById(
-    reasoningLevelsSection?.resources ?? [],
-    aiReasoningResource ? [aiReasoningResource] : [],
-  );
-  const mergedTools = mergeById(
-    toolsSection?.resources ?? [],
-    (aiFormData.tool_resources ?? []) as Array<{ id?: string | null }>,
-  );
-  const mergedVoices = mergeById(
-    voicesSection?.resources ?? [],
-    (aiFormData.voice_resources ?? []) as Array<{ id?: string | null }>,
-  );
-  const mergedDepartments = mergeByDepartmentId(
-    departmentsSection?.resources ?? [],
-    (aiFormData.department_resources ?? []) as Array<{
-      department_id?: string | null;
-    }>,
-  );
+  const mergedNames = namesSection?.resources ?? [];
+  const mergedDescriptions = descriptionsSection?.resources ?? [];
+  const mergedModels = modelsSection?.resources ?? [];
+  const mergedPrompts = promptsSection?.resources ?? [];
+  const mergedInstructions = instructionsSection?.resources ?? [];
+  const mergedTemperatureLevels = temperatureLevelsSection?.resources ?? [];
+  const mergedReasoningLevels = reasoningLevelsSection?.resources ?? [];
+  const mergedTools = toolsSection?.resources ?? [];
+  const mergedVoices = voicesSection?.resources ?? [];
+  const mergedDepartments = departmentsSection?.resources ?? [];
 
   return (
     <div className="space-y-6 py-4 px-4">
@@ -1356,7 +1161,7 @@ export default function Agent({
                       customHeader={
                         <Names
                           name_id={draftState.name_id}
-                          name_resource={aiNameResource ?? namesSection?.resource ?? null}
+                          name_resource={namesSection?.resource ?? null}
                           show_name={namesSection?.show ?? true}
                           name_suggestions={namesSection?.suggestions ?? []}
                           names={mergedNames}
@@ -1409,7 +1214,7 @@ export default function Agent({
                         <Descriptions
                           description_id={draftState.description_id}
                           description_resource={
-                            aiDescriptionResource ?? descriptionsSection?.resource ?? null
+                            descriptionsSection?.resource ?? null
                           }
                           show_description={descriptionsSection?.show ?? true}
                           description_suggestions={

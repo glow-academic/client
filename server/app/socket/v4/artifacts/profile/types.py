@@ -1,17 +1,10 @@
 """WebSocket-specific types for profile generation."""
 
-from app.api.v4.artifacts.profile.types import GetProfileApiRequest, ProfileFlagConfig
-from app.api.v4.resources.cohorts.types import QGetCohortsV4Item
+from app.api.v4.artifacts.profile.types import GetProfileApiRequest
 from app.socket.v4.artifacts.types import (
     GenerationCompleteEvent,
     GenerationErrorEvent,
     GenerationProgressEvent,
-)
-from app.sql.types import (
-    QGetDepartmentsV4Item,
-    QGetEmailsV4Item,
-    QGetNamesV4Item,
-    QGetRequestLimitsV4Item,
 )
 
 
@@ -24,16 +17,13 @@ class GenerateProfilePayload(GetProfileApiRequest):
 
 
 class ProfileGenerationCompleteEvent(GenerationCompleteEvent):
-    """Server-to-client event: profile generation complete."""
+    """Server-to-client event: profile generation complete.
+
+    Emitted when profile generation completes. Resource-level data is now
+    sent via resource_generation_complete events from the shared handler.
+    """
 
     artifact_type: str = "profile"
-
-    name_resource: QGetNamesV4Item | None = None
-    request_limit_resource: QGetRequestLimitsV4Item | None = None
-    email_resources: list[QGetEmailsV4Item] | None = None
-    department_resources: list[QGetDepartmentsV4Item] | None = None
-    cohort_resources: list[QGetCohortsV4Item] | None = None
-    flag_resource: ProfileFlagConfig | None = None
 
 
 class ProfileGenerationProgressEvent(GenerationProgressEvent):

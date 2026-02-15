@@ -33,7 +33,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { useProfile } from "@/contexts/profile-context";
 import { useSocket } from "@/contexts/socket-context";
 import { useDrafts } from "@/contexts/draft-context";
-import { useAiGeneration } from "@/hooks/use-ai-generation";
+import { useArtifactGeneration } from "@/hooks/use-artifact-generation";
 import { useDraftLifecycle } from "@/hooks/use-draft-lifecycle";
 import { useFlushRegistry } from "@/hooks/use-flush-registry";
 import { useGenerationModal } from "@/hooks/use-generation-modal";
@@ -356,36 +356,13 @@ function SimulationComponent({
     useState<SimulationFormState>(getInitialFormState);
 
   // --- AI Generation ---
-  const onAiComplete = useCallback((_data: Record<string, unknown>) => {
-    return { aiUpdates: {}, formStateUpdates: {} };
-  }, []);
-
   const groupId = stableSimulationDataFields?.group_id ?? null;
 
-  const { setGeneratingResources, isGenerating } = useAiGeneration<
-    SimulationResourceType,
-    Record<string, never>
-  >({
-    socket,
-    isConnected,
+  const { isGenerating, startGenerating, makeOnGenerationComplete } = useArtifactGeneration({
     artifactType: "simulation",
     groupId,
-    eventPrefix: "simulation_generation",
     validResourceTypes: VALID_RESOURCE_TYPES,
-    onComplete: onAiComplete,
   });
-
-  // Callback for resource components to clear their generating state
-  const makeOnGenerationComplete = useCallback(
-    (resourceType: SimulationResourceType) => () => {
-      setGeneratingResources((prev) => {
-        const next = new Set(prev);
-        next.delete(resourceType);
-        return next;
-      });
-    },
-    [],
-  );
 
   // Helper to check if a resource type can be regenerated
   // Use stableSimulationDataFields to prevent callback recreation when simulationData object reference changes
@@ -649,11 +626,7 @@ function SimulationComponent({
       }
 
       // Set all resources as generating
-      setGeneratingResources((prev) => {
-        const next = new Set(prev);
-        resourceTypes.forEach((rt) => next.add(rt));
-        return next;
-      });
+      startGenerating(resourceTypes);
 
       // Read search params from formData
       const formData = formDataRef.current;
@@ -672,7 +645,7 @@ function SimulationComponent({
         simulation_id: simulationId || null,
       });
     },
-    [socket, isConnected, simulationId, setGeneratingResources, formDataRef],
+    [socket, isConnected, simulationId, startGenerating, formDataRef],
   );
 
   // Individual generation handlers - generate directly without modals

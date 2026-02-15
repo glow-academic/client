@@ -21,7 +21,7 @@ import { Names } from "@/components/resources/Names";
 import { Values } from "@/components/resources/Values";
 import { useDrafts } from "@/contexts/draft-context";
 import { useSocket } from "@/contexts/socket-context";
-import { useAiGeneration } from "@/hooks/use-ai-generation";
+import { useArtifactGeneration } from "@/hooks/use-artifact-generation";
 import { useDraftLifecycle } from "@/hooks/use-draft-lifecycle";
 import { useFlushRegistry } from "@/hooks/use-flush-registry";
 import { useGenerationModal } from "@/hooks/use-generation-modal";
@@ -172,50 +172,10 @@ export default function Provider({
     referenceStateRef.current = initial;
   }, [getInitialFormState]);
 
-  const { setGeneratingResources, isGenerating } = useAiGeneration<
-    ResourceType,
-    Record<string, unknown>
-  >({
-    socket,
-    isConnected,
+  const { isGenerating, startGenerating } = useArtifactGeneration({
     artifactType: "provider",
-    groupId,
-    eventPrefix: "provider_generation",
-    validResourceTypes: PROVIDER_RESOURCES,
-    onComplete: useCallback((data: Record<string, unknown>) => {
-      return {
-        aiUpdates: {},
-        formStateUpdater: (prev: Record<string, unknown>) => {
-          const next = { ...prev };
-          const nameResource = data["name_resource"] as { id?: string } | undefined;
-          if (nameResource?.id) next["name_id"] = nameResource.id;
-          const descriptionResource = data["description_resource"] as
-            | { id?: string }
-            | undefined;
-          if (descriptionResource?.id) next["description_id"] = descriptionResource.id;
-          const flagResource = data["flag_resource"] as { id?: string } | undefined;
-          if (flagResource?.id) next["active_flag_id"] = flagResource.id;
-          const valueResource = data["value_resource"] as { id?: string } | undefined;
-          if (valueResource?.id) next["value_id"] = valueResource.id;
-          const endpointResource = data["endpoint_resource"] as
-            | { id?: string }
-            | undefined;
-          if (endpointResource?.id) next["endpoint_id"] = endpointResource.id;
-          const departmentResources = data["department_resources"] as
-            | Array<{ department_id?: string }>
-            | undefined;
-          if (departmentResources) {
-            next["department_ids"] = departmentResources
-              .map((d) => d.department_id)
-              .filter(Boolean);
-          }
-          return next;
-        },
-      };
-    }, []),
-    setFormState: setFormState as React.Dispatch<
-      React.SetStateAction<Record<string, unknown>>
-    >,
+    groupId: groupId,
+    validResourceTypes: PROVIDER_RESOURCES as string[],
   });
 
   const providerSearchParamsClient = useMemo(
@@ -291,11 +251,7 @@ export default function Provider({
         toast.error("WebSocket not connected");
         return;
       }
-      setGeneratingResources((prev) => {
-        const next = new Set(prev);
-        resourceTypes.forEach((rt) => next.add(rt));
-        return next;
-      });
+      startGenerating(resourceTypes);
       let currentDraftId =
         (formDataRef.current["draftId"] as string | undefined) ?? null;
       if (!currentDraftId) currentDraftId = await flushAllAndSave();
@@ -313,7 +269,7 @@ export default function Provider({
     [
       socket,
       isConnected,
-      setGeneratingResources,
+      startGenerating,
       formDataRef,
       flushAllAndSave,
       providerId,

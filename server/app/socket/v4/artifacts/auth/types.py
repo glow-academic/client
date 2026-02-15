@@ -1,17 +1,10 @@
 """WebSocket-specific types for auth generation."""
 
-from app.api.v4.artifacts.auth.types import AuthFlagConfig, GetAuthApiRequest
+from app.api.v4.artifacts.auth.types import GetAuthApiRequest
 from app.socket.v4.artifacts.types import (
     GenerationCompleteEvent,
     GenerationErrorEvent,
     GenerationProgressEvent,
-)
-from app.sql.types import (
-    QGetDescriptionsV4Item,
-    QGetItemsV4Item,
-    QGetNamesV4Item,
-    QGetProtocolsV4Item,
-    QGetSlugsV4Item,
 )
 
 AUTH_GENERATE_RESOURCE_TYPES = [
@@ -32,16 +25,13 @@ class GenerateAuthPayload(GetAuthApiRequest):
 
 
 class AuthGenerationCompleteEvent(GenerationCompleteEvent):
-    """Server-to-client event: auth_generation_complete."""
+    """Server-to-client event: auth_generation_complete.
+
+    Emitted when auth generation completes. Resource-level data is now
+    sent via resource_generation_complete events from the shared handler.
+    """
 
     artifact_type: str = "auth"
-
-    name_resource: QGetNamesV4Item | None = None
-    description_resource: QGetDescriptionsV4Item | None = None
-    flag_resource: AuthFlagConfig | None = None
-    protocol_resources: list[QGetProtocolsV4Item] | None = None
-    slug_resources: list[QGetSlugsV4Item] | None = None
-    item_resources: list[QGetItemsV4Item] | None = None
 
 
 class AuthGenerationProgressEvent(GenerationProgressEvent):

@@ -23,7 +23,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { useProfile } from "@/contexts/profile-context";
 import { useDrafts } from "@/contexts/draft-context";
 import { useSocket } from "@/contexts/socket-context";
-import { useAiGeneration } from "@/hooks/use-ai-generation";
+import { useArtifactGeneration } from "@/hooks/use-artifact-generation";
 import { useDraftLifecycle } from "@/hooks/use-draft-lifecycle";
 import { useFlushRegistry } from "@/hooks/use-flush-registry";
 import { useGenerationModal } from "@/hooks/use-generation-modal";
@@ -36,7 +36,6 @@ import {
 } from "@/lib/resources/action-builders";
 import type { ResourceType } from "@/lib/resources/types";
 import { parseAsBoolean, parseAsString, type Parser } from "nuqs";
-import type { Dispatch, SetStateAction } from "react";
 
 type SaveParameterIn = InputOf<"/api/v4/artifacts/parameters/save", "post">;
 type SaveParameterOut = OutputOf<"/api/v4/artifacts/parameters/save", "post">;
@@ -396,72 +395,10 @@ function ParameterComponent({
     },
   });
 
-  const onAiComplete = useCallback((data: Record<string, unknown>) => {
-    return {
-      aiUpdates: {} as Record<string, unknown>,
-      formStateUpdater: (prev: Record<string, unknown>) => {
-        const updates: Record<string, unknown> = {};
-        const nameRes = data["name_resource"] as { id?: string | null } | undefined;
-        const descRes = data["description_resource"] as
-          | { id?: string | null }
-          | undefined;
-        const flagRes = data["flag_resource"] as
-          | { id?: string | null; key?: string | null }
-          | undefined;
-        const departmentResources = data["department_resources"] as
-          | Array<{ department_id?: string | null }>
-          | undefined;
-        const fieldResources = data["field_resources"] as
-          | Array<{ field_id?: string | null; id?: string | null }>
-          | undefined;
-
-        if (nameRes?.id) updates["name_id"] = nameRes.id;
-        if (descRes?.id) updates["description_id"] = descRes.id;
-        if (flagRes?.id) {
-          const prevFlags = ((prev["flag_ids"] as string[]) ?? []).slice();
-          if (!prevFlags.includes(flagRes.id)) prevFlags.push(flagRes.id);
-          updates["flag_ids"] = prevFlags;
-          if (flagRes.key === "active") {
-            updates["active_flag_id"] = flagRes.id;
-          }
-        }
-
-        if (departmentResources?.length) {
-          const prevIds = (prev["department_ids"] as string[]) ?? [];
-          const nextIds = [
-            ...prevIds,
-            ...departmentResources
-              .map((d) => d.department_id)
-              .filter((x): x is string => !!x && !prevIds.includes(x)),
-          ];
-          updates["department_ids"] = nextIds;
-        }
-
-        if (fieldResources?.length) {
-          const prevIds = (prev["field_ids"] as string[]) ?? [];
-          const newIds = fieldResources
-            .map((f) => f.field_id ?? f.id)
-            .filter((x): x is string => !!x && !prevIds.includes(x));
-          updates["field_ids"] = [...prevIds, ...newIds];
-        }
-
-        return { ...prev, ...updates };
-      },
-    };
-  }, []);
-
-  const { isGenerating, setGeneratingResources } = useAiGeneration<
-    ResourceType,
-    Record<string, unknown>
-  >({
-    socket,
-    isConnected,
+  const { isGenerating, startGenerating } = useArtifactGeneration({
     artifactType: "parameter",
     groupId: s?.group_id,
-    eventPrefix: "parameter_generation",
     validResourceTypes: VALID_RESOURCE_TYPES,
-    onComplete: onAiComplete,
-    setFormState: setFormState as Dispatch<SetStateAction<Record<string, unknown>>>,
   });
 
   const handleGenerateResources = useCallback(
@@ -471,11 +408,7 @@ function ParameterComponent({
         return;
       }
 
-      setGeneratingResources((prev) => {
-        const next = new Set(prev);
-        resourceTypes.forEach((rt) => next.add(rt));
-        return next;
-      });
+      startGenerating(resourceTypes);
 
       let draftId = (formDataRef.current["draftId"] as string | undefined) ?? null;
       if (!draftId) {
@@ -493,7 +426,7 @@ function ParameterComponent({
         parameter_id: parameterId || null,
       });
     },
-    [socket, isConnected, flushAllAndSave, formDataRef, parameterId, setGeneratingResources]
+    [socket, isConnected, flushAllAndSave, formDataRef, parameterId, startGenerating]
   );
 
   const canRegenerate = useCallback(

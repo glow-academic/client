@@ -12,18 +12,7 @@ from app.socket.v4.artifacts.types import (
     GenerationProgressEvent,
 )
 from app.sql.types import (
-    QGetDepartmentsV4Item,
-    QGetDescriptionsV4Item,
-    QGetDocumentsV4Item,
-    QGetFlagsV4Item,
     QGetImagesV4Item,
-    QGetNamesV4Item,
-    QGetObjectivesV4Item,
-    QGetParameterFieldsV4Item,
-    QGetParametersV4Item,
-    QGetPersonasV4Item,
-    QGetProblemStatementsV4Item,
-    QGetQuestionsV4Item,
     QGetVideosV4Item,
 )
 
@@ -52,28 +41,17 @@ class GenerateScenarioPayload(GetScenarioApiRequest):
 class ScenarioGenerationCompleteEvent(GenerationCompleteEvent):
     """Server-to-client event: scenario_generation_complete.
 
-    Emitted when a scenario resource generation completes successfully.
-    Contains full resource objects (not just IDs) for immediate frontend use.
+    Emitted when scenario generation completes. Resource-level data is now
+    sent via resource_generation_complete events from the shared handler.
+    Media resources (images/videos) are still sent here as they require
+    special upload linking not covered by the resource layer.
     """
 
     artifact_type: str = "scenario"
 
-    # Single-select resources (full objects, not IDs)
-    name_resource: QGetNamesV4Item | None = None
-    description_resource: QGetDescriptionsV4Item | None = None
-    problem_statement_resource: QGetProblemStatementsV4Item | None = None
-    flag_resources: list[QGetFlagsV4Item] | None = None
-
-    # Multi-select resources (arrays of full objects)
-    department_resources: list[QGetDepartmentsV4Item] | None = None
-    persona_resources: list[QGetPersonasV4Item] | None = None
-    document_resources: list[QGetDocumentsV4Item] | None = None
-    objective_resources: list[QGetObjectivesV4Item] | None = None
-    question_resources: list[QGetQuestionsV4Item] | None = None
+    # Media resources - still handled by artifact-level media handler
     image_resources: list[QGetImagesV4Item] | None = None
     video_resources: list[QGetVideosV4Item] | None = None
-    parameter_resources: list[QGetParametersV4Item] | None = None
-    parameter_field_resources: list[QGetParameterFieldsV4Item] | None = None
 
 
 class ScenarioGenerationProgressEvent(GenerationProgressEvent):

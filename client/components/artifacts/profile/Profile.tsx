@@ -8,8 +8,6 @@
 
 import { useRouter } from "next/navigation";
 import React, {
-  type Dispatch,
-  type SetStateAction,
   useCallback,
   useEffect,
   useMemo,
@@ -45,7 +43,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { useDrafts } from "@/contexts/draft-context";
 import { useProfile } from "@/contexts/profile-context";
 import { useSocket } from "@/contexts/socket-context";
-import { useAiGeneration } from "@/hooks/use-ai-generation";
+import { useArtifactGeneration } from "@/hooks/use-artifact-generation";
 import { useDraftLifecycle } from "@/hooks/use-draft-lifecycle";
 import { useFlushRegistry } from "@/hooks/use-flush-registry";
 import { useGenerationModal } from "@/hooks/use-generation-modal";
@@ -605,94 +603,10 @@ function ProfileComponent({
     onPatchSuccess,
   });
 
-  // --- useAiGeneration hook ---
-  const onAiComplete = useCallback((data: Record<string, unknown>) => {
-    return {
-      aiUpdates: {} as Record<string, unknown>,
-      formStateUpdater: (prev: Record<string, unknown>) => {
-        const updates: Record<string, unknown> = {};
-
-        const nameResource = data["name_resource"] as { id?: string } | undefined;
-        if (nameResource?.id) updates["name_id"] = nameResource.id;
-
-        const flagResource = data["flag_resource"] as
-          | { flag_option_id?: string }
-          | undefined;
-        if (flagResource?.flag_option_id) {
-          updates["active_flag_id"] = flagResource.flag_option_id;
-        }
-
-        const requestLimitResource = data["request_limit_resource"] as
-          | { id?: string }
-          | undefined;
-        if (requestLimitResource?.id) {
-          updates["request_limit_id"] = requestLimitResource.id;
-        }
-
-        const deptResources = data["department_resources"] as
-          | Array<{ department_id?: string }>
-          | undefined;
-        const deptIds = deptResources
-          ?.map((d) => d.department_id)
-          .filter((id): id is string => !!id);
-        if (deptIds && deptIds.length > 0) {
-          const prevDeptIds = (prev["department_ids"] as string[]) ?? [];
-          const newDeptIds = deptIds.filter(
-            (id) => !prevDeptIds.includes(id)
-          );
-          updates["department_ids"] = [...prevDeptIds, ...newDeptIds];
-        }
-
-        const emailResources = data["email_resources"] as
-          | Array<{ id?: string }>
-          | undefined;
-        const emailIds = emailResources
-          ?.map((e) => e.id)
-          .filter((id): id is string => !!id);
-        if (emailIds && emailIds.length > 0) {
-          const prevEmailIds = (prev["email_ids"] as string[]) ?? [];
-          const newEmailIds = emailIds.filter(
-            (id) => !prevEmailIds.includes(id)
-          );
-          updates["email_ids"] = [...prevEmailIds, ...newEmailIds];
-          if (prevEmailIds.length === 0) {
-            updates["primary_email_index"] = 0;
-          }
-        }
-
-        const cohortResources = data["cohort_resources"] as
-          | Array<{ cohort_id?: string }>
-          | undefined;
-        const cohortIds = cohortResources
-          ?.map((c) => c.cohort_id)
-          .filter((id): id is string => !!id);
-        if (cohortIds && cohortIds.length > 0) {
-          const prevCohortIds = (prev["cohort_ids"] as string[]) ?? [];
-          const newCohortIds = cohortIds.filter(
-            (id) => !prevCohortIds.includes(id)
-          );
-          updates["cohort_ids"] = [...prevCohortIds, ...newCohortIds];
-        }
-
-        return { ...prev, ...updates };
-      },
-    };
-  }, []);
-
-  const { isGenerating, setGeneratingResources } = useAiGeneration<
-    ProfileResourceType,
-    Record<string, unknown>
-  >({
-    socket,
-    isConnected,
+  const { isGenerating, startGenerating } = useArtifactGeneration({
     artifactType: "profile",
     groupId: currentStaffData?.group_id,
-    eventPrefix: "profile_generation",
     validResourceTypes: [...VALID_RESOURCE_TYPES],
-    onComplete: onAiComplete,
-    setFormState: setFormState as Dispatch<
-      SetStateAction<Record<string, unknown>>
-    >,
   });
 
   const handleGenerateResources = useCallback(
@@ -705,11 +619,7 @@ function ProfileComponent({
         return;
       }
 
-      setGeneratingResources((prev) => {
-        const next = new Set(prev);
-        resourceTypes.forEach((rt) => next.add(rt as ProfileResourceType));
-        return next;
-      });
+      startGenerating(resourceTypes);
 
       const formData = formDataRef.current;
       let draftId = (formData["draftId"] as string | undefined) ?? null;
@@ -732,7 +642,7 @@ function ProfileComponent({
       socket,
       isConnected,
       staffId,
-      setGeneratingResources,
+      startGenerating,
       formDataRef,
       flushAllAndSave,
     ]

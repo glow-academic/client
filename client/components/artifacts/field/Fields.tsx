@@ -95,7 +95,7 @@ export default function Fields({
         .map((opt) => ({
           value: opt.id as string,
           label: opt.name as string,
-          count: opt.count ?? undefined,
+          count: opt.count ?? 0,
         }))
         .filter((opt) => opt.value && opt.label),
     [fieldsData?.parameter_filter],
@@ -106,7 +106,7 @@ export default function Fields({
         .map((opt) => ({
           value: opt.id as string,
           label: opt.name as string,
-          count: opt.count ?? undefined,
+          count: opt.count ?? 0,
         }))
         .filter((opt) => opt.value && opt.label),
     [fieldsData?.persona_filter],
@@ -117,7 +117,7 @@ export default function Fields({
         .map((opt) => ({
           value: opt.id as string,
           label: opt.name as string,
-          count: opt.count ?? undefined,
+          count: opt.count ?? 0,
         }))
         .filter((opt) => opt.value && opt.label),
     [fieldsData?.department_filter],
@@ -145,7 +145,7 @@ export default function Fields({
         cell: () => null,
         enableHiding: true,
         enableSorting: false,
-        accessorFn: (row: (typeof fields)[number]) => row.parameter_ids ?? [],
+        accessorFn: (row: (typeof fields)[number]) => row.conditional_parameter_ids ?? [],
         filterFn: (row, _id, value: string[]) => {
           const rowIds = (row.getValue("parameters") as string[]) ?? [];
           if (value.length === 0) return true;
@@ -225,26 +225,20 @@ export default function Fields({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sortingKey, columnFiltersKey, fields.length, pageIndex, pageSize]);
 
-  // Convert arrays to mappings for UI display (must be before early return)
+  // Convert filter options to mappings for UI display (must be before early return)
   const parameterMapping = useMemo(() => {
-    const parameters = fieldsData?.parameters || [];
+    const options = fieldsData?.parameter_filter?.options || [];
     return Object.fromEntries(
-      parameters.map((param) => [
-        param.parameter_id,
-        { name: param.name, description: param.description || undefined },
-      ])
-    ) as Record<string, { name: string; description?: string }>;
-  }, [fieldsData?.parameters]);
+      options.map((opt) => [opt.id, { name: opt.name || "" }])
+    ) as Record<string, { name: string }>;
+  }, [fieldsData?.parameter_filter]);
 
   const departmentMapping = useMemo(() => {
-    const departments = fieldsData?.departments || [];
+    const options = fieldsData?.department_filter?.options || [];
     return Object.fromEntries(
-      departments.map((dept) => [
-        dept.department_id,
-        { name: dept.name, description: dept.description || undefined },
-      ])
-    ) as Record<string, { name: string; description?: string }>;
-  }, [fieldsData?.departments]);
+      options.map((opt) => [opt.id, { name: opt.name || "" }])
+    ) as Record<string, { name: string }>;
+  }, [fieldsData?.department_filter]);
 
   if (isLoading) {
     return (
@@ -421,17 +415,17 @@ export default function Fields({
           </p>
           {/* Parameters and Departments */}
           <div className="flex flex-col gap-2 text-xs text-muted-foreground">
-            {field.parameter_ids && field.parameter_ids.length > 0 && (
+            {field.conditional_parameter_ids && field.conditional_parameter_ids.length > 0 && (
               <div className="flex flex-wrap gap-1">
                 <span className="font-medium">Parameters:</span>
-                {field.parameter_ids.slice(0, 3).map((pid) => (
+                {field.conditional_parameter_ids.slice(0, 3).map((pid) => (
                   <Badge key={pid} variant="outline" className="text-xs">
                     {parameterMapping[pid]?.["name"] || pid.slice(0, 8)}
                   </Badge>
                 ))}
-                {field.parameter_ids.length > 3 && (
+                {field.conditional_parameter_ids.length > 3 && (
                   <Badge variant="outline" className="text-xs">
-                    +{field.parameter_ids.length - 3} more
+                    +{field.conditional_parameter_ids.length - 3} more
                   </Badge>
                 )}
               </div>

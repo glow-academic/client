@@ -25,7 +25,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { useProfile } from "@/contexts/profile-context";
 import { useDrafts } from "@/contexts/draft-context";
 import { useSocket } from "@/contexts/socket-context";
-import { useAiGeneration } from "@/hooks/use-ai-generation";
+import { useArtifactGeneration } from "@/hooks/use-artifact-generation";
 import { useDraftLifecycle } from "@/hooks/use-draft-lifecycle";
 import { useFlushRegistry } from "@/hooks/use-flush-registry";
 import { useGenerationModal } from "@/hooks/use-generation-modal";
@@ -36,12 +36,7 @@ import {
   checkHasResourceIds,
   computeEffectiveFormState,
 } from "@/lib/resources/action-builders";
-import type { ServerToClientEvents } from "@/lib/ws/types";
 import { parseAsBoolean, parseAsString, type Parser } from "nuqs";
-
-type FieldGenerationCompletePayload = Parameters<
-  ServerToClientEvents["field_generation_complete"]
->[0];
 
 type SaveFieldIn = InputOf<"/api/v4/artifacts/fields/save", "post">;
 type SaveFieldOut = OutputOf<"/api/v4/artifacts/fields/save", "post">;
@@ -78,14 +73,6 @@ type FieldFormState = {
 type FlushResult = {
   name_id?: string | null;
   description_id?: string | null;
-};
-
-type FieldAiFormData = {
-  name_resource?: FieldGenerationCompletePayload["name_resource"];
-  description_resource?: FieldGenerationCompletePayload["description_resource"];
-  flag_resource?: FieldGenerationCompletePayload["flag_resource"];
-  department_resources?: FieldGenerationCompletePayload["department_resources"];
-  conditional_parameter_resources?: FieldGenerationCompletePayload["conditional_parameter_resources"];
 };
 
 export interface FieldProps {
@@ -220,102 +207,16 @@ function FieldComponent({
 
   const groupId = fieldData?.group_id;
 
-  const onAiComplete = useCallback((data: Record<string, unknown>) => {
-    const aiUpdates: Partial<FieldAiFormData> = {};
-    if (data["name_resource"]) {
-      aiUpdates.name_resource = data[
-        "name_resource"
-      ] as FieldAiFormData["name_resource"];
-    }
-    if (data["description_resource"]) {
-      aiUpdates.description_resource = data[
-        "description_resource"
-      ] as FieldAiFormData["description_resource"];
-    }
-    if (data["flag_resource"]) {
-      aiUpdates.flag_resource = data[
-        "flag_resource"
-      ] as FieldAiFormData["flag_resource"];
-    }
-    if (data["department_resources"]) {
-      aiUpdates.department_resources = data[
-        "department_resources"
-      ] as FieldAiFormData["department_resources"];
-    }
-    if (data["conditional_parameter_resources"]) {
-      aiUpdates.conditional_parameter_resources = data[
-        "conditional_parameter_resources"
-      ] as FieldAiFormData["conditional_parameter_resources"];
-    }
-
-    const updates: Record<string, unknown> = {};
-    const name = data["name_resource"] as { id?: string } | undefined;
-    const description = data["description_resource"] as
-      | { id?: string }
-      | undefined;
-    const flag = data["flag_resource"] as
-      | { flag_option_id?: string }
-      | undefined;
-
-    if (name?.id) updates["name_id"] = name.id;
-    if (description?.id) updates["description_id"] = description.id;
-    if (flag?.flag_option_id) updates["active_flag_id"] = flag.flag_option_id;
-
-    return {
-      aiUpdates,
-      formStateUpdates: updates,
-      formStateUpdater: (prev: Record<string, unknown>) => {
-        const next = { ...prev, ...updates };
-
-        const departmentResources = data["department_resources"] as
-          | Array<{ department_id?: string }>
-          | undefined;
-        if (departmentResources?.length) {
-          const existing = new Set((next["department_ids"] as string[]) ?? []);
-          departmentResources.forEach((d) => {
-            if (d.department_id) existing.add(d.department_id);
-          });
-          next["department_ids"] = Array.from(existing);
-        }
-
-        const conditionalResources = data[
-          "conditional_parameter_resources"
-        ] as Array<{ parameter_id?: string }> | undefined;
-        if (conditionalResources?.length) {
-          const existing = new Set(
-            (next["conditional_parameter_ids"] as string[]) ?? [],
-          );
-          conditionalResources.forEach((p) => {
-            if (p.parameter_id) existing.add(p.parameter_id);
-          });
-          next["conditional_parameter_ids"] = Array.from(existing);
-        }
-
-        return next;
-      },
-    };
-  }, []);
-
-  const {
-    setGeneratingResources,
-    isGenerating,
-    aiFormData,
-    clearAiResource,
-  } = useAiGeneration<FieldResourceType, FieldAiFormData>({
-    socket,
-    isConnected,
+  const { isGenerating, startGenerating } = useArtifactGeneration({
     artifactType: "field",
-    groupId,
-    eventPrefix: "field_generation",
+    groupId: groupId,
     validResourceTypes: [
       "names",
       "descriptions",
       "flags",
       "departments",
       "conditional_parameters",
-    ],
-    onComplete: onAiComplete,
-    setFormState,
+    ] as string[],
   });
 
   const canRegenerate = useCallback(
@@ -449,11 +350,7 @@ function FieldComponent({
         return;
       }
 
-      setGeneratingResources((prev) => {
-        const next = new Set(prev);
-        resourceTypes.forEach((rt) => next.add(rt));
-        return next;
-      });
+      startGenerating(resourceTypes);
 
       socket.emit("field_generate", {
         resource_types: resourceTypes,
@@ -462,7 +359,7 @@ function FieldComponent({
         field_id: fieldId || null,
       });
     },
-    [fieldId, flushAllAndSave, formDataRef, isConnected, setGeneratingResources, socket],
+    [fieldId, flushAllAndSave, formDataRef, isConnected, startGenerating, socket],
   );
 
   const stepResources = useMemo(
@@ -703,9 +600,6 @@ function FieldComponent({
                 createNamesAction={createNamesAction}
                 isAutosaveEnabled={isAutosaveEnabled}
                 registerFlush={registerFlushCallbacks.names}
-                aiResource={aiFormData.name_resource}
-                onAccept={() => clearAiResource("name_resource")}
-                onReject={() => clearAiResource("name_resource")}
               />
             }
             actions={
@@ -752,9 +646,6 @@ function FieldComponent({
                 onSearchChange={(term: string) =>
                   setFormData({ descriptionSearch: term || null })
                 }
-                aiResource={aiFormData.description_resource}
-                onAccept={() => clearAiResource("description_resource")}
-                onReject={() => clearAiResource("description_resource")}
               />
 
               <Departments
@@ -776,9 +667,6 @@ function FieldComponent({
                 }
                 onGenerate={() => handleGenerateResources(["departments"])}
                 isGenerating={isGenerating("departments")}
-                aiDepartmentResources={aiFormData.department_resources}
-                onAccept={() => clearAiResource("department_resources")}
-                onReject={() => clearAiResource("department_resources")}
               />
 
               <Flags
@@ -793,18 +681,6 @@ function FieldComponent({
                 showAiGenerate={stableFieldData?.flags?.show_ai_generate ?? false}
                 onGenerate={() => handleGenerateResources(["flags"])}
                 isGenerating={isGenerating("flags")}
-                aiFlagResources={
-                  aiFormData.flag_resource?.flag_option_id
-                    ? [
-                        {
-                          id: aiFormData.flag_resource.flag_option_id,
-                          key: aiFormData.flag_resource.key ?? null,
-                        },
-                      ]
-                    : null
-                }
-                onAccept={() => clearAiResource("flag_resource")}
-                onReject={() => clearAiResource("flag_resource")}
               />
             </div>
           </StepCard>
@@ -876,26 +752,12 @@ function FieldComponent({
             isGenerating={isGenerating("conditional_parameters")}
             searchTerm={conditionalParameterSearch}
             showSelectedFilter={conditionalParameterShowSelected}
-            aiParameterResources={
-              aiFormData.conditional_parameter_resources?.map((p) => ({
-                parameter_id: p.parameter_id,
-                name: p.name,
-              })) ?? null
-            }
-            onAccept={() => clearAiResource("conditional_parameter_resources")}
-            onReject={() => clearAiResource("conditional_parameter_resources")}
           />
         </StepCard>
       );
     },
     [
-      aiFormData.conditional_parameter_resources,
-      aiFormData.department_resources,
-      aiFormData.description_resource,
-      aiFormData.flag_resource,
-      aiFormData.name_resource,
       canRegenerate,
-      clearAiResource,
       createDescriptionsAction,
       createNamesAction,
       disabled,

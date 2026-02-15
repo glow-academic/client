@@ -34,7 +34,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { useProfile } from "@/contexts/profile-context";
 import { useSocket } from "@/contexts/socket-context";
 import { useDrafts } from "@/contexts/draft-context";
-import { useAiGeneration } from "@/hooks/use-ai-generation";
+import { useArtifactGeneration } from "@/hooks/use-artifact-generation";
 import { useDraftLifecycle } from "@/hooks/use-draft-lifecycle";
 import { useFlushRegistry } from "@/hooks/use-flush-registry";
 import { useGenerationModal } from "@/hooks/use-generation-modal";
@@ -170,34 +170,11 @@ function CohortComponent({
     useFlushRegistry<FlushResult>(FLUSH_KEYS);
 
   // --- AI Generation ---
-  const onAiComplete = useCallback((_data: Record<string, unknown>) => {
-    return { aiUpdates: {}, formStateUpdates: {} };
-  }, []);
-
-  const { setGeneratingResources, isGenerating } = useAiGeneration<
-    ResourceType,
-    Record<string, never>
-  >({
-    socket,
-    isConnected,
+  const { isGenerating, startGenerating, makeOnGenerationComplete } = useArtifactGeneration({
     artifactType: "cohort",
     groupId: cohortData?.group_id,
-    eventPrefix: "cohort_generation",
     validResourceTypes: VALID_RESOURCE_TYPES,
-    onComplete: onAiComplete,
   });
-
-  // Callback for resource components to clear their generating state
-  const makeOnGenerationComplete = useCallback(
-    (resourceType: ResourceType) => () => {
-      setGeneratingResources((prev) => {
-        const next = new Set(prev);
-        next.delete(resourceType);
-        return next;
-      });
-    },
-    [],
-  );
 
   // nuqs parsers for URL-backed state (will be passed to GenericForm)
   // Memoize to prevent new object reference on every render
@@ -551,11 +528,7 @@ function CohortComponent({
       }
 
       // Set all resources as generating
-      setGeneratingResources((prev) => {
-        const next = new Set(prev);
-        resourceTypes.forEach((rt) => next.add(rt));
-        return next;
-      });
+      startGenerating(resourceTypes);
 
       // Read search params from formData
       const formData = formDataRef.current;
@@ -584,7 +557,7 @@ function CohortComponent({
       cohortId,
       flushAllAndSave,
       formDataRef,
-      setGeneratingResources,
+      startGenerating,
     ],
   );
 
