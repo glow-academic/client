@@ -1,81 +1,70 @@
-"""Training simulation error handler.
-
-Listens to AI generation error events and emits training-specific
-error updates to clients. Filters by artifact_type='training'.
-"""
+"""Training bundle error handler - listens to generate_*_error events and emits training-bundle-specific events."""
 
 from typing import Any
 
 from fastapi import APIRouter
 
-from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
 from app.main import get_internal_sio, sio
-from app.socket.v4.artifacts.training.types import TrainingErrorEvent
+from app.socket.v4.artifacts.training.types import (
+    TrainingBundleGenerationErrorEvent,
+)
 from app.utils.logging.db_logger import get_logger
 
 logger = get_logger(__name__)
 
 internal_sio = get_internal_sio()
 
+client_router = APIRouter()
 server_router = APIRouter()
+
+
+# =============================================================================
+# FastAPI endpoint for OpenAPI documentation
+# =============================================================================
+
+
+@server_router.post("/training_bundle_generation_error")
+async def training_bundle_generation_error_api(
+    request: TrainingBundleGenerationErrorEvent,
+) -> dict[str, bool]:
+    """Server-to-client event: Training bundle generation error.
+
+    Emitted when training bundle resource generation fails.
+    """
+    return {"success": True}
 
 
 @internal_sio.on("generate_call_error")  # type: ignore
 @internal_sio.on("generate_text_error")  # type: ignore
-async def handle_training_error(data: dict[str, Any]) -> None:
-    """Handle generate_*_error events - filter by training artifact_type and emit training-specific event."""
-    # Filter by artifact_type (early return for efficiency)
+async def handle_training_bundle_error(data: dict[str, Any]) -> None:
+    """Handle generate_*_error event - filter by training_bundle artifact_type and emit training-bundle-specific event."""
     artifact_type = data.get("artifact_type")
-    if artifact_type != "training":
+    if artifact_type != "training_bundle":
         return
 
     sid = data.get("sid", "")
     if not sid:
         return
 
-    # Verify profile still connected
-    profile_id_str = await find_profile_by_socket(sid)
-    if not profile_id_str:
-        return
+    resource_type = data.get("resource_type")
+    resource_types = data.get("resource_types", [])
 
-    # Extract error message
     error_message = data.get("error_message") or data.get(
-        "message", "An error occurred during training generation"
+        "message", "An error occurred during training bundle generation"
     )
 
-    # Build error event
-    event = TrainingErrorEvent(
-        artifact_type="training",
+    event = TrainingBundleGenerationErrorEvent(
+        artifact_type="training_bundle",
         group_id=data.get("group_id"),
-        resource_type=data.get("resource_type"),
-        resource_types=data.get("resource_types"),
+        resource_type=resource_type,
+        resource_types=resource_types if resource_types else None,
         resource_id=data.get("resource_id"),
         success=False,
         message=error_message,
         trace_id=data.get("trace_id"),
-        # Training-specific fields
-        scenario_id=data.get("scenario_id"),
     )
-
     await sio.emit(
-        "training_error",
+        "training_bundle_generation_error",
         event.model_dump(mode="json"),
         room=sid,
     )
-
-    logger.error(
-        f"Training generation error - "
-        f"scenario_id={data.get('scenario_id')}, "
-        f"error: {error_message}"
-    )
-
-
-# =============================================================================
-# FastAPI endpoints for OpenAPI documentation
-# =============================================================================
-
-
-@server_router.post("/training/error", response_model=dict[str, bool])
-async def training_error_api(request: TrainingErrorEvent) -> dict[str, bool]:
-    """Server-to-client event: Training generation error occurred."""
-    return {"success": True}

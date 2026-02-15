@@ -1,11 +1,8 @@
-"""Types for training simulation socket events.
+"""WebSocket-specific types for training bundle generation.
 
-Defines payload and event types for the training simulation WebSocket handlers:
-- TrainingStartPayload: Start a new training session
-- TrainingStartedEvent: Training session started successfully
-
-Note: Training start creates structural entries (attempts, chats), not creatable entries.
-Creatable entry type validation is not needed for this handler.
+Extends base artifact types with training-bundle-specific fields.
+Types are registered in OpenAPI via FastAPI endpoints, enabling
+automatic type extraction in the frontend via InputOf/OutputOf.
 """
 
 from uuid import UUID
@@ -15,98 +12,77 @@ from pydantic import BaseModel
 from app.socket.v4.artifacts.types import (
     GenerationCompleteEvent,
     GenerationErrorEvent,
-    GenerationProgressEvent,
 )
 
+# Resource types that training bundle generation can produce
+TRAINING_BUNDLE_GENERATE_RESOURCE_TYPES = [
+    "departments",
+    "personas",
+    "documents",
+    "parameter_fields",
+    "scenarios",
+    "parameters",
+    "fields",
+    "questions",
+    "options",
+    "videos",
+    "images",
+    "templates",
+    "problem_statements",
+    "objectives",
+]
+
+
 # =============================================================================
-# Entry type constants (predefined per handler, not in payload)
-# =============================================================================
-
-# Training start creates structural entries (attempts, chats), not creatable entries.
-# Creatable entry validation is skipped when this is empty.
-TRAINING_START_ENTRY_TYPES: list[str] = []
-
-
-# =============================================================================
-# Client-to-Server Event Payloads
+# Client-to-Server Events (training_bundle_generate)
 # =============================================================================
 
 
-class TrainingStartPayload(BaseModel):
-    """Request payload for training_start WebSocket event.
+class GenerateTrainingBundlePayload(BaseModel):
+    """Request payload for training_bundle_generate WebSocket event."""
 
-    Starts a new training session. Server handles everything internally:
-    - Checks if scenario needs generation
-    - If generation needed, runs it and streams progress
-    - Creates attempt + chat entries (or just chat if attempt_id provided)
-    - Emits training_started when ready
+    training_bundle_entry_id: UUID
+    draft_id: UUID | None = None
+    resource_types: list[str]
+    user_instructions: list[str] | None = None
+    save: bool = True
 
-    Lobby flow: attempt_id is provided (pre-created via REST), department_id
-    and draft_id are optional (server resolves defaults if not provided).
+
+# =============================================================================
+# Server-to-Client Events
+# =============================================================================
+
+
+class TrainingBundleGenerationCompleteEvent(GenerationCompleteEvent):
+    """Server-to-client event: training_bundle_generation_complete.
+
+    Emitted when all agents have finished generating training bundle resources.
     """
 
-    training_bundle_entry_id: UUID  # Selected bundle from training/get
-    department_id: UUID | None = (
-        None  # Department selected in UI (resolved server-side if None)
-    )
-    draft_id: UUID | None = (
-        None  # Training draft for bundle start (created server-side if None)
-    )
-    attempt_id: UUID | None = None  # Pre-created attempt ID (lobby flow)
-    user_instructions: list[str] | None = None  # Optional generation hints
+    artifact_type: str = "training_bundle"
+    attempt_id: str | None = None
+    chat_id: str | None = None
 
 
-# =============================================================================
-# Server-to-Client Event Types
-# =============================================================================
+class TrainingBundleGenerationProgressEvent(BaseModel):
+    """Server-to-client event: training_bundle_generation_progress.
 
-
-class TrainingStartedEvent(BaseModel):
-    """Server-to-client event: training_started.
-
-    ALWAYS sent when training session is ready. This is the only success event
-    the client needs to handle. May be sent:
-    - Immediately if no generation was needed
-    - After generation completes if generation was needed
+    Emitted as individual resources complete, providing percentage progress.
     """
 
-    artifact_type: str = "training"
-    simulation_id: str
-    attempt_id: str
-    chat_id: str
-    scenario_id: str | None = None
-    scenario_data: dict | None = (
-        None  # {problem_statement, objectives, persona, video_ids, image_ids}
-    )
+    artifact_type: str = "training_bundle"
+    group_id: str
+    run_id: str | None = None
+    completed_resources: int
+    total_resources: int
+    percentage: int  # 0-100
+    last_completed_resource: str | None = None
 
 
-class TrainingProgressEvent(GenerationProgressEvent):
-    """Server-to-client event: training_progress.
+class TrainingBundleGenerationErrorEvent(GenerationErrorEvent):
+    """Server-to-client event: training_bundle_generation_error.
 
-    Optional - only sent if generation is happening. Client may not receive
-    any progress events if scenario already has content.
+    Emitted when training bundle resource generation fails.
     """
 
-    artifact_type: str = "training"
-    scenario_id: str | None = None
-
-
-class TrainingCompleteEvent(GenerationCompleteEvent):
-    """Internal event: generation complete.
-
-    Used internally to trigger the completion flow. Not sent to client -
-    client receives training_started instead.
-    """
-
-    artifact_type: str = "training"
-    scenario_id: str | None = None
-
-
-class TrainingErrorEvent(GenerationErrorEvent):
-    """Server-to-client event: training_error.
-
-    Emitted when an error occurs during training generation.
-    """
-
-    artifact_type: str = "training"
-    scenario_id: str | None = None
+    artifact_type: str = "training_bundle"

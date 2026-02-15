@@ -8,11 +8,11 @@ Section-first three-layer implementation (mirrors training/bundle.py):
 import asyncio
 from collections.abc import Callable, Coroutine
 from dataclasses import dataclass, field
-from typing import Annotated, Any, TypeVar, cast
+from typing import Any, TypeVar, cast
 from uuid import UUID
 
 import asyncpg
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, HTTPException, Request
 
 from app.api.v4.artifacts.benchmark.types import (
     BaseBenchmarkBundleSection,
@@ -26,6 +26,7 @@ from app.api.v4.artifacts.benchmark.types import (
     BenchmarkBundleToolSection,
     BenchmarkBundleVoiceSection,
     BenchmarkBundleWebsocketResources,
+    BenchmarkBundleWebsocketViews,
     GetBenchmarkBundleRequest,
     GetBenchmarkBundleResponse,
     GetBenchmarkBundleWebsocketResponse,
@@ -44,7 +45,7 @@ from app.api.v4.resources.tools.get import get_tools_internal
 from app.api.v4.resources.voices.get import get_voices_internal
 from app.api.v4.views.benchmark.bundle.get import get_benchmark_bundle_view_internal
 from app.infra.v4.error.handle_route_error import handle_route_error
-from app.main import get_db
+from app.main import get_pool
 
 router = APIRouter()
 
@@ -76,7 +77,9 @@ class BenchmarkBundleInternalData:
     benchmark_bundle_entry_id: UUID
     benchmark_id: UUID | None
     profile_has_access: bool
+    group_id: UUID | None = None
     draft_version: int | None = None
+    draft_item: Any | None = None
     # Per-resource: all (suggestions) and current (selected)
     all_resources: dict[str, list[Any]] = field(default_factory=dict)
     current_resources: dict[str, list[Any]] = field(default_factory=dict)
@@ -137,7 +140,7 @@ RESOURCE_CONFIG: list[tuple[str, str, Any, str]] = [
 
 
 async def get_benchmark_bundle_internal(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     profile_id: UUID,
     benchmark_bundle_entry_id: UUID,
     draft_id: UUID | None = None,
@@ -148,11 +151,12 @@ async def get_benchmark_bundle_internal(
     from app.api.v4.views.drafts.types import DraftBenchmarkViewItem
 
     # 1. Fetch MV view data (all 9 ID arrays)
-    view_data = await get_benchmark_bundle_view_internal(
-        conn=conn,
-        profile_id=profile_id,
-        benchmark_bundle_entry_id=benchmark_bundle_entry_id,
-    )
+    async with pool.acquire() as conn:
+        view_data = await get_benchmark_bundle_view_internal(
+            conn=conn,
+            profile_id=profile_id,
+            benchmark_bundle_entry_id=benchmark_bundle_entry_id,
+        )
 
     if not view_data.benchmark_bundle_entry_id:
         raise HTTPException(status_code=404, detail="Benchmark bundle not found")
@@ -166,13 +170,14 @@ async def get_benchmark_bundle_internal(
     # 2. Fetch draft if provided
     draft_item: DraftBenchmarkViewItem | None = None
     if draft_id is not None:
-        draft_items = await get_draft_benchmark_internal(
-            conn=conn,
-            draft_ids=[draft_id],
-            bypass_cache=bypass_cache,
-        )
-        if draft_items:
-            draft_item = draft_items[0]
+        async with pool.acquire() as conn:
+            draft_items = await get_draft_benchmark_internal(
+                conn=conn,
+                draft_ids=[draft_id],
+                bypass_cache=bypass_cache,
+            )
+            if draft_items:
+                draft_item = draft_items[0]
 
     # 3. Build selected IDs — draft overrides MV when present
     selected_ids: dict[str, list[UUID]] = {}
@@ -195,7 +200,8 @@ async def get_benchmark_bundle_internal(
         all_ids = list(getattr(view_data, view_attr, []) or [])
         if not all_ids:
             return (resource_key, [])
-        return (resource_key, await fetch_fn(conn, all_ids, bypass_cache))
+        async with pool.acquire() as conn:
+            return (resource_key, await fetch_fn(conn, all_ids, bypass_cache))
 
     fetch_tasks = [_fetch_resource(rk, va, fn) for rk, va, fn, _ia in RESOURCE_CONFIG]
     fetch_results = await asyncio.gather(*fetch_tasks)
@@ -204,7 +210,7 @@ async def get_benchmark_bundle_internal(
     for resource_key, items in fetch_results:
         all_resources[resource_key] = items
 
-    # 4. Filter current selections from full lists
+    # 5. Filter current selections from full lists
     current_resources: dict[str, list[Any]] = {}
     for resource_key, _view_attr, _fetch_fn, id_attr in RESOURCE_CONFIG:
         current_resources[resource_key] = _filter_by_ids(
@@ -213,8 +219,9 @@ async def get_benchmark_bundle_internal(
             id_attr,
         )
 
-    # 5. Settings-based agent resolution + config chain
-    settings_data = await get_auth_settings_internal(conn, profile_id, bypass_cache)
+    # 6. Settings-based agent resolution + config chain
+    async with pool.acquire() as conn:
+        settings_data = await get_auth_settings_internal(conn, profile_id, bypass_cache)
     agent_ids, create_tool_ids_map, link_tool_ids_map = resolve_agents_for_artifact(
         settings_data.agent_tool_entries, BENCHMARK_BUNDLE_RESOURCES
     )
@@ -228,22 +235,28 @@ async def get_benchmark_bundle_internal(
     )
     config_models: list[Any] = []
     if config_model_ids:
-        config_models = await get_models_internal(conn, config_model_ids, bypass_cache)
+        async with pool.acquire() as conn:
+            config_models = await get_models_internal(
+                conn, config_model_ids, bypass_cache
+            )
 
     config_provider_ids = list(
         dict.fromkeys(m.provider_id for m in config_models if m.provider_id)
     )
     config_providers: list[Any] = []
     if config_provider_ids:
-        config_providers = await get_providers_internal(
-            conn, config_provider_ids, bypass_cache
-        )
+        async with pool.acquire() as conn:
+            config_providers = await get_providers_internal(
+                conn, config_provider_ids, bypass_cache
+            )
 
     return BenchmarkBundleInternalData(
         benchmark_bundle_entry_id=view_data.benchmark_bundle_entry_id,
         benchmark_id=view_data.benchmark_id,
         profile_has_access=view_data.profile_has_access,
+        group_id=draft_item.group_id if draft_item else None,
         draft_version=draft_item.version if draft_item else None,
+        draft_item=draft_item,
         all_resources=all_resources,
         current_resources=current_resources,
         resource_agent_ids=agent_ids,
@@ -274,7 +287,7 @@ _SECTION_CLASSES: dict[str, type] = {
 
 
 async def get_benchmark_bundle_client(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     profile_id: UUID,
     benchmark_bundle_entry_id: UUID,
     draft_id: UUID | None = None,
@@ -282,7 +295,7 @@ async def get_benchmark_bundle_client(
 ) -> GetBenchmarkBundleResponse:
     """HTTP-facing bundle response formatter — section-first pattern."""
     data = await get_benchmark_bundle_internal(
-        conn=conn,
+        pool=pool,
         profile_id=profile_id,
         benchmark_bundle_entry_id=benchmark_bundle_entry_id,
         draft_id=draft_id,
@@ -326,7 +339,7 @@ async def get_benchmark_bundle_client(
 
 
 async def get_benchmark_bundle_websocket(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     profile_id: UUID,
     benchmark_bundle_entry_id: UUID,
     draft_id: UUID | None = None,
@@ -334,13 +347,16 @@ async def get_benchmark_bundle_websocket(
 ) -> GetBenchmarkBundleWebsocketResponse:
     """Thin wrapper for websocket consumers — selected resources only."""
     data = await get_benchmark_bundle_internal(
-        conn=conn,
+        pool=pool,
         profile_id=profile_id,
         benchmark_bundle_entry_id=benchmark_bundle_entry_id,
         draft_id=draft_id,
         bypass_cache=bypass_cache,
     )
     return GetBenchmarkBundleWebsocketResponse(
+        views=BenchmarkBundleWebsocketViews(
+            draft_benchmark_bundle=data.draft_item,
+        ),
         resources=BenchmarkBundleWebsocketResources(
             departments=data.current_resources.get("departments") or None,
             models=data.current_resources.get("models") or None,
@@ -357,6 +373,7 @@ async def get_benchmark_bundle_websocket(
             config_tools=data.config_tools or None,
         ),
         resource_agent_ids=data.resource_agent_ids,
+        group_id=data.group_id,
     )
 
 
@@ -369,7 +386,6 @@ async def get_benchmark_bundle_websocket(
 async def benchmark_bundle_get(
     request: GetBenchmarkBundleRequest,
     http_request: Request,
-    conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> GetBenchmarkBundleResponse:
     """Get hydrated resources for benchmark bundle customization."""
     try:
@@ -382,8 +398,12 @@ async def benchmark_bundle_get(
 
         bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
 
+        pool = get_pool()
+        if not pool:
+            raise RuntimeError("Database pool not initialized")
+
         return await get_benchmark_bundle_client(
-            conn=conn,
+            pool=pool,
             profile_id=cast(UUID, profile_id),
             benchmark_bundle_entry_id=request.benchmark_bundle_entry_id,
             draft_id=request.draft_id,

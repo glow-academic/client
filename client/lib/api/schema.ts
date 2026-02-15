@@ -8485,26 +8485,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v4/client/training/start": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Training Start Api
-         * @description Client-to-server event: Start a new training session.
-         */
-        post: operations["training_start_api_socket_v4_client_training_start_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/socket/v4/client/attempt/message": {
         parameters: {
             query?: never;
@@ -8991,7 +8971,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v4/server/training/started": {
+    "/socket/v4/server/training_bundle_generation_started": {
         parameters: {
             query?: never;
             header?: never;
@@ -9001,17 +8981,19 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Training Started Api
-         * @description Server-to-client event: Training session created successfully.
+         * Training Bundle Generation Started Api
+         * @description Server-to-client event: Training bundle generation started.
+         *
+         *     Emitted when training bundle generation begins, listing resource types being generated.
          */
-        post: operations["training_started_api_socket_v4_server_training_started_post"];
+        post: operations["training_bundle_generation_started_api_socket_v4_server_training_bundle_generation_started_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/socket/v4/server/training/progress": {
+    "/socket/v4/server/training_bundle_generation_complete": {
         parameters: {
             query?: never;
             header?: never;
@@ -9021,17 +9003,19 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Training Progress Api
-         * @description Server-to-client event: Training generation progress update.
+         * Training Bundle Generation Complete Api
+         * @description Server-to-client event: Training bundle generation completed.
+         *
+         *     Emitted when all agents have finished generating training bundle resources.
          */
-        post: operations["training_progress_api_socket_v4_server_training_progress_post"];
+        post: operations["training_bundle_generation_complete_api_socket_v4_server_training_bundle_generation_complete_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/socket/v4/server/training/complete": {
+    "/socket/v4/server/training_bundle_generation_error": {
         parameters: {
             query?: never;
             header?: never;
@@ -9041,17 +9025,19 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Training Complete Api
-         * @description Internal event: Training generation completed (not sent to client).
+         * Training Bundle Generation Error Api
+         * @description Server-to-client event: Training bundle generation error.
+         *
+         *     Emitted when training bundle resource generation fails.
          */
-        post: operations["training_complete_api_socket_v4_server_training_complete_post"];
+        post: operations["training_bundle_generation_error_api_socket_v4_server_training_bundle_generation_error_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/socket/v4/server/training/error": {
+    "/socket/v4/server/training_bundle_generation_progress": {
         parameters: {
             query?: never;
             header?: never;
@@ -9061,10 +9047,13 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Training Error Api
-         * @description Server-to-client event: Training generation error occurred.
+         * Training Bundle Generation Progress Api
+         * @description Server-to-client event: Training bundle generation progress.
+         *
+         *     Emitted as individual resources complete during training bundle generation.
+         *     Contains percentage-based progress tracking.
          */
-        post: operations["training_error_api_socket_v4_server_training_error_post"];
+        post: operations["training_bundle_generation_progress_api_socket_v4_server_training_bundle_generation_progress_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -9485,26 +9474,6 @@ export interface paths {
          * @description Server-to-client event: Response submission result.
          */
         post: operations["attempt_response_result_api_socket_v4_server_attempt_response_result_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/socket/v4/server/attempt/chat": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Attempt Chat Api
-         * @description Internal event: Create attempt chat (not sent to client).
-         */
-        post: operations["attempt_chat_api_socket_v4_server_attempt_chat_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -11035,95 +11004,6 @@ export interface paths {
         put?: never;
         /** Setting Generation Error Api */
         post: operations["setting_generation_error_api_socket_v4_server_setting_generation_error_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/socket/v4/server/training_bundle_generation_started": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Training Bundle Generation Started Api
-         * @description Server-to-client event: Training bundle generation started.
-         *
-         *     Emitted when training bundle generation begins, listing resource types being generated.
-         */
-        post: operations["training_bundle_generation_started_api_socket_v4_server_training_bundle_generation_started_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/socket/v4/server/training_bundle_generation_complete": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Training Bundle Generation Complete Api
-         * @description Server-to-client event: Training bundle generation completed.
-         *
-         *     Emitted when all agents have finished generating training bundle resources.
-         */
-        post: operations["training_bundle_generation_complete_api_socket_v4_server_training_bundle_generation_complete_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/socket/v4/server/training_bundle_generation_error": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Training Bundle Generation Error Api
-         * @description Server-to-client event: Training bundle generation error.
-         *
-         *     Emitted when training bundle resource generation fails.
-         */
-        post: operations["training_bundle_generation_error_api_socket_v4_server_training_bundle_generation_error_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/socket/v4/server/training_bundle_generation_progress": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Training Bundle Generation Progress Api
-         * @description Server-to-client event: Training bundle generation progress.
-         *
-         *     Emitted as individual resources complete during training bundle generation.
-         *     Contains percentage-based progress tracking.
-         */
-        post: operations["training_bundle_generation_progress_api_socket_v4_server_training_bundle_generation_progress_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -49023,6 +48903,10 @@ export interface components {
             message: string;
             /** Type */
             type?: string | null;
+            /** Attempt Id */
+            attempt_id?: string | null;
+            /** Chat Id */
+            chat_id?: string | null;
         };
         /**
          * TrainingBundleGenerationErrorEvent
@@ -49436,82 +49320,6 @@ export interface components {
             time_limit_ids?: string[] | null;
         };
         /**
-         * TrainingErrorEvent
-         * @description Server-to-client event: training_error.
-         *
-         *     Emitted when an error occurs during training generation.
-         */
-        TrainingErrorEvent: {
-            /**
-             * Artifact Type
-             * @default training
-             */
-            artifact_type: string;
-            /** Group Id */
-            group_id?: string | null;
-            /** Resource Type */
-            resource_type?: string | null;
-            /** Resource Types */
-            resource_types?: string[] | null;
-            /** Resource Id */
-            resource_id?: string | null;
-            /** Run Id */
-            run_id?: string | null;
-            /**
-             * Success
-             * @default false
-             */
-            success: boolean;
-            /** Message */
-            message: string;
-            /** Trace Id */
-            trace_id?: string | null;
-            /** Scenario Id */
-            scenario_id?: string | null;
-        };
-        /**
-         * TrainingProgressEvent
-         * @description Server-to-client event: training_progress.
-         *
-         *     Optional - only sent if generation is happening. Client may not receive
-         *     any progress events if scenario already has content.
-         */
-        TrainingProgressEvent: {
-            /**
-             * Artifact Type
-             * @default training
-             */
-            artifact_type: string;
-            /** Group Id */
-            group_id?: string | null;
-            /** Resource Type */
-            resource_type?: string | null;
-            /** Resource Id */
-            resource_id?: string | null;
-            /** Run Id */
-            run_id?: string | null;
-            /** Modality */
-            modality?: string | null;
-            /** Type */
-            type?: string | null;
-            /** Event Type */
-            event_type?: string | null;
-            /** Tool Call Id */
-            tool_call_id?: string | null;
-            /** Tool Name */
-            tool_name?: string | null;
-            /** Arguments */
-            arguments?: {
-                [key: string]: unknown;
-            } | null;
-            /** Arguments Delta */
-            arguments_delta?: string | null;
-            /** Trace Id */
-            trace_id?: string | null;
-            /** Scenario Id */
-            scenario_id?: string | null;
-        };
-        /**
          * TrainingSimulationOperational
          * @description Simulation data for starting a training session.
          *
@@ -49566,62 +49374,6 @@ export interface components {
             in_progress_count?: number | null;
             /** Not Started Count */
             not_started_count?: number | null;
-        };
-        /**
-         * TrainingStartPayload
-         * @description Request payload for training_start WebSocket event.
-         *
-         *     Starts a new training session. Server handles everything internally:
-         *     - Checks if scenario needs generation
-         *     - If generation needed, runs it and streams progress
-         *     - Creates attempt + chat entries (or just chat if attempt_id provided)
-         *     - Emits training_started when ready
-         *
-         *     Lobby flow: attempt_id is provided (pre-created via REST), department_id
-         *     and draft_id are optional (server resolves defaults if not provided).
-         */
-        TrainingStartPayload: {
-            /**
-             * Training Bundle Entry Id
-             * Format: uuid
-             */
-            training_bundle_entry_id: string;
-            /** Department Id */
-            department_id?: string | null;
-            /** Draft Id */
-            draft_id?: string | null;
-            /** Attempt Id */
-            attempt_id?: string | null;
-            /** User Instructions */
-            user_instructions?: string[] | null;
-        };
-        /**
-         * TrainingStartedEvent
-         * @description Server-to-client event: training_started.
-         *
-         *     ALWAYS sent when training session is ready. This is the only success event
-         *     the client needs to handle. May be sent:
-         *     - Immediately if no generation was needed
-         *     - After generation completes if generation was needed
-         */
-        TrainingStartedEvent: {
-            /**
-             * Artifact Type
-             * @default training
-             */
-            artifact_type: string;
-            /** Simulation Id */
-            simulation_id: string;
-            /** Attempt Id */
-            attempt_id: string;
-            /** Chat Id */
-            chat_id: string;
-            /** Scenario Id */
-            scenario_id?: string | null;
-            /** Scenario Data */
-            scenario_data?: {
-                [key: string]: unknown;
-            } | null;
         };
         /** UploadsApiRequest */
         UploadsApiRequest: {
@@ -66243,41 +65995,6 @@ export interface operations {
             };
         };
     };
-    training_start_api_socket_v4_client_training_start_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["TrainingStartPayload"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: boolean;
-                    };
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     attempt_message_api_socket_v4_client_attempt_message_post: {
         parameters: {
             query?: never;
@@ -67118,7 +66835,7 @@ export interface operations {
             };
         };
     };
-    training_started_api_socket_v4_server_training_started_post: {
+    training_bundle_generation_started_api_socket_v4_server_training_bundle_generation_started_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -67127,7 +66844,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["TrainingStartedEvent"];
+                "application/json": components["schemas"]["TrainingBundleGenerationStartedEvent"];
             };
         };
         responses: {
@@ -67153,7 +66870,7 @@ export interface operations {
             };
         };
     };
-    training_progress_api_socket_v4_server_training_progress_post: {
+    training_bundle_generation_complete_api_socket_v4_server_training_bundle_generation_complete_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -67162,7 +66879,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["TrainingProgressEvent"];
+                "application/json": components["schemas"]["TrainingBundleGenerationCompleteEvent"];
             };
         };
         responses: {
@@ -67188,7 +66905,7 @@ export interface operations {
             };
         };
     };
-    training_complete_api_socket_v4_server_training_complete_post: {
+    training_bundle_generation_error_api_socket_v4_server_training_bundle_generation_error_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -67197,9 +66914,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": {
-                    [key: string]: unknown;
-                };
+                "application/json": components["schemas"]["TrainingBundleGenerationErrorEvent"];
             };
         };
         responses: {
@@ -67225,7 +66940,7 @@ export interface operations {
             };
         };
     };
-    training_error_api_socket_v4_server_training_error_post: {
+    training_bundle_generation_progress_api_socket_v4_server_training_bundle_generation_progress_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -67234,7 +66949,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["TrainingErrorEvent"];
+                "application/json": components["schemas"]["TrainingBundleGenerationProgressEvent"];
             };
         };
         responses: {
@@ -67970,43 +67685,6 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["AttemptResponseResultEvent"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: boolean;
-                    };
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    attempt_chat_api_socket_v4_server_attempt_chat_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": {
-                    [key: string]: unknown;
-                };
             };
         };
         responses: {
@@ -70711,146 +70389,6 @@ export interface operations {
                 "application/json": {
                     [key: string]: unknown;
                 };
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: boolean;
-                    };
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    training_bundle_generation_started_api_socket_v4_server_training_bundle_generation_started_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["TrainingBundleGenerationStartedEvent"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: boolean;
-                    };
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    training_bundle_generation_complete_api_socket_v4_server_training_bundle_generation_complete_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["TrainingBundleGenerationCompleteEvent"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: boolean;
-                    };
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    training_bundle_generation_error_api_socket_v4_server_training_bundle_generation_error_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["TrainingBundleGenerationErrorEvent"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: boolean;
-                    };
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    training_bundle_generation_progress_api_socket_v4_server_training_bundle_generation_progress_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["TrainingBundleGenerationProgressEvent"];
             };
         };
         responses: {

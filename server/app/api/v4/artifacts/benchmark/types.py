@@ -226,11 +226,19 @@ class BenchmarkBundleWebsocketResources(BaseModel):
     config_tools: list[QGetToolsV4Item] | None = None
 
 
+class BenchmarkBundleWebsocketViews(BaseModel):
+    """Draft view for bundle websocket consumers."""
+
+    draft_benchmark_bundle: Any | None = None
+
+
 class GetBenchmarkBundleWebsocketResponse(BaseModel):
     """Websocket-facing bundle response with hydrated resources."""
 
+    views: BenchmarkBundleWebsocketViews | None = None
     resources: BenchmarkBundleWebsocketResources
     resource_agent_ids: dict[str, UUID | None] | None = None
+    group_id: UUID | None = None
 
 
 # =============================================================================

@@ -30,7 +30,7 @@ from app.infra.v4.websocket.generation_tracker import (
 from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.infra.v4.websocket.typed_emit import emit_to_internal
 from app.main import get_internal_sio, get_pool, sio
-from app.socket.v4.artifacts.training_bundle.types import (
+from app.socket.v4.artifacts.training.types import (
     TRAINING_BUNDLE_GENERATE_RESOURCE_TYPES,
     GenerateTrainingBundlePayload,
 )

@@ -1,222 +1,223 @@
-"""Training simulation complete handler.
+"""Training bundle completion handler - handles run/text completion and multi-agent coordination.
 
-Listens to AI generation completion events and completes the training start flow:
-1. Fetch fresh scenario data from DB
-2. Set up training_bundle_dept scope
-3. Emit attempt_chat internally - chat.py finishes the flow
-
-This handler finishes the flow that start.py began when generation was needed.
+Resource-level tool_call_complete/tool_result events are now handled by the shared
+resource_complete.py handler. This module handles:
+- text_complete: save assistant messages
+- run_complete: coordinate multi-agent completion via generation_tracker
 """
 
 import uuid
-from typing import Any, cast
+from typing import Any
 
 from fastapi import APIRouter
 
-from app.api.v4.artifacts.training.get import get_training_websocket
+from app.api.v4.artifacts.attempt.create import create_chat_internal
 from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
+from app.infra.v4.websocket.generation_tracker import (
+    cleanup_generation,
+    record_agent_complete,
+)
 from app.infra.v4.websocket.get_db_connection import get_db_connection
-from app.infra.v4.websocket.typed_emit import emit_to_internal
-from app.main import get_internal_sio
-from app.socket.v4.artifacts.types import GenerateErrorApiRequest
-from app.sql.types import (
-    PrepareTrainingStartSqlParams,
-    PrepareTrainingStartSqlRow,
+from app.main import get_internal_sio, sio
+from app.socket.v4.artifacts.training.types import (
+    TrainingBundleGenerationCompleteEvent,
 )
 from app.utils.logging.db_logger import get_logger
-from app.utils.sql_helper import execute_sql_typed
+from app.utils.sql_helper import load_sql
 
 logger = get_logger(__name__)
 
 internal_sio = get_internal_sio()
-
-server_router = APIRouter()
-
-# SQL paths
-SQL_PATH_PREPARE_START = (
-    "app/sql/v4/queries/generate/training/prepare_training_start_complete.sql"
+SQL_PATH_CREATE_MESSAGE_WITH_TEXT = (
+    "app/sql/v4/queries/messages/create_message_with_text_complete.sql"
 )
+
+client_router = APIRouter()
+server_router = APIRouter()
 
 
 @internal_sio.on("generate_call_complete")  # type: ignore
 @internal_sio.on("generate_text_complete")  # type: ignore
-async def handle_training_complete(data: dict[str, Any]) -> None:
-    """Handle generate_*_complete events - complete the training flow.
+async def handle_training_bundle_artifact_complete(data: dict[str, Any]) -> None:
+    """Handle generate_call_complete and generate_text_complete events - filter by training_bundle artifact_type."""
 
-    When generation completes, this handler:
-    1. Fetches fresh scenario data from DB
-    2. Sets up training_bundle_dept scope
-    3. Emits attempt_chat internally - chat.py finishes the flow
-    """
-    # Filter by artifact_type (early return for efficiency)
     artifact_type = data.get("artifact_type")
-    if artifact_type != "training":
+    if artifact_type != "training_bundle":
         return
 
     sid = data.get("sid", "")
     if not sid:
         return
 
-    # Verify profile still connected
-    profile_id_str = await find_profile_by_socket(sid)
-    if not profile_id_str:
+    event_type = data.get("event_type")
+
+    # Handle text completion - save assistant message
+    if event_type == "text_complete":
+        await _handle_training_bundle_text_complete(sid, data)
         return
 
-    training_bundle_entry_id_str = data.get("training_bundle_entry_id")
-    department_id_str = data.get("department_id")
-    draft_id_str = data.get("draft_id")
-    attempt_id_str = data.get("attempt_id")
-
-    if not training_bundle_entry_id_str or not department_id_str:
-        logger.error("Training complete missing training bundle context")
-        await emit_to_internal(
-            "generate_call_error",
-            GenerateErrorApiRequest(
-                sid=sid,
-                error_message="Training generation failed: missing context",
-                artifact_type="training",
-                group_id=data.get("group_id"),
-                resource_type="training",
-            ),
-            sid=sid,
-        )
+    # Handle run complete - coordinate multi-agent, emit completion
+    if event_type == "run_complete":
+        await _handle_training_bundle_run_complete(sid, data)
         return
 
-    if not attempt_id_str:
-        logger.error("Training complete missing attempt_id")
-        await emit_to_internal(
-            "generate_call_error",
-            GenerateErrorApiRequest(
-                sid=sid,
-                error_message="Training generation failed: missing attempt_id",
-                artifact_type="training",
-                group_id=data.get("group_id"),
-                resource_type="training",
-            ),
-            sid=sid,
-        )
+    # tool_call_complete and tool_result events are now handled by
+    # resource_complete.py (shared handler) - nothing to do here
+
+
+async def _handle_training_bundle_text_complete(sid: str, data: dict[str, Any]) -> None:
+    """Handle training bundle text generation completion - save assistant message."""
+    run_id = data.get("run_id")
+    final_content = data.get("text") or ""
+
+    if not run_id or not final_content:
         return
 
     try:
-        profile_id = uuid.UUID(profile_id_str)
-        training_bundle_entry_id = uuid.UUID(training_bundle_entry_id_str)
-        department_id = uuid.UUID(department_id_str)
-        draft_id = uuid.UUID(draft_id_str) if draft_id_str else None
-
         async with get_db_connection() as conn:
-            # Step 1: Fetch fresh scenario data from DB
-            training_ws = await get_training_websocket(
-                conn=conn,
-                profile_id=profile_id,
-                training_bundle_entry_id=training_bundle_entry_id,
-                department_id=department_id,
-                draft_id=draft_id,
+            create_message_sql = load_sql(SQL_PATH_CREATE_MESSAGE_WITH_TEXT)
+            await conn.fetchval(
+                create_message_sql,
+                uuid.UUID(run_id),
+                "assistant",
+                final_content,
+                True,
+                False,
             )
-            context_row = training_ws.resources
-
-            if not context_row.simulation_id:
-                await emit_to_internal(
-                    "generate_call_error",
-                    GenerateErrorApiRequest(
-                        sid=sid,
-                        error_message="Missing simulation scope for selected training bundle",
-                        artifact_type="training",
-                        group_id=data.get("group_id"),
-                        resource_type="training",
-                    ),
-                    sid=sid,
-                )
-                return
-
-            # Step 2: Set up training_bundle_dept scope
-            prepare_params = PrepareTrainingStartSqlParams(
-                p_profile_id=profile_id,
-                p_training_bundle_entry_id=training_bundle_entry_id,
-                p_department_id=department_id,
-                p_draft_id=draft_id,
-            )
-
-            prepare_row = cast(
-                PrepareTrainingStartSqlRow,
-                await execute_sql_typed(
-                    conn, SQL_PATH_PREPARE_START, params=prepare_params
-                ),
-            )
-
-            if not prepare_row or not prepare_row.training_bundle_department_id:
-                logger.error(
-                    f"Training complete preparation failed - "
-                    f"profile_id={profile_id}, training_bundle_entry_id={training_bundle_entry_id}"
-                )
-                await emit_to_internal(
-                    "generate_call_error",
-                    GenerateErrorApiRequest(
-                        sid=sid,
-                        error_message="Failed to prepare training scope after generation",
-                        artifact_type="training",
-                        group_id=data.get("group_id"),
-                        resource_type="training",
-                    ),
-                    sid=sid,
-                )
-                return
-
-            # Step 3: Build scenario data with fresh values from DB
-            scenario_data = None
-            if context_row.scenario_id:
-                scenario_data = {
-                    "problem_statement": context_row.problem_statement,
-                    "objectives": context_row.objectives,
-                    "persona": context_row.persona,
-                    "video_ids": context_row.video_ids,
-                    "image_ids": context_row.image_ids,
-                }
-
-            # Step 4: Emit attempt_chat internally - chat.py finishes the flow
-            await internal_sio.emit(
-                "attempt_chat",
-                {
-                    "sid": sid,
-                    "profile_id": str(profile_id),
-                    "attempt_id": attempt_id_str,
-                    "training_bundle_department_id": str(
-                        prepare_row.training_bundle_department_id
-                    ),
-                    "simulation_id": str(context_row.simulation_id),
-                    "scenario_id": str(prepare_row.scenario_id)
-                    if prepare_row.scenario_id
-                    else None,
-                    "scenario_data": scenario_data,
-                },
-            )
-
-            logger.info(
-                f"Training scope prepared (after generation) - "
-                f"profile_id={profile_id}, simulation_id={context_row.simulation_id}, "
-                f"training_bundle_department_id={prepare_row.training_bundle_department_id}"
-            )
-
     except Exception as e:
-        logger.exception(f"Failed to complete training session: {str(e)}")
-        await emit_to_internal(
-            "generate_call_error",
-            GenerateErrorApiRequest(
-                sid=sid,
-                error_message=f"Failed to complete training: {str(e)}",
-                artifact_type="training",
-                group_id=data.get("group_id"),
-                resource_type="training",
-            ),
-            sid=sid,
+        logger.exception(f"Failed to save training bundle text message: {str(e)}")
+
+
+async def _handle_training_bundle_run_complete(sid: str, data: dict[str, Any]) -> None:
+    """Handle training bundle generation run completion.
+
+    Coordinates multi-agent completion via generation_tracker:
+    1. Records this agent's completion
+    2. If all agents done: emits training_bundle_generation_complete
+    3. Cleans up generation tracking
+    """
+    run_id = data.get("run_id")
+    assistant_output = data.get("assistant_output") or ""
+    input_tokens = data.get("input_text_tokens", 0)
+    output_tokens = data.get("output_text_tokens", 0)
+    group_id_str = data.get("group_id")
+
+    if not run_id:
+        return
+
+    try:
+        async with get_db_connection() as conn:
+            # Save assistant message if there's text output
+            if assistant_output:
+                existing = await conn.fetchval(
+                    """
+                    SELECT id FROM messages_entry
+                    WHERE run_id = $1 AND role = 'assistant'::message_type
+                    LIMIT 1
+                    """,
+                    uuid.UUID(run_id),
+                )
+                if not existing:
+                    create_message_sql = load_sql(SQL_PATH_CREATE_MESSAGE_WITH_TEXT)
+                    await conn.fetchval(
+                        create_message_sql,
+                        uuid.UUID(run_id),
+                        "assistant",
+                        assistant_output,
+                        True,
+                        False,
+                    )
+
+            # Update run with token counts
+            if input_tokens or output_tokens:
+                await conn.execute(
+                    """
+                    UPDATE runs_entry
+                    SET input_tokens = COALESCE($2, input_tokens),
+                        output_tokens = COALESCE($3, output_tokens)
+                    WHERE id = $1
+                    """,
+                    uuid.UUID(run_id),
+                    input_tokens,
+                    output_tokens,
+                )
+    except Exception as e:
+        logger.exception(f"Failed to save training bundle run complete: {str(e)}")
+
+    # Multi-agent coordination via generation tracker
+    tool_results = data.get("tool_results") or []
+    is_complete, all_tool_results = await record_agent_complete(run_id, tool_results)
+
+    if is_complete:
+        # Auto-create chat if save=True (default)
+        attempt_id_str: str | None = None
+        chat_id: str | None = None
+
+        should_save = data.get("save", True)
+        attempt_id_data = data.get("attempt_id")
+        training_bundle_department_id_data = data.get("training_bundle_department_id")
+        profile_id_str = await find_profile_by_socket(sid)
+
+        if (
+            should_save
+            and profile_id_str
+            and attempt_id_data
+            and training_bundle_department_id_data
+        ):
+            try:
+                profile_id = uuid.UUID(profile_id_str)
+                attempt_id = uuid.UUID(attempt_id_data)
+                training_bundle_department_id = uuid.UUID(
+                    training_bundle_department_id_data
+                )
+                attempt_id_str = str(attempt_id)
+
+                async with get_db_connection() as conn:
+                    saved_chat_id = await create_chat_internal(
+                        conn=conn,
+                        profile_id=profile_id,
+                        attempt_id=attempt_id,
+                        training_bundle_department_id=training_bundle_department_id,
+                    )
+                    if saved_chat_id:
+                        chat_id = str(saved_chat_id)
+            except Exception as e:
+                logger.exception(
+                    f"Failed to auto-create chat for training bundle: {str(e)}"
+                )
+
+        # Emit training_bundle_generation_complete
+        event = TrainingBundleGenerationCompleteEvent(
+            artifact_type="training_bundle",
+            group_id=group_id_str or "",
+            resource_type="training_bundle",
+            run_id=run_id,
+            success=True,
+            message="Training bundle generation completed",
+            attempt_id=attempt_id_str,
+            chat_id=chat_id,
         )
 
+        await sio.emit(
+            "training_bundle_generation_complete",
+            event.model_dump(mode="json"),
+            room=sid,
+        )
+
+        await cleanup_generation(run_id)
+
 
 # =============================================================================
-# FastAPI endpoints for OpenAPI documentation
+# FastAPI endpoint for OpenAPI documentation
 # =============================================================================
 
 
-@server_router.post("/training/complete", response_model=dict[str, bool])
-async def training_complete_api(request: dict[str, Any]) -> dict[str, bool]:
-    """Internal event: Training generation completed (not sent to client)."""
+@server_router.post("/training_bundle_generation_complete")
+async def training_bundle_generation_complete_api(
+    request: TrainingBundleGenerationCompleteEvent,
+) -> dict[str, bool]:
+    """Server-to-client event: Training bundle generation completed.
+
+    Emitted when all agents have finished generating training bundle resources.
+    """
     return {"success": True}

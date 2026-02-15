@@ -30,7 +30,6 @@ from fastapi import APIRouter
 
 from . import (
     audio,
-    chat,
     complete,
     end,
     end_all,
@@ -46,7 +45,6 @@ from . import (
 
 __all__ = [
     "audio",
-    "chat",
     "complete",
     "end",
     "end_all",
@@ -87,4 +85,3 @@ server_router.include_router(end.server_router)
 server_router.include_router(end_all.server_router)
 server_router.include_router(audio.server_router)
 server_router.include_router(responses.server_router)
-server_router.include_router(chat.server_router)

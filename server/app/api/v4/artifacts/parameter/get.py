@@ -63,10 +63,10 @@ from app.api.v4.resources.models.get import get_models_internal
 from app.api.v4.resources.names.get import get_names_internal
 from app.api.v4.resources.names.search import search_names_internal
 from app.api.v4.resources.parameter_fields.get import get_parameter_fields_internal
-from app.api.v4.resources.providers.get import get_providers_internal
 from app.api.v4.resources.parameter_fields.search import (
     search_parameter_fields_internal,
 )
+from app.api.v4.resources.providers.get import get_providers_internal
 from app.api.v4.views.drafts.get import get_draft_parameter_internal
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
