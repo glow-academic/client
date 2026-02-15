@@ -20,8 +20,8 @@ import { loadHomeSearchParams } from "@/lib/search-params/home";
 
 /** ---- Strong types from OpenAPI ---- */
 // Using /training/get for simulation cards (enhanced with stats)
-type HomeCardsIn = InputOf<"/api/v4/artifacts/training/get", "post">;
-type HomeCardsOut = OutputOf<"/api/v4/artifacts/training/get", "post">;
+type HomeCardsIn = InputOf<"/api/v4/artifacts/training/list", "post">;
+type HomeCardsOut = OutputOf<"/api/v4/artifacts/training/list", "post">;
 // Using /attempt/list for history section
 type HomeHistoryIn = InputOf<"/api/v4/artifacts/attempt/list", "post">;
 type HomeHistoryOut = OutputOf<"/api/v4/artifacts/attempt/list", "post">;
@@ -38,7 +38,7 @@ const getHomeCards = async (
 ): Promise<HomeCardsOut> => {
   const bypassCache = await isHardRefresh();
 
-  return api.post("/artifacts/training/get", input, {
+  return api.post("/artifacts/training/list", input, {
     cache: "no-store",
     ...(bypassCache && {
       headers: {

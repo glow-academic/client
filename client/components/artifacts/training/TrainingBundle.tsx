@@ -23,7 +23,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
 type GetTrainingBundleOut = OutputOf<
-  "/api/v4/artifacts/training/bundle/get",
+  "/api/v4/artifacts/training/get",
   "post"
 >;
 export type TrainingBundleData = GetTrainingBundleOut;

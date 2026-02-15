@@ -20,8 +20,8 @@ import { loadPracticeSearchParams } from "@/lib/search-params/practice";
 
 /** ---- Strong types from OpenAPI ---- */
 // Using /training/get for simulation cards (enhanced with stats)
-type PracticeCardsIn = InputOf<"/api/v4/artifacts/training/get", "post">;
-type PracticeCardsOut = OutputOf<"/api/v4/artifacts/training/get", "post">;
+type PracticeCardsIn = InputOf<"/api/v4/artifacts/training/list", "post">;
+type PracticeCardsOut = OutputOf<"/api/v4/artifacts/training/list", "post">;
 // Using /attempt/list for history section
 type PracticeHistoryIn = InputOf<"/api/v4/artifacts/attempt/list", "post">;
 type PracticeHistoryOut = OutputOf<"/api/v4/artifacts/attempt/list", "post">;
@@ -38,7 +38,7 @@ const getPracticeCards = async (
 ): Promise<PracticeCardsOut> => {
   const bypassCache = await isHardRefresh();
 
-  return api.post("/artifacts/training/get", input, {
+  return api.post("/artifacts/training/list", input, {
     cache: "no-store",
     ...(bypassCache && {
       headers: {

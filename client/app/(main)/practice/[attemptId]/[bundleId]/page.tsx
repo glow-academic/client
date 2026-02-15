@@ -5,7 +5,7 @@ import type { Metadata } from "next";
 
 /** ---- Strong types from OpenAPI ---- */
 type GetTrainingBundleOut = OutputOf<
-  "/api/v4/artifacts/training/bundle/get",
+  "/api/v4/artifacts/training/get",
   "post"
 >;
 type PatchTrainingDraftIn = InputOf<
@@ -22,7 +22,7 @@ const getTrainingBundle = async (
   draftId: string | null,
 ): Promise<GetTrainingBundleOut> => {
   return api.post(
-    "/artifacts/training/bundle/get",
+    "/artifacts/training/get",
     {
       body: {
         training_bundle_entry_id: bundleId,

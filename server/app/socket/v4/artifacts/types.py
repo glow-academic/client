@@ -315,14 +315,14 @@ class SettingGenerationStartedEvent(BaseModel):
     resource_types: list[str]
 
 
-class TrainingBundleGenerationStartedEvent(BaseModel):
-    """Server-to-client event: training_bundle_generation_started.
+class TrainingGenerationStartedEvent(BaseModel):
+    """Server-to-client event: training_generation_started.
 
-    Emitted when training bundle generation begins, listing which resource types
+    Emitted when training generation begins, listing which resource types
     will be generated.
     """
 
-    artifact_type: str = "training_bundle"
+    artifact_type: str = "training"
     group_id: str
     run_id: str
     resource_types: list[str]

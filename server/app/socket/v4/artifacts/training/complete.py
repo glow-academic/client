@@ -1,4 +1,4 @@
-"""Training bundle completion handler - handles run/text completion and multi-agent coordination.
+"""Training completion handler - handles run/text completion and multi-agent coordination.
 
 Resource-level tool_call_complete/tool_result events are now handled by the shared
 resource_complete.py handler. This module handles:
@@ -20,7 +20,7 @@ from app.infra.v4.websocket.generation_tracker import (
 from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.main import get_internal_sio, sio
 from app.socket.v4.artifacts.training.types import (
-    TrainingBundleGenerationCompleteEvent,
+    TrainingGenerationCompleteEvent,
 )
 from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import load_sql
@@ -38,11 +38,11 @@ server_router = APIRouter()
 
 @internal_sio.on("generate_call_complete")  # type: ignore
 @internal_sio.on("generate_text_complete")  # type: ignore
-async def handle_training_bundle_artifact_complete(data: dict[str, Any]) -> None:
-    """Handle generate_call_complete and generate_text_complete events - filter by training_bundle artifact_type."""
+async def handle_training_artifact_complete(data: dict[str, Any]) -> None:
+    """Handle generate_call_complete and generate_text_complete events - filter by training artifact_type."""
 
     artifact_type = data.get("artifact_type")
-    if artifact_type != "training_bundle":
+    if artifact_type != "training":
         return
 
     sid = data.get("sid", "")
@@ -53,20 +53,20 @@ async def handle_training_bundle_artifact_complete(data: dict[str, Any]) -> None
 
     # Handle text completion - save assistant message
     if event_type == "text_complete":
-        await _handle_training_bundle_text_complete(sid, data)
+        await _handle_training_text_complete(sid, data)
         return
 
     # Handle run complete - coordinate multi-agent, emit completion
     if event_type == "run_complete":
-        await _handle_training_bundle_run_complete(sid, data)
+        await _handle_training_run_complete(sid, data)
         return
 
     # tool_call_complete and tool_result events are now handled by
     # resource_complete.py (shared handler) - nothing to do here
 
 
-async def _handle_training_bundle_text_complete(sid: str, data: dict[str, Any]) -> None:
-    """Handle training bundle text generation completion - save assistant message."""
+async def _handle_training_text_complete(sid: str, data: dict[str, Any]) -> None:
+    """Handle training text generation completion - save assistant message."""
     run_id = data.get("run_id")
     final_content = data.get("text") or ""
 
@@ -85,15 +85,15 @@ async def _handle_training_bundle_text_complete(sid: str, data: dict[str, Any]) 
                 False,
             )
     except Exception as e:
-        logger.exception(f"Failed to save training bundle text message: {str(e)}")
+        logger.exception(f"Failed to save training text message: {str(e)}")
 
 
-async def _handle_training_bundle_run_complete(sid: str, data: dict[str, Any]) -> None:
-    """Handle training bundle generation run completion.
+async def _handle_training_run_complete(sid: str, data: dict[str, Any]) -> None:
+    """Handle training generation run completion.
 
     Coordinates multi-agent completion via generation_tracker:
     1. Records this agent's completion
-    2. If all agents done: emits training_bundle_generation_complete
+    2. If all agents done: emits training_generation_complete
     3. Cleans up generation tracking
     """
     run_id = data.get("run_id")
@@ -142,7 +142,7 @@ async def _handle_training_bundle_run_complete(sid: str, data: dict[str, Any]) -
                     output_tokens,
                 )
     except Exception as e:
-        logger.exception(f"Failed to save training bundle run complete: {str(e)}")
+        logger.exception(f"Failed to save training run complete: {str(e)}")
 
     # Multi-agent coordination via generation tracker
     tool_results = data.get("tool_results") or []
@@ -183,23 +183,23 @@ async def _handle_training_bundle_run_complete(sid: str, data: dict[str, Any]) -
                         chat_id = str(saved_chat_id)
             except Exception as e:
                 logger.exception(
-                    f"Failed to auto-create chat for training bundle: {str(e)}"
+                    f"Failed to auto-create chat for training: {str(e)}"
                 )
 
-        # Emit training_bundle_generation_complete
-        event = TrainingBundleGenerationCompleteEvent(
-            artifact_type="training_bundle",
+        # Emit training_generation_complete
+        event = TrainingGenerationCompleteEvent(
+            artifact_type="training",
             group_id=group_id_str or "",
-            resource_type="training_bundle",
+            resource_type="training",
             run_id=run_id,
             success=True,
-            message="Training bundle generation completed",
+            message="Training generation completed",
             attempt_id=attempt_id_str,
             chat_id=chat_id,
         )
 
         await sio.emit(
-            "training_bundle_generation_complete",
+            "training_generation_complete",
             event.model_dump(mode="json"),
             room=sid,
         )
@@ -212,12 +212,12 @@ async def _handle_training_bundle_run_complete(sid: str, data: dict[str, Any]) -
 # =============================================================================
 
 
-@server_router.post("/training_bundle_generation_complete")
-async def training_bundle_generation_complete_api(
-    request: TrainingBundleGenerationCompleteEvent,
+@server_router.post("/training_generation_complete")
+async def training_generation_complete_api(
+    request: TrainingGenerationCompleteEvent,
 ) -> dict[str, bool]:
-    """Server-to-client event: Training bundle generation completed.
+    """Server-to-client event: Training generation completed.
 
-    Emitted when all agents have finished generating training bundle resources.
+    Emitted when all agents have finished generating training resources.
     """
     return {"success": True}

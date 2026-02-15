@@ -1,6 +1,6 @@
-"""Training bundle generation router - unified handler for all training bundle resource types.
+"""Training generation router - unified handler for all training resource types.
 
-This module handles all business logic for training bundle generation:
+This module handles all business logic for training generation:
 - Rate limit validation (fail fast)
 - Group/run creation
 - Agent/model context from pre-fetched resources (denormalized chain)
@@ -16,7 +16,7 @@ from typing import Any, cast
 
 from fastapi import APIRouter
 
-from app.api.v4.artifacts.training.bundle import get_training_bundle_websocket
+from app.api.v4.artifacts.training.get import get_training_bundle_websocket
 from app.api.v4.artifacts.training.types import GetTrainingBundleWebsocketResponse
 from app.api.v4.resources.instructions.get import get_instructions_internal
 from app.api.v4.resources.prompts.get import get_prompts_internal
@@ -31,12 +31,12 @@ from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.infra.v4.websocket.typed_emit import emit_to_internal
 from app.main import get_internal_sio, get_pool, sio
 from app.socket.v4.artifacts.training.types import (
-    TRAINING_BUNDLE_GENERATE_RESOURCE_TYPES,
-    GenerateTrainingBundlePayload,
+    TRAINING_GENERATE_RESOURCE_TYPES,
+    GenerateTrainingPayload,
 )
 from app.socket.v4.artifacts.types import (
     GenerateErrorApiRequest,
-    TrainingBundleGenerationStartedEvent,
+    TrainingGenerationStartedEvent,
 )
 from app.sql.types import (
     GetAgentToolsSqlParams,
@@ -67,7 +67,7 @@ SQL_PATH_CREATE_MESSAGE_WITH_TEXT = (
 )
 
 
-def _build_training_bundle_jinja_context(
+def _build_training_jinja_context(
     response: GetTrainingBundleWebsocketResponse, resource_types: list[str]
 ) -> dict[str, Any]:
     """Build Jinja context with resources as top-level variables.
@@ -81,10 +81,10 @@ def _build_training_bundle_jinja_context(
     return {}
 
 
-async def _training_bundle_generate_impl(
-    sid: str, data: GenerateTrainingBundlePayload, profile_id: uuid.UUID
+async def _training_generate_impl(
+    sid: str, data: GenerateTrainingPayload, profile_id: uuid.UUID
 ) -> None:
-    """Handle training bundle generation with all business logic.
+    """Handle training generation with all business logic.
 
     This function:
     1. Validates resource_types and resolves agent_id from domain mappings
@@ -105,9 +105,9 @@ async def _training_bundle_generate_impl(
                 GenerateErrorApiRequest(
                     sid=sid,
                     error_message="resource_types must be provided",
-                    artifact_type="training_bundle",
+                    artifact_type="training",
                     group_id=None,
-                    resource_type="training_bundle",
+                    resource_type="training",
                 ),
                 sid=sid,
             )
@@ -118,7 +118,7 @@ async def _training_bundle_generate_impl(
         invalid_types = [
             rt
             for rt in resource_types
-            if rt not in TRAINING_BUNDLE_GENERATE_RESOURCE_TYPES
+            if rt not in TRAINING_GENERATE_RESOURCE_TYPES
         ]
         if invalid_types:
             await emit_to_internal(
@@ -126,9 +126,9 @@ async def _training_bundle_generate_impl(
                 GenerateErrorApiRequest(
                     sid=sid,
                     error_message=f"Invalid resource types: {', '.join(invalid_types)}",
-                    artifact_type="training_bundle",
+                    artifact_type="training",
                     group_id=None,
-                    resource_type="training_bundle",
+                    resource_type="training",
                 ),
                 sid=sid,
             )
@@ -172,9 +172,9 @@ async def _training_bundle_generate_impl(
                 GenerateErrorApiRequest(
                     sid=sid,
                     error_message="No agent found for the requested resource types",
-                    artifact_type="training_bundle",
+                    artifact_type="training",
                     group_id=None,
-                    resource_type="training_bundle",
+                    resource_type="training",
                 ),
                 sid=sid,
             )
@@ -196,9 +196,9 @@ async def _training_bundle_generate_impl(
                 GenerateErrorApiRequest(
                     sid=sid,
                     error_message="No agent configuration found. Check department settings.",
-                    artifact_type="training_bundle",
+                    artifact_type="training",
                     group_id=None,
-                    resource_type="training_bundle",
+                    resource_type="training",
                 ),
                 sid=sid,
             )
@@ -211,9 +211,9 @@ async def _training_bundle_generate_impl(
                 GenerateErrorApiRequest(
                     sid=sid,
                     error_message=f"Agent '{agent_resource.name}' has no model configured",
-                    artifact_type="training_bundle",
+                    artifact_type="training",
                     group_id=None,
-                    resource_type="training_bundle",
+                    resource_type="training",
                 ),
                 sid=sid,
             )
@@ -226,9 +226,9 @@ async def _training_bundle_generate_impl(
                 GenerateErrorApiRequest(
                     sid=sid,
                     error_message=f"Model '{model_resource.name}' has no provider configured",
-                    artifact_type="training_bundle",
+                    artifact_type="training",
                     group_id=None,
-                    resource_type="training_bundle",
+                    resource_type="training",
                 ),
                 sid=sid,
             )
@@ -263,15 +263,15 @@ async def _training_bundle_generate_impl(
                 GenerateErrorApiRequest(
                     sid=sid,
                     error_message=f"No API key configured for provider '{provider_name}'",
-                    artifact_type="training_bundle",
+                    artifact_type="training",
                     group_id=None,
-                    resource_type="training_bundle",
+                    resource_type="training",
                 ),
                 sid=sid,
             )
             return
 
-        training_bundle_jinja_context = _build_training_bundle_jinja_context(
+        training_jinja_context = _build_training_jinja_context(
             result, resource_types
         )
 
@@ -292,7 +292,7 @@ async def _training_bundle_generate_impl(
             if requests_per_day is not None and runs_today >= requests_per_day:
                 error_msg = f"Rate limit exceeded ({runs_today}/{requests_per_day} requests today)"
                 logger.error(
-                    f"Training bundle generation rate limit exceeded - "
+                    f"Training generation rate limit exceeded - "
                     f"profile_id={profile_id}, agent_id={agent_id}, "
                     f"reason: {error_msg}"
                 )
@@ -300,10 +300,10 @@ async def _training_bundle_generate_impl(
                     "generate_call_error",
                     GenerateErrorApiRequest(
                         sid=sid,
-                        error_message=f"Failed to prepare training bundle generation: {error_msg}",
-                        artifact_type="training_bundle",
+                        error_message=f"Failed to prepare training generation: {error_msg}",
+                        artifact_type="training",
                         group_id=str(result.group_id) if result.group_id else None,
-                        resource_type="training_bundle",
+                        resource_type="training",
                     ),
                     sid=sid,
                 )
@@ -378,17 +378,17 @@ async def _training_bundle_generate_impl(
 
             if not prepare_row.run_id:
                 logger.error(
-                    f"Training bundle generation preparation failed unexpectedly - "
+                    f"Training generation preparation failed unexpectedly - "
                     f"profile_id={profile_id}, agent_id={agent_id}"
                 )
                 await emit_to_internal(
                     "generate_call_error",
                     GenerateErrorApiRequest(
                         sid=sid,
-                        error_message="Failed to prepare training bundle generation: Unknown error",
-                        artifact_type="training_bundle",
+                        error_message="Failed to prepare training generation: Unknown error",
+                        artifact_type="training",
                         group_id=str(existing_group_id) if existing_group_id else None,
-                        resource_type="training_bundle",
+                        resource_type="training",
                     ),
                     sid=sid,
                 )
@@ -399,7 +399,7 @@ async def _training_bundle_generate_impl(
             _trace_id = prepare_row.trace_id
             config_id = prepare_row.config_id
 
-            jinja_context = training_bundle_jinja_context
+            jinja_context = training_jinja_context
 
             # Inject config view into Jinja context for template access
             if config_id:
@@ -478,11 +478,11 @@ async def _training_bundle_generate_impl(
             await init_generation(str(run_id), num_agents)
             await init_resource_progress(str(run_id), len(resource_types))
 
-            # Emit training_bundle_generation_started to client
+            # Emit training_generation_started to client
             await sio.emit(
-                "training_bundle_generation_started",
+                "training_generation_started",
                 {
-                    "artifact_type": "training_bundle",
+                    "artifact_type": "training",
                     "group_id": str(group_id) if group_id else "",
                     "run_id": str(run_id),
                     "resource_types": resource_types,
@@ -496,10 +496,10 @@ async def _training_bundle_generate_impl(
                     "generate_artifact",
                     {
                         "sid": sid,
-                        "artifact_type": "training_bundle",
+                        "artifact_type": "training",
                         "resource_type": agent_resource_types[0]
                         if agent_resource_types
-                        else "training_bundle",
+                        else "training",
                         "run_id": str(run_id),
                         "group_id": str(group_id) if group_id else None,
                         "message_id": None,
@@ -522,25 +522,25 @@ async def _training_bundle_generate_impl(
                 )
 
     except Exception as e:
-        logger.exception(f"Failed to generate training bundle resources: {str(e)}")
+        logger.exception(f"Failed to generate training resources: {str(e)}")
         await emit_to_internal(
             "generate_call_error",
             GenerateErrorApiRequest(
                 sid=sid,
-                error_message=f"Failed to generate training bundle resources: {str(e)}",
-                artifact_type="training_bundle",
+                error_message=f"Failed to generate training resources: {str(e)}",
+                artifact_type="training",
                 group_id=None,
-                resource_type="training_bundle",
+                resource_type="training",
             ),
             sid=sid,
         )
 
 
 @sio.event  # type: ignore
-async def training_bundle_generate(sid: str, data: dict[str, Any]) -> None:
-    """Handle training_bundle_generate event (client-to-server)."""
+async def training_generate(sid: str, data: dict[str, Any]) -> None:
+    """Handle training_generate event (client-to-server)."""
     try:
-        payload = GenerateTrainingBundlePayload(**data)
+        payload = GenerateTrainingPayload(**data)
         profile_id_str = await find_profile_by_socket(sid)
         if not profile_id_str:
             await emit_to_internal(
@@ -548,32 +548,32 @@ async def training_bundle_generate(sid: str, data: dict[str, Any]) -> None:
                 GenerateErrorApiRequest(
                     sid=sid,
                     error_message="Profile not found. Please reconnect.",
-                    artifact_type="training_bundle",
+                    artifact_type="training",
                     group_id=None,
-                    resource_type="training_bundle",
+                    resource_type="training",
                 ),
                 sid=sid,
             )
             return
         profile_id = uuid.UUID(profile_id_str)
-        await _training_bundle_generate_impl(sid, payload, profile_id)
+        await _training_generate_impl(sid, payload, profile_id)
     except Exception as e:
         await emit_to_internal(
             "generate_call_error",
             GenerateErrorApiRequest(
                 sid=sid,
                 error_message=f"Invalid request: {str(e)}",
-                artifact_type="training_bundle",
+                artifact_type="training",
                 group_id=None,
-                resource_type="training_bundle",
+                resource_type="training",
             ),
             sid=sid,
         )
 
 
-@internal_sio.on("training_bundle_generate")  # type: ignore
-async def training_bundle_generate_internal(data: dict[str, Any]) -> None:
-    """Handle training_bundle_generate event from internal bus (server-to-server)."""
+@internal_sio.on("training_generate")  # type: ignore
+async def training_generate_internal(data: dict[str, Any]) -> None:
+    """Handle training_generate event from internal bus (server-to-server)."""
     try:
         sid = data.get("sid", "")
         if not sid:
@@ -586,26 +586,26 @@ async def training_bundle_generate_internal(data: dict[str, Any]) -> None:
                 GenerateErrorApiRequest(
                     sid=sid,
                     error_message="Profile not found. Please reconnect.",
-                    artifact_type="training_bundle",
+                    artifact_type="training",
                     group_id=None,
-                    resource_type="training_bundle",
+                    resource_type="training",
                 ),
                 sid=sid,
             )
             return
 
         profile_id = uuid.UUID(profile_id_str)
-        payload = GenerateTrainingBundlePayload(**data)
-        await _training_bundle_generate_impl(sid, payload, profile_id)
+        payload = GenerateTrainingPayload(**data)
+        await _training_generate_impl(sid, payload, profile_id)
     except Exception as e:
         await emit_to_internal(
             "generate_call_error",
             GenerateErrorApiRequest(
                 sid=sid,
                 error_message=f"Invalid request: {str(e)}",
-                artifact_type="training_bundle",
+                artifact_type="training",
                 group_id=None,
-                resource_type="training_bundle",
+                resource_type="training",
             ),
             sid=sid,
         )
@@ -616,12 +616,12 @@ async def training_bundle_generate_internal(data: dict[str, Any]) -> None:
 # =============================================================================
 
 
-@server_router.post("/training_bundle_generation_started")
-async def training_bundle_generation_started_api(
-    request: TrainingBundleGenerationStartedEvent,
+@server_router.post("/training_generation_started")
+async def training_generation_started_api(
+    request: TrainingGenerationStartedEvent,
 ) -> dict[str, bool]:
-    """Server-to-client event: Training bundle generation started.
+    """Server-to-client event: Training generation started.
 
-    Emitted when training bundle generation begins, listing resource types being generated.
+    Emitted when training generation begins, listing resource types being generated.
     """
     return {"success": True}

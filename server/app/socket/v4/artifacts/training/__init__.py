@@ -1,4 +1,4 @@
-"""Training socket v4 API routers - handles training bundle resource generation events."""
+"""Training socket v4 API routers - handles training resource generation events."""
 
 from fastapi import APIRouter
 

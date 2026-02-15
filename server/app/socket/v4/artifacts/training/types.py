@@ -1,6 +1,6 @@
-"""WebSocket-specific types for training bundle generation.
+"""WebSocket-specific types for training generation.
 
-Extends base artifact types with training-bundle-specific fields.
+Extends base artifact types with training-specific fields.
 Types are registered in OpenAPI via FastAPI endpoints, enabling
 automatic type extraction in the frontend via InputOf/OutputOf.
 """
@@ -14,8 +14,8 @@ from app.socket.v4.artifacts.types import (
     GenerationErrorEvent,
 )
 
-# Resource types that training bundle generation can produce
-TRAINING_BUNDLE_GENERATE_RESOURCE_TYPES = [
+# Resource types that training generation can produce
+TRAINING_GENERATE_RESOURCE_TYPES = [
     "departments",
     "personas",
     "documents",
@@ -34,12 +34,12 @@ TRAINING_BUNDLE_GENERATE_RESOURCE_TYPES = [
 
 
 # =============================================================================
-# Client-to-Server Events (training_bundle_generate)
+# Client-to-Server Events (training_generate)
 # =============================================================================
 
 
-class GenerateTrainingBundlePayload(BaseModel):
-    """Request payload for training_bundle_generate WebSocket event."""
+class GenerateTrainingPayload(BaseModel):
+    """Request payload for training_generate WebSocket event."""
 
     training_bundle_entry_id: UUID
     draft_id: UUID | None = None
@@ -53,24 +53,24 @@ class GenerateTrainingBundlePayload(BaseModel):
 # =============================================================================
 
 
-class TrainingBundleGenerationCompleteEvent(GenerationCompleteEvent):
-    """Server-to-client event: training_bundle_generation_complete.
+class TrainingGenerationCompleteEvent(GenerationCompleteEvent):
+    """Server-to-client event: training_generation_complete.
 
-    Emitted when all agents have finished generating training bundle resources.
+    Emitted when all agents have finished generating training resources.
     """
 
-    artifact_type: str = "training_bundle"
+    artifact_type: str = "training"
     attempt_id: str | None = None
     chat_id: str | None = None
 
 
-class TrainingBundleGenerationProgressEvent(BaseModel):
-    """Server-to-client event: training_bundle_generation_progress.
+class TrainingGenerationProgressEvent(BaseModel):
+    """Server-to-client event: training_generation_progress.
 
     Emitted as individual resources complete, providing percentage progress.
     """
 
-    artifact_type: str = "training_bundle"
+    artifact_type: str = "training"
     group_id: str
     run_id: str | None = None
     completed_resources: int
@@ -79,10 +79,10 @@ class TrainingBundleGenerationProgressEvent(BaseModel):
     last_completed_resource: str | None = None
 
 
-class TrainingBundleGenerationErrorEvent(GenerationErrorEvent):
-    """Server-to-client event: training_bundle_generation_error.
+class TrainingGenerationErrorEvent(GenerationErrorEvent):
+    """Server-to-client event: training_generation_error.
 
-    Emitted when training bundle resource generation fails.
+    Emitted when training resource generation fails.
     """
 
-    artifact_type: str = "training_bundle"
+    artifact_type: str = "training"
