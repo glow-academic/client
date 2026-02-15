@@ -13,6 +13,7 @@ class ProblemViewItem(BaseModel):
     type: str | None = None
     message: str | None = None
     resolved: bool | None = None
+    session_id: UUID | None = None
     problem_created_at: datetime | None = None
     problem_updated_at: datetime | None = None
     profile_id: UUID | None = None

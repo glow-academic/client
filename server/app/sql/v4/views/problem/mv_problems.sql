@@ -42,6 +42,7 @@ SELECT
     pe.type::text AS type,
     pe.message,
     pe.resolved,
+    pe.session_id,
     pe.created_at AS problem_created_at,
     pe.updated_at AS problem_updated_at,
     ppc.profiles_id AS profile_id
@@ -66,6 +67,9 @@ CREATE INDEX mv_problems_resolved_idx
 
 CREATE INDEX mv_problems_created_at_idx
     ON mv_problems (problem_created_at DESC);
+
+CREATE INDEX mv_problems_session_id_idx
+    ON mv_problems (session_id);
 
 CREATE INDEX mv_problems_profile_id_idx
     ON mv_problems (profile_id)

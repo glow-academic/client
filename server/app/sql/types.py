@@ -5846,33 +5846,6 @@ class StartBenchmarkAttemptApiResponse(BaseModel):
 
 
 
-# Generated from: get_benchmark_bundle_generation_context
-
-class GetBenchmarkBundleGenerationContextSqlParams(BaseModel):
-
-    p_profile_id: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.p_profile_id,
-        )
-
-class GetBenchmarkBundleGenerationContextSqlRow(BaseModel):
-
-    requests_per_day: int | None = None
-    runs_today: int | None = None
-
-class GetBenchmarkBundleGenerationContextApiRequest(BaseModel):
-
-    p_profile_id: UUID
-
-class GetBenchmarkBundleGenerationContextApiResponse(BaseModel):
-
-    requests_per_day: int | None = None
-    runs_today: int | None = None
-
-
-
 # Generated from: prepare_benchmark_bundle_generation
 
 class PrepareBenchmarkBundleGenerationSqlParams(BaseModel):
@@ -7148,33 +7121,6 @@ class PrepareTrainingStartApiResponse(BaseModel):
 
     training_bundle_department_id: UUID | None = None
     scenario_id: UUID | None = None
-
-
-
-# Generated from: get_training_bundle_generation_context
-
-class GetTrainingBundleGenerationContextSqlParams(BaseModel):
-
-    p_profile_id: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.p_profile_id,
-        )
-
-class GetTrainingBundleGenerationContextSqlRow(BaseModel):
-
-    requests_per_day: int | None = None
-    runs_today: int | None = None
-
-class GetTrainingBundleGenerationContextApiRequest(BaseModel):
-
-    p_profile_id: UUID
-
-class GetTrainingBundleGenerationContextApiResponse(BaseModel):
-
-    requests_per_day: int | None = None
-    runs_today: int | None = None
 
 
 
@@ -26590,6 +26536,7 @@ class QGetProblemListViewV4Item(BaseModel):
     type: str | None
     message: str | None
     resolved: bool | None
+    session_id: UUID | None
     problem_created_at: datetime | None
     problem_updated_at: datetime | None
     profile_id: UUID | None
@@ -27817,12 +27764,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "StartBenchmarkAttemptApiRequest",
         "StartBenchmarkAttemptApiResponse",
     ),
-    "app/sql/v4/queries/generate/benchmark_bundle/get_benchmark_bundle_generation_context_complete.sql": (
-        "GetBenchmarkBundleGenerationContextSqlParams",
-        "GetBenchmarkBundleGenerationContextSqlRow",
-        "GetBenchmarkBundleGenerationContextApiRequest",
-        "GetBenchmarkBundleGenerationContextApiResponse",
-    ),
     "app/sql/v4/queries/generate/benchmark_bundle/prepare_benchmark_bundle_generation_complete.sql": (
         "PrepareBenchmarkBundleGenerationSqlParams",
         "PrepareBenchmarkBundleGenerationSqlRow",
@@ -27990,12 +27931,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "PrepareTrainingStartSqlRow",
         "PrepareTrainingStartApiRequest",
         "PrepareTrainingStartApiResponse",
-    ),
-    "app/sql/v4/queries/generate/training_bundle/get_training_bundle_generation_context_complete.sql": (
-        "GetTrainingBundleGenerationContextSqlParams",
-        "GetTrainingBundleGenerationContextSqlRow",
-        "GetTrainingBundleGenerationContextApiRequest",
-        "GetTrainingBundleGenerationContextApiResponse",
     ),
     "app/sql/v4/queries/generate/training_bundle/prepare_training_bundle_generation_complete.sql": (
         "PrepareTrainingBundleGenerationSqlParams",
@@ -31512,11 +31447,6 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/queries/generate/benchmark_bundle/get_benchmark_bundle_generation_context_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
         file_path: Literal["app/sql/v4/queries/generate/benchmark_bundle/prepare_benchmark_bundle_generation_complete.sql"]
     ) -> SqlString: ...
 
@@ -31653,11 +31583,6 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/queries/generate/training/prepare_training_start_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/queries/generate/training_bundle/get_training_bundle_generation_context_complete.sql"]
     ) -> SqlString: ...
 
     @overload

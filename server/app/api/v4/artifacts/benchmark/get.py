@@ -37,6 +37,7 @@ from app.api.v4.resources.departments.get import get_departments_internal
 from app.api.v4.resources.instructions.get import get_instructions_internal
 from app.api.v4.resources.keys.get import get_keys_internal
 from app.api.v4.resources.models.get import get_models_internal
+from app.api.v4.resources.profiles.get import get_profiles_internal
 from app.api.v4.resources.prompts.get import get_prompts_internal
 from app.api.v4.resources.providers.get import get_providers_internal
 from app.api.v4.resources.reasoning_levels.get import get_reasoning_levels_internal
@@ -44,6 +45,7 @@ from app.api.v4.resources.temperature_levels.get import get_temperature_levels_i
 from app.api.v4.resources.tools.get import get_tools_internal
 from app.api.v4.resources.voices.get import get_voices_internal
 from app.api.v4.views.benchmark.bundle.get import get_benchmark_bundle_view_internal
+from app.api.v4.views.run.list.get import get_run_list_view_internal
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_pool
 
@@ -346,16 +348,45 @@ async def get_benchmark_bundle_websocket(
     bypass_cache: bool = False,
 ) -> GetBenchmarkBundleWebsocketResponse:
     """Thin wrapper for websocket consumers — selected resources only."""
-    data = await get_benchmark_bundle_internal(
-        pool=pool,
-        profile_id=profile_id,
-        benchmark_bundle_entry_id=benchmark_bundle_entry_id,
-        draft_id=draft_id,
-        bypass_cache=bypass_cache,
+
+    async def fetch_bundle():
+        return await get_benchmark_bundle_internal(
+            pool=pool,
+            profile_id=profile_id,
+            benchmark_bundle_entry_id=benchmark_bundle_entry_id,
+            draft_id=draft_id,
+            bypass_cache=bypass_cache,
+        )
+
+    async def fetch_config_profile():
+        async with pool.acquire() as conn:
+            return await get_profiles_internal(conn, [profile_id], bypass_cache)
+
+    async def fetch_runs_today():
+        from datetime import UTC, datetime
+
+        today_utc = datetime.now(UTC).replace(hour=0, minute=0, second=0, microsecond=0)
+        tomorrow_utc = today_utc.replace(hour=23, minute=59, second=59)
+        async with pool.acquire() as conn:
+            return await get_run_list_view_internal(
+                conn=conn,
+                profile_id_filter=profile_id,
+                date_from=today_utc,
+                date_to=tomorrow_utc,
+                page_limit=1,
+                bypass_cache=True,
+            )
+
+    (data, config_profile_result, runs_result) = await asyncio.gather(
+        fetch_bundle(),
+        fetch_config_profile(),
+        fetch_runs_today(),
     )
+
     return GetBenchmarkBundleWebsocketResponse(
         views=BenchmarkBundleWebsocketViews(
             draft_benchmark_bundle=data.draft_item,
+            runs=runs_result,
         ),
         resources=BenchmarkBundleWebsocketResources(
             departments=data.current_resources.get("departments") or None,
@@ -371,6 +402,7 @@ async def get_benchmark_bundle_websocket(
             config_models=data.config_models or None,
             config_providers=data.config_providers or None,
             config_tools=data.config_tools or None,
+            config_profile=config_profile_result or None,
         ),
         resource_agent_ids=data.resource_agent_ids,
         group_id=data.group_id,

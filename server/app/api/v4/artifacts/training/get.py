@@ -55,11 +55,13 @@ from app.api.v4.resources.personas.get import get_personas_internal
 from app.api.v4.resources.problem_statements.get import (
     get_problem_statements_internal,
 )
+from app.api.v4.resources.profiles.get import get_profiles_internal
 from app.api.v4.resources.questions.get import get_questions_internal
 from app.api.v4.resources.scenarios.get import get_scenarios_internal
 from app.api.v4.resources.videos.get import get_videos_internal
 from app.api.v4.views.drafts.get import get_draft_training_internal
 from app.api.v4.views.drafts.types import DraftTrainingViewItem
+from app.api.v4.views.run.list.get import get_run_list_view_internal
 from app.api.v4.views.training.bundle.get import get_training_bundle_view_internal
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_pool
@@ -393,15 +395,46 @@ async def get_training_bundle_websocket(
     bypass_cache: bool = False,
 ) -> GetTrainingBundleWebsocketResponse:
     """Thin wrapper for websocket consumers — selected resources only."""
-    data = await get_training_bundle_internal(
-        pool=pool,
-        profile_id=profile_id,
-        training_bundle_entry_id=training_bundle_entry_id,
-        draft_id=draft_id,
-        bypass_cache=bypass_cache,
+
+    async def fetch_bundle():
+        return await get_training_bundle_internal(
+            pool=pool,
+            profile_id=profile_id,
+            training_bundle_entry_id=training_bundle_entry_id,
+            draft_id=draft_id,
+            bypass_cache=bypass_cache,
+        )
+
+    async def fetch_config_profile():
+        async with pool.acquire() as conn:
+            return await get_profiles_internal(conn, [profile_id], bypass_cache)
+
+    async def fetch_runs_today():
+        from datetime import UTC, datetime
+
+        today_utc = datetime.now(UTC).replace(hour=0, minute=0, second=0, microsecond=0)
+        tomorrow_utc = today_utc.replace(hour=23, minute=59, second=59)
+        async with pool.acquire() as conn:
+            return await get_run_list_view_internal(
+                conn=conn,
+                profile_id_filter=profile_id,
+                date_from=today_utc,
+                date_to=tomorrow_utc,
+                page_limit=1,
+                bypass_cache=True,
+            )
+
+    (data, config_profile_result, runs_result) = await asyncio.gather(
+        fetch_bundle(),
+        fetch_config_profile(),
+        fetch_runs_today(),
     )
+
     return GetTrainingBundleWebsocketResponse(
-        views=TrainingBundleWebsocketViews(draft_training_bundle=data.draft_item),
+        views=TrainingBundleWebsocketViews(
+            draft_training_bundle=data.draft_item,
+            runs=runs_result,
+        ),
         resources=TrainingBundleWebsocketResources(
             departments=data.current_resources.get("departments") or None,
             personas=data.current_resources.get("personas") or None,
@@ -419,6 +452,7 @@ async def get_training_bundle_websocket(
             config_models=data.config_models or None,
             config_providers=data.config_providers or None,
             config_tools=data.config_tools or None,
+            config_profile=config_profile_result or None,
         ),
         resource_agent_ids=data.resource_agent_ids,
         group_id=data.group_id,

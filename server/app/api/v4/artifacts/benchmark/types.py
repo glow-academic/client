@@ -7,6 +7,7 @@ from pydantic import BaseModel, Field
 
 from app.api.v4.artifacts.types import FilterOption
 from app.api.v4.views.benchmark.tests.types import BenchmarkTestViewItem
+from app.api.v4.views.run.list.types import GetRunListViewResponse
 from app.sql.types import (
     BenchmarkBundleMultiResourceAction,
     QGetAgentsV4Item,
@@ -14,6 +15,7 @@ from app.sql.types import (
     QGetInstructionsV4Item,
     QGetKeysV4Item,
     QGetModelsV4Item,
+    QGetProfilesV4Item,
     QGetPromptsV4Item,
     QGetProvidersV4Item,
     QGetReasoningLevelsV4Item,
@@ -224,12 +226,14 @@ class BenchmarkBundleWebsocketResources(BaseModel):
     config_models: list[QGetModelsV4Item] | None = None
     config_providers: list[QGetProvidersV4Item] | None = None
     config_tools: list[QGetToolsV4Item] | None = None
+    config_profile: list[QGetProfilesV4Item] | None = None
 
 
 class BenchmarkBundleWebsocketViews(BaseModel):
     """Draft view for bundle websocket consumers."""
 
     draft_benchmark_bundle: Any | None = None
+    runs: GetRunListViewResponse | None = None
 
 
 class GetBenchmarkBundleWebsocketResponse(BaseModel):

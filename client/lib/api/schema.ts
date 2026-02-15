@@ -35943,6 +35943,8 @@ export interface components {
             message?: string | null;
             /** Resolved */
             resolved?: boolean | null;
+            /** Session Id */
+            session_id?: string | null;
             /** Problem Created At */
             problem_created_at?: string | null;
             /** Problem Updated At */

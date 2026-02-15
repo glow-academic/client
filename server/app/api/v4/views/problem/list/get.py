@@ -77,6 +77,7 @@ async def get_problem_list_view_internal(
                     type=item.type,
                     message=item.message,
                     resolved=item.resolved,
+                    session_id=item.session_id,
                     problem_created_at=item.problem_created_at,
                     problem_updated_at=item.problem_updated_at,
                     profile_id=item.profile_id,

@@ -56,6 +56,7 @@ CREATE TYPE types.q_get_problem_list_view_v4_item AS (
     type text,
     message text,
     resolved boolean,
+    session_id uuid,
     problem_created_at timestamptz,
     problem_updated_at timestamptz,
     profile_id uuid
@@ -111,6 +112,7 @@ AS $$
                     type,
                     message,
                     resolved,
+                    session_id,
                     problem_created_at,
                     problem_updated_at,
                     profile_id
