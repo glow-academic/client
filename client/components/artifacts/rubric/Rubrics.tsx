@@ -459,9 +459,12 @@ export default function Rubrics({
               const groupsDict: Record<string, string[]> = {};
               const groupIds = rubric.standard_group_ids || [];
               groupIds.forEach((groupId) => {
-                const group = standardGroups.find((g) => g.standard_group_id === groupId);
-                if (group && "standard_ids" in group && group.standard_ids) {
-                  groupsDict[String(groupId)] = (group.standard_ids as string[]).map(String);
+                // Find standards belonging to this group from the flat standards array
+                const standardsInGroup = standards
+                  .filter((s) => s.standard_group_id === groupId)
+                  .map((s) => String(s.standard_id));
+                if (standardsInGroup.length > 0) {
+                  groupsDict[String(groupId)] = standardsInGroup;
                 }
               });
               return groupsDict;
