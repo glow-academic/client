@@ -1,7 +1,7 @@
 """Attempt user speech complete handler.
 
 Handles internal event:
-- generate_user_speech_complete: Create user message in DB and emit attempt_user_complete
+- generate_audio_user_speech_complete: Create user message in DB and emit attempt_user_complete
 """
 
 import logging
@@ -26,9 +26,9 @@ SQL_PATH_VOICE_USER_MSG = (
 )
 
 
-@internal_sio.on("generate_user_speech_complete")  # type: ignore
-async def handle_generate_user_speech_complete(data: dict[str, Any]) -> None:
-    """Handle generate_user_speech_complete — finalize voice user message.
+@internal_sio.on("generate_audio_user_speech_complete")  # type: ignore
+async def handle_generate_audio_user_speech_complete(data: dict[str, Any]) -> None:
+    """Handle generate_audio_user_speech_complete — finalize voice user message.
 
     Creates the user message in DB and emits attempt_user_complete to the client
     so it can replace the optimistic voice message with the server-confirmed version.

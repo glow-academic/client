@@ -1,11 +1,15 @@
-"""OpenAI Realtime API adapter for voice mode.
+"""Realtime audio adapter for voice mode (OpenAI-compatible protocol).
 
-This adapter connects to the OpenAI Realtime API via WebSocket and handles
-bidirectional audio streaming between the client and OpenAI.
+This adapter connects to any OpenAI-compatible Realtime API via WebSocket and
+handles bidirectional audio streaming between the client and the provider.
+
+Supports OpenAI direct, Azure, xAI, Gemini, litellm proxy, or any provider
+that implements the OpenAI Realtime WebSocket protocol (session.update,
+input_audio_buffer.append, etc.) — just set the appropriate base_url.
 
 Architecture:
-- Uplink loop: Consumes from session.inbound_queue, sends to OpenAI WebSocket
-- Downlink loop: Receives from OpenAI WebSocket, emits via internal_sio
+- Uplink loop: Consumes from session.inbound_queue, sends to provider WebSocket
+- Downlink loop: Receives from provider WebSocket, calls audio_events functions
 
 The adapter uses the server-side WebSocket approach (not WebRTC ephemeral keys)
 to maintain control over the connection and enable server-side processing.
@@ -25,24 +29,31 @@ from app.infra.v4.websocket.adapters.audio.base import (
     BaseAudioAdapter,
 )
 from app.infra.v4.websocket.session_store import AudioSession
-from app.main import get_internal_sio
+from app.socket.v4.artifacts.audio_events import (
+    emit_audio_delta,
+    emit_audio_error,
+    emit_audio_response_done,
+    emit_audio_transcript_delta,
+    emit_audio_user_speech_complete,
+    emit_audio_user_speech_delta,
+    emit_audio_user_speech_start,
+)
 
 logger = logging.getLogger(__name__)
 
-internal_sio = get_internal_sio()
-
-# OpenAI Realtime API endpoint
-OPENAI_REALTIME_URL = "wss://api.openai.com/v1/realtime"
+# Default Realtime API endpoint (OpenAI direct)
+DEFAULT_REALTIME_URL = "wss://api.openai.com/v1/realtime"
 
 # Default model for realtime
 DEFAULT_REALTIME_MODEL = "gpt-4o-realtime-preview-2024-12-17"
 
 
-class OpenAIRealtimeAdapter(BaseAudioAdapter):
-    """OpenAI Realtime API adapter using WebSocket connection.
+class RealtimeAudioAdapter(BaseAudioAdapter):
+    """Provider-generic Realtime API adapter using WebSocket connection.
 
-    This adapter maintains a WebSocket connection to OpenAI's Realtime API
-    and handles bidirectional audio streaming.
+    This adapter maintains a WebSocket connection to any OpenAI-compatible
+    Realtime API and handles bidirectional audio streaming. Set base_url
+    to point at OpenAI, Azure, xAI, Gemini, a litellm proxy, etc.
     """
 
     def __init__(self) -> None:
@@ -58,19 +69,21 @@ class OpenAIRealtimeAdapter(BaseAudioAdapter):
         self,
         session: AudioSession,
         api_key: str,
+        base_url: str | None = None,
         model: str | None = None,
         voice: str | None = None,
         instructions: str | None = None,
         tools: list[dict[str, Any]] | None = None,
         **kwargs: Any,
     ) -> AudioSessionConfig:
-        """Initialize a realtime session with OpenAI.
+        """Initialize a realtime session with the provider.
 
         Establishes WebSocket connection and starts uplink/downlink loops.
 
         Args:
             session: The AudioSession containing queues and metadata
-            api_key: Decrypted OpenAI API key
+            api_key: Decrypted API key for the provider
+            base_url: Provider's realtime WebSocket endpoint (defaults to OpenAI)
             model: Model to use (defaults to gpt-4o-realtime-preview)
             voice: Voice for TTS (e.g., "alloy", "echo", "shimmer")
             instructions: System instructions for the session
@@ -83,10 +96,11 @@ class OpenAIRealtimeAdapter(BaseAudioAdapter):
         model = model or DEFAULT_REALTIME_MODEL
         voice = voice or "alloy"
 
-        # Build WebSocket URL with model
-        ws_url = f"{OPENAI_REALTIME_URL}?model={model}"
+        # Build WebSocket URL from base_url (supports any provider)
+        ws_base = base_url or DEFAULT_REALTIME_URL
+        ws_url = f"{ws_base}?model={model}"
 
-        # Connect to OpenAI Realtime API
+        # Connect to provider Realtime API
         headers = {
             "Authorization": f"Bearer {api_key}",
             "OpenAI-Beta": "realtime=v1",
@@ -97,7 +111,7 @@ class OpenAIRealtimeAdapter(BaseAudioAdapter):
             session.oa_ws_connection = ws
 
             logger.info(
-                f"Connected to OpenAI Realtime API - group_id={session.group_id}"
+                f"Connected to Realtime API ({ws_base}) - group_id={session.group_id}"
             )
 
             # Configure the session
@@ -160,7 +174,7 @@ class OpenAIRealtimeAdapter(BaseAudioAdapter):
             )
 
         except Exception as e:
-            logger.exception(f"Failed to connect to OpenAI Realtime API: {e}")
+            logger.exception(f"Failed to connect to Realtime API: {e}")
             raise
 
     async def stop_session(self, session: AudioSession) -> None:
@@ -246,15 +260,13 @@ class OpenAIRealtimeAdapter(BaseAudioAdapter):
             raise
         except Exception as e:
             logger.exception(f"Uplink loop error - group_id={group_id}: {e}")
-            await self._emit_error(session, f"Uplink error: {str(e)}")
+            await emit_audio_error(group_id, f"Uplink error: {str(e)}")
 
     async def _downlink_loop(self, session: AudioSession) -> None:
-        """Receive from OpenAI and emit internal events.
+        """Receive from provider and call audio_events functions.
 
-        Translates OpenAI Realtime events to internal events:
-        - response.audio.delta -> generate_audio_delta
-        - input_audio_buffer.speech_started -> generate_user_speech_start
-        - conversation.item.input_audio_transcription.completed -> generate_user_speech_delta
+        Translates provider Realtime events to generate_audio_* events
+        defined in audio_events.py (the single event contract).
         """
         ws: ClientConnection = session.oa_ws_connection
         group_id = session.group_id
@@ -265,7 +277,6 @@ class OpenAIRealtimeAdapter(BaseAudioAdapter):
         try:
             async for message in ws:
                 if isinstance(message, bytes):
-                    # Binary message - shouldn't happen with Realtime API
                     continue
 
                 event = json.loads(message)
@@ -273,9 +284,8 @@ class OpenAIRealtimeAdapter(BaseAudioAdapter):
 
                 # Log events for debugging (except frequent audio deltas)
                 if event_type != "response.audio.delta":
-                    logger.debug(f"OpenAI event: {event_type} - group_id={group_id}")
+                    logger.debug(f"Provider event: {event_type} - group_id={group_id}")
 
-                # Handle different event types
                 if event_type == "session.created":
                     logger.info(f"Session created - group_id={group_id}")
 
@@ -283,90 +293,46 @@ class OpenAIRealtimeAdapter(BaseAudioAdapter):
                     logger.info(f"Session updated - group_id={group_id}")
 
                 elif event_type == "input_audio_buffer.speech_started":
-                    # User started speaking
                     item_id = event.get("item_id", f"user-{group_id}")
                     current_user_item_id = item_id
-
-                    await internal_sio.emit(
-                        "generate_user_speech_start",
-                        {
-                            "group_id": group_id,
-                            "item_id": item_id,
-                        },
-                    )
+                    await emit_audio_user_speech_start(group_id, item_id)
 
                 elif event_type == "input_audio_buffer.speech_stopped":
-                    # User stopped speaking - VAD detected end
                     pass  # Transcription will come separately
 
                 elif (
                     event_type
                     == "conversation.item.input_audio_transcription.completed"
                 ):
-                    # User speech transcribed — this is the final transcript
                     transcript = event.get("transcript", "")
                     item_id = event.get(
                         "item_id", current_user_item_id or f"user-{group_id}"
                     )
-
-                    await internal_sio.emit(
-                        "generate_user_speech_delta",
-                        {
-                            "group_id": group_id,
-                            "item_id": item_id,
-                            "transcript": transcript,
-                        },
-                    )
-
-                    # Emit speech complete so the user message gets finalized in DB
-                    await internal_sio.emit(
-                        "generate_user_speech_complete",
-                        {
-                            "group_id": group_id,
-                            "item_id": item_id,
-                            "transcript": transcript,
-                        },
-                    )
+                    await emit_audio_user_speech_delta(group_id, item_id, transcript)
+                    await emit_audio_user_speech_complete(group_id, item_id, transcript)
 
                 elif event_type == "response.audio.delta":
-                    # Assistant audio chunk
                     audio_b64 = event.get("delta", "")
                     if audio_b64:
-                        # Decode base64 to bytes for client
                         audio_bytes = base64.b64decode(audio_b64)
-
-                        await internal_sio.emit(
-                            "generate_audio_delta",
-                            {
-                                "group_id": group_id,
-                                "audio": audio_bytes,
-                            },
-                        )
+                        await emit_audio_delta(group_id, audio_bytes)
 
                 elif event_type == "response.audio_transcript.delta":
-                    # Assistant transcript delta (optional - for display)
                     transcript = event.get("delta", "")
                     if transcript:
-                        await internal_sio.emit(
-                            "generate_assistant_transcript_delta",
-                            {
-                                "group_id": group_id,
-                                "transcript": transcript,
-                            },
-                        )
+                        await emit_audio_transcript_delta(group_id, transcript)
 
                 elif event_type == "response.done":
-                    # Response completed
                     response = event.get("response", {})
                     usage = response.get("usage", {})
                     logger.info(f"Response done - group_id={group_id}, usage={usage}")
+                    await emit_audio_response_done(group_id, usage)
 
                 elif event_type == "error":
-                    # Error from OpenAI
                     error = event.get("error", {})
                     error_msg = error.get("message", "Unknown error")
-                    logger.error(f"OpenAI error - group_id={group_id}: {error_msg}")
-                    await self._emit_error(session, error_msg)
+                    logger.error(f"Provider error - group_id={group_id}: {error_msg}")
+                    await emit_audio_error(group_id, error_msg)
 
         except asyncio.CancelledError:
             logger.info(f"Downlink loop cancelled - group_id={group_id}")
@@ -375,17 +341,7 @@ class OpenAIRealtimeAdapter(BaseAudioAdapter):
             logger.warning(f"WebSocket closed - group_id={group_id}: {e}")
         except Exception as e:
             logger.exception(f"Downlink loop error - group_id={group_id}: {e}")
-            await self._emit_error(session, f"Downlink error: {str(e)}")
-
-    async def _emit_error(self, session: AudioSession, message: str) -> None:
-        """Emit an error event."""
-        await internal_sio.emit(
-            "generate_audio_error",
-            {
-                "group_id": session.group_id,
-                "error_message": message,
-            },
-        )
+            await emit_audio_error(group_id, f"Downlink error: {str(e)}")
 
     def _format_tools(self, tools: list[dict[str, Any]]) -> list[dict[str, Any]]:
         """Format tools for OpenAI Realtime API.

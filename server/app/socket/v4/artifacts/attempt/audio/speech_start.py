@@ -1,7 +1,7 @@
 """Attempt user speech start handler.
 
 Handles internal event:
-- generate_user_speech_start: Translate to attempt_user_start
+- generate_audio_user_speech_start: Translate to attempt_user_start
 """
 
 from typing import Any
@@ -17,9 +17,9 @@ internal_sio = get_internal_sio()
 server_router = APIRouter()
 
 
-@internal_sio.on("generate_user_speech_start")  # type: ignore
-async def handle_generate_user_speech_start(data: dict[str, Any]) -> None:
-    """Handle generate_user_speech_start - translate to attempt_user_start.
+@internal_sio.on("generate_audio_user_speech_start")  # type: ignore
+async def handle_generate_audio_user_speech_start(data: dict[str, Any]) -> None:
+    """Handle generate_audio_user_speech_start - translate to attempt_user_start.
 
     BFF Translation: group_id from internal event -> chat_id for client event.
     """

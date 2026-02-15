@@ -169,9 +169,6 @@ DEFAULT_CATEGORIES = [
 ]
 
 
-# Global storage for voice sessions (group_id -> session data)
-_voice_sessions: dict[str, dict[str, Any]] = {}
-
 # Global storage for voice message IDs (group_id -> list of message IDs)
 # Accumulates message IDs created during voice tool calls, processed when response.done arrives
 _voice_message_ids: dict[str, list[str]] = {}
@@ -661,9 +658,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
 
         # Start voice session reaper (cleans up idle sessions every 60s)
         async def _reap_stale_voice_sessions() -> None:
-            from app.infra.v4.websocket.attempt.audio_helpers import (
-                cleanup_voice_session,
-            )
+            from app.infra.v4.websocket.audio_lifecycle import cleanup_audio_session
             from app.infra.v4.websocket.session_store import get_stale_sessions
 
             while True:
@@ -674,7 +669,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
                         logger.info(
                             f"Reaping stale voice session - group_id={session.group_id}"
                         )
-                        await cleanup_voice_session(session)
+                        await cleanup_audio_session(session)
                 except asyncio.CancelledError:
                     break
                 except Exception as e:

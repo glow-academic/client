@@ -1,7 +1,7 @@
 """Attempt user speech delta handler.
 
 Handles internal event:
-- generate_user_speech_delta: Translate to attempt_user_delta
+- generate_audio_user_speech_delta: Translate to attempt_user_delta
 """
 
 from typing import Any
@@ -17,9 +17,9 @@ internal_sio = get_internal_sio()
 server_router = APIRouter()
 
 
-@internal_sio.on("generate_user_speech_delta")  # type: ignore
-async def handle_generate_user_speech_delta(data: dict[str, Any]) -> None:
-    """Handle generate_user_speech_delta - translate to attempt_user_delta.
+@internal_sio.on("generate_audio_user_speech_delta")  # type: ignore
+async def handle_generate_audio_user_speech_delta(data: dict[str, Any]) -> None:
+    """Handle generate_audio_user_speech_delta - translate to attempt_user_delta.
 
     BFF Translation: group_id from internal event -> chat_id for client event.
     """

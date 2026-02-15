@@ -4,29 +4,27 @@ from fastapi import APIRouter
 
 from . import (
     attempt,
-    audio_frame_send,
+    audio_events,
+    audio_session,
     auth,
     benchmark,
+    call_events,
     generate,
-    mic_set_muted,
     simulation,
     test,
-    tool_call,
-    tool_result,
     training,
 )
 
 __all__ = [
     "attempt",
-    "audio_frame_send",
+    "audio_events",
+    "audio_session",
     "auth",
     "benchmark",
+    "call_events",
     "generate",
-    "mic_set_muted",
     "simulation",
     "test",
-    "tool_call",
-    "tool_result",
     "training",
 ]
 
@@ -48,5 +46,4 @@ server_router.include_router(attempt.server_router)
 server_router.include_router(benchmark.server_router)
 server_router.include_router(test.server_router)
 server_router.include_router(simulation.server_router)
-server_router.include_router(tool_call.server_router)
-server_router.include_router(tool_result.server_router)
+server_router.include_router(call_events.server_router)

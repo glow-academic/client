@@ -85,6 +85,7 @@ class GenerateArtifactPayload(BaseModel):
     mime_type: str | None = None
     file_size: int | None = None
     upload_id: str | None = None
+    chat_id: str | None = None  # For audio session store, never emitted externally
 
 
 def _parse_partial_json(partial: str) -> dict[str, Any] | None:
@@ -451,6 +452,70 @@ async def _generate_artifact_impl(
                     "mime_type": data.mime_type,
                     "file_size": data.file_size,
                     "upload_id": data.upload_id,
+                },
+            )
+            return
+
+        if data.modality == "audio":
+            from app.infra.v4.websocket.audio_lifecycle import get_audio_adapter
+            from app.infra.v4.websocket.session_store import (
+                create_session,
+                remove_session,
+            )
+
+            if not decrypted_api_key:
+                await _emit_modality_event(
+                    "audio",
+                    "error",
+                    GenerateErrorApiRequest(
+                        sid=sid,
+                        error_message="No API key configured for voice mode",
+                        artifact_type=data.artifact_type,
+                        group_id=data.group_id,
+                    ).model_dump(),
+                )
+                return
+
+            voice = model_config.voice or "alloy"
+            group_id = data.group_id or str(uuid.uuid4())
+
+            # Create session — chat_id stored for domain translator lookups
+            session = create_session(sid, group_id, data.chat_id or group_id)
+            adapter = get_audio_adapter()
+
+            try:
+                await adapter.initialize_session(
+                    session=session,
+                    api_key=decrypted_api_key,
+                    base_url=model_config.base_url,
+                    model=model_config.model,
+                    voice=voice,
+                    instructions=None,
+                )
+            except Exception as e:
+                remove_session(group_id)
+                await _emit_modality_event(
+                    "audio",
+                    "error",
+                    GenerateErrorApiRequest(
+                        sid=sid,
+                        error_message=f"Failed to connect to voice service: {str(e)}",
+                        artifact_type=data.artifact_type,
+                        group_id=group_id,
+                    ).model_dump(),
+                )
+                return
+
+            # Only emit group_id — domain translators resolve chat_id from session
+            await _emit_modality_event(
+                "audio",
+                "start",
+                {
+                    "sid": sid,
+                    "group_id": group_id,
+                    "artifact_type": data.artifact_type,
+                    "type": "start",
+                    "message": "Audio session ready",
                 },
             )
             return

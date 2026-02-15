@@ -86,12 +86,12 @@ async def disconnect(sid: str) -> None:
 
     # Clean up any active voice session for this socket
     try:
-        from app.infra.v4.websocket.attempt.audio_helpers import cleanup_voice_session
+        from app.infra.v4.websocket.audio_lifecycle import cleanup_audio_session
         from app.infra.v4.websocket.session_store import get_session_by_sid
 
         voice_session = get_session_by_sid(sid)
         if voice_session:
-            await cleanup_voice_session(voice_session)
+            await cleanup_audio_session(voice_session)
     except Exception:
         pass
 

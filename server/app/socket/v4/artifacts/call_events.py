@@ -1,4 +1,14 @@
-"""Artifact tool call handler - executes tools and returns tool_result for token factory."""
+"""Call modality event contract — tool execution + resolution.
+
+This module defines the internal events for the call modality:
+- generate_call_execute: Execute a tool call (DB write, template rendering)
+- generate_call_result:  Resolve the RPC future for a pending tool call
+
+The generate_call_start/progress/complete events are already emitted by
+generate.py via _emit_modality_event("call", ...).
+
+Naming convention: generate_call_{sub}
+"""
 
 import json
 import uuid
@@ -9,6 +19,7 @@ from fastapi import APIRouter
 from app.infra.v4.artifacts.discovery import map_template_values_to_table_columns
 from app.infra.v4.tools.render_tool_template import render_tool_template
 from app.infra.v4.websocket.get_db_connection import get_db_connection
+from app.infra.v4.websocket.tool_registry import resolve_tool_result
 from app.main import get_internal_sio
 from app.sql.types import (
     InfraToolsCreateCallForToolSqlParams,
@@ -29,9 +40,9 @@ client_router = APIRouter()
 server_router = APIRouter()
 
 
-@internal_sio.on("tool_call")  # type: ignore
-async def artifact_tool_call_internal(data: dict[str, Any]) -> None:
-    """Handle tool_call events for artifact domains."""
+@internal_sio.on("generate_call_execute")  # type: ignore
+async def handle_call_tool_call(data: dict[str, Any]) -> None:
+    """Execute a tool call — DB write, template rendering, resource creation/linking."""
     artifact_type = data.get("artifact_type")
     if artifact_type not in {
         "attempt",
@@ -68,7 +79,7 @@ async def artifact_tool_call_internal(data: dict[str, Any]) -> None:
         )
         if not tool_result or not tool_result.tool_id:
             await internal_sio.emit(
-                "tool_result",
+                "generate_call_result",
                 {
                     "call_id": call_id,
                     "success": False,
@@ -103,7 +114,7 @@ async def artifact_tool_call_internal(data: dict[str, Any]) -> None:
         )
         if not resource_result or not resource_result.resource_type:
             await internal_sio.emit(
-                "tool_result",
+                "generate_call_result",
                 {
                     "call_id": call_id,
                     "success": False,
@@ -130,7 +141,7 @@ async def artifact_tool_call_internal(data: dict[str, Any]) -> None:
         )
         if not call_result or not call_result.call_id:
             await internal_sio.emit(
-                "tool_result",
+                "generate_call_result",
                 {
                     "call_id": call_id,
                     "success": False,
@@ -181,7 +192,7 @@ async def artifact_tool_call_internal(data: dict[str, Any]) -> None:
             existing_id = mapped_values.get("id")
             if not existing_id:
                 await internal_sio.emit(
-                    "tool_result",
+                    "generate_call_result",
                     {
                         "call_id": call_id,
                         "success": False,
@@ -196,7 +207,7 @@ async def artifact_tool_call_internal(data: dict[str, Any]) -> None:
             existing_row = await conn.fetchrow(check_sql, uuid.UUID(existing_id))
             if not existing_row:
                 await internal_sio.emit(
-                    "tool_result",
+                    "generate_call_result",
                     {
                         "call_id": call_id,
                         "success": False,
@@ -218,7 +229,7 @@ async def artifact_tool_call_internal(data: dict[str, Any]) -> None:
             already_exists = False  # LINK tools don't have this concept
 
         await internal_sio.emit(
-            "tool_result",
+            "generate_call_result",
             {
                 "call_id": call_id,
                 "success": True,
@@ -229,3 +240,12 @@ async def artifact_tool_call_internal(data: dict[str, Any]) -> None:
                 "already_exists": already_exists,
             },
         )
+
+
+@internal_sio.on("generate_call_result")  # type: ignore
+async def handle_call_tool_result(data: dict[str, Any]) -> None:
+    """Resolve the RPC future for a pending tool call."""
+    call_id = data.get("call_id") or data.get("tool_call_id")
+    if not call_id:
+        return
+    resolve_tool_result(str(call_id), data)

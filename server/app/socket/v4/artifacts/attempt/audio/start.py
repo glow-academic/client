@@ -1,7 +1,10 @@
 """Attempt audio start handler.
 
 Handles WebSocket event:
-- attempt_audio_start: Start a voice session
+- attempt_audio_start: Start a voice session (BFF pre-generation validation)
+
+After validation, emits generate_artifact with modality="audio" to
+centralize session creation in generate.py.
 """
 
 import uuid
@@ -11,17 +14,11 @@ from fastapi import APIRouter
 
 from app.api.v4.artifacts.attempt.get import get_attempt_websocket
 from app.infra.v4.activity.websocket_logger import log_websocket_activity
-from app.infra.v4.websocket.attempt.audio_helpers import (
-    get_audio_adapter,
-)
 from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
 from app.infra.v4.websocket.get_db_connection import get_db_connection
-from app.infra.v4.websocket.session_store import (
-    create_session,
-    remove_session,
-)
+from app.infra.v4.websocket.session_store import get_session_by_group_id
 from app.main import (
-    _voice_sessions,
+    get_internal_sio,
     get_pool,
     sio,
 )
@@ -31,11 +28,11 @@ from app.socket.v4.artifacts.attempt.types import (
     AttemptUnifiedErrorEvent,
 )
 from app.sql.types import GetAudioStartContextSqlParams, GetAudioStartContextSqlRow
-from app.utils.auth.decrypt_api_key import decrypt_api_key
 from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import execute_sql_typed
 
 logger = get_logger(__name__)
+internal_sio = get_internal_sio()
 
 client_router = APIRouter()
 server_router = APIRouter()
@@ -49,9 +46,9 @@ SQL_PATH_AUDIO_START_CONTEXT = (
 async def attempt_audio_start(sid: str, data: dict[str, Any]) -> None:
     """Handle attempt_audio_start event - start a voice session.
 
-    BFF Translation: Client sends chat_id, server generates group_id internally.
-    Fetches voice configuration, initializes the audio adapter, and starts streaming.
-    Emits attempt_audio_ready with chat_id on success.
+    BFF Translation: Client sends chat_id, server validates context and config,
+    then emits generate_artifact with modality="audio" to centralize session
+    creation in generate.py. Emits attempt_audio_ready with chat_id on success.
     """
     try:
         payload = AttemptAudioStartPayload(**data)
@@ -76,15 +73,6 @@ async def attempt_audio_start(sid: str, data: dict[str, Any]) -> None:
         # Generate unique group_id for this voice session (like SQL does for text)
         group_id = str(uuid.uuid4())
 
-        # Create session with BOTH identifiers - group_id for internal, chat_id for events
-        session = create_session(sid, group_id, chat_id)
-
-        # Store session reference by group_id for cleanup
-        _voice_sessions[group_id] = {
-            "sid": sid,
-            "session": session,
-        }
-
         # Step 1: Lightweight context SQL — resolve chat_id → attempt_id
         async with get_db_connection() as conn:
             context_row = cast(
@@ -100,8 +88,6 @@ async def attempt_audio_start(sid: str, data: dict[str, Any]) -> None:
             )
 
         if not context_row or not context_row.chat_exists:
-            _voice_sessions.pop(group_id, None)
-            remove_session(group_id)
             await sio.emit(
                 "attempt_error",
                 AttemptUnifiedErrorEvent(
@@ -114,8 +100,6 @@ async def attempt_audio_start(sid: str, data: dict[str, Any]) -> None:
             return
 
         if context_row.chat_is_completed:
-            _voice_sessions.pop(group_id, None)
-            remove_session(group_id)
             await sio.emit(
                 "attempt_error",
                 AttemptUnifiedErrorEvent(
@@ -131,8 +115,6 @@ async def attempt_audio_start(sid: str, data: dict[str, Any]) -> None:
         requests_per_day = context_row.requests_per_day
         runs_today = context_row.runs_today or 0
         if requests_per_day is not None and runs_today >= requests_per_day:
-            _voice_sessions.pop(group_id, None)
-            remove_session(group_id)
             error_msg = (
                 f"Rate limit exceeded ({runs_today}/{requests_per_day} requests today)"
             )
@@ -211,22 +193,6 @@ async def attempt_audio_start(sid: str, data: dict[str, Any]) -> None:
             )
             return
 
-        # Decrypt API key (keep decryption at point of use — audio adapter uses key directly)
-        try:
-            api_key = decrypt_api_key(encrypted_api_key)
-        except Exception as e:
-            logger.exception(f"Failed to decrypt API key: {e}")
-            await sio.emit(
-                "attempt_error",
-                AttemptUnifiedErrorEvent(
-                    group_id=group_id,
-                    type="audio",
-                    message="Failed to decrypt API key",
-                ).model_dump(mode="json"),
-                room=sid,
-            )
-            return
-
         # Extract voice from agent resource (fallback to "alloy")
         voice = "alloy"
         if agent_resource and hasattr(agent_resource, "voice") and agent_resource.voice:
@@ -237,47 +203,34 @@ async def attempt_audio_start(sid: str, data: dict[str, Any]) -> None:
         if model_resource and model_resource.value:
             model_name = model_resource.value
 
-        # Initialize the audio adapter
-        adapter = get_audio_adapter()
-        try:
-            await adapter.initialize_session(
-                session=session,
-                api_key=api_key,
-                model=model_name,
-                voice=voice,
-                instructions=None,
-            )
-        except Exception as e:
-            logger.exception(f"Failed to initialize audio adapter: {e}")
-            # Clean up session on failure
-            _voice_sessions.pop(group_id, None)
-            remove_session(group_id)
-            await sio.emit(
-                "attempt_error",
-                AttemptUnifiedErrorEvent(
-                    group_id=group_id,
-                    type="audio",
-                    message=f"Failed to connect to voice service: {str(e)}",
-                ).model_dump(mode="json"),
-                room=sid,
-            )
-            return
-
-        # Emit success event
-        event = AttemptAudioReadyEvent(
-            chat_id=chat_id,
-            success=True,
-            message="Voice session ready",
+        # Extract base_url from provider resource
+        base_url = (
+            provider_resource.endpoint if hasattr(provider_resource, "endpoint") else ""
         )
 
-        await sio.emit(
-            "attempt_audio_ready",
-            event.model_dump(mode="json"),
-            room=sid,
+        # Step 4: Emit generate_artifact — session creation happens in generate.py
+        await internal_sio.emit(
+            "generate_artifact",
+            {
+                "sid": sid,
+                "artifact_type": "attempt",
+                "modality": "audio",
+                "run_id": str(uuid.uuid4()),
+                "group_id": group_id,
+                "chat_id": chat_id,
+                "messages": [],
+                "llm_config": {
+                    "model": model_name,
+                    "api_key": encrypted_api_key,
+                    "base_url": base_url,
+                    "voice": voice,
+                },
+            },
         )
 
         logger.info(
-            f"Audio session started - chat_id={chat_id}, group_id={group_id}, model={model_name}"
+            f"Audio start emitted generate_artifact - "
+            f"chat_id={chat_id}, group_id={group_id}, model={model_name}"
         )
 
         # Log activity
@@ -305,6 +258,24 @@ async def attempt_audio_start(sid: str, data: dict[str, Any]) -> None:
             ).model_dump(mode="json"),
             room=sid,
         )
+
+
+@internal_sio.on("generate_audio_start")  # type: ignore
+async def handle_audio_start(data: dict[str, Any]) -> None:
+    """Translate generate_audio_start → attempt_audio_ready for client."""
+    group_id = data.get("group_id")
+    sid = data.get("sid")
+    if not sid or not group_id:
+        return
+    session = get_session_by_group_id(group_id)
+    chat_id = session.chat_id if session else group_id
+    await sio.emit(
+        "attempt_audio_ready",
+        AttemptAudioReadyEvent(
+            chat_id=chat_id, success=True, message="Voice session ready"
+        ).model_dump(mode="json"),
+        room=sid,
+    )
 
 
 # =============================================================================

@@ -48,7 +48,8 @@ class BaseAudioAdapter(ABC):
         self,
         session: AudioSession,
         api_key: str,
-        model: str,
+        base_url: str | None = None,
+        model: str | None = None,
         voice: str | None = None,
         instructions: str | None = None,
         tools: list[dict[str, Any]] | None = None,
@@ -62,6 +63,7 @@ class BaseAudioAdapter(ABC):
         Args:
             session: The AudioSession containing queues and metadata
             api_key: Decrypted API key for the provider
+            base_url: Provider's realtime WebSocket endpoint
             model: Model to use (e.g., "gpt-4o-realtime-preview")
             voice: Voice to use for TTS
             instructions: System instructions for the session
