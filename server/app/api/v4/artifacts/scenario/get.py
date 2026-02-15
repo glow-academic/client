@@ -310,8 +310,6 @@ async def get_scenario_internal(
             profile_id=profile_id,
             scenario_id=scenario_id,
             draft_id=draft_id,
-            draft_group_id=effective_group_id,
-            draft_version=draft_item.version if draft_item is not None else None,
         )
 
         access_result = cast(
@@ -338,7 +336,7 @@ async def get_scenario_internal(
                     detail="You don't have access to this scenario. It may be restricted to other departments.",
                 )
 
-        effective_draft_version = access_result.effective_draft_version
+        effective_draft_version = draft_item.version if draft_item is not None else None
 
         # === QUERY 2: ID Fetching (using user_department_ids from Query 1) ===
         query2_params = GetScenarioIdsSqlParams(

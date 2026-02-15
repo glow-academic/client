@@ -21,24 +21,19 @@ END $$;
 CREATE OR REPLACE FUNCTION api_get_scenario_access_v4(
     profile_id uuid,
     scenario_id uuid DEFAULT NULL,
-    draft_id uuid DEFAULT NULL,
-    draft_group_id uuid DEFAULT NULL,
-    draft_version int DEFAULT NULL
+    draft_id uuid DEFAULT NULL
 )
 RETURNS TABLE (
     scenario_exists boolean,
-    effective_draft_version int,
-    group_id uuid,
-
-
     -- Scenario state for Python permission logic
     scenario_department_ids uuid[],
     active_simulation_count int
 )
 LANGUAGE sql
-VOLATILE
+STABLE
 AS $$
 -- User context (actor_name, user_role, department_ids) comes from get_profile_context_internal() in Python
+-- Group ID creation moved to Python
 WITH params AS (
     SELECT
         scenario_id AS scenario_id,
@@ -52,16 +47,6 @@ scenario_exists_check AS (
             WHEN (SELECT scenario_id FROM params) IS NULL THEN NULL::boolean
             ELSE EXISTS(SELECT 1 FROM scenario_artifact WHERE id = (SELECT scenario_id FROM params))::boolean
         END as scenario_exists
-),
--- Create a new group if no draft_group_id provided (guarantees group_id is always returned)
-ensure_group AS (
-    INSERT INTO groups_entry (created_at, updated_at)
-    SELECT NOW(), NOW()
-    WHERE draft_group_id IS NULL
-    RETURNING id
-),
-effective_group AS (
-    SELECT COALESCE(draft_group_id, (SELECT id FROM ensure_group)) as group_id
 ),
 -- Get scenario departments (for access check)
 scenario_departments_data AS (
@@ -84,14 +69,7 @@ scenario_edit_state AS (
     WHERE x.scenario_id IS NOT NULL
 )
 SELECT
-    -- Basic metadata
     (SELECT scenario_exists FROM scenario_exists_check) as scenario_exists,
-    draft_version as effective_draft_version,
-    (SELECT group_id FROM effective_group) as group_id,
-
-    -- User context for Python permission logic
-
-    -- Scenario state for Python permission logic
     COALESCE((SELECT department_ids FROM scenario_departments_data), ARRAY[]::uuid[]) as scenario_department_ids,
     COALESCE((SELECT active_simulation_count FROM scenario_edit_state), 0)::int as active_simulation_count
 FROM params x;

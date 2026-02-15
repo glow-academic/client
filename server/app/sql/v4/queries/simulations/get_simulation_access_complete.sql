@@ -38,7 +38,10 @@ WITH params AS (
     SELECT profile_id, simulation_id, draft_id
 ),
 simulation_departments AS (
-    SELECT DISTINCT sd.department_id
+    SELECT COALESCE(
+        ARRAY_REMOVE(ARRAY_AGG(DISTINCT sd.department_id), NULL),
+        ARRAY[]::uuid[]
+    ) as department_ids
     FROM simulation_departments_junction sd
     WHERE sd.simulation_id = (SELECT simulation_id FROM params)
       AND sd.active = true
@@ -65,7 +68,7 @@ cohort_usage AS (
 SELECT
     CASE
         WHEN (SELECT simulation_id FROM params) IS NULL THEN ARRAY[]::uuid[]
-        ELSE COALESCE(ARRAY_REMOVE(ARRAY_AGG(DISTINCT sd.department_id), NULL), ARRAY[]::uuid[])
+        ELSE COALESCE((SELECT department_ids FROM simulation_departments), ARRAY[]::uuid[])
     END as simulation_department_ids,
     CASE
         WHEN (SELECT simulation_id FROM params) IS NULL THEN NULL::boolean
@@ -77,6 +80,5 @@ SELECT
     (SELECT draft_version FROM simulation_data) as draft_version,
     COALESCE((SELECT usage_count FROM cohort_usage), 0)::int as cohort_usage_count,
     (SELECT draft_version FROM simulation_data) as effective_draft_version
-FROM simulation_departments sd
-GROUP BY TRUE;
+FROM params;
 $$;

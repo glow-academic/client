@@ -27,6 +27,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import type { InputOf, OutputOf } from "@/lib/api/types";
+import { useSocket } from "@/contexts/socket-context";
 import { cn } from "@/lib/utils";
 import { Check, Eye, Loader2, Sparkles, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -75,6 +76,7 @@ export interface DocumentsProps {
   aiDocumentResources?: Pick<DocumentResourceItem, "document_id" | "name">[] | null;
   onAccept?: () => void;
   onReject?: () => void;
+  onGenerationComplete?: () => void;
 }
 
 export function Documents({
@@ -103,6 +105,7 @@ export function Documents({
   aiDocumentResources,
   onAccept,
   onReject,
+  onGenerationComplete,
 }: DocumentsProps) {
   const ids = useMemo(() => document_ids ?? [], [document_ids]);
   const show = show_documents ?? false;
@@ -131,6 +134,37 @@ export function Documents({
     () => document_suggestions ?? [],
     [document_suggestions]
   );
+
+  // Socket-based AI suggestion handling
+  const { socket: aiSocket, isConnected: aiIsConnected } = useSocket();
+  const [internalAiDocumentResources, setInternalAiDocumentResources] = useState<
+    Pick<DocumentResourceItem, "document_id" | "name">[] | null
+  >(null);
+
+  useEffect(() => {
+    if (!aiSocket || !aiIsConnected) return;
+    const handleResourceComplete = (data: {
+      group_id?: string;
+      document_id?: string | null;
+      name?: string | null;
+    }) => {
+      if (group_id && data.group_id !== group_id) return;
+      if (data.document_id) {
+        setInternalAiDocumentResources([
+          { document_id: data.document_id, name: data.name ?? null },
+        ]);
+      }
+      onGenerationComplete?.();
+    };
+    aiSocket.on("documents_generation_complete", handleResourceComplete);
+    return () => {
+      aiSocket.off("documents_generation_complete", handleResourceComplete);
+    };
+  }, [aiSocket, aiIsConnected, group_id, onGenerationComplete]);
+
+  // Effective AI resources: internal (socket) takes priority, then prop fallback
+  const effectiveAiDocumentResources =
+    internalAiDocumentResources ?? aiDocumentResources ?? null;
 
   // Track which document IDs have already had resources created
   const createdDocumentIdsRef = useRef<Set<string>>(new Set());
@@ -244,31 +278,33 @@ export function Documents({
   }, [document_resources]);
 
   // AI suggestion state
-  const showDiff = !!aiDocumentResources?.length;
+  const showDiff = !!effectiveAiDocumentResources?.length;
   const aiSuggestedIds = useMemo(
     () =>
       new Set(
-        aiDocumentResources
+        effectiveAiDocumentResources
           ?.map((d) => d.document_id)
           .filter(Boolean) as string[]
       ),
-    [aiDocumentResources]
+    [effectiveAiDocumentResources]
   );
 
   // Accept AI suggestion - add AI-suggested documents to selection
   const handleAccept = useCallback(() => {
-    if (!aiDocumentResources?.length) return;
-    const newIds = aiDocumentResources
+    if (!effectiveAiDocumentResources?.length) return;
+    const newIds = effectiveAiDocumentResources
       .map((d) => d.document_id)
       .filter((id): id is string => !!id && !ids.includes(id));
     if (newIds.length > 0) {
       onChange([...ids, ...newIds]);
     }
     onAccept?.();
-  }, [aiDocumentResources, ids, onChange, onAccept]);
+    setInternalAiDocumentResources(null);
+  }, [effectiveAiDocumentResources, ids, onChange, onAccept]);
 
-  // Reject AI suggestion - just clear the pending state
+  // Reject AI suggestion - clear internal state
   const handleReject = useCallback(() => {
+    setInternalAiDocumentResources(null);
     onReject?.();
   }, [onReject]);
 

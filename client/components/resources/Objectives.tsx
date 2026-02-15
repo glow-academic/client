@@ -16,6 +16,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useSocket } from "@/contexts/socket-context";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 import { Check, GripVertical, Loader2, PlusCircle, Sparkles, Target, Trash2, X } from "lucide-react";
@@ -196,6 +197,7 @@ export interface ObjectivesProps {
   aiObjectiveResources?: Pick<ObjectiveResourceItem, "objective_id" | "objective">[] | null;
   onAccept?: () => void;
   onReject?: () => void;
+  onGenerationComplete?: () => void;
 }
 
 export function Objectives({
@@ -226,6 +228,7 @@ export function Objectives({
   aiObjectiveResources,
   onAccept,
   onReject,
+  onGenerationComplete,
 }: ObjectivesProps) {
   // Use standardized props
   const ids = useMemo(() => objective_ids ?? [], [objective_ids]);
@@ -265,6 +268,37 @@ export function Objectives({
       .map((obj) => obj.objective)
       .filter((text): text is string => text !== null && text !== undefined && text.trim() !== "");
   }, [objective_suggestions, effectiveObjectiveMapping, allObjectives]);
+
+  // Socket-based AI suggestion handling
+  const { socket: aiSocket, isConnected: aiIsConnected } = useSocket();
+  const [internalAiObjectiveResources, setInternalAiObjectiveResources] = useState<
+    Pick<ObjectiveResourceItem, "objective_id" | "objective">[] | null
+  >(null);
+
+  useEffect(() => {
+    if (!aiSocket || !aiIsConnected) return;
+    const handleResourceComplete = (data: {
+      group_id?: string;
+      objective_id?: string | null;
+      objective?: string | null;
+    }) => {
+      if (group_id && data.group_id !== group_id) return;
+      if (data.objective_id) {
+        setInternalAiObjectiveResources([
+          { objective_id: data.objective_id, objective: data.objective ?? null },
+        ]);
+      }
+      onGenerationComplete?.();
+    };
+    aiSocket.on("objectives_generation_complete", handleResourceComplete);
+    return () => {
+      aiSocket.off("objectives_generation_complete", handleResourceComplete);
+    };
+  }, [aiSocket, aiIsConnected, group_id, onGenerationComplete]);
+
+  // Effective AI resources: internal (socket) takes priority, then prop fallback
+  const effectiveAiObjectiveResources =
+    internalAiObjectiveResources ?? aiObjectiveResources ?? null;
 
   // Internal state for display texts (synced with objective_ids via objectiveMapping)
   const [internalTexts, setInternalTexts] = useState<string[]>(() => {
@@ -478,29 +512,31 @@ export function Objectives({
   }, [_objective_resources]);
 
   // AI suggestion state
-  const showDiff = !!aiObjectiveResources?.length;
+  const showDiff = !!effectiveAiObjectiveResources?.length;
 
   // Accept AI suggestion - add AI-suggested objectives to internal texts
   const handleAccept = useCallback(() => {
-    if (!aiObjectiveResources?.length) return;
+    if (!effectiveAiObjectiveResources?.length) return;
     // Add AI objectives to internal texts
-    const newTexts = aiObjectiveResources
+    const newTexts = effectiveAiObjectiveResources
       .map((o) => o.objective)
       .filter((text): text is string => !!text);
     if (newTexts.length > 0) {
       setInternalTexts((prev) => [...prev.filter((t) => t.trim()), ...newTexts]);
       // Map the new objective IDs
-      aiObjectiveResources.forEach((o) => {
+      effectiveAiObjectiveResources.forEach((o) => {
         if (o.objective_id && o.objective) {
           objectiveIdMapRef.current.set(o.objective, o.objective_id);
         }
       });
     }
+    setInternalAiObjectiveResources(null);
     onAccept?.();
-  }, [aiObjectiveResources, onAccept]);
+  }, [effectiveAiObjectiveResources, onAccept]);
 
   // Reject AI suggestion - just clear the pending state
   const handleReject = useCallback(() => {
+    setInternalAiObjectiveResources(null);
     onReject?.();
   }, [onReject]);
 
@@ -585,11 +621,11 @@ export function Objectives({
       )}
       
       {/* AI-suggested objectives preview */}
-      {showDiff && aiObjectiveResources && aiObjectiveResources.length > 0 && (
+      {showDiff && effectiveAiObjectiveResources && effectiveAiObjectiveResources.length > 0 && (
         <div className="mb-4 space-y-2">
           <p className="text-sm font-medium text-success">AI Suggested Objectives</p>
           <div className="space-y-2">
-            {aiObjectiveResources.map((item, idx) => (
+            {effectiveAiObjectiveResources.map((item, idx) => (
               <div
                 key={item.objective_id || idx}
                 className={cn(

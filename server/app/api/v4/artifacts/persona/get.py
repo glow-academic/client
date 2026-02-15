@@ -66,7 +66,8 @@ from app.api.v4.artifacts.persona.types import (
     PersonaWebsocketViews,
 )
 from app.api.v4.auth.profile import get_auth_profile_internal
-from app.api.v4.permissions import select_agents_for_artifact
+from app.api.v4.auth.settings import get_auth_settings_internal
+from app.api.v4.permissions import has_tools_for_resource, resolve_agents_for_artifact
 from app.api.v4.resources.agents.get import get_agents_internal
 from app.api.v4.resources.colors.get import get_colors_internal
 from app.api.v4.resources.colors.search import search_colors_internal
@@ -91,7 +92,6 @@ from app.api.v4.resources.parameters.get import get_parameters_internal
 from app.api.v4.resources.parameters.search import search_parameters_internal
 from app.api.v4.resources.providers.get import get_providers_internal
 from app.api.v4.resources.tools.get import get_tools_internal
-from app.api.v4.types import CandidateAgent
 from app.api.v4.views.drafts.get import get_draft_persona_internal
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
@@ -169,13 +169,20 @@ async def get_persona_internal(
             if draft_items:
                 draft_item = draft_items[0]
 
+    # === GROUP ID: Create in Python (moved from SQL side-effect) ===
+    if draft_item and draft_item.group_id:
+        effective_group_id = draft_item.group_id
+    else:
+        async with pool.acquire() as c:
+            effective_group_id = await c.fetchval(
+                "INSERT INTO groups_entry (created_at, updated_at) VALUES (NOW(), NOW()) RETURNING id"
+            )
+
     async with pool.acquire() as conn:
         query1_params = GetPersonaAccessSqlParams(
             profile_id=profile_id,
             persona_id=persona_id,
             draft_id=draft_id,
-            draft_group_id=draft_item.group_id if draft_item is not None else None,
-            draft_version=draft_item.version if draft_item is not None else None,
         )
 
         access_result = cast(
@@ -202,9 +209,7 @@ async def get_persona_internal(
                     detail="You don't have access to this persona. It may be restricted to other departments.",
                 )
 
-        # group_id is guaranteed by SQL (created inline if no draft)
-        effective_group_id = access_result.group_id
-        effective_draft_version = access_result.effective_draft_version
+        effective_draft_version = draft_item.version if draft_item is not None else None
 
         # === QUERY 2: ID Fetching (using user_department_ids from Query 1) ===
         query2_params = GetPersonaIdsSqlParams(
@@ -256,42 +261,39 @@ async def get_persona_internal(
         if draft_item.parameter_ids:
             selected_parameter_ids = draft_item.parameter_ids
 
-    # Config chain resource IDs (for pre-fetched generation config)
-    config_agent_resource_ids = ids_result.config_agent_resource_ids or []
-    config_model_resource_ids = ids_result.config_model_resource_ids or []
-    config_provider_resource_ids = ids_result.config_provider_resource_ids or []
+    # === RESOLVE AGENTS FROM SETTINGS (source of truth) ===
+    async with pool.acquire() as settings_conn:
+        settings_data = await get_auth_settings_internal(
+            settings_conn, profile_id, bypass_cache
+        )
 
-    # Get tools existence flags from Query 2 (used for show_* UI flags)
-    names_has_tools = ids_result.names_has_tools or False
-    colors_has_tools = ids_result.colors_has_tools or False
-    icons_has_tools = ids_result.icons_has_tools or False
-    instructions_has_tools = ids_result.instructions_has_tools or False
-
-    # === PARSE CANDIDATE AGENTS FROM QUERY 2 AND COMPUTE AGENT IDS IN PYTHON ===
-    candidate_agents = CandidateAgent.from_sql_rows(ids_result.candidate_agents)
-
-    # Use Python scoring to select best agents for each resource
-    user_dept_set = set(user_department_ids) if user_department_ids else None
-    resources_needed = list(PERSONA_RESOURCES)
-    agent_ids = select_agents_for_artifact(
-        candidates=candidate_agents,
-        artifact_resources=PERSONA_RESOURCES,
-        resources_needed=resources_needed,
-        user_department_ids=user_dept_set,
-        require_mcp=False,
+    agent_ids, tool_ids_map, _link_tool_ids = resolve_agents_for_artifact(
+        settings_data.agent_tool_entries, PERSONA_RESOURCES
     )
 
-    # === BUILD TOOL_IDS MAP FROM SELECTED AGENTS ===
-    # For each resource, find the selected agent and extract its create tool ID
-    tool_ids_map: dict[str, UUID | None] = {}
+    # Derive has_tools flags from settings
+    names_has_tools = has_tools_for_resource(
+        settings_data.agent_tool_entries, "names"
+    )
+    colors_has_tools = has_tools_for_resource(
+        settings_data.agent_tool_entries, "colors"
+    )
+    icons_has_tools = has_tools_for_resource(
+        settings_data.agent_tool_entries, "icons"
+    )
+    instructions_has_tools = has_tools_for_resource(
+        settings_data.agent_tool_entries, "instructions"
+    )
 
-    for resource in PERSONA_RESOURCES:
-        selected_agent_id = agent_ids.get(resource)
-        if selected_agent_id:
-            for candidate in candidate_agents:
-                if candidate.agent_id == selected_agent_id:
-                    tool_ids_map[resource] = candidate.create_tool_ids.get(resource)
-                    break
+    # Config chain resource IDs (derived from settings agents)
+    config_agent_resource_ids = [
+        a.id for a in settings_data.settings_agents if a.id
+    ]
+    config_model_resource_ids = [
+        a.model_id for a in settings_data.settings_agents if a.model_id
+    ]
+    # Provider IDs need to be fetched from models, but we'll fetch them in Pass 2
+    config_provider_resource_ids: list[UUID] = []
 
     # === COMPUTE SHOW_AI_GENERATE FLAGS (BFF pattern - server computes, client consumes) ===
     # Per-resource show_ai_generate flags

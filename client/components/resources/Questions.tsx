@@ -17,6 +17,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useSocket } from "@/contexts/socket-context";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 import {
@@ -79,6 +80,7 @@ export interface QuestionsProps {
   aiQuestionResources?: Pick<QuestionsResourceItem, "question_id" | "question_text">[] | null;
   onAccept?: () => void;
   onReject?: () => void;
+  onGenerationComplete?: () => void;
 }
 
 // Internal question type (matching ContentSection pattern)
@@ -124,6 +126,7 @@ export function Questions({
   aiQuestionResources,
   onAccept,
   onReject,
+  onGenerationComplete,
 }: QuestionsProps) {
   // Use standardized props
   const ids = useMemo(() => question_ids ?? [], [question_ids]);
@@ -158,6 +161,37 @@ export function Questions({
     }
     return [];
   }, [question_suggestions, effectiveQuestionMapping]);
+
+  // Socket-based AI suggestion handling
+  const { socket: aiSocket, isConnected: aiIsConnected } = useSocket();
+  const [internalAiQuestionResources, setInternalAiQuestionResources] = useState<
+    Pick<QuestionsResourceItem, "question_id" | "question_text">[] | null
+  >(null);
+
+  useEffect(() => {
+    if (!aiSocket || !aiIsConnected) return;
+    const handleResourceComplete = (data: {
+      group_id?: string;
+      question_id?: string | null;
+      question_text?: string | null;
+    }) => {
+      if (group_id && data.group_id !== group_id) return;
+      if (data.question_id) {
+        setInternalAiQuestionResources([
+          { question_id: data.question_id, question_text: data.question_text ?? null },
+        ]);
+      }
+      onGenerationComplete?.();
+    };
+    aiSocket.on("questions_generation_complete", handleResourceComplete);
+    return () => {
+      aiSocket.off("questions_generation_complete", handleResourceComplete);
+    };
+  }, [aiSocket, aiIsConnected, group_id, onGenerationComplete]);
+
+  // Effective AI resources: internal (socket) takes priority, then prop fallback
+  const effectiveAiQuestionResources =
+    internalAiQuestionResources ?? aiQuestionResources ?? null;
 
   // Internal state for questions (matching ContentSection pattern)
   const [internalQuestions, setInternalQuestions] = useState<QuestionType[]>(
@@ -688,13 +722,13 @@ export function Questions({
   }, [_question_resources]);
 
   // AI suggestion state
-  const showDiff = !!aiQuestionResources?.length;
+  const showDiff = !!effectiveAiQuestionResources?.length;
 
   // Accept AI suggestion - add AI-suggested questions to internal questions
   const handleAccept = useCallback(() => {
-    if (!aiQuestionResources?.length) return;
+    if (!effectiveAiQuestionResources?.length) return;
     // Add AI questions to internal questions
-    const newQuestions = aiQuestionResources
+    const newQuestions = effectiveAiQuestionResources
       .filter((q) => q.question_text)
       .map((q, idx) => ({
         id: q.question_id || `ai-${idx}`,
@@ -712,17 +746,19 @@ export function Questions({
         ...newQuestions,
       ]);
       // Map the new question IDs
-      aiQuestionResources.forEach((q) => {
+      effectiveAiQuestionResources.forEach((q) => {
         if (q.question_id && q.question_text) {
           questionIdMapRef.current.set(q.question_text, q.question_id);
         }
       });
     }
+    setInternalAiQuestionResources(null);
     onAccept?.();
-  }, [aiQuestionResources, onAccept]);
+  }, [effectiveAiQuestionResources, onAccept]);
 
   // Reject AI suggestion - just clear the pending state
   const handleReject = useCallback(() => {
+    setInternalAiQuestionResources(null);
     onReject?.();
   }, [onReject]);
 
@@ -808,11 +844,11 @@ export function Questions({
       )}
 
       {/* AI-suggested questions preview */}
-      {showDiff && aiQuestionResources && aiQuestionResources.length > 0 && (
+      {showDiff && effectiveAiQuestionResources && effectiveAiQuestionResources.length > 0 && (
         <div className="mb-4 space-y-2">
           <p className="text-sm font-medium text-success">AI Suggested Questions</p>
           <div className="space-y-2">
-            {aiQuestionResources.map((item, idx) => (
+            {effectiveAiQuestionResources.map((item, idx) => (
               <div
                 key={item.question_id || idx}
                 className={cn(

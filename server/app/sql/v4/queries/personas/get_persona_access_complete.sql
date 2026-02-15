@@ -21,24 +21,19 @@ END $$;
 CREATE OR REPLACE FUNCTION api_get_persona_access_v4(
     profile_id uuid,
     persona_id uuid DEFAULT NULL,
-    draft_id uuid DEFAULT NULL,
-    draft_group_id uuid DEFAULT NULL,
-    draft_version int DEFAULT NULL
+    draft_id uuid DEFAULT NULL
 )
 RETURNS TABLE (
     persona_exists boolean,
-    effective_draft_version int,
-    group_id uuid,
-
-
     -- Persona state for Python permission logic
     persona_department_ids uuid[],
     active_scenario_count int
 )
 LANGUAGE sql
-VOLATILE
+STABLE
 AS $$
 -- User context (actor_name, user_role, department_ids) comes from get_profile_context_internal() in Python
+-- Group ID creation moved to Python
 WITH params AS (
     SELECT
         persona_id AS persona_id,
@@ -52,16 +47,6 @@ persona_exists_check AS (
             WHEN (SELECT persona_id FROM params) IS NULL THEN NULL::boolean
             ELSE EXISTS(SELECT 1 FROM persona_artifact WHERE id = (SELECT persona_id FROM params))::boolean
         END as persona_exists
-),
--- Create a new group if no draft_group_id provided (guarantees group_id is always returned)
-ensure_group AS (
-    INSERT INTO groups_entry (created_at, updated_at)
-    SELECT NOW(), NOW()
-    WHERE draft_group_id IS NULL
-    RETURNING id
-),
-effective_group AS (
-    SELECT COALESCE(draft_group_id, (SELECT id FROM ensure_group)) as group_id
 ),
 -- Get persona departments (for access check)
 persona_departments_data AS (
@@ -82,12 +67,7 @@ persona_edit_state AS (
     WHERE x.persona_id IS NOT NULL
 )
 SELECT
-    -- Basic metadata
     (SELECT persona_exists FROM persona_exists_check) as persona_exists,
-    draft_version as effective_draft_version,
-    (SELECT group_id FROM effective_group) as group_id,
-
-    -- Persona state for Python permission logic
     COALESCE((SELECT department_ids FROM persona_departments_data), ARRAY[]::uuid[]) as persona_department_ids,
     COALESCE((SELECT active_scenario_count FROM persona_edit_state), 0) as active_scenario_count
 FROM params x;

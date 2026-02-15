@@ -27,12 +27,8 @@ import { cn } from "@/lib/utils";
 import { chartColorBackground, colorWithAlpha, useChartColors } from "@/lib/utils/chartColors";
 import { Users } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import type { TooltipProps } from "recharts";
 import {
-  Bar,
-  BarChart,
   CartesianGrid,
-  Cell,
   Line,
   LineChart,
   ResponsiveContainer,
@@ -41,25 +37,6 @@ import {
   YAxis,
 } from "recharts";
 import { TruncatedInsight } from "../TruncatedInsight";
-
-// Custom tooltip component with liquid glass styling
-function CustomBarTooltip({
-  active,
-  payload,
-  label,
-}: TooltipProps<number, string>) {
-  if (!active || !payload || !payload.length || !label) return null;
-
-  const value = payload[0]?.value;
-  if (typeof value !== "number") return null;
-
-  return (
-    <div className="rounded-md border border-border bg-muted/70 backdrop-blur px-3 py-2 shadow-sm">
-      <div className="font-medium">{label} Students</div>
-      <div className="mt-1 text-xs">Average Score: {value}%</div>
-    </div>
-  );
-}
 
 // Helper component for persona trend chart to use hooks properly
 function PersonaTrendChart({
@@ -344,54 +321,7 @@ export default function PersonaPerformance({
         </div>
       </CardHeader>
       <CardContent className="flex-1 overflow-hidden">
-        <div className="grid gap-6 md:grid-cols-2 h-full">
-          {/* Horizontal Bar Chart */}
-          <div
-            className="h-full"
-            style={
-              process.env.NODE_ENV === "test"
-                ? { minWidth: 400, minHeight: 300 }
-                : undefined
-            }
-          >
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={filteredChartData} layout="vertical">
-                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                <XAxis type="number" domain={[0, 100]} className="text-xs" />
-                <YAxis
-                  dataKey="name"
-                  type="category"
-                  width={80}
-                  className="text-xs"
-                />
-                <Tooltip content={<CustomBarTooltip />} />
-                <Bar
-                  dataKey="score"
-                  radius={[0, 4, 4, 0]}
-                  name="Average Score"
-                  className="cursor-pointer"
-                >
-                  {filteredChartData.map((entry, index) => {
-                    const entryWithBarColor =
-                      entry as PersonaPerformanceData & { barColor?: string };
-                    return (
-                      <Cell
-                        key={`cell-${index}`}
-                        fill={
-                          entryWithBarColor.barColor ||
-                          chartColors[index % chartColors.length]
-                        }
-                        className="hover:opacity-80 transition-opacity"
-                      />
-                    );
-                  })}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-
-          {/* Persona Cards */}
-          <div className="space-y-4 overflow-y-auto">
+        <div className="space-y-4 overflow-y-auto h-full">
             {filteredChartData.map((persona, index) => (
               <Dialog key={persona.name}>
                 <DialogTrigger asChild>
@@ -456,7 +386,6 @@ export default function PersonaPerformance({
                 </DialogContent>
               </Dialog>
             ))}
-          </div>
         </div>
       </CardContent>
     </Card>

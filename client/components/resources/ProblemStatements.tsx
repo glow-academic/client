@@ -17,6 +17,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useSocket } from "@/contexts/socket-context";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 import { Check, Loader2, Sparkles, X } from "lucide-react";
@@ -179,6 +180,7 @@ export interface ProblemStatementsProps {
   aiResource?: ProblemStatementResourceItem | null;
   onAccept?: () => void;
   onReject?: () => void;
+  onGenerationComplete?: () => void;
   /** When false, skip automatic resource creation (manual save mode) */
   isAutosaveEnabled?: boolean;
   /** Register a flush callback with parent for manual save - returns created ID */
@@ -212,6 +214,7 @@ export function ProblemStatements({
   aiResource,
   onAccept,
   onReject,
+  onGenerationComplete,
   isAutosaveEnabled = true,
   registerFlush,
 }: ProblemStatementsProps) {
@@ -226,6 +229,37 @@ export function ProblemStatements({
     () => problem_statements ?? [],
     [problem_statements]
   );
+
+  // Socket-based AI suggestion handling
+  const { socket: aiSocket, isConnected: aiIsConnected } = useSocket();
+  const [internalAiResource, setInternalAiResource] = useState<
+    ProblemStatementResourceItem | null
+  >(null);
+
+  useEffect(() => {
+    if (!aiSocket || !aiIsConnected) return;
+    const handleResourceComplete = (data: {
+      group_id?: string;
+      problem_statement_id?: string | null;
+      problem_statement?: string | null;
+    }) => {
+      if (group_id && data.group_id !== group_id) return;
+      if (data.problem_statement_id) {
+        setInternalAiResource({
+          problem_statement_id: data.problem_statement_id,
+          problem_statement: data.problem_statement ?? null,
+        } as ProblemStatementResourceItem);
+      }
+      onGenerationComplete?.();
+    };
+    aiSocket.on("problem_statements_generation_complete", handleResourceComplete);
+    return () => {
+      aiSocket.off("problem_statements_generation_complete", handleResourceComplete);
+    };
+  }, [aiSocket, aiIsConnected, group_id, onGenerationComplete]);
+
+  // Effective AI resource: internal (socket) takes priority, then prop fallback
+  const effectiveAiResource = internalAiResource ?? aiResource ?? null;
 
   // Handle nullable resource properties
   const resourceProblemStatement = resource?.problem_statement ?? "";
@@ -452,26 +486,28 @@ export function ProblemStatements({
   }, [problemStatementsArray, suggestionsMapping]);
 
   // AI diff view state
-  const showDiff = !!aiResource?.problem_statement;
+  const showDiff = !!effectiveAiResource?.problem_statement;
   const currentText = internalValue || "";
-  const aiText = aiResource?.problem_statement || "";
+  const aiText = effectiveAiResource?.problem_statement || "";
 
   // Accept AI suggestion - update internal value and notify parent
   const handleAccept = useCallback(() => {
-    if (!aiResource?.problem_statement_id) return;
+    if (!effectiveAiResource?.problem_statement_id) return;
     if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
     saveSeqRef.current += 1;
-    const text = aiResource.problem_statement || "";
+    const text = effectiveAiResource.problem_statement || "";
     setInternalValue(text);
     lastSavedValueRef.current = text;
     lastServerTextRef.current = text;
     isDirtyRef.current = false;
-    onProblemStatementIdChange(aiResource.problem_statement_id);
+    onProblemStatementIdChange(effectiveAiResource.problem_statement_id);
+    setInternalAiResource(null);
     onAccept?.();
-  }, [aiResource, onProblemStatementIdChange, onAccept]);
+  }, [effectiveAiResource, onProblemStatementIdChange, onAccept]);
 
   // Reject AI suggestion - just clear the pending state
   const handleReject = useCallback(() => {
+    setInternalAiResource(null);
     onReject?.();
   }, [onReject]);
 

@@ -16,6 +16,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useSocket } from "@/contexts/socket-context";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 import { inferMimeFromName } from "@/utils/mime-map";
@@ -79,6 +80,7 @@ export interface VideosProps {
   aiVideoResources?: Pick<VideoResourceItem, "video_id" | "name">[] | null;
   onAccept?: () => void;
   onReject?: () => void;
+  onGenerationComplete?: () => void;
 }
 
 export function Videos({
@@ -111,6 +113,7 @@ export function Videos({
   aiVideoResources,
   onAccept,
   onReject,
+  onGenerationComplete,
 }: VideosProps) {
   const ids = useMemo(() => video_ids ?? [], [video_ids]);
   const show = show_videos ?? false;

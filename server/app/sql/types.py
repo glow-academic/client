@@ -9166,23 +9166,17 @@ class GetPersonaAccessSqlParams(BaseModel):
     profile_id: UUID
     persona_id: UUID | None = None
     draft_id: UUID | None = None
-    draft_group_id: UUID | None = None
-    draft_version: int | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.profile_id,
             self.persona_id,
             self.draft_id,
-            self.draft_group_id,
-            self.draft_version,
         )
 
 class GetPersonaAccessSqlRow(BaseModel):
 
     persona_exists: bool | None = None
-    effective_draft_version: int | None = None
-    group_id: UUID | None = None
     persona_department_ids: list[UUID] | None = None
     active_scenario_count: int | None = None
 
@@ -9190,14 +9184,10 @@ class GetPersonaAccessApiRequest(BaseModel):
 
     persona_id: UUID | None = None
     draft_id: UUID | None = None
-    draft_group_id: UUID | None = None
-    draft_version: int | None = None
 
 class GetPersonaAccessApiResponse(BaseModel):
 
     persona_exists: bool | None = None
-    effective_draft_version: int | None = None
-    group_id: UUID | None = None
     persona_department_ids: list[UUID] | None = None
     active_scenario_count: int | None = None
 
@@ -9322,102 +9312,6 @@ class GetPersonaDocsJunctionsApiResponse(BaseModel):
 
 
 # Generated from: get_persona_generation_context
-
-
-# Generated from: get_persona_ids
-
-class GetPersonaIdsSqlParams(BaseModel):
-
-    profile_id: UUID
-    persona_id: UUID | None = None
-    draft_id: UUID | None = None
-    group_id: UUID | None = None
-    user_department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.profile_id,
-            self.persona_id,
-            self.draft_id,
-            self.group_id,
-            self.user_department_ids,
-        )
-
-class GetPersonaIdsSqlRow(BaseModel):
-
-    name_id: UUID | None = None
-    description_id: UUID | None = None
-    color_id: UUID | None = None
-    icon_id: UUID | None = None
-    instructions_id: UUID | None = None
-    active_flag_id: UUID | None = None
-    department_ids: list[UUID] | None = None
-    parameter_field_ids: list[UUID] | None = None
-    example_ids: list[UUID] | None = None
-    parameter_ids: list[UUID] | None = None
-    name_suggestions: list[UUID] | None = None
-    description_suggestions: list[UUID] | None = None
-    color_suggestions: list[UUID] | None = None
-    icon_suggestions: list[UUID] | None = None
-    instructions_suggestions: list[UUID] | None = None
-    department_suggestions: list[UUID] | None = None
-    parameter_field_suggestions: list[UUID] | None = None
-    example_suggestions: list[UUID] | None = None
-    parameter_suggestions: list[UUID] | None = None
-    candidate_agents: Any | None = None
-    names_has_tools: bool | None = None
-    colors_has_tools: bool | None = None
-    icons_has_tools: bool | None = None
-    instructions_has_tools: bool | None = None
-    departments_has_tools: bool | None = None
-    parameter_fields_has_tools: bool | None = None
-    examples_has_tools: bool | None = None
-    parameters_has_tools: bool | None = None
-    config_agent_resource_ids: list[UUID] | None = None
-    config_model_resource_ids: list[UUID] | None = None
-    config_provider_resource_ids: list[UUID] | None = None
-
-class GetPersonaIdsApiRequest(BaseModel):
-
-    persona_id: UUID | None = None
-    draft_id: UUID | None = None
-    group_id: UUID | None = None
-    user_department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-
-class GetPersonaIdsApiResponse(BaseModel):
-
-    name_id: UUID | None = None
-    description_id: UUID | None = None
-    color_id: UUID | None = None
-    icon_id: UUID | None = None
-    instructions_id: UUID | None = None
-    active_flag_id: UUID | None = None
-    department_ids: list[UUID] | None = None
-    parameter_field_ids: list[UUID] | None = None
-    example_ids: list[UUID] | None = None
-    parameter_ids: list[UUID] | None = None
-    name_suggestions: list[UUID] | None = None
-    description_suggestions: list[UUID] | None = None
-    color_suggestions: list[UUID] | None = None
-    icon_suggestions: list[UUID] | None = None
-    instructions_suggestions: list[UUID] | None = None
-    department_suggestions: list[UUID] | None = None
-    parameter_field_suggestions: list[UUID] | None = None
-    example_suggestions: list[UUID] | None = None
-    parameter_suggestions: list[UUID] | None = None
-    candidate_agents: Any | None = None
-    names_has_tools: bool | None = None
-    colors_has_tools: bool | None = None
-    icons_has_tools: bool | None = None
-    instructions_has_tools: bool | None = None
-    departments_has_tools: bool | None = None
-    parameter_fields_has_tools: bool | None = None
-    examples_has_tools: bool | None = None
-    parameters_has_tools: bool | None = None
-    config_agent_resource_ids: list[UUID] | None = None
-    config_model_resource_ids: list[UUID] | None = None
-    config_provider_resource_ids: list[UUID] | None = None
-
 
 
 # Generated from: get_persona_resource_data
@@ -20506,23 +20400,17 @@ class GetScenarioAccessSqlParams(BaseModel):
     profile_id: UUID
     scenario_id: UUID | None = None
     draft_id: UUID | None = None
-    draft_group_id: UUID | None = None
-    draft_version: int | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.profile_id,
             self.scenario_id,
             self.draft_id,
-            self.draft_group_id,
-            self.draft_version,
         )
 
 class GetScenarioAccessSqlRow(BaseModel):
 
     scenario_exists: bool | None = None
-    effective_draft_version: int | None = None
-    group_id: UUID | None = None
     scenario_department_ids: list[UUID] | None = None
     active_simulation_count: int | None = None
 
@@ -20530,14 +20418,10 @@ class GetScenarioAccessApiRequest(BaseModel):
 
     scenario_id: UUID | None = None
     draft_id: UUID | None = None
-    draft_group_id: UUID | None = None
-    draft_version: int | None = None
 
 class GetScenarioAccessApiResponse(BaseModel):
 
     scenario_exists: bool | None = None
-    effective_draft_version: int | None = None
-    group_id: UUID | None = None
     scenario_department_ids: list[UUID] | None = None
     active_simulation_count: int | None = None
 
@@ -20617,33 +20501,7 @@ class GetScenarioIdsSqlRow(BaseModel):
     image_suggestions: list[UUID] | None = None
     video_suggestions: list[UUID] | None = None
     question_suggestions: list[UUID] | None = None
-    candidate_agents: Any | None = None
-    names_has_tools: bool | None = None
-    descriptions_has_tools: bool | None = None
-    problem_statements_has_tools: bool | None = None
-    departments_has_tools: bool | None = None
-    personas_has_tools: bool | None = None
-    documents_has_tools: bool | None = None
-    parameters_has_tools: bool | None = None
-    parameter_fields_has_tools: bool | None = None
-    objectives_has_tools: bool | None = None
-    images_has_tools: bool | None = None
-    videos_has_tools: bool | None = None
-    questions_has_tools: bool | None = None
     video_enabled_value: bool | None = None
-    name_domain_id: UUID | None = None
-    description_domain_id: UUID | None = None
-    problem_statement_domain_id: UUID | None = None
-    flag_domain_id: UUID | None = None
-    departments_domain_id: UUID | None = None
-    personas_domain_id: UUID | None = None
-    documents_domain_id: UUID | None = None
-    parameters_domain_id: UUID | None = None
-    parameter_fields_domain_id: UUID | None = None
-    objectives_domain_id: UUID | None = None
-    images_domain_id: UUID | None = None
-    videos_domain_id: UUID | None = None
-    questions_domain_id: UUID | None = None
 
 class GetScenarioIdsApiRequest(BaseModel):
 
@@ -20682,33 +20540,7 @@ class GetScenarioIdsApiResponse(BaseModel):
     image_suggestions: list[UUID] | None = None
     video_suggestions: list[UUID] | None = None
     question_suggestions: list[UUID] | None = None
-    candidate_agents: Any | None = None
-    names_has_tools: bool | None = None
-    descriptions_has_tools: bool | None = None
-    problem_statements_has_tools: bool | None = None
-    departments_has_tools: bool | None = None
-    personas_has_tools: bool | None = None
-    documents_has_tools: bool | None = None
-    parameters_has_tools: bool | None = None
-    parameter_fields_has_tools: bool | None = None
-    objectives_has_tools: bool | None = None
-    images_has_tools: bool | None = None
-    videos_has_tools: bool | None = None
-    questions_has_tools: bool | None = None
     video_enabled_value: bool | None = None
-    name_domain_id: UUID | None = None
-    description_domain_id: UUID | None = None
-    problem_statement_domain_id: UUID | None = None
-    flag_domain_id: UUID | None = None
-    departments_domain_id: UUID | None = None
-    personas_domain_id: UUID | None = None
-    documents_domain_id: UUID | None = None
-    parameters_domain_id: UUID | None = None
-    parameter_fields_domain_id: UUID | None = None
-    objectives_domain_id: UUID | None = None
-    images_domain_id: UUID | None = None
-    videos_domain_id: UUID | None = None
-    questions_domain_id: UUID | None = None
 
 
 
@@ -21844,6 +21676,46 @@ class GetNameByIdApiRequest(BaseModel):
 class GetNameByIdApiResponse(BaseModel):
 
     name: str | None = None
+
+
+
+# Generated from: get_simulation_access
+
+class GetSimulationAccessSqlParams(BaseModel):
+
+    profile_id: UUID
+    simulation_id: UUID | None = None
+    draft_id: UUID | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.simulation_id,
+            self.draft_id,
+        )
+
+class GetSimulationAccessSqlRow(BaseModel):
+
+    simulation_department_ids: list[UUID] | None = None
+    simulation_exists: bool | None = None
+    group_id: UUID | None = None
+    draft_version: int | None = None
+    cohort_usage_count: int | None = None
+    effective_draft_version: int | None = None
+
+class GetSimulationAccessApiRequest(BaseModel):
+
+    simulation_id: UUID | None = None
+    draft_id: UUID | None = None
+
+class GetSimulationAccessApiResponse(BaseModel):
+
+    simulation_department_ids: list[UUID] | None = None
+    simulation_exists: bool | None = None
+    group_id: UUID | None = None
+    draft_version: int | None = None
+    cohort_usage_count: int | None = None
+    effective_draft_version: int | None = None
 
 
 
@@ -27542,12 +27414,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetPersonaGenerationContextApiRequest",
         "GetPersonaGenerationContextApiResponse",
     ),
-    "app/sql/v4/queries/personas/get_persona_ids_complete.sql": (
-        "GetPersonaIdsSqlParams",
-        "GetPersonaIdsSqlRow",
-        "GetPersonaIdsApiRequest",
-        "GetPersonaIdsApiResponse",
-    ),
     "app/sql/v4/queries/personas/get_persona_resource_data_complete.sql": (
         "GetPersonaResourceDataSqlParams",
         "GetPersonaResourceDataSqlRow",
@@ -29300,6 +29166,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetNameByIdApiRequest",
         "GetNameByIdApiResponse",
     ),
+    "app/sql/v4/queries/simulations/get_simulation_access_complete.sql": (
+        "GetSimulationAccessSqlParams",
+        "GetSimulationAccessSqlRow",
+        "GetSimulationAccessApiRequest",
+        "GetSimulationAccessApiResponse",
+    ),
     "app/sql/v4/queries/simulations/get_simulation_docs_complete.sql": (
         "GetSimulationDocsSqlParams",
         "GetSimulationDocsSqlRow",
@@ -30997,11 +30869,6 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/queries/personas/get_persona_ids_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
         file_path: Literal["app/sql/v4/queries/personas/get_persona_resource_data_complete.sql"]
     ) -> SqlString: ...
 
@@ -32458,6 +32325,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/queries/simulations/get_name_by_id_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/simulations/get_simulation_access_complete.sql"]
     ) -> SqlString: ...
 
     @overload
