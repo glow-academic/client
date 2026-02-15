@@ -243,7 +243,7 @@ class TrainingSimulationOperational(BaseModel):
     # Display metadata
     color: str | None = None  # from persona
     icon: str | None = None  # from persona
-    # Card stats from mv_attempt_facts
+    # Card stats from mv_profile_facts
     view_mode: str | None = None  # 'member' | 'instructional' | 'practice'
     num_sessions: int | None = None  # attempt_count
     highest_score: int | None = None  # highest_score_percent rounded

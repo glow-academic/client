@@ -497,7 +497,7 @@ def build_leaderboard_sections(
         ),
         filters=_section(
             bool(attempts) or bool(profile_rows),
-            "Filter IDs sourced from mv_attempt_facts and mv_profile_metrics",
+            "Filter IDs sourced from mv_profile_facts and mv_profile_metrics",
         ),
         accolade_winners=compute_accolade_winners(row_data),
     )

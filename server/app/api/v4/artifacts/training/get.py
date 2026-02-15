@@ -197,7 +197,7 @@ async def get_training_internal(
 
     Phase 1: Three parallel view fetches (always)
       - get_training_context_view_internal → mv_training (card defs + user_role)
-      - get_attempt_facts_internal(profile_id=user) → mv_attempt_facts (personal stats)
+      - get_attempt_facts_internal(profile_id=user) → mv_profile_facts (personal stats)
       - get_auth_profile_internal → profile context (role)
 
     Phase 2a: Parallel resource hydration (after Phase 1)

@@ -201,11 +201,6 @@ BEGIN
 
     END IF;
 
-    -- Ensure scenario-group linkage is present
-    INSERT INTO scenario_groups_junction (scenario_id, group_id)
-    VALUES (v_scenario_id, v_group_id)
-    ON CONFLICT DO NOTHING;
-
     -- Validate required resource IDs exist (single-select resources)
     IF v_name_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM names_resource WHERE id = v_name_id) THEN
         RAISE EXCEPTION 'Name resource not found: %', v_name_id;

@@ -90,8 +90,23 @@ function MainLayoutContent({
   const canShowAnalyticsFilters = pageMetadata?.show_analytics_filters ?? false;
 
   const handleSectionChange = (section: string) => {
-    // Find URL for section from breadcrumbs or sidebar
-    router.push(`/${section}`);
+    // Look up the correct URL from sidebar routes (handles nested routes like /training/cohorts)
+    const sidebarRoutes = pageData?.sidebar_routes ?? [];
+    let targetUrl = `/${section}`;
+    for (const route of sidebarRoutes) {
+      if (route.section === section) {
+        targetUrl = route.url;
+        break;
+      }
+      if (route.items) {
+        const child = route.items.find((item) => item.section === section);
+        if (child) {
+          targetUrl = child.url;
+          break;
+        }
+      }
+    }
+    router.push(targetUrl);
     router.refresh();
   };
 

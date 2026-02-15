@@ -25,10 +25,12 @@ export function NavigationBreadcrumbs({
     section?: string | null;
     url?: string;
   }) => {
-    if (onSectionChange && crumb.section) {
-      onSectionChange(crumb.section);
-    } else if (crumb.url) {
+    // Prefer the server-provided URL (handles nested routes like /training/cohorts)
+    if (crumb.url) {
       router.push(crumb.url);
+      router.refresh();
+    } else if (onSectionChange && crumb.section) {
+      onSectionChange(crumb.section);
     }
   };
 

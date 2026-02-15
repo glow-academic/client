@@ -43,7 +43,7 @@ class PageFilterConfig:
     """Static per-page filter configuration."""
 
     fields: AnalyticsFilterFields
-    mv_source: str  # "attempt_facts" | "pricing" | "benchmark" | "health"
+    mv_source: str  # "profile_facts" | "pricing" | "benchmark" | "health"
     attempt_options: list[str] = field(default_factory=list)
 
 
@@ -56,7 +56,7 @@ PAGE_FILTER_CONFIGS: dict[str, PageFilterConfig] = {
             roles=HIDDEN,
             attempts=HIDDEN,
         ),
-        mv_source="attempt_facts",
+        mv_source="profile_facts",
     ),
     "/practice": PageFilterConfig(
         fields=AnalyticsFilterFields(
@@ -66,7 +66,7 @@ PAGE_FILTER_CONFIGS: dict[str, PageFilterConfig] = {
             roles=HIDDEN,
             attempts=HIDDEN,
         ),
-        mv_source="attempt_facts",
+        mv_source="profile_facts",
     ),
     "/leaderboard": PageFilterConfig(
         fields=AnalyticsFilterFields(
@@ -76,7 +76,7 @@ PAGE_FILTER_CONFIGS: dict[str, PageFilterConfig] = {
             roles=HIDDEN,
             attempts=VISIBLE,
         ),
-        mv_source="attempt_facts",
+        mv_source="profile_facts",
         attempt_options=["general", "practice", "archived"],
     ),
     "/analytics/dashboard": PageFilterConfig(
@@ -87,7 +87,7 @@ PAGE_FILTER_CONFIGS: dict[str, PageFilterConfig] = {
             roles=VISIBLE,
             attempts=VISIBLE,
         ),
-        mv_source="attempt_facts",
+        mv_source="profile_facts",
         attempt_options=["general", "practice", "archived"],
     ),
     "/analytics/reports": PageFilterConfig(
@@ -98,7 +98,7 @@ PAGE_FILTER_CONFIGS: dict[str, PageFilterConfig] = {
             roles=VISIBLE,
             attempts=VISIBLE,
         ),
-        mv_source="attempt_facts",
+        mv_source="profile_facts",
         attempt_options=["general", "practice", "archived"],
     ),
     "/analytics/reports/[id]": PageFilterConfig(
@@ -109,7 +109,7 @@ PAGE_FILTER_CONFIGS: dict[str, PageFilterConfig] = {
             roles=HIDDEN,
             attempts=VISIBLE,
         ),
-        mv_source="attempt_facts",
+        mv_source="profile_facts",
         attempt_options=["general", "practice", "archived"],
     ),
     "/analytics/pricing": PageFilterConfig(
@@ -165,7 +165,7 @@ def get_page_filter_config(pathname: str) -> PageFilterConfig | None:
 # ---------------------------------------------------------------------------
 
 
-async def fetch_attempt_facts_filters(
+async def fetch_profile_facts_filters(
     pool: asyncpg.Pool,
     dept_ids: list[str],
     cohort_ids: list[str],
@@ -176,7 +176,7 @@ async def fetch_attempt_facts_filters(
     str | None,
     str | None,
 ]:
-    """Fetch filter options from mv_attempt_facts."""
+    """Fetch filter options from mv_profile_facts."""
     dept_opts: list[AnalyticsFilterOption] = []
     cohort_opts: list[AnalyticsFilterOption] = []
     earliest: str | None = None
@@ -186,10 +186,10 @@ async def fetch_attempt_facts_filters(
         async with pool.acquire() as c:
             rows = await c.fetch(
                 """
-                SELECT DISTINCT maf.department_id, dr.name
-                FROM mv_attempt_facts maf
-                JOIN departments_resource dr ON dr.id = maf.department_id
-                WHERE maf.department_id = ANY($1::uuid[])
+                SELECT DISTINCT pf.department_id, dr.name
+                FROM mv_profile_facts pf
+                JOIN departments_resource dr ON dr.id = pf.department_id
+                WHERE pf.department_id = ANY($1::uuid[])
                 ORDER BY dr.name
                 """,
                 [UUID(did) for did in dept_ids],
@@ -203,10 +203,10 @@ async def fetch_attempt_facts_filters(
         async with pool.acquire() as c:
             rows = await c.fetch(
                 """
-                SELECT DISTINCT maf.cohort_id, cr.name
-                FROM mv_attempt_facts maf
-                JOIN cohorts_resource cr ON cr.id = maf.cohort_id
-                WHERE maf.cohort_id = ANY($1::uuid[])
+                SELECT DISTINCT pf.cohort_id, cr.name
+                FROM mv_profile_facts pf
+                JOIN cohorts_resource cr ON cr.id = pf.cohort_id
+                WHERE pf.cohort_id = ANY($1::uuid[])
                 ORDER BY cr.name
                 """,
                 [UUID(cid) for cid in cohort_ids],
@@ -220,9 +220,9 @@ async def fetch_attempt_facts_filters(
         async with pool.acquire() as c:
             row = await c.fetchrow(
                 """
-                SELECT MIN(attempt_created_at) as earliest,
-                       MAX(attempt_created_at) as latest
-                FROM mv_attempt_facts
+                SELECT MIN(attempt_date) as earliest,
+                       MAX(attempt_date) as latest
+                FROM mv_profile_facts
                 WHERE department_id = ANY($1::uuid[])
                 """,
                 [UUID(did) for did in dept_ids],
@@ -411,8 +411,8 @@ async def get_analytics_filters(
         raise HTTPException(status_code=500, detail="Database pool not available")
 
     # Dispatch to the appropriate MV fetch function
-    if config.mv_source == "attempt_facts":
-        dept_opts, cohort_opts, earliest, latest = await fetch_attempt_facts_filters(
+    if config.mv_source == "profile_facts":
+        dept_opts, cohort_opts, earliest, latest = await fetch_profile_facts_filters(
             pool, dept_ids, cohort_ids, config.fields
         )
     elif config.mv_source == "pricing":

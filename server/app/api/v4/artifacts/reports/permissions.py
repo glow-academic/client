@@ -465,7 +465,7 @@ def compute_overview_section(
         reverse=True,
     )
     return ReportsOverviewSection(
-        status=_section(bool(rows), "Derived from mv_attempt_facts"),
+        status=_section(bool(rows), "Derived from mv_profile_facts"),
         rows=rows,
     )
 
@@ -603,7 +603,7 @@ def compute_history_section(
         )
 
     return ReportsHistorySection(
-        status=_section(bool(rows), "Uses mv_attempt_facts timeline"),
+        status=_section(bool(rows), "Uses mv_profile_facts timeline"),
         rows=rows,
     )
 
