@@ -661,7 +661,7 @@ async def get_scenario_internal(
                 c, selected_parameter_field_ids, bypass_cache
             )
             available = await search_parameter_fields_internal(
-                c, param_ids, bypass_cache
+                c, param_ids, bypass_cache=bypass_cache
             )
             return (selected, available)
 

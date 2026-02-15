@@ -407,6 +407,17 @@ async def get_db() -> AsyncGenerator[asyncpg.Connection, None]:
         yield connection
 
 
+async def expire_all_connections() -> None:
+    """Expire all pooled connections after a DB schema change (e.g. migrate-db).
+
+    This forces the pool to create fresh connections with up-to-date OIDs
+    instead of reusing stale ones that reference dropped/recreated objects.
+    """
+    if _db_pool:
+        await _db_pool.expire_connections()
+        print("🔄 All pooled connections expired (schema change detected)")
+
+
 @asynccontextmanager
 async def transaction(
     conn: asyncpg.Connection,
@@ -925,6 +936,10 @@ async def init_system() -> JSONResponse:
         if sql_success:
             init_messages.append(sql_message)
             logger.info(f"SQL compilation: {sql_message}")
+            # Expire all pooled connections after SQL compilation so prepared
+            # statements referencing old OIDs are discarded (fixes "could not
+            # open relation with OID" errors after migrate-db).
+            await expire_all_connections()
         else:
             init_errors.append(sql_message)
             logger.warning(f"SQL compilation: {sql_message}")

@@ -31,21 +31,12 @@ from app.api.v4.views.attempt.list.types import AttemptViewItem
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
-from app.sql.types import (
-    GetHomeContextSqlParams,
-    GetPracticeContextSqlParams,
-)
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
-from app.utils.sql_helper import execute_sql_typed
 
-HOME_CONTEXT_SQL_PATH = (
-    "app/sql/v4/queries/analytics/home/get_home_context_complete.sql"
-)
-PRACTICE_CONTEXT_SQL_PATH = (
-    "app/sql/v4/queries/analytics/practice/get_practice_context_complete.sql"
-)
+# Default pass threshold (was hardcoded as 70.0 in the deleted context SQL functions)
+DEFAULT_PASS_THRESHOLD = 70.0
 
 router = APIRouter()
 
@@ -535,30 +526,23 @@ async def list_attempts(
         # Use target_profile_id when viewing another user's report
         query_profile_id = request.target_profile_id or profile_resource_id
 
-        if request.practice:
-            context = await execute_sql_typed(
-                conn,
-                PRACTICE_CONTEXT_SQL_PATH,
-                params=GetPracticeContextSqlParams(profile_id=profile_resource_id),
-            )
-        else:
-            context = await execute_sql_typed(
-                conn,
-                HOME_CONTEXT_SQL_PATH,
-                params=GetHomeContextSqlParams(profile_id=profile_resource_id),
-            )
+        # Fetch actor name from profile (replaces deleted context SQL functions)
+        actor_name = await conn.fetchval(
+            "SELECT COALESCE(name, '') FROM profiles_resource WHERE id = $1",
+            profile_resource_id,
+        )
 
-        if context.actor_name:
+        if actor_name:
             audit_set(
-                http_request, actor={"name": context.actor_name, "id": profile_id}
+                http_request, actor={"name": actor_name, "id": profile_id}
             )
 
         result = await get_attempt_list_artifact_internal(
             conn=conn,
             request=request,
             profile_resource_id=query_profile_id,
-            pass_threshold=context.pass_threshold,
-            actor_name=context.actor_name,
+            pass_threshold=DEFAULT_PASS_THRESHOLD,
+            actor_name=actor_name,
             bypass_cache=bypass_cache,
             cache_key_path=http_request.url.path,
         )

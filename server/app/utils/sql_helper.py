@@ -169,7 +169,7 @@ async def execute_sql_typed(
         function_call_sql = function_call_sql.strip().rstrip(";")
 
         # Fetch rows (use fetch for both single and multi-row - consistent with raw SQL path)
-        # Retry once on schema change (e.g. after sql-compile drops/recreates types while server is running)
+        # Retry once on schema change (e.g. after sql-compile or migrate-db while server is running)
         try:
             if sql_params:
                 rows = await conn.fetch(function_call_sql, *sql_params)
@@ -178,8 +178,14 @@ async def execute_sql_typed(
         except (
             asyncpg.exceptions.InvalidCachedStatementError,
             asyncpg.exceptions.InternalClientError,
+            asyncpg.exceptions.InternalServerError,
         ):
+            # After DB drop/restore (migrate-db), OIDs change and connections hold stale
+            # prepared statements. reload_schema_state() clears client-side caches and
+            # re-introspects types so the retry uses fresh OIDs.
             await conn.reload_schema_state()
+            # Re-create the function on this connection (OIDs changed)
+            await conn.execute(sql_text)
             if sql_params:
                 rows = await conn.fetch(function_call_sql, *sql_params)
             else:
