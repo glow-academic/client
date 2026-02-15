@@ -421,18 +421,24 @@ async def get_training_internal(
             highest_score_percent = ps.get("highest_score_percent")
             has_passed = ps.get("has_passed", False)
 
-            # Persona color/icon — derived from first scenario's first persona
+            # Persona color/icon — only when all scenarios share the same color
             color: str | None = None
             icon: str | None = None
             if item.scenario_ids:
+                unique_colors: set[str | None] = set()
+                first_persona = None
                 for sid in item.scenario_ids:
                     scenario = scenario_map.get(sid)
                     if scenario and scenario.persona_ids:
                         persona = persona_map.get(scenario.persona_ids[0])
                         if persona:
-                            color = persona.color
-                            icon = persona.icon
-                            break
+                            unique_colors.add(persona.color)
+                            if first_persona is None:
+                                first_persona = persona
+                # Only set color if all scenarios resolve to the same color
+                if len(unique_colors) == 1 and first_persona:
+                    color = first_persona.color
+                    icon = first_persona.icon
 
             # Derive standard_group_ids from rubrics
             item_sg_ids: list[UUID] = []
