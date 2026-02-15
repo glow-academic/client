@@ -16,6 +16,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useResourceAi } from "@/hooks/use-resource-ai";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 import { Check, Loader2, Sparkles, X } from "lucide-react";
@@ -86,18 +87,34 @@ export function Endpoints({
   create_tool_id,
   createEndpointsAction,
   onGenerate,
-  isGenerating = false,
+  isGenerating: _isGenerating = false,
   showAiGenerate = false,
   isAutosaveEnabled = true,
   registerFlush,
-  // AI diff view props
-  aiEndpointResources,
-  onAccept,
-  onReject,
+  // AI diff view props (deprecated — kept for interface compat)
+  aiEndpointResources: _aiEndpointResources,
+  onAccept: _onAccept,
+  onReject: _onReject,
 }: EndpointsProps) {
   const ids = useMemo(() => endpoint_ids ?? [], [endpoint_ids]);
   const show = show_endpoints ?? false;
   const allEndpoints = useMemo(() => endpoints ?? [], [endpoints]);
+
+  // Socket-based AI suggestion handling via shared hook
+  const { isGenerating: aiIsGenerating, aiSuggestions, accept: acceptAi, reject: rejectAi } = useResourceAi<{
+    id: string | null;
+    base_url: string | null;
+  }>({
+    resourceType: "endpoints",
+    groupId: group_id,
+    extractSuggestion: (data) => {
+      const id = data.id as string | null | undefined;
+      const base_url = data.base_url as string | null | undefined;
+      if (!id) return null;
+      return { id, base_url: base_url ?? null };
+    },
+    accumulate: true,
+  });
   const suggestionsList = useMemo(
     () => endpoint_suggestions ?? [],
     [endpoint_suggestions]
@@ -180,30 +197,33 @@ export function Endpoints({
   }, [endpoint_resources]);
 
   // AI suggestion state
-  const showDiff = !!aiEndpointResources?.length;
-
-  // Get AI-suggested IDs (kept for potential future use)
-  const _aiSuggestedIds = useMemo(
-    () => new Set(aiEndpointResources?.map((r) => r.id).filter(Boolean) as string[]),
-    [aiEndpointResources]
+  const showDiff = aiSuggestions.length > 0;
+  const aiSuggestedIds = useMemo(
+    () =>
+      new Set(
+        aiSuggestions
+          .map((e) => e.id)
+          .filter(Boolean) as string[]
+      ),
+    [aiSuggestions]
   );
 
   // Accept AI suggestion - add AI-suggested endpoints to selection
   const handleAccept = useCallback(() => {
-    if (!aiEndpointResources?.length) return;
-    const newIds = aiEndpointResources
+    if (aiSuggestions.length === 0) return;
+    const newIds = aiSuggestions
       .map((e) => e.id)
-      .filter((id): id is string => !!id);
+      .filter((id): id is string => !!id && !ids.includes(id));
     if (newIds.length > 0) {
       onChange([...ids, ...newIds]);
     }
-    onAccept?.();
-  }, [aiEndpointResources, ids, onChange, onAccept]);
+    acceptAi();
+  }, [aiSuggestions, ids, onChange, acceptAi]);
 
   // Reject AI suggestion - just clear the pending state
   const handleReject = useCallback(() => {
-    onReject?.();
-  }, [onReject]);
+    rejectAi();
+  }, [rejectAi]);
 
   // Don't render if show_endpoints is false (AFTER all hooks)
   if (!show) {
@@ -233,9 +253,9 @@ export function Endpoints({
                     size="icon"
                     className="h-6 w-6"
                     onClick={onGenerate}
-                    disabled={disabled || isGenerating || showDiff}
+                    disabled={disabled || aiIsGenerating || showDiff}
                   >
-                    {isGenerating ? (
+                    {aiIsGenerating ? (
                       <Loader2 className="h-3.5 w-3.5 animate-spin" />
                     ) : (
                       <Sparkles className="h-3.5 w-3.5" />
@@ -287,11 +307,11 @@ export function Endpoints({
         </div>
       )}
       {/* AI-suggested endpoints preview */}
-      {showDiff && aiEndpointResources && aiEndpointResources.length > 0 && (
+      {showDiff && aiSuggestions.length > 0 && (
         <div className="mb-4 space-y-2">
           <p className="text-sm font-medium text-success">AI Suggested Endpoints</p>
           <div className="space-y-2">
-            {aiEndpointResources.map((item, idx) => (
+            {aiSuggestions.map((item, idx) => (
               <div
                 key={item.id || idx}
                 className={cn(

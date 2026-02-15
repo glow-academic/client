@@ -26,6 +26,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { useResourceAi } from "@/hooks/use-resource-ai";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 

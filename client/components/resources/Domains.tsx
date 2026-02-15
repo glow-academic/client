@@ -16,6 +16,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useResourceAi } from "@/hooks/use-resource-ai";
 import type { OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 import { Check, Loader2, Sparkles, X } from "lucide-react";
@@ -40,7 +41,8 @@ export interface DomainsProps {
   disabled?: boolean;
   onChange: (ids: string[]) => void;
   label?: string;
-  // AI diff props
+  group_id?: string | null;
+  // AI diff props (deprecated - now handled by useResourceAi hook)
   aiDomainResources?: Pick<DomainResourceItem, "id" | "resource">[] | null;
   onAccept?: () => void;
   onReject?: () => void;
@@ -58,13 +60,10 @@ export function Domains({
   disabled = false,
   onChange,
   label = "Domains",
-  // AI diff props
-  aiDomainResources,
-  onAccept,
-  onReject,
+  group_id,
+  // AI diff props (deprecated - now handled by useResourceAi hook)
   showAiGenerate,
   onGenerate,
-  isGenerating,
 }: DomainsProps) {
   const ids = useMemo(() => domain_ids ?? [], [domain_ids]);
   const show = show_domains ?? false;
@@ -74,16 +73,30 @@ export function Domains({
     [domain_suggestions]
   );
 
+  // Socket-based AI suggestion handling via shared hook
+  const { isGenerating: aiIsGenerating, aiSuggestions, accept: acceptAi, reject: rejectAi } = useResourceAi<{
+    id: string | null;
+    resource: string | null;
+  }>({
+    resourceType: "domains",
+    groupId: group_id,
+    extractSuggestion: (data) => {
+      if (!data.success && data.success !== undefined) return null;
+      return { id: (data.id as string) ?? null, resource: (data.resource as string) ?? null };
+    },
+    accumulate: true,
+  });
+
   // AI suggestion state
-  const showDiff = !!aiDomainResources?.length;
+  const showDiff = aiSuggestions.length > 0;
   const aiSuggestedIds = useMemo(
     () =>
       new Set(
-        aiDomainResources
-          ?.map((d) => d.id)
+        aiSuggestions
+          .map((d) => d.id)
           .filter(Boolean) as string[]
       ),
-    [aiDomainResources]
+    [aiSuggestions]
   );
 
   // Convert to items format for SelectableGrid
@@ -111,19 +124,19 @@ export function Domains({
 
   // Accept AI suggestion
   const handleAccept = useCallback(() => {
-    if (!aiDomainResources?.length) return;
-    const newIds = aiDomainResources
+    if (aiSuggestions.length === 0) return;
+    const newIds = aiSuggestions
       .map((d) => d.id)
       .filter((id): id is string => !!id && !ids.includes(id));
     if (newIds.length > 0) {
       onChange([...ids, ...newIds]);
     }
-    onAccept?.();
-  }, [aiDomainResources, ids, onChange, onAccept]);
+    acceptAi();
+  }, [aiSuggestions, ids, onChange, acceptAi]);
 
   const handleReject = useCallback(() => {
-    onReject?.();
-  }, [onReject]);
+    rejectAi();
+  }, [rejectAi]);
 
   // Check if any domain resource is generated (must be before early return)
   const hasGenerated = useMemo(() => {
@@ -150,9 +163,9 @@ export function Domains({
                     size="icon"
                     className="h-6 w-6"
                     onClick={onGenerate}
-                    disabled={disabled || isGenerating || showDiff}
+                    disabled={disabled || aiIsGenerating || showDiff}
                   >
-                    {isGenerating ? (
+                    {aiIsGenerating ? (
                       <Loader2 className="h-3.5 w-3.5 animate-spin" />
                     ) : (
                       <Sparkles className="h-3.5 w-3.5" />

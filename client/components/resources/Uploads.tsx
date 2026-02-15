@@ -17,6 +17,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import type { InputOf, OutputOf } from "@/lib/api/types";
+import { useResourceAi } from "@/hooks/use-resource-ai";
 import { cn } from "@/lib/utils";
 import { inferMimeFromName } from "@/utils/mime-map";
 import { Check, Loader2, Sparkles, UploadCloud, X } from "lucide-react";
@@ -89,20 +90,36 @@ export function Uploads({
   create_tool_id,
   createUploadsAction,
   onGenerate,
-  isGenerating = false,
+  isGenerating: _isGenerating = false,
   showAiGenerate = false,
   finalizeUploadAction,
   searchTerm = "",
   isAutosaveEnabled: _isAutosaveEnabled = true,
   registerFlush,
-  // AI diff view props
-  aiUploadResources,
-  onAccept,
-  onReject,
+  // AI diff view props (deprecated — kept for interface compat)
+  aiUploadResources: _aiUploadResources,
+  onAccept: _onAccept,
+  onReject: _onReject,
 }: UploadsProps) {
   const ids = useMemo(() => upload_ids ?? [], [upload_ids]);
   const show = show_uploads ?? true;
   const allUploads = useMemo(() => uploads ?? [], [uploads]);
+
+  // Socket-based AI suggestion handling via shared hook
+  const { isGenerating: aiIsGenerating, aiSuggestions, accept: acceptAi, reject: rejectAi } = useResourceAi<{
+    id: string | null;
+    file_path: string | null;
+  }>({
+    resourceType: "uploads",
+    groupId: group_id,
+    extractSuggestion: (data) => {
+      const id = data.id as string | null | undefined;
+      const file_path = data.file_path as string | null | undefined;
+      if (!id) return null;
+      return { id, file_path: file_path ?? null };
+    },
+    accumulate: true,
+  });
   const suggestionsList = useMemo(
     () => upload_suggestions ?? [],
     [upload_suggestions]
@@ -413,30 +430,33 @@ export function Uploads({
   );
 
   // AI suggestion state
-  const showDiff = !!aiUploadResources?.length;
-
-  // Get AI-suggested IDs (kept for potential future use)
-  const _aiSuggestedIds = useMemo(
-    () => new Set(aiUploadResources?.map((r) => r.id).filter(Boolean) as string[]),
-    [aiUploadResources]
+  const showDiff = aiSuggestions.length > 0;
+  const aiSuggestedIds = useMemo(
+    () =>
+      new Set(
+        aiSuggestions
+          .map((u) => u.id)
+          .filter(Boolean) as string[]
+      ),
+    [aiSuggestions]
   );
 
   // Accept AI suggestion - add AI-suggested uploads to selection
   const handleAccept = useCallback(() => {
-    if (!aiUploadResources?.length) return;
-    const newIds = aiUploadResources
+    if (aiSuggestions.length === 0) return;
+    const newIds = aiSuggestions
       .map((u) => u.id)
-      .filter((id): id is string => !!id);
+      .filter((id): id is string => !!id && !ids.includes(id));
     if (newIds.length > 0) {
       onChange([...ids, ...newIds]);
     }
-    onAccept?.();
-  }, [aiUploadResources, ids, onChange, onAccept]);
+    acceptAi();
+  }, [aiSuggestions, ids, onChange, acceptAi]);
 
   // Reject AI suggestion - just clear the pending state
   const handleReject = useCallback(() => {
-    onReject?.();
-  }, [onReject]);
+    rejectAi();
+  }, [rejectAi]);
 
   const hasGenerated = useMemo(() => {
     return upload_resources?.some((u) => u.generated) ?? false;
@@ -484,10 +504,10 @@ export function Uploads({
                     variant="ghost"
                     size="sm"
                     onClick={onGenerate}
-                    disabled={disabled || isGenerating || showDiff}
+                    disabled={disabled || aiIsGenerating || showDiff}
                     className="h-8 w-8 p-0"
                   >
-                    {isGenerating ? (
+                    {aiIsGenerating ? (
                       <Loader2 className="h-4 w-4 animate-spin" />
                     ) : (
                       <Sparkles className="h-4 w-4" />
@@ -538,11 +558,11 @@ export function Uploads({
       </div>
 
       {/* AI-suggested uploads preview */}
-      {showDiff && aiUploadResources && aiUploadResources.length > 0 && (
+      {showDiff && aiSuggestions.length > 0 && (
         <div className="mb-4 space-y-2">
           <p className="text-sm font-medium text-success">AI Suggested Files</p>
           <div className="space-y-2">
-            {aiUploadResources.map((item, idx) => (
+            {aiSuggestions.map((item, idx) => (
               <div
                 key={item.id || idx}
                 className={cn(

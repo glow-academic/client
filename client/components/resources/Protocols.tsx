@@ -16,6 +16,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useResourceAi } from "@/hooks/use-resource-ai";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 import { Check, Loader2, Sparkles, X } from "lucide-react";
@@ -81,12 +82,12 @@ export function Protocols({
   create_tool_id,
   createProtocolsAction,
   onGenerate,
-  isGenerating = false,
+  isGenerating: _isGenerating = false,
   showAiGenerate = false,
-  // AI diff view props
-  aiProtocolResources,
-  onAccept,
-  onReject,
+  // AI diff view props (deprecated - now handled by useResourceAi hook)
+  aiProtocolResources: _aiProtocolResources,
+  onAccept: _onAccept,
+  onReject: _onReject,
   isAutosaveEnabled = true,
   registerFlush,
 }: ProtocolsProps) {
@@ -97,6 +98,20 @@ export function Protocols({
     () => protocol_suggestions ?? [],
     [protocol_suggestions]
   );
+
+  // Socket-based AI suggestion handling via shared hook
+  const { isGenerating: aiIsGenerating, aiSuggestions, accept: acceptAi, reject: rejectAi } = useResourceAi<{
+    id: string | null;
+    value: string | null;
+  }>({
+    resourceType: "protocols",
+    groupId: group_id,
+    extractSuggestion: (data) => {
+      if (!data.success && data.success !== undefined) return null;
+      return { id: (data.id as string) ?? null, value: (data.value as string) ?? null };
+    },
+    accumulate: true,
+  });
 
   // Track which protocol IDs have already had resources created
   const createdProtocolIdsRef = useRef<Set<string>>(new Set());
@@ -213,30 +228,24 @@ export function Protocols({
   }, [protocol_resources]);
 
   // AI suggestion state
-  const showDiff = !!aiProtocolResources?.length;
-
-  // Get AI-suggested IDs (kept for potential future use)
-  const _aiSuggestedIds = useMemo(
-    () => new Set(aiProtocolResources?.map((r) => r.id).filter(Boolean) as string[]),
-    [aiProtocolResources]
-  );
+  const showDiff = aiSuggestions.length > 0;
 
   // Accept AI suggestion - add AI-suggested protocols to selection
   const handleAccept = useCallback(() => {
-    if (!aiProtocolResources?.length) return;
-    const newIds = aiProtocolResources
+    if (aiSuggestions.length === 0) return;
+    const newIds = aiSuggestions
       .map((p) => p.id)
       .filter((id): id is string => !!id);
     if (newIds.length > 0) {
       onChange([...ids, ...newIds]);
     }
-    onAccept?.();
-  }, [aiProtocolResources, ids, onChange, onAccept]);
+    acceptAi();
+  }, [aiSuggestions, ids, onChange, acceptAi]);
 
   // Reject AI suggestion - just clear the pending state
   const handleReject = useCallback(() => {
-    onReject?.();
-  }, [onReject]);
+    rejectAi();
+  }, [rejectAi]);
 
   // Don't render if show_protocols is false (AFTER all hooks)
   if (!show) {
@@ -266,9 +275,9 @@ export function Protocols({
                     size="icon"
                     className="h-6 w-6"
                     onClick={onGenerate}
-                    disabled={disabled || isGenerating || showDiff}
+                    disabled={disabled || aiIsGenerating || showDiff}
                   >
-                    {isGenerating ? (
+                    {aiIsGenerating ? (
                       <Loader2 className="h-3.5 w-3.5 animate-spin" />
                     ) : (
                       <Sparkles className="h-3.5 w-3.5" />
@@ -320,11 +329,11 @@ export function Protocols({
         </div>
       )}
       {/* AI-suggested protocols preview */}
-      {showDiff && aiProtocolResources && aiProtocolResources.length > 0 && (
+      {showDiff && aiSuggestions.length > 0 && (
         <div className="mb-4 space-y-2">
           <p className="text-sm font-medium text-success">AI Suggested Protocols</p>
           <div className="space-y-2">
-            {aiProtocolResources.map((item, idx) => (
+            {aiSuggestions.map((item, idx) => (
               <div
                 key={item.id || idx}
                 className={cn(

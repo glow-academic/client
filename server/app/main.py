@@ -150,6 +150,7 @@ socket_owner: dict[str, str] = {}  # profile_id -> socket_id
 # Global database connection pool
 _db_pool: asyncpg.Pool | None = None
 _test_container: Any | None = None
+_test_db_url: str | None = None
 
 # Global state dictionaries for agent tool results and progress (moved from utils/agents/tools/globals.py)
 # Global storage for classification results
@@ -291,11 +292,21 @@ async def init_db_pool() -> None:
         print("🐳 TEST mode detected: starting disposable Postgres with Testcontainers")
         from testcontainers.postgres import PostgresContainer  # type: ignore[import]
 
-        _test_container = PostgresContainer("postgres:18")
+        reuse = os.getenv("TESTCONTAINERS_REUSE_ENABLE", "false").lower() == "true"
+
+        container = PostgresContainer("postgres:18")
+        if reuse:
+            container = container.with_kwargs(remove=False)
+            container.with_name("glow-test-postgres")
+        _test_container = container
         _test_container.start()
 
         raw_url = _test_container.get_connection_url()
         db_url = raw_url.replace("postgresql+psycopg2://", "postgresql://")
+
+        # Store the base URL — conftest uses this for admin operations
+        global _test_db_url
+        _test_db_url = db_url
 
         pool_config = {
             "min_size": 1,
@@ -305,24 +316,7 @@ async def init_db_pool() -> None:
         _db_pool = await asyncpg.create_pool(db_url, **pool_config)
         print(f"✅ Using test database at {db_url}")
 
-        schema_path = (
-            Path(__file__).resolve().parent.parent.parent / "database" / "schema.sql"
-        )
-        if not schema_path.exists():
-            raise FileNotFoundError(
-                f"Schema file not found at {schema_path}. \n"
-                "Generate it with 'make export-db schema'."
-            )
-
-        schema_sql = schema_path.read_text()
-        # Filter out pg_dump meta-commands (lines starting with \) that can't be executed via asyncpg
-        # These are psql meta-commands, not SQL
-        filtered_sql = "\n".join(
-            line for line in schema_sql.split("\n") if not line.strip().startswith("\\")
-        )
-        async with _db_pool.acquire() as conn:
-            await conn.execute(filtered_sql)
-        print("🗄️  Test schema applied to disposable database")
+        # Schema application is handled by conftest.py (template DB flow)
         return
 
     db_user = os.getenv("DB_USER")
@@ -392,10 +386,14 @@ async def close_db_pool() -> None:
         print("✅ Database pool closed")
 
     if _test_container:
-        print("🐳 Stopping test database container...")
-        _test_container.stop()
+        reuse = os.getenv("TESTCONTAINERS_REUSE_ENABLE", "false").lower() == "true"
+        if reuse:
+            print("🐳 Container reuse enabled — keeping test container alive")
+        else:
+            print("🐳 Stopping test database container...")
+            _test_container.stop()
+            print("✅ Test database container stopped")
         _test_container = None
-        print("✅ Test database container stopped")
 
 
 async def get_db() -> AsyncGenerator[asyncpg.Connection, None]:

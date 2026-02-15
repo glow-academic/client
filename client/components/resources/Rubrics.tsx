@@ -16,6 +16,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useResourceAi } from "@/hooks/use-resource-ai";
 import type { OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 import { Check, Loader2, Sparkles, X } from "lucide-react";
@@ -40,7 +41,8 @@ export interface RubricsProps {
   disabled?: boolean;
   onChange: (ids: string[]) => void;
   label?: string;
-  // AI diff props
+  group_id?: string | null;
+  // AI diff props (deprecated - now handled by useResourceAi hook)
   aiRubricResources?: Pick<RubricsResourceItem, "id" | "name">[] | null;
   onAccept?: () => void;
   onReject?: () => void;
@@ -58,13 +60,10 @@ export function Rubrics({
   disabled = false,
   onChange,
   label = "Rubrics",
-  // AI diff props
-  aiRubricResources,
-  onAccept,
-  onReject,
+  group_id,
+  // AI diff props (deprecated - now handled by useResourceAi hook)
   showAiGenerate,
   onGenerate,
-  isGenerating,
 }: RubricsProps) {
   const ids = useMemo(() => rubric_ids ?? [], [rubric_ids]);
   const show = show_rubrics ?? false;
@@ -74,16 +73,30 @@ export function Rubrics({
     [rubric_suggestions]
   );
 
+  // Socket-based AI suggestion handling via shared hook
+  const { isGenerating: aiIsGenerating, aiSuggestions, accept: acceptAi, reject: rejectAi } = useResourceAi<{
+    id: string | null;
+    name: string | null;
+  }>({
+    resourceType: "rubrics",
+    groupId: group_id,
+    extractSuggestion: (data) => {
+      if (!data.success && data.success !== undefined) return null;
+      return { id: (data.id as string) ?? null, name: (data.name as string) ?? null };
+    },
+    accumulate: true,
+  });
+
   // AI suggestion state
-  const showDiff = !!aiRubricResources?.length;
+  const showDiff = aiSuggestions.length > 0;
   const aiSuggestedIds = useMemo(
     () =>
       new Set(
-        aiRubricResources
-          ?.map((r) => r.id)
+        aiSuggestions
+          .map((r) => r.id)
           .filter(Boolean) as string[]
       ),
-    [aiRubricResources]
+    [aiSuggestions]
   );
 
   // Convert to items format for SelectableGrid
@@ -111,19 +124,19 @@ export function Rubrics({
 
   // Accept AI suggestion
   const handleAccept = useCallback(() => {
-    if (!aiRubricResources?.length) return;
-    const newIds = aiRubricResources
+    if (aiSuggestions.length === 0) return;
+    const newIds = aiSuggestions
       .map((r) => r.id)
       .filter((id): id is string => !!id && !ids.includes(id));
     if (newIds.length > 0) {
       onChange([...ids, ...newIds]);
     }
-    onAccept?.();
-  }, [aiRubricResources, ids, onChange, onAccept]);
+    acceptAi();
+  }, [aiSuggestions, ids, onChange, acceptAi]);
 
   const handleReject = useCallback(() => {
-    onReject?.();
-  }, [onReject]);
+    rejectAi();
+  }, [rejectAi]);
 
   // Check if any rubric resource is generated (must be before early return)
   const hasGenerated = useMemo(() => {
@@ -150,9 +163,9 @@ export function Rubrics({
                     size="icon"
                     className="h-6 w-6"
                     onClick={onGenerate}
-                    disabled={disabled || isGenerating || showDiff}
+                    disabled={disabled || aiIsGenerating || showDiff}
                   >
-                    {isGenerating ? (
+                    {aiIsGenerating ? (
                       <Loader2 className="h-3.5 w-3.5 animate-spin" />
                     ) : (
                       <Sparkles className="h-3.5 w-3.5" />

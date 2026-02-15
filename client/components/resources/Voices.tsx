@@ -16,6 +16,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useResourceAi } from "@/hooks/use-resource-ai";
 import { cn } from "@/lib/utils";
 import { Check, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef } from "react";
@@ -88,10 +89,10 @@ export function Voices({
   showAiGenerate: _showAiGenerate = false,
   onGenerate: _onGenerate,
   isGenerating: _isGenerating = false,
-  // AI diff view props
-  aiVoiceResources,
-  onAccept,
-  onReject,
+  // AI diff view props (deprecated - now handled by useResourceAi hook)
+  aiVoiceResources: _aiVoiceResources,
+  onAccept: _onAccept,
+  onReject: _onReject,
 }: VoicesProps) {
   const ids = useMemo(() => voice_ids ?? [], [voice_ids]);
   const show = show_voices ?? false;
@@ -100,6 +101,20 @@ export function Voices({
     () => voice_suggestions ?? [],
     [voice_suggestions]
   );
+
+  // Socket-based AI suggestion handling via shared hook
+  const { isGenerating: _aiIsGenerating, aiSuggestions, accept: acceptAi, reject: rejectAi } = useResourceAi<{
+    id: string | null;
+    voice: string | null;
+  }>({
+    resourceType: "voices",
+    groupId: group_id,
+    extractSuggestion: (data) => {
+      if (!data.success && data.success !== undefined) return null;
+      return { id: (data.id as string) ?? null, voice: (data.voice as string) ?? null };
+    },
+    accumulate: true,
+  });
   const filteredVoices = useMemo(() => {
     if (!searchTerm?.trim()) {
       return allVoices;
@@ -148,30 +163,24 @@ export function Voices({
   );
 
   // AI suggestion state
-  const showDiff = !!aiVoiceResources?.length;
-
-  // Get AI-suggested IDs (kept for potential future use)
-  const _aiSuggestedIds = useMemo(
-    () => new Set(aiVoiceResources?.map((r) => r.id).filter(Boolean) as string[]),
-    [aiVoiceResources]
-  );
+  const showDiff = aiSuggestions.length > 0;
 
   // Accept AI suggestion - add AI-suggested voices to selection
   const handleAccept = useCallback(() => {
-    if (!aiVoiceResources?.length) return;
-    const newIds = aiVoiceResources
+    if (aiSuggestions.length === 0) return;
+    const newIds = aiSuggestions
       .map((v) => v.id)
       .filter((id): id is string => !!id);
     if (newIds.length > 0) {
       onVoiceIdsChange([...ids, ...newIds]);
     }
-    onAccept?.();
-  }, [aiVoiceResources, ids, onVoiceIdsChange, onAccept]);
+    acceptAi();
+  }, [aiSuggestions, ids, onVoiceIdsChange, acceptAi]);
 
   // Reject AI suggestion - just clear the pending state
   const handleReject = useCallback(() => {
-    onReject?.();
-  }, [onReject]);
+    rejectAi();
+  }, [rejectAi]);
 
   // Don't render if show_voices is false (AFTER all hooks)
   if (!show) {
@@ -223,11 +232,11 @@ export function Voices({
         )}
       </div>
       {/* AI-suggested voices preview */}
-      {showDiff && aiVoiceResources && aiVoiceResources.length > 0 && (
+      {showDiff && aiSuggestions.length > 0 && (
         <div className="mb-4 space-y-2">
           <p className="text-sm font-medium text-success">AI Suggested Voices</p>
           <div className="space-y-2">
-            {aiVoiceResources.map((item, idx) => (
+            {aiSuggestions.map((item, idx) => (
               <div
                 key={item.id || idx}
                 className={cn(

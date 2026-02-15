@@ -17,6 +17,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useResourceAi } from "@/hooks/use-resource-ai";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 import {
@@ -92,18 +93,33 @@ export function Emails({
   create_tool_id,
   createEmailsAction,
   onGenerate,
-  isGenerating = false,
+  isGenerating: _isGenerating = false,
   showAiGenerate = false,
   isAutosaveEnabled = true,
   registerFlush,
-  // AI diff view props
-  aiEmailResources,
-  onAccept,
-  onReject,
+  // AI diff view props (deprecated — kept for interface compat)
+  aiEmailResources: _aiEmailResources,
+  onAccept: _onAccept,
+  onReject: _onReject,
 }: EmailsProps) {
   const ids = useMemo(() => email_ids ?? [], [email_ids]);
   const show = show_emails ?? true;
   const allEmails = useMemo(() => emails ?? [], [emails]);
+
+  // Socket-based AI suggestion handling via shared hook
+  const { isGenerating: aiIsGenerating, aiSuggestions, accept: acceptAi, reject: rejectAi } = useResourceAi<
+    Pick<EmailResourceItem, "id" | "email">
+  >({
+    resourceType: "emails",
+    groupId: group_id,
+    extractSuggestion: (data) => {
+      const id = data.id as string | null | undefined;
+      const email = data.email as string | null | undefined;
+      if (!id) return null;
+      return { id, email: email ?? null };
+    },
+    accumulate: true,
+  });
   const suggestionsList = useMemo(
     () => email_suggestions ?? [],
     [email_suggestions]
@@ -382,21 +398,21 @@ export function Emails({
   }, [email_resources]);
 
   // AI suggestion state
-  const showDiff = !!aiEmailResources?.length;
+  const showDiff = aiSuggestions.length > 0;
   const aiSuggestedIds = useMemo(
     () =>
       new Set(
-        aiEmailResources
-          ?.map((e) => e.id)
+        aiSuggestions
+          .map((e) => e.id)
           .filter(Boolean) as string[]
       ),
-    [aiEmailResources]
+    [aiSuggestions]
   );
 
   // Accept AI suggestion - add AI-suggested emails to selection
   const handleAccept = useCallback(() => {
-    if (!aiEmailResources?.length) return;
-    const newIds = aiEmailResources
+    if (aiSuggestions.length === 0) return;
+    const newIds = aiSuggestions
       .map((e) => e.id)
       .filter((id): id is string => !!id && !ids.includes(id));
     if (newIds.length > 0) {
@@ -404,13 +420,13 @@ export function Emails({
       const nextPrimaryIndex = ids.length === 0 ? 0 : primaryIndex;
       onChange(nextIds, nextPrimaryIndex);
     }
-    onAccept?.();
-  }, [aiEmailResources, ids, onChange, primaryIndex, onAccept]);
+    acceptAi();
+  }, [aiSuggestions, ids, onChange, primaryIndex, acceptAi]);
 
   // Reject AI suggestion - just clear the pending state
   const handleRejectAi = useCallback(() => {
-    onReject?.();
-  }, [onReject]);
+    rejectAi();
+  }, [rejectAi]);
 
   // Don't render if show_emails is false (AFTER all hooks)
   if (!show) {
@@ -441,9 +457,9 @@ export function Emails({
                       size="icon"
                       className="h-6 w-6"
                       onClick={onGenerate}
-                      disabled={disabled || isGenerating || showDiff}
+                      disabled={disabled || aiIsGenerating || showDiff}
                     >
-                      {isGenerating ? (
+                      {aiIsGenerating ? (
                         <Loader2 className="h-3.5 w-3.5 animate-spin" />
                       ) : (
                         <Sparkles className="h-3.5 w-3.5" />

@@ -17,6 +17,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useResourceAi } from "@/hooks/use-resource-ai";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { Check, FileText, Loader2, Sparkles, X } from "lucide-react";
 import { useCallback, useMemo, useState } from "react";
@@ -75,12 +76,28 @@ export function Texts({
   group_id,
   createTextsAction,
   onGenerate,
-  isGenerating = false,
+  isGenerating: _isGenerating = false,
   showAiGenerate = false,
+  // AI diff view props (deprecated - now from useResourceAi hook)
   onAccept: _onAccept,
   onReject: _onReject,
   searchTerm,
 }: TextsProps) {
+  // AI suggestion handling via shared hook
+  const { isGenerating: aiIsGenerating, aiSuggestion, accept: acceptAi, reject: rejectAi } = useResourceAi<
+    Pick<TextResourceItem, "id" | "content">
+  >({
+    resourceType: "texts",
+    groupId: group_id,
+    extractSuggestion: (data) => {
+      if (!data.id) return null;
+      return {
+        id: (data.id as string) ?? null,
+        content: (data.content as string) ?? null,
+      };
+    },
+  });
+
   const [isCreating, setIsCreating] = useState(false);
   const [newTextContent, setNewTextContent] = useState("");
   const [showCreateForm, setShowCreateForm] = useState(false);
@@ -164,9 +181,9 @@ export function Texts({
                     size="icon"
                     className="h-7 w-7"
                     onClick={onGenerate}
-                    disabled={disabled || isGenerating}
+                    disabled={disabled || aiIsGenerating}
                   >
-                    {isGenerating ? (
+                    {aiIsGenerating ? (
                       <Loader2 className="h-3.5 w-3.5 animate-spin" />
                     ) : (
                       <Sparkles className="h-3.5 w-3.5" />

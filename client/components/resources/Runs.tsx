@@ -16,6 +16,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useResourceAi } from "@/hooks/use-resource-ai";
 import type { OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 import { Check, Loader2, Sparkles, X } from "lucide-react";
@@ -68,13 +69,26 @@ export function Runs({
   description,
   group_id,
   onGenerate,
-  isGenerating = false,
+  isGenerating: _isGenerating = false,
   showAiGenerate = false,
-  // AI diff view props
-  aiRunResources,
-  onAccept,
-  onReject,
+  // AI diff view props (deprecated - now from useResourceAi hook)
+  aiRunResources: _aiRunResources,
+  onAccept: _onAccept,
+  onReject: _onReject,
 }: RunsProps) {
+  // AI suggestion handling via shared hook (accumulate mode: each event = one run)
+  const { isGenerating: aiIsGenerating, aiSuggestions, accept: acceptAi, reject: rejectAi } = useResourceAi<
+    Pick<RunsResourceItem, "id">
+  >({
+    resourceType: "runs",
+    groupId: group_id,
+    accumulate: true,
+    extractSuggestion: (data) => {
+      if (!data.id) return null;
+      return { id: (data.id as string) ?? null };
+    },
+  });
+
   const ids = useMemo(() => run_ids ?? [], [run_ids]);
   const show = show_runs ?? false;
   const allRuns = useMemo(() => runs ?? [], [runs]);
@@ -83,16 +97,16 @@ export function Runs({
     [run_suggestions]
   );
 
-  // AI suggestion state
-  const showDiff = !!aiRunResources?.length;
+  // AI suggestion state from hook
+  const showDiff = aiSuggestions.length > 0;
   const aiSuggestedIds = useMemo(
     () =>
       new Set(
-        aiRunResources
-          ?.map((r) => r.id)
+        aiSuggestions
+          .map((r) => r.id)
           .filter(Boolean) as string[]
       ),
-    [aiRunResources]
+    [aiSuggestions]
   );
 
   // Convert runs array to RunItem format for grid rendering
@@ -131,20 +145,20 @@ export function Runs({
 
   // Accept AI suggestion - add AI-suggested runs to selection
   const handleAccept = useCallback(() => {
-    if (!aiRunResources?.length) return;
-    const newIds = aiRunResources
+    if (aiSuggestions.length === 0) return;
+    const newIds = aiSuggestions
       .map((r) => r.id)
       .filter((id): id is string => !!id && !ids.includes(id));
     if (newIds.length > 0) {
       onChange([...ids, ...newIds]);
     }
-    onAccept?.();
-  }, [aiRunResources, ids, onChange, onAccept]);
+    acceptAi();
+  }, [aiSuggestions, ids, onChange, acceptAi]);
 
   // Reject AI suggestion - just clear the pending state
   const handleReject = useCallback(() => {
-    onReject?.();
-  }, [onReject]);
+    rejectAi();
+  }, [rejectAi]);
 
   // Don't render if show_runs is false (AFTER all hooks)
   if (!show) {
@@ -174,9 +188,9 @@ export function Runs({
                     size="icon"
                     className="h-6 w-6"
                     onClick={onGenerate}
-                    disabled={disabled || isGenerating || showDiff}
+                    disabled={disabled || aiIsGenerating || showDiff}
                   >
-                    {isGenerating ? (
+                    {aiIsGenerating ? (
                       <Loader2 className="h-3.5 w-3.5 animate-spin" />
                     ) : (
                       <Sparkles className="h-3.5 w-3.5" />

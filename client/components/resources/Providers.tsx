@@ -16,6 +16,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useResourceAi } from "@/hooks/use-resource-ai";
 import type { OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 import { Check, Loader2, Sparkles, X } from "lucide-react";
@@ -42,6 +43,7 @@ export interface ProvidersProps {
   disabled?: boolean;
   onChange: (ids: string[]) => void;
   label?: string;
+  group_id?: string | null;
   // AI diff props
   aiProviderResources?: Pick<ProviderResourceItem, "id" | "name">[] | null;
   onAccept?: () => void;
@@ -60,13 +62,9 @@ export function Providers({
   disabled = false,
   onChange,
   label = "Providers",
-  // AI diff props
-  aiProviderResources,
-  onAccept,
-  onReject,
+  group_id,
   showAiGenerate = false,
   onGenerate,
-  isGenerating = false,
 }: ProvidersProps) {
   const ids = useMemo(() => provider_ids ?? [], [provider_ids]);
   const show = show_providers ?? false;
@@ -76,16 +74,30 @@ export function Providers({
     [provider_suggestions]
   );
 
+  // Socket-based AI suggestion handling via shared hook
+  const { isGenerating: aiIsGenerating, aiSuggestions, accept: acceptAi, reject: rejectAi } = useResourceAi<{
+    id: string | null;
+    name: string | null;
+  }>({
+    resourceType: "providers",
+    groupId: group_id,
+    extractSuggestion: (data) => {
+      if (!data.success && data.success !== undefined) return null;
+      return { id: (data.id as string) ?? null, name: (data.name as string) ?? null };
+    },
+    accumulate: true,
+  });
+
   // AI suggestion state
-  const showDiff = !!aiProviderResources?.length;
+  const showDiff = aiSuggestions.length > 0;
   const aiSuggestedIds = useMemo(
     () =>
       new Set(
-        aiProviderResources
-          ?.map((p) => p.id)
+        aiSuggestions
+          .map((p) => p.id)
           .filter(Boolean) as string[]
       ),
-    [aiProviderResources]
+    [aiSuggestions]
   );
 
   // Convert to items format for SelectableGrid
@@ -120,19 +132,19 @@ export function Providers({
 
   // Accept AI suggestion
   const handleAccept = useCallback(() => {
-    if (!aiProviderResources?.length) return;
-    const newIds = aiProviderResources
+    if (aiSuggestions.length === 0) return;
+    const newIds = aiSuggestions
       .map((p) => p.id)
       .filter((id): id is string => !!id && !ids.includes(id));
     if (newIds.length > 0) {
       onChange([...ids, ...newIds]);
     }
-    onAccept?.();
-  }, [aiProviderResources, ids, onChange, onAccept]);
+    acceptAi();
+  }, [aiSuggestions, ids, onChange, acceptAi]);
 
   const handleReject = useCallback(() => {
-    onReject?.();
-  }, [onReject]);
+    rejectAi();
+  }, [rejectAi]);
 
   // Don't render if show is false (AFTER all hooks)
   if (!show) {
@@ -154,9 +166,9 @@ export function Providers({
                     size="icon"
                     className="h-6 w-6"
                     onClick={onGenerate}
-                    disabled={disabled || isGenerating || showDiff}
+                    disabled={disabled || aiIsGenerating || showDiff}
                   >
-                    {isGenerating ? (
+                    {aiIsGenerating ? (
                       <Loader2 className="h-3.5 w-3.5 animate-spin" />
                     ) : (
                       <Sparkles className="h-3.5 w-3.5" />

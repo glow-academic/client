@@ -17,6 +17,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import type { OutputOf } from "@/lib/api/types";
+import { useResourceAi } from "@/hooks/use-resource-ai";
 import { cn } from "@/lib/utils";
 import { Check, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -79,11 +80,28 @@ export function RoleRoutes({
   showAiGenerate: _showAiGenerate = false,
   onGenerate: _onGenerate,
   isGenerating: _isGenerating = false,
-  // AI diff view props
-  aiRoleRouteResources,
-  onAccept,
-  onReject,
+  // AI diff view props (deprecated - now from useResourceAi hook)
+  aiRoleRouteResources: _aiRoleRouteResources,
+  onAccept: _onAccept,
+  onReject: _onReject,
 }: RoleRoutesProps) {
+  // AI suggestion handling via shared hook (accumulate mode: each event = one role route)
+  const { isGenerating: aiIsGenerating, aiSuggestions, accept: acceptAi, reject: rejectAi } = useResourceAi<
+    Pick<RoleRoutesResourceItem, "id" | "role_id" | "route_id">
+  >({
+    resourceType: "role_routes",
+    groupId: group_id,
+    accumulate: true,
+    extractSuggestion: (data) => {
+      if (!data.id) return null;
+      return {
+        id: (data.id as string) ?? null,
+        role_id: (data.role_id as string) ?? null,
+        route_id: (data.route_id as string) ?? null,
+      };
+    },
+  });
+
   const show = show_role_routes ?? false;
   const currentResources = useMemo(
     () => role_route_resources ?? [],
@@ -186,30 +204,26 @@ export function RoleRoutes({
       .sort((a, b) => a.name.localeCompare(b.name));
   }, [allRoutes]);
 
-  // AI suggestion state
-  const showDiff = !!aiRoleRouteResources?.length;
-  const _aiSuggestedIds = useMemo(
-    () => new Set(aiRoleRouteResources?.map((r) => r.id).filter(Boolean) as string[]),
-    [aiRoleRouteResources]
-  );
-  // Note: _aiSuggestedIds available for future use
+  // AI suggestion state from hook
+  const aiRoleRouteResources = aiSuggestions;
+  const showDiff = aiSuggestions.length > 0;
 
   // Build a set of AI-suggested role:route keys for highlighting
   const aiSuggestedKeys = useMemo(() => {
     return new Set(
-      aiRoleRouteResources
-        ?.filter((r) => r.role_id && r.route_id)
-        .map((r) => `${r.role_id}:${r.route_id}`) ?? []
+      aiSuggestions
+        .filter((r) => r.role_id && r.route_id)
+        .map((r) => `${r.role_id}:${r.route_id}`)
     );
-  }, [aiRoleRouteResources]);
+  }, [aiSuggestions]);
 
   // Accept AI suggestion - add AI-suggested role routes to selection
   const handleAccept = useCallback(() => {
-    if (!aiRoleRouteResources?.length) return;
+    if (aiSuggestions.length === 0) return;
     // Add AI-suggested routes to the routesByRole state
     setRoutesByRole((prev) => {
       const next = new Map(prev);
-      aiRoleRouteResources.forEach((r) => {
+      aiSuggestions.forEach((r) => {
         if (r.role_id && r.route_id) {
           if (!next.has(r.role_id)) {
             next.set(r.role_id, new Set());
@@ -222,7 +236,7 @@ export function RoleRoutes({
     // Add AI-suggested IDs to the roleRouteIdMap
     setRoleRouteIdMap((prev) => {
       const next = new Map(prev);
-      aiRoleRouteResources.forEach((r) => {
+      aiSuggestions.forEach((r) => {
         if (r.role_id && r.route_id && r.id) {
           const key = `${r.role_id}:${r.route_id}`;
           next.set(key, r.id);
@@ -230,13 +244,13 @@ export function RoleRoutes({
       });
       return next;
     });
-    onAccept?.();
-  }, [aiRoleRouteResources, onAccept]);
+    acceptAi();
+  }, [aiSuggestions, acceptAi]);
 
   // Reject AI suggestion - just clear the pending state
   const handleReject = useCallback(() => {
-    onReject?.();
-  }, [onReject]);
+    rejectAi();
+  }, [rejectAi]);
 
   if (!show) {
     return null;

@@ -17,6 +17,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import type { InputOf, OutputOf } from "@/lib/api/types";
+import { useResourceAi } from "@/hooks/use-resource-ai";
 import { cn } from "@/lib/utils";
 import { Check, Loader2, Sparkles, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef } from "react";
@@ -104,6 +105,21 @@ export function Values({
     () => value_suggestions ?? [],
     [value_suggestions]
   );
+
+  // Socket-based AI suggestion handling via shared hook
+  const { isGenerating: aiIsGenerating, aiSuggestions, accept: acceptAi, reject: rejectAi } = useResourceAi<{
+    value_id: string | null;
+    value: string | null;
+  }>({
+    resourceType: "values",
+    groupId: group_id,
+    extractSuggestion: (data) => {
+      if (!data.success && data.success !== undefined) return null;
+      return { value_id: (data.value_id as string) ?? null, value: (data.value as string) ?? null };
+    },
+    accumulate: true,
+  });
+
   const filteredValues = useMemo(() => {
     if (!searchTerm?.trim()) {
       return allValues;
@@ -174,24 +190,24 @@ export function Values({
   }, [value_resources]);
 
   // AI suggestion state
-  const showDiff = !!aiValueResources?.length;
+  const showDiff = aiSuggestions.length > 0;
 
   // Accept AI suggestion - add AI-suggested values to selection
   const handleAccept = useCallback(() => {
-    if (!aiValueResources?.length) return;
-    const aiIds = aiValueResources
-      .map((r) => r.id)
+    if (aiSuggestions.length === 0) return;
+    const aiIds = aiSuggestions
+      .map((r) => r.value_id)
       .filter((id): id is string => !!id);
     // Add AI-suggested IDs to existing selection
     const newIds = [...ids, ...aiIds.filter((id) => !ids.includes(id))];
     onChange(newIds);
-    onAccept?.();
-  }, [aiValueResources, ids, onChange, onAccept]);
+    acceptAi();
+  }, [aiSuggestions, ids, onChange, acceptAi]);
 
   // Reject AI suggestion - just clear the pending state
   const handleReject = useCallback(() => {
-    onReject?.();
-  }, [onReject]);
+    rejectAi();
+  }, [rejectAi]);
 
   // Don't render if show_values is false (AFTER all hooks)
   if (!show) {
@@ -221,9 +237,9 @@ export function Values({
                     size="icon"
                     className="h-6 w-6"
                     onClick={onGenerate}
-                    disabled={disabled || isGenerating || showDiff}
+                    disabled={disabled || aiIsGenerating || showDiff}
                   >
-                    {isGenerating ? (
+                    {aiIsGenerating ? (
                       <Loader2 className="h-3.5 w-3.5 animate-spin" />
                     ) : (
                       <Sparkles className="h-3.5 w-3.5" />
@@ -275,13 +291,13 @@ export function Values({
         </div>
       )}
       {/* AI-suggested values preview */}
-      {showDiff && aiValueResources && aiValueResources.length > 0 && (
+      {showDiff && aiSuggestions.length > 0 && (
         <div className="mb-4 space-y-2">
           <p className="text-sm font-medium text-success">AI Suggested Values</p>
           <div className="space-y-2">
-            {aiValueResources.map((item, idx) => (
+            {aiSuggestions.map((item, idx) => (
               <div
-                key={item.id || idx}
+                key={item.value_id || idx}
                 className={cn(
                   "p-3 rounded-lg border-2 border-success bg-success/10",
                   "text-sm"

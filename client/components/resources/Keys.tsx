@@ -15,6 +15,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useResourceAi } from "@/hooks/use-resource-ai";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 import { Check, Loader2, Sparkles, X } from "lucide-react";
@@ -83,7 +84,7 @@ export function Keys({
   multiSelect = false,
   onGenerate,
   showAiGenerate = false,
-  isGenerating = false,
+  isGenerating: _isGenerating = false,
   label = "Key",
   id = "key",
   required = false,
@@ -91,16 +92,31 @@ export function Keys({
   group_id,
   create_tool_id,
   createKeysAction,
-  // AI diff view props
-  aiKeyResources,
-  onAccept,
-  onReject,
+  // AI diff view props (deprecated — kept for interface compat)
+  aiKeyResources: _aiKeyResources,
+  onAccept: _onAccept,
+  onReject: _onReject,
   isAutosaveEnabled = true,
   registerFlush,
 }: KeysProps) {
   const resource = key_resource ?? null;
   const resourceId = key_id ?? null;
   const show = show_key ?? false;
+
+  // Socket-based AI suggestion handling via shared hook
+  const { isGenerating: aiIsGenerating, aiSuggestions, accept: acceptAi, reject: rejectAi } = useResourceAi<
+    Pick<KeyResourceItem, "id" | "name">
+  >({
+    resourceType: "keys",
+    groupId: group_id,
+    extractSuggestion: (data) => {
+      const id = data.id as string | null | undefined;
+      const name = data.name as string | null | undefined;
+      if (!id) return null;
+      return { id, name: name ?? null };
+    },
+    accumulate: true,
+  });
   const suggestionsList = useMemo(
     () => key_suggestions ?? [],
     [key_suggestions]
@@ -238,12 +254,12 @@ export function Keys({
   );
 
   // AI suggestion state
-  const showDiff = !!aiKeyResources?.length;
+  const showDiff = aiSuggestions.length > 0;
 
   // Accept AI suggestion - add AI-suggested keys to selection
   const handleAccept = useCallback(async () => {
-    if (!aiKeyResources?.length) return;
-    const aiIds = aiKeyResources
+    if (aiSuggestions.length === 0) return;
+    const aiIds = aiSuggestions
       .map((r) => r.id)
       .filter((id): id is string => !!id);
     if (multiSelect && onChange) {
@@ -254,13 +270,13 @@ export function Keys({
       // Single-select: use first AI-suggested key
       onKeyIdChange(aiIds[0]);
     }
-    onAccept?.();
-  }, [aiKeyResources, multiSelect, onChange, onKeyIdChange, ids, onAccept]);
+    acceptAi();
+  }, [aiSuggestions, multiSelect, onChange, onKeyIdChange, ids, acceptAi]);
 
   // Reject AI suggestion - just clear the pending state
   const handleReject = useCallback(() => {
-    onReject?.();
-  }, [onReject]);
+    rejectAi();
+  }, [rejectAi]);
 
   // Don't render if show_key is false (AFTER all hooks)
   if (!show) {
@@ -285,9 +301,9 @@ export function Keys({
                     size="icon"
                     className="h-6 w-6"
                     onClick={onGenerate}
-                    disabled={disabled || isGenerating || showDiff}
+                    disabled={disabled || aiIsGenerating || showDiff}
                   >
-                    {isGenerating ? (
+                    {aiIsGenerating ? (
                       <Loader2 className="h-3.5 w-3.5 animate-spin" />
                     ) : (
                       <Sparkles className="h-3.5 w-3.5" />
@@ -340,11 +356,11 @@ export function Keys({
       )}
 
       {/* AI-suggested keys preview */}
-      {showDiff && aiKeyResources && aiKeyResources.length > 0 && (
+      {showDiff && aiSuggestions.length > 0 && (
         <div className="mb-4 space-y-2">
           <p className="text-sm font-medium text-success">AI Suggested Keys</p>
           <div className="space-y-2">
-            {aiKeyResources.map((item, idx) => (
+            {aiSuggestions.map((item, idx) => (
               <div
                 key={item.id || idx}
                 className={cn(

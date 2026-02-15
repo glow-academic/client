@@ -16,6 +16,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useResourceAi } from "@/hooks/use-resource-ai";
 import type { OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 import { Check, Loader2, Sparkles, X } from "lucide-react";
@@ -39,7 +40,8 @@ export interface ThresholdsProps {
   disabled?: boolean;
   onChange: (ids: string[]) => void;
   label?: string;
-  // AI diff props
+  group_id?: string | null;
+  // AI diff props (deprecated - now handled by useResourceAi hook)
   aiThresholdResources?: Pick<ThresholdResourceItem, "id" | "value">[] | null;
   onAccept?: () => void;
   onReject?: () => void;
@@ -57,13 +59,9 @@ export function Thresholds({
   disabled = false,
   onChange,
   label = "Thresholds",
-  // AI diff props
-  aiThresholdResources,
-  onAccept,
-  onReject,
+  group_id,
   showAiGenerate = false,
   onGenerate,
-  isGenerating = false,
 }: ThresholdsProps) {
   const ids = useMemo(() => threshold_ids ?? [], [threshold_ids]);
   const show = show_thresholds ?? false;
@@ -73,16 +71,30 @@ export function Thresholds({
     [threshold_suggestions]
   );
 
+  // Socket-based AI suggestion handling via shared hook
+  const { isGenerating: aiIsGenerating, aiSuggestions, accept: acceptAi, reject: rejectAi } = useResourceAi<{
+    id: string | null;
+    value: number | null;
+  }>({
+    resourceType: "thresholds",
+    groupId: group_id,
+    extractSuggestion: (data) => {
+      if (!data.success && data.success !== undefined) return null;
+      return { id: (data.id as string) ?? null, value: (data.value as number) ?? null };
+    },
+    accumulate: true,
+  });
+
   // AI suggestion state
-  const showDiff = !!aiThresholdResources?.length;
+  const showDiff = aiSuggestions.length > 0;
   const aiSuggestedIds = useMemo(
     () =>
       new Set(
-        aiThresholdResources
-          ?.map((t) => t.id)
+        aiSuggestions
+          .map((t) => t.id)
           .filter(Boolean) as string[]
       ),
-    [aiThresholdResources]
+    [aiSuggestions]
   );
 
   // Convert to items format for SelectableGrid
@@ -112,21 +124,22 @@ export function Thresholds({
     return threshold_resources?.some((t) => t.generated) ?? false;
   }, [threshold_resources]);
 
-  // Accept AI suggestion
+  // Accept AI suggestion - add AI-suggested thresholds to selection
   const handleAccept = useCallback(() => {
-    if (!aiThresholdResources?.length) return;
-    const newIds = aiThresholdResources
+    if (aiSuggestions.length === 0) return;
+    const newIds = aiSuggestions
       .map((t) => t.id)
       .filter((id): id is string => !!id && !ids.includes(id));
     if (newIds.length > 0) {
       onChange([...ids, ...newIds]);
     }
-    onAccept?.();
-  }, [aiThresholdResources, ids, onChange, onAccept]);
+    acceptAi();
+  }, [aiSuggestions, ids, onChange, acceptAi]);
 
+  // Reject AI suggestion - just clear the pending state
   const handleReject = useCallback(() => {
-    onReject?.();
-  }, [onReject]);
+    rejectAi();
+  }, [rejectAi]);
 
   // Don't render if show is false (AFTER all hooks)
   if (!show) {
@@ -148,9 +161,9 @@ export function Thresholds({
                     size="icon"
                     className="h-6 w-6"
                     onClick={onGenerate}
-                    disabled={disabled || isGenerating || showDiff}
+                    disabled={disabled || aiIsGenerating || showDiff}
                   >
-                    {isGenerating ? (
+                    {aiIsGenerating ? (
                       <Loader2 className="h-3.5 w-3.5 animate-spin" />
                     ) : (
                       <Sparkles className="h-3.5 w-3.5" />

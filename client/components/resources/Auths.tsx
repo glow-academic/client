@@ -16,6 +16,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useResourceAi } from "@/hooks/use-resource-ai";
 import type { OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 import { Check, Loader2, Sparkles, X } from "lucide-react";
@@ -82,34 +83,48 @@ export function Auths({
   const show = show_auths ?? false;
   const allAuths = useMemo(() => auths ?? [], [auths]);
 
+  // Socket-based AI suggestion handling via shared hook
+  const { isGenerating: aiIsGenerating, aiSuggestions, accept: acceptAi, reject: rejectAi } = useResourceAi<{
+    id: string | null;
+    name: string | null;
+  }>({
+    resourceType: "auths",
+    groupId: group_id,
+    extractSuggestion: (data) => {
+      if (!data.success && data.success !== undefined) return null;
+      return { id: (data.id as string) ?? null, name: (data.name as string) ?? null };
+    },
+    accumulate: true,
+  });
+
   // AI suggestion state
-  const showDiff = !!aiAuthResources?.length;
+  const showDiff = aiSuggestions.length > 0;
   const aiSuggestedIds = useMemo(
     () =>
       new Set(
-        aiAuthResources
-          ?.map((a) => a.id)
+        aiSuggestions
+          .map((a) => a.id)
           .filter(Boolean) as string[]
       ),
-    [aiAuthResources]
+    [aiSuggestions]
   );
 
   // Accept AI suggestion - add AI-suggested auths to selection
   const handleAccept = useCallback(() => {
-    if (!aiAuthResources?.length) return;
-    const newIds = aiAuthResources
+    if (aiSuggestions.length === 0) return;
+    const newIds = aiSuggestions
       .map((a) => a.id)
       .filter((id): id is string => !!id && !ids.includes(id));
     if (newIds.length > 0) {
       onChange([...ids, ...newIds]);
     }
-    onAccept?.();
-  }, [aiAuthResources, ids, onChange, onAccept]);
+    acceptAi();
+  }, [aiSuggestions, ids, onChange, acceptAi]);
 
   // Reject AI suggestion - just clear the pending state
   const handleReject = useCallback(() => {
-    onReject?.();
-  }, [onReject]);
+    rejectAi();
+  }, [rejectAi]);
 
   const suggestionsList = useMemo(
     () => auth_suggestions ?? [],
@@ -175,9 +190,9 @@ export function Auths({
                     size="icon"
                     className="h-6 w-6"
                     onClick={onGenerate}
-                    disabled={disabled || isGenerating || showDiff}
+                    disabled={disabled || aiIsGenerating || showDiff}
                   >
-                    {isGenerating ? (
+                    {aiIsGenerating ? (
                       <Loader2 className="h-3.5 w-3.5 animate-spin" />
                     ) : (
                       <Sparkles className="h-3.5 w-3.5" />

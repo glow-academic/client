@@ -16,6 +16,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useResourceAi } from "@/hooks/use-resource-ai";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 import { Check, Loader2, Sparkles, X } from "lucide-react";
@@ -77,48 +78,63 @@ export function Tools({
   group_id,
   onGenerate,
   showAiGenerate = false,
-  isGenerating = false,
+  isGenerating: _isGenerating = false,
   searchTerm = "",
   onSearchChange,
   showSelectedFilter = false,
   onShowSelectedChange,
-  // AI diff view props
-  aiToolResources,
-  onAccept,
-  onReject,
+  // AI diff view props (deprecated — kept for interface compat)
+  aiToolResources: _aiToolResources,
+  onAccept: _onAccept,
+  onReject: _onReject,
 }: ToolsProps) {
   const ids = useMemo(() => tool_ids ?? [], [tool_ids]);
   const show = show_tools ?? false;
   const allTools = useMemo(() => tools ?? [], [tools]);
 
+  // Socket-based AI suggestion handling via shared hook
+  const { isGenerating: aiIsGenerating, aiSuggestions, accept: acceptAi, reject: rejectAi } = useResourceAi<
+    Pick<ToolResourceItem, "id" | "name">
+  >({
+    resourceType: "tools",
+    groupId: group_id,
+    extractSuggestion: (data) => {
+      const id = data.id as string | null | undefined;
+      const name = data.name as string | null | undefined;
+      if (!id) return null;
+      return { id, name: name ?? null };
+    },
+    accumulate: true,
+  });
+
   // AI suggestion state
-  const showDiff = !!aiToolResources?.length;
+  const showDiff = aiSuggestions.length > 0;
   const aiSuggestedIds = useMemo(
     () =>
       new Set(
-        aiToolResources
-          ?.map((t) => t.id)
+        aiSuggestions
+          .map((t) => t.id)
           .filter(Boolean) as string[]
       ),
-    [aiToolResources]
+    [aiSuggestions]
   );
 
   // Accept AI suggestion - add AI-suggested tools to selection
   const handleAccept = useCallback(() => {
-    if (!aiToolResources?.length) return;
-    const newIds = aiToolResources
+    if (aiSuggestions.length === 0) return;
+    const newIds = aiSuggestions
       .map((t) => t.id)
       .filter((id): id is string => !!id && !ids.includes(id));
     if (newIds.length > 0) {
       onChange([...ids, ...newIds]);
     }
-    onAccept?.();
-  }, [aiToolResources, ids, onChange, onAccept]);
+    acceptAi();
+  }, [aiSuggestions, ids, onChange, acceptAi]);
 
   // Reject AI suggestion - just clear the pending state
   const handleReject = useCallback(() => {
-    onReject?.();
-  }, [onReject]);
+    rejectAi();
+  }, [rejectAi]);
 
   const suggestionsList = useMemo(
     () => tool_suggestions ?? [],
@@ -224,9 +240,9 @@ export function Tools({
                   size="icon"
                   className="h-6 w-6"
                   onClick={onGenerate}
-                  disabled={disabled || isGenerating || showDiff}
+                  disabled={disabled || aiIsGenerating || showDiff}
                 >
-                  {isGenerating ? (
+                  {aiIsGenerating ? (
                     <Loader2 className="h-3.5 w-3.5 animate-spin" />
                   ) : (
                     <Sparkles className="h-3.5 w-3.5" />

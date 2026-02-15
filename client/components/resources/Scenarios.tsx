@@ -16,6 +16,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useResourceAi } from "@/hooks/use-resource-ai";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 import { Check, Loader2, Sparkles, X } from "lucide-react";
@@ -74,14 +75,9 @@ export function Scenarios({
   description,
   group_id,
   onGenerate,
-  isGenerating = false,
   showAiGenerate = false,
   searchTerm,
   showSelectedOnly = false,
-  // AI diff view props
-  aiScenarioResources,
-  onAccept,
-  onReject,
 }: ScenariosProps) {
   const ids = useMemo(() => scenario_ids ?? [], [scenario_ids]);
   const show = show_scenarios ?? false;
@@ -91,16 +87,30 @@ export function Scenarios({
     [scenario_suggestions]
   );
 
+  // Socket-based AI suggestion handling via shared hook
+  const { isGenerating: aiIsGenerating, aiSuggestions, accept: acceptAi, reject: rejectAi } = useResourceAi<{
+    scenario_id: string | null;
+    name: string | null;
+  }>({
+    resourceType: "scenarios",
+    groupId: group_id,
+    extractSuggestion: (data) => {
+      if (!data.success && data.success !== undefined) return null;
+      return { scenario_id: (data.scenario_id as string) ?? null, name: (data.name as string) ?? null };
+    },
+    accumulate: true,
+  });
+
   // AI suggestion state
-  const showDiff = !!aiScenarioResources?.length;
+  const showDiff = aiSuggestions.length > 0;
   const aiSuggestedIds = useMemo(
     () =>
       new Set(
-        aiScenarioResources
-          ?.map((s) => s.scenario_id)
+        aiSuggestions
+          .map((s) => s.scenario_id)
           .filter(Boolean) as string[]
       ),
-    [aiScenarioResources]
+    [aiSuggestions]
   );
 
   // Track which scenario IDs have already had resources created
@@ -179,20 +189,20 @@ export function Scenarios({
 
   // Accept AI suggestion - add AI-suggested scenarios to selection
   const handleAccept = useCallback(() => {
-    if (!aiScenarioResources?.length) return;
-    const newIds = aiScenarioResources
+    if (aiSuggestions.length === 0) return;
+    const newIds = aiSuggestions
       .map((s) => s.scenario_id)
       .filter((id): id is string => !!id && !ids.includes(id));
     if (newIds.length > 0) {
       onChange([...ids, ...newIds]);
     }
-    onAccept?.();
-  }, [aiScenarioResources, ids, onChange, onAccept]);
+    acceptAi();
+  }, [aiSuggestions, ids, onChange, acceptAi]);
 
   // Reject AI suggestion - just clear the pending state
   const handleReject = useCallback(() => {
-    onReject?.();
-  }, [onReject]);
+    rejectAi();
+  }, [rejectAi]);
 
   // Don't render if show_scenarios is false (AFTER all hooks)
   if (!show) {
@@ -222,9 +232,9 @@ export function Scenarios({
                     size="icon"
                     className="h-6 w-6"
                     onClick={onGenerate}
-                    disabled={disabled || isGenerating || showDiff}
+                    disabled={disabled || aiIsGenerating || showDiff}
                   >
-                    {isGenerating ? (
+                    {aiIsGenerating ? (
                       <Loader2 className="h-3.5 w-3.5 animate-spin" />
                     ) : (
                       <Sparkles className="h-3.5 w-3.5" />

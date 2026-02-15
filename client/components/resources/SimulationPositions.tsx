@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/tooltip";
 import type { OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
-import { useSocket } from "@/contexts/socket-context";
+import { useResourceAi } from "@/hooks/use-resource-ai";
 import {
   ArrowDown,
   ArrowUp,
@@ -131,53 +131,43 @@ export function SimulationPositions({
     [simulation_positions],
   );
 
-  // Socket-based AI suggestion handling
-  const { socket: aiSocket, isConnected: aiIsConnected } = useSocket();
-  const [
-    internalAiSimulationPositionResources,
-    setInternalAiSimulationPositionResources,
-  ] = useState<
-    | Pick<SimulationPositionResourceItem, "id" | "simulation_id" | "value">[]
-    | null
-  >(null);
-
-  useEffect(() => {
-    if (!aiSocket || !aiIsConnected) return;
-    const handleResourceComplete = (data: {
-      group_id?: string;
-      id?: string | null;
-      simulation_id?: string | null;
-      value?: number | null;
-    }) => {
-      if (group_id && data.group_id !== group_id) return;
-      if (data.id) {
-        setInternalAiSimulationPositionResources([
+  // Socket-based AI suggestion handling via shared hook
+  type AiPositionSuggestion = Pick<
+    SimulationPositionResourceItem,
+    "id" | "simulation_id" | "value"
+  >;
+  const {
+    isGenerating: aiIsGenerating,
+    aiSuggestion,
+    accept: acceptAi,
+    reject: rejectAi,
+  } = useResourceAi<AiPositionSuggestion[]>({
+    resourceType: "simulation_positions",
+    groupId: group_id,
+    extractSuggestion: (data) => {
+      const d = data as {
+        id?: string | null;
+        simulation_id?: string | null;
+        value?: number | null;
+      };
+      if (d.id) {
+        onGenerationComplete?.();
+        return [
           {
-            id: data.id,
-            simulation_id: data.simulation_id ?? null,
-            value: data.value ?? null,
+            id: d.id,
+            simulation_id: d.simulation_id ?? null,
+            value: d.value ?? null,
           },
-        ]);
+        ];
       }
       onGenerationComplete?.();
-    };
-    aiSocket.on(
-      "simulation_positions_generation_complete",
-      handleResourceComplete,
-    );
-    return () => {
-      aiSocket.off(
-        "simulation_positions_generation_complete",
-        handleResourceComplete,
-      );
-    };
-  }, [aiSocket, aiIsConnected, group_id, onGenerationComplete]);
+      return null;
+    },
+  });
 
-  // Effective AI resources: internal (socket) takes priority, then prop fallback
+  // Effective AI resources: hook suggestion takes priority, then prop fallback
   const effectiveAiSimulationPositionResources =
-    internalAiSimulationPositionResources ??
-    aiSimulationPositionResources ??
-    null;
+    aiSuggestion ?? aiSimulationPositionResources ?? null;
 
   const simulationLabels = useMemo(() => {
     const normalizeDescription = (description?: string | null) => {
@@ -454,15 +444,15 @@ export function SimulationPositions({
       emitPositions(merged);
       return merged;
     });
-    setInternalAiSimulationPositionResources(null);
+    acceptAi();
     onAccept?.();
-  }, [effectiveAiSimulationPositionResources, emitPositions, onAccept]);
+  }, [effectiveAiSimulationPositionResources, emitPositions, acceptAi, onAccept]);
 
   // Reject AI suggestion - just clear the pending state
   const handleReject = useCallback(() => {
-    setInternalAiSimulationPositionResources(null);
+    rejectAi();
     onReject?.();
-  }, [onReject]);
+  }, [rejectAi, onReject]);
 
   if (!show) {
     return null;
@@ -491,9 +481,9 @@ export function SimulationPositions({
                     size="icon"
                     className="h-6 w-6"
                     onClick={onGenerate}
-                    disabled={disabled || isGenerating || showDiff}
+                    disabled={disabled || aiIsGenerating || showDiff}
                   >
-                    {isGenerating ? (
+                    {aiIsGenerating ? (
                       <Loader2 className="h-3.5 w-3.5 animate-spin" />
                     ) : (
                       <Sparkles className="h-3.5 w-3.5" />

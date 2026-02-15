@@ -9,6 +9,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useResourceAi } from "@/hooks/use-resource-ai";
 import type { OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 import { Loader2, Sparkles } from "lucide-react";
@@ -78,6 +79,26 @@ export function ProviderKeys({
   onReject,
 }: ProviderKeysProps) {
   const selectedIds = useMemo(() => provider_key_ids ?? [], [provider_key_ids]);
+
+  // Socket-based AI suggestion handling via shared hook
+  const { isGenerating: aiIsGenerating, aiSuggestions, accept: acceptAi, reject: rejectAi } = useResourceAi<{
+    id: string | null;
+    provider_id: string | null;
+    key_id: string | null;
+  }>({
+    resourceType: "provider_keys",
+    groupId: undefined,
+    extractSuggestion: (data) => {
+      if (!data.success && data.success !== undefined) return null;
+      return {
+        id: (data.id as string) ?? null,
+        provider_id: (data.provider_id as string) ?? null,
+        key_id: (data.key_id as string) ?? null,
+      };
+    },
+    accumulate: true,
+  });
+
   const [resourcesById, setResourcesById] = useState<Map<string, ProviderKeysResourceItem>>(
     new Map()
   );
@@ -232,9 +253,9 @@ export function ProviderKeys({
                   size="icon"
                   className="h-6 w-6"
                   onClick={onGenerate}
-                  disabled={disabled || isGenerating}
+                  disabled={disabled || aiIsGenerating}
                 >
-                  {isGenerating ? (
+                  {aiIsGenerating ? (
                     <Loader2 className="h-3.5 w-3.5 animate-spin" />
                   ) : (
                     <Sparkles className="h-3.5 w-3.5" />

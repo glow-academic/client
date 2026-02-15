@@ -16,6 +16,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useResourceAi } from "@/hooks/use-resource-ai";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 import { Check, Loader2, Sparkles, X } from "lucide-react";
@@ -81,12 +82,7 @@ export function Slugs({
   create_tool_id,
   createSlugsAction,
   onGenerate,
-  isGenerating = false,
   showAiGenerate = false,
-  // AI diff view props
-  aiSlugResources,
-  onAccept,
-  onReject,
   isAutosaveEnabled = true,
   registerFlush,
 }: SlugsProps) {
@@ -97,6 +93,20 @@ export function Slugs({
     () => slug_suggestions ?? [],
     [slug_suggestions]
   );
+
+  // Socket-based AI suggestion handling via shared hook
+  const { isGenerating: aiIsGenerating, aiSuggestions, accept: acceptAi, reject: rejectAi } = useResourceAi<{
+    id: string | null;
+    value: string | null;
+  }>({
+    resourceType: "slugs",
+    groupId: group_id,
+    extractSuggestion: (data) => {
+      if (!data.success && data.success !== undefined) return null;
+      return { id: (data.id as string) ?? null, value: (data.value as string) ?? null };
+    },
+    accumulate: true,
+  });
 
   // Track which slug IDs have already had resources created
   const createdSlugIdsRef = useRef<Set<string>>(new Set());
@@ -213,30 +223,30 @@ export function Slugs({
   }, [slug_resources]);
 
   // AI suggestion state
-  const showDiff = !!aiSlugResources?.length;
+  const showDiff = aiSuggestions.length > 0;
 
   // Get AI-suggested IDs (kept for potential future use)
   const _aiSuggestedIds = useMemo(
-    () => new Set(aiSlugResources?.map((r) => r.id).filter(Boolean) as string[]),
-    [aiSlugResources]
+    () => new Set(aiSuggestions.map((r) => r.id).filter(Boolean) as string[]),
+    [aiSuggestions]
   );
 
   // Accept AI suggestion - add AI-suggested slugs to selection
   const handleAccept = useCallback(() => {
-    if (!aiSlugResources?.length) return;
-    const newIds = aiSlugResources
+    if (aiSuggestions.length === 0) return;
+    const newIds = aiSuggestions
       .map((s) => s.id)
       .filter((id): id is string => !!id);
     if (newIds.length > 0) {
       onChange([...ids, ...newIds]);
     }
-    onAccept?.();
-  }, [aiSlugResources, ids, onChange, onAccept]);
+    acceptAi();
+  }, [aiSuggestions, ids, onChange, acceptAi]);
 
   // Reject AI suggestion - just clear the pending state
   const handleReject = useCallback(() => {
-    onReject?.();
-  }, [onReject]);
+    rejectAi();
+  }, [rejectAi]);
 
   // Don't render if show_slugs is false (AFTER all hooks)
   if (!show) {
@@ -266,9 +276,9 @@ export function Slugs({
                     size="icon"
                     className="h-6 w-6"
                     onClick={onGenerate}
-                    disabled={disabled || isGenerating || showDiff}
+                    disabled={disabled || aiIsGenerating || showDiff}
                   >
-                    {isGenerating ? (
+                    {aiIsGenerating ? (
                       <Loader2 className="h-3.5 w-3.5 animate-spin" />
                     ) : (
                       <Sparkles className="h-3.5 w-3.5" />
@@ -320,11 +330,11 @@ export function Slugs({
         </div>
       )}
       {/* AI-suggested slugs preview */}
-      {showDiff && aiSlugResources && aiSlugResources.length > 0 && (
+      {showDiff && aiSuggestions.length > 0 && (
         <div className="mb-4 space-y-2">
           <p className="text-sm font-medium text-success">AI Suggested Slugs</p>
           <div className="space-y-2">
-            {aiSlugResources.map((item, idx) => (
+            {aiSuggestions.map((item, idx) => (
               <div
                 key={item.id || idx}
                 className={cn(

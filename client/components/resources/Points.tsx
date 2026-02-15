@@ -17,6 +17,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useResourceAi } from "@/hooks/use-resource-ai";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 import { Check, Loader2, Sparkles, X } from "lucide-react";
@@ -76,7 +77,7 @@ export function Points({
   onPointsIdChange,
   onGenerate,
   showAiGenerate = false,
-  isGenerating = false,
+  isGenerating: _isGenerating = false,
   label = "Points",
   id = "points",
   required = false,
@@ -91,13 +92,28 @@ export function Points({
   pointsResource,
   pointsId: _pointsId,
   suggestions,
-  // AI diff view props
-  aiPointsResources,
-  onAccept,
-  onReject,
+  // AI diff view props (deprecated - now from useResourceAi hook)
+  aiPointsResources: _aiPointsResources,
+  onAccept: _onAccept,
+  onReject: _onReject,
   isAutosaveEnabled = true,
   registerFlush,
 }: PointsProps) {
+  // AI suggestion handling via shared hook
+  const { isGenerating: aiIsGenerating, aiSuggestion, accept: acceptAi, reject: rejectAi } = useResourceAi<
+    Pick<PointsResourceItem, "id" | "value">
+  >({
+    resourceType: "points",
+    groupId: group_id,
+    extractSuggestion: (data) => {
+      if (!data.id) return null;
+      return {
+        id: (data.id as string) ?? null,
+        value: (data.value as number) ?? null,
+      };
+    },
+  });
+
   // Use standardized props with fallback to legacy props
   const resource = points_resource ?? pointsResource ?? null;
   const resourceId = points_id ?? _pointsId ?? null;
@@ -347,27 +363,27 @@ export function Points({
     return filteredPoints.filter((point) => point.id === resourceId);
   }, [filteredPoints, showSelectedFilter, resourceId]);
 
-  // AI suggestion state
-  const showDiff = !!aiPointsResources?.length;
+  // AI suggestion state from hook
+  const aiPointsResources = aiSuggestion ? [aiSuggestion] : [];
+  const showDiff = aiPointsResources.length > 0;
 
   // Accept AI suggestion - select the first AI-suggested points
   const handleAccept = useCallback(() => {
-    if (!aiPointsResources?.length) return;
-    const firstAiPoints = aiPointsResources[0];
-    if (firstAiPoints?.id) {
-      onPointsIdChange(firstAiPoints.id);
-      if (firstAiPoints.value !== null && firstAiPoints.value !== undefined) {
-        setInternalValue(String(firstAiPoints.value));
-        lastSavedValueRef.current = String(firstAiPoints.value);
+    if (!aiSuggestion) return;
+    if (aiSuggestion.id) {
+      onPointsIdChange(aiSuggestion.id);
+      if (aiSuggestion.value !== null && aiSuggestion.value !== undefined) {
+        setInternalValue(String(aiSuggestion.value));
+        lastSavedValueRef.current = String(aiSuggestion.value);
       }
     }
-    onAccept?.();
-  }, [aiPointsResources, onPointsIdChange, onAccept]);
+    acceptAi();
+  }, [aiSuggestion, onPointsIdChange, acceptAi]);
 
   // Reject AI suggestion - just clear the pending state
   const handleReject = useCallback(() => {
-    onReject?.();
-  }, [onReject]);
+    rejectAi();
+  }, [rejectAi]);
 
   // Don't render if show_points is false (AFTER all hooks)
   if (!show) {
@@ -393,9 +409,9 @@ export function Points({
                   size="icon"
                   className="h-6 w-6"
                   onClick={onGenerate}
-                  disabled={disabled || isGenerating || showDiff}
+                  disabled={disabled || aiIsGenerating || showDiff}
                 >
-                  {isGenerating ? (
+                  {aiIsGenerating ? (
                     <Loader2 className="h-3.5 w-3.5 animate-spin" />
                   ) : (
                     <Sparkles className="h-3.5 w-3.5" />

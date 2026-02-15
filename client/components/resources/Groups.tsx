@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/tooltip";
 import type { OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
+import { useResourceAi } from "@/hooks/use-resource-ai";
 import { Check, Loader2, Sparkles, X } from "lucide-react";
 import { useCallback, useMemo } from "react";
 
@@ -83,16 +84,29 @@ export function Groups({
     [group_suggestions]
   );
 
+  // Socket-based AI suggestion handling via shared hook
+  const { isGenerating: aiIsGenerating, aiSuggestions, accept: acceptAi, reject: rejectAi } = useResourceAi<{
+    group_id: string | null;
+  }>({
+    resourceType: "groups",
+    groupId: group_id,
+    extractSuggestion: (data) => {
+      if (!data.success && data.success !== undefined) return null;
+      return { group_id: (data.group_id as string) ?? null };
+    },
+    accumulate: true,
+  });
+
   // AI suggestion state
-  const showDiff = !!aiGroupResources?.length;
+  const showDiff = aiSuggestions.length > 0;
   const aiSuggestedIds = useMemo(
     () =>
       new Set(
-        aiGroupResources
-          ?.map((g) => g.id)
+        aiSuggestions
+          .map((g) => g.group_id)
           .filter(Boolean) as string[]
       ),
-    [aiGroupResources]
+    [aiSuggestions]
   );
 
   // Convert groups array to GroupItem format for grid rendering
@@ -130,20 +144,20 @@ export function Groups({
 
   // Accept AI suggestion - add AI-suggested groups to selection
   const handleAccept = useCallback(() => {
-    if (!aiGroupResources?.length) return;
-    const newIds = aiGroupResources
-      .map((g) => g.id)
+    if (aiSuggestions.length === 0) return;
+    const newIds = aiSuggestions
+      .map((g) => g.group_id)
       .filter((id): id is string => !!id && !ids.includes(id));
     if (newIds.length > 0) {
       onChange([...ids, ...newIds]);
     }
-    onAccept?.();
-  }, [aiGroupResources, ids, onChange, onAccept]);
+    acceptAi();
+  }, [aiSuggestions, ids, onChange, acceptAi]);
 
   // Reject AI suggestion - just clear the pending state
   const handleReject = useCallback(() => {
-    onReject?.();
-  }, [onReject]);
+    rejectAi();
+  }, [rejectAi]);
 
   // Don't render if show_groups is false (AFTER all hooks)
   if (!show) {
@@ -173,9 +187,9 @@ export function Groups({
                     size="icon"
                     className="h-6 w-6"
                     onClick={onGenerate}
-                    disabled={disabled || isGenerating || showDiff}
+                    disabled={disabled || aiIsGenerating || showDiff}
                   >
-                    {isGenerating ? (
+                    {aiIsGenerating ? (
                       <Loader2 className="h-3.5 w-3.5 animate-spin" />
                     ) : (
                       <Sparkles className="h-3.5 w-3.5" />

@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { Check, X } from "lucide-react";
+import { useResourceAi } from "@/hooks/use-resource-ai";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
@@ -86,10 +87,10 @@ export function ArgsOutputs({
   create_tool_id,
   isAutosaveEnabled = true,
   registerFlush,
-  // AI diff view props
-  aiArgsOutputsResources,
-  onAccept,
-  onReject,
+  // AI diff view props (deprecated - now handled by useResourceAi hook)
+  aiArgsOutputsResources: _aiArgsOutputsResources,
+  onAccept: _onAccept,
+  onReject: _onReject,
   showAiGenerate: _showAiGenerate = false,
   onGenerate: _onGenerate,
   isGenerating: _isGenerating = false,
@@ -392,27 +393,41 @@ export function ArgsOutputs({
     };
   }, []);
 
+  // Socket-based AI suggestion handling via shared hook
+  const { isGenerating: _aiIsGenerating, aiSuggestions, accept: acceptAi, reject: rejectAi } = useResourceAi<{
+    id: string | null;
+    name: string | null;
+  }>({
+    resourceType: "args_outputs",
+    groupId: group_id,
+    extractSuggestion: (data) => {
+      if (!data.success && data.success !== undefined) return null;
+      return { id: (data.id as string) ?? null, name: (data.name as string) ?? null };
+    },
+    accumulate: true,
+  });
+
   // AI suggestion state
-  const showDiff = !!aiArgsOutputsResources?.length;
+  const showDiff = aiSuggestions.length > 0;
 
   // Accept AI suggestion - add AI-suggested args_outputs names
   const handleAccept = useCallback(() => {
-    if (!aiArgsOutputsResources?.length) return;
+    if (aiSuggestions.length === 0) return;
     // For ArgsOutputs, we accept the suggested output names by updating internal state
     const newOutputNames: Record<string, string> = { ...outputNames };
-    aiArgsOutputsResources.forEach((aiOutput) => {
+    aiSuggestions.forEach((aiOutput) => {
       if (aiOutput.id && aiOutput.name) {
         newOutputNames[aiOutput.id] = aiOutput.name;
       }
     });
     setOutputNames(newOutputNames);
-    onAccept?.();
-  }, [aiArgsOutputsResources, outputNames, onAccept]);
+    acceptAi();
+  }, [aiSuggestions, outputNames, acceptAi]);
 
   // Reject AI suggestion - just clear the pending state
   const handleReject = useCallback(() => {
-    onReject?.();
-  }, [onReject]);
+    rejectAi();
+  }, [rejectAi]);
 
   // Don't render if no args_outputs selected
   if (args_outputs_ids.length === 0) {
@@ -475,11 +490,11 @@ export function ArgsOutputs({
       )}
 
       {/* AI-suggested args_outputs preview */}
-      {showDiff && aiArgsOutputsResources && aiArgsOutputsResources.length > 0 && (
+      {showDiff && aiSuggestions.length > 0 && (
         <div className="mb-4 space-y-2">
           <p className="text-sm font-medium text-success">AI Suggested Args Outputs</p>
           <div className="space-y-2">
-            {aiArgsOutputsResources.map((item, idx) => (
+            {aiSuggestions.map((item, idx) => (
               <div
                 key={item.id || idx}
                 className={cn(

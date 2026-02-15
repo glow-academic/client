@@ -134,10 +134,10 @@ export function ScenarioPersonas({
   showAiGenerate = false,
   isAutosaveEnabled = true,
   registerFlush,
-  // AI diff view props
+  // AI diff view props (deprecated - handled by useResourceAi hook)
   aiScenarioPersonaResources,
-  onAccept,
-  onReject,
+  onAccept: _onAccept,
+  onReject: _onReject,
   onGenerationComplete,
 }: ScenarioPersonasProps) {
   const show = show_scenario_personas ?? false;
@@ -157,13 +157,13 @@ export function ScenarioPersonas({
     resourceType: "scenario_personas",
     groupId: group_id,
     extractSuggestion: (data) => {
-      if (!data.id) return null;
+      if (!data["id"]) return null;
       onGenerationComplete?.();
       return {
-        id: (data.id as string) ?? null,
-        scenario_id: (data.scenario_id as string) ?? null,
-        persona_id: (data.persona_id as string) ?? null,
-        persona_name: (data.persona_name as string) ?? null,
+        id: (data["id"] as string) ?? null,
+        scenario_id: (data["scenario_id"] as string) ?? null,
+        persona_id: (data["persona_id"] as string) ?? null,
+        persona_name: (data["persona_name"] as string) ?? null,
       };
     },
   });
@@ -421,15 +421,13 @@ export function ScenarioPersonas({
         handlePersonaChange(r.scenario_id, r.persona_id);
       }
     });
-    setInternalAiScenarioPersonaResources(null);
-    onAccept?.();
-  }, [aiSuggestions, handlePersonaChange, onAccept]);
+    acceptAi();
+  }, [aiSuggestions, handlePersonaChange, acceptAi]);
 
   // Reject AI suggestion - just clear the pending state
   const handleReject = useCallback(() => {
-    setInternalAiScenarioPersonaResources(null);
-    onReject?.();
-  }, [onReject]);
+    rejectAi();
+  }, [rejectAi]);
 
   // Don't render if show_scenario_personas is false or no scenarios
   if (!show || scenario_ids.length === 0) {

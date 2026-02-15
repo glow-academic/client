@@ -16,6 +16,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useResourceAi } from "@/hooks/use-resource-ai";
 import { cn } from "@/lib/utils";
 import type { OutputOf } from "@/lib/api/types";
 import { Check, Loader2, Sparkles, X } from "lucide-react";
@@ -75,16 +76,11 @@ export function Fields({
   description,
   group_id,
   onGenerate,
-  isGenerating = false,
   showAiGenerate = false,
   searchTerm = "",
   showSelectedFilter = false,
   // Legacy props for backward compatibility
   fieldIds,
-  // AI diff view props
-  aiFieldResources,
-  onAccept,
-  onReject,
 }: FieldsProps) {
   // Use standardized props with fallback to legacy props
   const ids = useMemo(() => field_ids ?? fieldIds ?? [], [field_ids, fieldIds]);
@@ -95,16 +91,30 @@ export function Fields({
     [_field_suggestions]
   );
 
+  // Socket-based AI suggestion handling via shared hook
+  const { isGenerating: aiIsGenerating, aiSuggestions, accept: acceptAi, reject: rejectAi } = useResourceAi<{
+    field_id: string | null;
+    name: string | null;
+  }>({
+    resourceType: "fields",
+    groupId: group_id,
+    extractSuggestion: (data) => {
+      if (!data.success && data.success !== undefined) return null;
+      return { field_id: (data.field_id as string) ?? null, name: (data.name as string) ?? null };
+    },
+    accumulate: true,
+  });
+
   // AI suggestion state
-  const showDiff = !!aiFieldResources?.length;
+  const showDiff = aiSuggestions.length > 0;
   const aiSuggestedIds = useMemo(
     () =>
       new Set(
-        aiFieldResources
-          ?.map((f) => f.field_id)
+        aiSuggestions
+          .map((f) => f.field_id)
           .filter(Boolean) as string[]
       ),
-    [aiFieldResources]
+    [aiSuggestions]
   );
 
   // Convert fields array to FieldItem format for SelectableGrid
@@ -173,20 +183,20 @@ export function Fields({
 
   // Accept AI suggestion - add AI-suggested fields to selection
   const handleAccept = useCallback(() => {
-    if (!aiFieldResources?.length) return;
-    const newIds = aiFieldResources
+    if (aiSuggestions.length === 0) return;
+    const newIds = aiSuggestions
       .map((f) => f.field_id)
       .filter((id): id is string => !!id && !ids.includes(id));
     if (newIds.length > 0) {
       onChange([...ids, ...newIds]);
     }
-    onAccept?.();
-  }, [aiFieldResources, ids, onChange, onAccept]);
+    acceptAi();
+  }, [aiSuggestions, ids, onChange, acceptAi]);
 
   // Reject AI suggestion - just clear the pending state
   const handleReject = useCallback(() => {
-    onReject?.();
-  }, [onReject]);
+    rejectAi();
+  }, [rejectAi]);
 
   // Don't render if show_fields is false (AFTER all hooks)
   if (!show) {
@@ -216,9 +226,9 @@ export function Fields({
                     size="icon"
                     className="h-6 w-6"
                     onClick={onGenerate}
-                    disabled={disabled || isGenerating || showDiff}
+                    disabled={disabled || aiIsGenerating || showDiff}
                   >
-                    {isGenerating ? (
+                    {aiIsGenerating ? (
                       <Loader2 className="h-3.5 w-3.5 animate-spin" />
                     ) : (
                       <Sparkles className="h-3.5 w-3.5" />

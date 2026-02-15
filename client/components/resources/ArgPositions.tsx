@@ -3,6 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import type { OutputOf } from "@/lib/api/types";
+import { useResourceAi } from "@/hooks/use-resource-ai";
 import { ArrowDown, ArrowUp } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
@@ -75,6 +76,20 @@ export function ArgPositions({
   onAccept: _onAccept,
   onReject: _onReject,
 }: ArgPositionsProps) {
+  // Socket-based AI suggestion handling via shared hook
+  const { isGenerating: _aiIsGenerating } = useResourceAi<{
+    args_id: string | null;
+    value: number | null;
+  }>({
+    resourceType: "arg_positions",
+    groupId: group_id,
+    extractSuggestion: (data) => {
+      if (!data.success && data.success !== undefined) return null;
+      return { args_id: (data.args_id as string) ?? null, value: (data.value as number) ?? null };
+    },
+    accumulate: true,
+  });
+
   const [orderedArgs, setOrderedArgs] = useState<string[]>(args_ids);
   const [positionIdsByArg, setPositionIdsByArg] = useState<Map<string, string>>(
     new Map()

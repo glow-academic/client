@@ -15,6 +15,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useResourceAi } from "@/hooks/use-resource-ai";
 import type { OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 import { Check, X } from "lucide-react";
@@ -64,11 +65,27 @@ export function RunRubrics({
   showAiGenerate: _showAiGenerate = false,
   onGenerate: _onGenerate,
   isGenerating: _isGenerating = false,
-  // AI diff view props
-  aiRubricResources,
-  onAccept,
-  onReject,
+  // AI diff view props (deprecated - now from useResourceAi hook)
+  aiRubricResources: _aiRubricResources,
+  onAccept: _onAccept,
+  onReject: _onReject,
 }: RunRubricsProps) {
+  // AI suggestion handling via shared hook (accumulate mode: each event = one rubric)
+  const { isGenerating: aiIsGenerating, aiSuggestions, accept: acceptAi, reject: rejectAi } = useResourceAi<
+    Pick<RunRubricsResourceItem, "id" | "rubric_id">
+  >({
+    resourceType: "run_rubrics",
+    groupId: run_id,
+    accumulate: true,
+    extractSuggestion: (data) => {
+      if (!data.id) return null;
+      return {
+        id: (data.id as string) ?? null,
+        rubric_id: (data.rubric_id as string) ?? null,
+      };
+    },
+  });
+
   const selectedIds = useMemo(() => selected_rubric_ids ?? [], [
     selected_rubric_ids,
   ]);
@@ -88,35 +105,36 @@ export function RunRubrics({
     [onChange, run_id, selectedIds]
   );
 
-  // AI suggestion state
-  const showDiff = !!aiRubricResources?.length;
+  // AI suggestion state from hook
+  const aiRubricResources = aiSuggestions;
+  const showDiff = aiSuggestions.length > 0;
 
   // Set of AI-suggested rubric IDs for styling
   const aiSuggestedIds = useMemo(
     () =>
       new Set(
-        aiRubricResources
-          ?.map((r) => r.rubric_id)
+        aiSuggestions
+          .map((r) => r.rubric_id)
           .filter(Boolean) as string[]
       ),
-    [aiRubricResources]
+    [aiSuggestions]
   );
 
   // Accept AI suggestion - add AI-suggested rubrics to selection
   const handleAccept = useCallback(() => {
-    if (!aiRubricResources?.length) return;
-    const newIds = aiRubricResources
+    if (aiSuggestions.length === 0) return;
+    const newIds = aiSuggestions
       .map((r) => r.rubric_id)
       .filter((id): id is string => !!id);
     const merged = [...new Set([...selectedIds, ...newIds])];
     onChange(run_id, merged);
-    onAccept?.();
-  }, [aiRubricResources, selectedIds, onChange, run_id, onAccept]);
+    acceptAi();
+  }, [aiSuggestions, selectedIds, onChange, run_id, acceptAi]);
 
   // Reject AI suggestion - just clear the pending state
   const handleReject = useCallback(() => {
-    onReject?.();
-  }, [onReject]);
+    rejectAi();
+  }, [rejectAi]);
 
   if (!show_rubrics) {
     return null;

@@ -16,6 +16,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useResourceAi } from "@/hooks/use-resource-ai";
 import type { OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 import { Check, Loader2, Sparkles, X } from "lucide-react";
@@ -39,7 +40,8 @@ export interface ConditionalParametersProps {
   disabled?: boolean;
   onChange: (ids: string[]) => void;
   label?: string;
-  // AI diff props
+  group_id?: string | null;
+  // AI diff props (deprecated - now handled by useResourceAi hook)
   aiConditionalParameterResources?: Pick<ConditionalParametersResourceItem, "id" | "parameter_id">[] | null;
   onAccept?: () => void;
   onReject?: () => void;
@@ -57,13 +59,9 @@ export function ConditionalParameters({
   disabled = false,
   onChange,
   label = "Conditional Parameters",
-  // AI diff props
-  aiConditionalParameterResources,
-  onAccept,
-  onReject,
+  // AI diff props (deprecated - now handled by useResourceAi hook)
   showAiGenerate,
   onGenerate,
-  isGenerating,
 }: ConditionalParametersProps) {
   const ids = useMemo(
     () => conditional_parameter_ids ?? [],
@@ -79,16 +77,30 @@ export function ConditionalParameters({
     [conditional_parameter_suggestions]
   );
 
+  // Socket-based AI suggestion handling via shared hook
+  const { isGenerating: aiIsGenerating, aiSuggestions, accept: acceptAi, reject: rejectAi } = useResourceAi<{
+    id: string | null;
+    parameter_id: string | null;
+  }>({
+    resourceType: "conditional_parameters",
+    groupId: group_id,
+    extractSuggestion: (data) => {
+      if (!data.success && data.success !== undefined) return null;
+      return { id: (data.id as string) ?? null, parameter_id: (data.parameter_id as string) ?? null };
+    },
+    accumulate: true,
+  });
+
   // AI suggestion state
-  const showDiff = !!aiConditionalParameterResources?.length;
+  const showDiff = aiSuggestions.length > 0;
   const aiSuggestedIds = useMemo(
     () =>
       new Set(
-        aiConditionalParameterResources
-          ?.map((c) => c.id)
+        aiSuggestions
+          .map((c) => c.id)
           .filter(Boolean) as string[]
       ),
-    [aiConditionalParameterResources]
+    [aiSuggestions]
   );
 
   // Convert to items format for SelectableGrid
@@ -115,19 +127,19 @@ export function ConditionalParameters({
 
   // Accept AI suggestion
   const handleAccept = useCallback(() => {
-    if (!aiConditionalParameterResources?.length) return;
-    const newIds = aiConditionalParameterResources
+    if (aiSuggestions.length === 0) return;
+    const newIds = aiSuggestions
       .map((c) => c.id)
       .filter((id): id is string => !!id && !ids.includes(id));
     if (newIds.length > 0) {
       onChange([...ids, ...newIds]);
     }
-    onAccept?.();
-  }, [aiConditionalParameterResources, ids, onChange, onAccept]);
+    acceptAi();
+  }, [aiSuggestions, ids, onChange, acceptAi]);
 
   const handleReject = useCallback(() => {
-    onReject?.();
-  }, [onReject]);
+    rejectAi();
+  }, [rejectAi]);
 
   // Check if any conditional parameter resource is generated (must be before early return)
   const hasGenerated = useMemo(() => {
@@ -154,9 +166,9 @@ export function ConditionalParameters({
                     size="icon"
                     className="h-6 w-6"
                     onClick={onGenerate}
-                    disabled={disabled || isGenerating || showDiff}
+                    disabled={disabled || aiIsGenerating || showDiff}
                   >
-                    {isGenerating ? (
+                    {aiIsGenerating ? (
                       <Loader2 className="h-3.5 w-3.5 animate-spin" />
                     ) : (
                       <Sparkles className="h-3.5 w-3.5" />

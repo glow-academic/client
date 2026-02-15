@@ -18,6 +18,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import type { OutputOf } from "@/lib/api/types";
+import { useResourceAi } from "@/hooks/use-resource-ai";
 import { Check, Loader2, Sparkles, X } from "lucide-react";
 import { useCallback, useMemo } from "react";
 
@@ -97,33 +98,43 @@ export function TemperatureLevels({
   const resourceId = temperature_level_id ?? null;
   const show = show_temperature_levels ?? true;
 
+  // Socket-based AI suggestion handling via shared hook
+  const { isGenerating: aiIsGenerating, aiSuggestion, accept: acceptAi, reject: rejectAi } = useResourceAi<{
+    temperature_level_id: string | null;
+    name: string | null;
+  }>({
+    resourceType: "temperature_levels",
+    groupId: group_id,
+    extractSuggestion: (data) => {
+      if (!data.success && data.success !== undefined) return null;
+      return { temperature_level_id: (data.temperature_level_id as string) ?? null, name: (data.name as string) ?? null };
+    },
+  });
+
   // AI suggestion state
-  const showDiff = !!aiTemperatureLevelResources?.length;
+  const showDiff = !!aiSuggestion?.temperature_level_id;
   const _aiSuggestedIds = useMemo(
     () =>
       new Set(
-        aiTemperatureLevelResources
-          ?.map((t) => t.temperature_level_id)
-          .filter(Boolean) as string[]
+        aiSuggestion?.temperature_level_id
+          ? [aiSuggestion.temperature_level_id]
+          : []
       ),
-    [aiTemperatureLevelResources]
+    [aiSuggestion]
   );
   // Note: _aiSuggestedIds available for future use in highlighting suggested items
 
   // Accept AI suggestion - select AI-suggested temperature level
   const handleAccept = useCallback(() => {
-    if (!aiTemperatureLevelResources?.length) return;
-    const firstSuggested = aiTemperatureLevelResources[0]?.temperature_level_id;
-    if (firstSuggested) {
-      onTemperatureLevelIdChange(firstSuggested);
-    }
-    onAccept?.();
-  }, [aiTemperatureLevelResources, onTemperatureLevelIdChange, onAccept]);
+    if (!aiSuggestion?.temperature_level_id) return;
+    onTemperatureLevelIdChange(aiSuggestion.temperature_level_id);
+    acceptAi();
+  }, [aiSuggestion, onTemperatureLevelIdChange, acceptAi]);
 
   // Reject AI suggestion - just clear the pending state
   const handleReject = useCallback(() => {
-    onReject?.();
-  }, [onReject]);
+    rejectAi();
+  }, [rejectAi]);
 
   const _suggestionsList = useMemo(
     () => temperature_level_suggestions ?? [],
@@ -204,9 +215,9 @@ export function TemperatureLevels({
                     size="icon"
                     className="h-6 w-6"
                     onClick={onGenerate}
-                    disabled={disabled || isGenerating || showDiff}
+                    disabled={disabled || aiIsGenerating || showDiff}
                   >
-                    {isGenerating ? (
+                    {aiIsGenerating ? (
                       <Loader2 className="h-3.5 w-3.5 animate-spin" />
                     ) : (
                       <Sparkles className="h-3.5 w-3.5" />

@@ -153,12 +153,12 @@ export function Parameters({
     resourceType: "parameters",
     groupId: group_id,
     extractSuggestion: (data) => {
-      if (!data.parameter_id || !data.name) return null;
+      if (!data["parameter_id"] || !data["name"]) return null;
       onGenerationComplete?.();
       return [
         {
-          parameter_id: data.parameter_id as string,
-          name: data.name as string,
+          parameter_id: data["parameter_id"] as string,
+          name: data["name"] as string,
         },
       ];
     },

@@ -16,6 +16,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useResourceAi } from "@/hooks/use-resource-ai";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 import { Check, Loader2, Sparkles, X } from "lucide-react";
@@ -87,14 +88,27 @@ export function Pricing({
   createPricingAction,
   onGenerate,
   showAiGenerate = false,
-  isGenerating = false,
-  // AI diff view props
-  aiPricingResources,
-  onAccept,
-  onReject,
+  isGenerating: _isGenerating = false,
+  // AI diff view props (deprecated - now from useResourceAi hook)
+  aiPricingResources: _aiPricingResources,
+  onAccept: _onAccept,
+  onReject: _onReject,
   isAutosaveEnabled = true,
   registerFlush,
 }: PricingProps) {
+  // AI suggestion handling via shared hook (accumulate mode: each event = one pricing)
+  const { isGenerating: aiIsGenerating, aiSuggestions, accept: acceptAi, reject: rejectAi } = useResourceAi<
+    Pick<PricingResourceItem, "id">
+  >({
+    resourceType: "pricing",
+    groupId: group_id,
+    accumulate: true,
+    extractSuggestion: (data) => {
+      if (!data.id) return null;
+      return { id: (data.id as string) ?? null };
+    },
+  });
+
   const ids = useMemo(() => pricing_ids ?? [], [pricing_ids]);
   const show = show_pricing ?? false;
   const allPricing = useMemo(() => pricings ?? [], [pricings]);
@@ -191,30 +205,31 @@ export function Pricing({
     return pricing_resources?.some((m) => m.generated) ?? false;
   }, [pricing_resources]);
 
-  // AI suggestion state
-  const showDiff = !!aiPricingResources?.length;
+  // AI suggestion state from hook
+  const aiPricingResources = aiSuggestions;
+  const showDiff = aiSuggestions.length > 0;
   const aiSuggestedIds = useMemo(
-    () => new Set(aiPricingResources?.map((r) => r.id).filter(Boolean) as string[]),
-    [aiPricingResources]
+    () => new Set(aiSuggestions.map((r) => r.id).filter(Boolean) as string[]),
+    [aiSuggestions]
   );
 
   // Accept AI suggestion - add AI-suggested pricing to selection
   const handleAccept = useCallback(() => {
-    if (!aiPricingResources?.length) return;
-    const newIds = aiPricingResources
+    if (aiSuggestions.length === 0) return;
+    const newIds = aiSuggestions
       .map((r) => r.id)
       .filter((id): id is string => !!id);
     if (newIds.length > 0) {
       const mergedIds = [...new Set([...ids, ...newIds])];
       onChange(mergedIds);
     }
-    onAccept?.();
-  }, [aiPricingResources, ids, onChange, onAccept]);
+    acceptAi();
+  }, [aiSuggestions, ids, onChange, acceptAi]);
 
   // Reject AI suggestion - just clear the pending state
   const handleReject = useCallback(() => {
-    onReject?.();
-  }, [onReject]);
+    rejectAi();
+  }, [rejectAi]);
 
   // Don't render if show_pricing is false (AFTER all hooks)
   if (!show) {
@@ -244,9 +259,9 @@ export function Pricing({
                     size="icon"
                     className="h-6 w-6"
                     onClick={onGenerate}
-                    disabled={disabled || isGenerating || showDiff}
+                    disabled={disabled || aiIsGenerating || showDiff}
                   >
-                    {isGenerating ? (
+                    {aiIsGenerating ? (
                       <Loader2 className="h-3.5 w-3.5 animate-spin" />
                     ) : (
                       <Sparkles className="h-3.5 w-3.5" />

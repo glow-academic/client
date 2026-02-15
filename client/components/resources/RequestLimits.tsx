@@ -18,6 +18,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import type { InputOf, OutputOf } from "@/lib/api/types";
+import { useResourceAi } from "@/hooks/use-resource-ai";
 import { cn } from "@/lib/utils";
 import { Check, Infinity, Loader2, Plus, Sparkles, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -337,27 +338,37 @@ export function RequestLimits({
     return resource?.generated ?? false;
   }, [resource]);
 
+  // Socket-based AI suggestion handling via shared hook
+  const { isGenerating: aiIsGenerating, aiSuggestion, accept: acceptAi, reject: rejectAi } = useResourceAi<{
+    id: string | null;
+    requests_per_day: number | null;
+  }>({
+    resourceType: "request_limits",
+    groupId: group_id,
+    extractSuggestion: (data) => {
+      if (!data.success && data.success !== undefined) return null;
+      return { id: (data.id as string) ?? null, requests_per_day: (data.requests_per_day as number) ?? null };
+    },
+  });
+
   // AI suggestion state
-  const showDiff = !!aiRequestLimitResources?.length;
+  const showDiff = !!aiSuggestion?.id;
   const aiSuggestedIds = useMemo(
-    () => new Set(aiRequestLimitResources?.map((r) => r.id).filter(Boolean) as string[]),
-    [aiRequestLimitResources]
+    () => new Set(aiSuggestion?.id ? [aiSuggestion.id] : []),
+    [aiSuggestion]
   );
 
   // Accept AI suggestion - set AI-suggested request limit
   const handleAccept = useCallback(() => {
-    if (!aiRequestLimitResources?.length) return;
-    const firstSuggested = aiRequestLimitResources[0];
-    if (firstSuggested?.id) {
-      onRequestLimitIdChange(firstSuggested.id);
-    }
-    onAccept?.();
-  }, [aiRequestLimitResources, onRequestLimitIdChange, onAccept]);
+    if (!aiSuggestion?.id) return;
+    onRequestLimitIdChange(aiSuggestion.id);
+    acceptAi();
+  }, [aiSuggestion, onRequestLimitIdChange, acceptAi]);
 
   // Reject AI suggestion - just clear the pending state
   const handleReject = useCallback(() => {
-    onReject?.();
-  }, [onReject]);
+    rejectAi();
+  }, [rejectAi]);
 
   // Don't render if show_request_limit is false (AFTER all hooks)
   if (!show) {
@@ -388,9 +399,9 @@ export function RequestLimits({
                       size="icon"
                       className="h-6 w-6"
                       onClick={onGenerate}
-                      disabled={disabled || isGenerating || showDiff}
+                      disabled={disabled || aiIsGenerating || showDiff}
                     >
-                      {isGenerating ? (
+                      {aiIsGenerating ? (
                         <Loader2 className="h-3.5 w-3.5 animate-spin" />
                       ) : (
                         <Sparkles className="h-3.5 w-3.5" />
@@ -470,23 +481,20 @@ export function RequestLimits({
         </div>
       )}
       {/* AI-suggested request limits preview */}
-      {showDiff && aiRequestLimitResources && aiRequestLimitResources.length > 0 && (
+      {showDiff && aiSuggestion && (
         <div className="mb-4 space-y-2">
           <p className="text-sm font-medium text-success">AI Suggested Request Limit</p>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-            {aiRequestLimitResources.map((item, idx) => (
-              <div
-                key={item.id || idx}
-                className={cn(
-                  "p-3 rounded-lg border-2 border-success bg-success/10",
-                  "text-sm"
-                )}
-              >
-                {item.requests_per_day !== null && item.requests_per_day !== undefined
-                  ? `${item.requests_per_day} requests/day`
-                  : "Unlimited"}
-              </div>
-            ))}
+            <div
+              className={cn(
+                "p-3 rounded-lg border-2 border-success bg-success/10",
+                "text-sm"
+              )}
+            >
+              {aiSuggestion.requests_per_day !== null && aiSuggestion.requests_per_day !== undefined
+                ? `${aiSuggestion.requests_per_day} requests/day`
+                : "Unlimited"}
+            </div>
           </div>
         </div>
       )}

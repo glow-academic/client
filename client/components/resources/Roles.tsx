@@ -27,6 +27,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useResourceAi } from "@/hooks/use-resource-ai";
 import type { OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 import { ICON_MAP, ICON_NAMES } from "@/utils/icons";
@@ -66,6 +67,7 @@ export interface RolesProps {
   showAiGenerate?: boolean;
   onGenerate?: () => void | Promise<void>;
   isGenerating?: boolean;
+  group_id?: string | null;
   // AI diff view props
   aiRoleResources?: Pick<RolesResourceItem, "id" | "name">[] | null;
   onAccept?: () => void;
@@ -241,22 +243,32 @@ export function Roles({
   onRoleResourceChange,
   showAiGenerate = false,
   onGenerate,
-  isGenerating = false,
-  // AI diff view props
-  aiRoleResources,
-  onAccept,
-  onReject,
+  group_id,
 }: RolesProps) {
+  // Socket-based AI suggestion handling via shared hook
+  const { isGenerating: aiIsGenerating, aiSuggestions, accept: acceptAi, reject: rejectAi } = useResourceAi<{
+    id: string | null;
+    name: string | null;
+  }>({
+    resourceType: "roles",
+    groupId: group_id,
+    extractSuggestion: (data) => {
+      if (!data.success && data.success !== undefined) return null;
+      return { id: (data.id as string) ?? null, name: (data.name as string) ?? null };
+    },
+    accumulate: true,
+  });
+
   // AI suggestion state
-  const showDiff = multiSelect && !!aiRoleResources?.length;
+  const showDiff = multiSelect && aiSuggestions.length > 0;
   const aiSuggestedIds = useMemo(
     () =>
       new Set(
-        aiRoleResources
-          ?.map((r) => r.id)
+        aiSuggestions
+          .map((r) => r.id)
           .filter(Boolean) as string[]
       ),
-    [aiRoleResources]
+    [aiSuggestions]
   );
 
   const [roleOverrides, setRoleOverrides] = useState<
@@ -398,21 +410,21 @@ export function Roles({
 
   // Accept AI suggestion - add AI-suggested roles to selection (multi-select only)
   const handleAccept = useCallback(() => {
-    if (!aiRoleResources?.length || !multiSelect || !onRolesChange) return;
+    if (aiSuggestions.length === 0 || !multiSelect || !onRolesChange) return;
     const currentIds = role_ids ?? [];
-    const newIds = aiRoleResources
+    const newIds = aiSuggestions
       .map((r) => r.id)
       .filter((id): id is string => !!id && !currentIds.includes(id));
     if (newIds.length > 0) {
       onRolesChange([...currentIds, ...newIds]);
     }
-    onAccept?.();
-  }, [aiRoleResources, role_ids, onRolesChange, onAccept, multiSelect]);
+    acceptAi();
+  }, [aiSuggestions, role_ids, onRolesChange, acceptAi, multiSelect]);
 
   // Reject AI suggestion - just clear the pending state
   const handleReject = useCallback(() => {
-    onReject?.();
-  }, [onReject]);
+    rejectAi();
+  }, [rejectAi]);
 
   const hasGenerated = useMemo(() => {
     return roles?.some((r) => r.generated) ?? false;
@@ -440,9 +452,9 @@ export function Roles({
                     size="icon"
                     className="h-6 w-6"
                     onClick={onGenerate}
-                    disabled={disabled || isGenerating || showDiff}
+                    disabled={disabled || aiIsGenerating || showDiff}
                   >
-                    {isGenerating ? (
+                    {aiIsGenerating ? (
                       <Loader2 className="h-3.5 w-3.5 animate-spin" />
                     ) : (
                       <Sparkles className="h-3.5 w-3.5" />

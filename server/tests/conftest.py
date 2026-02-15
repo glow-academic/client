@@ -6,6 +6,7 @@ import os
 import sys
 from collections.abc import AsyncGenerator
 from pathlib import Path
+from urllib.parse import urlparse, urlunparse
 
 import asyncpg  # type: ignore[import]
 import pytest
@@ -24,6 +25,10 @@ os.environ["SECRET_KEY"] = os.getenv(
 )
 # Ensure Testcontainers-backed DB is used
 os.environ["ENV"] = os.getenv("ENV", "TEST")
+# Enable container reuse by default for fast local runs
+os.environ["TESTCONTAINERS_REUSE_ENABLE"] = os.getenv(
+    "TESTCONTAINERS_REUSE_ENABLE", "true"
+)
 # Ensure header signing works in test environment
 os.environ["AUTH_SECRET"] = os.getenv(
     "AUTH_SECRET", "test_secret_key_for_integration_tests"
@@ -44,6 +49,13 @@ from app.utils.test_db import get_test_db_url  # noqa: E402
 _test_db_url: str | None = None
 
 
+def _filter_meta_commands(sql: str) -> str:
+    """Strip psql meta-commands (lines starting with \\) from SQL."""
+    return "\n".join(
+        line for line in sql.split("\n") if not line.strip().startswith("\\")
+    )
+
+
 # --- CORE TEST FIXTURES ---
 
 
@@ -51,12 +63,13 @@ _test_db_url: str | None = None
 async def initialize_test_db() -> AsyncGenerator[None, None]:
     """Spin up disposable Postgres via init_db_pool and tear it down.
 
-    This initializes the test container, applies the schema, and loads seed data.
-    Individual tests create their own connections to avoid event loop issues.
+    Uses a template database to skip schema + seed + bootstrap on warm runs.
+    The template is invalidated automatically when any SQL file changes.
     """
     global _test_db_url
 
     database_dir = Path(__file__).parent.parent.parent / "database"
+    sql_dir = server_dir / "app" / "sql"
     schema_file = database_dir / "schema.sql"
     seed_file = database_dir / "test-seed.sql"
 
@@ -72,34 +85,97 @@ async def initialize_test_db() -> AsyncGenerator[None, None]:
             "Please run 'make build-test-seed' to generate it."
         )
 
+    # 1. Start / reuse the test container and create a pool to the default DB
     await init_db_pool()
 
-    # Get the connection URL from the test container for direct connections
-    # This avoids event loop issues with the pool
-    _test_db_url = get_test_db_url()
-    if _test_db_url is None:
+    base_url = get_test_db_url()
+    if base_url is None:
         raise RuntimeError("Test database URL not available")
 
-    # Load test-seed.sql after schema is applied
-    pool = get_pool()
-    if pool is None:
-        raise RuntimeError("Database pool not available")
-
-    sql_content = seed_file.read_text()
-    # Filter out pg_dump/psql meta-commands (lines starting with \)
-    filtered_sql = "\n".join(
-        line for line in sql_content.split("\n") if not line.strip().startswith("\\")
+    from app.utils.template_db import (
+        cleanup_old_templates,
+        clone_from_template,
+        compute_db_hash,
+        get_admin_url,
+        save_as_template,
+        template_exists,
     )
-    async with pool.acquire() as conn:
-        await conn.execute(filtered_sql)
-    print("🗄️  Test seed data applied to disposable database")
 
-    # Bootstrap all SQL views + query functions (dynamic discovery)
-    from tests.bootstrap_sql import bootstrap_all_sql
+    # 2. Compute content hash
+    db_hash = compute_db_hash(database_dir, sql_dir)
+    template_name = f"template_glow_{db_hash}"
+    clone_name = f"test_glow_{db_hash}"
+    admin_url = get_admin_url(base_url)
 
-    async with pool.acquire() as conn:
-        await bootstrap_all_sql(conn)
-    print("🗄️  SQL views and functions bootstrapped")
+    print(f"🔑 Template hash: {db_hash}")
+
+    # 3. Connect to admin DB and check for template
+    admin_conn = await asyncpg.connect(admin_url)
+    try:
+        has_template = await template_exists(admin_conn, template_name)
+
+        if has_template:
+            # --- WARM PATH: clone from template ---
+            print(f"⚡ Template found: {template_name} — cloning to {clone_name}")
+            await clone_from_template(admin_conn, template_name, clone_name)
+
+            # Reconnect pool to the cloned database
+            parsed = urlparse(base_url)
+            clone_url = urlunparse(parsed._replace(path=f"/{clone_name}"))
+
+            import app.main as main_mod
+
+            if main_mod._db_pool:
+                await main_mod._db_pool.close()
+            main_mod._db_pool = await asyncpg.create_pool(
+                clone_url, min_size=1, max_size=5
+            )
+            main_mod._test_db_url = clone_url
+            _test_db_url = clone_url
+            print("✅ Cloned database ready (schema + seed + SQL skipped)")
+        else:
+            # --- COLD PATH: build from scratch, then save as template ---
+            print("🏗️  No template found — building from scratch")
+
+            # Apply schema
+            pool = get_pool()
+            if pool is None:
+                raise RuntimeError("Database pool not available")
+
+            schema_sql = _filter_meta_commands(schema_file.read_text())
+            async with pool.acquire() as conn:
+                await conn.execute(schema_sql)
+            print("🗄️  Test schema applied")
+
+            # Apply seed data
+            seed_sql = _filter_meta_commands(seed_file.read_text())
+            async with pool.acquire() as conn:
+                await conn.execute(seed_sql)
+            print("🗄️  Test seed data applied")
+
+            # Bootstrap SQL views + functions
+            from tests.bootstrap_sql import bootstrap_all_sql
+
+            async with pool.acquire() as conn:
+                await bootstrap_all_sql(conn)
+            print("🗄️  SQL views and functions bootstrapped")
+
+            # Save as template for next run
+            # Extract the database name from the base URL
+            source_db = urlparse(base_url).path.lstrip("/")
+            await save_as_template(admin_conn, source_db, template_name)
+            print(f"💾 Template saved: {template_name}")
+
+            # Clean up old templates
+            await cleanup_old_templates(admin_conn)
+
+            _test_db_url = base_url
+    finally:
+        await admin_conn.close()
+
+    # Fallback: if _test_db_url wasn't set above
+    if _test_db_url is None:
+        _test_db_url = base_url
 
     try:
         yield

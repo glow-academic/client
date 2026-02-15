@@ -16,6 +16,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useResourceAi } from "@/hooks/use-resource-ai";
 import type { OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 import { Check, Loader2, Sparkles, X } from "lucide-react";
@@ -71,14 +72,14 @@ export function Settings({
   description,
   group_id,
   onGenerate,
-  isGenerating = false,
+  isGenerating: _isGenerating = false,
   showAiGenerate = false,
   // Legacy props for backward compatibility
   settingsIds,
-  // AI diff view props
-  aiSettingsResources,
-  onAccept,
-  onReject,
+  // AI diff view props (deprecated — kept for interface compat)
+  aiSettingsResources: _aiSettingsResources,
+  onAccept: _onAccept,
+  onReject: _onReject,
 }: SettingsProps) {
   // Use standardized props with fallback to legacy props
   const ids = useMemo(
@@ -88,34 +89,50 @@ export function Settings({
   const show = show_settings ?? false;
   const allSettings = useMemo(() => settings ?? [], [settings]);
 
+  // Socket-based AI suggestion handling via shared hook
+  const { isGenerating: aiIsGenerating, aiSuggestions, accept: acceptAi, reject: rejectAi } = useResourceAi<{
+    settings_id: string | null;
+    name: string | null;
+  }>({
+    resourceType: "settings",
+    groupId: group_id,
+    extractSuggestion: (data) => {
+      const settings_id = data.settings_id as string | null | undefined;
+      const name = data.name as string | null | undefined;
+      if (!settings_id) return null;
+      return { settings_id, name: name ?? null };
+    },
+    accumulate: true,
+  });
+
   // AI suggestion state
-  const showDiff = !!aiSettingsResources?.length;
+  const showDiff = aiSuggestions.length > 0;
   const aiSuggestedIds = useMemo(
     () =>
       new Set(
-        aiSettingsResources
-          ?.map((s) => s.settings_id)
+        aiSuggestions
+          .map((s) => s.settings_id)
           .filter(Boolean) as string[]
       ),
-    [aiSettingsResources]
+    [aiSuggestions]
   );
 
   // Accept AI suggestion - add AI-suggested settings to selection
   const handleAccept = useCallback(() => {
-    if (!aiSettingsResources?.length) return;
-    const newIds = aiSettingsResources
+    if (aiSuggestions.length === 0) return;
+    const newIds = aiSuggestions
       .map((s) => s.settings_id)
       .filter((id): id is string => !!id && !ids.includes(id));
     if (newIds.length > 0) {
       onChange([...ids, ...newIds]);
     }
-    onAccept?.();
-  }, [aiSettingsResources, ids, onChange, onAccept]);
+    acceptAi();
+  }, [aiSuggestions, ids, onChange, acceptAi]);
 
   // Reject AI suggestion - just clear the pending state
   const handleReject = useCallback(() => {
-    onReject?.();
-  }, [onReject]);
+    rejectAi();
+  }, [rejectAi]);
 
   const suggestionsList = useMemo(
     () => settings_suggestions ?? [],
@@ -182,9 +199,9 @@ export function Settings({
                     size="icon"
                     className="h-6 w-6"
                     onClick={onGenerate}
-                    disabled={disabled || isGenerating || showDiff}
+                    disabled={disabled || aiIsGenerating || showDiff}
                   >
-                    {isGenerating ? (
+                    {aiIsGenerating ? (
                       <Loader2 className="h-3.5 w-3.5 animate-spin" />
                     ) : (
                       <Sparkles className="h-3.5 w-3.5" />

@@ -16,6 +16,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useResourceAi } from "@/hooks/use-resource-ai";
 import { cn } from "@/lib/utils";
 import type { OutputOf } from "@/lib/api/types";
 import { Check, Loader2, Sparkles, X } from "lucide-react";
@@ -70,7 +71,7 @@ export function ReasoningLevels({
   disabled = false,
   onReasoningLevelIdChange,
   onGenerate,
-  isGenerating = false,
+  isGenerating: _isGenerating = false,
   showAiGenerate = false,
   label = "Reasoning Level",
   placeholder = "Select a reasoning level",
@@ -81,10 +82,10 @@ export function ReasoningLevels({
   searchTerm,
   onSearchChange,
   group_id,
-  // AI diff view props
-  aiReasoningLevelResources,
-  onAccept,
-  onReject,
+  // AI diff view props (deprecated - now handled by useResourceAi hook)
+  aiReasoningLevelResources: _aiReasoningLevelResources,
+  onAccept: _onAccept,
+  onReject: _onReject,
 }: ReasoningLevelsProps) {
   const resource = reasoning_level_resource ?? null;
   const resourceId = reasoning_level_id ?? null;
@@ -94,16 +95,32 @@ export function ReasoningLevels({
     [reasoning_level_suggestions]
   );
 
+  // Socket-based AI suggestion handling via shared hook
+  const { isGenerating: aiIsGenerating, aiSuggestion, accept: acceptAi, reject: rejectAi } = useResourceAi<{
+    reasoning_level_id: string | null;
+    reasoning_level: string | null;
+  }>({
+    resourceType: "reasoning_levels",
+    groupId: group_id,
+    extractSuggestion: (data) => {
+      if (!data.success && data.success !== undefined) return null;
+      return {
+        reasoning_level_id: (data.reasoning_level_id as string) ?? null,
+        reasoning_level: (data.reasoning_level as string) ?? null,
+      };
+    },
+  });
+
   // AI suggestion state
-  const showDiff = !!aiReasoningLevelResources?.length;
+  const showDiff = !!aiSuggestion;
   const aiSuggestedIds = useMemo(
     () =>
       new Set(
-        aiReasoningLevelResources
-          ?.map((r) => r.reasoning_level_id)
-          .filter(Boolean) as string[]
+        aiSuggestion?.reasoning_level_id
+          ? [aiSuggestion.reasoning_level_id]
+          : []
       ),
-    [aiReasoningLevelResources]
+    [aiSuggestion]
   );
 
   const filteredReasoningLevels = useMemo(() => {
@@ -132,18 +149,18 @@ export function ReasoningLevels({
 
   // Accept AI suggestion - set the AI-suggested reasoning level
   const handleAccept = useCallback(() => {
-    if (!aiReasoningLevelResources?.length) return;
-    const suggestedId = aiReasoningLevelResources[0]?.reasoning_level_id;
+    if (!aiSuggestion) return;
+    const suggestedId = aiSuggestion.reasoning_level_id;
     if (suggestedId && suggestedId !== resourceId) {
       onReasoningLevelIdChange(suggestedId);
     }
-    onAccept?.();
-  }, [aiReasoningLevelResources, resourceId, onReasoningLevelIdChange, onAccept]);
+    acceptAi();
+  }, [aiSuggestion, resourceId, onReasoningLevelIdChange, acceptAi]);
 
   // Reject AI suggestion - just clear the pending state
   const handleReject = useCallback(() => {
-    onReject?.();
-  }, [onReject]);
+    rejectAi();
+  }, [rejectAi]);
 
   // Don't render if show_reasoning_levels is false (AFTER all hooks)
   if (!show) {
@@ -168,9 +185,9 @@ export function ReasoningLevels({
                     size="icon"
                     className="h-6 w-6"
                     onClick={onGenerate}
-                    disabled={disabled || isGenerating || showDiff}
+                    disabled={disabled || aiIsGenerating || showDiff}
                   >
-                    {isGenerating ? (
+                    {aiIsGenerating ? (
                       <Loader2 className="h-3.5 w-3.5 animate-spin" />
                     ) : (
                       <Sparkles className="h-3.5 w-3.5" />

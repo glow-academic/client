@@ -16,6 +16,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useResourceAi } from "@/hooks/use-resource-ai";
 import { cn } from "@/lib/utils";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { Check, Loader2, Sparkles, X } from "lucide-react";
@@ -54,7 +55,7 @@ export interface OptionsProps {
   isAutosaveEnabled?: boolean;
   /** Register a flush callback with parent for manual save */
   registerFlush?: (flush: () => Promise<FlushResult>) => void;
-  // AI diff props
+  // AI diff props (deprecated - now handled by useResourceAi hook)
   aiOptionResources?: Array<{
     option_id?: string | null;
     option_text?: string | null;
@@ -80,13 +81,8 @@ export function Options({
   createOptionsAction: _createOptionsAction,
   isAutosaveEnabled: _isAutosaveEnabled = true,
   registerFlush,
-  // AI diff props
-  aiOptionResources,
-  onAccept,
-  onReject,
   showAiGenerate = false,
   onGenerate,
-  isGenerating = false,
 }: OptionsProps) {
   const ids = useMemo(() => option_ids ?? [], [option_ids]);
   const show = show_options ?? false;
@@ -113,16 +109,30 @@ export function Options({
     }
   }, [registerFlush]);
 
+  // Socket-based AI suggestion handling via shared hook
+  const { isGenerating: aiIsGenerating, aiSuggestions, accept: acceptAi, reject: rejectAi } = useResourceAi<{
+    option_id: string | null;
+    option_text: string | null;
+  }>({
+    resourceType: "options",
+    groupId: group_id,
+    extractSuggestion: (data) => {
+      if (!data.success && data.success !== undefined) return null;
+      return { option_id: (data.option_id as string) ?? null, option_text: (data.option_text as string) ?? null };
+    },
+    accumulate: true,
+  });
+
   // AI suggestion state
-  const showDiff = !!aiOptionResources?.length;
+  const showDiff = aiSuggestions.length > 0;
   const aiSuggestedIds = useMemo(
     () =>
       new Set(
-        aiOptionResources
-          ?.map((o) => o.option_id)
+        aiSuggestions
+          .map((o) => o.option_id)
           .filter(Boolean) as string[]
       ),
-    [aiOptionResources]
+    [aiSuggestions]
   );
 
   // Convert to items format for SelectableGrid
@@ -153,21 +163,22 @@ export function Options({
     return option_resources?.some((o) => o.generated) ?? false;
   }, [option_resources]);
 
-  // Accept AI suggestion
+  // Accept AI suggestion - add AI-suggested options to selection
   const handleAccept = useCallback(() => {
-    if (!aiOptionResources?.length) return;
-    const newIds = aiOptionResources
+    if (aiSuggestions.length === 0) return;
+    const newIds = aiSuggestions
       .map((o) => o.option_id)
       .filter((id): id is string => !!id && !ids.includes(id));
     if (newIds.length > 0) {
       onChange([...ids, ...newIds]);
     }
-    onAccept?.();
-  }, [aiOptionResources, ids, onChange, onAccept]);
+    acceptAi();
+  }, [aiSuggestions, ids, onChange, acceptAi]);
 
+  // Reject AI suggestion - just clear the pending state
   const handleReject = useCallback(() => {
-    onReject?.();
-  }, [onReject]);
+    rejectAi();
+  }, [rejectAi]);
 
   // Don't render if show is false (AFTER all hooks)
   if (!show) {
@@ -189,9 +200,9 @@ export function Options({
                     size="icon"
                     className="h-6 w-6"
                     onClick={onGenerate}
-                    disabled={disabled || isGenerating || showDiff}
+                    disabled={disabled || aiIsGenerating || showDiff}
                   >
-                    {isGenerating ? (
+                    {aiIsGenerating ? (
                       <Loader2 className="h-3.5 w-3.5 animate-spin" />
                     ) : (
                       <Sparkles className="h-3.5 w-3.5" />
