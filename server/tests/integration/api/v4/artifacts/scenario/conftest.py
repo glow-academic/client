@@ -36,9 +36,7 @@ async def seed_scenario_data() -> None:
 
     SQL bootstrap is handled by tests/conftest.py. This only inserts
     the profile-department link required by GET endpoints, then creates
-    a scenario via the save endpoint so list tests have data (seed
-    scenarios_resource entries all have self-referencing parent_id,
-    which the list SQL excludes as non-root).
+    a scenario via the save endpoint so list tests have data.
     """
     pool = get_pool()
     if pool is None:
@@ -47,8 +45,7 @@ async def seed_scenario_data() -> None:
     async with pool.acquire() as conn:
         await conn.execute(_SEED_PROFILE_DEPARTMENT_SQL)
 
-    # Create a scenario via the save endpoint so list tests have a root scenario.
-    # (Seed scenarios_resource entries have parent_id = own id, excluded by list.)
+    # Create a scenario via the save endpoint so list tests have a scenario.
     async def _override_get_db() -> AsyncGenerator[asyncpg.Connection, None]:
         async with pool.acquire() as c:
             yield c

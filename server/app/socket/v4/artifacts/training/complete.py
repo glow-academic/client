@@ -182,9 +182,7 @@ async def _handle_training_run_complete(sid: str, data: dict[str, Any]) -> None:
                     if saved_chat_id:
                         chat_id = str(saved_chat_id)
             except Exception as e:
-                logger.exception(
-                    f"Failed to auto-create chat for training: {str(e)}"
-                )
+                logger.exception(f"Failed to auto-create chat for training: {str(e)}")
 
         # Emit training_generation_complete
         event = TrainingGenerationCompleteEvent(

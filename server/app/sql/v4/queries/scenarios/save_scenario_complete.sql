@@ -186,7 +186,7 @@ BEGIN
         INSERT INTO scenario_artifact (created_at, updated_at)
         VALUES (NOW(), NOW())
         RETURNING id INTO v_scenario_id;
-        -- Root status is now set on scenarios_resource (is_root = TRUE) below
+        -- scenarios_resource row created below
     ELSE
         v_scenario_id := v_input_scenario_id;
 
@@ -657,8 +657,7 @@ BEGIN
         video_enabled,
         images_enabled,
         questions_enabled,
-        department_ids,
-        is_root
+        department_ids
     )
     SELECT
         n.name,
@@ -668,8 +667,7 @@ BEGIN
         v_video_enabled_flag_id IS NOT NULL,
         v_images_enabled_flag_id IS NOT NULL,
         v_questions_enabled_flag_id IS NOT NULL,
-        v_department_ids,
-        is_create  -- new scenarios are root; updates preserve existing tree structure
+        v_department_ids
     FROM (SELECT 1) one
     LEFT JOIN names_resource n ON n.id = v_name_id
     LEFT JOIN descriptions_resource d ON d.id = v_description_id

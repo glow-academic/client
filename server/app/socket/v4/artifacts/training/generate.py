@@ -116,9 +116,7 @@ async def _training_generate_impl(
         resource_types = data.resource_types
 
         invalid_types = [
-            rt
-            for rt in resource_types
-            if rt not in TRAINING_GENERATE_RESOURCE_TYPES
+            rt for rt in resource_types if rt not in TRAINING_GENERATE_RESOURCE_TYPES
         ]
         if invalid_types:
             await emit_to_internal(
@@ -271,9 +269,7 @@ async def _training_generate_impl(
             )
             return
 
-        training_jinja_context = _build_training_jinja_context(
-            result, resource_types
-        )
+        training_jinja_context = _build_training_jinja_context(result, resource_types)
 
         # Step 3: Check rate limit (the only thing still in SQL)
         async with get_db_connection() as conn:

@@ -345,7 +345,6 @@ async def get_scenario_list(
                     problem_statement=s.problem_statement,
                     is_inactive=s.is_inactive,
                     generated=s.generated,
-                    parent_scenario_id=s.parent_scenario_id,
                     department_ids=s.department_ids,
                     objective_ids=s.objective_ids,
                     persona_ids=s.persona_ids,

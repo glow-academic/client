@@ -31684,8 +31684,6 @@ export interface components {
             is_inactive?: boolean | null;
             /** Generated */
             generated?: boolean | null;
-            /** Parent Scenario Id */
-            parent_scenario_id?: string | null;
             /** Department Ids */
             department_ids?: string[] | null;
             /** Objective Ids */

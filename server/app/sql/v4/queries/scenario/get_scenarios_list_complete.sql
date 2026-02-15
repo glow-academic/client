@@ -40,7 +40,6 @@ CREATE TYPE types.q_list_scenarios_v4_scenario AS (
     problem_statement text,
     is_inactive boolean,
     generated boolean,
-    parent_scenario_id uuid,
     department_ids text[],
     objective_ids text[],
     persona_ids text[],
@@ -171,7 +170,6 @@ scenario_data AS (
         NOT EXISTS (SELECT 1 FROM scenario_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = s.id AND f.name = 'scenario_active' AND sf.value = TRUE) as is_inactive,
         s.generated as generated,
         s.updated_at,
-        sr.parent_id as parent_scenario_id,
         COALESCE(sdd.department_ids, NULL) as department_ids,
         COALESCE(so.objective_ids, ARRAY[]::text[]) as objective_ids,
         COALESCE(sr.persona_ids::text[], ARRAY[]::text[]) as persona_ids,
@@ -203,7 +201,7 @@ scenario_data AS (
         (SELECT n.name FROM scenario_names_junction sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.scenario_id = s.id LIMIT 1),
         ps.problem_statement,
         EXISTS (SELECT 1 FROM scenario_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = s.id AND f.name = 'scenario_active' AND sf.value = TRUE),
-        s.generated, s.updated_at, sr.parent_id, sr.persona_ids,
+        s.generated, s.updated_at, sr.persona_ids,
         sdd.department_ids, so.objective_ids, sfd.field_ids,
         ss.simulation_ids, ss.num_simulations, sc.cohort_ids,
         su.active_simulation_count, up.role
@@ -212,12 +210,11 @@ scenario_data AS (
         COUNT(sd.scenario_id) FILTER (WHERE sd.department_id IN (SELECT department_id FROM user_departments)) > 0
         OR NOT EXISTS (SELECT 1 FROM scenario_departments_junction sd2 WHERE sd2.scenario_id = s.id AND sd2.active = true)
 ),
--- Server-side filtering on root scenarios only
+-- Server-side filtering on scenarios
 filtered_roots AS (
     SELECT sd.*
     FROM scenario_data sd
-    WHERE sd.parent_scenario_id IS NULL
-      AND (search IS NULL OR LOWER(sd.name) LIKE '%' || LOWER(search) || '%' OR LOWER(sd.problem_statement) LIKE '%' || LOWER(search) || '%')
+    WHERE (search IS NULL OR LOWER(sd.name) LIKE '%' || LOWER(search) || '%' OR LOWER(sd.problem_statement) LIKE '%' || LOWER(search) || '%')
       AND (api_list_scenarios_v4.persona_ids IS NULL OR sd.persona_ids && api_list_scenarios_v4.persona_ids::text[])
       AND (api_list_scenarios_v4.simulation_ids IS NULL OR sd.simulation_ids && api_list_scenarios_v4.simulation_ids::text[])
       AND (filter_department_ids IS NULL OR sd.department_ids && filter_department_ids::text[])
@@ -230,37 +227,34 @@ paginated_roots AS (
     ORDER BY updated_at DESC NULLS LAST
     LIMIT page_size OFFSET page_offset
 ),
--- Include paginated roots and their children
+-- Paginated scenarios
 page_scenarios AS (
     SELECT sd.* FROM paginated_roots sd
-    UNION ALL
-    SELECT sd.* FROM scenario_data sd
-    WHERE sd.parent_scenario_id IN (SELECT scenario_id FROM paginated_roots)
 ),
 -- Page-level hydration CTEs removed — hydrated in Python via cached *_internal() functions
 -- Distinct IDs for filter dropdown options (from ALL visible roots, not just page)
 all_persona_ids_options AS (
     SELECT DISTINCT unnest(persona_ids)::uuid as persona_id
-    FROM scenario_data WHERE persona_ids IS NOT NULL AND parent_scenario_id IS NULL
+    FROM scenario_data WHERE persona_ids IS NOT NULL
 ),
 all_simulation_ids_options AS (
     SELECT DISTINCT unnest(simulation_ids) as simulation_id
-    FROM scenario_data WHERE parent_scenario_id IS NULL
+    FROM scenario_data
 ),
 all_department_ids_options AS (
     SELECT DISTINCT unnest(department_ids) as department_id
-    FROM scenario_data WHERE department_ids IS NOT NULL AND parent_scenario_id IS NULL
+    FROM scenario_data WHERE department_ids IS NOT NULL
 )
 SELECT
     -- Scenarios (paginated roots + children)
     COALESCE(
         ARRAY_AGG(
             (sd.scenario_id, sd.name, sd.problem_statement, sd.is_inactive, sd.generated,
-             sd.parent_scenario_id, sd.department_ids, sd.objective_ids, sd.persona_ids,
+             sd.department_ids, sd.objective_ids, sd.persona_ids,
              sd.field_ids, sd.simulation_ids, sd.num_simulations,
              sd.active_simulation_count,
              sd.cohort_ids, sd.updated_at)::types.q_list_scenarios_v4_scenario
-            ORDER BY sd.parent_scenario_id NULLS FIRST, sd.updated_at DESC NULLS LAST
+            ORDER BY sd.updated_at DESC NULLS LAST
         ),
         '{}'::types.q_list_scenarios_v4_scenario[]
     ) as scenarios,
@@ -268,7 +262,7 @@ SELECT
     -- Persona filter options
     COALESCE(
         (SELECT ARRAY_AGG(
-            (pr.id::text, pn_name.name, (SELECT COUNT(*) FROM scenario_data sd WHERE sd.parent_scenario_id IS NULL AND pr.id::text = ANY(sd.persona_ids)))::types.q_list_scenarios_v4_option
+            (pr.id::text, pn_name.name, (SELECT COUNT(*) FROM scenario_data sd WHERE pr.id::text = ANY(sd.persona_ids)))::types.q_list_scenarios_v4_option
             ORDER BY pn_name.name
          )
          FROM personas_resource pr
@@ -281,7 +275,7 @@ SELECT
     -- Simulation filter options (from simulations_resource directly)
     COALESCE(
         (SELECT ARRAY_AGG(
-            (sim_r.id::text, sim_r.name, (SELECT COUNT(*) FROM scenario_data sd WHERE sd.parent_scenario_id IS NULL AND sim_r.id::text = ANY(sd.simulation_ids)))::types.q_list_scenarios_v4_option
+            (sim_r.id::text, sim_r.name, (SELECT COUNT(*) FROM scenario_data sd WHERE sim_r.id::text = ANY(sd.simulation_ids)))::types.q_list_scenarios_v4_option
             ORDER BY sim_r.name
          )
          FROM simulations_resource sim_r
@@ -292,7 +286,7 @@ SELECT
     -- Department filter options (from departments_resource directly)
     COALESCE(
         (SELECT ARRAY_AGG(
-            (dr.id::text, dr.name, (SELECT COUNT(*) FROM scenario_data sd WHERE sd.parent_scenario_id IS NULL AND dr.id::text = ANY(sd.department_ids)))::types.q_list_scenarios_v4_option
+            (dr.id::text, dr.name, (SELECT COUNT(*) FROM scenario_data sd WHERE dr.id::text = ANY(sd.department_ids)))::types.q_list_scenarios_v4_option
             ORDER BY dr.name
          )
          FROM departments_resource dr
