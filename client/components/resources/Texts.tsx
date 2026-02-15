@@ -20,7 +20,7 @@ import {
 import { useResourceAi } from "@/hooks/use-resource-ai";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { Check, FileText, Loader2, Sparkles, X } from "lucide-react";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
 type CreateDraftTextsIn = InputOf<"/api/v4/resources/texts", "post">;
@@ -60,6 +60,10 @@ export interface TextsProps {
   onAccept?: () => void;
   onReject?: () => void;
   searchTerm?: string;
+  /** When false, skip automatic resource creation (manual save mode) */
+  isAutosaveEnabled?: boolean;
+  /** Register a flush callback with parent for manual save - returns created IDs */
+  registerFlush?: (flush: () => Promise<{ text_ids: string[] } | void>) => void;
 }
 
 export function Texts({
@@ -82,6 +86,8 @@ export function Texts({
   onAccept: _onAccept,
   onReject: _onReject,
   searchTerm,
+  isAutosaveEnabled = true,
+  registerFlush,
 }: TextsProps) {
   // AI suggestion handling via shared hook
   const { isGenerating: aiIsGenerating } = useResourceAi<
@@ -101,6 +107,9 @@ export function Texts({
   const [isCreating, setIsCreating] = useState(false);
   const [newTextContent, setNewTextContent] = useState("");
   const [showCreateForm, setShowCreateForm] = useState(false);
+
+  const createdTextIdsRef = useRef<Set<string>>(new Set());
+  const flushRef = useRef<(() => Promise<{ text_ids: string[] } | void>) | undefined>(undefined);
 
   // Derive selected texts from text_resources or texts list
   const selectedTexts = useMemo(() => {
@@ -149,6 +158,7 @@ export function Texts({
       });
       const newTextId = result?.texts_id;
       if (newTextId) {
+        createdTextIdsRef.current.add(newTextId);
         onChange([...text_ids, newTextId]);
         setNewTextContent("");
         setShowCreateForm(false);
@@ -160,6 +170,18 @@ export function Texts({
       setIsCreating(false);
     }
   }, [newTextContent, createTextsAction, create_tool_id, group_id, text_ids, onChange]);
+
+  // Flush function for manual save mode - returns all current text IDs
+  flushRef.current = async (): Promise<{ text_ids: string[] } | void> => {
+    return { text_ids };
+  };
+
+  // Register flush callback with parent
+  useEffect(() => {
+    if (registerFlush) {
+      registerFlush(() => flushRef.current?.() ?? Promise.resolve());
+    }
+  }, [registerFlush]);
 
   if (!show_texts) return null;
 

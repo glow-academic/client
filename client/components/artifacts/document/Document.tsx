@@ -62,6 +62,7 @@ const FLUSH_KEYS = [
   "descriptions",
   "uploads",
   "images",
+  "texts",
 ] as const;
 
 const DOCUMENT_RESOURCES: ResourceConfig[] = [
@@ -92,7 +93,7 @@ const DOCUMENT_RESOURCES: ResourceConfig[] = [
     flushKey: "image_ids",
     type: "multi",
   },
-  { key: "texts", formKey: "text_ids", flushKey: null, type: "multi" },
+  { key: "texts", formKey: "text_ids", flushKey: "text_ids", type: "multi" },
 ];
 
 // Types defined inline using InputOf/OutputOf
@@ -1204,6 +1205,7 @@ function DocumentComponent({
                 }
                 create_tool_id={documentDetail?.texts?.create_tool_id ?? null}
                 createTextsAction={createTextsAction}
+                registerFlush={registerFlushCallbacks["texts"]}
               />
             </StepCard>
           );
