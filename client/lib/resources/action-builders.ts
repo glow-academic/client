@@ -1,14 +1,10 @@
 /**
- * Shared helpers for building resource action payloads.
+ * Shared helpers for building flat resource payloads.
  *
- * For persona: save requests use flat IDs, draft uses buildDraftPayload.
- * For other artifacts: buildResourceActions still provides nested action objects.
+ * All artifacts send flat IDs (name_id, department_ids, etc.) for both
+ * draft patch and save requests. Server's from_request() wraps into
+ * internal ResourceAction composites.
  */
-
-export type ResourceSection = {
-  create_tool_id?: string | null;
-  link_tool_id?: string | null;
-};
 
 export type ResourceConfig = {
   /** Section key in entity data (e.g., "names", "departments") */
@@ -21,104 +17,9 @@ export type ResourceConfig = {
   type: "single" | "multi";
 };
 
-export function buildSingleAction(opts: {
-  resourceId: string | null | undefined;
-  wasCreated: boolean;
-  changed: boolean;
-  section: ResourceSection | undefined;
-}) {
-  return {
-    resource_id: opts.resourceId ?? null,
-    create_tool_id: opts.wasCreated
-      ? (opts.section?.create_tool_id ?? null)
-      : null,
-    link_tool_id: opts.changed ? (opts.section?.link_tool_id ?? null) : null,
-  };
-}
-
-export function buildMultiAction(opts: {
-  resourceIds: string[];
-  wasCreated: boolean;
-  changed: boolean;
-  section: ResourceSection | undefined;
-}) {
-  return {
-    resource_ids: opts.resourceIds.length > 0 ? opts.resourceIds : null,
-    create_tool_id: opts.wasCreated
-      ? (opts.section?.create_tool_id ?? null)
-      : null,
-    link_tool_id: opts.changed ? (opts.section?.link_tool_id ?? null) : null,
-  };
-}
-
-/**
- * Build resource action objects for all configured resources.
- * Used by non-persona artifacts for both patch (autosave) and save paths.
- */
-export function buildResourceActions(
-  resources: readonly ResourceConfig[],
-  opts: {
-    formState: Record<string, unknown>;
-    referenceState: Record<string, unknown> | null;
-    flushResults: Record<string, unknown>;
-    entityData: Record<string, unknown> | null | undefined;
-  },
-): Record<string, unknown> {
-  const { formState, referenceState, flushResults, entityData } = opts;
-  const result: Record<string, unknown> = {};
-
-  for (const r of resources) {
-    const section = entityData?.[r.key] as ResourceSection | undefined;
-
-    if (r.type === "single") {
-      const effectiveId =
-        r.flushKey && flushResults[r.flushKey] !== undefined
-          ? (flushResults[r.flushKey] as string | null)
-          : (formState[r.formKey] as string | null);
-      const wasCreated =
-        r.flushKey !== null &&
-        flushResults[r.flushKey!] !== undefined &&
-        flushResults[r.flushKey!] !== null;
-      const refId = referenceState
-        ? (referenceState[r.formKey] as string | null)
-        : null;
-      const changed = referenceState ? effectiveId !== refId : !!effectiveId;
-
-      result[r.key] = buildSingleAction({
-        resourceId: effectiveId,
-        wasCreated,
-        changed,
-        section,
-      });
-    } else {
-      const ids = formState[r.formKey] as string[];
-      const effectiveIds =
-        r.flushKey && flushResults[r.flushKey] !== undefined
-          ? (flushResults[r.flushKey] as string[])
-          : ids;
-      const wasCreated =
-        r.flushKey !== null && flushResults[r.flushKey!] !== undefined;
-      const refIds = referenceState
-        ? (referenceState[r.formKey] as string[])
-        : [];
-      const changed = JSON.stringify(effectiveIds) !== JSON.stringify(refIds);
-
-      result[r.key] = buildMultiAction({
-        resourceIds: effectiveIds ?? [],
-        wasCreated,
-        changed,
-        section,
-      });
-    }
-  }
-
-  return result;
-}
-
 /**
  * Build flat draft payload with only changed fields.
  * Returns an object with formKey→value for fields that differ from reference state.
- * Used by persona artifact for its simplified flat request format.
  */
 export function buildDraftPayload(
   resources: readonly ResourceConfig[],

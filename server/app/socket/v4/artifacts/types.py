@@ -157,3 +157,42 @@ class DocumentGenerationStartedEvent(BaseModel):
     group_id: str
     run_id: str
     resource_types: list[str]
+
+
+class ProfileGenerationStartedEvent(BaseModel):
+    """Server-to-client event: profile_generation_started.
+
+    Emitted when profile generation begins, listing which resource types
+    will be generated.
+    """
+
+    artifact_type: str = "profile"
+    group_id: str
+    run_id: str
+    resource_types: list[str]
+
+
+class ParameterGenerationStartedEvent(BaseModel):
+    """Server-to-client event: parameter_generation_started.
+
+    Emitted when parameter generation begins, listing which resource types
+    will be generated.
+    """
+
+    artifact_type: str = "parameter"
+    group_id: str
+    run_id: str
+    resource_types: list[str]
+
+
+class FieldGenerationStartedEvent(BaseModel):
+    """Server-to-client event: field_generation_started.
+
+    Emitted when field generation begins, listing which resource types
+    will be generated.
+    """
+
+    artifact_type: str = "field"
+    group_id: str
+    run_id: str
+    resource_types: list[str]

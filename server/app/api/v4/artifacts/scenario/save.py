@@ -2,6 +2,7 @@
 Unified endpoint that handles both create (input_scenario_id = NULL) and update (input_scenario_id provided).
 """
 
+import uuid
 from typing import Annotated, Any, cast
 
 import asyncpg  # type: ignore
@@ -14,6 +15,8 @@ from app.api.v4.artifacts.scenario.permissions import (
 from app.api.v4.artifacts.scenario.types import (
     SaveScenarioApiRequest,
     SaveScenarioApiResponse,
+    ScenarioMultiResourceAction,
+    ScenarioResourceAction,
     SaveScenarioSqlParams,
     SaveScenarioSqlRow,
 )
@@ -27,7 +30,10 @@ from app.sql.types import (
     load_sql_query,
 )
 from app.utils.cache.invalidate_tags import invalidate_tags
+from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import execute_sql_typed
+
+logger = get_logger(__name__)
 
 # Load SQL with types at module level - makes it clear what SQL file is used
 SQL_PATH = "app/sql/v4/queries/scenarios/save_scenario_complete.sql"
@@ -35,6 +41,74 @@ ACCESS_SQL_PATH = "app/sql/v4/queries/scenarios/get_scenario_access_complete.sql
 
 
 router = APIRouter()
+
+
+async def save_scenario_internal(
+    conn: asyncpg.Connection,
+    profile_id: uuid.UUID,
+    group_id: uuid.UUID | None,
+    resource_actions: dict[str, Any],
+    scenario_id: uuid.UUID | None = None,
+) -> uuid.UUID | None:
+    """Save a scenario from resource actions dict (used by generation complete handler).
+
+    Builds SaveScenarioSqlParams from a flat resource_actions dict, executes the
+    save SQL in a transaction, and invalidates cache.
+
+    Returns the scenario_id on success, None on failure.
+    """
+    try:
+
+        def _single(key: str) -> ScenarioResourceAction:
+            val = resource_actions.get(key, {})
+            if isinstance(val, dict):
+                return ScenarioResourceAction(
+                    resource_id=val.get("resource_id"),
+                )
+            return ScenarioResourceAction()
+
+        def _multi(key: str) -> ScenarioMultiResourceAction:
+            val = resource_actions.get(key, {})
+            if isinstance(val, dict):
+                return ScenarioMultiResourceAction(
+                    resource_ids=val.get("resource_ids"),
+                )
+            return ScenarioMultiResourceAction()
+
+        params = SaveScenarioSqlParams(
+            profile_id=profile_id,
+            input_scenario_id=scenario_id,
+            group_id=group_id,
+            names=_single("names"),
+            descriptions=_single("descriptions"),
+            problem_statements=_single("problem_statements"),
+            flags=_multi("flags"),
+            departments=_multi("departments"),
+            personas=_multi("personas"),
+            documents=_multi("documents"),
+            parameters=_multi("parameters"),
+            parameter_fields=_multi("parameter_fields"),
+            images=_multi("images"),
+            objectives=_multi("objectives"),
+            videos=_multi("videos"),
+            questions=_multi("questions"),
+        )
+
+        async with conn.transaction():
+            result = cast(
+                SaveScenarioSqlRow,
+                await execute_sql_typed(conn, SQL_PATH, params=params),
+            )
+
+            if not result or not result.scenario_id:
+                return None
+
+        await invalidate_tags(["scenarios"])
+        return result.scenario_id
+
+    except Exception as e:
+        logger.exception(f"save_scenario_internal failed: {e}")
+        return None
 
 
 @router.post(

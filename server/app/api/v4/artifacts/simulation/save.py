@@ -4,6 +4,7 @@ Unified endpoint that handles both create (input_simulation_id = NULL) and updat
 Uses two-pass architecture with Python-computed permissions.
 """
 
+import uuid
 from typing import Annotated, Any, cast
 
 import asyncpg  # type: ignore
@@ -17,6 +18,8 @@ from app.api.v4.artifacts.simulation.permissions import (
 from app.api.v4.artifacts.simulation.types import (
     SaveSimulationApiRequest,
     SaveSimulationApiResponse,
+    SimulationMultiResourceAction,
+    SimulationResourceAction,
     SaveSimulationSqlParams,
     SaveSimulationSqlRow,
 )
@@ -32,7 +35,10 @@ from app.sql.types import (
     load_sql_query,
 )
 from app.utils.cache.invalidate_tags import invalidate_tags
+from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import execute_sql_typed
+
+logger = get_logger(__name__)
 
 # Load SQL with types at module level - makes it clear what SQL file is used
 SQL_PATH = "app/sql/v4/queries/simulations/save_simulation_complete.sql"
@@ -43,6 +49,71 @@ ACCESS_SQL_PATH = (
 
 
 router = APIRouter()
+
+
+async def save_simulation_internal(
+    conn: asyncpg.Connection,
+    profile_id: uuid.UUID,
+    group_id: uuid.UUID,
+    resource_actions: dict[str, Any],
+    simulation_id: uuid.UUID | None = None,
+) -> uuid.UUID | None:
+    """Save a simulation from resource actions dict (used by generation complete handler).
+
+    Builds SaveSimulationSqlParams from a flat resource_actions dict, executes the
+    save SQL in a transaction, and invalidates cache.
+
+    Returns the simulation_id on success, None on failure.
+    """
+    try:
+
+        def _single(key: str) -> SimulationResourceAction:
+            val = resource_actions.get(key, {})
+            if isinstance(val, dict):
+                return SimulationResourceAction(
+                    resource_id=val.get("resource_id"),
+                )
+            return SimulationResourceAction()
+
+        def _multi(key: str) -> SimulationMultiResourceAction:
+            val = resource_actions.get(key, {})
+            if isinstance(val, dict):
+                return SimulationMultiResourceAction(
+                    resource_ids=val.get("resource_ids"),
+                )
+            return SimulationMultiResourceAction()
+
+        params = SaveSimulationSqlParams(
+            profile_id=profile_id,
+            input_simulation_id=simulation_id,
+            group_id=group_id,
+            names=_single("names"),
+            descriptions=_single("descriptions"),
+            flags=_multi("flags"),
+            departments=_multi("departments"),
+            scenarios=_multi("scenarios"),
+            scenario_flags=_multi("scenario_flags"),
+            scenario_positions=_multi("scenario_positions"),
+            scenario_rubrics=_multi("scenario_rubrics"),
+            scenario_time_limits=_multi("scenario_time_limits"),
+            scenario_personas=_multi("scenario_personas"),
+        )
+
+        async with conn.transaction():
+            result = cast(
+                SaveSimulationSqlRow,
+                await execute_sql_typed(conn, SQL_PATH, params=params),
+            )
+
+            if not result or not result.simulation_id:
+                return None
+
+        await invalidate_tags(["simulations"])
+        return result.simulation_id
+
+    except Exception as e:
+        logger.exception(f"save_simulation_internal failed: {e}")
+        return None
 
 
 @router.post(

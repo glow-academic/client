@@ -14,6 +14,7 @@ class GenerateProfilePayload(GetProfileApiRequest):
     resource_types: list[str]
     user_instructions: list[str] | None = None
     staff_id: str | None = None
+    save: bool = True
 
 
 class ProfileGenerationCompleteEvent(GenerationCompleteEvent):
@@ -21,9 +22,11 @@ class ProfileGenerationCompleteEvent(GenerationCompleteEvent):
 
     Emitted when profile generation completes. Resource-level data is now
     sent via resource_generation_complete events from the shared handler.
+    Contains optional profile_id if auto-save succeeded.
     """
 
     artifact_type: str = "profile"
+    profile_id: str | None = None
 
 
 class ProfileGenerationProgressEvent(GenerationProgressEvent):

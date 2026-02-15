@@ -10267,6 +10267,28 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/socket/v4/server/profile_generation_started": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Profile Generation Started Api
+         * @description Server-to-client event: Profile generation started.
+         *
+         *     Emitted when profile generation begins, listing resource types being generated.
+         */
+        post: operations["profile_generation_started_api_socket_v4_server_profile_generation_started_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/socket/v4/server/profile_generation_progress": {
         parameters: {
             query?: never;
@@ -10321,6 +10343,28 @@ export interface paths {
          * @description Server-to-client event: profile generation error.
          */
         post: operations["profile_generation_error_api_socket_v4_server_profile_generation_error_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v4/server/parameter_generation_started": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Parameter Generation Started Api
+         * @description Server-to-client event: Parameter generation started.
+         *
+         *     Emitted when parameter generation begins, listing resource types being generated.
+         */
+        post: operations["parameter_generation_started_api_socket_v4_server_parameter_generation_started_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -20520,6 +20564,7 @@ export interface components {
          *
          *     Emitted when cohort generation completes. Resource-level data is now
          *     sent via resource_generation_complete events from the shared handler.
+         *     Contains optional cohort_id if auto-save succeeded.
          */
         CohortGenerationCompleteEvent: {
             /**
@@ -20539,6 +20584,8 @@ export interface components {
             message: string;
             /** Type */
             type?: string | null;
+            /** Cohort Id */
+            cohort_id?: string | null;
         };
         /**
          * CohortGenerationErrorEvent
@@ -33120,6 +33167,26 @@ export interface components {
             /** Type */
             type?: string | null;
         };
+        /**
+         * ParameterGenerationStartedEvent
+         * @description Server-to-client event: parameter_generation_started.
+         *
+         *     Emitted when parameter generation begins, listing which resource types
+         *     will be generated.
+         */
+        ParameterGenerationStartedEvent: {
+            /**
+             * Artifact Type
+             * @default parameter
+             */
+            artifact_type: string;
+            /** Group Id */
+            group_id: string;
+            /** Run Id */
+            run_id: string;
+            /** Resource Types */
+            resource_types: string[];
+        };
         /** ParameterNameSection */
         ParameterNameSection: {
             /**
@@ -34066,7 +34133,7 @@ export interface components {
         };
         /**
          * PatchTrainingBundleDraftApiRequest
-         * @description Request for patching a training bundle draft.
+         * @description Request for patching a training bundle draft - flat resource IDs.
          */
         PatchTrainingBundleDraftApiRequest: {
             /** Input Draft Id */
@@ -34078,18 +34145,30 @@ export interface components {
              * @default 0
              */
             expected_version: number;
-            departments?: components["schemas"]["TrainingBundleMultiResourceAction"] | null;
-            personas?: components["schemas"]["TrainingBundleMultiResourceAction"] | null;
-            documents?: components["schemas"]["TrainingBundleMultiResourceAction"] | null;
-            parameter_fields?: components["schemas"]["TrainingBundleMultiResourceAction"] | null;
-            parameters?: components["schemas"]["TrainingBundleMultiResourceAction"] | null;
-            fields?: components["schemas"]["TrainingBundleMultiResourceAction"] | null;
-            questions?: components["schemas"]["TrainingBundleMultiResourceAction"] | null;
-            options?: components["schemas"]["TrainingBundleMultiResourceAction"] | null;
-            videos?: components["schemas"]["TrainingBundleMultiResourceAction"] | null;
-            images?: components["schemas"]["TrainingBundleMultiResourceAction"] | null;
-            problem_statements?: components["schemas"]["TrainingBundleMultiResourceAction"] | null;
-            objectives?: components["schemas"]["TrainingBundleMultiResourceAction"] | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
+            /** Persona Ids */
+            persona_ids?: string[] | null;
+            /** Document Ids */
+            document_ids?: string[] | null;
+            /** Parameter Field Ids */
+            parameter_field_ids?: string[] | null;
+            /** Parameter Ids */
+            parameter_ids?: string[] | null;
+            /** Field Ids */
+            field_ids?: string[] | null;
+            /** Question Ids */
+            question_ids?: string[] | null;
+            /** Option Ids */
+            option_ids?: string[] | null;
+            /** Video Ids */
+            video_ids?: string[] | null;
+            /** Image Ids */
+            image_ids?: string[] | null;
+            /** Problem Statement Ids */
+            problem_statement_ids?: string[] | null;
+            /** Objective Ids */
+            objective_ids?: string[] | null;
         };
         /**
          * PatchTrainingBundleDraftApiResponse
@@ -35495,6 +35574,7 @@ export interface components {
          *
          *     Emitted when profile generation completes. Resource-level data is now
          *     sent via resource_generation_complete events from the shared handler.
+         *     Contains optional profile_id if auto-save succeeded.
          */
         ProfileGenerationCompleteEvent: {
             /**
@@ -35514,6 +35594,8 @@ export interface components {
             message: string;
             /** Type */
             type?: string | null;
+            /** Profile Id */
+            profile_id?: string | null;
         };
         /** ProfileGenerationErrorEvent */
         ProfileGenerationErrorEvent: {
@@ -35575,6 +35657,26 @@ export interface components {
             arguments_delta?: string | null;
             /** Trace Id */
             trace_id?: string | null;
+        };
+        /**
+         * ProfileGenerationStartedEvent
+         * @description Server-to-client event: profile_generation_started.
+         *
+         *     Emitted when profile generation begins, listing which resource types
+         *     will be generated.
+         */
+        ProfileGenerationStartedEvent: {
+            /**
+             * Artifact Type
+             * @default profile
+             */
+            artifact_type: string;
+            /** Group Id */
+            group_id: string;
+            /** Run Id */
+            run_id: string;
+            /** Resource Types */
+            resource_types: string[];
         };
         /** ProfileNameSection */
         ProfileNameSection: {
@@ -41360,6 +41462,8 @@ export interface components {
             message: string;
             /** Type */
             type?: string | null;
+            /** Scenario Id */
+            scenario_id?: string | null;
             /** Image Resources */
             image_resources?: components["schemas"]["QGetImagesV4Item"][] | null;
             /** Video Resources */
@@ -45995,6 +46099,7 @@ export interface components {
          *
          *     Emitted when simulation generation completes. Resource-level data is now
          *     sent via resource_generation_complete events from the shared handler.
+         *     Contains optional simulation_id if auto-save succeeded.
          */
         SimulationGenerationCompleteEvent: {
             /**
@@ -46014,6 +46119,8 @@ export interface components {
             message: string;
             /** Type */
             type?: string | null;
+            /** Simulation Id */
+            simulation_id?: string | null;
         };
         /**
          * SimulationGenerationStartedEvent
@@ -48289,18 +48396,6 @@ export interface components {
             current?: components["schemas"]["QGetImagesV4Item"][] | null;
             /** Resources */
             resources?: components["schemas"]["QGetImagesV4Item"][] | null;
-        };
-        /**
-         * TrainingBundleMultiResourceAction
-         * @description Multi-resource action for training bundle draft patch.
-         */
-        TrainingBundleMultiResourceAction: {
-            /** Resource Ids */
-            resource_ids?: string[] | null;
-            /** Create Tool Id */
-            create_tool_id?: string | null;
-            /** Link Tool Id */
-            link_tool_id?: string | null;
         };
         /** TrainingBundleObjectiveSection */
         TrainingBundleObjectiveSection: {
@@ -68520,6 +68615,41 @@ export interface operations {
             };
         };
     };
+    profile_generation_started_api_socket_v4_server_profile_generation_started_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProfileGenerationStartedEvent"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     profile_generation_progress_api_socket_v4_server_profile_generation_progress_post: {
         parameters: {
             query?: never;
@@ -68600,6 +68730,41 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["ProfileGenerationErrorEvent"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    parameter_generation_started_api_socket_v4_server_parameter_generation_started_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ParameterGenerationStartedEvent"];
             };
         };
         responses: {

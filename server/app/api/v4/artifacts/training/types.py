@@ -478,24 +478,24 @@ class TrainingBundleMultiResourceAction(BaseModel):
 
 
 class PatchTrainingBundleDraftApiRequest(BaseModel):
-    """Request for patching a training bundle draft."""
+    """Request for patching a training bundle draft - flat resource IDs."""
 
     input_draft_id: UUID | None = None
     group_id: UUID | None = None
     expected_version: int = 0
-    # 13 customizable resources (scenarios excluded — not user-customizable)
-    departments: TrainingBundleMultiResourceAction | None = None
-    personas: TrainingBundleMultiResourceAction | None = None
-    documents: TrainingBundleMultiResourceAction | None = None
-    parameter_fields: TrainingBundleMultiResourceAction | None = None
-    parameters: TrainingBundleMultiResourceAction | None = None
-    fields: TrainingBundleMultiResourceAction | None = None
-    questions: TrainingBundleMultiResourceAction | None = None
-    options: TrainingBundleMultiResourceAction | None = None
-    videos: TrainingBundleMultiResourceAction | None = None
-    images: TrainingBundleMultiResourceAction | None = None
-    problem_statements: TrainingBundleMultiResourceAction | None = None
-    objectives: TrainingBundleMultiResourceAction | None = None
+    # 12 customizable resources (scenarios excluded — not user-customizable)
+    department_ids: list[UUID] | None = None
+    persona_ids: list[UUID] | None = None
+    document_ids: list[UUID] | None = None
+    parameter_field_ids: list[UUID] | None = None
+    parameter_ids: list[UUID] | None = None
+    field_ids: list[UUID] | None = None
+    question_ids: list[UUID] | None = None
+    option_ids: list[UUID] | None = None
+    video_ids: list[UUID] | None = None
+    image_ids: list[UUID] | None = None
+    problem_statement_ids: list[UUID] | None = None
+    objective_ids: list[UUID] | None = None
 
 
 class PatchTrainingBundleDraftApiResponse(BaseModel):
@@ -532,23 +532,25 @@ class PatchTrainingBundleDraftSqlParams(BaseModel):
         request: PatchTrainingBundleDraftApiRequest,
         profile_id: UUID,
     ) -> "PatchTrainingBundleDraftSqlParams":
-        empty = TrainingBundleMultiResourceAction()
+        def wrap(ids: list[UUID] | None) -> TrainingBundleMultiResourceAction:
+            return TrainingBundleMultiResourceAction(resource_ids=ids)
+
         return cls(
             profile_id=profile_id,
             input_draft_id=request.input_draft_id,
             group_id=request.group_id,
-            departments=request.departments or empty,
-            personas=request.personas or empty,
-            documents=request.documents or empty,
-            parameter_fields=request.parameter_fields or empty,
-            parameters=request.parameters or empty,
-            fields=request.fields or empty,
-            questions=request.questions or empty,
-            options=request.options or empty,
-            videos=request.videos or empty,
-            images=request.images or empty,
-            problem_statements=request.problem_statements or empty,
-            objectives=request.objectives or empty,
+            departments=wrap(request.department_ids),
+            personas=wrap(request.persona_ids),
+            documents=wrap(request.document_ids),
+            parameter_fields=wrap(request.parameter_field_ids),
+            parameters=wrap(request.parameter_ids),
+            fields=wrap(request.field_ids),
+            questions=wrap(request.question_ids),
+            options=wrap(request.option_ids),
+            videos=wrap(request.video_ids),
+            images=wrap(request.image_ids),
+            problem_statements=wrap(request.problem_statement_ids),
+            objectives=wrap(request.objective_ids),
             expected_version=request.expected_version,
         )
 

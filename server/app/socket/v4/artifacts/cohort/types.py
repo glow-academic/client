@@ -21,9 +21,11 @@ class CohortGenerationCompleteEvent(GenerationCompleteEvent):
 
     Emitted when cohort generation completes. Resource-level data is now
     sent via resource_generation_complete events from the shared handler.
+    Contains optional cohort_id if auto-save succeeded.
     """
 
     artifact_type: str = "cohort"
+    cohort_id: str | None = None
 
 
 class CohortGenerationProgressEvent(GenerationProgressEvent):

@@ -2,6 +2,7 @@
 Unified endpoint that handles both create (cohort_id = NULL) and update (cohort_id provided).
 """
 
+import uuid
 from typing import Annotated, Any, cast
 
 import asyncpg  # type: ignore
@@ -12,6 +13,8 @@ from app.api.v4.artifacts.cohort.permissions import (
     compute_can_edit,
 )
 from app.api.v4.artifacts.cohort.types import (
+    CohortMultiResourceAction,
+    CohortResourceAction,
     SaveCohortApiRequest,
     SaveCohortApiResponse,
     SaveCohortSqlParams,
@@ -27,7 +30,10 @@ from app.sql.types import (
     load_sql_query,
 )
 from app.utils.cache.invalidate_tags import invalidate_tags
+from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import execute_sql_typed
+
+logger = get_logger(__name__)
 
 # Load SQL with types at module level - makes it clear what SQL file is used
 ACCESS_SQL_PATH = "app/sql/v4/queries/cohorts/get_cohort_access_complete.sql"
@@ -35,6 +41,68 @@ SQL_PATH = "app/sql/v4/queries/cohorts/save_cohort_complete.sql"
 
 
 router = APIRouter()
+
+
+async def save_cohort_internal(
+    conn: asyncpg.Connection,
+    profile_id: uuid.UUID,
+    group_id: uuid.UUID,
+    resource_actions: dict[str, Any],
+    cohort_id: uuid.UUID | None = None,
+) -> uuid.UUID | None:
+    """Save a cohort from resource actions dict (used by generation complete handler).
+
+    Builds SaveCohortSqlParams from a flat resource_actions dict, executes the
+    save SQL in a transaction, and invalidates cache.
+
+    Returns the cohort_id on success, None on failure.
+    """
+    try:
+
+        def _single(key: str) -> CohortResourceAction:
+            val = resource_actions.get(key, {})
+            if isinstance(val, dict):
+                return CohortResourceAction(
+                    resource_id=val.get("resource_id"),
+                )
+            return CohortResourceAction()
+
+        def _multi(key: str) -> CohortMultiResourceAction:
+            val = resource_actions.get(key, {})
+            if isinstance(val, dict):
+                return CohortMultiResourceAction(
+                    resource_ids=val.get("resource_ids"),
+                )
+            return CohortMultiResourceAction()
+
+        params = SaveCohortSqlParams(
+            profile_id=profile_id,
+            input_cohort_id=cohort_id,
+            group_id=group_id,
+            names=_single("names"),
+            descriptions=_single("descriptions"),
+            flags=_single("flags"),
+            departments=_multi("departments"),
+            simulations=_multi("simulations"),
+            simulation_positions=_multi("simulation_positions"),
+            simulation_position_values=resource_actions.get("simulation_position_values"),
+        )
+
+        async with conn.transaction():
+            result = cast(
+                SaveCohortSqlRow,
+                await execute_sql_typed(conn, SQL_PATH, params=params),
+            )
+
+            if not result or not result.cohort_id:
+                return None
+
+        await invalidate_tags(["cohorts"])
+        return result.cohort_id
+
+    except Exception as e:
+        logger.exception(f"save_cohort_internal failed: {e}")
+        return None
 
 
 @router.post(

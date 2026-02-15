@@ -12,6 +12,7 @@ from typing import Any
 
 from fastapi import APIRouter
 
+from app.api.v4.artifacts.scenario.save import save_scenario_internal
 from app.api.v4.resources.images.get import get_images_internal
 from app.api.v4.resources.videos.get import get_videos_internal
 from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
@@ -146,7 +147,41 @@ async def _handle_scenario_run_complete(sid: str, data: dict[str, Any]) -> None:
     is_complete, _all_tool_results = await record_agent_complete(run_id, tool_results)
 
     if is_complete:
-        # All agents finished - emit scenario_generation_complete
+        # All agents finished - auto-save scenario if save=True (default)
+        scenario_id: str | None = None
+
+        should_save = data.get("save", True)
+        profile_id_str = await find_profile_by_socket(sid)
+        if should_save and profile_id_str and group_id_str:
+            try:
+                profile_id = uuid.UUID(profile_id_str)
+                group_id = uuid.UUID(group_id_str)
+
+                # Build resource_actions from all_tool_results
+                resource_actions: dict[str, Any] = {}
+                for tr in _all_tool_results:
+                    if isinstance(tr, dict):
+                        rt = tr.get("resource_type")
+                        rid = tr.get("resource_id")
+                        rids = tr.get("resource_ids")
+                        if rt and rid:
+                            resource_actions[rt] = {"resource_id": rid}
+                        elif rt and rids:
+                            resource_actions[rt] = {"resource_ids": rids}
+
+                async with get_db_connection() as conn:
+                    saved_id = await save_scenario_internal(
+                        conn=conn,
+                        profile_id=profile_id,
+                        group_id=group_id,
+                        resource_actions=resource_actions,
+                    )
+                    if saved_id:
+                        scenario_id = str(saved_id)
+            except Exception as e:
+                logger.exception(f"Failed to auto-save scenario: {str(e)}")
+
+        # Emit scenario_generation_complete
         event = ScenarioGenerationCompleteEvent(
             artifact_type="scenario",
             group_id=group_id_str or "",
@@ -154,6 +189,7 @@ async def _handle_scenario_run_complete(sid: str, data: dict[str, Any]) -> None:
             run_id=run_id,
             success=True,
             message="Scenario generation completed",
+            scenario_id=scenario_id,
         )
 
         await sio.emit(

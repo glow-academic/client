@@ -49,6 +49,7 @@ class ScenarioGenerationCompleteEvent(GenerationCompleteEvent):
     """
 
     artifact_type: str = "scenario"
+    scenario_id: str | None = None
 
     # Media resources - still handled by artifact-level media handler
     image_resources: list[QGetImagesV4Item] | None = None

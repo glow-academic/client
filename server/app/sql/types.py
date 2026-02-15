@@ -5946,47 +5946,98 @@ class PrepareDocumentGenerationApiResponse(BaseModel):
 
 
 
+# Generated from: get_field_generation_context
+
+class GetFieldGenerationContextSqlParams(BaseModel):
+
+    p_profile_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.p_profile_id,
+        )
+
+class GetFieldGenerationContextSqlRow(BaseModel):
+
+    requests_per_day: int | None = None
+    runs_today: int | None = None
+
+class GetFieldGenerationContextApiRequest(BaseModel):
+
+    p_profile_id: UUID
+
+class GetFieldGenerationContextApiResponse(BaseModel):
+
+    requests_per_day: int | None = None
+    runs_today: int | None = None
+
+
+
+# Generated from: prepare_field_generation
+
+class PrepareFieldGenerationSqlParams(BaseModel):
+
+    p_profile_id: UUID
+    p_group_id: UUID | None = None
+    p_agents_resource_id: UUID | None = None
+    p_models_resource_id: UUID | None = None
+    p_providers_resource_id: UUID | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.p_profile_id,
+            self.p_group_id,
+            self.p_agents_resource_id,
+            self.p_models_resource_id,
+            self.p_providers_resource_id,
+        )
+
+class PrepareFieldGenerationSqlRow(BaseModel):
+
+    run_id: UUID | None = None
+    group_id: UUID | None = None
+    trace_id: str | None = None
+    config_id: UUID | None = None
+
+class PrepareFieldGenerationApiRequest(BaseModel):
+
+    p_profile_id: UUID
+    p_group_id: UUID | None = None
+    p_agents_resource_id: UUID | None = None
+    p_models_resource_id: UUID | None = None
+    p_providers_resource_id: UUID | None = None
+
+class PrepareFieldGenerationApiResponse(BaseModel):
+
+    run_id: UUID | None = None
+    group_id: UUID | None = None
+    trace_id: str | None = None
+    config_id: UUID | None = None
+
+
+
 # Generated from: get_parameter_generation_context
 
 class GetParameterGenerationContextSqlParams(BaseModel):
 
     p_profile_id: UUID
-    p_agent_id: UUID
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.p_profile_id,
-            self.p_agent_id,
         )
 
 class GetParameterGenerationContextSqlRow(BaseModel):
 
-    agent_exists: bool | None = None
-    agent_name: str | None = None
-    agent_is_active: bool | None = None
-    model_id: UUID | None = None
-    model_name: str | None = None
-    provider_id: UUID | None = None
-    provider_name: str | None = None
-    has_api_key: bool | None = None
     requests_per_day: int | None = None
     runs_today: int | None = None
 
 class GetParameterGenerationContextApiRequest(BaseModel):
 
     p_profile_id: UUID
-    p_agent_id: UUID
 
 class GetParameterGenerationContextApiResponse(BaseModel):
 
-    agent_exists: bool | None = None
-    agent_name: str | None = None
-    agent_is_active: bool | None = None
-    model_id: UUID | None = None
-    model_name: str | None = None
-    provider_id: UUID | None = None
-    provider_name: str | None = None
-    has_api_key: bool | None = None
     requests_per_day: int | None = None
     runs_today: int | None = None
 
@@ -5994,38 +6045,21 @@ class GetParameterGenerationContextApiResponse(BaseModel):
 
 # Generated from: prepare_parameter_generation
 
-class IPersonaResourceV4(BaseModel):
-
-    resource_type: str | None
-    resource_ids: list[UUID] | None
-
 class PrepareParameterGenerationSqlParams(BaseModel):
 
     p_profile_id: UUID
-    p_agent_id: UUID
     p_group_id: UUID | None = None
-    p_resources: list[IPersonaResourceV4] | None = None
-    p_current_resources: list[IPersonaResourceV4] | None = None
-    p_resource_types: list[str] | None = None
+    p_agents_resource_id: UUID | None = None
+    p_models_resource_id: UUID | None = None
+    p_providers_resource_id: UUID | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
-        # Convert p_resources composite array to tuples for asyncpg
-        p_resources_tuples = [
-            (conn.resource_type, conn.resource_ids)
-            for conn in (self.p_resources or [])
-        ]
-        # Convert p_current_resources composite array to tuples for asyncpg
-        p_current_resources_tuples = [
-            (conn.resource_type, conn.resource_ids)
-            for conn in (self.p_current_resources or [])
-        ]
         return (
             self.p_profile_id,
-            self.p_agent_id,
             self.p_group_id,
-            p_resources_tuples,
-            p_current_resources_tuples,
-            self.p_resource_types,
+            self.p_agents_resource_id,
+            self.p_models_resource_id,
+            self.p_providers_resource_id,
         )
 
 class PrepareParameterGenerationSqlRow(BaseModel):
@@ -6033,49 +6067,22 @@ class PrepareParameterGenerationSqlRow(BaseModel):
     run_id: UUID | None = None
     group_id: UUID | None = None
     trace_id: str | None = None
-    agent_name: str | None = None
-    system_prompt: str | None = None
-    model_name: str | None = None
-    provider_name: str | None = None
-    base_url: str | None = None
-    api_key: str | None = None
-    temperature: float | None = None
-    reasoning: str | None = None
-    voice: str | None = None
-    quality: str | None = None
-    tools: list[IGetTextRunContextAndCreateRunV4Tool] | None = None
-    developer_instruction_templates: list[str] | None = None
-    jinja_context: Any | None = None
-    output_modalities: list[str] | None = None
+    config_id: UUID | None = None
 
 class PrepareParameterGenerationApiRequest(BaseModel):
 
     p_profile_id: UUID
-    p_agent_id: UUID
     p_group_id: UUID | None = None
-    p_resources: list[IPersonaResourceV4] | None = None
-    p_current_resources: list[IPersonaResourceV4] | None = None
-    p_resource_types: list[str] | None = None
+    p_agents_resource_id: UUID | None = None
+    p_models_resource_id: UUID | None = None
+    p_providers_resource_id: UUID | None = None
 
 class PrepareParameterGenerationApiResponse(BaseModel):
 
     run_id: UUID | None = None
     group_id: UUID | None = None
     trace_id: str | None = None
-    agent_name: str | None = None
-    system_prompt: str | None = None
-    model_name: str | None = None
-    provider_name: str | None = None
-    base_url: str | None = None
-    api_key: str | None = None
-    temperature: float | None = None
-    reasoning: str | None = None
-    voice: str | None = None
-    quality: str | None = None
-    tools: list[IGetTextRunContextAndCreateRunV4Tool] | None = None
-    developer_instruction_templates: list[str] | None = None
-    jinja_context: Any | None = None
-    output_modalities: list[str] | None = None
+    config_id: UUID | None = None
 
 
 
@@ -6169,6 +6176,76 @@ class PreparePersonaGenerationApiRequest(BaseModel):
     p_providers_resource_id: UUID | None = None
 
 class PreparePersonaGenerationApiResponse(BaseModel):
+
+    run_id: UUID | None = None
+    group_id: UUID | None = None
+    trace_id: str | None = None
+    config_id: UUID | None = None
+
+
+
+# Generated from: get_profile_generation_context
+
+class GetProfileGenerationContextSqlParams(BaseModel):
+
+    p_profile_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.p_profile_id,
+        )
+
+class GetProfileGenerationContextSqlRow(BaseModel):
+
+    requests_per_day: int | None = None
+    runs_today: int | None = None
+
+class GetProfileGenerationContextApiRequest(BaseModel):
+
+    p_profile_id: UUID
+
+class GetProfileGenerationContextApiResponse(BaseModel):
+
+    requests_per_day: int | None = None
+    runs_today: int | None = None
+
+
+
+# Generated from: prepare_profile_generation
+
+class PrepareProfileGenerationSqlParams(BaseModel):
+
+    p_profile_id: UUID
+    p_group_id: UUID | None = None
+    p_agents_resource_id: UUID | None = None
+    p_models_resource_id: UUID | None = None
+    p_providers_resource_id: UUID | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.p_profile_id,
+            self.p_group_id,
+            self.p_agents_resource_id,
+            self.p_models_resource_id,
+            self.p_providers_resource_id,
+        )
+
+class PrepareProfileGenerationSqlRow(BaseModel):
+
+    run_id: UUID | None = None
+    group_id: UUID | None = None
+    trace_id: str | None = None
+    config_id: UUID | None = None
+
+class PrepareProfileGenerationApiRequest(BaseModel):
+
+    p_profile_id: UUID
+    p_group_id: UUID | None = None
+    p_agents_resource_id: UUID | None = None
+    p_models_resource_id: UUID | None = None
+    p_providers_resource_id: UUID | None = None
+
+class PrepareProfileGenerationApiResponse(BaseModel):
 
     run_id: UUID | None = None
     group_id: UUID | None = None
@@ -6318,6 +6395,11 @@ class PrepareSimulationGenerationApiResponse(BaseModel):
 
 
 # Generated from: get_generation_run_context_and_create_run
+
+class IPersonaResourceV4(BaseModel):
+
+    resource_type: str | None
+    resource_ids: list[UUID] | None
 
 class GetGenerationRunContextAndCreateRunSqlParams(BaseModel):
 
@@ -27460,6 +27542,18 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "PrepareDocumentGenerationApiRequest",
         "PrepareDocumentGenerationApiResponse",
     ),
+    "app/sql/v4/queries/generate/field/get_field_generation_context_complete.sql": (
+        "GetFieldGenerationContextSqlParams",
+        "GetFieldGenerationContextSqlRow",
+        "GetFieldGenerationContextApiRequest",
+        "GetFieldGenerationContextApiResponse",
+    ),
+    "app/sql/v4/queries/generate/field/prepare_field_generation_complete.sql": (
+        "PrepareFieldGenerationSqlParams",
+        "PrepareFieldGenerationSqlRow",
+        "PrepareFieldGenerationApiRequest",
+        "PrepareFieldGenerationApiResponse",
+    ),
     "app/sql/v4/queries/generate/parameter/get_parameter_generation_context_complete.sql": (
         "GetParameterGenerationContextSqlParams",
         "GetParameterGenerationContextSqlRow",
@@ -27489,6 +27583,18 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "PreparePersonaGenerationSqlRow",
         "PreparePersonaGenerationApiRequest",
         "PreparePersonaGenerationApiResponse",
+    ),
+    "app/sql/v4/queries/generate/profile/get_profile_generation_context_complete.sql": (
+        "GetProfileGenerationContextSqlParams",
+        "GetProfileGenerationContextSqlRow",
+        "GetProfileGenerationContextApiRequest",
+        "GetProfileGenerationContextApiResponse",
+    ),
+    "app/sql/v4/queries/generate/profile/prepare_profile_generation_complete.sql": (
+        "PrepareProfileGenerationSqlParams",
+        "PrepareProfileGenerationSqlRow",
+        "PrepareProfileGenerationApiRequest",
+        "PrepareProfileGenerationApiResponse",
     ),
     "app/sql/v4/queries/generate/scenario/get_scenario_generation_context_complete.sql": (
         "GetScenarioGenerationContextSqlParams",
@@ -31076,6 +31182,16 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/generate/field/get_field_generation_context_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/generate/field/prepare_field_generation_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v4/queries/generate/parameter/get_parameter_generation_context_complete.sql"]
     ) -> SqlString: ...
 
@@ -31097,6 +31213,16 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/queries/generate/persona/prepare_persona_generation_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/generate/profile/get_profile_generation_context_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/generate/profile/prepare_profile_generation_complete.sql"]
     ) -> SqlString: ...
 
     @overload

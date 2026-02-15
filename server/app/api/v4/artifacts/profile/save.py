@@ -3,6 +3,7 @@ Unified endpoint that handles both create (input_profile_id = NULL) and update (
 Two-pass architecture: access check SQL → Python permissions → mutation SQL.
 """
 
+import uuid
 from typing import Annotated, Any, cast
 
 import asyncpg  # type: ignore
@@ -16,6 +17,8 @@ from app.api.v4.artifacts.profile.types import (
     PatchProfileDraftApiRequest,
     PatchProfileDraftSqlParams,
     PatchProfileDraftSqlRow,
+    ProfileMultiResourceAction,
+    ProfileResourceAction,
     SaveProfileRouteApiRequest,
     SaveProfileRouteApiResponse,
     SaveProfileSqlParams,
@@ -31,7 +34,10 @@ from app.sql.types import (
     load_sql_query,
 )
 from app.utils.cache.invalidate_tags import invalidate_tags
+from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import execute_sql_typed
+
+logger = get_logger(__name__)
 
 # SQL paths
 ACCESS_CHECK_SQL_PATH = (
@@ -42,6 +48,95 @@ PATCH_SQL_PATH = "app/sql/v4/queries/profile/patch_profile_draft_complete.sql"
 
 
 router = APIRouter()
+
+
+async def save_profile_internal(
+    conn: asyncpg.Connection,
+    profile_id: uuid.UUID,
+    group_id: uuid.UUID | None,
+    resource_actions: dict[str, Any],
+    input_profile_id: uuid.UUID | None = None,
+) -> uuid.UUID | None:
+    """Save a profile from resource actions dict (used by generation complete handler).
+
+    Uses the two-step draft-then-save pattern:
+    1. Patch/create a draft from resource_actions
+    2. Save from that draft
+
+    Returns the profile_id on success, None on failure.
+    """
+    try:
+
+        def _single(key: str) -> ProfileResourceAction:
+            val = resource_actions.get(key, {})
+            if isinstance(val, dict):
+                return ProfileResourceAction(
+                    resource_id=val.get("resource_id"),
+                )
+            return ProfileResourceAction()
+
+        def _multi(key: str) -> ProfileMultiResourceAction:
+            val = resource_actions.get(key, {})
+            if isinstance(val, dict):
+                return ProfileMultiResourceAction(
+                    resource_ids=val.get("resource_ids"),
+                )
+            return ProfileMultiResourceAction()
+
+        # Step 1: Patch/create draft from resource actions
+        patch_params = PatchProfileDraftSqlParams(
+            profile_id=profile_id,
+            input_draft_id=None,
+            group_id=group_id,
+            role=resource_actions.get("role"),
+            names=_single("names"),
+            flags=_single("flags"),
+            request_limits=_single("request_limits"),
+            emails=_multi("emails"),
+            departments=_multi("departments"),
+            cohorts=_multi("cohorts"),
+            expected_version=0,
+        )
+
+        async with conn.transaction():
+            patch_result = cast(
+                PatchProfileDraftSqlRow,
+                await execute_sql_typed(
+                    conn,
+                    PATCH_SQL_PATH,
+                    params=patch_params,
+                ),
+            )
+            resolved_draft_id = patch_result.draft_id if patch_result else None
+
+            if not resolved_draft_id:
+                return None
+
+            # Step 2: Save from draft
+            save_params = SaveProfileSqlParams(
+                draft_id=resolved_draft_id,
+                actor_profile_id=profile_id,
+                input_profile_id=input_profile_id,
+            )
+
+            result = cast(
+                SaveProfileSqlRow,
+                await execute_sql_typed(
+                    conn,
+                    SQL_PATH,
+                    params=save_params,
+                ),
+            )
+
+            if not result or not result.profile_id:
+                return None
+
+        await invalidate_tags(["profile"])
+        return result.profile_id
+
+    except Exception as e:
+        logger.exception(f"save_profile_internal failed: {e}")
+        return None
 
 
 @router.post(

@@ -3,13 +3,14 @@
 This module handles all business logic for parameter generation:
 - Rate limit validation (fail fast)
 - Group/run creation
-- Agent/model context fetching
+- Agent/model context from pre-fetched resources (denormalized chain)
 - Jinja template rendering for developer instructions
 - Message insertion with deduplication
 
 The AI handler (generate.py) receives a simplified payload with pre-rendered content.
 """
 
+import asyncio
 import uuid
 from typing import Any, cast
 
@@ -19,27 +20,30 @@ from app.api.v4.artifacts.parameter.get import get_parameter_websocket
 from app.api.v4.artifacts.parameter.types import (
     GetParameterWebsocketResponse,
 )
+from app.api.v4.resources.instructions.get import get_instructions_internal
+from app.api.v4.resources.prompts.get import get_prompts_internal
+from app.api.v4.views.config.get import get_config_internal
 from app.infra.v4.generation import convert_tools_to_dict, render_developer_instructions
 from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
+from app.infra.v4.websocket.generation_tracker import (
+    init_generation,
+    init_resource_progress,
+)
 from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.infra.v4.websocket.typed_emit import emit_to_internal
-from app.main import get_internal_sio, sio
-from app.socket.v4.artifacts.parameter.permissions import (
-    GenerationContext,
-    format_generation_error,
-    validate_generation_access,
-)
+from app.main import get_internal_sio, get_pool, sio
 from app.socket.v4.artifacts.parameter.types import GenerateParameterPayload
-from app.socket.v4.artifacts.types import GenerateErrorApiRequest
+from app.socket.v4.artifacts.types import (
+    GenerateErrorApiRequest,
+    ParameterGenerationStartedEvent,
+)
 from app.sql.types import (
+    GetAgentToolsSqlParams,
+    GetAgentToolsSqlRow,
     GetParameterGenerationContextSqlParams,
     GetParameterGenerationContextSqlRow,
-    GetPersonaResourceTreeSqlParams,
-    GetPersonaResourceTreeSqlRow,
-    IPersonaResourceV4,
     PrepareParameterGenerationSqlParams,
     PrepareParameterGenerationSqlRow,
-    QGetPersonaResourceTreeV4Node,
 )
 from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import execute_sql_typed, load_sql
@@ -51,14 +55,13 @@ internal_sio = get_internal_sio()
 client_router = APIRouter()
 server_router = APIRouter()
 
-# SQL paths - reuse persona resource tree (generic traversal)
-RESOURCE_TREE_SQL_PATH = (
-    "app/sql/v4/queries/personas/get_persona_resource_tree_complete.sql"
-)
-# Parameter-specific generation SQL
+# SQL paths
 SQL_PATH_CONTEXT = "app/sql/v4/queries/generate/parameter/get_parameter_generation_context_complete.sql"
 SQL_PATH_PREPARE = (
     "app/sql/v4/queries/generate/parameter/prepare_parameter_generation_complete.sql"
+)
+SQL_PATH_AGENT_TOOLS = (
+    "app/sql/v4/queries/generate/persona/get_agent_tools_complete.sql"
 )
 SQL_PATH_CREATE_MESSAGE_WITH_TEXT = (
     "app/sql/v4/queries/messages/create_message_with_text_complete.sql"
@@ -74,34 +77,15 @@ PARAMETER_RESOURCE_TYPES = [
 ]
 
 
-def _serialize_resource_item(item: Any) -> Any:
-    if item is None:
-        return None
-    if hasattr(item, "model_dump"):
-        return item.model_dump()
-    if hasattr(item, "_asdict"):
-        return dict(item._asdict())
-    if hasattr(item, "dict"):
-        return item.dict()
-    if isinstance(item, dict):
-        return item
-    return item
-
-
-def _serialize_resource_list(items: list[Any] | None) -> list[Any]:
-    if not items:
-        return []
-    return [
-        serialized
-        for item in items
-        if (serialized := _serialize_resource_item(item)) is not None
-    ]
-
-
 def _build_parameter_jinja_context(
-    response: GetParameterWebsocketResponse, resource_types: list[str]
+    response: GetParameterWebsocketResponse,
 ) -> dict[str, Any]:
-    """Build Jinja context from parameter websocket response."""
+    """Build Jinja context with resources as top-level variables.
+
+    Resources are the current selections (from get_parameter_internal's ID resolution).
+    Templates access resources directly: {{ names[0].name }}, {{ agents[0].temperature }}
+    Views (e.g. config) are injected separately after prepare.
+    """
     if response.resources:
         return response.resources.model_dump()
     return {}
@@ -110,18 +94,9 @@ def _build_parameter_jinja_context(
 async def _parameter_generate_impl(
     sid: str, data: GenerateParameterPayload, profile_id: uuid.UUID
 ) -> None:
-    """Handle parameter generation with all business logic.
-
-    This function:
-    1. Validates resource_types and resolves agent_id
-    2. Fetches parameter data via internal function for seed nodes
-    3. Expands resources via tree traversal
-    4. Calls prepare_parameter_generation SQL (rate limit, group/run, context)
-    5. Renders developer instructions with Jinja
-    6. Inserts pre-rendered messages
-    7. Emits simplified payload to generate_artifact handler
-    """
+    """Handle parameter generation with all business logic."""
     try:
+        # Validate resource_types
         if not data.resource_types:
             await emit_to_internal(
                 "generate_call_error",
@@ -150,13 +125,6 @@ async def _parameter_generate_impl(
             )
             return
 
-        # Step 1: Fetch parameter data for seed nodes using websocket function
-        # This gives us resource_agent_ids to look up agent IDs
-        result = await get_parameter_websocket(
-            profile_id=profile_id,
-            parameter_id=data.parameter_id,
-            draft_id=data.draft_id,
-        )
         resource_types = data.resource_types
 
         invalid_types = [
@@ -176,21 +144,39 @@ async def _parameter_generate_impl(
             )
             return
 
-        # Get agent_id from the first requested resource_type
-        agent_id: uuid.UUID | None = None
+        # Step 1: Fetch parameter data (includes pre-fetched config resources)
+        result = await get_parameter_websocket(
+            profile_id=profile_id,
+            parameter_id=data.parameter_id,
+            draft_id=data.draft_id,
+        )
+
+        # Group resource_types by agent_id for multi-agent dispatch
         resource_agent_ids = result.resource_agent_ids or {}
+
+        # Build agent_groups: {agent_id: [resource_types]}
+        agent_groups: dict[uuid.UUID, list[str]] = {}
         for rt in resource_types:
             aid = resource_agent_ids.get(rt)
             if aid is not None:
-                agent_id = aid
-                break
+                agent_groups.setdefault(aid, []).append(rt)
+
+        # Fallback: if no agent found for any resource type, pick first available
+        if not agent_groups:
+            for _rt, aid in resource_agent_ids.items():
+                if aid is not None:
+                    agent_groups[aid] = resource_types
+                    break
+
+        # Use first agent_id for validation (all share same config chain)
+        agent_id: uuid.UUID | None = next(iter(agent_groups)) if agent_groups else None
 
         if not agent_id:
             await emit_to_internal(
                 "generate_call_error",
                 GenerateErrorApiRequest(
                     sid=sid,
-                    error_message="No agent found for requested resource_types",
+                    error_message="No agent found for the requested resource types",
                     artifact_type="parameter",
                     group_id=None,
                     resource_type="parameter",
@@ -199,107 +185,117 @@ async def _parameter_generate_impl(
             )
             return
 
-        parameter_jinja_context = _build_parameter_jinja_context(result, resource_types)
+        # Step 2: Extract LLM config from pre-fetched resources
+        config_agents = result.resources.agents or []
+        config_models = result.resources.models or []
+        config_providers = result.resources.providers or []
 
-        # Step 2: Seed resource nodes from the parameter GET result (ONLY requested types)
-        seed_nodes: list[QGetPersonaResourceTreeV4Node] = []
+        agent_resource = config_agents[0] if config_agents else None
+        model_resource = config_models[0] if config_models else None
+        provider_resource = config_providers[0] if config_providers else None
 
-        def add_seed(resource_type: str, resource_id: uuid.UUID | None) -> None:
-            # Only seed requested resource types for Jinja context and tool filtering
-            if resource_id and resource_type in resource_types:
-                seed_nodes.append(
-                    QGetPersonaResourceTreeV4Node(
-                        resource_type=resource_type,
-                        resource_id=resource_id,
-                    )
-                )
+        # Validate: agent resource must exist
+        if not agent_resource:
+            await emit_to_internal(
+                "generate_call_error",
+                GenerateErrorApiRequest(
+                    sid=sid,
+                    error_message="No agent configuration found. Check department settings.",
+                    artifact_type="parameter",
+                    group_id=None,
+                    resource_type="parameter",
+                ),
+                sid=sid,
+            )
+            return
 
-        # Access resources from nested structure
-        resources_bucket = result.resources
+        # Validate: model resource must exist
+        if not model_resource:
+            await emit_to_internal(
+                "generate_call_error",
+                GenerateErrorApiRequest(
+                    sid=sid,
+                    error_message=f"Agent '{agent_resource.name}' has no model configured",
+                    artifact_type="parameter",
+                    group_id=None,
+                    resource_type="parameter",
+                ),
+                sid=sid,
+            )
+            return
 
-        if resources_bucket and resources_bucket.names:
-            for name in resources_bucket.names:
-                add_seed("names", name.id)
-        if resources_bucket and resources_bucket.descriptions:
-            for desc in resources_bucket.descriptions:
-                add_seed("descriptions", desc.id)
-        if resources_bucket and resources_bucket.flags:
-            for flag in resources_bucket.flags:
-                add_seed("flags", flag.flag_option_id)
-        if resources_bucket and resources_bucket.departments:
-            for dept in resources_bucket.departments:
-                add_seed("departments", dept.department_id)
-        if resources_bucket and resources_bucket.fields:
-            for field in resources_bucket.fields:
-                add_seed("fields", field.field_id)
+        # Validate: provider resource must exist
+        if not provider_resource:
+            await emit_to_internal(
+                "generate_call_error",
+                GenerateErrorApiRequest(
+                    sid=sid,
+                    error_message=f"Model '{model_resource.name}' has no provider configured",
+                    artifact_type="parameter",
+                    group_id=None,
+                    resource_type="parameter",
+                ),
+                sid=sid,
+            )
+            return
 
-        # Step 3: Expand seed nodes via resource tree traversal
+        # Extract LLM config fields from resources
+        model_name = (
+            model_resource.value
+            if hasattr(model_resource, "value")
+            else model_resource.name
+        )
+        base_url = (
+            model_resource.endpoint if hasattr(model_resource, "endpoint") else ""
+        )
+        api_key = model_resource.key if hasattr(model_resource, "key") else ""
+        temperature = (
+            agent_resource.temperature
+            if hasattr(agent_resource, "temperature")
+            else 0.0
+        )
+        reasoning = (
+            agent_resource.reasoning if hasattr(agent_resource, "reasoning") else None
+        )
+        voice = agent_resource.voice if hasattr(agent_resource, "voice") else None
+        quality = agent_resource.quality if hasattr(agent_resource, "quality") else None
+        provider_name = provider_resource.value or provider_resource.name or ""
+
+        # Validate: API key must exist
+        if not api_key:
+            await emit_to_internal(
+                "generate_call_error",
+                GenerateErrorApiRequest(
+                    sid=sid,
+                    error_message=f"No API key configured for provider '{provider_name}'",
+                    artifact_type="parameter",
+                    group_id=None,
+                    resource_type="parameter",
+                ),
+                sid=sid,
+            )
+            return
+
+        parameter_jinja_context = _build_parameter_jinja_context(result)
+
+        # Step 3: Check rate limit (the only thing still in SQL)
         async with get_db_connection() as conn:
-            resources: list[dict[str, Any]] = []
-            if seed_nodes:
-                resource_tree_params = GetPersonaResourceTreeSqlParams(
-                    profile_id=profile_id,
-                    seed_nodes=seed_nodes,
-                )
-                resource_tree_result = cast(
-                    GetPersonaResourceTreeSqlRow,
-                    await execute_sql_typed(
-                        conn,
-                        RESOURCE_TREE_SQL_PATH,
-                        params=resource_tree_params,
-                    ),
-                )
-
-                resources_by_type: dict[str, set[str]] = {}
-                for node in resource_tree_result.resources or []:
-                    if not node.resource_type or not node.resource_id:
-                        continue
-                    resources_by_type.setdefault(node.resource_type, set()).add(
-                        str(node.resource_id)
-                    )
-
-                resources = [
-                    IPersonaResourceV4(
-                        resource_type=resource_type,
-                        resource_ids=[uuid.UUID(rid) for rid in sorted(resource_ids)],
-                    )
-                    for resource_type, resource_ids in resources_by_type.items()
-                ]
-
-            # Get group_id from parameter response if available
-            existing_group_id: uuid.UUID | None = result.group_id
-
-            # Step 4: Fetch context and validate prerequisites
             context_params = GetParameterGenerationContextSqlParams(
                 p_profile_id=profile_id,
-                p_agent_id=agent_id,
             )
             context_row = cast(
                 GetParameterGenerationContextSqlRow,
                 await execute_sql_typed(conn, SQL_PATH_CONTEXT, params=context_params),
             )
 
-            # Build context dataclass for validation
-            ctx = GenerationContext(
-                agent_exists=context_row.agent_exists or False,
-                agent_name=context_row.agent_name,
-                agent_is_active=context_row.agent_is_active or False,
-                model_id=context_row.model_id,
-                model_name=context_row.model_name,
-                provider_id=context_row.provider_id,
-                provider_name=context_row.provider_name,
-                has_api_key=context_row.has_api_key or False,
-                requests_per_day=context_row.requests_per_day,
-                runs_today=context_row.runs_today or 0,
-            )
+            # Rate limit validation
+            requests_per_day = context_row.requests_per_day
+            runs_today = context_row.runs_today or 0
 
-            # Validate using business logic in Python
-            is_valid, failures = validate_generation_access(ctx)
-
-            if not is_valid:
-                error_msg = format_generation_error(failures)
+            if requests_per_day is not None and runs_today >= requests_per_day:
+                error_msg = f"Rate limit exceeded ({runs_today}/{requests_per_day} requests today)"
                 logger.error(
-                    f"Parameter generation validation failed - "
+                    f"Parameter generation rate limit exceeded - "
                     f"profile_id={profile_id}, agent_id={agent_id}, "
                     f"reason: {error_msg}"
                 )
@@ -309,42 +305,78 @@ async def _parameter_generate_impl(
                         sid=sid,
                         error_message=f"Failed to prepare parameter generation: {error_msg}",
                         artifact_type="parameter",
-                        group_id=str(existing_group_id) if existing_group_id else None,
+                        group_id=str(result.group_id) if result.group_id else None,
                         resource_type="parameter",
                     ),
                     sid=sid,
                 )
                 return
 
-            # Build current resources from form state (passed from frontend)
-            current_resources: list[IPersonaResourceV4] = []
+        existing_group_id = result.group_id
 
-            def collect_current(
-                resource_type: str, resource_ids: list[uuid.UUID] | None
-            ) -> None:
-                """Collect current resource IDs for a resource type."""
-                if resource_ids:
-                    current_resources.append(
-                        IPersonaResourceV4(
-                            resource_type=resource_type,
-                            resource_ids=resource_ids,
-                        )
+        async with get_db_connection() as conn:
+            # Step 5: Fetch tools, prompts, and instructions in parallel
+            pool = get_pool()
+            if not pool:
+                raise RuntimeError("Database pool not initialized")
+
+            async def fetch_tools():
+                async with pool.acquire() as c:
+                    tools_params = GetAgentToolsSqlParams(
+                        p_agent_id=agent_id,
+                        p_resource_types=resource_types,
                     )
+                    tools_row = cast(
+                        GetAgentToolsSqlRow,
+                        await execute_sql_typed(
+                            c, SQL_PATH_AGENT_TOOLS, params=tools_params
+                        ),
+                    )
+                    return tools_row.tools if tools_row else []
 
-            # Single-select resources (wrap in list)
-            if data.parameter_id:
-                # For parameter, current selections come from the draft
-                # The websocket response already includes current resources
-                pass
+            async def fetch_system_prompt():
+                prompt_id = (
+                    agent_resource.prompt_id
+                    if hasattr(agent_resource, "prompt_id")
+                    else None
+                )
+                if not prompt_id:
+                    return ""
+                async with pool.acquire() as c:
+                    prompts = await get_prompts_internal(c, [prompt_id])
+                    if prompts and prompts[0].system_prompt:
+                        return prompts[0].system_prompt
+                    return ""
 
-            # Step 5: Prepare generation (group/run creation, context fetch)
+            async def fetch_developer_instructions():
+                instruction_ids = (
+                    agent_resource.instruction_ids
+                    if hasattr(agent_resource, "instruction_ids")
+                    else []
+                )
+                if not instruction_ids:
+                    return []
+                async with pool.acquire() as c:
+                    instructions = await get_instructions_internal(c, instruction_ids)
+                    return [inst.template for inst in instructions if inst.template]
+
+            (
+                tools,
+                system_prompt,
+                developer_instruction_templates,
+            ) = await asyncio.gather(
+                fetch_tools(),
+                fetch_system_prompt(),
+                fetch_developer_instructions(),
+            )
+
+            # Step 6: Prepare generation (mutations only: group/run/config creation)
             prepare_params = PrepareParameterGenerationSqlParams(
                 p_profile_id=profile_id,
-                p_agent_id=agent_id,
                 p_group_id=existing_group_id,
-                p_resources=resources if resources else None,
-                p_current_resources=current_resources if current_resources else None,
-                p_resource_types=resource_types,  # For tool filtering
+                p_agents_resource_id=agent_resource.id,
+                p_models_resource_id=model_resource.id,
+                p_providers_resource_id=provider_resource.id,
             )
             prepare_row = cast(
                 PrepareParameterGenerationSqlRow,
@@ -369,32 +401,45 @@ async def _parameter_generate_impl(
                 )
                 return
 
-            # Extract context from prepare result
             run_id = prepare_row.run_id
             group_id = prepare_row.group_id
-            trace_id = prepare_row.trace_id
-            system_prompt = prepare_row.system_prompt
-            model_name = prepare_row.model_name
-            provider_name = prepare_row.provider_name
-            base_url = prepare_row.base_url
-            api_key = prepare_row.api_key
-            temperature = prepare_row.temperature
-            reasoning = prepare_row.reasoning
-            voice = prepare_row.voice
-            quality = prepare_row.quality
-            tools = prepare_row.tools
-            developer_instruction_templates = (
-                prepare_row.developer_instruction_templates
-            )
+            _trace_id = prepare_row.trace_id
+            config_id = prepare_row.config_id
+
             jinja_context = parameter_jinja_context
 
-            # Step 5: Render developer instructions with Jinja
+            # Inject config view into Jinja context for template access
+            if config_id:
+                async with pool.acquire() as config_conn:
+                    config_view_items = await get_config_internal(
+                        conn=config_conn,
+                        config_id=config_id,
+                        bypass_cache=True,
+                    )
+                config_view = (
+                    config_view_items[0].model_dump(mode="json")
+                    if config_view_items
+                    else {}
+                )
+            else:
+                config_view = {}
+            draft_parameter_view = (
+                result.views.draft_parameter.model_dump(mode="json")
+                if result.views and result.views.draft_parameter
+                else {}
+            )
+            jinja_context["views"] = {
+                "config": config_view,
+                "draft_parameter": draft_parameter_view,
+            }
+
+            # Step 7: Render developer instructions with Jinja
             rendered_developer_messages = render_developer_instructions(
                 templates=developer_instruction_templates,
                 jinja_context=jinja_context,
             )
 
-            # Step 6: Build messages for LLM AND persist to database
+            # Step 8: Build messages for LLM AND persist to database
             messages: list[dict[str, str]] = []
             create_message_sql = load_sql(SQL_PATH_CREATE_MESSAGE_WITH_TEXT)
 
@@ -435,35 +480,53 @@ async def _parameter_generate_impl(
                         False,
                     )
 
-            # Step 7: Emit simplified payload to generate_artifact handler
-            # The AI handler only needs to decrypt API key and stream LLM
-            await internal_sio.emit(
-                "generate_artifact",
+            # Step 9: Initialize generation tracker for multi-agent support
+            num_agents = len(agent_groups)
+            await init_generation(str(run_id), num_agents)
+            await init_resource_progress(str(run_id), len(resource_types))
+
+            # Emit parameter_generation_started to client
+            await sio.emit(
+                "parameter_generation_started",
                 {
-                    "sid": sid,
                     "artifact_type": "parameter",
-                    "resource_type": resource_types[0]
-                    if resource_types
-                    else "parameter",
+                    "group_id": str(group_id) if group_id else "",
                     "run_id": str(run_id),
-                    "group_id": str(group_id) if group_id else None,
-                    "message_id": None,
-                    "messages": messages,
-                    "llm_config": {
-                        "model": model_name,
-                        "api_key": api_key,
-                        "base_url": base_url,
-                        "temperature": temperature,
-                        "reasoning": reasoning,
-                        "provider": provider_name,
-                        "voice": voice,
-                        "quality": quality,
-                        "length_seconds": None,
-                        "tool_choice": "required",  # Force tool calls for parameter generation
-                    },
-                    "tools": convert_tools_to_dict(tools),
+                    "resource_types": resource_types,
                 },
+                room=sid,
             )
+
+            # Step 10: Dispatch to generate_artifact handler(s)
+            for _agent_group_id, agent_resource_types in agent_groups.items():
+                await internal_sio.emit(
+                    "generate_artifact",
+                    {
+                        "sid": sid,
+                        "artifact_type": "parameter",
+                        "resource_type": agent_resource_types[0]
+                        if agent_resource_types
+                        else "parameter",
+                        "run_id": str(run_id),
+                        "group_id": str(group_id) if group_id else None,
+                        "message_id": None,
+                        "messages": messages,
+                        "llm_config": {
+                            "model": model_name,
+                            "api_key": api_key,
+                            "base_url": base_url,
+                            "temperature": temperature,
+                            "reasoning": reasoning,
+                            "provider": provider_name,
+                            "voice": voice,
+                            "quality": quality,
+                            "length_seconds": None,
+                            "tool_choice": "required",
+                        },
+                        "tools": convert_tools_to_dict(tools),
+                        "save": data.save,
+                    },
+                )
 
     except Exception as e:
         logger.exception(f"Failed to generate parameter resources: {str(e)}")
@@ -553,3 +616,19 @@ async def parameter_generate_internal(data: dict[str, Any]) -> None:
             ),
             sid=sid,
         )
+
+
+# =============================================================================
+# FastAPI endpoint for OpenAPI documentation
+# =============================================================================
+
+
+@server_router.post("/parameter_generation_started")
+async def parameter_generation_started_api(
+    request: ParameterGenerationStartedEvent,
+) -> dict[str, bool]:
+    """Server-to-client event: Parameter generation started.
+
+    Emitted when parameter generation begins, listing resource types being generated.
+    """
+    return {"success": True}

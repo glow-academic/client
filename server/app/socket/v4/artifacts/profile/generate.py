@@ -1,8 +1,18 @@
-"""Profile generation router - unified handler for profile resource types."""
+"""Profile generation router - unified handler for profile resource types.
+
+This module handles all business logic for profile generation:
+- Rate limit validation (fail fast)
+- Group/run creation
+- Agent/model context from pre-fetched resources (denormalized chain)
+- Jinja template rendering for developer instructions
+- Message insertion with deduplication
+
+The AI handler (generate.py) receives a simplified payload with pre-rendered content.
+"""
 
 import asyncio
 import uuid
-from typing import Any
+from typing import Any, cast
 
 from fastapi import APIRouter
 
@@ -10,16 +20,31 @@ from app.api.v4.artifacts.profile.get import get_profile_websocket
 from app.api.v4.artifacts.profile.types import GetProfileWebsocketResponse
 from app.api.v4.resources.instructions.get import get_instructions_internal
 from app.api.v4.resources.prompts.get import get_prompts_internal
+from app.api.v4.views.config.get import get_config_internal
 from app.infra.v4.generation import convert_tools_to_dict, render_developer_instructions
-from app.infra.v4.generation.resource_utils import normalize_resources_for_sql
 from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
+from app.infra.v4.websocket.generation_tracker import (
+    init_generation,
+    init_resource_progress,
+)
 from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.infra.v4.websocket.typed_emit import emit_to_internal
 from app.main import get_internal_sio, get_pool, sio
 from app.socket.v4.artifacts.profile.types import GenerateProfilePayload
-from app.socket.v4.artifacts.types import GenerateErrorApiRequest
+from app.socket.v4.artifacts.types import (
+    GenerateErrorApiRequest,
+    ProfileGenerationStartedEvent,
+)
+from app.sql.types import (
+    GetAgentToolsSqlParams,
+    GetAgentToolsSqlRow,
+    GetProfileGenerationContextSqlParams,
+    GetProfileGenerationContextSqlRow,
+    PrepareProfileGenerationSqlParams,
+    PrepareProfileGenerationSqlRow,
+)
 from app.utils.logging.db_logger import get_logger
-from app.utils.sql_helper import load_sql
+from app.utils.sql_helper import execute_sql_typed, load_sql
 
 logger = get_logger(__name__)
 
@@ -28,9 +53,21 @@ internal_sio = get_internal_sio()
 client_router = APIRouter()
 server_router = APIRouter()
 
-CREATE_RUN_SQL_PATH = "app/sql/v4/queries/generate/start/get_generation_run_context_and_create_run_complete.sql"
-TEXT_RUN_CONTEXT_SQL_PATH = "app/sql/v4/queries/generate/text/get_text_run_context_for_existing_run_complete.sql"
+# SQL paths
+SQL_PATH_CONTEXT = (
+    "app/sql/v4/queries/generate/profile/get_profile_generation_context_complete.sql"
+)
+SQL_PATH_PREPARE = (
+    "app/sql/v4/queries/generate/profile/prepare_profile_generation_complete.sql"
+)
+SQL_PATH_AGENT_TOOLS = (
+    "app/sql/v4/queries/generate/persona/get_agent_tools_complete.sql"
+)
+SQL_PATH_CREATE_MESSAGE_WITH_TEXT = (
+    "app/sql/v4/queries/messages/create_message_with_text_complete.sql"
+)
 
+# Profile resource types
 PROFILE_RESOURCE_TYPES = [
     "names",
     "flags",
@@ -44,23 +81,23 @@ PROFILE_RESOURCE_TYPES = [
 def _build_profile_jinja_context(
     response: GetProfileWebsocketResponse,
 ) -> dict[str, Any]:
-    context: dict[str, Any] = (
-        response.resources.model_dump() if response.resources else {}
-    )
-    context["views"] = {
-        "draft_profile": (
-            response.views.draft_profile.model_dump(mode="json")
-            if response.views and response.views.draft_profile
-            else {}
-        )
-    }
-    return context
+    """Build Jinja context with resources as top-level variables.
+
+    Resources are the current selections (from get_profile_internal's ID resolution).
+    Templates access resources directly: {{ names[0].name }}, {{ agents[0].temperature }}
+    Views (e.g. config) are injected separately after prepare.
+    """
+    if response.resources:
+        return response.resources.model_dump()
+    return {}
 
 
 async def _profile_generate_impl(
     sid: str, data: GenerateProfilePayload, profile_id: uuid.UUID
 ) -> None:
+    """Handle profile generation with all business logic."""
     try:
+        # Validate resource_types
         if not data.resource_types:
             await emit_to_internal(
                 "generate_call_error",
@@ -89,8 +126,10 @@ async def _profile_generate_impl(
             )
             return
 
+        resource_types = data.resource_types
+
         invalid_types = [
-            rt for rt in data.resource_types if rt not in PROFILE_RESOURCE_TYPES
+            rt for rt in resource_types if rt not in PROFILE_RESOURCE_TYPES
         ]
         if invalid_types:
             await emit_to_internal(
@@ -106,271 +145,395 @@ async def _profile_generate_impl(
             )
             return
 
+        # Resolve target_profile_id from staff_id if needed
         target_profile_id = data.target_profile_id
         if not target_profile_id and data.staff_id:
             target_profile_id = uuid.UUID(data.staff_id)
 
+        # Step 1: Fetch profile data (includes pre-fetched config resources)
         result = await get_profile_websocket(
             profile_id=profile_id,
             target_profile_id=target_profile_id,
             draft_id=data.draft_id,
         )
 
+        # Group resource_types by agent_id for multi-agent dispatch
         resource_agent_ids = result.resource_agent_ids or {}
-        agent_id: uuid.UUID | None = None
-        for rt in data.resource_types:
+
+        # Build agent_groups: {agent_id: [resource_types]}
+        agent_groups: dict[uuid.UUID, list[str]] = {}
+        for rt in resource_types:
             aid = resource_agent_ids.get(rt)
             if aid is not None:
-                agent_id = aid
-                break
+                agent_groups.setdefault(aid, []).append(rt)
 
-        if agent_id is None:
+        # Fallback: if no agent found for any resource type, pick first available
+        if not agent_groups:
+            for _rt, aid in resource_agent_ids.items():
+                if aid is not None:
+                    agent_groups[aid] = resource_types
+                    break
+
+        # Use first agent_id for validation (all share same config chain)
+        agent_id: uuid.UUID | None = next(iter(agent_groups)) if agent_groups else None
+
+        if not agent_id:
             await emit_to_internal(
                 "generate_call_error",
                 GenerateErrorApiRequest(
                     sid=sid,
                     error_message="No agent found for the requested resource types",
                     artifact_type="profile",
-                    group_id=str(result.group_id) if result.group_id else None,
+                    group_id=None,
                     resource_type="profile",
                 ),
                 sid=sid,
             )
             return
 
+        # Step 2: Extract LLM config from pre-fetched resources
         config_agents = result.resources.agents or []
         config_models = result.resources.models or []
         config_providers = result.resources.providers or []
-        config_tools = result.resources.tools or []
 
-        agent_resource = next((a for a in config_agents if a.id == agent_id), None)
-        if not agent_resource and config_agents:
-            agent_resource = config_agents[0]
+        agent_resource = config_agents[0] if config_agents else None
+        model_resource = config_models[0] if config_models else None
+        provider_resource = config_providers[0] if config_providers else None
+
+        # Validate: agent resource must exist
         if not agent_resource:
             await emit_to_internal(
                 "generate_call_error",
                 GenerateErrorApiRequest(
                     sid=sid,
-                    error_message="No agent configuration found for generation",
+                    error_message="No agent configuration found. Check department settings.",
                     artifact_type="profile",
-                    group_id=str(result.group_id) if result.group_id else None,
+                    group_id=None,
                     resource_type="profile",
                 ),
                 sid=sid,
             )
             return
 
-        model_resource = next(
-            (
-                m
-                for m in config_models
-                if m.id is not None
-                and m.id == getattr(agent_resource, "model_id", None)
-            ),
-            None,
-        )
-        if not model_resource and config_models:
-            model_resource = config_models[0]
+        # Validate: model resource must exist
         if not model_resource:
             await emit_to_internal(
                 "generate_call_error",
                 GenerateErrorApiRequest(
                     sid=sid,
-                    error_message="No model configuration found for generation",
+                    error_message=f"Agent '{agent_resource.name}' has no model configured",
                     artifact_type="profile",
-                    group_id=str(result.group_id) if result.group_id else None,
+                    group_id=None,
                     resource_type="profile",
                 ),
                 sid=sid,
             )
             return
 
-        provider_resource = next(
-            (
-                p
-                for p in config_providers
-                if p.id is not None
-                and p.id == getattr(model_resource, "provider_id", None)
-            ),
-            None,
-        )
-        if not provider_resource and config_providers:
-            provider_resource = config_providers[0]
+        # Validate: provider resource must exist
         if not provider_resource:
             await emit_to_internal(
                 "generate_call_error",
                 GenerateErrorApiRequest(
                     sid=sid,
-                    error_message="No provider configuration found for generation",
+                    error_message=f"Model '{model_resource.name}' has no provider configured",
                     artifact_type="profile",
-                    group_id=str(result.group_id) if result.group_id else None,
+                    group_id=None,
                     resource_type="profile",
                 ),
                 sid=sid,
             )
             return
 
-        model_name = model_resource.value or model_resource.name
-        provider_name = provider_resource.value or provider_resource.name
-        base_url = provider_resource.endpoint
-        api_key = provider_resource.key
+        # Extract LLM config fields from resources
+        # Profile uses provider_resource for api_key and base_url
+        model_name = (
+            model_resource.value
+            if hasattr(model_resource, "value")
+            else model_resource.name
+        )
+        base_url = (
+            provider_resource.endpoint if hasattr(provider_resource, "endpoint") else ""
+        )
+        api_key = provider_resource.key if hasattr(provider_resource, "key") else ""
+        temperature = (
+            agent_resource.temperature
+            if hasattr(agent_resource, "temperature")
+            else 0.0
+        )
+        reasoning = (
+            agent_resource.reasoning if hasattr(agent_resource, "reasoning") else None
+        )
+        voice = agent_resource.voice if hasattr(agent_resource, "voice") else None
+        quality = agent_resource.quality if hasattr(agent_resource, "quality") else None
+        provider_name = provider_resource.value or provider_resource.name or ""
+
+        # Validate: API key must exist
+        if not api_key:
+            await emit_to_internal(
+                "generate_call_error",
+                GenerateErrorApiRequest(
+                    sid=sid,
+                    error_message=f"No API key configured for provider '{provider_name}'",
+                    artifact_type="profile",
+                    group_id=None,
+                    resource_type="profile",
+                ),
+                sid=sid,
+            )
+            return
 
         profile_jinja_context = _build_profile_jinja_context(result)
 
-        resources_bucket = result.resources
-        resources: list[dict[str, Any]] = []
+        # Step 3: Check rate limit (the only thing still in SQL)
+        async with get_db_connection() as conn:
+            context_params = GetProfileGenerationContextSqlParams(
+                p_profile_id=profile_id,
+            )
+            context_row = cast(
+                GetProfileGenerationContextSqlRow,
+                await execute_sql_typed(conn, SQL_PATH_CONTEXT, params=context_params),
+            )
 
-        def add_resource_ids(
-            resource_type: str, items: list[Any] | None, id_attr: str
-        ) -> None:
-            if items and resource_type in data.resource_types:
-                ids = []
-                for item in items:
-                    item_id = (
-                        item.get(id_attr)
-                        if isinstance(item, dict)
-                        else getattr(item, id_attr, None)
-                    )
-                    if item_id:
-                        ids.append(str(item_id))
-                if ids:
-                    resources.append(
-                        {"resource_type": resource_type, "resource_ids": ids}
-                    )
+            # Rate limit validation
+            requests_per_day = context_row.requests_per_day
+            runs_today = context_row.runs_today or 0
 
-        add_resource_ids("names", resources_bucket.names, "id")
-        add_resource_ids("emails", resources_bucket.emails, "id")
-        add_resource_ids("request_limits", resources_bucket.request_limits, "id")
-        add_resource_ids("departments", resources_bucket.departments, "department_id")
-        add_resource_ids("cohorts", resources_bucket.cohorts, "cohort_id")
-        add_resource_ids("flags", resources_bucket.flags, "flag_option_id")
+            if requests_per_day is not None and runs_today >= requests_per_day:
+                error_msg = f"Rate limit exceeded ({runs_today}/{requests_per_day} requests today)"
+                logger.error(
+                    f"Profile generation rate limit exceeded - "
+                    f"profile_id={profile_id}, agent_id={agent_id}, "
+                    f"reason: {error_msg}"
+                )
+                await emit_to_internal(
+                    "generate_call_error",
+                    GenerateErrorApiRequest(
+                        sid=sid,
+                        error_message=f"Failed to prepare profile generation: {error_msg}",
+                        artifact_type="profile",
+                        group_id=str(result.group_id) if result.group_id else None,
+                        resource_type="profile",
+                    ),
+                    sid=sid,
+                )
+                return
 
-        group_id: uuid.UUID | None = result.group_id
-        resources_sql = normalize_resources_for_sql(resources)
+        existing_group_id = result.group_id
 
         async with get_db_connection() as conn:
-            create_run_sql = load_sql(CREATE_RUN_SQL_PATH)
-            create_run_row = await conn.fetchrow(
-                create_run_sql,
-                agent_id,
-                profile_id,
-                None,
-                None,
-                group_id,
-                None,
-                data.user_instructions if data.user_instructions else None,
-                resources_sql,
-            )
-
-            if not create_run_row:
-                await emit_to_internal(
-                    "generate_call_error",
-                    GenerateErrorApiRequest(
-                        sid=sid,
-                        error_message="Failed to create generation run",
-                        artifact_type="profile",
-                        group_id=str(group_id) if group_id else None,
-                        resource_type="profile",
-                    ),
-                    sid=sid,
-                )
-                return
-
-            run_id = str(create_run_row["run_id"])
-            group_id = (
-                create_run_row["group_id"] if create_run_row["group_id"] else group_id
-            )
-            trace_id = create_run_row.get("trace_id")
-            message_ids = create_run_row.get("message_ids")
-
-            run_context_sql = load_sql(TEXT_RUN_CONTEXT_SQL_PATH)
-            run_context_row = await conn.fetchrow(
-                run_context_sql,
-                uuid.UUID(run_id),
-                agent_id,
-                message_ids,
-                group_id,
-                resources_sql,
-            )
-
-            if not run_context_row:
-                await emit_to_internal(
-                    "generate_call_error",
-                    GenerateErrorApiRequest(
-                        sid=sid,
-                        error_message="Failed to load generation context",
-                        artifact_type="profile",
-                        group_id=str(group_id) if group_id else None,
-                        resource_type="profile",
-                    ),
-                    sid=sid,
-                )
-                return
-
+            # Step 5: Fetch tools, prompts, and instructions in parallel
             pool = get_pool()
             if not pool:
                 raise RuntimeError("Database pool not initialized")
 
-            async def fetch_system_prompt() -> str:
-                prompt_id = getattr(agent_resource, "prompt_id", None)
+            async def fetch_tools():
+                async with pool.acquire() as c:
+                    tools_params = GetAgentToolsSqlParams(
+                        p_agent_id=agent_id,
+                        p_resource_types=resource_types,
+                    )
+                    tools_row = cast(
+                        GetAgentToolsSqlRow,
+                        await execute_sql_typed(
+                            c, SQL_PATH_AGENT_TOOLS, params=tools_params
+                        ),
+                    )
+                    return tools_row.tools if tools_row else []
+
+            async def fetch_system_prompt():
+                prompt_id = (
+                    agent_resource.prompt_id
+                    if hasattr(agent_resource, "prompt_id")
+                    else None
+                )
                 if not prompt_id:
                     return ""
                 async with pool.acquire() as c:
                     prompts = await get_prompts_internal(c, [prompt_id])
-                    return prompts[0].system_prompt or "" if prompts else ""
+                    if prompts and prompts[0].system_prompt:
+                        return prompts[0].system_prompt
+                    return ""
 
-            async def fetch_developer_templates() -> list[str]:
-                instruction_ids = getattr(agent_resource, "instruction_ids", None) or []
+            async def fetch_developer_instructions():
+                instruction_ids = (
+                    agent_resource.instruction_ids
+                    if hasattr(agent_resource, "instruction_ids")
+                    else []
+                )
                 if not instruction_ids:
                     return []
                 async with pool.acquire() as c:
                     instructions = await get_instructions_internal(c, instruction_ids)
-                    return [i.template for i in instructions if i.template]
+                    return [inst.template for inst in instructions if inst.template]
 
-            system_prompt, developer_templates = await asyncio.gather(
+            (
+                tools,
+                system_prompt,
+                developer_instruction_templates,
+            ) = await asyncio.gather(
+                fetch_tools(),
                 fetch_system_prompt(),
-                fetch_developer_templates(),
+                fetch_developer_instructions(),
             )
 
+            # Step 6: Prepare generation (mutations only: group/run/config creation)
+            prepare_params = PrepareProfileGenerationSqlParams(
+                p_profile_id=profile_id,
+                p_group_id=existing_group_id,
+                p_agents_resource_id=agent_resource.id,
+                p_models_resource_id=model_resource.id,
+                p_providers_resource_id=provider_resource.id,
+            )
+            prepare_row = cast(
+                PrepareProfileGenerationSqlRow,
+                await execute_sql_typed(conn, SQL_PATH_PREPARE, params=prepare_params),
+            )
+
+            if not prepare_row.run_id:
+                logger.error(
+                    f"Profile generation preparation failed unexpectedly - "
+                    f"profile_id={profile_id}, agent_id={agent_id}"
+                )
+                await emit_to_internal(
+                    "generate_call_error",
+                    GenerateErrorApiRequest(
+                        sid=sid,
+                        error_message="Failed to prepare profile generation: Unknown error",
+                        artifact_type="profile",
+                        group_id=str(existing_group_id) if existing_group_id else None,
+                        resource_type="profile",
+                    ),
+                    sid=sid,
+                )
+                return
+
+            run_id = prepare_row.run_id
+            group_id = prepare_row.group_id
+            _trace_id = prepare_row.trace_id
+            config_id = prepare_row.config_id
+
+            jinja_context = profile_jinja_context
+
+            # Inject config view into Jinja context for template access
+            if config_id:
+                async with pool.acquire() as config_conn:
+                    config_view_items = await get_config_internal(
+                        conn=config_conn,
+                        config_id=config_id,
+                        bypass_cache=True,
+                    )
+                config_view = (
+                    config_view_items[0].model_dump(mode="json")
+                    if config_view_items
+                    else {}
+                )
+            else:
+                config_view = {}
+            draft_profile_view = (
+                result.views.draft_profile.model_dump(mode="json")
+                if result.views and result.views.draft_profile
+                else {}
+            )
+            jinja_context["views"] = {
+                "config": config_view,
+                "draft_profile": draft_profile_view,
+            }
+
+            # Step 7: Render developer instructions with Jinja
             rendered_developer_messages = render_developer_instructions(
-                templates=developer_templates,
-                jinja_context=run_context_row.get("context") or profile_jinja_context,
+                templates=developer_instruction_templates,
+                jinja_context=jinja_context,
             )
 
-            messages: list[dict[str, Any]] = []
+            # Step 8: Build messages for LLM AND persist to database
+            messages: list[dict[str, str]] = []
+            create_message_sql = load_sql(SQL_PATH_CREATE_MESSAGE_WITH_TEXT)
+
+            # Insert system prompt
             if system_prompt:
                 messages.append({"role": "system", "content": system_prompt})
-            for dev_msg in rendered_developer_messages:
-                messages.append({"role": "developer", "content": dev_msg})
-            for user_msg in data.user_instructions or []:
-                messages.append({"role": "user", "content": user_msg})
+                await conn.fetchval(
+                    create_message_sql,
+                    run_id,
+                    "system",
+                    system_prompt,
+                    True,
+                    False,
+                )
 
-            resource_type = data.resource_types[0] if data.resource_types else "profile"
+            # Insert developer instructions
+            for m in rendered_developer_messages:
+                messages.append({"role": "developer", "content": m})
+                await conn.fetchval(
+                    create_message_sql,
+                    run_id,
+                    "developer",
+                    m,
+                    True,
+                    False,
+                )
 
-            await internal_sio.emit(
-                "generate_artifact",
+            # Insert user instructions
+            if data.user_instructions:
+                for instruction in data.user_instructions:
+                    messages.append({"role": "user", "content": instruction})
+                    await conn.fetchval(
+                        create_message_sql,
+                        run_id,
+                        "user",
+                        instruction,
+                        True,
+                        False,
+                    )
+
+            # Step 9: Initialize generation tracker for multi-agent support
+            num_agents = len(agent_groups)
+            await init_generation(str(run_id), num_agents)
+            await init_resource_progress(str(run_id), len(resource_types))
+
+            # Emit profile_generation_started to client
+            await sio.emit(
+                "profile_generation_started",
                 {
-                    "sid": sid,
                     "artifact_type": "profile",
-                    "resource_type": resource_type,
-                    "run_id": run_id,
-                    "group_id": str(group_id) if group_id else None,
-                    "message_id": None,
-                    "messages": messages,
-                    "llm_config": {
-                        "model": model_name,
-                        "api_key": api_key,
-                        "base_url": base_url,
-                        "temperature": agent_resource.temperature,
-                        "reasoning": agent_resource.reasoning,
-                        "provider": provider_name,
-                        "voice": agent_resource.voice,
-                        "quality": agent_resource.quality,
-                        "length_seconds": None,
-                    },
-                    "tools": convert_tools_to_dict(config_tools),
+                    "group_id": str(group_id) if group_id else "",
+                    "run_id": str(run_id),
+                    "resource_types": resource_types,
                 },
+                room=sid,
             )
+
+            # Step 10: Dispatch to generate_artifact handler(s)
+            for _agent_group_id, agent_resource_types in agent_groups.items():
+                await internal_sio.emit(
+                    "generate_artifact",
+                    {
+                        "sid": sid,
+                        "artifact_type": "profile",
+                        "resource_type": agent_resource_types[0]
+                        if agent_resource_types
+                        else "profile",
+                        "run_id": str(run_id),
+                        "group_id": str(group_id) if group_id else None,
+                        "message_id": None,
+                        "messages": messages,
+                        "llm_config": {
+                            "model": model_name,
+                            "api_key": api_key,
+                            "base_url": base_url,
+                            "temperature": temperature,
+                            "reasoning": reasoning,
+                            "provider": provider_name,
+                            "voice": voice,
+                            "quality": quality,
+                            "length_seconds": None,
+                            "tool_choice": "required",
+                        },
+                        "tools": convert_tools_to_dict(tools),
+                        "save": data.save,
+                    },
+                )
 
     except Exception as e:
         logger.exception(f"Failed to generate profile resources: {str(e)}")
@@ -389,6 +552,7 @@ async def _profile_generate_impl(
 
 @sio.event  # type: ignore
 async def profile_generate(sid: str, data: dict[str, Any]) -> None:
+    """Handle profile_generate event (client-to-server)."""
     try:
         payload = GenerateProfilePayload(**data)
         profile_id_str = await find_profile_by_socket(sid)
@@ -423,6 +587,7 @@ async def profile_generate(sid: str, data: dict[str, Any]) -> None:
 
 @internal_sio.on("profile_generate")  # type: ignore
 async def profile_generate_internal(data: dict[str, Any]) -> None:
+    """Handle profile_generate event from internal bus (server-to-server)."""
     try:
         sid = data.get("sid", "")
         if not sid:
@@ -458,3 +623,19 @@ async def profile_generate_internal(data: dict[str, Any]) -> None:
             ),
             sid=sid,
         )
+
+
+# =============================================================================
+# FastAPI endpoint for OpenAPI documentation
+# =============================================================================
+
+
+@server_router.post("/profile_generation_started")
+async def profile_generation_started_api(
+    request: ProfileGenerationStartedEvent,
+) -> dict[str, bool]:
+    """Server-to-client event: Profile generation started.
+
+    Emitted when profile generation begins, listing resource types being generated.
+    """
+    return {"success": True}
