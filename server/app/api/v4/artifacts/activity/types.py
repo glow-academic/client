@@ -7,6 +7,7 @@ from pydantic import BaseModel, Field
 
 from app.api.v4.views.activity.list.types import ActivityViewItem
 from app.api.v4.views.audit.list.types import AuditViewItem
+from app.api.v4.views.grant.list.types import GrantViewItem
 from app.api.v4.views.login.list.types import LoginViewItem
 from app.api.v4.views.problem.list.types import ProblemViewItem
 from app.api.v4.views.session.list.types import SessionViewItem
@@ -32,6 +33,7 @@ class ActivityViews(BaseModel):
     logins: list[LoginViewItem] = Field(default_factory=list)
     audits: list[AuditViewItem] = Field(default_factory=list)
     problems: list[ProblemViewItem] = Field(default_factory=list)
+    grants: list[GrantViewItem] = Field(default_factory=list)
 
 
 class ActivityResources(BaseModel):
@@ -63,7 +65,7 @@ class ActivityResponse(BaseModel):
     sessions_count: int = 0
     active_profiles_count: int = 0
     logins_count: int = 0
-    drafts_count: int = 0
+    emulations_count: int = 0
     # Chart data
     chart_data: list[ActivityChartPoint] = Field(default_factory=list)
     available_events: list[ActivityAvailableEvent] = Field(default_factory=list)

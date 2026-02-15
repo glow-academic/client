@@ -20,6 +20,8 @@ from app.api.v4.views.activity.list.get import get_activity_list_view_internal
 from app.api.v4.views.activity.list.types import GetActivityListViewResponse
 from app.api.v4.views.audit.list.get import get_audit_list_view_internal
 from app.api.v4.views.audit.list.types import GetAuditListViewResponse
+from app.api.v4.views.grant.list.get import get_grant_list_view_internal
+from app.api.v4.views.grant.list.types import GetGrantListViewResponse
 from app.api.v4.views.login.list.get import get_login_list_view_internal
 from app.api.v4.views.login.list.types import GetLoginListViewResponse
 from app.api.v4.views.problem.list.get import get_problem_list_view_internal
@@ -62,12 +64,6 @@ async def resolve_profile_ids_for_filters(
         f"SELECT p.id FROM profiles_resource p WHERE {where}", *params
     )
     return [row["id"] for row in rows]
-
-
-async def get_drafts_count(conn: asyncpg.Connection) -> int:
-    """Get total count of active drafts across all artifact types."""
-    count = await conn.fetchval("SELECT COUNT(*) FROM drafts_entry WHERE active = true")
-    return count or 0
 
 
 @router.post(
@@ -154,9 +150,11 @@ async def get_activity(
                     bypass_cache=bypass_cache,
                 )
 
-        async def fetch_drafts_count() -> int:
+        async def fetch_grants() -> GetGrantListViewResponse:
             async with pool.acquire() as c:
-                return await get_drafts_count(c)
+                return await get_grant_list_view_internal(
+                    conn=c, bypass_cache=bypass_cache
+                )
 
         (
             activity_result,
@@ -164,14 +162,14 @@ async def get_activity(
             logins_result,
             audits_result,
             problems_result,
-            drafts_count,
+            grants_result,
         ) = await asyncio.gather(
             fetch_activity(),
             fetch_sessions(),
             fetch_logins(),
             fetch_audits(),
             fetch_problems(),
-            fetch_drafts_count(),
+            fetch_grants(),
         )
 
         # Build chart_data from activity view (date_key + event_type + event_count)
@@ -207,6 +205,11 @@ async def get_activity(
         active_profiles_count = activity_result.total_count
         logins_count = logins_result.total_count
 
+        # Compute emulations count from grants
+        emulations_count = sum(
+            1 for g in grants_result.items if g.emulation_id is not None
+        )
+
         # Build views container
         views = ActivityViews(
             sessions=sessions_result.items,
@@ -214,6 +217,7 @@ async def get_activity(
             logins=logins_result.items,
             audits=audits_result.items,
             problems=problems_result.items,
+            grants=grants_result.items,
         )
 
         # Collect profile_ids for resources
@@ -233,7 +237,7 @@ async def get_activity(
             sessions_count=sessions_count,
             active_profiles_count=active_profiles_count,
             logins_count=logins_count,
-            drafts_count=drafts_count,
+            emulations_count=emulations_count,
             chart_data=chart_data,
             available_events=available_events,
             problems=problems_result.items,
