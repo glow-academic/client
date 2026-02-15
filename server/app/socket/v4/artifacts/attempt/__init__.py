@@ -30,6 +30,7 @@ from fastapi import APIRouter
 
 from . import (
     audio,
+    chat,
     complete,
     end,
     end_all,
@@ -40,11 +41,13 @@ from . import (
     message,
     progress,
     responses,
+    start,
     stop,
 )
 
 __all__ = [
     "audio",
+    "chat",
     "complete",
     "end",
     "end_all",
@@ -55,6 +58,7 @@ __all__ = [
     "message",
     "progress",
     "responses",
+    "start",
     "stop",
 ]
 
@@ -72,6 +76,7 @@ client_router.include_router(end.client_router)
 client_router.include_router(end_all.client_router)
 client_router.include_router(audio.client_router)
 client_router.include_router(responses.client_router)
+client_router.include_router(start.client_router)
 
 # Register server-to-client events
 server_router.include_router(message.server_router)
@@ -85,3 +90,5 @@ server_router.include_router(end.server_router)
 server_router.include_router(end_all.server_router)
 server_router.include_router(audio.server_router)
 server_router.include_router(responses.server_router)
+server_router.include_router(start.server_router)
+server_router.include_router(chat.server_router)

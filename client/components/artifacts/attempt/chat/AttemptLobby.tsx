@@ -54,12 +54,12 @@ export function AttemptLobby({
     [continuationOptions],
   );
 
-  // Listen for training_started or attempt_chat_ended to refresh the page
+  // Listen for attempt_chat_started, attempt_chat_ended, attempt_ended events
   useEffect(() => {
     if (!socket) return;
 
-    const handleStarted = (
-      data: Parameters<ServerToClientEvents["training_started"]>[0],
+    const handleChatStarted = (
+      data: Parameters<ServerToClientEvents["attempt_chat_started"]>[0],
     ) => {
       if (!isStarting) return;
       setIsStarting(false);
@@ -68,40 +68,44 @@ export function AttemptLobby({
       }
     };
 
-    const handleError = (
-      data: Parameters<ServerToClientEvents["training_error"]>[0],
-    ) => {
-      if (!isStarting) return;
-      setIsStarting(false);
-      toast.error(data.message || "Failed to start training.");
-    };
-
     const handleChatEnded = () => {
       if (!isStarting) return;
       setIsStarting(false);
       router.refresh();
     };
 
-    const handleAttemptError = (data: { type: string; message: string }) => {
+    const handleAttemptEnded = (
+      data: Parameters<ServerToClientEvents["attempt_ended"]>[0],
+    ) => {
       if (!isStarting) return;
-      if (data.type === "end") {
-        setIsStarting(false);
-        toast.error(data.message || "Failed to use previous scores.");
+      setIsStarting(false);
+      if (data.attempt_id === attemptId) {
+        // All scenarios complete — navigate to results
+        const basePath = mode === "practice" ? "/practice" : "/home";
+        router.push(`${basePath}/${attemptId}/results`);
       }
     };
 
-    socket.on("training_started", handleStarted);
-    socket.on("training_error", handleError);
+    const handleAttemptError = (data: { type?: string; message: string }) => {
+      if (!isStarting) return;
+      if (data.type === "end" || data.type === "start") {
+        setIsStarting(false);
+        toast.error(data.message || "Failed to start training.");
+      }
+    };
+
+    socket.on("attempt_chat_started", handleChatStarted);
     socket.on("attempt_chat_ended", handleChatEnded);
+    socket.on("attempt_ended", handleAttemptEnded);
     socket.on("attempt_error", handleAttemptError);
 
     return () => {
-      socket.off("training_started", handleStarted);
-      socket.off("training_error", handleError);
+      socket.off("attempt_chat_started", handleChatStarted);
       socket.off("attempt_chat_ended", handleChatEnded);
+      socket.off("attempt_ended", handleAttemptEnded);
       socket.off("attempt_error", handleAttemptError);
     };
-  }, [socket, isStarting, attemptId, router]);
+  }, [socket, isStarting, attemptId, mode, router]);
 
   const handleStart = useCallback(() => {
     if (!socket || !isConnected) {
@@ -126,7 +130,7 @@ export function AttemptLobby({
       payload.user_instructions = [userInstructions.trim()];
     }
 
-    socket.emit("training_start", payload);
+    socket.emit("attempt_start", payload);
   }, [
     socket,
     isConnected,

@@ -376,7 +376,7 @@ async def get_document_internal(
                 50,
                 0,
                 flag_ids,
-                bypass_cache,
+                bypass_cache=bypass_cache,
                 document=True,
             )
             # Filter to only document-specific flags
@@ -485,7 +485,7 @@ async def get_document_internal(
         departments_selected + departments_suggestions, "department_id"
     )
     fields = _dedupe_by_id(fields_selected + fields_suggestions, "field_id")
-    uploads = _dedupe_by_id(uploads_selected + uploads_suggestions, "id")
+    uploads = _dedupe_by_id(uploads_selected + uploads_suggestions, "uploads_id")
     images = _dedupe_by_id(images_selected + images_suggestions, "image_id")
     texts = _dedupe_by_id(texts_selected + texts_suggestions, "texts_id")
 
@@ -500,16 +500,16 @@ async def get_document_internal(
     department_resources = [
         d for d in departments if d.department_id in selected_department_ids
     ]
-    field_resources = [f for f in fields if f.id in selected_field_ids]
-    upload_resources = [u for u in uploads if u.id in selected_upload_ids]
+    field_resources = [f for f in fields if f.field_id in selected_field_ids]
+    upload_resources = [u for u in uploads if u.uploads_id in selected_upload_ids]
     image_resources = [i for i in images if i.image_id in selected_image_ids]
     text_resources = [t for t in texts if t.texts_id in selected_text_ids]
 
     name_suggestions = [n.id for n in names_suggestions]
     description_suggestions = [d.id for d in descriptions_suggestions]
     department_suggestions = [d.department_id for d in departments_suggestions]
-    field_suggestions = [f.id for f in fields_suggestions]
-    upload_suggestions = [u.id for u in uploads_suggestions]
+    field_suggestions = [f.field_id for f in fields_suggestions]
+    upload_suggestions = [u.uploads_id for u in uploads_suggestions]
     image_suggestions = [i.image_id for i in images_suggestions]
     text_suggestions = [t.texts_id for t in texts_suggestions]
 

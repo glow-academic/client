@@ -180,6 +180,16 @@ class ScenarioQuestion(BaseModel):
     generated: bool | None = None
 
 
+class ScenarioOption(BaseModel):
+    """Option for scenario."""
+
+    option_id: UUID | None = None
+    option_text: str | None = None
+    is_correct: bool | None = None
+    question_id: UUID | None = None
+    generated: bool | None = None
+
+
 class ScenarioProblemStatement(BaseModel):
     """Problem statement for scenario."""
 
@@ -217,6 +227,7 @@ class ScenarioResourceBucket(BaseModel):
     images: list[ScenarioImage] | None = None
     videos: list[ScenarioVideo] | None = None
     questions: list[ScenarioQuestion] | None = None
+    options: list[ScenarioOption] | None = None
 
 
 class ScenarioResources(BaseModel):
@@ -250,6 +261,7 @@ class GetScenarioApiRequest(BaseModel):
     image_search: str | None = None
     video_search: str | None = None
     question_search: str | None = None
+    option_search: str | None = None
     persona_show_selected: bool | None = None
     document_show_selected: bool | None = None
     parameter_show_selected: bool | None = None
@@ -325,6 +337,11 @@ class ScenarioQuestionSection(BaseResourceSection):
     resources: list[ScenarioQuestion] | None = None
 
 
+class ScenarioOptionSection(BaseResourceSection):
+    current: list[ScenarioOption] | None = None
+    resources: list[ScenarioOption] | None = None
+
+
 class GetScenarioApiResponse(BaseModel):
     """Response for getting a single scenario."""
 
@@ -354,6 +371,7 @@ class GetScenarioApiResponse(BaseModel):
     images: ScenarioImageSection | None = None
     videos: ScenarioVideoSection | None = None
     questions: ScenarioQuestionSection | None = None
+    options: ScenarioOptionSection | None = None
 
 
 class GetScenarioWebsocketResponse(BaseModel):
@@ -382,7 +400,7 @@ class ScenarioWebsocketViews(BaseModel):
 class ScenarioWebsocketResources(BaseModel):
     """Hydrated resources for websocket — selected only, no `current` wrapper."""
 
-    # 13 scenario resources (selected)
+    # 14 scenario resources (selected)
     names: list[ScenarioNameResource] | None = None
     descriptions: list[ScenarioDescriptionResource] | None = None
     problem_statements: list[ScenarioProblemStatement] | None = None
@@ -396,6 +414,7 @@ class ScenarioWebsocketResources(BaseModel):
     images: list[ScenarioImage] | None = None
     videos: list[ScenarioVideo] | None = None
     questions: list[ScenarioQuestion] | None = None
+    options: list[ScenarioOption] | None = None
 
     # 4 config resources for generation
     agents: list[QGetAgentsV4Item] | None = None
@@ -527,6 +546,7 @@ class SaveScenarioApiRequest(BaseModel):
     objective_ids: list[UUID] | None = None
     video_ids: list[UUID] | None = None
     question_ids: list[UUID] | None = None
+    option_ids: list[UUID] | None = None
 
 
 class ScenarioResourceAction(BaseModel):
@@ -624,6 +644,7 @@ class PatchScenarioDraftApiRequest(BaseModel):
     objective_ids: list[UUID] | None = None
     video_ids: list[UUID] | None = None
     question_ids: list[UUID] | None = None
+    option_ids: list[UUID] | None = None
 
 
 class PatchScenarioDraftApiResponse(BaseModel):
@@ -696,6 +717,7 @@ class GetScenarioSqlParams(BaseModel):
     image_search: str | None = None
     video_search: str | None = None
     question_search: str | None = None
+    option_search: str | None = None
     persona_show_selected: bool | None = None
     document_show_selected: bool | None = None
     parameter_show_selected: bool | None = None
@@ -823,6 +845,12 @@ class GetScenarioSqlRow(BaseModel):
     questions_required: bool | None = None
     question_suggestions: list[UUID] | None = None
     questions: list[ScenarioQuestion] | None = None
+    option_ids: list[UUID] | None = None
+    option_resources: list[ScenarioOption] | None = None
+    show_options: bool | None = None
+    options_required: bool | None = None
+    option_suggestions: list[UUID] | None = None
+    options: list[ScenarioOption] | None = None
     persona_ids: list[UUID] | None = None
     persona_resources: list[ScenarioPersona] | None = None
     show_personas: bool | None = None
@@ -906,6 +934,7 @@ class SaveScenarioSqlParams(BaseModel):
     objectives: ScenarioMultiResourceAction
     videos: ScenarioMultiResourceAction
     questions: ScenarioMultiResourceAction
+    options: ScenarioMultiResourceAction
 
     @classmethod
     def from_request(
@@ -951,6 +980,7 @@ class SaveScenarioSqlParams(BaseModel):
             objectives=ScenarioMultiResourceAction(resource_ids=request.objective_ids),
             videos=ScenarioMultiResourceAction(resource_ids=request.video_ids),
             questions=ScenarioMultiResourceAction(resource_ids=request.question_ids),
+            options=ScenarioMultiResourceAction(resource_ids=request.option_ids),
         )
 
     def to_tuple(self) -> tuple[Any, ...]:
@@ -977,6 +1007,7 @@ class SaveScenarioSqlParams(BaseModel):
             multi(self.objectives),
             multi(self.videos),
             multi(self.questions),
+            multi(self.options),
         )
 
 
@@ -1055,6 +1086,7 @@ class PatchScenarioDraftSqlParams(BaseModel):
     objectives: ScenarioMultiResourceAction
     videos: ScenarioMultiResourceAction
     questions: ScenarioMultiResourceAction
+    options: ScenarioMultiResourceAction
     expected_version: int = 0
 
     @classmethod
@@ -1167,6 +1199,11 @@ class PatchScenarioDraftSqlParams(BaseModel):
                 if request.question_ids is not None
                 else empty_multi
             ),
+            options=(
+                ScenarioMultiResourceAction(resource_ids=request.option_ids)
+                if request.option_ids is not None
+                else empty_multi
+            ),
             expected_version=request.expected_version,
         )
 
@@ -1194,6 +1231,7 @@ class PatchScenarioDraftSqlParams(BaseModel):
             multi(self.objectives),
             multi(self.videos),
             multi(self.questions),
+            multi(self.options),
             self.expected_version,
         )
 

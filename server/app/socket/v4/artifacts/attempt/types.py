@@ -349,6 +349,43 @@ class AttemptStoppedEvent(BaseModel):
     message: str | None = None
 
 
+class AttemptStartPayload(BaseModel):
+    """Request payload for attempt_start WebSocket event.
+
+    Dual-mode:
+    - Create mode (no attempt_id): creates a new attempt
+    - Next mode (has attempt_id): checks remaining scenarios and proceeds
+    """
+
+    training_bundle_entry_id: UUID | None = None
+    attempt_id: UUID | None = None
+    draft_id: UUID | None = None
+    infinite_mode: bool = False
+    resource_types: list[str] | None = None
+    user_instructions: list[str] | None = None
+    save: bool = True
+
+
+class AttemptStartedEvent(BaseModel):
+    """Server-to-client event: attempt_started.
+
+    Emitted when a new attempt is created.
+    """
+
+    attempt_id: str
+    training_bundle_entry_id: str
+
+
+class AttemptChatStartedEvent(BaseModel):
+    """Server-to-client event: attempt_chat_started.
+
+    Emitted when a new chat is created within an attempt.
+    """
+
+    attempt_id: str
+    chat_id: str
+
+
 class AttemptChatEndedEvent(BaseModel):
     """Server-to-client event: attempt_chat_ended.
 
@@ -363,11 +400,12 @@ class AttemptChatEndedEvent(BaseModel):
 class AttemptEndedEvent(BaseModel):
     """Server-to-client event: attempt_ended.
 
-    Emitted when an entire attempt is ended.
+    Emitted when an entire attempt is ended (all scenarios complete).
     """
 
     attempt_id: str
     success: bool
+    all_scenarios_complete: bool = False
     message: str | None = None
 
 

@@ -17,13 +17,12 @@ import PracticeZone, { PracticeZoneSkeleton } from "./PracticeZone";
 export interface PracticeProps {
   practiceData: PracticeOut;
   isGuest?: boolean;
-  createAttempt: (input: { body: { training_bundle_entry_id: string; infinite_mode: boolean } }) => Promise<{ attempt_id: string }>;
+
 }
 
 export default function Practice({
   practiceData,
   isGuest = false,
-  createAttempt,
 }: PracticeProps) {
   const { profile } = useProfile();
 
@@ -127,7 +126,6 @@ export default function Practice({
               | "admin"
               | "guest",
           }}
-          createAttempt={createAttempt}
         />
       </div>
     </TooltipProvider>

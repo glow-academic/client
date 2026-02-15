@@ -28,7 +28,8 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import type { InputOf, OutputOf } from "@/lib/api/types";
+import { useSocket } from "@/contexts/socket-context";
+import type { ServerToClientEvents } from "@/lib/ws/types";
 import { getIconComponent } from "@/utils/icons";
 import {
   ChevronLeft,
@@ -43,7 +44,7 @@ import {
   Users,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 // ProfileItem type derived from server response (single source of truth)
 import type { ProfileItem } from "@/app/(main)/layout-server";
@@ -82,9 +83,6 @@ const generateGradientFromHex = (hexColor: string): string => {
   return `linear-gradient(135deg, ${lighterHex} 0%, ${hexColor} 100%)`;
 };
 
-type CreateAttemptIn = InputOf<"/api/v4/artifacts/attempt/create", "post">;
-type CreateAttemptOut = OutputOf<"/api/v4/artifacts/attempt/create", "post">;
-
 export interface RubricItem {
   name: string | null;
   standard_group_ids: string[];
@@ -109,8 +107,6 @@ export interface SimulationCardProps {
   /** "default" = practice mode, "cohort" = home mode */
   type: "default" | "cohort";
   profile: ProfileItem;
-  /** Server action to create an attempt (runs on Next.js server, not browser) */
-  createAttempt: (input: CreateAttemptIn) => Promise<CreateAttemptOut>;
 }
 
 export default function SimulationCard({
@@ -131,66 +127,86 @@ export default function SimulationCard({
   passRate,
   type,
   profile,
-  createAttempt,
 }: SimulationCardProps) {
   const router = useRouter();
+  const { socket, isConnected } = useSocket();
 
   // Determine if this is practice mode based on type
   const practice = type === "default";
 
   // Loading state for this card
   const [isStarting, setIsStarting] = useState(false);
+  const isStartingRef = useRef(false);
 
   // Rubric navigation state
   const [currentRubricIndex, setCurrentRubricIndex] = useState(0);
   const totalRubrics = rubrics?.length ?? 0;
 
-  // Start training function - creates attempt via REST, navigates to attempt page
+  // Listen for attempt_started and attempt_chat_started to navigate
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleStarted = (
+      data: Parameters<ServerToClientEvents["attempt_started"]>[0],
+    ) => {
+      if (!isStartingRef.current) return;
+      const basePath = practice ? "/practice" : "/home";
+      router.push(`${basePath}/${data.attempt_id}`);
+
+      // Dispatch custom event for analytics
+      window.dispatchEvent(
+        new CustomEvent("simulationButtonPressed", {
+          detail: { simulationId: id },
+        })
+      );
+    };
+
+    const handleError = (data: { type?: string; message: string }) => {
+      if (!isStartingRef.current) return;
+      if (data.type === "start") {
+        setIsStarting(false);
+        isStartingRef.current = false;
+        toast.error(data.message || "Failed to start simulation.");
+      }
+    };
+
+    socket.on("attempt_started", handleStarted);
+    socket.on("attempt_error", handleError);
+
+    return () => {
+      socket.off("attempt_started", handleStarted);
+      socket.off("attempt_error", handleError);
+    };
+  }, [socket, practice, router, id]);
+
+  // Start training function - emits attempt_start via WebSocket
   const handleStartTraining = useCallback(
-    async (infiniteMode: boolean = false) => {
+    (infiniteMode: boolean = false) => {
       if (!trainingBundleEntryId) {
         toast.error("Training bundle is missing for this simulation.");
         return;
       }
 
+      if (!socket || !isConnected) {
+        toast.error("WebSocket not connected. Please refresh the page.");
+        return;
+      }
+
       setIsStarting(true);
-      const toastId = toast.loading(
+      isStartingRef.current = true;
+      toast.loading(
         infiniteMode ? "Starting infinite mode..." : "Starting simulation...",
         {
           dismissible: true,
         }
       );
-      try {
-        const result = await createAttempt({
-          body: {
-            training_bundle_entry_id: trainingBundleEntryId,
-            infinite_mode: infiniteMode,
-          },
-        });
-        const attemptId = result.attempt_id;
-        if (!attemptId) {
-          toast.dismiss(toastId);
-          toast.error("Failed to create training attempt.");
-          return;
-        }
 
-        const basePath = practice ? "/practice" : "/home";
-        router.push(`${basePath}/${attemptId}`);
-
-        // Dispatch custom event for analytics
-        window.dispatchEvent(
-          new CustomEvent("simulationButtonPressed", {
-            detail: { simulationId: id },
-          })
-        );
-      } catch {
-        toast.dismiss(toastId);
-        toast.error("Failed to create training attempt.");
-      } finally {
-        setIsStarting(false);
-      }
+      socket.emit("attempt_start", {
+        training_bundle_entry_id: trainingBundleEntryId,
+        infinite_mode: infiniteMode,
+      });
     },
-    [trainingBundleEntryId, practice, router, id, createAttempt]
+    [trainingBundleEntryId, socket, isConnected]
   );
 
   // Get persona configuration and icon based on persona data

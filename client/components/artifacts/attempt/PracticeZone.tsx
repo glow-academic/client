@@ -34,7 +34,6 @@ interface PracticeZoneProps {
   standardsMapping: StandardsMapping;
   rubrics?: RubricItem[];
   profile: ProfileItem | null;
-  createAttempt: (input: { body: { training_bundle_entry_id: string; infinite_mode: boolean } }) => Promise<{ attempt_id: string }>;
 }
 
 export default function PracticeZone({
@@ -44,7 +43,6 @@ export default function PracticeZone({
   standardsMapping,
   rubrics,
   profile,
-  createAttempt,
 }: PracticeZoneProps) {
   const [carouselIndex, setCarouselIndex] = useState(0);
 
@@ -153,7 +151,6 @@ export default function PracticeZone({
                 })}
                 type="default"
                 profile={profile}
-                createAttempt={createAttempt}
               />
             );
           },

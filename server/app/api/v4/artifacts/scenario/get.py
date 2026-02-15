@@ -63,6 +63,7 @@ from app.api.v4.artifacts.scenario.types import (
     ScenarioImageSection,
     ScenarioNameSection,
     ScenarioObjectiveSection,
+    ScenarioOptionSection,
     ScenarioParameterFieldSection,
     ScenarioParameterSection,
     ScenarioPersonaSection,
@@ -108,6 +109,8 @@ from app.api.v4.resources.problem_statements.get import (
 from app.api.v4.resources.problem_statements.search import (
     search_problem_statements_internal,
 )
+from app.api.v4.resources.options.get import get_options_internal
+from app.api.v4.resources.options.search import search_options_internal
 from app.api.v4.resources.questions.get import get_questions_internal
 from app.api.v4.resources.questions.search import search_questions_internal
 from app.api.v4.resources.tools.get import get_tools_internal

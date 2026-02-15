@@ -1,7 +1,7 @@
 -- Create options resource
 -- SIMPLIFIED: No agent_id required, optional tool_id for tracking
--- Get or create operation (returns existing ID if option_text + is_correct already exists)
--- Parameters: option_text (text), is_correct (boolean), mcp (boolean), group_id (uuid, optional), tool_id (uuid, optional)
+-- Get or create operation (returns existing ID if option_text + is_correct + question_id already exists)
+-- Parameters: option_text (text), is_correct (boolean), mcp (boolean), group_id (uuid, optional), tool_id (uuid, optional), question_id (uuid, optional)
 -- Returns: option_id (uuid)
 
 -- Drop function if exists (handles signature variations)
@@ -24,7 +24,8 @@ CREATE OR REPLACE FUNCTION api_create_options_v4(
     is_correct boolean,
     mcp boolean DEFAULT false,
     group_id uuid DEFAULT NULL,
-    tool_id uuid DEFAULT NULL
+    tool_id uuid DEFAULT NULL,
+    question_id uuid DEFAULT NULL
 )
 RETURNS TABLE (
     option_id uuid
@@ -38,11 +39,12 @@ DECLARE
     v_run_id uuid;
     v_call_id uuid;
 BEGIN
-    -- Check if options already exists (match on option_text + is_correct)
+    -- Check if options already exists (match on option_text + is_correct + question_id)
     SELECT r.id INTO v_option_id
     FROM options_resource r
     WHERE r.option_text = api_create_options_v4.option_text
       AND r.is_correct = api_create_options_v4.is_correct
+      AND (r.question_id IS NOT DISTINCT FROM api_create_options_v4.question_id)
     LIMIT 1;
 
     IF v_option_id IS NOT NULL THEN
@@ -51,8 +53,8 @@ BEGIN
     END IF;
 
     -- INSERT INTO options_resource table
-    INSERT INTO options_resource(option_text, is_correct, active, mcp)
-    VALUES (option_text, is_correct, true, mcp)
+    INSERT INTO options_resource(option_text, is_correct, active, mcp, question_id)
+    VALUES (option_text, is_correct, true, mcp, question_id)
     RETURNING id INTO v_option_id;
     -- If tool_id and group_id provided, create run and call for tracking
     IF tool_id IS NOT NULL AND group_id IS NOT NULL THEN

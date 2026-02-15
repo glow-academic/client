@@ -17,6 +17,8 @@ from app.infra.v4.websocket.attempt.run_store import remove_run_context
 from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
 from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.main import get_internal_sio, sio
+
+SHOULD_PROCEED = True
 from app.socket.v4.artifacts.attempt.types import (
     AttemptAssistantCompleteEvent,
     AttemptCompleteEvent,
@@ -278,6 +280,16 @@ async def _handle_grade_complete(sid: str, data: dict[str, Any]) -> None:
         f"Attempt grading complete - attempt_id={attempt_id}, "
         f"score={score}, passed={passed}"
     )
+
+    # Auto-proceed: trigger next scenario after grading completes
+    if SHOULD_PROCEED and attempt_id:
+        await internal_sio.emit(
+            "attempt_start",
+            {
+                "sid": sid,
+                "attempt_id": str(attempt_id),
+            },
+        )
 
 
 async def _handle_tool_complete(sid: str, data: dict[str, Any]) -> None:

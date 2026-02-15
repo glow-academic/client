@@ -82,7 +82,12 @@ def _build_training_jinja_context(
 
 
 async def _training_generate_impl(
-    sid: str, data: GenerateTrainingPayload, profile_id: uuid.UUID
+    sid: str,
+    data: GenerateTrainingPayload,
+    profile_id: uuid.UUID,
+    *,
+    attempt_id: str | None = None,
+    training_bundle_department_id: str | None = None,
 ) -> None:
     """Handle training generation with all business logic.
 
@@ -514,6 +519,8 @@ async def _training_generate_impl(
                         },
                         "tools": convert_tools_to_dict(tools),
                         "save": data.save,
+                        "attempt_id": attempt_id,
+                        "training_bundle_department_id": training_bundle_department_id,
                     },
                 )
 
@@ -592,7 +599,13 @@ async def training_generate_internal(data: dict[str, Any]) -> None:
 
         profile_id = uuid.UUID(profile_id_str)
         payload = GenerateTrainingPayload(**data)
-        await _training_generate_impl(sid, payload, profile_id)
+        await _training_generate_impl(
+            sid,
+            payload,
+            profile_id,
+            attempt_id=data.get("attempt_id"),
+            training_bundle_department_id=data.get("training_bundle_department_id"),
+        )
     except Exception as e:
         await emit_to_internal(
             "generate_call_error",

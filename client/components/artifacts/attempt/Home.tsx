@@ -22,10 +22,9 @@ import SimulationProgress, {
 
 export interface HomeProps {
   homeData: HomeOut;
-  createAttempt: (input: { body: { training_bundle_entry_id: string; infinite_mode: boolean } }) => Promise<{ attempt_id: string }>;
 }
 
-export default function Home({ homeData, createAttempt }: HomeProps) {
+export default function Home({ homeData }: HomeProps) {
   const { profile } = useProfile();
 
   // Use data directly from props (fetched server-side)
@@ -363,7 +362,6 @@ export default function Home({ homeData, createAttempt }: HomeProps) {
                           | "admin"
                           | "guest",
                       }}
-                      createAttempt={createAttempt}
                     />
                   ) : null
                 )}

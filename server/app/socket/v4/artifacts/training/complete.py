@@ -11,7 +11,6 @@ from typing import Any
 
 from fastapi import APIRouter
 
-from app.api.v4.artifacts.attempt.create import create_chat_internal
 from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
 from app.infra.v4.websocket.generation_tracker import (
     cleanup_generation,
@@ -164,25 +163,18 @@ async def _handle_training_run_complete(sid: str, data: dict[str, Any]) -> None:
             and attempt_id_data
             and training_bundle_department_id_data
         ):
-            try:
-                profile_id = uuid.UUID(profile_id_str)
-                attempt_id = uuid.UUID(attempt_id_data)
-                training_bundle_department_id = uuid.UUID(
-                    training_bundle_department_id_data
-                )
-                attempt_id_str = str(attempt_id)
+            attempt_id_str = attempt_id_data
 
-                async with get_db_connection() as conn:
-                    saved_chat_id = await create_chat_internal(
-                        conn=conn,
-                        profile_id=profile_id,
-                        attempt_id=attempt_id,
-                        training_bundle_department_id=training_bundle_department_id,
-                    )
-                    if saved_chat_id:
-                        chat_id = str(saved_chat_id)
-            except Exception as e:
-                logger.exception(f"Failed to auto-create chat for training: {str(e)}")
+            # Emit attempt_chat to create chat via the chat lifecycle handler
+            await internal_sio.emit(
+                "attempt_chat",
+                {
+                    "sid": sid,
+                    "attempt_id": attempt_id_data,
+                    "training_bundle_department_id": training_bundle_department_id_data,
+                    "profile_id": profile_id_str,
+                },
+            )
 
         # Emit training_generation_complete
         event = TrainingGenerationCompleteEvent(

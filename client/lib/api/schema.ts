@@ -2811,26 +2811,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v4/artifacts/attempt/create": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Create Attempt
-         * @description Create a new training attempt (no chat - lobby will start chat later).
-         */
-        post: operations["create_attempt_api_v4_artifacts_attempt_create_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v4/artifacts/attempt/archive": {
         parameters: {
             query?: never;
@@ -8725,6 +8705,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/socket/v4/client/attempt/start": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Attempt Start Api
+         * @description Client-to-server event: Start or proceed with an attempt.
+         */
+        post: operations["attempt_start_api_socket_v4_client_attempt_start_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/socket/v4/client/test/join": {
         parameters: {
             query?: never;
@@ -9454,6 +9454,46 @@ export interface paths {
          * @description Server-to-client event: Response submission result.
          */
         post: operations["attempt_response_result_api_socket_v4_server_attempt_response_result_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v4/server/attempt/started": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Attempt Started Api
+         * @description Server-to-client event: Attempt created.
+         */
+        post: operations["attempt_started_api_socket_v4_server_attempt_started_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v4/server/attempt/chat_started": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Attempt Chat Started Api
+         * @description Server-to-client event: Chat created within an attempt.
+         */
+        post: operations["attempt_chat_started_api_socket_v4_server_attempt_chat_started_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -18485,6 +18525,18 @@ export interface components {
             grade_id?: string | null;
         };
         /**
+         * AttemptChatStartedEvent
+         * @description Server-to-client event: attempt_chat_started.
+         *
+         *     Emitted when a new chat is created within an attempt.
+         */
+        AttemptChatStartedEvent: {
+            /** Attempt Id */
+            attempt_id: string;
+            /** Chat Id */
+            chat_id: string;
+        };
+        /**
          * AttemptCompleteEvent
          * @description Server-to-client event: attempt_complete.
          *
@@ -18605,13 +18657,18 @@ export interface components {
          * AttemptEndedEvent
          * @description Server-to-client event: attempt_ended.
          *
-         *     Emitted when an entire attempt is ended.
+         *     Emitted when an entire attempt is ended (all scenarios complete).
          */
         AttemptEndedEvent: {
             /** Attempt Id */
             attempt_id: string;
             /** Success */
             success: boolean;
+            /**
+             * All Scenarios Complete
+             * @default false
+             */
+            all_scenarios_complete: boolean;
             /** Message */
             message?: string | null;
         };
@@ -19018,6 +19075,48 @@ export interface components {
             question_id: string;
             /** Option Ids */
             option_ids: string[];
+        };
+        /**
+         * AttemptStartPayload
+         * @description Request payload for attempt_start WebSocket event.
+         *
+         *     Dual-mode:
+         *     - Create mode (no attempt_id): creates a new attempt
+         *     - Next mode (has attempt_id): checks remaining scenarios and proceeds
+         */
+        AttemptStartPayload: {
+            /** Training Bundle Entry Id */
+            training_bundle_entry_id?: string | null;
+            /** Attempt Id */
+            attempt_id?: string | null;
+            /** Draft Id */
+            draft_id?: string | null;
+            /**
+             * Infinite Mode
+             * @default false
+             */
+            infinite_mode: boolean;
+            /** Resource Types */
+            resource_types?: string[] | null;
+            /** User Instructions */
+            user_instructions?: string[] | null;
+            /**
+             * Save
+             * @default true
+             */
+            save: boolean;
+        };
+        /**
+         * AttemptStartedEvent
+         * @description Server-to-client event: attempt_started.
+         *
+         *     Emitted when a new attempt is created.
+         */
+        AttemptStartedEvent: {
+            /** Attempt Id */
+            attempt_id: string;
+            /** Training Bundle Entry Id */
+            training_bundle_entry_id: string;
         };
         /**
          * AttemptStopPayload
@@ -21440,27 +21539,6 @@ export interface components {
             total_percentage?: number | null;
             /** Total Time */
             total_time: number;
-        };
-        /** CreateAttemptRequest */
-        CreateAttemptRequest: {
-            /**
-             * Training Bundle Entry Id
-             * Format: uuid
-             */
-            training_bundle_entry_id: string;
-            /**
-             * Infinite Mode
-             * @default false
-             */
-            infinite_mode: boolean;
-        };
-        /** CreateAttemptResponse */
-        CreateAttemptResponse: {
-            /**
-             * Attempt Id
-             * Format: uuid
-             */
-            attempt_id: string;
         };
         /** CreateEmulationGrantApiRequest */
         CreateEmulationGrantApiRequest: {
@@ -27898,6 +27976,8 @@ export interface components {
             video_search?: string | null;
             /** Question Search */
             question_search?: string | null;
+            /** Option Search */
+            option_search?: string | null;
             /** Persona Show Selected */
             persona_show_selected?: boolean | null;
             /** Document Show Selected */
@@ -27948,6 +28028,7 @@ export interface components {
             images?: components["schemas"]["ScenarioImageSection"] | null;
             videos?: components["schemas"]["ScenarioVideoSection"] | null;
             questions?: components["schemas"]["ScenarioQuestionSection"] | null;
+            options?: components["schemas"]["ScenarioOptionSection"] | null;
         };
         /**
          * GetScenarioFactsRequest
@@ -32987,6 +33068,8 @@ export interface components {
             group_id?: string | null;
             /** Tool Id */
             tool_id?: string | null;
+            /** Question Id */
+            question_id?: string | null;
         };
         /** OptionsApiResponse */
         OptionsApiResponse: {
@@ -34334,6 +34417,8 @@ export interface components {
             video_ids?: string[] | null;
             /** Question Ids */
             question_ids?: string[] | null;
+            /** Option Ids */
+            option_ids?: string[] | null;
         };
         /**
          * PatchScenarioDraftApiResponse
@@ -41279,6 +41364,8 @@ export interface components {
             video_ids?: string[] | null;
             /** Question Ids */
             question_ids?: string[] | null;
+            /** Option Ids */
+            option_ids?: string[] | null;
         };
         /**
          * SaveScenarioApiResponse
@@ -42008,6 +42095,48 @@ export interface components {
             current?: components["schemas"]["ScenarioObjective"][] | null;
             /** Resources */
             resources?: components["schemas"]["ScenarioObjective"][] | null;
+        };
+        /**
+         * ScenarioOption
+         * @description Option for scenario.
+         */
+        ScenarioOption: {
+            /** Option Id */
+            option_id?: string | null;
+            /** Option Text */
+            option_text?: string | null;
+            /** Is Correct */
+            is_correct?: boolean | null;
+            /** Question Id */
+            question_id?: string | null;
+            /** Generated */
+            generated?: boolean | null;
+        };
+        /** ScenarioOptionSection */
+        ScenarioOptionSection: {
+            /**
+             * Show
+             * @default false
+             */
+            show: boolean;
+            /**
+             * Required
+             * @default false
+             */
+            required: boolean;
+            /** Suggestions */
+            suggestions?: string[] | null;
+            /**
+             * Show Ai Generate
+             * @default false
+             */
+            show_ai_generate: boolean;
+            /** Tool Id */
+            tool_id?: string | null;
+            /** Current */
+            current?: components["schemas"]["ScenarioOption"][] | null;
+            /** Resources */
+            resources?: components["schemas"]["ScenarioOption"][] | null;
         };
         /**
          * ScenarioParameter
@@ -55588,43 +55717,6 @@ export interface operations {
             };
         };
     };
-    create_attempt_api_v4_artifacts_attempt_create_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CreateAttemptRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CreateAttemptResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     archive_attempts_api_v4_artifacts_attempt_archive_post: {
         parameters: {
             query?: never;
@@ -66328,6 +66420,41 @@ export interface operations {
             };
         };
     };
+    attempt_start_api_socket_v4_client_attempt_start_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AttemptStartPayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     test_join_api_socket_v4_client_test_join_post: {
         parameters: {
             query?: never;
@@ -67563,6 +67690,76 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["AttemptResponseResultEvent"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    attempt_started_api_socket_v4_server_attempt_started_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AttemptStartedEvent"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    attempt_chat_started_api_socket_v4_server_attempt_chat_started_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AttemptChatStartedEvent"];
             };
         };
         responses: {
