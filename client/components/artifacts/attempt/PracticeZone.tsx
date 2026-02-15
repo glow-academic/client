@@ -1,4 +1,5 @@
 import SimulationCard, {
+  type RubricItem,
   SimulationCardSkeleton,
 } from "@/components/artifacts/attempt/SimulationCard";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -31,6 +32,7 @@ interface PracticeZoneProps {
   standardGroupsToStandards: Record<string, string[]>; // Mapping of standard_group_id -> array of standard_ids
   standardGroupsMapping: StandardGroupsMapping;
   standardsMapping: StandardsMapping;
+  rubrics?: RubricItem[];
   profile: ProfileItem | null;
   createAttempt: (input: { body: { training_bundle_entry_id: string; infinite_mode: boolean } }) => Promise<{ attempt_id: string }>;
 }
@@ -40,6 +42,7 @@ export default function PracticeZone({
   standardGroupsToStandards,
   standardGroupsMapping,
   standardsMapping,
+  rubrics,
   profile,
   createAttempt,
 }: PracticeZoneProps) {
@@ -142,6 +145,7 @@ export default function PracticeZone({
                 standard_groups={standardGroupsDict}
                 standardGroupsMapping={standardGroupsMapping}
                 standardsMapping={standardsMapping}
+                rubrics={rubrics}
                 {...(simulation.color && { color: simulation.color })}
                 {...(simulation.icon && { icon: simulation.icon })}
                 {...(typeof simulation.has_passed === "boolean" && {

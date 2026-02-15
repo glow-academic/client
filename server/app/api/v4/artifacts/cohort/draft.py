@@ -63,7 +63,7 @@ async def patch_cohort_draft(
             user_role = None
 
         # Permission check using centralized permissions logic
-        if not compute_can_draft(user_role=user_role):
+        if not compute_can_draft(user_role=user_role or ""):
             raise HTTPException(
                 status_code=403,
                 detail="You don't have permission to create or edit cohort drafts.",

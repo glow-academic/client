@@ -86,6 +86,14 @@ export default function Home({ homeData, createAttempt }: HomeProps) {
     [homeOverview?.standards]
   );
 
+  // Build rubrics array for SimulationCard navigation
+  const rubricItems = useMemo(() => {
+    return (homeOverview?.rubrics || []).map((r) => ({
+      name: r.name ?? null,
+      standard_group_ids: (r.standard_group_ids || []).map(String),
+    }));
+  }, [homeOverview?.rubrics]);
+
   const [carouselIndex, setCarouselIndex] = useState(0);
 
   // Use data directly from the hook
@@ -336,6 +344,7 @@ export default function Home({ homeData, createAttempt }: HomeProps) {
                           { name: string; description: string; points: number }
                         >
                       }
+                      rubrics={rubricItems}
                       {...(item.color && { color: item.color })}
                       {...(item.icon && { icon: item.icon })}
                       {...(typeof item.has_passed === "boolean" && {

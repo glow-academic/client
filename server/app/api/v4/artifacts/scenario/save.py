@@ -105,9 +105,7 @@ async def save_scenario(
             )
             access_result = cast(
                 GetScenarioAccessSqlRow,
-                await execute_sql_typed(
-                    conn, ACCESS_SQL_PATH, params=access_params
-                ),
+                await execute_sql_typed(conn, ACCESS_SQL_PATH, params=access_params),
             )
             if access_result and access_result.scenario_exists is False:
                 raise HTTPException(

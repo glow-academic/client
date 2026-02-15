@@ -7,6 +7,10 @@ from typing import Annotated, Any, cast
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
+from app.api.v4.artifacts.cohort.permissions import (
+    compute_can_create,
+    compute_can_save,
+)
 from app.api.v4.artifacts.cohort.types import (
     SaveCohortApiRequest,
     SaveCohortApiResponse,
@@ -59,7 +63,7 @@ async def save_cohort(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        # Fetch user context for audit logging
+        # Fetch user context for permissions and audit logging
         pool = get_pool()
         if pool:
             async with pool.acquire() as context_conn:
@@ -69,8 +73,48 @@ async def save_cohort(
                     bypass_cache=False,
                 )
                 actor_name = profile_ctx.access.actor_name
+                user_role = profile_ctx.access.role
+                user_department_ids = [
+                    d.department_id for d in profile_ctx.departments if d.department_id
+                ]
         else:
             actor_name = None
+            user_role = None
+            user_department_ids = []
+
+        # Permission checks
+        if request.input_cohort_id:
+            # Update mode: check save permissions
+            # Get cohort department IDs for permission check
+            cohort_department_ids = None
+            if pool:
+                async with pool.acquire() as dept_conn:
+                    rows = await dept_conn.fetch(
+                        "SELECT department_id FROM cohort_departments_junction WHERE cohort_id = $1 AND active = true",
+                        request.input_cohort_id,
+                    )
+                    cohort_department_ids = [row["department_id"] for row in rows]
+            if not compute_can_save(
+                user_role or "",
+                user_department_ids,
+                cohort_department_ids,
+            ):
+                raise HTTPException(
+                    status_code=403,
+                    detail="You don't have permission to save this cohort.",
+                )
+        else:
+            # Create mode: check create permissions
+            request_department_ids = (
+                request.departments.resource_ids
+                if request.departments and request.departments.resource_ids
+                else None
+            )
+            if not compute_can_create(user_role or "", request_department_ids):
+                raise HTTPException(
+                    status_code=403,
+                    detail="You don't have permission to create cohorts.",
+                )
 
         async with conn.transaction():
             # Convert API request to SQL params (add profile_id from header)

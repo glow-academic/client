@@ -81,6 +81,14 @@ export default function Practice({
     return mapping;
   }, [practiceOverview?.standards]);
 
+  // Build rubrics array for SimulationCard navigation
+  const rubricItems = useMemo(() => {
+    return (practiceOverview?.rubrics || []).map((r) => ({
+      name: r.name ?? null,
+      standard_group_ids: (r.standard_group_ids || []).map(String),
+    }));
+  }, [practiceOverview?.rubrics]);
+
   if (!profile) {
     return null;
   }
@@ -109,6 +117,7 @@ export default function Practice({
               { name: string; description: string; points: number }
             >
           }
+          rubrics={rubricItems}
           profile={{
             ...profile,
             role: profile.role as

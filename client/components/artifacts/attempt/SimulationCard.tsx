@@ -30,7 +30,18 @@ import {
 } from "@/components/ui/tooltip";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { getIconComponent } from "@/utils/icons";
-import { Infinity, Info, Table, Timer, User, Users } from "lucide-react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
+  Infinity,
+  Info,
+  Table,
+  Timer,
+  User,
+  Users,
+} from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useState } from "react";
 import { toast } from "sonner";
@@ -74,6 +85,11 @@ const generateGradientFromHex = (hexColor: string): string => {
 type CreateAttemptIn = InputOf<"/api/v4/artifacts/attempt/create", "post">;
 type CreateAttemptOut = OutputOf<"/api/v4/artifacts/attempt/create", "post">;
 
+export interface RubricItem {
+  name: string | null;
+  standard_group_ids: string[];
+}
+
 export interface SimulationCardProps {
   id: string;
   trainingBundleEntryId?: string | null;
@@ -85,6 +101,7 @@ export interface SimulationCardProps {
   standard_groups: Record<string, string[]>;
   standardGroupsMapping: StandardGroupsMapping;
   standardsMapping: StandardsMapping;
+  rubrics?: RubricItem[];
   color?: string;
   icon?: string;
   hasPassed?: boolean;
@@ -107,6 +124,7 @@ export default function SimulationCard({
   standard_groups,
   standardGroupsMapping,
   standardsMapping,
+  rubrics,
   color,
   icon,
   hasPassed,
@@ -122,6 +140,10 @@ export default function SimulationCard({
 
   // Loading state for this card
   const [isStarting, setIsStarting] = useState(false);
+
+  // Rubric navigation state
+  const [currentRubricIndex, setCurrentRubricIndex] = useState(0);
+  const totalRubrics = rubrics?.length ?? 0;
 
   // Start training function - creates attempt via REST, navigates to attempt page
   const handleStartTraining = useCallback(
@@ -277,16 +299,16 @@ export default function SimulationCard({
                       </DialogTrigger>
                     </TooltipTrigger>
                     <TooltipContent>
-                      <p>View Rubric</p>
+                      <p>View Rubrics</p>
                     </TooltipContent>
                   </Tooltip>
                   <DialogContent className="max-w-4xl">
                     <DialogDescription hidden>
-                      This dialog shows the rubric for the simulation.
+                      This dialog shows the rubrics for the simulation.
                     </DialogDescription>
                     <DialogHeader>
                       <DialogTitle>
-                        Grading Rubric: {simulationTitle}
+                        Rubrics: {simulationTitle}
                         {passRate && passRate > 0 && ` (${passRate}% to pass)`}
                       </DialogTitle>
                     </DialogHeader>
@@ -294,20 +316,91 @@ export default function SimulationCard({
                       className="overflow-x-auto -mx-6 px-6"
                       style={{ WebkitOverflowScrolling: "touch" }}
                     >
-                      {standard_groups &&
-                      Object.keys(standard_groups).length > 0 ? (
-                        <TableRubric
-                          standardGroups={standard_groups}
-                          standardGroupsMapping={standardGroupsMapping}
-                          standardsMapping={standardsMapping}
-                          showFullStandardsOnMobile={true}
-                        />
-                      ) : (
-                        <p className="text-sm text-gray-500">
-                          No rubric is associated with this simulation.
-                        </p>
-                      )}
+                      {(() => {
+                        // If rubrics are provided, show the current rubric's standard_groups
+                        // Otherwise fall back to showing all standard_groups
+                        const currentRubric = rubrics?.[currentRubricIndex];
+                        const visibleGroups = currentRubric
+                          ? Object.fromEntries(
+                              currentRubric.standard_group_ids
+                                .filter((sgId) => sgId in standard_groups)
+                                .map((sgId) => [sgId, standard_groups[sgId]])
+                            )
+                          : standard_groups;
+
+                        return Object.keys(visibleGroups).length > 0 ? (
+                          <TableRubric
+                            standardGroups={visibleGroups}
+                            standardGroupsMapping={standardGroupsMapping}
+                            standardsMapping={standardsMapping}
+                            showFullStandardsOnMobile={true}
+                          />
+                        ) : (
+                          <p className="text-sm text-gray-500">
+                            No rubric is associated with this simulation.
+                          </p>
+                        );
+                      })()}
                     </div>
+                    {/* Pagination footer */}
+                    {totalRubrics > 1 && (
+                      <div className="border-t px-4 py-3 flex items-center bg-background relative">
+                        <div className="flex items-center gap-2">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            className="h-8 w-8 p-0"
+                            onClick={() => setCurrentRubricIndex(0)}
+                            disabled={currentRubricIndex === 0}
+                          >
+                            <span className="sr-only">Go to first rubric</span>
+                            <ChevronsLeft className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            className="h-8 w-8 p-0"
+                            onClick={() => setCurrentRubricIndex(currentRubricIndex - 1)}
+                            disabled={currentRubricIndex === 0}
+                          >
+                            <span className="sr-only">Go to previous rubric</span>
+                            <ChevronLeft className="h-4 w-4" />
+                          </Button>
+                        </div>
+                        <div className="flex-1" />
+                        <div className="flex items-center gap-2 px-4 absolute left-1/2 -translate-x-1/2">
+                          <span className="text-sm font-medium">
+                            {rubrics?.[currentRubricIndex]?.name || `Rubric ${currentRubricIndex + 1}`}
+                          </span>
+                          <span className="text-sm text-muted-foreground">
+                            ({currentRubricIndex + 1} of {totalRubrics})
+                          </span>
+                        </div>
+                        <div className="flex-1" />
+                        <div className="flex items-center gap-2">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            className="h-8 w-8 p-0"
+                            onClick={() => setCurrentRubricIndex(currentRubricIndex + 1)}
+                            disabled={currentRubricIndex >= totalRubrics - 1}
+                          >
+                            <span className="sr-only">Go to next rubric</span>
+                            <ChevronRight className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            className="h-8 w-8 p-0"
+                            onClick={() => setCurrentRubricIndex(totalRubrics - 1)}
+                            disabled={currentRubricIndex >= totalRubrics - 1}
+                          >
+                            <span className="sr-only">Go to last rubric</span>
+                            <ChevronsRight className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    )}
                   </DialogContent>
                 </Dialog>
               )}

@@ -40,6 +40,14 @@ from app.sql.types import (
 # =============================================================================
 
 
+class RubricMapping(BaseModel):
+    """Rubric metadata mapping rubric to its standard groups."""
+
+    rubric_id: UUID
+    name: str | None = None
+    standard_group_ids: list[str] | None = None
+
+
 class StandardGroupMapping(BaseModel):
     """Standard group metadata for sidebar/legend."""
 
@@ -273,6 +281,7 @@ class GetTrainingGetResponse(BaseModel):
     actor_name: str | None = None
     items: list[TrainingSimulationOperational] | None = None
     # Rubric data for pre-start display
+    rubrics: list[RubricMapping] | None = None
     standard_groups: list[StandardGroupMapping] | None = None
     standards: list[StandardMapping] | None = None
 

@@ -25,6 +25,7 @@ from app.api.v4.artifacts.training.types import (
     GetTrainingGetRequest,
     GetTrainingGetResponse,
     GetTrainingWebsocketResponse,
+    RubricMapping,
     StandardGroupMapping,
     StandardMapping,
     TrainingSimulationOperational,
@@ -215,6 +216,18 @@ async def get_training_internal(
     """
     attempt_type = "practice" if practice else "general"
 
+    # --- Phase 0: Resolve profile_id → profiles_resource_id ---
+    # mv_profile_facts.profile_id stores profiles_resource.id, not profile.id
+    async with pool.acquire() as c:
+        profiles_resource_id = await c.fetchval(
+            """
+            SELECT profiles_id FROM profile_profiles_junction
+            WHERE profile_id = $1 AND active = true
+            LIMIT 1
+            """,
+            profile_id,
+        )
+
     # --- Phase 1: Three parallel fetches ---
     async def fetch_context() -> GetTrainingContextViewResponse:
         async with pool.acquire() as c:
@@ -229,7 +242,7 @@ async def get_training_internal(
         async with pool.acquire() as c:
             return await get_profile_facts_internal(
                 conn=c,
-                profile_id=profile_id,
+                profile_id=profiles_resource_id,
                 attempt_type=attempt_type,
                 is_archived=False,
                 page_limit=10000,
@@ -572,6 +585,23 @@ async def get_training_internal(
                 )
             )
 
+    # Build rubric mappings (rubric_id → name + standard_group_ids)
+    rubrics: list[RubricMapping] | None = None
+    if rubric_list:
+        rubrics = [
+            RubricMapping(
+                rubric_id=r.id,  # type: ignore[arg-type]
+                name=r.name,
+                standard_group_ids=(
+                    [str(sg_id) for sg_id in r.standard_group_ids]
+                    if r.standard_group_ids
+                    else None
+                ),
+            )
+            for r in rubric_list
+            if r.id
+        ]
+
     # Build standard group/standard mappings
     standard_groups: list[StandardGroupMapping] | None = None
     if standard_group_ids_list:
@@ -605,6 +635,7 @@ async def get_training_internal(
     return GetTrainingGetResponse(
         actor_name=actor_name,
         items=items,
+        rubrics=rubrics,
         standard_groups=standard_groups,
         standards=standards,
     )

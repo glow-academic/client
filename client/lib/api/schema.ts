@@ -28799,6 +28799,8 @@ export interface components {
             actor_name?: string | null;
             /** Items */
             items?: components["schemas"]["TrainingSimulationOperational"][] | null;
+            /** Rubrics */
+            rubrics?: components["schemas"]["RubricMapping"][] | null;
             /** Standard Groups */
             standard_groups?: components["schemas"]["StandardGroupMapping"][] | null;
             /** Standards */
@@ -40075,6 +40077,21 @@ export interface components {
             short_name?: string | null;
             /** Rubric Id */
             rubric_id?: string | null;
+        };
+        /**
+         * RubricMapping
+         * @description Rubric metadata mapping rubric to its standard groups.
+         */
+        RubricMapping: {
+            /**
+             * Rubric Id
+             * Format: uuid
+             */
+            rubric_id: string;
+            /** Name */
+            name?: string | null;
+            /** Standard Group Ids */
+            standard_group_ids?: string[] | null;
         };
         /** RubricMultiResourceAction */
         RubricMultiResourceAction: {

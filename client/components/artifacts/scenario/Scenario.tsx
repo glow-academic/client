@@ -58,8 +58,14 @@ import { parseAsBoolean, parseAsString, type Parser } from "nuqs";
 type GetScenarioOut = OutputOf<"/api/v4/artifacts/scenarios/get", "post">;
 type SaveScenarioIn = InputOf<"/api/v4/artifacts/scenarios/save", "post">;
 type SaveScenarioOut = OutputOf<"/api/v4/artifacts/scenarios/save", "post">;
-type PatchScenarioDraftIn = InputOf<"/api/v4/artifacts/scenarios/draft", "patch">;
-type PatchScenarioDraftOut = OutputOf<"/api/v4/artifacts/scenarios/draft", "patch">;
+type PatchScenarioDraftIn = InputOf<
+  "/api/v4/artifacts/scenarios/draft",
+  "patch"
+>;
+type PatchScenarioDraftOut = OutputOf<
+  "/api/v4/artifacts/scenarios/draft",
+  "patch"
+>;
 
 type CreateDraftNamesIn = InputOf<"/api/v4/resources/names", "post">;
 type CreateDraftNamesOut = OutputOf<"/api/v4/resources/names", "post">;
@@ -155,32 +161,32 @@ export interface ScenarioProps {
   // Server actions (unified save action like Persona)
   saveScenarioAction?: (input: SaveScenarioIn) => Promise<SaveScenarioOut>;
   patchScenarioDraftAction?: (
-    input: PatchScenarioDraftIn
+    input: PatchScenarioDraftIn,
   ) => Promise<PatchScenarioDraftOut>;
   // Resource creation actions
   createNamesAction?: (
-    input: CreateDraftNamesIn
+    input: CreateDraftNamesIn,
   ) => Promise<CreateDraftNamesOut>;
   createDescriptionsAction?: (
-    input: CreateDraftDescriptionsIn
+    input: CreateDraftDescriptionsIn,
   ) => Promise<CreateDraftDescriptionsOut>;
   createProblemStatementsAction?: (
-    input: CreateDraftProblemStatementsIn
+    input: CreateDraftProblemStatementsIn,
   ) => Promise<CreateDraftProblemStatementsOut>;
   createObjectivesAction?: (
-    input: CreateDraftObjectivesIn
+    input: CreateDraftObjectivesIn,
   ) => Promise<CreateDraftObjectivesOut>;
   createParameterFieldsAction?: (
-    input: CreateDraftParameterFieldsIn
+    input: CreateDraftParameterFieldsIn,
   ) => Promise<CreateDraftParameterFieldsOut>;
   createImagesAction?: (
-    input: CreateDraftImagesIn
+    input: CreateDraftImagesIn,
   ) => Promise<CreateDraftImagesOut>;
   createVideosAction?: (
-    input: CreateDraftVideosIn
+    input: CreateDraftVideosIn,
   ) => Promise<CreateDraftVideosOut>;
   createQuestionsAction?: (
-    input: CreateDraftQuestionsIn
+    input: CreateDraftQuestionsIn,
   ) => Promise<CreateDraftQuestionsOut>;
 }
 
@@ -297,13 +303,14 @@ function ScenarioComponent({
     useFlushRegistry<FlushResult>(FLUSH_KEYS);
 
   // --- AI Generation State ---
-  const [generatingResources, setGeneratingResources] = useState<Set<ScenarioResourceType>>(
-    new Set(),
-  );
+  const [generatingResources, setGeneratingResources] = useState<
+    Set<ScenarioResourceType>
+  >(new Set());
   const [_generationProgress, setGenerationProgress] = useState<number>(0);
 
   const isGenerating = useCallback(
-    (resourceType: string) => generatingResources.has(resourceType as ScenarioResourceType),
+    (resourceType: string) =>
+      generatingResources.has(resourceType as ScenarioResourceType),
     [generatingResources],
   );
 
@@ -321,7 +328,9 @@ function ScenarioComponent({
       if (data.resource_types) {
         setGeneratingResources((prev) => {
           const next = new Set(prev);
-          data.resource_types!.forEach((rt) => next.add(rt as ScenarioResourceType));
+          data.resource_types!.forEach((rt) =>
+            next.add(rt as ScenarioResourceType),
+          );
           return next;
         });
       }
@@ -341,8 +350,7 @@ function ScenarioComponent({
     }) => {
       if (data.group_id && data.group_id !== groupId) return;
       const resourceTypes =
-        data.resource_types ||
-        (data.resource_type ? [data.resource_type] : []);
+        data.resource_types || (data.resource_type ? [data.resource_type] : []);
       setGeneratingResources((prev) => {
         const next = new Set(prev);
         resourceTypes.forEach((rt) => {
@@ -382,6 +390,18 @@ function ScenarioComponent({
     };
   }, [socket, isConnected, groupId]);
 
+  // Callback for resource components to clear their generating state
+  const makeOnGenerationComplete = useCallback(
+    (resourceType: ScenarioResourceType) => () => {
+      setGeneratingResources((prev) => {
+        const next = new Set(prev);
+        next.delete(resourceType);
+        return next;
+      });
+    },
+    [],
+  );
+
   // nuqs parsers for URL-backed state (search/filter params only)
   const scenarioSearchParamsClient = useMemo(
     () => ({
@@ -397,7 +417,7 @@ function ScenarioComponent({
       documentShowSelected: parseAsBoolean,
       parameterShowSelected: parseAsBoolean,
     }),
-    []
+    [],
   );
 
   // --- Form State ---
@@ -497,7 +517,9 @@ function ScenarioComponent({
 
   const [formState, setFormState] =
     useState<ScenarioFormState>(getInitialFormState);
-  const formStateRef = useRef<Record<string, unknown>>(formState as unknown as Record<string, unknown>);
+  const formStateRef = useRef<Record<string, unknown>>(
+    formState as unknown as Record<string, unknown>,
+  );
   const lastPatchedFormStateRef = useRef<ScenarioFormState | null>(null);
   useEffect(() => {
     formStateRef.current = formState as unknown as Record<string, unknown>;
@@ -506,39 +528,39 @@ function ScenarioComponent({
   // Memoize stringified array dependencies
   const departmentIdsStr = useMemo(
     () => JSON.stringify(formState.department_ids),
-    [formState.department_ids]
+    [formState.department_ids],
   );
   const personaIdsStr = useMemo(
     () => JSON.stringify(formState.persona_ids),
-    [formState.persona_ids]
+    [formState.persona_ids],
   );
   const documentIdsStr = useMemo(
     () => JSON.stringify(formState.document_ids),
-    [formState.document_ids]
+    [formState.document_ids],
   );
   const parameterIdsStr = useMemo(
     () => JSON.stringify(formState.parameter_ids),
-    [formState.parameter_ids]
+    [formState.parameter_ids],
   );
   const parameterFieldIdsStr = useMemo(
     () => JSON.stringify(formState.parameter_field_ids),
-    [formState.parameter_field_ids]
+    [formState.parameter_field_ids],
   );
   const imageIdsStr = useMemo(
     () => JSON.stringify(formState.image_ids),
-    [formState.image_ids]
+    [formState.image_ids],
   );
   const objectiveIdsStr = useMemo(
     () => JSON.stringify(formState.objective_ids),
-    [formState.objective_ids]
+    [formState.objective_ids],
   );
   const videoIdsStr = useMemo(
     () => JSON.stringify(formState.video_ids),
-    [formState.video_ids]
+    [formState.video_ids],
   );
   const questionIdsStr = useMemo(
     () => JSON.stringify(formState.question_ids),
-    [formState.question_ids]
+    [formState.question_ids],
   );
 
   // Memoized stringified scenarioData array IDs for useEffect dependency
@@ -549,7 +571,7 @@ function ScenarioComponent({
           .map((item) => item.department_id)
           .filter(Boolean),
       ),
-    [scenarioData?.departments]
+    [scenarioData?.departments],
   );
   const scenarioPersonaIdsStr = useMemo(
     () =>
@@ -558,7 +580,7 @@ function ScenarioComponent({
           .map((item) => item.persona_id)
           .filter(Boolean),
       ),
-    [scenarioData?.personas]
+    [scenarioData?.personas],
   );
   const scenarioDocumentIdsStr = useMemo(
     () =>
@@ -567,7 +589,7 @@ function ScenarioComponent({
           .map((item) => item.document_id)
           .filter(Boolean),
       ),
-    [scenarioData?.documents]
+    [scenarioData?.documents],
   );
   const scenarioParameterIdsStr = useMemo(
     () =>
@@ -576,7 +598,7 @@ function ScenarioComponent({
           .map((item) => item.parameter_id)
           .filter(Boolean),
       ),
-    [scenarioData?.parameters]
+    [scenarioData?.parameters],
   );
   const scenarioParameterFieldIdsStr = useMemo(
     () =>
@@ -585,7 +607,7 @@ function ScenarioComponent({
           .map((item) => item.field_id)
           .filter(Boolean),
       ),
-    [scenarioData?.parameter_fields]
+    [scenarioData?.parameter_fields],
   );
   const scenarioImageIdsStr = useMemo(
     () =>
@@ -594,7 +616,7 @@ function ScenarioComponent({
           .map((item) => item.image_id)
           .filter(Boolean),
       ),
-    [scenarioData?.images]
+    [scenarioData?.images],
   );
   const scenarioObjectiveIdsStr = useMemo(
     () =>
@@ -603,7 +625,7 @@ function ScenarioComponent({
           .map((item) => item.id)
           .filter(Boolean),
       ),
-    [scenarioData?.objectives]
+    [scenarioData?.objectives],
   );
   const scenarioVideoIdsStr = useMemo(
     () =>
@@ -612,7 +634,7 @@ function ScenarioComponent({
           .map((item) => item.video_id)
           .filter(Boolean),
       ),
-    [scenarioData?.videos]
+    [scenarioData?.videos],
   );
   const scenarioQuestionIdsStr = useMemo(
     () =>
@@ -621,7 +643,7 @@ function ScenarioComponent({
           .map((item) => item.question_id)
           .filter(Boolean),
       ),
-    [scenarioData?.questions]
+    [scenarioData?.questions],
   );
 
   // Update form state when server data changes
@@ -689,12 +711,17 @@ function ScenarioComponent({
 
   // Stable ref wrapper for patch action
   const patchActionRef = useRef<
-    ((payload: Record<string, unknown>) => Promise<{ draft_id?: string | null; new_version?: number | null }>) | undefined
+    | ((
+        payload: Record<string, unknown>,
+      ) => Promise<{ draft_id?: string | null; new_version?: number | null }>)
+    | undefined
   >(undefined);
   useEffect(() => {
     if (patchScenarioDraftAction) {
       patchActionRef.current = async (payload: Record<string, unknown>) => {
-        return await patchScenarioDraftAction({ body: payload } as PatchScenarioDraftIn);
+        return await patchScenarioDraftAction({
+          body: payload,
+        } as PatchScenarioDraftIn);
       };
     } else {
       patchActionRef.current = undefined;
@@ -745,7 +772,7 @@ function ScenarioComponent({
       objectiveIdsStr,
       videoIdsStr,
       questionIdsStr,
-    ]
+    ],
   );
 
   const hasResourceIds = checkHasResourceIds(
@@ -757,7 +784,7 @@ function ScenarioComponent({
     (
       draftId: string | null,
       expectedVersion: number,
-      flushResults?: Record<string, unknown>
+      flushResults?: Record<string, unknown>,
     ): Record<string, unknown> => {
       const effectiveState = computeEffectiveFormState(
         SCENARIO_RESOURCES,
@@ -769,7 +796,10 @@ function ScenarioComponent({
       // Build flat draft payload for standard resources
       const resourcePayload = buildDraftPayload(SCENARIO_RESOURCES, {
         formState: formStateRef.current,
-        referenceState: referenceState as unknown as Record<string, unknown> | null,
+        referenceState: referenceState as unknown as Record<
+          string,
+          unknown
+        > | null,
         flushResults: (flushResults ?? {}) as Record<string, unknown>,
       });
 
@@ -798,7 +828,7 @@ function ScenarioComponent({
         expected_version: expectedVersion,
       };
     },
-    []
+    [],
   );
 
   const draftVersion =
@@ -834,7 +864,7 @@ function ScenarioComponent({
   // --- Conditional Parameter Toggle ---
   const getParameterFields = useCallback(
     () => scenarioDataRef.current?.parameter_fields?.resources ?? [],
-    []
+    [],
   );
 
   const { handleConditionalParameterToggle } = useConditionalParameterToggle({
@@ -881,7 +911,7 @@ function ScenarioComponent({
       formState.images_enabled_flag_id,
       formState.video_enabled_flag_id,
       formState.questions_enabled_flag_id,
-    ]
+    ],
   );
 
   const showProblemStatementSection = flagsEnabled.problemStatement;
@@ -911,19 +941,19 @@ function ScenarioComponent({
         case "objectives":
           return (
             stableScenarioDataFields.objectives?.current?.some(
-              (o: { generated?: boolean | null }) => o.generated
+              (o: { generated?: boolean | null }) => o.generated,
             ) ?? false
           );
         case "scenario_flags":
           return (
             stableScenarioDataFields.flags?.resources?.some(
-              (f: { generated?: boolean | null }) => f.generated
+              (f: { generated?: boolean | null }) => f.generated,
             ) ?? false
           );
         case "departments":
           return (
             stableScenarioDataFields.departments?.current?.some(
-              (d: { generated?: boolean | null }) => d.generated
+              (d: { generated?: boolean | null }) => d.generated,
             ) ?? false
           );
         case "personas":
@@ -938,37 +968,38 @@ function ScenarioComponent({
         case "parameter_fields":
           return (
             stableScenarioDataFields.parameter_fields?.current?.some(
-              (f: { generated?: boolean | null }) => f.generated
+              (f: { generated?: boolean | null }) => f.generated,
             ) ?? false
           );
         case "images":
           return (
             stableScenarioDataFields.images?.current?.some(
-              (i: { generated?: boolean | null }) => i.generated
+              (i: { generated?: boolean | null }) => i.generated,
             ) ?? false
           );
         case "videos":
           return (
             stableScenarioDataFields.videos?.current?.some(
-              (v: { generated?: boolean | null }) => v.generated
+              (v: { generated?: boolean | null }) => v.generated,
             ) ?? false
           );
         case "questions":
           return (
             stableScenarioDataFields.questions?.current?.some(
-              (q: { generated?: boolean | null }) => q.generated
+              (q: { generated?: boolean | null }) => q.generated,
             ) ?? false
           );
         default:
           return false;
       }
     },
-    [stableScenarioDataFields]
+    [stableScenarioDataFields],
   );
 
   const isGeneratingStepResource = useCallback(
-    (resourceType: string) => isGenerating(resourceType as ScenarioResourceType),
-    [isGenerating]
+    (resourceType: string) =>
+      isGenerating(resourceType as ScenarioResourceType),
+    [isGenerating],
   );
 
   // --- Disabled / Breadcrumb ---
@@ -1073,7 +1104,7 @@ function ScenarioComponent({
       formState.parameter_ids,
       formDataRef,
       setGeneratingResources,
-    ]
+    ],
   );
 
   const generateHandlers = useMemo(
@@ -1115,7 +1146,7 @@ function ScenarioComponent({
         "questions",
       ],
     }),
-    []
+    [],
   );
 
   const resourceLabels: Record<ScenarioResourceType, string> = useMemo(
@@ -1134,23 +1165,24 @@ function ScenarioComponent({
       videos: "Videos",
       questions: "Questions",
     }),
-    []
+    [],
   );
 
   const onModalGenerate = useCallback(
     (selectedResources: ScenarioResourceType[], instructions?: string) => {
       handleGenerateResources(selectedResources, instructions);
     },
-    [handleGenerateResources]
+    [handleGenerateResources],
   );
 
-  const { handleOpenStepCardModal, modalProps } = useGenerationModal<ScenarioResourceType>({
-    stepResources,
-    resourceLabels,
-    canRegenerate,
-    onGenerate: onModalGenerate,
-    isGenerating,
-  });
+  const { handleOpenStepCardModal, modalProps } =
+    useGenerationModal<ScenarioResourceType>({
+      stepResources,
+      resourceLabels,
+      canRegenerate,
+      onGenerate: onModalGenerate,
+      isGenerating,
+    });
 
   // --- Steps / Form Config ---
   const steps = useMemo(() => {
@@ -1263,7 +1295,7 @@ function ScenarioComponent({
       "documentShowSelected",
       "parameterShowSelected",
     ],
-    []
+    [],
   );
 
   const submitButton = useMemo(
@@ -1273,7 +1305,7 @@ function ScenarioComponent({
       createLabel: "Save Scenario",
       updateLabel: "Save Scenario",
     }),
-    []
+    [],
   );
 
   const resetSuccessMessage = useCallback((stepId: string) => {
@@ -1372,7 +1404,10 @@ function ScenarioComponent({
         throw new Error("Scenario name is required");
       }
 
-      if (stableScenarioDataFields?.descriptions?.required && !formState.description_id) {
+      if (
+        stableScenarioDataFields?.descriptions?.required &&
+        !formState.description_id
+      ) {
         toast.error("Scenario description is required");
         throw new Error("Scenario description is required");
       }
@@ -1425,12 +1460,18 @@ function ScenarioComponent({
         throw new Error("Parameters are required");
       }
 
-      if (stableScenarioDataFields?.images?.required && formState.image_ids.length === 0) {
+      if (
+        stableScenarioDataFields?.images?.required &&
+        formState.image_ids.length === 0
+      ) {
         toast.error("Images are required");
         throw new Error("Images are required");
       }
 
-      if (stableScenarioDataFields?.videos?.required && formState.video_ids.length === 0) {
+      if (
+        stableScenarioDataFields?.videos?.required &&
+        formState.video_ids.length === 0
+      ) {
         toast.error("Videos are required");
         throw new Error("Videos are required");
       }
@@ -1477,32 +1518,56 @@ function ScenarioComponent({
             input_scenario_id: isEditMode && scenarioId ? scenarioId : null,
             name_id: effectiveFormState.name_id!,
             description_id: effectiveFormState.description_id ?? null,
-            problem_statement_id: effectiveFormState.problem_statement_id ?? null,
+            problem_statement_id:
+              effectiveFormState.problem_statement_id ?? null,
             active_flag_id: effectiveFormState.active_flag_id ?? null,
-            objectives_enabled_flag_id: effectiveFormState.objectives_enabled_flag_id ?? null,
-            images_enabled_flag_id: effectiveFormState.images_enabled_flag_id ?? null,
-            video_enabled_flag_id: effectiveFormState.video_enabled_flag_id ?? null,
-            questions_enabled_flag_id: effectiveFormState.questions_enabled_flag_id ?? null,
-            problem_statement_enabled_flag_id: effectiveFormState.problem_statement_enabled_flag_id ?? null,
-            department_ids: effectiveFormState.department_ids?.length ? effectiveFormState.department_ids : null,
-            persona_ids: effectiveFormState.persona_ids?.length ? effectiveFormState.persona_ids : null,
-            document_ids: effectiveFormState.document_ids?.length ? effectiveFormState.document_ids : null,
-            parameter_ids: effectiveFormState.parameter_ids?.length ? effectiveFormState.parameter_ids : null,
-            parameter_field_ids: effectiveFormState.parameter_field_ids?.length ? effectiveFormState.parameter_field_ids : null,
-            image_ids: effectiveFormState.image_ids?.length ? effectiveFormState.image_ids : null,
-            objective_ids: effectiveFormState.objective_ids?.length ? effectiveFormState.objective_ids : null,
-            video_ids: effectiveFormState.video_ids?.length ? effectiveFormState.video_ids : null,
-            question_ids: effectiveFormState.question_ids?.length ? effectiveFormState.question_ids : null,
+            objectives_enabled_flag_id:
+              effectiveFormState.objectives_enabled_flag_id ?? null,
+            images_enabled_flag_id:
+              effectiveFormState.images_enabled_flag_id ?? null,
+            video_enabled_flag_id:
+              effectiveFormState.video_enabled_flag_id ?? null,
+            questions_enabled_flag_id:
+              effectiveFormState.questions_enabled_flag_id ?? null,
+            problem_statement_enabled_flag_id:
+              effectiveFormState.problem_statement_enabled_flag_id ?? null,
+            department_ids: effectiveFormState.department_ids?.length
+              ? effectiveFormState.department_ids
+              : null,
+            persona_ids: effectiveFormState.persona_ids?.length
+              ? effectiveFormState.persona_ids
+              : null,
+            document_ids: effectiveFormState.document_ids?.length
+              ? effectiveFormState.document_ids
+              : null,
+            parameter_ids: effectiveFormState.parameter_ids?.length
+              ? effectiveFormState.parameter_ids
+              : null,
+            parameter_field_ids: effectiveFormState.parameter_field_ids?.length
+              ? effectiveFormState.parameter_field_ids
+              : null,
+            image_ids: effectiveFormState.image_ids?.length
+              ? effectiveFormState.image_ids
+              : null,
+            objective_ids: effectiveFormState.objective_ids?.length
+              ? effectiveFormState.objective_ids
+              : null,
+            video_ids: effectiveFormState.video_ids?.length
+              ? effectiveFormState.video_ids
+              : null,
+            question_ids: effectiveFormState.question_ids?.length
+              ? effectiveFormState.question_ids
+              : null,
           } as unknown as SaveScenarioIn["body"],
         });
 
         toast.success(
-          `Scenario ${isEditMode ? "updated" : "created"} successfully!`
+          `Scenario ${isEditMode ? "updated" : "created"} successfully!`,
         );
         router.push("/training/scenarios");
       } catch (error) {
         toast.error(
-          `Failed to ${isEditMode ? "update" : "create"} scenario: ${error instanceof Error ? error.message : "Unknown error"}`
+          `Failed to ${isEditMode ? "update" : "create"} scenario: ${error instanceof Error ? error.message : "Unknown error"}`,
         );
         throw error;
       }
@@ -1527,7 +1592,7 @@ function ScenarioComponent({
       router,
       isAutosaveEnabled,
       flushAllResources,
-    ]
+    ],
   );
 
   // --- Step Status ---
@@ -1571,7 +1636,7 @@ function ScenarioComponent({
           return "pending";
       }
     },
-    [formState]
+    [formState],
   );
 
   // --- Render Step ---
@@ -1655,10 +1720,11 @@ function ScenarioComponent({
                   createNamesAction={
                     createNamesAction as
                       | ((
-                          input: CreateDraftNamesIn
+                          input: CreateDraftNamesIn,
                         ) => Promise<CreateDraftNamesOut>)
                       | undefined
                   }
+                  onGenerationComplete={makeOnGenerationComplete("names")}
                 />
               }
               resetFields={["name", "description", "departments"]}
@@ -1680,15 +1746,9 @@ function ScenarioComponent({
               <div className="space-y-4">
                 <Descriptions
                   description_id={formState.description_id ?? null}
-                  description_resource={
-                    s?.descriptions?.resource ?? null
-                  }
-                  show_description={
-                    s?.descriptions?.show ?? true
-                  }
-                  description_suggestions={
-                    s?.descriptions?.suggestions ?? []
-                  }
+                  description_resource={s?.descriptions?.resource ?? null}
+                  show_description={s?.descriptions?.show ?? true}
+                  description_suggestions={s?.descriptions?.suggestions ?? []}
                   descriptions={s?.descriptions?.resources ?? []}
                   searchTerm={descriptionSearch}
                   onSearchChange={(term: string) =>
@@ -1710,23 +1770,20 @@ function ScenarioComponent({
                   createDescriptionsAction={
                     createDescriptionsAction as
                       | ((
-                          input: CreateDraftDescriptionsIn
+                          input: CreateDraftDescriptionsIn,
                         ) => Promise<CreateDraftDescriptionsOut>)
                       | undefined
                   }
+                  onGenerationComplete={makeOnGenerationComplete(
+                    "descriptions",
+                  )}
                 />
 
                 <Departments
                   department_ids={formState.department_ids}
-                  department_resources={
-                    s?.departments?.current ?? []
-                  }
-                  show_departments={
-                    s?.departments?.show ?? false
-                  }
-                  department_suggestions={
-                    s?.departments?.suggestions ?? []
-                  }
+                  department_resources={s?.departments?.current ?? []}
+                  show_departments={s?.departments?.show ?? false}
+                  department_suggestions={s?.departments?.suggestions ?? []}
                   departments={s?.departments?.resources ?? []}
                   disabled={disabled}
                   onChange={(ids) =>
@@ -1737,13 +1794,15 @@ function ScenarioComponent({
                   group_id={s?.group_id ?? null}
                   onGenerate={generateHandlers["departments"]}
                   isGenerating={isGenerating("departments")}
+                  onGenerationComplete={makeOnGenerationComplete("departments")}
                 />
 
                 {/* Server-driven Flags - single component for all flags */}
                 {/* Filter out video_flag flags when video is not enabled */}
                 <Flags
                   flags={(s?.flags?.resources ?? []).filter(
-                    (f: { video_flag?: boolean | null }) => !f.video_flag || videoEnabled
+                    (f: { video_flag?: boolean | null }) =>
+                      !f.video_flag || videoEnabled,
                   )}
                   flag_ids={{
                     active: formState.active_flag_id ?? null,
@@ -1777,6 +1836,9 @@ function ScenarioComponent({
                   }}
                   onGenerate={generateHandlers["scenario_flags"]}
                   isGenerating={isGenerating("scenario_flags")}
+                  onGenerationComplete={makeOnGenerationComplete(
+                    "scenario_flags",
+                  )}
                 />
               </div>
             </StepCard>
@@ -1793,8 +1855,7 @@ function ScenarioComponent({
               resetFields={["problem_statement"]}
               actions={
                 stepResources["problem_statement"]?.length &&
-                (s?.problem_statements?.show_ai_generate ??
-                  false) ? (
+                (s?.problem_statements?.show_ai_generate ?? false) ? (
                   <StepCardAiButton
                     stepId="problem_statement"
                     resourceTypes={stepResources["problem_statement"]}
@@ -1816,9 +1877,7 @@ function ScenarioComponent({
                 problem_statement_suggestions={
                   s?.problem_statements?.suggestions ?? []
                 }
-                problem_statements={
-                  s?.problem_statements?.resources ?? []
-                }
+                problem_statements={s?.problem_statements?.resources ?? []}
                 disabled={disabled}
                 onProblemStatementIdChange={(problemStatementId) =>
                   setFormState((prev) => ({
@@ -1830,9 +1889,7 @@ function ScenarioComponent({
                 isGenerating={isGenerating("problem_statements")}
                 label="Problem Statement"
                 placeholder="Define the core problem"
-                required={
-                  s?.problem_statements?.required ?? false
-                }
+                required={s?.problem_statements?.required ?? false}
                 group_id={s?.group_id ?? null}
                 searchTerm={problemStatementSearch ?? undefined}
                 onSearchChange={(term: string) =>
@@ -1841,10 +1898,13 @@ function ScenarioComponent({
                 createProblemStatementsAction={
                   createProblemStatementsAction as
                     | ((
-                        input: CreateDraftProblemStatementsIn
+                        input: CreateDraftProblemStatementsIn,
                       ) => Promise<CreateDraftProblemStatementsOut>)
                     | undefined
                 }
+                onGenerationComplete={makeOnGenerationComplete(
+                  "problem_statements",
+                )}
               />
             </StepCard>
           );
@@ -1875,16 +1935,10 @@ function ScenarioComponent({
             >
               <Objectives
                 objective_ids={formState.objective_ids}
-                objective_resources={
-                  s?.objectives?.current ?? []
-                }
+                objective_resources={s?.objectives?.current ?? []}
                 show_objectives={showObjectivesSection}
-                objectives_required={
-                  s?.objectives?.required ?? false
-                }
-                objective_suggestions={
-                  s?.objectives?.suggestions ?? []
-                }
+                objectives_required={s?.objectives?.required ?? false}
+                objective_suggestions={s?.objectives?.suggestions ?? []}
                 objectives={s?.objectives?.resources ?? []}
                 disabled={disabled}
                 onChange={(ids) =>
@@ -1894,7 +1948,7 @@ function ScenarioComponent({
                 createObjectivesAction={
                   createObjectivesAction as
                     | ((
-                        input: CreateDraftObjectivesIn
+                        input: CreateDraftObjectivesIn,
                       ) => Promise<CreateDraftObjectivesOut>)
                     | undefined
                 }
@@ -1902,6 +1956,7 @@ function ScenarioComponent({
                 isGenerating={isGenerating("objectives")}
                 isAutosaveEnabled={isAutosaveEnabled}
                 registerFlush={registerFlushCallbacks["objectives"]}
+                onGenerationComplete={makeOnGenerationComplete("objectives")}
               />
             </StepCard>
           );
@@ -1948,13 +2003,9 @@ function ScenarioComponent({
               <div className="space-y-6">
                 <Personas
                   persona_ids={formState.persona_ids}
-                  persona_resources={
-                    s?.personas?.current ?? []
-                  }
+                  persona_resources={s?.personas?.current ?? []}
                   show_personas={s?.personas?.show ?? false}
-                  persona_suggestions={
-                    s?.personas?.suggestions ?? []
-                  }
+                  persona_suggestions={s?.personas?.suggestions ?? []}
                   personas={s?.personas?.resources ?? []}
                   disabled={disabled}
                   onChange={(ids) =>
@@ -1965,6 +2016,7 @@ function ScenarioComponent({
                   onGenerate={generateHandlers["personas"]}
                   isGenerating={isGenerating("personas")}
                   videoEnabled={videoEnabled}
+                  onGenerationComplete={makeOnGenerationComplete("personas")}
                 />
               </div>
             </StepCard>
@@ -2012,13 +2064,9 @@ function ScenarioComponent({
               <div className="space-y-6">
                 <Documents
                   document_ids={formState.document_ids}
-                  document_resources={
-                    s?.documents?.current ?? []
-                  }
+                  document_resources={s?.documents?.current ?? []}
                   show_documents={s?.documents?.show ?? false}
-                  document_suggestions={
-                    s?.documents?.suggestions ?? []
-                  }
+                  document_suggestions={s?.documents?.suggestions ?? []}
                   documents={s?.documents?.resources ?? []}
                   disabled={disabled}
                   onChange={(ids) =>
@@ -2029,6 +2077,7 @@ function ScenarioComponent({
                   onGenerate={generateHandlers["documents"]}
                   isGenerating={isGenerating("documents")}
                   videoEnabled={videoEnabled}
+                  onGenerationComplete={makeOnGenerationComplete("documents")}
                 />
               </div>
             </StepCard>
@@ -2062,8 +2111,7 @@ function ScenarioComponent({
               actions={
                 stepResources["parameters"]?.length &&
                 ((s?.parameters?.show_ai_generate ?? false) ||
-                  (s?.parameter_fields?.show_ai_generate ??
-                    false)) ? (
+                  (s?.parameter_fields?.show_ai_generate ?? false)) ? (
                   <StepCardAiButton
                     stepId="parameters"
                     resourceTypes={stepResources["parameters"]}
@@ -2079,15 +2127,9 @@ function ScenarioComponent({
               <div className="space-y-6">
                 <Parameters
                   parameter_ids={formState.parameter_ids}
-                  parameter_resources={
-                    s?.parameters?.current ?? []
-                  }
-                  show_parameters={
-                    s?.parameters?.show ?? false
-                  }
-                  parameter_suggestions={
-                    s?.parameters?.suggestions ?? []
-                  }
+                  parameter_resources={s?.parameters?.current ?? []}
+                  show_parameters={s?.parameters?.show ?? false}
+                  parameter_suggestions={s?.parameters?.suggestions ?? []}
                   parameters={s?.parameters?.resources ?? []}
                   searchTerm={parameterSearch}
                   showSelectedFilter={parameterShowSelected}
@@ -2100,21 +2142,16 @@ function ScenarioComponent({
                   onGenerate={generateHandlers["parameters"]}
                   isGenerating={isGenerating("parameters")}
                   videoEnabled={videoEnabled}
+                  onGenerationComplete={makeOnGenerationComplete("parameters")}
                 />
                 <ParameterFields
                   parameter_field_ids={formState.parameter_field_ids}
-                  parameter_field_resources={
-                    s?.parameter_fields?.current ?? []
-                  }
-                  show_parameter_fields={
-                    s?.parameter_fields?.show ?? false
-                  }
+                  parameter_field_resources={s?.parameter_fields?.current ?? []}
+                  show_parameter_fields={s?.parameter_fields?.show ?? false}
                   parameter_fields={s?.parameter_fields?.resources ?? []}
                   parameter_ids={formState.parameter_ids}
                   parameters={s?.parameters?.resources ?? []}
-                  parameter_resources={
-                    s?.parameters?.current ?? []
-                  }
+                  parameter_resources={s?.parameters?.current ?? []}
                   disabled={disabled}
                   onChange={(ids) =>
                     setFormState((prev) => ({
@@ -2126,12 +2163,13 @@ function ScenarioComponent({
                     handleConditionalParameterToggle
                   }
                   group_id={s?.group_id ?? null}
-                  required={
-                    s?.parameter_fields?.required ?? false
-                  }
+                  required={s?.parameter_fields?.required ?? false}
                   createParameterFieldsAction={createParameterFieldsAction}
                   isAutosaveEnabled={isAutosaveEnabled}
                   registerFlush={registerFlushCallbacks["parameter_fields"]}
+                  onGenerationComplete={makeOnGenerationComplete(
+                    "parameter_fields",
+                  )}
                 />
               </div>
             </StepCard>
@@ -2176,7 +2214,7 @@ function ScenarioComponent({
                 createImagesAction={
                   createImagesAction as
                     | ((
-                        input: CreateDraftImagesIn
+                        input: CreateDraftImagesIn,
                       ) => Promise<CreateDraftImagesOut>)
                     | undefined
                 }
@@ -2186,6 +2224,7 @@ function ScenarioComponent({
                 maxImages={3}
                 isAutosaveEnabled={isAutosaveEnabled}
                 registerFlush={registerFlushCallbacks["images"]}
+                onGenerationComplete={makeOnGenerationComplete("images")}
               />
             </StepCard>
           );
@@ -2229,7 +2268,7 @@ function ScenarioComponent({
                 createVideosAction={
                   createVideosAction as
                     | ((
-                        input: CreateDraftVideosIn
+                        input: CreateDraftVideosIn,
                       ) => Promise<CreateDraftVideosOut>)
                     | undefined
                 }
@@ -2237,6 +2276,7 @@ function ScenarioComponent({
                 isGenerating={isGenerating("videos")}
                 isAutosaveEnabled={isAutosaveEnabled}
                 registerFlush={registerFlushCallbacks["videos"]}
+                onGenerationComplete={makeOnGenerationComplete("videos")}
               />
             </StepCard>
           );
@@ -2267,16 +2307,10 @@ function ScenarioComponent({
             >
               <Questions
                 question_ids={formState.question_ids}
-                question_resources={
-                  s?.questions?.current ?? []
-                }
+                question_resources={s?.questions?.current ?? []}
                 show_questions={showQuestionsSection}
-                questions_required={
-                  s?.questions?.required ?? false
-                }
-                question_suggestions={
-                  s?.questions?.suggestions ?? []
-                }
+                questions_required={s?.questions?.required ?? false}
+                question_suggestions={s?.questions?.suggestions ?? []}
                 questions={s?.questions?.resources ?? []}
                 disabled={disabled}
                 onChange={(ids) =>
@@ -2286,7 +2320,7 @@ function ScenarioComponent({
                 createQuestionsAction={
                   createQuestionsAction as
                     | ((
-                        input: CreateDraftQuestionsIn
+                        input: CreateDraftQuestionsIn,
                       ) => Promise<CreateDraftQuestionsOut>)
                     | undefined
                 }
@@ -2294,6 +2328,7 @@ function ScenarioComponent({
                 isGenerating={isGenerating("questions")}
                 isAutosaveEnabled={isAutosaveEnabled}
                 registerFlush={registerFlushCallbacks["questions"]}
+                onGenerationComplete={makeOnGenerationComplete("questions")}
               />
             </StepCard>
           );
@@ -2329,7 +2364,8 @@ function ScenarioComponent({
       showObjectivesSection,
       showProblemStatementSection,
       videoEnabled,
-    ]
+      makeOnGenerationComplete,
+    ],
   );
 
   return (
@@ -2365,9 +2401,7 @@ function ScenarioComponent({
           }}
         />
 
-        {modalProps.open && (
-          <GenerateRegenerateModal {...modalProps} />
-        )}
+        {modalProps.open && <GenerateRegenerateModal {...modalProps} />}
       </div>
     </TooltipProvider>
   );
