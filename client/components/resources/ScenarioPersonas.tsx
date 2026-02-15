@@ -37,8 +37,13 @@ type CreateDraftScenarioPersonasOut = OutputOf<
 >;
 
 // Derive resource item type from the GET endpoint response
-type ScenarioPersonasGetResponse = OutputOf<"/api/v4/resources/scenario_personas/get", "post">;
-export type ScenarioPersonasResourceItem = NonNullable<ScenarioPersonasGetResponse["items"]>[number];
+type ScenarioPersonasGetResponse = OutputOf<
+  "/api/v4/resources/scenario_personas/get",
+  "post"
+>;
+export type ScenarioPersonasResourceItem = NonNullable<
+  ScenarioPersonasGetResponse["items"]
+>[number];
 
 export interface ScenarioPersonaItem {
   simulation_id: string;
@@ -84,7 +89,7 @@ export interface ScenarioPersonasProps {
   create_tool_id?: string | null; // Tool ID for AI generation/creation
   createScenarioPersonasAction?:
     | ((
-        input: CreateDraftScenarioPersonasIn
+        input: CreateDraftScenarioPersonasIn,
       ) => Promise<CreateDraftScenarioPersonasOut>)
     | undefined;
   onPersonaIdsChange?: (ids: string[]) => void;
@@ -93,10 +98,12 @@ export interface ScenarioPersonasProps {
   showAiGenerate?: boolean; // Whether to show AI generate button (computed server-side)
   isAutosaveEnabled?: boolean;
   registerFlush?: (
-    flush: () => Promise<{ scenario_persona_ids: string[] } | void>
+    flush: () => Promise<{ scenario_persona_ids: string[] } | void>,
   ) => void;
   // AI diff view props
-  aiScenarioPersonaResources?: Pick<ScenarioPersonasResourceItem, "id" | "scenario_id" | "persona_id">[] | null;
+  aiScenarioPersonaResources?:
+    | Pick<ScenarioPersonasResourceItem, "id" | "scenario_id" | "persona_id">[]
+    | null;
   onAccept?: () => void;
   onReject?: () => void;
   onGenerationComplete?: () => void;
@@ -134,16 +141,23 @@ export function ScenarioPersonas({
   onGenerationComplete,
 }: ScenarioPersonasProps) {
   const show = show_scenario_personas ?? false;
-  const allPersonas = useMemo(() => scenario_personas ?? [], [scenario_personas]);
+  const allPersonas = useMemo(
+    () => scenario_personas ?? [],
+    [scenario_personas],
+  );
   const currentPersonas = useMemo(
     () => scenario_persona_resources ?? [],
-    [scenario_persona_resources]
+    [scenario_persona_resources],
   );
 
   // Socket-based AI suggestion handling
   const { socket: aiSocket, isConnected: aiIsConnected } = useSocket();
-  const [internalAiScenarioPersonaResources, setInternalAiScenarioPersonaResources] = useState<
-    Pick<ScenarioPersonasResourceItem, "id" | "scenario_id" | "persona_id">[] | null
+  const [
+    internalAiScenarioPersonaResources,
+    setInternalAiScenarioPersonaResources,
+  ] = useState<
+    | Pick<ScenarioPersonasResourceItem, "id" | "scenario_id" | "persona_id">[]
+    | null
   >(null);
 
   useEffect(() => {
@@ -157,14 +171,24 @@ export function ScenarioPersonas({
       if (group_id && data.group_id !== group_id) return;
       if (data.id) {
         setInternalAiScenarioPersonaResources([
-          { id: data.id, scenario_id: data.scenario_id ?? null, persona_id: data.persona_id ?? null },
+          {
+            id: data.id,
+            scenario_id: data.scenario_id ?? null,
+            persona_id: data.persona_id ?? null,
+          },
         ]);
       }
       onGenerationComplete?.();
     };
-    aiSocket.on("scenario_personas_generation_complete", handleResourceComplete);
+    aiSocket.on(
+      "scenario_personas_generation_complete",
+      handleResourceComplete,
+    );
     return () => {
-      aiSocket.off("scenario_personas_generation_complete", handleResourceComplete);
+      aiSocket.off(
+        "scenario_personas_generation_complete",
+        handleResourceComplete,
+      );
     };
   }, [aiSocket, aiIsConnected, group_id, onGenerationComplete]);
 
@@ -329,11 +353,9 @@ export function ScenarioPersonas({
       setSelectedPersonaByScenario(updated);
 
       // Convert to array format for parent
-      const personasArray = Array.from(
-        updated.entries()
-      ).map(([sid, pid]) => {
+      const personasArray = Array.from(updated.entries()).map(([sid, pid]) => {
         const details = allPersonas.find(
-          (p) => p.scenario_id === sid && p.persona_id === pid
+          (p) => p.scenario_id === sid && p.persona_id === pid,
         );
         return {
           simulation_id: simulation_id || "",
@@ -397,7 +419,7 @@ export function ScenarioPersonas({
       group_id,
       allPersonas,
       artifactIdMap,
-    ]
+    ],
   );
 
   // AI suggestion state
@@ -409,9 +431,9 @@ export function ScenarioPersonas({
       new Set(
         effectiveAiScenarioPersonaResources
           ?.map((r) => r.scenario_id)
-          .filter(Boolean) as string[]
+          .filter(Boolean) as string[],
       ),
-    [effectiveAiScenarioPersonaResources]
+    [effectiveAiScenarioPersonaResources],
   );
 
   // Accept AI suggestion - apply AI-suggested persona assignments
@@ -512,29 +534,37 @@ export function ScenarioPersonas({
         </div>
       )}
       {/* AI-suggested persona assignments preview */}
-      {showDiff && effectiveAiScenarioPersonaResources && effectiveAiScenarioPersonaResources.length > 0 && (
-        <div className="mb-4 space-y-2">
-          <p className="text-sm font-medium text-success">AI Suggested Persona Assignments</p>
-          <div className="space-y-2">
-            {aiScenarioPersonaResources.map((item, idx) => {
-              const scenarioLabel = scenarioLabelMap.get(item.scenario_id || "") ?? "Unknown scenario";
-              const personaLabel = item.persona_name || "Unknown persona";
-              return (
-                <div
-                  key={item.id || `${item.scenario_id}-${item.persona_id}` || idx}
-                  className={cn(
-                    "flex items-center gap-2 p-3 rounded-lg border-2 border-success bg-success/10",
-                    "text-sm"
-                  )}
-                >
-                  <span className="font-medium">{scenarioLabel}:</span>
-                  <span>{personaLabel}</span>
-                </div>
-              );
-            })}
+      {showDiff &&
+        effectiveAiScenarioPersonaResources &&
+        effectiveAiScenarioPersonaResources.length > 0 && (
+          <div className="mb-4 space-y-2">
+            <p className="text-sm font-medium text-success">
+              AI Suggested Persona Assignments
+            </p>
+            <div className="space-y-2">
+              {effectiveAiScenarioPersonaResources.map((item, idx) => {
+                const scenarioLabel =
+                  scenarioLabelMap.get(item.scenario_id || "") ??
+                  "Unknown scenario";
+                const personaLabel = item.persona_name || "Unknown persona";
+                return (
+                  <div
+                    key={
+                      item.id || `${item.scenario_id}-${item.persona_id}` || idx
+                    }
+                    className={cn(
+                      "flex items-center gap-2 p-3 rounded-lg border-2 border-success bg-success/10",
+                      "text-sm",
+                    )}
+                  >
+                    <span className="font-medium">{scenarioLabel}:</span>
+                    <span>{personaLabel}</span>
+                  </div>
+                );
+              })}
+            </div>
           </div>
-        </div>
-      )}
+        )}
       <div className="pl-4 space-y-3">
         {scenario_ids.map((scenarioId) => {
           const isAiSuggested = aiSuggestedScenarioIds.has(scenarioId);
@@ -553,7 +583,8 @@ export function ScenarioPersonas({
               key={scenarioId}
               className={cn(
                 "flex items-center gap-3",
-                isAiSuggested && "ring-2 ring-success bg-success/5 rounded-lg p-2"
+                isAiSuggested &&
+                  "ring-2 ring-success bg-success/5 rounded-lg p-2",
               )}
             >
               <span

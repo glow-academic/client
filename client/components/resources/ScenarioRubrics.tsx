@@ -31,8 +31,13 @@ type CreateDraftScenarioRubricsOut = OutputOf<
 >;
 
 // Derive resource item type from the GET endpoint response
-type ScenarioRubricGetResponse = OutputOf<"/api/v4/resources/scenario_rubrics/get", "post">;
-export type ScenarioRubricResourceItem = NonNullable<ScenarioRubricGetResponse["items"]>[number];
+type ScenarioRubricGetResponse = OutputOf<
+  "/api/v4/resources/scenario_rubrics/get",
+  "post"
+>;
+export type ScenarioRubricResourceItem = NonNullable<
+  ScenarioRubricGetResponse["items"]
+>[number];
 
 export interface ScenarioRubricsProps {
   scenario_rubric_ids?: string[];
@@ -70,8 +75,8 @@ export interface ScenarioRubricsProps {
   group_id?: string | null;
   create_tool_id?: string | null; // Tool ID for AI generation/creation
   createScenarioRubricsAction?:
-    | ( (
-        input: CreateDraftScenarioRubricsIn
+    | ((
+        input: CreateDraftScenarioRubricsIn,
       ) => Promise<CreateDraftScenarioRubricsOut>)
     | undefined;
   onGenerate?: () => void | Promise<void>;
@@ -80,9 +85,13 @@ export interface ScenarioRubricsProps {
   /** When false, skip automatic resource creation (manual save mode) */
   isAutosaveEnabled?: boolean;
   /** Register a flush callback with parent for manual save - returns created IDs */
-  registerFlush?: (flush: () => Promise<{ scenario_rubric_ids: string[] } | void>) => void;
+  registerFlush?: (
+    flush: () => Promise<{ scenario_rubric_ids: string[] } | void>,
+  ) => void;
   // AI diff view props
-  aiScenarioRubricResources?: Pick<ScenarioRubricResourceItem, "id" | "scenario_id" | "rubric_id">[] | null;
+  aiScenarioRubricResources?:
+    | Pick<ScenarioRubricResourceItem, "id" | "scenario_id" | "rubric_id">[]
+    | null;
   onAccept?: () => void;
   onReject?: () => void;
   onGenerationComplete?: () => void;
@@ -130,14 +139,18 @@ export function ScenarioRubrics({
   const show = show_scenario_rubrics ?? false;
   const currentResources = useMemo(
     () => scenario_rubric_resources ?? [],
-    [scenario_rubric_resources]
+    [scenario_rubric_resources],
   );
   const allRubrics = useMemo(() => rubrics ?? [], [rubrics]);
 
   // Socket-based AI suggestion handling
   const { socket: aiSocket, isConnected: aiIsConnected } = useSocket();
-  const [internalAiScenarioRubricResources, setInternalAiScenarioRubricResources] = useState<
-    Pick<ScenarioRubricResourceItem, "id" | "scenario_id" | "rubric_id">[] | null
+  const [
+    internalAiScenarioRubricResources,
+    setInternalAiScenarioRubricResources,
+  ] = useState<
+    | Pick<ScenarioRubricResourceItem, "id" | "scenario_id" | "rubric_id">[]
+    | null
   >(null);
 
   useEffect(() => {
@@ -151,14 +164,21 @@ export function ScenarioRubrics({
       if (group_id && data.group_id !== group_id) return;
       if (data.id) {
         setInternalAiScenarioRubricResources([
-          { id: data.id, scenario_id: data.scenario_id ?? null, rubric_id: data.rubric_id ?? null },
+          {
+            id: data.id,
+            scenario_id: data.scenario_id ?? null,
+            rubric_id: data.rubric_id ?? null,
+          },
         ]);
       }
       onGenerationComplete?.();
     };
     aiSocket.on("scenario_rubrics_generation_complete", handleResourceComplete);
     return () => {
-      aiSocket.off("scenario_rubrics_generation_complete", handleResourceComplete);
+      aiSocket.off(
+        "scenario_rubrics_generation_complete",
+        handleResourceComplete,
+      );
     };
   }, [aiSocket, aiIsConnected, group_id, onGenerationComplete]);
 
@@ -186,10 +206,7 @@ export function ScenarioRubrics({
       if (id) {
         const name = (scenario.title || scenario.name)?.trim() || "";
         const descriptionText = scenario.description?.trim() || "";
-        map.set(
-          id,
-          name || descriptionText || "Untitled scenario"
-        );
+        map.set(id, name || descriptionText || "Untitled scenario");
       }
     });
     return map;
@@ -219,13 +236,14 @@ export function ScenarioRubrics({
   const [rubricIdByScenario, setRubricIdByScenario] = useState<
     Map<string, string | null>
   >(new Map());
-  const [scenarioRubricIdsByScenario, setScenarioRubricIdsByScenario] = useState<
-    Map<string, string>
-  >(new Map());
+  const [scenarioRubricIdsByScenario, setScenarioRubricIdsByScenario] =
+    useState<Map<string, string>>(new Map());
   const createdRubricKeysRef = useRef<Set<string>>(new Set());
 
   // Ref for flush function (stable reference for registerFlush)
-  const flushRef = useRef<(() => Promise<{ scenario_rubric_ids: string[] } | void>) | null>(null);
+  const flushRef = useRef<
+    (() => Promise<{ scenario_rubric_ids: string[] } | void>) | null
+  >(null);
 
   useEffect(() => {
     const nextRubrics = new Map<string, string | null>();
@@ -278,7 +296,9 @@ export function ScenarioRubrics({
   }, [scenarioRubricIdsByScenario, scenario_ids]);
 
   // Update flush function - returns current IDs from local state
-  flushRef.current = async (): Promise<{ scenario_rubric_ids: string[] } | void> => {
+  flushRef.current = async (): Promise<{
+    scenario_rubric_ids: string[];
+  } | void> => {
     const ids = scenario_ids
       .map((scenarioId) => scenarioRubricIdsByScenario.get(scenarioId))
       .filter((value): value is string => Boolean(value));
@@ -336,7 +356,7 @@ export function ScenarioRubrics({
       create_tool_id,
       group_id,
       artifactIdMap,
-    ]
+    ],
   );
 
   const handleSelect = useCallback(
@@ -370,7 +390,7 @@ export function ScenarioRubrics({
 
       void createScenarioRubric(scenarioId, nextRubricId);
     },
-    [createScenarioRubric]
+    [createScenarioRubric],
   );
 
   const rubricOptions = useMemo<ScenarioRubricOption[]>(() => {
@@ -403,32 +423,34 @@ export function ScenarioRubrics({
   }, [currentResources]);
 
   // AI suggestion state
-  const showDiff = !!aiScenarioRubricResources?.length;
+  const showDiff = !!effectiveAiScenarioRubricResources?.length;
 
   // Set of AI-suggested scenario IDs for styling
   const aiSuggestedScenarioIds = useMemo(
     () =>
       new Set(
-        aiScenarioRubricResources
+        effectiveAiScenarioRubricResources
           ?.map((r) => r.scenario_id)
-          .filter(Boolean) as string[]
+          .filter(Boolean) as string[],
       ),
-    [aiScenarioRubricResources]
+    [effectiveAiScenarioRubricResources],
   );
 
   // Accept AI suggestion - apply AI-suggested rubric assignments
   const handleAccept = useCallback(() => {
-    if (!aiScenarioRubricResources?.length) return;
-    aiScenarioRubricResources.forEach((r) => {
+    if (!effectiveAiScenarioRubricResources?.length) return;
+    effectiveAiScenarioRubricResources.forEach((r) => {
       if (r.scenario_id && r.rubric_id) {
         handleSelect(r.scenario_id, r.rubric_id);
       }
     });
+    setInternalAiScenarioRubricResources(null);
     onAccept?.();
-  }, [aiScenarioRubricResources, handleSelect, onAccept]);
+  }, [effectiveAiScenarioRubricResources, handleSelect, onAccept]);
 
   // Reject AI suggestion - just clear the pending state
   const handleReject = useCallback(() => {
+    setInternalAiScenarioRubricResources(null);
     onReject?.();
   }, [onReject]);
 
@@ -513,29 +535,39 @@ export function ScenarioRubrics({
         </div>
       )}
       {/* AI-suggested scenario rubrics preview */}
-      {showDiff && aiScenarioRubricResources && aiScenarioRubricResources.length > 0 && (
-        <div className="mb-4 space-y-2">
-          <p className="text-sm font-medium text-success">AI Suggested Scenario Rubrics</p>
-          <div className="space-y-2">
-            {aiScenarioRubricResources.map((item, idx) => {
-              const scenarioLabel = scenarioLabelMap.get(item.scenario_id || "") ?? "Unknown scenario";
-              const rubricLabel = rubricOptions.find((r) => r.id === item.rubric_id)?.name ?? "Unknown rubric";
-              return (
-                <div
-                  key={item.id || `${item.scenario_id}-${item.rubric_id}` || idx}
-                  className={cn(
-                    "flex items-center gap-2 p-3 rounded-lg border-2 border-success bg-success/10",
-                    "text-sm"
-                  )}
-                >
-                  <span className="font-medium">{scenarioLabel}:</span>
-                  <span>{rubricLabel}</span>
-                </div>
-              );
-            })}
+      {showDiff &&
+        effectiveAiScenarioRubricResources &&
+        effectiveAiScenarioRubricResources.length > 0 && (
+          <div className="mb-4 space-y-2">
+            <p className="text-sm font-medium text-success">
+              AI Suggested Scenario Rubrics
+            </p>
+            <div className="space-y-2">
+              {effectiveAiScenarioRubricResources.map((item, idx) => {
+                const scenarioLabel =
+                  scenarioLabelMap.get(item.scenario_id || "") ??
+                  "Unknown scenario";
+                const rubricLabel =
+                  rubricOptions.find((r) => r.id === item.rubric_id)?.name ??
+                  "Unknown rubric";
+                return (
+                  <div
+                    key={
+                      item.id || `${item.scenario_id}-${item.rubric_id}` || idx
+                    }
+                    className={cn(
+                      "flex items-center gap-2 p-3 rounded-lg border-2 border-success bg-success/10",
+                      "text-sm",
+                    )}
+                  >
+                    <span className="font-medium">{scenarioLabel}:</span>
+                    <span>{rubricLabel}</span>
+                  </div>
+                );
+              })}
+            </div>
           </div>
-        </div>
-      )}
+        )}
       <div className="space-y-4 pl-4">
         {scenario_ids.map((scenarioId) => {
           const isAiSuggested = aiSuggestedScenarioIds.has(scenarioId);
@@ -549,7 +581,8 @@ export function ScenarioRubrics({
               key={scenarioId}
               className={cn(
                 "space-y-2",
-                isAiSuggested && "ring-2 ring-success bg-success/5 rounded-lg p-2"
+                isAiSuggested &&
+                  "ring-2 ring-success bg-success/5 rounded-lg p-2",
               )}
             >
               <Label className="text-sm font-medium" title={labelText}>
@@ -578,7 +611,7 @@ export function ScenarioRubrics({
                       "hover:shadow-sm hover:bg-accent/50",
                       "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
                       option.isNone && "border-dashed text-muted-foreground",
-                      isSelected && "ring-2 ring-primary bg-accent"
+                      isSelected && "ring-2 ring-primary bg-accent",
                     )}
                   >
                     {isSelected && (

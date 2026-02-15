@@ -22,7 +22,7 @@ import SimulationProgress, {
 
 export interface HomeProps {
   homeData: HomeOut;
-  createAttempt: (input: { body: { training_bundle_entry_id: string } }) => Promise<{ attempt_id: string }>;
+  createAttempt: (input: { body: { training_bundle_entry_id: string; infinite_mode: boolean } }) => Promise<{ attempt_id: string }>;
 }
 
 export default function Home({ homeData, createAttempt }: HomeProps) {

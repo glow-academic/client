@@ -30,7 +30,7 @@ import {
 } from "@/components/ui/tooltip";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { getIconComponent } from "@/utils/icons";
-import { Info, Table, Timer, User, Users } from "lucide-react";
+import { Infinity, Info, Table, Timer, User, Users } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useState } from "react";
 import { toast } from "sonner";
@@ -125,20 +125,24 @@ export default function SimulationCard({
 
   // Start training function - creates attempt via REST, navigates to attempt page
   const handleStartTraining = useCallback(
-    async () => {
+    async (infiniteMode: boolean = false) => {
       if (!trainingBundleEntryId) {
         toast.error("Training bundle is missing for this simulation.");
         return;
       }
 
       setIsStarting(true);
-      const toastId = toast.loading("Starting simulation...", {
-        dismissible: true,
-      });
+      const toastId = toast.loading(
+        infiniteMode ? "Starting infinite mode..." : "Starting simulation...",
+        {
+          dismissible: true,
+        }
+      );
       try {
         const result = await createAttempt({
           body: {
             training_bundle_entry_id: trainingBundleEntryId,
+            infinite_mode: infiniteMode,
           },
         });
         const attemptId = result.attempt_id;
@@ -366,40 +370,59 @@ export default function SimulationCard({
         </CardContent>
 
         <CardFooter className="pt-0 relative z-10">
-          <Button
-            onClick={() => void handleStartTraining()}
-            disabled={isStarting}
-            data-testid={`start-simulation-${id}`}
-            variant={gradientClass ? undefined : "default"}
-            className={`w-full hover:shadow-lg transition-all duration-300 ${
-              isStarting ? "animate-pulse" : "hover:scale-105"
-            } ${
-              typeof gradientClass === "string" &&
-              gradientClass !== null &&
-              !gradientClass.startsWith("linear-gradient")
-                ? `bg-gradient-to-r ${gradientClass} text-white border-0 hover:opacity-90`
-                : typeof gradientClass === "string" &&
-                    gradientClass.startsWith("linear-gradient")
-                  ? "border-0"
-                  : ""
-            }`}
-            style={{
-              ...(typeof gradientClass === "string" &&
-                gradientClass.startsWith("linear-gradient") && {
-                  background: gradientClass,
-                  color: "white",
-                  border: "none",
-                }),
-            }}
-          >
-            {isStarting
-              ? "Starting..."
-              : type === "default"
-                ? "Start Simulation"
-                : hasPassed
-                  ? "Start Simulation (Complete)"
-                  : "Start Simulation"}
-          </Button>
+          <div className="flex items-center gap-2 w-full">
+            <Button
+              onClick={() => void handleStartTraining(false)}
+              disabled={isStarting}
+              data-testid={`start-simulation-${id}`}
+              variant={gradientClass ? undefined : "default"}
+              className={`flex-1 hover:shadow-lg transition-all duration-300 ${
+                isStarting ? "animate-pulse" : "hover:scale-105"
+              } ${
+                typeof gradientClass === "string" &&
+                gradientClass !== null &&
+                !gradientClass.startsWith("linear-gradient")
+                  ? `bg-gradient-to-r ${gradientClass} text-white border-0 hover:opacity-90`
+                  : typeof gradientClass === "string" &&
+                      gradientClass.startsWith("linear-gradient")
+                    ? "border-0"
+                    : ""
+              }`}
+              style={{
+                ...(typeof gradientClass === "string" &&
+                  gradientClass.startsWith("linear-gradient") && {
+                    background: gradientClass,
+                    color: "white",
+                    border: "none",
+                  }),
+              }}
+            >
+              {isStarting
+                ? "Starting..."
+                : type === "default"
+                  ? "Start Simulation"
+                  : hasPassed
+                    ? "Start Simulation (Complete)"
+                    : "Start Simulation"}
+            </Button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  onClick={() => void handleStartTraining(true)}
+                  disabled={isStarting}
+                  variant="default"
+                  size="icon"
+                  className="flex-shrink-0 hover:scale-105 transition-all duration-300"
+                  data-testid={`start-infinite-${id}`}
+                >
+                  <Infinity className="h-4 w-4 text-white" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Infinite Mode</p>
+              </TooltipContent>
+            </Tooltip>
+          </div>
         </CardFooter>
       </Card>
     </div>

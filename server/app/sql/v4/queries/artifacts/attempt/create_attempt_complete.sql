@@ -18,7 +18,8 @@ END $$;
 
 CREATE OR REPLACE FUNCTION create_attempt_v4(
     p_profile_id uuid,
-    p_training_bundle_entry_id uuid
+    p_training_bundle_entry_id uuid,
+    p_infinite_mode boolean DEFAULT false
 )
 RETURNS TABLE (
     out_attempt_id uuid
@@ -100,7 +101,7 @@ BEGIN
 
     -- Create attempt entry (no chat - that happens later via WS).
     INSERT INTO simulation_attempts_entry (created_at, updated_at, practice, infinite_mode, training_id)
-    VALUES (NOW(), NOW(), v_is_practice, false, v_training_id)
+    VALUES (NOW(), NOW(), v_is_practice, p_infinite_mode, v_training_id)
     RETURNING id INTO v_attempt_id;
 
     INSERT INTO simulation_attempts_simulations_connection (simulations_id, attempt_id, active)

@@ -32,8 +32,13 @@ type CreateDraftScenarioTimeLimitsOut = OutputOf<
 >;
 
 // Derive resource item type from the GET endpoint response
-type ScenarioTimeLimitGetResponse = OutputOf<"/api/v4/resources/scenario_time_limits/get", "post">;
-export type ScenarioTimeLimitResourceItem = NonNullable<ScenarioTimeLimitGetResponse["items"]>[number];
+type ScenarioTimeLimitGetResponse = OutputOf<
+  "/api/v4/resources/scenario_time_limits/get",
+  "post"
+>;
+export type ScenarioTimeLimitResourceItem = NonNullable<
+  ScenarioTimeLimitGetResponse["items"]
+>[number];
 
 export interface ScenarioTimeLimitsProps {
   scenario_time_limit_ids?: string[];
@@ -64,7 +69,7 @@ export interface ScenarioTimeLimitsProps {
   create_tool_id?: string | null; // Tool ID for AI generation/creation
   createScenarioTimeLimitsAction?:
     | ((
-        input: CreateDraftScenarioTimeLimitsIn
+        input: CreateDraftScenarioTimeLimitsIn,
       ) => Promise<CreateDraftScenarioTimeLimitsOut>)
     | undefined;
   onTimeLimitIdsChange?: (ids: string[]) => void;
@@ -74,9 +79,16 @@ export interface ScenarioTimeLimitsProps {
   /** When false, skip automatic resource creation (manual save mode) */
   isAutosaveEnabled?: boolean;
   /** Register a flush callback with parent for manual save - returns created IDs */
-  registerFlush?: (flush: () => Promise<{ scenario_time_limit_ids: string[] } | void>) => void;
+  registerFlush?: (
+    flush: () => Promise<{ scenario_time_limit_ids: string[] } | void>,
+  ) => void;
   // AI diff view props
-  aiScenarioTimeLimitResources?: Pick<ScenarioTimeLimitResourceItem, "id" | "scenario_id" | "time_limit_seconds">[] | null;
+  aiScenarioTimeLimitResources?:
+    | Pick<
+        ScenarioTimeLimitResourceItem,
+        "id" | "scenario_id" | "time_limit_seconds"
+      >[]
+    | null;
   onAccept?: () => void;
   onReject?: () => void;
   onGenerationComplete?: () => void;
@@ -112,8 +124,60 @@ export function ScenarioTimeLimits({
   const show = show_scenario_time_limits ?? false;
   const timeLimitResources = useMemo(
     () => scenario_time_limit_resources ?? [],
-    [scenario_time_limit_resources]
+    [scenario_time_limit_resources],
   );
+
+  // Socket-based AI suggestion handling
+  const { socket: aiSocket, isConnected: aiIsConnected } = useSocket();
+  const [
+    internalAiScenarioTimeLimitResources,
+    setInternalAiScenarioTimeLimitResources,
+  ] = useState<
+    | Pick<
+        ScenarioTimeLimitResourceItem,
+        "id" | "scenario_id" | "time_limit_seconds"
+      >[]
+    | null
+  >(null);
+
+  useEffect(() => {
+    if (!aiSocket || !aiIsConnected) return;
+    const handleResourceComplete = (data: {
+      group_id?: string;
+      id?: string | null;
+      scenario_id?: string | null;
+      time_limit_seconds?: number | null;
+    }) => {
+      if (group_id && data.group_id !== group_id) return;
+      if (data.id) {
+        setInternalAiScenarioTimeLimitResources([
+          {
+            id: data.id,
+            scenario_id: data.scenario_id ?? null,
+            time_limit_seconds: data.time_limit_seconds ?? null,
+          },
+        ]);
+      }
+      onGenerationComplete?.();
+    };
+    aiSocket.on(
+      "scenario_time_limits_generation_complete",
+      handleResourceComplete,
+    );
+    return () => {
+      aiSocket.off(
+        "scenario_time_limits_generation_complete",
+        handleResourceComplete,
+      );
+    };
+  }, [aiSocket, aiIsConnected, group_id, onGenerationComplete]);
+
+  // Effective AI resources: internal (socket) takes priority, then prop fallback
+  const effectiveAiScenarioTimeLimitResources =
+    internalAiScenarioTimeLimitResources ??
+    aiScenarioTimeLimitResources ??
+    null;
+
   const scenarioLabelMap = useMemo(() => {
     const map = new Map<string, string>();
     // Use full scenarios list as base (keyed by scenario_id to match scenario_ids)
@@ -134,10 +198,7 @@ export function ScenarioTimeLimits({
       if (id) {
         const name = (scenario.title || scenario.name)?.trim() || "";
         const descriptionText = scenario.description?.trim() || "";
-        map.set(
-          id,
-          name || descriptionText || "Untitled scenario"
-        );
+        map.set(id, name || descriptionText || "Untitled scenario");
       }
     });
     return map;
@@ -173,7 +234,9 @@ export function ScenarioTimeLimits({
   const createdTimeLimitKeysRef = useRef<Set<string>>(new Set());
 
   // Ref for flush function (stable reference for registerFlush)
-  const flushRef = useRef<(() => Promise<{ scenario_time_limit_ids: string[] } | void>) | null>(null);
+  const flushRef = useRef<
+    (() => Promise<{ scenario_time_limit_ids: string[] } | void>) | null
+  >(null);
 
   useEffect(() => {
     const nextLimits = new Map<string, number | null>();
@@ -181,7 +244,10 @@ export function ScenarioTimeLimits({
 
     timeLimitResources.forEach((resource) => {
       if (resource.scenario_id) {
-        nextLimits.set(resource.scenario_id, resource.time_limit_seconds ?? null);
+        nextLimits.set(
+          resource.scenario_id,
+          resource.time_limit_seconds ?? null,
+        );
         if (resource.id) {
           nextIds.set(resource.scenario_id, resource.id);
         }
@@ -227,7 +293,9 @@ export function ScenarioTimeLimits({
   }, [timeLimitIdsByScenario, scenario_ids]);
 
   // Update flush function - returns current IDs from local state
-  flushRef.current = async (): Promise<{ scenario_time_limit_ids: string[] } | void> => {
+  flushRef.current = async (): Promise<{
+    scenario_time_limit_ids: string[];
+  } | void> => {
     const ids = scenario_ids
       .map((scenarioId) => timeLimitIdsByScenario.get(scenarioId))
       .filter((value): value is string => Boolean(value));
@@ -285,7 +353,7 @@ export function ScenarioTimeLimits({
       create_tool_id,
       group_id,
       artifactIdMap,
-    ]
+    ],
   );
 
   const handleChange = useCallback(
@@ -306,7 +374,7 @@ export function ScenarioTimeLimits({
         void createTimeLimit(scenarioId, nextValue);
       }
     },
-    [createTimeLimit]
+    [createTimeLimit],
   );
 
   const hasGenerated = useMemo(() => {
@@ -314,32 +382,34 @@ export function ScenarioTimeLimits({
   }, [timeLimitResources]);
 
   // AI suggestion state
-  const showDiff = !!aiScenarioTimeLimitResources?.length;
+  const showDiff = !!effectiveAiScenarioTimeLimitResources?.length;
 
   // Set of AI-suggested scenario IDs for styling
   const aiSuggestedScenarioIds = useMemo(
     () =>
       new Set(
-        aiScenarioTimeLimitResources
+        effectiveAiScenarioTimeLimitResources
           ?.map((r) => r.scenario_id)
-          .filter(Boolean) as string[]
+          .filter(Boolean) as string[],
       ),
-    [aiScenarioTimeLimitResources]
+    [effectiveAiScenarioTimeLimitResources],
   );
 
   // Accept AI suggestion - apply AI-suggested time limits
   const handleAccept = useCallback(() => {
-    if (!aiScenarioTimeLimitResources?.length) return;
-    aiScenarioTimeLimitResources.forEach((r) => {
+    if (!effectiveAiScenarioTimeLimitResources?.length) return;
+    effectiveAiScenarioTimeLimitResources.forEach((r) => {
       if (r.scenario_id && r.time_limit_seconds != null) {
         handleChange(r.scenario_id, String(r.time_limit_seconds));
       }
     });
+    setInternalAiScenarioTimeLimitResources(null);
     onAccept?.();
-  }, [aiScenarioTimeLimitResources, handleChange, onAccept]);
+  }, [effectiveAiScenarioTimeLimitResources, handleChange, onAccept]);
 
   // Reject AI suggestion - just clear the pending state
   const handleReject = useCallback(() => {
+    setInternalAiScenarioTimeLimitResources(null);
     onReject?.();
   }, [onReject]);
 
@@ -424,56 +494,80 @@ export function ScenarioTimeLimits({
         </div>
       )}
       {/* AI-suggested time limits preview */}
-      {showDiff && aiScenarioTimeLimitResources && aiScenarioTimeLimitResources.length > 0 && (
-        <div className="mb-4 space-y-2">
-          <p className="text-sm font-medium text-success">AI Suggested Time Limits</p>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-            {aiScenarioTimeLimitResources.map((item, idx) => {
-              const scenarioLabel = scenarioLabelMap.get(item.scenario_id || "") ?? "Unknown scenario";
-              const minutes = item.time_limit_seconds != null ? Math.floor(item.time_limit_seconds / 60) : null;
-              const seconds = item.time_limit_seconds != null ? item.time_limit_seconds % 60 : null;
-              const timeDisplay = item.time_limit_seconds != null
-                ? `${minutes}m ${seconds}s`
-                : "Unlimited";
-              return (
-                <div
-                  key={item.id || item.scenario_id || idx}
-                  className={cn(
-                    "flex items-center gap-2 p-3 rounded-lg border-2 border-success bg-success/10",
-                    "text-sm"
-                  )}
-                >
-                  <Clock className="h-4 w-4 text-success" />
-                  <span className="font-medium">{scenarioLabel}:</span>
-                  <span>{timeDisplay}</span>
-                </div>
-              );
-            })}
+      {showDiff &&
+        effectiveAiScenarioTimeLimitResources &&
+        effectiveAiScenarioTimeLimitResources.length > 0 && (
+          <div className="mb-4 space-y-2">
+            <p className="text-sm font-medium text-success">
+              AI Suggested Time Limits
+            </p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+              {effectiveAiScenarioTimeLimitResources.map((item, idx) => {
+                const scenarioLabel =
+                  scenarioLabelMap.get(item.scenario_id || "") ??
+                  "Unknown scenario";
+                const minutes =
+                  item.time_limit_seconds != null
+                    ? Math.floor(item.time_limit_seconds / 60)
+                    : null;
+                const seconds =
+                  item.time_limit_seconds != null
+                    ? item.time_limit_seconds % 60
+                    : null;
+                const timeDisplay =
+                  item.time_limit_seconds != null
+                    ? `${minutes}m ${seconds}s`
+                    : "Unlimited";
+                return (
+                  <div
+                    key={item.id || item.scenario_id || idx}
+                    className={cn(
+                      "flex items-center gap-2 p-3 rounded-lg border-2 border-success bg-success/10",
+                      "text-sm",
+                    )}
+                  >
+                    <Clock className="h-4 w-4 text-success" />
+                    <span className="font-medium">{scenarioLabel}:</span>
+                    <span>{timeDisplay}</span>
+                  </div>
+                );
+              })}
+            </div>
           </div>
-        </div>
-      )}
+        )}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pl-4">
         {scenario_ids.map((scenarioId) => {
           const isAiSuggested = aiSuggestedScenarioIds.has(scenarioId);
           const currentValue = timeLimitByScenario.get(scenarioId);
           const isUnlimited = currentValue === null;
-          const minutes = currentValue != null ? Math.floor(currentValue / 60) : null;
+          const minutes =
+            currentValue != null ? Math.floor(currentValue / 60) : null;
           const seconds = currentValue != null ? currentValue % 60 : null;
           const labelText =
             scenarioLabelMap.get(scenarioId) ?? scenarioId.slice(0, 8);
 
           const handleMinutesChange = (value: string) => {
-            const newMinutes = value.trim() === "" ? 0 : Math.max(0, parseInt(value, 10) || 0);
+            const newMinutes =
+              value.trim() === "" ? 0 : Math.max(0, parseInt(value, 10) || 0);
             const currentSeconds = seconds ?? 0;
             const totalSeconds = newMinutes * 60 + currentSeconds;
-            handleChange(scenarioId, totalSeconds > 0 ? String(totalSeconds) : "");
+            handleChange(
+              scenarioId,
+              totalSeconds > 0 ? String(totalSeconds) : "",
+            );
           };
 
           const handleSecondsChange = (value: string) => {
-            const newSeconds = value.trim() === "" ? 0 : Math.min(59, Math.max(0, parseInt(value, 10) || 0));
+            const newSeconds =
+              value.trim() === ""
+                ? 0
+                : Math.min(59, Math.max(0, parseInt(value, 10) || 0));
             const currentMinutes = minutes ?? 0;
             const totalSeconds = currentMinutes * 60 + newSeconds;
-            handleChange(scenarioId, totalSeconds > 0 ? String(totalSeconds) : "");
+            handleChange(
+              scenarioId,
+              totalSeconds > 0 ? String(totalSeconds) : "",
+            );
           };
 
           const handleUnlimitedToggle = (checked: boolean) => {
@@ -491,12 +585,15 @@ export function ScenarioTimeLimits({
               key={scenarioId}
               className={cn(
                 "relative flex items-start gap-3 rounded-xl border bg-card px-4 py-3 shadow-sm transition-all hover:shadow-md hover:bg-accent/50",
-                isAiSuggested && "ring-2 ring-success bg-success/5"
+                isAiSuggested && "ring-2 ring-success bg-success/5",
               )}
             >
               <Clock className="h-5 w-5 text-amber-600 flex-shrink-0 mt-0.5" />
               <div className="flex-1 min-w-0">
-                <h3 className="font-medium text-sm leading-tight truncate" title={labelText}>
+                <h3
+                  className="font-medium text-sm leading-tight truncate"
+                  title={labelText}
+                >
                   {labelText}
                 </h3>
                 <div className="flex items-center gap-2 mt-2">
@@ -506,7 +603,9 @@ export function ScenarioTimeLimits({
                       onCheckedChange={handleUnlimitedToggle}
                       disabled={disabled}
                     />
-                    <span className="text-xs text-muted-foreground">Unlimited</span>
+                    <span className="text-xs text-muted-foreground">
+                      Unlimited
+                    </span>
                   </div>
                   {!isUnlimited && (
                     <>
@@ -515,7 +614,9 @@ export function ScenarioTimeLimits({
                         type="number"
                         min={0}
                         value={minutes ?? ""}
-                        onChange={(event) => handleMinutesChange(event.target.value)}
+                        onChange={(event) =>
+                          handleMinutesChange(event.target.value)
+                        }
                         placeholder="0"
                         disabled={disabled}
                         className="w-16 h-8"
@@ -526,7 +627,9 @@ export function ScenarioTimeLimits({
                         min={0}
                         max={59}
                         value={seconds ?? ""}
-                        onChange={(event) => handleSecondsChange(event.target.value)}
+                        onChange={(event) =>
+                          handleSecondsChange(event.target.value)
+                        }
                         placeholder="0"
                         disabled={disabled}
                         className="w-16 h-8"

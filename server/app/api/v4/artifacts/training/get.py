@@ -35,6 +35,7 @@ from app.api.v4.auth.profile import get_auth_profile_internal
 from app.api.v4.resources.cohorts.get import get_cohorts_internal
 from app.api.v4.resources.personas.get import get_personas_internal
 from app.api.v4.resources.rubrics.get import get_rubrics_internal
+from app.api.v4.resources.scenarios.get import get_scenarios_internal
 from app.api.v4.resources.simulations.get import get_simulations_internal
 from app.api.v4.resources.standard_groups.get import get_standard_groups_internal
 from app.api.v4.resources.standards.search import search_standards_internal
@@ -252,7 +253,7 @@ async def get_training_internal(
 
     # Collect IDs for batch resource fetching
     simulation_ids: list[UUID] = []
-    all_persona_ids: set[UUID] = set()
+    all_scenario_ids: set[UUID] = set()
     all_cohort_ids: set[UUID] = set()
     all_rubric_ids: set[UUID] = set()
     simulation_cohort_map: dict[UUID, list[UUID]] = {}
@@ -261,8 +262,9 @@ async def get_training_internal(
         for item in context.items:
             if item.simulation_id:
                 simulation_ids.append(item.simulation_id)
-            if item.persona_ids:
-                all_persona_ids.update(item.persona_ids)
+            # item.persona_ids is for user personas (from mv_training), not scenario personas
+            if item.scenario_ids:
+                all_scenario_ids.update(item.scenario_ids)
             if item.cohort_ids:
                 all_cohort_ids.update(item.cohort_ids)
                 if item.simulation_id:
@@ -272,6 +274,7 @@ async def get_training_internal(
 
     cohort_ids_list = list(all_cohort_ids)
     rubric_ids_list = list(all_rubric_ids)
+    scenario_ids_list = list(all_scenario_ids)
 
     # --- Phase 2a: Parallel resource hydration + conditional instructional data ---
     async def fetch_simulations() -> list:
@@ -280,10 +283,12 @@ async def get_training_internal(
                 c, simulation_ids, bypass_cache=bypass_cache
             )
 
-    async def fetch_personas() -> list:
+    async def fetch_scenarios() -> list:
+        if not scenario_ids_list:
+            return []
         async with pool.acquire() as c:
-            return await get_personas_internal(
-                c, list(all_persona_ids), bypass_cache=bypass_cache
+            return await get_scenarios_internal(
+                c, scenario_ids_list, bypass_cache=bypass_cache
             )
 
     async def fetch_cohorts() -> list:
@@ -317,7 +322,7 @@ async def get_training_internal(
 
     tasks_2a: list[Any] = [
         fetch_simulations(),
-        fetch_personas(),
+        fetch_scenarios(),
         fetch_cohorts(),
         fetch_rubrics(),
     ]
@@ -328,7 +333,7 @@ async def get_training_internal(
     results_2a = await asyncio.gather(*tasks_2a)
 
     sim_list = results_2a[0]
-    persona_list = results_2a[1]
+    scenario_list = results_2a[1]
     cohort_list = results_2a[2]
     rubric_list = results_2a[3]
 
@@ -337,6 +342,21 @@ async def get_training_internal(
     if is_instructional:
         cohort_facts_items = results_2a[4]
         cohort_member_profiles = results_2a[5]
+
+    # Derive persona IDs from scenarios (persona_ids on scenarios_resource)
+    scenario_map = {s.scenario_id: s for s in scenario_list if s.scenario_id}
+    all_persona_ids: set[UUID] = set()
+    for s in scenario_list:
+        if s.persona_ids:
+            all_persona_ids.update(s.persona_ids)
+
+    # Fetch personas sequentially (depends on scenario data)
+    persona_list: list = []
+    if all_persona_ids:
+        async with pool.acquire() as c:
+            persona_list = await get_personas_internal(
+                c, list(all_persona_ids), bypass_cache=bypass_cache
+            )
 
     # --- Phase 2b: Sequential — derive standard_group_ids from rubrics ---
     rubric_map = {r.id: r for r in rubric_list if r.id}
@@ -401,14 +421,18 @@ async def get_training_internal(
             highest_score_percent = ps.get("highest_score_percent")
             has_passed = ps.get("has_passed", False)
 
-            # Persona color/icon from first persona
+            # Persona color/icon — derived from first scenario's first persona
             color: str | None = None
             icon: str | None = None
-            if item.persona_ids:
-                persona = persona_map.get(item.persona_ids[0])
-                if persona:
-                    color = persona.color
-                    icon = persona.icon
+            if item.scenario_ids:
+                for sid in item.scenario_ids:
+                    scenario = scenario_map.get(sid)
+                    if scenario and scenario.persona_ids:
+                        persona = persona_map.get(scenario.persona_ids[0])
+                        if persona:
+                            color = persona.color
+                            icon = persona.icon
+                            break
 
             # Derive standard_group_ids from rubrics
             item_sg_ids: list[UUID] = []

@@ -21259,6 +21259,11 @@ export interface components {
              * Format: uuid
              */
             training_bundle_entry_id: string;
+            /**
+             * Infinite Mode
+             * @default false
+             */
+            infinite_mode: boolean;
         };
         /** CreateAttemptResponse */
         CreateAttemptResponse: {

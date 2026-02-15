@@ -23,11 +23,19 @@ import { Check, Loader2, Sparkles, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 type CreateDraftParametersIn = InputOf<"/api/v4/resources/parameters", "post">;
-type CreateDraftParametersOut = OutputOf<"/api/v4/resources/parameters", "post">;
+type CreateDraftParametersOut = OutputOf<
+  "/api/v4/resources/parameters",
+  "post"
+>;
 
 // Derive resource item type from the GET endpoint response
-type ParameterGetResponse = OutputOf<"/api/v4/resources/parameters/get", "post">;
-export type ParameterResourceItem = NonNullable<ParameterGetResponse["items"]>[number];
+type ParameterGetResponse = OutputOf<
+  "/api/v4/resources/parameters/get",
+  "post"
+>;
+export type ParameterResourceItem = NonNullable<
+  ParameterGetResponse["items"]
+>[number];
 
 export interface ParametersItem {
   id: string;
@@ -61,14 +69,18 @@ export interface ParametersProps {
   onShowSelectedChange?: (value: boolean) => void; // Callback when show selected filter changes
   videoEnabled?: boolean; // Whether video mode is enabled (for filtering)
   // AI diff view props
-  aiParameterResources?: Pick<ParameterResourceItem, "parameter_id" | "name">[] | null;
+  aiParameterResources?:
+    | Pick<ParameterResourceItem, "parameter_id" | "name">[]
+    | null;
   onAccept?: () => void;
   onReject?: () => void;
   onGenerationComplete?: () => void;
   /** When false, skip automatic resource creation (manual save mode) */
   isAutosaveEnabled?: boolean;
   /** Register a flush callback with parent for manual save - returns created ID */
-  registerFlush?: (flush: () => Promise<{ parameter_id: string | null } | void>) => void;
+  registerFlush?: (
+    flush: () => Promise<{ parameter_id: string | null } | void>,
+  ) => void;
 }
 
 export function Parameters({
@@ -131,16 +143,23 @@ export function Parameters({
   }, [allParameters, videoEnabled]);
   const suggestionsList = useMemo(
     () => parameter_suggestions ?? [],
-    [parameter_suggestions]
+    [parameter_suggestions],
   );
 
   // Internal socket-based AI suggestion handling
   const { socket: aiSocket, isConnected: aiIsConnected } = useSocket();
-  const [internalAiParameterResources, setInternalAiParameterResources] = useState<Pick<ParameterResourceItem, "parameter_id" | "name">[] | null>(null);
+  const [internalAiParameterResources, setInternalAiParameterResources] =
+    useState<Pick<ParameterResourceItem, "parameter_id" | "name">[] | null>(
+      null,
+    );
 
   useEffect(() => {
     if (!aiSocket || !aiIsConnected) return;
-    const handleResourceComplete = (data: { group_id?: string; parameter_id?: string | null; name?: string | null }) => {
+    const handleResourceComplete = (data: {
+      group_id?: string;
+      parameter_id?: string | null;
+      name?: string | null;
+    }) => {
       if (data.group_id !== group_id) return;
 
       setInternalAiParameterResources([
@@ -158,7 +177,8 @@ export function Parameters({
     };
   }, [aiSocket, aiIsConnected, group_id, onGenerationComplete]);
 
-  const effectiveAiParameterResources = internalAiParameterResources ?? aiParameterResources ?? null;
+  const effectiveAiParameterResources =
+    internalAiParameterResources ?? aiParameterResources ?? null;
 
   // AI suggestion state
   const showDiff = !!effectiveAiParameterResources?.length;
@@ -167,9 +187,9 @@ export function Parameters({
       new Set(
         effectiveAiParameterResources
           ?.map((p) => p.parameter_id)
-          .filter(Boolean) as string[]
+          .filter(Boolean) as string[],
       ),
-    [effectiveAiParameterResources]
+    [effectiveAiParameterResources],
   );
 
   // Accept AI suggestion - add AI-suggested parameters to selection
@@ -209,16 +229,22 @@ export function Parameters({
   const createdParametersIdsRef = useRef<Set<string>>(new Set());
 
   // Ref for flush function (stable reference for registerFlush)
-  const flushRef = useRef<(() => Promise<{ parameter_id: string | null } | void>) | undefined>(undefined);
+  const flushRef = useRef<
+    (() => Promise<{ parameter_id: string | null } | void>) | undefined
+  >(undefined);
 
   // Update flush function when dependencies change
-  flushRef.current = async (): Promise<{ parameter_id: string | null } | void> => {
+  flushRef.current = async (): Promise<{
+    parameter_id: string | null;
+  } | void> => {
     // Parameters component uses multi-select - flush creates resources for any uncreated selections
     if (!createParametersAction || !group_id) {
       return;
     }
 
-    const uncreatedIds = ids.filter(id => !createdParametersIdsRef.current.has(id));
+    const uncreatedIds = ids.filter(
+      (id) => !createdParametersIdsRef.current.has(id),
+    );
     for (const parameterId of uncreatedIds) {
       try {
         await createParametersAction({
@@ -231,7 +257,10 @@ export function Parameters({
         createdParametersIdsRef.current.add(parameterId);
       } catch (error) {
         // eslint-disable-next-line no-console
-        console.error(`Failed to create parameters resource for ${parameterId}:`, error);
+        console.error(
+          `Failed to create parameters resource for ${parameterId}:`,
+          error,
+        );
       }
     }
 
@@ -286,7 +315,7 @@ export function Parameters({
   // Check if a parameters is suggested
   const isSuggested = useCallback(
     (parametersId: string) => suggestionsList.includes(parametersId),
-    [suggestionsList]
+    [suggestionsList],
   );
 
   const handleSelect = useCallback(
@@ -319,7 +348,7 @@ export function Parameters({
             // eslint-disable-next-line no-console
             console.error(
               `Failed to create parameters resource for ${parametersId}:`,
-              error
+              error,
             );
             // Don't block UI - still update selection
           }
@@ -328,7 +357,7 @@ export function Parameters({
 
       onChange(newIds);
     },
-    [ids, onChange, createParametersAction, group_id, isAutosaveEnabled]
+    [ids, onChange, createParametersAction, group_id, isAutosaveEnabled],
   );
 
   // Check if any parameters resource is generated (must be before early return)
@@ -428,44 +457,48 @@ export function Parameters({
           const isAiSuggested = showDiff && aiSuggestedIds.has(item.id);
 
           return (
-          <div
-            className={cn(
-              "relative flex flex-col gap-3 p-4 rounded-xl border bg-card text-card-foreground shadow-sm transition-all text-left",
-              "hover:shadow-md hover:bg-accent/50",
-              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-              isSelected && "ring-2 ring-primary bg-accent",
-              isAiSuggested && !isSelected && "ring-2 ring-success bg-success/10"
-            )}
-          >
-            {isSelected && (
-              <div className="absolute top-2 right-2 z-10 h-6 w-6 bg-primary rounded-full flex items-center justify-center">
-                <Check className="h-3.5 w-3.5 text-primary-foreground" />
-              </div>
-            )}
-
-            {/* AI suggested badge - top right */}
-            {isAiSuggested && !isSelected && (
-              <div className="absolute top-2 right-2 z-10 px-1.5 py-0.5 bg-success/20 text-success text-xs rounded font-medium">
-                AI Suggested
-              </div>
-            )}
-
-            {isSuggested(item.id) && !isSelected && !isAiSuggested && (
-              <div className="absolute top-2 right-2 z-10 px-1.5 py-0.5 bg-primary/10 text-primary text-xs rounded">
-                Suggested
-              </div>
-            )}
-
-            <div className="flex-1 min-w-0">
-              <h3 className="font-medium text-sm leading-tight">{item.name}</h3>
-              {item.description && (
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  {item.description}
-                </p>
+            <div
+              className={cn(
+                "relative flex flex-col gap-3 p-4 rounded-xl border bg-card text-card-foreground shadow-sm transition-all text-left",
+                "hover:shadow-md hover:bg-accent/50",
+                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+                isSelected && "ring-2 ring-primary bg-accent",
+                isAiSuggested &&
+                  !isSelected &&
+                  "ring-2 ring-success bg-success/10",
               )}
+            >
+              {isSelected && (
+                <div className="absolute top-2 right-2 z-10 h-6 w-6 bg-primary rounded-full flex items-center justify-center">
+                  <Check className="h-3.5 w-3.5 text-primary-foreground" />
+                </div>
+              )}
+
+              {/* AI suggested badge - top right */}
+              {isAiSuggested && !isSelected && (
+                <div className="absolute top-2 right-2 z-10 px-1.5 py-0.5 bg-success/20 text-success text-xs rounded font-medium">
+                  AI Suggested
+                </div>
+              )}
+
+              {isSuggested(item.id) && !isSelected && !isAiSuggested && (
+                <div className="absolute top-2 right-2 z-10 px-1.5 py-0.5 bg-primary/10 text-primary text-xs rounded">
+                  Suggested
+                </div>
+              )}
+
+              <div className="flex-1 min-w-0">
+                <h3 className="font-medium text-sm leading-tight">
+                  {item.name}
+                </h3>
+                {item.description && (
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    {item.description}
+                  </p>
+                )}
+              </div>
             </div>
-          </div>
-        );
+          );
         }}
         emptyMessage="No parameters found."
         disabled={disabled}

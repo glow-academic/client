@@ -16,12 +16,26 @@ import {
 } from "@/components/ui/tooltip";
 import type { OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
-import { ArrowDown, ArrowUp, Check, GripVertical, Loader2, Sparkles, X } from "lucide-react";
+import { useSocket } from "@/contexts/socket-context";
+import {
+  ArrowDown,
+  ArrowUp,
+  Check,
+  GripVertical,
+  Loader2,
+  Sparkles,
+  X,
+} from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 // Derive resource item type from the GET endpoint response
-type SimulationPositionGetResponse = OutputOf<"/api/v4/resources/simulation_positions/get", "post">;
-export type SimulationPositionResourceItem = NonNullable<SimulationPositionGetResponse["items"]>[number];
+type SimulationPositionGetResponse = OutputOf<
+  "/api/v4/resources/simulation_positions/get",
+  "post"
+>;
+export type SimulationPositionResourceItem = NonNullable<
+  SimulationPositionGetResponse["items"]
+>[number];
 
 export interface SimulationPositionItem {
   simulation_id: string;
@@ -58,17 +72,27 @@ export interface SimulationPositionsProps {
   showAiGenerate?: boolean; // Whether to show AI generate button (computed server-side)
   createSimulationPositionsAction?:
     | ((input: {
-        body: { group_id: string; simulation_id: string; value: number; mcp: boolean };
+        body: {
+          group_id: string;
+          simulation_id: string;
+          value: number;
+          mcp: boolean;
+        };
       }) => Promise<unknown>)
     | undefined;
   // AI diff view props
-  aiSimulationPositionResources?: Pick<SimulationPositionResourceItem, "id" | "simulation_id" | "value">[] | null;
+  aiSimulationPositionResources?:
+    | Pick<SimulationPositionResourceItem, "id" | "simulation_id" | "value">[]
+    | null;
   onAccept?: () => void;
   onReject?: () => void;
+  onGenerationComplete?: () => void;
   /** When false, skip automatic resource creation (manual save mode) */
   isAutosaveEnabled?: boolean;
   /** Register a flush callback with parent for manual save - returns created positions */
-  registerFlush?: (flush: () => Promise<{ simulation_position_ids: string[] | null } | void>) => void;
+  registerFlush?: (
+    flush: () => Promise<{ simulation_position_ids: string[] | null } | void>,
+  ) => void;
 }
 
 export function SimulationPositions({
@@ -93,18 +117,68 @@ export function SimulationPositions({
   aiSimulationPositionResources,
   onAccept,
   onReject,
+  onGenerationComplete,
   isAutosaveEnabled = true,
   registerFlush,
 }: SimulationPositionsProps) {
   const show = show_simulation_positions ?? false;
   const selectedSimulationIds = useMemo(
     () => simulation_ids ?? [],
-    [simulation_ids]
+    [simulation_ids],
   );
   const currentPositions = useMemo(
     () => simulation_positions ?? [],
-    [simulation_positions]
+    [simulation_positions],
   );
+
+  // Socket-based AI suggestion handling
+  const { socket: aiSocket, isConnected: aiIsConnected } = useSocket();
+  const [
+    internalAiSimulationPositionResources,
+    setInternalAiSimulationPositionResources,
+  ] = useState<
+    | Pick<SimulationPositionResourceItem, "id" | "simulation_id" | "value">[]
+    | null
+  >(null);
+
+  useEffect(() => {
+    if (!aiSocket || !aiIsConnected) return;
+    const handleResourceComplete = (data: {
+      group_id?: string;
+      id?: string | null;
+      simulation_id?: string | null;
+      value?: number | null;
+    }) => {
+      if (group_id && data.group_id !== group_id) return;
+      if (data.id) {
+        setInternalAiSimulationPositionResources([
+          {
+            id: data.id,
+            simulation_id: data.simulation_id ?? null,
+            value: data.value ?? null,
+          },
+        ]);
+      }
+      onGenerationComplete?.();
+    };
+    aiSocket.on(
+      "simulation_positions_generation_complete",
+      handleResourceComplete,
+    );
+    return () => {
+      aiSocket.off(
+        "simulation_positions_generation_complete",
+        handleResourceComplete,
+      );
+    };
+  }, [aiSocket, aiIsConnected, group_id, onGenerationComplete]);
+
+  // Effective AI resources: internal (socket) takes priority, then prop fallback
+  const effectiveAiSimulationPositionResources =
+    internalAiSimulationPositionResources ??
+    aiSimulationPositionResources ??
+    null;
+
   const simulationLabels = useMemo(() => {
     const normalizeDescription = (description?: string | null) => {
       const trimmed = description?.trim() || "";
@@ -112,7 +186,11 @@ export function SimulationPositions({
       if (trimmed === "0") return null;
       if (/^\d+$/.test(trimmed)) return null;
       const trailingZeroMatch = trimmed.match(/^(.*)\s0$/);
-      if (trailingZeroMatch && trailingZeroMatch[1] && !/\d/.test(trailingZeroMatch[1])) {
+      if (
+        trailingZeroMatch &&
+        trailingZeroMatch[1] &&
+        !/\d/.test(trailingZeroMatch[1])
+      ) {
         const withoutTrailingZero = trailingZeroMatch[1].trim();
         return withoutTrailingZero || null;
       }
@@ -125,7 +203,10 @@ export function SimulationPositions({
         const name = sim.name?.trim() || null;
         const description = normalizeDescription(sim.description);
         if (name || description) {
-          map.set(sim.simulation_id, name || description || "Untitled simulation");
+          map.set(
+            sim.simulation_id,
+            name || description || "Untitled simulation",
+          );
         }
       }
     });
@@ -136,7 +217,7 @@ export function SimulationPositions({
         const description = normalizeDescription(sim.description);
         map.set(
           sim.simulation_id,
-          name || description || "Untitled simulation"
+          name || description || "Untitled simulation",
         );
       }
     });
@@ -161,11 +242,14 @@ export function SimulationPositions({
         map.set(simulationId, existingPosition ?? index + 1);
       });
       return map;
-    }
+    },
   );
 
   // Ref for flush function (stable reference for registerFlush)
-  const flushRef = useRef<(() => Promise<{ simulation_position_ids: string[] | null } | void>) | undefined>(undefined);
+  const flushRef = useRef<
+    | (() => Promise<{ simulation_position_ids: string[] | null } | void>)
+    | undefined
+  >(undefined);
 
   useEffect(() => {
     const newMap = new Map<string, number>();
@@ -177,14 +261,16 @@ export function SimulationPositions({
   }, [selectedSimulationIds, positionMap]);
 
   // Update flush function when dependencies change
-  flushRef.current = async (): Promise<{ simulation_position_ids: string[] | null } | void> => {
+  flushRef.current = async (): Promise<{
+    simulation_position_ids: string[] | null;
+  } | void> => {
     // Skip if no action available
     if (!createSimulationPositionsAction || !group_id) {
       return;
     }
 
     const positionsArray: SimulationPositionItem[] = Array.from(
-      localPositions.entries()
+      localPositions.entries(),
     ).map(([sid, value]) => ({
       simulation_id: sid,
       value,
@@ -226,7 +312,7 @@ export function SimulationPositions({
   const emitPositions = useCallback(
     (updated: Map<string, number>) => {
       const positionsArray: SimulationPositionItem[] = Array.from(
-        updated.entries()
+        updated.entries(),
       ).map(([sid, value]) => ({
         simulation_id: sid,
         value,
@@ -235,7 +321,12 @@ export function SimulationPositions({
       onChange(positionsArray);
 
       // Create resource entries for each position - only when autosave is enabled
-      if (isAutosaveEnabled && createSimulationPositionsAction && create_tool_id && group_id) {
+      if (
+        isAutosaveEnabled &&
+        createSimulationPositionsAction &&
+        create_tool_id &&
+        group_id
+      ) {
         for (const pos of positionsArray) {
           createSimulationPositionsAction({
             body: {
@@ -248,13 +339,19 @@ export function SimulationPositions({
             // eslint-disable-next-line no-console
             console.error(
               `Failed to create simulation position resource for ${pos.simulation_id}:`,
-              error
+              error,
             );
           });
         }
       }
     },
-    [onChange, createSimulationPositionsAction, create_tool_id, group_id, isAutosaveEnabled]
+    [
+      onChange,
+      createSimulationPositionsAction,
+      create_tool_id,
+      group_id,
+      isAutosaveEnabled,
+    ],
   );
 
   const updatePositions = useCallback(
@@ -265,7 +362,7 @@ export function SimulationPositions({
         return updated;
       });
     },
-    [emitPositions]
+    [emitPositions],
   );
 
   const handlePositionChange = useCallback(
@@ -275,7 +372,7 @@ export function SimulationPositions({
         return prev;
       });
     },
-    [updatePositions]
+    [updatePositions],
   );
 
   const handleMoveUp = useCallback(
@@ -295,7 +392,7 @@ export function SimulationPositions({
         return prev;
       });
     },
-    [updatePositions]
+    [updatePositions],
   );
 
   const handleMoveDown = useCallback(
@@ -316,7 +413,7 @@ export function SimulationPositions({
         return prev;
       });
     },
-    [updatePositions]
+    [updatePositions],
   );
 
   const sortedSimulations = useMemo(() => {
@@ -326,24 +423,24 @@ export function SimulationPositions({
   }, [localPositions]);
 
   // AI suggestion state
-  const showDiff = !!aiSimulationPositionResources?.length;
+  const showDiff = !!effectiveAiSimulationPositionResources?.length;
 
   // Set of AI-suggested simulation IDs for styling
   const aiSuggestedIds = useMemo(
     () =>
       new Set(
-        aiSimulationPositionResources
+        effectiveAiSimulationPositionResources
           ?.map((r) => r.simulation_id)
-          .filter(Boolean) as string[]
+          .filter(Boolean) as string[],
       ),
-    [aiSimulationPositionResources]
+    [effectiveAiSimulationPositionResources],
   );
 
   // Accept AI suggestion - apply AI-suggested positions
   const handleAccept = useCallback(() => {
-    if (!aiSimulationPositionResources?.length) return;
+    if (!effectiveAiSimulationPositionResources?.length) return;
     const newPositions = new Map<string, number>();
-    aiSimulationPositionResources.forEach((r) => {
+    effectiveAiSimulationPositionResources.forEach((r) => {
       if (r.simulation_id && r.value != null) {
         newPositions.set(r.simulation_id, r.value);
       }
@@ -357,11 +454,13 @@ export function SimulationPositions({
       emitPositions(merged);
       return merged;
     });
+    setInternalAiSimulationPositionResources(null);
     onAccept?.();
-  }, [aiSimulationPositionResources, emitPositions, onAccept]);
+  }, [effectiveAiSimulationPositionResources, emitPositions, onAccept]);
 
   // Reject AI suggestion - just clear the pending state
   const handleReject = useCallback(() => {
+    setInternalAiSimulationPositionResources(null);
     onReject?.();
   }, [onReject]);
 
@@ -444,28 +543,35 @@ export function SimulationPositions({
         </div>
       )}
       {/* AI-suggested positions preview */}
-      {showDiff && aiSimulationPositionResources && aiSimulationPositionResources.length > 0 && (
-        <div className="mb-4 space-y-2">
-          <p className="text-sm font-medium text-success">AI Suggested Positions</p>
-          <div className="space-y-2">
-            {aiSimulationPositionResources.map((item, idx) => (
-              <div
-                key={item.id || item.simulation_id || idx}
-                className={cn(
-                  "flex items-center gap-2 p-2 rounded-lg border-2 border-success bg-success/10"
-                )}
-              >
-                <GripVertical className="h-4 w-4 text-muted-foreground" />
-                <Label className="text-sm w-56 truncate">
-                  {simulationLabels.get(item.simulation_id || "") ?? "Untitled simulation"}
-                </Label>
-                <Label className="text-sm w-20">Position:</Label>
-                <span className="text-sm font-medium">{item.value ?? "-"}</span>
-              </div>
-            ))}
+      {showDiff &&
+        effectiveAiSimulationPositionResources &&
+        effectiveAiSimulationPositionResources.length > 0 && (
+          <div className="mb-4 space-y-2">
+            <p className="text-sm font-medium text-success">
+              AI Suggested Positions
+            </p>
+            <div className="space-y-2">
+              {effectiveAiSimulationPositionResources.map((item, idx) => (
+                <div
+                  key={item.id || item.simulation_id || idx}
+                  className={cn(
+                    "flex items-center gap-2 p-2 rounded-lg border-2 border-success bg-success/10",
+                  )}
+                >
+                  <GripVertical className="h-4 w-4 text-muted-foreground" />
+                  <Label className="text-sm w-56 truncate">
+                    {simulationLabels.get(item.simulation_id || "") ??
+                      "Untitled simulation"}
+                  </Label>
+                  <Label className="text-sm w-20">Position:</Label>
+                  <span className="text-sm font-medium">
+                    {item.value ?? "-"}
+                  </span>
+                </div>
+              ))}
+            </div>
           </div>
-        </div>
-      )}
+        )}
       <div className="space-y-2">
         {sortedSimulations.map((simulationId) => {
           const position = localPositions.get(simulationId) || 1;
@@ -478,7 +584,7 @@ export function SimulationPositions({
               key={simulationId}
               className={cn(
                 "flex items-center gap-2 p-2 border rounded-md",
-                isAiSuggested && "ring-2 ring-success bg-success/5"
+                isAiSuggested && "ring-2 ring-success bg-success/5",
               )}
             >
               <GripVertical className="h-4 w-4 text-muted-foreground" />

@@ -29,6 +29,7 @@ router = APIRouter()
 
 class CreateAttemptRequest(BaseModel):
     training_bundle_entry_id: UUID
+    infinite_mode: bool = False
 
 
 class CreateAttemptResponse(BaseModel):
@@ -57,6 +58,7 @@ async def create_attempt(
         params = CreateAttemptSqlParams(
             p_profile_id=profile_id,
             p_training_bundle_entry_id=request.training_bundle_entry_id,
+            p_infinite_mode=request.infinite_mode,
         )
 
         row = cast(

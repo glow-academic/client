@@ -17,7 +17,15 @@ import {
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 import { useSocket } from "@/contexts/socket-context";
-import { Check, ChevronLeft, ChevronRight, GripVertical, Loader2, Sparkles, X } from "lucide-react";
+import {
+  Check,
+  ChevronLeft,
+  ChevronRight,
+  GripVertical,
+  Loader2,
+  Sparkles,
+  X,
+} from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 type CreateDraftScenarioPositionsIn = InputOf<
@@ -30,8 +38,13 @@ type CreateDraftScenarioPositionsOut = OutputOf<
 >;
 
 // Derive resource item type from the GET endpoint response
-type ScenarioPositionGetResponse = OutputOf<"/api/v4/resources/scenario_positions/get", "post">;
-export type ScenarioPositionResourceItem = NonNullable<ScenarioPositionGetResponse["items"]>[number];
+type ScenarioPositionGetResponse = OutputOf<
+  "/api/v4/resources/scenario_positions/get",
+  "post"
+>;
+export type ScenarioPositionResourceItem = NonNullable<
+  ScenarioPositionGetResponse["items"]
+>[number];
 
 export interface ScenarioPositionItem {
   simulation_id: string;
@@ -73,7 +86,7 @@ export interface ScenarioPositionsProps {
   create_tool_id?: string | null; // Tool ID for AI generation/creation
   createScenarioPositionsAction?:
     | ((
-        input: CreateDraftScenarioPositionsIn
+        input: CreateDraftScenarioPositionsIn,
       ) => Promise<CreateDraftScenarioPositionsOut>)
     | undefined;
   onPositionIdsChange?: (ids: string[]) => void;
@@ -83,9 +96,13 @@ export interface ScenarioPositionsProps {
   /** When false, skip automatic resource creation (manual save mode) */
   isAutosaveEnabled?: boolean;
   /** Register a flush callback with parent for manual save - returns created IDs */
-  registerFlush?: (flush: () => Promise<{ scenario_position_ids: string[] } | void>) => void;
+  registerFlush?: (
+    flush: () => Promise<{ scenario_position_ids: string[] } | void>,
+  ) => void;
   // AI diff view props
-  aiScenarioPositionResources?: Pick<ScenarioPositionResourceItem, "id" | "scenario_id" | "value">[] | null;
+  aiScenarioPositionResources?:
+    | Pick<ScenarioPositionResourceItem, "id" | "scenario_id" | "value">[]
+    | null;
   onAccept?: () => void;
   onReject?: () => void;
   onGenerationComplete?: () => void;
@@ -123,14 +140,17 @@ export function ScenarioPositions({
   onGenerationComplete,
 }: ScenarioPositionsProps) {
   const show = show_scenario_positions ?? false;
-  const allPositions = useMemo(() => scenario_positions ?? [], [scenario_positions]);
+  const allPositions = useMemo(
+    () => scenario_positions ?? [],
+    [scenario_positions],
+  );
   const currentPositions = useMemo(
     () => scenario_position_resources ?? [],
-    [scenario_position_resources]
+    [scenario_position_resources],
   );
   const scenarioPositionIds = useMemo(
     () => scenario_position_ids ?? [],
-    [scenario_position_ids]
+    [scenario_position_ids],
   );
   const scenarioLabelMap = useMemo(() => {
     const map = new Map<string, string>();
@@ -160,7 +180,10 @@ export function ScenarioPositions({
 
   // Socket-based AI suggestion handling
   const { socket: aiSocket, isConnected: aiIsConnected } = useSocket();
-  const [internalAiScenarioPositionResources, setInternalAiScenarioPositionResources] = useState<
+  const [
+    internalAiScenarioPositionResources,
+    setInternalAiScenarioPositionResources,
+  ] = useState<
     Pick<ScenarioPositionResourceItem, "id" | "scenario_id" | "value">[] | null
   >(null);
 
@@ -175,14 +198,24 @@ export function ScenarioPositions({
       if (group_id && data.group_id !== group_id) return;
       if (data.id) {
         setInternalAiScenarioPositionResources([
-          { id: data.id, scenario_id: data.scenario_id ?? null, value: data.value ?? null },
+          {
+            id: data.id,
+            scenario_id: data.scenario_id ?? null,
+            value: data.value ?? null,
+          },
         ]);
       }
       onGenerationComplete?.();
     };
-    aiSocket.on("scenario_positions_generation_complete", handleResourceComplete);
+    aiSocket.on(
+      "scenario_positions_generation_complete",
+      handleResourceComplete,
+    );
     return () => {
-      aiSocket.off("scenario_positions_generation_complete", handleResourceComplete);
+      aiSocket.off(
+        "scenario_positions_generation_complete",
+        handleResourceComplete,
+      );
     };
   }, [aiSocket, aiIsConnected, group_id, onGenerationComplete]);
 
@@ -220,7 +253,9 @@ export function ScenarioPositions({
   const createdPositionKeysRef = useRef<Set<string>>(new Set());
 
   // Ref for flush function (stable reference for registerFlush)
-  const flushRef = useRef<(() => Promise<{ scenario_position_ids: string[] } | void>) | null>(null);
+  const flushRef = useRef<
+    (() => Promise<{ scenario_position_ids: string[] } | void>) | null
+  >(null);
 
   // Initialize positionIdsByScenario from server resources
   // Use the resource's own id field, NOT index-based correlation with scenarioPositionIds
@@ -261,7 +296,9 @@ export function ScenarioPositions({
   }, [positionIdsByScenario, scenario_ids]);
 
   // Update flush function - returns current IDs from local state
-  flushRef.current = async (): Promise<{ scenario_position_ids: string[] } | void> => {
+  flushRef.current = async (): Promise<{
+    scenario_position_ids: string[];
+  } | void> => {
     const ids = scenario_ids
       .map((scenarioId) => positionIdsByScenario.get(scenarioId))
       .filter((value): value is string => Boolean(value));
@@ -295,7 +332,7 @@ export function ScenarioPositions({
         map.set(scenarioId, existingPosition ?? index + 1);
       });
       return map;
-    }
+    },
   );
 
   // Update local positions when scenario_ids or currentPositions change
@@ -326,7 +363,7 @@ export function ScenarioPositions({
 
       // Convert to array format for parent
       const positionsArray: ScenarioPositionItem[] = Array.from(
-        updated.entries()
+        updated.entries(),
       ).map(([sid, value]) => ({
         simulation_id: simulation_id || "",
         scenario_id: sid,
@@ -386,7 +423,7 @@ export function ScenarioPositions({
       onPositionIdsChange,
       scenario_ids,
       artifactIdMap,
-    ]
+    ],
   );
 
   const handleMoveLeft = useCallback(
@@ -396,14 +433,14 @@ export function ScenarioPositions({
         handlePositionChange(scenarioId, currentPos - 1);
         // Swap with scenario at position - 1
         const swapScenario = Array.from(localPositions.entries()).find(
-          ([_, pos]) => pos === currentPos - 1
+          ([_, pos]) => pos === currentPos - 1,
         );
         if (swapScenario) {
           handlePositionChange(swapScenario[0], currentPos);
         }
       }
     },
-    [localPositions, handlePositionChange]
+    [localPositions, handlePositionChange],
   );
 
   const handleMoveRight = useCallback(
@@ -414,14 +451,14 @@ export function ScenarioPositions({
         handlePositionChange(scenarioId, currentPos + 1);
         // Swap with scenario at position + 1
         const swapScenario = Array.from(localPositions.entries()).find(
-          ([_, pos]) => pos === currentPos + 1
+          ([_, pos]) => pos === currentPos + 1,
         );
         if (swapScenario) {
           handlePositionChange(swapScenario[0], currentPos);
         }
       }
     },
-    [localPositions, handlePositionChange]
+    [localPositions, handlePositionChange],
   );
 
   // Sort scenarios by position for display
@@ -438,9 +475,9 @@ export function ScenarioPositions({
       new Set(
         effectiveAiScenarioPositionResources
           ?.map((r) => r.scenario_id)
-          .filter(Boolean) as string[]
+          .filter(Boolean) as string[],
       ),
-    [effectiveAiScenarioPositionResources]
+    [effectiveAiScenarioPositionResources],
   );
 
   // Accept AI suggestion - apply AI-suggested positions
@@ -456,7 +493,7 @@ export function ScenarioPositions({
     setLocalPositions(newPositions);
     // Emit changes
     const positionsArray: ScenarioPositionItem[] = Array.from(
-      newPositions.entries()
+      newPositions.entries(),
     ).map(([sid, value]) => ({
       simulation_id: simulation_id || "",
       scenario_id: sid,
@@ -464,11 +501,19 @@ export function ScenarioPositions({
       generated: false,
     }));
     onChange(positionsArray);
+    setInternalAiScenarioPositionResources(null);
     onAccept?.();
-  }, [aiScenarioPositionResources, localPositions, simulation_id, onChange, onAccept]);
+  }, [
+    effectiveAiScenarioPositionResources,
+    localPositions,
+    simulation_id,
+    onChange,
+    onAccept,
+  ]);
 
   // Reject AI suggestion - just clear the pending state
   const handleReject = useCallback(() => {
+    setInternalAiScenarioPositionResources(null);
     onReject?.();
   }, [onReject]);
 
@@ -552,45 +597,51 @@ export function ScenarioPositions({
         </div>
       )}
       {/* AI-suggested positions preview */}
-      {showDiff && aiScenarioPositionResources && aiScenarioPositionResources.length > 0 && (
-        <div className="mb-4 space-y-2">
-          <p className="text-sm font-medium text-success">AI Suggested Positions</p>
-          <div className="flex gap-3 overflow-x-auto py-2 pb-3 px-2">
-            {aiScenarioPositionResources.map((item, idx) => {
-              const labelText = item.scenario_id
-                ? scenarioLabelMap.get(item.scenario_id) ?? "Untitled scenario"
-                : "Untitled scenario";
-              return (
-                <div
-                  key={item.id || item.scenario_id || idx}
-                  className={cn(
-                    "p-3 rounded-lg border-2 border-success bg-success/10",
-                    "text-sm h-[88px] w-[180px] flex-shrink-0"
-                  )}
-                >
-                  <div className="font-medium">{labelText}</div>
-                  <div className="text-xs text-muted-foreground mt-1">
-                    Position: {item.value ?? "N/A"}
+      {showDiff &&
+        effectiveAiScenarioPositionResources &&
+        effectiveAiScenarioPositionResources.length > 0 && (
+          <div className="mb-4 space-y-2">
+            <p className="text-sm font-medium text-success">
+              AI Suggested Positions
+            </p>
+            <div className="flex gap-3 overflow-x-auto py-2 pb-3 px-2">
+              {effectiveAiScenarioPositionResources.map((item, idx) => {
+                const labelText = item.scenario_id
+                  ? (scenarioLabelMap.get(item.scenario_id) ??
+                    "Untitled scenario")
+                  : "Untitled scenario";
+                return (
+                  <div
+                    key={item.id || item.scenario_id || idx}
+                    className={cn(
+                      "p-3 rounded-lg border-2 border-success bg-success/10",
+                      "text-sm h-[88px] w-[180px] flex-shrink-0",
+                    )}
+                  >
+                    <div className="font-medium">{labelText}</div>
+                    <div className="text-xs text-muted-foreground mt-1">
+                      Position: {item.value ?? "N/A"}
+                    </div>
                   </div>
-                </div>
-              );
-            })}
+                );
+              })}
+            </div>
           </div>
-        </div>
-      )}
+        )}
       <div className="pl-4">
         <div className="flex gap-3 overflow-x-auto py-2 pb-3 px-2 w-0 min-w-full">
           {sortedScenarios.map((scenarioId) => {
             const position = localPositions.get(scenarioId) || 1;
             const maxPos = Math.max(...Array.from(localPositions.values()));
-            const labelText = scenarioLabelMap.get(scenarioId) ?? "Untitled scenario";
+            const labelText =
+              scenarioLabelMap.get(scenarioId) ?? "Untitled scenario";
             const isAiSuggested = showDiff && aiSuggestedIds.has(scenarioId);
             return (
               <div
                 key={scenarioId}
                 className={cn(
                   "relative flex flex-col justify-between p-3 rounded-xl border bg-card text-card-foreground shadow-sm transition-all text-left h-[88px] w-[180px] flex-shrink-0 hover:shadow-md hover:bg-accent/50",
-                  isAiSuggested && "ring-2 ring-success bg-success/10"
+                  isAiSuggested && "ring-2 ring-success bg-success/10",
                 )}
               >
                 {/* AI suggested badge */}
@@ -601,7 +652,10 @@ export function ScenarioPositions({
                 )}
                 <div className="flex items-start gap-2">
                   <GripVertical className="h-4 w-4 text-muted-foreground cursor-grab flex-shrink-0 mt-0.5" />
-                  <h3 className="font-medium text-sm leading-tight line-clamp-2 pr-16" title={labelText}>
+                  <h3
+                    className="font-medium text-sm leading-tight line-clamp-2 pr-16"
+                    title={labelText}
+                  >
                     {labelText}
                   </h3>
                 </div>
