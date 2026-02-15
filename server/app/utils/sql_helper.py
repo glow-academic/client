@@ -27,6 +27,11 @@ from app.utils.sql_nest import nest
 # Type: dict[str, SQLMetadata | None]
 _metadata_cache: dict[str, Any] = {}
 
+# Track which functions have been JIT-created on this process to avoid
+# redundant DROP TYPE / CREATE TYPE on every request (which causes race
+# conditions under concurrent load).
+_jit_created_functions: set[str] = {}
+
 
 class HasToTuple(Protocol):
     """Protocol for parameter models that have to_tuple() method."""
