@@ -9,7 +9,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 from app.api.v4.artifacts.department.permissions import (
     compute_can_create,
-    compute_can_save,
+    compute_can_edit,
 )
 from app.api.v4.artifacts.department.types import (
     SaveDepartmentApiRequest,
@@ -110,7 +110,7 @@ async def save_department(
                 user_role=user_role,
             )
         else:
-            can_save_result = compute_can_save(
+            can_save_result = compute_can_edit(
                 user_role=user_role,
                 usage_count=access_result.department_usage_count or 0,
             )

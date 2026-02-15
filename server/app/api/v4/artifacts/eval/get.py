@@ -322,17 +322,9 @@ async def get_eval_internal(
     )
 
     # === PYTHON BUSINESS LOGIC ===
-    can_edit = compute_can_edit(
-        user_role=user_role,
-        eval_department_ids=eval_department_ids,
-        active_usage_count=active_usage_count,
-    )
+    can_edit = compute_can_edit(user_role=user_role)
 
-    disabled_reason = compute_disabled_reason(
-        user_role=user_role,
-        eval_department_ids=eval_department_ids,
-        active_usage_count=active_usage_count,
-    )
+    disabled_reason = compute_disabled_reason(user_role=user_role)
 
     # === PASS 2: Parallel Resource Fetching ===
 

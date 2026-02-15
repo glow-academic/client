@@ -46,7 +46,11 @@ def compute_can_edit(
     if user_role not in ("admin", "superadmin"):
         return False
     # Department subset check (when user_department_ids is available)
-    if user_department_ids is not None and user_role != "superadmin" and model_department_ids:
+    if (
+        user_department_ids is not None
+        and user_role != "superadmin"
+        and model_department_ids
+    ):
         user_dept_set = {str(d) for d in user_department_ids}
         model_dept_set = {str(d) for d in model_department_ids}
         if not model_dept_set.issubset(user_dept_set):

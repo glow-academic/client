@@ -224,24 +224,6 @@ def compute_can_create(
     return True
 
 
-def compute_can_save(
-    user_role: str | None,
-    rubric_department_ids: list[str] | list[UUID] | None,
-    active_simulation_count: int,
-) -> bool:
-    """Compute permission to save/update an existing rubric."""
-    if user_role != "superadmin":
-        return False
-
-    if not rubric_department_ids and user_role != "superadmin":
-        return False
-
-    if active_simulation_count > 0:
-        return False
-
-    return True
-
-
 # ========== Draft Endpoint Permission Functions ==========
 
 

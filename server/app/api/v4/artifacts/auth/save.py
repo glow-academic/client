@@ -10,7 +10,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 from app.api.v4.artifacts.auth.permissions import (
     compute_can_create,
-    compute_can_save,
+    compute_can_edit,
 )
 from app.api.v4.artifacts.auth.types import (
     SaveAuthApiRequest,
@@ -108,7 +108,7 @@ async def save_auth(
         if not request.input_auth_id:
             can_save_result = compute_can_create(user_role=user_role)
         else:
-            can_save_result = compute_can_save(user_role=user_role)
+            can_save_result = compute_can_edit(user_role=user_role)
 
         if not can_save_result:
             raise HTTPException(

@@ -82,17 +82,6 @@ def compute_can_duplicate(user_role: str | None) -> bool:
     return user_role == "superadmin"
 
 
-def compute_can_save(
-    user_role: str | None,
-    active_settings_count: int = 0,
-) -> bool:
-    """Compute permission to save/update an existing auth."""
-    if active_settings_count > 0:
-        return False
-
-    return user_role == "superadmin"
-
-
 def compute_can_create(user_role: str | None) -> bool:
     """Compute permission to create a new auth."""
     return user_role == "superadmin"

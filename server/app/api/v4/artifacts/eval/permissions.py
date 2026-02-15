@@ -214,13 +214,6 @@ def compute_can_create(
     return user_role == "superadmin"
 
 
-def compute_can_save(
-    user_role: str | None,
-) -> bool:
-    """Compute permission to save/update an existing eval."""
-    return user_role == "superadmin"
-
-
 # ========== Draft Endpoint Permission Functions ==========
 
 

@@ -9,7 +9,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 from app.api.v4.artifacts.rubric.permissions import (
     compute_can_create,
-    compute_can_save,
+    compute_can_edit,
 )
 from app.api.v4.artifacts.rubric.types import (
     SaveRubricApiRequest,
@@ -115,7 +115,7 @@ async def save_rubric(
                 department_ids=None,
             )
         else:
-            can_save_result = compute_can_save(
+            can_save_result = compute_can_edit(
                 user_role=user_role,
                 rubric_department_ids=access_result.rubric_department_ids,
                 active_simulation_count=access_result.active_simulation_count or 0,
