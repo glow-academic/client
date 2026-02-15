@@ -163,7 +163,9 @@ async def _attempt_start_impl(
                 # Look up context
                 ctx = await conn.fetchrow(SQL_ATTEMPT_CONTEXT, attempt_id)
                 if not ctx:
-                    logger.warning(f"No training bundle context for attempt {attempt_id}")
+                    logger.warning(
+                        f"No training bundle context for attempt {attempt_id}"
+                    )
                     await sio.emit(
                         "attempt_error",
                         AttemptUnifiedErrorEvent(

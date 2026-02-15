@@ -5,7 +5,7 @@
 "use client";
 
 import { GripVertical, PlusCircle, Trash2 } from "lucide-react";
-import { useMemo, useRef, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -25,7 +25,7 @@ export interface ReorderableListProps<T extends string = string> {
   itemPlaceholder?: string;
 }
 
-// Component for item input with autocomplete
+// Component for item input with ghost autocomplete
 function ItemInputWithAutocomplete({
   index,
   value,
@@ -53,51 +53,32 @@ function ItemInputWithAutocomplete({
   onRemove: () => void;
   totalItems: number;
 }) {
-  const [showSuggestions, setShowSuggestions] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Filter suggestions based on current input value
-  const filteredSuggestions = useMemo(() => {
-    if (!value.trim() || !suggestions.length) return [];
-
-    const valueLower = value.toLowerCase().trim();
-
-    // Filter suggestions that start with or contain the typed text
-    // Exclude exact matches (case-insensitive) to avoid distraction
-    const matching = suggestions
-      .filter((s) => {
-        const sLower = s.toLowerCase().trim();
-        // Skip exact matches
-        if (sLower === valueLower) return false;
-        // Include if starts with or contains the typed text
-        return sLower.startsWith(valueLower) || sLower.includes(valueLower);
-      })
-      .slice(0, 5); // Show top 5 matches
-
-    return matching;
+  // Ghost autocomplete: find first prefix match
+  const ghostMatch = useMemo(() => {
+    const trimmed = value.trim();
+    if (!trimmed || !suggestions.length) return null;
+    const valueLower = trimmed.toLowerCase();
+    return (
+      suggestions.find((s) => {
+        const sLower = s.toLowerCase();
+        return sLower.startsWith(valueLower) && sLower !== valueLower;
+      }) ?? null
+    );
   }, [suggestions, value]);
 
-  const handleSelect = (suggestion: string) => {
-    onChange(suggestion);
-    setShowSuggestions(false);
-    inputRef.current?.focus();
-  };
+  const ghostSuffix = ghostMatch ? ghostMatch.slice(value.length) : "";
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    onChange(e.target.value);
-    setShowSuggestions(true);
-  };
-
-  const handleFocus = () => {
-    if (value && filteredSuggestions.length > 0) {
-      setShowSuggestions(true);
-    }
-  };
-
-  const handleBlur = () => {
-    // Delay hiding suggestions to allow clicks
-    setTimeout(() => setShowSuggestions(false), 200);
-  };
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLInputElement>) => {
+      if (e.key === "Tab" && ghostSuffix) {
+        e.preventDefault();
+        onChange(ghostMatch!);
+      }
+    },
+    [ghostSuffix, ghostMatch, onChange],
+  );
 
   return (
     <div
@@ -120,29 +101,21 @@ function ItemInputWithAutocomplete({
           <Input
             ref={inputRef}
             value={value}
-            onChange={handleInputChange}
-            onFocus={handleFocus}
-            onBlur={handleBlur}
+            onChange={(e) => onChange(e.target.value)}
+            onKeyDown={handleKeyDown}
             placeholder={placeholder}
             className="flex-1"
             disabled={disabled}
-            onDragStart={(e) => e.preventDefault()} // Prevent dragging from input
+            onDragStart={(e) => e.preventDefault()}
           />
-          {showSuggestions && !disabled && filteredSuggestions.length > 0 && (
-            <div className="absolute z-50 w-full mt-1 bg-popover border border-border rounded-md shadow-md max-h-48 overflow-auto">
-              <div className="p-1">
-                {filteredSuggestions.map((suggestion, idx) => (
-                  <div
-                    key={idx}
-                    onClick={() => handleSelect(suggestion)}
-                    onMouseDown={(e) => e.preventDefault()} // Prevent input blur
-                    className="px-2 py-1.5 text-sm cursor-pointer hover:bg-accent hover:text-accent-foreground rounded-sm transition-colors"
-                  >
-                    {suggestion}
-                  </div>
-                ))}
-              </div>
-            </div>
+          {ghostSuffix && !disabled && (
+            <span
+              aria-hidden="true"
+              className="absolute inset-0 pointer-events-none flex items-center px-3 text-sm"
+            >
+              <span className="invisible">{value}</span>
+              <span className="text-muted-foreground/40">{ghostSuffix}</span>
+            </span>
           )}
         </div>
         {totalItems > 1 && (

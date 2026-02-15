@@ -92,6 +92,8 @@ from app.api.v4.resources.images.search import search_images_internal
 from app.api.v4.resources.names.get import get_names_internal
 from app.api.v4.resources.names.search import search_names_internal
 from app.api.v4.resources.objectives.get import get_objectives_internal
+from app.api.v4.resources.options.get import get_options_internal
+from app.api.v4.resources.options.search import search_options_internal
 from app.api.v4.resources.parameter_fields.get import get_parameter_fields_internal
 from app.api.v4.resources.parameter_fields.search import (
     search_parameter_fields_internal,
@@ -109,8 +111,6 @@ from app.api.v4.resources.problem_statements.get import (
 from app.api.v4.resources.problem_statements.search import (
     search_problem_statements_internal,
 )
-from app.api.v4.resources.options.get import get_options_internal
-from app.api.v4.resources.options.search import search_options_internal
 from app.api.v4.resources.questions.get import get_questions_internal
 from app.api.v4.resources.questions.search import search_questions_internal
 from app.api.v4.resources.tools.get import get_tools_internal
@@ -245,6 +245,7 @@ async def get_scenario_internal(
     image_search: str | None = None,
     video_search: str | None = None,
     question_search: str | None = None,
+    option_search: str | None = None,
     persona_show_selected: bool | None = None,
     document_show_selected: bool | None = None,
     parameter_show_selected: bool | None = None,
@@ -414,6 +415,7 @@ async def get_scenario_internal(
     selected_image_ids = ids_result.image_ids or []
     selected_video_ids = ids_result.video_ids or []
     selected_question_ids = ids_result.question_ids or []
+    selected_option_ids = ids_result.option_ids or []
 
     # Draft values override canonical junction values
     if draft_item is not None:
@@ -449,6 +451,7 @@ async def get_scenario_internal(
         "images": draft_item.group_id if draft_item else None,
         "videos": draft_item.group_id if draft_item else None,
         "questions": draft_item.group_id if draft_item else None,
+        "options": draft_item.group_id if draft_item else None,
     }
 
     # Parallel fetch all resources
@@ -683,6 +686,21 @@ async def get_scenario_internal(
             )
             return (selected, suggestions)
 
+    async def fetch_options():
+        async with pool.acquire() as c:
+            selected = await get_options_internal(c, selected_option_ids, bypass_cache)
+            suggestions = await search_options_internal(
+                c,
+                option_search,
+                20,
+                0,
+                selected_option_ids,
+                question_ids=selected_question_ids or None,
+                bypass_cache=bypass_cache,
+                scenario=True,
+            )
+            return (selected, suggestions)
+
     # === TWO-PHASE FETCH ===
     # Phase 1a: Fetch scenario parameters FIRST to get all scenario parameter IDs
     (parameters_selected, parameters_suggestions) = await fetch_parameters()
@@ -726,6 +744,7 @@ async def get_scenario_internal(
         (images_selected, images_suggestions),
         (videos_selected, videos_suggestions),
         (questions_selected, questions_suggestions),
+        (options_selected, options_suggestions),
     ) = await asyncio.gather(
         fetch_names(),
         fetch_descriptions(),
@@ -739,6 +758,7 @@ async def get_scenario_internal(
         fetch_images(),
         fetch_videos(),
         fetch_questions(),
+        fetch_options(),
     )
 
     # === VIDEO PARAMETER COMPUTATION ===
@@ -824,6 +844,7 @@ async def get_scenario_internal(
     images = _dedupe_by_id(images_selected + images_suggestions, "image_id")
     videos = _dedupe_by_id(videos_selected + videos_suggestions, "video_id")
     questions = _dedupe_by_id(questions_selected + questions_suggestions, "question_id")
+    options = _dedupe_by_id(options_selected + options_suggestions, "option_id")
 
     # Compute final show flags
     show_name = compute_show_name()
@@ -839,6 +860,7 @@ async def get_scenario_internal(
     show_images = compute_show_images(len(images))
     show_videos = compute_show_videos(len(videos))
     show_questions = compute_show_questions(len(questions))
+    show_options = len(options) > 0
 
     show_flags_map = {
         "names": show_name,
@@ -854,6 +876,7 @@ async def get_scenario_internal(
         "images": show_images,
         "videos": show_videos,
         "questions": show_questions,
+        "options": show_options,
     }
 
     required_flags_map = {
@@ -870,6 +893,7 @@ async def get_scenario_internal(
         "images": compute_images_required(),
         "videos": compute_videos_required(),
         "questions": compute_questions_required(),
+        "options": False,
     }
 
     # Build enriched flags list from ALL available scenario flags
@@ -975,6 +999,7 @@ async def get_scenario_internal(
     image_resources = images_selected
     video_resources = videos_selected
     question_resources = questions_selected
+    option_resources = options_selected
 
     # Build resources payload
     resources_payload = ScenarioResources(
@@ -992,6 +1017,7 @@ async def get_scenario_internal(
             images=[_to_dict(i) for i in images],
             videos=[_to_dict(v) for v in videos],
             questions=[_to_dict(q) for q in questions],
+            options=[_to_dict(o) for o in options],
         ),
         current=ScenarioResourceBucket(
             names=[_to_dict(name_resource)] if name_resource else [],
@@ -1024,6 +1050,7 @@ async def get_scenario_internal(
             images=[_to_dict(i) for i in image_resources],
             videos=[_to_dict(v) for v in video_resources],
             questions=[_to_dict(q) for q in question_resources],
+            options=[_to_dict(o) for o in option_resources],
         ),
     )
 
@@ -1042,6 +1069,7 @@ async def get_scenario_internal(
         "images": [i.image_id for i in images_suggestions],
         "videos": [v.video_id for v in videos_suggestions],
         "questions": [q.question_id for q in questions_suggestions],
+        "options": [o.option_id for o in options_suggestions],
     }
 
     # Validation for new mode
@@ -1214,6 +1242,7 @@ async def get_scenario_websocket(
             images=current.images if current else None,
             videos=current.videos if current else None,
             questions=current.questions if current else None,
+            options=current.options if current else None,
             agents=data.config_agent_resources,
             models=data.config_model_resources,
             providers=data.config_provider_resources,
@@ -1241,6 +1270,7 @@ async def get_scenario_client(
     image_search: str | None = None,
     video_search: str | None = None,
     question_search: str | None = None,
+    option_search: str | None = None,
     persona_show_selected: bool | None = None,
     document_show_selected: bool | None = None,
     parameter_show_selected: bool | None = None,
@@ -1263,6 +1293,7 @@ async def get_scenario_client(
         image_search=image_search,
         video_search=video_search,
         question_search=question_search,
+        option_search=option_search,
         persona_show_selected=persona_show_selected,
         document_show_selected=document_show_selected,
         parameter_show_selected=parameter_show_selected,
@@ -1368,6 +1399,11 @@ async def get_scenario_client(
             resources=(resources_bucket.questions if resources_bucket else None),
             **section_common("questions"),
         ),
+        options=ScenarioOptionSection(
+            current=(current_bucket.options if current_bucket else None),
+            resources=(resources_bucket.options if resources_bucket else None),
+            **section_common("options"),
+        ),
     )
 
 
@@ -1426,6 +1462,7 @@ async def get_scenario(
             image_search=request.image_search,
             video_search=request.video_search,
             question_search=request.question_search,
+            option_search=request.option_search,
             persona_show_selected=request.persona_show_selected,
             document_show_selected=request.document_show_selected,
             parameter_show_selected=request.parameter_show_selected,

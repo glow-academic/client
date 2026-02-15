@@ -40,9 +40,7 @@ SHOULD_PROCEED = True
 SQL_PATH_CREATE_CHAT = (
     "app/sql/v4/queries/generate/attempt/create_attempt_chat_complete.sql"
 )
-SQL_PATH_END_CHAT = (
-    "app/sql/v4/queries/generate/attempt/end_attempt_chat_complete.sql"
-)
+SQL_PATH_END_CHAT = "app/sql/v4/queries/generate/attempt/end_attempt_chat_complete.sql"
 
 
 async def _attempt_chat_impl(sid: str, data: dict[str, Any]) -> None:
@@ -78,7 +76,9 @@ async def _attempt_chat_impl(sid: str, data: dict[str, Any]) -> None:
                     )
 
                     if end_row and end_row.success:
-                        last_chat_id = str(end_row.chat_id) if end_row.chat_id else chat_id_str
+                        last_chat_id = (
+                            str(end_row.chat_id) if end_row.chat_id else chat_id_str
+                        )
 
                 # Refresh MVs
                 await conn.execute("REFRESH MATERIALIZED VIEW mv_attempt_list")
@@ -108,7 +108,9 @@ async def _attempt_chat_impl(sid: str, data: dict[str, Any]) -> None:
 
         else:
             # === CREATE MODE ===
-            training_bundle_department_id_str = data.get("training_bundle_department_id")
+            training_bundle_department_id_str = data.get(
+                "training_bundle_department_id"
+            )
             if not profile_id_str or not training_bundle_department_id_str:
                 logger.warning(
                     "attempt_chat create mode: missing profile_id or training_bundle_department_id"

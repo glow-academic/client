@@ -92,6 +92,7 @@ async def save_scenario_internal(
             objectives=_multi("objectives"),
             videos=_multi("videos"),
             questions=_multi("questions"),
+            options=_multi("options"),
         )
 
         async with conn.transaction():

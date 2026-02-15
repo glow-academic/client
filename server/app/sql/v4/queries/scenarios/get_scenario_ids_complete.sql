@@ -50,6 +50,7 @@ RETURNS TABLE (
     image_ids uuid[],
     video_ids uuid[],
     question_ids uuid[],
+    option_ids uuid[],
 
     -- Suggestion IDs (computed in Python via search endpoints)
     name_suggestions uuid[],
@@ -62,6 +63,7 @@ RETURNS TABLE (
     image_suggestions uuid[],
     video_suggestions uuid[],
     question_suggestions uuid[],
+    option_suggestions uuid[],
 
     -- Video enabled flag value (for video parameter filtering)
     video_enabled_value boolean
@@ -377,6 +379,30 @@ scenario_questions_combined_data AS (
     FROM params
     LIMIT 1
 ),
+scenario_options_junction_data AS (
+    SELECT
+        CASE
+            WHEN (SELECT scenario_id FROM params) IS NULL THEN ARRAY[]::uuid[]
+            ELSE COALESCE(
+                (SELECT ARRAY_AGG(so.option_id ORDER BY so.created_at)
+                 FROM scenario_options_junction so
+                 WHERE so.scenario_id = (SELECT scenario_id FROM params) AND so.active = true),
+                ARRAY[]::uuid[]
+            )
+        END as option_ids
+    FROM params
+    LIMIT 1
+),
+scenario_options_combined_data AS (
+    SELECT
+        CASE
+            WHEN COALESCE(array_length((SELECT option_ids FROM scenario_options_junction_data), 1), 0) > 0
+                THEN (SELECT option_ids FROM scenario_options_junction_data)
+            ELSE ARRAY[]::uuid[]
+        END as option_ids
+    FROM params
+    LIMIT 1
+),
 -- Single-select resource IDs (from draft or scenario junction)
 name_resource_data AS (
     SELECT COALESCE(
@@ -480,6 +506,7 @@ SELECT
     (SELECT image_ids FROM scenario_images_combined_data) as image_ids,
     (SELECT video_ids FROM scenario_videos_combined_data) as video_ids,
     (SELECT question_ids FROM scenario_questions_combined_data) as question_ids,
+    (SELECT option_ids FROM scenario_options_combined_data) as option_ids,
 
     -- Suggestion IDs (computed in Python via search endpoints)
     ARRAY[]::uuid[] as name_suggestions,
@@ -492,6 +519,7 @@ SELECT
     ARRAY[]::uuid[] as image_suggestions,
     ARRAY[]::uuid[] as video_suggestions,
     ARRAY[]::uuid[] as question_suggestions,
+    ARRAY[]::uuid[] as option_suggestions,
 
     -- Video enabled flag value
     (SELECT video_enabled_value FROM video_enabled_value_data) as video_enabled_value

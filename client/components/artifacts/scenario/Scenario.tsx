@@ -35,6 +35,7 @@ import { ParameterFields } from "@/components/resources/ParameterFields";
 import { Parameters } from "@/components/resources/Parameters";
 import { Personas } from "@/components/resources/Personas";
 import { ProblemStatements } from "@/components/resources/ProblemStatements";
+import { Options } from "@/components/resources/Options";
 import { Questions } from "@/components/resources/Questions";
 import { Videos } from "@/components/resources/Videos";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -105,6 +106,8 @@ type CreateDraftVideosIn = InputOf<"/api/v4/resources/videos", "post">;
 type CreateDraftVideosOut = OutputOf<"/api/v4/resources/videos", "post">;
 type CreateDraftQuestionsIn = InputOf<"/api/v4/resources/questions", "post">;
 type CreateDraftQuestionsOut = OutputOf<"/api/v4/resources/questions", "post">;
+type CreateDraftOptionsIn = InputOf<"/api/v4/resources/options", "post">;
+type CreateDraftOptionsOut = OutputOf<"/api/v4/resources/options", "post">;
 
 type ScenarioResourceType =
   | "names"
@@ -119,7 +122,8 @@ type ScenarioResourceType =
   | "parameter_fields"
   | "images"
   | "videos"
-  | "questions";
+  | "questions"
+  | "options";
 
 type ScenarioFormState = {
   name_id: string | null;
@@ -140,6 +144,7 @@ type ScenarioFormState = {
   objective_ids: string[];
   video_ids: string[];
   question_ids: string[];
+  option_ids: string[];
 };
 
 // Type for flush results - each resource returns its created ID(s)
@@ -151,6 +156,7 @@ type FlushResult = {
   image_ids?: string[];
   video_ids?: string[];
   question_ids?: string[];
+  option_ids?: string[];
   parameter_field_ids?: string[];
 };
 
@@ -189,6 +195,9 @@ export interface ScenarioProps {
   createQuestionsAction?: (
     input: CreateDraftQuestionsIn,
   ) => Promise<CreateDraftQuestionsOut>;
+  createOptionsAction?: (
+    input: CreateDraftOptionsIn,
+  ) => Promise<CreateDraftOptionsOut>;
 }
 
 const FLUSH_KEYS = [
@@ -199,6 +208,7 @@ const FLUSH_KEYS = [
   "images",
   "videos",
   "questions",
+  "options",
   "parameter_fields",
 ];
 
@@ -216,6 +226,7 @@ const VALID_RESOURCE_TYPES: ScenarioResourceType[] = [
   "images",
   "videos",
   "questions",
+  "options",
 ];
 
 const SCENARIO_RESOURCES: ResourceConfig[] = [
@@ -271,6 +282,12 @@ const SCENARIO_RESOURCES: ResourceConfig[] = [
     flushKey: "question_ids",
     type: "multi",
   },
+  {
+    key: "options",
+    formKey: "option_ids",
+    flushKey: "option_ids",
+    type: "multi",
+  },
 ];
 
 function ScenarioComponent({
@@ -287,6 +304,7 @@ function ScenarioComponent({
   createImagesAction,
   createVideosAction,
   createQuestionsAction,
+  createOptionsAction,
 }: ScenarioProps) {
   const router = useRouter();
   const isEditMode = !!scenarioId;
@@ -356,6 +374,7 @@ function ScenarioComponent({
         objective_ids: [],
         video_ids: [],
         question_ids: [],
+        option_ids: [],
       };
     }
 
@@ -421,6 +440,10 @@ function ScenarioComponent({
         .map((item) => item.question_id)
         .filter(Boolean)
         .map(String),
+      option_ids: (scenarioData.options?.current ?? [])
+        .map((item: { option_id?: string | null }) => item.option_id)
+        .filter(Boolean)
+        .map(String),
     };
   }, [scenarioData]);
 
@@ -470,6 +493,10 @@ function ScenarioComponent({
   const questionIdsStr = useMemo(
     () => JSON.stringify(formState.question_ids),
     [formState.question_ids],
+  );
+  const optionIdsStr = useMemo(
+    () => JSON.stringify(formState.option_ids),
+    [formState.option_ids],
   );
 
   // Memoized stringified scenarioData array IDs for useEffect dependency
@@ -554,6 +581,15 @@ function ScenarioComponent({
       ),
     [scenarioData?.questions],
   );
+  const scenarioOptionIdsStr = useMemo(
+    () =>
+      JSON.stringify(
+        (scenarioData?.options?.current ?? [])
+          .map((item: { option_id?: string | null }) => item.option_id)
+          .filter(Boolean),
+      ),
+    [scenarioData?.options],
+  );
 
   // Update form state when server data changes
   useEffect(() => {
@@ -586,7 +622,9 @@ function ScenarioComponent({
           JSON.stringify(newState.objective_ids) ||
         JSON.stringify(prev.video_ids) !== JSON.stringify(newState.video_ids) ||
         JSON.stringify(prev.question_ids) !==
-          JSON.stringify(newState.question_ids)
+          JSON.stringify(newState.question_ids) ||
+        JSON.stringify(prev.option_ids) !==
+          JSON.stringify(newState.option_ids)
       ) {
         serverSyncPendingRef.current = true;
         return newState;
@@ -610,6 +648,7 @@ function ScenarioComponent({
     scenarioObjectiveIdsStr,
     scenarioVideoIdsStr,
     scenarioQuestionIdsStr,
+    scenarioOptionIdsStr,
   ]);
 
   // --- Draft Lifecycle ---
@@ -660,6 +699,7 @@ function ScenarioComponent({
         objective_ids: formState.objective_ids,
         video_ids: formState.video_ids,
         question_ids: formState.question_ids,
+        option_ids: formState.option_ids,
       }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [
@@ -681,6 +721,7 @@ function ScenarioComponent({
       objectiveIdsStr,
       videoIdsStr,
       questionIdsStr,
+      optionIdsStr,
     ],
   );
 
@@ -799,6 +840,7 @@ function ScenarioComponent({
       images: scenarioData.images,
       videos: scenarioData.videos,
       questions: scenarioData.questions,
+      options: scenarioData.options,
       can_edit: scenarioData.can_edit,
       disabled_reason: scenarioData.disabled_reason,
       basic_show_ai_generate: scenarioData.basic_show_ai_generate,
@@ -1294,6 +1336,7 @@ function ScenarioComponent({
           return {
             ...prev,
             question_ids: [],
+            option_ids: [],
           };
         default:
           return prev;
@@ -1462,6 +1505,9 @@ function ScenarioComponent({
               : null,
             question_ids: effectiveFormState.question_ids?.length
               ? effectiveFormState.question_ids
+              : null,
+            option_ids: effectiveFormState.option_ids?.length
+              ? effectiveFormState.option_ids
               : null,
           } as unknown as SaveScenarioIn["body"],
         });
@@ -2235,6 +2281,30 @@ function ScenarioComponent({
                 registerFlush={registerFlushCallbacks["questions"]}
                 onGenerationComplete={makeOnGenerationComplete("questions")}
               />
+              <Options
+                option_ids={formState.option_ids}
+                option_resources={s?.options?.current ?? []}
+                show_options={
+                  showQuestionsSection && formState.question_ids.length > 0
+                }
+                options={s?.options?.resources ?? []}
+                question_ids={formState.question_ids}
+                question_resources={s?.questions?.current ?? []}
+                disabled={disabled}
+                onChange={(ids) =>
+                  setFormState((prev) => ({ ...prev, option_ids: ids }))
+                }
+                group_id={s?.group_id ?? null}
+                createOptionsAction={
+                  createOptionsAction as
+                    | ((
+                        input: CreateDraftOptionsIn,
+                      ) => Promise<CreateDraftOptionsOut>)
+                    | undefined
+                }
+                isAutosaveEnabled={isAutosaveEnabled}
+                registerFlush={registerFlushCallbacks["options"]}
+              />
             </StepCard>
           );
         default:
@@ -2257,6 +2327,7 @@ function ScenarioComponent({
       createImagesAction,
       createVideosAction,
       createQuestionsAction,
+      createOptionsAction,
       handleOpenStepCardModal,
       canRegenerate,
       stepResources,

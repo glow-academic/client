@@ -34,6 +34,7 @@ SCENARIO_RESOURCES: set[str] = {
     "images",
     "videos",
     "questions",
+    "options",
     "departments",
     "fields",
     "personas",

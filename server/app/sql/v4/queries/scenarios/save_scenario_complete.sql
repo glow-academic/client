@@ -73,7 +73,8 @@ CREATE OR REPLACE FUNCTION api_save_scenario_v4(
     images types.scenario_multi_resource_action DEFAULT NULL,
     objectives types.scenario_multi_resource_action DEFAULT NULL,
     videos types.scenario_multi_resource_action DEFAULT NULL,
-    questions types.scenario_multi_resource_action DEFAULT NULL
+    questions types.scenario_multi_resource_action DEFAULT NULL,
+    options types.scenario_multi_resource_action DEFAULT NULL
 )
 RETURNS TABLE (
     scenario_id uuid,
@@ -108,6 +109,7 @@ DECLARE
     v_objective_ids uuid[];
     v_video_ids uuid[];
     v_question_ids uuid[];
+    v_option_ids uuid[];
     v_flag_ids uuid[];
     v_run_id uuid;
     v_call_id uuid;
@@ -166,6 +168,7 @@ BEGIN
     v_objective_ids := COALESCE((objectives).resource_ids, ARRAY[]::uuid[]);
     v_video_ids := COALESCE((videos).resource_ids, ARRAY[]::uuid[]);
     v_question_ids := COALESCE((questions).resource_ids, ARRAY[]::uuid[]);
+    v_option_ids := COALESCE((options).resource_ids, ARRAY[]::uuid[]);
     v_flag_ids := COALESCE((flags).resource_ids, ARRAY[]::uuid[]);
     v_parameter_fields_call_id := NULL;
 
@@ -253,6 +256,7 @@ BEGIN
         UPDATE scenario_problem_statements_junction SET active = false WHERE scenario_id = v_scenario_id AND active = true;
         UPDATE scenario_videos_junction SET active = false WHERE scenario_id = v_scenario_id AND active = true;
         UPDATE scenario_questions_junction SET active = false WHERE scenario_id = v_scenario_id AND active = true;
+        UPDATE scenario_options_junction SET active = false WHERE scenario_id = v_scenario_id AND active = true;
     END IF;
 
     -- Tool-call tracking: one run per save, explicit per-resource call linking.
@@ -523,6 +527,26 @@ BEGIN
         END IF;
     END IF;
 
+    -- options
+    IF COALESCE(array_length(v_option_ids, 1), 0) > 0 THEN
+        IF (options).create_tool_id IS NOT NULL THEN
+            v_call_id := uuidv7();
+            INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
+            VALUES (v_call_id, 'scenario_save_create_options_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+            INSERT INTO tools_calls_connection (tools_id, call_id) VALUES ((options).create_tool_id, v_call_id);
+            INSERT INTO options_calls_connection (options_id, call_id)
+            SELECT x.option_id, v_call_id FROM UNNEST(v_option_ids) AS x(option_id);
+        END IF;
+        IF (options).link_tool_id IS NOT NULL THEN
+            v_call_id := uuidv7();
+            INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
+            VALUES (v_call_id, 'scenario_save_link_options_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+            INSERT INTO tools_calls_connection (tools_id, call_id) VALUES ((options).link_tool_id, v_call_id);
+            INSERT INTO options_calls_connection (options_id, call_id)
+            SELECT x.option_id, v_call_id FROM UNNEST(v_option_ids) AS x(option_id);
+        END IF;
+    END IF;
+
     -- Link resources (using parameters directly - no draft queries!)
     IF v_name_id IS NOT NULL THEN
         INSERT INTO scenario_names_junction (scenario_id, name_id, active, created_at)
@@ -640,6 +664,13 @@ BEGIN
         SELECT v_scenario_id, question_id, true, NOW()
         FROM UNNEST(v_question_ids) as question_id
         ON CONFLICT (scenario_id, question_id) DO UPDATE SET active = true;
+    END IF;
+
+    IF v_option_ids IS NOT NULL THEN
+        INSERT INTO scenario_options_junction (scenario_id, option_id, active, created_at)
+        SELECT v_scenario_id, option_id, true, NOW()
+        FROM UNNEST(v_option_ids) as option_id
+        ON CONFLICT (scenario_id, option_id) DO UPDATE SET active = true;
     END IF;
 
     -- Persona-style scenario resource workflow:

@@ -22,8 +22,6 @@ import type { InputOf, OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 import {
   Check,
-  ChevronDown,
-  ChevronUp,
   GripVertical,
   Loader2,
   MessageSquare,
@@ -88,12 +86,6 @@ type QuestionType = {
   id: string;
   question_text: string;
   allow_multiple: boolean;
-  options: Array<{
-    id: string;
-    option_text: string;
-    type?: "discrete" | "freeform";
-    is_correct: boolean;
-  }>;
   times?: number[];
 };
 
@@ -180,20 +172,6 @@ export function Questions({
           id: id || `temp-${idx}`,
           question_text: effectiveQuestionMapping[id] || "",
           allow_multiple: false,
-          options: [
-            {
-              id: "",
-              option_text: "",
-              type: "discrete" as const,
-              is_correct: false,
-            },
-            {
-              id: "",
-              option_text: "",
-              type: "discrete" as const,
-              is_correct: false,
-            },
-          ],
           times: [],
         }));
       }
@@ -202,20 +180,6 @@ export function Questions({
           id: "",
           question_text: "",
           allow_multiple: false,
-          options: [
-            {
-              id: "",
-              option_text: "",
-              type: "discrete" as const,
-              is_correct: false,
-            },
-            {
-              id: "",
-              option_text: "",
-              type: "discrete" as const,
-              is_correct: false,
-            },
-          ],
           times: [],
         },
       ];
@@ -233,19 +197,9 @@ export function Questions({
   const [draggedQuestionIndex, setDraggedQuestionIndex] = useState<
     number | null
   >(null);
-  const [draggedOptionIndex, setDraggedOptionIndex] = useState<{
-    questionIndex: number;
-    optionIndex: number;
-  } | null>(null);
-  const [expandedQuestions, setExpandedQuestions] = useState<Set<number>>(
-    new Set()
-  );
   const questionInputRefs = useRef<Record<number, HTMLInputElement | null>>(
     {}
   );
-  const [optionMaxWidths, setOptionMaxWidths] = useState<
-    Record<number, number | undefined>
-  >({});
 
   // Sync external question_ids changes (when loading from server)
   useEffect(() => {
@@ -254,20 +208,6 @@ export function Questions({
         id: id || `temp-${idx}`,
         question_text: effectiveQuestionMapping[id] || "",
         allow_multiple: false,
-        options: [
-          {
-            id: "",
-            option_text: "",
-            type: "discrete" as const,
-            is_correct: false,
-          },
-          {
-            id: "",
-            option_text: "",
-            type: "discrete" as const,
-            is_correct: false,
-          },
-        ],
         times: [],
       }));
       // Only update if questions actually changed to prevent infinite loops
@@ -287,46 +227,6 @@ export function Questions({
       lastReportedIdsRef.current = ids;
     }
   }, [ids, effectiveQuestionMapping]);
-
-  // Update option max widths when question inputs resize
-  useEffect(() => {
-    const updateWidths = () => {
-      const widths: Record<number, number | undefined> = {};
-      Object.entries(questionInputRefs.current).forEach(([indexStr, el]) => {
-        if (el) {
-          const index = parseInt(indexStr, 10);
-          const question = internalQuestions[index];
-          const baseSpace = 40; // gap + checkbox
-          const deleteButtonSpace =
-            question && question.options.length > 2 ? 40 : 0;
-          const totalSpace = baseSpace + deleteButtonSpace;
-          const calculatedWidth = el.offsetWidth - totalSpace;
-          widths[index] = calculatedWidth > 0 ? calculatedWidth : undefined;
-        }
-      });
-      setOptionMaxWidths(widths);
-    };
-
-    updateWidths();
-
-    const observers: ResizeObserver[] = [];
-    Object.values(questionInputRefs.current).forEach((el) => {
-      if (el) {
-        const observer = new ResizeObserver(() => {
-          updateWidths();
-        });
-        observer.observe(el);
-        observers.push(observer);
-      }
-    });
-
-    window.addEventListener("resize", updateWidths);
-
-    return () => {
-      observers.forEach((observer) => observer.disconnect());
-      window.removeEventListener("resize", updateWidths);
-    };
-  }, [internalQuestions, videoLength, expandedQuestions]);
 
   // Debounced resource creation for each question text - only when autosave is enabled
   useEffect(() => {
@@ -440,18 +340,6 @@ export function Questions({
   }, [registerFlush]);
 
   // Question handlers (matching ContentSection pattern)
-  const toggleQuestionExpanded = useCallback((index: number) => {
-    setExpandedQuestions((prev) => {
-      const newSet = new Set(prev);
-      if (newSet.has(index)) {
-        newSet.delete(index);
-      } else {
-        newSet.add(index);
-      }
-      return newSet;
-    });
-  }, []);
-
   const handleDragStartQuestion = useCallback(
     (e: React.DragEvent, index: number) => {
       setDraggedQuestionIndex(index);
@@ -480,58 +368,6 @@ export function Questions({
       setDraggedQuestionIndex(null);
     },
     [draggedQuestionIndex]
-  );
-
-  const handleDragStartOption = useCallback(
-    (
-      e: React.DragEvent,
-      questionIndex: number,
-      optionIndex: number
-    ) => {
-      setDraggedOptionIndex({ questionIndex, optionIndex });
-      e.dataTransfer.effectAllowed = "move";
-    },
-    []
-  );
-
-  const handleDragOverOption = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = "move";
-  }, []);
-
-  const handleDropOption = useCallback(
-    (
-      e: React.DragEvent,
-      questionIndex: number,
-      targetOptionIndex: number
-    ) => {
-      e.preventDefault();
-      if (draggedOptionIndex === null) return;
-      if (
-        draggedOptionIndex.questionIndex !== questionIndex ||
-        draggedOptionIndex.optionIndex === targetOptionIndex
-      ) {
-        setDraggedOptionIndex(null);
-        return;
-      }
-      setInternalQuestions((prev) => {
-        const next = [...prev];
-        const question = next[draggedOptionIndex.questionIndex];
-        if (!question) return next;
-        const options = [...question.options];
-        const removed = options[draggedOptionIndex.optionIndex];
-        if (!removed) return next;
-        options.splice(draggedOptionIndex.optionIndex, 1);
-        options.splice(targetOptionIndex, 0, removed);
-        next[draggedOptionIndex.questionIndex] = {
-          ...question,
-          options,
-        };
-        return next;
-      });
-      setDraggedOptionIndex(null);
-    },
-    [draggedOptionIndex]
   );
 
   const handleQuestionTextChange = useCallback(
@@ -571,95 +407,6 @@ export function Questions({
     [videoLength]
   );
 
-  const handleAddOption = useCallback((questionIndex: number) => {
-    setInternalQuestions((prev) => {
-      const next = [...prev];
-      const question = next[questionIndex];
-      if (!question) return next;
-      next[questionIndex] = {
-        ...question,
-        options: [
-          ...question.options,
-          {
-            id: "",
-            option_text: "",
-            type: "discrete",
-            is_correct: false,
-          },
-        ],
-      };
-      return next;
-    });
-  }, []);
-
-  const handleRemoveOption = useCallback(
-    (questionIndex: number, optionIndex: number) => {
-      setInternalQuestions((prev) => {
-        const next = [...prev];
-        const question = next[questionIndex];
-        if (!question) return next;
-        next[questionIndex] = {
-          ...question,
-          options: question.options.filter((_, i) => i !== optionIndex),
-        };
-        return next;
-      });
-    },
-    []
-  );
-
-  const handleOptionChange = useCallback(
-    (
-      questionIndex: number,
-      optionIndex: number,
-      option: {
-        id: string;
-        option_text: string;
-        type?: "discrete" | "freeform";
-        is_correct: boolean;
-      }
-    ) => {
-      setInternalQuestions((prev) => {
-        const next = [...prev];
-        const question = next[questionIndex];
-        if (!question) return next;
-        const options = [...question.options];
-        const existingOption = options[optionIndex];
-        if (!existingOption) return next;
-        options[optionIndex] = option;
-        next[questionIndex] = {
-          ...question,
-          options,
-        };
-        return next;
-      });
-    },
-    []
-  );
-
-  const handleToggleOptionCorrect = useCallback(
-    (questionIndex: number, optionIndex: number) => {
-      setInternalQuestions((prev) => {
-        const next = [...prev];
-        const question = next[questionIndex];
-        if (!question) return next;
-        const options = [...question.options];
-        const existingOption = options[optionIndex];
-        if (!existingOption) return next;
-        options[optionIndex] = {
-          ...existingOption,
-          is_correct: !existingOption.is_correct,
-        };
-        next[questionIndex] = {
-          ...question,
-          options,
-        };
-        return next;
-      });
-    },
-    []
-  );
-
   const addQuestion = useCallback(() => {
     if (internalQuestions.length >= maxItems) {
       toast.error(`Maximum ${maxItems} questions allowed`);
@@ -671,20 +418,6 @@ export function Questions({
         id: "",
         question_text: "",
         allow_multiple: false,
-        options: [
-          {
-            id: "",
-            option_text: "",
-            type: "discrete",
-            is_correct: false,
-          },
-          {
-            id: "",
-            option_text: "",
-            type: "discrete",
-            is_correct: false,
-          },
-        ],
         times: [],
       },
     ]);
@@ -712,10 +445,6 @@ export function Questions({
         id: q.question_id || `ai-${idx}`,
         question_text: q.question_text || "",
         allow_multiple: false,
-        options: [
-          { id: "", option_text: "", type: "discrete" as const, is_correct: false },
-          { id: "", option_text: "", type: "discrete" as const, is_correct: false },
-        ],
         times: [],
       }));
     if (newQuestions.length > 0) {
@@ -877,26 +606,6 @@ export function Questions({
                   </div>
                 )}
 
-                {/* Accordion Toggle */}
-                {question.options.length > 0 && (
-                  <Button
-                    type="button"
-                    variant={
-                      expandedQuestions.has(index) ? "default" : "outline"
-                    }
-                    size="icon"
-                    onClick={() => toggleQuestionExpanded(index)}
-                    className="h-8 w-8 shrink-0"
-                    disabled={disabled}
-                  >
-                    {expandedQuestions.has(index) ? (
-                      <ChevronDown className="h-4 w-4" />
-                    ) : (
-                      <ChevronUp className="h-4 w-4" />
-                    )}
-                  </Button>
-                )}
-
                 {/* Question Text Input */}
                 <div className="flex-1 min-w-0">
                   <Input
@@ -951,115 +660,6 @@ export function Questions({
                   <Trash2 className="h-4 w-4" />
                 </Button>
               </div>
-
-              {/* Options (shown when expanded) */}
-              {expandedQuestions.has(index) &&
-                question.options.length > 0 && (
-                  <div className="pl-10 space-y-2 border-l-2 border-muted">
-                    {question.options.map((option, optIndex) => (
-                      <div
-                        key={option.id || optIndex}
-                        className={cn(
-                          "flex items-center gap-2",
-                          draggedOptionIndex?.questionIndex === index &&
-                            draggedOptionIndex?.optionIndex === optIndex &&
-                            "opacity-50"
-                        )}
-                        onDragOver={handleDragOverOption}
-                        onDrop={(e) => handleDropOption(e, index, optIndex)}
-                      >
-                        {/* Option Drag Handle */}
-                        <div
-                          draggable={!disabled}
-                          onDragStart={(e) =>
-                            handleDragStartOption(e, index, optIndex)
-                          }
-                          className="cursor-grab active:cursor-grabbing w-8 shrink-0 flex items-center justify-center"
-                        >
-                          <GripVertical className="h-4 w-4 text-muted-foreground" />
-                        </div>
-
-                        {/* Correct Checkbox */}
-                        {option.type !== "freeform" && (
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button
-                                type="button"
-                                variant={
-                                  option.is_correct ? "default" : "outline"
-                                }
-                                size="icon"
-                                onClick={() => {
-                                  handleToggleOptionCorrect(index, optIndex);
-                                }}
-                                className="h-8 w-8 shrink-0"
-                                disabled={disabled}
-                              >
-                                <Check className="h-4 w-4" />
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              {option.is_correct
-                                ? "Mark as incorrect"
-                                : "Mark as correct"}
-                            </TooltipContent>
-                          </Tooltip>
-                        )}
-
-                        {/* Option Text Input */}
-                        <Input
-                          value={option.option_text}
-                          onChange={(e) => {
-                            handleOptionChange(index, optIndex, {
-                              ...option,
-                              option_text: e.target.value,
-                            });
-                          }}
-                          placeholder="Option text"
-                          className="flex-1 min-w-0"
-                          style={{
-                            maxWidth:
-                              optionMaxWidths[index] !== undefined
-                                ? `${optionMaxWidths[index]}px`
-                                : undefined,
-                          }}
-                          disabled={disabled}
-                          onDragStart={(e) => e.preventDefault()}
-                        />
-
-                        {/* Delete Option Button */}
-                        {question.options.length > 2 && (
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => {
-                              handleRemoveOption(index, optIndex);
-                            }}
-                            className="h-8 w-8 shrink-0"
-                            disabled={disabled}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        )}
-                      </div>
-                    ))}
-                    {question.options.length < 5 && (
-                      <Button
-                        type="button"
-                        variant="secondary"
-                        size="sm"
-                        onClick={() => {
-                          handleAddOption(index);
-                        }}
-                        disabled={disabled}
-                      >
-                        <PlusCircle className="h-4 w-4 mr-2" />
-                        Add Option
-                      </Button>
-                    )}
-                  </div>
-                )}
             </div>
           ))}
         </div>
