@@ -120,9 +120,7 @@ async def _test_start_impl(
                     return
 
                 # Step 3: Refresh MVs
-                await conn.execute(
-                    "REFRESH MATERIALIZED VIEW mv_benchmark_invocations"
-                )
+                await conn.execute("REFRESH MATERIALIZED VIEW mv_benchmark_invocations")
 
             # Step 4: Invalidate caches
             await invalidate_tags(["test", "tests", "benchmark", "invocations"])
@@ -135,9 +133,7 @@ async def _test_start_impl(
                 room=sid,
             )
 
-            logger.info(
-                f"Test created - profile_id={profile_id}, test_id={test_id}"
-            )
+            logger.info(f"Test created - profile_id={profile_id}, test_id={test_id}")
 
             # Step 6: Auto-proceed if enabled
             if not SHOULD_PROCEED:

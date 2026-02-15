@@ -38,8 +38,6 @@ from app.socket.v4.artifacts.types import (
 from app.sql.types import (
     GetAgentToolsSqlParams,
     GetAgentToolsSqlRow,
-    GetPersonaGenerationContextSqlParams,
-    GetPersonaGenerationContextSqlRow,
     PreparePersonaGenerationSqlParams,
     PreparePersonaGenerationSqlRow,
 )
@@ -54,9 +52,6 @@ client_router = APIRouter()
 server_router = APIRouter()
 
 # SQL paths
-SQL_PATH_CONTEXT = (
-    "app/sql/v4/queries/generate/persona/get_persona_generation_context_complete.sql"
-)
 SQL_PATH_PREPARE = (
     "app/sql/v4/queries/generate/persona/prepare_persona_generation_complete.sql"
 )
@@ -299,39 +294,38 @@ async def _persona_generate_impl(
 
         persona_jinja_context = _build_persona_jinja_context(result, resource_types)
 
-        # Step 3: Check rate limit (the only thing still in SQL)
-        async with get_db_connection() as conn:
-            context_params = GetPersonaGenerationContextSqlParams(
-                p_profile_id=profile_id,
-            )
-            context_row = cast(
-                GetPersonaGenerationContextSqlRow,
-                await execute_sql_typed(conn, SQL_PATH_CONTEXT, params=context_params),
-            )
+        # Step 3: Check rate limit from pre-fetched config_profile + runs
+        config_profile = (
+            result.resources.config_profile[0]
+            if result.resources.config_profile
+            else None
+        )
+        requests_per_day = config_profile.requests_per_day if config_profile else None
+        runs_today = (
+            result.views.runs.total_count if result.views and result.views.runs else 0
+        )
 
-            # Rate limit validation
-            requests_per_day = context_row.requests_per_day
-            runs_today = context_row.runs_today or 0
-
-            if requests_per_day is not None and runs_today >= requests_per_day:
-                error_msg = f"Rate limit exceeded ({runs_today}/{requests_per_day} requests today)"
-                logger.error(
-                    f"Persona generation rate limit exceeded - "
-                    f"profile_id={profile_id}, agent_id={agent_id}, "
-                    f"reason: {error_msg}"
-                )
-                await emit_to_internal(
-                    "generate_call_error",
-                    GenerateErrorApiRequest(
-                        sid=sid,
-                        error_message=f"Failed to prepare persona generation: {error_msg}",
-                        artifact_type="persona",
-                        group_id=str(result.group_id) if result.group_id else None,
-                        resource_type="persona",
-                    ),
+        if requests_per_day is not None and runs_today >= requests_per_day:
+            error_msg = (
+                f"Rate limit exceeded ({runs_today}/{requests_per_day} requests today)"
+            )
+            logger.error(
+                f"Persona generation rate limit exceeded - "
+                f"profile_id={profile_id}, agent_id={agent_id}, "
+                f"reason: {error_msg}"
+            )
+            await emit_to_internal(
+                "generate_call_error",
+                GenerateErrorApiRequest(
                     sid=sid,
-                )
-                return
+                    error_message=f"Failed to prepare persona generation: {error_msg}",
+                    artifact_type="persona",
+                    group_id=str(result.group_id) if result.group_id else None,
+                    resource_type="persona",
+                ),
+                sid=sid,
+            )
+            return
 
         existing_group_id = result.group_id
 

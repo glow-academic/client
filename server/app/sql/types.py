@@ -16108,6 +16108,7 @@ class QGetProfilesV4Item(BaseModel):
     description: str | None
     emails: list[str] | None
     primary_email: str | None
+    requests_per_day: int | None
 
 
 class GetProfilesSqlRow(BaseModel):
@@ -25699,6 +25700,7 @@ class GetRunListViewSqlParams(BaseModel):
     sort_order_field: str | None = None
     page_limit_val: int | None = 50
     page_offset_val: int | None = 0
+    profile_id_filter: UUID | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
@@ -25710,6 +25712,7 @@ class GetRunListViewSqlParams(BaseModel):
             self.sort_order_field,
             self.page_limit_val,
             self.page_offset_val,
+            self.profile_id_filter,
         )
 
 
@@ -25748,6 +25751,7 @@ class GetRunListViewApiRequest(BaseModel):
     sort_order_field: str | None = None
     page_limit_val: int | None = 50
     page_offset_val: int | None = 0
+    profile_id_filter: UUID | None = None
 
 
 class GetRunListViewApiResponse(BaseModel):

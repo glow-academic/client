@@ -37796,6 +37796,8 @@ export interface components {
             emails: string[] | null;
             /** Primary Email */
             primary_email: string | null;
+            /** Requests Per Day */
+            requests_per_day: number | null;
         };
         /** QGetPromptsV4Item */
         QGetPromptsV4Item: {

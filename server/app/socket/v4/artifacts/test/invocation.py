@@ -42,8 +42,7 @@ async def test_invocation_handler(data: dict[str, Any]) -> None:
         return
 
     logger.info(
-        f"Test invocation lifecycle - test_id={test_id}, "
-        f"invocation_id={invocation_id}"
+        f"Test invocation lifecycle - test_id={test_id}, invocation_id={invocation_id}"
     )
 
     if SHOULD_PROCEED:

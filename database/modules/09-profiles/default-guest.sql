@@ -6,7 +6,7 @@
 
 -- Resource rows
 INSERT INTO public.names_resource (id, name, created_at, active, generated, mcp) VALUES ('019b995b-cb82-777d-af04-d80af5048021', 'Default Guest', '2025-08-12T12:52:09.564220+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
-INSERT INTO public.profiles_resource (last_login, created_at, role, active, generated, mcp, id, name, description, department_ids, cohort_ids, role_id, emails, primary_email) VALUES ('2025-08-12T12:52:09.564220+00:00', '2025-08-12T12:52:09.564220+00:00', 'guest', true, false, false, '019bb25e-e611-78ab-b453-5c7720d87aec', 'Default Guest', NULL, '{}', '{019bb25e-e605-7500-8000-000000000001}', '019bbabc-5a37-7028-8b98-728b7aa54d0d', '{019c57ef-f302-787e-b140-15f193cc887d,019c5801-d006-7d59-ad92-0d98a5c02a51}', 'redacted@purdue.edu') ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.profiles_resource (last_login, created_at, role, active, generated, mcp, id, name, description, department_ids, cohort_ids, role_id, emails, primary_email, requests_per_day) VALUES ('2025-08-12T12:52:09.564220+00:00', '2025-08-12T12:52:09.564220+00:00', 'guest', true, false, false, '019bb25e-e611-78ab-b453-5c7720d87aec', 'Default Guest', NULL, '{}', '{019bb25e-e605-7500-8000-000000000001}', '019bbabc-5a37-7028-8b98-728b7aa54d0d', '{019c57ef-f302-787e-b140-15f193cc887d,019c5801-d006-7d59-ad92-0d98a5c02a51}', 'redacted@purdue.edu', NULL) ON CONFLICT (id) DO NOTHING;
 
 -- Artifact
 -- profile_artifact

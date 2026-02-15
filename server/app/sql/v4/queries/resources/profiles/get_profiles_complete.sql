@@ -54,7 +54,8 @@ CREATE TYPE types.q_get_profiles_v4_item AS (
     name text,
     description text,
     emails text[],
-    primary_email text
+    primary_email text,
+    requests_per_day integer
 );
 
 -- Create function - query profiles_resource directly (emails denormalized)
@@ -74,7 +75,8 @@ SELECT COALESCE(
             p.name,
             COALESCE(p.description, ''),
             COALESCE(p.emails, ARRAY[]::text[]),
-            p.primary_email
+            p.primary_email,
+            p.requests_per_day
         )::types.q_get_profiles_v4_item
         ORDER BY array_position(p_ids, p.id)
     ),

@@ -39,7 +39,7 @@ STABLE
 AS $$
 SELECT COALESCE(
     ARRAY_AGG(
-        (q.profile_id, q.name, q.description, q.emails, q.primary_email)::types.q_get_profiles_v4_item
+        (q.profile_id, q.name, q.description, q.emails, q.primary_email, q.requests_per_day)::types.q_get_profiles_v4_item
         ORDER BY q.name
     ),
     ARRAY[]::types.q_get_profiles_v4_item[]
@@ -50,7 +50,8 @@ FROM (
         p.name,
         COALESCE(p.description, '') AS description,
         COALESCE(p.emails, ARRAY[]::text[]) AS emails,
-        p.primary_email
+        p.primary_email,
+        p.requests_per_day
     FROM profiles_resource p
     WHERE p.active = true
       AND (search IS NULL OR search = '' OR LOWER(p.name) LIKE '%' || LOWER(search) || '%' OR LOWER(COALESCE(p.description, '')) LIKE '%' || LOWER(search) || '%')

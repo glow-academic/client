@@ -69,6 +69,7 @@ async def get_run_list_view_internal(
     page_limit: int = 50,
     page_offset: int = 0,
     bypass_cache: bool = False,
+    profile_id_filter: UUID | None = None,
 ) -> GetRunListViewResponse:
     """Internal function for fetching run data from mv_runs."""
     from app.sql.types import GetRunListViewSqlParams
@@ -84,6 +85,7 @@ async def get_run_list_view_internal(
             "sort_order": sort_order,
             "page_limit": page_limit,
             "page_offset": page_offset,
+            "profile_id_filter": str(profile_id_filter) if profile_id_filter else None,
         },
     )
 
@@ -101,6 +103,7 @@ async def get_run_list_view_internal(
         sort_order_field=sort_order,
         page_limit_val=page_limit,
         page_offset_val=page_offset,
+        profile_id_filter=profile_id_filter,
     )
 
     result = await execute_sql_typed(conn, SQL_PATH, params=params)

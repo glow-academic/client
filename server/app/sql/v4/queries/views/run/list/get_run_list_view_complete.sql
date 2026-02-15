@@ -84,7 +84,8 @@ CREATE OR REPLACE FUNCTION api_get_run_list_view_v4(
     sort_by_field text DEFAULT 'date',
     sort_order_field text DEFAULT 'desc',
     page_limit_val int DEFAULT 50,
-    page_offset_val int DEFAULT 0
+    page_offset_val int DEFAULT 0,
+    profile_id_filter uuid DEFAULT NULL
 )
 RETURNS TABLE (
     items types.q_get_run_list_view_v4_item[],
@@ -102,6 +103,10 @@ AS $$
             AND (group_ids IS NULL OR mv.group_id = ANY(group_ids))
             AND (date_from IS NULL OR mv.run_created_at >= date_from)
             AND (date_to IS NULL OR mv.run_created_at < date_to)
+            AND (profile_id_filter IS NULL OR EXISTS (
+                SELECT 1 FROM profiles_runs_connection prc
+                WHERE prc.run_id = mv.run_id AND prc.profiles_id = profile_id_filter
+            ))
     ),
     counted AS (
         SELECT COUNT(*)::int AS total FROM filtered
