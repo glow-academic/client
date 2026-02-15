@@ -4,12 +4,10 @@ Two-pass architecture:
 1. SQL returns raw data with department_ids and model_usage_count
 2. Python computes permissions (can_edit, can_delete, can_duplicate)
 
-Filter option names hydrated from cached *_internal() functions.
+Filter option names resolved in SQL via ListFilterSection pattern.
 """
 
-import asyncio
 from typing import Annotated, Any, cast
-from uuid import UUID
 
 import asyncpg
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
@@ -20,17 +18,11 @@ from app.api.v4.artifacts.provider.permissions import (
     compute_can_edit,
 )
 from app.api.v4.artifacts.provider.types import (
-    ListProviderApiDepartment,
-    ListProviderApiModel,
     ListProviderApiProvider,
-    ListProviderApiProviderOption,
     ListProviderApiResponse,
-    ListProviderApiStatusOption,
 )
 from app.api.v4.auth.profile import get_auth_profile_internal
-from app.api.v4.resources.departments.get import get_departments_internal
-from app.api.v4.resources.models.get import get_models_internal
-from app.api.v4.resources.providers.get import get_providers_internal
+from app.api.v4.types import ListFilterSection
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
@@ -115,7 +107,17 @@ async def get_provider_list(
             user_department_ids = []
 
         # Convert API request to SQL params (add profile_id from header)
-        params = GetProvidersListSqlParams(profile_id=profile_id)
+        params = GetProvidersListSqlParams(
+            profile_id=profile_id,
+            search=getattr(request, "search", None),
+            filter_department_ids=getattr(request, "filter_department_ids", None),
+            filter_model_ids=getattr(request, "filter_model_ids", None),
+            filter_status=getattr(request, "filter_status", None),
+            department_search=getattr(request, "department_search", None),
+            model_search=getattr(request, "model_search", None),
+            page_size=getattr(request, "page_size", 1000),
+            page_offset=getattr(request, "page_offset", 0),
+        )
         sql_params = params.to_tuple()
 
         # Execute query with typed helper
@@ -132,7 +134,7 @@ async def get_provider_list(
         if actor_name:
             audit_set(http_request, actor={"name": actor_name, "id": profile_id})
 
-        # user_role already fetched from context above
+        # Compute permissions for each provider in Python
         providers_list: list[ListProviderApiProvider] = []
 
         if result.providers:
@@ -166,140 +168,25 @@ async def get_provider_list(
                     )
                 )
 
-        # Map status options
-        status_options: list[ListProviderApiStatusOption] = []
-        if result.status_options:
-            for opt in result.status_options:
-                status_options.append(
-                    ListProviderApiStatusOption(
-                        value=opt.value,
-                        label=opt.label,
-                    )
-                )
-
-        # --- Python hydration: filter option names from cached *_internal() ---
-        # Extract option IDs and counts from SQL result
-        provider_option_ids = getattr(result, "provider_option_ids", None) or []
-        department_option_ids = getattr(result, "department_option_ids", None) or []
-        model_option_ids = getattr(result, "model_option_ids", None) or []
-
-        # Build ID -> count maps
-        provider_count_map: dict[UUID, int] = {}
-        provider_ids_to_fetch: list[UUID] = []
-        for opt in provider_option_ids:
-            opt_id = getattr(opt, "id", None)
-            opt_count = getattr(opt, "count", 0)
-            if opt_id:
-                uid = UUID(str(opt_id)) if not isinstance(opt_id, UUID) else opt_id
-                provider_count_map[uid] = int(opt_count or 0)
-                provider_ids_to_fetch.append(uid)
-
-        department_count_map: dict[UUID, int] = {}
-        department_ids_to_fetch: list[UUID] = []
-        for opt in department_option_ids:
-            opt_id = getattr(opt, "id", None)
-            opt_count = getattr(opt, "count", 0)
-            if opt_id:
-                uid = UUID(str(opt_id)) if not isinstance(opt_id, UUID) else opt_id
-                department_count_map[uid] = int(opt_count or 0)
-                department_ids_to_fetch.append(uid)
-
-        model_count_map: dict[UUID, int] = {}
-        model_ids_to_fetch: list[UUID] = []
-        for opt in model_option_ids:
-            opt_id = getattr(opt, "id", None)
-            opt_count = getattr(opt, "count", 0)
-            if opt_id:
-                uid = UUID(str(opt_id)) if not isinstance(opt_id, UUID) else opt_id
-                model_count_map[uid] = int(opt_count or 0)
-                model_ids_to_fetch.append(uid)
-
-        # Parallel fetch names from cached *_internal() functions
-        providers_data = []
-        departments_data = []
-        models_data = []
-
-        pool = get_pool()
-        has_ids = any(
-            [provider_ids_to_fetch, department_ids_to_fetch, model_ids_to_fetch]
-        )
-
-        if pool and has_ids:
-
-            async def fetch_providers() -> list:
-                if not provider_ids_to_fetch:
-                    return []
-                async with pool.acquire() as c:
-                    return await get_providers_internal(
-                        c, provider_ids_to_fetch, bypass_cache
-                    )
-
-            async def fetch_departments() -> list:
-                if not department_ids_to_fetch:
-                    return []
-                async with pool.acquire() as c:
-                    return await get_departments_internal(
-                        c, department_ids_to_fetch, bypass_cache
-                    )
-
-            async def fetch_models() -> list:
-                if not model_ids_to_fetch:
-                    return []
-                async with pool.acquire() as c:
-                    return await get_models_internal(
-                        c, model_ids_to_fetch, bypass_cache
-                    )
-
-            providers_data, departments_data, models_data = await asyncio.gather(
-                fetch_providers(), fetch_departments(), fetch_models()
-            )
-
-        # Merge names with counts
-        # QGetProvidersV4Item uses .id (not .provider_id)
-        provider_options: list[ListProviderApiProviderOption] = [
-            ListProviderApiProviderOption(
-                provider_id=p.id,
-                name=p.name,
-                description=p.description or "",
-                count=provider_count_map.get(p.id, 0) if p.id else 0,
-            )
-            for p in providers_data
-            if p.id
-        ]
-
-        # QGetDepartmentsV4Item uses .department_id
-        departments: list[ListProviderApiDepartment] = [
-            ListProviderApiDepartment(
-                department_id=d.department_id,
-                name=d.name,
-                description=d.description or "",
-                count=department_count_map.get(d.department_id, 0)
-                if d.department_id
-                else 0,
-            )
-            for d in departments_data
-            if d.department_id
-        ]
-
-        # QGetModelsV4Item uses .id (not .model_id)
-        models: list[ListProviderApiModel] = [
-            ListProviderApiModel(
-                model_id=m.id,
-                name=m.name,
-                description=m.description or "",
-                count=model_count_map.get(m.id, 0) if m.id else 0,
-            )
-            for m in models_data
-            if m.id
-        ]
-
+        # Build API response with ListFilterSection pattern
         api_response = ListProviderApiResponse(
             actor_name=actor_name,
             providers=providers_list,
-            provider_options=provider_options,
-            departments=departments,
-            models=models,
-            status_options=status_options,
+            department_filter=ListFilterSection.from_sql_options(
+                result.department_options,
+                getattr(request, "filter_department_ids", None),
+                getattr(request, "department_search", None),
+            ),
+            model_filter=ListFilterSection.from_sql_options(
+                result.model_options,
+                getattr(request, "filter_model_ids", None),
+                getattr(request, "model_search", None),
+            ),
+            status_filter=ListFilterSection.from_sql_options(
+                result.status_options,
+                getattr(request, "filter_status", None),
+                None,
+            ),
             total_count=result.total_count,
         )
 

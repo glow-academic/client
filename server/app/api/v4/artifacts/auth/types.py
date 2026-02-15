@@ -160,16 +160,15 @@ class AuthItemAction(BaseModel):
 
 
 class SaveAuthApiRequest(BaseModel):
-    """Request model for save auth endpoint."""
+    """Request model for save auth endpoint - flat resource IDs."""
 
-    group_id: UUID
     input_auth_id: UUID | None = None
-    names: AuthResourceAction
-    descriptions: AuthResourceAction
-    flags: AuthResourceAction
-    protocols: AuthMultiResourceAction
-    slugs: AuthMultiResourceAction
-    items: AuthItemAction | None = None
+    name_id: UUID
+    description_id: UUID | None = None
+    flag_id: UUID | None = None
+    protocol_ids: list[UUID] | None = None
+    slug_ids: list[UUID] | None = None
+    items: list[SaveAuthItemInput] | None = None
 
 
 class SaveAuthApiResponse(BaseModel):
@@ -195,18 +194,21 @@ class SaveAuthSqlParams(BaseModel):
 
     @classmethod
     def from_request(
-        cls, request: SaveAuthApiRequest, profile_id: UUID
+        cls,
+        request: SaveAuthApiRequest,
+        profile_id: UUID,
+        group_id: UUID | None,
     ) -> SaveAuthSqlParams:
         return cls(
             profile_id=profile_id,
-            group_id=request.group_id,
+            group_id=group_id,
             input_auth_id=request.input_auth_id,
-            names=request.names,
-            descriptions=request.descriptions,
-            flags=request.flags,
-            protocols=request.protocols,
-            slugs=request.slugs,
-            items=request.items or AuthItemAction(items=[]),
+            names=AuthResourceAction(resource_id=request.name_id),
+            descriptions=AuthResourceAction(resource_id=request.description_id),
+            flags=AuthResourceAction(resource_id=request.flag_id),
+            protocols=AuthMultiResourceAction(resource_ids=request.protocol_ids),
+            slugs=AuthMultiResourceAction(resource_ids=request.slug_ids),
+            items=AuthItemAction(items=request.items or []),
         )
 
     def to_tuple(self) -> tuple:
@@ -278,16 +280,16 @@ class DuplicateAuthApiResponse(BaseModel):
 
 
 class PatchAuthDraftApiRequest(BaseModel):
-    """Request model for patch auth draft endpoint."""
+    """Request model for patch auth draft endpoint - flat resource IDs."""
 
     input_draft_id: UUID | None = None
     group_id: UUID | None = None
-    names: AuthResourceAction | None = None
-    descriptions: AuthResourceAction | None = None
-    flags: AuthResourceAction | None = None
-    protocols: AuthMultiResourceAction | None = None
-    slugs: AuthMultiResourceAction | None = None
-    items: AuthItemAction | None = None
+    name_id: UUID | None = None
+    description_id: UUID | None = None
+    flag_id: UUID | None = None
+    protocol_ids: list[UUID] | None = None
+    slug_ids: list[UUID] | None = None
+    items: list[SaveAuthItemInput] | None = None
     expected_version: int = 0
 
 
@@ -318,18 +320,16 @@ class PatchAuthDraftSqlParams(BaseModel):
     def from_request(
         cls, request: PatchAuthDraftApiRequest, profile_id: UUID
     ) -> PatchAuthDraftSqlParams:
-        empty_single = AuthResourceAction()
-        empty_multi = AuthMultiResourceAction()
         return cls(
             profile_id=profile_id,
             input_draft_id=request.input_draft_id,
             group_id=request.group_id,
-            names=request.names or empty_single,
-            descriptions=request.descriptions or empty_single,
-            flags=request.flags or empty_single,
-            protocols=request.protocols or empty_multi,
-            slugs=request.slugs or empty_multi,
-            items=request.items or AuthItemAction(items=[]),
+            names=AuthResourceAction(resource_id=request.name_id),
+            descriptions=AuthResourceAction(resource_id=request.description_id),
+            flags=AuthResourceAction(resource_id=request.flag_id),
+            protocols=AuthMultiResourceAction(resource_ids=request.protocol_ids),
+            slugs=AuthMultiResourceAction(resource_ids=request.slug_ids),
+            items=AuthItemAction(items=request.items or []),
             expected_version=request.expected_version,
         )
 

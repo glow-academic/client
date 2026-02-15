@@ -142,16 +142,15 @@ class RubricMultiResourceAction(BaseModel):
 
 
 class SaveRubricApiRequest(BaseModel):
-    group_id: UUID
     input_rubric_id: UUID | None = None
-    names: RubricResourceAction
-    descriptions: RubricResourceAction
-    flags: RubricResourceAction
-    departments: RubricMultiResourceAction
-    points: RubricResourceAction
-    pass_points: RubricResourceAction
-    standard_groups: RubricMultiResourceAction
-    standards: RubricMultiResourceAction
+    name_id: UUID
+    description_id: UUID | None = None
+    flag_id: UUID | None = None
+    department_ids: list[UUID] | None = None
+    total_points_id: UUID | None = None
+    pass_points_id: UUID | None = None
+    standard_group_ids: list[UUID] | None = None
+    standard_ids: list[UUID] | None = None
 
 
 class SaveRubricApiResponse(BaseModel):
@@ -175,9 +174,28 @@ class SaveRubricSqlParams(BaseModel):
 
     @classmethod
     def from_request(
-        cls, request: SaveRubricApiRequest, profile_id: UUID
+        cls,
+        request: SaveRubricApiRequest,
+        profile_id: UUID,
+        group_id: UUID | None,
     ) -> SaveRubricSqlParams:
-        return cls(profile_id=profile_id, **request.model_dump())
+        return cls(
+            profile_id=profile_id,
+            group_id=group_id,
+            input_rubric_id=request.input_rubric_id,
+            names=RubricResourceAction(resource_id=request.name_id),
+            descriptions=RubricResourceAction(resource_id=request.description_id),
+            flags=RubricResourceAction(resource_id=request.flag_id),
+            departments=RubricMultiResourceAction(
+                resource_ids=request.department_ids
+            ),
+            points=RubricResourceAction(resource_id=request.total_points_id),
+            pass_points=RubricResourceAction(resource_id=request.pass_points_id),
+            standard_groups=RubricMultiResourceAction(
+                resource_ids=request.standard_group_ids
+            ),
+            standards=RubricMultiResourceAction(resource_ids=request.standard_ids),
+        )
 
     def to_tuple(self) -> tuple:
         return (
@@ -222,14 +240,14 @@ class DuplicateRubricApiResponse(BaseModel):
 class PatchRubricDraftApiRequest(BaseModel):
     input_draft_id: UUID | None = None
     group_id: UUID | None = None
-    names: RubricResourceAction | None = None
-    descriptions: RubricResourceAction | None = None
-    flags: RubricResourceAction | None = None
-    departments: RubricMultiResourceAction | None = None
-    points: RubricResourceAction | None = None
-    pass_points: RubricResourceAction | None = None
-    standard_groups: RubricMultiResourceAction | None = None
-    standards: RubricMultiResourceAction | None = None
+    name_id: UUID | None = None
+    description_id: UUID | None = None
+    flag_id: UUID | None = None
+    department_ids: list[UUID] | None = None
+    total_points_id: UUID | None = None
+    pass_points_id: UUID | None = None
+    standard_group_ids: list[UUID] | None = None
+    standard_ids: list[UUID] | None = None
     expected_version: int = 0
 
 
@@ -258,20 +276,22 @@ class PatchRubricDraftSqlParams(BaseModel):
     def from_request(
         cls, request: PatchRubricDraftApiRequest, profile_id: UUID
     ) -> PatchRubricDraftSqlParams:
-        empty_single = RubricResourceAction()
-        empty_multi = RubricMultiResourceAction()
         return cls(
             profile_id=profile_id,
             input_draft_id=request.input_draft_id,
             group_id=request.group_id,
-            names=request.names or empty_single,
-            descriptions=request.descriptions or empty_single,
-            flags=request.flags or empty_single,
-            departments=request.departments or empty_multi,
-            points=request.points or empty_single,
-            pass_points=request.pass_points or empty_single,
-            standard_groups=request.standard_groups or empty_multi,
-            standards=request.standards or empty_multi,
+            names=RubricResourceAction(resource_id=request.name_id),
+            descriptions=RubricResourceAction(resource_id=request.description_id),
+            flags=RubricResourceAction(resource_id=request.flag_id),
+            departments=RubricMultiResourceAction(
+                resource_ids=request.department_ids
+            ),
+            points=RubricResourceAction(resource_id=request.total_points_id),
+            pass_points=RubricResourceAction(resource_id=request.pass_points_id),
+            standard_groups=RubricMultiResourceAction(
+                resource_ids=request.standard_group_ids
+            ),
+            standards=RubricMultiResourceAction(resource_ids=request.standard_ids),
             expected_version=request.expected_version,
         )
 

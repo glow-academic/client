@@ -7,7 +7,7 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
-from app.api.v4.types import BaseResourceSection
+from app.api.v4.types import BaseResourceSection, ListFilterSection
 from app.api.v4.views.drafts.types import DraftAgentViewItem
 from app.sql.types import (
     QGetAgentsV4Item,
@@ -300,29 +300,12 @@ class ListAgentApiAgent(BaseModel):
     can_delete: bool | None = None
 
 
-class ListAgentApiDepartment(BaseModel):
-    """Department filter option for list endpoint."""
-
-    department_id: UUID | None = None
-    name: str | None = None
-    description: str | None = None
-    count: int | None = None
-
-
-class ListAgentApiModel(BaseModel):
-    """Model filter option for list endpoint."""
-
-    model_id: UUID | None = None
-    name: str | None = None
-    description: str | None = None
-    count: int | None = None
-
-
 class ListAgentApiResponse(BaseModel):
     """Response model for list agent endpoint."""
 
     actor_name: str | None = None
     agents: list[ListAgentApiAgent] | None = None
-    departments: list[ListAgentApiDepartment] | None = None
-    models: list[ListAgentApiModel] | None = None
+    department_filter: ListFilterSection | None = None
+    model_filter: ListFilterSection | None = None
+    tool_filter: ListFilterSection | None = None
     total_count: int | None = None

@@ -8,7 +8,7 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
-from app.api.v4.types import BaseResourceSection
+from app.api.v4.types import BaseResourceSection, ListFilterSection
 from app.api.v4.views.drafts.types import DraftProviderViewItem
 from app.sql.types import (
     QGetAgentsV4Item,
@@ -187,39 +187,12 @@ class ListProviderApiProvider(BaseModel):
     can_duplicate: bool | None = None
 
 
-class ListProviderApiProviderOption(BaseModel):
-    provider_id: UUID | None = None
-    name: str | None = None
-    description: str | None = None
-    count: int | None = None
-
-
-class ListProviderApiDepartment(BaseModel):
-    department_id: UUID | None = None
-    name: str | None = None
-    description: str | None = None
-    count: int | None = None
-
-
-class ListProviderApiModel(BaseModel):
-    model_id: UUID | None = None
-    name: str | None = None
-    description: str | None = None
-    count: int | None = None
-
-
-class ListProviderApiStatusOption(BaseModel):
-    value: str | None = None
-    label: str | None = None
-
-
 class ListProviderApiResponse(BaseModel):
     actor_name: str | None = None
     providers: list[ListProviderApiProvider] | None = None
-    provider_options: list[ListProviderApiProviderOption] | None = None
-    departments: list[ListProviderApiDepartment] | None = None
-    models: list[ListProviderApiModel] | None = None
-    status_options: list[ListProviderApiStatusOption] | None = None
+    department_filter: ListFilterSection | None = None
+    model_filter: ListFilterSection | None = None
+    status_filter: ListFilterSection | None = None
     total_count: int | None = None
 
 

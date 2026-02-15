@@ -283,20 +283,18 @@ class EvalMultiResourceAction(BaseModel):
 
 
 class SaveEvalApiRequest(BaseModel):
-    """Request model for save eval endpoint (nested section actions)."""
+    """Request model for save eval endpoint - flat resource IDs."""
 
-    group_id: UUID
     input_eval_id: UUID | None = None
-
-    names: EvalResourceAction
-    descriptions: EvalResourceAction
-    flags: EvalMultiResourceAction
-    departments: EvalMultiResourceAction
-    agents: EvalMultiResourceAction
-    runs: EvalMultiResourceAction
-    groups: EvalMultiResourceAction
-    run_positions: EvalMultiResourceAction | None = None
-    group_positions: EvalMultiResourceAction | None = None
+    name_id: UUID
+    description_id: UUID | None = None
+    flag_ids: list[UUID] | None = None
+    department_ids: list[UUID] | None = None
+    agent_ids: list[UUID] | None = None
+    model_run_ids: list[UUID] | None = None
+    group_ids: list[UUID] | None = None
+    run_position_ids: list[UUID] | None = None
+    group_position_ids: list[UUID] | None = None
 
     # Scoped rubric mappings (target -> rubric ids)
     run_rubrics: list[EvalRunRubricMapping] | None = None
@@ -330,30 +328,24 @@ class SaveEvalSqlParams(BaseModel):
 
     @classmethod
     def from_request(
-        cls, request: SaveEvalApiRequest, profile_id: UUID
+        cls,
+        request: SaveEvalApiRequest,
+        profile_id: UUID,
+        group_id: UUID | None,
     ) -> SaveEvalSqlParams:
-        name_id = request.names.resource_id
-        if not name_id:
-            raise ValueError("Name resource is required")
         return cls(
             profile_id=profile_id,
-            group_id=request.group_id,
+            group_id=group_id,
             input_eval_id=request.input_eval_id,
-            name_id=name_id,
-            description_id=request.descriptions.resource_id,
-            flag_ids=request.flags.resource_ids,
-            department_ids=request.departments.resource_ids,
-            agent_ids=request.agents.resource_ids,
-            model_run_ids=request.runs.resource_ids,
-            group_ids=request.groups.resource_ids,
-            run_position_ids=(
-                request.run_positions.resource_ids if request.run_positions else None
-            ),
-            group_position_ids=(
-                request.group_positions.resource_ids
-                if request.group_positions
-                else None
-            ),
+            name_id=request.name_id,
+            description_id=request.description_id,
+            flag_ids=request.flag_ids,
+            department_ids=request.department_ids,
+            agent_ids=request.agent_ids,
+            model_run_ids=request.model_run_ids,
+            group_ids=request.group_ids,
+            run_position_ids=request.run_position_ids,
+            group_position_ids=request.group_position_ids,
             run_rubrics=request.run_rubrics,
             group_rubrics=request.group_rubrics,
         )
@@ -429,15 +421,15 @@ class DuplicateEvalApiResponse(BaseModel):
 class PatchEvalDraftApiRequest(BaseModel):
     input_draft_id: UUID | None = None
     group_id: UUID | None = None
-    names: EvalResourceAction | None = None
-    descriptions: EvalResourceAction | None = None
-    flags: EvalMultiResourceAction | None = None
-    departments: EvalMultiResourceAction | None = None
-    agents: EvalMultiResourceAction | None = None
-    runs: EvalMultiResourceAction | None = None
-    groups: EvalMultiResourceAction | None = None
-    run_positions: EvalMultiResourceAction | None = None
-    group_positions: EvalMultiResourceAction | None = None
+    name_id: UUID | None = None
+    description_id: UUID | None = None
+    flag_ids: list[UUID] | None = None
+    department_ids: list[UUID] | None = None
+    agent_ids: list[UUID] | None = None
+    model_run_ids: list[UUID] | None = None
+    group_ids: list[UUID] | None = None
+    run_position_ids: list[UUID] | None = None
+    group_position_ids: list[UUID] | None = None
     expected_version: int = 0
 
 
@@ -473,23 +465,15 @@ class PatchEvalDraftSqlParams(BaseModel):
             profile_id=profile_id,
             input_draft_id=request.input_draft_id,
             group_id=request.group_id,
-            name_id=request.names.resource_id if request.names else None,
-            description_id=request.descriptions.resource_id
-            if request.descriptions
-            else None,
-            flag_ids=request.flags.resource_ids if request.flags else None,
-            department_ids=request.departments.resource_ids
-            if request.departments
-            else None,
-            agent_ids=request.agents.resource_ids if request.agents else None,
-            model_run_ids=request.runs.resource_ids if request.runs else None,
-            group_ids=request.groups.resource_ids if request.groups else None,
-            run_position_ids=request.run_positions.resource_ids
-            if request.run_positions
-            else None,
-            group_position_ids=request.group_positions.resource_ids
-            if request.group_positions
-            else None,
+            name_id=request.name_id,
+            description_id=request.description_id,
+            flag_ids=request.flag_ids,
+            department_ids=request.department_ids,
+            agent_ids=request.agent_ids,
+            model_run_ids=request.model_run_ids,
+            group_ids=request.group_ids,
+            run_position_ids=request.run_position_ids,
+            group_position_ids=request.group_position_ids,
             expected_version=request.expected_version,
         )
 

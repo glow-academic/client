@@ -833,7 +833,7 @@ Architecture notes:
 
 Frontend notes:
 - `client/components/providers/Provider.tsx` is canonical and uses parity stack:
-  - `useDraftLifecycle` + `useFlushRegistry` + `useAiGeneration` + `useGenerationModal`
+  - `useDraftLifecycle` + `useFlushRegistry` + `useArtifactGeneration` + `useGenerationModal`
   - step-level AI actions use `StepCardAiButton`
 - Provider frontend reads sections directly (`s.names`, `s.descriptions`, etc.) and does not parse legacy payload shapes.
 - Provider page server actions should include resource creation actions for creatable resources used in flush (`names`, `descriptions`, `values`).
@@ -988,7 +988,7 @@ Architecture notes:
 Frontend notes:
 - `client/components/rubrics/Rubric.tsx` is canonical and should use parity stack:
   - `useSaveContext` + `useDraftLifecycle` + `useFlushRegistry`
-  - `useAiGeneration` + `useGenerationModal` + `StepCardAiButton`
+  - `useArtifactGeneration` + `useGenerationModal` + `StepCardAiButton`
   - `buildResourceActions` / `computeEffectiveFormState` / `checkHasResourceIds`
 - Rubric pages and metadata should read section fields directly (`names.resource`, `descriptions.resource`), never `resources.current`.
 - Do not wire rubric to `/api/v4/resources/departments` create routes; departments in rubric are selected/linked resources only.
@@ -1033,7 +1033,7 @@ Conditional parameter naming rule:
 Frontend notes:
 - `client/components/fields/Field.tsx` is canonical and should use the compact parity stack:
   - `useSaveContext` + `useDraftLifecycle` + `useFlushRegistry`
-  - `useAiGeneration` + `useGenerationModal` + `StepCardAiButton`
+  - `useArtifactGeneration` + `useGenerationModal` + `StepCardAiButton`
   - `buildResourceActions` / `computeEffectiveFormState` / `checkHasResourceIds`
 - Field pages and metadata must read section fields directly (`names.resource`, `descriptions.resource`) and never parse `resources.current`.
 - Field search params should use:
@@ -1085,7 +1085,7 @@ Frontend notes:
   - section-first field reads (`s.names.resource`, `s.protocols.current`, etc.)
   - `useSaveContext` + `useDraftLifecycle` + `useFlushRegistry`
   - `buildResourceActions` / `computeEffectiveFormState` / `checkHasResourceIds`
-  - `useAiGeneration` + `useGenerationModal` + `StepCardAiButton`
+  - `useArtifactGeneration` + `useGenerationModal` + `StepCardAiButton`
 - Metadata/pages must read section fields directly (`names.resource`, `descriptions.resource`) and never parse legacy `resources.current`.
 - Do not reintroduce legacy compatibility adapters for auth flat payloads.
 

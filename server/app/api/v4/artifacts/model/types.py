@@ -13,7 +13,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-from app.api.v4.types import BaseResourceSection
+from app.api.v4.types import BaseResourceSection, ListFilterSection
 from app.api.v4.views.drafts.types import DraftModelViewItem
 from app.sql.types import (
     QGetAgentsV4Item,
@@ -327,30 +327,14 @@ class ListModelApiModel(BaseModel):
     updated_at: datetime | None = None
 
 
-class ListModelApiProvider(BaseModel):
-    """Provider filter option for list endpoint."""
-
-    provider_id: UUID | None = None
-    name: str | None = None
-    count: int | None = None
-
-
-class ListModelApiDepartment(BaseModel):
-    """Department filter option for list endpoint."""
-
-    department_id: UUID | None = None
-    name: str | None = None
-    description: str | None = None
-    count: int | None = None
-
-
 class ListModelApiResponse(BaseModel):
     """Response model for list model endpoint with computed permissions."""
 
     actor_name: str | None = None
     models: list[ListModelApiModel] | None = None
-    providers: list[ListModelApiProvider] | None = None
-    departments: list[ListModelApiDepartment] | None = None
+    provider_filter: ListFilterSection | None = None
+    department_filter: ListFilterSection | None = None
+    agent_filter: ListFilterSection | None = None
     total_count: int | None = None
 
 

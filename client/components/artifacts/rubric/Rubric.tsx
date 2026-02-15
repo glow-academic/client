@@ -33,7 +33,7 @@ import { useFlushRegistry } from "@/hooks/use-flush-registry";
 import { useGenerationModal } from "@/hooks/use-generation-modal";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import {
-  buildResourceActions,
+  buildDraftPayload,
   checkHasResourceIds,
   computeEffectiveFormState,
   type ResourceConfig,
@@ -42,7 +42,6 @@ import { parseAsBoolean, parseAsString, type Parser } from "nuqs";
 
 type SaveRubricIn = InputOf<"/api/v4/artifacts/rubrics/save", "post">;
 type SaveRubricOut = OutputOf<"/api/v4/artifacts/rubrics/save", "post">;
-type SaveRubricBody = NonNullable<SaveRubricIn["body"]>;
 type PatchRubricDraftIn = InputOf<"/api/v4/artifacts/rubrics/draft", "patch">;
 type PatchRubricDraftOut = OutputOf<"/api/v4/artifacts/rubrics/draft", "patch">;
 type CreateDraftNamesIn = InputOf<"/api/v4/resources/names", "post">;
@@ -283,11 +282,10 @@ function RubricComponent({
     ): Record<string, unknown> => ({
       input_draft_id: inputDraftId || null,
       group_id: s?.group_id ?? null,
-      ...buildResourceActions(RUBRIC_RESOURCES, {
+      ...buildDraftPayload(RUBRIC_RESOURCES, {
         formState: formStateRef.current,
         referenceState: lastPatchedFormStateRef.current,
         flushResults: flushResults ?? {},
-        entityData: s as Record<string, unknown> | null,
       }),
       expected_version: expectedVersion,
     }),
@@ -448,32 +446,23 @@ function RubricComponent({
         throw new Error("Save action not available");
       }
 
-      const initialState = getInitialFormState() as unknown as Record<
-        string,
-        unknown
-      >;
-      const saveActions = buildResourceActions(RUBRIC_RESOURCES, {
-        formState: effectiveFormState as unknown as Record<string, unknown>,
-        referenceState: initialState,
-        flushResults,
-        entityData: s as Record<string, unknown> | null,
-      }) as Pick<
-        SaveRubricBody,
-        | "names"
-        | "descriptions"
-        | "flags"
-        | "departments"
-        | "points"
-        | "pass_points"
-        | "standard_groups"
-        | "standards"
-      >;
-
       await saveRubricAction({
         body: {
           input_rubric_id: isEditMode ? rubricId ?? null : null,
-          group_id: s.group_id,
-          ...saveActions,
+          name_id: effectiveFormState.name_id!,
+          description_id: effectiveFormState.description_id ?? null,
+          flag_id: effectiveFormState.active_flag_id ?? null,
+          department_ids: effectiveFormState.department_ids?.length
+            ? effectiveFormState.department_ids
+            : null,
+          total_points_id: effectiveFormState.total_points_id ?? null,
+          pass_points_id: effectiveFormState.pass_points_id ?? null,
+          standard_group_ids: effectiveFormState.standard_group_ids?.length
+            ? effectiveFormState.standard_group_ids
+            : null,
+          standard_ids: effectiveFormState.standard_ids?.length
+            ? effectiveFormState.standard_ids
+            : null,
         },
       });
 
@@ -486,7 +475,6 @@ function RubricComponent({
       s,
       profile?.id,
       saveRubricAction,
-      getInitialFormState,
       isEditMode,
       rubricId,
       router,

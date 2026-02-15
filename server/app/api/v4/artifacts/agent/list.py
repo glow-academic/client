@@ -4,11 +4,10 @@ Two-pass architecture:
 1. SQL returns raw data with department_link_count
 2. Python computes permissions (can_edit, can_delete, can_duplicate)
 
-Filter option names hydrated from cached *_internal() functions.
-Search filtering applied in Python.
+Filter option names resolved in SQL via ListFilterSection pattern.
+Model names for per-agent display hydrated from cached get_models_internal().
 """
 
-import asyncio
 from typing import Annotated, Any, cast
 from uuid import UUID
 
@@ -22,13 +21,11 @@ from app.api.v4.artifacts.agent.permissions import (
 )
 from app.api.v4.artifacts.agent.types import (
     ListAgentApiAgent,
-    ListAgentApiDepartment,
-    ListAgentApiModel,
     ListAgentApiResponse,
 )
 from app.api.v4.auth.profile import get_auth_profile_internal
-from app.api.v4.resources.departments.get import get_departments_internal
 from app.api.v4.resources.models.get import get_models_internal
+from app.api.v4.types import ListFilterSection
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
@@ -113,7 +110,11 @@ async def get_agent_list(
             profile_id=profile_id,
             search=request.search,
             filter_department_ids=request.filter_department_ids,
+            filter_model_ids=getattr(request, "filter_model_ids", None),
+            filter_tool_ids=getattr(request, "filter_tool_ids", None),
             department_search=request.department_search,
+            model_search=getattr(request, "model_search", None),
+            tool_search=getattr(request, "tool_search", None),
             page_size=request.page_size,
             page_offset=request.page_offset,
         )
@@ -135,6 +136,7 @@ async def get_agent_list(
 
         # Compute permissions for each agent in Python
         agents_with_permissions: list[ListAgentApiAgent] = []
+        agent_model_ids: set[UUID] = set()
         for agent in result.agents or []:
             can_edit_val = compute_list_can_edit(
                 user_role=user_role,
@@ -146,6 +148,13 @@ async def get_agent_list(
                 active_settings_count=agent.active_settings_count or 0,
             )
             can_duplicate_val = compute_can_duplicate(user_role)
+
+            if agent.model_id:
+                agent_model_ids.add(
+                    UUID(str(agent.model_id))
+                    if not isinstance(agent.model_id, UUID)
+                    else agent.model_id
+                )
 
             agents_with_permissions.append(
                 ListAgentApiAgent(
@@ -164,123 +173,43 @@ async def get_agent_list(
                 )
             )
 
-        # --- Python hydration: filter option names from cached *_internal() ---
-        # Extract option IDs and counts from SQL result
-        department_option_ids = getattr(result, "department_option_ids", None) or []
-        model_option_ids = getattr(result, "model_option_ids", None) or []
+        # Hydrate model_name and model_description per agent from cached models
+        if pool and agent_model_ids:
+            async with pool.acquire() as c:
+                models_data = await get_models_internal(
+                    c, list(agent_model_ids), bypass_cache
+                )
+            model_lookup: dict[UUID, tuple[str | None, str | None]] = {}
+            for m in models_data:
+                m_id = getattr(m, "id", None)
+                if m_id:
+                    uid = UUID(str(m_id)) if not isinstance(m_id, UUID) else m_id
+                    model_lookup[uid] = (m.name, m.description)
 
-        # Build ID -> count maps
-        department_count_map: dict[UUID, int] = {}
-        department_ids_to_fetch: list[UUID] = []
-        for opt in department_option_ids:
-            opt_id = getattr(opt, "id", None)
-            opt_count = getattr(opt, "count", 0)
-            if opt_id:
-                uid = UUID(str(opt_id)) if not isinstance(opt_id, UUID) else opt_id
-                department_count_map[uid] = int(opt_count or 0)
-                department_ids_to_fetch.append(uid)
+            for agent in agents_with_permissions:
+                if agent.model_id and agent.model_id in model_lookup:
+                    agent.model_name = model_lookup[agent.model_id][0]
+                    agent.model_description = model_lookup[agent.model_id][1]
 
-        model_count_map: dict[UUID, int] = {}
-        model_ids_to_fetch: list[UUID] = []
-        for opt in model_option_ids:
-            opt_id = getattr(opt, "id", None)
-            opt_count = getattr(opt, "count", 0)
-            if opt_id:
-                uid = UUID(str(opt_id)) if not isinstance(opt_id, UUID) else opt_id
-                model_count_map[uid] = int(opt_count or 0)
-                model_ids_to_fetch.append(uid)
-
-        # Also collect model IDs from agents for name hydration
-        agent_model_ids: set[UUID] = set()
-        for agent in agents_with_permissions:
-            if agent.model_id:
-                agent_model_ids.add(agent.model_id)
-        # Merge with option model IDs
-        all_model_ids_to_fetch = list(set(model_ids_to_fetch) | agent_model_ids)
-
-        # Parallel fetch names from cached *_internal() functions
-        departments_data = []
-        models_data = []
-
-        pool = get_pool()
-        has_ids = any([department_ids_to_fetch, all_model_ids_to_fetch])
-
-        if pool and has_ids:
-
-            async def fetch_departments() -> list:
-                if not department_ids_to_fetch:
-                    return []
-                async with pool.acquire() as c:
-                    return await get_departments_internal(
-                        c, department_ids_to_fetch, bypass_cache
-                    )
-
-            async def fetch_models() -> list:
-                if not all_model_ids_to_fetch:
-                    return []
-                async with pool.acquire() as c:
-                    return await get_models_internal(
-                        c, all_model_ids_to_fetch, bypass_cache
-                    )
-
-            departments_data, models_data = await asyncio.gather(
-                fetch_departments(), fetch_models()
-            )
-
-        # Build model lookup for agent name hydration
-        model_lookup: dict[UUID, tuple[str | None, str | None]] = {}
-        for m in models_data:
-            m_id = getattr(m, "id", None)
-            if m_id:
-                uid = UUID(str(m_id)) if not isinstance(m_id, UUID) else m_id
-                model_lookup[uid] = (m.name, m.description)
-
-        # Hydrate model_name and model_description on each agent
-        for agent in agents_with_permissions:
-            if agent.model_id and agent.model_id in model_lookup:
-                agent.model_name = model_lookup[agent.model_id][0]
-                agent.model_description = model_lookup[agent.model_id][1]
-
-        # Merge names with counts, apply search filtering in Python
-        department_search = request.department_search
-        departments: list[ListAgentApiDepartment] = [
-            ListAgentApiDepartment(
-                department_id=d.department_id,
-                name=d.name,
-                description=d.description or "",
-                count=department_count_map.get(d.department_id, 0)
-                if d.department_id
-                else 0,
-            )
-            for d in departments_data
-            if d.department_id
-            and (
-                department_search is None
-                or department_search.lower() in (d.name or "").lower()
-            )
-        ]
-
-        models: list[ListAgentApiModel] = [
-            ListAgentApiModel(
-                model_id=UUID(str(m_id)) if not isinstance(m_id, UUID) else m_id,
-                name=m.name,
-                description=m.description or "",
-                count=model_count_map.get(
-                    UUID(str(m_id)) if not isinstance(m_id, UUID) else m_id, 0
-                ),
-            )
-            for m in models_data
-            if (m_id := getattr(m, "id", None))
-            and (UUID(str(m_id)) if not isinstance(m_id, UUID) else m_id)
-            in model_count_map
-        ]
-
-        # Build API response with computed permissions
+        # Build API response with ListFilterSection pattern
         api_response = ListAgentApiResponse(
             actor_name=actor_name,
             agents=agents_with_permissions,
-            departments=departments,
-            models=models,
+            department_filter=ListFilterSection.from_sql_options(
+                result.department_options,
+                request.filter_department_ids,
+                request.department_search,
+            ),
+            model_filter=ListFilterSection.from_sql_options(
+                result.model_options,
+                getattr(request, "filter_model_ids", None),
+                getattr(request, "model_search", None),
+            ),
+            tool_filter=ListFilterSection.from_sql_options(
+                result.tool_options,
+                getattr(request, "filter_tool_ids", None),
+                getattr(request, "tool_search", None),
+            ),
             total_count=result.total_count,
         )
 

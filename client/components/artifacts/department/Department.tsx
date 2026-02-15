@@ -30,7 +30,7 @@ import { useFlushRegistry } from "@/hooks/use-flush-registry";
 import { useGenerationModal } from "@/hooks/use-generation-modal";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import {
-  buildResourceActions,
+  buildDraftPayload,
   checkHasResourceIds,
   computeEffectiveFormState,
   type ResourceConfig,
@@ -40,7 +40,6 @@ import { parseAsString, type Parser } from "nuqs";
 
 type SaveDepartmentIn = InputOf<"/api/v4/artifacts/departments/save", "post">;
 type SaveDepartmentOut = OutputOf<"/api/v4/artifacts/departments/save", "post">;
-type SaveDepartmentBody = NonNullable<SaveDepartmentIn["body"]>;
 type CreateDraftNamesIn = InputOf<"/api/v4/resources/names", "post">;
 type CreateDraftNamesOut = OutputOf<"/api/v4/resources/names", "post">;
 type CreateDraftDescriptionsIn = InputOf<

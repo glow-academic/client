@@ -109,12 +109,11 @@ class DepartmentMultiResourceAction(BaseModel):
 
 
 class SaveDepartmentApiRequest(BaseModel):
-    group_id: UUID
     input_department_id: UUID | None = None
-    names: DepartmentResourceAction
-    descriptions: DepartmentResourceAction
-    flags: DepartmentResourceAction
-    settings: DepartmentMultiResourceAction
+    name_id: UUID
+    description_id: UUID | None = None
+    flag_id: UUID | None = None
+    settings_ids: list[UUID] | None = None
 
 
 class SaveDepartmentApiResponse(BaseModel):
@@ -134,9 +133,24 @@ class SaveDepartmentSqlParams(BaseModel):
 
     @classmethod
     def from_request(
-        cls, request: SaveDepartmentApiRequest, profile_id: UUID
+        cls,
+        request: SaveDepartmentApiRequest,
+        profile_id: UUID,
+        group_id: UUID | None,
     ) -> SaveDepartmentSqlParams:
-        return cls(profile_id=profile_id, **request.model_dump())
+        return cls(
+            profile_id=profile_id,
+            group_id=group_id,
+            input_department_id=request.input_department_id,
+            names=DepartmentResourceAction(resource_id=request.name_id),
+            descriptions=DepartmentResourceAction(
+                resource_id=request.description_id
+            ),
+            flags=DepartmentResourceAction(resource_id=request.flag_id),
+            settings=DepartmentMultiResourceAction(
+                resource_ids=request.settings_ids
+            ),
+        )
 
     def to_tuple(self) -> tuple:
         def single(a: DepartmentResourceAction) -> tuple:
@@ -183,10 +197,10 @@ class DuplicateDepartmentApiResponse(BaseModel):
 class PatchDepartmentDraftApiRequest(BaseModel):
     input_draft_id: UUID | None = None
     group_id: UUID | None = None
-    names: DepartmentResourceAction | None = None
-    descriptions: DepartmentResourceAction | None = None
-    flags: DepartmentResourceAction | None = None
-    settings: DepartmentMultiResourceAction | None = None
+    name_id: UUID | None = None
+    description_id: UUID | None = None
+    flag_id: UUID | None = None
+    settings_ids: list[UUID] | None = None
     expected_version: int = 0
 
 
@@ -211,16 +225,18 @@ class PatchDepartmentDraftSqlParams(BaseModel):
     def from_request(
         cls, request: PatchDepartmentDraftApiRequest, profile_id: UUID
     ) -> PatchDepartmentDraftSqlParams:
-        empty_single = DepartmentResourceAction()
-        empty_multi = DepartmentMultiResourceAction()
         return cls(
             profile_id=profile_id,
             input_draft_id=request.input_draft_id,
             group_id=request.group_id,
-            names=request.names or empty_single,
-            descriptions=request.descriptions or empty_single,
-            flags=request.flags or empty_single,
-            settings=request.settings or empty_multi,
+            names=DepartmentResourceAction(resource_id=request.name_id),
+            descriptions=DepartmentResourceAction(
+                resource_id=request.description_id
+            ),
+            flags=DepartmentResourceAction(resource_id=request.flag_id),
+            settings=DepartmentMultiResourceAction(
+                resource_ids=request.settings_ids
+            ),
             expected_version=request.expected_version,
         )
 

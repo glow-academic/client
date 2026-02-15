@@ -47,9 +47,10 @@ CREATE TYPE types.q_list_models_v4_model AS (
     active_agent_count bigint
 );
 
--- Filter option types simplified: id + count only (names hydrated in Python from cache)
-CREATE TYPE types.q_list_models_v4_option_id AS (
-    id uuid,
+-- Filter option type: value/label/count (names resolved in SQL, no Python hydration needed)
+CREATE TYPE types.q_list_models_v4_option AS (
+    value text,
+    label text,
     count bigint
 );
 
@@ -59,15 +60,18 @@ CREATE OR REPLACE FUNCTION api_list_models_v4(
     search text DEFAULT NULL,
     filter_provider_ids uuid[] DEFAULT NULL,
     filter_department_ids uuid[] DEFAULT NULL,
+    filter_agent_ids uuid[] DEFAULT NULL,
     provider_search text DEFAULT NULL,
     department_search text DEFAULT NULL,
+    agent_search text DEFAULT NULL,
     page_size int DEFAULT 1000,
     page_offset int DEFAULT 0
 )
 RETURNS TABLE (
     models types.q_list_models_v4_model[],
-    provider_option_ids types.q_list_models_v4_option_id[],
-    department_option_ids types.q_list_models_v4_option_id[],
+    provider_options types.q_list_models_v4_option[],
+    department_options types.q_list_models_v4_option[],
+    agent_options types.q_list_models_v4_option[],
     total_count bigint
 )
 LANGUAGE sql
@@ -107,6 +111,15 @@ agent_usage AS (
     WHERE am.active = true
     GROUP BY am.model_id
 ),
+-- Agent IDs per model (for filtering)
+model_agents_data AS (
+    SELECT
+        am.model_id,
+        ARRAY_AGG(DISTINCT am.agent_id) as agent_ids
+    FROM agent_models_junction am
+    WHERE am.active = true
+    GROUP BY am.model_id
+),
 -- Determine if model is an image model (has 'image' output modality)
 image_model_check AS (
     SELECT
@@ -127,18 +140,20 @@ model_data_base AS (
         m.updated_at,
         mpd.provider_id,
         COALESCE(mdd.department_ids, NULL) as department_ids,
-        COALESCE(au.active_agent_count, 0)::bigint as active_agent_count
+        COALESCE(au.active_agent_count, 0)::bigint as active_agent_count,
+        COALESCE(mad.agent_ids, ARRAY[]::uuid[]) as agent_ids
     FROM model_artifact m
     LEFT JOIN model_departments_data mdd ON mdd.model_id = m.id
     LEFT JOIN model_providers_data mpd ON mpd.model_id = m.id
     LEFT JOIN agent_usage au ON au.model_id = m.id
     LEFT JOIN image_model_check imc ON imc.model_id = m.id
+    LEFT JOIN model_agents_data mad ON mad.model_id = m.id
     LEFT JOIN model_departments_junction md ON md.model_id = m.id AND md.department_id IN (SELECT department_id FROM user_departments)
     GROUP BY m.id,
         (SELECT n.name FROM model_names_junction mn JOIN names_resource n ON mn.name_id = n.id WHERE mn.model_id = m.id LIMIT 1),
         (SELECT d.description FROM model_descriptions_junction md JOIN descriptions_resource d ON md.description_id = d.id WHERE md.model_id = m.id LIMIT 1),
         EXISTS (SELECT 1 FROM model_flags_junction mf JOIN flags_resource f ON mf.flag_id = f.id WHERE mf.model_id = m.id AND f.name = 'model_active' AND mf.value = TRUE),
-        imc.image_model, m.updated_at, mpd.provider_id, mdd.department_ids, au.active_agent_count
+        imc.image_model, m.updated_at, mpd.provider_id, mdd.department_ids, au.active_agent_count, mad.agent_ids
     HAVING COUNT(md.model_id) > 0 OR NOT EXISTS (
         SELECT 1 FROM model_departments_junction md2 WHERE md2.model_id = m.id
     )
@@ -158,6 +173,8 @@ filtered_models AS (
         AND (filter_provider_ids IS NULL OR md.provider_id = ANY(filter_provider_ids))
         -- Department filter: model must belong to at least one selected department
         AND (filter_department_ids IS NULL OR md.department_ids && filter_department_ids::text[])
+        -- Agent filter: model must be used by one of the selected agents
+        AND (filter_agent_ids IS NULL OR md.agent_ids && filter_agent_ids)
 ),
 -- Count total filtered results (before pagination)
 filtered_count AS (
@@ -170,7 +187,7 @@ paginated_models AS (
     ORDER BY fm.updated_at DESC NULLS LAST
     LIMIT page_size OFFSET page_offset
 ),
--- Filter option IDs with counts (names hydrated in Python from cached *_internal() functions)
+-- Provider options with names resolved in SQL
 all_provider_ids AS (
     SELECT DISTINCT provider_id
     FROM model_data
@@ -178,17 +195,39 @@ all_provider_ids AS (
 ),
 provider_option_data AS (
     SELECT
-        pr.id,
+        pr.id::text as value,
+        (SELECT n.name FROM provider_names_junction pn JOIN names_resource n ON n.id = pn.name_id WHERE pn.provider_id = pp.provider_id LIMIT 1) as label,
         (SELECT COUNT(*) FROM model_data md WHERE md.provider_id = pr.id) as count
     FROM providers_resource pr
+    JOIN provider_providers_junction pp ON pp.providers_id = pr.id
     WHERE pr.id IN (SELECT provider_id FROM all_provider_ids)
+      AND (provider_search IS NULL OR LOWER((SELECT n.name FROM provider_names_junction pn JOIN names_resource n ON n.id = pn.name_id WHERE pn.provider_id = pp.provider_id LIMIT 1)) LIKE '%' || LOWER(provider_search) || '%')
 ),
+-- Department options with names resolved in SQL
 department_option_data AS (
     SELECT
-        dr.id,
+        dr.id::text as value,
+        (SELECT n.name FROM department_names_junction dn JOIN names_resource n ON n.id = dn.name_id WHERE dn.department_id = dd.department_id LIMIT 1) as label,
         (SELECT COUNT(*) FROM model_data) as count
     FROM departments_resource dr
+    JOIN department_departments_junction dd ON dd.departments_id = dr.id
     WHERE dr.id IN (SELECT department_id FROM user_departments)
+      AND (department_search IS NULL OR LOWER((SELECT n.name FROM department_names_junction dn JOIN names_resource n ON n.id = dn.name_id WHERE dn.department_id = dd.department_id LIMIT 1)) LIKE '%' || LOWER(department_search) || '%')
+),
+-- Agent options with names resolved in SQL
+all_agent_ids AS (
+    SELECT DISTINCT unnest(agent_ids) as agent_id
+    FROM model_data
+    WHERE agent_ids IS NOT NULL AND array_length(agent_ids, 1) > 0
+),
+agent_option_data AS (
+    SELECT
+        aa.id::text as value,
+        (SELECT n.name FROM agent_names_junction an JOIN names_resource n ON n.id = an.name_id WHERE an.agent_id = aa.id LIMIT 1) as label,
+        (SELECT COUNT(*) FROM model_data md WHERE aa.id = ANY(md.agent_ids)) as count
+    FROM agent_artifact aa
+    WHERE aa.id IN (SELECT agent_id FROM all_agent_ids)
+      AND (agent_search IS NULL OR LOWER((SELECT n.name FROM agent_names_junction an JOIN names_resource n ON n.id = an.name_id WHERE an.agent_id = aa.id LIMIT 1)) LIKE '%' || LOWER(agent_search) || '%')
 )
 SELECT
     -- Aggregate paginated models
@@ -203,20 +242,30 @@ SELECT
         ) FROM paginated_models pm),
         '{}'::types.q_list_models_v4_model[]
     ) as models,
-    -- Provider option IDs with counts (names hydrated in Python)
+    -- Provider options (names resolved in SQL)
     COALESCE(
         (SELECT ARRAY_AGG(
-            (pod.id, pod.count)::types.q_list_models_v4_option_id
+            (pod.value, pod.label, pod.count)::types.q_list_models_v4_option
+            ORDER BY pod.label
         ) FROM provider_option_data pod),
-        '{}'::types.q_list_models_v4_option_id[]
-    ) as provider_option_ids,
-    -- Department option IDs with counts (names hydrated in Python)
+        '{}'::types.q_list_models_v4_option[]
+    ) as provider_options,
+    -- Department options (names resolved in SQL)
     COALESCE(
         (SELECT ARRAY_AGG(
-            (dod.id, dod.count)::types.q_list_models_v4_option_id
+            (dod.value, dod.label, dod.count)::types.q_list_models_v4_option
+            ORDER BY dod.label
         ) FROM department_option_data dod),
-        '{}'::types.q_list_models_v4_option_id[]
-    ) as department_option_ids,
+        '{}'::types.q_list_models_v4_option[]
+    ) as department_options,
+    -- Agent options (names resolved in SQL)
+    COALESCE(
+        (SELECT ARRAY_AGG(
+            (aod.value, aod.label, aod.count)::types.q_list_models_v4_option
+            ORDER BY aod.label
+        ) FROM agent_option_data aod),
+        '{}'::types.q_list_models_v4_option[]
+    ) as agent_options,
     -- Total count of filtered models (before pagination)
     (SELECT total_count FROM filtered_count) as total_count
 FROM params

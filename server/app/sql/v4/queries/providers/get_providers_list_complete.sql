@@ -1,6 +1,6 @@
 -- Get providers list with raw data for Python-side permission computation
 -- Resource-first: only touches provider_artifact + provider's own junctions + resource tables
--- Filter option names hydrated from cached *_internal() functions in Python
+-- Filter option names resolved in SQL via ListFilterSection pattern
 -- Uses safe drop/recreate pattern: drop function first, then types (no CASCADE), then recreate
 -- 1) Drop function first (breaks dependency on types)
 -- Drop all versions of the function using DO block to handle signature variations
@@ -46,25 +46,30 @@ CREATE TYPE types.q_list_providers_v4_provider AS (
     model_ids uuid[]
 );
 
-CREATE TYPE types.q_list_providers_v4_status_option AS (
+-- Filter option type: value/label/count (names resolved in SQL, no Python hydration needed)
+CREATE TYPE types.q_list_providers_v4_option AS (
     value text,
-    label text
-);
-
--- Filter option types simplified: id + count only (names hydrated in Python from cache)
-CREATE TYPE types.q_list_providers_v4_option_id AS (
-    id uuid,
+    label text,
     count bigint
 );
 
 -- 4) Recreate function
-CREATE OR REPLACE FUNCTION api_list_providers_v4(profile_id uuid)
+CREATE OR REPLACE FUNCTION api_list_providers_v4(
+    profile_id uuid,
+    search text DEFAULT NULL,
+    filter_department_ids uuid[] DEFAULT NULL,
+    filter_model_ids uuid[] DEFAULT NULL,
+    filter_status text[] DEFAULT NULL,
+    department_search text DEFAULT NULL,
+    model_search text DEFAULT NULL,
+    page_size int DEFAULT 1000,
+    page_offset int DEFAULT 0
+)
 RETURNS TABLE (
     providers types.q_list_providers_v4_provider[],
-    provider_option_ids types.q_list_providers_v4_option_id[],
-    department_option_ids types.q_list_providers_v4_option_id[],
-    model_option_ids types.q_list_providers_v4_option_id[],
-    status_options types.q_list_providers_v4_status_option[],
+    department_options types.q_list_providers_v4_option[],
+    model_options types.q_list_providers_v4_option[],
+    status_options types.q_list_providers_v4_option[],
     total_count bigint
 )
 LANGUAGE sql
@@ -121,33 +126,54 @@ provider_data AS (
     LEFT JOIN model_data md ON md.provider_id = pr.id
     WHERE p.active = true
 ),
+-- Apply server-side filters
+filtered_providers AS (
+    SELECT pd.*
+    FROM provider_data pd
+    WHERE
+        -- Search filter
+        (search IS NULL OR LOWER(pd.name) LIKE '%' || LOWER(search) || '%' OR LOWER(pd.description) LIKE '%' || LOWER(search) || '%')
+        -- Department filter
+        AND (filter_department_ids IS NULL OR pd.department_ids && filter_department_ids)
+        -- Model filter
+        AND (filter_model_ids IS NULL OR pd.model_ids && filter_model_ids)
+        -- Status filter
+        AND (filter_status IS NULL OR (pd.active AND 'true' = ANY(filter_status)) OR (NOT pd.active AND 'false' = ANY(filter_status)))
+),
+-- Count total filtered results (before pagination)
+filtered_count AS (
+    SELECT COUNT(*)::bigint as total_count FROM filtered_providers
+),
+-- Paginate filtered results
+paginated_providers AS (
+    SELECT fp.*
+    FROM filtered_providers fp
+    ORDER BY fp.updated_at DESC NULLS LAST
+    LIMIT page_size OFFSET page_offset
+),
 providers_agg AS (
     SELECT
         COALESCE(
             ARRAY_AGG(
-                (pd.provider_id, pd.name, pd.description, pd.value, pd.active, pd.updated_at, pd.department_ids, pd.active_model_count, pd.model_ids)::types.q_list_providers_v4_provider
-                ORDER BY pd.updated_at DESC NULLS LAST
+                (pp.provider_id, pp.name, pp.description, pp.value, pp.active, pp.updated_at, pp.department_ids, pp.active_model_count, pp.model_ids)::types.q_list_providers_v4_provider
+                ORDER BY pp.updated_at DESC NULLS LAST
             ),
             '{}'::types.q_list_providers_v4_provider[]
         ) as providers
-    FROM provider_data pd
+    FROM paginated_providers pp
 ),
--- Filter option IDs with counts (names hydrated in Python from cached *_internal() functions)
-provider_option_data AS (
-    SELECT
-        p.id,
-        (SELECT COUNT(*) FROM provider_data pd WHERE pd.provider_id IS NOT NULL)::bigint as count
-    FROM providers_resource p
-    WHERE p.active = true
-      AND EXISTS (SELECT 1 FROM provider_providers_junction ppj WHERE ppj.providers_id = p.id)
-),
+-- Department options with names resolved in SQL
 department_option_data AS (
     SELECT
-        dr.id,
-        (SELECT COUNT(*) FROM provider_data)::bigint as count
+        dr.id::text as value,
+        (SELECT n.name FROM department_names_junction dn JOIN names_resource n ON n.id = dn.name_id WHERE dn.department_id = dd.department_id LIMIT 1) as label,
+        (SELECT COUNT(*) FROM provider_data pd WHERE dr.id = ANY(pd.department_ids)) as count
     FROM departments_resource dr
+    JOIN department_departments_junction dd ON dd.departments_id = dr.id
     WHERE dr.id IN (SELECT department_id FROM user_departments)
+      AND (department_search IS NULL OR LOWER((SELECT n.name FROM department_names_junction dn JOIN names_resource n ON n.id = dn.name_id WHERE dn.department_id = dd.department_id LIMIT 1)) LIKE '%' || LOWER(department_search) || '%')
 ),
+-- Model options with names resolved in SQL
 all_model_ids AS (
     SELECT DISTINCT unnest(model_ids) as model_id
     FROM provider_data
@@ -155,40 +181,44 @@ all_model_ids AS (
 ),
 model_option_data AS (
     SELECT
-        mr.id,
-        (SELECT COUNT(*) FROM provider_data pd WHERE mr.id = ANY(pd.model_ids))::bigint as count
-    FROM models_resource mr
-    WHERE mr.id IN (SELECT model_id FROM all_model_ids)
+        ma.id::text as value,
+        (SELECT n.name FROM model_names_junction mn JOIN names_resource n ON n.id = mn.name_id WHERE mn.model_id = ma.id LIMIT 1) as label,
+        (SELECT COUNT(*) FROM provider_data pd WHERE ma.id = ANY(pd.model_ids)) as count
+    FROM model_artifact ma
+    WHERE ma.id IN (SELECT model_id FROM all_model_ids)
+      AND (model_search IS NULL OR LOWER((SELECT n.name FROM model_names_junction mn JOIN names_resource n ON n.id = mn.name_id WHERE mn.model_id = ma.id LIMIT 1)) LIKE '%' || LOWER(model_search) || '%')
+),
+-- Status options with counts
+status_option_data AS (
+    SELECT * FROM (VALUES
+        ('true', 'Active', (SELECT COUNT(*) FROM provider_data WHERE active = true)::bigint),
+        ('false', 'Inactive', (SELECT COUNT(*) FROM provider_data WHERE active = false)::bigint)
+    ) AS t(value, label, count)
 )
 SELECT
     pa.providers,
-    -- Provider option IDs with counts (names hydrated in Python)
+    -- Department options (names resolved in SQL)
     COALESCE(
         (SELECT ARRAY_AGG(
-            (pod.id, pod.count)::types.q_list_providers_v4_option_id
-        ) FROM provider_option_data pod),
-        '{}'::types.q_list_providers_v4_option_id[]
-    ) as provider_option_ids,
-    -- Department option IDs with counts (names hydrated in Python)
-    COALESCE(
-        (SELECT ARRAY_AGG(
-            (dod.id, dod.count)::types.q_list_providers_v4_option_id
+            (dod.value, dod.label, dod.count)::types.q_list_providers_v4_option
+            ORDER BY dod.label
         ) FROM department_option_data dod),
-        '{}'::types.q_list_providers_v4_option_id[]
-    ) as department_option_ids,
-    -- Model option IDs with counts (names hydrated in Python)
+        '{}'::types.q_list_providers_v4_option[]
+    ) as department_options,
+    -- Model options (names resolved in SQL)
     COALESCE(
         (SELECT ARRAY_AGG(
-            (mod.id, mod.count)::types.q_list_providers_v4_option_id
+            (mod.value, mod.label, mod.count)::types.q_list_providers_v4_option
+            ORDER BY mod.label
         ) FROM model_option_data mod),
-        '{}'::types.q_list_providers_v4_option_id[]
-    ) as model_option_ids,
-    ARRAY[
-        ('true', 'Active')::types.q_list_providers_v4_status_option,
-        ('false', 'Inactive')::types.q_list_providers_v4_status_option
-    ]::types.q_list_providers_v4_status_option[] as status_options,
+        '{}'::types.q_list_providers_v4_option[]
+    ) as model_options,
+    -- Status options with counts
+    (SELECT ARRAY_AGG(
+        (sod.value, sod.label, sod.count)::types.q_list_providers_v4_option
+    ) FROM status_option_data sod) as status_options,
     -- Total count
-    (SELECT COUNT(*) FROM provider_data)::bigint as total_count
+    (SELECT total_count FROM filtered_count) as total_count
 FROM params
 CROSS JOIN providers_agg pa
 $$;

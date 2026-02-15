@@ -49,8 +49,10 @@ CREATE TYPE types.q_list_agents_v4_agent AS (
     active_settings_count bigint
 );
 
-CREATE TYPE types.q_list_agents_v4_option_id AS (
-    id uuid,
+-- Filter option type: value/label/count (names resolved in SQL, no Python hydration needed)
+CREATE TYPE types.q_list_agents_v4_option AS (
+    value text,
+    label text,
     count bigint
 );
 
@@ -59,14 +61,19 @@ CREATE OR REPLACE FUNCTION api_list_agents_v4(
     profile_id uuid,
     search text DEFAULT NULL,
     filter_department_ids uuid[] DEFAULT NULL,
+    filter_model_ids uuid[] DEFAULT NULL,
+    filter_tool_ids uuid[] DEFAULT NULL,
     department_search text DEFAULT NULL,
+    model_search text DEFAULT NULL,
+    tool_search text DEFAULT NULL,
     page_size int DEFAULT 12,
     page_offset int DEFAULT 0
 )
 RETURNS TABLE (
     agents types.q_list_agents_v4_agent[],
-    department_option_ids types.q_list_agents_v4_option_id[],
-    model_option_ids types.q_list_agents_v4_option_id[],
+    department_options types.q_list_agents_v4_option[],
+    model_options types.q_list_agents_v4_option[],
+    tool_options types.q_list_agents_v4_option[],
     total_count bigint
 )
 LANGUAGE sql
@@ -100,6 +107,17 @@ agent_settings_data AS (
     WHERE aaj.active = true
     GROUP BY aaj.agent_id
 ),
+-- Tool IDs per agent (for filtering)
+agent_tools_data AS (
+    SELECT
+        atj.agent_id,
+        ARRAY_AGG(DISTINCT ttj.tool_id) as tool_ids
+    FROM agent_tools_junction atj
+    JOIN tools_resource tr ON tr.id = atj.tool_id AND tr.active = true
+    JOIN tool_tools_junction ttj ON ttj.tools_id = tr.id
+    WHERE atj.active = true
+    GROUP BY atj.agent_id
+),
 agent_data AS (
     SELECT
         a.id as agent_id,
@@ -110,6 +128,7 @@ agent_data AS (
         a.updated_at,
         COALESCE(add_data.department_ids, NULL) as department_ids,
         COALESCE(asd.active_settings_count, 0) as active_settings_count,
+        COALESCE(atd.tool_ids, ARRAY[]::uuid[]) as tool_ids,
         -- Temperature from junction
         (SELECT tl.temperature FROM agent_temperature_levels_junction atl
          JOIN temperature_levels_resource tl ON tl.id = atl.temperature_level_id AND tl.active = true
@@ -121,9 +140,10 @@ agent_data AS (
     FROM agent_artifact a
     LEFT JOIN agent_departments_data add_data ON add_data.agent_id = a.id
     LEFT JOIN agent_settings_data asd ON asd.agent_id = a.id
+    LEFT JOIN agent_tools_data atd ON atd.agent_id = a.id
     LEFT JOIN agent_departments_junction ad ON ad.agent_id = a.id AND ad.active = true AND ad.department_id IN (SELECT department_id FROM user_departments)
     GROUP BY a.id, a.updated_at,
-        add_data.department_ids, asd.active_settings_count
+        add_data.department_ids, asd.active_settings_count, atd.tool_ids
     HAVING COUNT(ad.department_id) > 0 OR NOT EXISTS (
         SELECT 1 FROM agent_departments_junction ad2 WHERE ad2.agent_id = a.id AND ad2.active = true
     )
@@ -137,6 +157,10 @@ filtered_agents AS (
         (search IS NULL OR LOWER(ad.agent_name) LIKE '%' || LOWER(search) || '%' OR LOWER(ad.description) LIKE '%' || LOWER(search) || '%')
         -- Department filter: agent must belong to at least one selected department
         AND (filter_department_ids IS NULL OR ad.department_ids && filter_department_ids::text[])
+        -- Model filter: agent must use one of the selected models
+        AND (filter_model_ids IS NULL OR ad.model_id = ANY(filter_model_ids))
+        -- Tool filter: agent must use one of the selected tools
+        AND (filter_tool_ids IS NULL OR ad.tool_ids && filter_tool_ids)
 ),
 -- Count total filtered results (before pagination)
 filtered_count AS (
@@ -149,15 +173,18 @@ paginated_agents AS (
     ORDER BY fa.updated_at DESC NULLS LAST
     LIMIT page_size OFFSET page_offset
 ),
--- Department option IDs with counts (names hydrated in Python)
+-- Department options with names resolved in SQL
 department_option_data AS (
     SELECT
-        dr.id,
+        dr.id::text as value,
+        (SELECT n.name FROM department_names_junction dn JOIN names_resource n ON n.id = dn.name_id WHERE dn.department_id = dd.department_id LIMIT 1) as label,
         (SELECT COUNT(*) FROM agent_data ad WHERE dr.id::text = ANY(ad.department_ids)) as count
     FROM departments_resource dr
+    JOIN department_departments_junction dd ON dd.departments_id = dr.id
     WHERE dr.id IN (SELECT department_id FROM user_departments)
+      AND (department_search IS NULL OR LOWER((SELECT n.name FROM department_names_junction dn JOIN names_resource n ON n.id = dn.name_id WHERE dn.department_id = dd.department_id LIMIT 1)) LIKE '%' || LOWER(department_search) || '%')
 ),
--- Model option IDs with counts (names hydrated in Python)
+-- Model options with names resolved in SQL
 all_model_ids AS (
     SELECT DISTINCT model_id
     FROM agent_data
@@ -165,10 +192,28 @@ all_model_ids AS (
 ),
 model_option_data AS (
     SELECT
-        mr.id,
+        mr.id::text as value,
+        (SELECT n.name FROM model_names_junction mn JOIN names_resource n ON n.id = mn.name_id WHERE mn.model_id = mm.model_id LIMIT 1) as label,
         (SELECT COUNT(*) FROM agent_data ad WHERE mr.id = ad.model_id) as count
     FROM models_resource mr
+    JOIN model_models_junction mm ON mm.models_id = mr.id
     WHERE mr.id IN (SELECT model_id FROM all_model_ids)
+      AND (model_search IS NULL OR LOWER((SELECT n.name FROM model_names_junction mn JOIN names_resource n ON n.id = mn.name_id WHERE mn.model_id = mm.model_id LIMIT 1)) LIKE '%' || LOWER(model_search) || '%')
+),
+-- Tool options with names resolved in SQL
+all_tool_ids AS (
+    SELECT DISTINCT unnest(tool_ids) as tool_id
+    FROM agent_data
+    WHERE tool_ids IS NOT NULL AND array_length(tool_ids, 1) > 0
+),
+tool_option_data AS (
+    SELECT
+        ta.id::text as value,
+        (SELECT n.name FROM tool_names_junction tn JOIN names_resource n ON n.id = tn.name_id WHERE tn.tool_id = ta.id LIMIT 1) as label,
+        (SELECT COUNT(*) FROM agent_data ad WHERE ta.id = ANY(ad.tool_ids)) as count
+    FROM tool_artifact ta
+    WHERE ta.id IN (SELECT tool_id FROM all_tool_ids)
+      AND (tool_search IS NULL OR LOWER((SELECT n.name FROM tool_names_junction tn JOIN names_resource n ON n.id = tn.name_id WHERE tn.tool_id = ta.id LIMIT 1)) LIKE '%' || LOWER(tool_search) || '%')
 )
 SELECT
     -- Aggregate paginated agents
@@ -185,20 +230,30 @@ SELECT
         ) FROM paginated_agents pa),
         '{}'::types.q_list_agents_v4_agent[]
     ) as agents,
-    -- Department option IDs with counts (names hydrated in Python)
+    -- Department options (names resolved in SQL)
     COALESCE(
         (SELECT ARRAY_AGG(
-            (dod.id, dod.count)::types.q_list_agents_v4_option_id
+            (dod.value, dod.label, dod.count)::types.q_list_agents_v4_option
+            ORDER BY dod.label
         ) FROM department_option_data dod),
-        '{}'::types.q_list_agents_v4_option_id[]
-    ) as department_option_ids,
-    -- Model option IDs with counts (names hydrated in Python)
+        '{}'::types.q_list_agents_v4_option[]
+    ) as department_options,
+    -- Model options (names resolved in SQL)
     COALESCE(
         (SELECT ARRAY_AGG(
-            (mod.id, mod.count)::types.q_list_agents_v4_option_id
+            (mod.value, mod.label, mod.count)::types.q_list_agents_v4_option
+            ORDER BY mod.label
         ) FROM model_option_data mod),
-        '{}'::types.q_list_agents_v4_option_id[]
-    ) as model_option_ids,
+        '{}'::types.q_list_agents_v4_option[]
+    ) as model_options,
+    -- Tool options (names resolved in SQL)
+    COALESCE(
+        (SELECT ARRAY_AGG(
+            (tod.value, tod.label, tod.count)::types.q_list_agents_v4_option
+            ORDER BY tod.label
+        ) FROM tool_option_data tod),
+        '{}'::types.q_list_agents_v4_option[]
+    ) as tool_options,
     -- Total count of filtered agents (before pagination)
     (SELECT total_count FROM filtered_count) as total_count
 FROM params

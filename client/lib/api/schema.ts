@@ -18987,15 +18987,6 @@ export interface components {
             /** Trace Id */
             trace_id?: string | null;
         };
-        /** AuthItemAction */
-        AuthItemAction: {
-            /** Items */
-            items?: components["schemas"]["SaveAuthItemInput"][] | null;
-            /** Create Tool Id */
-            create_tool_id?: string | null;
-            /** Link Tool Id */
-            link_tool_id?: string | null;
-        };
         /** AuthItemKeysApiRequest */
         AuthItemKeysApiRequest: {
             /**
@@ -19205,15 +19196,6 @@ export interface components {
             /** Resources */
             resources?: components["schemas"]["AuthItemResource"][] | null;
         };
-        /** AuthMultiResourceAction */
-        AuthMultiResourceAction: {
-            /** Resource Ids */
-            resource_ids?: string[] | null;
-            /** Create Tool Id */
-            create_tool_id?: string | null;
-            /** Link Tool Id */
-            link_tool_id?: string | null;
-        };
         /** AuthNameSection */
         AuthNameSection: {
             /**
@@ -19264,15 +19246,6 @@ export interface components {
             current?: components["schemas"]["QGetProtocolsV4Item"][] | null;
             /** Resources */
             resources?: components["schemas"]["QGetProtocolsV4Item"][] | null;
-        };
-        /** AuthResourceAction */
-        AuthResourceAction: {
-            /** Resource Id */
-            resource_id?: string | null;
-            /** Create Tool Id */
-            create_tool_id?: string | null;
-            /** Link Tool Id */
-            link_tool_id?: string | null;
         };
         /** AuthSlugSection */
         AuthSlugSection: {
@@ -22051,15 +22024,6 @@ export interface components {
             /** Resources */
             resources?: components["schemas"]["DepartmentFlagConfig"][] | null;
         };
-        /** DepartmentMultiResourceAction */
-        DepartmentMultiResourceAction: {
-            /** Resource Ids */
-            resource_ids?: string[] | null;
-            /** Create Tool Id */
-            create_tool_id?: string | null;
-            /** Link Tool Id */
-            link_tool_id?: string | null;
-        };
         /** DepartmentNameSection */
         DepartmentNameSection: {
             /**
@@ -22084,15 +22048,6 @@ export interface components {
             resource?: components["schemas"]["QGetNamesV4Item"] | null;
             /** Resources */
             resources?: components["schemas"]["QGetNamesV4Item"][] | null;
-        };
-        /** DepartmentResourceAction */
-        DepartmentResourceAction: {
-            /** Resource Id */
-            resource_id?: string | null;
-            /** Create Tool Id */
-            create_tool_id?: string | null;
-            /** Link Tool Id */
-            link_tool_id?: string | null;
         };
         /** DepartmentSettingSection */
         DepartmentSettingSection: {
@@ -23863,15 +23818,6 @@ export interface components {
             /** Resources */
             resources?: components["schemas"]["EvalAvailableGroup"][] | null;
         };
-        /** EvalMultiResourceAction */
-        EvalMultiResourceAction: {
-            /** Resource Ids */
-            resource_ids?: string[] | null;
-            /** Create Tool Id */
-            create_tool_id?: string | null;
-            /** Link Tool Id */
-            link_tool_id?: string | null;
-        };
         /** EvalNameSection */
         EvalNameSection: {
             /**
@@ -23898,15 +23844,6 @@ export interface components {
             resource?: components["schemas"]["QGetNamesV4Item"] | null;
             /** Resources */
             resources?: components["schemas"]["QGetNamesV4Item"][] | null;
-        };
-        /** EvalResourceAction */
-        EvalResourceAction: {
-            /** Resource Id */
-            resource_id?: string | null;
-            /** Create Tool Id */
-            create_tool_id?: string | null;
-            /** Link Tool Id */
-            link_tool_id?: string | null;
         };
         /**
          * EvalRubricItem
@@ -24918,8 +24855,16 @@ export interface components {
             search?: string | null;
             /** Filter Department Ids */
             filter_department_ids?: string[] | null;
+            /** Filter Model Ids */
+            filter_model_ids?: string[] | null;
+            /** Filter Tool Ids */
+            filter_tool_ids?: string[] | null;
             /** Department Search */
             department_search?: string | null;
+            /** Model Search */
+            model_search?: string | null;
+            /** Tool Search */
+            tool_search?: string | null;
             /**
              * Page Size
              * @default 12
@@ -27110,7 +27055,30 @@ export interface components {
             items?: components["schemas"]["QGetProvidersV4Item"][] | null;
         };
         /** GetProvidersListApiRequest */
-        GetProvidersListApiRequest: Record<string, never>;
+        GetProvidersListApiRequest: {
+            /** Search */
+            search?: string | null;
+            /** Filter Department Ids */
+            filter_department_ids?: string[] | null;
+            /** Filter Model Ids */
+            filter_model_ids?: string[] | null;
+            /** Filter Status */
+            filter_status?: string[] | null;
+            /** Department Search */
+            department_search?: string | null;
+            /** Model Search */
+            model_search?: string | null;
+            /**
+             * Page Size
+             * @default 1000
+             */
+            page_size: number | null;
+            /**
+             * Page Offset
+             * @default 0
+             */
+            page_offset: number | null;
+        };
         /** GetQualitiesApiRequest */
         GetQualitiesApiRequest: {
             /** Ids */
@@ -30537,34 +30505,6 @@ export interface components {
             can_delete?: boolean | null;
         };
         /**
-         * ListAgentApiDepartment
-         * @description Department filter option for list endpoint.
-         */
-        ListAgentApiDepartment: {
-            /** Department Id */
-            department_id?: string | null;
-            /** Name */
-            name?: string | null;
-            /** Description */
-            description?: string | null;
-            /** Count */
-            count?: number | null;
-        };
-        /**
-         * ListAgentApiModel
-         * @description Model filter option for list endpoint.
-         */
-        ListAgentApiModel: {
-            /** Model Id */
-            model_id?: string | null;
-            /** Name */
-            name?: string | null;
-            /** Description */
-            description?: string | null;
-            /** Count */
-            count?: number | null;
-        };
-        /**
          * ListAgentApiResponse
          * @description Response model for list agent endpoint.
          */
@@ -30573,10 +30513,9 @@ export interface components {
             actor_name?: string | null;
             /** Agents */
             agents?: components["schemas"]["ListAgentApiAgent"][] | null;
-            /** Departments */
-            departments?: components["schemas"]["ListAgentApiDepartment"][] | null;
-            /** Models */
-            models?: components["schemas"]["ListAgentApiModel"][] | null;
+            department_filter?: components["schemas"]["ListFilterSection"] | null;
+            model_filter?: components["schemas"]["ListFilterSection"] | null;
+            tool_filter?: components["schemas"]["ListFilterSection"] | null;
             /** Total Count */
             total_count?: number | null;
         };
@@ -30930,20 +30869,6 @@ export interface components {
             search?: string | null;
         };
         /**
-         * ListModelApiDepartment
-         * @description Department filter option for list endpoint.
-         */
-        ListModelApiDepartment: {
-            /** Department Id */
-            department_id?: string | null;
-            /** Name */
-            name?: string | null;
-            /** Description */
-            description?: string | null;
-            /** Count */
-            count?: number | null;
-        };
-        /**
          * ListModelApiModel
          * @description Model type for list endpoint with computed permissions.
          */
@@ -30978,18 +30903,6 @@ export interface components {
             updated_at?: string | null;
         };
         /**
-         * ListModelApiProvider
-         * @description Provider filter option for list endpoint.
-         */
-        ListModelApiProvider: {
-            /** Provider Id */
-            provider_id?: string | null;
-            /** Name */
-            name?: string | null;
-            /** Count */
-            count?: number | null;
-        };
-        /**
          * ListModelApiResponse
          * @description Response model for list model endpoint with computed permissions.
          */
@@ -30998,10 +30911,9 @@ export interface components {
             actor_name?: string | null;
             /** Models */
             models?: components["schemas"]["ListModelApiModel"][] | null;
-            /** Providers */
-            providers?: components["schemas"]["ListModelApiProvider"][] | null;
-            /** Departments */
-            departments?: components["schemas"]["ListModelApiDepartment"][] | null;
+            provider_filter?: components["schemas"]["ListFilterSection"] | null;
+            department_filter?: components["schemas"]["ListFilterSection"] | null;
+            agent_filter?: components["schemas"]["ListFilterSection"] | null;
             /** Total Count */
             total_count?: number | null;
         };
@@ -31013,10 +30925,14 @@ export interface components {
             filter_provider_ids?: string[] | null;
             /** Filter Department Ids */
             filter_department_ids?: string[] | null;
+            /** Filter Agent Ids */
+            filter_agent_ids?: string[] | null;
             /** Provider Search */
             provider_search?: string | null;
             /** Department Search */
             department_search?: string | null;
+            /** Agent Search */
+            agent_search?: string | null;
             /**
              * Page Size
              * @default 1000
@@ -31118,28 +31034,6 @@ export interface components {
             /** Total Count */
             total_count?: number | null;
         };
-        /** ListProviderApiDepartment */
-        ListProviderApiDepartment: {
-            /** Department Id */
-            department_id?: string | null;
-            /** Name */
-            name?: string | null;
-            /** Description */
-            description?: string | null;
-            /** Count */
-            count?: number | null;
-        };
-        /** ListProviderApiModel */
-        ListProviderApiModel: {
-            /** Model Id */
-            model_id?: string | null;
-            /** Name */
-            name?: string | null;
-            /** Description */
-            description?: string | null;
-            /** Count */
-            count?: number | null;
-        };
         /**
          * ListProviderApiProvider
          * @description Provider type for list endpoint with computed permissions.
@@ -31170,40 +31064,17 @@ export interface components {
             /** Can Duplicate */
             can_duplicate?: boolean | null;
         };
-        /** ListProviderApiProviderOption */
-        ListProviderApiProviderOption: {
-            /** Provider Id */
-            provider_id?: string | null;
-            /** Name */
-            name?: string | null;
-            /** Description */
-            description?: string | null;
-            /** Count */
-            count?: number | null;
-        };
         /** ListProviderApiResponse */
         ListProviderApiResponse: {
             /** Actor Name */
             actor_name?: string | null;
             /** Providers */
             providers?: components["schemas"]["ListProviderApiProvider"][] | null;
-            /** Provider Options */
-            provider_options?: components["schemas"]["ListProviderApiProviderOption"][] | null;
-            /** Departments */
-            departments?: components["schemas"]["ListProviderApiDepartment"][] | null;
-            /** Models */
-            models?: components["schemas"]["ListProviderApiModel"][] | null;
-            /** Status Options */
-            status_options?: components["schemas"]["ListProviderApiStatusOption"][] | null;
+            department_filter?: components["schemas"]["ListFilterSection"] | null;
+            model_filter?: components["schemas"]["ListFilterSection"] | null;
+            status_filter?: components["schemas"]["ListFilterSection"] | null;
             /** Total Count */
             total_count?: number | null;
-        };
-        /** ListProviderApiStatusOption */
-        ListProviderApiStatusOption: {
-            /** Value */
-            value?: string | null;
-            /** Label */
-            label?: string | null;
         };
         /** ListRubricApiDepartment */
         ListRubricApiDepartment: {
@@ -33394,19 +33265,25 @@ export interface components {
         };
         /**
          * PatchAuthDraftApiRequest
-         * @description Request model for patch auth draft endpoint.
+         * @description Request model for patch auth draft endpoint - flat resource IDs.
          */
         PatchAuthDraftApiRequest: {
             /** Input Draft Id */
             input_draft_id?: string | null;
             /** Group Id */
             group_id?: string | null;
-            names?: components["schemas"]["AuthResourceAction"] | null;
-            descriptions?: components["schemas"]["AuthResourceAction"] | null;
-            flags?: components["schemas"]["AuthResourceAction"] | null;
-            protocols?: components["schemas"]["AuthMultiResourceAction"] | null;
-            slugs?: components["schemas"]["AuthMultiResourceAction"] | null;
-            items?: components["schemas"]["AuthItemAction"] | null;
+            /** Name Id */
+            name_id?: string | null;
+            /** Description Id */
+            description_id?: string | null;
+            /** Flag Id */
+            flag_id?: string | null;
+            /** Protocol Ids */
+            protocol_ids?: string[] | null;
+            /** Slug Ids */
+            slug_ids?: string[] | null;
+            /** Items */
+            items?: components["schemas"]["SaveAuthItemInput"][] | null;
             /**
              * Expected Version
              * @default 0
@@ -33471,10 +33348,14 @@ export interface components {
             input_draft_id?: string | null;
             /** Group Id */
             group_id?: string | null;
-            names?: components["schemas"]["DepartmentResourceAction"] | null;
-            descriptions?: components["schemas"]["DepartmentResourceAction"] | null;
-            flags?: components["schemas"]["DepartmentResourceAction"] | null;
-            settings?: components["schemas"]["DepartmentMultiResourceAction"] | null;
+            /** Name Id */
+            name_id?: string | null;
+            /** Description Id */
+            description_id?: string | null;
+            /** Flag Id */
+            flag_id?: string | null;
+            /** Settings Ids */
+            settings_ids?: string[] | null;
             /**
              * Expected Version
              * @default 0
@@ -33549,15 +33430,24 @@ export interface components {
             input_draft_id?: string | null;
             /** Group Id */
             group_id?: string | null;
-            names?: components["schemas"]["EvalResourceAction"] | null;
-            descriptions?: components["schemas"]["EvalResourceAction"] | null;
-            flags?: components["schemas"]["EvalMultiResourceAction"] | null;
-            departments?: components["schemas"]["EvalMultiResourceAction"] | null;
-            agents?: components["schemas"]["EvalMultiResourceAction"] | null;
-            runs?: components["schemas"]["EvalMultiResourceAction"] | null;
-            groups?: components["schemas"]["EvalMultiResourceAction"] | null;
-            run_positions?: components["schemas"]["EvalMultiResourceAction"] | null;
-            group_positions?: components["schemas"]["EvalMultiResourceAction"] | null;
+            /** Name Id */
+            name_id?: string | null;
+            /** Description Id */
+            description_id?: string | null;
+            /** Flag Ids */
+            flag_ids?: string[] | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
+            /** Agent Ids */
+            agent_ids?: string[] | null;
+            /** Model Run Ids */
+            model_run_ids?: string[] | null;
+            /** Group Ids */
+            group_ids?: string[] | null;
+            /** Run Position Ids */
+            run_position_ids?: string[] | null;
+            /** Group Position Ids */
+            group_position_ids?: string[] | null;
             /**
              * Expected Version
              * @default 0
@@ -33857,14 +33747,22 @@ export interface components {
             input_draft_id?: string | null;
             /** Group Id */
             group_id?: string | null;
-            names?: components["schemas"]["RubricResourceAction"] | null;
-            descriptions?: components["schemas"]["RubricResourceAction"] | null;
-            flags?: components["schemas"]["RubricResourceAction"] | null;
-            departments?: components["schemas"]["RubricMultiResourceAction"] | null;
-            points?: components["schemas"]["RubricResourceAction"] | null;
-            pass_points?: components["schemas"]["RubricResourceAction"] | null;
-            standard_groups?: components["schemas"]["RubricMultiResourceAction"] | null;
-            standards?: components["schemas"]["RubricMultiResourceAction"] | null;
+            /** Name Id */
+            name_id?: string | null;
+            /** Description Id */
+            description_id?: string | null;
+            /** Flag Id */
+            flag_id?: string | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
+            /** Total Points Id */
+            total_points_id?: string | null;
+            /** Pass Points Id */
+            pass_points_id?: string | null;
+            /** Standard Group Ids */
+            standard_group_ids?: string[] | null;
+            /** Standard Ids */
+            standard_ids?: string[] | null;
             /**
              * Expected Version
              * @default 0
@@ -39636,15 +39534,6 @@ export interface components {
             /** Standard Group Ids */
             standard_group_ids?: string[] | null;
         };
-        /** RubricMultiResourceAction */
-        RubricMultiResourceAction: {
-            /** Resource Ids */
-            resource_ids?: string[] | null;
-            /** Create Tool Id */
-            create_tool_id?: string | null;
-            /** Link Tool Id */
-            link_tool_id?: string | null;
-        };
         /** RubricNameSection */
         RubricNameSection: {
             /**
@@ -39719,15 +39608,6 @@ export interface components {
             resource?: components["schemas"]["QGetPointsV4Item"] | null;
             /** Resources */
             resources?: components["schemas"]["QGetPointsV4Item"][] | null;
-        };
-        /** RubricResourceAction */
-        RubricResourceAction: {
-            /** Resource Id */
-            resource_id?: string | null;
-            /** Create Tool Id */
-            create_tool_id?: string | null;
-            /** Link Tool Id */
-            link_tool_id?: string | null;
         };
         /** RubricStandardGroupsSection */
         RubricStandardGroupsSection: {
@@ -40307,22 +40187,26 @@ export interface components {
         };
         /**
          * SaveAuthApiRequest
-         * @description Request model for save auth endpoint.
+         * @description Request model for save auth endpoint - flat resource IDs.
          */
         SaveAuthApiRequest: {
-            /**
-             * Group Id
-             * Format: uuid
-             */
-            group_id: string;
             /** Input Auth Id */
             input_auth_id?: string | null;
-            names: components["schemas"]["AuthResourceAction"];
-            descriptions: components["schemas"]["AuthResourceAction"];
-            flags: components["schemas"]["AuthResourceAction"];
-            protocols: components["schemas"]["AuthMultiResourceAction"];
-            slugs: components["schemas"]["AuthMultiResourceAction"];
-            items?: components["schemas"]["AuthItemAction"] | null;
+            /**
+             * Name Id
+             * Format: uuid
+             */
+            name_id: string;
+            /** Description Id */
+            description_id?: string | null;
+            /** Flag Id */
+            flag_id?: string | null;
+            /** Protocol Ids */
+            protocol_ids?: string[] | null;
+            /** Slug Ids */
+            slug_ids?: string[] | null;
+            /** Items */
+            items?: components["schemas"]["SaveAuthItemInput"][] | null;
         };
         /**
          * SaveAuthApiResponse
@@ -40396,17 +40280,19 @@ export interface components {
         };
         /** SaveDepartmentApiRequest */
         SaveDepartmentApiRequest: {
-            /**
-             * Group Id
-             * Format: uuid
-             */
-            group_id: string;
             /** Input Department Id */
             input_department_id?: string | null;
-            names: components["schemas"]["DepartmentResourceAction"];
-            descriptions: components["schemas"]["DepartmentResourceAction"];
-            flags: components["schemas"]["DepartmentResourceAction"];
-            settings: components["schemas"]["DepartmentMultiResourceAction"];
+            /**
+             * Name Id
+             * Format: uuid
+             */
+            name_id: string;
+            /** Description Id */
+            description_id?: string | null;
+            /** Flag Id */
+            flag_id?: string | null;
+            /** Settings Ids */
+            settings_ids?: string[] | null;
         };
         /** SaveDepartmentApiResponse */
         SaveDepartmentApiResponse: {
@@ -40422,25 +40308,32 @@ export interface components {
         };
         /**
          * SaveEvalApiRequest
-         * @description Request model for save eval endpoint (nested section actions).
+         * @description Request model for save eval endpoint - flat resource IDs.
          */
         SaveEvalApiRequest: {
-            /**
-             * Group Id
-             * Format: uuid
-             */
-            group_id: string;
             /** Input Eval Id */
             input_eval_id?: string | null;
-            names: components["schemas"]["EvalResourceAction"];
-            descriptions: components["schemas"]["EvalResourceAction"];
-            flags: components["schemas"]["EvalMultiResourceAction"];
-            departments: components["schemas"]["EvalMultiResourceAction"];
-            agents: components["schemas"]["EvalMultiResourceAction"];
-            runs: components["schemas"]["EvalMultiResourceAction"];
-            groups: components["schemas"]["EvalMultiResourceAction"];
-            run_positions?: components["schemas"]["EvalMultiResourceAction"] | null;
-            group_positions?: components["schemas"]["EvalMultiResourceAction"] | null;
+            /**
+             * Name Id
+             * Format: uuid
+             */
+            name_id: string;
+            /** Description Id */
+            description_id?: string | null;
+            /** Flag Ids */
+            flag_ids?: string[] | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
+            /** Agent Ids */
+            agent_ids?: string[] | null;
+            /** Model Run Ids */
+            model_run_ids?: string[] | null;
+            /** Group Ids */
+            group_ids?: string[] | null;
+            /** Run Position Ids */
+            run_position_ids?: string[] | null;
+            /** Group Position Ids */
+            group_position_ids?: string[] | null;
             /** Run Rubrics */
             run_rubrics?: components["schemas"]["EvalRunRubricMapping"][] | null;
             /** Group Rubrics */
@@ -40708,21 +40601,27 @@ export interface components {
         };
         /** SaveRubricApiRequest */
         SaveRubricApiRequest: {
-            /**
-             * Group Id
-             * Format: uuid
-             */
-            group_id: string;
             /** Input Rubric Id */
             input_rubric_id?: string | null;
-            names: components["schemas"]["RubricResourceAction"];
-            descriptions: components["schemas"]["RubricResourceAction"];
-            flags: components["schemas"]["RubricResourceAction"];
-            departments: components["schemas"]["RubricMultiResourceAction"];
-            points: components["schemas"]["RubricResourceAction"];
-            pass_points: components["schemas"]["RubricResourceAction"];
-            standard_groups: components["schemas"]["RubricMultiResourceAction"];
-            standards: components["schemas"]["RubricMultiResourceAction"];
+            /**
+             * Name Id
+             * Format: uuid
+             */
+            name_id: string;
+            /** Description Id */
+            description_id?: string | null;
+            /** Flag Id */
+            flag_id?: string | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
+            /** Total Points Id */
+            total_points_id?: string | null;
+            /** Pass Points Id */
+            pass_points_id?: string | null;
+            /** Standard Group Ids */
+            standard_group_ids?: string[] | null;
+            /** Standard Ids */
+            standard_ids?: string[] | null;
         };
         /** SaveRubricApiResponse */
         SaveRubricApiResponse: {
