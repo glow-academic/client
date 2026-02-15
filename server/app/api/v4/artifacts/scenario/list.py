@@ -1,7 +1,7 @@
 """Scenarios list endpoint - v4 API following DHH principles.
 
 Resource-first: SQL only touches scenario_artifact + scenario's own junctions + resource tables.
-Permissions (can_edit, can_delete, can_duplicate) computed in SQL.
+Permissions (can_edit, can_delete, can_duplicate) computed in Python.
 Mapping arrays (objectives/fields/cohorts/personas/simulations/departments) hydrated in Python
 via cached *_internal() functions.
 """
@@ -13,6 +13,11 @@ from uuid import UUID
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
+from app.api.v4.artifacts.scenario.permissions import (
+    compute_can_delete,
+    compute_can_duplicate,
+    compute_can_edit,
+)
 from app.api.v4.artifacts.scenario.types import (
     GetScenariosListApiRequest,
     GetScenariosListSqlParams,
@@ -93,7 +98,7 @@ async def get_scenario_list(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        # Fetch user context for audit logging
+        # Fetch user context for audit logging and permissions
         pool = get_pool()
         if pool:
             async with pool.acquire() as context_conn:
@@ -103,8 +108,10 @@ async def get_scenario_list(
                     bypass_cache=bypass_cache,
                 )
                 actor_name = profile_ctx.access.actor_name
+                user_role = profile_ctx.access.role
         else:
             actor_name = None
+            user_role = "member"
 
         # Convert API request to SQL params (add profile_id from header)
         params = GetScenariosListSqlParams(
@@ -275,7 +282,7 @@ async def get_scenario_list(
         api_cohorts: list[ListScenarioApiCohort] = [
             ListScenarioApiCohort(
                 cohort_id=str(c.cohort_id) if c.cohort_id else None,
-                name=getattr(c, "title", None) or getattr(c, "name", None) or "",
+                name=getattr(c, "name", None) or "",
                 description=c.description or "",
             )
             for c in cohorts_data
@@ -295,7 +302,7 @@ async def get_scenario_list(
         api_simulations: list[ListScenarioApiSimulation] = [
             ListScenarioApiSimulation(
                 simulation_id=str(s.simulation_id) if s.simulation_id else None,
-                name=getattr(s, "title", None) or getattr(s, "name", None) or "",
+                name=getattr(s, "name", None) or "",
                 description=s.description or "",
                 department_ids=getattr(s, "department_ids", None),
             )
@@ -311,11 +318,44 @@ async def get_scenario_list(
             for d in departments_data
         ]
 
-        # Convert SQL composite types → API types (QListScenariosV4* → ListScenarioApi*)
-        api_scenarios = [
-            ListScenarioApiScenario.model_validate(s.model_dump())
-            for s in (result.scenarios or [])
-        ]
+        # Compute permissions in Python for each scenario
+        api_scenarios: list[ListScenarioApiScenario] = []
+        for s in result.scenarios or []:
+            can_edit_val = compute_can_edit(
+                user_role=user_role,
+                scenario_department_ids=s.department_ids,
+                active_simulation_count=s.active_simulation_count or 0,
+            )
+            can_delete_val = compute_can_delete(
+                user_role=user_role,
+                scenario_department_ids=s.department_ids,
+                total_simulation_links=s.total_simulation_links or 0,
+            )
+            can_duplicate_val = compute_can_duplicate(user_role)
+
+            api_scenarios.append(
+                ListScenarioApiScenario(
+                    scenario_id=s.scenario_id,
+                    name=s.name,
+                    problem_statement=s.problem_statement,
+                    is_inactive=s.is_inactive,
+                    generated=s.generated,
+                    parent_scenario_id=s.parent_scenario_id,
+                    department_ids=s.department_ids,
+                    objective_ids=s.objective_ids,
+                    persona_ids=s.persona_ids,
+                    field_ids=s.field_ids,
+                    simulation_ids=s.simulation_ids,
+                    num_simulations=s.num_simulations,
+                    active_simulation_count=s.active_simulation_count,
+                    total_simulation_links=s.total_simulation_links,
+                    can_edit=can_edit_val,
+                    can_delete=can_delete_val,
+                    can_duplicate=can_duplicate_val,
+                    cohort_ids=s.cohort_ids,
+                    updated_at=s.updated_at,
+                )
+            )
 
         # Build API response
         api_response = ListScenarioApiResponse(

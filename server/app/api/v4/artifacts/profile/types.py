@@ -7,6 +7,7 @@ from uuid import UUID
 from pydantic import BaseModel
 
 from app.api.v4.resources.cohorts.types import QGetCohortsV4Item
+from app.api.v4.types import BaseResourceSection
 from app.api.v4.views.drafts.types import DraftProfileViewItem
 from app.sql.types import (
     QGetAgentsV4Item,
@@ -31,17 +32,6 @@ class ProfileFlagConfig(BaseModel):
     show: bool = True
     required: bool = False
     generated: bool | None = None
-
-
-class BaseResourceSection(BaseModel):
-    """Common metadata fields for all profile resource sections."""
-
-    show: bool = False
-    required: bool = False
-    suggestions: list[UUID] | None = None
-    show_ai_generate: bool = False
-    create_tool_id: UUID | None = None
-    link_tool_id: UUID | None = None
 
 
 class ProfileNameSection(BaseResourceSection):

@@ -4,7 +4,6 @@
  * @AshokSaravanan222 & @siladiea
  * 01/20/2025
  */
-import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Table,
@@ -18,41 +17,28 @@ import {
 export default function Loading() {
   return (
     <div className="space-y-6">
-      {/* KPI Cards Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-        {[...Array(5)].map((_, i) => (
-          <Card key={i}>
-            <CardContent className="p-6">
-              <div className="space-y-2">
-                <Skeleton className="h-4 w-24" />
-                <Skeleton className="h-8 w-16" />
-                <Skeleton className="h-3 w-32" />
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-
       {/* Data Table Section */}
       <div className="space-y-2">
         {/* Toolbar skeleton */}
         <div className="flex items-center justify-between">
-          <div className="flex flex-1 items-center space-x-2">
-            {/* Search input */}
-            <Skeleton className="h-8 w-[150px] lg:w-[250px]" />
-            {/* Filter buttons */}
-            <Skeleton className="h-8 w-[120px]" />
-            <Skeleton className="h-8 w-[100px]" />
-            <Skeleton className="h-8 w-[120px]" />
-            <Skeleton className="h-8 w-[140px]" />
+          <div className="flex flex-1 items-center space-x-2 flex-wrap">
+            <div className="mb-2 w-full md:w-auto">
+              {/* Search input */}
+              <Skeleton className="h-8 w-full md:w-[150px] lg:w-[250px]" />
+            </div>
+
+            <div className="flex items-center space-x-2 flex-wrap mb-2">
+              {/* Filter buttons: Role, Department */}
+              <Skeleton className="h-8 w-[100px]" />
+              <Skeleton className="h-8 w-[120px]" />
+            </div>
           </div>
-          <div className="flex items-center space-x-2">
-            {/* Bulk actions skeleton */}
+          <div className="flex items-center space-x-2 mb-2">
+            {/* CSV Import button */}
             <Skeleton className="h-8 w-[100px]" />
-            <Skeleton className="h-8 w-[100px]" />
-            {/* Create button skeleton */}
-            <Skeleton className="h-8 w-[100px]" />
-            {/* Column visibility skeleton */}
+            {/* Refresh button */}
+            <Skeleton className="h-8 w-8" />
+            {/* Column visibility */}
             <Skeleton className="h-8 w-8" />
           </div>
         </div>
@@ -131,12 +117,36 @@ export default function Loading() {
           </Table>
         </div>
 
-        {/* Pagination skeleton */}
-        <div className="flex items-center justify-between px-2">
-          <Skeleton className="h-8 w-[100px]" />
+        {/* Pagination skeleton (staff={true} uses w-[85px] select) */}
+        {/* Mobile */}
+        <div className="flex items-center px-2 md:hidden">
           <div className="flex items-center space-x-2">
-            <Skeleton className="h-8 w-[70px]" />
-            <Skeleton className="h-8 w-[70px]" />
+            <Skeleton className="h-4 w-24" />
+            <Skeleton className="h-8 w-[85px]" />
+          </div>
+          <div className="flex-1 flex items-center justify-center">
+            <Skeleton className="h-4 w-[80px]" />
+          </div>
+          <div className="flex items-center space-x-2">
+            <Skeleton className="h-8 w-8" />
+            <Skeleton className="h-8 w-8" />
+          </div>
+        </div>
+        {/* Desktop */}
+        <div className="hidden md:flex items-center px-2">
+          <div className="flex-1" />
+          <div className="flex items-center space-x-6 lg:space-x-8">
+            <div className="flex items-center space-x-2">
+              <Skeleton className="h-4 w-24" />
+              <Skeleton className="h-8 w-[85px]" />
+            </div>
+            <Skeleton className="h-4 w-[100px]" />
+            <div className="flex items-center space-x-2">
+              <Skeleton className="hidden h-8 w-8 lg:block" />
+              <Skeleton className="h-8 w-8" />
+              <Skeleton className="h-8 w-8" />
+              <Skeleton className="hidden h-8 w-8 lg:block" />
+            </div>
           </div>
         </div>
       </div>

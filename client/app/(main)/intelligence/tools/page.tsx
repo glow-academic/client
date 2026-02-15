@@ -24,7 +24,7 @@ const getToolsList = async (): Promise<ToolsListOut> => {
   const bypassCache = await isHardRefresh();
   return api.post(
     "/artifacts/tools/list",
-    {} as ToolsListIn,
+    { body: {} } as ToolsListIn,
     {
       cache: "no-store",
       ...(bypassCache && {

@@ -59,29 +59,55 @@ def has_access(
 
 def compute_can_edit(
     user_role: str | None,
-    simulation_department_ids: list[UUID] | None,
-    cohort_usage_count: int | None,
+    simulation_department_ids: list[str] | list[UUID] | None,
+    cohort_usage_count: int,
 ) -> bool:
-    """Compute whether user can edit the simulation."""
-    if user_role == "learner":
+    """Compute whether user can edit the simulation.
+
+    Constraints:
+    1. Not a default simulation (unless superadmin)
+    2. Not linked to cohorts
+    3. User has admin/instructional/superadmin role
+    """
+    # Default simulations can only be edited by superadmin
+    if not simulation_department_ids and user_role != "superadmin":
         return False
-    if user_role in ("superadmin", "admin"):
-        return True
-    usage_count = cohort_usage_count or 0
-    return usage_count == 0
+
+    # Simulations in use by cohorts cannot be edited
+    if cohort_usage_count > 0:
+        return False
+
+    # Role check
+    return user_role in ("admin", "instructional", "superadmin")
 
 
 def compute_disabled_reason(
     user_role: str | None,
-    simulation_department_ids: list[UUID] | None,
-    cohort_usage_count: int | None,
+    simulation_department_ids: list[str] | list[UUID] | None,
+    cohort_usage_count: int,
 ) -> str | None:
     """Compute reason why editing is disabled."""
-    if user_role == "learner":
-        return "Learners cannot edit simulations"
-    usage_count = cohort_usage_count or 0
-    if user_role == "staff" and usage_count > 0:
-        return f"Simulation is used by {usage_count} cohort(s). Only admins can edit."
+    # Default simulations can only be edited by superadmin
+    if not simulation_department_ids and user_role != "superadmin":
+        return (
+            "This is a default simulation that cannot be edited. "
+            "You can view the details but cannot make changes."
+        )
+
+    # Simulations in use by cohorts cannot be edited
+    if cohort_usage_count > 0:
+        return (
+            "This simulation is currently in use by cohorts and cannot be edited. "
+            "You can view the details but cannot make changes."
+        )
+
+    # Role check
+    if user_role not in ("admin", "instructional", "superadmin"):
+        return (
+            "This simulation cannot be edited. "
+            "You can view the details but cannot make changes."
+        )
+
     return None
 
 
@@ -92,19 +118,30 @@ def compute_disabled_reason(
 
 def compute_can_delete(
     user_role: str | None,
-    simulation_department_ids: list[UUID] | None,
-    cohort_usage_count: int | None,
+    simulation_department_ids: list[str] | list[UUID] | None,
+    cohort_usage_count: int,
 ) -> bool:
-    """Compute whether user can delete the simulation."""
-    if user_role not in ("superadmin", "admin", "instructional"):
+    """Compute can_delete permission.
+
+    Business logic:
+    - Default simulations (no departments) cannot be deleted except by superadmin
+    - Simulations linked to ANY cohort cannot be deleted
+    - Only admins, instructional, and superadmins can delete
+    """
+    if not simulation_department_ids and user_role != "superadmin":
         return False
-    usage_count = cohort_usage_count or 0
-    return usage_count == 0
+    if cohort_usage_count > 0:
+        return False
+    return user_role in ("admin", "instructional", "superadmin")
 
 
 def compute_can_duplicate(user_role: str | None) -> bool:
-    """Compute whether user can duplicate simulations."""
-    return user_role != "learner"
+    """Compute can_duplicate permission.
+
+    Business logic:
+    - Only admin/instructional/superadmin can duplicate
+    """
+    return user_role in ("admin", "instructional", "superadmin")
 
 
 # =============================================================================
@@ -114,26 +151,50 @@ def compute_can_duplicate(user_role: str | None) -> bool:
 
 def compute_can_create(
     user_role: str | None,
-    department_ids: list[UUID] | None,
+    department_ids: list[str] | list[UUID] | None,
 ) -> bool:
-    """Compute whether user can create a new simulation."""
-    if user_role == "learner":
+    """Compute permission to create a new simulation.
+
+    Business logic:
+    - Only admin/instructional/superadmin can create simulations
+    - Non-superadmins cannot create general objects (no departments)
+    """
+    if user_role not in ("admin", "instructional", "superadmin"):
         return False
-    if user_role in ("superadmin", "admin"):
-        return True
-    return bool(department_ids)
+    if user_role != "superadmin" and not department_ids:
+        return False
+    return True
 
 
 def compute_can_save(
     user_role: str | None,
-    user_department_ids: list[UUID] | None,
-    simulation_department_ids: list[UUID] | None,
-    cohort_usage_count: int | None,
+    user_department_ids: list[str] | list[UUID] | None,
+    simulation_department_ids: list[str] | list[UUID] | None,
+    cohort_usage_count: int,
 ) -> bool:
-    """Compute whether user can save/update the simulation."""
-    if not has_access(user_role, user_department_ids, simulation_department_ids):
+    """Compute permission to save/update an existing simulation.
+
+    Business logic:
+    - Not a default simulation (unless superadmin)
+    - Not linked to cohorts
+    - User has admin/instructional/superadmin role
+    - Non-superadmins must belong to ALL of the simulation's departments
+    """
+    if user_role not in ("admin", "instructional", "superadmin"):
         return False
-    return compute_can_edit(user_role, simulation_department_ids, cohort_usage_count)
+    if not simulation_department_ids and user_role != "superadmin":
+        return False
+    if cohort_usage_count > 0:
+        return False
+    # Non-superadmins must belong to ALL of the simulation's departments
+    if user_role != "superadmin" and simulation_department_ids:
+        if not user_department_ids:
+            return False
+        user_dept_set = {str(d) for d in user_department_ids}
+        sim_dept_set = {str(d) for d in simulation_department_ids}
+        if not sim_dept_set.issubset(user_dept_set):
+            return False
+    return True
 
 
 # =============================================================================
@@ -142,8 +203,12 @@ def compute_can_save(
 
 
 def compute_can_draft(user_role: str | None) -> bool:
-    """Compute whether user can create/modify drafts."""
-    return user_role != "learner"
+    """Compute permission to create or update a draft.
+
+    Business logic:
+    - Only admin/instructional/superadmin can create/edit drafts
+    """
+    return user_role in ("admin", "instructional", "superadmin")
 
 
 # =============================================================================

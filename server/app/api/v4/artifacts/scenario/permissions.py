@@ -176,53 +176,57 @@ def has_access(
 
 def compute_can_edit(
     user_role: str | None,
-    scenario_department_ids: list[UUID] | None,
-    usage_count: int | None = None,
+    scenario_department_ids: list[str] | list[UUID] | None,
+    active_simulation_count: int,
 ) -> bool:
     """Compute whether user can edit the scenario.
 
-    Args:
-        user_role: User's role
-        scenario_department_ids: Scenario's department IDs
-        usage_count: Number of simulations using this scenario
-
-    Returns:
-        True if user can edit the scenario
+    Constraints:
+    1. Not a default scenario (unless superadmin)
+    2. Not linked to active simulations
+    3. User has admin/instructional/superadmin role
     """
-    # Learners cannot edit
-    if user_role == "learner":
+    # Default scenarios can only be edited by superadmin
+    if not scenario_department_ids and user_role != "superadmin":
         return False
 
-    # Superadmins and admins can always edit
-    if user_role in ("superadmin", "admin"):
-        return True
+    # Scenarios in use by simulations cannot be edited
+    if active_simulation_count > 0:
+        return False
 
-    # Staff can edit if scenario is not used by any simulations
-    count = usage_count or 0
-    return count == 0
+    # Role check
+    return user_role in ("admin", "instructional", "superadmin")
 
 
 def compute_disabled_reason(
     user_role: str | None,
-    scenario_department_ids: list[UUID] | None,
-    usage_count: int | None = None,
+    scenario_department_ids: list[str] | list[UUID] | None,
+    active_simulation_count: int,
 ) -> str | None:
     """Compute reason why editing is disabled.
 
-    Args:
-        user_role: User's role
-        scenario_department_ids: Scenario's department IDs
-        usage_count: Number of simulations using this scenario
-
-    Returns:
-        Reason string if editing is disabled, None otherwise
+    Returns None if editing is allowed.
     """
-    if user_role == "learner":
-        return "Learners cannot edit scenarios"
+    # Default scenarios can only be edited by superadmin
+    if not scenario_department_ids and user_role != "superadmin":
+        return (
+            "This is a default scenario that cannot be edited. "
+            "You can view the details but cannot make changes."
+        )
 
-    count = usage_count or 0
-    if user_role == "staff" and count > 0:
-        return f"Scenario is used by {count} simulation(s). Only admins can edit."
+    # Scenarios in use by simulations cannot be edited
+    if active_simulation_count > 0:
+        return (
+            "This scenario is currently in use by simulations and cannot be edited. "
+            "You can view the details but cannot make changes."
+        )
+
+    # Role check
+    if user_role not in ("admin", "instructional", "superadmin"):
+        return (
+            "This scenario cannot be edited. "
+            "You can view the details but cannot make changes."
+        )
 
     return None
 
@@ -234,39 +238,35 @@ def compute_disabled_reason(
 
 def compute_can_delete(
     user_role: str | None,
-    scenario_department_ids: list[UUID] | None,
-    usage_count: int | None,
+    scenario_department_ids: list[str] | list[UUID] | None,
+    total_simulation_links: int,
 ) -> bool:
-    """Compute whether user can delete the scenario.
+    """Compute can_delete permission.
 
-    Args:
-        user_role: User's role
-        scenario_department_ids: Scenario's department IDs
-        usage_count: Number of simulations using this scenario
-
-    Returns:
-        True if user can delete the scenario
+    Business logic:
+    - Default scenarios (no departments) cannot be deleted except by superadmin
+    - Scenarios linked to ANY simulation (active or not) cannot be deleted
+    - Only admins, instructional, and superadmins can delete
     """
-    # Only admins, instructional, and superadmins can delete
-    if user_role not in ("superadmin", "admin", "instructional"):
+    # Default scenarios can only be deleted by superadmin
+    if not scenario_department_ids and user_role != "superadmin":
         return False
 
-    # Cannot delete if used by simulations
-    count = usage_count or 0
-    return count == 0
+    # Scenarios with any simulation links cannot be deleted
+    if total_simulation_links > 0:
+        return False
+
+    # Only admins, instructional, and superadmins can delete
+    return user_role in ("admin", "instructional", "superadmin")
 
 
 def compute_can_duplicate(user_role: str | None) -> bool:
-    """Compute whether user can duplicate scenarios.
+    """Compute can_duplicate permission.
 
-    Args:
-        user_role: User's role
-
-    Returns:
-        True if user can duplicate scenarios
+    Business logic:
+    - Only admin/instructional/superadmin can duplicate
     """
-    # Everyone except learners can duplicate
-    return user_role != "learner"
+    return user_role in ("admin", "instructional", "superadmin")
 
 
 # =============================================================================
@@ -276,52 +276,61 @@ def compute_can_duplicate(user_role: str | None) -> bool:
 
 def compute_can_create(
     user_role: str | None,
-    department_ids: list[UUID] | None,
+    department_ids: list[str] | list[UUID] | None,
 ) -> bool:
-    """Compute whether user can create a new scenario.
+    """Compute permission to create a new scenario.
 
-    Args:
-        user_role: User's role
-        department_ids: Department IDs for the new scenario
-
-    Returns:
-        True if user can create the scenario
+    Business logic:
+    - Only admin/instructional/superadmin can create scenarios
+    - Non-superadmins cannot create general objects (no departments)
     """
-    # Learners cannot create
-    if user_role == "learner":
+    # Role check first
+    if user_role not in ("admin", "instructional", "superadmin"):
         return False
 
-    # Superadmins and admins can always create
-    if user_role in ("superadmin", "admin"):
-        return True
+    # Non-superadmins cannot create general objects (no departments)
+    if user_role != "superadmin" and not department_ids:
+        return False
 
-    # Staff can create if they have department access
-    return bool(department_ids)
+    return True
 
 
 def compute_can_save(
     user_role: str | None,
-    user_department_ids: list[UUID] | None,
-    scenario_department_ids: list[UUID] | None,
-    usage_count: int | None = None,
+    user_department_ids: list[str] | list[UUID] | None,
+    scenario_department_ids: list[str] | list[UUID] | None,
+    active_simulation_count: int,
 ) -> bool:
-    """Compute whether user can save/update the scenario.
+    """Compute permission to save/update an existing scenario.
 
-    Args:
-        user_role: User's role
-        user_department_ids: User's department IDs
-        scenario_department_ids: Scenario's department IDs
-        usage_count: Number of simulations using this scenario
-
-    Returns:
-        True if user can save the scenario
+    Business logic:
+    - Not a default scenario (unless superadmin)
+    - Not linked to active simulations
+    - User has admin/instructional/superadmin role
+    - Non-superadmins must belong to ALL of the scenario's departments
     """
-    # Must have access first
-    if not has_access(user_role, user_department_ids, scenario_department_ids):
+    # Role check first
+    if user_role not in ("admin", "instructional", "superadmin"):
         return False
 
-    # Then check edit permission
-    return compute_can_edit(user_role, scenario_department_ids, usage_count)
+    # Default scenarios can only be edited by superadmin
+    if not scenario_department_ids and user_role != "superadmin":
+        return False
+
+    # Scenarios in use by active simulations cannot be edited
+    if active_simulation_count > 0:
+        return False
+
+    # Non-superadmins must belong to ALL of the scenario's departments
+    if user_role != "superadmin" and scenario_department_ids:
+        if not user_department_ids:
+            return False
+        user_dept_set = {str(d) for d in user_department_ids}
+        scenario_dept_set = {str(d) for d in scenario_department_ids}
+        if not scenario_dept_set.issubset(user_dept_set):
+            return False
+
+    return True
 
 
 # =============================================================================
@@ -330,16 +339,12 @@ def compute_can_save(
 
 
 def compute_can_draft(user_role: str | None) -> bool:
-    """Compute whether user can create/modify drafts.
+    """Compute permission to create or update a draft.
 
-    Args:
-        user_role: User's role
-
-    Returns:
-        True if user can work with drafts
+    Business logic:
+    - Only admin/instructional/superadmin can create/edit drafts
     """
-    # Everyone except learners can use drafts
-    return user_role != "learner"
+    return user_role in ("admin", "instructional", "superadmin")
 
 
 # =============================================================================

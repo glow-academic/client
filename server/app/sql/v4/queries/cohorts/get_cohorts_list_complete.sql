@@ -41,16 +41,13 @@ CREATE TYPE types.q_list_cohorts_v4_cohort AS (
     cohort_id uuid,
     name text,
     description text,
-    active boolean,
+    is_inactive boolean,
     department_ids text[],
     profile_ids text[],
     simulation_ids text[],
     usage_count bigint,
     num_members int,
-    can_edit boolean,
-    can_delete boolean,
-    can_duplicate boolean,
-    can_leave boolean,
+    is_member boolean,
     updated_at timestamptz
 );
 
@@ -166,37 +163,24 @@ cohort_simulations_agg AS (
     JOIN cohorts_resource cr ON cr.id = crb.resource_id
     WHERE cr.simulation_ids IS NOT NULL AND array_length(cr.simulation_ids, 1) > 0
 ),
--- Main cohort data with permissions computed in SQL
+-- Main cohort data — permissions computed in Python
 cohorts_data AS (
     SELECT
         c.id as cohort_id,
         (SELECT n.name FROM cohort_names_junction cn JOIN names_resource n ON cn.name_id = n.id WHERE cn.cohort_id = c.id LIMIT 1) as name,
         COALESCE((SELECT d.description FROM cohort_descriptions_junction cd JOIN descriptions_resource d ON cd.description_id = d.id WHERE cd.cohort_id = c.id LIMIT 1), '') as description,
-        EXISTS (SELECT 1 FROM cohort_flags_junction cf JOIN flags_resource f ON cf.flag_id = f.id WHERE cf.cohort_id = c.id AND f.name = 'cohort_active' AND cf.value = TRUE) as active,
+        NOT EXISTS (SELECT 1 FROM cohort_flags_junction cf JOIN flags_resource f ON cf.flag_id = f.id WHERE cf.cohort_id = c.id AND f.name = 'cohort_active' AND cf.value = TRUE) as is_inactive,
         c.updated_at,
         cdd.department_ids as department_ids,
         COALESCE(cp.profile_ids, ARRAY[]::uuid[]) as profile_ids,
         COALESCE(csa.simulation_ids::uuid[], ARRAY[]::uuid[]) as simulation_ids,
         COALESCE(cu.usage_count, 0) as usage_count,
         COALESCE(array_length(cprf.profile_ids, 1), 0) as num_members,
-        -- Permissions computed in SQL
-        CASE
-            WHEN up.role = 'superadmin'::profile_type THEN true
-            WHEN cdd.department_ids IS NULL THEN false
-            WHEN up.role = 'admin'::profile_type THEN true
-            ELSE false
-        END as can_edit,
-        CASE
-            WHEN up.role = 'superadmin'::profile_type AND COALESCE(cu.usage_count, 0) = 0 THEN true
-            WHEN cdd.department_ids IS NULL THEN false
-            WHEN up.role = 'admin'::profile_type AND COALESCE(cu.usage_count, 0) = 0 THEN true
-            ELSE false
-        END as can_delete,
-        true as can_duplicate,
+        -- is_member: needed for Python compute_can_leave
         CASE
             WHEN upr.resource_id IS NOT NULL AND crb.resource_id = ANY(COALESCE(upr.cohort_ids, ARRAY[]::uuid[])) THEN true
             ELSE false
-        END as can_leave
+        END as is_member
     FROM params x
     JOIN cohort_artifact c ON true
     LEFT JOIN cohort_resource_bridge crb ON crb.cohort_id = c.id
@@ -257,11 +241,10 @@ SELECT
     -- Aggregate cohorts (from paginated set)
     COALESCE(
         (SELECT ARRAY_AGG(
-            (cd.cohort_id, cd.name, cd.description, cd.active, cd.department_ids,
+            (cd.cohort_id, cd.name, cd.description, cd.is_inactive, cd.department_ids,
              ARRAY(SELECT unnest(cd.profile_ids)::text),
              ARRAY(SELECT unnest(cd.simulation_ids)::text),
-             cd.usage_count, cd.num_members,
-             cd.can_edit, cd.can_delete, cd.can_duplicate, cd.can_leave,
+             cd.usage_count, cd.num_members, cd.is_member,
              cd.updated_at)::types.q_list_cohorts_v4_cohort
             ORDER BY cd.updated_at DESC NULLS LAST
         ) FROM paginated_cohorts cd),

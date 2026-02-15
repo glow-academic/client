@@ -16970,10 +16970,8 @@ export interface components {
              * @default false
              */
             show_ai_generate: boolean;
-            /** Create Tool Id */
-            create_tool_id?: string | null;
-            /** Link Tool Id */
-            link_tool_id?: string | null;
+            /** Tool Id */
+            tool_id?: string | null;
             /** Current */
             current?: components["schemas"]["QGetDepartmentsV4Item"][] | null;
             /** Resources */
@@ -16998,10 +16996,8 @@ export interface components {
              * @default false
              */
             show_ai_generate: boolean;
-            /** Create Tool Id */
-            create_tool_id?: string | null;
-            /** Link Tool Id */
-            link_tool_id?: string | null;
+            /** Tool Id */
+            tool_id?: string | null;
             resource?: components["schemas"]["QGetDescriptionsV4Item"] | null;
             /** Resources */
             resources?: components["schemas"]["QGetDescriptionsV4Item"][] | null;
@@ -17053,10 +17049,8 @@ export interface components {
              * @default false
              */
             show_ai_generate: boolean;
-            /** Create Tool Id */
-            create_tool_id?: string | null;
-            /** Link Tool Id */
-            link_tool_id?: string | null;
+            /** Tool Id */
+            tool_id?: string | null;
             /** Current */
             current?: components["schemas"]["AgentFlagConfig"][] | null;
             /** Resources */
@@ -17081,10 +17075,8 @@ export interface components {
              * @default false
              */
             show_ai_generate: boolean;
-            /** Create Tool Id */
-            create_tool_id?: string | null;
-            /** Link Tool Id */
-            link_tool_id?: string | null;
+            /** Tool Id */
+            tool_id?: string | null;
             resource?: components["schemas"]["QGetInstructionsV4Item"] | null;
             /** Resources */
             resources?: components["schemas"]["QGetInstructionsV4Item"][] | null;
@@ -17108,10 +17100,8 @@ export interface components {
              * @default false
              */
             show_ai_generate: boolean;
-            /** Create Tool Id */
-            create_tool_id?: string | null;
-            /** Link Tool Id */
-            link_tool_id?: string | null;
+            /** Tool Id */
+            tool_id?: string | null;
             resource?: components["schemas"]["QGetModelsV4Item"] | null;
             /** Resources */
             resources?: components["schemas"]["QGetModelsV4Item"][] | null;
@@ -17147,10 +17137,8 @@ export interface components {
              * @default false
              */
             show_ai_generate: boolean;
-            /** Create Tool Id */
-            create_tool_id?: string | null;
-            /** Link Tool Id */
-            link_tool_id?: string | null;
+            /** Tool Id */
+            tool_id?: string | null;
             resource?: components["schemas"]["QGetNamesV4Item"] | null;
             /** Resources */
             resources?: components["schemas"]["QGetNamesV4Item"][] | null;
@@ -17174,10 +17162,8 @@ export interface components {
              * @default false
              */
             show_ai_generate: boolean;
-            /** Create Tool Id */
-            create_tool_id?: string | null;
-            /** Link Tool Id */
-            link_tool_id?: string | null;
+            /** Tool Id */
+            tool_id?: string | null;
             resource?: components["schemas"]["QGetPromptsV4Item"] | null;
             /** Resources */
             resources?: components["schemas"]["QGetPromptsV4Item"][] | null;
@@ -17201,10 +17187,8 @@ export interface components {
              * @default false
              */
             show_ai_generate: boolean;
-            /** Create Tool Id */
-            create_tool_id?: string | null;
-            /** Link Tool Id */
-            link_tool_id?: string | null;
+            /** Tool Id */
+            tool_id?: string | null;
             resource?: components["schemas"]["QGetReasoningLevelsV4Item"] | null;
             /** Resources */
             resources?: components["schemas"]["QGetReasoningLevelsV4Item"][] | null;
@@ -17240,10 +17224,8 @@ export interface components {
              * @default false
              */
             show_ai_generate: boolean;
-            /** Create Tool Id */
-            create_tool_id?: string | null;
-            /** Link Tool Id */
-            link_tool_id?: string | null;
+            /** Tool Id */
+            tool_id?: string | null;
             resource?: components["schemas"]["QGetTemperatureLevelsV4Item"] | null;
             /** Resources */
             resources?: components["schemas"]["QGetTemperatureLevelsV4Item"][] | null;
@@ -17267,10 +17249,8 @@ export interface components {
              * @default false
              */
             show_ai_generate: boolean;
-            /** Create Tool Id */
-            create_tool_id?: string | null;
-            /** Link Tool Id */
-            link_tool_id?: string | null;
+            /** Tool Id */
+            tool_id?: string | null;
             /** Current */
             current?: components["schemas"]["QGetToolsV4Item"][] | null;
             /** Resources */
@@ -17295,10 +17275,8 @@ export interface components {
              * @default false
              */
             show_ai_generate: boolean;
-            /** Create Tool Id */
-            create_tool_id?: string | null;
-            /** Link Tool Id */
-            link_tool_id?: string | null;
+            /** Tool Id */
+            tool_id?: string | null;
             /** Current */
             current?: components["schemas"]["QGetVoicesV4Item"][] | null;
             /** Resources */
@@ -18902,10 +18880,8 @@ export interface components {
              * @default false
              */
             show_ai_generate: boolean;
-            /** Create Tool Id */
-            create_tool_id?: string | null;
-            /** Link Tool Id */
-            link_tool_id?: string | null;
+            /** Tool Id */
+            tool_id?: string | null;
             resource?: components["schemas"]["QGetDescriptionsV4Item"] | null;
             /** Resources */
             resources?: components["schemas"]["QGetDescriptionsV4Item"][] | null;
@@ -18957,10 +18933,8 @@ export interface components {
              * @default false
              */
             show_ai_generate: boolean;
-            /** Create Tool Id */
-            create_tool_id?: string | null;
-            /** Link Tool Id */
-            link_tool_id?: string | null;
+            /** Tool Id */
+            tool_id?: string | null;
             /** Current */
             current?: components["schemas"]["AuthFlagConfig"][] | null;
             /** Resources */
@@ -19276,10 +19250,8 @@ export interface components {
              * @default false
              */
             show_ai_generate: boolean;
-            /** Create Tool Id */
-            create_tool_id?: string | null;
-            /** Link Tool Id */
-            link_tool_id?: string | null;
+            /** Tool Id */
+            tool_id?: string | null;
             /** Current */
             current?: components["schemas"]["AuthItemResource"][] | null;
             /** Resources */
@@ -19313,10 +19285,8 @@ export interface components {
              * @default false
              */
             show_ai_generate: boolean;
-            /** Create Tool Id */
-            create_tool_id?: string | null;
-            /** Link Tool Id */
-            link_tool_id?: string | null;
+            /** Tool Id */
+            tool_id?: string | null;
             resource?: components["schemas"]["QGetNamesV4Item"] | null;
             /** Resources */
             resources?: components["schemas"]["QGetNamesV4Item"][] | null;
@@ -19340,10 +19310,8 @@ export interface components {
              * @default false
              */
             show_ai_generate: boolean;
-            /** Create Tool Id */
-            create_tool_id?: string | null;
-            /** Link Tool Id */
-            link_tool_id?: string | null;
+            /** Tool Id */
+            tool_id?: string | null;
             /** Current */
             current?: components["schemas"]["QGetProtocolsV4Item"][] | null;
             /** Resources */
@@ -19377,10 +19345,8 @@ export interface components {
              * @default false
              */
             show_ai_generate: boolean;
-            /** Create Tool Id */
-            create_tool_id?: string | null;
-            /** Link Tool Id */
-            link_tool_id?: string | null;
+            /** Tool Id */
+            tool_id?: string | null;
             /** Current */
             current?: components["schemas"]["QGetSlugsV4Item"][] | null;
             /** Resources */
@@ -20454,10 +20420,8 @@ export interface components {
              * @default false
              */
             show_ai_generate: boolean;
-            /** Create Tool Id */
-            create_tool_id?: string | null;
-            /** Link Tool Id */
-            link_tool_id?: string | null;
+            /** Tool Id */
+            tool_id?: string | null;
             /** Current */
             current?: components["schemas"]["CohortDepartment"][] | null;
             /** Resources */
@@ -20494,10 +20458,8 @@ export interface components {
              * @default false
              */
             show_ai_generate: boolean;
-            /** Create Tool Id */
-            create_tool_id?: string | null;
-            /** Link Tool Id */
-            link_tool_id?: string | null;
+            /** Tool Id */
+            tool_id?: string | null;
             resource?: components["schemas"]["CohortDescriptionResource"] | null;
             /** Resources */
             resources?: components["schemas"]["CohortDescriptionResource"][] | null;
@@ -20537,10 +20499,8 @@ export interface components {
              * @default false
              */
             show_ai_generate: boolean;
-            /** Create Tool Id */
-            create_tool_id?: string | null;
-            /** Link Tool Id */
-            link_tool_id?: string | null;
+            /** Tool Id */
+            tool_id?: string | null;
             resource?: components["schemas"]["CohortFlagResource"] | null;
             /** Resources */
             resources?: components["schemas"]["CohortFlagResource"][] | null;
@@ -20651,10 +20611,8 @@ export interface components {
         CohortMultiResourceAction: {
             /** Resource Ids */
             resource_ids?: string[] | null;
-            /** Create Tool Id */
-            create_tool_id?: string | null;
-            /** Link Tool Id */
-            link_tool_id?: string | null;
+            /** Tool Id */
+            tool_id?: string | null;
         };
         /**
          * CohortNameResource
@@ -20687,10 +20645,8 @@ export interface components {
              * @default false
              */
             show_ai_generate: boolean;
-            /** Create Tool Id */
-            create_tool_id?: string | null;
-            /** Link Tool Id */
-            link_tool_id?: string | null;
+            /** Tool Id */
+            tool_id?: string | null;
             resource?: components["schemas"]["CohortNameResource"] | null;
             /** Resources */
             resources?: components["schemas"]["CohortNameResource"][] | null;
@@ -20702,10 +20658,8 @@ export interface components {
         CohortResourceAction: {
             /** Resource Id */
             resource_id?: string | null;
-            /** Create Tool Id */
-            create_tool_id?: string | null;
-            /** Link Tool Id */
-            link_tool_id?: string | null;
+            /** Tool Id */
+            tool_id?: string | null;
         };
         /**
          * CohortSimulation
@@ -20756,10 +20710,8 @@ export interface components {
              * @default false
              */
             show_ai_generate: boolean;
-            /** Create Tool Id */
-            create_tool_id?: string | null;
-            /** Link Tool Id */
-            link_tool_id?: string | null;
+            /** Tool Id */
+            tool_id?: string | null;
             /** Current */
             current?: components["schemas"]["CohortSimulationPosition"][] | null;
             /** Resources */
@@ -20784,10 +20736,8 @@ export interface components {
              * @default false
              */
             show_ai_generate: boolean;
-            /** Create Tool Id */
-            create_tool_id?: string | null;
-            /** Link Tool Id */
-            link_tool_id?: string | null;
+            /** Tool Id */
+            tool_id?: string | null;
             /** Current */
             current?: components["schemas"]["CohortSimulation"][] | null;
             /** Resources */
@@ -21838,8 +21788,8 @@ export interface components {
             usage_count?: number | null;
             /** Deleted */
             deleted?: boolean | null;
-            /** Title */
-            title?: string | null;
+            /** Name */
+            name?: string | null;
             /** Actor Name */
             actor_name?: string | null;
         };
@@ -22099,10 +22049,8 @@ export interface components {
              * @default false
              */
             show_ai_generate: boolean;
-            /** Create Tool Id */
-            create_tool_id?: string | null;
-            /** Link Tool Id */
-            link_tool_id?: string | null;
+            /** Tool Id */
+            tool_id?: string | null;
             resource?: components["schemas"]["QGetDescriptionsV4Item"] | null;
             /** Resources */
             resources?: components["schemas"]["QGetDescriptionsV4Item"][] | null;
@@ -22154,10 +22102,8 @@ export interface components {
              * @default false
              */
             show_ai_generate: boolean;
-            /** Create Tool Id */
-            create_tool_id?: string | null;
-            /** Link Tool Id */
-            link_tool_id?: string | null;
+            /** Tool Id */
+            tool_id?: string | null;
             /** Current */
             current?: components["schemas"]["DepartmentFlagConfig"][] | null;
             /** Resources */
@@ -22191,10 +22137,8 @@ export interface components {
              * @default false
              */
             show_ai_generate: boolean;
-            /** Create Tool Id */
-            create_tool_id?: string | null;
-            /** Link Tool Id */
-            link_tool_id?: string | null;
+            /** Tool Id */
+            tool_id?: string | null;
             resource?: components["schemas"]["QGetNamesV4Item"] | null;
             /** Resources */
             resources?: components["schemas"]["QGetNamesV4Item"][] | null;
@@ -22227,10 +22171,8 @@ export interface components {
              * @default false
              */
             show_ai_generate: boolean;
-            /** Create Tool Id */
-            create_tool_id?: string | null;
-            /** Link Tool Id */
-            link_tool_id?: string | null;
+            /** Tool Id */
+            tool_id?: string | null;
             /** Current */
             current?: components["schemas"]["app__sql__types__QGetSettingsV4Item"][] | null;
             /** Resources */
@@ -22517,10 +22459,8 @@ export interface components {
              * @default false
              */
             show_ai_generate: boolean;
-            /** Create Tool Id */
-            create_tool_id?: string | null;
-            /** Link Tool Id */
-            link_tool_id?: string | null;
+            /** Tool Id */
+            tool_id?: string | null;
             /** Current */
             current?: components["schemas"]["QGetDepartmentsV4Item"][] | null;
             /** Resources */
@@ -22545,10 +22485,8 @@ export interface components {
              * @default false
              */
             show_ai_generate: boolean;
-            /** Create Tool Id */
-            create_tool_id?: string | null;
-            /** Link Tool Id */
-            link_tool_id?: string | null;
+            /** Tool Id */
+            tool_id?: string | null;
             resource?: components["schemas"]["QGetDescriptionsV4Item"] | null;
             /** Resources */
             resources?: components["schemas"]["QGetDescriptionsV4Item"][] | null;
@@ -22588,10 +22526,8 @@ export interface components {
              * @default false
              */
             show_ai_generate: boolean;
-            /** Create Tool Id */
-            create_tool_id?: string | null;
-            /** Link Tool Id */
-            link_tool_id?: string | null;
+            /** Tool Id */
+            tool_id?: string | null;
             /** Current */
             current?: components["schemas"]["QGetParameterFieldsV4Item"][] | null;
             /** Resources */
@@ -22642,10 +22578,8 @@ export interface components {
              * @default false
              */
             show_ai_generate: boolean;
-            /** Create Tool Id */
-            create_tool_id?: string | null;
-            /** Link Tool Id */
-            link_tool_id?: string | null;
+            /** Tool Id */
+            tool_id?: string | null;
             /** Current */
             current?: components["schemas"]["DocumentFlagConfig"][] | null;
             /** Resources */
@@ -22709,10 +22643,8 @@ export interface components {
              * @default false
              */
             show_ai_generate: boolean;
-            /** Create Tool Id */
-            create_tool_id?: string | null;
-            /** Link Tool Id */
-            link_tool_id?: string | null;
+            /** Tool Id */
+            tool_id?: string | null;
             /** Current */
             current?: components["schemas"]["QGetImagesV4Item"][] | null;
             /** Resources */
@@ -22737,10 +22669,8 @@ export interface components {
              * @default false
              */
             show_ai_generate: boolean;
-            /** Create Tool Id */
-            create_tool_id?: string | null;
-            /** Link Tool Id */
-            link_tool_id?: string | null;
+            /** Tool Id */
+            tool_id?: string | null;
             resource?: components["schemas"]["QGetNamesV4Item"] | null;
             /** Resources */
             resources?: components["schemas"]["QGetNamesV4Item"][] | null;
@@ -22764,10 +22694,8 @@ export interface components {
              * @default false
              */
             show_ai_generate: boolean;
-            /** Create Tool Id */
-            create_tool_id?: string | null;
-            /** Link Tool Id */
-            link_tool_id?: string | null;
+            /** Tool Id */
+            tool_id?: string | null;
             /** Current */
             current?: components["schemas"]["QGetTextsV4Item"][] | null;
             /** Resources */
@@ -22792,10 +22720,8 @@ export interface components {
              * @default false
              */
             show_ai_generate: boolean;
-            /** Create Tool Id */
-            create_tool_id?: string | null;
-            /** Link Tool Id */
-            link_tool_id?: string | null;
+            /** Tool Id */
+            tool_id?: string | null;
             /** Current */
             current?: components["schemas"]["QGetUploadsV4Item"][] | null;
             /** Resources */
@@ -23106,10 +23032,10 @@ export interface components {
         DuplicateCohortApiResponse: {
             /** Id */
             id?: string | null;
-            /** Title */
-            title?: string | null;
-            /** Original Title */
-            original_title?: string | null;
+            /** Name */
+            name?: string | null;
+            /** Original Name */
+            original_name?: string | null;
             /** Actor Name */
             actor_name?: string | null;
         };
@@ -24466,10 +24392,8 @@ export interface components {
              * @default false
              */
             show_ai_generate: boolean;
-            /** Create Tool Id */
-            create_tool_id?: string | null;
-            /** Link Tool Id */
-            link_tool_id?: string | null;
+            /** Tool Id */
+            tool_id?: string | null;
             /** Current */
             current?: components["schemas"]["QGetParametersV4Item"][] | null;
             /** Resources */
@@ -24494,10 +24418,8 @@ export interface components {
              * @default false
              */
             show_ai_generate: boolean;
-            /** Create Tool Id */
-            create_tool_id?: string | null;
-            /** Link Tool Id */
-            link_tool_id?: string | null;
+            /** Tool Id */
+            tool_id?: string | null;
             /** Current */
             current?: components["schemas"]["QGetDepartmentsV4Item"][] | null;
             /** Resources */
@@ -24522,10 +24444,8 @@ export interface components {
              * @default false
              */
             show_ai_generate: boolean;
-            /** Create Tool Id */
-            create_tool_id?: string | null;
-            /** Link Tool Id */
-            link_tool_id?: string | null;
+            /** Tool Id */
+            tool_id?: string | null;
             resource?: components["schemas"]["QGetDescriptionsV4Item"] | null;
             /** Resources */
             resources?: components["schemas"]["QGetDescriptionsV4Item"][] | null;
@@ -24577,10 +24497,8 @@ export interface components {
              * @default false
              */
             show_ai_generate: boolean;
-            /** Create Tool Id */
-            create_tool_id?: string | null;
-            /** Link Tool Id */
-            link_tool_id?: string | null;
+            /** Tool Id */
+            tool_id?: string | null;
             resource?: components["schemas"]["FieldFlagConfig"] | null;
             /** Resources */
             resources?: components["schemas"]["FieldFlagConfig"][] | null;
@@ -24701,10 +24619,8 @@ export interface components {
              * @default false
              */
             show_ai_generate: boolean;
-            /** Create Tool Id */
-            create_tool_id?: string | null;
-            /** Link Tool Id */
-            link_tool_id?: string | null;
+            /** Tool Id */
+            tool_id?: string | null;
             resource?: components["schemas"]["QGetNamesV4Item"] | null;
             /** Resources */
             resources?: components["schemas"]["QGetNamesV4Item"][] | null;
@@ -30775,7 +30691,7 @@ export interface components {
         };
         /**
          * ListCohortApiCohort
-         * @description Cohort item in list response with SQL-computed permissions.
+         * @description Cohort item in list response with Python-computed permissions.
          */
         ListCohortApiCohort: {
             /** Cohort Id */
@@ -30784,8 +30700,8 @@ export interface components {
             name?: string | null;
             /** Description */
             description?: string | null;
-            /** Active */
-            active?: boolean | null;
+            /** Is Inactive */
+            is_inactive?: boolean | null;
             /** Department Ids */
             department_ids?: string[] | null;
             /** Profile Ids */
@@ -30937,6 +30853,8 @@ export interface components {
             active_scenario_count?: number | null;
             /** Total Scenario Links */
             total_scenario_links?: number | null;
+            /** Upload Id */
+            upload_id?: string | null;
             /** Can Edit */
             can_edit?: boolean | null;
             /** Can Duplicate */
@@ -31649,17 +31567,17 @@ export interface components {
         };
         /**
          * ListScenarioApiScenario
-         * @description Scenario item in list response with SQL-computed permissions.
+         * @description Scenario item in list response with Python-computed permissions.
          */
         ListScenarioApiScenario: {
             /** Scenario Id */
             scenario_id?: string | null;
-            /** Title */
-            title?: string | null;
+            /** Name */
+            name?: string | null;
             /** Problem Statement */
             problem_statement?: string | null;
-            /** Active */
-            active?: boolean | null;
+            /** Is Inactive */
+            is_inactive?: boolean | null;
             /** Generated */
             generated?: boolean | null;
             /** Parent Scenario Id */
@@ -31676,6 +31594,10 @@ export interface components {
             simulation_ids?: string[] | null;
             /** Num Simulations */
             num_simulations?: number | null;
+            /** Active Simulation Count */
+            active_simulation_count?: number | null;
+            /** Total Simulation Links */
+            total_simulation_links?: number | null;
             /** Can Edit */
             can_edit?: boolean | null;
             /** Can Delete */
@@ -31800,7 +31722,7 @@ export interface components {
         };
         /**
          * ListSimulationApiSimulation
-         * @description Simulation item in list response with SQL-computed permissions.
+         * @description Simulation item in list response with Python-computed permissions.
          */
         ListSimulationApiSimulation: {
             /** Simulation Id */
@@ -31811,20 +31733,22 @@ export interface components {
             description?: string | null;
             /** Department Ids */
             department_ids?: string[] | null;
-            /** Active */
-            active?: boolean | null;
+            /** Is Inactive */
+            is_inactive?: boolean | null;
             /** Practice Simulation */
             practice_simulation?: boolean | null;
+            /** Scenario Ids */
+            scenario_ids?: string[] | null;
+            /** Num Cohorts */
+            num_cohorts?: number | null;
+            /** Cohort Usage Count */
+            cohort_usage_count?: number | null;
             /** Can Edit */
             can_edit?: boolean | null;
             /** Can Delete */
             can_delete?: boolean | null;
             /** Can Duplicate */
             can_duplicate?: boolean | null;
-            /** Scenario Ids */
-            scenario_ids?: string[] | null;
-            /** Num Cohorts */
-            num_cohorts?: number | null;
             /** Cohort Ids */
             cohort_ids?: string[] | null;
             /** Updated At */
@@ -32186,10 +32110,8 @@ export interface components {
              * @default false
              */
             show_ai_generate: boolean;
-            /** Create Tool Id */
-            create_tool_id?: string | null;
-            /** Link Tool Id */
-            link_tool_id?: string | null;
+            /** Tool Id */
+            tool_id?: string | null;
             /** Current */
             current?: components["schemas"]["QGetDepartmentsV4Item"][] | null;
             /** Resources */
@@ -32214,10 +32136,8 @@ export interface components {
              * @default false
              */
             show_ai_generate: boolean;
-            /** Create Tool Id */
-            create_tool_id?: string | null;
-            /** Link Tool Id */
-            link_tool_id?: string | null;
+            /** Tool Id */
+            tool_id?: string | null;
             resource?: components["schemas"]["QGetDescriptionsV4Item"] | null;
             /** Resources */
             resources?: components["schemas"]["QGetDescriptionsV4Item"][] | null;
@@ -32269,10 +32189,8 @@ export interface components {
              * @default false
              */
             show_ai_generate: boolean;
-            /** Create Tool Id */
-            create_tool_id?: string | null;
-            /** Link Tool Id */
-            link_tool_id?: string | null;
+            /** Tool Id */
+            tool_id?: string | null;
             /** Current */
             current?: components["schemas"]["ModelFlagConfig"][] | null;
             /** Resources */
@@ -32343,10 +32261,8 @@ export interface components {
              * @default false
              */
             show_ai_generate: boolean;
-            /** Create Tool Id */
-            create_tool_id?: string | null;
-            /** Link Tool Id */
-            link_tool_id?: string | null;
+            /** Tool Id */
+            tool_id?: string | null;
             /** Current */
             current?: components["schemas"]["QGetModalitiesV4Item"][] | null;
             /** Resources */
@@ -32383,10 +32299,8 @@ export interface components {
              * @default false
              */
             show_ai_generate: boolean;
-            /** Create Tool Id */
-            create_tool_id?: string | null;
-            /** Link Tool Id */
-            link_tool_id?: string | null;
+            /** Tool Id */
+            tool_id?: string | null;
             resource?: components["schemas"]["QGetNamesV4Item"] | null;
             /** Resources */
             resources?: components["schemas"]["QGetNamesV4Item"][] | null;
@@ -32410,10 +32324,8 @@ export interface components {
              * @default false
              */
             show_ai_generate: boolean;
-            /** Create Tool Id */
-            create_tool_id?: string | null;
-            /** Link Tool Id */
-            link_tool_id?: string | null;
+            /** Tool Id */
+            tool_id?: string | null;
             /** Current */
             current?: components["schemas"]["QGetPricingV4Item"][] | null;
             /** Resources */
@@ -32438,10 +32350,8 @@ export interface components {
              * @default false
              */
             show_ai_generate: boolean;
-            /** Create Tool Id */
-            create_tool_id?: string | null;
-            /** Link Tool Id */
-            link_tool_id?: string | null;
+            /** Tool Id */
+            tool_id?: string | null;
             resource?: components["schemas"]["QGetProvidersV4Item"] | null;
             /** Resources */
             resources?: components["schemas"]["QGetProvidersV4Item"][] | null;
@@ -32465,10 +32375,8 @@ export interface components {
              * @default false
              */
             show_ai_generate: boolean;
-            /** Create Tool Id */
-            create_tool_id?: string | null;
-            /** Link Tool Id */
-            link_tool_id?: string | null;
+            /** Tool Id */
+            tool_id?: string | null;
             /** Current */
             current?: components["schemas"]["QGetQualitiesV4Item"][] | null;
             /** Resources */
@@ -32493,10 +32401,8 @@ export interface components {
              * @default false
              */
             show_ai_generate: boolean;
-            /** Create Tool Id */
-            create_tool_id?: string | null;
-            /** Link Tool Id */
-            link_tool_id?: string | null;
+            /** Tool Id */
+            tool_id?: string | null;
             /** Current */
             current?: components["schemas"]["QGetReasoningLevelsV4Item"][] | null;
             /** Resources */
@@ -32533,10 +32439,8 @@ export interface components {
              * @default false
              */
             show_ai_generate: boolean;
-            /** Create Tool Id */
-            create_tool_id?: string | null;
-            /** Link Tool Id */
-            link_tool_id?: string | null;
+            /** Tool Id */
+            tool_id?: string | null;
             /** Current */
             current?: components["schemas"]["QGetTemperatureLevelsV4Item"][] | null;
             /** Resources */
@@ -32561,10 +32465,8 @@ export interface components {
              * @default false
              */
             show_ai_generate: boolean;
-            /** Create Tool Id */
-            create_tool_id?: string | null;
-            /** Link Tool Id */
-            link_tool_id?: string | null;
+            /** Tool Id */
+            tool_id?: string | null;
             resource?: components["schemas"]["QGetValuesV4Item"] | null;
             /** Resources */
             resources?: components["schemas"]["QGetValuesV4Item"][] | null;
@@ -32588,10 +32490,8 @@ export interface components {
              * @default false
              */
             show_ai_generate: boolean;
-            /** Create Tool Id */
-            create_tool_id?: string | null;
-            /** Link Tool Id */
-            link_tool_id?: string | null;
+            /** Tool Id */
+            tool_id?: string | null;
             /** Current */
             current?: components["schemas"]["QGetVoicesV4Item"][] | null;
             /** Resources */
@@ -33244,10 +33144,8 @@ export interface components {
              * @default false
              */
             show_ai_generate: boolean;
-            /** Create Tool Id */
-            create_tool_id?: string | null;
-            /** Link Tool Id */
-            link_tool_id?: string | null;
+            /** Tool Id */
+            tool_id?: string | null;
             /** Current */
             current?: components["schemas"]["QGetDepartmentsV4Item"][] | null;
             /** Resources */
@@ -33272,10 +33170,8 @@ export interface components {
              * @default false
              */
             show_ai_generate: boolean;
-            /** Create Tool Id */
-            create_tool_id?: string | null;
-            /** Link Tool Id */
-            link_tool_id?: string | null;
+            /** Tool Id */
+            tool_id?: string | null;
             resource?: components["schemas"]["QGetDescriptionsV4Item"] | null;
             /** Resources */
             resources?: components["schemas"]["QGetDescriptionsV4Item"][] | null;
@@ -33299,10 +33195,8 @@ export interface components {
              * @default false
              */
             show_ai_generate: boolean;
-            /** Create Tool Id */
-            create_tool_id?: string | null;
-            /** Link Tool Id */
-            link_tool_id?: string | null;
+            /** Tool Id */
+            tool_id?: string | null;
             /** Current */
             current?: components["schemas"]["QGetParameterFieldsV4Item"][] | null;
             /** Resources */
@@ -33505,10 +33399,8 @@ export interface components {
              * @default false
              */
             show_ai_generate: boolean;
-            /** Create Tool Id */
-            create_tool_id?: string | null;
-            /** Link Tool Id */
-            link_tool_id?: string | null;
+            /** Tool Id */
+            tool_id?: string | null;
             /** Current */
             current?: components["schemas"]["ParameterFlagConfig"][] | null;
             /** Resources */
@@ -33575,10 +33467,8 @@ export interface components {
              * @default false
              */
             show_ai_generate: boolean;
-            /** Create Tool Id */
-            create_tool_id?: string | null;
-            /** Link Tool Id */
-            link_tool_id?: string | null;
+            /** Tool Id */
+            tool_id?: string | null;
             resource?: components["schemas"]["QGetNamesV4Item"] | null;
             /** Resources */
             resources?: components["schemas"]["QGetNamesV4Item"][] | null;
@@ -35631,10 +35521,8 @@ export interface components {
              * @default false
              */
             show_ai_generate: boolean;
-            /** Create Tool Id */
-            create_tool_id?: string | null;
-            /** Link Tool Id */
-            link_tool_id?: string | null;
+            /** Tool Id */
+            tool_id?: string | null;
             /** Current */
             current?: components["schemas"]["QGetCohortsV4Item"][] | null;
             /** Resources */
@@ -35659,10 +35547,8 @@ export interface components {
              * @default false
              */
             show_ai_generate: boolean;
-            /** Create Tool Id */
-            create_tool_id?: string | null;
-            /** Link Tool Id */
-            link_tool_id?: string | null;
+            /** Tool Id */
+            tool_id?: string | null;
             /** Current */
             current?: components["schemas"]["QGetDepartmentsV4Item"][] | null;
             /** Resources */
@@ -35687,10 +35573,8 @@ export interface components {
              * @default false
              */
             show_ai_generate: boolean;
-            /** Create Tool Id */
-            create_tool_id?: string | null;
-            /** Link Tool Id */
-            link_tool_id?: string | null;
+            /** Tool Id */
+            tool_id?: string | null;
             /** Current */
             current?: components["schemas"]["QGetEmailsV4Item"][] | null;
             /** Resources */
@@ -35810,10 +35694,8 @@ export interface components {
              * @default false
              */
             show_ai_generate: boolean;
-            /** Create Tool Id */
-            create_tool_id?: string | null;
-            /** Link Tool Id */
-            link_tool_id?: string | null;
+            /** Tool Id */
+            tool_id?: string | null;
             current?: components["schemas"]["ProfileFlagConfig"] | null;
             /** Resources */
             resources?: components["schemas"]["ProfileFlagConfig"][] | null;
@@ -35939,10 +35821,8 @@ export interface components {
              * @default false
              */
             show_ai_generate: boolean;
-            /** Create Tool Id */
-            create_tool_id?: string | null;
-            /** Link Tool Id */
-            link_tool_id?: string | null;
+            /** Tool Id */
+            tool_id?: string | null;
             resource?: components["schemas"]["QGetNamesV4Item"] | null;
             /** Resources */
             resources?: components["schemas"]["QGetNamesV4Item"][] | null;
@@ -35966,10 +35846,8 @@ export interface components {
              * @default false
              */
             show_ai_generate: boolean;
-            /** Create Tool Id */
-            create_tool_id?: string | null;
-            /** Link Tool Id */
-            link_tool_id?: string | null;
+            /** Tool Id */
+            tool_id?: string | null;
             resource?: components["schemas"]["QGetRequestLimitsV4Item"] | null;
             /** Resources */
             resources?: components["schemas"]["QGetRequestLimitsV4Item"][] | null;
@@ -36411,10 +36289,8 @@ export interface components {
              * @default false
              */
             show_ai_generate: boolean;
-            /** Create Tool Id */
-            create_tool_id?: string | null;
-            /** Link Tool Id */
-            link_tool_id?: string | null;
+            /** Tool Id */
+            tool_id?: string | null;
             /** Current */
             current?: components["schemas"]["QGetDepartmentsV4Item"][] | null;
             /** Resources */
@@ -36439,10 +36315,8 @@ export interface components {
              * @default false
              */
             show_ai_generate: boolean;
-            /** Create Tool Id */
-            create_tool_id?: string | null;
-            /** Link Tool Id */
-            link_tool_id?: string | null;
+            /** Tool Id */
+            tool_id?: string | null;
             resource?: components["schemas"]["QGetDescriptionsV4Item"] | null;
             /** Resources */
             resources?: components["schemas"]["QGetDescriptionsV4Item"][] | null;
@@ -36466,10 +36340,8 @@ export interface components {
              * @default false
              */
             show_ai_generate: boolean;
-            /** Create Tool Id */
-            create_tool_id?: string | null;
-            /** Link Tool Id */
-            link_tool_id?: string | null;
+            /** Tool Id */
+            tool_id?: string | null;
             resource?: components["schemas"]["QGetEndpointsV4Item"] | null;
             /** Resources */
             resources?: components["schemas"]["QGetEndpointsV4Item"][] | null;
@@ -36521,10 +36393,8 @@ export interface components {
              * @default false
              */
             show_ai_generate: boolean;
-            /** Create Tool Id */
-            create_tool_id?: string | null;
-            /** Link Tool Id */
-            link_tool_id?: string | null;
+            /** Tool Id */
+            tool_id?: string | null;
             /** Current */
             current?: components["schemas"]["ProviderFlagConfig"][] | null;
             /** Resources */
@@ -36583,10 +36453,8 @@ export interface components {
              * @default false
              */
             show_ai_generate: boolean;
-            /** Create Tool Id */
-            create_tool_id?: string | null;
-            /** Link Tool Id */
-            link_tool_id?: string | null;
+            /** Tool Id */
+            tool_id?: string | null;
             resource?: components["schemas"]["QGetKeysV4Item"] | null;
             /** Resources */
             resources?: components["schemas"]["QGetKeysV4Item"][] | null;
@@ -36771,10 +36639,8 @@ export interface components {
              * @default false
              */
             show_ai_generate: boolean;
-            /** Create Tool Id */
-            create_tool_id?: string | null;
-            /** Link Tool Id */
-            link_tool_id?: string | null;
+            /** Tool Id */
+            tool_id?: string | null;
             resource?: components["schemas"]["QGetNamesV4Item"] | null;
             /** Resources */
             resources?: components["schemas"]["QGetNamesV4Item"][] | null;
@@ -36807,10 +36673,8 @@ export interface components {
              * @default false
              */
             show_ai_generate: boolean;
-            /** Create Tool Id */
-            create_tool_id?: string | null;
-            /** Link Tool Id */
-            link_tool_id?: string | null;
+            /** Tool Id */
+            tool_id?: string | null;
             resource?: components["schemas"]["QGetValuesV4Item"] | null;
             /** Resources */
             resources?: components["schemas"]["QGetValuesV4Item"][] | null;
@@ -38099,6 +37963,8 @@ export interface components {
             scenario_ids: string[] | null;
             /** Field Ids */
             field_ids: string[] | null;
+            /** Upload Ids */
+            upload_ids: string[] | null;
             /** Is Inactive */
             is_inactive: boolean | null;
             /** Num Scenarios */
@@ -39850,10 +39716,8 @@ export interface components {
              * @default false
              */
             show_ai_generate: boolean;
-            /** Create Tool Id */
-            create_tool_id?: string | null;
-            /** Link Tool Id */
-            link_tool_id?: string | null;
+            /** Tool Id */
+            tool_id?: string | null;
             /** Current */
             current?: components["schemas"]["QGetDepartmentsV4Item"][] | null;
             /** Resources */
@@ -39878,10 +39742,8 @@ export interface components {
              * @default false
              */
             show_ai_generate: boolean;
-            /** Create Tool Id */
-            create_tool_id?: string | null;
-            /** Link Tool Id */
-            link_tool_id?: string | null;
+            /** Tool Id */
+            tool_id?: string | null;
             resource?: components["schemas"]["QGetDescriptionsV4Item"] | null;
             /** Resources */
             resources?: components["schemas"]["QGetDescriptionsV4Item"][] | null;
@@ -39989,10 +39851,8 @@ export interface components {
              * @default false
              */
             show_ai_generate: boolean;
-            /** Create Tool Id */
-            create_tool_id?: string | null;
-            /** Link Tool Id */
-            link_tool_id?: string | null;
+            /** Tool Id */
+            tool_id?: string | null;
             /** Current */
             current?: components["schemas"]["RubricFlagConfig"][] | null;
             /** Resources */
@@ -40125,10 +39985,8 @@ export interface components {
              * @default false
              */
             show_ai_generate: boolean;
-            /** Create Tool Id */
-            create_tool_id?: string | null;
-            /** Link Tool Id */
-            link_tool_id?: string | null;
+            /** Tool Id */
+            tool_id?: string | null;
             resource?: components["schemas"]["QGetNamesV4Item"] | null;
             /** Resources */
             resources?: components["schemas"]["QGetNamesV4Item"][] | null;
@@ -40152,10 +40010,8 @@ export interface components {
              * @default false
              */
             show_ai_generate: boolean;
-            /** Create Tool Id */
-            create_tool_id?: string | null;
-            /** Link Tool Id */
-            link_tool_id?: string | null;
+            /** Tool Id */
+            tool_id?: string | null;
             resource?: components["schemas"]["QGetPointsV4Item"] | null;
             /** Resources */
             resources?: components["schemas"]["QGetPointsV4Item"][] | null;
@@ -40179,10 +40035,8 @@ export interface components {
              * @default false
              */
             show_ai_generate: boolean;
-            /** Create Tool Id */
-            create_tool_id?: string | null;
-            /** Link Tool Id */
-            link_tool_id?: string | null;
+            /** Tool Id */
+            tool_id?: string | null;
             resource?: components["schemas"]["QGetPointsV4Item"] | null;
             /** Resources */
             resources?: components["schemas"]["QGetPointsV4Item"][] | null;
@@ -40215,10 +40069,8 @@ export interface components {
              * @default false
              */
             show_ai_generate: boolean;
-            /** Create Tool Id */
-            create_tool_id?: string | null;
-            /** Link Tool Id */
-            link_tool_id?: string | null;
+            /** Tool Id */
+            tool_id?: string | null;
             /** Current */
             current?: components["schemas"]["QGetStandardGroupsV4Item"][] | null;
             /** Resources */
@@ -40243,10 +40095,8 @@ export interface components {
              * @default false
              */
             show_ai_generate: boolean;
-            /** Create Tool Id */
-            create_tool_id?: string | null;
-            /** Link Tool Id */
-            link_tool_id?: string | null;
+            /** Tool Id */
+            tool_id?: string | null;
             /** Current */
             current?: components["schemas"]["QGetStandardsV4Item"][] | null;
             /** Resources */
@@ -45692,10 +45542,8 @@ export interface components {
              * @default false
              */
             show_ai_generate: boolean;
-            /** Create Tool Id */
-            create_tool_id?: string | null;
-            /** Link Tool Id */
-            link_tool_id?: string | null;
+            /** Tool Id */
+            tool_id?: string | null;
             /** Current */
             current?: components["schemas"]["QGetAuthItemKeysV4Item"][] | null;
             /** Resources */
@@ -45720,10 +45568,8 @@ export interface components {
              * @default false
              */
             show_ai_generate: boolean;
-            /** Create Tool Id */
-            create_tool_id?: string | null;
-            /** Link Tool Id */
-            link_tool_id?: string | null;
+            /** Tool Id */
+            tool_id?: string | null;
             /** Current */
             current?: components["schemas"]["QGetAuthsV4Item"][] | null;
             /** Resources */
@@ -45748,10 +45594,8 @@ export interface components {
              * @default false
              */
             show_ai_generate: boolean;
-            /** Create Tool Id */
-            create_tool_id?: string | null;
-            /** Link Tool Id */
-            link_tool_id?: string | null;
+            /** Tool Id */
+            tool_id?: string | null;
             /** Current */
             current?: components["schemas"]["QGetColorsV4Item"][] | null;
             /** Resources */
@@ -45776,10 +45620,8 @@ export interface components {
              * @default false
              */
             show_ai_generate: boolean;
-            /** Create Tool Id */
-            create_tool_id?: string | null;
-            /** Link Tool Id */
-            link_tool_id?: string | null;
+            /** Tool Id */
+            tool_id?: string | null;
             /** Current */
             current?: components["schemas"]["QGetDepartmentsV4Item"][] | null;
             /** Resources */
@@ -45804,10 +45646,8 @@ export interface components {
              * @default false
              */
             show_ai_generate: boolean;
-            /** Create Tool Id */
-            create_tool_id?: string | null;
-            /** Link Tool Id */
-            link_tool_id?: string | null;
+            /** Tool Id */
+            tool_id?: string | null;
             resource?: components["schemas"]["QGetDescriptionsV4Item"] | null;
             /** Resources */
             resources?: components["schemas"]["QGetDescriptionsV4Item"][] | null;
@@ -45859,10 +45699,8 @@ export interface components {
              * @default false
              */
             show_ai_generate: boolean;
-            /** Create Tool Id */
-            create_tool_id?: string | null;
-            /** Link Tool Id */
-            link_tool_id?: string | null;
+            /** Tool Id */
+            tool_id?: string | null;
             current?: components["schemas"]["SettingFlagConfig"] | null;
             /** Resources */
             resources?: components["schemas"]["SettingFlagConfig"][] | null;
@@ -45943,10 +45781,8 @@ export interface components {
              * @default false
              */
             show_ai_generate: boolean;
-            /** Create Tool Id */
-            create_tool_id?: string | null;
-            /** Link Tool Id */
-            link_tool_id?: string | null;
+            /** Tool Id */
+            tool_id?: string | null;
             resource?: components["schemas"]["QGetNamesV4Item"] | null;
             /** Resources */
             resources?: components["schemas"]["QGetNamesV4Item"][] | null;
@@ -45970,10 +45806,8 @@ export interface components {
              * @default false
              */
             show_ai_generate: boolean;
-            /** Create Tool Id */
-            create_tool_id?: string | null;
-            /** Link Tool Id */
-            link_tool_id?: string | null;
+            /** Tool Id */
+            tool_id?: string | null;
             /** Current */
             current?: components["schemas"]["QGetProfilesV4Item"][] | null;
             /** Resources */
@@ -45998,10 +45832,8 @@ export interface components {
              * @default false
              */
             show_ai_generate: boolean;
-            /** Create Tool Id */
-            create_tool_id?: string | null;
-            /** Link Tool Id */
-            link_tool_id?: string | null;
+            /** Tool Id */
+            tool_id?: string | null;
             /** Current */
             current?: components["schemas"]["QGetProviderKeysV4Item"][] | null;
             /** Resources */
@@ -46038,10 +45870,8 @@ export interface components {
              * @default false
              */
             show_ai_generate: boolean;
-            /** Create Tool Id */
-            create_tool_id?: string | null;
-            /** Link Tool Id */
-            link_tool_id?: string | null;
+            /** Tool Id */
+            tool_id?: string | null;
             /** Current */
             current?: components["schemas"]["QGetRoleRoutesV4Item"][] | null;
             /** Resources */
@@ -46066,10 +45896,8 @@ export interface components {
              * @default false
              */
             show_ai_generate: boolean;
-            /** Create Tool Id */
-            create_tool_id?: string | null;
-            /** Link Tool Id */
-            link_tool_id?: string | null;
+            /** Tool Id */
+            tool_id?: string | null;
             /** Current */
             current?: components["schemas"]["app__sql__types__QGetRolesV4Item"][] | null;
             /** Resources */
@@ -46312,10 +46140,8 @@ export interface components {
              * @default false
              */
             show_ai_generate: boolean;
-            /** Create Tool Id */
-            create_tool_id?: string | null;
-            /** Link Tool Id */
-            link_tool_id?: string | null;
+            /** Tool Id */
+            tool_id?: string | null;
             /** Current */
             current?: components["schemas"]["SimulationDepartment"][] | null;
             /** Resources */
@@ -46340,10 +46166,8 @@ export interface components {
              * @default false
              */
             show_ai_generate: boolean;
-            /** Create Tool Id */
-            create_tool_id?: string | null;
-            /** Link Tool Id */
-            link_tool_id?: string | null;
+            /** Tool Id */
+            tool_id?: string | null;
             resource?: components["schemas"]["QGetDescriptionsV4Item"] | null;
             /** Resources */
             resources?: components["schemas"]["QGetDescriptionsV4Item"][] | null;
@@ -46446,10 +46270,8 @@ export interface components {
              * @default false
              */
             show_ai_generate: boolean;
-            /** Create Tool Id */
-            create_tool_id?: string | null;
-            /** Link Tool Id */
-            link_tool_id?: string | null;
+            /** Tool Id */
+            tool_id?: string | null;
             /** Current */
             current?: components["schemas"]["SimulationFlagConfig"][] | null;
             /** Resources */
@@ -46506,10 +46328,8 @@ export interface components {
         SimulationMultiResourceAction: {
             /** Resource Ids */
             resource_ids?: string[] | null;
-            /** Create Tool Id */
-            create_tool_id?: string | null;
-            /** Link Tool Id */
-            link_tool_id?: string | null;
+            /** Tool Id */
+            tool_id?: string | null;
         };
         /** SimulationNameSection */
         SimulationNameSection: {
@@ -46530,10 +46350,8 @@ export interface components {
              * @default false
              */
             show_ai_generate: boolean;
-            /** Create Tool Id */
-            create_tool_id?: string | null;
-            /** Link Tool Id */
-            link_tool_id?: string | null;
+            /** Tool Id */
+            tool_id?: string | null;
             resource?: components["schemas"]["QGetNamesV4Item"] | null;
             /** Resources */
             resources?: components["schemas"]["QGetNamesV4Item"][] | null;
@@ -46688,10 +46506,8 @@ export interface components {
         SimulationResourceAction: {
             /** Resource Id */
             resource_id?: string | null;
-            /** Create Tool Id */
-            create_tool_id?: string | null;
-            /** Link Tool Id */
-            link_tool_id?: string | null;
+            /** Tool Id */
+            tool_id?: string | null;
         };
         /**
          * SimulationScenario
@@ -46744,10 +46560,8 @@ export interface components {
              * @default false
              */
             show_ai_generate: boolean;
-            /** Create Tool Id */
-            create_tool_id?: string | null;
-            /** Link Tool Id */
-            link_tool_id?: string | null;
+            /** Tool Id */
+            tool_id?: string | null;
             /** Current */
             current?: components["schemas"]["QGetScenarioFlagsV4Item"][] | null;
             /** Resources */
@@ -46772,10 +46586,8 @@ export interface components {
              * @default false
              */
             show_ai_generate: boolean;
-            /** Create Tool Id */
-            create_tool_id?: string | null;
-            /** Link Tool Id */
-            link_tool_id?: string | null;
+            /** Tool Id */
+            tool_id?: string | null;
             /** Current */
             current?: components["schemas"]["QGetScenarioPersonasV4Item"][] | null;
             /** Resources */
@@ -46800,10 +46612,8 @@ export interface components {
              * @default false
              */
             show_ai_generate: boolean;
-            /** Create Tool Id */
-            create_tool_id?: string | null;
-            /** Link Tool Id */
-            link_tool_id?: string | null;
+            /** Tool Id */
+            tool_id?: string | null;
             /** Current */
             current?: components["schemas"]["QGetScenarioPositionsV4Item"][] | null;
             /** Resources */
@@ -46828,10 +46638,8 @@ export interface components {
              * @default false
              */
             show_ai_generate: boolean;
-            /** Create Tool Id */
-            create_tool_id?: string | null;
-            /** Link Tool Id */
-            link_tool_id?: string | null;
+            /** Tool Id */
+            tool_id?: string | null;
             /** Current */
             current?: components["schemas"]["QGetScenarioRubricsV4Item"][] | null;
             /** Resources */
@@ -46856,10 +46664,8 @@ export interface components {
              * @default false
              */
             show_ai_generate: boolean;
-            /** Create Tool Id */
-            create_tool_id?: string | null;
-            /** Link Tool Id */
-            link_tool_id?: string | null;
+            /** Tool Id */
+            tool_id?: string | null;
             /** Current */
             current?: components["schemas"]["SimulationScenario"][] | null;
             /** Resources */
@@ -46884,10 +46690,8 @@ export interface components {
              * @default false
              */
             show_ai_generate: boolean;
-            /** Create Tool Id */
-            create_tool_id?: string | null;
-            /** Link Tool Id */
-            link_tool_id?: string | null;
+            /** Tool Id */
+            tool_id?: string | null;
             /** Current */
             current?: components["schemas"]["QGetScenarioTimeLimitsV4Item"][] | null;
             /** Resources */
@@ -48332,10 +48136,8 @@ export interface components {
              * @default false
              */
             show_ai_generate: boolean;
-            /** Create Tool Id */
-            create_tool_id?: string | null;
-            /** Link Tool Id */
-            link_tool_id?: string | null;
+            /** Tool Id */
+            tool_id?: string | null;
             /** Current */
             current?: components["schemas"]["QGetArgsOutputsV4Item"][] | null;
             /** Resources */
@@ -48360,10 +48162,8 @@ export interface components {
              * @default false
              */
             show_ai_generate: boolean;
-            /** Create Tool Id */
-            create_tool_id?: string | null;
-            /** Link Tool Id */
-            link_tool_id?: string | null;
+            /** Tool Id */
+            tool_id?: string | null;
             /** Current */
             current?: components["schemas"]["QGetArgPositionsV4Item"][] | null;
             /** Resources */
@@ -48388,10 +48188,8 @@ export interface components {
              * @default false
              */
             show_ai_generate: boolean;
-            /** Create Tool Id */
-            create_tool_id?: string | null;
-            /** Link Tool Id */
-            link_tool_id?: string | null;
+            /** Tool Id */
+            tool_id?: string | null;
             /** Current */
             current?: components["schemas"]["QGetArgsV4Item"][] | null;
             /** Resources */
@@ -48416,10 +48214,8 @@ export interface components {
              * @default false
              */
             show_ai_generate: boolean;
-            /** Create Tool Id */
-            create_tool_id?: string | null;
-            /** Link Tool Id */
-            link_tool_id?: string | null;
+            /** Tool Id */
+            tool_id?: string | null;
             resource?: components["schemas"]["QGetDescriptionsV4Item"] | null;
             /** Resources */
             resources?: components["schemas"]["QGetDescriptionsV4Item"][] | null;
@@ -48471,10 +48267,8 @@ export interface components {
              * @default false
              */
             show_ai_generate: boolean;
-            /** Create Tool Id */
-            create_tool_id?: string | null;
-            /** Link Tool Id */
-            link_tool_id?: string | null;
+            /** Tool Id */
+            tool_id?: string | null;
             current?: components["schemas"]["ToolFlagConfig"] | null;
             /** Resources */
             resources?: components["schemas"]["ToolFlagConfig"][] | null;
@@ -48613,10 +48407,8 @@ export interface components {
              * @default false
              */
             show_ai_generate: boolean;
-            /** Create Tool Id */
-            create_tool_id?: string | null;
-            /** Link Tool Id */
-            link_tool_id?: string | null;
+            /** Tool Id */
+            tool_id?: string | null;
             resource?: components["schemas"]["QGetNamesV4Item"] | null;
             /** Resources */
             resources?: components["schemas"]["QGetNamesV4Item"][] | null;

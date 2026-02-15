@@ -20,25 +20,20 @@ export default function Loading() {
       <div className="space-y-4">
         {/* Toolbar skeleton */}
         <div className="flex items-center justify-between">
-          <div className="flex flex-1 items-center space-x-2">
-            {/* Search input */}
-            <Skeleton className="h-8 w-[150px] lg:w-[250px]" />
-            {/* Filter buttons */}
-            <Skeleton className="h-8 w-[100px]" />
+          <div className="flex flex-1 items-center space-x-2 flex-wrap">
+            <div className="w-full md:w-auto mb-2 md:mb-0">
+              {/* Search input */}
+              <Skeleton className="h-8 w-full md:w-[150px] lg:w-[250px]" />
+            </div>
+
+            {/* Filter buttons: Scenarios, Department */}
+            <Skeleton className="h-8 w-[110px]" />
             <Skeleton className="h-8 w-[120px]" />
-            <Skeleton className="h-8 w-[100px]" />
-            <Skeleton className="h-8 w-[120px]" />
-          </div>
-          <div className="flex items-center space-x-2">
-            {/* View mode toggle skeleton */}
-            <Skeleton className="h-8 w-[70px]" />
-            {/* Column visibility skeleton */}
-            <Skeleton className="h-8 w-8" />
           </div>
         </div>
 
-        {/* Table skeleton (default list view) */}
-        <div className="rounded-md border">
+        {/* Table skeleton */}
+        <div className="rounded-md border overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>
@@ -100,11 +95,35 @@ export default function Loading() {
         </div>
 
         {/* Pagination skeleton */}
-        <div className="flex items-center justify-between px-2">
-          <Skeleton className="h-8 w-[100px]" />
+        {/* Mobile */}
+        <div className="flex items-center px-2 md:hidden">
           <div className="flex items-center space-x-2">
+            <Skeleton className="h-4 w-24" />
             <Skeleton className="h-8 w-[70px]" />
-            <Skeleton className="h-8 w-[70px]" />
+          </div>
+          <div className="flex-1 flex items-center justify-center">
+            <Skeleton className="h-4 w-[80px]" />
+          </div>
+          <div className="flex items-center space-x-2">
+            <Skeleton className="h-8 w-8" />
+            <Skeleton className="h-8 w-8" />
+          </div>
+        </div>
+        {/* Desktop */}
+        <div className="hidden md:flex items-center px-2">
+          <div className="flex-1" />
+          <div className="flex items-center space-x-6 lg:space-x-8">
+            <div className="flex items-center space-x-2">
+              <Skeleton className="h-4 w-24" />
+              <Skeleton className="h-8 w-[70px]" />
+            </div>
+            <Skeleton className="h-4 w-[100px]" />
+            <div className="flex items-center space-x-2">
+              <Skeleton className="hidden h-8 w-8 lg:block" />
+              <Skeleton className="h-8 w-8" />
+              <Skeleton className="h-8 w-8" />
+              <Skeleton className="hidden h-8 w-8 lg:block" />
+            </div>
           </div>
         </div>
       </div>

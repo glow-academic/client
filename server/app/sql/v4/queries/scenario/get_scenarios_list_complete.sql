@@ -36,9 +36,9 @@ END $$;
 -- 3) Recreate types
 CREATE TYPE types.q_list_scenarios_v4_scenario AS (
     scenario_id uuid,
-    title text,
+    name text,
     problem_statement text,
-    active boolean,
+    is_inactive boolean,
     generated boolean,
     parent_scenario_id uuid,
     department_ids text[],
@@ -47,9 +47,8 @@ CREATE TYPE types.q_list_scenarios_v4_scenario AS (
     field_ids text[],
     simulation_ids text[],
     num_simulations int,
-    can_edit boolean,
-    can_delete boolean,
-    can_duplicate boolean,
+    active_simulation_count int,
+    total_simulation_links int,
     cohort_ids text[],
     updated_at timestamptz
 );
@@ -178,9 +177,9 @@ scenario_usage AS (
 scenario_data AS (
     SELECT
         s.id as scenario_id,
-        (SELECT n.name FROM scenario_names_junction sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.scenario_id = s.id LIMIT 1) as title,
+        (SELECT n.name FROM scenario_names_junction sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.scenario_id = s.id LIMIT 1) as name,
         COALESCE(ps.problem_statement, '') as problem_statement,
-        EXISTS (SELECT 1 FROM scenario_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = s.id AND f.name = 'scenario_active' AND sf.value = TRUE) as active,
+        NOT EXISTS (SELECT 1 FROM scenario_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = s.id AND f.name = 'scenario_active' AND sf.value = TRUE) as is_inactive,
         s.generated as generated,
         s.updated_at,
         sr.parent_id as parent_scenario_id,
@@ -191,21 +190,9 @@ scenario_data AS (
         COALESCE(ss.simulation_ids, ARRAY[]::text[]) as simulation_ids,
         COALESCE(ss.num_simulations, 0) as num_simulations,
         COALESCE(sc.cohort_ids, ARRAY[]::text[]) as cohort_ids,
-        -- Permissions (replaces view_scenario_edit_state)
-        CASE
-            WHEN COALESCE(su.active_usage_count, 0) > 0 THEN false
-            WHEN sdd.department_ids IS NULL AND up.role != 'superadmin' THEN false
-            WHEN up.role IN ('admin'::profile_type, 'instructional'::profile_type, 'superadmin'::profile_type) THEN true
-            ELSE false
-        END as can_edit,
-        CASE
-            WHEN COALESCE(su.active_usage_count, 0) > 0 THEN false
-            WHEN sdd.department_ids IS NULL AND up.role != 'superadmin' THEN false
-            WHEN up.role IN ('admin'::profile_type, 'instructional'::profile_type, 'superadmin'::profile_type)
-                 AND COALESCE(su.total_simulation_links, 0) = 0 THEN true
-            ELSE false
-        END as can_delete,
-        true as can_duplicate
+        -- Raw data for Python permission computation
+        COALESCE(su.active_usage_count, 0) as active_simulation_count,
+        COALESCE(su.total_simulation_links, 0) as total_simulation_links
     FROM scenario_artifact s
     -- Bridge to scenarios_resource for denormalized persona_ids + root check + parent linkage
     JOIN scenario_scenarios_junction ssj ON ssj.scenario_id = s.id
@@ -242,7 +229,7 @@ filtered_roots AS (
     SELECT sd.*
     FROM scenario_data sd
     WHERE sd.parent_scenario_id IS NULL
-      AND (search IS NULL OR LOWER(sd.title) LIKE '%' || LOWER(search) || '%' OR LOWER(sd.problem_statement) LIKE '%' || LOWER(search) || '%')
+      AND (search IS NULL OR LOWER(sd.name) LIKE '%' || LOWER(search) || '%' OR LOWER(sd.problem_statement) LIKE '%' || LOWER(search) || '%')
       AND (api_list_scenarios_v4.persona_ids IS NULL OR sd.persona_ids && api_list_scenarios_v4.persona_ids::text[])
       AND (api_list_scenarios_v4.simulation_ids IS NULL OR sd.simulation_ids && api_list_scenarios_v4.simulation_ids::text[])
       AND (filter_department_ids IS NULL OR sd.department_ids && filter_department_ids::text[])
@@ -280,10 +267,11 @@ SELECT
     -- Scenarios (paginated roots + children)
     COALESCE(
         ARRAY_AGG(
-            (sd.scenario_id, sd.title, sd.problem_statement, sd.active, sd.generated,
+            (sd.scenario_id, sd.name, sd.problem_statement, sd.is_inactive, sd.generated,
              sd.parent_scenario_id, sd.department_ids, sd.objective_ids, sd.persona_ids,
-             sd.field_ids, sd.simulation_ids, sd.num_simulations, sd.can_edit,
-             sd.can_delete, sd.can_duplicate, sd.cohort_ids, sd.updated_at)::types.q_list_scenarios_v4_scenario
+             sd.field_ids, sd.simulation_ids, sd.num_simulations,
+             sd.active_simulation_count, sd.total_simulation_links,
+             sd.cohort_ids, sd.updated_at)::types.q_list_scenarios_v4_scenario
             ORDER BY sd.parent_scenario_id NULLS FIRST, sd.updated_at DESC NULLS LAST
         ),
         '{}'::types.q_list_scenarios_v4_scenario[]

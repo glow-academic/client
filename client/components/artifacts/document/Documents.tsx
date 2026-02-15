@@ -91,8 +91,7 @@ export interface DocumentsProps {
 type DocumentRow = NonNullable<DocumentsListOut["documents"]>[number];
 
 const DocumentPreviewThumb = ({ document }: { document: DocumentRow }) => {
-  const isPdf = document.extension?.toLowerCase() === "pdf";
-  const hasPreview = Boolean(document.upload_id && isPdf);
+  const hasPreview = Boolean(document.upload_id);
   const [showPreview, setShowPreview] = useState(hasPreview);
 
   useEffect(() => {

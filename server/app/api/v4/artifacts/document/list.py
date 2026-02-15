@@ -31,6 +31,7 @@ from app.api.v4.auth.profile import get_auth_profile_internal
 from app.api.v4.resources.departments.get import get_departments_internal
 from app.api.v4.resources.fields.get import get_fields_internal
 from app.api.v4.resources.scenarios.get import get_scenarios_internal
+from app.api.v4.resources.uploads.get import get_uploads_internal
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
@@ -172,6 +173,14 @@ async def get_document_list(
                 )
             )
 
+        # --- Collect upload resource IDs for Pass 2 hydration ---
+        all_upload_resource_ids: list[UUID] = []
+        for doc in result.documents or []:
+            if doc.upload_ids:
+                all_upload_resource_ids.extend(doc.upload_ids)
+        # Deduplicate
+        all_upload_resource_ids = list(set(all_upload_resource_ids))
+
         # --- Python hydration: filter option names from cached *_internal() ---
         # Extract option IDs and counts from SQL result
         scenario_option_ids = getattr(result, "scenario_option_ids", None) or []
@@ -216,8 +225,15 @@ async def get_document_list(
 
         pool = get_pool()
         has_ids = any(
-            [scenario_ids_to_fetch, field_ids_to_fetch, department_ids_to_fetch]
+            [
+                scenario_ids_to_fetch,
+                field_ids_to_fetch,
+                department_ids_to_fetch,
+                all_upload_resource_ids,
+            ]
         )
+
+        uploads_data: list = []
 
         if pool and has_ids:
 
@@ -245,9 +261,56 @@ async def get_document_list(
                         c, department_ids_to_fetch, bypass_cache
                     )
 
-            scenarios_data, fields_data, departments_data = await asyncio.gather(
-                fetch_scenarios(), fetch_fields(), fetch_departments()
+            async def fetch_uploads() -> list:
+                if not all_upload_resource_ids:
+                    return []
+                async with pool.acquire() as c:
+                    return await get_uploads_internal(
+                        c, all_upload_resource_ids, bypass_cache
+                    )
+
+            (
+                scenarios_data,
+                fields_data,
+                departments_data,
+                uploads_data,
+            ) = await asyncio.gather(
+                fetch_scenarios(), fetch_fields(), fetch_departments(), fetch_uploads()
             )
+
+        # Build uploads_id -> upload_id map (resource ID -> file ID for download URL)
+        upload_resource_to_file_id: dict[UUID, UUID] = {}
+        for u in uploads_data:
+            if u.uploads_id and u.upload_id:
+                uid = (
+                    UUID(str(u.uploads_id))
+                    if not isinstance(u.uploads_id, UUID)
+                    else u.uploads_id
+                )
+                upload_resource_to_file_id[uid] = u.upload_id
+
+        # Hydrate upload_id onto documents
+        for doc_api in documents_with_permissions:
+            # Find the matching SQL doc to get upload_ids
+            matching_sql_doc = next(
+                (
+                    d
+                    for d in (result.documents or [])
+                    if d.document_id == doc_api.document_id
+                ),
+                None,
+            )
+            if matching_sql_doc and matching_sql_doc.upload_ids:
+                for resource_id in matching_sql_doc.upload_ids:
+                    rid = (
+                        UUID(str(resource_id))
+                        if not isinstance(resource_id, UUID)
+                        else resource_id
+                    )
+                    file_id = upload_resource_to_file_id.get(rid)
+                    if file_id:
+                        doc_api.upload_id = file_id
+                        break
 
         # Merge names with counts, apply search filtering in Python
         scenario_search = request.scenario_search

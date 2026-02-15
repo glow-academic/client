@@ -10,7 +10,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-from app.api.v4.types import ListFilterSection
+from app.api.v4.types import BaseResourceSection, ListFilterSection
 from app.api.v4.views.drafts.types import DraftSimulationViewItem
 from app.sql.types import (
     QGetAgentsV4Item,
@@ -300,17 +300,6 @@ class GetSimulationApiRequest(BaseModel):
     filter_scenario_ids: list[UUID] | None = None
 
 
-class BaseResourceSection(BaseModel):
-    """Common metadata for simulation resource sections."""
-
-    show: bool = False
-    required: bool = False
-    suggestions: list[UUID] | None = None
-    show_ai_generate: bool = False
-    create_tool_id: UUID | None = None
-    link_tool_id: UUID | None = None
-
-
 class SimulationNameSection(BaseResourceSection):
     resource: QGetNamesV4Item | None = None
     resources: list[QGetNamesV4Item] | None = None
@@ -427,19 +416,20 @@ class GetSimulationWebsocketResponse(BaseModel):
 
 
 class ListSimulationApiSimulation(BaseModel):
-    """Simulation item in list response with SQL-computed permissions."""
+    """Simulation item in list response with Python-computed permissions."""
 
     simulation_id: UUID | None = None
     name: str | None = None
     description: str | None = None
     department_ids: list[str] | None = None
-    active: bool | None = None
+    is_inactive: bool | None = None
     practice_simulation: bool | None = None
+    scenario_ids: list[str] | None = None
+    num_cohorts: int | None = None
+    cohort_usage_count: int | None = None
     can_edit: bool | None = None
     can_delete: bool | None = None
     can_duplicate: bool | None = None
-    scenario_ids: list[str] | None = None
-    num_cohorts: int | None = None
     cohort_ids: list[str] | None = None
     updated_at: datetime | None = None
 
@@ -481,16 +471,14 @@ class SimulationResourceAction(BaseModel):
     """Single-select resource action with tool call tracking."""
 
     resource_id: UUID | None = None
-    create_tool_id: UUID | None = None
-    link_tool_id: UUID | None = None
+    tool_id: UUID | None = None
 
 
 class SimulationMultiResourceAction(BaseModel):
     """Multi-select resource action with tool call tracking."""
 
     resource_ids: list[UUID] | None = None
-    create_tool_id: UUID | None = None
-    link_tool_id: UUID | None = None
+    tool_id: UUID | None = None
 
 
 # =============================================================================
@@ -563,12 +551,12 @@ class SaveSimulationSqlParams(BaseModel):
         def single(
             a: SimulationResourceAction,
         ) -> tuple[UUID | None, UUID | None, UUID | None]:
-            return (a.resource_id, a.create_tool_id, a.link_tool_id)
+            return (a.resource_id, a.tool_id, a.tool_id)
 
         def multi(
             a: SimulationMultiResourceAction,
         ) -> tuple[list[UUID] | None, UUID | None, UUID | None]:
-            return (a.resource_ids, a.create_tool_id, a.link_tool_id)
+            return (a.resource_ids, a.tool_id, a.tool_id)
 
         return (
             self.profile_id,
@@ -707,20 +695,12 @@ class PatchSimulationDraftSqlParams(BaseModel):
         def single(
             a: SimulationResourceAction | None,
         ) -> tuple[UUID | None, UUID | None, UUID | None]:
-            return (
-                (a.resource_id, a.create_tool_id, a.link_tool_id)
-                if a
-                else (None, None, None)
-            )
+            return (a.resource_id, a.tool_id, a.tool_id) if a else (None, None, None)
 
         def multi(
             a: SimulationMultiResourceAction | None,
         ) -> tuple[list[UUID] | None, UUID | None, UUID | None]:
-            return (
-                (a.resource_ids, a.create_tool_id, a.link_tool_id)
-                if a
-                else (None, None, None)
-            )
+            return (a.resource_ids, a.tool_id, a.tool_id) if a else (None, None, None)
 
         return (
             self.profile_id,
@@ -746,19 +726,17 @@ class PatchSimulationDraftSqlParams(BaseModel):
 
 
 class ListSimulationSqlSimulation(BaseModel):
-    """Raw simulation from SQL with SQL-computed permissions."""
+    """Raw simulation from SQL — permissions computed in Python."""
 
     simulation_id: UUID | None = None
     name: str | None = None
     description: str | None = None
     department_ids: list[str] | None = None
-    active: bool | None = None
+    is_inactive: bool | None = None
     practice_simulation: bool | None = None
-    can_edit: bool | None = None
-    can_delete: bool | None = None
-    can_duplicate: bool | None = None
     scenario_ids: list[str] | None = None
     num_cohorts: int | None = None
+    cohort_usage_count: int | None = None
     cohort_ids: list[str] | None = None
     updated_at: datetime | None = None
 

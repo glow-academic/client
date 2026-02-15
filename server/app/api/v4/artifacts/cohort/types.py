@@ -10,7 +10,7 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
-from app.api.v4.types import ListFilterSection
+from app.api.v4.types import BaseResourceSection, ListFilterSection
 from app.api.v4.views.drafts.types import DraftCohortViewItem
 from app.sql.types import (
     QGetAgentsV4Item,
@@ -116,17 +116,6 @@ class GetCohortApiRequest(BaseModel):
     draft_id: UUID | None = None
 
 
-class BaseResourceSection(BaseModel):
-    """Common metadata fields for all cohort resource sections."""
-
-    show: bool = False
-    required: bool = False
-    suggestions: list[UUID] | None = None
-    show_ai_generate: bool = False
-    create_tool_id: UUID | None = None
-    link_tool_id: UUID | None = None
-
-
 class CohortNameSection(BaseResourceSection):
     resource: CohortNameResource | None = None
     resources: list[CohortNameResource] | None = None
@@ -222,12 +211,12 @@ class CohortWebsocketResources(BaseModel):
 
 
 class ListCohortApiCohort(BaseModel):
-    """Cohort item in list response with SQL-computed permissions."""
+    """Cohort item in list response with Python-computed permissions."""
 
     cohort_id: UUID | None = None
     name: str | None = None
     description: str | None = None
-    active: bool | None = None
+    is_inactive: bool | None = None
     department_ids: list[str] | None = None
     profile_ids: list[str] | None = None
     simulation_ids: list[str] | None = None
@@ -289,16 +278,14 @@ class CohortResourceAction(BaseModel):
     """Single resource action payload with tool-call metadata."""
 
     resource_id: UUID | None = None
-    create_tool_id: UUID | None = None
-    link_tool_id: UUID | None = None
+    tool_id: UUID | None = None
 
 
 class CohortMultiResourceAction(BaseModel):
     """Multi-resource action payload with tool-call metadata."""
 
     resource_ids: list[UUID] | None = None
-    create_tool_id: UUID | None = None
-    link_tool_id: UUID | None = None
+    tool_id: UUID | None = None
 
 
 class SaveCohortApiRequest(BaseModel):
@@ -363,12 +350,12 @@ class SaveCohortSqlParams(BaseModel):
         def single(
             a: CohortResourceAction,
         ) -> tuple[UUID | None, UUID | None, UUID | None]:
-            return (a.resource_id, a.create_tool_id, a.link_tool_id)
+            return (a.resource_id, a.tool_id, a.tool_id)
 
         def multi(
             a: CohortMultiResourceAction,
         ) -> tuple[list[UUID] | None, UUID | None, UUID | None]:
-            return (a.resource_ids, a.create_tool_id, a.link_tool_id)
+            return (a.resource_ids, a.tool_id, a.tool_id)
 
         return (
             self.profile_id,
@@ -407,7 +394,7 @@ class DeleteCohortApiResponse(BaseModel):
 
     usage_count: int | None = None
     deleted: bool | None = None
-    title: str | None = None
+    name: str | None = None
     actor_name: str | None = None
 
 
@@ -426,7 +413,7 @@ class DuplicateCohortApiResponse(BaseModel):
     """Response for duplicating a cohort."""
 
     id: UUID | None = None
-    title: str | None = None
+    name: str | None = None
     actor_name: str | None = None
 
 
@@ -495,20 +482,12 @@ class PatchCohortDraftSqlParams(BaseModel):
         def single(
             a: CohortResourceAction | None,
         ) -> tuple[UUID | None, UUID | None, UUID | None]:
-            return (
-                (a.resource_id, a.create_tool_id, a.link_tool_id)
-                if a
-                else (None, None, None)
-            )
+            return (a.resource_id, a.tool_id, a.tool_id) if a else (None, None, None)
 
         def multi(
             a: CohortMultiResourceAction | None,
         ) -> tuple[list[UUID] | None, UUID | None, UUID | None]:
-            return (
-                (a.resource_ids, a.create_tool_id, a.link_tool_id)
-                if a
-                else (None, None, None)
-            )
+            return (a.resource_ids, a.tool_id, a.tool_id) if a else (None, None, None)
 
         return (
             self.profile_id,
@@ -540,19 +519,16 @@ class PatchCohortDraftSqlRow(BaseModel):
 
 
 class ListCohortSqlCohort(BaseModel):
-    """Raw cohort from SQL with SQL-computed permissions."""
+    """Raw cohort from SQL — permissions computed in Python."""
 
     cohort_id: UUID | None = None
     name: str | None = None
     description: str | None = None
-    active: bool | None = None
+    is_inactive: bool | None = None
     department_ids: list[str] | None = None
     profile_ids: list[str] | None = None
     simulation_ids: list[str] | None = None
     usage_count: int | None = None
     num_members: int | None = None
-    can_edit: bool | None = None
-    can_delete: bool | None = None
-    can_duplicate: bool | None = None
-    can_leave: bool | None = None
+    is_member: bool | None = None
     updated_at: datetime | None = None

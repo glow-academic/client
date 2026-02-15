@@ -37,13 +37,11 @@ CREATE TYPE types.q_list_simulations_v4_simulation AS (
     name text,
     description text,
     department_ids text[],
-    active boolean,
+    is_inactive boolean,
     practice_simulation boolean,
-    can_edit boolean,
-    can_delete boolean,
-    can_duplicate boolean,
     scenario_ids text[],
     num_cohorts int,
+    cohort_usage_count int,
     cohort_ids text[],
     updated_at timestamptz
 );
@@ -137,7 +135,7 @@ simulation_departments_data AS (
     WHERE sd.active = true
     GROUP BY sd.simulation_id
 ),
--- Main simulation data with permissions computed in SQL
+-- Main simulation data — permissions computed in Python
 simulation_data AS (
     SELECT
         s.id as simulation_id,
@@ -153,31 +151,14 @@ simulation_data AS (
             ),
             'No description'
         ) as description,
-        EXISTS (SELECT 1 FROM simulation_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.simulation_id = s.id AND f.name = 'simulation_active' AND sf.value = TRUE) as active,
+        NOT EXISTS (SELECT 1 FROM simulation_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.simulation_id = s.id AND f.name = 'simulation_active' AND sf.value = TRUE) as is_inactive,
         EXISTS (SELECT 1 FROM simulation_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.simulation_id = s.id AND f.name = 'practice' AND sf.value = TRUE) as practice_simulation,
         s.updated_at,
         COALESCE(sdd.department_ids, NULL) as department_ids,
         COALESCE(ssd.scenario_ids, ARRAY[]::text[]) as scenario_ids,
-        COALESCE(ac.attempt_count, 0) as attempt_count,
-        COALESCE(scd.total_cohort_links, 0) as total_cohort_links,
         COALESCE(scd.num_cohorts, 0) as num_cohorts,
-        COALESCE(scd.cohort_ids, ARRAY[]::text[]) as cohort_ids,
-        -- Permissions computed in SQL
-        CASE
-            WHEN sdd.department_ids IS NULL AND up.role != 'superadmin' THEN false
-            WHEN up.role IN ('admin'::profile_type, 'instructional'::profile_type, 'superadmin'::profile_type) THEN true
-            ELSE false
-        END as can_edit,
-        CASE
-            WHEN sdd.department_ids IS NULL AND up.role != 'superadmin' THEN false
-            WHEN COALESCE(scd.total_cohort_links, 0) > 0 THEN false
-            WHEN up.role IN ('admin'::profile_type, 'instructional'::profile_type, 'superadmin'::profile_type) THEN true
-            ELSE false
-        END as can_delete,
-        CASE
-            WHEN up.role IN ('admin'::profile_type, 'instructional'::profile_type, 'superadmin'::profile_type) THEN true
-            ELSE false
-        END as can_duplicate
+        COALESCE(scd.total_cohort_links, 0)::int as cohort_usage_count,
+        COALESCE(scd.cohort_ids, ARRAY[]::text[]) as cohort_ids
     FROM simulation_artifact s
     LEFT JOIN simulation_departments_junction sd ON sd.simulation_id = s.id AND sd.active = true
     LEFT JOIN simulation_departments_data sdd ON sdd.simulation_id = s.id
@@ -191,7 +172,7 @@ simulation_data AS (
         EXISTS (SELECT 1 FROM simulation_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.simulation_id = s.id AND f.name = 'simulation_active' AND sf.value = TRUE),
         EXISTS (SELECT 1 FROM simulation_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.simulation_id = s.id AND f.name = 'practice' AND sf.value = TRUE),
         s.updated_at, sdd.department_ids, ssd.scenario_ids,
-        ac.attempt_count, scd.total_cohort_links, scd.num_cohorts, scd.cohort_ids, up.role
+        scd.total_cohort_links, scd.num_cohorts, scd.cohort_ids, up.role
     HAVING
         COUNT(sd.simulation_id) FILTER (WHERE sd.department_id IN (SELECT department_id FROM user_departments)) > 0
         OR NOT EXISTS (SELECT 1 FROM simulation_departments_junction sd2 WHERE sd2.simulation_id = s.id AND sd2.active = true)
@@ -234,9 +215,9 @@ SELECT
     COALESCE(
         (SELECT ARRAY_AGG(
             (simd.simulation_id, simd.name, simd.description, simd.department_ids,
-             simd.active, simd.practice_simulation,
-             simd.can_edit, simd.can_delete, simd.can_duplicate,
-             simd.scenario_ids, simd.num_cohorts, simd.cohort_ids, simd.updated_at
+             simd.is_inactive, simd.practice_simulation,
+             simd.scenario_ids, simd.num_cohorts, simd.cohort_usage_count,
+             simd.cohort_ids, simd.updated_at
             )::types.q_list_simulations_v4_simulation
             ORDER BY simd.updated_at DESC NULLS LAST
         ) FROM paginated_simulations simd),

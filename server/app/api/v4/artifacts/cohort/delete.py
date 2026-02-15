@@ -164,7 +164,7 @@ async def delete_cohort(
                     http_request,
                     actor={"name": actor_name, "id": profile_id},
                     cohort={
-                        "name": result.title or "Unknown",
+                        "name": result.name or "Unknown",
                         "id": str(request.cohort_id),
                     },
                 )

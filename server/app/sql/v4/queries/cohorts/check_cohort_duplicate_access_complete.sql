@@ -21,7 +21,7 @@ CREATE OR REPLACE FUNCTION api_check_cohort_duplicate_access_v4(
 )
 RETURNS TABLE (
     cohort_exists boolean,
-    original_title text,
+    original_name text,
     cohort_department_ids text[]
 )
 LANGUAGE sql
@@ -41,7 +41,7 @@ cohort_exists_check AS (
 ),
 -- Get cohort name
 cohort_name_data AS (
-    SELECT n.name as original_title
+    SELECT n.name as original_name
     FROM cohort_names_junction cn
     JOIN names_resource n ON cn.name_id = n.id
     WHERE cn.cohort_id = (SELECT p_cohort_id FROM params)
@@ -58,7 +58,7 @@ cohort_departments AS (
 )
 SELECT
     (SELECT cohort_exists FROM cohort_exists_check),
-    cnd.original_title::text,
+    cnd.original_name::text,
     cd.department_ids as cohort_department_ids
 FROM cohort_departments cd
 CROSS JOIN cohort_name_data cnd;

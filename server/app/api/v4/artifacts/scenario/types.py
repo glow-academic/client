@@ -10,7 +10,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-from app.api.v4.types import ListFilterSection
+from app.api.v4.types import BaseResourceSection, ListFilterSection
 from app.api.v4.views.drafts.types import DraftScenarioViewItem
 from app.sql.types import (
     QGetAgentsV4Item,
@@ -260,16 +260,6 @@ class GetScenarioApiRequest(BaseModel):
     mcp: bool | None = False
 
 
-class BaseResourceSection(BaseModel):
-    """Common metadata fields for all resource sections."""
-
-    show: bool = False
-    required: bool = False
-    suggestions: list[UUID] | None = None
-    show_ai_generate: bool = False
-    tool_id: UUID | None = None
-
-
 class ScenarioNameSection(BaseResourceSection):
     resource: ScenarioNameResource | None = None
     resources: list[ScenarioNameResource] | None = None
@@ -420,12 +410,12 @@ class ScenarioWebsocketResources(BaseModel):
 
 
 class ListScenarioApiScenario(BaseModel):
-    """Scenario item in list response with SQL-computed permissions."""
+    """Scenario item in list response with Python-computed permissions."""
 
     scenario_id: UUID | None = None
-    title: str | None = None
+    name: str | None = None
     problem_statement: str | None = None
-    active: bool | None = None
+    is_inactive: bool | None = None
     generated: bool | None = None
     parent_scenario_id: UUID | None = None
     department_ids: list[str] | None = None
@@ -434,6 +424,8 @@ class ListScenarioApiScenario(BaseModel):
     field_ids: list[str] | None = None
     simulation_ids: list[str] | None = None
     num_simulations: int | None = None
+    active_simulation_count: int | None = None
+    total_simulation_links: int | None = None
     can_edit: bool | None = None
     can_delete: bool | None = None
     can_duplicate: bool | None = None
@@ -651,12 +643,12 @@ class PatchScenarioDraftApiResponse(BaseModel):
 
 
 class ListScenarioSqlScenario(BaseModel):
-    """Raw scenario from SQL with SQL-computed permissions."""
+    """Raw scenario from SQL — permissions computed in Python."""
 
     scenario_id: UUID | None = None
-    title: str | None = None
+    name: str | None = None
     problem_statement: str | None = None
-    active: bool | None = None
+    is_inactive: bool | None = None
     generated: bool | None = None
     parent_scenario_id: UUID | None = None
     department_ids: list[str] | None = None
@@ -665,9 +657,8 @@ class ListScenarioSqlScenario(BaseModel):
     field_ids: list[str] | None = None
     simulation_ids: list[str] | None = None
     num_simulations: int | None = None
-    can_edit: bool | None = None
-    can_delete: bool | None = None
-    can_duplicate: bool | None = None
+    active_simulation_count: int | None = None
+    total_simulation_links: int | None = None
     cohort_ids: list[str] | None = None
     updated_at: datetime | None = None
 

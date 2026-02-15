@@ -112,55 +112,49 @@ def build_domain_data(
 
 
 def compute_can_edit(
-    user_role: str,
-    cohort_department_ids: list[UUID] | None,
+    user_role: str | None,
+    cohort_department_ids: list[str] | list[UUID] | None,
 ) -> bool:
     """Compute if user can edit the cohort.
 
-    Rules:
-    - superadmin: can always edit
-    - admin: can edit if cohort has departments (not a default cohort)
-    - instructional/member/guest: cannot edit cohorts
-
-    Key difference from personas: cohorts only allow admin/superadmin to edit.
+    Constraints:
+    1. Not a default cohort (unless superadmin)
+    2. User has admin/instructional/superadmin role
     """
-    if user_role == "superadmin":
-        return True
-
-    # Default cohorts (no departments) can only be edited by superadmin
-    if cohort_department_ids is None or len(cohort_department_ids) == 0:
+    # Default cohorts can only be edited by superadmin
+    if not cohort_department_ids and user_role != "superadmin":
         return False
 
-    if user_role == "admin":
-        return True
-
-    return False
+    # Role check
+    return user_role in ("admin", "instructional", "superadmin")
 
 
 def compute_can_delete(
-    user_role: str,
-    cohort_department_ids: list[UUID] | None,
+    user_role: str | None,
+    cohort_department_ids: list[str] | list[UUID] | None,
     usage_count: int,
 ) -> bool:
-    """Compute if user can delete the cohort.
+    """Compute can_delete permission.
 
-    Rules:
-    - Must have edit permission
-    - Cannot delete if usage_count > 0 (has linked profiles with attempts)
+    Business logic:
+    - Default cohorts (no departments) cannot be deleted except by superadmin
+    - Cohorts with usage_count > 0 cannot be deleted
+    - Only admins, instructional, and superadmins can delete
     """
-    if not compute_can_edit(user_role, cohort_department_ids):
+    if not cohort_department_ids and user_role != "superadmin":
         return False
+    if usage_count > 0:
+        return False
+    return user_role in ("admin", "instructional", "superadmin")
 
-    return usage_count == 0
 
+def compute_can_duplicate(user_role: str | None) -> bool:
+    """Compute can_duplicate permission.
 
-def compute_can_duplicate(user_role: str) -> bool:
-    """Compute if user can duplicate the cohort.
-
-    Rules:
-    - All authenticated users can duplicate cohorts
+    Business logic:
+    - Only admin/instructional/superadmin can duplicate
     """
-    return True
+    return user_role in ("admin", "instructional", "superadmin")
 
 
 def compute_can_leave(is_member: bool) -> bool:
@@ -173,50 +167,49 @@ def compute_can_leave(is_member: bool) -> bool:
 
 
 def compute_disabled_reason(
-    user_role: str,
-    cohort_department_ids: list[UUID] | None,
+    user_role: str | None,
+    cohort_department_ids: list[str] | list[UUID] | None,
 ) -> str | None:
     """Compute the disabled reason for editing a cohort.
 
     Returns None if editing is allowed, otherwise returns a message.
     """
-    if user_role == "superadmin":
-        return None
-
-    # Default cohorts (no departments)
-    if cohort_department_ids is None or len(cohort_department_ids) == 0:
+    # Default cohorts can only be edited by superadmin
+    if not cohort_department_ids and user_role != "superadmin":
         return "This is a default cohort that cannot be edited."
 
-    if user_role in ("admin",):
+    if user_role in ("admin", "instructional", "superadmin"):
         return None
 
     return "This cohort cannot be edited."
 
 
 def has_access(
-    user_role: str,
-    user_department_ids: list[UUID],
-    cohort_department_ids: list[UUID] | None,
+    user_role: str | None,
+    user_department_ids: list[str] | list[UUID] | None,
+    cohort_department_ids: list[str] | list[UUID] | None,
 ) -> bool:
     """Check if user has access to view the cohort.
 
-    Rules:
-    - superadmin: can access all cohorts
-    - Other roles: can access if cohort has no departments (default) or
-      shares at least one department with user
+    Access rules:
+    - Superadmin has access to all cohorts
+    - User has access if cohort has no departments (default cohort)
+    - User has access if they share at least one department with the cohort
     """
     if user_role == "superadmin":
         return True
 
     # Default cohorts (no departments) are accessible to all
-    if cohort_department_ids is None or len(cohort_department_ids) == 0:
+    if not cohort_department_ids:
         return True
 
-    # Check for department overlap
-    user_dept_set = set(user_department_ids)
-    cohort_dept_set = set(cohort_department_ids)
+    # Check department overlap
+    if not user_department_ids:
+        return False
 
-    return len(user_dept_set & cohort_dept_set) > 0
+    user_dept_set = {str(d) for d in user_department_ids}
+    cohort_dept_set = {str(d) for d in cohort_department_ids}
+    return bool(user_dept_set & cohort_dept_set)
 
 
 # =============================================================================
@@ -320,46 +313,53 @@ def get_missing_tools(
 
 
 def compute_can_create(
-    user_role: str,
-    department_ids: list[UUID] | None,
+    user_role: str | None,
+    department_ids: list[str] | list[UUID] | None,
 ) -> bool:
-    """Compute if user can create a new cohort.
+    """Compute permission to create a new cohort.
 
-    Rules:
-    - superadmin: can always create
-    - admin: can create if at least one department is specified
-    - Other roles: cannot create cohorts
+    Business logic:
+    - Only admin/instructional/superadmin can create cohorts
+    - Non-superadmins cannot create general objects (no departments)
     """
-    if user_role == "superadmin":
-        return True
-
-    if user_role == "admin":
-        # Must have at least one department
-        return department_ids is not None and len(department_ids) > 0
-
-    return False
+    if user_role not in ("admin", "instructional", "superadmin"):
+        return False
+    if user_role != "superadmin" and not department_ids:
+        return False
+    return True
 
 
 def compute_can_save(
-    user_role: str,
-    user_department_ids: list[UUID],
-    cohort_department_ids: list[UUID] | None,
+    user_role: str | None,
+    user_department_ids: list[str] | list[UUID] | None,
+    cohort_department_ids: list[str] | list[UUID] | None,
 ) -> bool:
-    """Compute if user can save changes to an existing cohort.
+    """Compute permission to save/update an existing cohort.
 
-    This combines access check with edit permission.
+    Business logic:
+    - Not a default cohort (unless superadmin)
+    - User has admin/instructional/superadmin role
+    - Non-superadmins must belong to ALL of the cohort's departments
     """
-    if not has_access(user_role, user_department_ids, cohort_department_ids):
+    if user_role not in ("admin", "instructional", "superadmin"):
         return False
-
-    return compute_can_edit(user_role, cohort_department_ids)
-
-
-def compute_can_draft(user_role: str) -> bool:
-    """Compute if user can create/update a draft.
-
-    Rules:
-    - All authenticated users can create drafts (drafts are auto-saved)
-    - The actual save operation will validate permissions
-    """
+    if not cohort_department_ids and user_role != "superadmin":
+        return False
+    # Non-superadmins must belong to ALL of the cohort's departments
+    if user_role != "superadmin" and cohort_department_ids:
+        if not user_department_ids:
+            return False
+        user_dept_set = {str(d) for d in user_department_ids}
+        cohort_dept_set = {str(d) for d in cohort_department_ids}
+        if not cohort_dept_set.issubset(user_dept_set):
+            return False
     return True
+
+
+def compute_can_draft(user_role: str | None) -> bool:
+    """Compute permission to create or update a draft.
+
+    Business logic:
+    - Only admin/instructional/superadmin can create/edit drafts
+    """
+    return user_role in ("admin", "instructional", "superadmin")

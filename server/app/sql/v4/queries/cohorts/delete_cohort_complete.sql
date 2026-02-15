@@ -24,7 +24,7 @@ CREATE OR REPLACE FUNCTION api_delete_cohort_v4(
 RETURNS TABLE (
     usage_count bigint,
     deleted boolean,
-    title text,
+    name text,
     actor_name text
 )
 LANGUAGE sql
@@ -47,9 +47,9 @@ usage_check AS (
     FROM params x
     JOIN profile_cohorts_junction cp ON cp.cohort_id = x.cohort_id
 ),
-cohort_title AS (
-    -- Get cohort title before deletion
-    SELECT (SELECT n.name FROM cohort_names_junction cn JOIN names_resource n ON cn.name_id = n.id WHERE cn.cohort_id = c.id LIMIT 1) as title
+cohort_name AS (
+    -- Get cohort name before deletion
+    SELECT (SELECT n.name FROM cohort_names_junction cn JOIN names_resource n ON cn.name_id = n.id WHERE cn.cohort_id = c.id LIMIT 1) as name
     FROM params x
     JOIN cohort_artifact c ON c.id = x.cohort_id
 ),
@@ -64,9 +64,9 @@ delete_result AS (
 SELECT 
     uc.usage_count,
     CASE WHEN EXISTS(SELECT 1 FROM delete_result) THEN true ELSE false END as deleted,
-    ct.title,
+    cn.name,
     ap.actor_name
 FROM actor_profile ap
 CROSS JOIN usage_check uc
-CROSS JOIN cohort_title ct
+CROSS JOIN cohort_name cn
 $$;

@@ -8,6 +8,7 @@ import asyncpg
 from app.api.v4.views.drafts.types import (
     DraftAgentViewItem,
     DraftAuthViewItem,
+    DraftBenchmarkViewItem,
     DraftCohortViewItem,
     DraftDepartmentViewItem,
     DraftDocumentViewItem,
@@ -370,5 +371,20 @@ async def get_draft_training_internal(
         "training",
         f"{_SQL_BASE}/get_draft_training_view_complete.sql",
         DraftTrainingViewItem,
+        bypass_cache,
+    )
+
+
+async def get_draft_benchmark_internal(
+    conn: asyncpg.Connection,
+    draft_ids: list[UUID],
+    bypass_cache: bool = False,
+) -> list[DraftBenchmarkViewItem]:
+    return await _get_draft_internal(
+        conn,
+        draft_ids,
+        "benchmark",
+        f"{_SQL_BASE}/get_draft_benchmark_view_complete.sql",
+        DraftBenchmarkViewItem,
         bypass_cache,
     )

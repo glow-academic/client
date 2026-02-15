@@ -6,6 +6,7 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
+from app.api.v4.types import BaseResourceSection
 from app.api.v4.views.drafts.types import DraftAuthViewItem
 from app.sql.types import (
     QGetAgentsV4Item,
@@ -44,17 +45,6 @@ class AuthItemResource(BaseModel):
     key_id: UUID | None = None
     encrypted: bool | None = None
     generated: bool | None = None
-
-
-class BaseResourceSection(BaseModel):
-    """Common metadata fields for all auth resource sections."""
-
-    show: bool = False
-    required: bool = False
-    suggestions: list[UUID] | None = None
-    show_ai_generate: bool = False
-    create_tool_id: UUID | None = None
-    link_tool_id: UUID | None = None
 
 
 class AuthNameSection(BaseResourceSection):

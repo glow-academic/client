@@ -11,6 +11,12 @@ from uuid import UUID
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
+from app.api.v4.artifacts.cohort.permissions import (
+    compute_can_delete,
+    compute_can_duplicate,
+    compute_can_edit,
+    compute_can_leave,
+)
 from app.api.v4.artifacts.cohort.types import (
     ListCohortApiCohort,
     ListCohortApiDepartment,
@@ -120,15 +126,46 @@ async def get_cohort_list(
         if actor_name:
             audit_set(http_request, actor={"name": actor_name, "id": profile_id})
 
-        # Convert raw SQL cohorts to API cohorts (permissions already computed in SQL)
+        # Compute permissions in Python for each cohort
         api_cohorts: list[ListCohortApiCohort] = []
         for sql_cohort in result.cohorts or []:
-            if hasattr(sql_cohort, "model_dump"):
-                api_cohorts.append(
-                    ListCohortApiCohort.model_validate(sql_cohort.model_dump())
+            c = (
+                sql_cohort
+                if hasattr(sql_cohort, "cohort_id")
+                else type("C", (), sql_cohort)()
+            )  # type: ignore
+            can_edit_val = compute_can_edit(
+                user_role=user_role,
+                cohort_department_ids=getattr(c, "department_ids", None),
+            )
+            can_delete_val = compute_can_delete(
+                user_role=user_role,
+                cohort_department_ids=getattr(c, "department_ids", None),
+                usage_count=getattr(c, "usage_count", 0) or 0,
+            )
+            can_duplicate_val = compute_can_duplicate(user_role)
+            can_leave_val = compute_can_leave(
+                is_member=getattr(c, "is_member", False) or False,
+            )
+
+            api_cohorts.append(
+                ListCohortApiCohort(
+                    cohort_id=getattr(c, "cohort_id", None),
+                    name=getattr(c, "name", None),
+                    description=getattr(c, "description", None),
+                    is_inactive=getattr(c, "is_inactive", None),
+                    department_ids=getattr(c, "department_ids", None),
+                    profile_ids=getattr(c, "profile_ids", None),
+                    simulation_ids=getattr(c, "simulation_ids", None),
+                    usage_count=getattr(c, "usage_count", None),
+                    num_members=getattr(c, "num_members", None),
+                    can_edit=can_edit_val,
+                    can_delete=can_delete_val,
+                    can_duplicate=can_duplicate_val,
+                    can_leave=can_leave_val,
+                    updated_at=getattr(c, "updated_at", None),
                 )
-            else:
-                api_cohorts.append(ListCohortApiCohort.model_validate(sql_cohort))
+            )
 
         # --- Python hydration: profiles, simulations, departments from cached *_internal() ---
         # 1. Collect unique IDs from paginated cohorts
@@ -202,7 +239,7 @@ async def get_cohort_list(
         api_simulations: list[ListCohortApiSimulation] = [
             ListCohortApiSimulation(
                 simulation_id=s.simulation_id,
-                name=getattr(s, "title", None) or getattr(s, "name", None),
+                name=getattr(s, "name", None),
                 description=s.description,
                 department_ids=getattr(s, "department_ids", None),
             )

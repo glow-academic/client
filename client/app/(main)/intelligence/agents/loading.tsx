@@ -1,5 +1,5 @@
 /**
- * app/(main)/management/agents/loading.tsx
+ * app/(main)/intelligence/agents/loading.tsx
  * Loading skeleton for agents page
  * @AshokSaravanan222 & @siladiea
  * 01/20/2025
@@ -12,20 +12,18 @@ export default function Loading() {
     <div className="space-y-8">
       <div className="space-y-4">
         {/* Toolbar skeleton */}
-        <div className="flex items-center justify-between">
-          <div className="flex flex-1 items-center space-x-2 flex-wrap">
-            <div className="mb-2">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
+          <div className="flex flex-col md:flex-row md:flex-1 md:items-center md:space-x-2 gap-2 md:gap-0">
+            <div className="w-full md:w-auto">
               {/* Search input */}
-              <Skeleton className="h-8 w-[150px] lg:w-[250px]" />
+              <Skeleton className="h-8 w-full md:w-[150px] lg:w-[250px]" />
             </div>
 
-            <div className="flex items-center space-x-2 flex-wrap mb-2">
-              {/* Filter buttons */}
-              <Skeleton className="h-8 w-[100px]" />
-              <Skeleton className="h-8 w-[100px]" />
-              <Skeleton className="h-8 w-[120px]" />
+            <div className="flex items-center space-x-2 flex-wrap">
+              {/* Filter buttons: Model, Role, Department */}
+              <Skeleton className="h-8 w-[90px]" />
               <Skeleton className="h-8 w-[80px]" />
-              <Skeleton className="h-8 w-[120px]" />
+              <Skeleton className="h-8 w-[110px]" />
             </div>
           </div>
         </div>
@@ -35,18 +33,18 @@ export default function Loading() {
           {[...Array(6)].map((_, i) => (
             <Card key={i} className="hover:shadow-md transition-shadow">
               <CardHeader>
-                <div className="flex justify-between items-start">
-                  <div className="space-y-2 flex-1">
-                    <div className="flex items-center gap-2">
-                      <Skeleton className="h-5 w-32" />
-                      <div className="flex gap-1">
+                <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+                  <div className="space-y-2 flex-1 min-w-0">
+                    <Skeleton className="h-5 w-32" />
+                    <div className="mt-1">
+                      <div className="flex flex-wrap items-center gap-2">
                         <Skeleton className="h-5 w-20 rounded-full" />
                         <Skeleton className="h-5 w-16 rounded-full" />
                       </div>
                     </div>
                     <Skeleton className="h-4 w-full" />
                   </div>
-                  <div className="flex gap-2 items-center">
+                  <div className="flex flex-wrap gap-2 items-center">
                     <Skeleton className="h-9 w-9" />
                     <Skeleton className="h-9 w-9" />
                   </div>
@@ -54,7 +52,7 @@ export default function Loading() {
               </CardHeader>
               <CardContent>
                 <div className="text-sm">
-                  <Skeleton className="h-4 w-24" />
+                  <Skeleton className="h-4 w-32" />
                 </div>
               </CardContent>
             </Card>
@@ -62,11 +60,35 @@ export default function Loading() {
         </div>
 
         {/* Pagination skeleton */}
-        <div className="flex items-center justify-between px-2">
-          <Skeleton className="h-8 w-[100px]" />
+        {/* Mobile */}
+        <div className="flex items-center px-2 md:hidden">
           <div className="flex items-center space-x-2">
+            <Skeleton className="h-4 w-24" />
             <Skeleton className="h-8 w-[70px]" />
-            <Skeleton className="h-8 w-[70px]" />
+          </div>
+          <div className="flex-1 flex items-center justify-center">
+            <Skeleton className="h-4 w-[80px]" />
+          </div>
+          <div className="flex items-center space-x-2">
+            <Skeleton className="h-8 w-8" />
+            <Skeleton className="h-8 w-8" />
+          </div>
+        </div>
+        {/* Desktop */}
+        <div className="hidden md:flex items-center px-2">
+          <div className="flex-1" />
+          <div className="flex items-center space-x-6 lg:space-x-8">
+            <div className="flex items-center space-x-2">
+              <Skeleton className="h-4 w-24" />
+              <Skeleton className="h-8 w-[70px]" />
+            </div>
+            <Skeleton className="h-4 w-[100px]" />
+            <div className="flex items-center space-x-2">
+              <Skeleton className="hidden h-8 w-8 lg:block" />
+              <Skeleton className="h-8 w-8" />
+              <Skeleton className="h-8 w-8" />
+              <Skeleton className="hidden h-8 w-8 lg:block" />
+            </div>
           </div>
         </div>
       </div>

@@ -8,6 +8,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from app.api.v4.types import BaseResourceSection
 from app.api.v4.views.drafts.types import DraftSettingViewItem
 from app.sql.types import (
     QGetAgentsV4Item,
@@ -43,17 +44,6 @@ class SettingFlagConfig(BaseModel):
 
 
 # ========== Per-Resource Section Types ==========
-
-
-class BaseResourceSection(BaseModel):
-    """Common metadata fields for all resource sections."""
-
-    show: bool = False
-    required: bool = False
-    suggestions: list[UUID] | None = None
-    show_ai_generate: bool = False
-    create_tool_id: UUID | None = None
-    link_tool_id: UUID | None = None
 
 
 # Single-select sections

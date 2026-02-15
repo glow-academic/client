@@ -8,7 +8,7 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
-from app.api.v4.types import ListFilterSection
+from app.api.v4.types import BaseResourceSection, ListFilterSection
 from app.api.v4.views.drafts.types import DraftPersonaViewItem
 from app.sql.types import (
     QGetAgentsV4Item,
@@ -42,16 +42,6 @@ class PersonaFlagConfig(BaseModel):
 
 
 # ========== Per-Resource Section Types ==========
-
-
-class BaseResourceSection(BaseModel):
-    """Common metadata fields for all resource sections."""
-
-    show: bool = False
-    required: bool = False
-    suggestions: list[UUID] | None = None
-    show_ai_generate: bool = False
-    tool_id: UUID | None = None
 
 
 # Single-select sections (resource = singular current, resources = all options)

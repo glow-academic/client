@@ -167,7 +167,7 @@ def compute_show_icon(icons_has_tools: bool, icons_count: int) -> bool:
 
 def compute_show_instructions(instructions_has_tools: bool) -> bool:
     """Determine if instructions picker should be shown."""
-    return instructions_has_tools
+    return True
 
 
 def compute_show_flag() -> bool:
@@ -252,7 +252,7 @@ def compute_parameters_required() -> bool:
 
 def compute_can_delete(
     user_role: str | None,
-    persona_department_ids: list[str] | None,
+    persona_department_ids: list[str] | list[UUID] | None,
     total_scenario_links: int,
 ) -> bool:
     """Compute can_delete permission.

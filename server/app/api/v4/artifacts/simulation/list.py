@@ -1,6 +1,6 @@
 """Simulations list endpoint - v4 API following DHH principles.
 
-Permissions (can_edit, can_delete, can_duplicate) are computed in SQL.
+Permissions (can_edit, can_delete, can_duplicate) computed in Python.
 Scenario/persona mapping hydrated in Python via cached *_internal() functions.
 """
 
@@ -10,10 +10,16 @@ from uuid import UUID
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
+from app.api.v4.artifacts.simulation.permissions import (
+    compute_can_delete,
+    compute_can_duplicate,
+    compute_can_edit,
+)
 from app.api.v4.artifacts.simulation.types import (
     ListSimulationApiPersona,
     ListSimulationApiResponse,
     ListSimulationApiScenario,
+    ListSimulationApiSimulation,
     ListSimulationSqlRow,
     QGetScenariosV4Item,
 )
@@ -84,7 +90,7 @@ async def get_simulation_list(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        # Fetch user context for audit logging
+        # Fetch user context for audit logging and permissions
         pool = get_pool()
         if pool:
             async with pool.acquire() as context_conn:
@@ -94,8 +100,10 @@ async def get_simulation_list(
                     bypass_cache=bypass_cache,
                 )
                 actor_name = profile_ctx.access.actor_name
+                user_role = profile_ctx.access.role
         else:
             actor_name = None
+            user_role = "member"
 
         # Convert API request to SQL params
         params = GetSimulationsListSqlParams(
@@ -184,24 +192,44 @@ async def get_simulation_list(
                 )
             )
 
-        # Convert SQL composite types to dicts so Pydantic can re-validate
-        # into the handcrafted API types (auto-generated Q* types != API types)
-        def to_dicts(items: list[Any] | None) -> list[dict] | None:
-            if items is None:
-                return None
-            return [
-                item
-                if isinstance(item, dict)
-                else item.model_dump()
-                if hasattr(item, "model_dump")
-                else item
-                for item in items
-            ]
+        # Compute permissions in Python for each simulation
+        api_simulations: list[ListSimulationApiSimulation] = []
+        for sim in result.simulations or []:
+            can_edit_val = compute_can_edit(
+                user_role=user_role,
+                simulation_department_ids=sim.department_ids,
+                cohort_usage_count=sim.cohort_usage_count or 0,
+            )
+            can_delete_val = compute_can_delete(
+                user_role=user_role,
+                simulation_department_ids=sim.department_ids,
+                cohort_usage_count=sim.cohort_usage_count or 0,
+            )
+            can_duplicate_val = compute_can_duplicate(user_role)
+
+            api_simulations.append(
+                ListSimulationApiSimulation(
+                    simulation_id=sim.simulation_id,
+                    name=sim.name,
+                    description=sim.description,
+                    department_ids=sim.department_ids,
+                    is_inactive=sim.is_inactive,
+                    practice_simulation=sim.practice_simulation,
+                    scenario_ids=sim.scenario_ids,
+                    num_cohorts=sim.num_cohorts,
+                    cohort_usage_count=sim.cohort_usage_count,
+                    can_edit=can_edit_val,
+                    can_delete=can_delete_val,
+                    can_duplicate=can_duplicate_val,
+                    cohort_ids=getattr(sim, "cohort_ids", None),
+                    updated_at=sim.updated_at,
+                )
+            )
 
         # Build API response
         api_response = ListSimulationApiResponse(
             actor_name=actor_name,
-            simulations=to_dicts(result.simulations),
+            simulations=api_simulations,
             scenarios=scenario_mapping,
             scenario_filter=ListFilterSection.from_sql_options(
                 result.scenario_options,

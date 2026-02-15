@@ -11,6 +11,7 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
+from app.api.v4.types import BaseResourceSection
 from app.api.v4.views.drafts.types import DraftDocumentViewItem
 from app.sql.types import (
     QGetAgentsV4Item,
@@ -46,17 +47,6 @@ class GetDocumentApiRequest(BaseModel):
 
     document_id: UUID | None = None
     draft_id: UUID | None = None
-
-
-class BaseResourceSection(BaseModel):
-    """Common metadata for document resource sections."""
-
-    show: bool = False
-    required: bool = False
-    suggestions: list[UUID] | None = None
-    show_ai_generate: bool = False
-    create_tool_id: UUID | None = None
-    link_tool_id: UUID | None = None
 
 
 class DocumentNameSection(BaseResourceSection):
@@ -196,6 +186,7 @@ class ListDocumentApiDocument(BaseModel):
     num_scenarios: int | None = None
     active_scenario_count: int | None = None
     total_scenario_links: int | None = None
+    upload_id: UUID | None = None
     # Computed in Python
     can_edit: bool | None = None
     can_duplicate: bool | None = None

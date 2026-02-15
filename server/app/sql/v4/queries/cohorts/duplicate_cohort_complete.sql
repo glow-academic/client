@@ -24,8 +24,8 @@ CREATE OR REPLACE FUNCTION api_duplicate_cohort_v4(
 )
 RETURNS TABLE (
     id uuid,
-    title text,
-    original_title text,
+    name text,
+    original_name text,
     actor_name text
 )
 LANGUAGE sql
@@ -47,7 +47,7 @@ original_cohort AS (
     -- Get original cohort data
     SELECT 
         c.id,
-        (SELECT n.name FROM cohort_names_junction cn JOIN names_resource n ON cn.name_id = n.id WHERE cn.cohort_id = c.id LIMIT 1) as title,
+        (SELECT n.name FROM cohort_names_junction cn JOIN names_resource n ON cn.name_id = n.id WHERE cn.cohort_id = c.id LIMIT 1) as name,
         (SELECT d.description FROM cohort_descriptions_junction cd JOIN descriptions_resource d ON cd.description_id = d.id WHERE cd.cohort_id = c.id LIMIT 1) as description
     FROM params x
     JOIN cohort_artifact c ON c.id = x.cohort_id
@@ -125,7 +125,7 @@ cohort_with_title AS (
     -- Get cohort with title for return (name from names_resource via name_resource_id)
     SELECT
         nc.id,
-        n.name as title
+        n.name as name
     FROM new_cohort nc
     LEFT JOIN names_resource n ON n.id = name_resource_id
 ),
@@ -175,8 +175,8 @@ copy_departments AS (
 -- Return new cohort info
 SELECT 
     cwt.id,
-    cwt.title,
-    oc.title as original_title,
+    cwt.name,
+    oc.name as original_name,
     ap.actor_name
 FROM cohort_with_title cwt
 CROSS JOIN original_cohort oc

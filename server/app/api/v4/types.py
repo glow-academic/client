@@ -11,6 +11,20 @@ from uuid import UUID
 from pydantic import BaseModel
 
 
+class BaseResourceSection(BaseModel):
+    """Common metadata fields for all resource sections.
+
+    Shared across persona, scenario, simulation, cohort, and other artifacts.
+    Uses a single `tool_id` field (merged from create/link tool IDs).
+    """
+
+    show: bool = False
+    required: bool = False
+    suggestions: list[UUID] | None = None
+    show_ai_generate: bool = False
+    tool_id: UUID | None = None
+
+
 class ListFilterOption(BaseModel):
     """Standardized option for list endpoint filter sections."""
 

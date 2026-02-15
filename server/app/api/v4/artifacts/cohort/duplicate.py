@@ -115,8 +115,8 @@ async def duplicate_cohort(
             )
 
         # Phase 1: Python creates name resource
-        original_title = access_result.original_title or "Unknown"
-        new_name = f"{original_title} Copy"
+        original_name = access_result.original_name or "Unknown"
+        new_name = f"{original_name} Copy"
         name_resource_id = await create_names_internal(conn, new_name)
 
         # Phase 2: SQL creates artifact + links junctions (inside transaction)
@@ -147,7 +147,7 @@ async def duplicate_cohort(
                 audit_set(
                     http_request,
                     actor={"name": actor_name, "id": profile_id},
-                    cohort={"name": original_title, "id": str(result.id)},
+                    cohort={"name": original_name, "id": str(result.id)},
                 )
 
         # Convert SQL result to API response (no manual conversion needed)
