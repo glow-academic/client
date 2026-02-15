@@ -457,7 +457,7 @@ async def get_persona_internal(
                 50,
                 0,
                 flag_ids,
-                bypass_cache,
+                bypass_cache=bypass_cache,
                 persona=True,
             )
             # Filter to only persona-specific flags (business logic in Python)
@@ -478,7 +478,6 @@ async def get_persona_internal(
                 suggest_source="all",
                 exclude_ids=department_ids,
                 bypass_cache=bypass_cache,
-                persona=True,
             )
             return (selected, suggestions)
 
@@ -696,6 +695,20 @@ async def get_persona_internal(
         if flag.id
     ]
 
+    # Convert current flag_resource to PersonaFlagConfig for the current bucket
+    current_flag_config: PersonaFlagConfig | None = None
+    if flag_resource and flag_resource.id:
+        current_flag_config = PersonaFlagConfig(
+            key=derive_flag_key_and_label(flag_resource.name)[0],
+            label=derive_flag_key_and_label(flag_resource.name)[1],
+            description=flag_resource.description,
+            icon_id=flag_resource.icon,
+            flag_option_id=flag_resource.id,
+            show=show_flag,
+            required=compute_flag_required(),
+            generated=flag_resource.generated,
+        )
+
     # Validation for new mode
     if persona_id is None:
         # New mode: check for valid departments
@@ -732,7 +745,7 @@ async def get_persona_internal(
             colors=[color_resource] if color_resource else [],
             icons=[icon_resource] if icon_resource else [],
             instructions=[instructions_resource] if instructions_resource else [],
-            flags=[flag_resource] if flag_resource else [],
+            flags=[current_flag_config] if current_flag_config else [],
             departments=department_resources or [],
             parameter_fields=parameter_field_resources or [],
             examples=example_resources or [],
