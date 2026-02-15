@@ -79,6 +79,24 @@ FIELD_MAP = [
         "Keycloak client ID",
     ),
     (
+        "auth.keycloak.client_secret",
+        "AUTH_KEYCLOAK_SECRET",
+        "",
+        "Keycloak client secret",
+    ),
+    (
+        "auth.google.client_id",
+        "GOOGLE_CLIENT_ID",
+        "",
+        "Google OAuth client ID",
+    ),
+    (
+        "auth.google.client_secret",
+        "GOOGLE_CLIENT_SECRET",
+        "",
+        "Google OAuth client secret",
+    ),
+    (
         "auth.microsoft.client_id",
         "AUTH_MICROSOFT_ENTRA_ID_ID",
         "",
@@ -93,6 +111,8 @@ FIELD_MAP = [
     # Providers
     ("providers.openai_api_key", "OPENAI_API_KEY", "", "OpenAI API key"),
     ("providers.gemini_api_key", "GEMINI_API_KEY", "", "Gemini API key"),
+    # Redis
+    ("redis.url", "REDIS_URL", "redis://localhost:6380", "Redis URL"),
 ]
 
 # These are always derived/constant — not in the YAML
@@ -306,9 +326,14 @@ def generate_env(config_path: str | None, interactive: bool, output_path: str) -
         f'KEYCLOAK_ADMIN_PASSWORD="{values["KEYCLOAK_ADMIN_PASSWORD"]}"',
         f'KEYCLOAK_REALM="{values["KEYCLOAK_REALM"]}"',
         f'AUTH_KEYCLOAK_ID="{values["AUTH_KEYCLOAK_ID"]}"',
+        f'AUTH_KEYCLOAK_SECRET="{values["AUTH_KEYCLOAK_SECRET"]}"',
         f'KEYCLOAK_PUBLIC_URL="{values["KEYCLOAK_PUBLIC_URL"]}"',
         f'NEXT_PUBLIC_KEYCLOAK_URL="{values["NEXT_PUBLIC_KEYCLOAK_URL"]}"',
         f'NEXT_PUBLIC_AUTH_KEYCLOAK_ID="{values["NEXT_PUBLIC_AUTH_KEYCLOAK_ID"]}"',
+        "",
+        "# Google OAuth",
+        f'GOOGLE_CLIENT_ID="{values["GOOGLE_CLIENT_ID"]}"',
+        f'GOOGLE_CLIENT_SECRET="{values["GOOGLE_CLIENT_SECRET"]}"',
         "",
         "# Microsoft Entra ID",
         f'AUTH_MICROSOFT_ENTRA_ID_ID="{values["AUTH_MICROSOFT_ENTRA_ID_ID"]}"',
@@ -317,6 +342,9 @@ def generate_env(config_path: str | None, interactive: bool, output_path: str) -
         "# AI Providers",
         f'OPENAI_API_KEY="{values["OPENAI_API_KEY"]}"',
         f'GEMINI_API_KEY="{values["GEMINI_API_KEY"]}"',
+        "",
+        "# Redis",
+        f'REDIS_URL="{values["REDIS_URL"]}"',
         "",
         "# Network (defaults — overridden inside Docker)",
         f'DB_PORT="{values["DB_PORT"]}"',

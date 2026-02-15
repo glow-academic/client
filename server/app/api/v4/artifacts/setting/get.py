@@ -524,7 +524,23 @@ async def get_setting_internal(
     description_resource = next(
         (d for d in descriptions if d.id == selected_description_id), None
     )
-    flag_resource = next((f for f in flags if f.id == selected_active_flag_id), None)
+    flag_resource_raw = next(
+        (f for f in flags if f.id == selected_active_flag_id), None
+    )
+    flag_resource = (
+        SettingFlagConfig(
+            key=derive_flag_key_and_label(flag_resource_raw.name)[0],
+            label=derive_flag_key_and_label(flag_resource_raw.name)[1],
+            description=flag_resource_raw.description,
+            icon_id=flag_resource_raw.icon,
+            flag_option_id=flag_resource_raw.id,
+            show=show_flag,
+            required=compute_flag_required(),
+            generated=flag_resource_raw.generated,
+        )
+        if flag_resource_raw
+        else None
+    )
 
     # Find selected resources (multi-select)
     color_id_set = set(selected_color_ids)

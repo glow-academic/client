@@ -56,6 +56,10 @@ auth:
     admin_password: "admin"                 # KEYCLOAK_ADMIN_PASSWORD
     realm: "master"                         # KEYCLOAK_REALM
     client_id: "glow-client"                # AUTH_KEYCLOAK_ID
+    client_secret: ""                       # AUTH_KEYCLOAK_SECRET (auto-generated if blank)
+  google:
+    client_id: ""                           # GOOGLE_CLIENT_ID
+    client_secret: ""                       # GOOGLE_CLIENT_SECRET
   microsoft:
     client_id: ""                           # AUTH_MICROSOFT_ENTRA_ID_ID
     client_secret: ""                       # AUTH_MICROSOFT_ENTRA_ID_SECRET
@@ -66,6 +70,12 @@ auth:
 providers:
   openai_api_key: ""                        # OPENAI_API_KEY
   gemini_api_key: ""                        # GEMINI_API_KEY
+
+# -----------------------------------------------------------------------------
+# Redis
+# -----------------------------------------------------------------------------
+redis:
+  url: "redis://localhost:6380"             # REDIS_URL
 
 # -----------------------------------------------------------------------------
 # Install Mode (for pre-built GHCR images vs source build)

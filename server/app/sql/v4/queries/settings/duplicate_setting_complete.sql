@@ -33,10 +33,10 @@ WITH params AS (
            profile_id AS profile_id
 ),
 original_setting AS (
-    SELECT 
+    SELECT
         s.id,
-        (SELECT n.name FROM setting_names_junction sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.setting_id = s.id LIMIT 1),
-        (SELECT d.description FROM setting_descriptions_junction sd JOIN descriptions_resource d ON sd.description_id = d.id WHERE sd.setting_id = s.id LIMIT 1)
+        (SELECT n.name FROM setting_names_junction sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.setting_id = s.id LIMIT 1) as name,
+        (SELECT sd.description_id FROM setting_descriptions_junction sd WHERE sd.setting_id = s.id LIMIT 1) as description_id
     FROM params x
     JOIN setting_artifact s ON s.id = x.setting_id
 ),
@@ -56,15 +56,6 @@ new_name_resource AS (
     WHERE name IS NOT NULL
     ON CONFLICT (name) DO UPDATE SET created_at = EXCLUDED.created_at
     RETURNING id as name_id, name
-),
--- Insert description INTO descriptions_resource table
-new_description_resource AS (
-    INSERT INTO descriptions_resource (description, created_at)
-    SELECT description, NOW()
-    FROM original_setting
-    WHERE description IS NOT NULL AND description != ''
-    ON CONFLICT (description) DO UPDATE SET created_at = EXCLUDED.created_at
-    RETURNING id as description_id, description
 ),
 new_setting AS (
     INSERT INTO setting_artifact (
@@ -88,16 +79,16 @@ link_setting_name AS (
     CROSS JOIN new_name_resource nnr
     ON CONFLICT (setting_id, name_id) DO NOTHING
 ),
--- Link setting to description
+-- Link setting to existing description (like personas pattern)
 link_setting_description AS (
     INSERT INTO setting_descriptions_junction (setting_id, description_id, created_at)
-    SELECT 
+    SELECT
         ns.id,
-        ndr.description_id,
+        os.description_id,
         NOW()
     FROM new_setting ns
-    CROSS JOIN new_description_resource ndr
-    ON CONFLICT (setting_id, description_id) DO NOTHING
+    CROSS JOIN original_setting os
+    WHERE os.description_id IS NOT NULL
 ),
 -- Link setting active flag (set to false for duplicate)
 link_setting_active_flag AS (
