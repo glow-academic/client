@@ -114,7 +114,7 @@ BEGIN
     END IF;
 
     IF input_draft_id IS NOT NULL THEN
-        SELECT group_id INTO v_group_id FROM drafts_entry WHERE id = input_draft_id;
+        SELECT drafts_entry.group_id INTO v_group_id FROM drafts_entry WHERE id = input_draft_id;
 
         IF v_group_id IS NULL THEN
             v_group_id := group_id;
@@ -352,16 +352,16 @@ BEGIN
                 END IF;
             END IF;
 
-            DELETE FROM names_drafts_connection WHERE draft_id = v_draft_id;
-            DELETE FROM descriptions_drafts_connection WHERE draft_id = v_draft_id;
-            DELETE FROM colors_drafts_connection WHERE draft_id = v_draft_id;
-            DELETE FROM flags_drafts_connection WHERE draft_id = v_draft_id;
-            DELETE FROM departments_drafts_connection WHERE draft_id = v_draft_id;
-            DELETE FROM profiles_drafts_connection WHERE draft_id = v_draft_id;
-            DELETE FROM providers_drafts_connection WHERE draft_id = v_draft_id;
-            DELETE FROM keys_drafts_connection WHERE draft_id = v_draft_id;
-            DELETE FROM roles_drafts_connection WHERE draft_id = v_draft_id;
-            DELETE FROM role_routes_drafts_connection WHERE draft_id = v_draft_id;
+            DELETE FROM names_drafts_connection WHERE names_drafts_connection.draft_id = v_draft_id;
+            DELETE FROM descriptions_drafts_connection WHERE descriptions_drafts_connection.draft_id = v_draft_id;
+            DELETE FROM colors_drafts_connection WHERE colors_drafts_connection.draft_id = v_draft_id;
+            DELETE FROM flags_drafts_connection WHERE flags_drafts_connection.draft_id = v_draft_id;
+            DELETE FROM departments_drafts_connection WHERE departments_drafts_connection.draft_id = v_draft_id;
+            DELETE FROM profiles_drafts_connection WHERE profiles_drafts_connection.draft_id = v_draft_id;
+            DELETE FROM providers_drafts_connection WHERE providers_drafts_connection.draft_id = v_draft_id;
+            DELETE FROM keys_drafts_connection WHERE keys_drafts_connection.draft_id = v_draft_id;
+            DELETE FROM roles_drafts_connection WHERE roles_drafts_connection.draft_id = v_draft_id;
+            DELETE FROM role_routes_drafts_connection WHERE role_routes_drafts_connection.draft_id = v_draft_id;
 
             INSERT INTO profiles_drafts_connection (draft_id, profiles_id, version)
             VALUES (v_draft_id, v_profiles_resource_id, v_new_version)

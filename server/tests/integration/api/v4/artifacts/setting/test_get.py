@@ -131,7 +131,7 @@ class TestSettingGetExisting:
         assert response.status_code == 200
         names = response.json()["names"]
         assert names["resource"] is not None
-        assert names["resource"]["name"] == "Default Settings"
+        assert names["resource"]["name"] == "Purdue CS Settings"
 
     async def test_get_existing_has_description_resource(
         self, client: httpx.AsyncClient

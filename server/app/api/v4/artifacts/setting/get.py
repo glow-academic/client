@@ -527,20 +527,6 @@ async def get_setting_internal(
     flag_resource_raw = next(
         (f for f in flags if f.id == selected_active_flag_id), None
     )
-    flag_resource = (
-        SettingFlagConfig(
-            key=derive_flag_key_and_label(flag_resource_raw.name)[0],
-            label=derive_flag_key_and_label(flag_resource_raw.name)[1],
-            description=flag_resource_raw.description,
-            icon_id=flag_resource_raw.icon,
-            flag_option_id=flag_resource_raw.id,
-            show=show_flag,
-            required=compute_flag_required(),
-            generated=flag_resource_raw.generated,
-        )
-        if flag_resource_raw
-        else None
-    )
 
     # Find selected resources (multi-select)
     color_id_set = set(selected_color_ids)
@@ -580,6 +566,20 @@ async def get_setting_internal(
     show_description = compute_show_description()
     show_colors = compute_show_colors(len(colors))
     show_flag = compute_show_flag()
+    flag_resource = (
+        SettingFlagConfig(
+            key=derive_flag_key_and_label(flag_resource_raw.name)[0],
+            label=derive_flag_key_and_label(flag_resource_raw.name)[1],
+            description=flag_resource_raw.description,
+            icon_id=flag_resource_raw.icon,
+            flag_option_id=flag_resource_raw.id,
+            show=show_flag,
+            required=compute_flag_required(),
+            generated=flag_resource_raw.generated,
+        )
+        if flag_resource_raw
+        else None
+    )
     show_departments = compute_show_departments(len(departments))
     show_profiles = compute_show_profiles()
     show_auths = compute_show_auths()

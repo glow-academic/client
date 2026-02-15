@@ -118,22 +118,22 @@ BEGIN
             RAISE EXCEPTION 'Setting not found: %', input_setting_id;
         END IF;
 
-        UPDATE setting_names_junction SET active = false WHERE setting_id = v_setting_id AND active = true;
-        UPDATE setting_descriptions_junction SET active = false WHERE setting_id = v_setting_id AND active = true;
-        UPDATE setting_colors_junction SET active = false WHERE setting_id = v_setting_id AND active = true;
-        UPDATE department_settings_junction SET active = false WHERE settings_id = v_setting_id AND active = true;
-        UPDATE setting_profiles_junction SET active = false WHERE setting_id = v_setting_id AND active = true;
-        UPDATE setting_auths_junction SET active = false WHERE settings_id = v_setting_id AND active = true;
-        UPDATE setting_provider_keys_junction SET active = false WHERE setting_id = v_setting_id AND active = true;
-        UPDATE setting_auth_item_keys_junction SET active = false WHERE setting_id = v_setting_id AND active = true;
-        UPDATE setting_roles_junction SET active = false WHERE setting_id = v_setting_id AND active = true;
-        UPDATE setting_role_routes_junction SET active = false WHERE setting_id = v_setting_id AND active = true;
+        UPDATE setting_names_junction SET active = false WHERE setting_names_junction.setting_id = v_setting_id AND active = true;
+        UPDATE setting_descriptions_junction SET active = false WHERE setting_descriptions_junction.setting_id = v_setting_id AND active = true;
+        UPDATE setting_colors_junction SET active = false WHERE setting_colors_junction.setting_id = v_setting_id AND active = true;
+        UPDATE department_settings_junction SET active = false WHERE department_settings_junction.settings_id = v_setting_id AND active = true;
+        UPDATE setting_profiles_junction SET active = false WHERE setting_profiles_junction.setting_id = v_setting_id AND active = true;
+        UPDATE setting_auths_junction SET active = false WHERE setting_auths_junction.settings_id = v_setting_id AND active = true;
+        UPDATE setting_provider_keys_junction SET active = false WHERE setting_provider_keys_junction.setting_id = v_setting_id AND active = true;
+        UPDATE setting_auth_item_keys_junction SET active = false WHERE setting_auth_item_keys_junction.setting_id = v_setting_id AND active = true;
+        UPDATE setting_roles_junction SET active = false WHERE setting_roles_junction.setting_id = v_setting_id AND active = true;
+        UPDATE setting_role_routes_junction SET active = false WHERE setting_role_routes_junction.setting_id = v_setting_id AND active = true;
 
         UPDATE setting_flags_junction
         SET flag_id = COALESCE(v_active_flag_id, setting_flags_junction.flag_id),
             value = CASE WHEN v_active_flag_id IS NOT NULL THEN true ELSE false END,
             active = true
-        WHERE setting_id = v_setting_id;
+        WHERE setting_flags_junction.setting_id = v_setting_id;
     END IF;
 
     -- === TOOL CALL TRACKING ===

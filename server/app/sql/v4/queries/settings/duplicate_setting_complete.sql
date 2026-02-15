@@ -46,7 +46,7 @@ original_flags AS (
     FROM params x
     JOIN setting_flags_junction sf ON sf.setting_id = x.setting_id
     JOIN flags_resource f ON sf.flag_id = f.id
-    WHERE f.name != 'active'
+    WHERE f.name != 'setting_active'
 ),
 -- Insert name INTO names_resource table
 new_name_resource AS (
