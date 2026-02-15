@@ -89,7 +89,7 @@ export function Videos({
   show_videos = false,
   create_tool_id,
   videos_required,
-  video_suggestions,
+  video_suggestions: _video_suggestions,
   videos,
   disabled = false,
   onChange,
@@ -118,11 +118,6 @@ export function Videos({
   const ids = useMemo(() => video_ids ?? [], [video_ids]);
   const show = show_videos ?? false;
   const allVideos = useMemo(() => videos ?? [], [videos]);
-  const suggestionsList = useMemo(
-    () => video_suggestions ?? [],
-    [video_suggestions]
-  );
-
   // Socket-based AI suggestion handling via shared hook
   const {
     isGenerating: aiIsGenerating,
@@ -224,12 +219,6 @@ export function Videos({
     });
     return mapping;
   }, [allVideos]);
-
-  // Check if a video is suggested
-  const _isSuggested = useCallback(
-    (videoId: string) => suggestionsList.includes(videoId),
-    [suggestionsList]
-  );
 
   const handleVideoSelect = useCallback(
     async (selectedIds: string[]) => {
@@ -528,15 +517,6 @@ export function Videos({
 
   // AI suggestion state
   const showDiff = !!aiSuggestion?.length;
-  const aiSuggestedIds = useMemo(
-    () =>
-      new Set(
-        aiSuggestion
-          ?.map((v) => v.video_id)
-          .filter(Boolean) as string[]
-      ),
-    [aiSuggestion]
-  );
 
   // Accept AI suggestion - select the first AI-suggested video
   const handleAccept = useCallback(() => {

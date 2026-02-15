@@ -69,12 +69,7 @@ export function Groups({
   description,
   group_id,
   onGenerate,
-  isGenerating = false,
   showAiGenerate = false,
-  // AI diff view props
-  aiGroupResources,
-  onAccept,
-  onReject,
 }: GroupsProps) {
   const ids = useMemo(() => group_ids ?? [], [group_ids]);
   const show = show_groups ?? false;

@@ -151,7 +151,7 @@ export function ScenarioPersonas({
   );
 
   // Socket-based AI suggestion handling via shared hook
-  const { isGenerating: aiIsGenerating, aiSuggestion, accept: acceptAi, reject: rejectAi } = useResourceAi<
+  const { aiSuggestion, accept: acceptAi, reject: rejectAi } = useResourceAi<
     Pick<ScenarioPersonasResourceItem, "id" | "scenario_id" | "persona_id"> & { persona_name?: string | null }
   >({
     resourceType: "scenario_personas",

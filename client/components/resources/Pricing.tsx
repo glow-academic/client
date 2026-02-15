@@ -93,7 +93,6 @@ export function Pricing({
   aiPricingResources: _aiPricingResources,
   onAccept: _onAccept,
   onReject: _onReject,
-  isAutosaveEnabled = true,
   registerFlush,
 }: PricingProps) {
   // AI suggestion handling via shared hook (accumulate mode: each event = one pricing)

@@ -195,7 +195,7 @@ export function Instructions({
   disabled = false,
   onInstructionsIdChange,
   onGenerate,
-  isGenerating = false,
+  isGenerating: _isGenerating = false,
   label = "Instructions",
   placeholder = "Enter instructions",
   required = false,
@@ -204,7 +204,7 @@ export function Instructions({
   "data-testid": dataTestId,
   helpText,
   group_id,
-  create_tool_id,
+  create_tool_id: _create_tool_id,
   showAiGenerate = false,
   createInstructionsAction,
   searchTerm,
@@ -216,10 +216,10 @@ export function Instructions({
   instructionsId,
   suggestions,
   // AI diff view props
-  aiResource,
-  onAccept,
-  onReject,
-  onGenerationComplete,
+  aiResource: _aiResource,
+  onAccept: _onAccept,
+  onReject: _onReject,
+  onGenerationComplete: _onGenerationComplete,
 }: InstructionsProps) {
   // Use standardized props with fallback to legacy props
   const resource = instructions_resource ?? instructionsResource ?? null;

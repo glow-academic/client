@@ -71,7 +71,7 @@ export function GroupRubrics({
   isGenerating: _isGenerating = false,
 }: GroupRubricsProps) {
   // AI suggestion handling via shared hook (accumulate mode: each event = one rubric)
-  const { isGenerating: aiIsGenerating, aiSuggestions, accept: acceptAi, reject: rejectAi } = useResourceAi<
+  const { aiSuggestions, accept: acceptAi, reject: rejectAi } = useResourceAi<
     Pick<GroupRubricResourceItem, "id" | "rubric_id">
   >({
     resourceType: "group_rubrics",

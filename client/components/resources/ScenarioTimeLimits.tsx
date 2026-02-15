@@ -95,7 +95,6 @@ export interface ScenarioTimeLimitsProps {
 }
 
 export function ScenarioTimeLimits({
-  scenario_time_limit_ids,
   scenario_time_limit_resources,
   show_scenario_time_limits = false,
   scenario_ids = [],
@@ -111,7 +110,6 @@ export function ScenarioTimeLimits({
   createScenarioTimeLimitsAction,
   onTimeLimitIdsChange,
   onGenerate,
-  isGenerating = false,
   showAiGenerate = false,
   isAutosaveEnabled = true,
   registerFlush,

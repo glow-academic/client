@@ -78,13 +78,13 @@ export function Icons({
   id = "icon",
   required = false,
   searchTerm = "",
-  onSearchChange,
+  onSearchChange: _onSearchChange,
   showSelectedFilter = false,
-  onShowSelectedChange,
+  onShowSelectedChange: _onShowSelectedChange,
   group_id,
   showAiGenerate = false,
   onGenerate,
-  isGenerating = false,
+  isGenerating: _isGenerating = false,
   // Legacy props for backward compatibility
   iconResource,
   iconId: _iconId,
@@ -92,10 +92,10 @@ export function Icons({
   suggestedIcons = [],
   iconSuggestions,
   // AI diff view props
-  aiResource,
-  onAccept,
-  onReject,
-  onGenerationComplete,
+  aiResource: _aiResource,
+  onAccept: _onAccept,
+  onReject: _onReject,
+  onGenerationComplete: _onGenerationComplete,
 }: IconsProps) {
   // Use standardized props with fallback to legacy props
   const resource = icon_resource ?? iconResource ?? null;

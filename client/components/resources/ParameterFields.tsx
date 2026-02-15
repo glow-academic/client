@@ -107,7 +107,6 @@ export function ParameterFields({
   required = false,
   description,
   group_id,
-  create_tool_id,
   showAiGenerate = false,
   createParameterFieldsAction,
   onGenerate,
@@ -536,17 +535,7 @@ export function ParameterFields({
 
   // AI suggestion state
   const showDiff = !!effectiveAiParameterFieldResources?.length;
-  const aiSuggestedIds = useMemo(
-    () =>
-      new Set(
-        effectiveAiParameterFieldResources
-          ?.map((f) => f.id)
-          .filter(Boolean) as string[]
-      ),
-    [effectiveAiParameterFieldResources]
-  );
-
-  // Also track by field_id for matching during rendering
+  // Track by field_id for matching during rendering
   const aiSuggestedFieldIds = useMemo(
     () =>
       new Set(

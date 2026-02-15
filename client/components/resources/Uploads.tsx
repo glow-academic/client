@@ -113,8 +113,8 @@ export function Uploads({
     resourceType: "uploads",
     groupId: group_id,
     extractSuggestion: (data) => {
-      const id = data.id as string | null | undefined;
-      const file_path = data.file_path as string | null | undefined;
+      const id = data["id"] as string | null | undefined;
+      const file_path = data["file_path"] as string | null | undefined;
       if (!id) return null;
       return { id, file_path: file_path ?? null };
     },

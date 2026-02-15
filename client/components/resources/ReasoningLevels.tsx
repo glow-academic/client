@@ -90,11 +90,6 @@ export function ReasoningLevels({
   const resource = reasoning_level_resource ?? null;
   const resourceId = reasoning_level_id ?? null;
   const show = show_reasoning_levels ?? true;
-  const suggestionsList = useMemo(
-    () => reasoning_level_suggestions ?? [],
-    [reasoning_level_suggestions]
-  );
-
   // Socket-based AI suggestion handling via shared hook
   const { isGenerating: aiIsGenerating, aiSuggestion, accept: acceptAi, reject: rejectAi } = useResourceAi<{
     reasoning_level_id: string | null;

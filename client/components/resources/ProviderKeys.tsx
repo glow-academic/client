@@ -74,14 +74,11 @@ export function ProviderKeys({
   createProviderKeysAction,
   showAiGenerate = false,
   onGenerate,
-  isGenerating = false,
-  onAccept,
-  onReject,
 }: ProviderKeysProps) {
   const selectedIds = useMemo(() => provider_key_ids ?? [], [provider_key_ids]);
 
   // Socket-based AI suggestion handling via shared hook
-  const { isGenerating: aiIsGenerating, aiSuggestions, accept: acceptAi, reject: rejectAi } = useResourceAi<{
+  const { isGenerating: aiIsGenerating } = useResourceAi<{
     id: string | null;
     provider_id: string | null;
     key_id: string | null;

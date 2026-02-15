@@ -75,11 +75,6 @@ export function Modalities({
   group_id,
   onGenerate,
   showAiGenerate = false,
-  isGenerating = false,
-  // AI diff view props
-  aiModalityResources,
-  onAccept,
-  onReject,
 }: ModalitiesProps) {
   const ids = useMemo(() => modality_ids ?? [], [modality_ids]);
   const show = show_modalities ?? false;

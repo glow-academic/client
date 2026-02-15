@@ -20,7 +20,7 @@ import { useResourceAi } from "@/hooks/use-resource-ai";
 import { cn } from "@/lib/utils";
 import type { OutputOf } from "@/lib/api/types";
 import { Check, Loader2, Sparkles, X } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 
 // Derive resource item type from the GET endpoint response
 type DepartmentsGetResponse = OutputOf<"/api/v4/resources/departments/get", "post">;
@@ -96,14 +96,14 @@ export function Departments({
   showAiGenerate = false,
   createDepartmentsAction,
   onGenerate,
-  isGenerating = false,
+  isGenerating: _isGenerating = false,
   isAutosaveEnabled = true,
   registerFlush,
   // AI diff view props
-  aiDepartmentResources,
-  onAccept,
-  onReject,
-  onGenerationComplete,
+  aiDepartmentResources: _aiDepartmentResources,
+  onAccept: _onAccept,
+  onReject: _onReject,
+  onGenerationComplete: _onGenerationComplete,
   // Legacy props for backward compatibility
   departmentIds,
 }: DepartmentsProps) {

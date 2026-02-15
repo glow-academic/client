@@ -113,8 +113,8 @@ export function Emails({
     resourceType: "emails",
     groupId: group_id,
     extractSuggestion: (data) => {
-      const id = data.id as string | null | undefined;
-      const email = data.email as string | null | undefined;
+      const id = data["id"] as string | null | undefined;
+      const email = data["email"] as string | null | undefined;
       if (!id) return null;
       return { id, email: email ?? null };
     },

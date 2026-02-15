@@ -59,6 +59,7 @@ export function ConditionalParameters({
   disabled = false,
   onChange,
   label = "Conditional Parameters",
+  group_id,
   // AI diff props (deprecated - now handled by useResourceAi hook)
   showAiGenerate,
   onGenerate,

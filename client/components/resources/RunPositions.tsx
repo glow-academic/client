@@ -16,6 +16,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useResourceAi } from "@/hooks/use-resource-ai";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 import { Check, Loader2, Sparkles, X } from "lucide-react";
@@ -55,7 +56,7 @@ export interface RunPositionsProps {
   isAutosaveEnabled?: boolean;
   /** Register a flush callback with parent for manual save */
   registerFlush?: (flush: () => Promise<FlushResult>) => void;
-  // AI diff props
+  // AI diff props (deprecated - now handled by useResourceAi hook)
   aiRunPositionResources?: Pick<RunPositionsResourceItem, "id" | "value">[] | null;
   onAccept?: () => void;
   onReject?: () => void;
@@ -78,13 +79,8 @@ export function RunPositions({
   createRunPositionsAction: _createRunPositionsAction,
   isAutosaveEnabled: _isAutosaveEnabled = true,
   registerFlush,
-  // AI diff props
-  aiRunPositionResources,
-  onAccept,
-  onReject,
   showAiGenerate = false,
   onGenerate,
-  isGenerating = false,
 }: RunPositionsProps) {
   const ids = useMemo(
     () => run_position_ids ?? [],
@@ -117,16 +113,30 @@ export function RunPositions({
     }
   }, [registerFlush]);
 
+  // Socket-based AI suggestion handling via shared hook
+  const { isGenerating: aiIsGenerating, aiSuggestions, accept: acceptAi, reject: rejectAi } = useResourceAi<{
+    id: string | null;
+    value: number | null;
+  }>({
+    resourceType: "run_positions",
+    groupId: group_id,
+    extractSuggestion: (data) => {
+      if (!data.success && data.success !== undefined) return null;
+      return { id: (data.id as string) ?? null, value: (data.value as number) ?? null };
+    },
+    accumulate: true,
+  });
+
   // AI suggestion state
-  const showDiff = !!aiRunPositionResources?.length;
+  const showDiff = aiSuggestions.length > 0;
   const aiSuggestedIds = useMemo(
     () =>
       new Set(
-        aiRunPositionResources
-          ?.map((r) => r.id)
+        aiSuggestions
+          .map((r) => r.id)
           .filter(Boolean) as string[]
       ),
-    [aiRunPositionResources]
+    [aiSuggestions]
   );
 
   // Convert to items format for SelectableGrid
@@ -158,21 +168,22 @@ export function RunPositions({
     return run_position_resources?.some((r) => r.generated) ?? false;
   }, [run_position_resources]);
 
-  // Accept AI suggestion
+  // Accept AI suggestion - add AI-suggested run positions to selection
   const handleAccept = useCallback(() => {
-    if (!aiRunPositionResources?.length) return;
-    const newIds = aiRunPositionResources
+    if (aiSuggestions.length === 0) return;
+    const newIds = aiSuggestions
       .map((r) => r.id)
       .filter((id): id is string => !!id && !ids.includes(id));
     if (newIds.length > 0) {
       onChange([...ids, ...newIds]);
     }
-    onAccept?.();
-  }, [aiRunPositionResources, ids, onChange, onAccept]);
+    acceptAi();
+  }, [aiSuggestions, ids, onChange, acceptAi]);
 
+  // Reject AI suggestion - just clear the pending state
   const handleReject = useCallback(() => {
-    onReject?.();
-  }, [onReject]);
+    rejectAi();
+  }, [rejectAi]);
 
   // Don't render if show is false (AFTER all hooks)
   if (!show) {
@@ -194,9 +205,9 @@ export function RunPositions({
                     size="icon"
                     className="h-6 w-6"
                     onClick={onGenerate}
-                    disabled={disabled || isGenerating || showDiff}
+                    disabled={disabled || aiIsGenerating || showDiff}
                   >
-                    {isGenerating ? (
+                    {aiIsGenerating ? (
                       <Loader2 className="h-3.5 w-3.5 animate-spin" />
                     ) : (
                       <Sparkles className="h-3.5 w-3.5" />

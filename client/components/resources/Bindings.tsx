@@ -16,6 +16,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useResourceAi } from "@/hooks/use-resource-ai";
 import type { OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 import { Check, Loader2, Sparkles, X } from "lucide-react";
@@ -39,7 +40,8 @@ export interface BindingsProps {
   disabled?: boolean;
   onChange: (ids: string[]) => void;
   label?: string;
-  // AI diff props
+  group_id?: string | null;
+  // AI diff props (deprecated - now handled by useResourceAi hook)
   aiBindingResources?: Pick<BindingsResourceItem, "id" | "entry">[] | null;
   onAccept?: () => void;
   onReject?: () => void;
@@ -57,13 +59,9 @@ export function Bindings({
   disabled = false,
   onChange,
   label = "Bindings",
-  // AI diff props
-  aiBindingResources,
-  onAccept,
-  onReject,
+  group_id,
   showAiGenerate,
   onGenerate,
-  isGenerating,
 }: BindingsProps) {
   const ids = useMemo(() => binding_ids ?? [], [binding_ids]);
   const show = show_bindings ?? false;
@@ -73,16 +71,30 @@ export function Bindings({
     [binding_suggestions]
   );
 
+  // Socket-based AI suggestion handling via shared hook
+  const { isGenerating: aiIsGenerating, aiSuggestions, accept: acceptAi, reject: rejectAi } = useResourceAi<{
+    id: string | null;
+    entry: string | null;
+  }>({
+    resourceType: "bindings",
+    groupId: group_id,
+    extractSuggestion: (data) => {
+      if (!data.success && data.success !== undefined) return null;
+      return { id: (data.id as string) ?? null, entry: (data.entry as string) ?? null };
+    },
+    accumulate: true,
+  });
+
   // AI suggestion state
-  const showDiff = !!aiBindingResources?.length;
+  const showDiff = aiSuggestions.length > 0;
   const aiSuggestedIds = useMemo(
     () =>
       new Set(
-        aiBindingResources
-          ?.map((b) => b.id)
+        aiSuggestions
+          .map((b) => b.id)
           .filter(Boolean) as string[]
       ),
-    [aiBindingResources]
+    [aiSuggestions]
   );
 
   // Convert to items format for SelectableGrid
@@ -107,21 +119,22 @@ export function Bindings({
     [onChange]
   );
 
-  // Accept AI suggestion
+  // Accept AI suggestion - add AI-suggested bindings to selection
   const handleAccept = useCallback(() => {
-    if (!aiBindingResources?.length) return;
-    const newIds = aiBindingResources
+    if (aiSuggestions.length === 0) return;
+    const newIds = aiSuggestions
       .map((b) => b.id)
       .filter((id): id is string => !!id && !ids.includes(id));
     if (newIds.length > 0) {
       onChange([...ids, ...newIds]);
     }
-    onAccept?.();
-  }, [aiBindingResources, ids, onChange, onAccept]);
+    acceptAi();
+  }, [aiSuggestions, ids, onChange, acceptAi]);
 
+  // Reject AI suggestion - just clear the pending state
   const handleReject = useCallback(() => {
-    onReject?.();
-  }, [onReject]);
+    rejectAi();
+  }, [rejectAi]);
 
   // Check if any binding resource is generated (must be before early return)
   const hasGenerated = useMemo(() => {
@@ -148,9 +161,9 @@ export function Bindings({
                     size="icon"
                     className="h-6 w-6"
                     onClick={onGenerate}
-                    disabled={disabled || isGenerating || showDiff}
+                    disabled={disabled || aiIsGenerating || showDiff}
                   >
-                    {isGenerating ? (
+                    {aiIsGenerating ? (
                       <Loader2 className="h-3.5 w-3.5 animate-spin" />
                     ) : (
                       <Sparkles className="h-3.5 w-3.5" />

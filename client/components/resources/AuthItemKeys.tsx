@@ -74,14 +74,11 @@ export function AuthItemKeys({
   createAuthItemKeysAction,
   showAiGenerate = false,
   onGenerate,
-  isGenerating = false,
-  onAccept,
-  onReject,
 }: AuthItemKeysProps) {
   const selectedIds = useMemo(() => auth_item_key_ids ?? [], [auth_item_key_ids]);
 
   // Socket-based AI suggestion handling via shared hook
-  const { isGenerating: aiIsGenerating, aiSuggestions, accept: acceptAi, reject: rejectAi } = useResourceAi<{
+  const { isGenerating: aiIsGenerating } = useResourceAi<{
     id: string | null;
     auth_id: string | null;
     key_id: string | null;

@@ -201,7 +201,6 @@ export function Prompts({
   searchTerm,
   onSearchChange,
   group_id,
-  create_tool_id,
   createPromptsAction,
   // Legacy props for backward compatibility
   promptResource,
@@ -209,11 +208,7 @@ export function Prompts({
   suggestions: _suggestions,
   showAiGenerate = false,
   onGenerate,
-  isGenerating = false,
-  // AI diff view props
-  aiResource,
-  onAccept,
-  onReject,
+  // AI diff view props (deprecated - now handled by useResourceAi hook)
   isAutosaveEnabled = true,
   registerFlush,
 }: PromptsProps) {
@@ -229,25 +224,43 @@ export function Prompts({
     return [];
   }, [prompts]);
 
+  // Socket-based AI suggestion handling via shared hook
+  const { isGenerating: aiIsGenerating, aiSuggestion, accept: acceptAi, reject: rejectAi } = useResourceAi<{
+    prompt_id: string | null;
+    system_prompt: string | null;
+    name: string | null;
+  }>({
+    resourceType: "prompts",
+    groupId: group_id,
+    extractSuggestion: (data) => {
+      if (!data.success && data.success !== undefined) return null;
+      return {
+        prompt_id: (data.prompt_id as string) ?? null,
+        system_prompt: (data.system_prompt as string) ?? null,
+        name: (data.name as string) ?? null,
+      };
+    },
+  });
+
   // AI diff view state
-  const showDiff = !!aiResource?.system_prompt;
-  const aiText = aiResource?.system_prompt || "";
+  const showDiff = !!aiSuggestion?.system_prompt;
+  const aiText = aiSuggestion?.system_prompt || "";
 
   // Accept AI suggestion - update prompt content and notify parent
   const handleAccept = useCallback(() => {
-    if (!aiResource?.prompt_id) return;
+    if (!aiSuggestion?.prompt_id) return;
     if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
-    const text = aiResource.system_prompt || "";
+    const text = aiSuggestion.system_prompt || "";
     setPromptContent(text);
     lastSavedContentRef.current = text;
-    onPromptIdChange(aiResource.prompt_id);
-    onAccept?.();
-  }, [aiResource, onPromptIdChange, onAccept]);
+    onPromptIdChange(aiSuggestion.prompt_id);
+    acceptAi();
+  }, [aiSuggestion, onPromptIdChange, acceptAi]);
 
   // Reject AI suggestion - just clear the pending state
   const handleReject = useCallback(() => {
-    onReject?.();
-  }, [onReject]);
+    rejectAi();
+  }, [rejectAi]);
 
   // Track prompt content in local state
   const [promptContent, setPromptContent] = useState<string>(
@@ -500,9 +513,9 @@ export function Prompts({
                     size="icon"
                     className="h-6 w-6"
                     onClick={onGenerate}
-                    disabled={disabled || isGenerating || showDiff}
+                    disabled={disabled || aiIsGenerating || showDiff}
                   >
-                    {isGenerating ? (
+                    {aiIsGenerating ? (
                       <Loader2 className="h-3.5 w-3.5 animate-spin" />
                     ) : (
                       <Sparkles className="h-3.5 w-3.5" />

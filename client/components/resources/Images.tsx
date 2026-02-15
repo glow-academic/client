@@ -92,7 +92,7 @@ export function Images({
   show_images = false,
   create_tool_id,
   images_required,
-  image_suggestions,
+  image_suggestions: _image_suggestions,
   images,
   disabled = false,
   onChange,
@@ -105,7 +105,7 @@ export function Images({
   createImagesAction,
   onGenerate,
   showAiGenerate = false,
-  isGenerating = false,
+  isGenerating: _isGenerating = false,
   multiSelect = false,
   maxImages = 1,
   onImageUpload,
@@ -114,20 +114,15 @@ export function Images({
   isAutosaveEnabled = true,
   registerFlush,
   finalizeUploadAction,
-  // AI diff view props
-  aiImageResources,
-  onAccept,
-  onReject,
-  onGenerationComplete,
+  // AI diff view props (deprecated -- now handled by useResourceAi hook)
+  aiImageResources: _aiImageResources,
+  onAccept: _onAccept,
+  onReject: _onReject,
+  onGenerationComplete: _onGenerationComplete,
 }: ImagesProps) {
   const ids = useMemo(() => image_ids ?? [], [image_ids]);
   const show = show_images ?? false;
   const allImages = useMemo(() => images ?? [], [images]);
-  const suggestionsList = useMemo(
-    () => image_suggestions ?? [],
-    [image_suggestions]
-  );
-
   // Socket-based AI suggestion handling via shared hook
   const { isGenerating: aiIsGenerating, aiSuggestion, accept: acceptAi, reject: rejectAi } = useResourceAi<
     Pick<ImageResourceItem, "image_id" | "name">[]
@@ -244,12 +239,6 @@ export function Images({
     });
     return mapping;
   }, [allImages]);
-
-  // Check if an image is suggested
-  const _isSuggested = useCallback(
-    (imageId: string) => suggestionsList.includes(imageId),
-    [suggestionsList]
-  );
 
   const handleImageSelect = useCallback(
     async (selectedIds: string[]) => {
@@ -558,15 +547,6 @@ export function Images({
 
   // AI suggestion state
   const showDiff = !!aiSuggestion?.length;
-  const aiSuggestedIds = useMemo(
-    () =>
-      new Set(
-        aiSuggestion
-          ?.map((i) => i.image_id)
-          .filter(Boolean) as string[]
-      ),
-    [aiSuggestion]
-  );
 
   // Accept AI suggestion - add AI-suggested images to selection
   const handleAccept = useCallback(() => {

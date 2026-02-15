@@ -82,13 +82,7 @@ export function Args({
   create_tool_id,
   isAutosaveEnabled = true,
   registerFlush,
-  // AI diff view props
-  aiArgsResources,
-  onAccept,
-  onReject,
-  showAiGenerate: _showAiGenerate = false,
-  onGenerate: _onGenerate,
-  isGenerating: _isGenerating = false,
+  // AI diff view props (deprecated - now handled by useResourceAi hook)
 }: ArgsProps) {
   const sortedFields = useMemo(() => {
     return [...input_args_fields].sort((a, b) => a.name.localeCompare(b.name));
@@ -279,15 +273,29 @@ export function Args({
     };
   }, []);
 
+  // Socket-based AI suggestion handling via shared hook
+  const { aiSuggestions, accept: acceptAi, reject: rejectAi } = useResourceAi<{
+    id: string | null;
+    name: string | null;
+  }>({
+    resourceType: "args",
+    groupId: group_id,
+    extractSuggestion: (data) => {
+      if (!data.success && data.success !== undefined) return null;
+      return { id: (data.id as string) ?? null, name: (data.name as string) ?? null };
+    },
+    accumulate: true,
+  });
+
   // AI suggestion state
-  const showDiff = !!aiArgsResources?.length;
+  const showDiff = aiSuggestions.length > 0;
 
   // Accept AI suggestion - add AI-suggested args field values
   const handleAccept = useCallback(() => {
-    if (!aiArgsResources?.length) return;
+    if (aiSuggestions.length === 0) return;
     // For Args, we accept the suggested field values by updating internal state
     const newFieldValues: Record<string, Partial<ArgsFieldDetail>> = { ...fieldValues };
-    aiArgsResources.forEach((aiArg) => {
+    aiSuggestions.forEach((aiArg) => {
       if (aiArg.id && aiArg.name) {
         newFieldValues[aiArg.id] = {
           ...newFieldValues[aiArg.id],
@@ -296,13 +304,13 @@ export function Args({
       }
     });
     setFieldValues(newFieldValues);
-    onAccept?.();
-  }, [aiArgsResources, fieldValues, onAccept]);
+    acceptAi();
+  }, [aiSuggestions, fieldValues, acceptAi]);
 
   // Reject AI suggestion - just clear the pending state
   const handleReject = useCallback(() => {
-    onReject?.();
-  }, [onReject]);
+    rejectAi();
+  }, [rejectAi]);
 
   // Don't render if no args selected
   if (args_ids.length === 0) {
@@ -364,11 +372,11 @@ export function Args({
       )}
 
       {/* AI-suggested args preview */}
-      {showDiff && aiArgsResources && aiArgsResources.length > 0 && (
+      {showDiff && aiSuggestions.length > 0 && (
         <div className="mb-4 space-y-2">
           <p className="text-sm font-medium text-success">AI Suggested Args</p>
           <div className="space-y-2">
-            {aiArgsResources.map((item, idx) => (
+            {aiSuggestions.map((item, idx) => (
               <div
                 key={item.id || idx}
                 className={cn(

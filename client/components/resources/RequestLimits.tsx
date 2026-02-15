@@ -97,7 +97,6 @@ export function RequestLimits({
   disabled = false,
   onRequestLimitIdChange,
   onGenerate,
-  isGenerating = false,
   showAiGenerate = false,
   label = "Request Limit",
   id = "request_limit",
@@ -111,10 +110,6 @@ export function RequestLimits({
   // Legacy props for backward compatibility
   requestLimitResource,
   requestLimitId: _requestLimitId,
-  // AI diff view props
-  aiRequestLimitResources,
-  onAccept,
-  onReject,
   isAutosaveEnabled = true,
   registerFlush,
 }: RequestLimitsProps) {

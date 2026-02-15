@@ -70,20 +70,14 @@ export function Cohorts({
   label = "Cohorts",
   id = "cohorts",
   required = false,
-  placeholder = "Select cohorts...",
   description,
   searchTerm = "",
   showSelectedFilter = false,
   emptyMessage = "No cohorts found.",
   group_id,
   onGenerate,
-  isGenerating = false,
   showAiGenerate = false,
   cohortIds,
-  // AI diff view props
-  aiCohortResources,
-  onAccept,
-  onReject,
 }: CohortsProps) {
   const ids = useMemo(
     () => cohort_ids ?? cohortIds ?? [],

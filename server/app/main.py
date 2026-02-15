@@ -281,6 +281,58 @@ def get_pool() -> asyncpg.Pool | None:
     return _db_pool
 
 
+_CONTAINER_INFO_FILE = Path("/tmp/glow_test_container.json")  # noqa: S108
+
+
+def _try_reuse_container() -> str | None:
+    """Try to reconnect to an existing test Postgres container.
+
+    Returns the DB URL if the container is alive, else None.
+    """
+    import json
+    import subprocess
+
+    if not _CONTAINER_INFO_FILE.exists():
+        return None
+
+    try:
+        info = json.loads(_CONTAINER_INFO_FILE.read_text())
+        container_id = info["container_id"]
+        db_url = info["db_url"]
+    except (json.JSONDecodeError, KeyError):
+        _CONTAINER_INFO_FILE.unlink(missing_ok=True)
+        return None
+
+    # Check if the container is still running
+    try:
+        result = subprocess.run(
+            ["docker", "inspect", "-f", "{{.State.Running}}", container_id],
+            capture_output=True,
+            text=True,
+            timeout=5,
+        )
+        if result.returncode == 0 and result.stdout.strip() == "true":
+            return db_url
+    except (subprocess.TimeoutExpired, FileNotFoundError):
+        pass
+
+    _CONTAINER_INFO_FILE.unlink(missing_ok=True)
+    return None
+
+
+def _save_container_info(db_url: str) -> None:
+    """Persist container info so future runs can reuse it."""
+    import json
+
+    if _test_container is None:
+        return
+
+    container_id = _test_container.get_wrapped_container().id
+    _CONTAINER_INFO_FILE.write_text(
+        json.dumps({"container_id": container_id, "db_url": db_url})
+    )
+
+
 async def init_db_pool() -> None:
     """Initialize asyncpg connection pool."""
     global _db_pool, _test_container
@@ -293,19 +345,28 @@ async def init_db_pool() -> None:
         from testcontainers.postgres import PostgresContainer  # type: ignore[import]
 
         reuse = os.getenv("TESTCONTAINERS_REUSE_ENABLE", "false").lower() == "true"
-
-        container = PostgresContainer("postgres:18")
-        if reuse:
-            container = container.with_kwargs(remove=False)
-            container.with_name("glow-test-postgres")
-        _test_container = container
-        _test_container.start()
-
-        raw_url = _test_container.get_connection_url()
-        db_url = raw_url.replace("postgresql+psycopg2://", "postgresql://")
-
-        # Store the base URL — conftest uses this for admin operations
         global _test_db_url
+        db_url: str | None = None
+
+        if reuse:
+            db_url = _try_reuse_container()
+
+        if db_url:
+            print(f"♻️  Reusing existing container at {db_url}")
+        else:
+            container = PostgresContainer("postgres:18")
+            if reuse:
+                container = container.with_kwargs(remove=False)
+            _test_container = container
+            _test_container.start()
+
+            raw_url = _test_container.get_connection_url()
+            db_url = raw_url.replace("postgresql+psycopg2://", "postgresql://")
+
+            if reuse:
+                # Save connection info for future reuse
+                _save_container_info(db_url)
+
         _test_db_url = db_url
 
         pool_config = {

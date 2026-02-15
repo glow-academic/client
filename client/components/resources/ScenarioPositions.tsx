@@ -112,7 +112,6 @@ export function ScenarioPositions({
   scenario_position_ids,
   scenario_position_resources,
   show_scenario_positions = false,
-  scenario_position_suggestions,
   scenario_positions,
   scenarios,
   scenario_resources,
@@ -129,7 +128,6 @@ export function ScenarioPositions({
   createScenarioPositionsAction,
   onPositionIdsChange,
   onGenerate,
-  isGenerating = false,
   showAiGenerate = false,
   isAutosaveEnabled = true,
   registerFlush,
@@ -140,17 +138,9 @@ export function ScenarioPositions({
   onGenerationComplete,
 }: ScenarioPositionsProps) {
   const show = show_scenario_positions ?? false;
-  const allPositions = useMemo(
-    () => scenario_positions ?? [],
-    [scenario_positions],
-  );
   const currentPositions = useMemo(
     () => scenario_position_resources ?? [],
     [scenario_position_resources],
-  );
-  const scenarioPositionIds = useMemo(
-    () => scenario_position_ids ?? [],
-    [scenario_position_ids],
   );
   const scenarioLabelMap = useMemo(() => {
     const map = new Map<string, string>();
@@ -240,8 +230,6 @@ export function ScenarioPositions({
   const positionIdsByScenarioRef = useRef<Map<string, string>>(new Map());
   // Keep ref in sync with state for use in useEffect without causing loops
   positionIdsByScenarioRef.current = positionIdsByScenario;
-  const createdPositionKeysRef = useRef<Set<string>>(new Set());
-
   // Ref for flush function (stable reference for registerFlush)
   const flushRef = useRef<
     (() => Promise<{ scenario_position_ids: string[] } | void>) | null

@@ -74,12 +74,7 @@ export function Qualities({
   onSearchChange,
   group_id,
   onGenerate,
-  isGenerating = false,
   showAiGenerate = false,
-  // AI diff view props
-  aiQualityResources,
-  onAccept,
-  onReject,
 }: QualitiesProps) {
   const ids = useMemo(() => quality_ids ?? [], [quality_ids]);
   const show = show_qualities ?? false;

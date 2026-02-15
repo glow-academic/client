@@ -97,8 +97,8 @@ export function Settings({
     resourceType: "settings",
     groupId: group_id,
     extractSuggestion: (data) => {
-      const settings_id = data.settings_id as string | null | undefined;
-      const name = data.name as string | null | undefined;
+      const settings_id = data["settings_id"] as string | null | undefined;
+      const name = data["name"] as string | null | undefined;
       if (!settings_id) return null;
       return { settings_id, name: name ?? null };
     },

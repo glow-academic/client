@@ -72,12 +72,7 @@ export function Auths({
   description,
   group_id,
   onGenerate,
-  isGenerating = false,
   showAiGenerate = false,
-  // AI diff view props
-  aiAuthResources,
-  onAccept,
-  onReject,
 }: AuthsProps) {
   const ids = useMemo(() => auth_ids ?? [], [auth_ids]);
   const show = show_auths ?? false;

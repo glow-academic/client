@@ -76,7 +76,7 @@ export function Names({
   disabled = false,
   onNameIdChange,
   onGenerate,
-  isGenerating = false,
+  isGenerating: _isGenerating = false,
   placeholder = "Enter name",
   required = false,
   id = "name",
@@ -84,7 +84,7 @@ export function Names({
   defaultName,
   hideDescription = false,
   group_id,
-  create_tool_id,
+  create_tool_id: _create_tool_id,
   showAiGenerate = false,
   createNamesAction,
   isAutosaveEnabled = true,
@@ -94,10 +94,10 @@ export function Names({
   nameId: _nameId,
   suggestions,
   // AI diff view props
-  aiResource,
-  onAccept,
-  onReject,
-  onGenerationComplete,
+  aiResource: _aiResource,
+  onAccept: _onAccept,
+  onReject: _onReject,
+  onGenerationComplete: _onGenerationComplete,
 }: NamesProps) {
   // Use standardized props with fallback to legacy props
   const resource = name_resource ?? nameResource ?? null;

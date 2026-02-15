@@ -103,7 +103,7 @@ export function Questions({
   show_questions = false,
   create_tool_id,
   questions_required,
-  question_suggestions,
+  question_suggestions: _question_suggestions,
   questions,
   disabled = false,
   onChange,
@@ -148,19 +148,6 @@ export function Questions({
     });
     return mapping;
   }, [questionMapping, ids, allQuestions]);
-
-  // Convert question_suggestions (UUIDs) to question strings by looking them up
-  const _suggestionsList = useMemo(() => {
-    if (question_suggestions && question_suggestions.length > 0) {
-      return question_suggestions
-        .map((id) => effectiveQuestionMapping[id])
-        .filter(
-          (text): text is string =>
-            text !== null && text !== undefined && text.trim() !== ""
-        );
-    }
-    return [];
-  }, [question_suggestions, effectiveQuestionMapping]);
 
   // AI suggestion handling via shared hook
   type AiQuestionSuggestion = Pick<QuestionsResourceItem, "question_id" | "question_text">[];

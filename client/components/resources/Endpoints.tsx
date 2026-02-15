@@ -89,7 +89,6 @@ export function Endpoints({
   onGenerate,
   isGenerating: _isGenerating = false,
   showAiGenerate = false,
-  isAutosaveEnabled = true,
   registerFlush,
   // AI diff view props (deprecated — kept for interface compat)
   aiEndpointResources: _aiEndpointResources,
@@ -108,8 +107,8 @@ export function Endpoints({
     resourceType: "endpoints",
     groupId: group_id,
     extractSuggestion: (data) => {
-      const id = data.id as string | null | undefined;
-      const base_url = data.base_url as string | null | undefined;
+      const id = data["id"] as string | null | undefined;
+      const base_url = data["base_url"] as string | null | undefined;
       if (!id) return null;
       return { id, base_url: base_url ?? null };
     },
@@ -159,11 +158,6 @@ export function Endpoints({
 
   const handleSelect = useCallback(
     async (selectedIds: string[]) => {
-      // Find newly selected IDs
-      const newlySelected = selectedIds.filter(
-        (id) => !ids.includes(id) && !createdEndpointIdsRef.current.has(id)
-      );
-
       // Create resources for newly selected endpoints (endpoints are generated, not selected)
       // So we don't create resources here - they're created via generation
       // Update parent state
@@ -198,15 +192,6 @@ export function Endpoints({
 
   // AI suggestion state
   const showDiff = aiSuggestions.length > 0;
-  const aiSuggestedIds = useMemo(
-    () =>
-      new Set(
-        aiSuggestions
-          .map((e) => e.id)
-          .filter(Boolean) as string[]
-      ),
-    [aiSuggestions]
-  );
 
   // Accept AI suggestion - add AI-suggested endpoints to selection
   const handleAccept = useCallback(() => {

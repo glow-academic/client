@@ -2,7 +2,9 @@
 
 import { useSocket } from "@/contexts/socket-context";
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { AppSocket } from "@/contexts/socket-context";
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type SocketEventData = any;
 
 /**
  * Shared hook for resource-level AI suggestion state management.
@@ -15,7 +17,7 @@ export function useResourceAi<TSuggestion>(config: {
   /** Group ID for filtering socket events */
   groupId: string | null | undefined;
   /** Extract a typed suggestion from the generation_complete event payload */
-  extractSuggestion: (data: Record<string, unknown>) => TSuggestion | null;
+  extractSuggestion: (data: SocketEventData) => TSuggestion | null;
   /** When true, accumulate suggestions into an array (for multi-value resources like Departments) */
   accumulate?: boolean;
 }): {
@@ -45,12 +47,12 @@ export function useResourceAi<TSuggestion>(config: {
     const completeEvent = `${resourceType}_generation_complete`;
     const errorEvent = `${resourceType}_generation_error`;
 
-    const handleStarted = (data: Record<string, unknown>) => {
+    const handleStarted = (data: SocketEventData) => {
       if (groupId && data.group_id !== groupId) return;
       setIsGenerating(true);
     };
 
-    const handleComplete = (data: Record<string, unknown>) => {
+    const handleComplete = (data: SocketEventData) => {
       if (groupId && data.group_id !== groupId) return;
       setIsGenerating(false);
       const suggestion = extractRef.current(data);
@@ -63,7 +65,7 @@ export function useResourceAi<TSuggestion>(config: {
       }
     };
 
-    const handleError = (data: Record<string, unknown>) => {
+    const handleError = (data: SocketEventData) => {
       if (groupId && data.group_id !== groupId) return;
       setIsGenerating(false);
     };
@@ -71,8 +73,8 @@ export function useResourceAi<TSuggestion>(config: {
     // Type-safe socket.on requires exact event names from ServerToClientEvents.
     // Since resourceType is dynamic, we cast to use the generic listener API.
     const s = socket as unknown as {
-      on: (event: string, handler: (data: Record<string, unknown>) => void) => void;
-      off: (event: string, handler: (data: Record<string, unknown>) => void) => void;
+      on: (event: string, handler: (data: SocketEventData) => void) => void;
+      off: (event: string, handler: (data: SocketEventData) => void) => void;
     };
 
     s.on(startedEvent, handleStarted);

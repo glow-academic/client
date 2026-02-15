@@ -111,7 +111,7 @@ export function Colors({
   showSelectedFilter = false,
   onShowSelectedChange: _onShowSelectedChange,
   group_id,
-  create_tool_id,
+  create_tool_id: _create_tool_id,
   showAiGenerate = false,
   createColorsAction,
   isAutosaveEnabled = true,

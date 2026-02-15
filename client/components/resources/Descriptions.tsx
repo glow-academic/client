@@ -203,7 +203,7 @@ export function Descriptions({
   disabled = false,
   onDescriptionIdChange,
   onGenerate,
-  isGenerating = false,
+  isGenerating: _isGenerating = false,
   label = "Description",
   placeholder = "Enter description",
   required = false,
@@ -212,7 +212,7 @@ export function Descriptions({
   "data-testid": dataTestId,
   helpText,
   group_id,
-  create_tool_id,
+  create_tool_id: _create_tool_id,
   showAiGenerate = false,
   createDescriptionsAction,
   searchTerm,
@@ -224,10 +224,10 @@ export function Descriptions({
   descriptionId,
   suggestions,
   // AI diff view props
-  aiResource,
-  onAccept,
-  onReject,
-  onGenerationComplete,
+  aiResource: _aiResource,
+  onAccept: _onAccept,
+  onReject: _onReject,
+  onGenerationComplete: _onGenerationComplete,
 }: DescriptionsProps) {
   // Use standardized props with fallback to legacy props
   const resource = description_resource ?? descriptionResource ?? null;

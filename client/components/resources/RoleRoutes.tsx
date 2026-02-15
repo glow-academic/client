@@ -86,7 +86,7 @@ export function RoleRoutes({
   onReject: _onReject,
 }: RoleRoutesProps) {
   // AI suggestion handling via shared hook (accumulate mode: each event = one role route)
-  const { isGenerating: aiIsGenerating, aiSuggestions, accept: acceptAi, reject: rejectAi } = useResourceAi<
+  const { aiSuggestions, accept: acceptAi, reject: rejectAi } = useResourceAi<
     Pick<RoleRoutesResourceItem, "id" | "role_id" | "route_id">
   >({
     resourceType: "role_routes",

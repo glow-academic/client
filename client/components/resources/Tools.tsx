@@ -99,8 +99,8 @@ export function Tools({
     resourceType: "tools",
     groupId: group_id,
     extractSuggestion: (data) => {
-      const id = data.id as string | null | undefined;
-      const name = data.name as string | null | undefined;
+      const id = data["id"] as string | null | undefined;
+      const name = data["name"] as string | null | undefined;
       if (!id) return null;
       return { id, name: name ?? null };
     },

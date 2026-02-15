@@ -225,12 +225,6 @@ export function Slugs({
   // AI suggestion state
   const showDiff = aiSuggestions.length > 0;
 
-  // Get AI-suggested IDs (kept for potential future use)
-  const _aiSuggestedIds = useMemo(
-    () => new Set(aiSuggestions.map((r) => r.id).filter(Boolean) as string[]),
-    [aiSuggestions]
-  );
-
   // Accept AI suggestion - add AI-suggested slugs to selection
   const handleAccept = useCallback(() => {
     if (aiSuggestions.length === 0) return;

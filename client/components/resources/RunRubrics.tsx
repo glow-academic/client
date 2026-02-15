@@ -71,7 +71,7 @@ export function RunRubrics({
   onReject: _onReject,
 }: RunRubricsProps) {
   // AI suggestion handling via shared hook (accumulate mode: each event = one rubric)
-  const { isGenerating: aiIsGenerating, aiSuggestions, accept: acceptAi, reject: rejectAi } = useResourceAi<
+  const { aiSuggestions, accept: acceptAi, reject: rejectAi } = useResourceAi<
     Pick<RunRubricsResourceItem, "id" | "rubric_id">
   >({
     resourceType: "run_rubrics",
