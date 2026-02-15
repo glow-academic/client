@@ -20,7 +20,6 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from app.api.v4.artifacts.scenario.permissions import (
     SCENARIO_BASIC_RESOURCES,
     SCENARIO_CONTENT_RESOURCES,
-    SCENARIO_DOMAIN_METADATA,
     SCENARIO_RESOURCES,
     compute_can_edit,
     compute_departments_required,
@@ -76,7 +75,8 @@ from app.api.v4.artifacts.scenario.types import (
     ScenarioWebsocketViews,
 )
 from app.api.v4.auth.profile import get_auth_profile_internal
-from app.api.v4.permissions import select_agents_for_artifact
+from app.api.v4.auth.settings import get_auth_settings_internal
+from app.api.v4.permissions import resolve_agents_for_artifact
 from app.api.v4.resources.agents.get import get_agents_internal
 from app.api.v4.resources.departments.get import get_departments_internal
 from app.api.v4.resources.departments.search import search_departments_internal
@@ -113,7 +113,6 @@ from app.api.v4.resources.questions.search import search_questions_internal
 from app.api.v4.resources.tools.get import get_tools_internal
 from app.api.v4.resources.videos.get import get_videos_internal
 from app.api.v4.resources.videos.search import search_videos_internal
-from app.api.v4.types import CandidateAgent, build_domain_data
 from app.api.v4.views.drafts.get import get_draft_scenario_internal
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
@@ -190,8 +189,7 @@ class ScenarioInternalData:
     draft_version: int | None
     group_id: UUID | None
 
-    # Domain mappings
-    domain_ids_map: dict[str, UUID | None]
+    # Agent mappings
     agent_ids: dict[str, UUID | None]
 
     # Show/required flags
@@ -201,13 +199,10 @@ class ScenarioInternalData:
     # Suggestions (resource -> list of suggestion IDs)
     suggestions_map: dict[str, list[UUID]]
 
-    # Show AI generate flags (computed: domain_id exists AND agent exists)
+    # Show AI generate flags (computed: agent exists for resource)
     show_ai_generate_map: dict[str, bool]
     basic_show_ai_generate: bool
     content_show_ai_generate: bool
-
-    # Domain data for modals
-    domain_data_list: list[Any]  # list[DomainData]
 
     # Resources payload
     resources_payload: ScenarioResources
@@ -301,12 +296,21 @@ async def get_scenario_internal(
         d.department_id for d in profile_ctx.departments if d.department_id
     ]
 
+    # === GROUP ID: Create in Python (moved from SQL side-effect) ===
+    if draft_item and draft_item.group_id:
+        effective_group_id = draft_item.group_id
+    else:
+        async with pool.acquire() as c:
+            effective_group_id = await c.fetchval(
+                "INSERT INTO groups_entry (created_at, updated_at) VALUES (NOW(), NOW()) RETURNING id"
+            )
+
     async with pool.acquire() as conn:
         query1_params = GetScenarioAccessSqlParams(
             profile_id=profile_id,
             scenario_id=scenario_id,
             draft_id=draft_id,
-            draft_group_id=draft_item.group_id if draft_item is not None else None,
+            draft_group_id=effective_group_id,
             draft_version=draft_item.version if draft_item is not None else None,
         )
 
@@ -334,8 +338,6 @@ async def get_scenario_internal(
                     detail="You don't have access to this scenario. It may be restricted to other departments.",
                 )
 
-        # group_id is guaranteed by SQL (created inline if no draft)
-        effective_group_id = access_result.group_id
         effective_draft_version = access_result.effective_draft_version
 
         # === QUERY 2: ID Fetching (using user_department_ids from Query 1) ===
@@ -352,60 +354,23 @@ async def get_scenario_internal(
             await execute_sql_typed(conn, QUERY2_SQL_PATH, params=query2_params),
         )
 
-    # === PARSE CANDIDATE AGENTS FROM QUERY 2 AND COMPUTE AGENT IDS IN PYTHON ===
-    candidate_agents = CandidateAgent.from_sql_rows(ids_result.candidate_agents)
+    # === RESOLVE AGENTS FROM SETTINGS (source of truth) ===
+    async with pool.acquire() as settings_conn:
+        settings_data = await get_auth_settings_internal(
+            settings_conn, profile_id, bypass_cache
+        )
 
-    # Use Python scoring to select best agents for each resource
-    user_dept_set = set(user_department_ids) if user_department_ids else None
-    resources_needed = list(SCENARIO_RESOURCES)
-    agent_ids = select_agents_for_artifact(
-        candidates=candidate_agents,
-        artifact_resources=SCENARIO_RESOURCES,
-        resources_needed=resources_needed,
-        user_department_ids=user_dept_set,
-        require_mcp=False,
+    agent_ids, tool_ids_map_create, _link_tool_ids = resolve_agents_for_artifact(
+        settings_data.agent_tool_entries, SCENARIO_RESOURCES
     )
-
-    # === BUILD TOOL_IDS MAP FROM SELECTED AGENTS ===
-    tool_ids_map: dict[str, UUID | None] = {}
-
-    for resource in SCENARIO_RESOURCES:
-        selected_agent_id = agent_ids.get(resource)
-        if selected_agent_id:
-            for candidate in candidate_agents:
-                if candidate.agent_id == selected_agent_id:
-                    tool_ids_map[resource] = candidate.create_tool_ids.get(resource)
-                    break
-
-    # === EXTRACT DOMAIN IDS FROM QUERY 2 ===
-    domain_ids_map: dict[str, UUID | None] = {
-        "names": ids_result.name_domain_id,
-        "descriptions": ids_result.description_domain_id,
-        "problem_statements": ids_result.problem_statement_domain_id,
-        "flags": ids_result.flag_domain_id,
-        "departments": ids_result.departments_domain_id,
-        "personas": ids_result.personas_domain_id,
-        "documents": ids_result.documents_domain_id,
-        "parameters": ids_result.parameters_domain_id,
-        "fields": ids_result.parameter_fields_domain_id,
-        "objectives": ids_result.objectives_domain_id,
-        "images": ids_result.images_domain_id,
-        "videos": ids_result.videos_domain_id,
-        "questions": ids_result.questions_domain_id,
-    }
+    tool_ids_map = tool_ids_map_create
 
     # === COMPUTE SHOW_AI_GENERATE FLAGS ===
-    def compute_show_ai_generate(resource: str) -> bool:
-        """Returns True if domain_id exists AND agent exists for that resource."""
-        domain_id = domain_ids_map.get(resource)
-        agent_id = agent_ids.get(resource)
-        return domain_id is not None and agent_id is not None
-
     show_ai_generate_map = {
-        resource: compute_show_ai_generate(resource) for resource in SCENARIO_RESOURCES
+        resource: agent_ids.get(resource) is not None
+        for resource in SCENARIO_RESOURCES
     }
 
-    # Step-level show_ai_generate flags
     basic_show_ai_generate = any(
         show_ai_generate_map.get(r, False) for r in SCENARIO_BASIC_RESOURCES
     )
@@ -905,11 +870,6 @@ async def get_scenario_internal(
         "questions": compute_questions_required(),
     }
 
-    # Build rich domain metadata for client display
-    domain_data_list = build_domain_data(
-        domain_ids_map, show_flags_map, required_flags_map, SCENARIO_DOMAIN_METADATA
-    )
-
     # Build enriched flags list from ALL available scenario flags
     scenario_flags: list[ScenarioFlagConfig] = [
         ScenarioFlagConfig(
@@ -1135,8 +1095,7 @@ async def get_scenario_internal(
         disabled_reason=disabled_reason,
         draft_version=effective_draft_version,
         group_id=effective_group_id,
-        # Domain mappings
-        domain_ids_map=domain_ids_map,
+        # Agent mappings
         agent_ids=agent_ids,
         # Show/required flags
         show_flags_map=show_flags_map,
@@ -1147,8 +1106,7 @@ async def get_scenario_internal(
         show_ai_generate_map=show_ai_generate_map,
         basic_show_ai_generate=basic_show_ai_generate,
         content_show_ai_generate=content_show_ai_generate,
-        # Domain data and resources
-        domain_data_list=domain_data_list,
+        # Resources
         resources_payload=resources_payload,
         # Per-resource group IDs
         resource_group_ids=resource_group_ids,

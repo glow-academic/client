@@ -59,7 +59,8 @@ from app.api.v4.artifacts.cohort.types import (
     GetCohortWebsocketResponse,
 )
 from app.api.v4.auth.profile import get_auth_profile_internal
-from app.api.v4.permissions import select_agents_for_artifact
+from app.api.v4.auth.settings import get_auth_settings_internal
+from app.api.v4.permissions import has_tools_for_resource, resolve_agents_for_artifact
 from app.api.v4.resources.agents.get import get_agents_internal
 from app.api.v4.resources.departments.get import get_departments_internal
 from app.api.v4.resources.departments.search import search_departments_internal
@@ -77,7 +78,6 @@ from app.api.v4.resources.simulation_positions.get import (
 from app.api.v4.resources.simulations.get import get_simulations_internal
 from app.api.v4.resources.simulations.search import search_simulations_internal
 from app.api.v4.resources.tools.get import get_tools_internal
-from app.api.v4.types import CandidateAgent
 from app.api.v4.views.drafts.get import get_draft_cohort_internal
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
@@ -231,12 +231,21 @@ async def get_cohort_internal(
             if draft_items:
                 draft_item = draft_items[0]
 
+    # === GROUP ID: Create in Python (moved from SQL side-effect) ===
+    if draft_item and draft_item.group_id:
+        effective_group_id = draft_item.group_id
+    else:
+        async with pool.acquire() as c:
+            effective_group_id = await c.fetchval(
+                "INSERT INTO groups_entry (created_at, updated_at) VALUES (NOW(), NOW()) RETURNING id"
+            )
+
     async with pool.acquire() as conn:
         query1_params = GetCohortAccessSqlParams(
             profile_id=profile_id,
             cohort_id=cohort_id,
             draft_id=draft_id,
-            draft_group_id=draft_item.group_id if draft_item is not None else None,
+            draft_group_id=effective_group_id,
             draft_version=draft_item.version if draft_item is not None else None,
         )
 
@@ -266,7 +275,7 @@ async def get_cohort_internal(
             profile_id=profile_id,
             cohort_id=cohort_id,
             draft_id=draft_id,
-            group_id=access_result.group_id,
+            group_id=effective_group_id,
             user_department_ids=user_department_ids,
         )
 
@@ -275,63 +284,28 @@ async def get_cohort_internal(
             await execute_sql_typed(conn, QUERY2_SQL_PATH, params=query2_params),
         )
 
-    # === PARSE CANDIDATE AGENTS FROM QUERY 2 AND COMPUTE AGENT IDS IN PYTHON ===
-    candidate_agents = CandidateAgent.from_sql_rows(ids_result.candidate_agents)
+    # === RESOLVE AGENTS FROM SETTINGS (source of truth) ===
+    async with pool.acquire() as settings_conn:
+        settings_data = await get_auth_settings_internal(
+            settings_conn, profile_id, bypass_cache
+        )
 
-    # Use Python scoring to select best agents for each resource
-    user_dept_set = set(user_department_ids) if user_department_ids else None
-    resources_needed = list(COHORT_RESOURCES)
-    agent_ids = select_agents_for_artifact(
-        candidates=candidate_agents,
-        artifact_resources=COHORT_RESOURCES,
-        resources_needed=resources_needed,
-        user_department_ids=user_dept_set,
-        require_mcp=False,
+    agent_ids, create_tool_ids_map, link_tool_ids_map = resolve_agents_for_artifact(
+        settings_data.agent_tool_entries, COHORT_RESOURCES
     )
-
-    # === BUILD TOOL_IDS MAPS FROM SELECTED AGENTS ===
-    create_tool_ids_map: dict[str, UUID | None] = {}
-    link_tool_ids_map: dict[str, UUID | None] = {}
-
-    for resource in COHORT_RESOURCES:
-        selected_agent_id = agent_ids.get(resource)
-        if selected_agent_id:
-            for candidate in candidate_agents:
-                if candidate.agent_id == selected_agent_id:
-                    create_tool_ids_map[resource] = candidate.create_tool_ids.get(
-                        resource
-                    )
-                    link_tool_ids_map[resource] = candidate.link_tool_ids.get(resource)
-                    break
 
     # === COMPUTE SHOW_AI_GENERATE FLAGS ===
-    def compute_show_ai_generate(resource: str) -> bool:
-        """Returns True when an agent is configured for the resource."""
-        return agent_ids.get(resource) is not None
+    show_ai_generate_map = {
+        resource: agent_ids.get(resource) is not None for resource in COHORT_RESOURCES
+    }
 
-    name_show_ai_generate = compute_show_ai_generate("names")
-    description_show_ai_generate = compute_show_ai_generate("descriptions")
-    flag_show_ai_generate = compute_show_ai_generate("flags")
-    departments_show_ai_generate = compute_show_ai_generate("departments")
-    simulations_show_ai_generate = compute_show_ai_generate("simulations")
-    simulation_positions_show_ai_generate = compute_show_ai_generate(
-        "simulation_positions"
-    )
-
-    # Step-level flags
     basic_show_ai_generate = any(
-        [
-            name_show_ai_generate,
-            description_show_ai_generate,
-            flag_show_ai_generate,
-            departments_show_ai_generate,
-        ]
+        show_ai_generate_map.get(r, False)
+        for r in ("names", "descriptions", "flags", "departments")
     )
     simulations_step_show_ai_generate = any(
-        [
-            simulations_show_ai_generate,
-            simulation_positions_show_ai_generate,
-        ]
+        show_ai_generate_map.get(r, False)
+        for r in ("simulations", "simulation_positions")
     )
 
     # === PYTHON BUSINESS LOGIC ===
@@ -361,7 +335,7 @@ async def get_cohort_internal(
                 None,
                 20,
                 0,
-                access_result.group_id,
+                effective_group_id,
                 None,
                 name_ids,
                 bypass_cache,
@@ -377,7 +351,7 @@ async def get_cohort_internal(
                 None,
                 20,
                 0,
-                access_result.group_id,
+                effective_group_id,
                 "recent",
                 description_ids,
                 bypass_cache,
@@ -431,7 +405,7 @@ async def get_cohort_internal(
                 search=None,
                 limit_count=20,
                 offset_count=0,
-                draft_id=access_result.group_id,
+                draft_id=effective_group_id,
                 suggest_source="recent",
                 exclude_ids=simulation_ids,
                 bypass_cache=bypass_cache,
@@ -572,16 +546,6 @@ async def get_cohort_internal(
         "simulation_positions": compute_simulation_positions_required(),
     }
 
-    # Build show_ai_generate map
-    show_ai_generate_map = {
-        "names": name_show_ai_generate,
-        "descriptions": description_show_ai_generate,
-        "flags": flag_show_ai_generate,
-        "departments": departments_show_ai_generate,
-        "simulations": simulations_show_ai_generate,
-        "simulation_positions": simulation_positions_show_ai_generate,
-    }
-
     # Build suggestions map
     suggestions_map: dict[str, list[UUID]] = {
         "names": name_suggestions_ids,
@@ -611,7 +575,6 @@ async def get_cohort_internal(
     )
 
     # Per-resource group IDs (cohort uses single group_id for all resources)
-    effective_group_id = access_result.group_id
     resource_group_ids: dict[str, UUID | None] = {
         "names": effective_group_id,
         "descriptions": effective_group_id,

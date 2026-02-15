@@ -58,7 +58,9 @@ latest_grade AS (
         g.chat_id,
         g.score AS grade_score,
         g.passed AS grade_passed,
-        g.time_taken AS grade_time_taken
+        g.time_taken AS grade_time_taken,
+        g.total_points AS grade_total_points,
+        g.pass_points AS grade_pass_points
     FROM simulation_grades_entry g
     WHERE g.active = TRUE
     ORDER BY g.chat_id, g.created_at DESC
@@ -223,6 +225,8 @@ SELECT
     lg.grade_score,
     lg.grade_passed,
     lg.grade_time_taken,
+    lg.grade_total_points,
+    lg.grade_pass_points,
     COALESCE(fa.feedbacks, ARRAY[]::types.mv_feedback[]) AS feedbacks,
     COALESCE(aa.analyses, ARRAY[]::types.mv_analysis[]) AS analyses,
     bc.problem_statement_id,

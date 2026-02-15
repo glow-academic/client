@@ -1,5 +1,6 @@
 -- Access check for cohort get (lightweight)
 -- Returns user context + cohort access context only
+-- Group ID creation moved to Python (this query is now STABLE)
 
 -- Drop all versions of the function using DO block to handle signature variations
 DO $$
@@ -34,7 +35,7 @@ RETURNS TABLE (
     usage_count int
 )
 LANGUAGE sql
-VOLATILE
+STABLE
 AS $$
 -- User context (actor_name, user_role, department_ids) comes from get_profile_context_internal() in Python
 WITH params AS (
@@ -47,16 +48,6 @@ cohort_exists_check AS (
             WHEN (SELECT cohort_id FROM params) IS NULL THEN NULL::boolean
             ELSE EXISTS(SELECT 1 FROM cohort_artifact WHERE id = (SELECT cohort_id FROM params))::boolean
         END as cohort_exists
-),
--- Create a new group if no draft_group_id provided (guarantees group_id is always returned)
-ensure_group AS (
-    INSERT INTO groups_entry (created_at, updated_at)
-    SELECT NOW(), NOW()
-    WHERE draft_group_id IS NULL
-    RETURNING id
-),
-effective_group AS (
-    SELECT COALESCE(draft_group_id, (SELECT id FROM ensure_group)) as group_id
 ),
 -- Get cohort departments (for access check)
 cohort_departments_data AS (
@@ -79,13 +70,10 @@ SELECT
     -- Basic metadata
     (SELECT cohort_exists FROM cohort_exists_check) as cohort_exists,
     draft_version as effective_draft_version,
-    (SELECT group_id FROM effective_group) as group_id,
-
-    -- User context for Python permission logic
+    draft_group_id as group_id,
 
     -- Cohort state for Python permission logic
     COALESCE((SELECT department_ids FROM cohort_departments_data), ARRAY[]::uuid[]) as cohort_department_ids,
     COALESCE((SELECT usage_count FROM usage_count_data), 0) as usage_count
 FROM params x;
 $$;
-

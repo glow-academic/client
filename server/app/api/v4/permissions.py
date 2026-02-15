@@ -4,10 +4,82 @@ This module provides reusable agent scoring and selection logic
 for artifacts that need Python-based agent selection.
 """
 
+from collections import defaultdict
 from datetime import datetime
 from uuid import UUID
 
+from app.api.v4.auth.types import SettingsAgentToolEntry
 from app.api.v4.types import CandidateAgent
+
+
+def resolve_agents_for_artifact(
+    entries: list[SettingsAgentToolEntry],
+    artifact_resources: set[str],
+) -> tuple[dict[str, UUID | None], dict[str, UUID | None], dict[str, UUID | None]]:
+    """Resolve best agent and tool IDs for each resource using settings entries.
+
+    Groups entries by agent_id to compute coverage (how many artifact resources
+    each agent covers). For each resource, picks the agent with highest coverage.
+
+    Returns:
+        (agent_ids, create_tool_ids, link_tool_ids) — all resource→UUID|None dicts
+    """
+    if not entries:
+        empty: dict[str, UUID | None] = {r: None for r in artifact_resources}
+        return empty, dict(empty), dict(empty)
+
+    # Group entries by agent: agent_id -> list of entries
+    agent_entries: dict[UUID, list[SettingsAgentToolEntry]] = defaultdict(list)
+    for e in entries:
+        agent_entries[e.agent_id].append(e)
+
+    # Compute coverage per agent (how many artifact resources it covers)
+    agent_coverage: dict[UUID, int] = {}
+    for agent_id, elist in agent_entries.items():
+        agent_resources = {e.resource for e in elist}
+        agent_coverage[agent_id] = len(agent_resources & artifact_resources)
+
+    agent_ids: dict[str, UUID | None] = {}
+    create_tool_ids: dict[str, UUID | None] = {}
+    link_tool_ids: dict[str, UUID | None] = {}
+
+    for resource in artifact_resources:
+        # Find all entries for this resource
+        resource_entries = [e for e in entries if e.resource == resource]
+        if not resource_entries:
+            agent_ids[resource] = None
+            create_tool_ids[resource] = None
+            link_tool_ids[resource] = None
+            continue
+
+        # Pick agent with highest coverage, then by agent_id for determinism
+        best_entry = max(
+            resource_entries,
+            key=lambda e: (agent_coverage.get(e.agent_id, 0), e.agent_id),
+        )
+        agent_ids[resource] = best_entry.agent_id
+
+        # Find create/link tool IDs for this agent+resource
+        agent_resource_entries = [
+            e
+            for e in resource_entries
+            if e.agent_id == best_entry.agent_id
+        ]
+        create_tool_ids[resource] = next(
+            (e.tool_id for e in agent_resource_entries if e.is_creatable), None
+        )
+        link_tool_ids[resource] = next(
+            (e.tool_id for e in agent_resource_entries if not e.is_creatable), None
+        )
+
+    return agent_ids, create_tool_ids, link_tool_ids
+
+
+def has_tools_for_resource(
+    entries: list[SettingsAgentToolEntry], resource: str
+) -> bool:
+    """Check if any agent has tools for the given resource."""
+    return any(e.resource == resource for e in entries)
 
 
 def score_agent_for_artifact(

@@ -71,7 +71,8 @@ from app.api.v4.artifacts.simulation.types import (
     SimulationWebsocketViews,
 )
 from app.api.v4.auth.profile import get_auth_profile_internal
-from app.api.v4.permissions import select_agents_for_artifact
+from app.api.v4.auth.settings import get_auth_settings_internal
+from app.api.v4.permissions import has_tools_for_resource, resolve_agents_for_artifact
 from app.api.v4.resources.agents.get import get_agents_internal
 from app.api.v4.resources.departments.get import get_departments_internal
 from app.api.v4.resources.departments.search import search_departments_internal
@@ -106,7 +107,6 @@ from app.api.v4.resources.scenario_time_limits.search import (
 )
 from app.api.v4.resources.scenarios.search import search_scenarios_internal
 from app.api.v4.resources.tools.get import get_tools_internal
-from app.api.v4.types import CandidateAgent
 from app.api.v4.views.drafts.get import get_draft_simulation_internal
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
@@ -222,14 +222,21 @@ async def get_simulation_internal(
         d.department_id for d in profile_ctx.departments if d.department_id
     ]
 
+    # === GROUP ID: Create in Python (moved from SQL side-effect) ===
+    if draft_item and draft_item.group_id:
+        effective_group_id = draft_item.group_id
+    else:
+        async with pool.acquire() as c:
+            effective_group_id = await c.fetchval(
+                "INSERT INTO groups_entry (created_at, updated_at) VALUES (NOW(), NOW()) RETURNING id"
+            )
+
     async with pool.acquire() as conn:
         # === QUERY 1: Access Check ===
         query1_params = GetSimulationAccessSqlParams(
             profile_id=profile_id,
             simulation_id=simulation_id,
             draft_id=draft_id,
-            draft_group_id=draft_item.group_id if draft_item is not None else None,
-            draft_version=draft_item.version if draft_item is not None else None,
         )
 
         access_result = cast(
@@ -254,8 +261,6 @@ async def get_simulation_internal(
                     detail="You don't have access to this simulation. It may be restricted to other departments.",
                 )
 
-        # group_id is guaranteed by SQL (created inline if no draft)
-        effective_group_id = access_result.group_id
         effective_draft_version = access_result.effective_draft_version
 
         # === QUERY 2: ID Fetching ===
@@ -272,52 +277,25 @@ async def get_simulation_internal(
             await execute_sql_typed(conn, QUERY2_SQL_PATH, params=query2_params),
         )
 
-    # === PARSE CANDIDATE AGENTS AND SELECT BEST AGENTS ===
-    candidate_agents = CandidateAgent.from_sql_rows(ids_result.candidate_agents)
-    user_dept_set = set(user_department_ids) if user_department_ids else None
+    # === RESOLVE AGENTS FROM SETTINGS (source of truth) ===
+    async with pool.acquire() as settings_conn:
+        settings_data = await get_auth_settings_internal(
+            settings_conn, profile_id, bypass_cache
+        )
 
-    resources_needed = list(SIMULATION_RESOURCES)
-    agent_ids = select_agents_for_artifact(
-        candidates=candidate_agents,
-        artifact_resources=SIMULATION_RESOURCES,
-        resources_needed=resources_needed,
-        user_department_ids=user_dept_set,
-        require_mcp=False,
+    agent_ids, create_tool_ids_map, link_tool_ids_map = resolve_agents_for_artifact(
+        settings_data.agent_tool_entries, SIMULATION_RESOURCES
     )
 
-    # === BUILD TOOL_IDS MAPS FROM SELECTED AGENTS ===
-    create_tool_ids_map: dict[str, UUID | None] = {}
-    link_tool_ids_map: dict[str, UUID | None] = {}
-
-    for resource in SIMULATION_RESOURCES:
-        selected_agent_id = agent_ids.get(resource)
-        if selected_agent_id:
-            for candidate in candidate_agents:
-                if candidate.agent_id == selected_agent_id:
-                    create_tool_ids_map[resource] = candidate.create_tool_ids.get(
-                        resource
-                    )
-                    link_tool_ids_map[resource] = candidate.link_tool_ids.get(resource)
-                    break
-
     # === COMPUTE SHOW_AI_GENERATE FLAGS ===
-    def compute_show_ai_generate(resource: str) -> bool:
-        agent_id = agent_ids.get(resource)
-        return agent_id is not None
-
     show_ai_generate_map = {
-        resource: compute_show_ai_generate(resource)
+        resource: agent_ids.get(resource) is not None
         for resource in SIMULATION_RESOURCES
     }
 
     basic_show_ai_generate = any(
-        [
-            show_ai_generate_map.get("names", False),
-            show_ai_generate_map.get("descriptions", False),
-            show_ai_generate_map.get("flags", False),
-            show_ai_generate_map.get("departments", False),
-            show_ai_generate_map.get("scenarios", False),
-        ]
+        show_ai_generate_map.get(r, False)
+        for r in ("names", "descriptions", "flags", "departments", "scenarios")
     )
 
     # === PYTHON BUSINESS LOGIC ===
@@ -625,7 +603,7 @@ async def get_simulation_internal(
     ]
 
     # Compute show/required flags
-    names_has_tools = ids_result.names_has_tools or False
+    names_has_tools = has_tools_for_resource(settings_data.agent_tool_entries, "names")
     show_name = compute_show_name(names_has_tools)
     show_description_flag = compute_show_description()
     show_departments_flag = compute_show_departments(len(departments))

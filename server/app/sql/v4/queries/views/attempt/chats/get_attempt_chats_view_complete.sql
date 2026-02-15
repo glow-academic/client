@@ -61,11 +61,13 @@ CREATE TYPE types.q_get_attempt_chats_view_v4_response AS (
     created_at timestamptz
 );
 
--- Grade composite type (no grade_id - not a resource, no rubric points - fetched via rubric handler)
+-- Grade composite type (no grade_id - not a resource)
 CREATE TYPE types.q_get_attempt_chats_view_v4_grade AS (
     score float,
     passed boolean,
-    time_taken int
+    time_taken int,
+    total_points int,
+    pass_points int
 );
 
 -- Analysis item type
@@ -236,7 +238,7 @@ AS $$
             mv.chat_created_at AS created_at,
             mv.chat_completed AS completed,
             -- Grade (composite type)
-            (mv.grade_score, mv.grade_passed, mv.grade_time_taken)::types.q_get_attempt_chats_view_v4_grade AS grade,
+            (mv.grade_score, mv.grade_passed, mv.grade_time_taken, mv.grade_total_points, mv.grade_pass_points)::types.q_get_attempt_chats_view_v4_grade AS grade,
             -- Feedbacks
             ft.feedbacks,
             -- Analyses

@@ -1395,6 +1395,37 @@ class DuplicateAuthApiResponse(BaseModel):
 
 
 
+# Generated from: get_agent_tool_entries
+
+class GetAgentToolEntriesSqlParams(BaseModel):
+
+    agent_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.agent_ids,
+        )
+
+class GetAgentToolEntriesSqlRow(BaseModel):
+
+    agent_id: UUID | None = None
+    tool_id: UUID | None = None
+    resource: str | None = None
+    is_creatable: bool | None = None
+
+class GetAgentToolEntriesApiRequest(BaseModel):
+
+    agent_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+
+class GetAgentToolEntriesApiResponse(BaseModel):
+
+    agent_id: UUID | None = None
+    tool_id: UUID | None = None
+    resource: str | None = None
+    is_creatable: bool | None = None
+
+
+
 # Generated from: get_auth_access
 
 class GetAuthAccessSqlParams(BaseModel):
@@ -2181,18 +2212,6 @@ class GetCohortIdsSqlRow(BaseModel):
     description_suggestions: list[UUID] | None = None
     department_suggestions: list[UUID] | None = None
     simulation_suggestions: list[UUID] | None = None
-    candidate_agents: Any | None = None
-    names_has_tools: bool | None = None
-    descriptions_has_tools: bool | None = None
-    flags_has_tools: bool | None = None
-    departments_has_tools: bool | None = None
-    simulations_has_tools: bool | None = None
-    names_domain_id: UUID | None = None
-    descriptions_domain_id: UUID | None = None
-    flags_domain_id: UUID | None = None
-    departments_domain_id: UUID | None = None
-    simulations_domain_id: UUID | None = None
-    simulation_positions_domain_id: UUID | None = None
 
 class GetCohortIdsApiRequest(BaseModel):
 
@@ -2213,18 +2232,6 @@ class GetCohortIdsApiResponse(BaseModel):
     description_suggestions: list[UUID] | None = None
     department_suggestions: list[UUID] | None = None
     simulation_suggestions: list[UUID] | None = None
-    candidate_agents: Any | None = None
-    names_has_tools: bool | None = None
-    descriptions_has_tools: bool | None = None
-    flags_has_tools: bool | None = None
-    departments_has_tools: bool | None = None
-    simulations_has_tools: bool | None = None
-    names_domain_id: UUID | None = None
-    descriptions_domain_id: UUID | None = None
-    flags_domain_id: UUID | None = None
-    departments_domain_id: UUID | None = None
-    simulations_domain_id: UUID | None = None
-    simulation_positions_domain_id: UUID | None = None
 
 
 
@@ -21840,46 +21847,6 @@ class GetNameByIdApiResponse(BaseModel):
 
 
 
-# Generated from: get_simulation_access
-
-class GetSimulationAccessSqlParams(BaseModel):
-
-    profile_id: UUID
-    simulation_id: UUID | None = None
-    draft_id: UUID | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.profile_id,
-            self.simulation_id,
-            self.draft_id,
-        )
-
-class GetSimulationAccessSqlRow(BaseModel):
-
-    simulation_department_ids: list[UUID] | None = None
-    simulation_exists: bool | None = None
-    group_id: UUID | None = None
-    draft_version: int | None = None
-    cohort_usage_count: int | None = None
-    effective_draft_version: int | None = None
-
-class GetSimulationAccessApiRequest(BaseModel):
-
-    simulation_id: UUID | None = None
-    draft_id: UUID | None = None
-
-class GetSimulationAccessApiResponse(BaseModel):
-
-    simulation_department_ids: list[UUID] | None = None
-    simulation_exists: bool | None = None
-    group_id: UUID | None = None
-    draft_version: int | None = None
-    cohort_usage_count: int | None = None
-    effective_draft_version: int | None = None
-
-
-
 # Generated from: get_simulation_docs
 
 class GetSimulationDocsSqlParams(BaseModel):
@@ -21936,27 +21903,6 @@ class GetSimulationIdsSqlRow(BaseModel):
     scenario_rubric_ids: list[UUID] | None = None
     scenario_time_limit_ids: list[UUID] | None = None
     scenario_persona_ids: list[UUID] | None = None
-    candidate_agents: Any | None = None
-    names_has_tools: bool | None = None
-    descriptions_has_tools: bool | None = None
-    flags_has_tools: bool | None = None
-    departments_has_tools: bool | None = None
-    scenarios_has_tools: bool | None = None
-    scenario_flags_has_tools: bool | None = None
-    scenario_personas_has_tools: bool | None = None
-    scenario_positions_has_tools: bool | None = None
-    scenario_rubrics_has_tools: bool | None = None
-    scenario_time_limits_has_tools: bool | None = None
-    name_domain_id: UUID | None = None
-    description_domain_id: UUID | None = None
-    flag_domain_id: UUID | None = None
-    departments_domain_id: UUID | None = None
-    scenarios_domain_id: UUID | None = None
-    scenario_flags_domain_id: UUID | None = None
-    scenario_personas_domain_id: UUID | None = None
-    scenario_positions_domain_id: UUID | None = None
-    scenario_rubrics_domain_id: UUID | None = None
-    scenario_time_limits_domain_id: UUID | None = None
 
 class GetSimulationIdsApiRequest(BaseModel):
 
@@ -21977,27 +21923,6 @@ class GetSimulationIdsApiResponse(BaseModel):
     scenario_rubric_ids: list[UUID] | None = None
     scenario_time_limit_ids: list[UUID] | None = None
     scenario_persona_ids: list[UUID] | None = None
-    candidate_agents: Any | None = None
-    names_has_tools: bool | None = None
-    descriptions_has_tools: bool | None = None
-    flags_has_tools: bool | None = None
-    departments_has_tools: bool | None = None
-    scenarios_has_tools: bool | None = None
-    scenario_flags_has_tools: bool | None = None
-    scenario_personas_has_tools: bool | None = None
-    scenario_positions_has_tools: bool | None = None
-    scenario_rubrics_has_tools: bool | None = None
-    scenario_time_limits_has_tools: bool | None = None
-    name_domain_id: UUID | None = None
-    description_domain_id: UUID | None = None
-    flag_domain_id: UUID | None = None
-    departments_domain_id: UUID | None = None
-    scenarios_domain_id: UUID | None = None
-    scenario_flags_domain_id: UUID | None = None
-    scenario_personas_domain_id: UUID | None = None
-    scenario_positions_domain_id: UUID | None = None
-    scenario_rubrics_domain_id: UUID | None = None
-    scenario_time_limits_domain_id: UUID | None = None
 
 
 
@@ -24288,6 +24213,8 @@ class QGetAttemptChatsViewV4Grade(BaseModel):
     score: float | None
     passed: bool | None
     time_taken: int | None
+    total_points: int | None
+    pass_points: int | None
 
 
 
@@ -26462,6 +26389,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "DuplicateAuthSqlRow",
         "DuplicateAuthApiRequest",
         "DuplicateAuthApiResponse",
+    ),
+    "app/sql/v4/queries/auth/get_agent_tool_entries_complete.sql": (
+        "GetAgentToolEntriesSqlParams",
+        "GetAgentToolEntriesSqlRow",
+        "GetAgentToolEntriesApiRequest",
+        "GetAgentToolEntriesApiResponse",
     ),
     "app/sql/v4/queries/auth/get_auth_access_complete.sql": (
         "GetAuthAccessSqlParams",
@@ -29367,12 +29300,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetNameByIdApiRequest",
         "GetNameByIdApiResponse",
     ),
-    "app/sql/v4/queries/simulations/get_simulation_access_complete.sql": (
-        "GetSimulationAccessSqlParams",
-        "GetSimulationAccessSqlRow",
-        "GetSimulationAccessApiRequest",
-        "GetSimulationAccessApiResponse",
-    ),
     "app/sql/v4/queries/simulations/get_simulation_docs_complete.sql": (
         "GetSimulationDocsSqlParams",
         "GetSimulationDocsSqlRow",
@@ -30106,6 +30033,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/queries/auth/duplicate_auth_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/auth/get_agent_tool_entries_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -32526,11 +32458,6 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/queries/simulations/get_name_by_id_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/queries/simulations/get_simulation_access_complete.sql"]
     ) -> SqlString: ...
 
     @overload

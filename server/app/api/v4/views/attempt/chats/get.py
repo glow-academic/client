@@ -106,6 +106,8 @@ async def get_attempt_chats_internal(
                     score=item.grade.score,
                     passed=item.grade.passed,
                     time_taken=item.grade.time_taken,
+                    total_points=item.grade.total_points,
+                    pass_points=item.grade.pass_points,
                 )
 
             # Transform analyses

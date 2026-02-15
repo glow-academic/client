@@ -15,7 +15,11 @@ from app.api.v4.auth.permissions import (
     build_artifact_has_generation_map,
     derive_theme_tokens,
 )
-from app.api.v4.auth.types import AuthSettingsInternalData, GetAuthSettingsApiResponse
+from app.api.v4.auth.types import (
+    AuthSettingsInternalData,
+    GetAuthSettingsApiResponse,
+    SettingsAgentToolEntry,
+)
 from app.api.v4.resources.agents.get import get_agents_internal
 from app.api.v4.resources.settings.get import get_settings_internal
 from app.api.v4.resources.tools.get import get_tools_internal
@@ -23,6 +27,8 @@ from app.infra.v4.activity.audit import audit_activity
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
 from app.sql.types import (
+    GetAgentToolEntriesSqlParams,
+    GetAgentToolEntriesSqlRow,
     GetProfileContextApiRequest,
     GetSettingsThemeDataSqlParams,
     GetSettingsThemeDataSqlRow,
@@ -31,6 +37,9 @@ from app.utils.sql_helper import execute_sql_typed
 
 SQL_SETTINGS_THEME_PATH = (
     "app/sql/v4/queries/settings/get_settings_theme_data_complete.sql"
+)
+SQL_AGENT_TOOL_ENTRIES_PATH = (
+    "app/sql/v4/queries/auth/get_agent_tool_entries_complete.sql"
 )
 
 router = APIRouter()
@@ -108,6 +117,30 @@ async def get_auth_settings_internal(
                 c, list(set(all_tool_ids)), bypass_cache
             )
 
+    # Resolve agent→tool→resource entries for settings agents
+    agent_tool_entries: list[SettingsAgentToolEntry] = []
+    if settings_agent_ids:
+        async with pool.acquire() as c:
+            entry_params = GetAgentToolEntriesSqlParams(
+                agent_ids=list(settings_agent_ids)
+            )
+            entry_rows = cast(
+                list[GetAgentToolEntriesSqlRow],
+                await execute_sql_typed(
+                    c, SQL_AGENT_TOOL_ENTRIES_PATH, params=entry_params, multi_row=True
+                ),
+            )
+            agent_tool_entries = [
+                SettingsAgentToolEntry(
+                    agent_id=row.agent_id,
+                    tool_id=row.tool_id,
+                    resource=row.resource,
+                    is_creatable=row.is_creatable or False,
+                )
+                for row in entry_rows
+                if row.agent_id and row.tool_id and row.resource
+            ]
+
     theme_primitives = {
         "primary": settings_theme.primary_color or "",
         "accent": settings_theme.accent or "",
@@ -135,6 +168,7 @@ async def get_auth_settings_internal(
         artifact_has_generation=build_artifact_has_generation_map(
             access.artifact_agent_ids
         ),
+        agent_tool_entries=agent_tool_entries,
     )
 
 

@@ -63,6 +63,9 @@ user_cohorts AS (
     JOIN cohort_cohorts_junction ccj
       ON ccj.cohorts_id = pcj.cohort_id
      AND ccj.active = true
+    JOIN cohorts_resource cr
+      ON cr.id = ccj.cohorts_id
+     AND cr.active = true
     WHERE pcj.profile_id = (SELECT profile_id FROM params)
       AND pcj.active = true
 ),

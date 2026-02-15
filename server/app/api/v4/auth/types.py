@@ -48,6 +48,16 @@ class AuthProfileInternalData:
 
 
 @dataclass
+class SettingsAgentToolEntry:
+    """Flat agent→tool→resource entry resolved from settings chain."""
+
+    agent_id: UUID
+    tool_id: UUID
+    resource: str  # e.g. "names", "colors", "instructions"
+    is_creatable: bool  # from tool_creatable flag
+
+
+@dataclass
 class AuthSettingsInternalData:
     """Hydrated settings — settings resource + agents + tools + theme."""
 
@@ -58,6 +68,7 @@ class AuthSettingsInternalData:
     settings_theme: GetSettingsThemeDataSqlRow
     settings_tokens: QGetProfileContextV4ThemeTokens
     artifact_has_generation: dict[str, bool]
+    agent_tool_entries: list[SettingsAgentToolEntry]
 
 
 class GetProfileContextApiResponse(BaseModel):
