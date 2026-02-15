@@ -8,7 +8,7 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
-from app.api.v4.types import BaseResourceSection
+from app.api.v4.types import BaseResourceSection, ListFilterSection
 from app.api.v4.views.drafts.types import DraftToolViewItem
 from app.sql.types import (
     QGetAgentsV4Item,
@@ -169,6 +169,9 @@ class ListToolApiTool(BaseModel):
 class ListToolApiResponse(BaseModel):
     actor_name: str | None = None
     tools: list[ListToolApiTool] | None = None
+    department_filter: ListFilterSection | None = None
+    agent_filter: ListFilterSection | None = None
+    creatable_filter: ListFilterSection | None = None
     total_count: int | None = None
 
 

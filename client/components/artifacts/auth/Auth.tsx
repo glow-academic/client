@@ -31,7 +31,7 @@ import { useFlushRegistry } from "@/hooks/use-flush-registry";
 import { useGenerationModal } from "@/hooks/use-generation-modal";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import {
-  buildResourceActions,
+  buildDraftPayload,
   checkHasResourceIds,
   computeEffectiveFormState,
   type ResourceConfig,
@@ -40,7 +40,6 @@ import { parseAsString, type Parser } from "nuqs";
 
 type SaveAuthIn = InputOf<"/api/v4/artifacts/auths/save", "post">;
 type SaveAuthOut = OutputOf<"/api/v4/artifacts/auths/save", "post">;
-type SaveAuthBody = NonNullable<SaveAuthIn["body"]>;
 type PatchAuthDraftIn = InputOf<"/api/v4/artifacts/auths/draft", "patch">;
 type PatchAuthDraftOut = OutputOf<"/api/v4/artifacts/auths/draft", "patch">;
 type CreateDraftNamesIn = InputOf<"/api/v4/resources/names", "post">;
@@ -250,19 +249,15 @@ function AuthComponent({
     ): Record<string, unknown> => ({
       input_draft_id: inputDraftId || null,
       group_id: s?.group_id ?? null,
-      ...buildResourceActions(AUTH_RESOURCES, {
+      ...buildDraftPayload(AUTH_RESOURCES, {
         formState: formStateRef.current,
         referenceState: lastPatchedFormStateRef.current,
         flushResults: flushResults ?? {},
-        entityData: s as Record<string, unknown> | null,
       }),
-      items: {
-        items:
-          ((formStateRef.current["items"] as AuthFormState["items"]) ?? []).length > 0
-            ? ((formStateRef.current["items"] as AuthFormState["items"]) ?? [])
-            : null,
-        create_tool_id: s?.items?.create_tool_id ?? null,
-      },
+      items:
+        ((formStateRef.current["items"] as AuthFormState["items"]) ?? []).length > 0
+          ? ((formStateRef.current["items"] as AuthFormState["items"]) ?? [])
+          : null,
       expected_version: expectedVersion,
     }),
     [s],
@@ -414,32 +409,22 @@ function AuthComponent({
         throw new Error("Save action not available");
       }
 
-      const initialState = getInitialFormState() as unknown as Record<
-        string,
-        unknown
-      >;
-      const saveActions = buildResourceActions(AUTH_RESOURCES, {
-        formState: effectiveFormState as unknown as Record<string, unknown>,
-        referenceState: initialState,
-        flushResults,
-        entityData: s as Record<string, unknown> | null,
-      }) as Pick<
-        SaveAuthBody,
-        "names" | "descriptions" | "flags" | "protocols" | "slugs"
-      >;
-
       await saveAuthAction({
         body: {
           input_auth_id: isEditMode ? authId ?? null : null,
-          group_id: s.group_id,
-          ...saveActions,
-          items: {
-            items:
-              effectiveFormState.items.length > 0
-                ? effectiveFormState.items
-                : null,
-            create_tool_id: s.items?.create_tool_id ?? null,
-          },
+          name_id: effectiveFormState.name_id!,
+          description_id: effectiveFormState.description_id ?? null,
+          flag_id: effectiveFormState.active_flag_id ?? null,
+          protocol_ids: effectiveFormState.protocol_ids?.length
+            ? effectiveFormState.protocol_ids
+            : null,
+          slug_ids: effectiveFormState.slug_ids?.length
+            ? effectiveFormState.slug_ids
+            : null,
+          items:
+            effectiveFormState.items.length > 0
+              ? effectiveFormState.items
+              : null,
         },
       });
 
@@ -452,7 +437,6 @@ function AuthComponent({
       s,
       profile?.id,
       saveAuthAction,
-      getInitialFormState,
       isEditMode,
       authId,
       router,

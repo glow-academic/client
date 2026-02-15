@@ -31,6 +31,7 @@ class GenerateScenarioPayload(GetScenarioApiRequest):
     # Generation-specific fields - resource-type-based API
     resource_types: list[str]  # Required: which resource types to generate
     user_instructions: list[str] | None = None  # Optional: user instructions
+    save: bool = True  # Whether to auto-save scenario on completion
 
 
 # =============================================================================

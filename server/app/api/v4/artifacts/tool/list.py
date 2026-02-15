@@ -3,6 +3,8 @@
 Two-pass architecture:
 1. SQL returns raw data with active_usage_count and total_usage_count
 2. Python computes permissions (can_edit, can_delete, can_duplicate)
+
+Filter option names resolved in SQL via ListFilterSection pattern.
 """
 
 from typing import Annotated, Any, cast
@@ -20,6 +22,7 @@ from app.api.v4.artifacts.tool.types import (
     ListToolApiTool,
 )
 from app.api.v4.auth.profile import get_auth_profile_internal
+from app.api.v4.types import ListFilterSection
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
@@ -103,6 +106,11 @@ async def get_tool_list(
         params = GetToolsListSqlParams(
             profile_id=profile_id,
             search=request.search,
+            filter_department_ids=getattr(request, "filter_department_ids", None),
+            filter_agent_ids=getattr(request, "filter_agent_ids", None),
+            filter_creatable=getattr(request, "filter_creatable", None),
+            department_search=getattr(request, "department_search", None),
+            agent_search=getattr(request, "agent_search", None),
             page_size=request.page_size,
             page_offset=request.page_offset,
         )
@@ -125,12 +133,9 @@ async def get_tool_list(
                 actor={"name": actor_name, "id": profile_id},
             )
 
-        # user_role already fetched from context above
-
         # Compute permissions for each tool in Python
         tools_with_permissions: list[ListToolApiTool] = []
         for tool in result.tools or []:
-            # Compute permissions based on user role and tool state
             can_edit_val = compute_can_edit(
                 user_role=user_role,
                 active_agent_count=tool.active_agent_count or 0,
@@ -141,7 +146,6 @@ async def get_tool_list(
             )
             can_duplicate_val = compute_can_duplicate(user_role)
 
-            # Create tool with computed permissions
             tools_with_permissions.append(
                 ListToolApiTool(
                     tool_id=tool.tool_id,
@@ -155,10 +159,25 @@ async def get_tool_list(
                 )
             )
 
-        # Build API response with computed permissions
+        # Build API response with ListFilterSection pattern
         api_response = ListToolApiResponse(
             actor_name=actor_name,
             tools=tools_with_permissions,
+            department_filter=ListFilterSection.from_sql_options(
+                result.department_options,
+                getattr(request, "filter_department_ids", None),
+                getattr(request, "department_search", None),
+            ),
+            agent_filter=ListFilterSection.from_sql_options(
+                result.agent_options,
+                getattr(request, "filter_agent_ids", None),
+                getattr(request, "agent_search", None),
+            ),
+            creatable_filter=ListFilterSection.from_sql_options(
+                result.creatable_options,
+                getattr(request, "filter_creatable", None),
+                None,
+            ),
             total_count=result.total_count,
         )
 

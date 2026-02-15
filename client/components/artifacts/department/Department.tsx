@@ -210,11 +210,10 @@ function DepartmentComponent({
     ): Record<string, unknown> => ({
       input_draft_id: inputDraftId || null,
       group_id: s?.group_id ?? null,
-      ...buildResourceActions(DEPARTMENT_RESOURCES, {
+      ...buildDraftPayload(DEPARTMENT_RESOURCES, {
         formState: formStateRef.current,
         referenceState: lastPatchedFormStateRef.current,
         flushResults: flushResults ?? {},
-        entityData: s as Record<string, unknown> | null,
       }),
       expected_version: expectedVersion,
     }),
@@ -349,25 +348,15 @@ function DepartmentComponent({
         throw new Error("Save action not available");
       }
 
-      const initialState = getInitialFormState() as unknown as Record<
-        string,
-        unknown
-      >;
-      const saveActions = buildResourceActions(DEPARTMENT_RESOURCES, {
-        formState: effectiveFormState as unknown as Record<string, unknown>,
-        referenceState: initialState,
-        flushResults,
-        entityData: s as Record<string, unknown> | null,
-      }) as Pick<
-        SaveDepartmentBody,
-        "names" | "descriptions" | "flags" | "settings"
-      >;
-
       await saveDepartmentAction({
         body: {
           input_department_id: isEditMode ? departmentId ?? null : null,
-          group_id: s.group_id,
-          ...saveActions,
+          name_id: effectiveFormState.name_id!,
+          description_id: effectiveFormState.description_id ?? null,
+          flag_id: effectiveFormState.active_flag_id ?? null,
+          settings_ids: effectiveFormState.settings_ids?.length
+            ? effectiveFormState.settings_ids
+            : null,
         },
       });
       toast.success(
@@ -381,7 +370,6 @@ function DepartmentComponent({
       s,
       profile?.id,
       saveDepartmentAction,
-      getInitialFormState,
       isEditMode,
       departmentId,
       router,

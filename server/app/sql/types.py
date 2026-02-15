@@ -6035,6 +6035,76 @@ class PreparePersonaGenerationApiResponse(BaseModel):
 
 
 
+# Generated from: get_scenario_generation_context
+
+class GetScenarioGenerationContextSqlParams(BaseModel):
+
+    p_profile_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.p_profile_id,
+        )
+
+class GetScenarioGenerationContextSqlRow(BaseModel):
+
+    requests_per_day: int | None = None
+    runs_today: int | None = None
+
+class GetScenarioGenerationContextApiRequest(BaseModel):
+
+    p_profile_id: UUID
+
+class GetScenarioGenerationContextApiResponse(BaseModel):
+
+    requests_per_day: int | None = None
+    runs_today: int | None = None
+
+
+
+# Generated from: prepare_scenario_generation
+
+class PrepareScenarioGenerationSqlParams(BaseModel):
+
+    p_profile_id: UUID
+    p_group_id: UUID | None = None
+    p_agents_resource_id: UUID | None = None
+    p_models_resource_id: UUID | None = None
+    p_providers_resource_id: UUID | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.p_profile_id,
+            self.p_group_id,
+            self.p_agents_resource_id,
+            self.p_models_resource_id,
+            self.p_providers_resource_id,
+        )
+
+class PrepareScenarioGenerationSqlRow(BaseModel):
+
+    run_id: UUID | None = None
+    group_id: UUID | None = None
+    trace_id: str | None = None
+    config_id: UUID | None = None
+
+class PrepareScenarioGenerationApiRequest(BaseModel):
+
+    p_profile_id: UUID
+    p_group_id: UUID | None = None
+    p_agents_resource_id: UUID | None = None
+    p_models_resource_id: UUID | None = None
+    p_providers_resource_id: UUID | None = None
+
+class PrepareScenarioGenerationApiResponse(BaseModel):
+
+    run_id: UUID | None = None
+    group_id: UUID | None = None
+    trace_id: str | None = None
+    config_id: UUID | None = None
+
+
+
 # Generated from: get_generation_run_context_and_create_run
 
 class GetGenerationRunContextAndCreateRunSqlParams(BaseModel):
@@ -23163,6 +23233,11 @@ class GetToolsListSqlParams(BaseModel):
 
     profile_id: UUID
     search: str | None = None
+    filter_department_ids: list[UUID] | None = None
+    filter_agent_ids: list[UUID] | None = None
+    filter_creatable: list[str] | None = None
+    department_search: str | None = None
+    agent_search: str | None = None
     page_size: int | None = 12
     page_offset: int | None = 0
 
@@ -23170,9 +23245,23 @@ class GetToolsListSqlParams(BaseModel):
         return (
             self.profile_id,
             self.search,
+            self.filter_department_ids,
+            self.filter_agent_ids,
+            self.filter_creatable,
+            self.department_search,
+            self.agent_search,
             self.page_size,
             self.page_offset,
         )
+
+class QGetToolsListV4Option(BaseModel):
+
+    value: str | None
+    label: str | None
+    count: int | None
+
+
+
 
 class QGetToolsListV4Tool(BaseModel):
 
@@ -23182,21 +23271,33 @@ class QGetToolsListV4Tool(BaseModel):
     active: bool | None
     active_agent_count: int | None
     updated_at: datetime | None
+    department_ids: list[str] | None
 
 class GetToolsListSqlRow(BaseModel):
 
     tools: list[QGetToolsListV4Tool] | None = None
+    department_options: list[QGetToolsListV4Option] | None = None
+    agent_options: list[QGetToolsListV4Option] | None = None
+    creatable_options: list[QGetToolsListV4Option] | None = None
     total_count: int | None = None
 
 class GetToolsListApiRequest(BaseModel):
 
     search: str | None = None
+    filter_department_ids: list[UUID] | None = None
+    filter_agent_ids: list[UUID] | None = None
+    filter_creatable: list[str] | None = None
+    department_search: str | None = None
+    agent_search: str | None = None
     page_size: int | None = 12
     page_offset: int | None = 0
 
 class GetToolsListApiResponse(BaseModel):
 
     tools: list[QGetToolsListV4Tool] | None = None
+    department_options: list[QGetToolsListV4Option] | None = None
+    agent_options: list[QGetToolsListV4Option] | None = None
+    creatable_options: list[QGetToolsListV4Option] | None = None
     total_count: int | None = None
 
 
@@ -27152,6 +27253,18 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "PreparePersonaGenerationApiRequest",
         "PreparePersonaGenerationApiResponse",
     ),
+    "app/sql/v4/queries/generate/scenario/get_scenario_generation_context_complete.sql": (
+        "GetScenarioGenerationContextSqlParams",
+        "GetScenarioGenerationContextSqlRow",
+        "GetScenarioGenerationContextApiRequest",
+        "GetScenarioGenerationContextApiResponse",
+    ),
+    "app/sql/v4/queries/generate/scenario/prepare_scenario_generation_complete.sql": (
+        "PrepareScenarioGenerationSqlParams",
+        "PrepareScenarioGenerationSqlRow",
+        "PrepareScenarioGenerationApiRequest",
+        "PrepareScenarioGenerationApiResponse",
+    ),
     "app/sql/v4/queries/generate/start/get_generation_run_context_and_create_run_complete.sql": (
         "GetGenerationRunContextAndCreateRunSqlParams",
         "GetGenerationRunContextAndCreateRunSqlRow",
@@ -30715,6 +30828,16 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/queries/generate/persona/prepare_persona_generation_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/generate/scenario/get_scenario_generation_context_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/generate/scenario/prepare_scenario_generation_complete.sql"]
     ) -> SqlString: ...
 
     @overload

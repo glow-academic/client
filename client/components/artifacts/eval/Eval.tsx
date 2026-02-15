@@ -185,26 +185,6 @@ function buildGroupRubricPayload(
     }));
 }
 
-function buildSingleAction(
-  resource_id: string | null,
-  create_tool_id?: string | null
-) {
-  return {
-    resource_id,
-    create_tool_id: create_tool_id ?? null,
-  };
-}
-
-function buildMultiAction(
-  resource_ids: string[],
-  create_tool_id?: string | null
-) {
-  return {
-    resource_ids: resource_ids.length > 0 ? resource_ids : null,
-    create_tool_id: create_tool_id ?? null,
-  };
-}
-
 function EvalComponent({
   evalId,
   evalDetail,
@@ -515,40 +495,26 @@ function EvalComponent({
     const timer = setTimeout(async () => {
       try {
         if (!patchEvalDraftActionRef.current) return;
+        const flagIds = [
+          formState.active_flag_id,
+          formState.dynamic_flag_id,
+          formState.groups_flag_id,
+        ].filter(Boolean) as string[];
         const result = await patchEvalDraftActionRef.current({
           body: {
             input_draft_id: draftId || null,
             group_id: s?.group_id ?? null,
-            names: buildSingleAction(
-              formState.name_id,
-              s?.names?.create_tool_id ?? null
-            ),
-            descriptions: buildSingleAction(
-              formState.description_id,
-              s?.descriptions?.create_tool_id ?? null
-            ),
-            flags: buildMultiAction(
-              [
-                formState.active_flag_id,
-                formState.dynamic_flag_id,
-                formState.groups_flag_id,
-              ].filter(Boolean) as string[],
-              null
-            ),
-            departments: buildMultiAction(
-              formState.department_ids,
-              null
-            ),
-            agents: buildMultiAction(
-              formState.agent_ids,
-              null
-            ),
-            runs: buildMultiAction(formState.model_run_ids),
-            groups: buildMultiAction(formState.group_ids),
-            run_positions: buildMultiAction([]),
-            group_positions: buildMultiAction([]),
+            name_id: formState.name_id,
+            description_id: formState.description_id,
+            flag_ids: flagIds.length > 0 ? flagIds : null,
+            department_ids: formState.department_ids.length > 0 ? formState.department_ids : null,
+            agent_ids: formState.agent_ids.length > 0 ? formState.agent_ids : null,
+            model_run_ids: formState.model_run_ids.length > 0 ? formState.model_run_ids : null,
+            group_ids: formState.group_ids.length > 0 ? formState.group_ids : null,
+            run_position_ids: null,
+            group_position_ids: null,
             expected_version: lastSavedVersionRef.current,
-          } as unknown as PatchEvalDraftIn["body"],
+          },
         });
 
         lastPatchedKeyRef.current = draftPatchKey;
@@ -928,43 +894,28 @@ function EvalComponent({
           throw new Error("Name is required");
         }
 
+        const saveFlagIds = [
+          formState.active_flag_id,
+          formState.dynamic_flag_id,
+          formState.groups_flag_id,
+        ].filter(Boolean) as string[];
         await saveAction({
           body: {
-            group_id: s?.group_id ?? "",
             input_eval_id: isEditMode && evalId ? evalId : null,
-            names: buildSingleAction(
-              formState.name_id,
-              s?.names?.create_tool_id ?? null
-            ),
-            descriptions: buildSingleAction(
-              formState.description_id,
-              s?.descriptions?.create_tool_id ?? null
-            ),
-            flags: buildMultiAction(
-              [
-                formState.active_flag_id,
-                formState.dynamic_flag_id,
-                formState.groups_flag_id,
-              ].filter(Boolean) as string[],
-              null
-            ),
-            departments: buildMultiAction(
-              formState.department_ids,
-              null
-            ),
-            agents: buildMultiAction(
-              formState.agent_ids,
-              null
-            ),
-            runs: buildMultiAction(formState.model_run_ids),
-            groups: buildMultiAction(formState.group_ids),
-            run_positions: buildMultiAction([]),
-            group_positions: buildMultiAction([]),
+            name_id: formState.name_id!,
+            description_id: formState.description_id,
+            flag_ids: saveFlagIds.length > 0 ? saveFlagIds : null,
+            department_ids: formState.department_ids.length > 0 ? formState.department_ids : null,
+            agent_ids: formState.agent_ids.length > 0 ? formState.agent_ids : null,
+            model_run_ids: formState.model_run_ids.length > 0 ? formState.model_run_ids : null,
+            group_ids: formState.group_ids.length > 0 ? formState.group_ids : null,
+            run_position_ids: null,
+            group_position_ids: null,
             run_rubrics: buildRunRubricPayload(formState.run_rubric_links),
             group_rubrics: buildGroupRubricPayload(
               formState.group_rubric_links
             ),
-          } as unknown as SaveEvalIn["body"],
+          },
         });
         toast.success(
           `Eval ${isEditMode ? "updated" : "created"} successfully!`

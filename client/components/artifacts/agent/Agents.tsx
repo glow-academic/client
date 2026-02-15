@@ -98,7 +98,7 @@ export default function Agents({
     });
   }, [agentsData?.agents]);
   
-  // Build model mapping from agents array (extract unique models)
+  // Build model mapping from agents array (for per-card model name display)
   const modelMapping = useMemo(() => {
     const mapping: Record<string, { name: string; description: string }> = {};
     const agentsArray = agentsData?.agents || [];
@@ -115,57 +115,51 @@ export default function Agents({
     return mapping;
   }, [agentsData]);
 
-  // Filter options (inline)
-  const modelOptions = useMemo(
+  // Filter options from server-provided ListFilterSection
+  const departmentOptions = useMemo(
     () =>
-      Object.entries(modelMapping)
-        .map(([id, name]) => ({
-          value: id,
-          label: name.name ?? id,
+      (agentsData?.department_filter?.options || [])
+        .map((opt) => ({
+          value: opt.id as string,
+          label: opt.name as string,
+          count: opt.count ?? 0,
         }))
-        .filter((opt) => opt.label),
-    [modelMapping],
+        .filter((opt) => opt.value && opt.label),
+    [agentsData?.department_filter],
   );
 
-  // Build role options from unique agent roles
-  const roleOptions = useMemo(() => {
-    const roles = agents
-      .map((a) => a.role)
-      .filter((role): role is string => role !== null && role !== undefined);
-    const uniqueRoles = [...new Set(roles)].sort();
-    return uniqueRoles.map((role) => ({
-      value: role,
-      label: role,
-    }));
-  }, [agents]);
+  const modelOptions = useMemo(
+    () =>
+      (agentsData?.model_filter?.options || [])
+        .map((opt) => ({
+          value: opt.id as string,
+          label: opt.name as string,
+          count: opt.count ?? 0,
+        }))
+        .filter((opt) => opt.value && opt.label),
+    [agentsData?.model_filter],
+  );
 
-  // Build department options from agents array (extract unique departments)
-  // Note: Department info is not directly available in agents array, so we'll use department_ids
-  // For now, we'll create a simple mapping from department_ids
+  const toolOptions = useMemo(
+    () =>
+      (agentsData?.tool_filter?.options || [])
+        .map((opt) => ({
+          value: opt.id as string,
+          label: opt.name as string,
+          count: opt.count ?? 0,
+        }))
+        .filter((opt) => opt.value && opt.label),
+    [agentsData?.tool_filter],
+  );
+
+  // Build department name mapping from filter options (for badge display)
   const departmentMapping = useMemo(() => {
-    const mapping: Record<string, { name: string; description: string }> = {};
-    const agentsArray = agentsData?.agents || [];
-    agentsArray.forEach((agent) => {
-      if (agent.department_ids && Array.isArray(agent.department_ids)) {
-        agent.department_ids.forEach((deptId) => {
-          if (deptId && !mapping[deptId]) {
-            mapping[deptId] = {
-              name: deptId, // Department name not available in agents list response
-              description: "",
-            };
-          }
-        });
-      }
+    const mapping: Record<string, string> = {};
+    (agentsData?.department_filter?.options || []).forEach((opt) => {
+      if (opt.id && opt.name) mapping[opt.id] = opt.name;
     });
     return mapping;
-  }, [agentsData]);
-
-  const departmentOptions = useMemo(() => {
-    return Object.entries(departmentMapping).map(([id, obj]) => ({
-      value: id,
-      label: obj?.name || id,
-    }));
-  }, [departmentMapping]);
+  }, [agentsData?.department_filter]);
 
   // Define table columns inline
   const columns: ColumnDef<(typeof agents)[number]>[] = useMemo(
@@ -182,19 +176,6 @@ export default function Agents({
           return modelMapping[modelId]?.name || modelId;
         },
       },
-      // Hidden faceting column for Role
-      {
-        id: "role",
-        header: () => null,
-        cell: () => null,
-        enableHiding: true,
-        enableSorting: false,
-        accessorFn: (row: (typeof agents)[number]) => row.role || "",
-        filterFn: (row, _id, value: string[]) => {
-          const role = String(row.getValue("role"));
-          return value.includes(role);
-        },
-      },
       // Hidden faceting column for Departments (array of IDs)
       {
         id: "departments",
@@ -209,6 +190,16 @@ export default function Agents({
           if (rowIds.length === 0) return true;
           return value.some((v) => rowIds.includes(v));
         },
+      },
+      // Hidden faceting column for Tools
+      {
+        id: "tools",
+        header: () => null,
+        cell: () => null,
+        enableHiding: true,
+        enableSorting: false,
+        accessorFn: () => [] as string[],
+        filterFn: () => true,
       },
       {
         accessorKey: "updated_at",

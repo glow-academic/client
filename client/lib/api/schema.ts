@@ -28448,6 +28448,16 @@ export interface components {
         GetToolsListApiRequest: {
             /** Search */
             search?: string | null;
+            /** Filter Department Ids */
+            filter_department_ids?: string[] | null;
+            /** Filter Agent Ids */
+            filter_agent_ids?: string[] | null;
+            /** Filter Creatable */
+            filter_creatable?: string[] | null;
+            /** Department Search */
+            department_search?: string | null;
+            /** Agent Search */
+            agent_search?: string | null;
             /**
              * Page Size
              * @default 12
@@ -31503,6 +31513,9 @@ export interface components {
             actor_name?: string | null;
             /** Tools */
             tools?: components["schemas"]["ListToolApiTool"][] | null;
+            department_filter?: components["schemas"]["ListFilterSection"] | null;
+            agent_filter?: components["schemas"]["ListFilterSection"] | null;
+            creatable_filter?: components["schemas"]["ListFilterSection"] | null;
             /** Total Count */
             total_count?: number | null;
         };

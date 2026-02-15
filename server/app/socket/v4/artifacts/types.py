@@ -105,3 +105,16 @@ class PersonaGenerationStartedEvent(BaseModel):
     group_id: str
     run_id: str
     resource_types: list[str]
+
+
+class ScenarioGenerationStartedEvent(BaseModel):
+    """Server-to-client event: scenario_generation_started.
+
+    Emitted when scenario generation begins, listing which resource types
+    will be generated.
+    """
+
+    artifact_type: str = "scenario"
+    group_id: str
+    run_id: str
+    resource_types: list[str]
