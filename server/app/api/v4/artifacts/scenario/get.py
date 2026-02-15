@@ -695,7 +695,7 @@ async def get_scenario_internal(
                 20,
                 0,
                 selected_video_ids,
-                bypass_cache,
+                bypass_cache=bypass_cache,
                 scenario=True,
             )
             return (selected, suggestions)
@@ -711,7 +711,7 @@ async def get_scenario_internal(
                 20,
                 0,
                 selected_question_ids,
-                bypass_cache,
+                bypass_cache=bypass_cache,
                 scenario=True,
             )
             return (selected, suggestions)
