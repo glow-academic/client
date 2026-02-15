@@ -10433,6 +10433,312 @@ class GetProfileApiResponse(BaseModel):
 
 
 
+# Generated from: get_profile_context_access
+
+class GetProfileContextAccessSqlParams(BaseModel):
+
+    profile_id: UUID | None = None
+    department_id: str | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.department_id,
+        )
+
+class QGetProfileContextAccessV4ArtifactAgent(BaseModel):
+
+    artifact: str | None
+    has_generation: bool | None
+
+class GetProfileContextAccessSqlRow(BaseModel):
+
+    is_authorized: bool | None = None
+    id: UUID | None = None
+    name: str | None = None
+    role: str | None = None
+    active: bool | None = None
+    primary_department_id: UUID | None = None
+    department_ids: list[UUID] | None = None
+    cohort_ids: list[UUID] | None = None
+    settings_id: UUID | None = None
+    settings_agent_ids: list[UUID] | None = None
+    draft_ids: list[UUID] | None = None
+    scoped_roles: list[str] | None = None
+    available_sections: list[str] | None = None
+    available_routes: list[str] | None = None
+    redirect_path: str | None = None
+    actor_name: str | None = None
+    artifact_agent_ids: list[QGetProfileContextAccessV4ArtifactAgent] | None = None
+
+class GetProfileContextAccessApiRequest(BaseModel):
+
+    department_id: str | None = None
+
+class GetProfileContextAccessApiResponse(BaseModel):
+
+    is_authorized: bool | None = None
+    id: UUID | None = None
+    name: str | None = None
+    role: str | None = None
+    active: bool | None = None
+    primary_department_id: UUID | None = None
+    department_ids: list[UUID] | None = None
+    cohort_ids: list[UUID] | None = None
+    settings_id: UUID | None = None
+    settings_agent_ids: list[UUID] | None = None
+    draft_ids: list[UUID] | None = None
+    scoped_roles: list[str] | None = None
+    available_sections: list[str] | None = None
+    available_routes: list[str] | None = None
+    redirect_path: str | None = None
+    actor_name: str | None = None
+    artifact_agent_ids: list[QGetProfileContextAccessV4ArtifactAgent] | None = None
+
+
+
+# Generated from: get_profile_context
+
+class GetProfileContextSqlParams(BaseModel):
+
+    profile_id: UUID | None = None
+    department_id: str | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.department_id,
+        )
+
+class QGetProfileContextV4Auth(BaseModel):
+
+    auth_id: UUID | None
+    name: str | None
+    description: str | None
+    slug: str | None
+
+
+
+
+class QGetProfileContextV4Cohort(BaseModel):
+
+    cohort_id: UUID | None
+    title: str | None
+    description: str | None
+    active: bool | None
+    department_ids: list[str] | None
+
+
+
+
+class QGetProfileContextV4Department(BaseModel):
+
+    department_id: UUID | None
+    title: str | None
+    description: str | None
+    active: bool | None
+    is_primary: bool | None
+
+
+
+
+class QGetProfileContextV4Draft(BaseModel):
+
+    id: UUID | None
+    artifact_type: str | None
+    payload: Any | None
+    version: int | None
+    updated_at: datetime | None
+
+
+
+
+class QGetProfileContextV4RoleResource(BaseModel):
+
+    role: str | None
+    name: str | None
+    description: str | None
+    icon_value: str | None
+    color_hex: str | None
+
+
+
+
+class QGetProfileContextV4Simulation(BaseModel):
+
+    simulation_id: UUID | None
+    title: str | None
+    description: str | None
+    department_ids: list[str] | None
+    time_limit: int | None
+    active: bool | None
+    practice_simulation: bool | None
+
+
+
+
+class QGetProfileContextV4ThemeTokens(BaseModel):
+
+    background: str | None
+    foreground: str | None
+    card: str | None
+    card_foreground: str | None
+    popover: str | None
+    popover_foreground: str | None
+    primary_color: str | None
+    primary_foreground: str | None
+    secondary: str | None
+    secondary_foreground: str | None
+    muted: str | None
+    muted_foreground: str | None
+    accent: str | None
+    accent_foreground: str | None
+    destructive: str | None
+    border: str | None
+    input: str | None
+    ring: str | None
+    success: str | None
+    success_foreground: str | None
+    warning: str | None
+    warning_foreground: str | None
+    info: str | None
+    info_foreground: str | None
+    chart1: str | None
+    chart2: str | None
+    chart3: str | None
+    chart4: str | None
+    chart5: str | None
+    sidebar: str | None
+    sidebar_foreground: str | None
+    sidebar_primary: str | None
+    sidebar_primary_foreground: str | None
+    sidebar_accent: str | None
+    sidebar_accent_foreground: str | None
+    sidebar_border: str | None
+    sidebar_ring: str | None
+
+class GetProfileContextSqlRow(BaseModel):
+
+    is_authorized: bool | None = None
+    id: UUID | None = None
+    name: str | None = None
+    emails: list[str] | None = None
+    primary_email: str | None = None
+    role: str | None = None
+    active: bool | None = None
+    req_per_day: int | None = None
+    last_login: datetime | None = None
+    last_active: datetime | None = None
+    created_at: datetime | None = None
+    updated_at: datetime | None = None
+    primary_department_id: UUID | None = None
+    departments: list[QGetProfileContextV4Department] | None = None
+    cohorts: list[QGetProfileContextV4Cohort] | None = None
+    simulations: list[QGetProfileContextV4Simulation] | None = None
+    earliest_attempt_date: datetime | None = None
+    scoped_roles: list[str] | None = None
+    role_resources: list[QGetProfileContextV4RoleResource] | None = None
+    settings_id: str | None = None
+    settings_created_at: datetime | None = None
+    settings_active: bool | None = None
+    settings_name: str | None = None
+    settings_description: str | None = None
+    settings_primary_color: str | None = None
+    settings_accent: str | None = None
+    settings_background: str | None = None
+    settings_surface: str | None = None
+    settings_success: str | None = None
+    settings_warning: str | None = None
+    settings_error: str | None = None
+    settings_sidebar_background: str | None = None
+    settings_sidebar_primary: str | None = None
+    settings_chart1: str | None = None
+    settings_chart2: str | None = None
+    settings_chart3: str | None = None
+    settings_chart4: str | None = None
+    settings_chart5: str | None = None
+    settings_guest_login_enabled: bool | None = None
+    settings_success_threshold: int | None = None
+    settings_warning_threshold: int | None = None
+    settings_danger_threshold: int | None = None
+    settings_auth_ids: list[str] | None = None
+    settings_auths: list[QGetProfileContextV4Auth] | None = None
+    settings_provider_key_ids: list[UUID] | None = None
+    available_sections: list[str] | None = None
+    available_routes: list[str] | None = None
+    redirect_path: str | None = None
+    department_ids: list[str] | None = None
+    cohort_ids: list[str] | None = None
+    simulation_ids: list[str] | None = None
+    drafts: list[QGetProfileContextV4Draft] | None = None
+    settings_tokens: QGetProfileContextV4ThemeTokens | None = None
+    actor_name: str | None = None
+    session_id: UUID | None = None
+
+class GetProfileContextApiRequest(BaseModel):
+
+    department_id: str | None = None
+
+class GetProfileContextApiResponse(BaseModel):
+
+    is_authorized: bool | None = None
+    id: UUID | None = None
+    name: str | None = None
+    emails: list[str] | None = None
+    primary_email: str | None = None
+    role: str | None = None
+    active: bool | None = None
+    req_per_day: int | None = None
+    last_login: datetime | None = None
+    last_active: datetime | None = None
+    created_at: datetime | None = None
+    updated_at: datetime | None = None
+    primary_department_id: UUID | None = None
+    departments: list[QGetProfileContextV4Department] | None = None
+    cohorts: list[QGetProfileContextV4Cohort] | None = None
+    simulations: list[QGetProfileContextV4Simulation] | None = None
+    earliest_attempt_date: datetime | None = None
+    scoped_roles: list[str] | None = None
+    role_resources: list[QGetProfileContextV4RoleResource] | None = None
+    settings_id: str | None = None
+    settings_created_at: datetime | None = None
+    settings_active: bool | None = None
+    settings_name: str | None = None
+    settings_description: str | None = None
+    settings_primary_color: str | None = None
+    settings_accent: str | None = None
+    settings_background: str | None = None
+    settings_surface: str | None = None
+    settings_success: str | None = None
+    settings_warning: str | None = None
+    settings_error: str | None = None
+    settings_sidebar_background: str | None = None
+    settings_sidebar_primary: str | None = None
+    settings_chart1: str | None = None
+    settings_chart2: str | None = None
+    settings_chart3: str | None = None
+    settings_chart4: str | None = None
+    settings_chart5: str | None = None
+    settings_guest_login_enabled: bool | None = None
+    settings_success_threshold: int | None = None
+    settings_warning_threshold: int | None = None
+    settings_danger_threshold: int | None = None
+    settings_auth_ids: list[str] | None = None
+    settings_auths: list[QGetProfileContextV4Auth] | None = None
+    settings_provider_key_ids: list[UUID] | None = None
+    available_sections: list[str] | None = None
+    available_routes: list[str] | None = None
+    redirect_path: str | None = None
+    department_ids: list[str] | None = None
+    cohort_ids: list[str] | None = None
+    simulation_ids: list[str] | None = None
+    drafts: list[QGetProfileContextV4Draft] | None = None
+    settings_tokens: QGetProfileContextV4ThemeTokens | None = None
+    actor_name: str | None = None
+    session_id: UUID | None = None
+
+
+
 # Generated from: get_profile_docs
 
 class GetProfileDocsSqlParams(BaseModel):
@@ -27419,6 +27725,18 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetProfileApiRequest",
         "GetProfileApiResponse",
     ),
+    "app/sql/v4/queries/profile/get_profile_context_access_complete.sql": (
+        "GetProfileContextAccessSqlParams",
+        "GetProfileContextAccessSqlRow",
+        "GetProfileContextAccessApiRequest",
+        "GetProfileContextAccessApiResponse",
+    ),
+    "app/sql/v4/queries/profile/get_profile_context_complete.sql": (
+        "GetProfileContextSqlParams",
+        "GetProfileContextSqlRow",
+        "GetProfileContextApiRequest",
+        "GetProfileContextApiResponse",
+    ),
     "app/sql/v4/queries/profile/get_profile_docs_complete.sql": (
         "GetProfileDocsSqlParams",
         "GetProfileDocsSqlRow",
@@ -30838,6 +31156,16 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/queries/profile/get_profile_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/profile/get_profile_context_access_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/profile/get_profile_context_complete.sql"]
     ) -> SqlString: ...
 
     @overload

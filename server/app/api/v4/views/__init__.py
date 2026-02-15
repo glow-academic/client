@@ -7,6 +7,7 @@ This consolidates home/practice/dashboard/reports into unified views with filter
 from fastapi import APIRouter
 
 from app.api.v4.views.activity import router as activity_router
+from app.api.v4.views.analytics import router as analytics_router
 from app.api.v4.views.attempt import router as attempt_router
 from app.api.v4.views.audit import router as audit_router
 from app.api.v4.views.benchmark import router as benchmark_router
@@ -39,3 +40,4 @@ router.include_router(call_router)
 router.include_router(problem_router)
 router.include_router(login_router)
 router.include_router(metric_router)
+router.include_router(analytics_router)
