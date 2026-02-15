@@ -1,6 +1,6 @@
 -- Create benchmark test entry via REST.
--- Calls socket_start_benchmark_attempt_v4 for test creation,
--- then socket_create_test_invocations_v4 for invocation creation.
+-- Calls socket_start_benchmark_attempt_v4 for test creation only.
+-- Invocation creation is now handled by create_invocations_internal() in Python.
 
 DO $$
 DECLARE
@@ -30,7 +30,7 @@ AS $$
 DECLARE
     v_test_id uuid;
 BEGIN
-    -- Step 1: Create test entry + links
+    -- Create test entry + links
     SELECT s.attempt_id INTO v_test_id
     FROM socket_start_benchmark_attempt_v4(p_profile_id, p_eval_id, p_infinite_mode) s
     LIMIT 1;
@@ -38,9 +38,6 @@ BEGIN
     IF v_test_id IS NULL THEN
         RAISE EXCEPTION 'Failed to create benchmark test for eval %', p_eval_id;
     END IF;
-
-    -- Step 2: Create invocations
-    PERFORM * FROM socket_create_test_invocations_v4(v_test_id, p_eval_id);
 
     RETURN QUERY SELECT v_test_id;
 END;

@@ -19,8 +19,8 @@ import { Suspense } from "react";
 import { loadBenchmarkSearchParams } from "@/lib/search-params/benchmark";
 
 /** ---- Strong types from OpenAPI ---- */
-type BenchmarkOverviewIn = InputOf<"/api/v4/artifacts/benchmark/get", "post">;
-type BenchmarkOverviewOut = OutputOf<"/api/v4/artifacts/benchmark/get", "post">;
+type BenchmarkOverviewIn = InputOf<"/api/v4/artifacts/benchmark/list", "post">;
+type BenchmarkOverviewOut = OutputOf<"/api/v4/artifacts/benchmark/list", "post">;
 type BenchmarkHistoryIn = InputOf<"/api/v4/artifacts/test/list", "post">;
 type BenchmarkHistoryOut = OutputOf<"/api/v4/artifacts/test/list", "post">;
 type CreateTestIn = InputOf<"/api/v4/artifacts/test/create", "post">;
@@ -54,7 +54,7 @@ const getBenchmarkOverview = async (
   "use server";
   const bypassCache = await isHardRefresh();
 
-  return api.post("/artifacts/benchmark/get", input, {
+  return api.post("/artifacts/benchmark/list", input, {
     cache: "no-store",
     ...(bypassCache && {
       headers: {

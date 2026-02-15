@@ -7,7 +7,7 @@ import type { Metadata } from "next";
 
 /** ---- Strong types from OpenAPI ---- */
 type GetBenchmarkBundleOut = OutputOf<
-  "/api/v4/artifacts/benchmark/bundle/get",
+  "/api/v4/artifacts/benchmark/get",
   "post"
 >;
 type PatchBenchmarkDraftIn = InputOf<
@@ -24,7 +24,7 @@ const getBenchmarkBundle = async (
   draftId: string | null,
 ): Promise<GetBenchmarkBundleOut> => {
   return api.post(
-    "/artifacts/benchmark/bundle/get",
+    "/artifacts/benchmark/get",
     {
       body: {
         benchmark_bundle_entry_id: bundleId,

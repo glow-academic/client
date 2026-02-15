@@ -3369,7 +3369,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v4/artifacts/benchmark/get": {
+    "/api/v4/artifacts/benchmark/list": {
         parameters: {
             query?: never;
             header?: never;
@@ -3379,10 +3379,10 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Get Benchmark
+         * List Benchmark
          * @description Get benchmark artifact data with full resource hydration.
          */
-        post: operations["get_benchmark_api_v4_artifacts_benchmark_get_post"];
+        post: operations["list_benchmark_api_v4_artifacts_benchmark_list_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3426,7 +3426,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v4/artifacts/benchmark/bundle/get": {
+    "/api/v4/artifacts/benchmark/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -3439,7 +3439,7 @@ export interface paths {
          * Benchmark Bundle Get
          * @description Get hydrated resources for benchmark bundle customization.
          */
-        post: operations["benchmark_bundle_get_api_v4_artifacts_benchmark_bundle_get_post"];
+        post: operations["benchmark_bundle_get_api_v4_artifacts_benchmark_get_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -56622,7 +56622,7 @@ export interface operations {
             };
         };
     };
-    get_benchmark_api_v4_artifacts_benchmark_get_post: {
+    list_benchmark_api_v4_artifacts_benchmark_list_post: {
         parameters: {
             query?: never;
             header?: {
@@ -56733,7 +56733,7 @@ export interface operations {
             };
         };
     };
-    benchmark_bundle_get_api_v4_artifacts_benchmark_bundle_get_post: {
+    benchmark_bundle_get_api_v4_artifacts_benchmark_get_post: {
         parameters: {
             query?: never;
             header?: {

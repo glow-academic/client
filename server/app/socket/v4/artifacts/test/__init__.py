@@ -13,7 +13,6 @@ from . import (
     complete,
     error,
     grade,
-    invocation,
     join,
     leave,
     progress,
@@ -26,7 +25,6 @@ __all__ = [
     "complete",
     "error",
     "grade",
-    "invocation",
     "join",
     "leave",
     "progress",
@@ -47,7 +45,6 @@ client_router.include_router(grade.client_router)
 
 server_router.include_router(join.server_router)
 server_router.include_router(stop.server_router)
-server_router.include_router(invocation.server_router)
 server_router.include_router(progress.server_router)
 server_router.include_router(complete.server_router)
 server_router.include_router(error.server_router)

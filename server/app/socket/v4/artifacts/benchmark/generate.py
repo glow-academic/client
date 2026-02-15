@@ -16,7 +16,7 @@ from typing import Any, cast
 
 from fastapi import APIRouter
 
-from app.api.v4.artifacts.benchmark.bundle import get_benchmark_bundle_websocket
+from app.api.v4.artifacts.benchmark.get import get_benchmark_bundle_websocket
 from app.api.v4.artifacts.benchmark.types import GetBenchmarkBundleWebsocketResponse
 from app.api.v4.resources.instructions.get import get_instructions_internal
 from app.api.v4.resources.prompts.get import get_prompts_internal

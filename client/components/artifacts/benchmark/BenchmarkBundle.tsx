@@ -18,7 +18,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
 type GetBenchmarkBundleOut = OutputOf<
-  "/api/v4/artifacts/benchmark/bundle/get",
+  "/api/v4/artifacts/benchmark/get",
   "post"
 >;
 export type BenchmarkBundleData = GetBenchmarkBundleOut;

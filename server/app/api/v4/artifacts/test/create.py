@@ -13,6 +13,8 @@ from pydantic import BaseModel
 
 from app.main import get_db
 from app.sql.types import (
+    CreateTestInvocationsSqlParams,
+    CreateTestInvocationsSqlRow,
     CreateTestSqlParams,
     CreateTestSqlRow,
 )
@@ -23,8 +25,50 @@ from app.utils.sql_helper import execute_sql_typed
 logger = get_logger(__name__)
 
 SQL_PATH = "app/sql/v4/queries/artifacts/test/create_test_complete.sql"
+SQL_PATH_CREATE_INVOCATIONS = (
+    "app/sql/v4/queries/generate/test/create_test_invocations_complete.sql"
+)
 
 router = APIRouter()
+
+
+async def create_invocations_internal(
+    conn: asyncpg.Connection,
+    test_id: UUID,
+    eval_id: UUID,
+) -> UUID | None:
+    """Create test invocations + refresh MVs.
+
+    Returns the first invocation_id on success, None on failure.
+    """
+    try:
+        params = CreateTestInvocationsSqlParams(
+            p_test_id=test_id,
+            p_eval_id=eval_id,
+        )
+
+        row = cast(
+            CreateTestInvocationsSqlRow,
+            await execute_sql_typed(conn, SQL_PATH_CREATE_INVOCATIONS, params=params),
+        )
+
+        if not row or not row.chats:
+            return None
+
+        # Refresh MVs so invocations are immediately visible
+        await conn.execute("REFRESH MATERIALIZED VIEW mv_benchmark_invocations")
+
+        await invalidate_tags(["test", "tests", "benchmark", "invocations"])
+
+        first_chat = row.chats[0] if row.chats else None
+        if first_chat and isinstance(first_chat, dict):
+            chat_id = first_chat.get("chat_id")
+            return UUID(str(chat_id)) if chat_id else None
+        return None
+
+    except Exception as e:
+        logger.exception(f"create_invocations_internal failed: {e}")
+        return None
 
 
 class CreateTestRequest(BaseModel):
@@ -71,6 +115,9 @@ async def create_test(
                 status_code=500,
                 detail="Failed to create test.",
             )
+
+        # Create invocations for the test
+        await create_invocations_internal(conn, row.test_id, request.eval_id)
 
         # Invalidate caches so the new test is visible
         await invalidate_tags(["test", "tests", "benchmark"])

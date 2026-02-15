@@ -8,7 +8,7 @@ import type { ProfileItem } from "@/app/(main)/layout-server";
 import type { OutputOf } from "@/lib/api/types";
 
 // Extract eval item type from benchmark overview response (single source of truth)
-type BenchmarkOverviewOut = OutputOf<"/api/v4/artifacts/benchmark/get", "post">;
+type BenchmarkOverviewOut = OutputOf<"/api/v4/artifacts/benchmark/list", "post">;
 type EvalsArray = NonNullable<BenchmarkOverviewOut["evals"]>;
 type EvalItem = EvalsArray extends Array<infer T> ? T : never;
 
