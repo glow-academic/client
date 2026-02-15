@@ -25484,7 +25484,7 @@ export interface components {
             /** Redirect Path */
             redirect_path?: string | null;
             /** Role Resources */
-            role_resources?: components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__12"][] | null;
+            role_resources?: components["schemas"]["QGetProfileContextV4RoleResource"][] | null;
             /** Session Id */
             session_id?: string | null;
             /** Actor Name */
@@ -25503,7 +25503,7 @@ export interface components {
             warning_threshold?: number | null;
             /** Danger Threshold */
             danger_threshold?: number | null;
-            tokens?: components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__13"] | null;
+            tokens?: components["schemas"]["QGetProfileContextV4ThemeTokens"] | null;
             /** Agents */
             agents?: components["schemas"]["QGetAgentsV4Item"][] | null;
             /** Tools */
@@ -27045,6 +27045,11 @@ export interface components {
             primary_department_id?: string | null;
             /** Actor Name */
             actor_name?: string | null;
+        };
+        /** GetProfileContextApiRequest */
+        GetProfileContextApiRequest: {
+            /** Department Id */
+            department_id?: string | null;
         };
         /**
          * GetProfileFactsRequest
@@ -37586,6 +37591,96 @@ export interface components {
             version?: number | null;
             /** Updated At */
             updated_at?: string | null;
+        };
+        /** QGetProfileContextV4RoleResource */
+        QGetProfileContextV4RoleResource: {
+            /** Role */
+            role: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Icon Value */
+            icon_value: string | null;
+            /** Color Hex */
+            color_hex: string | null;
+        };
+        /** QGetProfileContextV4ThemeTokens */
+        QGetProfileContextV4ThemeTokens: {
+            /** Background */
+            background: string | null;
+            /** Foreground */
+            foreground: string | null;
+            /** Card */
+            card: string | null;
+            /** Card Foreground */
+            card_foreground: string | null;
+            /** Popover */
+            popover: string | null;
+            /** Popover Foreground */
+            popover_foreground: string | null;
+            /** Primary Color */
+            primary_color: string | null;
+            /** Primary Foreground */
+            primary_foreground: string | null;
+            /** Secondary */
+            secondary: string | null;
+            /** Secondary Foreground */
+            secondary_foreground: string | null;
+            /** Muted */
+            muted: string | null;
+            /** Muted Foreground */
+            muted_foreground: string | null;
+            /** Accent */
+            accent: string | null;
+            /** Accent Foreground */
+            accent_foreground: string | null;
+            /** Destructive */
+            destructive: string | null;
+            /** Border */
+            border: string | null;
+            /** Input */
+            input: string | null;
+            /** Ring */
+            ring: string | null;
+            /** Success */
+            success: string | null;
+            /** Success Foreground */
+            success_foreground: string | null;
+            /** Warning */
+            warning: string | null;
+            /** Warning Foreground */
+            warning_foreground: string | null;
+            /** Info */
+            info: string | null;
+            /** Info Foreground */
+            info_foreground: string | null;
+            /** Chart1 */
+            chart1: string | null;
+            /** Chart2 */
+            chart2: string | null;
+            /** Chart3 */
+            chart3: string | null;
+            /** Chart4 */
+            chart4: string | null;
+            /** Chart5 */
+            chart5: string | null;
+            /** Sidebar */
+            sidebar: string | null;
+            /** Sidebar Foreground */
+            sidebar_foreground: string | null;
+            /** Sidebar Primary */
+            sidebar_primary: string | null;
+            /** Sidebar Primary Foreground */
+            sidebar_primary_foreground: string | null;
+            /** Sidebar Accent */
+            sidebar_accent: string | null;
+            /** Sidebar Accent Foreground */
+            sidebar_accent_foreground: string | null;
+            /** Sidebar Border */
+            sidebar_border: string | null;
+            /** Sidebar Ring */
+            sidebar_ring: string | null;
         };
         /** QGetProfilesV4Item */
         QGetProfilesV4Item: {
@@ -50370,20 +50465,8 @@ export interface components {
         app__sql__types___build_missing_type___locals____MissingSqlType__1: {
             [key: string]: unknown;
         };
-        /** RefreshMvHealthApiResponse */
-        app__sql__types___build_missing_type___locals____MissingSqlType__10: {
-            [key: string]: unknown;
-        };
         /** RefreshMvBenchmarkApiResponse */
-        app__sql__types___build_missing_type___locals____MissingSqlType__11: {
-            [key: string]: unknown;
-        };
-        /** QGetProfileContextV4RoleResource */
-        app__sql__types___build_missing_type___locals____MissingSqlType__12: {
-            [key: string]: unknown;
-        };
-        /** QGetProfileContextV4ThemeTokens */
-        app__sql__types___build_missing_type___locals____MissingSqlType__13: {
+        app__sql__types___build_missing_type___locals____MissingSqlType__10: {
             [key: string]: unknown;
         };
         /** RefreshMvDashboardApiRequest */
@@ -50402,19 +50485,19 @@ export interface components {
         app__sql__types___build_missing_type___locals____MissingSqlType__5: {
             [key: string]: unknown;
         };
-        /** GetProfileContextApiRequest */
+        /** RefreshHomeMvsNewApiResponse */
         app__sql__types___build_missing_type___locals____MissingSqlType__6: {
             [key: string]: unknown;
         };
-        /** RefreshHomeMvsNewApiResponse */
+        /** RefreshMvDashboardApiResponse */
         app__sql__types___build_missing_type___locals____MissingSqlType__7: {
             [key: string]: unknown;
         };
-        /** RefreshMvDashboardApiResponse */
+        /** RefreshMvPricingApiResponse */
         app__sql__types___build_missing_type___locals____MissingSqlType__8: {
             [key: string]: unknown;
         };
-        /** RefreshMvPricingApiResponse */
+        /** RefreshMvHealthApiResponse */
         app__sql__types___build_missing_type___locals____MissingSqlType__9: {
             [key: string]: unknown;
         };
@@ -55478,7 +55561,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__7"];
+                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__6"];
                 };
             };
             /** @description Validation Error */
@@ -55922,7 +56005,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__8"];
+                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__7"];
                 };
             };
             /** @description Validation Error */
@@ -56070,7 +56153,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__8"];
+                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__7"];
                 };
             };
             /** @description Validation Error */
@@ -56181,7 +56264,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__8"];
+                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__7"];
                 };
             };
             /** @description Validation Error */
@@ -56292,7 +56375,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__9"];
+                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__8"];
                 };
             };
             /** @description Validation Error */
@@ -56588,7 +56671,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__10"];
+                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__9"];
                 };
             };
             /** @description Validation Error */
@@ -56697,7 +56780,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__11"];
+                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__10"];
                 };
             };
             /** @description Validation Error */
@@ -65497,7 +65580,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__6"];
+                "application/json": components["schemas"]["GetProfileContextApiRequest"];
             };
         };
         responses: {
@@ -65534,7 +65617,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__6"];
+                "application/json": components["schemas"]["GetProfileContextApiRequest"];
             };
         };
         responses: {
@@ -65571,7 +65654,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__6"];
+                "application/json": components["schemas"]["GetProfileContextApiRequest"];
             };
         };
         responses: {
@@ -65608,7 +65691,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__6"];
+                "application/json": components["schemas"]["GetProfileContextApiRequest"];
             };
         };
         responses: {
