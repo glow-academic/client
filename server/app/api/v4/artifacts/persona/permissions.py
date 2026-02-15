@@ -146,7 +146,7 @@ def has_access(
 
 def compute_show_name(names_has_tools: bool) -> bool:
     """Determine if name picker should be shown."""
-    return names_has_tools
+    return True
 
 
 def compute_show_description() -> bool:
@@ -157,12 +157,12 @@ def compute_show_description() -> bool:
 
 def compute_show_color(colors_has_tools: bool, colors_count: int) -> bool:
     """Determine if color picker should be shown."""
-    return colors_has_tools and colors_count > 0
+    return colors_count > 0
 
 
 def compute_show_icon(icons_has_tools: bool, icons_count: int) -> bool:
     """Determine if icon picker should be shown."""
-    return icons_has_tools and icons_count > 0
+    return icons_count > 0
 
 
 def compute_show_instructions(instructions_has_tools: bool) -> bool:

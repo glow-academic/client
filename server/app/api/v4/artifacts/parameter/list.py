@@ -164,7 +164,11 @@ async def get_parameter_list(
                     department_ids=parameter.department_ids,
                     scenario_ids=parameter.scenario_ids,
                     num_items=parameter.num_items,
-                    sample_items=parameter.sample_items,
+                    sample_items=[
+                        item.name
+                        for item in (parameter.sample_items or [])
+                        if item.name
+                    ],
                     can_edit=can_edit_val,
                     can_duplicate=can_duplicate_val,
                     can_delete=can_delete_val,

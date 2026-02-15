@@ -21,6 +21,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
@@ -184,18 +185,6 @@ export function SaveToolbar({ artifactType }: SaveToolbarProps) {
           </Button>
         )}
 
-        {/* Autosave toggle */}
-        {isAutosaveLoaded && (
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <RefreshCw className="h-3 w-3" />
-            <span>Autosave</span>
-            <Switch
-              checked={isAutosaveEnabled}
-              onCheckedChange={setAutosaveEnabled}
-            />
-          </div>
-        )}
-
         {/* Draft Picker Button */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -205,6 +194,22 @@ export function SaveToolbar({ artifactType }: SaveToolbarProps) {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-56">
+            {/* Autosave toggle */}
+            {isAutosaveLoaded && (
+              <>
+                <DropdownMenuLabel className="flex items-center justify-between font-normal">
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <RefreshCw className="h-3 w-3" />
+                    <span>Autosave</span>
+                  </div>
+                  <Switch
+                    checked={isAutosaveEnabled}
+                    onCheckedChange={setAutosaveEnabled}
+                  />
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+              </>
+            )}
             {filteredDrafts.length === 0 ? (
               <DropdownMenuItem disabled>No drafts available</DropdownMenuItem>
             ) : (

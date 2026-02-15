@@ -400,7 +400,7 @@ async def get_persona_internal(
                 20,
                 0,
                 effective_group_id,
-                "recent",
+                "all",
                 color_ids,
                 bypass_cache,
                 persona=True,
@@ -416,7 +416,7 @@ async def get_persona_internal(
                 20,
                 0,
                 effective_group_id,
-                "recent",
+                "all",
                 icon_ids,
                 bypass_cache,
                 persona=True,
@@ -533,7 +533,7 @@ async def get_persona_internal(
                 suggest_source="all",
                 exclude_ids=parameter_ids,
                 bypass_cache=bypass_cache,
-                persona=True,
+                persona=False,
             )
             return (selected, suggestions)
 
