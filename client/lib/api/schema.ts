@@ -3446,6 +3446,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/artifacts/benchmark/draft": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Patch Benchmark Draft
+         * @description Patch benchmark bundle draft for bundle configuration and create/update draft.
+         */
+        patch: operations["patch_benchmark_draft_api_v4_artifacts_benchmark_draft_patch"];
+        trace?: never;
+    };
     "/api/v4/artifacts/test/get": {
         parameters: {
             query?: never;
@@ -10533,6 +10553,28 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/socket/v4/server/model_generation_started": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Model Generation Started Api
+         * @description Server-to-client event: Model generation started.
+         *
+         *     Emitted when model generation begins, listing resource types being generated.
+         */
+        post: operations["model_generation_started_api_socket_v4_server_model_generation_started_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/socket/v4/server/model_generation_progress": {
         parameters: {
             query?: never;
@@ -17214,6 +17256,7 @@ export interface components {
          *
          *     Emitted when an agent resource generation completes successfully.
          *     Contains full resource objects (not just IDs) for immediate frontend use.
+         *     Contains optional agent_id if auto-save succeeded.
          */
         AgentGenerationCompleteEvent: {
             /**
@@ -17233,6 +17276,8 @@ export interface components {
             message: string;
             /** Type */
             type?: string | null;
+            /** Agent Id */
+            agent_id?: string | null;
             name_resource?: components["schemas"]["QGetNamesV4Item"] | null;
             description_resource?: components["schemas"]["QGetDescriptionsV4Item"] | null;
             model_resource?: components["schemas"]["QGetModelsV4Item"] | null;
@@ -25622,6 +25667,8 @@ export interface components {
              * @default false
              */
             profile_has_access: boolean;
+            /** Draft Version */
+            draft_version?: number | null;
             departments?: components["schemas"]["BenchmarkBundleDepartmentSection"] | null;
             models?: components["schemas"]["BenchmarkBundleModelSection"] | null;
             prompts?: components["schemas"]["BenchmarkBundlePromptSection"] | null;
@@ -32131,6 +32178,26 @@ export interface components {
             /** Type */
             type?: string | null;
         };
+        /**
+         * ModelGenerationStartedEvent
+         * @description Server-to-client event: model_generation_started.
+         *
+         *     Emitted when model generation begins, listing which resource types
+         *     will be generated.
+         */
+        ModelGenerationStartedEvent: {
+            /**
+             * Artifact Type
+             * @default model
+             */
+            artifact_type: string;
+            /** Group Id */
+            group_id: string;
+            /** Run Id */
+            run_id: string;
+            /** Resource Types */
+            resource_types: string[];
+        };
         /** ModelModalitySection */
         ModelModalitySection: {
             /**
@@ -33573,6 +33640,51 @@ export interface components {
             new_version: number;
             /** Message */
             message: string;
+        };
+        /**
+         * PatchBenchmarkBundleDraftApiRequest
+         * @description Request for patching a benchmark bundle draft - flat resource IDs.
+         */
+        PatchBenchmarkBundleDraftApiRequest: {
+            /** Input Draft Id */
+            input_draft_id?: string | null;
+            /** Group Id */
+            group_id?: string | null;
+            /**
+             * Expected Version
+             * @default 0
+             */
+            expected_version: number;
+            /** Department Ids */
+            department_ids?: string[] | null;
+            /** Model Ids */
+            model_ids?: string[] | null;
+            /** Prompt Ids */
+            prompt_ids?: string[] | null;
+            /** Instruction Ids */
+            instruction_ids?: string[] | null;
+            /** Voice Ids */
+            voice_ids?: string[] | null;
+            /** Temperature Level Ids */
+            temperature_level_ids?: string[] | null;
+            /** Reasoning Level Ids */
+            reasoning_level_ids?: string[] | null;
+            /** Tool Ids */
+            tool_ids?: string[] | null;
+            /** Key Ids */
+            key_ids?: string[] | null;
+        };
+        /**
+         * PatchBenchmarkBundleDraftApiResponse
+         * @description Response for patching a benchmark bundle draft.
+         */
+        PatchBenchmarkBundleDraftApiResponse: {
+            /** Draft Id */
+            draft_id?: string | null;
+            /** New Version */
+            new_version?: number | null;
+            /** Draft Exists */
+            draft_exists?: boolean | null;
         };
         /**
          * PatchCohortDraftApiRequest
@@ -56502,6 +56614,43 @@ export interface operations {
             };
         };
     };
+    patch_benchmark_draft_api_v4_artifacts_benchmark_draft_patch: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PatchBenchmarkBundleDraftApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PatchBenchmarkBundleDraftApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_test_artifact_api_v4_artifacts_test_get_post: {
         parameters: {
             query?: never;
@@ -69180,6 +69329,41 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["FieldGenerationErrorEvent"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    model_generation_started_api_socket_v4_server_model_generation_started_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ModelGenerationStartedEvent"];
             };
         };
         responses: {

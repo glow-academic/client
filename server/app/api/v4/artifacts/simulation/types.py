@@ -540,13 +540,25 @@ class SaveSimulationSqlParams(BaseModel):
             names=SimulationResourceAction(resource_id=request.name_id),
             descriptions=SimulationResourceAction(resource_id=request.description_id),
             flags=SimulationMultiResourceAction(resource_ids=request.flag_ids),
-            departments=SimulationMultiResourceAction(resource_ids=request.department_ids),
+            departments=SimulationMultiResourceAction(
+                resource_ids=request.department_ids
+            ),
             scenarios=SimulationMultiResourceAction(resource_ids=request.scenario_ids),
-            scenario_flags=SimulationMultiResourceAction(resource_ids=request.scenario_flag_ids),
-            scenario_positions=SimulationMultiResourceAction(resource_ids=request.scenario_position_ids),
-            scenario_rubrics=SimulationMultiResourceAction(resource_ids=request.scenario_rubric_ids),
-            scenario_time_limits=SimulationMultiResourceAction(resource_ids=request.scenario_time_limit_ids),
-            scenario_personas=SimulationMultiResourceAction(resource_ids=request.scenario_persona_ids),
+            scenario_flags=SimulationMultiResourceAction(
+                resource_ids=request.scenario_flag_ids
+            ),
+            scenario_positions=SimulationMultiResourceAction(
+                resource_ids=request.scenario_position_ids
+            ),
+            scenario_rubrics=SimulationMultiResourceAction(
+                resource_ids=request.scenario_rubric_ids
+            ),
+            scenario_time_limits=SimulationMultiResourceAction(
+                resource_ids=request.scenario_time_limit_ids
+            ),
+            scenario_personas=SimulationMultiResourceAction(
+                resource_ids=request.scenario_persona_ids
+            ),
         )
 
     def to_tuple(self) -> tuple[Any, ...]:
@@ -683,13 +695,25 @@ class PatchSimulationDraftSqlParams(BaseModel):
             names=SimulationResourceAction(resource_id=request.name_id),
             descriptions=SimulationResourceAction(resource_id=request.description_id),
             flags=SimulationMultiResourceAction(resource_ids=request.flag_ids),
-            departments=SimulationMultiResourceAction(resource_ids=request.department_ids),
+            departments=SimulationMultiResourceAction(
+                resource_ids=request.department_ids
+            ),
             scenarios=SimulationMultiResourceAction(resource_ids=request.scenario_ids),
-            scenario_flags=SimulationMultiResourceAction(resource_ids=request.scenario_flag_ids),
-            scenario_positions=SimulationMultiResourceAction(resource_ids=request.scenario_position_ids),
-            scenario_rubrics=SimulationMultiResourceAction(resource_ids=request.scenario_rubric_ids),
-            scenario_time_limits=SimulationMultiResourceAction(resource_ids=request.scenario_time_limit_ids),
-            scenario_personas=SimulationMultiResourceAction(resource_ids=request.scenario_persona_ids),
+            scenario_flags=SimulationMultiResourceAction(
+                resource_ids=request.scenario_flag_ids
+            ),
+            scenario_positions=SimulationMultiResourceAction(
+                resource_ids=request.scenario_position_ids
+            ),
+            scenario_rubrics=SimulationMultiResourceAction(
+                resource_ids=request.scenario_rubric_ids
+            ),
+            scenario_time_limits=SimulationMultiResourceAction(
+                resource_ids=request.scenario_time_limit_ids
+            ),
+            scenario_personas=SimulationMultiResourceAction(
+                resource_ids=request.scenario_persona_ids
+            ),
             expected_version=request.expected_version,
         )
 

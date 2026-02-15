@@ -85,7 +85,9 @@ async def save_cohort_internal(
             departments=_multi("departments"),
             simulations=_multi("simulations"),
             simulation_positions=_multi("simulation_positions"),
-            simulation_position_values=resource_actions.get("simulation_position_values"),
+            simulation_position_values=resource_actions.get(
+                "simulation_position_values"
+            ),
         )
 
         async with conn.transaction():
@@ -201,7 +203,9 @@ async def save_cohort(
 
         async with conn.transaction():
             # Convert flat resource IDs to SQL params (add profile_id and group_id from server)
-            params = SaveCohortSqlParams.from_request(request, profile_id=profile_id, group_id=group_id)
+            params = SaveCohortSqlParams.from_request(
+                request, profile_id=profile_id, group_id=group_id
+            )
             sql_params = params.to_tuple()
 
             # Execute SQL with typed helper - automatically detects and calls function if present

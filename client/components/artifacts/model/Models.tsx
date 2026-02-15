@@ -1,13 +1,15 @@
 /**
  * Models.tsx
- * Used to display the models page with all created models and management functionality.
+ * Used to display the models page with server-side filtering.
+ * Hybrid approach: provider/department/agent filters are server-driven,
+ * type (custom/standard) and status (active/inactive) remain client-side.
  * @AshokSaravanan222 & @siladiea
  * 06/18/2025
  */
 "use client";
 import { Copy, Cpu, Edit, Trash2, X } from "lucide-react";
-import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import {
@@ -37,10 +39,7 @@ import {
   SortingState,
   VisibilityState,
   getCoreRowModel,
-  getFacetedRowModel,
-  getFacetedUniqueValues,
   getFilteredRowModel,
-  getPaginationRowModel,
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table";
@@ -64,14 +63,30 @@ export interface ModelsProps {
     input: DuplicateModelIn
   ) => Promise<DuplicateModelOut>;
   deleteModelAction?: (input: DeleteModelIn) => Promise<DeleteModelOut>;
+  // Server-side pagination
+  pageIndex: number;
+  pageSize: number;
+  totalCount: number;
+  // Server-side filter search terms
+  providerSearch: string;
+  departmentSearch: string;
+  agentSearch: string;
 }
 
 export default function Models({
   listData: serverListData,
   duplicateModelAction,
   deleteModelAction,
+  pageIndex,
+  pageSize,
+  totalCount,
+  providerSearch,
+  departmentSearch,
+  agentSearch,
 }: ModelsProps) {
   const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const { profile } = useProfile();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [deleteItem, setDeleteItem] = useState<{
@@ -81,10 +96,14 @@ export default function Models({
   const [isDeleting, setIsDeleting] = useState(false);
   const [isDuplicating, setIsDuplicating] = useState<string | null>(null);
 
-  // Use server-provided data directly
-  const modelsData = serverListData;
+  // Local search state for debouncing
+  const [searchTerm, setSearchTerm] = useState(
+    searchParams?.get("search") ?? ""
+  );
+  const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Use server-provided data directly
+  const modelsData = serverListData;
   const models = useMemo(() => modelsData?.models || [], [modelsData?.models]);
 
   // Filter options from server-provided ListFilterSection
@@ -94,7 +113,7 @@ export default function Models({
         .map((opt) => ({
           value: opt.id as string,
           label: opt.name as string,
-          count: opt.count ?? 0,
+          count: opt.count ?? undefined,
         }))
         .filter((opt) => opt.value && opt.label),
     [modelsData?.provider_filter]
@@ -106,7 +125,7 @@ export default function Models({
         .map((opt) => ({
           value: opt.id as string,
           label: opt.name as string,
-          count: opt.count ?? 0,
+          count: opt.count ?? undefined,
         }))
         .filter((opt) => opt.value && opt.label),
     [modelsData?.department_filter]
@@ -118,7 +137,7 @@ export default function Models({
         .map((opt) => ({
           value: opt.id as string,
           label: opt.name as string,
-          count: opt.count ?? 0,
+          count: opt.count ?? undefined,
         }))
         .filter((opt) => opt.value && opt.label),
     [modelsData?.agent_filter]
@@ -132,13 +151,225 @@ export default function Models({
     []
   );
 
-  // Table state
+  // Table state - initialize server-driven filters from URL, client-only filters start empty
   const [rowSelection, setRowSelection] = useState({});
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
-  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
+  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>(() => {
+    const filters: ColumnFiltersState = [];
+    const provIds = searchParams?.getAll("providerIds") ?? [];
+    const deptIds = searchParams?.getAll("departmentIds") ?? [];
+    const agIds = searchParams?.getAll("agentIds") ?? [];
+    if (provIds.length > 0) filters.push({ id: "provider", value: provIds });
+    if (deptIds.length > 0) filters.push({ id: "departments", value: deptIds });
+    if (agIds.length > 0) filters.push({ id: "agents", value: agIds });
+    return filters;
+  });
   const [sorting, setSorting] = useState<SortingState>([
     { id: "updated_at", desc: true },
   ]);
+
+  // Helper to update URL search params
+  const updateModelsParams = useCallback(
+    (updates: {
+      page?: number;
+      pageSize?: number;
+      search?: string;
+      providerIds?: string[];
+      departmentIds?: string[];
+      agentIds?: string[];
+      providerSearch?: string;
+      departmentSearch?: string;
+      agentSearch?: string;
+    }) => {
+      const params = new URLSearchParams(searchParams?.toString() || "");
+
+      if (updates.page !== undefined) {
+        if (updates.page === 0) params.delete("page");
+        else params.set("page", updates.page.toString());
+      }
+
+      if (updates.pageSize !== undefined) {
+        if (updates.pageSize === 12) params.delete("pageSize");
+        else params.set("pageSize", updates.pageSize.toString());
+      }
+
+      if (updates.search !== undefined) {
+        if (updates.search === "") params.delete("search");
+        else params.set("search", updates.search);
+      }
+
+      if (updates.providerIds !== undefined) {
+        params.delete("providerIds");
+        updates.providerIds.forEach((id) => params.append("providerIds", id));
+      }
+
+      if (updates.departmentIds !== undefined) {
+        params.delete("departmentIds");
+        updates.departmentIds.forEach((id) => params.append("departmentIds", id));
+      }
+
+      if (updates.agentIds !== undefined) {
+        params.delete("agentIds");
+        updates.agentIds.forEach((id) => params.append("agentIds", id));
+      }
+
+      if (updates.providerSearch !== undefined) {
+        if (updates.providerSearch === "") params.delete("providerSearch");
+        else params.set("providerSearch", updates.providerSearch);
+      }
+
+      if (updates.departmentSearch !== undefined) {
+        if (updates.departmentSearch === "") params.delete("departmentSearch");
+        else params.set("departmentSearch", updates.departmentSearch);
+      }
+
+      if (updates.agentSearch !== undefined) {
+        if (updates.agentSearch === "") params.delete("agentSearch");
+        else params.set("agentSearch", updates.agentSearch);
+      }
+
+      const qs = params.toString();
+      router.push(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
+    },
+    [pathname, router, searchParams]
+  );
+
+  // Commit search to URL
+  const commitSearch = useCallback(
+    (value: string) => {
+      updateModelsParams({ page: 0, search: value.trim() || "" });
+    },
+    [updateModelsParams]
+  );
+
+  // Handle search input change with debounce
+  const handleSearchChange = useCallback(
+    (value: string) => {
+      setSearchTerm(value);
+      if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
+      if (value === "") { commitSearch(""); return; }
+      searchTimeoutRef.current = setTimeout(() => { commitSearch(value); }, 500);
+    },
+    [commitSearch]
+  );
+
+  const handleSearchBlur = useCallback(() => {
+    if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
+    commitSearch(searchTerm);
+  }, [commitSearch, searchTerm]);
+
+  const handleSearchKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLInputElement>) => {
+      if (e.key === "Enter") {
+        if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
+        commitSearch(searchTerm);
+      }
+    },
+    [commitSearch, searchTerm]
+  );
+
+  // Handle filter option search changes (debounced)
+  const providerSearchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const departmentSearchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const agentSearchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const [localProviderSearch, setLocalProviderSearch] = useState(providerSearch);
+  const [localDepartmentSearch, setLocalDepartmentSearch] = useState(departmentSearch);
+  const [localAgentSearch, setLocalAgentSearch] = useState(agentSearch);
+
+  const handleProviderSearchChange = useCallback(
+    (value: string) => {
+      setLocalProviderSearch(value);
+      if (providerSearchTimeoutRef.current) clearTimeout(providerSearchTimeoutRef.current);
+      providerSearchTimeoutRef.current = setTimeout(() => {
+        updateModelsParams({ providerSearch: value });
+      }, 300);
+    },
+    [updateModelsParams]
+  );
+
+  const handleDepartmentSearchChange = useCallback(
+    (value: string) => {
+      setLocalDepartmentSearch(value);
+      if (departmentSearchTimeoutRef.current) clearTimeout(departmentSearchTimeoutRef.current);
+      departmentSearchTimeoutRef.current = setTimeout(() => {
+        updateModelsParams({ departmentSearch: value });
+      }, 300);
+    },
+    [updateModelsParams]
+  );
+
+  const handleAgentSearchChange = useCallback(
+    (value: string) => {
+      setLocalAgentSearch(value);
+      if (agentSearchTimeoutRef.current) clearTimeout(agentSearchTimeoutRef.current);
+      agentSearchTimeoutRef.current = setTimeout(() => {
+        updateModelsParams({ agentSearch: value });
+      }, 300);
+    },
+    [updateModelsParams]
+  );
+
+  // Server-driven filter IDs
+  const serverFilterIds = useMemo(() => new Set(["provider", "departments", "agents"]), []);
+
+  // Sync column filters to URL when they change (only server-driven ones)
+  const handleColumnFiltersChange = useCallback(
+    (updater: ColumnFiltersState | ((prev: ColumnFiltersState) => ColumnFiltersState)) => {
+      const newFilters = typeof updater === "function" ? updater(columnFilters) : updater;
+      setColumnFilters(newFilters);
+
+      // Only push server-driven filters to URL
+      const providerFilter = newFilters.find((f) => f.id === "provider");
+      const departmentFilter = newFilters.find((f) => f.id === "departments");
+      const agentFilter = newFilters.find((f) => f.id === "agents");
+
+      // Check if any server-driven filter actually changed
+      const oldProviderFilter = columnFilters.find((f) => f.id === "provider");
+      const oldDepartmentFilter = columnFilters.find((f) => f.id === "departments");
+      const oldAgentFilter = columnFilters.find((f) => f.id === "agents");
+
+      const serverChanged =
+        JSON.stringify(providerFilter?.value) !== JSON.stringify(oldProviderFilter?.value) ||
+        JSON.stringify(departmentFilter?.value) !== JSON.stringify(oldDepartmentFilter?.value) ||
+        JSON.stringify(agentFilter?.value) !== JSON.stringify(oldAgentFilter?.value);
+
+      if (serverChanged) {
+        updateModelsParams({
+          page: 0,
+          providerIds: (providerFilter?.value as string[]) || [],
+          departmentIds: (departmentFilter?.value as string[]) || [],
+          agentIds: (agentFilter?.value as string[]) || [],
+        });
+      }
+    },
+    [columnFilters, updateModelsParams]
+  );
+
+  // Handle pagination change
+  const handlePaginationChange = useCallback(
+    (
+      updater:
+        | { pageIndex: number; pageSize: number }
+        | ((prev: { pageIndex: number; pageSize: number }) => {
+            pageIndex: number;
+            pageSize: number;
+          })
+    ) => {
+      const newPagination =
+        typeof updater === "function"
+          ? updater({ pageIndex, pageSize })
+          : updater;
+      updateModelsParams({
+        page: newPagination.pageIndex,
+        pageSize: newPagination.pageSize,
+      });
+    },
+    [pageIndex, pageSize, updateModelsParams]
+  );
+
+  // Compute page count from total
+  const pageCount = Math.ceil(totalCount / pageSize);
 
   const columns = useMemo<ColumnDef<(typeof models)[number]>[]>(
     () => [
@@ -146,14 +377,8 @@ export default function Models({
         accessorKey: "name",
         header: "Name",
         cell: ({ row }) => row.getValue("name"),
-        filterFn: (row, id, value) => {
-          const name = String(row.getValue(id)).toLowerCase();
-          const desc = String(row.original.description).toLowerCase();
-          const query = String(value).toLowerCase();
-          return name.includes(query) || desc.includes(query);
-        },
       },
-      // Hidden faceting column for Provider
+      // Hidden faceting column for Provider (server-driven)
       {
         id: "provider",
         header: () => null,
@@ -166,7 +391,7 @@ export default function Models({
           return value.includes(provider);
         },
       },
-      // Hidden faceting column for Custom Model (based on base_url presence)
+      // Hidden faceting column for Custom Model (client-only)
       {
         id: "is_custom",
         header: () => null,
@@ -180,7 +405,7 @@ export default function Models({
           return value.includes(isCustom);
         },
       },
-      // Hidden faceting column for Active Status
+      // Hidden faceting column for Active Status (client-only)
       {
         id: "active",
         header: () => null,
@@ -193,7 +418,7 @@ export default function Models({
           return value.includes(status);
         },
       },
-      // Hidden faceting column for Departments
+      // Hidden faceting column for Departments (server-driven)
       {
         id: "departments",
         header: () => null,
@@ -208,7 +433,7 @@ export default function Models({
           return value.some((v) => rowIds.includes(v));
         },
       },
-      // Hidden faceting column for Agents
+      // Hidden faceting column for Agents (server-driven)
       {
         id: "agents",
         header: () => null,
@@ -237,7 +462,7 @@ export default function Models({
     []
   );
 
-  // Create table instance
+  // Create table instance - hybrid: manual for server filters, client filtering for type/status
   const table = useReactTable({
     data: models,
     columns,
@@ -246,41 +471,46 @@ export default function Models({
       columnVisibility,
       rowSelection,
       columnFilters,
+      pagination: {
+        pageIndex,
+        pageSize,
+      },
     },
     enableRowSelection: true,
     onRowSelectionChange: setRowSelection,
     onSortingChange: setSorting,
-    onColumnFiltersChange: setColumnFilters,
+    onColumnFiltersChange: handleColumnFiltersChange,
     onColumnVisibilityChange: setColumnVisibility,
+    onPaginationChange: handlePaginationChange,
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
     getSortedRowModel: getSortedRowModel(),
-    getFacetedRowModel: getFacetedRowModel(),
-    getFacetedUniqueValues: getFacetedUniqueValues(),
-    initialState: {
-      pagination: {
-        pageSize: 12,
-      },
-    },
+    manualPagination: true,
+    manualFiltering: false, // Client-side filtering for type/status on server-provided page
+    pageCount,
   });
 
   // Get filtered rows for rendering
-  const tableRows = table.getRowModel().rows;
+  const sortingKey = JSON.stringify(sorting);
+  const columnFiltersKey = JSON.stringify(columnFilters);
+  const tableRows = useMemo(() => {
+    return table.getRowModel().rows;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sortingKey, columnFiltersKey, models.length, pageIndex, pageSize]);
 
   // Get column references for toolbar
-  const nameColumn = table.getColumn("name");
   const providerColumn = table.getColumn("provider");
   const customModelColumn = table.getColumn("is_custom");
   const activeColumn = table.getColumn("active");
   const departmentsColumn = table.getColumn("departments");
   const agentsColumn = table.getColumn("agents");
-  const isFiltered = table.getState().columnFilters.length > 0;
+  const isFiltered =
+    table.getState().columnFilters.length > 0 ||
+    searchTerm.length > 0;
 
   const handleDelete = async () => {
     if (!deleteItem || !deleteModelAction) return;
 
-    // Ensure profileId exists - required for API calls
     if (!profile?.id) {
       toast.error("Profile not loaded. Please refresh the page.");
       return;
@@ -293,7 +523,6 @@ export default function Models({
           model_id: deleteItem.id,
         },
       });
-      // profileId comes from X-Profile-Id header automatically
       toast.success("Model deleted successfully");
       router.refresh();
     } catch {
@@ -321,7 +550,6 @@ export default function Models({
   const handleDuplicateModelClick = async (model: (typeof models)[number]) => {
     if (!duplicateModelAction) return;
 
-    // Ensure profileId exists - required for API calls
     if (!profile?.id) {
       toast.error("Profile not loaded. Please refresh the page.");
       return;
@@ -338,7 +566,6 @@ export default function Models({
           model_id: model.model_id,
         },
       });
-      // profileId comes from X-Profile-Id header automatically
       toast.success(
         `Model '${model.name || "Unknown Model"}' duplicated successfully`
       );
@@ -442,113 +669,123 @@ export default function Models({
   return (
     <TooltipProvider>
       <div className="space-y-6">
-        {models.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-12">
-            <p className="text-muted-foreground">No models found</p>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {/* Toolbar */}
-            <div
-              className="flex flex-col md:flex-row md:items-center md:justify-between gap-2"
-              data-testid="models-toolbar"
-            >
-              <div className="flex flex-col md:flex-row md:flex-1 md:items-center md:space-x-2 gap-2 md:gap-0">
-                <div className="w-full md:w-auto">
-                  <Input
-                    data-testid="models-search"
-                    placeholder="Search models..."
-                    value={(nameColumn?.getFilterValue() as string) ?? ""}
-                    onChange={(event) =>
-                      nameColumn?.setFilterValue(event.target.value)
-                    }
-                    className="h-8 w-full md:w-[150px] lg:w-[250px]"
-                    aria-label="Search models by name"
-                    aria-controls="models-grid"
+        <div className="space-y-4">
+          {/* Toolbar */}
+          <div
+            className="flex flex-col md:flex-row md:items-center md:justify-between gap-2"
+            data-testid="models-toolbar"
+          >
+            <div className="flex flex-col md:flex-row md:flex-1 md:items-center md:space-x-2 gap-2 md:gap-0">
+              <div className="w-full md:w-auto">
+                <Input
+                  data-testid="models-search"
+                  placeholder="Search models..."
+                  value={searchTerm}
+                  onChange={(event) => handleSearchChange(event.target.value)}
+                  onBlur={handleSearchBlur}
+                  onKeyDown={handleSearchKeyDown}
+                  className="h-8 w-full md:w-[150px] lg:w-[250px]"
+                  aria-label="Search models by name"
+                  aria-controls="models-grid"
+                />
+              </div>
+
+              <div className="flex items-center space-x-2 flex-wrap">
+                <DataTableFacetedFilter
+                  column={providerColumn}
+                  title="Provider"
+                  options={providerOptions}
+                  isServerDriven={true}
+                  onSearchChange={handleProviderSearchChange}
+                  searchValue={localProviderSearch}
+                />
+
+                <DataTableFacetedFilter
+                  column={departmentsColumn}
+                  title="Department"
+                  options={departmentOptions}
+                  isServerDriven={true}
+                  onSearchChange={handleDepartmentSearchChange}
+                  searchValue={localDepartmentSearch}
+                />
+
+                <DataTableFacetedFilter
+                  column={agentsColumn}
+                  title="Agent"
+                  options={agentOptions}
+                  isServerDriven={true}
+                  onSearchChange={handleAgentSearchChange}
+                  searchValue={localAgentSearch}
+                />
+
+                {customModelColumn && (
+                  <DataTableFacetedFilter
+                    column={customModelColumn}
+                    title="Type"
+                    options={[
+                      { value: "true", label: "Custom Models" },
+                      { value: "false", label: "Standard Models" },
+                    ]}
                   />
-                </div>
+                )}
 
-                <div className="flex items-center space-x-2 flex-wrap">
-                  {providerColumn && providerOptions.length > 0 && (
-                    <DataTableFacetedFilter
-                      column={providerColumn}
-                      title="Provider"
-                      options={providerOptions}
-                      isServerDriven
-                    />
-                  )}
+                {activeColumn && statusOptions.length > 0 && (
+                  <DataTableFacetedFilter
+                    column={activeColumn}
+                    title="Status"
+                    options={statusOptions}
+                  />
+                )}
 
-                  {departmentsColumn && departmentOptions.length > 0 && (
-                    <DataTableFacetedFilter
-                      column={departmentsColumn}
-                      title="Department"
-                      options={departmentOptions}
-                      isServerDriven
-                    />
-                  )}
-
-                  {agentsColumn && agentOptions.length > 0 && (
-                    <DataTableFacetedFilter
-                      column={agentsColumn}
-                      title="Agent"
-                      options={agentOptions}
-                      isServerDriven
-                    />
-                  )}
-
-                  {customModelColumn && (
-                    <DataTableFacetedFilter
-                      column={customModelColumn}
-                      title="Type"
-                      options={[
-                        { value: "true", label: "Custom Models" },
-                        { value: "false", label: "Standard Models" },
-                      ]}
-                    />
-                  )}
-
-                  {activeColumn && statusOptions.length > 0 && (
-                    <DataTableFacetedFilter
-                      column={activeColumn}
-                      title="Status"
-                      options={statusOptions}
-                    />
-                  )}
-
-                  {isFiltered && (
-                    <Button
-                      variant="ghost"
-                      onClick={() => table.resetColumnFilters()}
-                      className="h-8 px-2 lg:px-3 hidden md:flex"
-                    >
-                      Reset
-                      <X className="ml-2 h-4 w-4" />
-                    </Button>
-                  )}
-                </div>
+                {isFiltered && (
+                  <Button
+                    variant="ghost"
+                    onClick={() => {
+                      setSearchTerm("");
+                      setLocalProviderSearch("");
+                      setLocalDepartmentSearch("");
+                      setLocalAgentSearch("");
+                      table.resetColumnFilters();
+                      updateModelsParams({
+                        page: 0,
+                        search: "",
+                        providerIds: [],
+                        departmentIds: [],
+                        agentIds: [],
+                        providerSearch: "",
+                        departmentSearch: "",
+                        agentSearch: "",
+                      });
+                    }}
+                    className="h-8 px-2 lg:px-3 hidden md:flex"
+                  >
+                    Reset
+                    <X className="ml-2 h-4 w-4" />
+                  </Button>
+                )}
               </div>
             </div>
-
-            {/* Cards Grid */}
-            <div
-              className="grid gap-4 md:grid-cols-2 lg:grid-cols-3"
-              role="grid"
-              aria-label="models grid"
-              data-testid="models-grid"
-            >
-              {tableRows.length ? (
-                tableRows.map((row) => renderModelCard(row.original))
-              ) : (
-                <div className="col-span-full text-center py-8 text-muted-foreground">
-                  No models match the current filters.
-                </div>
-              )}
-            </div>
-
-            {/* Pagination */}
-            <DataTablePagination table={table} card={true} />
           </div>
-        )}
+
+          {/* Cards Grid */}
+          <div
+            className="grid gap-4 md:grid-cols-2 lg:grid-cols-3"
+            role="grid"
+            aria-label="models grid"
+            data-testid="models-grid"
+          >
+            {tableRows.length ? (
+              tableRows.map((row) => renderModelCard(row.original))
+            ) : (
+              <div className="col-span-full text-center py-8 text-muted-foreground">
+                No models match the current filters.
+              </div>
+            )}
+          </div>
+
+          {/* Pagination */}
+          <DataTablePagination table={table} card={true} />
+        </div>
 
         {/* Delete Confirmation Dialog */}
         <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>

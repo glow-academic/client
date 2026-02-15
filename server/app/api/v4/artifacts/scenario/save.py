@@ -15,10 +15,10 @@ from app.api.v4.artifacts.scenario.permissions import (
 from app.api.v4.artifacts.scenario.types import (
     SaveScenarioApiRequest,
     SaveScenarioApiResponse,
-    ScenarioMultiResourceAction,
-    ScenarioResourceAction,
     SaveScenarioSqlParams,
     SaveScenarioSqlRow,
+    ScenarioMultiResourceAction,
+    ScenarioResourceAction,
 )
 from app.api.v4.auth.profile import get_auth_profile_internal
 from app.infra.v4.activity.audit import audit_activity, audit_set

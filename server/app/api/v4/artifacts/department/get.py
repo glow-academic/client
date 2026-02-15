@@ -237,37 +237,20 @@ async def get_department_internal(
         if draft_item.settings_ids:
             selected_settings_ids = draft_item.settings_ids
 
-    # Get tools existence flags from Query 2
-    names_has_tools = ids_result.names_has_tools or False
+    # === RESOLVE AGENTS FROM SETTINGS (source of truth) ===
+    async with pool.acquire() as settings_conn:
+        settings_data = await get_auth_settings_internal(
+            settings_conn, profile_id, bypass_cache
+        )
 
-    # === PARSE CANDIDATE AGENTS FROM QUERY 2 AND COMPUTE AGENT IDS IN PYTHON ===
-    candidate_agents = CandidateAgent.from_sql_rows(ids_result.candidate_agents)
-
-    # Use Python scoring to select best agents for each resource
-    user_dept_set = set(user_department_ids) if user_department_ids else None
-    resources_needed = list(DEPARTMENT_RESOURCES)
-    resource_agent_ids = select_agents_for_artifact(
-        candidates=candidate_agents,
-        artifact_resources=DEPARTMENT_RESOURCES,
-        resources_needed=resources_needed,
-        user_department_ids=user_dept_set,
-        require_mcp=False,
+    resource_agent_ids, create_tool_ids_map, link_tool_ids_map = (
+        resolve_agents_for_artifact(
+            settings_data.agent_tool_entries, DEPARTMENT_RESOURCES
+        )
     )
 
-    # === BUILD TOOL_IDS MAPS FROM SELECTED AGENTS ===
-    create_tool_ids_map: dict[str, UUID | None] = {}
-    link_tool_ids_map: dict[str, UUID | None] = {}
-
-    for resource in DEPARTMENT_RESOURCES:
-        selected_agent_id = resource_agent_ids.get(resource)
-        if selected_agent_id:
-            for candidate in candidate_agents:
-                if candidate.agent_id == selected_agent_id:
-                    create_tool_ids_map[resource] = candidate.create_tool_ids.get(
-                        resource
-                    )
-                    link_tool_ids_map[resource] = candidate.link_tool_ids.get(resource)
-                    break
+    # Derive has_tools flags from settings
+    names_has_tools = has_tools_for_resource(settings_data.agent_tool_entries, "names")
 
     # === COMPUTE SHOW_AI_GENERATE FLAGS ===
     def compute_show_ai_generate(resource: str) -> bool:
@@ -440,30 +423,26 @@ async def get_department_internal(
             detail="You don't have access to this department. It may be restricted to other departments.",
         )
 
-    # Fetch config resources for websocket generation context.
-    selected_agent_ids = [aid for aid in resource_agent_ids.values() if aid is not None]
-    selected_agent_ids = list(dict.fromkeys(selected_agent_ids))
-    config_agents = []
-    config_models = []
-    config_providers = []
-    config_tools = []
-    if selected_agent_ids:
+    # Fetch config resources for websocket generation context (from settings agents).
+    config_agent_resource_ids = [a.id for a in settings_data.settings_agents if a.id]
+    config_model_resource_ids = [
+        a.model_id for a in settings_data.settings_agents if a.model_id
+    ]
+
+    config_agents: list[Any] = []
+    config_models: list[Any] = []
+    config_providers: list[Any] = []
+    config_tools: list[Any] = []
+    if config_agent_resource_ids:
         async with pool.acquire() as c:
             config_agents = await get_agents_internal(
-                c,
-                selected_agent_ids,
-                bypass_cache=bypass_cache,
+                c, config_agent_resource_ids, bypass_cache=bypass_cache
             )
-        model_ids = list(
-            dict.fromkeys([a.model_id for a in config_agents if a.model_id is not None])
-        )
-        if model_ids:
-            async with pool.acquire() as c:
-                config_models = await get_models_internal(
-                    c,
-                    model_ids,
-                    bypass_cache=bypass_cache,
-                )
+    if config_model_resource_ids:
+        async with pool.acquire() as c:
+            config_models = await get_models_internal(
+                c, config_model_resource_ids, bypass_cache=bypass_cache
+            )
         provider_ids = list(
             dict.fromkeys(
                 [m.provider_id for m in config_models if m.provider_id is not None]
@@ -472,22 +451,18 @@ async def get_department_internal(
         if provider_ids:
             async with pool.acquire() as c:
                 config_providers = await get_providers_internal(
-                    c,
-                    provider_ids,
-                    bypass_cache=bypass_cache,
+                    c, provider_ids, bypass_cache=bypass_cache
                 )
-        tool_ids: list[UUID] = []
-        for agent in config_agents:
-            raw = getattr(agent, "tool_ids", None) or []
-            tool_ids.extend([tid for tid in raw if tid is not None])
-        tool_ids = list(dict.fromkeys(tool_ids))
-        if tool_ids:
-            async with pool.acquire() as c:
-                config_tools = await get_tools_internal(
-                    c,
-                    tool_ids,
-                    bypass_cache=bypass_cache,
-                )
+    tool_ids: list[UUID] = []
+    for agent in config_agents:
+        raw = getattr(agent, "tool_ids", None) or []
+        tool_ids.extend([tid for tid in raw if tid is not None])
+    tool_ids = list(dict.fromkeys(tool_ids))
+    if tool_ids:
+        async with pool.acquire() as c:
+            config_tools = await get_tools_internal(
+                c, tool_ids, bypass_cache=bypass_cache
+            )
 
     # Build show_ai_generate map
     show_ai_generate_map = {

@@ -367,8 +367,12 @@ class SaveSettingSqlParams(BaseModel):
             departments=SettingMultiResourceAction(resource_ids=request.department_ids),
             profiles=SettingMultiResourceAction(resource_ids=request.profile_ids),
             auths=SettingMultiResourceAction(resource_ids=request.auth_ids),
-            provider_keys=SettingMultiResourceAction(resource_ids=request.provider_key_ids),
-            auth_item_keys=SettingMultiResourceAction(resource_ids=request.auth_item_key_ids),
+            provider_keys=SettingMultiResourceAction(
+                resource_ids=request.provider_key_ids
+            ),
+            auth_item_keys=SettingMultiResourceAction(
+                resource_ids=request.auth_item_key_ids
+            ),
             roles=SettingMultiResourceAction(resource_ids=request.role_ids),
             role_routes=SettingMultiResourceAction(resource_ids=request.role_route_ids),
         )
@@ -473,8 +477,12 @@ class PatchSettingDraftSqlParams(BaseModel):
             departments=SettingMultiResourceAction(resource_ids=request.department_ids),
             profiles=SettingMultiResourceAction(resource_ids=request.profile_ids),
             auths=SettingMultiResourceAction(resource_ids=request.auth_ids),
-            provider_keys=SettingMultiResourceAction(resource_ids=request.provider_key_ids),
-            auth_item_keys=SettingMultiResourceAction(resource_ids=request.auth_item_key_ids),
+            provider_keys=SettingMultiResourceAction(
+                resource_ids=request.provider_key_ids
+            ),
+            auth_item_keys=SettingMultiResourceAction(
+                resource_ids=request.auth_item_key_ids
+            ),
             roles=SettingMultiResourceAction(resource_ids=request.role_ids),
             role_routes=SettingMultiResourceAction(resource_ids=request.role_route_ids),
             expected_version=request.expected_version,

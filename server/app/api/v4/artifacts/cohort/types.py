@@ -340,7 +340,9 @@ class SaveCohortSqlParams(BaseModel):
             flags=CohortResourceAction(resource_id=request.flag_id),
             departments=CohortMultiResourceAction(resource_ids=request.department_ids),
             simulations=CohortMultiResourceAction(resource_ids=request.simulation_ids),
-            simulation_positions=CohortMultiResourceAction(resource_ids=request.simulation_position_ids),
+            simulation_positions=CohortMultiResourceAction(
+                resource_ids=request.simulation_position_ids
+            ),
             simulation_position_values=request.simulation_position_values,
         )
 
@@ -473,7 +475,9 @@ class PatchCohortDraftSqlParams(BaseModel):
             flags=CohortResourceAction(resource_id=request.flag_id),
             departments=CohortMultiResourceAction(resource_ids=request.department_ids),
             simulations=CohortMultiResourceAction(resource_ids=request.simulation_ids),
-            simulation_positions=CohortMultiResourceAction(resource_ids=request.simulation_position_ids),
+            simulation_positions=CohortMultiResourceAction(
+                resource_ids=request.simulation_position_ids
+            ),
             simulation_position_values=request.simulation_position_values,
             expected_version=request.expected_version,
         )

@@ -18,10 +18,10 @@ from app.api.v4.artifacts.simulation.permissions import (
 from app.api.v4.artifacts.simulation.types import (
     SaveSimulationApiRequest,
     SaveSimulationApiResponse,
-    SimulationMultiResourceAction,
-    SimulationResourceAction,
     SaveSimulationSqlParams,
     SaveSimulationSqlRow,
+    SimulationMultiResourceAction,
+    SimulationResourceAction,
 )
 from app.api.v4.auth.profile import get_auth_profile_internal
 from app.infra.v4.activity.audit import audit_activity, audit_set
@@ -286,9 +286,7 @@ async def save_simulation(
                     # Update mode: look up name from name_id if available
                     simulation_name = "Simulation"
                     if request.name_id:
-                        name_params = GetNameByIdSqlParams(
-                            name_id=request.name_id
-                        )
+                        name_params = GetNameByIdSqlParams(name_id=request.name_id)
                         name_result = cast(
                             GetNameByIdSqlRow,
                             await execute_sql_typed(

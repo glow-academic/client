@@ -1,11 +1,11 @@
 /**
  * Providers.tsx
- * Used to display the providers page with table-based filtering and card layout.
+ * Used to display the providers page with server-side filtering.
  */
 "use client";
 import { Edit, Trash2, X } from "lucide-react";
-import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import type {
@@ -22,10 +22,6 @@ import {
   SortingState,
   VisibilityState,
   getCoreRowModel,
-  getFacetedRowModel,
-  getFacetedUniqueValues,
-  getFilteredRowModel,
-  getPaginationRowModel,
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table";
@@ -43,7 +39,6 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
 
 export interface ProvidersProps {
   // Server-provided data (for server-side rendering)
@@ -52,13 +47,27 @@ export interface ProvidersProps {
   deleteProviderAction?: (
     input: DeleteProviderIn
   ) => Promise<DeleteProviderOut>;
+  // Server-side pagination
+  pageIndex: number;
+  pageSize: number;
+  totalCount: number;
+  // Server-side filter search terms
+  departmentSearch: string;
+  modelSearch: string;
 }
 
 export default function Providers({
   listData: serverListData,
   deleteProviderAction,
+  pageIndex,
+  pageSize,
+  totalCount,
+  departmentSearch,
+  modelSearch,
 }: ProvidersProps) {
   const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [deleteItem, setDeleteItem] = useState<{
     id: string;
@@ -66,17 +75,31 @@ export default function Providers({
   } | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
+  // Local search state for debouncing
+  const [searchTerm, setSearchTerm] = useState(
+    searchParams?.get("search") ?? ""
+  );
+  const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   // Table state
   const [rowSelection, setRowSelection] = useState({});
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
-  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
+  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>(() => {
+    const filters: ColumnFiltersState = [];
+    const deptIds = searchParams?.getAll("departmentIds") ?? [];
+    const mIds = searchParams?.getAll("modelIds") ?? [];
+    const sIds = searchParams?.getAll("statusIds") ?? [];
+    if (deptIds.length > 0) filters.push({ id: "departments", value: deptIds });
+    if (mIds.length > 0) filters.push({ id: "models", value: mIds });
+    if (sIds.length > 0) filters.push({ id: "status", value: sIds });
+    return filters;
+  });
   const [sorting, setSorting] = useState<SortingState>([
     { id: "updated_at", desc: true },
   ]);
 
   // Use server-provided data directly
   const providersData = serverListData;
-  const isLoading = false; // No loading when using server data
 
   // Extract data from response
   const providers = useMemo(
@@ -91,7 +114,7 @@ export default function Providers({
         .map((opt) => ({
           value: opt.id as string,
           label: opt.name as string,
-          count: opt.count ?? 0,
+          count: opt.count ?? undefined,
         }))
         .filter((opt) => opt.value && opt.label),
     [providersData?.department_filter]
@@ -103,7 +126,7 @@ export default function Providers({
         .map((opt) => ({
           value: opt.id as string,
           label: opt.name as string,
-          count: opt.count ?? 0,
+          count: opt.count ?? undefined,
         }))
         .filter((opt) => opt.value && opt.label),
     [providersData?.model_filter]
@@ -115,28 +138,186 @@ export default function Providers({
         .map((opt) => ({
           value: opt.id as string,
           label: opt.name as string,
-          count: opt.count ?? 0,
+          count: opt.count ?? undefined,
         }))
         .filter((opt) => opt.value && opt.label),
     [providersData?.status_filter]
   );
 
+  // Helper to update URL search params
+  const updateProvidersParams = useCallback(
+    (updates: {
+      page?: number;
+      pageSize?: number;
+      search?: string;
+      departmentIds?: string[];
+      modelIds?: string[];
+      statusIds?: string[];
+      departmentSearch?: string;
+      modelSearch?: string;
+    }) => {
+      const params = new URLSearchParams(searchParams?.toString() || "");
+
+      if (updates.page !== undefined) {
+        if (updates.page === 0) params.delete("page");
+        else params.set("page", updates.page.toString());
+      }
+
+      if (updates.pageSize !== undefined) {
+        if (updates.pageSize === 12) params.delete("pageSize");
+        else params.set("pageSize", updates.pageSize.toString());
+      }
+
+      if (updates.search !== undefined) {
+        if (updates.search === "") params.delete("search");
+        else params.set("search", updates.search);
+      }
+
+      if (updates.departmentIds !== undefined) {
+        params.delete("departmentIds");
+        updates.departmentIds.forEach((id) => params.append("departmentIds", id));
+      }
+
+      if (updates.modelIds !== undefined) {
+        params.delete("modelIds");
+        updates.modelIds.forEach((id) => params.append("modelIds", id));
+      }
+
+      if (updates.statusIds !== undefined) {
+        params.delete("statusIds");
+        updates.statusIds.forEach((id) => params.append("statusIds", id));
+      }
+
+      if (updates.departmentSearch !== undefined) {
+        if (updates.departmentSearch === "") params.delete("departmentSearch");
+        else params.set("departmentSearch", updates.departmentSearch);
+      }
+
+      if (updates.modelSearch !== undefined) {
+        if (updates.modelSearch === "") params.delete("modelSearch");
+        else params.set("modelSearch", updates.modelSearch);
+      }
+
+      const qs = params.toString();
+      router.push(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
+    },
+    [pathname, router, searchParams]
+  );
+
+  // Commit search to URL
+  const commitSearch = useCallback(
+    (value: string) => {
+      updateProvidersParams({ page: 0, search: value.trim() || "" });
+    },
+    [updateProvidersParams]
+  );
+
+  // Handle search input change with debounce
+  const handleSearchChange = useCallback(
+    (value: string) => {
+      setSearchTerm(value);
+      if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
+      if (value === "") { commitSearch(""); return; }
+      searchTimeoutRef.current = setTimeout(() => { commitSearch(value); }, 500);
+    },
+    [commitSearch]
+  );
+
+  const handleSearchBlur = useCallback(() => {
+    if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
+    commitSearch(searchTerm);
+  }, [commitSearch, searchTerm]);
+
+  const handleSearchKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLInputElement>) => {
+      if (e.key === "Enter") {
+        if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
+        commitSearch(searchTerm);
+      }
+    },
+    [commitSearch, searchTerm]
+  );
+
+  // Handle filter option search changes (debounced)
+  const departmentSearchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const modelSearchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const [localDepartmentSearch, setLocalDepartmentSearch] = useState(departmentSearch);
+  const [localModelSearch, setLocalModelSearch] = useState(modelSearch);
+
+  const handleDepartmentSearchChange = useCallback(
+    (value: string) => {
+      setLocalDepartmentSearch(value);
+      if (departmentSearchTimeoutRef.current) clearTimeout(departmentSearchTimeoutRef.current);
+      departmentSearchTimeoutRef.current = setTimeout(() => {
+        updateProvidersParams({ departmentSearch: value });
+      }, 300);
+    },
+    [updateProvidersParams]
+  );
+
+  const handleModelSearchChange = useCallback(
+    (value: string) => {
+      setLocalModelSearch(value);
+      if (modelSearchTimeoutRef.current) clearTimeout(modelSearchTimeoutRef.current);
+      modelSearchTimeoutRef.current = setTimeout(() => {
+        updateProvidersParams({ modelSearch: value });
+      }, 300);
+    },
+    [updateProvidersParams]
+  );
+
+  // Sync column filters to URL when they change
+  const handleColumnFiltersChange = useCallback(
+    (updater: ColumnFiltersState | ((prev: ColumnFiltersState) => ColumnFiltersState)) => {
+      const newFilters = typeof updater === "function" ? updater(columnFilters) : updater;
+      setColumnFilters(newFilters);
+
+      const departmentFilter = newFilters.find((f) => f.id === "departments");
+      const modelFilter = newFilters.find((f) => f.id === "models");
+      const statusFilter = newFilters.find((f) => f.id === "status");
+
+      updateProvidersParams({
+        page: 0,
+        departmentIds: (departmentFilter?.value as string[]) || [],
+        modelIds: (modelFilter?.value as string[]) || [],
+        statusIds: (statusFilter?.value as string[]) || [],
+      });
+    },
+    [columnFilters, updateProvidersParams]
+  );
+
+  // Handle pagination change
+  const handlePaginationChange = useCallback(
+    (
+      updater:
+        | { pageIndex: number; pageSize: number }
+        | ((prev: { pageIndex: number; pageSize: number }) => {
+            pageIndex: number;
+            pageSize: number;
+          })
+    ) => {
+      const newPagination =
+        typeof updater === "function"
+          ? updater({ pageIndex, pageSize })
+          : updater;
+      updateProvidersParams({
+        page: newPagination.pageIndex,
+        pageSize: newPagination.pageSize,
+      });
+    },
+    [pageIndex, pageSize, updateProvidersParams]
+  );
+
+  // Compute page count from total
+  const pageCount = Math.ceil(totalCount / pageSize);
+
   // Define table columns inline
   const columns: ColumnDef<(typeof providers)[number]>[] = useMemo(
     () => [
-      {
-        accessorKey: "name",
-        header: "Name",
-      },
-      {
-        accessorKey: "description",
-        header: "Description",
-      },
-      {
-        accessorKey: "value",
-        header: "Value",
-      },
-      // Hidden faceting column for Status
+      { accessorKey: "name", header: "Name" },
+      { accessorKey: "description", header: "Description" },
+      { accessorKey: "value", header: "Value" },
       {
         id: "status",
         header: () => null,
@@ -151,7 +332,6 @@ export default function Providers({
           return value.includes(rowStatus);
         },
       },
-      // Hidden faceting column for Departments
       {
         id: "departments",
         header: () => null,
@@ -166,7 +346,6 @@ export default function Providers({
           return value.some((v) => rowIds.includes(v));
         },
       },
-      // Hidden faceting column for Models
       {
         id: "models",
         header: () => null,
@@ -199,7 +378,7 @@ export default function Providers({
     []
   );
 
-  // Create table instance
+  // Create table instance with manual pagination and filtering
   const table = useReactTable({
     data: providers,
     columns,
@@ -208,91 +387,30 @@ export default function Providers({
       columnVisibility,
       rowSelection,
       columnFilters,
+      pagination: {
+        pageIndex,
+        pageSize,
+      },
     },
     enableRowSelection: true,
     onRowSelectionChange: setRowSelection,
     onSortingChange: setSorting,
-    onColumnFiltersChange: setColumnFilters,
+    onColumnFiltersChange: handleColumnFiltersChange,
     onColumnVisibilityChange: setColumnVisibility,
+    onPaginationChange: handlePaginationChange,
     getCoreRowModel: getCoreRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
     getSortedRowModel: getSortedRowModel(),
-    getFacetedRowModel: getFacetedRowModel(),
-    getFacetedUniqueValues: getFacetedUniqueValues(),
-    initialState: {
-      pagination: {
-        pageSize: 12,
-      },
-    },
+    manualPagination: true,
+    manualFiltering: true,
+    pageCount,
   });
 
-  // Memoize table rows to avoid calling getRowModel() multiple times and prevent re-render issues
-  // Extract pagination primitives directly to avoid object reference issues
-  const pageIndex = table.getState().pagination.pageIndex;
-  const pageSize = table.getState().pagination.pageSize;
-  // Stringify arrays for stable comparison (arrays are compared by reference)
+  // Memoize table rows
   const sortingKey = JSON.stringify(sorting);
-  const columnFiltersKey = JSON.stringify(columnFilters);
   const tableRows = useMemo(() => {
     return table.getRowModel().rows;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [
-    // Use JSON.stringify for arrays to ensure stable comparison (arrays are compared by reference)
-    sortingKey,
-    columnFiltersKey,
-    providers.length,
-    // Use pagination primitives directly (not object references)
-    pageIndex,
-    pageSize,
-  ]);
-
-  if (isLoading) {
-    return (
-      <div className="space-y-6">
-        {/* Header skeleton */}
-        <div className="flex items-center justify-between">
-          <Skeleton className="h-8 w-48" />
-          <Skeleton className="h-10 w-32" />
-        </div>
-
-        {/* Toolbar skeleton */}
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
-          <div className="flex flex-col md:flex-row md:flex-1 md:items-center md:space-x-2 gap-2 md:gap-0">
-            <Skeleton className="h-8 w-full md:w-[150px] lg:w-[250px]" />
-            <div className="flex items-center space-x-2">
-              <Skeleton className="h-8 w-[100px]" />
-              <Skeleton className="h-8 w-[120px]" />
-            </div>
-          </div>
-        </div>
-
-        {/* Providers grid skeleton */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {[...Array(6)].map((_, i) => (
-            <Card key={i} className="overflow-hidden">
-              <CardHeader className="pb-4">
-                <div className="flex items-start justify-between">
-                  <div className="space-y-2">
-                    <Skeleton className="h-5 w-32" />
-                    <Skeleton className="h-4 w-24" />
-                  </div>
-                  <div className="flex space-x-2">
-                    <Skeleton className="h-8 w-8 rounded" />
-                    <Skeleton className="h-8 w-8 rounded" />
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent className="pt-0">
-                <Skeleton className="h-4 w-full mb-2" />
-                <Skeleton className="h-4 w-3/4" />
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      </div>
-    );
-  }
+  }, [sortingKey, providers.length, pageIndex, pageSize]);
 
   const handleDelete = async () => {
     if (!deleteItem || !deleteProviderAction) return;
@@ -304,7 +422,6 @@ export default function Providers({
           provider_id: deleteItem.id,
         },
       });
-      // profileId comes from X-Profile-Id header automatically
       toast.success("Provider deleted successfully");
       router.refresh();
     } catch {
@@ -323,10 +440,6 @@ export default function Providers({
 
   const handleEdit = (id: string) => {
     router.push(`/intelligence/providers/${id}`);
-  };
-
-  const handleCreateNew = () => {
-    router.push("/intelligence/providers/new");
   };
 
   const renderProviderCard = (provider: (typeof providers)[number]) => {
@@ -394,6 +507,14 @@ export default function Providers({
     );
   };
 
+  // Get column references for toolbar
+  const departmentsColumn = table.getColumn("departments");
+  const modelsColumn = table.getColumn("models");
+  const statusColumn = table.getColumn("status");
+  const isFiltered =
+    table.getState().columnFilters.length > 0 ||
+    searchTerm.length > 0;
+
   return (
     <div className="space-y-6" data-page="providers-index">
       {/* Toolbar */}
@@ -401,41 +522,55 @@ export default function Providers({
         <div className="flex flex-col md:flex-row md:flex-1 md:items-center md:space-x-2 gap-2 md:gap-0">
           <Input
             placeholder="Search providers..."
-            value={(table.getColumn("name")?.getFilterValue() as string) ?? ""}
-            onChange={(event) =>
-              table.getColumn("name")?.setFilterValue(event.target.value)
-            }
+            value={searchTerm}
+            onChange={(event) => handleSearchChange(event.target.value)}
+            onBlur={handleSearchBlur}
+            onKeyDown={handleSearchKeyDown}
             className="h-8 w-full md:w-[150px] lg:w-[250px]"
             data-testid="input-search-providers"
           />
-          {departmentOptions.length > 0 && table.getColumn("departments") && (
+          <DataTableFacetedFilter
+            column={departmentsColumn}
+            title="Department"
+            options={departmentOptions}
+            isServerDriven={true}
+            onSearchChange={handleDepartmentSearchChange}
+            searchValue={localDepartmentSearch}
+          />
+          <DataTableFacetedFilter
+            column={modelsColumn}
+            title="Model"
+            options={modelOptions}
+            isServerDriven={true}
+            onSearchChange={handleModelSearchChange}
+            searchValue={localModelSearch}
+          />
+          {statusColumn && statusOptions.length > 0 && (
             <DataTableFacetedFilter
-              column={table.getColumn("departments")!}
-              title="Department"
-              options={departmentOptions}
-              isServerDriven
-            />
-          )}
-          {modelOptions.length > 0 && table.getColumn("models") && (
-            <DataTableFacetedFilter
-              column={table.getColumn("models")!}
-              title="Model"
-              options={modelOptions}
-              isServerDriven
-            />
-          )}
-          {statusOptions.length > 0 && table.getColumn("status") && (
-            <DataTableFacetedFilter
-              column={table.getColumn("status")!}
+              column={statusColumn}
               title="Status"
               options={statusOptions}
-              isServerDriven
+              isServerDriven={true}
             />
           )}
-          {table.getState().columnFilters.length > 0 && (
+          {isFiltered && (
             <Button
               variant="ghost"
-              onClick={() => table.resetColumnFilters()}
+              onClick={() => {
+                setSearchTerm("");
+                setLocalDepartmentSearch("");
+                setLocalModelSearch("");
+                table.resetColumnFilters();
+                updateProvidersParams({
+                  page: 0,
+                  search: "",
+                  departmentIds: [],
+                  modelIds: [],
+                  statusIds: [],
+                  departmentSearch: "",
+                  modelSearch: "",
+                });
+              }}
               className="h-8 px-2 lg:px-3"
             >
               Reset

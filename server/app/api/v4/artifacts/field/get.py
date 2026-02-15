@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import asyncio
-from dataclasses import replace
 from typing import Annotated, Any, cast
 from uuid import UUID
 
@@ -41,7 +40,8 @@ from app.api.v4.artifacts.field.types import (
     GetFieldWebsocketResponse,
 )
 from app.api.v4.auth.profile import get_auth_profile_internal
-from app.api.v4.permissions import select_agents_for_artifact
+from app.api.v4.auth.settings import get_auth_settings_internal
+from app.api.v4.permissions import has_tools_for_resource, resolve_agents_for_artifact
 from app.api.v4.resources.agents.get import get_agents_internal
 from app.api.v4.resources.departments.get import get_departments_internal
 from app.api.v4.resources.departments.search import search_departments_internal
@@ -56,7 +56,6 @@ from app.api.v4.resources.parameters.get import get_parameters_internal
 from app.api.v4.resources.parameters.search import search_parameters_internal
 from app.api.v4.resources.providers.get import get_providers_internal
 from app.api.v4.resources.tools.get import get_tools_internal
-from app.api.v4.types import CandidateAgent
 from app.api.v4.views.drafts.get import get_draft_field_internal
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
@@ -92,10 +91,6 @@ def _dedupe_by_id(items: list[Any], id_attr: str) -> list[Any]:
             seen.add(item_id)
             output.append(item)
     return output
-
-
-def _normalize_field_resource_alias(resource: str) -> str:
-    return "conditional_parameters" if resource == "parameters" else resource
 
 
 async def get_field_internal(
@@ -205,48 +200,15 @@ async def get_field_internal(
         if draft_item.parameter_ids:
             selected_conditional_parameter_ids = draft_item.parameter_ids
 
-    raw_candidate_agents = CandidateAgent.from_sql_rows(ids_result.candidate_agents)
-    candidate_agents: list[CandidateAgent] = []
-    for candidate in raw_candidate_agents:
-        normalized_tool_resources = {
-            _normalize_field_resource_alias(resource)
-            for resource in candidate.tool_resources
-        }
-        normalized_create_tool_ids = {
-            _normalize_field_resource_alias(resource): tool_id
-            for resource, tool_id in candidate.create_tool_ids.items()
-        }
-        normalized_link_tool_ids = {
-            _normalize_field_resource_alias(resource): tool_id
-            for resource, tool_id in candidate.link_tool_ids.items()
-        }
-        candidate_agents.append(
-            replace(
-                candidate,
-                tool_resources=normalized_tool_resources,
-                create_tool_ids=normalized_create_tool_ids,
-                link_tool_ids=normalized_link_tool_ids,
-            )
+    # === RESOLVE AGENTS FROM SETTINGS (source of truth) ===
+    async with pool.acquire() as settings_conn:
+        settings_data = await get_auth_settings_internal(
+            settings_conn, profile_id, bypass_cache
         )
-    agent_ids = select_agents_for_artifact(
-        candidates=candidate_agents,
-        artifact_resources=FIELD_RESOURCES,
-        resources_needed=list(FIELD_RESOURCES),
-        user_department_ids=set(user_department_ids) if user_department_ids else None,
-        require_mcp=False,
-    )
 
-    create_tool_ids_map: dict[str, UUID | None] = {}
-    link_tool_ids_map: dict[str, UUID | None] = {}
-    for resource in FIELD_RESOURCES:
-        selected_agent_id = agent_ids.get(resource)
-        if not selected_agent_id:
-            continue
-        for candidate in candidate_agents:
-            if candidate.agent_id == selected_agent_id:
-                create_tool_ids_map[resource] = candidate.create_tool_ids.get(resource)
-                link_tool_ids_map[resource] = candidate.link_tool_ids.get(resource)
-                break
+    agent_ids, create_tool_ids_map, link_tool_ids_map = resolve_agents_for_artifact(
+        settings_data.agent_tool_entries, FIELD_RESOURCES
+    )
 
     show_ai_generate_map = {
         "names": agent_ids.get("names") is not None,
@@ -422,8 +384,10 @@ async def get_field_internal(
         if p.parameter_id in selected_conditional_parameter_ids
     ]
 
+    names_has_tools = has_tools_for_resource(settings_data.agent_tool_entries, "names")
+
     show_flags_map = {
-        "names": compute_show_name(ids_result.names_has_tools or False),
+        "names": compute_show_name(names_has_tools),
         "descriptions": compute_show_description(),
         "flags": compute_show_flag(),
         "departments": compute_show_departments(len(all_departments)),
@@ -464,59 +428,45 @@ async def get_field_internal(
             status_code=400, detail="No accessible departments found for user"
         )
 
-    selected_agent_ids = list({aid for aid in agent_ids.values() if aid is not None})
+    # Fetch config resources for websocket generation context (from settings agents).
+    config_agent_resource_ids = [a.id for a in settings_data.settings_agents if a.id]
+    config_model_resource_ids = [
+        a.model_id for a in settings_data.settings_agents if a.model_id
+    ]
 
-    config_agents = []
-    config_models = []
-    config_providers = []
-    config_tools = []
-    if selected_agent_ids:
+    config_agents: list[Any] = []
+    config_models: list[Any] = []
+    config_providers: list[Any] = []
+    config_tools: list[Any] = []
+    if config_agent_resource_ids:
         async with pool.acquire() as config_conn:
             config_agents = await get_agents_internal(
-                config_conn,
-                selected_agent_ids,
-                bypass_cache,
+                config_conn, config_agent_resource_ids, bypass_cache
             )
-            model_ids = list(
+    if config_model_resource_ids:
+        async with pool.acquire() as config_conn:
+            config_models = await get_models_internal(
+                config_conn, config_model_resource_ids, bypass_cache
+            )
+            provider_ids = list(
                 {
-                    agent.model_id
-                    for agent in config_agents
-                    if agent.model_id is not None
+                    model.provider_id
+                    for model in config_models
+                    if model.provider_id is not None
                 }
             )
-            if model_ids:
-                config_models = await get_models_internal(
-                    config_conn,
-                    model_ids,
-                    bypass_cache,
+            if provider_ids:
+                config_providers = await get_providers_internal(
+                    config_conn, provider_ids, bypass_cache
                 )
-                provider_ids = list(
-                    {
-                        model.provider_id
-                        for model in config_models
-                        if model.provider_id is not None
-                    }
-                )
-                if provider_ids:
-                    config_providers = await get_providers_internal(
-                        config_conn,
-                        provider_ids,
-                        bypass_cache,
-                    )
-            tool_ids = list(
-                {
-                    tool_id
-                    for agent in config_agents
-                    for tool_id in (agent.tool_ids or [])
-                    if tool_id is not None
-                }
-            )
-            if tool_ids:
-                config_tools = await get_tools_internal(
-                    config_conn,
-                    tool_ids,
-                    bypass_cache,
-                )
+    tool_ids: list[UUID] = []
+    for agent in config_agents:
+        raw = getattr(agent, "tool_ids", None) or []
+        tool_ids.extend([tid for tid in raw if tid is not None])
+    tool_ids = list(dict.fromkeys(tool_ids))
+    if tool_ids:
+        async with pool.acquire() as config_conn:
+            config_tools = await get_tools_internal(config_conn, tool_ids, bypass_cache)
 
     return FieldInternalData(
         actor_name=actor_name,

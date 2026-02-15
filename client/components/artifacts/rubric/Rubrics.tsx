@@ -1,13 +1,15 @@
 /**
  * Rubrics.tsx
- * Used to display the rubrics page with table-based filtering and card layout.
+ * Used to display the rubrics page with server-side filtering.
+ * Hybrid approach: department/simulation filters are server-driven,
+ * passPercentage remains client-side.
  * @AshokSaravanan222 & @siladiea
  * 06/18/2025
  */
 "use client";
 import { Copy, Edit, Eye, FileCheck, Star, Trash2, X } from "lucide-react";
-import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import {
@@ -16,10 +18,7 @@ import {
   SortingState,
   VisibilityState,
   getCoreRowModel,
-  getFacetedRowModel,
-  getFacetedUniqueValues,
   getFilteredRowModel,
-  getPaginationRowModel,
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table";
@@ -60,14 +59,28 @@ export interface RubricsProps {
   ) => Promise<DuplicateRubricOut>;
   deleteRubricAction?: (input: DeleteRubricIn) => Promise<DeleteRubricOut>;
   saveRubricAction?: (input: SaveRubricIn) => Promise<SaveRubricOut>;
+  // Server-side pagination
+  pageIndex: number;
+  pageSize: number;
+  totalCount: number;
+  // Server-side filter search terms
+  departmentSearch: string;
+  simulationSearch: string;
 }
 
 export default function Rubrics({
   listData: serverListData,
   duplicateRubricAction,
   deleteRubricAction,
+  pageIndex,
+  pageSize,
+  totalCount,
+  departmentSearch,
+  simulationSearch,
 }: RubricsProps) {
   const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const { profile } = useProfile();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [deleteItem, setDeleteItem] = useState<{
@@ -77,10 +90,23 @@ export default function Rubrics({
   const [isDeleting, setIsDeleting] = useState(false);
   const [isDuplicating, setIsDuplicating] = useState<string | null>(null);
 
+  // Local search state for debouncing
+  const [searchTerm, setSearchTerm] = useState(
+    searchParams?.get("search") ?? ""
+  );
+  const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   // Table state
   const [rowSelection, setRowSelection] = useState({});
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
-  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
+  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>(() => {
+    const filters: ColumnFiltersState = [];
+    const deptIds = searchParams?.getAll("departmentIds") ?? [];
+    const simIds = searchParams?.getAll("simulationIds") ?? [];
+    if (deptIds.length > 0) filters.push({ id: "departments", value: deptIds });
+    if (simIds.length > 0) filters.push({ id: "simulations", value: simIds });
+    return filters;
+  });
   const [sorting, setSorting] = useState<SortingState>([
     { id: "name", desc: false },
   ]);
@@ -105,7 +131,7 @@ export default function Rubrics({
         .map((opt) => ({
           value: opt.id as string,
           label: opt.name as string,
-          count: opt.count ?? 0,
+          count: opt.count ?? undefined,
         }))
         .filter((opt) => opt.value && opt.label),
     [rubricsData?.department_filter]
@@ -117,13 +143,13 @@ export default function Rubrics({
         .map((opt) => ({
           value: opt.id as string,
           label: opt.name as string,
-          count: opt.count ?? 0,
+          count: opt.count ?? undefined,
         }))
         .filter((opt) => opt.value && opt.label),
     [rubricsData?.simulation_filter]
   );
 
-  // Filter pass percentage options to only show ranges that have actual data
+  // Filter pass percentage options to only show ranges that have actual data (client-only)
   const passPercentageOptions = useMemo(() => {
     const allRanges = [
       { value: "0-25", label: "0-25%", min: 0, max: 25 },
@@ -132,7 +158,6 @@ export default function Rubrics({
       { value: "76-100", label: "76-100%", min: 76, max: 100 },
     ];
 
-    // Check which ranges have rubrics
     const rangesWithData = allRanges.filter((range) => {
       return rubrics.some((rubric) => {
         const percentage = rubric.pass_percentage ?? 0;
@@ -143,6 +168,176 @@ export default function Rubrics({
     return rangesWithData.map(({ value, label }) => ({ value, label }));
   }, [rubrics]);
 
+  // Helper to update URL search params
+  const updateRubricsParams = useCallback(
+    (updates: {
+      page?: number;
+      pageSize?: number;
+      search?: string;
+      departmentIds?: string[];
+      simulationIds?: string[];
+      departmentSearch?: string;
+      simulationSearch?: string;
+    }) => {
+      const params = new URLSearchParams(searchParams?.toString() || "");
+
+      if (updates.page !== undefined) {
+        if (updates.page === 0) params.delete("page");
+        else params.set("page", updates.page.toString());
+      }
+
+      if (updates.pageSize !== undefined) {
+        if (updates.pageSize === 12) params.delete("pageSize");
+        else params.set("pageSize", updates.pageSize.toString());
+      }
+
+      if (updates.search !== undefined) {
+        if (updates.search === "") params.delete("search");
+        else params.set("search", updates.search);
+      }
+
+      if (updates.departmentIds !== undefined) {
+        params.delete("departmentIds");
+        updates.departmentIds.forEach((id) => params.append("departmentIds", id));
+      }
+
+      if (updates.simulationIds !== undefined) {
+        params.delete("simulationIds");
+        updates.simulationIds.forEach((id) => params.append("simulationIds", id));
+      }
+
+      if (updates.departmentSearch !== undefined) {
+        if (updates.departmentSearch === "") params.delete("departmentSearch");
+        else params.set("departmentSearch", updates.departmentSearch);
+      }
+
+      if (updates.simulationSearch !== undefined) {
+        if (updates.simulationSearch === "") params.delete("simulationSearch");
+        else params.set("simulationSearch", updates.simulationSearch);
+      }
+
+      const qs = params.toString();
+      router.push(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
+    },
+    [pathname, router, searchParams]
+  );
+
+  // Commit search to URL
+  const commitSearch = useCallback(
+    (value: string) => {
+      updateRubricsParams({ page: 0, search: value.trim() || "" });
+    },
+    [updateRubricsParams]
+  );
+
+  // Handle search input change with debounce
+  const handleSearchChange = useCallback(
+    (value: string) => {
+      setSearchTerm(value);
+      if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
+      if (value === "") { commitSearch(""); return; }
+      searchTimeoutRef.current = setTimeout(() => { commitSearch(value); }, 500);
+    },
+    [commitSearch]
+  );
+
+  const handleSearchBlur = useCallback(() => {
+    if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
+    commitSearch(searchTerm);
+  }, [commitSearch, searchTerm]);
+
+  const handleSearchKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLInputElement>) => {
+      if (e.key === "Enter") {
+        if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
+        commitSearch(searchTerm);
+      }
+    },
+    [commitSearch, searchTerm]
+  );
+
+  // Handle filter option search changes (debounced)
+  const departmentSearchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const simulationSearchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const [localDepartmentSearch, setLocalDepartmentSearch] = useState(departmentSearch);
+  const [localSimulationSearch, setLocalSimulationSearch] = useState(simulationSearch);
+
+  const handleDepartmentSearchChange = useCallback(
+    (value: string) => {
+      setLocalDepartmentSearch(value);
+      if (departmentSearchTimeoutRef.current) clearTimeout(departmentSearchTimeoutRef.current);
+      departmentSearchTimeoutRef.current = setTimeout(() => {
+        updateRubricsParams({ departmentSearch: value });
+      }, 300);
+    },
+    [updateRubricsParams]
+  );
+
+  const handleSimulationSearchChange = useCallback(
+    (value: string) => {
+      setLocalSimulationSearch(value);
+      if (simulationSearchTimeoutRef.current) clearTimeout(simulationSearchTimeoutRef.current);
+      simulationSearchTimeoutRef.current = setTimeout(() => {
+        updateRubricsParams({ simulationSearch: value });
+      }, 300);
+    },
+    [updateRubricsParams]
+  );
+
+  // Sync column filters to URL when they change (only server-driven ones)
+  const handleColumnFiltersChange = useCallback(
+    (updater: ColumnFiltersState | ((prev: ColumnFiltersState) => ColumnFiltersState)) => {
+      const newFilters = typeof updater === "function" ? updater(columnFilters) : updater;
+      setColumnFilters(newFilters);
+
+      const departmentFilter = newFilters.find((f) => f.id === "departments");
+      const simulationFilter = newFilters.find((f) => f.id === "simulations");
+
+      // Check if any server-driven filter actually changed
+      const oldDepartmentFilter = columnFilters.find((f) => f.id === "departments");
+      const oldSimulationFilter = columnFilters.find((f) => f.id === "simulations");
+
+      const serverChanged =
+        JSON.stringify(departmentFilter?.value) !== JSON.stringify(oldDepartmentFilter?.value) ||
+        JSON.stringify(simulationFilter?.value) !== JSON.stringify(oldSimulationFilter?.value);
+
+      if (serverChanged) {
+        updateRubricsParams({
+          page: 0,
+          departmentIds: (departmentFilter?.value as string[]) || [],
+          simulationIds: (simulationFilter?.value as string[]) || [],
+        });
+      }
+    },
+    [columnFilters, updateRubricsParams]
+  );
+
+  // Handle pagination change
+  const handlePaginationChange = useCallback(
+    (
+      updater:
+        | { pageIndex: number; pageSize: number }
+        | ((prev: { pageIndex: number; pageSize: number }) => {
+            pageIndex: number;
+            pageSize: number;
+          })
+    ) => {
+      const newPagination =
+        typeof updater === "function"
+          ? updater({ pageIndex, pageSize })
+          : updater;
+      updateRubricsParams({
+        page: newPagination.pageIndex,
+        pageSize: newPagination.pageSize,
+      });
+    },
+    [pageIndex, pageSize, updateRubricsParams]
+  );
+
+  // Compute page count from total
+  const pageCount = Math.ceil(totalCount / pageSize);
+
   // Column definitions for TanStack Table
   const columns = useMemo<ColumnDef<(typeof rubrics)[number]>[]>(
     () => [
@@ -150,14 +345,8 @@ export default function Rubrics({
         accessorKey: "name",
         header: "Name",
         cell: ({ row }) => row.getValue("name"),
-        filterFn: (row, id, value) => {
-          const name = String(row.getValue(id)).toLowerCase();
-          const desc = String(row.original.description).toLowerCase();
-          const query = String(value).toLowerCase();
-          return name.includes(query) || desc.includes(query);
-        },
       },
-      // Hidden faceting column for Pass Percentage (server-provided)
+      // Hidden faceting column for Pass Percentage (client-only)
       {
         id: "passPercentage",
         header: () => null,
@@ -165,7 +354,6 @@ export default function Rubrics({
         enableHiding: true,
         enableSorting: false,
         accessorFn: (row: (typeof rubrics)[number]) => {
-          // Return the range string that this percentage falls into for faceting
           const percentage = row.pass_percentage ?? 0;
           if (percentage >= 0 && percentage <= 25) return "0-25";
           if (percentage >= 26 && percentage <= 50) return "26-50";
@@ -210,7 +398,7 @@ export default function Rubrics({
     [],
   );
 
-  // Create table instance
+  // Create table instance - hybrid: manual for server filters, client filtering for passPercentage
   const table = useReactTable({
     data: rubrics,
     columns,
@@ -219,49 +407,36 @@ export default function Rubrics({
       columnVisibility,
       rowSelection,
       columnFilters,
+      pagination: {
+        pageIndex,
+        pageSize,
+      },
     },
     enableRowSelection: true,
     onRowSelectionChange: setRowSelection,
     onSortingChange: setSorting,
-    onColumnFiltersChange: setColumnFilters,
+    onColumnFiltersChange: handleColumnFiltersChange,
     onColumnVisibilityChange: setColumnVisibility,
+    onPaginationChange: handlePaginationChange,
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
     getSortedRowModel: getSortedRowModel(),
-    getFacetedRowModel: getFacetedRowModel(),
-    getFacetedUniqueValues: getFacetedUniqueValues(),
-    initialState: {
-      pagination: {
-        pageSize: 12,
-      },
-    },
+    manualPagination: true,
+    manualFiltering: false, // Client-side filtering for passPercentage on server-provided page
+    pageCount,
   });
 
-  // Memoize table rows to avoid calling getRowModel() multiple times and prevent re-render issues
-  // Extract pagination primitives directly to avoid object reference issues
-  const pageIndex = table.getState().pagination.pageIndex;
-  const pageSize = table.getState().pagination.pageSize;
-  // Stringify arrays for stable comparison (arrays are compared by reference)
+  // Memoize table rows
   const sortingKey = JSON.stringify(sorting);
   const columnFiltersKey = JSON.stringify(columnFilters);
   const tableRows = useMemo(() => {
     return table.getRowModel().rows;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [
-    // Use JSON.stringify for arrays to ensure stable comparison (arrays are compared by reference)
-    sortingKey,
-    columnFiltersKey,
-    rubrics.length,
-    // Use pagination primitives directly (not object references)
-    pageIndex,
-    pageSize,
-  ]);
+  }, [sortingKey, columnFiltersKey, rubrics.length, pageIndex, pageSize]);
 
   const handleDelete = async () => {
     if (!deleteItem || !deleteRubricAction) return;
 
-    // Ensure profileId exists - required for API calls
     if (!profile?.id) {
       toast.error("Profile not loaded. Please refresh the page.");
       return;
@@ -291,7 +466,6 @@ export default function Rubrics({
       return;
     }
 
-    // Ensure profileId exists - required for API calls
     if (!profile?.id) {
       toast.error("Profile not loaded. Please refresh the page.");
       return;
@@ -323,8 +497,6 @@ export default function Rubrics({
   };
 
   const renderRubricCard = (rubric: (typeof rubrics)[number]) => {
-    // Calculate pass percentage from standard groups (sum of passPoints / sum of points)
-    // This matches how RubricDetails calculates it
     const groupIds = rubric.standard_group_ids || [];
     let totalPoints = 0;
     let totalPassPoints = 0;
@@ -340,7 +512,7 @@ export default function Rubrics({
     const passPercentage =
       totalPoints > 0
         ? Math.round((totalPassPoints / totalPoints) * 100)
-        : (rubric.pass_percentage ?? 0); // Fallback to server value if no groups
+        : (rubric.pass_percentage ?? 0);
 
     return (
       <Card
@@ -442,11 +614,9 @@ export default function Rubrics({
         <CardContent className="p-6">
           <TableRubric
             standardGroups={(() => {
-              // Convert standard_group_ids array to dict format expected by TableRubric
               const groupsDict: Record<string, string[]> = {};
               const groupIds = rubric.standard_group_ids || [];
               groupIds.forEach((groupId) => {
-                // Find standards belonging to this group from the flat standards array
                 const standardsInGroup = standards
                   .filter((s) => s.standard_group_id === groupId)
                   .map((s) => String(s.standard_id));
@@ -457,7 +627,6 @@ export default function Rubrics({
               return groupsDict;
             })()}
             standardGroupsMapping={(() => {
-              // Convert standard_groups array to dict format expected by TableRubric
               const mapping: Record<string, { name: string; description: string; points: number; passPoints: number }> = {};
               standardGroups.forEach((group) => {
                 if (group.standard_group_id) {
@@ -472,7 +641,6 @@ export default function Rubrics({
               return mapping;
             })()}
             standardsMapping={(() => {
-              // Convert standards array to dict format expected by TableRubric
               const mapping: Record<string, { name: string; description: string; points: number }> = {};
               standards.forEach((standard) => {
                 if (standard.standard_id) {
@@ -493,11 +661,12 @@ export default function Rubrics({
   };
 
   // Get column references for toolbar
-  const nameColumn = table.getColumn("name");
   const passPercentageColumn = table.getColumn("passPercentage");
   const departmentsColumn = table.getColumn("departments");
   const simulationsColumn = table.getColumn("simulations");
-  const isFiltered = table.getState().columnFilters.length > 0;
+  const isFiltered =
+    table.getState().columnFilters.length > 0 ||
+    searchTerm.length > 0;
 
   return (
     <div className="space-y-6">
@@ -511,10 +680,10 @@ export default function Rubrics({
             <div className="w-full md:w-auto">
               <Input
                 placeholder="Search rubrics..."
-                value={(nameColumn?.getFilterValue() as string) ?? ""}
-                onChange={(event) =>
-                  nameColumn?.setFilterValue(event.target.value)
-                }
+                value={searchTerm}
+                onChange={(event) => handleSearchChange(event.target.value)}
+                onBlur={handleSearchBlur}
+                onKeyDown={handleSearchKeyDown}
                 className="h-8 w-full md:w-[150px] lg:w-[250px]"
                 data-testid="rubrics-search"
               />
@@ -529,28 +698,41 @@ export default function Rubrics({
                 />
               )}
 
-              {departmentsColumn && departmentOptions.length > 0 && (
-                <DataTableFacetedFilter
-                  column={departmentsColumn}
-                  title="Department"
-                  options={departmentOptions}
-                  isServerDriven
-                />
-              )}
+              <DataTableFacetedFilter
+                column={departmentsColumn}
+                title="Department"
+                options={departmentOptions}
+                isServerDriven={true}
+                onSearchChange={handleDepartmentSearchChange}
+                searchValue={localDepartmentSearch}
+              />
 
-              {simulationsColumn && simulationOptions.length > 0 && (
-                <DataTableFacetedFilter
-                  column={simulationsColumn}
-                  title="Simulation"
-                  options={simulationOptions}
-                  isServerDriven
-                />
-              )}
+              <DataTableFacetedFilter
+                column={simulationsColumn}
+                title="Simulation"
+                options={simulationOptions}
+                isServerDriven={true}
+                onSearchChange={handleSimulationSearchChange}
+                searchValue={localSimulationSearch}
+              />
 
               {isFiltered && (
                 <Button
                   variant="ghost"
-                  onClick={() => table.resetColumnFilters()}
+                  onClick={() => {
+                    setSearchTerm("");
+                    setLocalDepartmentSearch("");
+                    setLocalSimulationSearch("");
+                    table.resetColumnFilters();
+                    updateRubricsParams({
+                      page: 0,
+                      search: "",
+                      departmentIds: [],
+                      simulationIds: [],
+                      departmentSearch: "",
+                      simulationSearch: "",
+                    });
+                  }}
                   className="h-8 px-2 lg:px-3 hidden md:flex"
                 >
                   Reset

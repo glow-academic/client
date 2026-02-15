@@ -54,6 +54,7 @@ class BenchmarkBundleInternalData:
     benchmark_bundle_entry_id: UUID
     benchmark_id: UUID | None
     profile_has_access: bool
+    draft_version: int | None = None
     # Per-resource: all (suggestions) and current (selected)
     all_resources: dict[str, list[Any]] = field(default_factory=dict)
     current_resources: dict[str, list[Any]] = field(default_factory=dict)
@@ -111,9 +112,13 @@ async def get_benchmark_bundle_internal(
     conn: asyncpg.Connection,
     profile_id: UUID,
     benchmark_bundle_entry_id: UUID,
+    draft_id: UUID | None = None,
     bypass_cache: bool = False,
 ) -> BenchmarkBundleInternalData:
     """Shared IDs-first + hydration internal fetch for benchmark bundle artifact."""
+    from app.api.v4.views.drafts.get import get_draft_benchmark_internal
+    from app.api.v4.views.drafts.types import DraftBenchmarkViewItem
+
     # 1. Fetch MV view data (all 9 ID arrays)
     view_data = await get_benchmark_bundle_view_internal(
         conn=conn,
@@ -130,13 +135,28 @@ async def get_benchmark_bundle_internal(
             detail="You do not have access to this benchmark bundle.",
         )
 
-    # 2. Build selected IDs from MV (no draft override for now)
+    # 2. Fetch draft if provided
+    draft_item: DraftBenchmarkViewItem | None = None
+    if draft_id is not None:
+        draft_items = await get_draft_benchmark_internal(
+            conn=conn,
+            draft_ids=[draft_id],
+            bypass_cache=bypass_cache,
+        )
+        if draft_items:
+            draft_item = draft_items[0]
+
+    # 3. Build selected IDs — draft overrides MV when present
     selected_ids: dict[str, list[UUID]] = {}
     for resource_key, view_attr, _fetch_fn, _id_attr in RESOURCE_CONFIG:
-        mv_ids = list(getattr(view_data, view_attr, []) or [])
-        selected_ids[resource_key] = mv_ids
+        if draft_item is not None:
+            draft_ids_val = getattr(draft_item, view_attr, None)
+            selected_ids[resource_key] = list(draft_ids_val) if draft_ids_val else []
+        else:
+            mv_ids = list(getattr(view_data, view_attr, []) or [])
+            selected_ids[resource_key] = mv_ids
 
-    # 3. Hydrate ALL 9 resources in parallel
+    # 4. Hydrate ALL 9 resources in parallel
     FetchFn = Callable[..., Coroutine[Any, Any, list[Any]]]
 
     async def _fetch_resource(
@@ -169,6 +189,7 @@ async def get_benchmark_bundle_internal(
         benchmark_bundle_entry_id=view_data.benchmark_bundle_entry_id,
         benchmark_id=view_data.benchmark_id,
         profile_has_access=view_data.profile_has_access,
+        draft_version=draft_item.version if draft_item else None,
         all_resources=all_resources,
         current_resources=current_resources,
     )
@@ -197,6 +218,7 @@ async def get_benchmark_bundle_client(
     conn: asyncpg.Connection,
     profile_id: UUID,
     benchmark_bundle_entry_id: UUID,
+    draft_id: UUID | None = None,
     bypass_cache: bool = False,
 ) -> GetBenchmarkBundleResponse:
     """HTTP-facing bundle response formatter — section-first pattern."""
@@ -204,6 +226,7 @@ async def get_benchmark_bundle_client(
         conn=conn,
         profile_id=profile_id,
         benchmark_bundle_entry_id=benchmark_bundle_entry_id,
+        draft_id=draft_id,
         bypass_cache=bypass_cache,
     )
 
@@ -221,6 +244,7 @@ async def get_benchmark_bundle_client(
         benchmark_bundle_entry_id=data.benchmark_bundle_entry_id,
         benchmark_id=data.benchmark_id,
         profile_has_access=data.profile_has_access,
+        draft_version=data.draft_version,
         departments=_section("departments"),
         models=_section("models"),
         prompts=_section("prompts"),
@@ -259,6 +283,7 @@ async def benchmark_bundle_get(
             conn=conn,
             profile_id=cast(UUID, profile_id),
             benchmark_bundle_entry_id=request.benchmark_bundle_entry_id,
+            draft_id=request.draft_id,
             bypass_cache=bypass_cache,
         )
     except HTTPException:
