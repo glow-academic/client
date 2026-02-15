@@ -125,9 +125,16 @@ async def save_setting(
                 detail="You don't have permission to save this setting.",
             )
 
+        # Server-resolved group_id: create if not updating an existing setting
+        group_id = None
+        if not request.input_setting_id:
+            group_id = await conn.fetchval(
+                "INSERT INTO groups_entry (created_at, updated_at) VALUES (NOW(), NOW()) RETURNING id"
+            )
+
         async with conn.transaction():
-            # Convert API request to SQL params (add profile_id from header)
-            params = SaveSettingSqlParams.from_request(request, profile_id)
+            # Convert API request to SQL params (add profile_id and group_id from server)
+            params = SaveSettingSqlParams.from_request(request, profile_id, group_id)
             sql_params = params.to_tuple()
 
             # Execute SQL with typed helper - automatically detects and calls function if present

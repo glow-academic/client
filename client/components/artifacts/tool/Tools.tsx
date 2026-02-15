@@ -82,6 +82,43 @@ export default function Tools({
   const tools = toolsData?.tools || [];
   const toolsArray = Array.isArray(tools) ? tools : [];
 
+  // Filter options from server-provided ListFilterSection
+  const departmentOptions = useMemo(
+    () =>
+      (toolsData?.department_filter?.options || [])
+        .map((opt) => ({
+          value: opt.id as string,
+          label: opt.name as string,
+          count: opt.count ?? 0,
+        }))
+        .filter((opt) => opt.value && opt.label),
+    [toolsData?.department_filter]
+  );
+
+  const agentOptions = useMemo(
+    () =>
+      (toolsData?.agent_filter?.options || [])
+        .map((opt) => ({
+          value: opt.id as string,
+          label: opt.name as string,
+          count: opt.count ?? 0,
+        }))
+        .filter((opt) => opt.value && opt.label),
+    [toolsData?.agent_filter]
+  );
+
+  const creatableOptions = useMemo(
+    () =>
+      (toolsData?.creatable_filter?.options || [])
+        .map((opt) => ({
+          value: opt.id as string,
+          label: opt.name as string,
+          count: opt.count ?? 0,
+        }))
+        .filter((opt) => opt.value && opt.label),
+    [toolsData?.creatable_filter]
+  );
+
   // Define table columns for filtering/sorting
   const columns: ColumnDef<(typeof toolsArray)[number]>[] = useMemo(
     () => [
@@ -98,6 +135,36 @@ export default function Tools({
         accessorFn: (row: (typeof toolsArray)[number]) => {
           return row.updated_at ?? null;
         },
+      },
+      // Hidden faceting column for Departments
+      {
+        id: "departments",
+        header: () => null,
+        cell: () => null,
+        enableHiding: true,
+        enableSorting: false,
+        accessorFn: () => [] as string[],
+        filterFn: () => true,
+      },
+      // Hidden faceting column for Agents
+      {
+        id: "agents",
+        header: () => null,
+        cell: () => null,
+        enableHiding: true,
+        enableSorting: false,
+        accessorFn: () => [] as string[],
+        filterFn: () => true,
+      },
+      // Hidden faceting column for Creatable
+      {
+        id: "creatable",
+        header: () => null,
+        cell: () => null,
+        enableHiding: true,
+        enableSorting: false,
+        accessorFn: () => "" as string,
+        filterFn: () => true,
       },
     ],
     []
@@ -119,6 +186,8 @@ export default function Tools({
     getFilteredRowModel: getFilteredRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
     getSortedRowModel: getSortedRowModel(),
+    getFacetedRowModel: getFacetedRowModel(),
+    getFacetedUniqueValues: getFacetedUniqueValues(),
     initialState: {
       pagination: {
         pageSize: 12,
@@ -305,6 +374,9 @@ export default function Tools({
 
   // Get column references for toolbar
   const nameColumn = table.getColumn("name");
+  const departmentsColumn = table.getColumn("departments");
+  const agentsColumn = table.getColumn("agents");
+  const creatableColumn = table.getColumn("creatable");
   const isFiltered = table.getState().columnFilters.length > 0;
 
   return (
@@ -336,6 +408,33 @@ export default function Tools({
               </div>
 
               <div className="flex items-center space-x-2 flex-wrap">
+                {departmentsColumn && departmentOptions.length > 0 && (
+                  <DataTableFacetedFilter
+                    column={departmentsColumn}
+                    title="Department"
+                    options={departmentOptions}
+                    isServerDriven
+                  />
+                )}
+
+                {agentsColumn && agentOptions.length > 0 && (
+                  <DataTableFacetedFilter
+                    column={agentsColumn}
+                    title="Agent"
+                    options={agentOptions}
+                    isServerDriven
+                  />
+                )}
+
+                {creatableColumn && creatableOptions.length > 0 && (
+                  <DataTableFacetedFilter
+                    column={creatableColumn}
+                    title="Type"
+                    options={creatableOptions}
+                    isServerDriven
+                  />
+                )}
+
                 {isFiltered && (
                   <Button
                     variant="ghost"

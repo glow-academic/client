@@ -65,20 +65,6 @@ type PatchSettingDraftOut = OutputOf<"/api/v4/artifacts/settings/draft", "patch"
 
 type SettingData = OutputOf<"/api/v4/artifacts/settings/get", "post">;
 
-function singleAction(resourceId: string | null) {
-  return {
-    resource_id: resourceId,
-    create_tool_id: null,
-  };
-}
-
-function multiAction(resourceIds: string[]) {
-  return {
-    resource_ids: resourceIds.length > 0 ? resourceIds : null,
-    create_tool_id: null,
-  };
-}
-
 export interface SettingProps {
   settingId?: string;
   // Server-provided data (for server-side rendering)
@@ -661,17 +647,17 @@ function SettingComponent({
           body: {
             input_draft_id: draftId || null,
             group_id: settingData?.group_id ?? null,
-            names: singleAction(formState.name_id),
-            descriptions: singleAction(formState.description_id),
-            colors: multiAction(formState.color_ids),
-            flags: singleAction(formState.active_flag_id),
-            departments: multiAction(formState.department_ids),
-            profiles: multiAction(formState.profile_ids),
-            auths: multiAction(formState.auth_ids),
-            provider_keys: multiAction(formState.provider_key_ids),
-            auth_item_keys: multiAction(formState.key_ids),
-            roles: multiAction(formState.role_ids),
-            role_routes: multiAction(formState.role_route_ids),
+            name_id: formState.name_id || null,
+            description_id: formState.description_id || null,
+            flag_id: formState.active_flag_id || null,
+            color_ids: formState.color_ids.length > 0 ? formState.color_ids : null,
+            department_ids: formState.department_ids.length > 0 ? formState.department_ids : null,
+            profile_ids: formState.profile_ids.length > 0 ? formState.profile_ids : null,
+            auth_ids: formState.auth_ids.length > 0 ? formState.auth_ids : null,
+            provider_key_ids: formState.provider_key_ids.length > 0 ? formState.provider_key_ids : null,
+            auth_item_key_ids: formState.key_ids.length > 0 ? formState.key_ids : null,
+            role_ids: formState.role_ids.length > 0 ? formState.role_ids : null,
+            role_route_ids: formState.role_route_ids.length > 0 ? formState.role_route_ids : null,
             expected_version: lastSavedVersionRef.current, // ✅ ref, not state dep
           },
         });
@@ -752,18 +738,17 @@ function SettingComponent({
         await saveSettingAction({
           body: {
             input_setting_id: isEditMode && settingId ? settingId : null,
-            group_id: settingData?.group_id ?? null,
-            names: singleAction(formState.name_id),
-            descriptions: singleAction(formState.description_id || null),
-            colors: multiAction(formState.color_ids || []),
-            flags: singleAction(formState.active_flag_id || null),
-            departments: multiAction(formState.department_ids || []),
-            profiles: multiAction(formState.profile_ids || []),
-            auths: multiAction(formState.auth_ids || []),
-            provider_keys: multiAction(formState.provider_key_ids || []),
-            auth_item_keys: multiAction(formState.key_ids || []),
-            roles: multiAction(formState.role_ids || []),
-            role_routes: multiAction(formState.role_route_ids || []),
+            name_id: formState.name_id!,
+            description_id: formState.description_id || null,
+            flag_id: formState.active_flag_id || null,
+            color_ids: formState.color_ids.length > 0 ? formState.color_ids : null,
+            department_ids: formState.department_ids.length > 0 ? formState.department_ids : null,
+            profile_ids: formState.profile_ids.length > 0 ? formState.profile_ids : null,
+            auth_ids: formState.auth_ids.length > 0 ? formState.auth_ids : null,
+            provider_key_ids: formState.provider_key_ids.length > 0 ? formState.provider_key_ids : null,
+            auth_item_key_ids: formState.key_ids.length > 0 ? formState.key_ids : null,
+            role_ids: formState.role_ids.length > 0 ? formState.role_ids : null,
+            role_route_ids: formState.role_route_ids.length > 0 ? formState.role_route_ids : null,
           },
         });
         toast.success(

@@ -33886,24 +33886,35 @@ export interface components {
         };
         /**
          * PatchSettingDraftApiRequest
-         * @description Request model for patch setting draft endpoint - nested resource actions.
+         * @description Request model for patch setting draft endpoint - flat resource IDs.
          */
         PatchSettingDraftApiRequest: {
             /** Input Draft Id */
             input_draft_id?: string | null;
             /** Group Id */
             group_id?: string | null;
-            names?: components["schemas"]["SettingResourceAction"] | null;
-            descriptions?: components["schemas"]["SettingResourceAction"] | null;
-            colors?: components["schemas"]["SettingMultiResourceAction"] | null;
-            flags?: components["schemas"]["SettingResourceAction"] | null;
-            departments?: components["schemas"]["SettingMultiResourceAction"] | null;
-            profiles?: components["schemas"]["SettingMultiResourceAction"] | null;
-            auths?: components["schemas"]["SettingMultiResourceAction"] | null;
-            provider_keys?: components["schemas"]["SettingMultiResourceAction"] | null;
-            auth_item_keys?: components["schemas"]["SettingMultiResourceAction"] | null;
-            roles?: components["schemas"]["SettingMultiResourceAction"] | null;
-            role_routes?: components["schemas"]["SettingMultiResourceAction"] | null;
+            /** Name Id */
+            name_id?: string | null;
+            /** Description Id */
+            description_id?: string | null;
+            /** Flag Id */
+            flag_id?: string | null;
+            /** Color Ids */
+            color_ids?: string[] | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
+            /** Profile Ids */
+            profile_ids?: string[] | null;
+            /** Auth Ids */
+            auth_ids?: string[] | null;
+            /** Provider Key Ids */
+            provider_key_ids?: string[] | null;
+            /** Auth Item Key Ids */
+            auth_item_key_ids?: string[] | null;
+            /** Role Ids */
+            role_ids?: string[] | null;
+            /** Role Route Ids */
+            role_route_ids?: string[] | null;
             /**
              * Expected Version
              * @default 0
@@ -40731,24 +40742,36 @@ export interface components {
         };
         /**
          * SaveSettingApiRequest
-         * @description Request model for save setting endpoint - accepts nested resource actions.
+         * @description Request model for save setting endpoint - flat resource IDs.
          */
         SaveSettingApiRequest: {
             /** Input Setting Id */
             input_setting_id?: string | null;
-            /** Group Id */
-            group_id?: string | null;
-            names: components["schemas"]["SettingResourceAction"];
-            descriptions: components["schemas"]["SettingResourceAction"];
-            colors: components["schemas"]["SettingMultiResourceAction"];
-            flags: components["schemas"]["SettingResourceAction"];
-            departments: components["schemas"]["SettingMultiResourceAction"];
-            profiles: components["schemas"]["SettingMultiResourceAction"];
-            auths: components["schemas"]["SettingMultiResourceAction"];
-            provider_keys: components["schemas"]["SettingMultiResourceAction"];
-            auth_item_keys: components["schemas"]["SettingMultiResourceAction"];
-            roles: components["schemas"]["SettingMultiResourceAction"];
-            role_routes: components["schemas"]["SettingMultiResourceAction"];
+            /**
+             * Name Id
+             * Format: uuid
+             */
+            name_id: string;
+            /** Description Id */
+            description_id?: string | null;
+            /** Flag Id */
+            flag_id?: string | null;
+            /** Color Ids */
+            color_ids?: string[] | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
+            /** Profile Ids */
+            profile_ids?: string[] | null;
+            /** Auth Ids */
+            auth_ids?: string[] | null;
+            /** Provider Key Ids */
+            provider_key_ids?: string[] | null;
+            /** Auth Item Key Ids */
+            auth_item_key_ids?: string[] | null;
+            /** Role Ids */
+            role_ids?: string[] | null;
+            /** Role Route Ids */
+            role_route_ids?: string[] | null;
         };
         /**
          * SaveSettingApiResponse
@@ -45403,18 +45426,6 @@ export interface components {
             /** Type */
             type?: string | null;
         };
-        /**
-         * SettingMultiResourceAction
-         * @description Multi-select resource with tool call tracking.
-         */
-        SettingMultiResourceAction: {
-            /** Resource Ids */
-            resource_ids?: string[] | null;
-            /** Create Tool Id */
-            create_tool_id?: string | null;
-            /** Link Tool Id */
-            link_tool_id?: string | null;
-        };
         /** SettingNameSection */
         SettingNameSection: {
             /**
@@ -45491,18 +45502,6 @@ export interface components {
             current?: components["schemas"]["QGetProviderKeysV4Item"][] | null;
             /** Resources */
             resources?: components["schemas"]["QGetProviderKeysV4Item"][] | null;
-        };
-        /**
-         * SettingResourceAction
-         * @description Single-select resource with tool call tracking.
-         */
-        SettingResourceAction: {
-            /** Resource Id */
-            resource_id?: string | null;
-            /** Create Tool Id */
-            create_tool_id?: string | null;
-            /** Link Tool Id */
-            link_tool_id?: string | null;
         };
         /** SettingRoleRouteSection */
         SettingRoleRouteSection: {

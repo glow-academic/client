@@ -410,21 +410,21 @@ class SaveSettingSqlRow(BaseModel):
 
 
 class PatchSettingDraftApiRequest(BaseModel):
-    """Request model for patch setting draft endpoint - nested resource actions."""
+    """Request model for patch setting draft endpoint - flat resource IDs."""
 
     input_draft_id: UUID | None = None
     group_id: UUID | None = None
-    names: SettingResourceAction | None = None
-    descriptions: SettingResourceAction | None = None
-    colors: SettingMultiResourceAction | None = None
-    flags: SettingResourceAction | None = None
-    departments: SettingMultiResourceAction | None = None
-    profiles: SettingMultiResourceAction | None = None
-    auths: SettingMultiResourceAction | None = None
-    provider_keys: SettingMultiResourceAction | None = None
-    auth_item_keys: SettingMultiResourceAction | None = None
-    roles: SettingMultiResourceAction | None = None
-    role_routes: SettingMultiResourceAction | None = None
+    name_id: UUID | None = None
+    description_id: UUID | None = None
+    flag_id: UUID | None = None
+    color_ids: list[UUID] | None = None
+    department_ids: list[UUID] | None = None
+    profile_ids: list[UUID] | None = None
+    auth_ids: list[UUID] | None = None
+    provider_key_ids: list[UUID] | None = None
+    auth_item_key_ids: list[UUID] | None = None
+    role_ids: list[UUID] | None = None
+    role_route_ids: list[UUID] | None = None
     expected_version: int = 0
 
 
@@ -458,25 +458,25 @@ class PatchSettingDraftSqlParams(BaseModel):
 
     @classmethod
     def from_request(
-        cls, request: PatchSettingDraftApiRequest, profile_id: UUID
+        cls,
+        request: PatchSettingDraftApiRequest,
+        profile_id: UUID,
     ) -> PatchSettingDraftSqlParams:
-        _empty_single = SettingResourceAction()
-        _empty_multi = SettingMultiResourceAction()
         return cls(
             profile_id=profile_id,
             input_draft_id=request.input_draft_id,
             group_id=request.group_id,
-            names=request.names or _empty_single,
-            descriptions=request.descriptions or _empty_single,
-            flags=request.flags or _empty_single,
-            colors=request.colors or _empty_multi,
-            departments=request.departments or _empty_multi,
-            profiles=request.profiles or _empty_multi,
-            auths=request.auths or _empty_multi,
-            provider_keys=request.provider_keys or _empty_multi,
-            auth_item_keys=request.auth_item_keys or _empty_multi,
-            roles=request.roles or _empty_multi,
-            role_routes=request.role_routes or _empty_multi,
+            names=SettingResourceAction(resource_id=request.name_id),
+            descriptions=SettingResourceAction(resource_id=request.description_id),
+            flags=SettingResourceAction(resource_id=request.flag_id),
+            colors=SettingMultiResourceAction(resource_ids=request.color_ids),
+            departments=SettingMultiResourceAction(resource_ids=request.department_ids),
+            profiles=SettingMultiResourceAction(resource_ids=request.profile_ids),
+            auths=SettingMultiResourceAction(resource_ids=request.auth_ids),
+            provider_keys=SettingMultiResourceAction(resource_ids=request.provider_key_ids),
+            auth_item_keys=SettingMultiResourceAction(resource_ids=request.auth_item_key_ids),
+            roles=SettingMultiResourceAction(resource_ids=request.role_ids),
+            role_routes=SettingMultiResourceAction(resource_ids=request.role_route_ids),
             expected_version=request.expected_version,
         )
 

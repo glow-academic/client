@@ -118,3 +118,16 @@ class ScenarioGenerationStartedEvent(BaseModel):
     group_id: str
     run_id: str
     resource_types: list[str]
+
+
+class SimulationGenerationStartedEvent(BaseModel):
+    """Server-to-client event: simulation_generation_started.
+
+    Emitted when simulation generation begins, listing which resource types
+    will be generated.
+    """
+
+    artifact_type: str = "simulation"
+    group_id: str
+    run_id: str
+    resource_types: list[str]
