@@ -42,7 +42,7 @@ os.environ["E2E_STORAGE"] = os.getenv("E2E_STORAGE", "")
 server_dir = Path(__file__).parent.parent
 sys.path.insert(0, str(server_dir))
 
-from app.main import close_db_pool, get_pool, init_db_pool  # noqa: E402
+from app.main import close_db_pool, init_db_pool  # noqa: E402
 from app.utils.test_db import get_test_db_url  # noqa: E402
 
 # Store the test database URL for direct connections
@@ -96,6 +96,7 @@ async def initialize_test_db() -> AsyncGenerator[None, None]:
         cleanup_old_templates,
         clone_from_template,
         compute_db_hash,
+        create_fresh_db,
         get_admin_url,
         save_as_template,
         template_exists,
@@ -110,6 +111,8 @@ async def initialize_test_db() -> AsyncGenerator[None, None]:
     print(f"🔑 Template hash: {db_hash}")
 
     # 3. Connect to admin DB and check for template
+    import app.main as main_mod
+
     admin_conn = await asyncpg.connect(admin_url)
     try:
         has_template = await template_exists(admin_conn, template_name)
@@ -123,8 +126,6 @@ async def initialize_test_db() -> AsyncGenerator[None, None]:
             parsed = urlparse(base_url)
             clone_url = urlunparse(parsed._replace(path=f"/{clone_name}"))
 
-            import app.main as main_mod
-
             if main_mod._db_pool:
                 await main_mod._db_pool.close()
             main_mod._db_pool = await asyncpg.create_pool(
@@ -137,10 +138,21 @@ async def initialize_test_db() -> AsyncGenerator[None, None]:
             # --- COLD PATH: build from scratch, then save as template ---
             print("🏗️  No template found — building from scratch")
 
-            # Apply schema
-            pool = get_pool()
-            if pool is None:
-                raise RuntimeError("Database pool not available")
+            # Create a fresh database to avoid conflicts with stale state
+            build_db = f"build_glow_{db_hash}"
+            await create_fresh_db(admin_conn, build_db)
+
+            # Reconnect pool to the fresh build database
+            parsed = urlparse(base_url)
+            build_url = urlunparse(parsed._replace(path=f"/{build_db}"))
+
+            if main_mod._db_pool:
+                await main_mod._db_pool.close()
+            main_mod._db_pool = await asyncpg.create_pool(
+                build_url, min_size=1, max_size=5
+            )
+
+            pool = main_mod._db_pool
 
             schema_sql = _filter_meta_commands(schema_file.read_text())
             async with pool.acquire() as conn:
@@ -160,16 +172,26 @@ async def initialize_test_db() -> AsyncGenerator[None, None]:
                 await bootstrap_all_sql(conn)
             print("🗄️  SQL views and functions bootstrapped")
 
+            # Close pool before saving template (terminates connections)
+            await main_mod._db_pool.close()
+            main_mod._db_pool = None
+
             # Save as template for next run
-            # Extract the database name from the base URL
-            source_db = urlparse(base_url).path.lstrip("/")
-            await save_as_template(admin_conn, source_db, template_name)
+            await save_as_template(admin_conn, build_db, template_name)
             print(f"💾 Template saved: {template_name}")
 
-            # Clean up old templates
+            # Clean up old templates (this drops build_glow_* too)
             await cleanup_old_templates(admin_conn)
 
-            _test_db_url = base_url
+            # Clone from the freshly saved template for the test run
+            await clone_from_template(admin_conn, template_name, clone_name)
+            clone_url = urlunparse(parsed._replace(path=f"/{clone_name}"))
+
+            main_mod._db_pool = await asyncpg.create_pool(
+                clone_url, min_size=1, max_size=5
+            )
+            main_mod._test_db_url = clone_url
+            _test_db_url = clone_url
     finally:
         await admin_conn.close()
 

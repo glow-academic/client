@@ -8,7 +8,7 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
-from app.api.v4.types import BaseResourceSection
+from app.api.v4.types import BaseResourceSection, ListFilterSection
 from app.api.v4.views.drafts.types import DraftParameterViewItem
 from app.sql.types import (
     QGetAgentsV4Item,
@@ -174,25 +174,12 @@ class ListParameterApiParameter(BaseModel):
     updated_at: datetime | None = None
 
 
-class ListParameterApiScenario(BaseModel):
-    scenario_id: UUID | None = None
-    name: str | None = None
-    description: str | None = None
-    count: int | None = None
-
-
-class ListParameterApiDepartment(BaseModel):
-    department_id: UUID | None = None
-    name: str | None = None
-    description: str | None = None
-    count: int | None = None
-
-
 class ListParameterApiResponse(BaseModel):
     actor_name: str | None = None
     parameters: list[ListParameterApiParameter] | None = None
-    scenarios: list[ListParameterApiScenario] | None = None
-    departments: list[ListParameterApiDepartment] | None = None
+    scenario_filter: ListFilterSection | None = None
+    field_filter: ListFilterSection | None = None
+    department_filter: ListFilterSection | None = None
     total_count: int | None = None
 
 
@@ -212,14 +199,14 @@ class ParameterMultiResourceAction(BaseModel):
 
 
 class SaveParameterApiRequest(BaseModel):
-    group_id: UUID
-    input_parameter_id: UUID | None = None
+    """Request model for save parameter endpoint - flat resource IDs."""
 
-    names: ParameterResourceAction
-    descriptions: ParameterResourceAction
-    flags: ParameterMultiResourceAction
-    departments: ParameterMultiResourceAction
-    fields: ParameterMultiResourceAction
+    input_parameter_id: UUID | None = None
+    name_id: UUID
+    description_id: UUID | None = None
+    flag_ids: list[UUID] | None = None
+    department_ids: list[UUID] | None = None
+    field_ids: list[UUID] | None = None
 
 
 class SaveParameterApiResponse(BaseModel):
@@ -240,9 +227,21 @@ class SaveParameterSqlParams(BaseModel):
 
     @classmethod
     def from_request(
-        cls, request: SaveParameterApiRequest, profile_id: UUID
+        cls,
+        request: SaveParameterApiRequest,
+        profile_id: UUID,
+        group_id: UUID | None,
     ) -> SaveParameterSqlParams:
-        return cls(profile_id=profile_id, **request.model_dump())
+        return cls(
+            profile_id=profile_id,
+            group_id=group_id,
+            input_parameter_id=request.input_parameter_id,
+            names=ParameterResourceAction(resource_id=request.name_id),
+            descriptions=ParameterResourceAction(resource_id=request.description_id),
+            flags=ParameterMultiResourceAction(resource_ids=request.flag_ids),
+            departments=ParameterMultiResourceAction(resource_ids=request.department_ids),
+            fields=ParameterMultiResourceAction(resource_ids=request.field_ids),
+        )
 
     def to_tuple(self) -> tuple:
         def single(a: ParameterResourceAction) -> tuple:
@@ -269,13 +268,15 @@ class SaveParameterSqlRow(BaseModel):
 
 
 class PatchParameterDraftApiRequest(BaseModel):
+    """Request model for patch parameter draft endpoint - flat resource IDs."""
+
     input_draft_id: UUID | None = None
     group_id: UUID | None = None
-    names: ParameterResourceAction | None = None
-    descriptions: ParameterResourceAction | None = None
-    flags: ParameterMultiResourceAction | None = None
-    departments: ParameterMultiResourceAction | None = None
-    fields: ParameterMultiResourceAction | None = None
+    name_id: UUID | None = None
+    description_id: UUID | None = None
+    flag_ids: list[UUID] | None = None
+    department_ids: list[UUID] | None = None
+    field_ids: list[UUID] | None = None
     expected_version: int = 0
 
 
@@ -301,17 +302,15 @@ class PatchParameterDraftSqlParams(BaseModel):
     def from_request(
         cls, request: PatchParameterDraftApiRequest, profile_id: UUID
     ) -> PatchParameterDraftSqlParams:
-        empty_single = ParameterResourceAction()
-        empty_multi = ParameterMultiResourceAction()
         return cls(
             profile_id=profile_id,
             input_draft_id=request.input_draft_id,
             group_id=request.group_id,
-            names=request.names or empty_single,
-            descriptions=request.descriptions or empty_single,
-            flags=request.flags or empty_multi,
-            departments=request.departments or empty_multi,
-            fields=request.fields or empty_multi,
+            names=ParameterResourceAction(resource_id=request.name_id),
+            descriptions=ParameterResourceAction(resource_id=request.description_id),
+            flags=ParameterMultiResourceAction(resource_ids=request.flag_ids),
+            departments=ParameterMultiResourceAction(resource_ids=request.department_ids),
+            fields=ParameterMultiResourceAction(resource_ids=request.field_ids),
             expected_version=request.expected_version,
         )
 

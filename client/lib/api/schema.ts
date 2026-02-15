@@ -22652,6 +22652,15 @@ export interface components {
             /** Resources */
             resources?: components["schemas"]["QGetImagesV4Item"][] | null;
         };
+        /** DocumentMultiResourceAction */
+        DocumentMultiResourceAction: {
+            /** Resource Ids */
+            resource_ids: string[] | null;
+            /** Create Tool Id */
+            create_tool_id: string | null;
+            /** Link Tool Id */
+            link_tool_id: string | null;
+        };
         /** DocumentNameSection */
         DocumentNameSection: {
             /**
@@ -22676,6 +22685,15 @@ export interface components {
             resource?: components["schemas"]["QGetNamesV4Item"] | null;
             /** Resources */
             resources?: components["schemas"]["QGetNamesV4Item"][] | null;
+        };
+        /** DocumentResourceAction */
+        DocumentResourceAction: {
+            /** Resource Id */
+            resource_id: string | null;
+            /** Create Tool Id */
+            create_tool_id: string | null;
+            /** Link Tool Id */
+            link_tool_id: string | null;
         };
         /** DocumentTextSection */
         DocumentTextSection: {
@@ -24593,15 +24611,6 @@ export interface components {
             /** Trace Id */
             trace_id?: string | null;
         };
-        /** FieldMultiResourceAction */
-        FieldMultiResourceAction: {
-            /** Resource Ids */
-            resource_ids?: string[] | null;
-            /** Create Tool Id */
-            create_tool_id?: string | null;
-            /** Link Tool Id */
-            link_tool_id?: string | null;
-        };
         /** FieldNameSection */
         FieldNameSection: {
             /**
@@ -24626,15 +24635,6 @@ export interface components {
             resource?: components["schemas"]["QGetNamesV4Item"] | null;
             /** Resources */
             resources?: components["schemas"]["QGetNamesV4Item"][] | null;
-        };
-        /** FieldResourceAction */
-        FieldResourceAction: {
-            /** Resource Id */
-            resource_id?: string | null;
-            /** Create Tool Id */
-            create_tool_id?: string | null;
-            /** Link Tool Id */
-            link_tool_id?: string | null;
         };
         /** FinalizeUploadApiResponse */
         FinalizeUploadApiResponse: {
@@ -25941,12 +25941,12 @@ export interface components {
         GetDocumentsListApiResponse: {
             /** Documents */
             documents?: components["schemas"]["QListDocumentsV4Document"][] | null;
-            /** Scenario Option Ids */
-            scenario_option_ids?: components["schemas"]["QListDocumentsV4OptionId"][] | null;
-            /** Field Option Ids */
-            field_option_ids?: components["schemas"]["QListDocumentsV4OptionId"][] | null;
-            /** Department Option Ids */
-            department_option_ids?: components["schemas"]["QListDocumentsV4OptionId"][] | null;
+            /** Scenario Options */
+            scenario_options?: components["schemas"]["QListDocumentsV4Option"][] | null;
+            /** Field Options */
+            field_options?: components["schemas"]["QListDocumentsV4Option"][] | null;
+            /** Department Options */
+            department_options?: components["schemas"]["QListDocumentsV4Option"][] | null;
             /** Total Count */
             total_count?: number | null;
         };
@@ -26715,8 +26715,12 @@ export interface components {
             scenario_ids?: string[] | null;
             /** Filter Department Ids */
             filter_department_ids?: string[] | null;
+            /** Field Ids */
+            field_ids?: string[] | null;
             /** Scenario Search */
             scenario_search?: string | null;
+            /** Field Search */
+            field_search?: string | null;
             /** Department Search */
             department_search?: string | null;
             /**
@@ -28279,6 +28283,8 @@ export interface components {
             cohort_search?: string | null;
             /** Department Search */
             department_search?: string | null;
+            /** Role Search */
+            role_search?: string | null;
             /**
              * Page Size
              * @default 12
@@ -30815,20 +30821,6 @@ export interface components {
             total_count?: number | null;
         };
         /**
-         * ListDocumentApiDepartment
-         * @description Department type for list endpoint.
-         */
-        ListDocumentApiDepartment: {
-            /** Department Id */
-            department_id?: string | null;
-            /** Name */
-            name?: string | null;
-            /** Description */
-            description?: string | null;
-            /** Count */
-            count?: number | null;
-        };
-        /**
          * ListDocumentApiDocument
          * @description Document type for list endpoint with computed permissions.
          */
@@ -30863,20 +30855,6 @@ export interface components {
             updated_at?: string | null;
         };
         /**
-         * ListDocumentApiField
-         * @description Field type for list endpoint.
-         */
-        ListDocumentApiField: {
-            /** Field Id */
-            field_id?: string | null;
-            /** Name */
-            name?: string | null;
-            /** Description */
-            description?: string | null;
-            /** Count */
-            count?: number | null;
-        };
-        /**
          * ListDocumentApiResponse
          * @description Response model for list document endpoint with computed permissions.
          */
@@ -30885,36 +30863,11 @@ export interface components {
             actor_name?: string | null;
             /** Documents */
             documents?: components["schemas"]["ListDocumentApiDocument"][] | null;
-            /** Scenarios */
-            scenarios?: components["schemas"]["ListDocumentApiScenario"][] | null;
-            /** Fields */
-            fields?: components["schemas"]["ListDocumentApiField"][] | null;
-            /** Departments */
-            departments?: components["schemas"]["ListDocumentApiDepartment"][] | null;
+            scenario_filter?: components["schemas"]["ListFilterSection"] | null;
+            field_filter?: components["schemas"]["ListFilterSection"] | null;
+            department_filter?: components["schemas"]["ListFilterSection"] | null;
             /** Total Count */
             total_count?: number | null;
-        };
-        /**
-         * ListDocumentApiScenario
-         * @description Scenario type for list endpoint.
-         */
-        ListDocumentApiScenario: {
-            /** Scenario Id */
-            scenario_id?: string | null;
-            /** Name */
-            name?: string | null;
-            /** Description */
-            description?: string | null;
-            /** Active */
-            active?: boolean | null;
-            /** Persona Ids */
-            persona_ids?: string[] | null;
-            /** Document Ids */
-            document_ids?: string[] | null;
-            /** Parameter Item Ids */
-            parameter_item_ids?: string[] | null;
-            /** Count */
-            count?: number | null;
         };
         /**
          * ListEvalApiDepartment
@@ -31174,17 +31127,6 @@ export interface components {
              */
             page_offset: number | null;
         };
-        /** ListParameterApiDepartment */
-        ListParameterApiDepartment: {
-            /** Department Id */
-            department_id?: string | null;
-            /** Name */
-            name?: string | null;
-            /** Description */
-            description?: string | null;
-            /** Count */
-            count?: number | null;
-        };
         /** ListParameterApiParameter */
         ListParameterApiParameter: {
             /** Parameter Id */
@@ -31220,23 +31162,11 @@ export interface components {
             actor_name?: string | null;
             /** Parameters */
             parameters?: components["schemas"]["ListParameterApiParameter"][] | null;
-            /** Scenarios */
-            scenarios?: components["schemas"]["ListParameterApiScenario"][] | null;
-            /** Departments */
-            departments?: components["schemas"]["ListParameterApiDepartment"][] | null;
+            scenario_filter?: components["schemas"]["ListFilterSection"] | null;
+            field_filter?: components["schemas"]["ListFilterSection"] | null;
+            department_filter?: components["schemas"]["ListFilterSection"] | null;
             /** Total Count */
             total_count?: number | null;
-        };
-        /** ListParameterApiScenario */
-        ListParameterApiScenario: {
-            /** Scenario Id */
-            scenario_id?: string | null;
-            /** Name */
-            name?: string | null;
-            /** Description */
-            description?: string | null;
-            /** Count */
-            count?: number | null;
         };
         /**
          * ListPersonaApiPersona
@@ -31749,34 +31679,6 @@ export interface components {
             updated_at?: string | null;
         };
         /**
-         * ListStaffApiCohort
-         * @description Cohort type for list endpoint filter options.
-         */
-        ListStaffApiCohort: {
-            /** Cohort Id */
-            cohort_id?: string | null;
-            /** Name */
-            name?: string | null;
-            /** Description */
-            description?: string | null;
-            /** Count */
-            count?: number | null;
-        };
-        /**
-         * ListStaffApiDepartment
-         * @description Department type for list endpoint filter options.
-         */
-        ListStaffApiDepartment: {
-            /** Department Id */
-            department_id?: string | null;
-            /** Name */
-            name?: string | null;
-            /** Description */
-            description?: string | null;
-            /** Count */
-            count?: number | null;
-        };
-        /**
          * ListStaffApiResponse
          * @description Response model for staff list endpoint with computed permissions.
          */
@@ -31785,12 +31687,9 @@ export interface components {
             actor_name?: string | null;
             /** Staff */
             staff?: components["schemas"]["ListStaffApiStaff"][] | null;
-            /** Cohorts */
-            cohorts?: components["schemas"]["ListStaffApiCohort"][] | null;
-            /** Departments */
-            departments?: components["schemas"]["ListStaffApiDepartment"][] | null;
-            /** Role Options */
-            role_options?: string[] | null;
+            cohort_filter?: components["schemas"]["ListFilterSection"] | null;
+            department_filter?: components["schemas"]["ListFilterSection"] | null;
+            role_filter?: components["schemas"]["ListFilterSection"] | null;
             /** Total Count */
             total_count?: number | null;
         };
@@ -33433,15 +33332,6 @@ export interface components {
             /** Field Resources */
             field_resources?: components["schemas"]["QGetParameterFieldsV4Item"][] | null;
         };
-        /** ParameterMultiResourceAction */
-        ParameterMultiResourceAction: {
-            /** Resource Ids */
-            resource_ids?: string[] | null;
-            /** Create Tool Id */
-            create_tool_id?: string | null;
-            /** Link Tool Id */
-            link_tool_id?: string | null;
-        };
         /** ParameterNameSection */
         ParameterNameSection: {
             /**
@@ -33466,15 +33356,6 @@ export interface components {
             resource?: components["schemas"]["QGetNamesV4Item"] | null;
             /** Resources */
             resources?: components["schemas"]["QGetNamesV4Item"][] | null;
-        };
-        /** ParameterResourceAction */
-        ParameterResourceAction: {
-            /** Resource Id */
-            resource_id?: string | null;
-            /** Create Tool Id */
-            create_tool_id?: string | null;
-            /** Link Tool Id */
-            link_tool_id?: string | null;
         };
         /**
          * ParametersGenerationCompleteEvent
@@ -33755,21 +33636,29 @@ export interface components {
         };
         /**
          * PatchDocumentDraftApiRequest
-         * @description Request model for patch document draft endpoint - nested resource actions.
+         * @description Request model for patch document draft endpoint - flat resource IDs.
          */
         PatchDocumentDraftApiRequest: {
             /** Input Draft Id */
             input_draft_id?: string | null;
             /** Group Id */
             group_id?: string | null;
-            names?: components["schemas"]["app__api__v4__artifacts__document__types__DocumentResourceAction"] | null;
-            descriptions?: components["schemas"]["app__api__v4__artifacts__document__types__DocumentResourceAction"] | null;
-            flags?: components["schemas"]["app__api__v4__artifacts__document__types__DocumentResourceAction"] | null;
-            departments?: components["schemas"]["app__api__v4__artifacts__document__types__DocumentMultiResourceAction"] | null;
-            fields?: components["schemas"]["app__api__v4__artifacts__document__types__DocumentMultiResourceAction"] | null;
-            uploads?: components["schemas"]["app__api__v4__artifacts__document__types__DocumentMultiResourceAction"] | null;
-            images?: components["schemas"]["app__api__v4__artifacts__document__types__DocumentMultiResourceAction"] | null;
-            texts?: components["schemas"]["app__api__v4__artifacts__document__types__DocumentMultiResourceAction"] | null;
+            /** Name Id */
+            name_id?: string | null;
+            /** Description Id */
+            description_id?: string | null;
+            /** Flag Id */
+            flag_id?: string | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
+            /** Field Ids */
+            field_ids?: string[] | null;
+            /** Upload Ids */
+            upload_ids?: string[] | null;
+            /** Image Ids */
+            image_ids?: string[] | null;
+            /** Text Ids */
+            text_ids?: string[] | null;
             /**
              * Expected Version
              * @default 0
@@ -33831,17 +33720,25 @@ export interface components {
             /** Message */
             message: string;
         };
-        /** PatchFieldDraftApiRequest */
+        /**
+         * PatchFieldDraftApiRequest
+         * @description Request model for patch field draft endpoint - flat resource IDs.
+         */
         PatchFieldDraftApiRequest: {
             /** Input Draft Id */
             input_draft_id?: string | null;
             /** Group Id */
             group_id?: string | null;
-            names?: components["schemas"]["FieldResourceAction"] | null;
-            descriptions?: components["schemas"]["FieldResourceAction"] | null;
-            flags?: components["schemas"]["FieldResourceAction"] | null;
-            departments?: components["schemas"]["FieldMultiResourceAction"] | null;
-            conditional_parameters?: components["schemas"]["FieldMultiResourceAction"] | null;
+            /** Name Id */
+            name_id?: string | null;
+            /** Description Id */
+            description_id?: string | null;
+            /** Flag Id */
+            flag_id?: string | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
+            /** Conditional Parameter Ids */
+            conditional_parameter_ids?: string[] | null;
             /**
              * Expected Version
              * @default 0
@@ -33906,17 +33803,25 @@ export interface components {
             /** Message */
             message: string;
         };
-        /** PatchParameterDraftApiRequest */
+        /**
+         * PatchParameterDraftApiRequest
+         * @description Request model for patch parameter draft endpoint - flat resource IDs.
+         */
         PatchParameterDraftApiRequest: {
             /** Input Draft Id */
             input_draft_id?: string | null;
             /** Group Id */
             group_id?: string | null;
-            names?: components["schemas"]["ParameterResourceAction"] | null;
-            descriptions?: components["schemas"]["ParameterResourceAction"] | null;
-            flags?: components["schemas"]["ParameterMultiResourceAction"] | null;
-            departments?: components["schemas"]["ParameterMultiResourceAction"] | null;
-            fields?: components["schemas"]["ParameterMultiResourceAction"] | null;
+            /** Name Id */
+            name_id?: string | null;
+            /** Description Id */
+            description_id?: string | null;
+            /** Flag Ids */
+            flag_ids?: string[] | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
+            /** Field Ids */
+            field_ids?: string[] | null;
             /**
              * Expected Version
              * @default 0
@@ -33989,7 +33894,7 @@ export interface components {
         };
         /**
          * PatchProfileDraftApiRequest
-         * @description Request model for patch profile draft endpoint - nested resource actions.
+         * @description Request model for patch profile draft endpoint - flat resource IDs.
          */
         PatchProfileDraftApiRequest: {
             /** Input Draft Id */
@@ -33998,12 +33903,18 @@ export interface components {
             group_id?: string | null;
             /** Role */
             role?: string | null;
-            names?: components["schemas"]["ProfileResourceAction"] | null;
-            flags?: components["schemas"]["ProfileResourceAction"] | null;
-            request_limits?: components["schemas"]["ProfileResourceAction"] | null;
-            emails?: components["schemas"]["ProfileMultiResourceAction"] | null;
-            departments?: components["schemas"]["ProfileMultiResourceAction"] | null;
-            cohorts?: components["schemas"]["ProfileMultiResourceAction"] | null;
+            /** Name Id */
+            name_id?: string | null;
+            /** Flag Id */
+            flag_id?: string | null;
+            /** Request Limit Id */
+            request_limit_id?: string | null;
+            /** Email Ids */
+            email_ids?: string[] | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
+            /** Cohort Ids */
+            cohort_ids?: string[] | null;
             /**
              * Expected Version
              * @default 0
@@ -35787,15 +35698,6 @@ export interface components {
             /** Trace Id */
             trace_id?: string | null;
         };
-        /** ProfileMultiResourceAction */
-        ProfileMultiResourceAction: {
-            /** Resource Ids */
-            resource_ids?: string[] | null;
-            /** Create Tool Id */
-            create_tool_id?: string | null;
-            /** Link Tool Id */
-            link_tool_id?: string | null;
-        };
         /** ProfileNameSection */
         ProfileNameSection: {
             /**
@@ -35845,15 +35747,6 @@ export interface components {
             resource?: components["schemas"]["QGetRequestLimitsV4Item"] | null;
             /** Resources */
             resources?: components["schemas"]["QGetRequestLimitsV4Item"][] | null;
-        };
-        /** ProfileResourceAction */
-        ProfileResourceAction: {
-            /** Resource Id */
-            resource_id?: string | null;
-            /** Create Tool Id */
-            create_tool_id?: string | null;
-            /** Link Tool Id */
-            link_tool_id?: string | null;
         };
         /**
          * ProfileRoleResource
@@ -37968,10 +37861,12 @@ export interface components {
             /** Updated At */
             updated_at: string | null;
         };
-        /** QListDocumentsV4OptionId */
-        QListDocumentsV4OptionId: {
-            /** Id */
-            id: string | null;
+        /** QListDocumentsV4Option */
+        QListDocumentsV4Option: {
+            /** Value */
+            value: string | null;
+            /** Label */
+            label: string | null;
             /** Count */
             count: number | null;
         };
@@ -40762,20 +40657,26 @@ export interface components {
             /** Message */
             message: string;
         };
-        /** SaveFieldApiRequest */
+        /**
+         * SaveFieldApiRequest
+         * @description Request model for save field endpoint - flat resource IDs.
+         */
         SaveFieldApiRequest: {
-            /**
-             * Group Id
-             * Format: uuid
-             */
-            group_id: string;
             /** Input Field Id */
             input_field_id?: string | null;
-            names: components["schemas"]["FieldResourceAction"];
-            descriptions: components["schemas"]["FieldResourceAction"];
-            flags: components["schemas"]["FieldResourceAction"];
-            departments: components["schemas"]["FieldMultiResourceAction"];
-            conditional_parameters: components["schemas"]["FieldMultiResourceAction"];
+            /**
+             * Name Id
+             * Format: uuid
+             */
+            name_id: string;
+            /** Description Id */
+            description_id?: string | null;
+            /** Flag Id */
+            flag_id?: string | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
+            /** Conditional Parameter Ids */
+            conditional_parameter_ids?: string[] | null;
         };
         /** SaveFieldApiResponse */
         SaveFieldApiResponse: {
@@ -40824,20 +40725,26 @@ export interface components {
             /** Actor Name */
             actor_name?: string | null;
         };
-        /** SaveParameterApiRequest */
+        /**
+         * SaveParameterApiRequest
+         * @description Request model for save parameter endpoint - flat resource IDs.
+         */
         SaveParameterApiRequest: {
-            /**
-             * Group Id
-             * Format: uuid
-             */
-            group_id: string;
             /** Input Parameter Id */
             input_parameter_id?: string | null;
-            names: components["schemas"]["ParameterResourceAction"];
-            descriptions: components["schemas"]["ParameterResourceAction"];
-            flags: components["schemas"]["ParameterMultiResourceAction"];
-            departments: components["schemas"]["ParameterMultiResourceAction"];
-            fields: components["schemas"]["ParameterMultiResourceAction"];
+            /**
+             * Name Id
+             * Format: uuid
+             */
+            name_id: string;
+            /** Description Id */
+            description_id?: string | null;
+            /** Flag Ids */
+            flag_ids?: string[] | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
+            /** Field Ids */
+            field_ids?: string[] | null;
         };
         /** SaveParameterApiResponse */
         SaveParameterApiResponse: {
@@ -40908,21 +40815,28 @@ export interface components {
         };
         /**
          * SaveProfileRouteApiRequest
-         * @description Save payload with persona-style nested resource actions.
+         * @description Save payload with flat resource IDs.
          */
         SaveProfileRouteApiRequest: {
             /** Input Profile Id */
             input_profile_id?: string | null;
-            /** Group Id */
-            group_id?: string | null;
             /** Role */
             role?: string | null;
-            names: components["schemas"]["ProfileResourceAction"];
-            flags: components["schemas"]["ProfileResourceAction"];
-            request_limits: components["schemas"]["ProfileResourceAction"];
-            emails: components["schemas"]["ProfileMultiResourceAction"];
-            departments: components["schemas"]["ProfileMultiResourceAction"];
-            cohorts: components["schemas"]["ProfileMultiResourceAction"];
+            /**
+             * Name Id
+             * Format: uuid
+             */
+            name_id: string;
+            /** Flag Id */
+            flag_id?: string | null;
+            /** Request Limit Id */
+            request_limit_id?: string | null;
+            /** Email Ids */
+            email_ids?: string[] | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
+            /** Cohort Ids */
+            cohort_ids?: string[] | null;
             /**
              * Expected Version
              * @default 0
@@ -49736,49 +49650,31 @@ export interface components {
             message: string;
         };
         /**
-         * DocumentMultiResourceAction
-         * @description Multi-select resource action with tool call tracking.
-         */
-        app__api__v4__artifacts__document__types__DocumentMultiResourceAction: {
-            /** Resource Ids */
-            resource_ids?: string[] | null;
-            /** Create Tool Id */
-            create_tool_id?: string | null;
-            /** Link Tool Id */
-            link_tool_id?: string | null;
-        };
-        /**
-         * DocumentResourceAction
-         * @description Single-select resource action with tool call tracking.
-         */
-        app__api__v4__artifacts__document__types__DocumentResourceAction: {
-            /** Resource Id */
-            resource_id?: string | null;
-            /** Create Tool Id */
-            create_tool_id?: string | null;
-            /** Link Tool Id */
-            link_tool_id?: string | null;
-        };
-        /**
          * SaveDocumentApiRequest
-         * @description Request model for save document endpoint - nested resource actions.
+         * @description Request model for save document endpoint - flat resource IDs.
          */
         app__api__v4__artifacts__document__types__SaveDocumentApiRequest: {
-            /**
-             * Group Id
-             * Format: uuid
-             */
-            group_id: string;
             /** Input Document Id */
             input_document_id?: string | null;
-            names: components["schemas"]["app__api__v4__artifacts__document__types__DocumentResourceAction"];
-            descriptions: components["schemas"]["app__api__v4__artifacts__document__types__DocumentResourceAction"];
-            flags: components["schemas"]["app__api__v4__artifacts__document__types__DocumentResourceAction"];
-            departments: components["schemas"]["app__api__v4__artifacts__document__types__DocumentMultiResourceAction"];
-            fields: components["schemas"]["app__api__v4__artifacts__document__types__DocumentMultiResourceAction"];
-            uploads: components["schemas"]["app__api__v4__artifacts__document__types__DocumentMultiResourceAction"];
-            images: components["schemas"]["app__api__v4__artifacts__document__types__DocumentMultiResourceAction"];
-            texts: components["schemas"]["app__api__v4__artifacts__document__types__DocumentMultiResourceAction"];
+            /**
+             * Name Id
+             * Format: uuid
+             */
+            name_id: string;
+            /** Description Id */
+            description_id?: string | null;
+            /** Flag Id */
+            flag_id?: string | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
+            /** Field Ids */
+            field_ids?: string[] | null;
+            /** Upload Ids */
+            upload_ids?: string[] | null;
+            /** Image Ids */
+            image_ids?: string[] | null;
+            /** Text Ids */
+            text_ids?: string[] | null;
         };
         /**
          * SaveDocumentApiResponse
@@ -50086,24 +49982,6 @@ export interface components {
             /** Actor Name */
             actor_name?: string | null;
         };
-        /** DocumentMultiResourceAction */
-        app__sql__types__DocumentMultiResourceAction: {
-            /** Resource Ids */
-            resource_ids: string[] | null;
-            /** Create Tool Id */
-            create_tool_id: string | null;
-            /** Link Tool Id */
-            link_tool_id: string | null;
-        };
-        /** DocumentResourceAction */
-        app__sql__types__DocumentResourceAction: {
-            /** Resource Id */
-            resource_id: string | null;
-            /** Create Tool Id */
-            create_tool_id: string | null;
-            /** Link Tool Id */
-            link_tool_id: string | null;
-        };
         /** QGetRolesV4Item */
         app__sql__types__QGetRolesV4Item: {
             /** Id */
@@ -50218,14 +50096,14 @@ export interface components {
             input_document_id?: string | null;
             /** Group Id */
             group_id?: string | null;
-            names?: components["schemas"]["app__sql__types__DocumentResourceAction"] | null;
-            descriptions?: components["schemas"]["app__sql__types__DocumentResourceAction"] | null;
-            flags?: components["schemas"]["app__sql__types__DocumentResourceAction"] | null;
-            departments?: components["schemas"]["app__sql__types__DocumentMultiResourceAction"] | null;
-            fields?: components["schemas"]["app__sql__types__DocumentMultiResourceAction"] | null;
-            uploads?: components["schemas"]["app__sql__types__DocumentMultiResourceAction"] | null;
-            images?: components["schemas"]["app__sql__types__DocumentMultiResourceAction"] | null;
-            texts?: components["schemas"]["app__sql__types__DocumentMultiResourceAction"] | null;
+            names?: components["schemas"]["DocumentResourceAction"] | null;
+            descriptions?: components["schemas"]["DocumentResourceAction"] | null;
+            flags?: components["schemas"]["DocumentResourceAction"] | null;
+            departments?: components["schemas"]["DocumentMultiResourceAction"] | null;
+            fields?: components["schemas"]["DocumentMultiResourceAction"] | null;
+            uploads?: components["schemas"]["DocumentMultiResourceAction"] | null;
+            images?: components["schemas"]["DocumentMultiResourceAction"] | null;
+            texts?: components["schemas"]["DocumentMultiResourceAction"] | null;
         };
         /** SaveDocumentApiResponse */
         app__sql__types__SaveDocumentApiResponse: {

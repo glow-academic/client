@@ -131,9 +131,7 @@ async def save_agent(
             )
             access_result = cast(
                 GetAgentAccessSqlRow,
-                await execute_sql_typed(
-                    conn, ACCESS_SQL_PATH, params=access_params
-                ),
+                await execute_sql_typed(conn, ACCESS_SQL_PATH, params=access_params),
             )
             if access_result and access_result.agent_exists is False:
                 raise HTTPException(

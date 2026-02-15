@@ -8,7 +8,6 @@ Filter option names hydrated from cached *_internal() functions.
 Search filtering applied in Python.
 """
 
-import asyncio
 from typing import Annotated, Any, cast
 from uuid import UUID
 
@@ -21,17 +20,12 @@ from app.api.v4.artifacts.document.permissions import (
     compute_can_edit,
 )
 from app.api.v4.artifacts.document.types import (
-    ListDocumentApiDepartment,
     ListDocumentApiDocument,
-    ListDocumentApiField,
     ListDocumentApiResponse,
-    ListDocumentApiScenario,
 )
 from app.api.v4.auth.profile import get_auth_profile_internal
-from app.api.v4.resources.departments.get import get_departments_internal
-from app.api.v4.resources.fields.get import get_fields_internal
-from app.api.v4.resources.scenarios.get import get_scenarios_internal
 from app.api.v4.resources.uploads.get import get_uploads_internal
+from app.api.v4.types import ListFilterSection
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
@@ -186,85 +180,11 @@ async def get_document_list(
         # Deduplicate
         all_upload_resource_ids = list(set(all_upload_resource_ids))
 
-        # --- Python hydration: filter option names from cached *_internal() ---
-        # Extract option IDs and counts from SQL result
-        scenario_option_ids = getattr(result, "scenario_option_ids", None) or []
-        field_option_ids = getattr(result, "field_option_ids", None) or []
-        department_option_ids = getattr(result, "department_option_ids", None) or []
-
-        # Build ID -> count maps
-        scenario_count_map: dict[UUID, int] = {}
-        scenario_ids_to_fetch: list[UUID] = []
-        for opt in scenario_option_ids:
-            opt_id = getattr(opt, "id", None)
-            opt_count = getattr(opt, "count", 0)
-            if opt_id:
-                uid = UUID(str(opt_id)) if not isinstance(opt_id, UUID) else opt_id
-                scenario_count_map[uid] = int(opt_count or 0)
-                scenario_ids_to_fetch.append(uid)
-
-        field_count_map: dict[UUID, int] = {}
-        field_ids_to_fetch: list[UUID] = []
-        for opt in field_option_ids:
-            opt_id = getattr(opt, "id", None)
-            opt_count = getattr(opt, "count", 0)
-            if opt_id:
-                uid = UUID(str(opt_id)) if not isinstance(opt_id, UUID) else opt_id
-                field_count_map[uid] = int(opt_count or 0)
-                field_ids_to_fetch.append(uid)
-
-        department_count_map: dict[UUID, int] = {}
-        department_ids_to_fetch: list[UUID] = []
-        for opt in department_option_ids:
-            opt_id = getattr(opt, "id", None)
-            opt_count = getattr(opt, "count", 0)
-            if opt_id:
-                uid = UUID(str(opt_id)) if not isinstance(opt_id, UUID) else opt_id
-                department_count_map[uid] = int(opt_count or 0)
-                department_ids_to_fetch.append(uid)
-
-        # Parallel fetch names from cached *_internal() functions
-        scenarios_data = []
-        fields_data = []
-        departments_data = []
-
-        pool = get_pool()
-        has_ids = any(
-            [
-                scenario_ids_to_fetch,
-                field_ids_to_fetch,
-                department_ids_to_fetch,
-                all_upload_resource_ids,
-            ]
-        )
-
+        # --- Fetch upload resources for file ID hydration ---
         uploads_data: list = []
 
-        if pool and has_ids:
-
-            async def fetch_scenarios() -> list:
-                if not scenario_ids_to_fetch:
-                    return []
-                async with pool.acquire() as c:
-                    return await get_scenarios_internal(
-                        c, scenario_ids_to_fetch, bypass_cache
-                    )
-
-            async def fetch_fields() -> list:
-                if not field_ids_to_fetch:
-                    return []
-                async with pool.acquire() as c:
-                    return await get_fields_internal(
-                        c, field_ids_to_fetch, bypass_cache
-                    )
-
-            async def fetch_departments() -> list:
-                if not department_ids_to_fetch:
-                    return []
-                async with pool.acquire() as c:
-                    return await get_departments_internal(
-                        c, department_ids_to_fetch, bypass_cache
-                    )
+        pool = get_pool()
+        if pool and all_upload_resource_ids:
 
             async def fetch_uploads() -> list:
                 if not all_upload_resource_ids:
@@ -274,14 +194,7 @@ async def get_document_list(
                         c, all_upload_resource_ids, bypass_cache
                     )
 
-            (
-                scenarios_data,
-                fields_data,
-                departments_data,
-                uploads_data,
-            ) = await asyncio.gather(
-                fetch_scenarios(), fetch_fields(), fetch_departments(), fetch_uploads()
-            )
+            uploads_data = await fetch_uploads()
 
         # Build uploads_id -> upload_id map (resource ID -> file ID for download URL)
         upload_resource_to_file_id: dict[UUID, UUID] = {}
@@ -317,61 +230,25 @@ async def get_document_list(
                         doc_api.upload_id = file_id
                         break
 
-        # Merge names with counts, apply search filtering in Python
-        scenario_search = request.scenario_search
-        scenarios: list[ListDocumentApiScenario] = [
-            ListDocumentApiScenario(
-                scenario_id=s.scenario_id,
-                name=s.name,
-                description=s.description or "",
-                count=scenario_count_map.get(s.scenario_id, 0) if s.scenario_id else 0,
-            )
-            for s in scenarios_data
-            if s.scenario_id
-            and (
-                scenario_search is None
-                or scenario_search.lower() in (s.name or "").lower()
-            )
-        ]
-
-        field_search = request.field_search
-        fields: list[ListDocumentApiField] = [
-            ListDocumentApiField(
-                field_id=f.field_id,
-                name=f.name,
-                description=f.description or "",
-                count=field_count_map.get(f.field_id, 0) if f.field_id else 0,
-            )
-            for f in fields_data
-            if f.field_id
-            and (field_search is None or field_search.lower() in (f.name or "").lower())
-        ]
-
-        department_search = request.department_search
-        departments: list[ListDocumentApiDepartment] = [
-            ListDocumentApiDepartment(
-                department_id=d.department_id,
-                name=d.name,
-                description=d.description or "",
-                count=department_count_map.get(d.department_id, 0)
-                if d.department_id
-                else 0,
-            )
-            for d in departments_data
-            if d.department_id
-            and (
-                department_search is None
-                or department_search.lower() in (d.name or "").lower()
-            )
-        ]
-
-        # Build API response with computed permissions
+        # Build API response with filter sections (names resolved in SQL)
         api_response = ListDocumentApiResponse(
             actor_name=actor_name,
             documents=documents_with_permissions,
-            scenarios=scenarios,
-            fields=fields,
-            departments=departments,
+            scenario_filter=ListFilterSection.from_sql_options(
+                result.scenario_options,
+                request.scenario_ids,
+                request.scenario_search,
+            ),
+            field_filter=ListFilterSection.from_sql_options(
+                result.field_options,
+                request.field_ids,
+                request.field_search,
+            ),
+            department_filter=ListFilterSection.from_sql_options(
+                result.department_options,
+                request.filter_department_ids,
+                request.department_search,
+            ),
             total_count=result.total_count,
         )
 

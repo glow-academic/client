@@ -8,9 +8,7 @@ Filter option names hydrated from cached *_internal() functions.
 Search filtering for cohort/department options applied in Python.
 """
 
-import asyncio
 from typing import Annotated, Any, cast
-from uuid import UUID
 
 import asyncpg
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
@@ -21,14 +19,11 @@ from app.api.v4.artifacts.profile.permissions import (
     compute_can_edit,
 )
 from app.api.v4.artifacts.profile.types import (
-    ListStaffApiCohort,
-    ListStaffApiDepartment,
     ListStaffApiResponse,
     ListStaffApiStaff,
 )
 from app.api.v4.auth.profile import get_auth_profile_internal
-from app.api.v4.resources.cohorts.get import get_cohorts_internal
-from app.api.v4.resources.departments.get import get_departments_internal
+from app.api.v4.types import ListFilterSection
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
@@ -119,6 +114,7 @@ async def get_profile_list(
             role_filter=request.role_filter,
             cohort_search=request.cohort_search,
             department_search=request.department_search,
+            role_search=request.role_search,
             page_size=request.page_size,
             page_offset=request.page_offset,
         )
@@ -180,102 +176,25 @@ async def get_profile_list(
                 )
             )
 
-        # --- Python hydration: filter option names from cached *_internal() ---
-        cohort_option_ids = getattr(result, "cohort_option_ids", None) or []
-        department_option_ids = getattr(result, "department_option_ids", None) or []
-
-        # Build ID -> count maps
-        cohort_count_map: dict[UUID, int] = {}
-        cohort_ids_to_fetch: list[UUID] = []
-        for opt in cohort_option_ids:
-            opt_id = getattr(opt, "id", None)
-            opt_count = getattr(opt, "count", 0)
-            if opt_id:
-                uid = UUID(str(opt_id)) if not isinstance(opt_id, UUID) else opt_id
-                cohort_count_map[uid] = int(opt_count or 0)
-                cohort_ids_to_fetch.append(uid)
-
-        department_count_map: dict[UUID, int] = {}
-        department_ids_to_fetch: list[UUID] = []
-        for opt in department_option_ids:
-            opt_id = getattr(opt, "id", None)
-            opt_count = getattr(opt, "count", 0)
-            if opt_id:
-                uid = UUID(str(opt_id)) if not isinstance(opt_id, UUID) else opt_id
-                department_count_map[uid] = int(opt_count or 0)
-                department_ids_to_fetch.append(uid)
-
-        # Parallel fetch names from cached *_internal() functions
-        cohorts_data = []
-        departments_data = []
-
-        pool = get_pool()
-        has_ids = any([cohort_ids_to_fetch, department_ids_to_fetch])
-
-        if pool and has_ids:
-
-            async def fetch_cohorts() -> list:
-                if not cohort_ids_to_fetch:
-                    return []
-                async with pool.acquire() as c:
-                    return await get_cohorts_internal(
-                        c, cohort_ids_to_fetch, bypass_cache
-                    )
-
-            async def fetch_departments() -> list:
-                if not department_ids_to_fetch:
-                    return []
-                async with pool.acquire() as c:
-                    return await get_departments_internal(
-                        c, department_ids_to_fetch, bypass_cache
-                    )
-
-            cohorts_data, departments_data = await asyncio.gather(
-                fetch_cohorts(), fetch_departments()
-            )
-
-        # Merge names with counts, apply search filtering in Python
-        cohort_search = request.cohort_search
-        cohorts: list[ListStaffApiCohort] = [
-            ListStaffApiCohort(
-                cohort_id=s.cohort_id,
-                name=s.title,  # QGetCohortsV4Item uses 'title' not 'name'
-                description=s.description or "",
-                count=cohort_count_map.get(s.cohort_id, 0) if s.cohort_id else 0,
-            )
-            for s in cohorts_data
-            if s.cohort_id
-            and (
-                cohort_search is None
-                or cohort_search.lower() in (s.title or "").lower()
-            )
-        ]
-
-        department_search = request.department_search
-        departments: list[ListStaffApiDepartment] = [
-            ListStaffApiDepartment(
-                department_id=d.department_id,
-                name=d.name,
-                description=d.description or "",
-                count=department_count_map.get(d.department_id, 0)
-                if d.department_id
-                else 0,
-            )
-            for d in departments_data
-            if d.department_id
-            and (
-                department_search is None
-                or department_search.lower() in (d.name or "").lower()
-            )
-        ]
-
-        # Build API response with computed permissions and hydrated names
+        # Build API response with filter sections (names resolved in SQL)
         api_response = ListStaffApiResponse(
             actor_name=actor_name,
             staff=staff_with_permissions,
-            cohorts=cohorts,
-            departments=departments,
-            role_options=result.role_options,
+            cohort_filter=ListFilterSection.from_sql_options(
+                result.cohort_options,
+                request.cohort_ids,
+                request.cohort_search,
+            ),
+            department_filter=ListFilterSection.from_sql_options(
+                result.department_options,
+                request.filter_department_ids,
+                request.department_search,
+            ),
+            role_filter=ListFilterSection.from_sql_options(
+                result.role_options,
+                [request.role_filter] if request.role_filter else None,
+                request.role_search,
+            ),
             total_count=result.total_count,
         )
 

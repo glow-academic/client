@@ -212,14 +212,14 @@ class FieldMultiResourceAction(BaseModel):
 
 
 class SaveFieldApiRequest(BaseModel):
-    group_id: UUID
-    input_field_id: UUID | None = None
+    """Request model for save field endpoint - flat resource IDs."""
 
-    names: FieldResourceAction
-    descriptions: FieldResourceAction
-    flags: FieldResourceAction
-    departments: FieldMultiResourceAction
-    conditional_parameters: FieldMultiResourceAction
+    input_field_id: UUID | None = None
+    name_id: UUID
+    description_id: UUID | None = None
+    flag_id: UUID | None = None
+    department_ids: list[UUID] | None = None
+    conditional_parameter_ids: list[UUID] | None = None
 
 
 class SaveFieldApiResponse(BaseModel):
@@ -240,9 +240,23 @@ class SaveFieldSqlParams(BaseModel):
 
     @classmethod
     def from_request(
-        cls, request: SaveFieldApiRequest, profile_id: UUID
+        cls,
+        request: SaveFieldApiRequest,
+        profile_id: UUID,
+        group_id: UUID | None,
     ) -> SaveFieldSqlParams:
-        return cls(profile_id=profile_id, **request.model_dump())
+        return cls(
+            profile_id=profile_id,
+            group_id=group_id,
+            input_field_id=request.input_field_id,
+            names=FieldResourceAction(resource_id=request.name_id),
+            descriptions=FieldResourceAction(resource_id=request.description_id),
+            flags=FieldResourceAction(resource_id=request.flag_id),
+            departments=FieldMultiResourceAction(resource_ids=request.department_ids),
+            conditional_parameters=FieldMultiResourceAction(
+                resource_ids=request.conditional_parameter_ids
+            ),
+        )
 
     def to_tuple(self) -> tuple:
         def single(a: FieldResourceAction) -> tuple:
@@ -269,13 +283,15 @@ class SaveFieldSqlRow(BaseModel):
 
 
 class PatchFieldDraftApiRequest(BaseModel):
+    """Request model for patch field draft endpoint - flat resource IDs."""
+
     input_draft_id: UUID | None = None
     group_id: UUID | None = None
-    names: FieldResourceAction | None = None
-    descriptions: FieldResourceAction | None = None
-    flags: FieldResourceAction | None = None
-    departments: FieldMultiResourceAction | None = None
-    conditional_parameters: FieldMultiResourceAction | None = None
+    name_id: UUID | None = None
+    description_id: UUID | None = None
+    flag_id: UUID | None = None
+    department_ids: list[UUID] | None = None
+    conditional_parameter_ids: list[UUID] | None = None
     expected_version: int = 0
 
 
@@ -301,17 +317,17 @@ class PatchFieldDraftSqlParams(BaseModel):
     def from_request(
         cls, request: PatchFieldDraftApiRequest, profile_id: UUID
     ) -> PatchFieldDraftSqlParams:
-        empty_single = FieldResourceAction()
-        empty_multi = FieldMultiResourceAction()
         return cls(
             profile_id=profile_id,
             input_draft_id=request.input_draft_id,
             group_id=request.group_id,
-            names=request.names or empty_single,
-            descriptions=request.descriptions or empty_single,
-            flags=request.flags or empty_single,
-            departments=request.departments or empty_multi,
-            conditional_parameters=request.conditional_parameters or empty_multi,
+            names=FieldResourceAction(resource_id=request.name_id),
+            descriptions=FieldResourceAction(resource_id=request.description_id),
+            flags=FieldResourceAction(resource_id=request.flag_id),
+            departments=FieldMultiResourceAction(resource_ids=request.department_ids),
+            conditional_parameters=FieldMultiResourceAction(
+                resource_ids=request.conditional_parameter_ids
+            ),
             expected_version=request.expected_version,
         )
 

@@ -11,7 +11,7 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
-from app.api.v4.types import BaseResourceSection
+from app.api.v4.types import BaseResourceSection, ListFilterSection
 from app.api.v4.views.drafts.types import DraftDocumentViewItem
 from app.sql.types import (
     QGetAgentsV4Item,
@@ -193,45 +193,14 @@ class ListDocumentApiDocument(BaseModel):
     updated_at: datetime | None = None
 
 
-class ListDocumentApiScenario(BaseModel):
-    """Scenario type for list endpoint."""
-
-    scenario_id: UUID | None = None
-    name: str | None = None
-    description: str | None = None
-    active: bool | None = None
-    persona_ids: list[UUID] | None = None
-    document_ids: list[UUID] | None = None
-    parameter_item_ids: list[UUID] | None = None
-    count: int | None = None
-
-
-class ListDocumentApiField(BaseModel):
-    """Field type for list endpoint."""
-
-    field_id: UUID | None = None
-    name: str | None = None
-    description: str | None = None
-    count: int | None = None
-
-
-class ListDocumentApiDepartment(BaseModel):
-    """Department type for list endpoint."""
-
-    department_id: UUID | None = None
-    name: str | None = None
-    description: str | None = None
-    count: int | None = None
-
-
 class ListDocumentApiResponse(BaseModel):
     """Response model for list document endpoint with computed permissions."""
 
     actor_name: str | None = None
     documents: list[ListDocumentApiDocument] | None = None
-    scenarios: list[ListDocumentApiScenario] | None = None
-    fields: list[ListDocumentApiField] | None = None
-    departments: list[ListDocumentApiDepartment] | None = None
+    scenario_filter: ListFilterSection | None = None
+    field_filter: ListFilterSection | None = None
+    department_filter: ListFilterSection | None = None
     total_count: int | None = None
 
 
@@ -258,18 +227,17 @@ class DocumentMultiResourceAction(BaseModel):
 
 
 class SaveDocumentApiRequest(BaseModel):
-    """Request model for save document endpoint - nested resource actions."""
+    """Request model for save document endpoint - flat resource IDs."""
 
-    group_id: UUID
     input_document_id: UUID | None = None
-    names: DocumentResourceAction
-    descriptions: DocumentResourceAction
-    flags: DocumentResourceAction
-    departments: DocumentMultiResourceAction
-    fields: DocumentMultiResourceAction
-    uploads: DocumentMultiResourceAction
-    images: DocumentMultiResourceAction
-    texts: DocumentMultiResourceAction
+    name_id: UUID
+    description_id: UUID | None = None
+    flag_id: UUID | None = None
+    department_ids: list[UUID] | None = None
+    field_ids: list[UUID] | None = None
+    upload_ids: list[UUID] | None = None
+    image_ids: list[UUID] | None = None
+    text_ids: list[UUID] | None = None
 
 
 class SaveDocumentApiResponse(BaseModel):
@@ -297,20 +265,23 @@ class SaveDocumentSqlParams(BaseModel):
 
     @classmethod
     def from_request(
-        cls, request: SaveDocumentApiRequest, profile_id: UUID
+        cls,
+        request: SaveDocumentApiRequest,
+        profile_id: UUID,
+        group_id: UUID | None,
     ) -> SaveDocumentSqlParams:
         return cls(
             profile_id=profile_id,
             input_document_id=request.input_document_id,
-            group_id=request.group_id,
-            names=request.names,
-            descriptions=request.descriptions,
-            flags=request.flags,
-            departments=request.departments,
-            fields=request.fields,
-            uploads=request.uploads,
-            images=request.images,
-            texts=request.texts,
+            group_id=group_id,
+            names=DocumentResourceAction(resource_id=request.name_id),
+            descriptions=DocumentResourceAction(resource_id=request.description_id),
+            flags=DocumentResourceAction(resource_id=request.flag_id),
+            departments=DocumentMultiResourceAction(resource_ids=request.department_ids),
+            fields=DocumentMultiResourceAction(resource_ids=request.field_ids),
+            uploads=DocumentMultiResourceAction(resource_ids=request.upload_ids),
+            images=DocumentMultiResourceAction(resource_ids=request.image_ids),
+            texts=DocumentMultiResourceAction(resource_ids=request.text_ids),
         )
 
     def to_tuple(self) -> tuple[Any, ...]:
@@ -383,18 +354,18 @@ class DuplicateDocumentApiResponse(BaseModel):
 
 
 class PatchDocumentDraftApiRequest(BaseModel):
-    """Request model for patch document draft endpoint - nested resource actions."""
+    """Request model for patch document draft endpoint - flat resource IDs."""
 
     input_draft_id: UUID | None = None
     group_id: UUID | None = None
-    names: DocumentResourceAction | None = None
-    descriptions: DocumentResourceAction | None = None
-    flags: DocumentResourceAction | None = None
-    departments: DocumentMultiResourceAction | None = None
-    fields: DocumentMultiResourceAction | None = None
-    uploads: DocumentMultiResourceAction | None = None
-    images: DocumentMultiResourceAction | None = None
-    texts: DocumentMultiResourceAction | None = None
+    name_id: UUID | None = None
+    description_id: UUID | None = None
+    flag_id: UUID | None = None
+    department_ids: list[UUID] | None = None
+    field_ids: list[UUID] | None = None
+    upload_ids: list[UUID] | None = None
+    image_ids: list[UUID] | None = None
+    text_ids: list[UUID] | None = None
     expected_version: int | None = 0
 
 
@@ -431,14 +402,14 @@ class PatchDocumentDraftSqlParams(BaseModel):
             profile_id=profile_id,
             input_draft_id=request.input_draft_id,
             group_id=request.group_id,
-            names=request.names,
-            descriptions=request.descriptions,
-            flags=request.flags,
-            departments=request.departments,
-            fields=request.fields,
-            uploads=request.uploads,
-            images=request.images,
-            texts=request.texts,
+            names=DocumentResourceAction(resource_id=request.name_id),
+            descriptions=DocumentResourceAction(resource_id=request.description_id),
+            flags=DocumentResourceAction(resource_id=request.flag_id),
+            departments=DocumentMultiResourceAction(resource_ids=request.department_ids),
+            fields=DocumentMultiResourceAction(resource_ids=request.field_ids),
+            uploads=DocumentMultiResourceAction(resource_ids=request.upload_ids),
+            images=DocumentMultiResourceAction(resource_ids=request.image_ids),
+            texts=DocumentMultiResourceAction(resource_ids=request.text_ids),
             expected_version=request.expected_version,
         )
 

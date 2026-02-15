@@ -37,7 +37,7 @@ import { useFlushRegistry } from "@/hooks/use-flush-registry";
 import { useGenerationModal } from "@/hooks/use-generation-modal";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import {
-  buildResourceActions,
+  buildDraftPayload,
   checkHasResourceIds,
   computeEffectiveFormState,
   type ResourceConfig,
@@ -99,7 +99,6 @@ const DOCUMENT_RESOURCES: ResourceConfig[] = [
 // Types defined inline using InputOf/OutputOf
 type SaveDocumentIn = InputOf<"/api/v4/artifacts/documents/save", "post">;
 type SaveDocumentOut = OutputOf<"/api/v4/artifacts/documents/save", "post">;
-type SaveDocumentBody = NonNullable<SaveDocumentIn["body"]>;
 type CreateDraftNamesIn = InputOf<"/api/v4/resources/names", "post">;
 type CreateDraftNamesOut = OutputOf<"/api/v4/resources/names", "post">;
 type CreateDraftDescriptionsIn = InputOf<
@@ -341,11 +340,14 @@ function DocumentComponent({
     ): Record<string, unknown> => ({
       input_draft_id: inputDraftId || null,
       group_id: documentDetail?.group_id ?? null,
-      ...buildResourceActions(DOCUMENT_RESOURCES, {
+      ...buildDraftPayload(DOCUMENT_RESOURCES, {
         formState: formStateRef.current,
-        referenceState: lastPatchedFormStateRef.current,
-        flushResults: flushResults ?? {},
-        entityData: documentDetail as Record<string, unknown> | null,
+        referenceState:
+          lastPatchedFormStateRef.current as unknown as Record<
+            string,
+            unknown
+          > | null,
+        flushResults: (flushResults ?? {}) as Record<string, unknown>,
       }),
       expected_version: expectedVersion,
     }),
@@ -652,39 +654,28 @@ function DocumentComponent({
         throw new Error("Required fields are missing");
       }
 
-      const groupId = documentDetail?.group_id;
-      if (!groupId) {
-        toast.error("Missing group ID. Please refresh and try again.");
-        throw new Error("Missing group ID");
-      }
-
       try {
-        const initialState = getInitialFormState() as unknown as Record<
-          string,
-          unknown
-        >;
-        const saveActions = buildResourceActions(DOCUMENT_RESOURCES, {
-          formState: effectiveFormState as unknown as Record<string, unknown>,
-          referenceState: initialState,
-          flushResults,
-          entityData: documentDetail as Record<string, unknown> | null,
-        }) as Pick<
-          SaveDocumentBody,
-          | "names"
-          | "descriptions"
-          | "flags"
-          | "departments"
-          | "fields"
-          | "uploads"
-          | "images"
-          | "texts"
-        >;
-
         await saveDocumentAction({
           body: {
-            group_id: groupId,
             input_document_id: isEditMode && documentId ? documentId : null,
-            ...saveActions,
+            name_id: effectiveFormState.name_id!,
+            description_id: effectiveFormState.description_id ?? null,
+            flag_id: effectiveFormState.active_flag_id ?? null,
+            department_ids: effectiveFormState.department_ids?.length
+              ? effectiveFormState.department_ids
+              : null,
+            field_ids: effectiveFormState.field_ids?.length
+              ? effectiveFormState.field_ids
+              : null,
+            upload_ids: effectiveFormState.upload_ids?.length
+              ? effectiveFormState.upload_ids
+              : null,
+            image_ids: effectiveFormState.image_ids?.length
+              ? effectiveFormState.image_ids
+              : null,
+            text_ids: effectiveFormState.text_ids?.length
+              ? effectiveFormState.text_ids
+              : null,
           },
         });
         toast.success(

@@ -7,7 +7,7 @@ from uuid import UUID
 from pydantic import BaseModel
 
 from app.api.v4.resources.cohorts.types import QGetCohortsV4Item
-from app.api.v4.types import BaseResourceSection
+from app.api.v4.types import BaseResourceSection, ListFilterSection
 from app.api.v4.views.drafts.types import DraftProfileViewItem
 from app.sql.types import (
     QGetAgentsV4Item,
@@ -128,17 +128,16 @@ class GetProfileWebsocketResponse(BaseModel):
 
 
 class SaveProfileRouteApiRequest(BaseModel):
-    """Save payload with persona-style nested resource actions."""
+    """Save payload with flat resource IDs."""
 
     input_profile_id: UUID | None = None
-    group_id: UUID | None = None
     role: str | None = None
-    names: ProfileResourceAction
-    flags: ProfileResourceAction
-    request_limits: ProfileResourceAction
-    emails: ProfileMultiResourceAction
-    departments: ProfileMultiResourceAction
-    cohorts: ProfileMultiResourceAction
+    name_id: UUID
+    flag_id: UUID | None = None
+    request_limit_id: UUID | None = None
+    email_ids: list[UUID] | None = None
+    department_ids: list[UUID] | None = None
+    cohort_ids: list[UUID] | None = None
     expected_version: int = 0
 
 
@@ -198,17 +197,17 @@ class ProfileMultiResourceAction(BaseModel):
 
 
 class PatchProfileDraftApiRequest(BaseModel):
-    """Request model for patch profile draft endpoint - nested resource actions."""
+    """Request model for patch profile draft endpoint - flat resource IDs."""
 
     input_draft_id: UUID | None = None
     group_id: UUID | None = None
     role: str | None = None
-    names: ProfileResourceAction | None = None
-    flags: ProfileResourceAction | None = None
-    request_limits: ProfileResourceAction | None = None
-    emails: ProfileMultiResourceAction | None = None
-    departments: ProfileMultiResourceAction | None = None
-    cohorts: ProfileMultiResourceAction | None = None
+    name_id: UUID | None = None
+    flag_id: UUID | None = None
+    request_limit_id: UUID | None = None
+    email_ids: list[UUID] | None = None
+    department_ids: list[UUID] | None = None
+    cohort_ids: list[UUID] | None = None
     expected_version: int = 0
 
 
@@ -236,19 +235,17 @@ class PatchProfileDraftSqlParams(BaseModel):
     def from_request(
         cls, request: PatchProfileDraftApiRequest, profile_id: UUID
     ) -> PatchProfileDraftSqlParams:
-        empty_single = ProfileResourceAction()
-        empty_multi = ProfileMultiResourceAction()
         return cls(
             profile_id=profile_id,
             input_draft_id=request.input_draft_id,
             group_id=request.group_id,
             role=request.role,
-            names=request.names or empty_single,
-            flags=request.flags or empty_single,
-            request_limits=request.request_limits or empty_single,
-            emails=request.emails or empty_multi,
-            departments=request.departments or empty_multi,
-            cohorts=request.cohorts or empty_multi,
+            names=ProfileResourceAction(resource_id=request.name_id),
+            flags=ProfileResourceAction(resource_id=request.flag_id),
+            request_limits=ProfileResourceAction(resource_id=request.request_limit_id),
+            emails=ProfileMultiResourceAction(resource_ids=request.email_ids),
+            departments=ProfileMultiResourceAction(resource_ids=request.department_ids),
+            cohorts=ProfileMultiResourceAction(resource_ids=request.cohort_ids),
             expected_version=request.expected_version,
         )
 
@@ -302,30 +299,12 @@ class ListStaffApiStaff(BaseModel):
     can_delete: bool | None = None
 
 
-class ListStaffApiCohort(BaseModel):
-    """Cohort type for list endpoint filter options."""
-
-    cohort_id: UUID | None = None
-    name: str | None = None
-    description: str | None = None
-    count: int | None = None
-
-
-class ListStaffApiDepartment(BaseModel):
-    """Department type for list endpoint filter options."""
-
-    department_id: UUID | None = None
-    name: str | None = None
-    description: str | None = None
-    count: int | None = None
-
-
 class ListStaffApiResponse(BaseModel):
     """Response model for staff list endpoint with computed permissions."""
 
     actor_name: str | None = None
     staff: list[ListStaffApiStaff] | None = None
-    cohorts: list[ListStaffApiCohort] | None = None
-    departments: list[ListStaffApiDepartment] | None = None
-    role_options: list[str] | None = None
+    cohort_filter: ListFilterSection | None = None
+    department_filter: ListFilterSection | None = None
+    role_filter: ListFilterSection | None = None
     total_count: int | None = None

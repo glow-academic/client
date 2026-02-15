@@ -97,23 +97,42 @@ async def save_as_template(
     )
     if existing:
         # Unmark as template first so it can be dropped
-        await admin_conn.execute(
-            f"ALTER DATABASE \"{template_name}\" IS_TEMPLATE false"
-        )
+        await admin_conn.execute(f'ALTER DATABASE "{template_name}" IS_TEMPLATE false')
         await admin_conn.execute(f'DROP DATABASE "{template_name}"')
 
     await admin_conn.execute(
         f'CREATE DATABASE "{template_name}" TEMPLATE "{source_db}"'
     )
-    await admin_conn.execute(
-        f"ALTER DATABASE \"{template_name}\" IS_TEMPLATE true"
+    await admin_conn.execute(f'ALTER DATABASE "{template_name}" IS_TEMPLATE true')
+
+
+async def create_fresh_db(admin_conn: asyncpg.Connection, db_name: str) -> None:
+    """Create a fresh empty database, dropping it first if it exists."""
+    existing = await admin_conn.fetchval(
+        "SELECT 1 FROM pg_database WHERE datname = $1", db_name
     )
+    if existing:
+        # Terminate connections before dropping
+        await admin_conn.execute(
+            """
+            SELECT pg_terminate_backend(pid)
+            FROM pg_stat_activity
+            WHERE datname = $1 AND pid <> pg_backend_pid()
+            """,
+            db_name,
+        )
+        await admin_conn.execute(f'DROP DATABASE "{db_name}"')
+    await admin_conn.execute(f'CREATE DATABASE "{db_name}"')
 
 
 async def cleanup_old_templates(
     admin_conn: asyncpg.Connection, keep_count: int = 3
 ) -> None:
-    """Drop old ``template_glow_*`` databases, keeping the *keep_count* newest."""
+    """Drop old ``template_glow_*`` databases, keeping the *keep_count* newest.
+
+    Also cleans up stale ``build_glow_*`` and ``test_glow_*`` databases.
+    """
+    # Clean up templates (keep newest N)
     rows = await admin_conn.fetch(
         """
         SELECT datname FROM pg_database
@@ -128,3 +147,23 @@ async def cleanup_old_templates(
             await admin_conn.execute(f'DROP DATABASE "{name}"')
         except Exception:
             pass  # best-effort cleanup
+
+    # Clean up stale build/test databases (keep none — they're ephemeral)
+    for prefix in ("build_glow_%", "test_glow_%"):
+        stale = await admin_conn.fetch(
+            "SELECT datname FROM pg_database WHERE datname LIKE $1", prefix
+        )
+        for row in stale:
+            name = row["datname"]
+            try:
+                await admin_conn.execute(
+                    """
+                    SELECT pg_terminate_backend(pid)
+                    FROM pg_stat_activity
+                    WHERE datname = $1 AND pid <> pg_backend_pid()
+                    """,
+                    name,
+                )
+                await admin_conn.execute(f'DROP DATABASE "{name}"')
+            except Exception:
+                pass

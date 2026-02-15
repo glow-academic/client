@@ -20,6 +20,7 @@ END $$;
 -- 2) Drop types in reverse dependency order (parameter depends on sample_item)
 DROP TYPE IF EXISTS types.q_list_parameters_v4_parameter;
 DROP TYPE IF EXISTS types.q_list_parameters_v4_option_id;
+DROP TYPE IF EXISTS types.q_list_parameters_v4_option;
 DROP TYPE IF EXISTS types.q_list_parameters_v4_sample_item;
 
 -- 3) Recreate types
@@ -43,9 +44,10 @@ CREATE TYPE types.q_list_parameters_v4_parameter AS (
     active_scenario_count bigint
 );
 
--- Filter option type: id + count only (names hydrated in Python from cache)
-CREATE TYPE types.q_list_parameters_v4_option_id AS (
-    id uuid,
+-- Filter option type: value/label/count (names resolved in SQL)
+CREATE TYPE types.q_list_parameters_v4_option AS (
+    value text,
+    label text,
     count bigint
 );
 
@@ -55,15 +57,18 @@ CREATE OR REPLACE FUNCTION api_list_parameters_v4(
     search text DEFAULT NULL,
     scenario_ids uuid[] DEFAULT NULL,
     filter_department_ids uuid[] DEFAULT NULL,
+    field_ids uuid[] DEFAULT NULL,
     scenario_search text DEFAULT NULL,
+    field_search text DEFAULT NULL,
     department_search text DEFAULT NULL,
     page_size int DEFAULT 12,
     page_offset int DEFAULT 0
 )
 RETURNS TABLE (
     parameters types.q_list_parameters_v4_parameter[],
-    scenario_option_ids types.q_list_parameters_v4_option_id[],
-    department_option_ids types.q_list_parameters_v4_option_id[],
+    scenario_options types.q_list_parameters_v4_option[],
+    field_options types.q_list_parameters_v4_option[],
+    department_options types.q_list_parameters_v4_option[],
     total_count bigint
 )
 LANGUAGE sql
@@ -111,6 +116,16 @@ parameter_departments_data AS (
     WHERE pd.active = true
     GROUP BY pd.parameter_id
 ),
+-- Field linkage via parameter_fields_junction
+parameter_fields_agg AS (
+    SELECT
+        pfj.parameter_id,
+        ARRAY_AGG(DISTINCT pfj.field_id) as field_ids
+    FROM parameter_fields_junction pfj
+    JOIN field_flags_junction ff ON ff.field_id = pfj.field_id
+    JOIN flags_resource fl ON ff.flag_id = fl.id AND fl.name = 'field_active' AND ff.value = true
+    GROUP BY pfj.parameter_id
+),
 parameter_item_counts AS (
     SELECT
         pfj.parameter_id,
@@ -148,6 +163,7 @@ parameter_data_base AS (
         p.updated_at,
         COALESCE(pdd.department_ids, NULL) as department_ids,
         COALESCE(ps.scenario_ids, ARRAY[]::uuid[]) as scenario_ids,
+        COALESCE(pfa.field_ids, ARRAY[]::uuid[]) as field_ids,
         COALESCE(pic.num_items, 0)::int as num_items,
         COALESCE(
             (SELECT ARRAY_AGG((psi.field_id, psi.name, psi.description)::types.q_list_parameters_v4_sample_item ORDER BY psi.name)
@@ -159,6 +175,7 @@ parameter_data_base AS (
     FROM parameter_artifact p
     LEFT JOIN parameter_scenarios ps ON ps.parameter_id = p.id
     LEFT JOIN parameter_departments_data pdd ON pdd.parameter_id = p.id
+    LEFT JOIN parameter_fields_agg pfa ON pfa.parameter_id = p.id
     LEFT JOIN parameter_item_counts pic ON pic.parameter_id = p.id
     LEFT JOIN parameter_active_scenario_links pasl ON pasl.parameter_id = p.id
     LEFT JOIN parameter_departments_junction pd ON pd.parameter_id = p.id AND pd.active = true AND pd.department_id IN (SELECT department_id FROM user_departments)
@@ -167,7 +184,7 @@ parameter_data_base AS (
         (SELECT d.description FROM parameter_descriptions_junction pd JOIN descriptions_resource d ON pd.description_id = d.id WHERE pd.parameter_id = p.id LIMIT 1),
         EXISTS (SELECT 1 FROM parameter_flags_junction pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.parameter_id = p.id AND f.name = 'parameter_active' AND pf.value = TRUE),
         p.updated_at,
-        pdd.department_ids, ps.scenario_ids, pic.num_items,
+        pdd.department_ids, ps.scenario_ids, pfa.field_ids, pic.num_items,
         pasl.active_scenario_count
     HAVING COUNT(pd.parameter_id) > 0 OR NOT EXISTS (
         SELECT 1 FROM parameter_departments_junction pd2 WHERE pd2.parameter_id = p.id AND pd2.active = true
@@ -186,6 +203,8 @@ filtered_parameters AS (
         (search IS NULL OR LOWER(pd.parameter_name) LIKE '%' || LOWER(search) || '%' OR LOWER(pd.description) LIKE '%' || LOWER(search) || '%')
         -- Scenario filter: parameter must be linked to at least one selected scenario
         AND (api_list_parameters_v4.scenario_ids IS NULL OR pd.scenario_ids && api_list_parameters_v4.scenario_ids)
+        -- Field filter: parameter must contain at least one selected field
+        AND (api_list_parameters_v4.field_ids IS NULL OR pd.field_ids && api_list_parameters_v4.field_ids)
         -- Department filter: parameter must belong to at least one selected department
         AND (filter_department_ids IS NULL OR pd.department_ids && filter_department_ids::text[])
 ),
@@ -200,24 +219,19 @@ paginated_parameters AS (
     ORDER BY fp.updated_at DESC NULLS LAST
     LIMIT page_size OFFSET page_offset
 ),
--- Filter option IDs with counts (names hydrated in Python from cached *_internal() functions)
+-- Filter options with value/label/count (names resolved in SQL)
 all_scenario_ids AS (
     SELECT DISTINCT unnest(scenario_ids) as scenario_id
     FROM parameter_data
 ),
-scenario_option_data AS (
-    SELECT
-        sr.id,
-        (SELECT COUNT(*) FROM parameter_data pd WHERE sr.id = ANY(pd.scenario_ids)) as count
-    FROM scenarios_resource sr
-    WHERE sr.id IN (SELECT scenario_id FROM all_scenario_ids)
+all_field_ids AS (
+    SELECT DISTINCT unnest(field_ids) as field_id
+    FROM parameter_data
+    WHERE field_ids IS NOT NULL AND array_length(field_ids, 1) > 0
 ),
-department_option_data AS (
-    SELECT
-        dr.id,
-        (SELECT COUNT(*) FROM parameter_data) as count
-    FROM departments_resource dr
-    WHERE dr.id IN (SELECT department_id FROM user_departments)
+all_department_ids AS (
+    SELECT DISTINCT department_id
+    FROM user_departments
 )
 SELECT
     -- Aggregate paginated parameters
@@ -231,20 +245,45 @@ SELECT
         ) FROM paginated_parameters pd),
         '{}'::types.q_list_parameters_v4_parameter[]
     ) as parameters,
-    -- Scenario option IDs with counts (names hydrated in Python)
+    -- Scenario filter options (value/label/count resolved in SQL)
     COALESCE(
         (SELECT ARRAY_AGG(
-            (sod.id, sod.count)::types.q_list_parameters_v4_option_id
-        ) FROM scenario_option_data sod),
-        '{}'::types.q_list_parameters_v4_option_id[]
-    ) as scenario_option_ids,
-    -- Department option IDs with counts (names hydrated in Python)
+            (sr.id::text, sn_name.name, (SELECT COUNT(*) FROM parameter_data pd WHERE sr.id = ANY(pd.scenario_ids)))::types.q_list_parameters_v4_option
+            ORDER BY sn_name.name
+         )
+         FROM scenarios_resource sr
+         JOIN scenario_scenarios_junction ssj ON ssj.scenarios_id = sr.id
+         JOIN (SELECT sn.scenario_id, n.name FROM scenario_names_junction sn JOIN names_resource n ON sn.name_id = n.id) sn_name ON sn_name.scenario_id = ssj.scenario_id
+         WHERE sr.id IN (SELECT scenario_id FROM all_scenario_ids)
+           AND (scenario_search IS NULL OR LOWER(sn_name.name) LIKE '%' || LOWER(scenario_search) || '%')),
+        '{}'::types.q_list_parameters_v4_option[]
+    ) as scenario_options,
+    -- Field filter options (value/label/count resolved in SQL)
     COALESCE(
         (SELECT ARRAY_AGG(
-            (dod.id, dod.count)::types.q_list_parameters_v4_option_id
-        ) FROM department_option_data dod),
-        '{}'::types.q_list_parameters_v4_option_id[]
-    ) as department_option_ids,
+            (fr.id::text, fn_name.name, (SELECT COUNT(*) FROM parameter_data pd WHERE fr.id = ANY(pd.field_ids)))::types.q_list_parameters_v4_option
+            ORDER BY fn_name.name
+         )
+         FROM fields_resource fr
+         JOIN field_fields_junction ffj ON ffj.fields_id = fr.id
+         JOIN (SELECT fn.field_id, n.name FROM field_names_junction fn JOIN names_resource n ON fn.name_id = n.id) fn_name ON fn_name.field_id = ffj.field_id
+         WHERE fr.id IN (SELECT field_id FROM all_field_ids)
+           AND (field_search IS NULL OR LOWER(fn_name.name) LIKE '%' || LOWER(field_search) || '%')),
+        '{}'::types.q_list_parameters_v4_option[]
+    ) as field_options,
+    -- Department filter options (value/label/count resolved in SQL)
+    COALESCE(
+        (SELECT ARRAY_AGG(
+            (dr.id::text, dn_name.name, (SELECT COUNT(*) FROM parameter_data pd WHERE dr.id::text = ANY(pd.department_ids)))::types.q_list_parameters_v4_option
+            ORDER BY dn_name.name
+         )
+         FROM departments_resource dr
+         JOIN department_departments_junction ddj ON ddj.departments_id = dr.id
+         JOIN (SELECT dn.department_id, n.name FROM department_names_junction dn JOIN names_resource n ON dn.name_id = n.id) dn_name ON dn_name.department_id = ddj.department_id
+         WHERE dr.id IN (SELECT department_id FROM all_department_ids)
+           AND (department_search IS NULL OR LOWER(dn_name.name) LIKE '%' || LOWER(department_search) || '%')),
+        '{}'::types.q_list_parameters_v4_option[]
+    ) as department_options,
     -- Total count of filtered parameters (before pagination)
     (SELECT total_count FROM filtered_count) as total_count
 FROM params

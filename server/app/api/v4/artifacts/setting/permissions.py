@@ -77,9 +77,7 @@ def compute_disabled_reason(
 ) -> str | None:
     """Compute the reason why editing is disabled, if any."""
     if not setting_department_ids and user_role != "superadmin":
-        return (
-            "This is a default setting that cannot be edited."
-        )
+        return "This is a default setting that cannot be edited."
     if user_role not in ("admin", "superadmin"):
         return (
             "This setting cannot be edited. "

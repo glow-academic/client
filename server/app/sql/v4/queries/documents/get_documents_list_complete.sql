@@ -49,9 +49,10 @@ CREATE TYPE types.q_list_documents_v4_document AS (
     updated_at timestamptz
 );
 
--- Filter option types simplified: id + count only (names hydrated in Python from cache)
-CREATE TYPE types.q_list_documents_v4_option_id AS (
-    id uuid,
+-- Filter option type: value/label/count (names resolved in SQL, no Python hydration needed)
+CREATE TYPE types.q_list_documents_v4_option AS (
+    value text,
+    label text,
     count bigint
 );
 
@@ -70,9 +71,9 @@ CREATE OR REPLACE FUNCTION api_list_documents_v4(
 )
 RETURNS TABLE (
     documents types.q_list_documents_v4_document[],
-    scenario_option_ids types.q_list_documents_v4_option_id[],
-    field_option_ids types.q_list_documents_v4_option_id[],
-    department_option_ids types.q_list_documents_v4_option_id[],
+    scenario_options types.q_list_documents_v4_option[],
+    field_options types.q_list_documents_v4_option[],
+    department_options types.q_list_documents_v4_option[],
     total_count bigint
 )
 LANGUAGE sql
@@ -182,36 +183,19 @@ paginated_documents AS (
     ORDER BY fd.updated_at DESC NULLS LAST
     LIMIT page_size OFFSET page_offset
 ),
--- Filter option IDs with counts (names hydrated in Python from cached *_internal() functions)
+-- Filter options with value/label/count (names resolved in SQL)
 all_scenario_ids AS (
     SELECT DISTINCT unnest(scenario_ids) as scenario_id
     FROM document_data
 ),
-scenario_option_data AS (
-    SELECT
-        sr.id,
-        (SELECT COUNT(*) FROM document_data dd WHERE sr.id = ANY(dd.scenario_ids)) as count
-    FROM scenarios_resource sr
-    WHERE sr.id IN (SELECT scenario_id FROM all_scenario_ids)
-),
-assigned_field_ids AS (
+all_field_ids AS (
     SELECT DISTINCT unnest(field_ids) as field_id
     FROM document_data
     WHERE field_ids IS NOT NULL AND array_length(field_ids, 1) > 0
 ),
-field_option_data AS (
-    SELECT
-        fr.id,
-        (SELECT COUNT(*) FROM document_data dd WHERE fr.id = ANY(dd.field_ids)) as count
-    FROM fields_resource fr
-    WHERE fr.id IN (SELECT field_id FROM assigned_field_ids)
-),
-department_option_data AS (
-    SELECT
-        dr.id,
-        (SELECT COUNT(*) FROM document_data) as count
-    FROM departments_resource dr
-    WHERE dr.id IN (SELECT department_id FROM user_departments)
+all_department_ids AS (
+    SELECT DISTINCT department_id
+    FROM user_departments
 )
 SELECT
     -- Aggregate paginated documents
@@ -227,27 +211,45 @@ SELECT
         ) FROM paginated_documents pd),
         '{}'::types.q_list_documents_v4_document[]
     ) as documents,
-    -- Scenario option IDs with counts (names hydrated in Python)
+    -- Scenario filter options (value/label/count resolved in SQL)
     COALESCE(
         (SELECT ARRAY_AGG(
-            (sod.id, sod.count)::types.q_list_documents_v4_option_id
-        ) FROM scenario_option_data sod),
-        '{}'::types.q_list_documents_v4_option_id[]
-    ) as scenario_option_ids,
-    -- Field option IDs with counts (names hydrated in Python)
+            (sr.id::text, sn_name.name, (SELECT COUNT(*) FROM document_data dd WHERE sr.id = ANY(dd.scenario_ids)))::types.q_list_documents_v4_option
+            ORDER BY sn_name.name
+         )
+         FROM scenarios_resource sr
+         JOIN scenario_scenarios_junction ssj ON ssj.scenarios_id = sr.id
+         JOIN (SELECT sn.scenario_id, n.name FROM scenario_names_junction sn JOIN names_resource n ON sn.name_id = n.id) sn_name ON sn_name.scenario_id = ssj.scenario_id
+         WHERE sr.id IN (SELECT scenario_id FROM all_scenario_ids)
+           AND (scenario_search IS NULL OR LOWER(sn_name.name) LIKE '%' || LOWER(scenario_search) || '%')),
+        '{}'::types.q_list_documents_v4_option[]
+    ) as scenario_options,
+    -- Field filter options (value/label/count resolved in SQL)
     COALESCE(
         (SELECT ARRAY_AGG(
-            (fod.id, fod.count)::types.q_list_documents_v4_option_id
-        ) FROM field_option_data fod),
-        '{}'::types.q_list_documents_v4_option_id[]
-    ) as field_option_ids,
-    -- Department option IDs with counts (names hydrated in Python)
+            (fr.id::text, fn_name.name, (SELECT COUNT(*) FROM document_data dd WHERE fr.id = ANY(dd.field_ids)))::types.q_list_documents_v4_option
+            ORDER BY fn_name.name
+         )
+         FROM fields_resource fr
+         JOIN field_fields_junction ffj ON ffj.fields_id = fr.id
+         JOIN (SELECT fn.field_id, n.name FROM field_names_junction fn JOIN names_resource n ON fn.name_id = n.id) fn_name ON fn_name.field_id = ffj.field_id
+         WHERE fr.id IN (SELECT field_id FROM all_field_ids)
+           AND (field_search IS NULL OR LOWER(fn_name.name) LIKE '%' || LOWER(field_search) || '%')),
+        '{}'::types.q_list_documents_v4_option[]
+    ) as field_options,
+    -- Department filter options (value/label/count resolved in SQL)
     COALESCE(
         (SELECT ARRAY_AGG(
-            (dod.id, dod.count)::types.q_list_documents_v4_option_id
-        ) FROM department_option_data dod),
-        '{}'::types.q_list_documents_v4_option_id[]
-    ) as department_option_ids,
+            (dr.id::text, dn_name.name, (SELECT COUNT(*) FROM document_data dd WHERE dr.id::text = ANY(dd.department_ids)))::types.q_list_documents_v4_option
+            ORDER BY dn_name.name
+         )
+         FROM departments_resource dr
+         JOIN department_departments_junction ddj ON ddj.departments_id = dr.id
+         JOIN (SELECT dn.department_id, n.name FROM department_names_junction dn JOIN names_resource n ON dn.name_id = n.id) dn_name ON dn_name.department_id = ddj.department_id
+         WHERE dr.id IN (SELECT department_id FROM all_department_ids)
+           AND (department_search IS NULL OR LOWER(dn_name.name) LIKE '%' || LOWER(department_search) || '%')),
+        '{}'::types.q_list_documents_v4_option[]
+    ) as department_options,
     -- Total count of filtered documents (before pagination)
     (SELECT total_count FROM filtered_count) as total_count
 FROM params

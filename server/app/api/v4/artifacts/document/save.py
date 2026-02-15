@@ -131,9 +131,19 @@ async def save_document(
                 detail="You don't have permission to save this document.",
             )
 
+        # Create group_id in Python (server-resolved like persona)
+        group_id = None
+        if pool:
+            async with pool.acquire() as group_conn:
+                group_id = await group_conn.fetchval(
+                    "INSERT INTO groups_entry (created_at, updated_at) VALUES (NOW(), NOW()) RETURNING id"
+                )
+
         async with conn.transaction():
             # Convert API request to SQL params using from_request()
-            params = SaveDocumentSqlParams.from_request(request, profile_id)
+            params = SaveDocumentSqlParams.from_request(
+                request, profile_id=profile_id, group_id=group_id
+            )
             sql_params = params.to_tuple()
 
             # Execute SQL with typed helper

@@ -138,14 +138,14 @@ async def save_profile(
             # We patch/create draft from these actions, then persist from that draft.
             patch_request = PatchProfileDraftApiRequest(
                 input_draft_id=None,
-                group_id=request.group_id,
+                group_id=None,
                 role=request.role,
-                names=request.names,
-                flags=request.flags,
-                request_limits=request.request_limits,
-                departments=request.departments,
-                emails=request.emails,
-                cohorts=request.cohorts,
+                name_id=request.name_id,
+                flag_id=request.flag_id,
+                request_limit_id=request.request_limit_id,
+                email_ids=request.email_ids,
+                department_ids=request.department_ids,
+                cohort_ids=request.cohort_ids,
                 expected_version=request.expected_version,
             )
             patch_params = PatchProfileDraftSqlParams.from_request(

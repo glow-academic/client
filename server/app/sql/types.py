@@ -3636,17 +3636,18 @@ class QListDocumentsV4Document(BaseModel):
 
 
 
-class QListDocumentsV4OptionId(BaseModel):
+class QListDocumentsV4Option(BaseModel):
 
-    id: UUID | None
+    value: str | None
+    label: str | None
     count: int | None
 
 class GetDocumentsListSqlRow(BaseModel):
 
     documents: list[QListDocumentsV4Document] | None = None
-    scenario_option_ids: list[QListDocumentsV4OptionId] | None = None
-    field_option_ids: list[QListDocumentsV4OptionId] | None = None
-    department_option_ids: list[QListDocumentsV4OptionId] | None = None
+    scenario_options: list[QListDocumentsV4Option] | None = None
+    field_options: list[QListDocumentsV4Option] | None = None
+    department_options: list[QListDocumentsV4Option] | None = None
     total_count: int | None = None
 
 class GetDocumentsListApiRequest(BaseModel):
@@ -3664,9 +3665,9 @@ class GetDocumentsListApiRequest(BaseModel):
 class GetDocumentsListApiResponse(BaseModel):
 
     documents: list[QListDocumentsV4Document] | None = None
-    scenario_option_ids: list[QListDocumentsV4OptionId] | None = None
-    field_option_ids: list[QListDocumentsV4OptionId] | None = None
-    department_option_ids: list[QListDocumentsV4OptionId] | None = None
+    scenario_options: list[QListDocumentsV4Option] | None = None
+    field_options: list[QListDocumentsV4Option] | None = None
+    department_options: list[QListDocumentsV4Option] | None = None
     total_count: int | None = None
 
 
@@ -8890,7 +8891,9 @@ class GetParametersListSqlParams(BaseModel):
     search: str | None = None
     scenario_ids: list[UUID] | None = None
     filter_department_ids: list[UUID] | None = None
+    field_ids: list[UUID] | None = None
     scenario_search: str | None = None
+    field_search: str | None = None
     department_search: str | None = None
     page_size: int | None = 12
     page_offset: int | None = 0
@@ -8901,15 +8904,18 @@ class GetParametersListSqlParams(BaseModel):
             self.search,
             self.scenario_ids,
             self.filter_department_ids,
+            self.field_ids,
             self.scenario_search,
+            self.field_search,
             self.department_search,
             self.page_size,
             self.page_offset,
         )
 
-class QListParametersV4OptionId(BaseModel):
+class QListParametersV4Option(BaseModel):
 
-    id: UUID | None
+    value: str | None
+    label: str | None
     count: int | None
 
 
@@ -8937,8 +8943,9 @@ class QListParametersV4Parameter(BaseModel):
 class GetParametersListSqlRow(BaseModel):
 
     parameters: list[QListParametersV4Parameter] | None = None
-    scenario_option_ids: list[QListParametersV4OptionId] | None = None
-    department_option_ids: list[QListParametersV4OptionId] | None = None
+    scenario_options: list[QListParametersV4Option] | None = None
+    field_options: list[QListParametersV4Option] | None = None
+    department_options: list[QListParametersV4Option] | None = None
     total_count: int | None = None
 
 class GetParametersListApiRequest(BaseModel):
@@ -8946,7 +8953,9 @@ class GetParametersListApiRequest(BaseModel):
     search: str | None = None
     scenario_ids: list[UUID] | None = None
     filter_department_ids: list[UUID] | None = None
+    field_ids: list[UUID] | None = None
     scenario_search: str | None = None
+    field_search: str | None = None
     department_search: str | None = None
     page_size: int | None = 12
     page_offset: int | None = 0
@@ -8954,8 +8963,9 @@ class GetParametersListApiRequest(BaseModel):
 class GetParametersListApiResponse(BaseModel):
 
     parameters: list[QListParametersV4Parameter] | None = None
-    scenario_option_ids: list[QListParametersV4OptionId] | None = None
-    department_option_ids: list[QListParametersV4OptionId] | None = None
+    scenario_options: list[QListParametersV4Option] | None = None
+    field_options: list[QListParametersV4Option] | None = None
+    department_options: list[QListParametersV4Option] | None = None
     total_count: int | None = None
 
 
@@ -22351,6 +22361,7 @@ class GetStaffListSqlParams(BaseModel):
     role_filter: str | None = None
     cohort_search: str | None = None
     department_search: str | None = None
+    role_search: str | None = None
     page_size: int | None = 12
     page_offset: int | None = 0
 
@@ -22363,13 +22374,15 @@ class GetStaffListSqlParams(BaseModel):
             self.role_filter,
             self.cohort_search,
             self.department_search,
+            self.role_search,
             self.page_size,
             self.page_offset,
         )
 
-class QListStaffV4OptionId(BaseModel):
+class QListStaffV4Option(BaseModel):
 
-    id: UUID | None
+    value: str | None
+    label: str | None
     count: int | None
 
 
@@ -22393,9 +22406,9 @@ class QListStaffV4Staff(BaseModel):
 class GetStaffListSqlRow(BaseModel):
 
     staff: list[QListStaffV4Staff] | None = None
-    cohort_option_ids: list[QListStaffV4OptionId] | None = None
-    department_option_ids: list[QListStaffV4OptionId] | None = None
-    role_options: list[str] | None = None
+    cohort_options: list[QListStaffV4Option] | None = None
+    department_options: list[QListStaffV4Option] | None = None
+    role_options: list[QListStaffV4Option] | None = None
     total_count: int | None = None
 
 class GetStaffListApiRequest(BaseModel):
@@ -22406,15 +22419,16 @@ class GetStaffListApiRequest(BaseModel):
     role_filter: str | None = None
     cohort_search: str | None = None
     department_search: str | None = None
+    role_search: str | None = None
     page_size: int | None = 12
     page_offset: int | None = 0
 
 class GetStaffListApiResponse(BaseModel):
 
     staff: list[QListStaffV4Staff] | None = None
-    cohort_option_ids: list[QListStaffV4OptionId] | None = None
-    department_option_ids: list[QListStaffV4OptionId] | None = None
-    role_options: list[str] | None = None
+    cohort_options: list[QListStaffV4Option] | None = None
+    department_options: list[QListStaffV4Option] | None = None
+    role_options: list[QListStaffV4Option] | None = None
     total_count: int | None = None
 
 

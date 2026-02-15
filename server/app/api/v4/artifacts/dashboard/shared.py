@@ -12,6 +12,7 @@ import asyncpg
 
 from app.api.v4.artifacts.dashboard.types import DashboardSectionRequest
 from app.api.v4.resources.rubrics.get import get_rubrics_batch_internal
+from app.api.v4.resources.standard_groups.get import get_standard_groups_internal
 from app.api.v4.views.analytics.profile_facts.types import GetProfileFactsResponse
 from app.api.v4.views.analytics.rubric_facts.types import GetRubricFactsResponse
 from app.api.v4.views.analytics.scenario_facts.types import GetScenarioFactsResponse
@@ -237,12 +238,25 @@ async def hydrate_rubric_resources(
             bypass_cache=bypass_cache,
         )
 
-    # Build standard_group_name_map from rubric standard_groups
-    standard_group_name_map: dict[str, str] = {}
+    # Collect all standard_group_ids from rubrics
+    all_sg_ids: list[UUID] = []
     for rubric in rubrics:
-        standard_groups = getattr(rubric, "standard_groups", None) or []
-        for sg in standard_groups:
-            sg_id = getattr(sg, "id", None) or getattr(sg, "standard_group_id", None)
+        sg_ids = getattr(rubric, "standard_group_ids", None) or []
+        for sg_id in sg_ids:
+            if sg_id and sg_id not in all_sg_ids:
+                all_sg_ids.append(sg_id)
+
+    # Fetch standard group names via resource handler
+    standard_group_name_map: dict[str, str] = {}
+    if all_sg_ids:
+        async with pool.acquire() as c:
+            sg_items = await get_standard_groups_internal(
+                conn=c,
+                ids=all_sg_ids,
+                bypass_cache=bypass_cache,
+            )
+        for sg in sg_items:
+            sg_id = getattr(sg, "standard_group_id", None)
             sg_name = getattr(sg, "name", None)
             if sg_id and sg_name:
                 standard_group_name_map[str(sg_id)] = sg_name

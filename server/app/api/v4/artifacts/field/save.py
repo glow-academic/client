@@ -110,7 +110,7 @@ async def save_field(
         if not request.input_field_id:
             can_save_result = compute_can_create(
                 user_role=user_role,
-                department_ids=request.departments.resource_ids,
+                department_ids=request.department_ids,
             )
         else:
             can_save_result = compute_can_edit(
@@ -125,10 +125,19 @@ async def save_field(
                 detail="You don't have permission to save this field.",
             )
 
+        # Create group_id in Python (server-resolved like persona)
+        group_id = None
+        if pool:
+            async with pool.acquire() as group_conn:
+                group_id = await group_conn.fetchval(
+                    "INSERT INTO groups_entry (created_at, updated_at) VALUES (NOW(), NOW()) RETURNING id"
+                )
+
         async with conn.transaction():
             params = SaveFieldSqlParams.from_request(
                 request,
                 profile_id=profile_id,
+                group_id=group_id,
             )
             sql_params = params.to_tuple()
 

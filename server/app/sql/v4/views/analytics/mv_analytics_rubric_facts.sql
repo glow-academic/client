@@ -98,8 +98,11 @@ LEFT JOIN simulation_attempts_departments_connection adc ON adc.attempt_id = a.i
 JOIN simulation_feedbacks_entry fe ON fe.grade_id = lg.grade_id AND fe.active = TRUE
 JOIN feedbacks_standards_connection fsc ON fsc.feedbacks_id = fe.id
 JOIN standards_resource s ON s.id = fsc.standard_id
+JOIN rubric_rubrics_junction rrj
+    ON rrj.rubrics_id = gr.rubric_id
+   AND rrj.active = TRUE
 JOIN rubric_standard_groups_junction rsg
-    ON rsg.rubric_id = gr.rubric_id
+    ON rsg.rubric_id = rrj.rubric_id
    AND rsg.active = TRUE
 JOIN standard_groups_resource sg
     ON sg.id = rsg.standard_group_id

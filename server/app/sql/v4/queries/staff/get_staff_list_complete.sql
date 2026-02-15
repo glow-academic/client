@@ -53,9 +53,10 @@ CREATE TYPE types.q_list_staff_v4_staff AS (
     active_cohort_count bigint
 );
 
--- Filter option: id + count only (names hydrated in Python)
-CREATE TYPE types.q_list_staff_v4_option_id AS (
-    id uuid,
+-- Filter option type: value/label/count (names resolved in SQL)
+CREATE TYPE types.q_list_staff_v4_option AS (
+    value text,
+    label text,
     count bigint
 );
 
@@ -68,14 +69,15 @@ CREATE OR REPLACE FUNCTION api_list_staff_v4(
     role_filter text DEFAULT NULL,
     cohort_search text DEFAULT NULL,
     department_search text DEFAULT NULL,
+    role_search text DEFAULT NULL,
     page_size int DEFAULT 12,
     page_offset int DEFAULT 0
 )
 RETURNS TABLE (
     staff types.q_list_staff_v4_staff[],
-    cohort_option_ids types.q_list_staff_v4_option_id[],
-    department_option_ids types.q_list_staff_v4_option_id[],
-    role_options text[],
+    cohort_options types.q_list_staff_v4_option[],
+    department_options types.q_list_staff_v4_option[],
+    role_options types.q_list_staff_v4_option[],
     total_count bigint
 )
 LANGUAGE sql
@@ -223,31 +225,30 @@ paginated_staff AS (
     ORDER BY fs.name ASC NULLS LAST
     LIMIT page_size OFFSET page_offset
 ),
--- Filter option IDs with counts (names hydrated in Python from cached *_internal() functions)
--- Cohort option IDs: resource IDs from cohort_cohorts_junction
+-- Filter options with value/label/count (names resolved in SQL)
 all_cohort_ids AS (
     SELECT DISTINCT unnest(cohort_ids)::uuid as cohort_id
     FROM staff_rows
 ),
-cohort_option_data AS (
-    SELECT
-        cr.id,
-        (SELECT COUNT(*) FROM staff_rows sr WHERE cr.id::text = ANY(sr.cohort_ids)) as count
-    FROM cohorts_resource cr
-    WHERE cr.id IN (SELECT cohort_id FROM all_cohort_ids)
-),
--- Department option IDs: already resource IDs
 all_department_ids AS (
     SELECT DISTINCT unnest(department_ids)::uuid as department_id
     FROM staff_rows
     WHERE department_ids IS NOT NULL AND array_length(department_ids, 1) > 0
 ),
-department_option_data AS (
-    SELECT
-        dr.id,
-        (SELECT COUNT(*) FROM staff_rows sr WHERE dr.id::text = ANY(sr.department_ids)) as count
-    FROM departments_resource dr
-    WHERE dr.id IN (SELECT department_id FROM all_department_ids)
+-- Role options with counts from filtered staff
+all_role_values AS (
+    SELECT DISTINCT role as role_value
+    FROM staff_rows
+    WHERE role IS NOT NULL
+),
+available_roles AS (
+    SELECT unnest(
+        CASE
+            WHEN (SELECT role FROM user_profile) = 'superadmin' THEN ARRAY['superadmin', 'admin', 'instructional', 'member', 'guest', 'custom']::text[]
+            WHEN (SELECT role FROM user_profile) = 'admin' THEN ARRAY['admin', 'instructional', 'member', 'guest', 'custom']::text[]
+            ELSE ARRAY['instructional', 'member', 'guest']::text[]
+        END
+    ) as role_value
 )
 SELECT
     -- Aggregate paginated staff (no can_edit/can_delete — computed in Python)
@@ -261,25 +262,42 @@ SELECT
         FROM paginated_staff sr),
         '{}'::types.q_list_staff_v4_staff[]
     ) as staff,
-    -- Cohort option IDs with counts (names hydrated in Python)
+    -- Cohort filter options (value/label/count resolved in SQL)
     COALESCE(
         (SELECT ARRAY_AGG(
-            (cod.id, cod.count)::types.q_list_staff_v4_option_id
-        ) FROM cohort_option_data cod),
-        '{}'::types.q_list_staff_v4_option_id[]
-    ) as cohort_option_ids,
-    -- Department option IDs with counts (names hydrated in Python)
+            (cr.id::text, cn_name.name, (SELECT COUNT(*) FROM staff_rows sr WHERE cr.id::text = ANY(sr.cohort_ids)))::types.q_list_staff_v4_option
+            ORDER BY cn_name.name
+         )
+         FROM cohorts_resource cr
+         JOIN cohort_cohorts_junction ccj ON ccj.cohorts_id = cr.id
+         JOIN (SELECT cn.cohort_id, n.name FROM cohort_names_junction cn JOIN names_resource n ON cn.name_id = n.id) cn_name ON cn_name.cohort_id = ccj.cohort_id
+         WHERE cr.id IN (SELECT cohort_id FROM all_cohort_ids)
+           AND (cohort_search IS NULL OR LOWER(cn_name.name) LIKE '%' || LOWER(cohort_search) || '%')),
+        '{}'::types.q_list_staff_v4_option[]
+    ) as cohort_options,
+    -- Department filter options (value/label/count resolved in SQL)
     COALESCE(
         (SELECT ARRAY_AGG(
-            (dod.id, dod.count)::types.q_list_staff_v4_option_id
-        ) FROM department_option_data dod),
-        '{}'::types.q_list_staff_v4_option_id[]
-    ) as department_option_ids,
-    CASE
-        WHEN up.role = 'superadmin' THEN ARRAY['superadmin', 'admin', 'instructional', 'member', 'guest', 'custom']::text[]
-        WHEN up.role = 'admin' THEN ARRAY['admin', 'instructional', 'member', 'guest', 'custom']::text[]
-        ELSE ARRAY['instructional', 'member', 'guest']::text[]
-    END as role_options,
+            (dr.id::text, dn_name.name, (SELECT COUNT(*) FROM staff_rows sr WHERE dr.id::text = ANY(sr.department_ids)))::types.q_list_staff_v4_option
+            ORDER BY dn_name.name
+         )
+         FROM departments_resource dr
+         JOIN department_departments_junction ddj ON ddj.departments_id = dr.id
+         JOIN (SELECT dn.department_id, n.name FROM department_names_junction dn JOIN names_resource n ON dn.name_id = n.id) dn_name ON dn_name.department_id = ddj.department_id
+         WHERE dr.id IN (SELECT department_id FROM all_department_ids)
+           AND (department_search IS NULL OR LOWER(dn_name.name) LIKE '%' || LOWER(department_search) || '%')),
+        '{}'::types.q_list_staff_v4_option[]
+    ) as department_options,
+    -- Role filter options (value/label/count resolved in SQL)
+    COALESCE(
+        (SELECT ARRAY_AGG(
+            (ar.role_value, INITCAP(ar.role_value), (SELECT COUNT(*) FROM staff_rows sr WHERE sr.role::text = ar.role_value))::types.q_list_staff_v4_option
+            ORDER BY ar.role_value
+         )
+         FROM available_roles ar
+         WHERE (role_search IS NULL OR LOWER(ar.role_value) LIKE '%' || LOWER(role_search) || '%')),
+        '{}'::types.q_list_staff_v4_option[]
+    ) as role_options,
     -- Total count of filtered staff (before pagination)
     (SELECT total_count FROM filtered_count) as total_count
 FROM user_profile up
