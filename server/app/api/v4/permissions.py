@@ -2,6 +2,10 @@
 
 This module provides reusable agent scoring and selection logic
 for artifacts that need Python-based agent selection.
+
+For the unified permission model (edit/delete guards, role tiers,
+active parent counting), see audits/PERMISSION_UNIFICATION_PLAN.md.
+Per-artifact permission logic lives in each artifact's permissions.py.
 """
 
 from collections import defaultdict

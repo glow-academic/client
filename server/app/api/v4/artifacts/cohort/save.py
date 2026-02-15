@@ -21,11 +21,16 @@ from app.api.v4.auth.profile import get_auth_profile_internal
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
-from app.sql.types import load_sql_query
+from app.sql.types import (
+    GetCohortAccessSqlParams,
+    GetCohortAccessSqlRow,
+    load_sql_query,
+)
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.sql_helper import execute_sql_typed
 
 # Load SQL with types at module level - makes it clear what SQL file is used
+ACCESS_SQL_PATH = "app/sql/v4/queries/cohorts/get_cohort_access_complete.sql"
 SQL_PATH = "app/sql/v4/queries/cohorts/save_cohort_complete.sql"
 
 
@@ -84,19 +89,28 @@ async def save_cohort(
 
         # Permission checks
         if request.input_cohort_id:
-            # Update mode: check save permissions
-            # Get cohort department IDs for permission check
-            cohort_department_ids = None
-            if pool:
-                async with pool.acquire() as dept_conn:
-                    rows = await dept_conn.fetch(
-                        "SELECT department_id FROM cohort_departments_junction WHERE cohort_id = $1 AND active = true",
-                        request.input_cohort_id,
-                    )
-                    cohort_department_ids = [row["department_id"] for row in rows]
+            # Update mode: check access and save permissions
+            access_params = GetCohortAccessSqlParams(
+                profile_id=profile_id,
+                cohort_id=request.input_cohort_id,
+            )
+            access_result = cast(
+                GetCohortAccessSqlRow,
+                await execute_sql_typed(
+                    conn, ACCESS_SQL_PATH, params=access_params
+                ),
+            )
+            if access_result and access_result.cohort_exists is False:
+                raise HTTPException(
+                    status_code=404,
+                    detail=f"Cohort {request.input_cohort_id} not found",
+                )
             if not compute_can_edit(
-                user_role=user_role or "",
-                cohort_department_ids=cohort_department_ids,
+                user_role=user_role,
+                cohort_department_ids=getattr(
+                    access_result, "cohort_department_ids", None
+                )
+                or [],
                 user_department_ids=user_department_ids,
             ):
                 raise HTTPException(

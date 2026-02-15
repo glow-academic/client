@@ -7,6 +7,11 @@ from typing import Annotated, Any, cast
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
+from app.api.v4.artifacts.agent.permissions import (
+    compute_can_create,
+    compute_can_edit,
+    has_access,
+)
 from app.api.v4.artifacts.agent.types import (
     SaveAgentApiRequest,
     SaveAgentApiResponse,
@@ -16,6 +21,8 @@ from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
 from app.sql.types import (
+    GetAgentAccessSqlParams,
+    GetAgentAccessSqlRow,
     SaveAgentSqlParams,
     SaveAgentSqlRow,
     load_sql_query,
@@ -24,6 +31,7 @@ from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.sql_helper import execute_sql_typed
 
 # Load SQL with types at module level - makes it clear what SQL file is used
+ACCESS_SQL_PATH = "app/sql/v4/queries/agents/get_agent_access_complete.sql"
 SQL_PATH = "app/sql/v4/queries/agents/save_agent_complete.sql"
 
 
@@ -61,7 +69,7 @@ async def save_agent(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        # Fetch user context for audit logging
+        # Fetch user context for permissions and audit logging
         pool = get_pool()
         if pool:
             async with pool.acquire() as context_conn:
@@ -71,8 +79,14 @@ async def save_agent(
                     bypass_cache=False,
                 )
                 actor_name = profile_ctx.access.actor_name
+                user_role = profile_ctx.access.role
+                user_department_ids = [
+                    d.department_id for d in profile_ctx.departments if d.department_id
+                ]
         else:
             actor_name = None
+            user_role = None
+            user_department_ids = []
 
         name_id = request.names.resource_id if request.names else None
         model_id = request.models.resource_id if request.models else None
@@ -107,6 +121,52 @@ async def save_agent(
         )
         tool_ids = request.tools.resource_ids if request.tools is not None else None
         voice_ids = request.voices.resource_ids if request.voices is not None else None
+
+        # Permission checks
+        if request.input_agent_id:
+            # Update mode: check access and save permissions
+            access_params = GetAgentAccessSqlParams(
+                profile_id=profile_id,
+                agent_id=request.input_agent_id,
+            )
+            access_result = cast(
+                GetAgentAccessSqlRow,
+                await execute_sql_typed(
+                    conn, ACCESS_SQL_PATH, params=access_params
+                ),
+            )
+            if access_result and access_result.agent_exists is False:
+                raise HTTPException(
+                    status_code=404,
+                    detail=f"Agent {request.input_agent_id} not found",
+                )
+
+            agent_department_ids = (
+                getattr(access_result, "agent_department_ids", None) or []
+            )
+            has_agent_access = has_access(
+                user_role, user_department_ids, agent_department_ids
+            )
+
+            if not compute_can_edit(
+                user_role=user_role,
+                has_agent_access=has_agent_access,
+                missing_tools=[],
+                agent_id=request.input_agent_id,
+            ):
+                raise HTTPException(
+                    status_code=403,
+                    detail="You don't have permission to save this agent.",
+                )
+        else:
+            # Create mode: check create permissions
+            if not compute_can_create(
+                user_role=user_role, user_department_ids=user_department_ids
+            ):
+                raise HTTPException(
+                    status_code=403,
+                    detail="You don't have permission to create agents.",
+                )
 
         # Validate required section actions
         if not name_id:

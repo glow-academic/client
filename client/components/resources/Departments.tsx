@@ -16,7 +16,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useSocket } from "@/contexts/socket-context";
+import { useResourceAi } from "@/hooks/use-resource-ai";
 import { cn } from "@/lib/utils";
 import type { OutputOf } from "@/lib/api/types";
 import { Check, Loader2, Sparkles, X } from "lucide-react";
@@ -119,37 +119,30 @@ export function Departments({
     [department_suggestions]
   );
 
-  // Internal socket-based AI suggestion handling
-  const { socket: aiSocket, isConnected: aiIsConnected } = useSocket();
-  const [internalAiDepartmentResources, setInternalAiDepartmentResources] = useState<Array<{ department_id?: string | null; name?: string | null }> | null>(null);
-
-  useEffect(() => {
-    if (!aiSocket || !aiIsConnected) return;
-
-    const handleGenerationComplete = (data: { group_id?: string; department_id?: string | null; name?: string | null }) => {
-      if (data.group_id !== group_id) return;
-      setInternalAiDepartmentResources([{ department_id: data.department_id ?? null, name: data.name ?? null }]);
-      onGenerationComplete?.();
-    };
-
-    aiSocket.on("departments_generation_complete", handleGenerationComplete);
-    return () => {
-      aiSocket.off("departments_generation_complete", handleGenerationComplete);
-    };
-  }, [aiSocket, aiIsConnected, group_id, onGenerationComplete]);
-
-  const effectiveAiDepartmentResources = internalAiDepartmentResources ?? aiDepartmentResources ?? null;
+  // Socket-based AI suggestion handling via shared hook
+  const { isGenerating: aiIsGenerating, aiSuggestions, accept: acceptAi, reject: rejectAi } = useResourceAi<{
+    department_id: string | null;
+    name: string | null;
+  }>({
+    resourceType: "departments",
+    groupId: group_id,
+    extractSuggestion: (data) => {
+      if (!data.success && data.success !== undefined) return null;
+      return { department_id: (data.department_id as string) ?? null, name: (data.name as string) ?? null };
+    },
+    accumulate: true,
+  });
 
   // AI suggestion state
-  const showDiff = !!effectiveAiDepartmentResources?.length;
+  const showDiff = aiSuggestions.length > 0;
   const aiSuggestedIds = useMemo(
     () =>
       new Set(
-        effectiveAiDepartmentResources
-          ?.map((d) => d.department_id)
+        aiSuggestions
+          .map((d) => d.department_id)
           .filter(Boolean) as string[]
       ),
-    [effectiveAiDepartmentResources]
+    [aiSuggestions]
   );
 
   // Track which department IDs have already had resources created
@@ -257,22 +250,20 @@ export function Departments({
 
   // Accept AI suggestion - add AI-suggested departments to selection
   const handleAccept = useCallback(() => {
-    if (!effectiveAiDepartmentResources?.length) return;
-    const newIds = effectiveAiDepartmentResources
+    if (aiSuggestions.length === 0) return;
+    const newIds = aiSuggestions
       .map((d) => d.department_id)
       .filter((id): id is string => !!id && !ids.includes(id));
     if (newIds.length > 0) {
       onChange([...ids, ...newIds]);
     }
-    setInternalAiDepartmentResources(null);
-    onAccept?.();
-  }, [effectiveAiDepartmentResources, ids, onChange, onAccept]);
+    acceptAi();
+  }, [aiSuggestions, ids, onChange, acceptAi]);
 
   // Reject AI suggestion - just clear the pending state
   const handleReject = useCallback(() => {
-    setInternalAiDepartmentResources(null);
-    onReject?.();
-  }, [onReject]);
+    rejectAi();
+  }, [rejectAi]);
 
   // Check if any department resource is generated (must be before early return)
   const hasGenerated = useMemo(() => {

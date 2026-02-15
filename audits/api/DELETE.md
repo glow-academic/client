@@ -62,27 +62,27 @@ User context must come from `get_auth_profile_internal()`, not the monolithic `g
 
 Reference: `server/app/api/v4/artifacts/persona/delete.py`, `permissions.py`
 
-### Rule 3: Usage check includes ALL links (active AND inactive)
+### Rule 3: Usage check counts ACTIVE links only
 
-The access check SQL must count ALL historical links, not just active ones. Any historical usage link blocks deletion. This prevents orphaning references in downstream artifacts.
+The access check SQL must count only **active** links (`WHERE active = true` on junction tables). Inactive/soft-deleted links do not block deletion. This is the unified permission model — same check for both edit and delete.
 
 ```sql
--- Count ALL links, not just active
-SELECT COUNT(*) as total_scenario_links
+-- Count only ACTIVE links
+SELECT COUNT(*) as active_scenario_count
 FROM scenario_personas_junction
-WHERE persona_artifact_id = p_persona_id;
--- No WHERE active = true filter
+WHERE persona_artifact_id = p_persona_id
+  AND active = true;
 ```
 
 Reference: `check_persona_delete_access_complete.sql`
 
 ### Rule 4: Python validates usage before delete
 
-The Python handler must check `usage_count > 0` and raise a `ValueError` (400) before attempting the delete. This is a separate check from the permission check:
+The Python handler must check `active_count > 0` and raise a `ValueError` (400) before attempting the delete. This is a separate check from the permission check:
 
 ```python
-if access.total_scenario_links > 0:
-    raise ValueError(f"Cannot delete: {artifact} is used by {access.total_scenario_links} scenarios")
+if access.active_scenario_count > 0:
+    raise ValueError(f"Cannot delete: {artifact} is used by {access.active_scenario_count} active scenarios")
 ```
 
 Reference: `server/app/api/v4/artifacts/persona/delete.py`
@@ -111,12 +111,15 @@ Reference: `delete_persona_complete.sql`
 Default artifacts (those with no department associations) are only deletable by superadmin users. The `compute_can_delete()` function must enforce this:
 
 ```python
-def compute_can_delete(user_role, artifact_department_ids, total_usage_links):
-    if total_usage_links > 0:
+def compute_can_delete(user_role, artifact_department_ids, active_parent_count):
+    # Default object guard
+    if not artifact_department_ids and user_role != "superadmin":
         return False
-    if not artifact_department_ids:  # default artifact
-        return user_role == "superadmin"
-    return user_role in ("admin", "instructional", "superadmin")
+    # Active parent link guard (same as edit)
+    if active_parent_count > 0:
+        return False
+    # Role check (admin/superadmin for simulation/intelligence tier, superadmin only for admin tier)
+    return user_role in ("admin", "superadmin")
 ```
 
 Reference: `server/app/api/v4/artifacts/persona/permissions.py`
@@ -172,11 +175,12 @@ class Delete{Artifact}ApiRequest(BaseModel):
 ## MUST NOT Rules
 
 1. **MUST NOT** manually delete junction rows — CASCADE handles it
-2. **MUST NOT** only check active links for usage — must count ALL links (active + inactive)
+2. **MUST NOT** count inactive links for usage — only count `active = true` junction rows
 3. **MUST NOT** skip usage validation before delete
 4. **MUST NOT** allow non-superadmin to delete default (no-department) artifacts
 5. **MUST NOT** skip transaction wrapper
 6. **MUST NOT** skip audit context — must include deleted artifact name
+7. **MUST NOT** use different checks for edit vs delete — same active parent count blocks both
 
 ---
 
@@ -346,5 +350,6 @@ CASCADE-only cleanup: {N}
 1. **Do NOT fix anything.** This is a read-only audit. Report only.
 2. **The persona delete is the gold standard.** Reference: `server/app/api/v4/artifacts/persona/delete.py`.
 3. **CASCADE is the rule.** Delete SQL must not manually clean up junctions. If CASCADE is not set up on junction FKs, that's a migration/schema bug, not a delete endpoint bug (report it separately via the RELATION audit).
-4. **Usage counts are ALL-time.** Any historical link (active or inactive) blocks deletion. This is intentional to prevent orphaning references.
+4. **Usage counts are ACTIVE-only.** Only `active = true` junction rows block deletion. This is the unified permission model — same check for edit and delete.
 5. **Default artifacts**: Artifacts with no department associations are system defaults and require superadmin to delete.
+6. **Role tiers**: Simulation/Intelligence tier uses `admin`/`superadmin`. Admin tier (Department, Rubric, Auth, Eval) uses `superadmin` only. See `audits/PERMISSION_UNIFICATION_PLAN.md` for the full matrix.

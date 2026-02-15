@@ -14,7 +14,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useSocket } from "@/contexts/socket-context";
+import { useResourceAi } from "@/hooks/use-resource-ai";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { Check, Loader2, Sparkles, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -109,38 +109,21 @@ export function Names({
   );
   const namesArray = useMemo(() => names ?? [], [names]);
 
-  // Socket-based AI suggestion handling
-  const { socket: aiSocket, isConnected: aiIsConnected } = useSocket();
-  const [internalAiResource, setInternalAiResource] = useState<{
-    id?: string | null;
-    name?: string | null;
-  } | null>(null);
-
-  useEffect(() => {
-    if (!aiSocket || !aiIsConnected) return;
-    const handleResourceComplete = (data: {
-      group_id?: string;
-      id?: string | null;
-      name?: string | null;
-    }) => {
-      if (group_id && data.group_id !== group_id) return;
-      setInternalAiResource({
-        id: data.id ?? null,
-        name: data.name ?? null,
-      });
-      onGenerationComplete?.();
-    };
-    aiSocket.on("names_generation_complete", handleResourceComplete);
-    return () => {
-      aiSocket.off("names_generation_complete", handleResourceComplete);
-    };
-  }, [aiSocket, aiIsConnected, group_id, onGenerationComplete]);
-
-  // Effective AI resource: internal (socket) takes priority, then prop fallback
-  const effectiveAiResource = internalAiResource ?? aiResource ?? null;
+  // Socket-based AI suggestion handling via shared hook
+  const { isGenerating: aiIsGenerating, aiSuggestion, accept: acceptAi, reject: rejectAi } = useResourceAi<{
+    id: string | null;
+    name: string | null;
+  }>({
+    resourceType: "names",
+    groupId: group_id,
+    extractSuggestion: (data) => {
+      if (!data.success && data.success !== undefined) return null;
+      return { id: (data.id as string) ?? null, name: (data.name as string) ?? null };
+    },
+  });
 
   // AI suggestion state
-  const showDiff = !!effectiveAiResource?.name;
+  const showDiff = !!aiSuggestion?.name;
 
   // Handle nullable resource properties
   const resourceName = resource?.name ?? null;
@@ -371,21 +354,19 @@ export function Names({
 
   // Accept AI suggestion - update internal value and notify parent
   const handleAccept = useCallback(() => {
-    if (!effectiveAiResource?.id) return;
+    if (!aiSuggestion?.id) return;
     if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
-    const text = effectiveAiResource.name || "";
+    const text = aiSuggestion.name || "";
     setInternalValue(text);
     lastSavedValueRef.current = text;
-    onNameIdChange(effectiveAiResource.id);
-    onAccept?.();
-    setInternalAiResource(null);
-  }, [effectiveAiResource, onNameIdChange, onAccept]);
+    onNameIdChange(aiSuggestion.id);
+    acceptAi();
+  }, [aiSuggestion, onNameIdChange, acceptAi]);
 
   // Reject AI suggestion - just clear the pending state
   const handleReject = useCallback(() => {
-    setInternalAiResource(null);
-    onReject?.();
-  }, [onReject]);
+    rejectAi();
+  }, [rejectAi]);
 
   // Don't render if show_name is false (AFTER all hooks)
   if (!show) {
@@ -397,7 +378,7 @@ export function Names({
   const displayValue = internalValue || defaultName || "";
 
   // AI suggestion text
-  const aiName = effectiveAiResource?.name || "";
+  const aiName = aiSuggestion?.name || "";
 
   return (
     <div className="flex-1 items-end">
@@ -463,9 +444,9 @@ export function Names({
                   size="icon"
                   className="h-8 w-8"
                   onClick={onGenerate}
-                  disabled={disabled || isGenerating || showDiff}
+                  disabled={disabled || aiIsGenerating || showDiff}
                 >
-                  {isGenerating ? (
+                  {aiIsGenerating ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
                   ) : (
                     <Sparkles className="h-4 w-4" />

@@ -44,34 +44,59 @@ def has_access(
 
 def compute_can_edit(
     user_role: str | None,
-    active_department_count: int,
+    setting_department_ids: list[str] | list[UUID] | None = None,
+    user_department_ids: list[str] | list[UUID] | None = None,
 ) -> bool:
-    """Unified can_edit logic.
+    """Unified can_edit logic for settings.
 
     Constraints:
-    1. Not linked to active departments
-    2. User has admin/superadmin role
+    1. Default settings (no departments) — only superadmin
+    2. Role check — admin/superadmin
+    3. Department subset check — non-superadmins must belong to ALL setting departments
     """
-    if active_department_count > 0:
+    if not setting_department_ids and user_role != "superadmin":
         return False
-    return user_role in ("admin", "superadmin")
+    if user_role not in ("admin", "superadmin"):
+        return False
+    if (
+        user_department_ids is not None
+        and user_role != "superadmin"
+        and setting_department_ids
+    ):
+        user_dept_set = {str(d) for d in user_department_ids}
+        setting_dept_set = {str(d) for d in setting_department_ids}
+        if not setting_dept_set.issubset(user_dept_set):
+            return False
+    return True
 
 
 def compute_disabled_reason(
     user_role: str | None,
-    active_department_count: int,
+    setting_department_ids: list[str] | list[UUID] | None = None,
+    user_department_ids: list[str] | list[UUID] | None = None,
 ) -> str | None:
     """Compute the reason why editing is disabled, if any."""
-    if active_department_count > 0:
+    if not setting_department_ids and user_role != "superadmin":
         return (
-            "This setting is currently linked to departments and cannot be edited. "
-            "You can view the details but cannot make changes."
+            "This is a default setting that cannot be edited."
         )
     if user_role not in ("admin", "superadmin"):
         return (
             "This setting cannot be edited. "
             "You can view the details but cannot make changes."
         )
+    if (
+        user_department_ids is not None
+        and user_role != "superadmin"
+        and setting_department_ids
+    ):
+        user_dept_set = {str(d) for d in user_department_ids}
+        setting_dept_set = {str(d) for d in setting_department_ids}
+        if not setting_dept_set.issubset(user_dept_set):
+            return (
+                "You don't have access to all departments for this setting. "
+                "You can view the details but cannot make changes."
+            )
     return None
 
 
@@ -185,15 +210,15 @@ def derive_flag_key_and_label(name: str | None) -> tuple[str, str]:
 
 def compute_can_delete(
     user_role: str | None,
-    active_department_count: int,
+    setting_department_ids: list[str] | list[UUID] | None = None,
 ) -> bool:
     """Compute can_delete permission.
 
     Business logic:
-    - Settings linked to active departments cannot be deleted
+    - Default settings (no departments) can only be deleted by superadmin
     - Only admins and superadmins can delete
     """
-    if active_department_count > 0:
+    if not setting_department_ids and user_role != "superadmin":
         return False
     return user_role in ("admin", "superadmin")
 

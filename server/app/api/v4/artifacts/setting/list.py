@@ -91,9 +91,13 @@ async def get_setting_list(
                 )
                 actor_name = profile_ctx.access.actor_name
                 user_role = profile_ctx.access.role
+                user_department_ids = [
+                    d.department_id for d in profile_ctx.departments if d.department_id
+                ]
         else:
             actor_name = None
             user_role = None
+            user_department_ids = []
 
         # Convert API request to SQL params (add profile_id from header)
         params = GetSettingsListSqlParams(profile_id=profile_id)
@@ -116,15 +120,14 @@ async def get_setting_list(
         # Compute permissions for each setting in Python
         settings_with_permissions: list[ListSettingApiSetting] = []
         for setting in result.settings or []:
-            active_department_count = len(setting.department_ids or [])
-
             can_edit_val = compute_can_edit(
                 user_role=user_role,
-                active_department_count=active_department_count,
+                setting_department_ids=setting.department_ids,
+                user_department_ids=user_department_ids,
             )
             can_delete_val = compute_can_delete(
                 user_role=user_role,
-                active_department_count=active_department_count,
+                setting_department_ids=setting.department_ids,
             )
             can_duplicate_val = compute_can_duplicate(user_role)
 

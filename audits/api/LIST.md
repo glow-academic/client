@@ -363,3 +363,4 @@ Caching: {N}
 3. **Denormalization responsibility**: Save endpoints must keep denormalized arrays in sync. If `scenarios_resource.persona_ids` is stale, that's a save endpoint bug, not a list endpoint bug.
 4. **Filter dimensions are artifact-specific**. Persona uses scenarios/fields/departments. Other artifacts define their own 3 dimensions.
 5. **Delete permission counts are for UI only**. The actual delete endpoint has its own independent access check SQL.
+6. **Unified edit/delete guard**: `compute_can_edit` and `compute_can_delete` use the same active parent link count. Both count only `active = true` junction rows. See `audits/PERMISSION_UNIFICATION_PLAN.md` for the full permission matrix.

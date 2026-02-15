@@ -8,16 +8,29 @@
 | **Immediate parent only** | One level up in the hierarchy |
 | **Active link existence** | `active = true` junction rows = currently linked |
 | **Default objects** | No departments = superadmin only for edit/delete |
-| **Role gate** | admin / instructional / superadmin (varies by artifact) |
+| **Role gate** | admin / superadmin (simulation/intelligence tier) or superadmin only (admin tier) |
 
-### Completed Artifacts (Phases 1-9)
+### Completed Artifacts
 
-| Entity | Edit blocked if | Delete blocked if | Status |
-|--------|----------------|-------------------|--------|
-| **Persona** | active scenario links > 0 | active scenario links > 0 | DONE |
-| **Scenario** | active simulation links > 0 | active simulation links > 0 | DONE |
-| **Simulation** | active cohort links > 0 | active cohort links > 0 | DONE (already unified) |
-| **Cohort** | never (role + default guard only) | active profile links > 0 | DONE |
+| Entity | Tier | Edit blocked if | Delete blocked if | Role | Status |
+|--------|------|----------------|-------------------|------|--------|
+| **Persona** | Simulation | active scenario links > 0 | active scenario links > 0 | admin/superadmin | DONE |
+| **Scenario** | Simulation | active simulation links > 0 | active simulation links > 0 | admin/superadmin | DONE |
+| **Simulation** | Simulation | active cohort links > 0 | active cohort links > 0 | admin/superadmin | DONE |
+| **Cohort** | Simulation | never (role + default guard only) | active profile links > 0 | admin/superadmin | DONE |
+| **Document** | Simulation | active scenario links > 0 | active scenario links > 0 | admin/superadmin | DONE |
+| **Parameter** | Simulation | active scenario links > 0 | active scenario links > 0 | admin/superadmin | DONE |
+| **Field** | Simulation | active parameter links > 0 | active parameter links > 0 | admin/superadmin | DONE |
+| **Profile** | Simulation | never (role only) | active cohort links > 0 | admin/superadmin | DONE |
+| **Tool** | Intelligence | active agent links > 0 | active agent links > 0 | admin/superadmin | DONE |
+| **Model** | Intelligence | active agent links > 0 | active agent links > 0 | admin/superadmin | DONE |
+| **Provider** | Intelligence | active model links > 0 | active model links > 0 | admin/superadmin | DONE |
+| **Agent** | Intelligence | active settings links > 0 | active settings links > 0 | admin/superadmin | DONE |
+| **Setting** | Admin | active department links > 0 | active department links > 0 | admin/superadmin | DONE |
+| **Department** | Admin | total usage > 0 (self-check) | total usage > 0 (self-check) | superadmin only | DONE |
+| **Rubric** | Admin | active simulation links > 0 | active simulation links > 0 | superadmin only | DONE |
+| **Auth** | Admin | active settings links > 0 | active settings links > 0 | superadmin only | DONE |
+| **Eval** | Admin | never (role only) | never (role only) | superadmin only | DONE |
 
 ---
 
@@ -281,21 +294,21 @@ These artifacts don't follow the standard edit/delete permission pattern.
 
 ### 11. Eval
 
-**Current State:** Has permissions.py with `compute_can_edit`, `compute_can_delete`, default guard, department check. Uses `active_eval_count` for edit. Delete blocks on usage.
+**Current State (UNIFIED):** Superadmin only. No parent check needed — evals have no parent entity links that would block edit/delete. All usage/department params removed from permission functions.
 
-**Assessment:** Eval is relatively new and may already follow the correct pattern. Needs verification of active-only counting.
+**Assessment:** DONE — simplified to role-only check.
 
 ### 12. Auth
 
-**Current State:** Auth is a read-only configuration entity. The `get_auth_list` endpoint doesn't compute edit/delete permissions — it just returns auth provider data.
+**Current State (UNIFIED):** Superadmin only. Parent: Settings (via `setting_auths_junction`). Added `active_settings_count` check to both edit and delete. SQL CTEs added to list and delete access check queries.
 
-**Assessment:** NO CHANGES NEEDED — auth is not a CRUD artifact.
+**Assessment:** DONE — added active parent link guard.
 
 ### 13. Setting
 
-**Current State:** Settings has permissions.py but settings are singleton config objects — they're always editable by the right role and never deleted.
+**Current State (UNIFIED):** Admin/superadmin. Parent: Departments (via `setting_departments_junction`). Edit/delete blocked by `active_department_count`. Delete endpoint updated to use active department count instead of user department IDs.
 
-**Assessment:** NO CHANGES NEEDED — settings don't have parent-link blocking.
+**Assessment:** DONE — added active parent link guard.
 
 ### 14. Simulation
 
