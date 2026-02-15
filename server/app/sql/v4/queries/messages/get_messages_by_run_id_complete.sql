@@ -47,7 +47,6 @@ messages_data AS (
         fc.content,
         m.created_at,
         m.completed,
-        m.audio,
         ar.upload_id
     FROM params p
     JOIN messages_entry m ON m.run_id = p.run_id
@@ -60,7 +59,7 @@ messages_data AS (
 SELECT
     COALESCE(
         ARRAY_AGG(
-            (md.id, md.role, md.content, md.created_at, md.completed, md.audio, md.upload_id)::types.i_get_messages_by_ids_v4_message
+            (md.id, md.role, md.content, md.created_at, md.completed, md.upload_id)::types.i_get_messages_by_ids_v4_message
             ORDER BY md.created_at
         ),
         '{}'::types.i_get_messages_by_ids_v4_message[]

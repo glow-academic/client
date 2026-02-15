@@ -75,6 +75,7 @@ async def get_login_list_view_internal(
                 LoginViewItem(
                     login_id=item.login_id,
                     profile_id=item.profile_id,
+                    session_id=item.session_id,
                     last_login=item.last_login,
                     login_created_at=item.login_created_at,
                     active=item.active,

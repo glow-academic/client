@@ -113,7 +113,14 @@ CREATE TYPE types.q_get_attempt_messages_view_v4_item AS (
     improvements types.q_get_attempt_messages_view_v4_improvement[],
 
     -- Hints (practice-specific, message_id implied)
-    hints types.q_get_attempt_messages_view_v4_hint[]
+    hints types.q_get_attempt_messages_view_v4_hint[],
+
+    -- Branch path and depth
+    branch_path uuid[],
+    depth int,
+
+    -- Audio resource ID
+    audio_id uuid
 );
 
 -- ============================================================================
@@ -240,7 +247,10 @@ AS $$
             ct.contents,
             st.strengths,
             it.improvements,
-            ht.hints
+            ht.hints,
+            mv.branch_path,
+            mv.depth,
+            mv.audio_id
         FROM mv_data mv
         LEFT JOIN contents_transformed ct ON ct.message_id = mv.message_id
         LEFT JOIN strengths_transformed st ON st.message_id = mv.message_id
@@ -263,7 +273,10 @@ AS $$
                     contents,
                     strengths,
                     improvements,
-                    hints
+                    hints,
+                    branch_path,
+                    depth,
+                    audio_id
                 )::types.q_get_attempt_messages_view_v4_item
                 ORDER BY chat_id, created_at, message_id
             ),

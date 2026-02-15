@@ -65,11 +65,13 @@ from app.api.v4.resources.flags.search import search_flags_internal
 from app.api.v4.resources.models.get import get_models_internal
 from app.api.v4.resources.names.get import get_names_internal
 from app.api.v4.resources.names.search import search_names_internal
+from app.api.v4.resources.profiles.get import get_profiles_internal
 from app.api.v4.resources.providers.get import get_providers_internal
 from app.api.v4.resources.request_limits.get import get_request_limits_internal
 from app.api.v4.resources.request_limits.search import search_request_limits_internal
 from app.api.v4.resources.tools.get import get_tools_internal
 from app.api.v4.views.drafts.get import get_draft_profile_internal
+from app.api.v4.views.run.list.get import get_run_list_view_internal
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
@@ -669,22 +671,62 @@ async def get_profile_websocket(
         bypass_cache=bypass_cache,
     )
 
-    draft_profile = None
-    if draft_id is not None:
-        pool = get_pool()
-        if pool:
-            async with pool.acquire() as conn:
-                draft_items = await get_draft_profile_internal(
-                    conn=conn,
-                    draft_ids=[draft_id],
-                    bypass_cache=bypass_cache,
-                )
-                if draft_items:
-                    draft_profile = draft_items[0]
+    # Fetch draft, config_profile, and runs_today in parallel
+    pool = get_pool()
+
+    async def fetch_draft():
+        if not draft_id or not pool:
+            return None
+        async with pool.acquire() as conn:
+            draft_items = await get_draft_profile_internal(
+                conn=conn,
+                draft_ids=[draft_id],
+                bypass_cache=bypass_cache,
+            )
+            return draft_items[0] if draft_items else None
+
+    async def fetch_config_profile():
+        if not pool:
+            return None
+        async with pool.acquire() as conn:
+            return await get_profiles_internal(conn, [profile_id], bypass_cache)
+
+    async def fetch_runs_today():
+        if not pool:
+            return None
+        from datetime import UTC, datetime
+
+        today_utc = datetime.now(UTC).replace(hour=0, minute=0, second=0, microsecond=0)
+        tomorrow_utc = today_utc.replace(hour=23, minute=59, second=59)
+        async with pool.acquire() as conn:
+            return await get_run_list_view_internal(
+                conn=conn,
+                profile_id_filter=profile_id,
+                date_from=today_utc,
+                date_to=tomorrow_utc,
+                page_limit=1,
+                bypass_cache=True,
+            )
+
+    (
+        draft_profile,
+        config_profile_result,
+        runs_result,
+    ) = await asyncio.gather(
+        fetch_draft(),
+        fetch_config_profile(),
+        fetch_runs_today(),
+    )
+
+    # Build views (always construct — both fields optional now)
+    views = ProfileWebsocketViews(
+        draft_profile=draft_profile,
+        runs=runs_result,
+    )
 
     return GetProfileWebsocketResponse(
         group_id=data.group_id,
-        views=ProfileWebsocketViews(draft_profile=draft_profile),
+        views=views if draft_profile or runs_result else None,
         resources=ProfileWebsocketResources(
             names=[data.selected_name_resource] if data.selected_name_resource else [],
             emails=data.selected_email_resources,
@@ -698,6 +740,7 @@ async def get_profile_websocket(
             models=data.config_model_resources,
             providers=data.config_provider_resources,
             tools=data.config_tool_resources,
+            config_profile=config_profile_result or None,
         ),
         resource_agent_ids=data.agent_ids,
     )

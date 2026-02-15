@@ -9,19 +9,25 @@ from fastapi import APIRouter
 from app.api.v4.views.activity import router as activity_router
 from app.api.v4.views.analytics import router as analytics_router
 from app.api.v4.views.attempt import router as attempt_router
+from app.api.v4.views.audio import router as audio_router
 from app.api.v4.views.audit import router as audit_router
 from app.api.v4.views.benchmark import router as benchmark_router
 from app.api.v4.views.call import router as call_router
 from app.api.v4.views.config import router as config_router
+from app.api.v4.views.grant import router as grant_router
 from app.api.v4.views.group import router as group_router
 from app.api.v4.views.health import router as health_router
+from app.api.v4.views.image import router as image_router
 from app.api.v4.views.login import router as login_router
 from app.api.v4.views.message import router as message_router
 from app.api.v4.views.metric import router as metric_router
 from app.api.v4.views.problem import router as problem_router
 from app.api.v4.views.run import router as run_router
 from app.api.v4.views.session import router as session_router
+from app.api.v4.views.text import router as text_router
 from app.api.v4.views.training import router as training_router
+from app.api.v4.views.upload import router as upload_router
+from app.api.v4.views.video import router as video_router
 
 router = APIRouter(prefix="/views", tags=["views"])
 
@@ -41,3 +47,9 @@ router.include_router(problem_router)
 router.include_router(login_router)
 router.include_router(metric_router)
 router.include_router(analytics_router)
+router.include_router(text_router)
+router.include_router(upload_router)
+router.include_router(image_router)
+router.include_router(video_router)
+router.include_router(audio_router)
+router.include_router(grant_router)

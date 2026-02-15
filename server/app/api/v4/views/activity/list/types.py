@@ -1,23 +1,19 @@
 """Types for activity list view."""
 
-from datetime import date
+from datetime import datetime
+from uuid import UUID
 
 from pydantic import BaseModel, Field
 
 
 class ActivityViewItem(BaseModel):
-    """Single activity row from the activity list view."""
+    """Single activity from the activity list view."""
 
-    date_key: date
-    event_type: str | None = None
-    event_count: int = 0
-    unique_profiles: int = 0
-    saved_count: int = 0
-    created_count: int = 0
-    duplicated_count: int = 0
-    uploaded_count: int = 0
-    deleted_count: int = 0
-    updated_count: int = 0
+    activity_id: UUID
+    profile_id: UUID | None = None
+    session_id: UUID | None = None
+    last_active: datetime | None = None
+    created_at: datetime | None = None
 
 
 class GetActivityListViewResponse(BaseModel):

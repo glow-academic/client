@@ -1,13 +1,13 @@
 -- Materialized View: mv_activity
--- Daily aggregation for activity event trend charts.
+-- Lean activity-level data for activity views.
 --
--- Grain: One row per (date, event_type)
--- Filter: endpoint IS NOT NULL
+-- Grain: One row per activity entry
+-- Filter: active = true only
 --
--- Purpose: Event trend charts on activity overview page
+-- Purpose: Activity data with profile_id and session_id
 -- Section: ACTIVITY (lean MV)
 --
--- Dependencies: audits_entry, sessions_entry
+-- Dependencies: activity_entry, profiles_activity_connection
 -- ============================================================================
 -- Step 1: Drop all indexes on mv_activity materialized view (if it exists)
 -- ============================================================================
@@ -38,20 +38,16 @@ DROP MATERIALIZED VIEW IF EXISTS mv_activity CASCADE;
 
 CREATE MATERIALIZED VIEW mv_activity AS
 SELECT
-    (a.created_at::date) AS date_key,
-    a.endpoint AS event_type,
-    COUNT(*)::int AS event_count,
-    COUNT(DISTINCT s.profile_id)::int AS unique_profiles,
-    COUNT(*) FILTER (WHERE a.endpoint LIKE '%.saved')::int AS saved_count,
-    COUNT(*) FILTER (WHERE a.endpoint LIKE '%.created')::int AS created_count,
-    COUNT(*) FILTER (WHERE a.endpoint LIKE '%.duplicated')::int AS duplicated_count,
-    COUNT(*) FILTER (WHERE a.endpoint LIKE '%.uploaded')::int AS uploaded_count,
-    COUNT(*) FILTER (WHERE a.endpoint LIKE '%.deleted')::int AS deleted_count,
-    COUNT(*) FILTER (WHERE a.endpoint LIKE '%.updated')::int AS updated_count
-FROM audits_entry a
-LEFT JOIN sessions_entry s ON s.id = a.session_id
-WHERE a.endpoint IS NOT NULL AND a.endpoint != ''
-GROUP BY (a.created_at::date), a.endpoint
+    a.id          AS activity_id,
+    pac.profiles_id AS profile_id,
+    a.session_id,
+    a.last_active,
+    a.created_at
+FROM activity_entry a
+LEFT JOIN profiles_activity_connection pac
+    ON pac.activity_id = a.id
+    AND pac.active = true
+WHERE a.active = true
 WITH NO DATA;
 
 -- ============================================================================
@@ -59,20 +55,21 @@ WITH NO DATA;
 -- ============================================================================
 
 CREATE UNIQUE INDEX mv_activity_pk
-    ON mv_activity (date_key, event_type);
+    ON mv_activity (activity_id);
 
 -- ============================================================================
 -- Step 5: Create Filter/Slicing Indexes
 -- ============================================================================
 
-CREATE INDEX mv_activity_date_key_idx
-    ON mv_activity (date_key DESC);
+CREATE INDEX mv_activity_profile_id_idx
+    ON mv_activity (profile_id)
+    WHERE profile_id IS NOT NULL;
 
-CREATE INDEX mv_activity_event_type_idx
-    ON mv_activity (event_type);
+CREATE INDEX mv_activity_session_id_idx
+    ON mv_activity (session_id);
 
-CREATE INDEX mv_activity_date_event_idx
-    ON mv_activity (date_key DESC, event_type);
+CREATE INDEX mv_activity_created_at_idx
+    ON mv_activity (created_at DESC);
 
 -- ============================================================================
 -- Step 6: Refresh Materialized View with Data

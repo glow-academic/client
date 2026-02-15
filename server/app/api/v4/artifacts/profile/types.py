@@ -9,12 +9,14 @@ from pydantic import BaseModel
 from app.api.v4.resources.cohorts.types import QGetCohortsV4Item
 from app.api.v4.types import BaseResourceSection, ListFilterSection
 from app.api.v4.views.drafts.types import DraftProfileViewItem
+from app.api.v4.views.run.list.types import GetRunListViewResponse
 from app.sql.types import (
     QGetAgentsV4Item,
     QGetDepartmentsV4Item,
     QGetEmailsV4Item,
     QGetModelsV4Item,
     QGetNamesV4Item,
+    QGetProfilesV4Item,
     QGetProvidersV4Item,
     QGetRequestLimitsV4Item,
     QGetToolsV4Item,
@@ -105,6 +107,7 @@ class GetProfileApiResponse(BaseModel):
 
 class ProfileWebsocketViews(BaseModel):
     draft_profile: DraftProfileViewItem | None = None
+    runs: GetRunListViewResponse | None = None
 
 
 class ProfileWebsocketResources(BaseModel):
@@ -118,6 +121,7 @@ class ProfileWebsocketResources(BaseModel):
     models: list[QGetModelsV4Item] | None = None
     providers: list[QGetProvidersV4Item] | None = None
     tools: list[QGetToolsV4Item] | None = None
+    config_profile: list[QGetProfilesV4Item] | None = None
 
 
 class GetProfileWebsocketResponse(BaseModel):

@@ -1,11 +1,11 @@
 -- ============================================================================
 -- Query: get_activity_list_view
--- Purpose: Fetch daily activity data from mv_activity with declarative filters
+-- Purpose: Fetch activity-level data from mv_activity with declarative filters
 -- Section: VIEWS/ACTIVITY/LIST
 --
 -- Includes:
--- - Filtering (date range, event_type)
--- - Sorting (by date_key)
+-- - Filtering (profile_id, session_id)
+-- - Ordering (by created_at)
 -- - Pagination
 -- ============================================================================
 
@@ -50,16 +50,11 @@ END $$;
 -- ============================================================================
 
 CREATE TYPE types.q_get_activity_list_view_v4_item AS (
-    date_key date,
-    event_type text,
-    event_count int,
-    unique_profiles int,
-    saved_count int,
-    created_count int,
-    duplicated_count int,
-    uploaded_count int,
-    deleted_count int,
-    updated_count int
+    activity_id uuid,
+    profile_id uuid,
+    session_id uuid,
+    last_active timestamptz,
+    created_at timestamptz
 );
 
 -- ============================================================================
@@ -67,11 +62,9 @@ CREATE TYPE types.q_get_activity_list_view_v4_item AS (
 -- ============================================================================
 
 CREATE OR REPLACE FUNCTION api_get_activity_list_view_v4(
-    event_type_filter text DEFAULT NULL,
-    date_from date DEFAULT NULL,
-    date_to date DEFAULT NULL,
-    sort_order_field text DEFAULT 'desc',
-    page_limit_val int DEFAULT 1000,
+    profile_id_filter uuid DEFAULT NULL,
+    session_id_filter uuid DEFAULT NULL,
+    page_limit_val int DEFAULT 10000,
     page_offset_val int DEFAULT 0
 )
 RETURNS TABLE (
@@ -86,9 +79,8 @@ AS $$
         SELECT mv.*
         FROM mv_activity mv
         WHERE
-            (event_type_filter IS NULL OR mv.event_type = event_type_filter)
-            AND (date_from IS NULL OR mv.date_key >= date_from)
-            AND (date_to IS NULL OR mv.date_key <= date_to)
+            (profile_id_filter IS NULL OR mv.profile_id = profile_id_filter)
+            AND (session_id_filter IS NULL OR mv.session_id = session_id_filter)
     ),
     counted AS (
         SELECT COUNT(*)::int AS total FROM filtered
@@ -96,9 +88,7 @@ AS $$
     sorted AS (
         SELECT *
         FROM filtered
-        ORDER BY
-            CASE WHEN sort_order_field = 'asc' THEN date_key END ASC,
-            CASE WHEN sort_order_field != 'asc' THEN date_key END DESC
+        ORDER BY created_at DESC
         LIMIT page_limit_val
         OFFSET page_offset_val
     ),
@@ -106,20 +96,13 @@ AS $$
         SELECT COALESCE(
             ARRAY_AGG(
                 (
-                    date_key,
-                    event_type,
-                    event_count,
-                    unique_profiles,
-                    saved_count,
-                    created_count,
-                    duplicated_count,
-                    uploaded_count,
-                    deleted_count,
-                    updated_count
+                    activity_id,
+                    profile_id,
+                    session_id,
+                    last_active,
+                    created_at
                 )::types.q_get_activity_list_view_v4_item
-                ORDER BY
-                    CASE WHEN sort_order_field = 'asc' THEN date_key END ASC,
-                    CASE WHEN sort_order_field != 'asc' THEN date_key END DESC
+                ORDER BY created_at DESC
             ),
             ARRAY[]::types.q_get_activity_list_view_v4_item[]
         ) AS items

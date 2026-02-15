@@ -13,6 +13,7 @@ from pydantic import BaseModel
 
 from app.api.v4.types import BaseResourceSection, ListFilterSection
 from app.api.v4.views.drafts.types import DraftDocumentViewItem
+from app.api.v4.views.run.list.types import GetRunListViewResponse
 from app.sql.types import (
     QGetAgentsV4Item,
     QGetDepartmentsV4Item,
@@ -21,6 +22,7 @@ from app.sql.types import (
     QGetModelsV4Item,
     QGetNamesV4Item,
     QGetParameterFieldsV4Item,
+    QGetProfilesV4Item,
     QGetProvidersV4Item,
     QGetTextsV4Item,
     QGetToolsV4Item,
@@ -142,6 +144,7 @@ class DocumentWebsocketViews(BaseModel):
     """Optional websocket views payload."""
 
     draft_document: DraftDocumentViewItem | None = None
+    runs: GetRunListViewResponse | None = None
 
 
 class DocumentWebsocketResources(BaseModel):
@@ -159,6 +162,7 @@ class DocumentWebsocketResources(BaseModel):
     models: list[QGetModelsV4Item] | None = None
     providers: list[QGetProvidersV4Item] | None = None
     tools: list[QGetToolsV4Item] | None = None
+    config_profile: list[QGetProfilesV4Item] | None = None
 
 
 class GetDocumentWebsocketResponse(BaseModel):

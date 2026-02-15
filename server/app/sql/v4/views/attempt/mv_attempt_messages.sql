@@ -183,6 +183,34 @@ contents_agg AS (
     WHERE sce.active = TRUE
     GROUP BY sce.message_id
 ),
+-- Recursive branch construction
+-- Roots = messages that never appear as child_id in the tree
+branch_agg AS (
+    SELECT message_id, branch_path, depth FROM (
+        WITH RECURSIVE walk AS (
+            SELECT sm.id AS message_id, sm.chat_id,
+                   ARRAY[sm.id] AS branch_path, 0 AS depth
+            FROM simulation_messages_entry sm
+            LEFT JOIN simulation_message_tree_entry smt
+                ON smt.child_id = sm.id AND smt.active = true
+            WHERE smt.child_id IS NULL
+            UNION ALL
+            SELECT smt.child_id, w.chat_id,
+                   w.branch_path || smt.child_id, w.depth + 1
+            FROM simulation_message_tree_entry smt
+            JOIN walk w ON w.message_id = smt.parent_id
+            WHERE smt.active = true
+        )
+        SELECT * FROM walk
+    ) sub
+),
+-- Audio resource ID per message
+audio_agg AS (
+    SELECT ae.message_id, aac.audios_id AS audio_id
+    FROM audios_entry ae
+    JOIN audios_audios_connection aac ON aac.audio_id = ae.id AND aac.active = true
+    WHERE ae.active = true AND ae.message_id IS NOT NULL
+),
 -- Get runs_id (resource) for each run_id (entry)
 runs_resource_agg AS (
     SELECT
@@ -203,13 +231,20 @@ base_messages AS (
         -- Run resource ID (one hop to hydrate)
         rra.runs_id,
         -- History content (for LLM context)
-        te.content AS history_content
+        te.content AS history_content,
+        -- Branch path and depth
+        ba.branch_path,
+        ba.depth,
+        -- Audio resource ID
+        aa.audio_id
     FROM simulation_messages_entry sm
     JOIN messages_entry m ON m.id = sm.id
     JOIN simulation_chats_entry c ON c.id = sm.chat_id
     JOIN simulation_attempts_entry a ON a.id = c.attempt_id
     LEFT JOIN runs_resource_agg rra ON rra.run_id = m.run_id
     LEFT JOIN texts_entry te ON te.id = m.text_id
+    LEFT JOIN branch_agg ba ON ba.message_id = sm.id
+    LEFT JOIN audio_agg aa ON aa.message_id = sm.id
     WHERE m.active = TRUE
       AND c.active = TRUE
       AND a.active = TRUE
@@ -245,7 +280,14 @@ SELECT
     COALESCE(ia.improvements, ARRAY[]::types.mv_improvement[]) AS improvements,
 
     -- Hints (PRACTICE-specific, denormalized, message_id implied)
-    COALESCE(ha.hints, ARRAY[]::types.mv_hint[]) AS hints
+    COALESCE(ha.hints, ARRAY[]::types.mv_hint[]) AS hints,
+
+    -- Branch path and depth (from recursive tree walk)
+    COALESCE(bm.branch_path, ARRAY[bm.message_id]) AS branch_path,
+    COALESCE(bm.depth, 0) AS depth,
+
+    -- Audio resource ID
+    bm.audio_id
 
 FROM base_messages bm
 LEFT JOIN contents_agg ca ON ca.message_id = bm.message_id

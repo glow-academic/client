@@ -36,8 +36,6 @@ from app.socket.v4.artifacts.types import (
 from app.sql.types import (
     GetAgentToolsSqlParams,
     GetAgentToolsSqlRow,
-    GetCohortGenerationContextSqlParams,
-    GetCohortGenerationContextSqlRow,
     PrepareCohortGenerationSqlParams,
     PrepareCohortGenerationSqlRow,
 )
@@ -52,9 +50,6 @@ client_router = APIRouter()
 server_router = APIRouter()
 
 # SQL paths
-SQL_PATH_CONTEXT = (
-    "app/sql/v4/queries/generate/cohort/get_cohort_generation_context_complete.sql"
-)
 SQL_PATH_PREPARE = (
     "app/sql/v4/queries/generate/cohort/prepare_cohort_generation_complete.sql"
 )
@@ -254,33 +249,32 @@ async def _cohort_generate_impl(
 
         cohort_jinja_context = _build_cohort_jinja_context(result)
 
-        # Step 3: Check rate limit (the only thing still in SQL)
-        async with get_db_connection() as conn:
-            context_params = GetCohortGenerationContextSqlParams(
-                p_profile_id=profile_id,
-            )
-            context_row = cast(
-                GetCohortGenerationContextSqlRow,
-                await execute_sql_typed(conn, SQL_PATH_CONTEXT, params=context_params),
-            )
+        # Step 3: Check rate limit from pre-fetched config_profile + runs
+        config_profile = (
+            result.resources.config_profile[0]
+            if result.resources.config_profile
+            else None
+        )
+        requests_per_day = config_profile.requests_per_day if config_profile else None
+        runs_today = (
+            result.views.runs.total_count if result.views and result.views.runs else 0
+        )
 
-            # Rate limit validation
-            requests_per_day = context_row.requests_per_day
-            runs_today = context_row.runs_today or 0
-
-            if requests_per_day is not None and runs_today >= requests_per_day:
-                error_msg = f"Rate limit exceeded ({runs_today}/{requests_per_day} requests today)"
-                logger.error(
-                    f"Cohort generation rate limit exceeded - "
-                    f"profile_id={profile_id}, agent_id={agent_id}, "
-                    f"reason: {error_msg}"
-                )
-                await _emit_generation_error(
-                    sid,
-                    message=f"Failed to prepare cohort generation: {error_msg}",
-                    group_id=result.group_id,
-                )
-                return
+        if requests_per_day is not None and runs_today >= requests_per_day:
+            error_msg = (
+                f"Rate limit exceeded ({runs_today}/{requests_per_day} requests today)"
+            )
+            logger.error(
+                f"Cohort generation rate limit exceeded - "
+                f"profile_id={profile_id}, agent_id={agent_id}, "
+                f"reason: {error_msg}"
+            )
+            await _emit_generation_error(
+                sid,
+                message=f"Failed to prepare cohort generation: {error_msg}",
+                group_id=result.group_id,
+            )
+            return
 
         existing_group_id = result.group_id
 

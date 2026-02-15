@@ -12,9 +12,11 @@ from pydantic import BaseModel, Field
 
 from app.api.v4.types import BaseResourceSection, ListFilterSection
 from app.api.v4.views.drafts.types import DraftScenarioViewItem
+from app.api.v4.views.run.list.types import GetRunListViewResponse
 from app.sql.types import (
     QGetAgentsV4Item,
     QGetModelsV4Item,
+    QGetProfilesV4Item,
     QGetProvidersV4Item,
     QGetToolsV4Item,
 )
@@ -395,6 +397,7 @@ class ScenarioWebsocketViews(BaseModel):
     """Optional websocket views payload."""
 
     draft_scenario: DraftScenarioViewItem | None = None
+    runs: GetRunListViewResponse | None = None
 
 
 class ScenarioWebsocketResources(BaseModel):
@@ -421,6 +424,8 @@ class ScenarioWebsocketResources(BaseModel):
     models: list[QGetModelsV4Item] | None = None
     providers: list[QGetProvidersV4Item] | None = None
     tools: list[QGetToolsV4Item] | None = None
+    # Profile config (for rate limiting)
+    config_profile: list[QGetProfilesV4Item] | None = None
 
 
 # =============================================================================

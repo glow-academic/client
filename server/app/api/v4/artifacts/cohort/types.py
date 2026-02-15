@@ -12,9 +12,11 @@ from pydantic import BaseModel
 
 from app.api.v4.types import BaseResourceSection, ListFilterSection
 from app.api.v4.views.drafts.types import DraftCohortViewItem
+from app.api.v4.views.run.list.types import GetRunListViewResponse
 from app.sql.types import (
     QGetAgentsV4Item,
     QGetModelsV4Item,
+    QGetProfilesV4Item,
     QGetProvidersV4Item,
     QGetToolsV4Item,
 )
@@ -187,6 +189,7 @@ class GetCohortWebsocketResponse(BaseModel):
 
 class CohortWebsocketViews(BaseModel):
     draft_cohort: DraftCohortViewItem | None = None
+    runs: GetRunListViewResponse | None = None
 
 
 class CohortWebsocketResources(BaseModel):
@@ -203,6 +206,7 @@ class CohortWebsocketResources(BaseModel):
     models: list[QGetModelsV4Item] | None = None
     providers: list[QGetProvidersV4Item] | None = None
     tools: list[QGetToolsV4Item] | None = None
+    config_profile: list[QGetProfilesV4Item] | None = None
 
 
 # =============================================================================

@@ -40,6 +40,7 @@ CREATE MATERIALIZED VIEW mv_logins AS
 SELECT
     l.id AS login_id,
     plc.profiles_id AS profile_id,
+    l.session_id,
     l.last_login,
     l.created_at AS login_created_at,
     COALESCE(l.active, false) AS active,
@@ -66,6 +67,9 @@ CREATE UNIQUE INDEX mv_logins_pk
 CREATE INDEX mv_logins_profile_id_idx
     ON mv_logins (profile_id)
     WHERE profile_id IS NOT NULL;
+
+CREATE INDEX mv_logins_session_id_idx
+    ON mv_logins (session_id);
 
 CREATE INDEX mv_logins_last_login_idx
     ON mv_logins (last_login DESC);

@@ -8183,6 +8183,126 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/views/text/list/get": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Texts
+         * @description Get text data from the materialized view.
+         */
+        post: operations["get_texts_api_v4_views_text_list_get_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/views/upload/list/get": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Uploads
+         * @description Get upload data from the materialized view.
+         */
+        post: operations["get_uploads_api_v4_views_upload_list_get_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/views/image/list/get": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Images
+         * @description Get image data from the materialized view.
+         */
+        post: operations["get_images_api_v4_views_image_list_get_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/views/video/list/get": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Videos
+         * @description Get video data from the materialized view.
+         */
+        post: operations["get_videos_api_v4_views_video_list_get_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/views/audio/list/get": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Audios
+         * @description Get audio data from the materialized view.
+         */
+        post: operations["get_audios_api_v4_views_audio_list_get_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/views/grant/list/get": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Grants
+         * @description Get grant data from the materialized view.
+         */
+        post: operations["get_grants_api_v4_views_grant_list_get_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v4/auth/login": {
         parameters: {
             query?: never;
@@ -19222,6 +19342,33 @@ export interface components {
             simulation_messages?: components["schemas"]["MessageData"][] | null;
         };
         /**
+         * AudioViewItem
+         * @description Single audio from the audio list view.
+         */
+        AudioViewItem: {
+            /**
+             * Audio Id
+             * Format: uuid
+             */
+            audio_id: string;
+            /** Uploads Id */
+            uploads_id?: string | null;
+            /** Upload Id */
+            upload_id?: string | null;
+            /** Call Id */
+            call_id?: string | null;
+            /** Message Id */
+            message_id?: string | null;
+            /** File Path */
+            file_path?: string | null;
+            /** Mime Type */
+            mime_type?: string | null;
+            /** Size */
+            size?: number | null;
+            /** Created At */
+            created_at?: string | null;
+        };
+        /**
          * AuditViewItem
          * @description Single audit from the audit list view.
          */
@@ -25606,6 +25753,23 @@ export interface components {
             profile_options?: components["schemas"]["app__api__v4__views__attempt__list__types__FilterOption"][] | null;
         };
         /**
+         * GetAudioListViewResponse
+         * @description Response containing audio list data.
+         */
+        GetAudioListViewResponse: {
+            /**
+             * Items
+             * @description Audio data items
+             */
+            items?: components["schemas"]["AudioViewItem"][];
+            /**
+             * Total Count
+             * @description Total count before pagination
+             * @default 0
+             */
+            total_count: number;
+        };
+        /**
          * GetAuditListViewResponse
          * @description Response containing audit list data.
          */
@@ -26534,6 +26698,23 @@ export interface components {
             items?: components["schemas"]["QGetFlagsV4Item"][] | null;
         };
         /**
+         * GetGrantListViewResponse
+         * @description Response containing grant list data.
+         */
+        GetGrantListViewResponse: {
+            /**
+             * Items
+             * @description Grant data items
+             */
+            items?: components["schemas"]["GrantViewItem"][];
+            /**
+             * Total Count
+             * @description Total count before pagination
+             * @default 0
+             */
+            total_count: number;
+        };
+        /**
          * GetGroupDetailRequest
          * @description Request for group detail endpoint.
          */
@@ -26708,6 +26889,23 @@ export interface components {
          */
         GetImageApiResponse: {
             item?: components["schemas"]["GetImageV4Item"] | null;
+        };
+        /**
+         * GetImageListViewResponse
+         * @description Response containing image list data.
+         */
+        GetImageListViewResponse: {
+            /**
+             * Items
+             * @description Image data items
+             */
+            items?: components["schemas"]["ImageViewItem"][];
+            /**
+             * Total Count
+             * @description Total count before pagination
+             * @default 0
+             */
+            total_count: number;
         };
         /**
          * GetImageV4Item
@@ -28868,6 +29066,23 @@ export interface components {
             /** Eval Options */
             eval_options?: components["schemas"]["TestListFilterOption"][];
         };
+        /**
+         * GetTextListViewResponse
+         * @description Response containing text list data.
+         */
+        GetTextListViewResponse: {
+            /**
+             * Items
+             * @description Text data items
+             */
+            items?: components["schemas"]["TextViewItem"][];
+            /**
+             * Total Count
+             * @description Total count before pagination
+             * @default 0
+             */
+            total_count: number;
+        };
         /** GetTextsApiRequest */
         GetTextsApiRequest: {
             /** P Ids */
@@ -29137,6 +29352,23 @@ export interface components {
             /** Standards */
             standards?: components["schemas"]["StandardMapping"][] | null;
         };
+        /**
+         * GetUploadListViewResponse
+         * @description Response containing upload list data.
+         */
+        GetUploadListViewResponse: {
+            /**
+             * Items
+             * @description Upload data items
+             */
+            items?: components["schemas"]["UploadViewItem"][];
+            /**
+             * Total Count
+             * @description Total count before pagination
+             * @default 0
+             */
+            total_count: number;
+        };
         /** GetUploadsApiRequest */
         GetUploadsApiRequest: {
             /** Ids */
@@ -29174,6 +29406,23 @@ export interface components {
          */
         GetVideoApiResponse: {
             item?: components["schemas"]["GetVideoV4Item"] | null;
+        };
+        /**
+         * GetVideoListViewResponse
+         * @description Response containing video list data.
+         */
+        GetVideoListViewResponse: {
+            /**
+             * Items
+             * @description Video data items
+             */
+            items?: components["schemas"]["VideoViewItem"][];
+            /**
+             * Total Count
+             * @description Total count before pagination
+             * @default 0
+             */
+            total_count: number;
         };
         /**
          * GetVideoV4Item
@@ -29259,6 +29508,31 @@ export interface components {
             feedback_by_standard_id?: {
                 [key: string]: string;
             } | null;
+        };
+        /**
+         * GrantViewItem
+         * @description Single grant from the grant list view.
+         */
+        GrantViewItem: {
+            /**
+             * Grant Id
+             * Format: uuid
+             */
+            grant_id: string;
+            /** Grantor Id */
+            grantor_id?: string | null;
+            /** Emulation Id */
+            emulation_id?: string | null;
+            /** Emulated Id */
+            emulated_id?: string | null;
+            /** Expires At */
+            expires_at?: string | null;
+            /** Used At */
+            used_at?: string | null;
+            /** Revoked At */
+            revoked_at?: string | null;
+            /** Created At */
+            created_at?: string | null;
         };
         /**
          * GroupDetailCallItem
@@ -30146,6 +30420,29 @@ export interface components {
             name?: string | null;
             /** Description */
             description?: string | null;
+        };
+        /**
+         * ImageViewItem
+         * @description Single image from the image list view.
+         */
+        ImageViewItem: {
+            /**
+             * Image Id
+             * Format: uuid
+             */
+            image_id: string;
+            /** Uploads Id */
+            uploads_id?: string | null;
+            /** Upload Id */
+            upload_id?: string | null;
+            /** File Path */
+            file_path?: string | null;
+            /** Mime Type */
+            mime_type?: string | null;
+            /** Size */
+            size?: number | null;
+            /** Created At */
+            created_at?: string | null;
         };
         /** ImagesApiRequest */
         ImagesApiRequest: {
@@ -48133,6 +48430,28 @@ export interface components {
             /** Benchmark Invocations */
             benchmark_invocations?: components["schemas"]["BenchmarkInvocationViewItem"][] | null;
         };
+        /**
+         * TextViewItem
+         * @description Single text from the text list view.
+         */
+        TextViewItem: {
+            /**
+             * Texts Id
+             * Format: uuid
+             */
+            texts_id: string;
+            /**
+             * Text Id
+             * Format: uuid
+             */
+            text_id: string;
+            /** Content */
+            content?: string | null;
+            /** Content Hash */
+            content_hash?: string | null;
+            /** Created At */
+            created_at?: string | null;
+        };
         /** TextsApiRequest */
         TextsApiRequest: {
             /** Content */
@@ -49367,6 +49686,30 @@ export interface components {
             /** Not Started Count */
             not_started_count?: number | null;
         };
+        /**
+         * UploadViewItem
+         * @description Single upload from the upload list view.
+         */
+        UploadViewItem: {
+            /**
+             * Uploads Id
+             * Format: uuid
+             */
+            uploads_id: string;
+            /**
+             * Upload Id
+             * Format: uuid
+             */
+            upload_id: string;
+            /** File Path */
+            file_path?: string | null;
+            /** Mime Type */
+            mime_type?: string | null;
+            /** Size */
+            size?: number | null;
+            /** Created At */
+            created_at?: string | null;
+        };
         /** UploadsApiRequest */
         UploadsApiRequest: {
             /**
@@ -49681,6 +50024,29 @@ export interface components {
             description?: string | null;
             /** Length Seconds */
             length_seconds?: number | null;
+        };
+        /**
+         * VideoViewItem
+         * @description Single video from the video list view.
+         */
+        VideoViewItem: {
+            /**
+             * Video Id
+             * Format: uuid
+             */
+            video_id: string;
+            /** Uploads Id */
+            uploads_id?: string | null;
+            /** Upload Id */
+            upload_id?: string | null;
+            /** File Path */
+            file_path?: string | null;
+            /** Mime Type */
+            mime_type?: string | null;
+            /** Size */
+            size?: number | null;
+            /** Created At */
+            created_at?: string | null;
         };
         /** VideosApiRequest */
         VideosApiRequest: {
@@ -65457,6 +65823,204 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["GetScenarioFactsResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_texts_api_v4_views_text_list_get_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetTextListViewResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_uploads_api_v4_views_upload_list_get_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetUploadListViewResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_images_api_v4_views_image_list_get_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetImageListViewResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_videos_api_v4_views_video_list_get_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetVideoListViewResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_audios_api_v4_views_audio_list_get_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetAudioListViewResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_grants_api_v4_views_grant_list_get_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetGrantListViewResponse"];
                 };
             };
             /** @description Validation Error */

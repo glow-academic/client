@@ -862,9 +862,7 @@ async def get_persona_websocket(
             return None
         from datetime import datetime
 
-        today_utc = datetime.now(UTC).replace(
-            hour=0, minute=0, second=0, microsecond=0
-        )
+        today_utc = datetime.now(UTC).replace(hour=0, minute=0, second=0, microsecond=0)
         tomorrow_utc = today_utc.replace(hour=23, minute=59, second=59)
         async with pool.acquire() as conn:
             return await get_run_list_view_internal(

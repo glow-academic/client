@@ -12,12 +12,14 @@ from pydantic import BaseModel, Field
 
 from app.api.v4.types import BaseResourceSection, ListFilterSection
 from app.api.v4.views.drafts.types import DraftSimulationViewItem
+from app.api.v4.views.run.list.types import GetRunListViewResponse
 from app.sql.types import (
     QGetAgentsV4Item,
     QGetDepartmentsV4Item,
     QGetDescriptionsV4Item,
     QGetModelsV4Item,
     QGetNamesV4Item,
+    QGetProfilesV4Item,
     QGetProvidersV4Item,
     QGetRubricsV4Item,
     QGetScenarioFlagsV4Item,
@@ -379,6 +381,7 @@ class SimulationWebsocketViews(BaseModel):
     """Optional websocket views payload."""
 
     draft_simulation: DraftSimulationViewItem | None = None
+    runs: GetRunListViewResponse | None = None
 
 
 class SimulationWebsocketResources(BaseModel):
@@ -399,6 +402,8 @@ class SimulationWebsocketResources(BaseModel):
     models: list[QGetModelsV4Item] | None = None
     providers: list[QGetProvidersV4Item] | None = None
     tools: list[QGetToolsV4Item] | None = None
+    # Profile config (for rate limiting)
+    config_profile: list[QGetProfilesV4Item] | None = None
 
 
 class GetSimulationWebsocketResponse(BaseModel):

@@ -11,6 +11,7 @@ class LoginViewItem(BaseModel):
 
     login_id: UUID
     profile_id: UUID | None = None
+    session_id: UUID | None = None
     last_login: datetime | None = None
     login_created_at: datetime | None = None
     active: bool | None = None

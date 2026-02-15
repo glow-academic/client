@@ -26,7 +26,6 @@ CREATE TYPE types.i_get_messages_by_ids_v4_message AS (
     content text,
     created_at timestamptz,
     completed boolean,
-    audio boolean,
     upload_id uuid
 );
 
@@ -60,7 +59,6 @@ messages_data AS (
         fc.content,
         m.created_at,
         m.completed,
-        m.audio,
         ar.upload_id,
         array_position(p.message_ids, m.id) as pos
     FROM params p
@@ -75,7 +73,7 @@ messages_data AS (
 SELECT
     COALESCE(
         ARRAY_AGG(
-            (md.id, md.role, md.content, md.created_at, md.completed, md.audio, md.upload_id)::types.i_get_messages_by_ids_v4_message
+            (md.id, md.role, md.content, md.created_at, md.completed, md.upload_id)::types.i_get_messages_by_ids_v4_message
             ORDER BY md.pos
         ),
         '{}'::types.i_get_messages_by_ids_v4_message[]

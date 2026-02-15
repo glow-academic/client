@@ -187,8 +187,8 @@ new_developer_messages_data AS (
     WHERE NOT EXISTS (SELECT 1 FROM existing_developer_messages e WHERE e.hash = dmh.hash)
 ),
 new_developer_messages AS (
-    INSERT INTO messages_entry (role, completed, audio, run_id, created_at, updated_at)
-    SELECT 'developer'::message_type, false, false, nd.run_id, NOW(), NOW()
+    INSERT INTO messages_entry (role, completed, run_id, created_at, updated_at)
+    SELECT 'developer'::message_type, false, nd.run_id, NOW(), NOW()
     FROM new_developer_messages_data nd
     RETURNING id, run_id, created_at, updated_at
 ),
@@ -291,8 +291,8 @@ new_user_messages_data AS (
     WHERE NOT EXISTS (SELECT 1 FROM existing_user_messages e WHERE e.hash = umh.hash)
 ),
 new_user_messages AS (
-    INSERT INTO messages_entry (role, completed, audio, run_id, created_at, updated_at)
-    SELECT 'user'::message_type, false, false, nd.run_id, NOW(), NOW()
+    INSERT INTO messages_entry (role, completed, run_id, created_at, updated_at)
+    SELECT 'user'::message_type, false, nd.run_id, NOW(), NOW()
     FROM new_user_messages_data nd
     RETURNING id, run_id, created_at, updated_at
 ),

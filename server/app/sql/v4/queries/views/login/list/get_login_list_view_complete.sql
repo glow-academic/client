@@ -54,6 +54,7 @@ END $$;
 CREATE TYPE types.q_get_login_list_view_v4_item AS (
     login_id uuid,
     profile_id uuid,
+    session_id uuid,
     last_login timestamptz,
     login_created_at timestamptz,
     active boolean,
@@ -110,6 +111,7 @@ AS $$
                 (
                     login_id,
                     profile_id,
+                    session_id,
                     last_login,
                     login_created_at,
                     active,

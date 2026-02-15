@@ -79,6 +79,13 @@ pricing_cached AS (
     FROM run_pricing_entry rpe
     JOIN run_pricing_pricing_connection rppc ON rppc.run_pricing_id = rpe.id AND rppc.active = TRUE
     WHERE rpe.active = TRUE AND rpe.pricing_type = 'cached'
+),
+debug_agg AS (
+    SELECT di.run_id,
+        COALESCE(array_agg(di.content ORDER BY di.created_at), ARRAY[]::text[]) AS debug_info
+    FROM debug_info_entry di
+    WHERE di.active = true AND di.run_id IS NOT NULL
+    GROUP BY di.run_id
 )
 SELECT
     -- Primary key
@@ -109,13 +116,17 @@ SELECT
     po.pricing_id AS output_pricing_pricing_id,
     pc.pricing_count AS cached_pricing_count,
     pc.unit_id AS cached_pricing_unit_id,
-    pc.pricing_id AS cached_pricing_pricing_id
+    pc.pricing_id AS cached_pricing_pricing_id,
+
+    -- Debug info
+    COALESCE(da.debug_info, ARRAY[]::text[]) AS debug_info
 
 FROM runs_entry r
 LEFT JOIN configs_agg ca ON ca.run_id = r.id
 LEFT JOIN pricing_input pi ON pi.run_id = r.id
 LEFT JOIN pricing_output po ON po.run_id = r.id
 LEFT JOIN pricing_cached pc ON pc.run_id = r.id
+LEFT JOIN debug_agg da ON da.run_id = r.id
 WHERE r.group_id IS NOT NULL
 WITH NO DATA;
 
