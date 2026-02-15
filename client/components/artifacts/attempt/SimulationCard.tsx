@@ -132,6 +132,9 @@ export default function SimulationCard({
       }
 
       setIsStarting(true);
+      const toastId = toast.loading("Starting simulation...", {
+        dismissible: true,
+      });
       try {
         const result = await createAttempt({
           body: {
@@ -140,6 +143,7 @@ export default function SimulationCard({
         });
         const attemptId = result.attempt_id;
         if (!attemptId) {
+          toast.dismiss(toastId);
           toast.error("Failed to create training attempt.");
           return;
         }
@@ -154,6 +158,7 @@ export default function SimulationCard({
           })
         );
       } catch {
+        toast.dismiss(toastId);
         toast.error("Failed to create training attempt.");
       } finally {
         setIsStarting(false);

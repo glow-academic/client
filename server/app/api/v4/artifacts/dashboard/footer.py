@@ -94,29 +94,29 @@ async def get_dashboard_footer(
                 document_ids_set.add(doc_id)
 
         # 4. Batch 1: Hydrate simulations, scenarios, personas, documents
-        async with pool.acquire() as c:
-            simulations, scenarios_list, personas, documents = await asyncio.gather(
-                get_simulations_internal(
-                    conn=c,
-                    ids=list(simulation_ids_set),
-                    bypass_cache=bypass_cache,
-                ),
-                get_scenarios_internal(
-                    conn=c,
-                    ids=list(scenario_ids_set),
-                    bypass_cache=bypass_cache,
-                ),
-                get_personas_internal(
-                    conn=c,
-                    ids=list(persona_ids_set),
-                    bypass_cache=bypass_cache,
-                ),
-                get_documents_internal(
-                    conn=c,
-                    ids=list(document_ids_set),
-                    bypass_cache=bypass_cache,
-                ),
-            )
+        # Each concurrent task needs its own connection (asyncpg doesn't support concurrent ops on one connection)
+        async def _get_simulations():
+            async with pool.acquire() as c:
+                return await get_simulations_internal(conn=c, ids=list(simulation_ids_set), bypass_cache=bypass_cache)
+
+        async def _get_scenarios():
+            async with pool.acquire() as c:
+                return await get_scenarios_internal(conn=c, ids=list(scenario_ids_set), bypass_cache=bypass_cache)
+
+        async def _get_personas():
+            async with pool.acquire() as c:
+                return await get_personas_internal(conn=c, ids=list(persona_ids_set), bypass_cache=bypass_cache)
+
+        async def _get_documents():
+            async with pool.acquire() as c:
+                return await get_documents_internal(conn=c, ids=list(document_ids_set), bypass_cache=bypass_cache)
+
+        simulations, scenarios_list, personas, documents = await asyncio.gather(
+            _get_simulations(),
+            _get_scenarios(),
+            _get_personas(),
+            _get_documents(),
+        )
 
         # 5. Collect all parameter_field_ids from hydrated resources
         all_pf_ids: set = set()
@@ -151,19 +151,18 @@ async def get_dashboard_footer(
                     field_parameter_map[pf.field_id] = pf.parameter_id
 
         # 8. Batch 3: Hydrate parameters and fields
-        async with pool.acquire() as c:
-            parameters, fields_list = await asyncio.gather(
-                get_parameters_internal(
-                    conn=c,
-                    ids=list(parameter_ids_set),
-                    bypass_cache=bypass_cache,
-                ),
-                get_fields_internal(
-                    conn=c,
-                    ids=list(field_ids_set),
-                    bypass_cache=bypass_cache,
-                ),
-            )
+        async def _get_parameters():
+            async with pool.acquire() as c:
+                return await get_parameters_internal(conn=c, ids=list(parameter_ids_set), bypass_cache=bypass_cache)
+
+        async def _get_fields():
+            async with pool.acquire() as c:
+                return await get_fields_internal(conn=c, ids=list(field_ids_set), bypass_cache=bypass_cache)
+
+        parameters, fields_list = await asyncio.gather(
+            _get_parameters(),
+            _get_fields(),
+        )
 
         # 9. Build name maps
         simulation_name_map = {

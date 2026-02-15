@@ -87,7 +87,7 @@ async def get_dashboard_header(
                 await c.fetch(
                     """
                     SELECT simulation_id, COUNT(*)::int AS scenario_count
-                    FROM scenarios_resource
+                    FROM simulation_scenarios_junction
                     WHERE simulation_id = ANY($1::uuid[]) AND active = true
                     GROUP BY simulation_id
                     """,
