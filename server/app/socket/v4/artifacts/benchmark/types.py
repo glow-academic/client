@@ -1,107 +1,83 @@
-"""Types for benchmark socket events.
+"""WebSocket-specific types for benchmark bundle generation.
 
-Defines payload and event types for benchmark start:
-- BenchmarkStartPayload: client entry point
-- BenchmarkStartedEvent: emitted with structure for client to control
-- BenchmarkProgressEvent: emitted during benchmark execution
-- BenchmarkCompleteEvent: emitted when all tests complete
-- BenchmarkErrorEvent: emitted on errors
-
-Test execution is handled by test/ handlers (test_run, test_run_all, test_grade).
+Extends base artifact types with benchmark-bundle-specific fields.
+Types are registered in OpenAPI via FastAPI endpoints, enabling
+automatic type extraction in the frontend via InputOf/OutputOf.
 """
 
 from uuid import UUID
 
 from pydantic import BaseModel
 
+from app.socket.v4.artifacts.types import (
+    GenerationCompleteEvent,
+    GenerationErrorEvent,
+)
+
+# Resource types that benchmark bundle generation can produce
+BENCHMARK_BUNDLE_GENERATE_RESOURCE_TYPES = [
+    "departments",
+    "models",
+    "prompts",
+    "instructions",
+    "voices",
+    "temperature_levels",
+    "reasoning_levels",
+    "tools",
+    "keys",
+]
+
+
 # =============================================================================
-# Client-to-Server Event Payloads
+# Client-to-Server Events (benchmark_bundle_generate)
 # =============================================================================
 
 
-class BenchmarkStartPayload(BaseModel):
-    """Request payload for benchmark_start WebSocket event.
+class GenerateBenchmarkBundlePayload(BaseModel):
+    """Request payload for benchmark_bundle_generate WebSocket event."""
 
-    Creates benchmark attempt structure. Client then controls
-    execution via test_run/test_run_all.
-    """
-
-    eval_id: UUID
-    infinite_mode: bool = False
+    benchmark_bundle_entry_id: UUID
+    draft_id: UUID | None = None
+    resource_types: list[str]
+    user_instructions: list[str] | None = None
+    save: bool = True
 
 
 # =============================================================================
-# Server-to-Client Event Types
+# Server-to-Client Events
 # =============================================================================
 
 
-class BenchmarkChatInfo(BaseModel):
-    """Info about a benchmark chat (test instance).
+class BenchmarkBundleGenerationCompleteEvent(GenerationCompleteEvent):
+    """Server-to-client event: benchmark_bundle_generation_complete.
 
-    Each chat represents one run or group to be tested.
+    Emitted when all agents have finished generating benchmark bundle resources.
     """
 
-    chat_id: str
-    run_resource_id: str | None = None
-    group_resource_id: str | None = None
-    status: str = "pending"  # pending, running, completed, failed
-    total_runs: int = 1
-    completed_runs: int = 0
-
-
-class BenchmarkStartedEvent(BaseModel):
-    """Server-to-client event: benchmark_started.
-
-    Emitted when benchmark attempt is created with structure.
-    Client uses chat_ids to trigger test_run/test_run_all.
-    """
-
-    artifact_type: str = "benchmark"
-    success: bool = True
-    message: str
-    attempt_id: str
-    eval_id: str | None = None
-    use_groups: bool = False
-    chats: list[BenchmarkChatInfo] = []
-
-
-class BenchmarkProgressEvent(BaseModel):
-    """Server-to-client event: benchmark_progress.
-
-    Emitted during benchmark execution to show overall progress.
-    """
-
-    artifact_type: str = "benchmark"
-    attempt_id: str
-    total_chats: int | None = None
-    completed_chats: int | None = None
-    status: str | None = None
-    message: str | None = None
-
-
-class BenchmarkCompleteEvent(BaseModel):
-    """Server-to-client event: benchmark_complete.
-
-    Emitted when all tests in benchmark are complete.
-    """
-
-    artifact_type: str = "benchmark"
-    success: bool = True
-    message: str
-    attempt_id: str
-    total_chats: int | None = None
-    passed_chats: int | None = None
-
-
-class BenchmarkErrorEvent(BaseModel):
-    """Server-to-client event: benchmark_error.
-
-    Emitted on errors.
-    """
-
-    artifact_type: str = "benchmark"
-    success: bool = False
-    message: str
+    artifact_type: str = "benchmark_bundle"
     attempt_id: str | None = None
     chat_id: str | None = None
-    error_type: str | None = None
+
+
+class BenchmarkBundleGenerationProgressEvent(BaseModel):
+    """Server-to-client event: benchmark_bundle_generation_progress.
+
+    Emitted as individual resources complete, providing percentage progress.
+    """
+
+    artifact_type: str = "benchmark_bundle"
+    group_id: str
+    run_id: str | None = None
+    completed_resources: int
+    total_resources: int
+    percentage: int  # 0-100
+    last_completed_resource: str | None = None
+
+
+class BenchmarkBundleGenerationErrorEvent(GenerationErrorEvent):
+    """Server-to-client event: benchmark_bundle_generation_error.
+
+    Emitted when benchmark bundle resource generation fails.
+    """
+
+    artifact_type: str = "benchmark_bundle"

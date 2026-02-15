@@ -11,11 +11,6 @@ from fastapi import APIRouter
 
 from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.main import get_internal_sio, sio
-from app.socket.v4.artifacts.benchmark.types import (
-    BenchmarkChatInfo,
-    BenchmarkErrorEvent,
-    BenchmarkStartedEvent,
-)
 from app.sql.types import CreateTestInvocationsSqlParams, CreateTestInvocationsSqlRow
 from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import execute_sql_typed
@@ -60,63 +55,30 @@ async def handle_test_invocation(data: dict[str, Any]) -> None:
                 ),
             )
 
-            # Build chat info list from SQL result
-            chats: list[BenchmarkChatInfo] = []
-            if result and result.chats:
-                for chat_data in result.chats:
-                    chats.append(
-                        BenchmarkChatInfo(
-                            chat_id=str(chat_data.get("chat_id")),
-                            run_resource_id=str(chat_data.get("run_resource_id"))
-                            if chat_data.get("run_resource_id")
-                            else None,
-                            group_resource_id=str(chat_data.get("group_resource_id"))
-                            if chat_data.get("group_resource_id")
-                            else None,
-                            status="pending",
-                            total_runs=chat_data.get("total_runs", 1),
-                            completed_runs=0,
-                        )
-                    )
-
-            started_event = BenchmarkStartedEvent(
-                message="Benchmark attempt created",
-                attempt_id=str(attempt_id),
-                eval_id=str(eval_id),
-                use_groups=result.use_groups or False if result else False,
-                chats=chats,
-            )
-
             await sio.emit(
                 "benchmark_started",
-                started_event.model_dump(mode="json"),
+                {
+                    "artifact_type": "benchmark",
+                    "test_id": str(attempt_id),
+                    "invocation_id": str(result.chats[0].get("chat_id"))
+                    if result and result.chats
+                    else None,
+                },
                 room=sid,
             )
 
             logger.info(
-                f"Test invocations created - attempt_id={attempt_id}, "
-                f"eval_id={eval_id}, chats={len(chats)}"
+                f"Test invocations created - test_id={attempt_id}, eval_id={eval_id}"
             )
 
     except Exception as e:
         logger.exception(f"Failed to create test invocations: {str(e)}")
         await sio.emit(
             "benchmark_error",
-            BenchmarkErrorEvent(
-                message=f"Failed to create test invocations: {str(e)}"
-            ).model_dump(mode="json"),
+            {
+                "artifact_type": "benchmark",
+                "success": False,
+                "message": f"Failed to create test invocations: {str(e)}",
+            },
             room=sid,
         )
-
-
-# =============================================================================
-# FastAPI endpoints for OpenAPI documentation
-# =============================================================================
-
-
-@server_router.post("/test/invocation/started", response_model=dict[str, bool])
-async def test_invocation_started_api(
-    request: BenchmarkStartedEvent,
-) -> dict[str, bool]:
-    """Server-to-client event: Test invocations created, benchmark started."""
-    return {"success": True}

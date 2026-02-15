@@ -326,3 +326,16 @@ class TrainingBundleGenerationStartedEvent(BaseModel):
     group_id: str
     run_id: str
     resource_types: list[str]
+
+
+class BenchmarkBundleGenerationStartedEvent(BaseModel):
+    """Server-to-client event: benchmark_bundle_generation_started.
+
+    Emitted when benchmark bundle generation begins, listing which resource types
+    will be generated.
+    """
+
+    artifact_type: str = "benchmark_bundle"
+    group_id: str
+    run_id: str
+    resource_types: list[str]

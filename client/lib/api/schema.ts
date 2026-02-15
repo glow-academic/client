@@ -8725,26 +8725,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v4/client/benchmark/start": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Benchmark Start Api
-         * @description Client-to-server event: Start a benchmark attempt.
-         */
-        post: operations["benchmark_start_api_socket_v4_client_benchmark_start_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/socket/v4/client/test/join": {
         parameters: {
             query?: never;
@@ -9480,7 +9460,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v4/server/benchmark/started": {
+    "/socket/v4/server/benchmark_bundle_generation_started": {
         parameters: {
             query?: never;
             header?: never;
@@ -9490,17 +9470,19 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Benchmark Started Api
-         * @description Server-to-client event: Benchmark attempt created successfully.
+         * Benchmark Bundle Generation Started Api
+         * @description Server-to-client event: Benchmark bundle generation started.
+         *
+         *     Emitted when benchmark bundle generation begins, listing resource types being generated.
          */
-        post: operations["benchmark_started_api_socket_v4_server_benchmark_started_post"];
+        post: operations["benchmark_bundle_generation_started_api_socket_v4_server_benchmark_bundle_generation_started_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/socket/v4/server/benchmark/progress": {
+    "/socket/v4/server/benchmark_bundle_generation_complete": {
         parameters: {
             query?: never;
             header?: never;
@@ -9510,17 +9492,19 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Benchmark Progress Api
-         * @description Server-to-client event: Benchmark progress update.
+         * Benchmark Bundle Generation Complete Api
+         * @description Server-to-client event: Benchmark bundle generation completed.
+         *
+         *     Emitted when all agents have finished generating benchmark bundle resources.
          */
-        post: operations["benchmark_progress_api_socket_v4_server_benchmark_progress_post"];
+        post: operations["benchmark_bundle_generation_complete_api_socket_v4_server_benchmark_bundle_generation_complete_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/socket/v4/server/benchmark/complete": {
+    "/socket/v4/server/benchmark_bundle_generation_error": {
         parameters: {
             query?: never;
             header?: never;
@@ -9530,17 +9514,19 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Benchmark Complete Api
-         * @description Server-to-client event: Benchmark completed.
+         * Benchmark Bundle Generation Error Api
+         * @description Server-to-client event: Benchmark bundle generation error.
+         *
+         *     Emitted when benchmark bundle resource generation fails.
          */
-        post: operations["benchmark_complete_api_socket_v4_server_benchmark_complete_post"];
+        post: operations["benchmark_bundle_generation_error_api_socket_v4_server_benchmark_bundle_generation_error_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/socket/v4/server/benchmark/error": {
+    "/socket/v4/server/benchmark_bundle_generation_progress": {
         parameters: {
             query?: never;
             header?: never;
@@ -9550,10 +9536,13 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Benchmark Error Api
-         * @description Server-to-client event: Benchmark error occurred.
+         * Benchmark Bundle Generation Progress Api
+         * @description Server-to-client event: Benchmark bundle generation progress.
+         *
+         *     Emitted as individual resources complete during benchmark bundle generation.
+         *     Contains percentage-based progress tracking.
          */
-        post: operations["benchmark_error_api_socket_v4_server_benchmark_error_post"];
+        post: operations["benchmark_bundle_generation_progress_api_socket_v4_server_benchmark_bundle_generation_progress_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -9594,26 +9583,6 @@ export interface paths {
          * @description Server-to-client event: Benchmark test stopped.
          */
         post: operations["test_stopped_api_socket_v4_server_test_stopped_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/socket/v4/server/test/invocation/started": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Test Invocation Started Api
-         * @description Server-to-client event: Test invocations created, benchmark started.
-         */
-        post: operations["test_invocation_started_api_socket_v4_server_test_invocation_started_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -19830,6 +19799,112 @@ export interface components {
             /** Resources */
             resources?: components["schemas"]["QGetDepartmentsV4Item"][] | null;
         };
+        /**
+         * BenchmarkBundleGenerationCompleteEvent
+         * @description Server-to-client event: benchmark_bundle_generation_complete.
+         *
+         *     Emitted when all agents have finished generating benchmark bundle resources.
+         */
+        BenchmarkBundleGenerationCompleteEvent: {
+            /**
+             * Artifact Type
+             * @default benchmark_bundle
+             */
+            artifact_type: string;
+            /** Group Id */
+            group_id: string;
+            /** Resource Type */
+            resource_type: string;
+            /** Run Id */
+            run_id?: string | null;
+            /** Success */
+            success: boolean;
+            /** Message */
+            message: string;
+            /** Type */
+            type?: string | null;
+            /** Attempt Id */
+            attempt_id?: string | null;
+            /** Chat Id */
+            chat_id?: string | null;
+        };
+        /**
+         * BenchmarkBundleGenerationErrorEvent
+         * @description Server-to-client event: benchmark_bundle_generation_error.
+         *
+         *     Emitted when benchmark bundle resource generation fails.
+         */
+        BenchmarkBundleGenerationErrorEvent: {
+            /**
+             * Artifact Type
+             * @default benchmark_bundle
+             */
+            artifact_type: string;
+            /** Group Id */
+            group_id?: string | null;
+            /** Resource Type */
+            resource_type?: string | null;
+            /** Resource Types */
+            resource_types?: string[] | null;
+            /** Resource Id */
+            resource_id?: string | null;
+            /** Run Id */
+            run_id?: string | null;
+            /**
+             * Success
+             * @default false
+             */
+            success: boolean;
+            /** Message */
+            message: string;
+            /** Trace Id */
+            trace_id?: string | null;
+        };
+        /**
+         * BenchmarkBundleGenerationProgressEvent
+         * @description Server-to-client event: benchmark_bundle_generation_progress.
+         *
+         *     Emitted as individual resources complete, providing percentage progress.
+         */
+        BenchmarkBundleGenerationProgressEvent: {
+            /**
+             * Artifact Type
+             * @default benchmark_bundle
+             */
+            artifact_type: string;
+            /** Group Id */
+            group_id: string;
+            /** Run Id */
+            run_id?: string | null;
+            /** Completed Resources */
+            completed_resources: number;
+            /** Total Resources */
+            total_resources: number;
+            /** Percentage */
+            percentage: number;
+            /** Last Completed Resource */
+            last_completed_resource?: string | null;
+        };
+        /**
+         * BenchmarkBundleGenerationStartedEvent
+         * @description Server-to-client event: benchmark_bundle_generation_started.
+         *
+         *     Emitted when benchmark bundle generation begins, listing which resource types
+         *     will be generated.
+         */
+        BenchmarkBundleGenerationStartedEvent: {
+            /**
+             * Artifact Type
+             * @default benchmark_bundle
+             */
+            artifact_type: string;
+            /** Group Id */
+            group_id: string;
+            /** Run Id */
+            run_id: string;
+            /** Resource Types */
+            resource_types: string[];
+        };
         /** BenchmarkBundleInstructionSection */
         BenchmarkBundleInstructionSection: {
             /**
@@ -20007,61 +20082,6 @@ export interface components {
             resources?: components["schemas"]["QGetVoicesV4Item"][] | null;
         };
         /**
-         * BenchmarkChatInfo
-         * @description Info about a benchmark chat (test instance).
-         *
-         *     Each chat represents one run or group to be tested.
-         */
-        BenchmarkChatInfo: {
-            /** Chat Id */
-            chat_id: string;
-            /** Run Resource Id */
-            run_resource_id?: string | null;
-            /** Group Resource Id */
-            group_resource_id?: string | null;
-            /**
-             * Status
-             * @default pending
-             */
-            status: string;
-            /**
-             * Total Runs
-             * @default 1
-             */
-            total_runs: number;
-            /**
-             * Completed Runs
-             * @default 0
-             */
-            completed_runs: number;
-        };
-        /**
-         * BenchmarkCompleteEvent
-         * @description Server-to-client event: benchmark_complete.
-         *
-         *     Emitted when all tests in benchmark are complete.
-         */
-        BenchmarkCompleteEvent: {
-            /**
-             * Artifact Type
-             * @default benchmark
-             */
-            artifact_type: string;
-            /**
-             * Success
-             * @default true
-             */
-            success: boolean;
-            /** Message */
-            message: string;
-            /** Attempt Id */
-            attempt_id: string;
-            /** Total Chats */
-            total_chats?: number | null;
-            /** Passed Chats */
-            passed_chats?: number | null;
-        };
-        /**
          * BenchmarkContextViewItem
          * @description IDs-first benchmark item -- raw IDs only, no computed fields.
          */
@@ -20109,32 +20129,6 @@ export interface components {
             name?: string | null;
             /** Description */
             description?: string | null;
-        };
-        /**
-         * BenchmarkErrorEvent
-         * @description Server-to-client event: benchmark_error.
-         *
-         *     Emitted on errors.
-         */
-        BenchmarkErrorEvent: {
-            /**
-             * Artifact Type
-             * @default benchmark
-             */
-            artifact_type: string;
-            /**
-             * Success
-             * @default false
-             */
-            success: boolean;
-            /** Message */
-            message: string;
-            /** Attempt Id */
-            attempt_id?: string | null;
-            /** Chat Id */
-            chat_id?: string | null;
-            /** Error Type */
-            error_type?: string | null;
         };
         /**
          * BenchmarkEvalItem
@@ -20230,29 +20224,6 @@ export interface components {
             historical_run_ids?: string[];
         };
         /**
-         * BenchmarkProgressEvent
-         * @description Server-to-client event: benchmark_progress.
-         *
-         *     Emitted during benchmark execution to show overall progress.
-         */
-        BenchmarkProgressEvent: {
-            /**
-             * Artifact Type
-             * @default benchmark
-             */
-            artifact_type: string;
-            /** Attempt Id */
-            attempt_id: string;
-            /** Total Chats */
-            total_chats?: number | null;
-            /** Completed Chats */
-            completed_chats?: number | null;
-            /** Status */
-            status?: string | null;
-            /** Message */
-            message?: string | null;
-        };
-        /**
          * BenchmarkRequest
          * @description Request for getting benchmark data.
          */
@@ -20286,60 +20257,6 @@ export interface components {
             date_range_earliest?: string | null;
             /** Date Range Latest */
             date_range_latest?: string | null;
-        };
-        /**
-         * BenchmarkStartPayload
-         * @description Request payload for benchmark_start WebSocket event.
-         *
-         *     Creates benchmark attempt structure. Client then controls
-         *     execution via test_run/test_run_all.
-         */
-        BenchmarkStartPayload: {
-            /**
-             * Eval Id
-             * Format: uuid
-             */
-            eval_id: string;
-            /**
-             * Infinite Mode
-             * @default false
-             */
-            infinite_mode: boolean;
-        };
-        /**
-         * BenchmarkStartedEvent
-         * @description Server-to-client event: benchmark_started.
-         *
-         *     Emitted when benchmark attempt is created with structure.
-         *     Client uses chat_ids to trigger test_run/test_run_all.
-         */
-        BenchmarkStartedEvent: {
-            /**
-             * Artifact Type
-             * @default benchmark
-             */
-            artifact_type: string;
-            /**
-             * Success
-             * @default true
-             */
-            success: boolean;
-            /** Message */
-            message: string;
-            /** Attempt Id */
-            attempt_id: string;
-            /** Eval Id */
-            eval_id?: string | null;
-            /**
-             * Use Groups
-             * @default false
-             */
-            use_groups: boolean;
-            /**
-             * Chats
-             * @default []
-             */
-            chats: components["schemas"]["BenchmarkChatInfo"][];
         };
         /**
          * BenchmarkTestViewItem
@@ -66415,41 +66332,6 @@ export interface operations {
             };
         };
     };
-    benchmark_start_api_socket_v4_client_benchmark_start_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["BenchmarkStartPayload"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: boolean;
-                    };
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     test_join_api_socket_v4_client_test_join_post: {
         parameters: {
             query?: never;
@@ -67710,7 +67592,7 @@ export interface operations {
             };
         };
     };
-    benchmark_started_api_socket_v4_server_benchmark_started_post: {
+    benchmark_bundle_generation_started_api_socket_v4_server_benchmark_bundle_generation_started_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -67719,7 +67601,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["BenchmarkStartedEvent"];
+                "application/json": components["schemas"]["BenchmarkBundleGenerationStartedEvent"];
             };
         };
         responses: {
@@ -67745,7 +67627,7 @@ export interface operations {
             };
         };
     };
-    benchmark_progress_api_socket_v4_server_benchmark_progress_post: {
+    benchmark_bundle_generation_complete_api_socket_v4_server_benchmark_bundle_generation_complete_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -67754,7 +67636,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["BenchmarkProgressEvent"];
+                "application/json": components["schemas"]["BenchmarkBundleGenerationCompleteEvent"];
             };
         };
         responses: {
@@ -67780,7 +67662,7 @@ export interface operations {
             };
         };
     };
-    benchmark_complete_api_socket_v4_server_benchmark_complete_post: {
+    benchmark_bundle_generation_error_api_socket_v4_server_benchmark_bundle_generation_error_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -67789,7 +67671,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["BenchmarkCompleteEvent"];
+                "application/json": components["schemas"]["BenchmarkBundleGenerationErrorEvent"];
             };
         };
         responses: {
@@ -67815,7 +67697,7 @@ export interface operations {
             };
         };
     };
-    benchmark_error_api_socket_v4_server_benchmark_error_post: {
+    benchmark_bundle_generation_progress_api_socket_v4_server_benchmark_bundle_generation_progress_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -67824,7 +67706,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["BenchmarkErrorEvent"];
+                "application/json": components["schemas"]["BenchmarkBundleGenerationProgressEvent"];
             };
         };
         responses: {
@@ -67895,41 +67777,6 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["TestStoppedEvent"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: boolean;
-                    };
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    test_invocation_started_api_socket_v4_server_test_invocation_started_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["BenchmarkStartedEvent"];
             };
         };
         responses: {

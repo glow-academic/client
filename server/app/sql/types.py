@@ -5627,6 +5627,72 @@ class StartBenchmarkAttemptApiResponse(BaseModel):
     eval_id: UUID | None = None
 
 
+# Generated from: get_benchmark_bundle_generation_context
+
+
+class GetBenchmarkBundleGenerationContextSqlParams(BaseModel):
+    p_profile_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (self.p_profile_id,)
+
+
+class GetBenchmarkBundleGenerationContextSqlRow(BaseModel):
+    requests_per_day: int | None = None
+    runs_today: int | None = None
+
+
+class GetBenchmarkBundleGenerationContextApiRequest(BaseModel):
+    p_profile_id: UUID
+
+
+class GetBenchmarkBundleGenerationContextApiResponse(BaseModel):
+    requests_per_day: int | None = None
+    runs_today: int | None = None
+
+
+# Generated from: prepare_benchmark_bundle_generation
+
+
+class PrepareBenchmarkBundleGenerationSqlParams(BaseModel):
+    p_profile_id: UUID
+    p_group_id: UUID | None = None
+    p_agents_resource_id: UUID | None = None
+    p_models_resource_id: UUID | None = None
+    p_providers_resource_id: UUID | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.p_profile_id,
+            self.p_group_id,
+            self.p_agents_resource_id,
+            self.p_models_resource_id,
+            self.p_providers_resource_id,
+        )
+
+
+class PrepareBenchmarkBundleGenerationSqlRow(BaseModel):
+    run_id: UUID | None = None
+    group_id: UUID | None = None
+    trace_id: str | None = None
+    config_id: UUID | None = None
+
+
+class PrepareBenchmarkBundleGenerationApiRequest(BaseModel):
+    p_profile_id: UUID
+    p_group_id: UUID | None = None
+    p_agents_resource_id: UUID | None = None
+    p_models_resource_id: UUID | None = None
+    p_providers_resource_id: UUID | None = None
+
+
+class PrepareBenchmarkBundleGenerationApiResponse(BaseModel):
+    run_id: UUID | None = None
+    group_id: UUID | None = None
+    trace_id: str | None = None
+    config_id: UUID | None = None
+
+
 # Generated from: get_cohort_generation_context
 
 
@@ -26737,6 +26803,18 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "StartBenchmarkAttemptApiRequest",
         "StartBenchmarkAttemptApiResponse",
     ),
+    "app/sql/v4/queries/generate/benchmark_bundle/get_benchmark_bundle_generation_context_complete.sql": (
+        "GetBenchmarkBundleGenerationContextSqlParams",
+        "GetBenchmarkBundleGenerationContextSqlRow",
+        "GetBenchmarkBundleGenerationContextApiRequest",
+        "GetBenchmarkBundleGenerationContextApiResponse",
+    ),
+    "app/sql/v4/queries/generate/benchmark_bundle/prepare_benchmark_bundle_generation_complete.sql": (
+        "PrepareBenchmarkBundleGenerationSqlParams",
+        "PrepareBenchmarkBundleGenerationSqlRow",
+        "PrepareBenchmarkBundleGenerationApiRequest",
+        "PrepareBenchmarkBundleGenerationApiResponse",
+    ),
     "app/sql/v4/queries/generate/cohort/get_cohort_generation_context_complete.sql": (
         "GetCohortGenerationContextSqlParams",
         "GetCohortGenerationContextSqlRow",
@@ -30681,6 +30759,20 @@ if TYPE_CHECKING:
     def load_sql_query(
         file_path: Literal[
             "app/sql/v4/queries/generate/benchmark/start_benchmark_attempt_complete.sql"
+        ],
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal[
+            "app/sql/v4/queries/generate/benchmark_bundle/get_benchmark_bundle_generation_context_complete.sql"
+        ],
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal[
+            "app/sql/v4/queries/generate/benchmark_bundle/prepare_benchmark_bundle_generation_complete.sql"
         ],
     ) -> SqlString: ...
 
