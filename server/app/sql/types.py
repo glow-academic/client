@@ -26105,6 +26105,7 @@ class QGetTrainingContextViewV4Item(BaseModel):
     cohort_ids: list[UUID] | None
     persona_ids: list[UUID] | None
     rubric_ids: list[UUID] | None
+    time_limit_ids: list[UUID] | None
 
 class GetTrainingContextViewSqlRow(BaseModel):
 

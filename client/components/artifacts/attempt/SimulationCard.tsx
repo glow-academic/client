@@ -344,9 +344,7 @@ export default function SimulationCard({
                 <Users className="h-3 w-3 mr-1" />
               )}
               <span>
-                {type === "default"
-                  ? "1 session"
-                  : `${numSessions} session${numSessions !== 1 ? "s" : ""}`}
+                {`${numSessions} scenario${numSessions !== 1 ? "s" : ""}`}
               </span>
             </div>
             {highestScore !== undefined &&

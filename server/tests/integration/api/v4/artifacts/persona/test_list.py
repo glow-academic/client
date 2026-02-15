@@ -74,8 +74,10 @@ class TestPersonaList:
         assert "persona_id" in first_persona
         assert "name" in first_persona
 
-    async def test_list_returns_scenarios(self, client: httpx.AsyncClient) -> None:
-        """LIST returns scenarios filter data."""
+    async def test_list_returns_scenario_filter(
+        self, client: httpx.AsyncClient
+    ) -> None:
+        """LIST returns scenario_filter section."""
         response = await client.post(
             "/api/v4/artifacts/personas/list",
             json={},
@@ -84,10 +86,12 @@ class TestPersonaList:
 
         assert response.status_code == 200
         data = response.json()
-        assert "scenarios" in data
+        assert "scenario_filter" in data
+        section = data["scenario_filter"]
+        assert "options" in section
 
-    async def test_list_returns_fields(self, client: httpx.AsyncClient) -> None:
-        """LIST returns fields filter data."""
+    async def test_list_returns_field_filter(self, client: httpx.AsyncClient) -> None:
+        """LIST returns field_filter section."""
         response = await client.post(
             "/api/v4/artifacts/personas/list",
             json={},
@@ -96,10 +100,14 @@ class TestPersonaList:
 
         assert response.status_code == 200
         data = response.json()
-        assert "fields" in data
+        assert "field_filter" in data
+        section = data["field_filter"]
+        assert "options" in section
 
-    async def test_list_returns_departments(self, client: httpx.AsyncClient) -> None:
-        """LIST returns departments filter data."""
+    async def test_list_returns_department_filter(
+        self, client: httpx.AsyncClient
+    ) -> None:
+        """LIST returns department_filter section."""
         response = await client.post(
             "/api/v4/artifacts/personas/list",
             json={},
@@ -108,7 +116,9 @@ class TestPersonaList:
 
         assert response.status_code == 200
         data = response.json()
-        assert "departments" in data
+        assert "department_filter" in data
+        section = data["department_filter"]
+        assert "options" in section
 
     async def test_list_returns_total_count(self, client: httpx.AsyncClient) -> None:
         """LIST returns total_count for pagination."""

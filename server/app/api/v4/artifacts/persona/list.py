@@ -21,16 +21,14 @@ from app.api.v4.artifacts.persona.permissions import (
     compute_can_edit,
 )
 from app.api.v4.artifacts.persona.types import (
-    ListPersonaApiDepartment,
-    ListPersonaApiField,
     ListPersonaApiPersona,
     ListPersonaApiResponse,
-    ListPersonaApiScenario,
 )
 from app.api.v4.auth.profile import get_auth_profile_internal
 from app.api.v4.resources.departments.get import get_departments_internal
 from app.api.v4.resources.fields.get import get_fields_internal
 from app.api.v4.resources.scenarios.get import get_scenarios_internal
+from app.api.v4.types import ListFilterOption, ListFilterSection
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
@@ -254,59 +252,79 @@ async def get_persona_list(
 
         # Merge names with counts, apply search filtering in Python
         scenario_search = request.scenario_search
-        scenarios: list[ListPersonaApiScenario] = [
-            ListPersonaApiScenario(
-                scenario_id=s.scenario_id,
-                name=s.name,
-                description=s.description or "",
-                count=scenario_count_map.get(s.scenario_id, 0) if s.scenario_id else 0,
-            )
-            for s in scenarios_data
-            if s.scenario_id
-            and (
-                scenario_search is None
-                or scenario_search.lower() in (s.name or "").lower()
-            )
-        ]
+        scenario_filter = ListFilterSection(
+            options=[
+                ListFilterOption(
+                    id=str(s.scenario_id),
+                    name=s.name,
+                    count=scenario_count_map.get(s.scenario_id, 0)
+                    if s.scenario_id
+                    else 0,
+                )
+                for s in scenarios_data
+                if s.scenario_id
+                and (
+                    scenario_search is None
+                    or scenario_search.lower() in (s.name or "").lower()
+                )
+            ],
+            selected_ids=[str(sid) for sid in (request.scenario_ids or [])]
+            if request.scenario_ids
+            else None,
+            search=request.scenario_search,
+        )
 
         field_search = request.field_search
-        fields: list[ListPersonaApiField] = [
-            ListPersonaApiField(
-                field_id=f.field_id,
-                name=f.name,
-                description=f.description or "",
-                count=field_count_map.get(f.field_id, 0) if f.field_id else 0,
-            )
-            for f in fields_data
-            if f.field_id
-            and (field_search is None or field_search.lower() in (f.name or "").lower())
-        ]
+        field_filter = ListFilterSection(
+            options=[
+                ListFilterOption(
+                    id=str(f.field_id),
+                    name=f.name,
+                    count=field_count_map.get(f.field_id, 0) if f.field_id else 0,
+                )
+                for f in fields_data
+                if f.field_id
+                and (
+                    field_search is None
+                    or field_search.lower() in (f.name or "").lower()
+                )
+            ],
+            selected_ids=[str(fid) for fid in (request.field_ids or [])]
+            if request.field_ids
+            else None,
+            search=request.field_search,
+        )
 
         department_search = request.department_search
-        departments: list[ListPersonaApiDepartment] = [
-            ListPersonaApiDepartment(
-                department_id=d.department_id,
-                name=d.name,
-                description=d.description or "",
-                count=department_count_map.get(d.department_id, 0)
+        department_filter = ListFilterSection(
+            options=[
+                ListFilterOption(
+                    id=str(d.department_id),
+                    name=d.name,
+                    count=department_count_map.get(d.department_id, 0)
+                    if d.department_id
+                    else 0,
+                )
+                for d in departments_data
                 if d.department_id
-                else 0,
-            )
-            for d in departments_data
-            if d.department_id
-            and (
-                department_search is None
-                or department_search.lower() in (d.name or "").lower()
-            )
-        ]
+                and (
+                    department_search is None
+                    or department_search.lower() in (d.name or "").lower()
+                )
+            ],
+            selected_ids=[str(did) for did in (request.filter_department_ids or [])]
+            if request.filter_department_ids
+            else None,
+            search=request.department_search,
+        )
 
         # Build API response with computed permissions
         api_response = ListPersonaApiResponse(
             actor_name=actor_name,
             personas=personas_with_permissions,
-            scenarios=scenarios,
-            fields=fields,
-            departments=departments,
+            scenario_filter=scenario_filter,
+            field_filter=field_filter,
+            department_filter=department_filter,
             total_count=result.total_count,
         )
 

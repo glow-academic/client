@@ -5,9 +5,57 @@ This module provides reusable type definitions used across multiple artifacts.
 
 from dataclasses import dataclass
 from datetime import datetime
+from typing import Any
 from uuid import UUID
 
 from pydantic import BaseModel
+
+
+class ListFilterOption(BaseModel):
+    """Standardized option for list endpoint filter sections."""
+
+    id: str | None = None
+    name: str | None = None
+    count: int | None = None
+
+
+class ListFilterSection(BaseModel):
+    """Filter section with options and echoed request state."""
+
+    options: list[ListFilterOption] | None = None
+    selected_ids: list[str] | None = None
+    search: str | None = None
+
+    @classmethod
+    def from_sql_options(
+        cls,
+        options: list[Any] | None,
+        selected_ids: list[UUID] | None,
+        search: str | None,
+        id_key: str = "value",
+        name_key: str = "label",
+        count_key: str = "count",
+    ) -> "ListFilterSection":
+        """Build from SQL option rows (dict or model). Handles value/label/count
+        (scenario/simulation/cohort SQL) and id/name/count (persona hydration)."""
+
+        def _get(o: Any, key: str) -> Any:
+            return o.get(key) if isinstance(o, dict) else getattr(o, key, None)
+
+        return cls(
+            options=[
+                ListFilterOption(
+                    id=str(_get(o, id_key)) if _get(o, id_key) else None,
+                    name=_get(o, name_key),
+                    count=_get(o, count_key),
+                )
+                for o in (options or [])
+            ],
+            selected_ids=[str(sid) for sid in (selected_ids or [])]
+            if selected_ids
+            else None,
+            search=search,
+        )
 
 
 class DomainAgent(BaseModel):

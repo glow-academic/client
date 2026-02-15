@@ -14,6 +14,7 @@ class TrainingContextViewItem(BaseModel):
     cohort_ids: list[UUID] | None = None
     persona_ids: list[UUID] | None = None
     rubric_ids: list[UUID] | None = None
+    time_limit_ids: list[UUID] | None = None
 
 
 class GetTrainingContextViewResponse(BaseModel):

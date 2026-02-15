@@ -74,10 +74,10 @@ class TestSimulationList:
         assert "simulation_id" in first_simulation
         assert "name" in first_simulation
 
-    async def test_list_returns_scenario_options(
+    async def test_list_returns_scenario_filter(
         self, client: httpx.AsyncClient
     ) -> None:
-        """LIST returns scenario_options filter data."""
+        """LIST returns scenario_filter section."""
         response = await client.post(
             "/api/v4/artifacts/simulations/list",
             json={},
@@ -86,12 +86,14 @@ class TestSimulationList:
 
         assert response.status_code == 200
         data = response.json()
-        assert "scenario_options" in data
+        assert "scenario_filter" in data
+        section = data["scenario_filter"]
+        assert "options" in section
 
-    async def test_list_returns_department_options(
+    async def test_list_returns_department_filter(
         self, client: httpx.AsyncClient
     ) -> None:
-        """LIST returns department_options filter data."""
+        """LIST returns department_filter section."""
         response = await client.post(
             "/api/v4/artifacts/simulations/list",
             json={},
@@ -100,7 +102,9 @@ class TestSimulationList:
 
         assert response.status_code == 200
         data = response.json()
-        assert "department_options" in data
+        assert "department_filter" in data
+        section = data["department_filter"]
+        assert "options" in section
 
     async def test_list_returns_total_count(self, client: httpx.AsyncClient) -> None:
         """LIST returns total_count for pagination."""

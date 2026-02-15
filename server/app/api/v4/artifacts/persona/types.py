@@ -8,6 +8,7 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
+from app.api.v4.types import ListFilterSection
 from app.api.v4.views.drafts.types import DraftPersonaViewItem
 from app.sql.types import (
     QGetAgentsV4Item,
@@ -289,41 +290,14 @@ class ListPersonaApiPersona(BaseModel):
     updated_at: datetime | None = None
 
 
-class ListPersonaApiScenario(BaseModel):
-    """Scenario type for list endpoint."""
-
-    scenario_id: UUID | None = None
-    name: str | None = None
-    description: str | None = None
-    count: int | None = None
-
-
-class ListPersonaApiField(BaseModel):
-    """Field type for list endpoint."""
-
-    field_id: UUID | None = None
-    name: str | None = None
-    description: str | None = None
-    count: int | None = None
-
-
-class ListPersonaApiDepartment(BaseModel):
-    """Department type for list endpoint."""
-
-    department_id: UUID | None = None
-    name: str | None = None
-    description: str | None = None
-    count: int | None = None
-
-
 class ListPersonaApiResponse(BaseModel):
     """Response model for list persona endpoint with computed permissions."""
 
     actor_name: str | None = None
     personas: list[ListPersonaApiPersona] | None = None
-    scenarios: list[ListPersonaApiScenario] | None = None
-    fields: list[ListPersonaApiField] | None = None
-    departments: list[ListPersonaApiDepartment] | None = None
+    scenario_filter: ListFilterSection | None = None
+    field_filter: ListFilterSection | None = None
+    department_filter: ListFilterSection | None = None
     total_count: int | None = None
 
 

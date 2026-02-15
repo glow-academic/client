@@ -30842,6 +30842,11 @@ export interface components {
             simulations?: components["schemas"]["ListCohortApiSimulation"][] | null;
             /** Departments */
             departments?: components["schemas"]["ListCohortApiDepartment"][] | null;
+            simulation_filter?: components["schemas"]["ListFilterSection"] | null;
+            profile_filter?: components["schemas"]["ListFilterSection"] | null;
+            department_filter?: components["schemas"]["ListFilterSection"] | null;
+            /** Total Count */
+            total_count?: number | null;
         };
         /**
          * ListCohortApiSimulation
@@ -31125,6 +31130,30 @@ export interface components {
             total_count?: number | null;
         };
         /**
+         * ListFilterOption
+         * @description Standardized option for list endpoint filter sections.
+         */
+        ListFilterOption: {
+            /** Id */
+            id?: string | null;
+            /** Name */
+            name?: string | null;
+            /** Count */
+            count?: number | null;
+        };
+        /**
+         * ListFilterSection
+         * @description Filter section with options and echoed request state.
+         */
+        ListFilterSection: {
+            /** Options */
+            options?: components["schemas"]["ListFilterOption"][] | null;
+            /** Selected Ids */
+            selected_ids?: string[] | null;
+            /** Search */
+            search?: string | null;
+        };
+        /**
          * ListModelApiDepartment
          * @description Department filter option for list endpoint.
          */
@@ -31288,34 +31317,6 @@ export interface components {
             count?: number | null;
         };
         /**
-         * ListPersonaApiDepartment
-         * @description Department type for list endpoint.
-         */
-        ListPersonaApiDepartment: {
-            /** Department Id */
-            department_id?: string | null;
-            /** Name */
-            name?: string | null;
-            /** Description */
-            description?: string | null;
-            /** Count */
-            count?: number | null;
-        };
-        /**
-         * ListPersonaApiField
-         * @description Field type for list endpoint.
-         */
-        ListPersonaApiField: {
-            /** Field Id */
-            field_id?: string | null;
-            /** Name */
-            name?: string | null;
-            /** Description */
-            description?: string | null;
-            /** Count */
-            count?: number | null;
-        };
-        /**
          * ListPersonaApiPersona
          * @description Persona type for list endpoint with computed permissions.
          */
@@ -31358,28 +31359,11 @@ export interface components {
             actor_name?: string | null;
             /** Personas */
             personas?: components["schemas"]["ListPersonaApiPersona"][] | null;
-            /** Scenarios */
-            scenarios?: components["schemas"]["ListPersonaApiScenario"][] | null;
-            /** Fields */
-            fields?: components["schemas"]["ListPersonaApiField"][] | null;
-            /** Departments */
-            departments?: components["schemas"]["ListPersonaApiDepartment"][] | null;
+            scenario_filter?: components["schemas"]["ListFilterSection"] | null;
+            field_filter?: components["schemas"]["ListFilterSection"] | null;
+            department_filter?: components["schemas"]["ListFilterSection"] | null;
             /** Total Count */
             total_count?: number | null;
-        };
-        /**
-         * ListPersonaApiScenario
-         * @description Scenario type for list endpoint.
-         */
-        ListPersonaApiScenario: {
-            /** Scenario Id */
-            scenario_id?: string | null;
-            /** Name */
-            name?: string | null;
-            /** Description */
-            description?: string | null;
-            /** Count */
-            count?: number | null;
         };
         /** ListProviderApiDepartment */
         ListProviderApiDepartment: {
@@ -31615,18 +31599,6 @@ export interface components {
             description?: string | null;
         };
         /**
-         * ListScenarioApiOption
-         * @description Option for facet filtering.
-         */
-        ListScenarioApiOption: {
-            /** Value */
-            value?: string | null;
-            /** Label */
-            label?: string | null;
-            /** Count */
-            count?: number | null;
-        };
-        /**
          * ListScenarioApiPersona
          * @description Persona in list response.
          */
@@ -31663,12 +31635,9 @@ export interface components {
             simulations?: components["schemas"]["ListScenarioApiSimulation"][] | null;
             /** Departments */
             departments?: components["schemas"]["ListScenarioApiDepartment"][] | null;
-            /** Persona Options */
-            persona_options?: components["schemas"]["ListScenarioApiOption"][] | null;
-            /** Simulation Options */
-            simulation_options?: components["schemas"]["ListScenarioApiOption"][] | null;
-            /** Department Options */
-            department_options?: components["schemas"]["ListScenarioApiOption"][] | null;
+            persona_filter?: components["schemas"]["ListFilterSection"] | null;
+            simulation_filter?: components["schemas"]["ListFilterSection"] | null;
+            department_filter?: components["schemas"]["ListFilterSection"] | null;
             /** Total Count */
             total_count?: number | null;
         };
@@ -31783,18 +31752,6 @@ export interface components {
             can_duplicate?: boolean | null;
         };
         /**
-         * ListSimulationApiOption
-         * @description Option for facet filtering.
-         */
-        ListSimulationApiOption: {
-            /** Value */
-            value?: string | null;
-            /** Label */
-            label?: string | null;
-            /** Count */
-            count?: number | null;
-        };
-        /**
          * ListSimulationApiPersona
          * @description Persona in list response (minimal: only for color dot rendering).
          */
@@ -31815,12 +31772,9 @@ export interface components {
             simulations?: components["schemas"]["ListSimulationApiSimulation"][] | null;
             /** Scenarios */
             scenarios?: components["schemas"]["ListSimulationApiScenario"][] | null;
-            /** Scenario Options */
-            scenario_options?: components["schemas"]["ListSimulationApiOption"][] | null;
-            /** Cohort Options */
-            cohort_options?: components["schemas"]["ListSimulationApiOption"][] | null;
-            /** Department Options */
-            department_options?: components["schemas"]["ListSimulationApiOption"][] | null;
+            scenario_filter?: components["schemas"]["ListFilterSection"] | null;
+            cohort_filter?: components["schemas"]["ListFilterSection"] | null;
+            department_filter?: components["schemas"]["ListFilterSection"] | null;
             /** Total Count */
             total_count?: number | null;
         };
@@ -49171,6 +49125,8 @@ export interface components {
             persona_ids?: string[] | null;
             /** Rubric Ids */
             rubric_ids?: string[] | null;
+            /** Time Limit Ids */
+            time_limit_ids?: string[] | null;
         };
         /**
          * TrainingErrorEvent

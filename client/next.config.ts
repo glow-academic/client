@@ -15,12 +15,6 @@ module.exports = {
   typescript: { ignoreBuildErrors: true, tsconfigPath: "./tsconfig.json" },
 
   reactStrictMode: false,
-  experimental: {
-    staleTimes: {
-      dynamic: 0,
-      static: 0,
-    },
-  },
   serverExternalPackages: ["pg", "@auth/pg-adapter"],
   webpack: (
     config: WebpackConfig,

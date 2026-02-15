@@ -38,7 +38,8 @@ CREATE TYPE types.q_get_training_context_view_v4_item AS (
     scenario_ids uuid[],
     cohort_ids uuid[],
     persona_ids uuid[],
-    rubric_ids uuid[]
+    rubric_ids uuid[],
+    time_limit_ids uuid[]
 );
 
 CREATE OR REPLACE FUNCTION api_get_training_context_view_v4(
@@ -108,7 +109,9 @@ simulation_scope AS (
         ARRAY_AGG(DISTINCT pid.persona_id ORDER BY pid.persona_id)
             FILTER (WHERE pid.persona_id IS NOT NULL) AS persona_ids,
         ARRAY_AGG(DISTINCT rid.rubric_id ORDER BY rid.rubric_id)
-            FILTER (WHERE rid.rubric_id IS NOT NULL) AS rubric_ids
+            FILTER (WHERE rid.rubric_id IS NOT NULL) AS rubric_ids,
+        ARRAY_AGG(DISTINCT tlid.time_limit_id ORDER BY tlid.time_limit_id)
+            FILTER (WHERE tlid.time_limit_id IS NOT NULL) AS time_limit_ids
     FROM active_simulations asim
     JOIN accessible_training at2
       ON asim.simulation_id = ANY(at2.simulation_ids)
@@ -117,6 +120,7 @@ simulation_scope AS (
     LEFT JOIN LATERAL unnest(at2.cohort_ids) coid(cohort_id) ON TRUE
     LEFT JOIN LATERAL unnest(at2.persona_ids) pid(persona_id) ON TRUE
     LEFT JOIN LATERAL unnest(at2.rubric_ids) rid(rubric_id) ON TRUE
+    LEFT JOIN LATERAL unnest(at2.time_limit_ids) tlid(time_limit_id) ON TRUE
     GROUP BY asim.simulation_id
 )
 SELECT
@@ -129,7 +133,8 @@ SELECT
                     ss.scenario_ids,
                     ss.cohort_ids,
                     ss.persona_ids,
-                    ss.rubric_ids
+                    ss.rubric_ids,
+                    ss.time_limit_ids
                 )::types.q_get_training_context_view_v4_item
                 ORDER BY ss.simulation_id
             )

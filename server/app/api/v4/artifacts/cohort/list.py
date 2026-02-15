@@ -22,6 +22,7 @@ from app.api.v4.auth.profile import get_auth_profile_internal
 from app.api.v4.resources.departments.get import get_departments_internal
 from app.api.v4.resources.profiles.get import get_profiles_internal
 from app.api.v4.resources.simulations.get import get_simulations_internal
+from app.api.v4.types import ListFilterSection
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
@@ -225,6 +226,22 @@ async def get_cohort_list(
             profiles=api_profiles,
             simulations=api_simulations,
             departments=api_departments,
+            simulation_filter=ListFilterSection.from_sql_options(
+                result.simulation_options,
+                request.filter_simulation_ids,
+                request.simulation_search,
+            ),
+            profile_filter=ListFilterSection.from_sql_options(
+                result.profile_options,
+                request.filter_profile_ids,
+                request.profile_search,
+            ),
+            department_filter=ListFilterSection.from_sql_options(
+                result.department_options,
+                request.filter_department_ids,
+                request.department_search,
+            ),
+            total_count=result.total_count,
         )
 
         # Cache response (use mode='json' to serialize UUIDs and other types)

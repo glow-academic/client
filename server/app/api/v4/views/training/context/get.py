@@ -67,6 +67,9 @@ async def get_training_context_view_internal(
                     cohort_ids=list(item.cohort_ids) if item.cohort_ids else None,
                     persona_ids=(list(item.persona_ids) if item.persona_ids else None),
                     rubric_ids=(list(item.rubric_ids) if item.rubric_ids else None),
+                    time_limit_ids=(
+                        list(item.time_limit_ids) if item.time_limit_ids else None
+                    ),
                 )
             )
 

@@ -10,6 +10,7 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
+from app.api.v4.types import ListFilterSection
 from app.api.v4.views.drafts.types import DraftCohortViewItem
 from app.sql.types import (
     QGetAgentsV4Item,
@@ -264,13 +265,6 @@ class ListCohortApiDepartment(BaseModel):
     description: str | None = None
 
 
-class ListCohortApiOption(BaseModel):
-    """Option for facet filtering."""
-
-    value: str | None = None
-    label: str | None = None
-
-
 class ListCohortApiResponse(BaseModel):
     """Response for listing cohorts."""
 
@@ -280,6 +274,10 @@ class ListCohortApiResponse(BaseModel):
     profiles: list[ListCohortApiProfile] | None = None
     simulations: list[ListCohortApiSimulation] | None = None
     departments: list[ListCohortApiDepartment] | None = None
+    simulation_filter: "ListFilterSection | None" = None
+    profile_filter: "ListFilterSection | None" = None
+    department_filter: "ListFilterSection | None" = None
+    total_count: int | None = None
 
 
 # =============================================================================

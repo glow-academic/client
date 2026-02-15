@@ -10,6 +10,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
+from app.api.v4.types import ListFilterSection
 from app.api.v4.views.drafts.types import DraftScenarioViewItem
 from app.sql.types import (
     QGetAgentsV4Item,
@@ -491,14 +492,6 @@ class ListScenarioApiDepartment(BaseModel):
     description: str | None = None
 
 
-class ListScenarioApiOption(BaseModel):
-    """Option for facet filtering."""
-
-    value: str | None = None
-    label: str | None = None
-    count: int | None = None
-
-
 class ListScenarioApiResponse(BaseModel):
     """Response for listing scenarios."""
 
@@ -510,9 +503,9 @@ class ListScenarioApiResponse(BaseModel):
     personas: list[ListScenarioApiPersona] | None = None
     simulations: list[ListScenarioApiSimulation] | None = None
     departments: list[ListScenarioApiDepartment] | None = None
-    persona_options: list[ListScenarioApiOption] | None = None
-    simulation_options: list[ListScenarioApiOption] | None = None
-    department_options: list[ListScenarioApiOption] | None = None
+    persona_filter: "ListFilterSection | None" = None
+    simulation_filter: "ListFilterSection | None" = None
+    department_filter: "ListFilterSection | None" = None
     total_count: int | None = None
 
 
@@ -685,9 +678,9 @@ class ListScenarioSqlRow(BaseModel):
     actor_name: str | None = None
     user_role: str | None = None
     scenarios: list[ListScenarioSqlScenario] | None = None
-    persona_options: list[ListScenarioApiOption] | None = None
-    simulation_options: list[ListScenarioApiOption] | None = None
-    department_options: list[ListScenarioApiOption] | None = None
+    persona_options: list[dict] | None = None
+    simulation_options: list[dict] | None = None
+    department_options: list[dict] | None = None
     total_count: int | None = None
 
 

@@ -18,6 +18,7 @@ from app.api.v4.artifacts.simulation.types import (
     QGetScenariosV4Item,
 )
 from app.api.v4.auth.profile import get_auth_profile_internal
+from app.api.v4.types import ListFilterSection
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
@@ -202,9 +203,21 @@ async def get_simulation_list(
             actor_name=actor_name,
             simulations=to_dicts(result.simulations),
             scenarios=scenario_mapping,
-            scenario_options=to_dicts(result.scenario_options),
-            cohort_options=to_dicts(result.cohort_options),
-            department_options=to_dicts(result.department_options),
+            scenario_filter=ListFilterSection.from_sql_options(
+                result.scenario_options,
+                filters.filter_scenario_ids,
+                filters.scenario_search,
+            ),
+            cohort_filter=ListFilterSection.from_sql_options(
+                result.cohort_options,
+                filters.filter_cohort_ids,
+                filters.cohort_search,
+            ),
+            department_filter=ListFilterSection.from_sql_options(
+                result.department_options,
+                filters.filter_department_ids,
+                filters.department_search,
+            ),
             total_count=result.total_count,
         )
 

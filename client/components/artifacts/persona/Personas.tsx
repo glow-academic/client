@@ -202,39 +202,36 @@ export default function Personas({
     return personasData?.personas || [];
   }, [personasData?.personas]);
 
-  // Derive options from full arrays (server returns filtered options based on search)
+  // Derive options from filter sections (server returns filtered options based on search)
   const scenarioOptions = useMemo(() => {
-    const scenarios = personasData?.scenarios || [];
-    return scenarios
-      .map((item) => ({
-        value: String(item.scenario_id || ""),
-        label: item.name || "",
-        count: typeof item.count === "number" ? item.count : undefined,
+    return (personasData?.scenario_filter?.options || [])
+      .map((opt) => ({
+        value: opt.id as string,
+        label: opt.name as string,
+        count: opt.count ?? undefined,
       }))
       .filter((opt) => opt.value && opt.label);
-  }, [personasData?.scenarios]);
+  }, [personasData?.scenario_filter]);
 
   const fieldOptions = useMemo(() => {
-    const fields = personasData?.fields || [];
-    return fields
-      .map((item) => ({
-        value: String(item.field_id || ""),
-        label: item.name || "",
-        count: typeof item.count === "number" ? item.count : undefined,
+    return (personasData?.field_filter?.options || [])
+      .map((opt) => ({
+        value: opt.id as string,
+        label: opt.name as string,
+        count: opt.count ?? undefined,
       }))
       .filter((opt) => opt.value && opt.label);
-  }, [personasData?.fields]);
+  }, [personasData?.field_filter]);
 
   const departmentOptions = useMemo(() => {
-    const departments = personasData?.departments || [];
-    return departments
-      .map((item) => ({
-        value: String(item.department_id || ""),
-        label: item.name || "",
-        count: typeof item.count === "number" ? item.count : undefined,
+    return (personasData?.department_filter?.options || [])
+      .map((opt) => ({
+        value: opt.id as string,
+        label: opt.name as string,
+        count: opt.count ?? undefined,
       }))
       .filter((opt) => opt.value && opt.label);
-  }, [personasData?.departments]);
+  }, [personasData?.department_filter]);
 
   // Helper to update URL search params
   const updatePersonasParams = useCallback(

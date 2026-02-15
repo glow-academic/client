@@ -135,6 +135,52 @@ class TestScenarioList:
         assert "total_count" in data
         assert data["total_count"] > 0
 
+    async def test_list_returns_persona_filter(self, client: httpx.AsyncClient) -> None:
+        """LIST returns persona_filter section."""
+        response = await client.post(
+            "/api/v4/artifacts/scenarios/list",
+            json={},
+            headers=HEADERS,
+        )
+
+        assert response.status_code == 200
+        data = response.json()
+        assert "persona_filter" in data
+        section = data["persona_filter"]
+        assert "options" in section
+
+    async def test_list_returns_simulation_filter(
+        self, client: httpx.AsyncClient
+    ) -> None:
+        """LIST returns simulation_filter section."""
+        response = await client.post(
+            "/api/v4/artifacts/scenarios/list",
+            json={},
+            headers=HEADERS,
+        )
+
+        assert response.status_code == 200
+        data = response.json()
+        assert "simulation_filter" in data
+        section = data["simulation_filter"]
+        assert "options" in section
+
+    async def test_list_returns_department_filter(
+        self, client: httpx.AsyncClient
+    ) -> None:
+        """LIST returns department_filter section."""
+        response = await client.post(
+            "/api/v4/artifacts/scenarios/list",
+            json={},
+            headers=HEADERS,
+        )
+
+        assert response.status_code == 200
+        data = response.json()
+        assert "department_filter" in data
+        section = data["department_filter"]
+        assert "options" in section
+
     async def test_list_no_profile_returns_401(self, client: httpx.AsyncClient) -> None:
         """LIST without X-Profile-Id returns 401."""
         response = await client.post(

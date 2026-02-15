@@ -10,6 +10,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
+from app.api.v4.types import ListFilterSection
 from app.api.v4.views.drafts.types import DraftSimulationViewItem
 from app.sql.types import (
     QGetAgentsV4Item,
@@ -459,23 +460,15 @@ class ListSimulationApiScenario(BaseModel):
     persona_mapping: list[ListSimulationApiPersona] | None = None
 
 
-class ListSimulationApiOption(BaseModel):
-    """Option for facet filtering."""
-
-    value: str | None = None
-    label: str | None = None
-    count: int | None = None
-
-
 class ListSimulationApiResponse(BaseModel):
     """Response for listing simulations."""
 
     actor_name: str | None = None
     simulations: list[ListSimulationApiSimulation] | None = None
     scenarios: list[ListSimulationApiScenario] | None = None
-    scenario_options: list[ListSimulationApiOption] | None = None
-    cohort_options: list[ListSimulationApiOption] | None = None
-    department_options: list[ListSimulationApiOption] | None = None
+    scenario_filter: "ListFilterSection | None" = None
+    cohort_filter: "ListFilterSection | None" = None
+    department_filter: "ListFilterSection | None" = None
     total_count: int | None = None
 
 

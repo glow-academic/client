@@ -20,7 +20,6 @@ from app.api.v4.artifacts.scenario.types import (
     ListScenarioApiDepartment,
     ListScenarioApiField,
     ListScenarioApiObjective,
-    ListScenarioApiOption,
     ListScenarioApiPersona,
     ListScenarioApiResponse,
     ListScenarioApiScenario,
@@ -34,6 +33,7 @@ from app.api.v4.resources.fields.get import get_fields_internal
 from app.api.v4.resources.objectives.get import get_objectives_internal
 from app.api.v4.resources.personas.get import get_personas_internal
 from app.api.v4.resources.simulations.get import get_simulations_internal
+from app.api.v4.types import ListFilterSection
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
@@ -316,18 +316,6 @@ async def get_scenario_list(
             ListScenarioApiScenario.model_validate(s.model_dump())
             for s in (result.scenarios or [])
         ]
-        api_persona_options = [
-            ListScenarioApiOption.model_validate(o.model_dump())
-            for o in (result.persona_options or [])
-        ]
-        api_simulation_options = [
-            ListScenarioApiOption.model_validate(o.model_dump())
-            for o in (result.simulation_options or [])
-        ]
-        api_department_options = [
-            ListScenarioApiOption.model_validate(o.model_dump())
-            for o in (result.department_options or [])
-        ]
 
         # Build API response
         api_response = ListScenarioApiResponse(
@@ -339,9 +327,21 @@ async def get_scenario_list(
             personas=api_personas,
             simulations=api_simulations,
             departments=api_departments,
-            persona_options=api_persona_options,
-            simulation_options=api_simulation_options,
-            department_options=api_department_options,
+            persona_filter=ListFilterSection.from_sql_options(
+                result.persona_options,
+                request.persona_ids,
+                request.persona_search,
+            ),
+            simulation_filter=ListFilterSection.from_sql_options(
+                result.simulation_options,
+                request.simulation_ids,
+                request.simulation_search,
+            ),
+            department_filter=ListFilterSection.from_sql_options(
+                result.department_options,
+                request.filter_department_ids,
+                request.department_search,
+            ),
             total_count=result.total_count,
         )
 

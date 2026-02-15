@@ -221,36 +221,36 @@ export function Scenarios({
   // Use server-provided facet options directly (filtered by search term server-side)
   const personaOptions = useMemo(
     () =>
-      (scenariosData?.persona_options || [])
+      (scenariosData?.persona_filter?.options || [])
         .map((opt) => ({
-          value: opt["value"] as string,
-          label: opt["label"] as string,
-          count: typeof opt["count"] === "number" ? opt["count"] : undefined,
+          value: opt.id as string,
+          label: opt.name as string,
+          count: opt.count ?? undefined,
         }))
         .filter((opt) => opt.value && opt.label),
-    [scenariosData?.persona_options],
+    [scenariosData?.persona_filter],
   );
   const simulationOptions = useMemo(
     () =>
-      (scenariosData?.simulation_options || [])
+      (scenariosData?.simulation_filter?.options || [])
         .map((opt) => ({
-          value: opt["value"] as string,
-          label: opt["label"] as string,
-          count: typeof opt["count"] === "number" ? opt["count"] : undefined,
+          value: opt.id as string,
+          label: opt.name as string,
+          count: opt.count ?? undefined,
         }))
         .filter((opt) => opt.value && opt.label),
-    [scenariosData?.simulation_options],
+    [scenariosData?.simulation_filter],
   );
   const departmentOptions = useMemo(
     () =>
-      (scenariosData?.department_options || [])
+      (scenariosData?.department_filter?.options || [])
         .map((opt) => ({
-          value: opt["value"] as string,
-          label: opt["label"] as string,
-          count: typeof opt["count"] === "number" ? opt["count"] : undefined,
+          value: opt.id as string,
+          label: opt.name as string,
+          count: opt.count ?? undefined,
         }))
         .filter((opt) => opt.value && opt.label),
-    [scenariosData?.department_options],
+    [scenariosData?.department_filter],
   );
 
   // Define table columns inline

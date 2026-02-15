@@ -35,6 +35,9 @@ from app.api.v4.auth.profile import get_auth_profile_internal
 from app.api.v4.resources.cohorts.get import get_cohorts_internal
 from app.api.v4.resources.personas.get import get_personas_internal
 from app.api.v4.resources.rubrics.get import get_rubrics_internal
+from app.api.v4.resources.scenario_time_limits.get import (
+    get_scenario_time_limits_internal,
+)
 from app.api.v4.resources.scenarios.get import get_scenarios_internal
 from app.api.v4.resources.simulations.get import get_simulations_internal
 from app.api.v4.resources.standard_groups.get import get_standard_groups_internal
@@ -256,6 +259,7 @@ async def get_training_internal(
     all_scenario_ids: set[UUID] = set()
     all_cohort_ids: set[UUID] = set()
     all_rubric_ids: set[UUID] = set()
+    all_time_limit_ids: set[UUID] = set()
     simulation_cohort_map: dict[UUID, list[UUID]] = {}
 
     if context and context.items:
@@ -271,10 +275,13 @@ async def get_training_internal(
                     simulation_cohort_map[item.simulation_id] = list(item.cohort_ids)
             if item.rubric_ids:
                 all_rubric_ids.update(item.rubric_ids)
+            if item.time_limit_ids:
+                all_time_limit_ids.update(item.time_limit_ids)
 
     cohort_ids_list = list(all_cohort_ids)
     rubric_ids_list = list(all_rubric_ids)
     scenario_ids_list = list(all_scenario_ids)
+    time_limit_ids_list = list(all_time_limit_ids)
 
     # --- Phase 2a: Parallel resource hydration + conditional instructional data ---
     async def fetch_simulations() -> list:
@@ -303,6 +310,14 @@ async def get_training_internal(
                 c, rubric_ids_list, bypass_cache=bypass_cache
             )
 
+    async def fetch_time_limits() -> list:
+        if not time_limit_ids_list:
+            return []
+        async with pool.acquire() as c:
+            return await get_scenario_time_limits_internal(
+                c, time_limit_ids_list, bypass_cache=bypass_cache
+            )
+
     async def fetch_cohort_attempt_facts() -> list:
         async with pool.acquire() as c:
             result = await get_profile_facts_internal(
@@ -325,6 +340,7 @@ async def get_training_internal(
         fetch_scenarios(),
         fetch_cohorts(),
         fetch_rubrics(),
+        fetch_time_limits(),
     ]
     if is_instructional:
         tasks_2a.append(fetch_cohort_attempt_facts())
@@ -336,12 +352,19 @@ async def get_training_internal(
     scenario_list = results_2a[1]
     cohort_list = results_2a[2]
     rubric_list = results_2a[3]
+    time_limit_list = results_2a[4]
 
     cohort_facts_items: list[ProfileFactsItem] | None = None
     cohort_member_profiles: dict[UUID, set[UUID]] | None = None
     if is_instructional:
-        cohort_facts_items = results_2a[4]
-        cohort_member_profiles = results_2a[5]
+        cohort_facts_items = results_2a[5]
+        cohort_member_profiles = results_2a[6]
+
+    # Build scenario_id → time_limit_seconds map from time limits resource
+    scenario_time_limit_map: dict[UUID, int] = {}
+    for tl in time_limit_list:
+        if tl.scenario_id and tl.time_limit_seconds:
+            scenario_time_limit_map[tl.scenario_id] = tl.time_limit_seconds
 
     # Derive persona IDs from scenarios (persona_ids on scenarios_resource)
     scenario_map = {s.scenario_id: s for s in scenario_list if s.scenario_id}
@@ -417,9 +440,24 @@ async def get_training_internal(
         for item in context.items:
             simulation = simulation_map.get(item.simulation_id)
             ps = personal_stats.get(item.simulation_id, {})
-            attempt_count = ps.get("attempt_count", 0)
             highest_score_percent = ps.get("highest_score_percent")
             has_passed = ps.get("has_passed", False)
+
+            # num_sessions = number of scenarios in this simulation
+            num_scenarios = len(item.scenario_ids) if item.scenario_ids else 0
+
+            # time_limit = sum of per-scenario time limits (seconds → minutes)
+            time_limit_total_seconds = 0
+            has_time_limits = False
+            if item.scenario_ids:
+                for sid in item.scenario_ids:
+                    tl_seconds = scenario_time_limit_map.get(sid)
+                    if tl_seconds is not None:
+                        time_limit_total_seconds += tl_seconds
+                        has_time_limits = True
+            time_limit_minutes = (
+                round(time_limit_total_seconds / 60) if has_time_limits else None
+            )
 
             # Persona color/icon — only when all scenarios share the same color
             color: str | None = None
@@ -490,6 +528,7 @@ async def get_training_internal(
             )
 
             # Mode-specific stats
+            attempt_count = ps.get("attempt_count", 0)
             if is_instructional and instructional_stats is not None:
                 ist = instructional_stats.get(item.simulation_id, {})
                 status = ist.get("status", "not-started")
@@ -511,14 +550,14 @@ async def get_training_internal(
                     simulation_description=(
                         simulation.description if simulation else None
                     ),
-                    time_limit=None,  # TODO: time_limit not on simulations_resource
+                    time_limit=time_limit_minutes,
                     training_bundle_entry_id=training_bundle_entry_id,
                     scenario_ids=item.scenario_ids,
                     cohort_ids=item.cohort_ids,
                     color=color,
                     icon=icon,
                     view_mode=view_mode,
-                    num_sessions=attempt_count,
+                    num_sessions=num_scenarios,
                     highest_score=highest_score,
                     has_passed=has_passed,
                     status=status,
