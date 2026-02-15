@@ -29,6 +29,21 @@ async def bootstrap_all_sql(conn: asyncpg.Connection) -> None:
     4. Auto-refresh unpopulated MVs via pg_matviews catalog
     5. Log summary of successes/failures
     """
+    # Keycloak stub tables — the real tables are created by Keycloak at startup,
+    # but the test DB never runs Keycloak.  These minimal stubs let SQL functions
+    # that reference keycloak.org / keycloak.realm compile without error.
+    await conn.execute("""
+        CREATE SCHEMA IF NOT EXISTS keycloak;
+        CREATE TABLE IF NOT EXISTS keycloak.org (
+            id text PRIMARY KEY,
+            alias text
+        );
+        CREATE TABLE IF NOT EXISTS keycloak.realm (
+            name text PRIMARY KEY,
+            ssl_required text
+        );
+    """)
+
     views_dir = _SERVER_ROOT / "app" / "sql" / VERSION / "views"
     queries_dir = _SERVER_ROOT / "app" / "sql" / VERSION / "queries"
 
