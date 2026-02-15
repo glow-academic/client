@@ -4295,15 +4295,16 @@ class QListEvalsV4Eval(BaseModel):
 
 
 
-class QListEvalsV4OptionId(BaseModel):
+class QListEvalsV4Option(BaseModel):
 
-    id: UUID | None
+    value: str | None
+    label: str | None
     count: int | None
 
 class GetEvalsListSqlRow(BaseModel):
 
     evals: list[QListEvalsV4Eval] | None = None
-    department_option_ids: list[QListEvalsV4OptionId] | None = None
+    department_options: list[QListEvalsV4Option] | None = None
     total_count: int | None = None
 
 class GetEvalsListApiRequest(BaseModel):
@@ -4317,7 +4318,7 @@ class GetEvalsListApiRequest(BaseModel):
 class GetEvalsListApiResponse(BaseModel):
 
     evals: list[QListEvalsV4Eval] | None = None
-    department_option_ids: list[QListEvalsV4OptionId] | None = None
+    department_options: list[QListEvalsV4Option] | None = None
     total_count: int | None = None
 
 
@@ -5801,6 +5802,76 @@ class StartBenchmarkAttemptApiResponse(BaseModel):
 
     attempt_id: UUID | None = None
     eval_id: UUID | None = None
+
+
+
+# Generated from: get_cohort_generation_context
+
+class GetCohortGenerationContextSqlParams(BaseModel):
+
+    p_profile_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.p_profile_id,
+        )
+
+class GetCohortGenerationContextSqlRow(BaseModel):
+
+    requests_per_day: int | None = None
+    runs_today: int | None = None
+
+class GetCohortGenerationContextApiRequest(BaseModel):
+
+    p_profile_id: UUID
+
+class GetCohortGenerationContextApiResponse(BaseModel):
+
+    requests_per_day: int | None = None
+    runs_today: int | None = None
+
+
+
+# Generated from: prepare_cohort_generation
+
+class PrepareCohortGenerationSqlParams(BaseModel):
+
+    p_profile_id: UUID
+    p_group_id: UUID | None = None
+    p_agents_resource_id: UUID | None = None
+    p_models_resource_id: UUID | None = None
+    p_providers_resource_id: UUID | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.p_profile_id,
+            self.p_group_id,
+            self.p_agents_resource_id,
+            self.p_models_resource_id,
+            self.p_providers_resource_id,
+        )
+
+class PrepareCohortGenerationSqlRow(BaseModel):
+
+    run_id: UUID | None = None
+    group_id: UUID | None = None
+    trace_id: str | None = None
+    config_id: UUID | None = None
+
+class PrepareCohortGenerationApiRequest(BaseModel):
+
+    p_profile_id: UUID
+    p_group_id: UUID | None = None
+    p_agents_resource_id: UUID | None = None
+    p_models_resource_id: UUID | None = None
+    p_providers_resource_id: UUID | None = None
+
+class PrepareCohortGenerationApiResponse(BaseModel):
+
+    run_id: UUID | None = None
+    group_id: UUID | None = None
+    trace_id: str | None = None
+    config_id: UUID | None = None
 
 
 
@@ -27293,6 +27364,18 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "StartBenchmarkAttemptApiRequest",
         "StartBenchmarkAttemptApiResponse",
     ),
+    "app/sql/v4/queries/generate/cohort/get_cohort_generation_context_complete.sql": (
+        "GetCohortGenerationContextSqlParams",
+        "GetCohortGenerationContextSqlRow",
+        "GetCohortGenerationContextApiRequest",
+        "GetCohortGenerationContextApiResponse",
+    ),
+    "app/sql/v4/queries/generate/cohort/prepare_cohort_generation_complete.sql": (
+        "PrepareCohortGenerationSqlParams",
+        "PrepareCohortGenerationSqlRow",
+        "PrepareCohortGenerationApiRequest",
+        "PrepareCohortGenerationApiResponse",
+    ),
     "app/sql/v4/queries/generate/parameter/get_parameter_generation_context_complete.sql": (
         "GetParameterGenerationContextSqlParams",
         "GetParameterGenerationContextSqlRow",
@@ -30885,6 +30968,16 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/queries/generate/benchmark/start_benchmark_attempt_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/generate/cohort/get_cohort_generation_context_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/generate/cohort/prepare_cohort_generation_complete.sql"]
     ) -> SqlString: ...
 
     @overload

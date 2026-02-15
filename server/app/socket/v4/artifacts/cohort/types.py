@@ -13,6 +13,7 @@ class GenerateCohortPayload(GetCohortApiRequest):
 
     resource_types: list[str]
     user_instructions: list[str] | None = None
+    save: bool = True  # Whether to auto-save cohort on completion
 
 
 class CohortGenerationCompleteEvent(GenerationCompleteEvent):

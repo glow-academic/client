@@ -131,3 +131,16 @@ class SimulationGenerationStartedEvent(BaseModel):
     group_id: str
     run_id: str
     resource_types: list[str]
+
+
+class CohortGenerationStartedEvent(BaseModel):
+    """Server-to-client event: cohort_generation_started.
+
+    Emitted when cohort generation begins, listing which resource types
+    will be generated.
+    """
+
+    artifact_type: str = "cohort"
+    group_id: str
+    run_id: str
+    resource_types: list[str]

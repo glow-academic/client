@@ -7,6 +7,7 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
+from app.api.v4.types import ListFilterSection
 from app.api.v4.views.drafts.types import DraftEvalViewItem
 from app.sql.types import (
     QGetAgentsV4Item,
@@ -248,21 +249,12 @@ class ListEvalApiEval(BaseModel):
     updated_at: datetime | None = None
 
 
-class ListEvalApiDepartment(BaseModel):
-    """Department type for list endpoint."""
-
-    department_id: UUID | None = None
-    name: str | None = None
-    description: str | None = None
-    count: int | None = None
-
-
 class ListEvalApiResponse(BaseModel):
     """Response model for list eval endpoint with computed permissions."""
 
     actor_name: str | None = None
     evals: list[ListEvalApiEval] | None = None
-    departments: list[ListEvalApiDepartment] | None = None
+    department_filter: ListFilterSection | None = None
     total_count: int | None = None
     user_role: str | None = None
 

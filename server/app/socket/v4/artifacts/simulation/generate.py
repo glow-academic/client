@@ -52,9 +52,7 @@ client_router = APIRouter()
 server_router = APIRouter()
 
 # SQL paths
-SQL_PATH_CONTEXT = (
-    "app/sql/v4/queries/generate/simulation/get_simulation_generation_context_complete.sql"
-)
+SQL_PATH_CONTEXT = "app/sql/v4/queries/generate/simulation/get_simulation_generation_context_complete.sql"
 SQL_PATH_PREPARE = (
     "app/sql/v4/queries/generate/simulation/prepare_simulation_generation_complete.sql"
 )

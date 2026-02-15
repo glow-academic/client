@@ -45,8 +45,10 @@ CREATE TYPE types.q_list_evals_v4_eval AS (
     updated_at timestamptz
 );
 
-CREATE TYPE types.q_list_evals_v4_option_id AS (
-    id uuid,
+-- Filter option type: value/label/count (names resolved in SQL, no Python hydration needed)
+CREATE TYPE types.q_list_evals_v4_option AS (
+    value text,
+    label text,
     count bigint
 );
 
@@ -61,7 +63,7 @@ CREATE OR REPLACE FUNCTION api_list_evals_v4(
 )
 RETURNS TABLE (
     evals types.q_list_evals_v4_eval[],
-    department_option_ids types.q_list_evals_v4_option_id[],
+    department_options types.q_list_evals_v4_option[],
     total_count bigint
 )
 LANGUAGE sql
@@ -170,26 +172,30 @@ eval_objects AS (
     ) as evals
     FROM paginated_evals pe
 ),
--- Build department filter option IDs (names hydrated in Python via get_departments_internal)
+-- Department options with names resolved in SQL (ListFilterSection pattern)
 department_option_data AS (
-    SELECT COALESCE(
-        ARRAY_AGG(
-            (d.department_id, d.count)::types.q_list_evals_v4_option_id
-        ),
-        '{}'::types.q_list_evals_v4_option_id[]
-    ) as department_option_ids
-    FROM (
-        SELECT
-            ed.department_id,
-            COUNT(DISTINCT ae.id) as count
-        FROM accessible_evals ae
-        JOIN eval_departments_junction ed ON ed.eval_id = ae.id AND ed.active = true
-        GROUP BY ed.department_id
-    ) d
+    SELECT
+        dr.id::text as value,
+        (SELECT n.name FROM department_names_junction dn JOIN names_resource n ON n.id = dn.name_id WHERE dn.department_id = dd.department_id LIMIT 1) as label,
+        COUNT(DISTINCT ae.id) as count
+    FROM departments_resource dr
+    JOIN department_departments_junction dd ON dd.departments_id = dr.id
+    JOIN accessible_evals ae ON EXISTS (
+        SELECT 1 FROM eval_departments_junction ed WHERE ed.eval_id = ae.id AND ed.active = true AND ed.department_id = dr.id
+    )
+    WHERE dr.id IN (SELECT department_id FROM user_departments)
+      AND (department_search IS NULL OR LOWER((SELECT n.name FROM department_names_junction dn JOIN names_resource n ON n.id = dn.name_id WHERE dn.department_id = dd.department_id LIMIT 1)) LIKE '%' || LOWER(department_search) || '%')
+    GROUP BY dr.id, dd.department_id
 )
 SELECT
     (SELECT evals FROM eval_objects) as evals,
-    (SELECT department_option_ids FROM department_option_data) as department_option_ids,
+    COALESCE(
+        (SELECT ARRAY_AGG(
+            (dod.value, dod.label, dod.count)::types.q_list_evals_v4_option
+            ORDER BY dod.label
+        ) FROM department_option_data dod),
+        '{}'::types.q_list_evals_v4_option[]
+    ) as department_options,
     (SELECT count FROM total) as total_count
 FROM user_profile up;
 $$;

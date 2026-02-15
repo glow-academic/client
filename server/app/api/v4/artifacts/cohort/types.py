@@ -289,18 +289,15 @@ class CohortMultiResourceAction(BaseModel):
 
 
 class SaveCohortApiRequest(BaseModel):
-    """Request for saving a cohort - nested resource actions."""
+    """Request for saving a cohort - flat resource IDs."""
 
-    # Context
-    group_id: UUID  # REQUIRED - which group to save to
-    input_cohort_id: UUID | None = None  # For update mode
-
-    names: "CohortResourceAction"
-    descriptions: "CohortResourceAction"
-    flags: "CohortResourceAction"
-    departments: "CohortMultiResourceAction"
-    simulations: "CohortMultiResourceAction"
-    simulation_positions: "CohortMultiResourceAction"
+    input_cohort_id: UUID | None = None
+    name_id: UUID
+    description_id: UUID | None = None
+    flag_id: UUID | None = None
+    department_ids: list[UUID] | None = None
+    simulation_ids: list[UUID] | None = None
+    simulation_position_ids: list[UUID] | None = None
     simulation_position_values: list[int] | None = None
 
 
@@ -329,18 +326,21 @@ class SaveCohortSqlParams(BaseModel):
 
     @classmethod
     def from_request(
-        cls, request: SaveCohortApiRequest, profile_id: UUID
+        cls,
+        request: SaveCohortApiRequest,
+        profile_id: UUID,
+        group_id: UUID | None,
     ) -> "SaveCohortSqlParams":
         return cls(
             profile_id=profile_id,
-            group_id=request.group_id,
+            group_id=group_id,
             input_cohort_id=request.input_cohort_id,
-            names=request.names,
-            descriptions=request.descriptions,
-            flags=request.flags,
-            departments=request.departments,
-            simulations=request.simulations,
-            simulation_positions=request.simulation_positions,
+            names=CohortResourceAction(resource_id=request.name_id),
+            descriptions=CohortResourceAction(resource_id=request.description_id),
+            flags=CohortResourceAction(resource_id=request.flag_id),
+            departments=CohortMultiResourceAction(resource_ids=request.department_ids),
+            simulations=CohortMultiResourceAction(resource_ids=request.simulation_ids),
+            simulation_positions=CohortMultiResourceAction(resource_ids=request.simulation_position_ids),
             simulation_position_values=request.simulation_position_values,
         )
 
@@ -423,16 +423,16 @@ class DuplicateCohortApiResponse(BaseModel):
 
 
 class PatchCohortDraftApiRequest(BaseModel):
-    """Request for patching a cohort draft."""
+    """Request for patching a cohort draft - flat resource IDs."""
 
     input_draft_id: UUID | None = None
     group_id: UUID | None = None
-    names: "CohortResourceAction | None" = None
-    descriptions: "CohortResourceAction | None" = None
-    flags: "CohortResourceAction | None" = None
-    departments: "CohortMultiResourceAction | None" = None
-    simulations: "CohortMultiResourceAction | None" = None
-    simulation_positions: "CohortMultiResourceAction | None" = None
+    name_id: UUID | None = None
+    description_id: UUID | None = None
+    flag_id: UUID | None = None
+    department_ids: list[UUID] | None = None
+    simulation_ids: list[UUID] | None = None
+    simulation_position_ids: list[UUID] | None = None
     simulation_position_values: list[int] | None = None
     expected_version: int | None = 0
 
@@ -468,12 +468,12 @@ class PatchCohortDraftSqlParams(BaseModel):
             profile_id=profile_id,
             input_draft_id=request.input_draft_id,
             group_id=request.group_id,
-            names=request.names,
-            descriptions=request.descriptions,
-            flags=request.flags,
-            departments=request.departments,
-            simulations=request.simulations,
-            simulation_positions=request.simulation_positions,
+            names=CohortResourceAction(resource_id=request.name_id),
+            descriptions=CohortResourceAction(resource_id=request.description_id),
+            flags=CohortResourceAction(resource_id=request.flag_id),
+            departments=CohortMultiResourceAction(resource_ids=request.department_ids),
+            simulations=CohortMultiResourceAction(resource_ids=request.simulation_ids),
+            simulation_positions=CohortMultiResourceAction(resource_ids=request.simulation_position_ids),
             simulation_position_values=request.simulation_position_values,
             expected_version=request.expected_version,
         )

@@ -85,21 +85,18 @@ export default function Evals({
     setEvalsList(evalsArray);
   }, [evalsData?.evals]);
 
-  // Build agent options from evals data (unique agents across all evals)
-  const agentOptions = useMemo(() => {
-    const agentMap = new Map<string, string>();
-    (evalsData?.evals || []).forEach((evalItem) => {
-      (evalItem.agent_ids || []).forEach((id) => {
-        if (id && !agentMap.has(id)) {
-          agentMap.set(id, id);
-        }
-      });
-    });
-    return Array.from(agentMap.entries()).map(([value]) => ({
-      value,
-      label: value,
-    }));
-  }, [evalsData?.evals]);
+  // Filter options from server-provided ListFilterSection
+  const departmentOptions = useMemo(
+    () =>
+      (evalsData?.department_filter?.options || [])
+        .map((opt) => ({
+          value: opt.id as string,
+          label: opt.name as string,
+          count: opt.count ?? 0,
+        }))
+        .filter((opt) => opt.value && opt.label),
+    [evalsData?.department_filter]
+  );
 
   // WebSocket integration for real-time updates
   useEffect(() => {
@@ -162,25 +159,15 @@ export default function Evals({
           return row.updated_at ?? null;
         },
       },
-      // Hidden faceting column for Agent (single ID)
+      // Hidden faceting column for Departments
       {
-        id: "agent_id",
+        id: "departments",
         header: () => null,
         cell: () => null,
         enableHiding: true,
         enableSorting: false,
-        accessorFn: (row: (typeof evalsListArray)[number]) => {
-          const agentIds = row.agent_ids;
-          return Array.isArray(agentIds) && agentIds.length > 0
-            ? (agentIds[0] ?? "")
-            : "";
-        },
-        filterFn: (row, _id, value: string[]) => {
-          const rowId = row.getValue("agent_id") as string;
-          if (value.length === 0) return true;
-          if (!rowId) return false;
-          return value.includes(rowId);
-        },
+        accessorFn: () => [] as string[],
+        filterFn: () => true,
       },
     ],
     []
@@ -319,7 +306,7 @@ export default function Evals({
 
   // Get column references for toolbar
   const nameColumn = table.getColumn("name");
-  const agentColumn = table.getColumn("agent_id");
+  const departmentsColumn = table.getColumn("departments");
   const isFiltered = table.getState().columnFilters.length > 0;
 
   return (
@@ -351,12 +338,12 @@ export default function Evals({
               </div>
 
               <div className="flex items-center space-x-2 flex-wrap">
-                {/* Agent Filter */}
-                {agentColumn && agentOptions.length > 0 && (
+                {departmentsColumn && departmentOptions.length > 0 && (
                   <DataTableFacetedFilter
-                    column={agentColumn}
-                    title="Agent"
-                    options={agentOptions}
+                    column={departmentsColumn}
+                    title="Department"
+                    options={departmentOptions}
+                    isServerDriven
                   />
                 )}
 

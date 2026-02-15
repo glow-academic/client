@@ -117,20 +117,23 @@ async def save_cohort(
                 )
         else:
             # Create mode: check create permissions
-            request_department_ids = (
-                request.departments.resource_ids
-                if request.departments and request.departments.resource_ids
-                else None
-            )
+            request_department_ids = request.department_ids or None
             if not compute_can_create(user_role or "", request_department_ids):
                 raise HTTPException(
                     status_code=403,
                     detail="You don't have permission to create cohorts.",
                 )
 
+        # Server-resolved group_id: create if not updating an existing cohort
+        group_id = None
+        if not request.input_cohort_id:
+            group_id = await conn.fetchval(
+                "INSERT INTO groups_entry (created_at, updated_at) VALUES (NOW(), NOW()) RETURNING id"
+            )
+
         async with conn.transaction():
-            # Convert API request to SQL params (add profile_id from header)
-            params = SaveCohortSqlParams.from_request(request, profile_id=profile_id)
+            # Convert flat resource IDs to SQL params (add profile_id and group_id from server)
+            params = SaveCohortSqlParams.from_request(request, profile_id=profile_id, group_id=group_id)
             sql_params = params.to_tuple()
 
             # Execute SQL with typed helper - automatically detects and calls function if present

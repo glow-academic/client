@@ -161,10 +161,10 @@ async def save_simulation(
                         )
             else:
                 # Create mode
-                # Use department_ids from request resource actions
+                # Use department_ids from request
                 request_department_ids = (
-                    [str(d) for d in (request.departments.resource_ids or [])]
-                    if request.departments.resource_ids
+                    [str(d) for d in (request.department_ids or [])]
+                    if request.department_ids
                     else []
                 )
                 if not compute_can_create(user_role, request_department_ids):
@@ -173,11 +173,18 @@ async def save_simulation(
                         detail="You don't have permission to create simulations.",
                     )
 
+        # Server-resolved group_id: create if not updating an existing simulation
+        group_id = None
+        if not request.input_simulation_id:
+            group_id = await conn.fetchval(
+                "INSERT INTO groups_entry (created_at, updated_at) VALUES (NOW(), NOW()) RETURNING id"
+            )
+
         # Pass 2: Execute save
         async with conn.transaction():
-            # Convert nested resource actions to SQL params
+            # Convert flat resource IDs to SQL params
             params = SaveSimulationSqlParams.from_request(
-                request, profile_id=profile_id
+                request, profile_id=profile_id, group_id=group_id
             )
             sql_params = params.to_tuple()
 
@@ -207,9 +214,9 @@ async def save_simulation(
                 if request.input_simulation_id:
                     # Update mode: look up name from name_id if available
                     simulation_name = "Simulation"
-                    if request.names and request.names.resource_id:
+                    if request.name_id:
                         name_params = GetNameByIdSqlParams(
-                            name_id=request.names.resource_id
+                            name_id=request.name_id
                         )
                         name_result = cast(
                             GetNameByIdSqlRow,

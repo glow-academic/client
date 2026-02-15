@@ -9729,6 +9729,28 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/socket/v4/server/simulation_generation_started": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Simulation Generation Started Api
+         * @description Server-to-client event: Simulation generation started.
+         *
+         *     Emitted when simulation generation begins, listing resource types being generated.
+         */
+        post: operations["simulation_generation_started_api_socket_v4_server_simulation_generation_started_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/socket/v4/server/simulation_generation_progress": {
         parameters: {
             query?: never;
@@ -10141,6 +10163,28 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/socket/v4/server/cohort_generation_started": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Cohort Generation Started Api
+         * @description Server-to-client event: Cohort generation started.
+         *
+         *     Emitted when cohort generation begins, listing resource types being generated.
+         */
+        post: operations["cohort_generation_started_api_socket_v4_server_cohort_generation_started_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/socket/v4/server/cohort_generation_progress": {
         parameters: {
             query?: never;
@@ -10172,7 +10216,7 @@ export interface paths {
         put?: never;
         /**
          * Cohort Generation Complete Api
-         * @description Server-to-client event: cohort generation complete.
+         * @description Server-to-client event: Cohort generation completed.
          */
         post: operations["cohort_generation_complete_api_socket_v4_server_cohort_generation_complete_post"];
         delete?: never;
@@ -20542,14 +20586,24 @@ export interface components {
             trace_id?: string | null;
         };
         /**
-         * CohortMultiResourceAction
-         * @description Multi-resource action payload with tool-call metadata.
+         * CohortGenerationStartedEvent
+         * @description Server-to-client event: cohort_generation_started.
+         *
+         *     Emitted when cohort generation begins, listing which resource types
+         *     will be generated.
          */
-        CohortMultiResourceAction: {
-            /** Resource Ids */
-            resource_ids?: string[] | null;
-            /** Tool Id */
-            tool_id?: string | null;
+        CohortGenerationStartedEvent: {
+            /**
+             * Artifact Type
+             * @default cohort
+             */
+            artifact_type: string;
+            /** Group Id */
+            group_id: string;
+            /** Run Id */
+            run_id: string;
+            /** Resource Types */
+            resource_types: string[];
         };
         /**
          * CohortNameResource
@@ -20587,16 +20641,6 @@ export interface components {
             resource?: components["schemas"]["CohortNameResource"] | null;
             /** Resources */
             resources?: components["schemas"]["CohortNameResource"][] | null;
-        };
-        /**
-         * CohortResourceAction
-         * @description Single resource action payload with tool-call metadata.
-         */
-        CohortResourceAction: {
-            /** Resource Id */
-            resource_id?: string | null;
-            /** Tool Id */
-            tool_id?: string | null;
         };
         /**
          * CohortSimulation
@@ -30778,20 +30822,6 @@ export interface components {
             total_count?: number | null;
         };
         /**
-         * ListEvalApiDepartment
-         * @description Department type for list endpoint.
-         */
-        ListEvalApiDepartment: {
-            /** Department Id */
-            department_id?: string | null;
-            /** Name */
-            name?: string | null;
-            /** Description */
-            description?: string | null;
-            /** Count */
-            count?: number | null;
-        };
-        /**
          * ListEvalApiEval
          * @description Eval type for list endpoint with computed permissions.
          */
@@ -30832,8 +30862,7 @@ export interface components {
             actor_name?: string | null;
             /** Evals */
             evals?: components["schemas"]["ListEvalApiEval"][] | null;
-            /** Departments */
-            departments?: components["schemas"]["ListEvalApiDepartment"][] | null;
+            department_filter?: components["schemas"]["ListFilterSection"] | null;
             /** Total Count */
             total_count?: number | null;
             /** User Role */
@@ -33344,19 +33373,25 @@ export interface components {
         };
         /**
          * PatchCohortDraftApiRequest
-         * @description Request for patching a cohort draft.
+         * @description Request for patching a cohort draft - flat resource IDs.
          */
         PatchCohortDraftApiRequest: {
             /** Input Draft Id */
             input_draft_id?: string | null;
             /** Group Id */
             group_id?: string | null;
-            names?: components["schemas"]["CohortResourceAction"] | null;
-            descriptions?: components["schemas"]["CohortResourceAction"] | null;
-            flags?: components["schemas"]["CohortResourceAction"] | null;
-            departments?: components["schemas"]["CohortMultiResourceAction"] | null;
-            simulations?: components["schemas"]["CohortMultiResourceAction"] | null;
-            simulation_positions?: components["schemas"]["CohortMultiResourceAction"] | null;
+            /** Name Id */
+            name_id?: string | null;
+            /** Description Id */
+            description_id?: string | null;
+            /** Flag Id */
+            flag_id?: string | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
+            /** Simulation Ids */
+            simulation_ids?: string[] | null;
+            /** Simulation Position Ids */
+            simulation_position_ids?: string[] | null;
             /** Simulation Position Values */
             simulation_position_values?: number[] | null;
             /**
@@ -33940,23 +33975,33 @@ export interface components {
         };
         /**
          * PatchSimulationDraftApiRequest
-         * @description Request for patching a simulation draft - nested resource actions.
+         * @description Request for patching a simulation draft - flat resource IDs.
          */
         PatchSimulationDraftApiRequest: {
             /** Input Draft Id */
             input_draft_id?: string | null;
             /** Group Id */
             group_id?: string | null;
-            names?: components["schemas"]["SimulationResourceAction"] | null;
-            descriptions?: components["schemas"]["SimulationResourceAction"] | null;
-            flags?: components["schemas"]["SimulationMultiResourceAction"] | null;
-            departments?: components["schemas"]["SimulationMultiResourceAction"] | null;
-            scenarios?: components["schemas"]["SimulationMultiResourceAction"] | null;
-            scenario_flags?: components["schemas"]["SimulationMultiResourceAction"] | null;
-            scenario_positions?: components["schemas"]["SimulationMultiResourceAction"] | null;
-            scenario_rubrics?: components["schemas"]["SimulationMultiResourceAction"] | null;
-            scenario_time_limits?: components["schemas"]["SimulationMultiResourceAction"] | null;
-            scenario_personas?: components["schemas"]["SimulationMultiResourceAction"] | null;
+            /** Name Id */
+            name_id?: string | null;
+            /** Description Id */
+            description_id?: string | null;
+            /** Flag Ids */
+            flag_ids?: string[] | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
+            /** Scenario Ids */
+            scenario_ids?: string[] | null;
+            /** Scenario Flag Ids */
+            scenario_flag_ids?: string[] | null;
+            /** Scenario Position Ids */
+            scenario_position_ids?: string[] | null;
+            /** Scenario Rubric Ids */
+            scenario_rubric_ids?: string[] | null;
+            /** Scenario Time Limit Ids */
+            scenario_time_limit_ids?: string[] | null;
+            /** Scenario Persona Ids */
+            scenario_persona_ids?: string[] | null;
             /**
              * Expected Version
              * @default 0
@@ -40295,22 +40340,26 @@ export interface components {
         };
         /**
          * SaveCohortApiRequest
-         * @description Request for saving a cohort - nested resource actions.
+         * @description Request for saving a cohort - flat resource IDs.
          */
         SaveCohortApiRequest: {
-            /**
-             * Group Id
-             * Format: uuid
-             */
-            group_id: string;
             /** Input Cohort Id */
             input_cohort_id?: string | null;
-            names: components["schemas"]["CohortResourceAction"];
-            descriptions: components["schemas"]["CohortResourceAction"];
-            flags: components["schemas"]["CohortResourceAction"];
-            departments: components["schemas"]["CohortMultiResourceAction"];
-            simulations: components["schemas"]["CohortMultiResourceAction"];
-            simulation_positions: components["schemas"]["CohortMultiResourceAction"];
+            /**
+             * Name Id
+             * Format: uuid
+             */
+            name_id: string;
+            /** Description Id */
+            description_id?: string | null;
+            /** Flag Id */
+            flag_id?: string | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
+            /** Simulation Ids */
+            simulation_ids?: string[] | null;
+            /** Simulation Position Ids */
+            simulation_position_ids?: string[] | null;
             /** Simulation Position Values */
             simulation_position_values?: number[] | null;
         };
@@ -40798,26 +40847,34 @@ export interface components {
         };
         /**
          * SaveSimulationApiRequest
-         * @description Request for saving a simulation - nested resource actions.
+         * @description Request for saving a simulation - flat resource IDs.
          */
         SaveSimulationApiRequest: {
-            /**
-             * Group Id
-             * Format: uuid
-             */
-            group_id: string;
             /** Input Simulation Id */
             input_simulation_id?: string | null;
-            names: components["schemas"]["SimulationResourceAction"];
-            descriptions: components["schemas"]["SimulationResourceAction"];
-            flags: components["schemas"]["SimulationMultiResourceAction"];
-            departments: components["schemas"]["SimulationMultiResourceAction"];
-            scenarios: components["schemas"]["SimulationMultiResourceAction"];
-            scenario_flags: components["schemas"]["SimulationMultiResourceAction"];
-            scenario_positions: components["schemas"]["SimulationMultiResourceAction"];
-            scenario_rubrics: components["schemas"]["SimulationMultiResourceAction"];
-            scenario_time_limits: components["schemas"]["SimulationMultiResourceAction"];
-            scenario_personas: components["schemas"]["SimulationMultiResourceAction"];
+            /**
+             * Name Id
+             * Format: uuid
+             */
+            name_id: string;
+            /** Description Id */
+            description_id?: string | null;
+            /** Flag Ids */
+            flag_ids?: string[] | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
+            /** Scenario Ids */
+            scenario_ids?: string[] | null;
+            /** Scenario Flag Ids */
+            scenario_flag_ids?: string[] | null;
+            /** Scenario Position Ids */
+            scenario_position_ids?: string[] | null;
+            /** Scenario Rubric Ids */
+            scenario_rubric_ids?: string[] | null;
+            /** Scenario Time Limit Ids */
+            scenario_time_limit_ids?: string[] | null;
+            /** Scenario Persona Ids */
+            scenario_persona_ids?: string[] | null;
         };
         /**
          * SaveSimulationApiResponse
@@ -45956,14 +46013,24 @@ export interface components {
             type?: string | null;
         };
         /**
-         * SimulationMultiResourceAction
-         * @description Multi-select resource action with tool call tracking.
+         * SimulationGenerationStartedEvent
+         * @description Server-to-client event: simulation_generation_started.
+         *
+         *     Emitted when simulation generation begins, listing which resource types
+         *     will be generated.
          */
-        SimulationMultiResourceAction: {
-            /** Resource Ids */
-            resource_ids?: string[] | null;
-            /** Tool Id */
-            tool_id?: string | null;
+        SimulationGenerationStartedEvent: {
+            /**
+             * Artifact Type
+             * @default simulation
+             */
+            artifact_type: string;
+            /** Group Id */
+            group_id: string;
+            /** Run Id */
+            run_id: string;
+            /** Resource Types */
+            resource_types: string[];
         };
         /** SimulationNameSection */
         SimulationNameSection: {
@@ -46132,16 +46199,6 @@ export interface components {
             tool_call_id?: string | null;
             /** Tool Name */
             tool_name?: string | null;
-        };
-        /**
-         * SimulationResourceAction
-         * @description Single-select resource action with tool call tracking.
-         */
-        SimulationResourceAction: {
-            /** Resource Id */
-            resource_id?: string | null;
-            /** Tool Id */
-            tool_id?: string | null;
         };
         /**
          * SimulationScenario
@@ -67528,6 +67585,41 @@ export interface operations {
             };
         };
     };
+    simulation_generation_started_api_socket_v4_server_simulation_generation_started_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SimulationGenerationStartedEvent"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     simulation_generation_progress_api_socket_v4_server_simulation_generation_progress_post: {
         parameters: {
             query?: never;
@@ -68225,6 +68317,41 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["PersonaGenerationProgressEvent"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    cohort_generation_started_api_socket_v4_server_cohort_generation_started_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CohortGenerationStartedEvent"];
             };
         };
         responses: {

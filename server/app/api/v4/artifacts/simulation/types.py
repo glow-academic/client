@@ -487,20 +487,19 @@ class SimulationMultiResourceAction(BaseModel):
 
 
 class SaveSimulationApiRequest(BaseModel):
-    """Request for saving a simulation - nested resource actions."""
+    """Request for saving a simulation - flat resource IDs."""
 
-    group_id: UUID
     input_simulation_id: UUID | None = None
-    names: SimulationResourceAction
-    descriptions: SimulationResourceAction
-    flags: SimulationMultiResourceAction
-    departments: SimulationMultiResourceAction
-    scenarios: SimulationMultiResourceAction
-    scenario_flags: SimulationMultiResourceAction
-    scenario_positions: SimulationMultiResourceAction
-    scenario_rubrics: SimulationMultiResourceAction
-    scenario_time_limits: SimulationMultiResourceAction
-    scenario_personas: SimulationMultiResourceAction
+    name_id: UUID
+    description_id: UUID | None = None
+    flag_ids: list[UUID] | None = None
+    department_ids: list[UUID] | None = None
+    scenario_ids: list[UUID] | None = None
+    scenario_flag_ids: list[UUID] | None = None
+    scenario_position_ids: list[UUID] | None = None
+    scenario_rubric_ids: list[UUID] | None = None
+    scenario_time_limit_ids: list[UUID] | None = None
+    scenario_persona_ids: list[UUID] | None = None
 
 
 class SaveSimulationApiResponse(BaseModel):
@@ -529,22 +528,25 @@ class SaveSimulationSqlParams(BaseModel):
 
     @classmethod
     def from_request(
-        cls, request: SaveSimulationApiRequest, profile_id: UUID
+        cls,
+        request: SaveSimulationApiRequest,
+        profile_id: UUID,
+        group_id: UUID | None,
     ) -> "SaveSimulationSqlParams":
         return cls(
             profile_id=profile_id,
             input_simulation_id=request.input_simulation_id,
-            group_id=request.group_id,
-            names=request.names,
-            descriptions=request.descriptions,
-            flags=request.flags,
-            departments=request.departments,
-            scenarios=request.scenarios,
-            scenario_flags=request.scenario_flags,
-            scenario_positions=request.scenario_positions,
-            scenario_rubrics=request.scenario_rubrics,
-            scenario_time_limits=request.scenario_time_limits,
-            scenario_personas=request.scenario_personas,
+            group_id=group_id,
+            names=SimulationResourceAction(resource_id=request.name_id),
+            descriptions=SimulationResourceAction(resource_id=request.description_id),
+            flags=SimulationMultiResourceAction(resource_ids=request.flag_ids),
+            departments=SimulationMultiResourceAction(resource_ids=request.department_ids),
+            scenarios=SimulationMultiResourceAction(resource_ids=request.scenario_ids),
+            scenario_flags=SimulationMultiResourceAction(resource_ids=request.scenario_flag_ids),
+            scenario_positions=SimulationMultiResourceAction(resource_ids=request.scenario_position_ids),
+            scenario_rubrics=SimulationMultiResourceAction(resource_ids=request.scenario_rubric_ids),
+            scenario_time_limits=SimulationMultiResourceAction(resource_ids=request.scenario_time_limit_ids),
+            scenario_personas=SimulationMultiResourceAction(resource_ids=request.scenario_persona_ids),
         )
 
     def to_tuple(self) -> tuple[Any, ...]:
@@ -627,20 +629,20 @@ class DuplicateSimulationApiResponse(BaseModel):
 
 
 class PatchSimulationDraftApiRequest(BaseModel):
-    """Request for patching a simulation draft - nested resource actions."""
+    """Request for patching a simulation draft - flat resource IDs."""
 
     input_draft_id: UUID | None = None
     group_id: UUID | None = None
-    names: SimulationResourceAction | None = None
-    descriptions: SimulationResourceAction | None = None
-    flags: SimulationMultiResourceAction | None = None
-    departments: SimulationMultiResourceAction | None = None
-    scenarios: SimulationMultiResourceAction | None = None
-    scenario_flags: SimulationMultiResourceAction | None = None
-    scenario_positions: SimulationMultiResourceAction | None = None
-    scenario_rubrics: SimulationMultiResourceAction | None = None
-    scenario_time_limits: SimulationMultiResourceAction | None = None
-    scenario_personas: SimulationMultiResourceAction | None = None
+    name_id: UUID | None = None
+    description_id: UUID | None = None
+    flag_ids: list[UUID] | None = None
+    department_ids: list[UUID] | None = None
+    scenario_ids: list[UUID] | None = None
+    scenario_flag_ids: list[UUID] | None = None
+    scenario_position_ids: list[UUID] | None = None
+    scenario_rubric_ids: list[UUID] | None = None
+    scenario_time_limit_ids: list[UUID] | None = None
+    scenario_persona_ids: list[UUID] | None = None
     expected_version: int | None = 0
 
 
@@ -678,16 +680,16 @@ class PatchSimulationDraftSqlParams(BaseModel):
             profile_id=profile_id,
             input_draft_id=request.input_draft_id,
             group_id=request.group_id,
-            names=request.names,
-            descriptions=request.descriptions,
-            flags=request.flags,
-            departments=request.departments,
-            scenarios=request.scenarios,
-            scenario_flags=request.scenario_flags,
-            scenario_positions=request.scenario_positions,
-            scenario_rubrics=request.scenario_rubrics,
-            scenario_time_limits=request.scenario_time_limits,
-            scenario_personas=request.scenario_personas,
+            names=SimulationResourceAction(resource_id=request.name_id),
+            descriptions=SimulationResourceAction(resource_id=request.description_id),
+            flags=SimulationMultiResourceAction(resource_ids=request.flag_ids),
+            departments=SimulationMultiResourceAction(resource_ids=request.department_ids),
+            scenarios=SimulationMultiResourceAction(resource_ids=request.scenario_ids),
+            scenario_flags=SimulationMultiResourceAction(resource_ids=request.scenario_flag_ids),
+            scenario_positions=SimulationMultiResourceAction(resource_ids=request.scenario_position_ids),
+            scenario_rubrics=SimulationMultiResourceAction(resource_ids=request.scenario_rubric_ids),
+            scenario_time_limits=SimulationMultiResourceAction(resource_ids=request.scenario_time_limit_ids),
+            scenario_personas=SimulationMultiResourceAction(resource_ids=request.scenario_persona_ids),
             expected_version=request.expected_version,
         )
 
