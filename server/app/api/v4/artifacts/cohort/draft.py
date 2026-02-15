@@ -5,15 +5,17 @@ from typing import Annotated, Any, cast
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
+from app.api.v4.artifacts.cohort.permissions import compute_can_draft
 from app.api.v4.artifacts.cohort.types import (
     PatchCohortDraftApiRequest,
     PatchCohortDraftApiResponse,
     PatchCohortDraftSqlParams,
     PatchCohortDraftSqlRow,
 )
+from app.api.v4.auth.profile import get_auth_profile_internal
 from app.infra.v4.activity.audit import audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
-from app.main import get_db
+from app.main import get_db, get_pool
 from app.sql.types import load_sql_query
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.sql_helper import execute_sql_typed
@@ -45,6 +47,26 @@ async def patch_cohort_draft(
             raise HTTPException(
                 status_code=401,
                 detail="Profile ID is required. Please sign in again.",
+            )
+
+        # Fetch user context for permissions
+        pool = get_pool()
+        if pool:
+            async with pool.acquire() as context_conn:
+                profile_ctx = await get_auth_profile_internal(
+                    conn=context_conn,
+                    profile_id=profile_id,
+                    bypass_cache=False,
+                )
+                user_role = profile_ctx.access.role
+        else:
+            user_role = None
+
+        # Permission check using centralized permissions logic
+        if not compute_can_draft(user_role=user_role):
+            raise HTTPException(
+                status_code=403,
+                detail="You don't have permission to create or edit cohort drafts.",
             )
 
         async with conn.transaction():

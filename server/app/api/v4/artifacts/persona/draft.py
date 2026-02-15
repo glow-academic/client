@@ -16,18 +16,11 @@ from app.api.v4.auth.profile import get_auth_profile_internal
 from app.infra.v4.activity.audit import audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
-from app.sql.types import (
-    CheckPersonaDuplicateAccessSqlParams,
-    CheckPersonaDuplicateAccessSqlRow,
-    load_sql_query,
-)
+from app.sql.types import load_sql_query
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.sql_helper import execute_sql_typed
 
 # SQL paths
-ACCESS_CHECK_SQL_PATH = (
-    "app/sql/v4/queries/personas/check_persona_duplicate_access_complete.sql"
-)
 SQL_PATH = "app/sql/v4/queries/personas/patch_persona_draft_complete.sql"
 
 router = APIRouter()
@@ -69,25 +62,6 @@ async def patch_persona_draft(
                 user_role = profile_ctx.access.role
         else:
             user_role = None
-
-        # Permission check: get user role using typed SQL
-        access_params = CheckPersonaDuplicateAccessSqlParams(
-            profile_id=profile_id,
-        )
-        access_result = cast(
-            CheckPersonaDuplicateAccessSqlRow,
-            await execute_sql_typed(
-                conn,
-                ACCESS_CHECK_SQL_PATH,
-                params=access_params,
-            ),
-        )
-
-        if not access_result:
-            raise HTTPException(
-                status_code=401,
-                detail="Unable to verify user permissions.",
-            )
 
         # Permission check using centralized permissions logic
         can_draft_result = compute_can_draft(user_role=user_role)

@@ -26,13 +26,13 @@ CREATE OR REPLACE FUNCTION api_check_persona_save_access_v4(
 RETURNS TABLE (
     -- Persona state for Python permission logic (NULL for create mode)
     persona_department_ids text[],
-    active_scenario_count bigint,
-    group_id uuid
+    active_scenario_count bigint
 )
 LANGUAGE sql
-VOLATILE
+STABLE
 AS $$
 -- User context (actor_name, user_role, department_ids) comes from get_profile_context_internal() in Python
+-- Group ID creation moved to Python
 WITH params AS (
     SELECT
         profile_id AS profile_id,
@@ -55,17 +55,10 @@ persona_edit_state AS (
     FROM params x
     LEFT JOIN scenario_personas_junction spj ON spj.persona_id = x.persona_id AND spj.active = true
     WHERE x.persona_id IS NOT NULL
-),
--- Create a new group (guarantees group_id is always returned for save)
-ensure_group AS (
-    INSERT INTO groups_entry (created_at, updated_at)
-    VALUES (NOW(), NOW())
-    RETURNING id
 )
 SELECT
     COALESCE((SELECT department_ids FROM persona_departments_data), ARRAY[]::text[]) as persona_department_ids,
-    COALESCE((SELECT active_scenario_count FROM persona_edit_state), 0)::bigint as active_scenario_count,
-    (SELECT id FROM ensure_group) as group_id
+    COALESCE((SELECT active_scenario_count FROM persona_edit_state), 0)::bigint as active_scenario_count
 FROM params x
 $$;
 

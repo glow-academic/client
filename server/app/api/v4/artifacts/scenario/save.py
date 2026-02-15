@@ -7,6 +7,10 @@ from typing import Annotated, Any, cast
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
+from app.api.v4.artifacts.scenario.permissions import (
+    compute_can_create,
+    compute_can_save,
+)
 from app.api.v4.artifacts.scenario.types import (
     SaveScenarioApiRequest,
     SaveScenarioApiResponse,
@@ -64,7 +68,7 @@ async def save_scenario(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        # Fetch user context for audit logging
+        # Fetch user context for permissions and audit logging
         pool = get_pool()
         if pool:
             async with pool.acquire() as context_conn:
@@ -74,25 +78,59 @@ async def save_scenario(
                     bypass_cache=False,
                 )
                 actor_name = profile_ctx.access.actor_name
+                user_role = profile_ctx.access.role
+                user_department_ids = [
+                    d.department_id for d in profile_ctx.departments if d.department_id
+                ]
         else:
             actor_name = None
+            user_role = None
+            user_department_ids = []
 
-        # Resolve group_id server-side via access check
+        # Create group_id in Python (moved from SQL)
         group_id = None
         if pool:
-            async with pool.acquire() as access_conn:
-                access_params = GetScenarioAccessSqlParams(
-                    profile_id=profile_id,
-                    scenario_id=request.input_scenario_id,
-                    draft_id=None,
+            async with pool.acquire() as group_conn:
+                group_id = await group_conn.fetchval(
+                    "INSERT INTO groups_entry (created_at, updated_at) VALUES (NOW(), NOW()) RETURNING id"
                 )
-                access_result = cast(
-                    GetScenarioAccessSqlRow,
-                    await execute_sql_typed(
-                        access_conn, ACCESS_SQL_PATH, params=access_params
-                    ),
+
+        # Permission checks
+        if request.input_scenario_id:
+            # Update mode: check access and save permissions
+            access_params = GetScenarioAccessSqlParams(
+                profile_id=profile_id,
+                scenario_id=request.input_scenario_id,
+                draft_id=None,
+            )
+            access_result = cast(
+                GetScenarioAccessSqlRow,
+                await execute_sql_typed(
+                    conn, ACCESS_SQL_PATH, params=access_params
+                ),
+            )
+            if access_result and access_result.scenario_exists is False:
+                raise HTTPException(
+                    status_code=404,
+                    detail=f"Scenario {request.input_scenario_id} not found",
                 )
-                group_id = getattr(access_result, "group_id", None)
+            if not compute_can_save(
+                user_role,
+                user_department_ids,
+                getattr(access_result, "scenario_department_ids", None) or [],
+                getattr(access_result, "active_simulation_count", 0),
+            ):
+                raise HTTPException(
+                    status_code=403,
+                    detail="You don't have permission to save this scenario.",
+                )
+        else:
+            # Create mode: check create permissions
+            if not compute_can_create(user_role, user_department_ids):
+                raise HTTPException(
+                    status_code=403,
+                    detail="You don't have permission to create scenarios.",
+                )
 
         async with conn.transaction():
             # Convert API request to SQL params (add profile_id and server-resolved group_id)

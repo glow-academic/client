@@ -205,8 +205,13 @@ async def save_persona(
                 detail="You don't have permission to save this persona.",
             )
 
-        # Resolve group_id server-side from access check
-        group_id = getattr(access_result, "group_id", None)
+        # Create group_id in Python (moved from SQL)
+        group_id = None
+        if pool:
+            async with pool.acquire() as group_conn:
+                group_id = await group_conn.fetchval(
+                    "INSERT INTO groups_entry (created_at, updated_at) VALUES (NOW(), NOW()) RETURNING id"
+                )
 
         async with conn.transaction():
             # Convert API request to SQL params (add profile_id and server-resolved group_id)

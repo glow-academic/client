@@ -9085,7 +9085,6 @@ class CheckPersonaSaveAccessSqlRow(BaseModel):
 
     persona_department_ids: list[str] | None = None
     active_scenario_count: int | None = None
-    group_id: UUID | None = None
 
 class CheckPersonaSaveAccessApiRequest(BaseModel):
 
@@ -9095,7 +9094,6 @@ class CheckPersonaSaveAccessApiResponse(BaseModel):
 
     persona_department_ids: list[str] | None = None
     active_scenario_count: int | None = None
-    group_id: UUID | None = None
 
 
 

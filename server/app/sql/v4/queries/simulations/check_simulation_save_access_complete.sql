@@ -36,15 +36,7 @@ WITH params AS (
         simulation_id AS p_simulation_id,
         draft_id AS p_draft_id
 ),
--- User context: actor_name comes from get_profile_context_internal() in Python
-user_profile AS (
-    SELECT COALESCE(r.role, 'member'::profile_type) as role,
-           ''::text as actor_name
-    FROM profile_roles_junction prj
-    JOIN roles_resource r ON prj.role_id = r.id
-    WHERE prj.profile_id = (SELECT profile_id FROM params)
-    LIMIT 1
-),
+-- User context (role, actor_name) comes from get_profile_context_internal() in Python
 -- Check if simulation exists (only if simulation_id provided)
 simulation_exists_check AS (
     SELECT
@@ -78,8 +70,7 @@ SELECT
     sd.department_ids as simulation_department_ids,
     COALESCE(cu.usage_count, 0)::int as cohort_usage_count,
     drd.department_ids as draft_department_ids
-FROM user_profile up
-CROSS JOIN simulation_departments sd
+FROM simulation_departments sd
 CROSS JOIN cohort_usage cu
 CROSS JOIN draft_departments drd;
 $$;
