@@ -161,10 +161,14 @@ async def execute_sql_typed(
 
     # Execute query - handle functions vs raw SQL differently
     if is_function and function_name:
-        # JIT-create the function if it doesn't exist (e.g. test functions)
-        await conn.execute(sql_text)
-        # Refresh asyncpg's type cache after DROP TYPE/CREATE TYPE changes OIDs
-        await conn.reload_schema_state()
+        # JIT-create the function only once per process to avoid DROP TYPE / CREATE TYPE
+        # race conditions under concurrent load (OIDs change mid-flight on other connections).
+        cache_key_fn = f"{schema}.{function_name}"
+        if cache_key_fn not in _jit_created_functions:
+            await conn.execute(sql_text)
+            # Refresh asyncpg's type cache after DROP TYPE/CREATE TYPE changes OIDs
+            await conn.reload_schema_state()
+            _jit_created_functions.add(cache_key_fn)
 
         # Call it with SELECT * FROM schema.function_name($1, $2, ...)
         num_params = len(sql_params)
@@ -190,9 +194,12 @@ async def execute_sql_typed(
             # After DB drop/restore (migrate-db), OIDs change and connections hold stale
             # prepared statements. reload_schema_state() clears client-side caches and
             # re-introspects types so the retry uses fresh OIDs.
+            _jit_created_functions.discard(cache_key_fn)
             await conn.reload_schema_state()
             # Re-create the function on this connection (OIDs changed)
             await conn.execute(sql_text)
+            await conn.reload_schema_state()
+            _jit_created_functions.add(cache_key_fn)
             if sql_params:
                 rows = await conn.fetch(function_call_sql, *sql_params)
             else:
