@@ -18,12 +18,12 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useSocket } from "@/contexts/socket-context";
+import { useResourceAi } from "@/hooks/use-resource-ai";
 import type { OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 import { getIconComponent } from "@/utils/icons";
 import { Check, Loader2, Power, Sparkles, X } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo } from "react";
 
 // Derive resource item type from the GET endpoint response
 type FlagGetResponse = OutputOf<"/api/v4/resources/flags/get", "post">;
@@ -87,11 +87,6 @@ export function Flags(props: FlagsProps) {
     group_id,
     onChange,
     onGenerate,
-    isGenerating = false,
-    aiFlagResources,
-    onAccept,
-    onReject,
-    onGenerationComplete,
   } = props;
 
   // Determine mode based on props
@@ -111,39 +106,27 @@ export function Flags(props: FlagsProps) {
     [visibleFlags]
   );
 
-  // Socket-based AI suggestion handling
-  const { socket: aiSocket, isConnected: aiIsConnected } = useSocket();
-  const [internalAiFlagResources, setInternalAiFlagResources] = useState<
-    Pick<FlagResourceItem, "id" | "name">[] | null
-  >(null);
-
-  useEffect(() => {
-    if (!aiSocket || !aiIsConnected) return;
-    const handleResourceComplete = (data: { group_id?: string; id?: string | null; name?: string | null }) => {
-      if (group_id && data.group_id !== group_id) return;
-      setInternalAiFlagResources([
-        { id: data.id as string, name: data.name as string },
-      ]);
-      onGenerationComplete?.();
-    };
-    aiSocket.on("flags_generation_complete", handleResourceComplete);
-    return () => {
-      aiSocket.off("flags_generation_complete", handleResourceComplete);
-    };
-  }, [aiSocket, aiIsConnected, group_id, onGenerationComplete]);
-
-  // Effective AI flag resources: internal (socket) takes priority, then prop fallback
-  const effectiveAiFlagResources =
-    internalAiFlagResources ?? aiFlagResources ?? null;
+  // AI suggestion handling via shared hook (accumulate mode: each event = one flag)
+  const { isGenerating: aiIsGenerating, aiSuggestions, accept: acceptAi, reject: rejectAi } = useResourceAi<
+    Pick<FlagResourceItem, "id" | "name">
+  >({
+    resourceType: "flags",
+    groupId: group_id,
+    accumulate: true,
+    extractSuggestion: (data) => {
+      if (!data.id) return null;
+      return { id: data.id as string, name: data.name as string };
+    },
+  });
 
   // AI suggestion state
-  const showDiff = !!effectiveAiFlagResources?.length;
+  const showDiff = aiSuggestions.length > 0;
   const aiSuggestedFlagIds = useMemo(
     () =>
       new Set(
-        effectiveAiFlagResources?.map((f) => f.id).filter(Boolean) as string[]
+        aiSuggestions.map((f) => f.id).filter(Boolean) as string[]
       ),
-    [effectiveAiFlagResources]
+    [aiSuggestions]
   );
 
   // Get the checked state for a flag
@@ -176,9 +159,9 @@ export function Flags(props: FlagsProps) {
 
   // Accept AI suggestion - apply all AI-suggested flags
   const handleAccept = useCallback(() => {
-    if (!effectiveAiFlagResources?.length) return;
+    if (aiSuggestions.length === 0) return;
 
-    for (const aiFlag of effectiveAiFlagResources) {
+    for (const aiFlag of aiSuggestions) {
       if (!aiFlag.id) continue;
       // Find which flag this applies to and set it
       const targetFlag = visibleFlags.find(
@@ -197,15 +180,13 @@ export function Flags(props: FlagsProps) {
         }
       }
     }
-    setInternalAiFlagResources(null);
-    onAccept?.();
-  }, [effectiveAiFlagResources, visibleFlags, isMultiMode, onChange, onAccept]);
+    acceptAi();
+  }, [aiSuggestions, visibleFlags, isMultiMode, onChange, acceptAi]);
 
   // Reject AI suggestion - just clear the pending state
   const handleReject = useCallback(() => {
-    setInternalAiFlagResources(null);
-    onReject?.();
-  }, [onReject]);
+    rejectAi();
+  }, [rejectAi]);
 
   // Don't render if show_flags is false or no visible flags
   if (!show_flags || visibleFlags.length === 0) {
@@ -228,9 +209,9 @@ export function Flags(props: FlagsProps) {
                     size="icon"
                     className="h-6 w-6"
                     onClick={onGenerate}
-                    disabled={disabled || isGenerating || showDiff}
+                    disabled={disabled || aiIsGenerating || showDiff}
                   >
-                    {isGenerating ? (
+                    {aiIsGenerating ? (
                       <Loader2 className="h-3.5 w-3.5 animate-spin" />
                     ) : (
                       <Sparkles className="h-3.5 w-3.5" />

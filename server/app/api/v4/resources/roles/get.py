@@ -65,7 +65,12 @@ async def get_roles_internal(
         await execute_sql_typed(conn, SQL_PATH, params=params),
     )
 
-    items: list[QGetRolesV4Item] = result.items if result and result.items else []
+    items: list[QGetRolesV4Item] = [
+        QGetRolesV4Item.model_validate(
+            item.model_dump() if hasattr(item, "model_dump") else item
+        )
+        for item in (result.items or [])
+    ] if result else []
 
     # Cache result
     await set_cached(

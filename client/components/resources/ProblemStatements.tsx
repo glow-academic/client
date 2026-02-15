@@ -17,7 +17,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useSocket } from "@/contexts/socket-context";
+import { useResourceAi } from "@/hooks/use-resource-ai";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 import { Check, Loader2, Sparkles, X } from "lucide-react";
@@ -197,7 +197,7 @@ export function ProblemStatements({
   onProblemStatementIdChange,
   onGenerate,
   showAiGenerate = false,
-  isGenerating = false,
+  isGenerating: _isGenerating = false,
   label = "Problem Statement",
   placeholder = "Enter problem statement",
   required = false,
@@ -210,11 +210,11 @@ export function ProblemStatements({
   createProblemStatementsAction,
   searchTerm,
   onSearchChange,
-  // AI diff view props
-  aiResource,
-  onAccept,
-  onReject,
-  onGenerationComplete,
+  // AI diff view props (deprecated - handled by useResourceAi hook)
+  aiResource: _aiResource,
+  onAccept: _onAccept,
+  onReject: _onReject,
+  onGenerationComplete: _onGenerationComplete,
   isAutosaveEnabled = true,
   registerFlush,
 }: ProblemStatementsProps) {
@@ -230,36 +230,29 @@ export function ProblemStatements({
     [problem_statements]
   );
 
-  // Socket-based AI suggestion handling
-  const { socket: aiSocket, isConnected: aiIsConnected } = useSocket();
-  const [internalAiResource, setInternalAiResource] = useState<
-    ProblemStatementResourceItem | null
-  >(null);
-
-  useEffect(() => {
-    if (!aiSocket || !aiIsConnected) return;
-    const handleResourceComplete = (data: {
-      group_id?: string;
-      problem_statement_id?: string | null;
-      problem_statement?: string | null;
-    }) => {
-      if (group_id && data.group_id !== group_id) return;
-      if (data.problem_statement_id) {
-        setInternalAiResource({
-          problem_statement_id: data.problem_statement_id,
-          problem_statement: data.problem_statement ?? null,
-        } as ProblemStatementResourceItem);
+  // Socket-based AI suggestion handling via shared hook
+  const {
+    isGenerating: aiIsGenerating,
+    aiSuggestion,
+    accept: acceptAi,
+    reject: rejectAi,
+  } = useResourceAi<ProblemStatementResourceItem>({
+    resourceType: "problem_statements",
+    groupId: group_id,
+    extractSuggestion: (data) => {
+      const d = data as {
+        problem_statement_id?: string | null;
+        problem_statement?: string | null;
+      };
+      if (d.problem_statement_id) {
+        return {
+          problem_statement_id: d.problem_statement_id,
+          problem_statement: d.problem_statement ?? null,
+        } as ProblemStatementResourceItem;
       }
-      onGenerationComplete?.();
-    };
-    aiSocket.on("problem_statements_generation_complete", handleResourceComplete);
-    return () => {
-      aiSocket.off("problem_statements_generation_complete", handleResourceComplete);
-    };
-  }, [aiSocket, aiIsConnected, group_id, onGenerationComplete]);
-
-  // Effective AI resource: internal (socket) takes priority, then prop fallback
-  const effectiveAiResource = internalAiResource ?? aiResource ?? null;
+      return null;
+    },
+  });
 
   // Handle nullable resource properties
   const resourceProblemStatement = resource?.problem_statement ?? "";
@@ -486,30 +479,28 @@ export function ProblemStatements({
   }, [problemStatementsArray, suggestionsMapping]);
 
   // AI diff view state
-  const showDiff = !!effectiveAiResource?.problem_statement;
+  const showDiff = !!aiSuggestion?.problem_statement;
   const currentText = internalValue || "";
-  const aiText = effectiveAiResource?.problem_statement || "";
+  const aiText = aiSuggestion?.problem_statement || "";
 
   // Accept AI suggestion - update internal value and notify parent
   const handleAccept = useCallback(() => {
-    if (!effectiveAiResource?.problem_statement_id) return;
+    if (!aiSuggestion?.problem_statement_id) return;
     if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
     saveSeqRef.current += 1;
-    const text = effectiveAiResource.problem_statement || "";
+    const text = aiSuggestion.problem_statement || "";
     setInternalValue(text);
     lastSavedValueRef.current = text;
     lastServerTextRef.current = text;
     isDirtyRef.current = false;
-    onProblemStatementIdChange(effectiveAiResource.problem_statement_id);
-    setInternalAiResource(null);
-    onAccept?.();
-  }, [effectiveAiResource, onProblemStatementIdChange, onAccept]);
+    onProblemStatementIdChange(aiSuggestion.problem_statement_id);
+    acceptAi();
+  }, [aiSuggestion, onProblemStatementIdChange, acceptAi]);
 
   // Reject AI suggestion - just clear the pending state
   const handleReject = useCallback(() => {
-    setInternalAiResource(null);
-    onReject?.();
-  }, [onReject]);
+    rejectAi();
+  }, [rejectAi]);
 
   // Don't render if show_problem_statement is false (AFTER all hooks)
   if (!show) {
@@ -534,9 +525,9 @@ export function ProblemStatements({
                     size="icon"
                     className="h-6 w-6"
                     onClick={onGenerate}
-                    disabled={disabled || isGenerating || showDiff}
+                    disabled={disabled || aiIsGenerating || showDiff}
                   >
-                    {isGenerating ? (
+                    {aiIsGenerating ? (
                       <Loader2 className="h-3.5 w-3.5 animate-spin" />
                     ) : (
                       <Sparkles className="h-3.5 w-3.5" />

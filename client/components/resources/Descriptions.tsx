@@ -17,7 +17,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useSocket } from "@/contexts/socket-context";
+import { useResourceAi } from "@/hooks/use-resource-ai";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 import { Check, Loader2, Sparkles, X } from "lucide-react";
@@ -405,52 +405,42 @@ export function Descriptions({
     isDirtyRef.current = newValue !== lastSavedValueRef.current;
   }, []);
 
-  // Internal socket-based AI suggestion handling
-  const { socket: aiSocket, isConnected: aiIsConnected } = useSocket();
-  const [internalAiResource, setInternalAiResource] = useState<{ id?: string | null; description?: string | null } | null>(null);
-
-  useEffect(() => {
-    if (!aiSocket || !aiIsConnected) return;
-    const handleResourceComplete = (data: { group_id?: string; id?: string | null; description?: string | null }) => {
-      if (group_id && data.group_id !== group_id) return;
-      setInternalAiResource({
-        id: data.id ?? null,
-        description: data.description ?? null,
-      });
-      onGenerationComplete?.();
-    };
-    aiSocket.on("descriptions_generation_complete", handleResourceComplete);
-    return () => { aiSocket.off("descriptions_generation_complete", handleResourceComplete); };
-  }, [aiSocket, aiIsConnected, group_id, onGenerationComplete]);
-
-  // Compute effective AI resource: internal socket state takes priority, then prop
-  const effectiveAiResource = internalAiResource ?? aiResource ?? null;
+  // AI suggestion handling via shared hook
+  const { isGenerating: aiIsGenerating, aiSuggestion, accept: acceptAi, reject: rejectAi } = useResourceAi<{
+    id: string | null;
+    description: string | null;
+  }>({
+    resourceType: "descriptions",
+    groupId: group_id,
+    extractSuggestion: (data) => {
+      if (!data.success && data.success !== undefined) return null;
+      return { id: (data.id as string) ?? null, description: (data.description as string) ?? null };
+    },
+  });
 
   // AI diff view state
-  const showDiff = !!effectiveAiResource?.description;
+  const showDiff = !!aiSuggestion?.description;
   const currentText = internalValue || "";
-  const aiText = effectiveAiResource?.description || "";
+  const aiText = aiSuggestion?.description || "";
 
   // Accept AI suggestion - update internal value and notify parent
   const handleAccept = useCallback(() => {
-    if (!effectiveAiResource?.id) return;
+    if (!aiSuggestion?.id) return;
     if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
     saveSeqRef.current += 1;
-    const text = effectiveAiResource.description || "";
+    const text = aiSuggestion.description || "";
     setInternalValue(text);
     lastSavedValueRef.current = text;
     lastServerTextRef.current = text;
     isDirtyRef.current = false;
-    onDescriptionIdChange(effectiveAiResource.id);
-    setInternalAiResource(null);
-    onAccept?.();
-  }, [effectiveAiResource, onDescriptionIdChange, onAccept]);
+    onDescriptionIdChange(aiSuggestion.id);
+    acceptAi();
+  }, [aiSuggestion, onDescriptionIdChange, acceptAi]);
 
   // Reject AI suggestion - just clear the pending state
   const handleReject = useCallback(() => {
-    setInternalAiResource(null);
-    onReject?.();
-  }, [onReject]);
+    rejectAi();
+  }, [rejectAi]);
 
   // Use descriptions array if available, otherwise create placeholder mapping
   const suggestionsMapping = useMemo(() => {
@@ -516,9 +506,9 @@ export function Descriptions({
                     size="icon"
                     className="h-6 w-6"
                     onClick={onGenerate}
-                    disabled={disabled || isGenerating || showDiff}
+                    disabled={disabled || aiIsGenerating || showDiff}
                   >
-                    {isGenerating ? (
+                    {aiIsGenerating ? (
                       <Loader2 className="h-3.5 w-3.5 animate-spin" />
                     ) : (
                       <Sparkles className="h-3.5 w-3.5" />
@@ -592,7 +582,7 @@ export function Descriptions({
             onDescriptionIdChange(selectedId);
             // Clear any pending AI suggestion when picker selection changes
             if (showDiff) {
-              onReject?.();
+              rejectAi();
             }
           }}
           getId={(item) => {

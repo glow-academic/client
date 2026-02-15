@@ -16,11 +16,11 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useSocket } from "@/contexts/socket-context";
+import { useResourceAi } from "@/hooks/use-resource-ai";
 import type { OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 import { Check, X } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo } from "react";
 
 // Derive resource item type from the GET endpoint response
 type ModelsGetResponse = OutputOf<"/api/v4/resources/models/get", "post">;
@@ -70,11 +70,11 @@ export function Models({
   showSelectedFilter = false,
   onShowSelectedChange,
   group_id,
-  // AI diff view props
-  aiModelResources,
-  onAccept,
-  onReject,
-  onGenerationComplete,
+  // AI diff view props (deprecated — kept for interface compat)
+  aiModelResources: _aiModelResources,
+  onAccept: _onAccept,
+  onReject: _onReject,
+  onGenerationComplete: _onGenerationComplete,
   showAiGenerate: _showAiGenerate = false,
   onGenerate: _onGenerate,
   isGenerating: _isGenerating = false,
@@ -86,44 +86,26 @@ export function Models({
     [model_suggestions]
   );
 
-  // Socket-based AI suggestion handling
-  const { socket: aiSocket, isConnected: aiIsConnected } = useSocket();
-  const [internalAiModelResources, setInternalAiModelResources] = useState<
-    Array<Pick<ModelResourceItem, "id" | "name">> | null
-  >(null);
-
-  useEffect(() => {
-    if (!aiSocket || !aiIsConnected) return;
-    const handleResourceComplete = (data: {
-      group_id?: string;
-      id?: string | null;
-      name?: string | null;
-    }) => {
-      if (group_id && data.group_id !== group_id) return;
-      if (data.id) {
-        setInternalAiModelResources([{ id: data.id, name: data.name ?? null }]);
-      }
-      onGenerationComplete?.();
-    };
-    aiSocket.on("models_generation_complete", handleResourceComplete);
-    return () => {
-      aiSocket.off("models_generation_complete", handleResourceComplete);
-    };
-  }, [aiSocket, aiIsConnected, group_id, onGenerationComplete]);
-
-  // Effective AI resources: internal (socket) takes priority, then prop fallback
-  const effectiveAiModelResources = internalAiModelResources ?? aiModelResources ?? null;
+  // AI suggestion via shared hook
+  const { aiSuggestion, accept: acceptAi, reject: rejectAi } = useResourceAi<
+    Pick<ModelResourceItem, "id" | "name">
+  >({
+    resourceType: "models",
+    groupId: group_id,
+    extractSuggestion: (data) => {
+      const id = data.id as string | null | undefined;
+      const name = data.name as string | null | undefined;
+      if (!id) return null;
+      return { id, name: name ?? null };
+    },
+  });
 
   // AI suggestion state
-  const showDiff = !!effectiveAiModelResources?.length;
+  const showDiff = !!aiSuggestion?.id;
   const aiSuggestedIds = useMemo(
     () =>
-      new Set(
-        effectiveAiModelResources
-          ?.map((m) => m.id)
-          .filter(Boolean) as string[]
-      ),
-    [effectiveAiModelResources]
+      aiSuggestion?.id ? new Set([aiSuggestion.id]) : new Set<string>(),
+    [aiSuggestion]
   );
 
   // Handle search term changes
@@ -195,22 +177,19 @@ export function Models({
     [resourceId, onModelIdChange]
   );
 
-  // Accept AI suggestion - set the AI-suggested model and clear internal state
+  // Accept AI suggestion - set the AI-suggested model and clear state
   const handleAccept = useCallback(() => {
-    if (!effectiveAiModelResources?.length) return;
-    const suggestedId = effectiveAiModelResources[0]?.id;
-    if (suggestedId && suggestedId !== resourceId) {
-      onModelIdChange(suggestedId);
+    if (!aiSuggestion?.id) return;
+    if (aiSuggestion.id !== resourceId) {
+      onModelIdChange(aiSuggestion.id);
     }
-    onAccept?.();
-    setInternalAiModelResources(null);
-  }, [effectiveAiModelResources, resourceId, onModelIdChange, onAccept]);
+    acceptAi();
+  }, [aiSuggestion, resourceId, onModelIdChange, acceptAi]);
 
-  // Reject AI suggestion - clear internal state
+  // Reject AI suggestion - clear state
   const handleReject = useCallback(() => {
-    setInternalAiModelResources(null);
-    onReject?.();
-  }, [onReject]);
+    rejectAi();
+  }, [rejectAi]);
 
   // Don't render if show_models is false (AFTER all hooks)
   if (!show) {

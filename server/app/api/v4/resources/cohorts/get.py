@@ -66,7 +66,12 @@ async def get_cohorts_internal(
         await execute_sql_typed(conn, SQL_PATH, params=params),
     )
 
-    items: list[QGetCohortsV4Item] = result.items if result and result.items else []
+    items: list[QGetCohortsV4Item] = [
+        QGetCohortsV4Item.model_validate(
+            item.model_dump() if hasattr(item, "model_dump") else item
+        )
+        for item in (result.items or [])
+    ] if result else []
 
     # Cache result
     await set_cached(

@@ -15,7 +15,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useSocket } from "@/contexts/socket-context";
+import { useResourceAi } from "@/hooks/use-resource-ai";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { getIconComponent } from "@/utils/icons";
 import { cn } from "@/lib/utils";
@@ -119,7 +119,7 @@ export function ScenarioFlags({
   create_tool_id,
   createScenarioFlagsAction,
   onGenerate,
-  isGenerating = false,
+  isGenerating: _isGenerating = false,
   showAiGenerate = false,
   isAutosaveEnabled = true,
   registerFlush,
@@ -197,33 +197,28 @@ export function ScenarioFlags({
   // Ref for flush function (stable reference for registerFlush)
   const flushRef = useRef<(() => Promise<{ scenario_flag_ids: string[] } | void>) | null>(null);
 
-  // Socket-based AI suggestion handling
-  const { socket: aiSocket, isConnected: aiIsConnected } = useSocket();
-  const [internalAiFlagResources, setInternalAiFlagResources] = useState<
-    Pick<ScenarioFlagsResourceItem, "id">[] | null
-  >(null);
-
-  useEffect(() => {
-    if (!aiSocket || !aiIsConnected) return;
-    const handleResourceComplete = (data: {
-      group_id?: string;
-      id?: string | null;
-    }) => {
-      if (group_id && data.group_id !== group_id) return;
-      if (data.id) {
-        setInternalAiFlagResources([{ id: data.id }]);
+  // Socket-based AI suggestion handling via shared hook
+  const {
+    isGenerating: aiIsGenerating,
+    aiSuggestion: aiSuggestionFromSocket,
+    accept: acceptAi,
+    reject: rejectAi,
+  } = useResourceAi<Pick<ScenarioFlagsResourceItem, "id">[]>({
+    resourceType: "scenario_flags",
+    groupId: group_id,
+    extractSuggestion: (data) => {
+      const id = data.id as string | null | undefined;
+      if (id) {
+        onGenerationComplete?.();
+        return [{ id }];
       }
-      onGenerationComplete?.();
-    };
-    aiSocket.on("scenario_flags_generation_complete", handleResourceComplete);
-    return () => {
-      aiSocket.off("scenario_flags_generation_complete", handleResourceComplete);
-    };
-  }, [aiSocket, aiIsConnected, group_id, onGenerationComplete]);
+      return null;
+    },
+  });
 
-  // Effective AI resources: internal (socket) takes priority, then prop fallback
+  // Effective AI resources: hook (socket) takes priority, then prop fallback
   const effectiveAiFlagResources =
-    internalAiFlagResources ?? aiFlagResources ?? null;
+    aiSuggestionFromSocket ?? aiFlagResources ?? null;
 
   useEffect(() => {
     const nextSelected = new Map<string, Set<string>>();
@@ -478,15 +473,15 @@ export function ScenarioFlags({
         }
       }
     }
-    setInternalAiFlagResources(null);
+    acceptAi();
     onAccept?.();
-  }, [effectiveAiFlagResources, filteredFlagOptionsByScenario, handleToggle, onAccept]);
+  }, [effectiveAiFlagResources, filteredFlagOptionsByScenario, handleToggle, acceptAi, onAccept]);
 
   // Reject AI suggestion - just clear the pending state
   const handleReject = useCallback(() => {
-    setInternalAiFlagResources(null);
+    rejectAi();
     onReject?.();
-  }, [onReject]);
+  }, [rejectAi, onReject]);
 
   if (!show || scenario_ids.length === 0) {
     return null;
@@ -515,9 +510,9 @@ export function ScenarioFlags({
                     size="icon"
                     className="h-6 w-6"
                     onClick={onGenerate}
-                    disabled={disabled || isGenerating || showDiff}
+                    disabled={disabled || aiIsGenerating || showDiff}
                   >
-                    {isGenerating ? (
+                    {aiIsGenerating ? (
                       <Loader2 className="h-3.5 w-3.5 animate-spin" />
                     ) : (
                       <Sparkles className="h-3.5 w-3.5" />

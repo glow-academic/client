@@ -16,7 +16,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useSocket } from "@/contexts/socket-context";
+import { useResourceAi } from "@/hooks/use-resource-ai";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 import { Check, GripVertical, Loader2, PlusCircle, Sparkles, Target, Trash2, X } from "lucide-react";
@@ -220,14 +220,14 @@ export function Objectives({
   createObjectivesAction,
   onGenerate,
   showAiGenerate = false,
-  isGenerating = false,
+  isGenerating: _isGenerating = false,
   objectiveMapping = {},
   isAutosaveEnabled = true,
   registerFlush,
-  // AI diff view props
-  aiObjectiveResources,
-  onAccept,
-  onReject,
+  // AI diff view props (deprecated — now handled by useResourceAi hook)
+  aiObjectiveResources: _aiObjectiveResources,
+  onAccept: _onAccept,
+  onReject: _onReject,
   onGenerationComplete,
 }: ObjectivesProps) {
   // Use standardized props
@@ -269,36 +269,25 @@ export function Objectives({
       .filter((text): text is string => text !== null && text !== undefined && text.trim() !== "");
   }, [objective_suggestions, effectiveObjectiveMapping, allObjectives]);
 
-  // Socket-based AI suggestion handling
-  const { socket: aiSocket, isConnected: aiIsConnected } = useSocket();
-  const [internalAiObjectiveResources, setInternalAiObjectiveResources] = useState<
-    Pick<ObjectiveResourceItem, "objective_id" | "objective">[] | null
-  >(null);
-
-  useEffect(() => {
-    if (!aiSocket || !aiIsConnected) return;
-    const handleResourceComplete = (data: {
-      group_id?: string;
-      objective_id?: string | null;
-      objective?: string | null;
-    }) => {
-      if (group_id && data.group_id !== group_id) return;
-      if (data.objective_id) {
-        setInternalAiObjectiveResources([
-          { objective_id: data.objective_id, objective: data.objective ?? null },
-        ]);
+  // Socket-based AI suggestion handling via shared hook
+  const {
+    isGenerating: aiIsGenerating,
+    aiSuggestion,
+    accept: acceptAi,
+    reject: rejectAi,
+  } = useResourceAi<Pick<ObjectiveResourceItem, "objective_id" | "objective">[]>({
+    resourceType: "objectives",
+    groupId: group_id,
+    extractSuggestion: (data) => {
+      const objectiveId = data.objective_id as string | null | undefined;
+      const objective = data.objective as string | null | undefined;
+      if (objectiveId) {
+        onGenerationComplete?.();
+        return [{ objective_id: objectiveId, objective: objective ?? null }];
       }
-      onGenerationComplete?.();
-    };
-    aiSocket.on("objectives_generation_complete", handleResourceComplete);
-    return () => {
-      aiSocket.off("objectives_generation_complete", handleResourceComplete);
-    };
-  }, [aiSocket, aiIsConnected, group_id, onGenerationComplete]);
-
-  // Effective AI resources: internal (socket) takes priority, then prop fallback
-  const effectiveAiObjectiveResources =
-    internalAiObjectiveResources ?? aiObjectiveResources ?? null;
+      return null;
+    },
+  });
 
   // Internal state for display texts (synced with objective_ids via objectiveMapping)
   const [internalTexts, setInternalTexts] = useState<string[]>(() => {
@@ -512,33 +501,31 @@ export function Objectives({
   }, [_objective_resources]);
 
   // AI suggestion state
-  const showDiff = !!effectiveAiObjectiveResources?.length;
+  const showDiff = !!aiSuggestion?.length;
 
   // Accept AI suggestion - add AI-suggested objectives to internal texts
   const handleAccept = useCallback(() => {
-    if (!effectiveAiObjectiveResources?.length) return;
+    if (!aiSuggestion?.length) return;
     // Add AI objectives to internal texts
-    const newTexts = effectiveAiObjectiveResources
+    const newTexts = aiSuggestion
       .map((o) => o.objective)
       .filter((text): text is string => !!text);
     if (newTexts.length > 0) {
       setInternalTexts((prev) => [...prev.filter((t) => t.trim()), ...newTexts]);
       // Map the new objective IDs
-      effectiveAiObjectiveResources.forEach((o) => {
+      aiSuggestion.forEach((o) => {
         if (o.objective_id && o.objective) {
           objectiveIdMapRef.current.set(o.objective, o.objective_id);
         }
       });
     }
-    setInternalAiObjectiveResources(null);
-    onAccept?.();
-  }, [effectiveAiObjectiveResources, onAccept]);
+    acceptAi();
+  }, [aiSuggestion, acceptAi]);
 
   // Reject AI suggestion - just clear the pending state
   const handleReject = useCallback(() => {
-    setInternalAiObjectiveResources(null);
-    onReject?.();
-  }, [onReject]);
+    rejectAi();
+  }, [rejectAi]);
 
   // Don't render if show_objectives is false (AFTER all hooks)
   if (!show) {
@@ -566,9 +553,9 @@ export function Objectives({
                     size="icon"
                     className="h-6 w-6"
                     onClick={onGenerate}
-                    disabled={disabled || isGenerating || showDiff}
+                    disabled={disabled || aiIsGenerating || showDiff}
                   >
-                    {isGenerating ? (
+                    {aiIsGenerating ? (
                       <Loader2 className="h-3.5 w-3.5 animate-spin" />
                     ) : (
                       <Sparkles className="h-3.5 w-3.5" />
@@ -621,11 +608,11 @@ export function Objectives({
       )}
       
       {/* AI-suggested objectives preview */}
-      {showDiff && effectiveAiObjectiveResources && effectiveAiObjectiveResources.length > 0 && (
+      {showDiff && aiSuggestion && aiSuggestion.length > 0 && (
         <div className="mb-4 space-y-2">
           <p className="text-sm font-medium text-success">AI Suggested Objectives</p>
           <div className="space-y-2">
-            {effectiveAiObjectiveResources.map((item, idx) => (
+            {aiSuggestion.map((item, idx) => (
               <div
                 key={item.objective_id || idx}
                 className={cn(

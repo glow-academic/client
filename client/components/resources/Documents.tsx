@@ -27,7 +27,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import type { InputOf, OutputOf } from "@/lib/api/types";
-import { useSocket } from "@/contexts/socket-context";
+import { useResourceAi } from "@/hooks/use-resource-ai";
 import { cn } from "@/lib/utils";
 import { Check, Eye, Loader2, Sparkles, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -96,15 +96,15 @@ export function Documents({
   create_tool_id,
   createDocumentsAction,
   onGenerate,
-  isGenerating = false,
+  isGenerating: _isGenerating = false,
   showAiGenerate = false,
   videoEnabled = false,
   isAutosaveEnabled = true,
   registerFlush,
-  // AI diff view props
-  aiDocumentResources,
-  onAccept,
-  onReject,
+  // AI diff view props (deprecated - kept for interface compatibility)
+  aiDocumentResources: _aiDocumentResources,
+  onAccept: _onAccept,
+  onReject: _onReject,
   onGenerationComplete,
 }: DocumentsProps) {
   const ids = useMemo(() => document_ids ?? [], [document_ids]);
@@ -135,36 +135,25 @@ export function Documents({
     [document_suggestions]
   );
 
-  // Socket-based AI suggestion handling
-  const { socket: aiSocket, isConnected: aiIsConnected } = useSocket();
-  const [internalAiDocumentResources, setInternalAiDocumentResources] = useState<
-    Pick<DocumentResourceItem, "document_id" | "name">[] | null
-  >(null);
-
-  useEffect(() => {
-    if (!aiSocket || !aiIsConnected) return;
-    const handleResourceComplete = (data: {
-      group_id?: string;
-      document_id?: string | null;
-      name?: string | null;
-    }) => {
-      if (group_id && data.group_id !== group_id) return;
-      if (data.document_id) {
-        setInternalAiDocumentResources([
-          { document_id: data.document_id, name: data.name ?? null },
-        ]);
+  // AI suggestion handling via shared hook
+  const {
+    isGenerating: aiIsGenerating,
+    aiSuggestion,
+    accept: acceptAi,
+    reject: rejectAi,
+  } = useResourceAi<Pick<DocumentResourceItem, "document_id" | "name">[]>({
+    resourceType: "documents",
+    groupId: group_id,
+    extractSuggestion: (data) => {
+      const documentId = data.document_id as string | null | undefined;
+      const name = data.name as string | null | undefined;
+      if (documentId) {
+        onGenerationComplete?.();
+        return [{ document_id: documentId, name: name ?? null }];
       }
-      onGenerationComplete?.();
-    };
-    aiSocket.on("documents_generation_complete", handleResourceComplete);
-    return () => {
-      aiSocket.off("documents_generation_complete", handleResourceComplete);
-    };
-  }, [aiSocket, aiIsConnected, group_id, onGenerationComplete]);
-
-  // Effective AI resources: internal (socket) takes priority, then prop fallback
-  const effectiveAiDocumentResources =
-    internalAiDocumentResources ?? aiDocumentResources ?? null;
+      return null;
+    },
+  });
 
   // Track which document IDs have already had resources created
   const createdDocumentIdsRef = useRef<Set<string>>(new Set());
@@ -278,35 +267,33 @@ export function Documents({
   }, [document_resources]);
 
   // AI suggestion state
-  const showDiff = !!effectiveAiDocumentResources?.length;
+  const showDiff = !!aiSuggestion?.length;
   const aiSuggestedIds = useMemo(
     () =>
       new Set(
-        effectiveAiDocumentResources
+        aiSuggestion
           ?.map((d) => d.document_id)
           .filter(Boolean) as string[]
       ),
-    [effectiveAiDocumentResources]
+    [aiSuggestion]
   );
 
   // Accept AI suggestion - add AI-suggested documents to selection
   const handleAccept = useCallback(() => {
-    if (!effectiveAiDocumentResources?.length) return;
-    const newIds = effectiveAiDocumentResources
+    if (!aiSuggestion?.length) return;
+    const newIds = aiSuggestion
       .map((d) => d.document_id)
       .filter((id): id is string => !!id && !ids.includes(id));
     if (newIds.length > 0) {
       onChange([...ids, ...newIds]);
     }
-    onAccept?.();
-    setInternalAiDocumentResources(null);
-  }, [effectiveAiDocumentResources, ids, onChange, onAccept]);
+    acceptAi();
+  }, [aiSuggestion, ids, onChange, acceptAi]);
 
   // Reject AI suggestion - clear internal state
   const handleReject = useCallback(() => {
-    setInternalAiDocumentResources(null);
-    onReject?.();
-  }, [onReject]);
+    rejectAi();
+  }, [rejectAi]);
 
   // Don't render if show_documents is false (AFTER all hooks)
   if (!show) {
@@ -336,9 +323,9 @@ export function Documents({
                     size="icon"
                     className="h-6 w-6"
                     onClick={onGenerate}
-                    disabled={disabled || isGenerating || showDiff}
+                    disabled={disabled || aiIsGenerating || showDiff}
                   >
-                    {isGenerating ? (
+                    {aiIsGenerating ? (
                       <Loader2 className="h-3.5 w-3.5 animate-spin" />
                     ) : (
                       <Sparkles className="h-3.5 w-3.5" />

@@ -20,7 +20,7 @@ import {
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 import { getColorName } from "@/utils/color-helpers";
-import { useSocket } from "@/contexts/socket-context";
+import { useResourceAi } from "@/hooks/use-resource-ai";
 import { Check, Loader2, Sparkles, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
@@ -101,7 +101,7 @@ export function Colors({
   onChange,
   multiSelect = false,
   onGenerate,
-  isGenerating = false,
+  isGenerating: _isGenerating = false,
   label = "Color",
   id = "color",
   required = false,
@@ -121,11 +121,11 @@ export function Colors({
   colorId: _colorId,
   presetColors,
   colorSuggestions,
-  // AI diff view props
-  aiResource,
-  onAccept,
-  onReject,
-  onGenerationComplete,
+  // AI diff view props (deprecated - kept for backward compatibility)
+  aiResource: _aiResource,
+  onAccept: _onAccept,
+  onReject: _onReject,
+  onGenerationComplete: _onGenerationComplete,
 }: ColorsProps) {
   // Use standardized props with fallback to legacy props
   const resource = color_resource ?? colorResource ?? null;
@@ -137,55 +137,41 @@ export function Colors({
   );
   const ids = useMemo(() => color_ids ?? [], [color_ids]);
 
-  // Socket-based AI suggestion handling
-  const { socket: aiSocket, isConnected: aiIsConnected } = useSocket();
-  const [internalAiResource, setInternalAiResource] = useState<{ id?: string | null; name?: string | null; hex_code?: string | null } | null>(null);
-
-  useEffect(() => {
-    if (!aiSocket || !aiIsConnected) return;
-    const handleResourceComplete = (data: {
-      group_id?: string;
-      id?: string | null;
-      name?: string | null;
-      hex_code?: string | null;
-    }) => {
-      if (group_id && data.group_id !== group_id) return;
-      setInternalAiResource({
-        id: data.id ?? null,
-        name: data.name ?? null,
-        hex_code: data.hex_code ?? null,
-      });
-      onGenerationComplete?.();
-    };
-    aiSocket.on("colors_generation_complete", handleResourceComplete);
-    return () => { aiSocket.off("colors_generation_complete", handleResourceComplete); };
-  }, [aiSocket, aiIsConnected, group_id, onGenerationComplete]);
-
-  const effectiveAiResource = internalAiResource ?? aiResource ?? null;
+  // AI suggestion via shared hook
+  const { isGenerating: aiIsGenerating, aiSuggestion, accept: acceptAi, reject: rejectAi } = useResourceAi<{
+    id: string | null;
+    name: string | null;
+    hex_code: string | null;
+  }>({
+    resourceType: "colors",
+    groupId: group_id,
+    extractSuggestion: (data) => {
+      if (!data.success && data.success !== undefined) return null;
+      return { id: (data.id as string) ?? null, name: (data.name as string) ?? null, hex_code: (data.hex_code as string) ?? null };
+    },
+  });
 
   // AI suggestion state
-  const showDiff = !!effectiveAiResource?.id;
-  const aiSuggestedId = effectiveAiResource?.id || null;
+  const showDiff = !!aiSuggestion?.id;
+  const aiSuggestedId = aiSuggestion?.id || null;
 
   // Accept AI suggestion - update color selection
   const handleAcceptAi = useCallback(() => {
-    if (!effectiveAiResource?.id) return;
+    if (!aiSuggestion?.id) return;
     if (onColorIdChange) {
-      onColorIdChange(effectiveAiResource.id);
+      onColorIdChange(aiSuggestion.id);
     }
-    if (effectiveAiResource.hex_code) {
-      setInternalValue(effectiveAiResource.hex_code);
-      lastSavedValueRef.current = effectiveAiResource.hex_code;
+    if (aiSuggestion.hex_code) {
+      setInternalValue(aiSuggestion.hex_code);
+      lastSavedValueRef.current = aiSuggestion.hex_code;
     }
-    setInternalAiResource(null);
-    onAccept?.();
-  }, [effectiveAiResource, onColorIdChange, onAccept]);
+    acceptAi();
+  }, [aiSuggestion, onColorIdChange, acceptAi]);
 
   // Reject AI suggestion - just clear the pending state
   const handleRejectAi = useCallback(() => {
-    setInternalAiResource(null);
-    onReject?.();
-  }, [onReject]);
+    rejectAi();
+  }, [rejectAi]);
   
   // Track which color IDs have already had resources created (multi-select)
   const createdColorIdsRef = useRef<Set<string>>(new Set());
@@ -559,9 +545,9 @@ export function Colors({
                       size="icon"
                       className="h-6 w-6"
                       onClick={onGenerate}
-                      disabled={disabled || isGenerating}
+                      disabled={disabled || aiIsGenerating}
                     >
-                      {isGenerating ? (
+                      {aiIsGenerating ? (
                         <Loader2 className="h-3.5 w-3.5 animate-spin" />
                       ) : (
                         <Sparkles className="h-3.5 w-3.5" />
@@ -647,9 +633,9 @@ export function Colors({
                   size="icon"
                   className="h-6 w-6"
                   onClick={onGenerate}
-                  disabled={disabled || isGenerating || showDiff}
+                  disabled={disabled || aiIsGenerating || showDiff}
                 >
-                  {isGenerating ? (
+                  {aiIsGenerating ? (
                     <Loader2 className="h-3.5 w-3.5 animate-spin" />
                   ) : (
                     <Sparkles className="h-3.5 w-3.5" />

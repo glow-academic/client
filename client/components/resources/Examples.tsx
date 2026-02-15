@@ -16,7 +16,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import type { OutputOf } from "@/lib/api/types";
-import { useSocket } from "@/contexts/socket-context";
+import { useResourceAi } from "@/hooks/use-resource-ai";
 import { cn } from "@/lib/utils";
 import { Check, Loader2, Sparkles, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -88,18 +88,18 @@ export function Examples({
   showAiGenerate = false,
   createExamplesAction,
   onGenerate,
-  isGenerating = false,
+  isGenerating: _isGenerating = false,
   exampleMapping = {},
   isAutosaveEnabled = true,
   registerFlush,
   // Legacy props for backward compatibility
   exampleIds,
   suggestions = [],
-  // AI diff view props
-  aiExampleResources,
-  onAccept,
-  onReject,
-  onGenerationComplete,
+  // AI diff view props (deprecated — handled by useResourceAi hook)
+  aiExampleResources: _aiExampleResources,
+  onAccept: _onAccept,
+  onReject: _onReject,
+  onGenerationComplete: _onGenerationComplete,
 }: ExamplesProps) {
   // Use standardized props with fallback to legacy props
   const ids = useMemo(
@@ -328,26 +328,19 @@ export function Examples({
     setInternalTexts(items.length > 0 ? items : [""]);
   }, []);
 
-  // Socket-based AI suggestion handling
-  const { socket: aiSocket, isConnected: aiIsConnected } = useSocket();
-  const [internalAiExampleResources, setInternalAiExampleResources] = useState<Pick<ExampleResourceItem, "id" | "example">[] | null>(null);
-
-  useEffect(() => {
-    if (!aiSocket || !aiIsConnected || !group_id) return;
-
-    const handleGenerationComplete = (data: { group_id?: string; id?: string | null; example?: string | null }) => {
-      if (data.group_id !== group_id) return;
-      setInternalAiExampleResources([{ id: data.id as string, example: data.example as string }]);
-      onGenerationComplete?.();
-    };
-
-    aiSocket.on("examples_generation_complete", handleGenerationComplete);
-    return () => {
-      aiSocket.off("examples_generation_complete", handleGenerationComplete);
-    };
-  }, [aiSocket, aiIsConnected, group_id, onGenerationComplete]);
-
-  const effectiveAiExampleResources = internalAiExampleResources ?? aiExampleResources ?? null;
+  // AI suggestion handling via shared hook
+  const { isGenerating: aiIsGenerating, aiSuggestions, accept: acceptAi, reject: rejectAi } = useResourceAi<{
+    id: string | null;
+    example: string | null;
+  }>({
+    resourceType: "examples",
+    groupId: group_id,
+    extractSuggestion: (data) => {
+      if (!data.success && data.success !== undefined) return null;
+      return { id: (data.id as string) ?? null, example: (data.example as string) ?? null };
+    },
+    accumulate: true,
+  });
 
   // Check if any example resource is generated (must be before early return)
   const hasGenerated = useMemo(() => {
@@ -355,33 +348,31 @@ export function Examples({
   }, [_example_resources]);
 
   // AI suggestion state
-  const showDiff = !!effectiveAiExampleResources?.length;
+  const showDiff = aiSuggestions.length > 0;
 
   // Accept AI suggestion - add AI-suggested examples to internal texts
   const handleAccept = useCallback(() => {
-    if (!effectiveAiExampleResources?.length) return;
+    if (!aiSuggestions.length) return;
     // Add AI examples to internal texts
-    const newTexts = effectiveAiExampleResources
+    const newTexts = aiSuggestions
       .map((e) => e.example)
       .filter((text): text is string => !!text);
     if (newTexts.length > 0) {
       setInternalTexts((prev) => [...prev.filter((t) => t.trim()), ...newTexts]);
       // Map the new example IDs
-      effectiveAiExampleResources.forEach((e) => {
+      aiSuggestions.forEach((e) => {
         if (e.id && e.example) {
           exampleIdMapRef.current.set(e.example, e.id);
         }
       });
     }
-    setInternalAiExampleResources(null);
-    onAccept?.();
-  }, [effectiveAiExampleResources, onAccept]);
+    acceptAi();
+  }, [aiSuggestions, acceptAi]);
 
   // Reject AI suggestion - just clear the pending state
   const handleReject = useCallback(() => {
-    setInternalAiExampleResources(null);
-    onReject?.();
-  }, [onReject]);
+    rejectAi();
+  }, [rejectAi]);
 
   // Don't render if show_examples is false (AFTER all hooks)
   if (!show) {
@@ -406,9 +397,9 @@ export function Examples({
                     size="icon"
                     className="h-6 w-6"
                     onClick={onGenerate}
-                    disabled={disabled || isGenerating || showDiff}
+                    disabled={disabled || aiIsGenerating || showDiff}
                   >
-                    {isGenerating ? (
+                    {aiIsGenerating ? (
                       <Loader2 className="h-3.5 w-3.5 animate-spin" />
                     ) : (
                       <Sparkles className="h-3.5 w-3.5" />
@@ -460,11 +451,11 @@ export function Examples({
         </div>
       )}
       {/* AI-suggested examples preview */}
-      {showDiff && effectiveAiExampleResources && effectiveAiExampleResources.length > 0 && (
+      {showDiff && aiSuggestions.length > 0 && (
         <div className="mb-4 space-y-2">
           <p className="text-sm font-medium text-success">AI Suggested Examples</p>
           <div className="space-y-2">
-            {effectiveAiExampleResources.map((item, idx) => (
+            {aiSuggestions.map((item, idx) => (
               <div
                 key={item.id || idx}
                 className={cn(

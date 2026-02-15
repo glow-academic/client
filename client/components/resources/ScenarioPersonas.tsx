@@ -25,7 +25,7 @@ import type { InputOf, OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 import { Check, Loader2, Sparkles, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useSocket } from "@/contexts/socket-context";
+import { useResourceAi } from "@/hooks/use-resource-ai";
 
 type CreateDraftScenarioPersonasIn = InputOf<
   "/api/v4/resources/scenario_personas",
@@ -150,51 +150,28 @@ export function ScenarioPersonas({
     [scenario_persona_resources],
   );
 
-  // Socket-based AI suggestion handling
-  const { socket: aiSocket, isConnected: aiIsConnected } = useSocket();
-  const [
-    internalAiScenarioPersonaResources,
-    setInternalAiScenarioPersonaResources,
-  ] = useState<
-    | Pick<ScenarioPersonasResourceItem, "id" | "scenario_id" | "persona_id">[]
-    | null
-  >(null);
-
-  useEffect(() => {
-    if (!aiSocket || !aiIsConnected) return;
-    const handleResourceComplete = (data: {
-      group_id?: string;
-      id?: string | null;
-      scenario_id?: string | null;
-      persona_id?: string | null;
-    }) => {
-      if (group_id && data.group_id !== group_id) return;
-      if (data.id) {
-        setInternalAiScenarioPersonaResources([
-          {
-            id: data.id,
-            scenario_id: data.scenario_id ?? null,
-            persona_id: data.persona_id ?? null,
-          },
-        ]);
-      }
+  // Socket-based AI suggestion handling via shared hook
+  const { isGenerating: aiIsGenerating, aiSuggestion, accept: acceptAi, reject: rejectAi } = useResourceAi<
+    Pick<ScenarioPersonasResourceItem, "id" | "scenario_id" | "persona_id"> & { persona_name?: string | null }
+  >({
+    resourceType: "scenario_personas",
+    groupId: group_id,
+    extractSuggestion: (data) => {
+      if (!data.id) return null;
       onGenerationComplete?.();
-    };
-    aiSocket.on(
-      "scenario_personas_generation_complete",
-      handleResourceComplete,
-    );
-    return () => {
-      aiSocket.off(
-        "scenario_personas_generation_complete",
-        handleResourceComplete,
-      );
-    };
-  }, [aiSocket, aiIsConnected, group_id, onGenerationComplete]);
+      return {
+        id: (data.id as string) ?? null,
+        scenario_id: (data.scenario_id as string) ?? null,
+        persona_id: (data.persona_id as string) ?? null,
+        persona_name: (data.persona_name as string) ?? null,
+      };
+    },
+  });
 
-  // Effective AI resources: internal (socket) takes priority, then prop fallback
-  const effectiveAiScenarioPersonaResources =
-    internalAiScenarioPersonaResources ?? aiScenarioPersonaResources ?? null;
+  // AI suggestions: hook suggestion takes priority, then prop fallback
+  const aiSuggestions = aiSuggestion
+    ? [aiSuggestion]
+    : aiScenarioPersonaResources ?? null;
 
   const scenarioLabelMap = useMemo(() => {
     const map = new Map<string, string>();
@@ -423,30 +400,30 @@ export function ScenarioPersonas({
   );
 
   // AI suggestion state
-  const showDiff = !!effectiveAiScenarioPersonaResources?.length;
+  const showDiff = !!aiSuggestions?.length;
 
   // Set of AI-suggested scenario IDs for styling
   const aiSuggestedScenarioIds = useMemo(
     () =>
       new Set(
-        effectiveAiScenarioPersonaResources
+        aiSuggestions
           ?.map((r) => r.scenario_id)
           .filter(Boolean) as string[],
       ),
-    [effectiveAiScenarioPersonaResources],
+    [aiSuggestions],
   );
 
   // Accept AI suggestion - apply AI-suggested persona assignments
   const handleAccept = useCallback(() => {
-    if (!effectiveAiScenarioPersonaResources?.length) return;
-    effectiveAiScenarioPersonaResources.forEach((r) => {
+    if (!aiSuggestions?.length) return;
+    aiSuggestions.forEach((r) => {
       if (r.scenario_id && r.persona_id) {
         handlePersonaChange(r.scenario_id, r.persona_id);
       }
     });
     setInternalAiScenarioPersonaResources(null);
     onAccept?.();
-  }, [effectiveAiScenarioPersonaResources, handlePersonaChange, onAccept]);
+  }, [aiSuggestions, handlePersonaChange, onAccept]);
 
   // Reject AI suggestion - just clear the pending state
   const handleReject = useCallback(() => {
@@ -535,14 +512,14 @@ export function ScenarioPersonas({
       )}
       {/* AI-suggested persona assignments preview */}
       {showDiff &&
-        effectiveAiScenarioPersonaResources &&
-        effectiveAiScenarioPersonaResources.length > 0 && (
+        aiSuggestions &&
+        aiSuggestions.length > 0 && (
           <div className="mb-4 space-y-2">
             <p className="text-sm font-medium text-success">
               AI Suggested Persona Assignments
             </p>
             <div className="space-y-2">
-              {effectiveAiScenarioPersonaResources.map((item, idx) => {
+              {aiSuggestions.map((item, idx) => {
                 const scenarioLabel =
                   scenarioLabelMap.get(item.scenario_id || "") ??
                   "Unknown scenario";

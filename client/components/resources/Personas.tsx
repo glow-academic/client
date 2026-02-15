@@ -19,9 +19,9 @@ import {
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 import { getIconComponent } from "@/utils/icons";
-import { useSocket } from "@/contexts/socket-context";
+import { useResourceAi } from "@/hooks/use-resource-ai";
 import { Brain, Check, Loader2, Sparkles, X } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 
 // Utility function to generate gradient from hex color
 const generateGradientFromHex = (hexColor: string): string => {
@@ -110,14 +110,14 @@ export function Personas({
   createPersonasAction,
   onGenerate,
   showAiGenerate = false,
-  isGenerating = false,
+  isGenerating: _isGenerating = false,
   videoEnabled = false,
   isAutosaveEnabled = true,
   registerFlush,
   // AI diff view props
   aiPersonaResources,
-  onAccept,
-  onReject,
+  onAccept: _onAccept,
+  onReject: _onReject,
   onGenerationComplete,
 }: PersonasProps) {
   const ids = useMemo(() => persona_ids ?? [], [persona_ids]);
@@ -148,36 +148,29 @@ export function Personas({
     [persona_suggestions]
   );
 
-  // Socket-based AI suggestion handling
-  const { socket: aiSocket, isConnected: aiIsConnected } = useSocket();
-  const [internalAiPersonaResources, setInternalAiPersonaResources] = useState<
-    Pick<PersonaResourceItem, "persona_id" | "name">[] | null
-  >(null);
-
-  useEffect(() => {
-    if (!aiSocket || !aiIsConnected) return;
-    const handleResourceComplete = (data: {
-      group_id?: string;
-      persona_id?: string | null;
-      name?: string | null;
-    }) => {
-      if (group_id && data.group_id !== group_id) return;
-      if (data.persona_id) {
-        setInternalAiPersonaResources([
-          { persona_id: data.persona_id, name: data.name ?? null },
-        ]);
+  // AI suggestion via shared hook
+  const {
+    isGenerating: aiIsGenerating,
+    aiSuggestion,
+    accept: acceptAi,
+    reject: rejectAi,
+  } = useResourceAi<Pick<PersonaResourceItem, "persona_id" | "name">[]>({
+    resourceType: "personas",
+    groupId: group_id,
+    extractSuggestion: (data) => {
+      const personaId = data.persona_id as string | null | undefined;
+      const name = data.name as string | null | undefined;
+      if (personaId) {
+        onGenerationComplete?.();
+        return [{ persona_id: personaId, name: name ?? null }];
       }
-      onGenerationComplete?.();
-    };
-    aiSocket.on("personas_generation_complete", handleResourceComplete);
-    return () => {
-      aiSocket.off("personas_generation_complete", handleResourceComplete);
-    };
-  }, [aiSocket, aiIsConnected, group_id, onGenerationComplete]);
+      return null;
+    },
+  });
 
-  // Effective AI resources: internal (socket) takes priority, then prop fallback
+  // Effective AI resources: hook (socket) takes priority, then prop fallback
   const effectiveAiPersonaResources =
-    internalAiPersonaResources ?? aiPersonaResources ?? null;
+    aiSuggestion ?? aiPersonaResources ?? null;
 
   // Track which persona IDs have already had resources created
   const createdPersonaIdsRef = useRef<Set<string>>(new Set());
@@ -310,15 +303,13 @@ export function Personas({
     if (newIds.length > 0) {
       onChange([...ids, ...newIds]);
     }
-    onAccept?.();
-    setInternalAiPersonaResources(null);
-  }, [effectiveAiPersonaResources, ids, onChange, onAccept]);
+    acceptAi();
+  }, [effectiveAiPersonaResources, ids, onChange, acceptAi]);
 
   // Reject AI suggestion - clear internal state
   const handleReject = useCallback(() => {
-    setInternalAiPersonaResources(null);
-    onReject?.();
-  }, [onReject]);
+    rejectAi();
+  }, [rejectAi]);
 
   // Don't render if show_personas is false (AFTER all hooks)
   if (!show) {
@@ -348,9 +339,9 @@ export function Personas({
                     size="icon"
                     className="h-6 w-6"
                     onClick={onGenerate}
-                    disabled={disabled || isGenerating || showDiff}
+                    disabled={disabled || aiIsGenerating || showDiff}
                   >
-                    {isGenerating ? (
+                    {aiIsGenerating ? (
                       <Loader2 className="h-3.5 w-3.5 animate-spin" />
                     ) : (
                       <Sparkles className="h-3.5 w-3.5" />

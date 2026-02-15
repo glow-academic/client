@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/tooltip";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
-import { useSocket } from "@/contexts/socket-context";
+import { useResourceAi } from "@/hooks/use-resource-ai";
 import {
   Check,
   ChevronLeft,
@@ -178,50 +178,40 @@ export function ScenarioPositions({
     return map;
   }, [scenarios, scenario_resources]);
 
-  // Socket-based AI suggestion handling
-  const { socket: aiSocket, isConnected: aiIsConnected } = useSocket();
-  const [
-    internalAiScenarioPositionResources,
-    setInternalAiScenarioPositionResources,
-  ] = useState<
-    Pick<ScenarioPositionResourceItem, "id" | "scenario_id" | "value">[] | null
-  >(null);
-
-  useEffect(() => {
-    if (!aiSocket || !aiIsConnected) return;
-    const handleResourceComplete = (data: {
-      group_id?: string;
-      id?: string | null;
-      scenario_id?: string | null;
-      value?: number | null;
-    }) => {
-      if (group_id && data.group_id !== group_id) return;
-      if (data.id) {
-        setInternalAiScenarioPositionResources([
+  // Socket-based AI suggestion handling via shared hook
+  type AiPositionSuggestion = Pick<ScenarioPositionResourceItem, "id" | "scenario_id" | "value">;
+  const {
+    isGenerating: aiIsGenerating,
+    aiSuggestion,
+    accept: acceptAi,
+    reject: rejectAi,
+  } = useResourceAi<AiPositionSuggestion[]>({
+    resourceType: "scenario_positions",
+    groupId: group_id,
+    extractSuggestion: (data) => {
+      const d = data as {
+        id?: string | null;
+        scenario_id?: string | null;
+        value?: number | null;
+      };
+      if (d.id) {
+        onGenerationComplete?.();
+        return [
           {
-            id: data.id,
-            scenario_id: data.scenario_id ?? null,
-            value: data.value ?? null,
+            id: d.id,
+            scenario_id: d.scenario_id ?? null,
+            value: d.value ?? null,
           },
-        ]);
+        ];
       }
       onGenerationComplete?.();
-    };
-    aiSocket.on(
-      "scenario_positions_generation_complete",
-      handleResourceComplete,
-    );
-    return () => {
-      aiSocket.off(
-        "scenario_positions_generation_complete",
-        handleResourceComplete,
-      );
-    };
-  }, [aiSocket, aiIsConnected, group_id, onGenerationComplete]);
+      return null;
+    },
+  });
 
-  // Effective AI resources: internal (socket) takes priority, then prop fallback
+  // Effective AI resources: hook suggestion takes priority, then prop fallback
   const effectiveAiScenarioPositionResources =
-    internalAiScenarioPositionResources ?? aiScenarioPositionResources ?? null;
+    aiSuggestion ?? aiScenarioPositionResources ?? null;
 
   // Map resource ID → artifact ID for API calls (API expects scenario_artifact.id)
   // From get_simulation SQL: s.id = scenarios_resource.id, s.scenario_id = scenario_artifact.id (via junction)
@@ -501,21 +491,22 @@ export function ScenarioPositions({
       generated: false,
     }));
     onChange(positionsArray);
-    setInternalAiScenarioPositionResources(null);
+    acceptAi();
     onAccept?.();
   }, [
     effectiveAiScenarioPositionResources,
     localPositions,
     simulation_id,
     onChange,
+    acceptAi,
     onAccept,
   ]);
 
   // Reject AI suggestion - just clear the pending state
   const handleReject = useCallback(() => {
-    setInternalAiScenarioPositionResources(null);
+    rejectAi();
     onReject?.();
-  }, [onReject]);
+  }, [rejectAi, onReject]);
 
   // Don't render if show_scenario_positions is false or no scenarios (AFTER all hooks)
   if (!show || scenario_ids.length === 0) {
@@ -545,9 +536,9 @@ export function ScenarioPositions({
                     size="icon"
                     className="h-6 w-6"
                     onClick={onGenerate}
-                    disabled={disabled || isGenerating || showDiff}
+                    disabled={disabled || aiIsGenerating || showDiff}
                   >
-                    {isGenerating ? (
+                    {aiIsGenerating ? (
                       <Loader2 className="h-3.5 w-3.5 animate-spin" />
                     ) : (
                       <Sparkles className="h-3.5 w-3.5" />

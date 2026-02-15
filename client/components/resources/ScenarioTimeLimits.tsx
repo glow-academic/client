@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/tooltip";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
-import { useSocket } from "@/contexts/socket-context";
+import { useResourceAi } from "@/hooks/use-resource-ai";
 import { Check, Clock, Loader2, Sparkles, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
@@ -127,56 +127,43 @@ export function ScenarioTimeLimits({
     [scenario_time_limit_resources],
   );
 
-  // Socket-based AI suggestion handling
-  const { socket: aiSocket, isConnected: aiIsConnected } = useSocket();
-  const [
-    internalAiScenarioTimeLimitResources,
-    setInternalAiScenarioTimeLimitResources,
-  ] = useState<
-    | Pick<
-        ScenarioTimeLimitResourceItem,
-        "id" | "scenario_id" | "time_limit_seconds"
-      >[]
-    | null
-  >(null);
-
-  useEffect(() => {
-    if (!aiSocket || !aiIsConnected) return;
-    const handleResourceComplete = (data: {
-      group_id?: string;
-      id?: string | null;
-      scenario_id?: string | null;
-      time_limit_seconds?: number | null;
-    }) => {
-      if (group_id && data.group_id !== group_id) return;
-      if (data.id) {
-        setInternalAiScenarioTimeLimitResources([
+  // Socket-based AI suggestion handling via shared hook
+  type AiTimeLimitSuggestion = Pick<
+    ScenarioTimeLimitResourceItem,
+    "id" | "scenario_id" | "time_limit_seconds"
+  >;
+  const {
+    isGenerating: aiIsGenerating,
+    aiSuggestion,
+    accept: acceptAi,
+    reject: rejectAi,
+  } = useResourceAi<AiTimeLimitSuggestion[]>({
+    resourceType: "scenario_time_limits",
+    groupId: group_id,
+    extractSuggestion: (data) => {
+      const d = data as {
+        id?: string | null;
+        scenario_id?: string | null;
+        time_limit_seconds?: number | null;
+      };
+      if (d.id) {
+        onGenerationComplete?.();
+        return [
           {
-            id: data.id,
-            scenario_id: data.scenario_id ?? null,
-            time_limit_seconds: data.time_limit_seconds ?? null,
+            id: d.id,
+            scenario_id: d.scenario_id ?? null,
+            time_limit_seconds: d.time_limit_seconds ?? null,
           },
-        ]);
+        ];
       }
       onGenerationComplete?.();
-    };
-    aiSocket.on(
-      "scenario_time_limits_generation_complete",
-      handleResourceComplete,
-    );
-    return () => {
-      aiSocket.off(
-        "scenario_time_limits_generation_complete",
-        handleResourceComplete,
-      );
-    };
-  }, [aiSocket, aiIsConnected, group_id, onGenerationComplete]);
+      return null;
+    },
+  });
 
-  // Effective AI resources: internal (socket) takes priority, then prop fallback
+  // Effective AI resources: hook suggestion takes priority, then prop fallback
   const effectiveAiScenarioTimeLimitResources =
-    internalAiScenarioTimeLimitResources ??
-    aiScenarioTimeLimitResources ??
-    null;
+    aiSuggestion ?? aiScenarioTimeLimitResources ?? null;
 
   const scenarioLabelMap = useMemo(() => {
     const map = new Map<string, string>();
@@ -403,15 +390,15 @@ export function ScenarioTimeLimits({
         handleChange(r.scenario_id, String(r.time_limit_seconds));
       }
     });
-    setInternalAiScenarioTimeLimitResources(null);
+    acceptAi();
     onAccept?.();
-  }, [effectiveAiScenarioTimeLimitResources, handleChange, onAccept]);
+  }, [effectiveAiScenarioTimeLimitResources, handleChange, acceptAi, onAccept]);
 
   // Reject AI suggestion - just clear the pending state
   const handleReject = useCallback(() => {
-    setInternalAiScenarioTimeLimitResources(null);
+    rejectAi();
     onReject?.();
-  }, [onReject]);
+  }, [rejectAi, onReject]);
 
   if (!show || scenario_ids.length === 0) {
     return null;

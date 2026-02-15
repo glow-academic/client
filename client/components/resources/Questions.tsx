@@ -17,7 +17,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useSocket } from "@/contexts/socket-context";
+import { useResourceAi } from "@/hooks/use-resource-ai";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 import {
@@ -116,17 +116,17 @@ export function Questions({
   group_id,
   createQuestionsAction,
   onGenerate,
-  isGenerating = false,
+  isGenerating: _isGenerating = false,
   showAiGenerate = false,
   questionMapping = {},
   videoLength = null,
   isAutosaveEnabled = true,
   registerFlush,
-  // AI diff view props
-  aiQuestionResources,
-  onAccept,
-  onReject,
-  onGenerationComplete,
+  // AI diff view props (deprecated - handled by useResourceAi hook)
+  aiQuestionResources: _aiQuestionResources,
+  onAccept: _onAccept,
+  onReject: _onReject,
+  onGenerationComplete: _onGenerationComplete,
 }: QuestionsProps) {
   // Use standardized props
   const ids = useMemo(() => question_ids ?? [], [question_ids]);
@@ -162,36 +162,25 @@ export function Questions({
     return [];
   }, [question_suggestions, effectiveQuestionMapping]);
 
-  // Socket-based AI suggestion handling
-  const { socket: aiSocket, isConnected: aiIsConnected } = useSocket();
-  const [internalAiQuestionResources, setInternalAiQuestionResources] = useState<
-    Pick<QuestionsResourceItem, "question_id" | "question_text">[] | null
-  >(null);
-
-  useEffect(() => {
-    if (!aiSocket || !aiIsConnected) return;
-    const handleResourceComplete = (data: {
-      group_id?: string;
-      question_id?: string | null;
-      question_text?: string | null;
-    }) => {
-      if (group_id && data.group_id !== group_id) return;
-      if (data.question_id) {
-        setInternalAiQuestionResources([
-          { question_id: data.question_id, question_text: data.question_text ?? null },
-        ]);
+  // AI suggestion handling via shared hook
+  type AiQuestionSuggestion = Pick<QuestionsResourceItem, "question_id" | "question_text">[];
+  const {
+    isGenerating: aiIsGenerating,
+    aiSuggestion,
+    accept: acceptAi,
+    reject: rejectAi,
+  } = useResourceAi<AiQuestionSuggestion>({
+    resourceType: "questions",
+    groupId: group_id,
+    extractSuggestion: (data) => {
+      const questionId = data.question_id as string | null | undefined;
+      const questionText = data.question_text as string | null | undefined;
+      if (questionId) {
+        return [{ question_id: questionId, question_text: questionText ?? null }];
       }
-      onGenerationComplete?.();
-    };
-    aiSocket.on("questions_generation_complete", handleResourceComplete);
-    return () => {
-      aiSocket.off("questions_generation_complete", handleResourceComplete);
-    };
-  }, [aiSocket, aiIsConnected, group_id, onGenerationComplete]);
-
-  // Effective AI resources: internal (socket) takes priority, then prop fallback
-  const effectiveAiQuestionResources =
-    internalAiQuestionResources ?? aiQuestionResources ?? null;
+      return null;
+    },
+  });
 
   // Internal state for questions (matching ContentSection pattern)
   const [internalQuestions, setInternalQuestions] = useState<QuestionType[]>(
@@ -722,13 +711,13 @@ export function Questions({
   }, [_question_resources]);
 
   // AI suggestion state
-  const showDiff = !!effectiveAiQuestionResources?.length;
+  const showDiff = !!aiSuggestion?.length;
 
   // Accept AI suggestion - add AI-suggested questions to internal questions
   const handleAccept = useCallback(() => {
-    if (!effectiveAiQuestionResources?.length) return;
+    if (!aiSuggestion?.length) return;
     // Add AI questions to internal questions
-    const newQuestions = effectiveAiQuestionResources
+    const newQuestions = aiSuggestion
       .filter((q) => q.question_text)
       .map((q, idx) => ({
         id: q.question_id || `ai-${idx}`,
@@ -746,21 +735,19 @@ export function Questions({
         ...newQuestions,
       ]);
       // Map the new question IDs
-      effectiveAiQuestionResources.forEach((q) => {
+      aiSuggestion.forEach((q) => {
         if (q.question_id && q.question_text) {
           questionIdMapRef.current.set(q.question_text, q.question_id);
         }
       });
     }
-    setInternalAiQuestionResources(null);
-    onAccept?.();
-  }, [effectiveAiQuestionResources, onAccept]);
+    acceptAi();
+  }, [aiSuggestion, acceptAi]);
 
   // Reject AI suggestion - just clear the pending state
   const handleReject = useCallback(() => {
-    setInternalAiQuestionResources(null);
-    onReject?.();
-  }, [onReject]);
+    rejectAi();
+  }, [rejectAi]);
 
   // Don't render if show_questions is false (AFTER all hooks)
   if (!show) {
@@ -789,9 +776,9 @@ export function Questions({
                     size="icon"
                     className="h-6 w-6"
                     onClick={onGenerate}
-                    disabled={disabled || isGenerating || showDiff}
+                    disabled={disabled || aiIsGenerating || showDiff}
                   >
-                    {isGenerating ? (
+                    {aiIsGenerating ? (
                       <Loader2 className="h-3.5 w-3.5 animate-spin" />
                     ) : (
                       <Sparkles className="h-3.5 w-3.5" />
@@ -844,11 +831,11 @@ export function Questions({
       )}
 
       {/* AI-suggested questions preview */}
-      {showDiff && effectiveAiQuestionResources && effectiveAiQuestionResources.length > 0 && (
+      {showDiff && aiSuggestion && aiSuggestion.length > 0 && (
         <div className="mb-4 space-y-2">
           <p className="text-sm font-medium text-success">AI Suggested Questions</p>
           <div className="space-y-2">
-            {effectiveAiQuestionResources.map((item, idx) => (
+            {aiSuggestion.map((item, idx) => (
               <div
                 key={item.question_id || idx}
                 className={cn(

@@ -16,7 +16,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useSocket } from "@/contexts/socket-context";
+import { useResourceAi } from "@/hooks/use-resource-ai";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 import { Check, Loader2, Sparkles, X } from "lucide-react";
@@ -111,14 +111,14 @@ export function ParameterFields({
   showAiGenerate = false,
   createParameterFieldsAction,
   onGenerate,
-  onGenerationComplete,
-  isGenerating = false,
+  onGenerationComplete: _onGenerationComplete,
+  isGenerating: _isGenerating = false,
   isAutosaveEnabled = true,
   registerFlush,
   // AI diff view props
   aiParameterFieldResources,
-  onAccept,
-  onReject,
+  onAccept: _onAccept,
+  onReject: _onReject,
 }: ParameterFieldsProps) {
   const show = show_parameter_fields ?? false;
   // Available fields from parameter_fields_junction (what user CAN select)
@@ -489,33 +489,23 @@ export function ParameterFields({
     [selectedFieldKeyToResourceId, localKeyToResourceId, resourceIds, pendingSelections]
   );
 
-  // Internal socket-based AI suggestion handling
-  const { socket: aiSocket, isConnected: aiIsConnected } = useSocket();
-  const [internalAiParameterFieldResources, setInternalAiParameterFieldResources] = useState<Pick<ParameterFieldResourceItem, "id" | "field_id" | "parameter_id">[] | null>(null);
-
-  useEffect(() => {
-    if (!aiSocket || !aiIsConnected || !group_id) return;
-
-    const handleGenerationComplete = (data: { group_id?: string; id?: string | null; field_id?: string | null; parameter_id?: string | null }) => {
-      if (data.group_id !== group_id) return;
-
-      setInternalAiParameterFieldResources([
+  // AI suggestion handling via shared hook
+  const { isGenerating: aiIsGenerating, aiSuggestion, accept: acceptAi, reject: rejectAi } = useResourceAi<Pick<ParameterFieldResourceItem, "id" | "field_id" | "parameter_id">[]>({
+    resourceType: "parameter_fields",
+    groupId: group_id,
+    extractSuggestion: (data) => {
+      if (!data.id && !data.field_id && !data.parameter_id) return null;
+      return [
         {
           id: data.id as string,
           field_id: data.field_id as string,
           parameter_id: data.parameter_id as string,
         },
-      ]);
-      onGenerationComplete?.();
-    };
+      ];
+    },
+  });
 
-    aiSocket.on("parameter_fields_generation_complete", handleGenerationComplete);
-    return () => {
-      aiSocket.off("parameter_fields_generation_complete", handleGenerationComplete);
-    };
-  }, [aiSocket, aiIsConnected, group_id, onGenerationComplete]);
-
-  const effectiveAiParameterFieldResources = internalAiParameterFieldResources ?? aiParameterFieldResources ?? null;
+  const effectiveAiParameterFieldResources = aiSuggestion ?? aiParameterFieldResources ?? null;
 
   // Group available fields by parameter_id
   const fieldOptionsByParameter = useMemo(() => {
@@ -580,15 +570,13 @@ export function ParameterFields({
         return next;
       });
     }
-    setInternalAiParameterFieldResources(null);
-    onAccept?.();
-  }, [effectiveAiParameterFieldResources, resourceIds, onAccept]);
+    acceptAi();
+  }, [effectiveAiParameterFieldResources, resourceIds, acceptAi]);
 
   // Reject AI suggestion - just clear the pending state
   const handleRejectAi = useCallback(() => {
-    setInternalAiParameterFieldResources(null);
-    onReject?.();
-  }, [onReject]);
+    rejectAi();
+  }, [rejectAi]);
 
   // Don't render if show is false or no parameters selected
   if (!show || parameter_ids.length === 0) {
@@ -618,9 +606,9 @@ export function ParameterFields({
                     size="icon"
                     className="h-6 w-6"
                     onClick={onGenerate}
-                    disabled={disabled || isGenerating || showDiff}
+                    disabled={disabled || aiIsGenerating || showDiff}
                   >
-                    {isGenerating ? (
+                    {aiIsGenerating ? (
                       <Loader2 className="h-3.5 w-3.5 animate-spin" />
                     ) : (
                       <Sparkles className="h-3.5 w-3.5" />
