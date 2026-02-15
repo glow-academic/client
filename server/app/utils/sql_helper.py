@@ -30,7 +30,7 @@ _metadata_cache: dict[str, Any] = {}
 # Track which functions have been JIT-created on this process to avoid
 # redundant DROP TYPE / CREATE TYPE on every request (which causes race
 # conditions under concurrent load).
-_jit_created_functions: set[str] = {}
+_jit_created_functions: set[str] = set()
 
 
 class HasToTuple(Protocol):

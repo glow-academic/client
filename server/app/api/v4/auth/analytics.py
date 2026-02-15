@@ -6,6 +6,7 @@ Called alongside context from layout-server.tsx.
 
 from __future__ import annotations
 
+import asyncio
 from dataclasses import dataclass, field
 from typing import Annotated, cast
 from uuid import UUID
@@ -270,16 +271,33 @@ async def fetch_pricing_filters(
             ]
 
     if fields.date_range.visible:
-        async with pool.acquire() as c:
-            row = await c.fetchrow(
-                """
-                SELECT MIN(date_key) as earliest, MAX(date_key) as latest
-                FROM mv_pricing_daily
-                """,
+        from app.api.v4.views.run.list.get import get_run_list_view_internal
+
+        async with pool.acquire() as c_earliest, pool.acquire() as c_latest:
+            earliest_result, latest_result = await asyncio.gather(
+                get_run_list_view_internal(
+                    conn=c_earliest,
+                    sort_by="date",
+                    sort_order="asc",
+                    page_limit=1,
+                    page_offset=0,
+                ),
+                get_run_list_view_internal(
+                    conn=c_latest,
+                    sort_by="date",
+                    sort_order="desc",
+                    page_limit=1,
+                    page_offset=0,
+                ),
             )
-            if row and row["earliest"]:
-                earliest = row["earliest"].isoformat()
-                latest = row["latest"].isoformat()
+            if earliest_result.items:
+                earliest_dt = earliest_result.items[0].run_created_at
+                if earliest_dt:
+                    earliest = earliest_dt.date().isoformat()
+            if latest_result.items:
+                latest_dt = latest_result.items[0].run_created_at
+                if latest_dt:
+                    latest = latest_dt.date().isoformat()
 
     return dept_opts, [], earliest, latest
 
