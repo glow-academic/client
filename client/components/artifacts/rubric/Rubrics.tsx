@@ -471,7 +471,7 @@ export default function Rubrics({
       return;
     }
 
-    setIsDuplicating(rubric.rubric_id);
+    setIsDuplicating(rubric.rubric_id ?? null);
     try {
       await duplicateRubricAction({
         body: {

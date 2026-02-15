@@ -14,8 +14,12 @@ from app.api.v4.artifacts.agent.permissions import (
     has_access,
 )
 from app.api.v4.artifacts.agent.types import (
+    AgentMultiResourceAction,
+    AgentResourceAction,
     SaveAgentApiRequest,
     SaveAgentApiResponse,
+    SaveAgentSqlParams,
+    SaveAgentSqlRow,
 )
 from app.api.v4.auth.profile import get_auth_profile_internal
 from app.infra.v4.activity.audit import audit_activity, audit_set
@@ -24,8 +28,6 @@ from app.main import get_db, get_pool
 from app.sql.types import (
     GetAgentAccessSqlParams,
     GetAgentAccessSqlRow,
-    SaveAgentSqlParams,
-    SaveAgentSqlRow,
     load_sql_query,
 )
 from app.utils.cache.invalidate_tags import invalidate_tags
@@ -51,42 +53,44 @@ async def save_agent_internal(
 ) -> uuid.UUID | None:
     """Save an agent from resource actions dict (used by generation complete handler).
 
-    Agent uses auto-generated SaveAgentSqlParams which takes flat IDs and strings
-    (not resource action composites). Maps resource_actions keys to the flat params.
+    Builds SaveAgentSqlParams from a flat resource_actions dict, executes the
+    save SQL in a transaction, and invalidates cache.
 
     Returns the agent_id on success, None on failure.
     """
     try:
 
-        def _single_id(key: str) -> uuid.UUID | None:
+        def _single(key: str) -> AgentResourceAction:
             val = resource_actions.get(key, {})
             if isinstance(val, dict):
-                rid = val.get("resource_id")
-                return uuid.UUID(str(rid)) if rid else None
-            return None
+                return AgentResourceAction(
+                    resource_id=val.get("resource_id"),
+                )
+            return AgentResourceAction()
 
-        def _multi_ids(key: str) -> list[uuid.UUID] | None:
+        def _multi(key: str) -> AgentMultiResourceAction:
             val = resource_actions.get(key, {})
             if isinstance(val, dict):
-                rids = val.get("resource_ids")
-                if rids:
-                    return [uuid.UUID(str(r)) for r in rids]
-            return None
+                return AgentMultiResourceAction(
+                    resource_ids=val.get("resource_ids"),
+                )
+            return AgentMultiResourceAction()
 
         params = SaveAgentSqlParams(
             profile_id=profile_id,
             input_agent_id=agent_id,
-            name_id=_single_id("names"),
-            model_id=_single_id("models"),
-            description_id=_single_id("descriptions"),
-            prompt_id=_single_id("prompts"),
-            instructions_id=_single_id("instructions"),
-            active_flag_id=_single_id("flags"),
-            temperature_level_id=_single_id("temperature_levels"),
-            reasoning_level_id=_single_id("reasoning_levels"),
-            department_ids=_multi_ids("departments"),
-            tool_ids=_multi_ids("tools"),
-            voice_ids=_multi_ids("voices"),
+            group_id=group_id,
+            names=_single("names"),
+            descriptions=_single("descriptions"),
+            models=_single("models"),
+            prompts=_single("prompts"),
+            instructions=_single("instructions"),
+            flags=_single("flags"),
+            temperature_levels=_single("temperature_levels"),
+            reasoning_levels=_single("reasoning_levels"),
+            departments=_multi("departments"),
+            tools=_multi("tools"),
+            voices=_multi("voices"),
         )
 
         async with conn.transaction():
@@ -156,18 +160,6 @@ async def save_agent(
             user_role = None
             user_department_ids = []
 
-        name_id = request.name_id
-        model_id = request.model_id
-        description_id = request.description_id
-        prompt_id = request.prompt_id
-        instructions_id = request.instructions_id
-        active_flag_id = request.active_flag_id
-        temperature_level_id = request.temperature_level_id
-        reasoning_level_id = request.reasoning_level_id
-        department_ids = request.department_ids
-        tool_ids = request.tool_ids
-        voice_ids = request.voice_ids
-
         # Permission checks
         if request.input_agent_id:
             # Update mode: check access and save permissions
@@ -212,35 +204,17 @@ async def save_agent(
                     detail="You don't have permission to create agents.",
                 )
 
-        # Validate required fields
-        if not name_id:
-            raise HTTPException(status_code=400, detail="name_id is required")
-
-        if not model_id:
-            raise HTTPException(status_code=400, detail="model_id is required")
-
-        async with conn.transaction():
-            # Server-resolved group_id
+        # Server-resolved group_id: create if not updating an existing agent
+        group_id = None
+        if not request.input_agent_id:
             group_id = await conn.fetchval(
-                "INSERT INTO groups_entry DEFAULT VALUES RETURNING id"
+                "INSERT INTO groups_entry (created_at, updated_at) VALUES (NOW(), NOW()) RETURNING id"
             )
 
-            # Convert API request to SQL params (add profile_id from header)
-            params = SaveAgentSqlParams(
-                profile_id=profile_id,
-                group_id=group_id,
-                input_agent_id=request.input_agent_id,
-                name_id=name_id,
-                model_id=model_id,
-                description_id=description_id,
-                prompt_id=prompt_id,
-                instructions_id=instructions_id,
-                active_flag_id=active_flag_id,
-                temperature_level_id=temperature_level_id,
-                reasoning_level_id=reasoning_level_id,
-                department_ids=department_ids,
-                tool_ids=tool_ids,
-                voice_ids=voice_ids,
+        async with conn.transaction():
+            # Convert flat resource IDs to SQL params (add profile_id and group_id from server)
+            params = SaveAgentSqlParams.from_request(
+                request, profile_id=profile_id, group_id=group_id
             )
             sql_params = params.to_tuple()
 
@@ -263,20 +237,7 @@ async def save_agent(
             # Set audit context with data from SQL query
             if actor_name:
                 audit_ctx = {"actor": {"name": actor_name, "id": profile_id}}
-                # Only add agent to audit context if input_agent_id was provided (update mode)
-                # For create mode, we don't have the name yet, so we'll use the request name if available
-                if request.input_agent_id:
-                    # Update mode: use request name (from request body)
-                    audit_ctx["agent"] = {
-                        "name": str(name_id),
-                        "id": str(result.agent_id),
-                    }
-                else:
-                    # Create mode: use request name
-                    audit_ctx["agent"] = {
-                        "name": str(name_id),
-                        "id": str(result.agent_id),
-                    }
+                audit_ctx["agent"] = {"id": str(result.agent_id)}
                 audit_set(http_request, **audit_ctx)
 
         # Convert SQL result to API response

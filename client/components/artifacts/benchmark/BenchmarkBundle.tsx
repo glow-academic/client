@@ -11,26 +11,36 @@ import { TemperatureLevels } from "@/components/resources/TemperatureLevels";
 import { ReasoningLevels } from "@/components/resources/ReasoningLevels";
 import { Tools } from "@/components/resources/Tools";
 import { Keys } from "@/components/resources/Keys";
-import type { OutputOf } from "@/lib/api/types";
+import type { InputOf, OutputOf } from "@/lib/api/types";
 import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { parseAsString, useQueryStates } from "nuqs";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { toast } from "sonner";
 
 type GetBenchmarkBundleOut = OutputOf<
   "/api/v4/artifacts/benchmark/bundle/get",
   "post"
 >;
 export type BenchmarkBundleData = GetBenchmarkBundleOut;
+type PatchBenchmarkBundleDraftIn = InputOf<
+  "/api/v4/artifacts/benchmark/draft",
+  "patch"
+>;
+type PatchBenchmarkBundleDraftOut = OutputOf<
+  "/api/v4/artifacts/benchmark/draft",
+  "patch"
+>;
 
 type BenchmarkBundleFormState = {
   department_ids: string[];
-  model_id: string | null;
-  prompt_id: string | null;
-  instruction_id: string | null;
+  model_ids: string[];
+  prompt_ids: string[];
+  instruction_ids: string[];
   voice_ids: string[];
-  temperature_level_id: string | null;
-  reasoning_level_id: string | null;
+  temperature_level_ids: string[];
+  reasoning_level_ids: string[];
   tool_ids: string[];
-  key_id: string | null;
+  key_ids: string[];
 };
 
 function extractIds<T>(
@@ -43,23 +53,18 @@ function extractIds<T>(
     .filter((id): id is string => !!id);
 }
 
-function extractFirstId<T>(
-  items: T[] | null | undefined,
-  idKey: keyof T,
-): string | null {
-  if (!items || items.length === 0) return null;
-  const val = items[0][idKey] as string | null | undefined;
-  return val ?? null;
-}
-
 interface BenchmarkBundleProps {
   bundleData: GetBenchmarkBundleOut;
   testId: string;
+  patchBenchmarkDraftAction: (
+    input: PatchBenchmarkBundleDraftIn,
+  ) => Promise<PatchBenchmarkBundleDraftOut>;
 }
 
 export default function BenchmarkBundle({
   bundleData,
   testId,
+  patchBenchmarkDraftAction,
 }: BenchmarkBundleProps) {
   const router = useRouter();
   const s = bundleData;
@@ -67,14 +72,14 @@ export default function BenchmarkBundle({
   const initialFormState = useMemo<BenchmarkBundleFormState>(
     () => ({
       department_ids: extractIds(s.departments?.current, "department_id"),
-      model_id: extractFirstId(s.models?.current, "id"),
-      prompt_id: extractFirstId(s.prompts?.current, "id"),
-      instruction_id: extractFirstId(s.instructions?.current, "id"),
+      model_ids: extractIds(s.models?.current, "id"),
+      prompt_ids: extractIds(s.prompts?.current, "id"),
+      instruction_ids: extractIds(s.instructions?.current, "id"),
       voice_ids: extractIds(s.voices?.current, "id"),
-      temperature_level_id: extractFirstId(s.temperature_levels?.current, "id"),
-      reasoning_level_id: extractFirstId(s.reasoning_levels?.current, "id"),
+      temperature_level_ids: extractIds(s.temperature_levels?.current, "id"),
+      reasoning_level_ids: extractIds(s.reasoning_levels?.current, "id"),
       tool_ids: extractIds(s.tools?.current, "id"),
-      key_id: extractFirstId(s.keys?.current, "id"),
+      key_ids: extractIds(s.keys?.current, "id"),
     }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [],
@@ -82,16 +87,91 @@ export default function BenchmarkBundle({
 
   const [formState, setFormState] =
     useState<BenchmarkBundleFormState>(initialFormState);
+
+  const [urlParams, setUrlParams] = useQueryStates(
+    {
+      draftId: parseAsString,
+    },
+    { history: "replace", shallow: true },
+  );
+
+  const [draftId, setDraftId] = useState<string | null>(
+    urlParams.draftId || null,
+  );
+  const [draftVersion, setDraftVersion] = useState<number>(
+    s.draft_version ?? 0,
+  );
   const [isSaving, setIsSaving] = useState(false);
 
-  const saveAndReturn = async () => {
+  const saveTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const savingRef = useRef(false);
+
+  useEffect(() => {
+    if (draftId && draftId !== urlParams.draftId) {
+      void setUrlParams({ draftId });
+    }
+  }, [draftId, setUrlParams, urlParams.draftId]);
+
+  const saveDraftNow = useCallback(async () => {
+    if (savingRef.current) return;
+
+    savingRef.current = true;
+    try {
+      const result = await patchBenchmarkDraftAction({
+        body: {
+          input_draft_id: draftId,
+          expected_version: draftVersion,
+          department_ids: formState.department_ids,
+          model_ids: formState.model_ids,
+          prompt_ids: formState.prompt_ids,
+          instruction_ids: formState.instruction_ids,
+          voice_ids: formState.voice_ids,
+          temperature_level_ids: formState.temperature_level_ids,
+          reasoning_level_ids: formState.reasoning_level_ids,
+          tool_ids: formState.tool_ids,
+          key_ids: formState.key_ids,
+        },
+      } as PatchBenchmarkBundleDraftIn);
+
+      if (result.draft_id) {
+        setDraftId(result.draft_id);
+      }
+      if (typeof result.new_version === "number") {
+        setDraftVersion(result.new_version);
+      }
+    } catch {
+      toast.error("Failed to save draft selections.");
+    } finally {
+      savingRef.current = false;
+    }
+  }, [draftId, draftVersion, formState, patchBenchmarkDraftAction]);
+
+  // Debounced autosave on form state change
+  useEffect(() => {
+    if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    saveTimerRef.current = setTimeout(() => {
+      void saveDraftNow();
+    }, 700);
+
+    return () => {
+      if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    };
+  }, [formState, saveDraftNow]);
+
+  const saveAndReturn = useCallback(async () => {
     setIsSaving(true);
     try {
-      router.push(`/benchmark/${testId}`);
+      await saveDraftNow();
+      const params = new URLSearchParams();
+      if (draftId) params.set("draftId", draftId);
+      const qs = params.toString();
+      router.push(`/benchmark/${testId}${qs ? `?${qs}` : ""}`);
+    } catch {
+      toast.error("Failed to save draft.");
     } finally {
       setIsSaving(false);
     }
-  };
+  }, [saveDraftNow, testId, draftId, router]);
 
   if (!s.profile_has_access) {
     return (
@@ -126,27 +206,13 @@ export default function BenchmarkBundle({
 
       {s.models?.show && (
         <Models
-          model_id={formState.model_id}
-          model_resource={
-            s.models.current?.[0]
-              ? {
-                  id: s.models.current[0].id ?? null,
-                  name: s.models.current[0].name ?? null,
-                  description: s.models.current[0].description ?? null,
-                }
-              : null
-          }
+          model_id={formState.model_ids[0] ?? null}
+          model_resource={s.models.current?.[0] ?? null}
           show_models={s.models.show}
-          models={
-            s.models.resources?.map((m) => ({
-              model_id: m.id ?? null,
-              name: m.name ?? null,
-              description: m.description ?? null,
-            })) ?? []
-          }
+          models={s.models.resources ?? []}
           disabled={false}
-          onModelIdChange={(id) =>
-            setFormState((prev) => ({ ...prev, model_id: id }))
+          onModelIdChange={(id: string | null) =>
+            setFormState((prev) => ({ ...prev, model_ids: id ? [id] : [] }))
           }
           label="Models"
         />
@@ -154,29 +220,13 @@ export default function BenchmarkBundle({
 
       {s.prompts?.show && (
         <Prompts
-          prompt_id={formState.prompt_id}
-          prompt_resource={
-            s.prompts.current?.[0]
-              ? {
-                  id: s.prompts.current[0].id ?? null,
-                  name: s.prompts.current[0].name ?? null,
-                  description: s.prompts.current[0].description ?? null,
-                  system_prompt: s.prompts.current[0].system_prompt ?? null,
-                }
-              : null
-          }
+          prompt_id={formState.prompt_ids[0] ?? null}
+          prompt_resource={s.prompts.current?.[0] ?? null}
           show_prompts={s.prompts.show}
-          prompts={
-            s.prompts.resources?.map((p) => ({
-              prompt_id: p.id ?? null,
-              name: p.name ?? null,
-              description: p.description ?? null,
-              system_prompt: p.system_prompt ?? null,
-            })) ?? []
-          }
+          prompts={s.prompts.resources ?? []}
           disabled={false}
-          onPromptIdChange={(id) =>
-            setFormState((prev) => ({ ...prev, prompt_id: id }))
+          onPromptIdChange={(id: string | null) =>
+            setFormState((prev) => ({ ...prev, prompt_ids: id ? [id] : [] }))
           }
           label="Prompts"
         />
@@ -184,25 +234,16 @@ export default function BenchmarkBundle({
 
       {s.instructions?.show && (
         <Instructions
-          instruction_id={formState.instruction_id}
-          instruction_resource={
-            s.instructions.current?.[0]
-              ? {
-                  id: s.instructions.current[0].id ?? null,
-                  template: s.instructions.current[0].template ?? null,
-                }
-              : null
-          }
+          instruction_id={formState.instruction_ids[0] ?? null}
+          instruction_resource={s.instructions.current?.[0] ?? null}
           show_instructions={s.instructions.show}
-          instructions={
-            s.instructions.resources?.map((i) => ({
-              instruction_id: i.id ?? null,
-              template: i.template ?? null,
-            })) ?? []
-          }
+          instructions={s.instructions.resources ?? []}
           disabled={false}
-          onInstructionIdChange={(id) =>
-            setFormState((prev) => ({ ...prev, instruction_id: id }))
+          onInstructionIdChange={(id: string | null) =>
+            setFormState((prev) => ({
+              ...prev,
+              instruction_ids: id ? [id] : [],
+            }))
           }
           label="Instructions"
         />
@@ -224,54 +265,32 @@ export default function BenchmarkBundle({
 
       {s.temperature_levels?.show && (
         <TemperatureLevels
-          temperature_level_id={formState.temperature_level_id}
-          temperature_level_resource={
-            s.temperature_levels.current?.[0]
-              ? {
-                  id: s.temperature_levels.current[0].id ?? null,
-                  temperature:
-                    s.temperature_levels.current[0].temperature != null
-                      ? String(s.temperature_levels.current[0].temperature)
-                      : null,
-                }
-              : null
-          }
+          temperature_level_id={formState.temperature_level_ids[0] ?? null}
+          temperature_level_resource={s.temperature_levels.current?.[0] ?? null}
           show_temperature_levels={s.temperature_levels.show}
-          temperature_levels={
-            s.temperature_levels.resources?.map((t) => ({
-              id: t.id ?? null,
-              temperature: t.temperature != null ? String(t.temperature) : null,
-            })) ?? []
-          }
+          temperature_levels={s.temperature_levels.resources ?? []}
           disabled={false}
-          onTemperatureLevelIdChange={(id) =>
-            setFormState((prev) => ({ ...prev, temperature_level_id: id }))
+          onTemperatureLevelIdChange={(id: string | null) =>
+            setFormState((prev) => ({
+              ...prev,
+              temperature_level_ids: id ? [id] : [],
+            }))
           }
         />
       )}
 
       {s.reasoning_levels?.show && (
         <ReasoningLevels
-          reasoning_level_id={formState.reasoning_level_id}
-          reasoning_level_resource={
-            s.reasoning_levels.current?.[0]
-              ? {
-                  id: s.reasoning_levels.current[0].id ?? null,
-                  reasoning_level:
-                    s.reasoning_levels.current[0].reasoning_level ?? null,
-                }
-              : null
-          }
+          reasoning_level_id={formState.reasoning_level_ids[0] ?? null}
+          reasoning_level_resource={s.reasoning_levels.current?.[0] ?? null}
           show_reasoning_levels={s.reasoning_levels.show}
-          reasoning_levels={
-            s.reasoning_levels.resources?.map((r) => ({
-              id: r.id ?? null,
-              reasoning_level: r.reasoning_level ?? null,
-            })) ?? []
-          }
+          reasoning_levels={s.reasoning_levels.resources ?? []}
           disabled={false}
-          onReasoningLevelIdChange={(id) =>
-            setFormState((prev) => ({ ...prev, reasoning_level_id: id }))
+          onReasoningLevelIdChange={(id: string | null) =>
+            setFormState((prev) => ({
+              ...prev,
+              reasoning_level_ids: id ? [id] : [],
+            }))
           }
         />
       )}
@@ -279,21 +298,9 @@ export default function BenchmarkBundle({
       {s.tools?.show && (
         <Tools
           tool_ids={formState.tool_ids}
-          tool_resources={
-            s.tools.current?.map((t) => ({
-              tool_id: t.id ?? null,
-              name: t.name ?? null,
-              description: t.description ?? null,
-            })) ?? []
-          }
+          tool_resources={s.tools.current ?? []}
           show_tools={s.tools.show}
-          tools={
-            s.tools.resources?.map((t) => ({
-              tool_id: t.id ?? null,
-              name: t.name ?? null,
-              description: t.description ?? null,
-            })) ?? []
-          }
+          tools={s.tools.resources ?? []}
           disabled={false}
           onChange={(ids) =>
             setFormState((prev) => ({ ...prev, tool_ids: ids }))
@@ -303,31 +310,13 @@ export default function BenchmarkBundle({
 
       {s.keys?.show && (
         <Keys
-          key_id={formState.key_id}
-          key_resource={
-            s.keys.current?.[0]
-              ? {
-                  id: s.keys.current[0].id ?? null,
-                  name: s.keys.current[0].name ?? null,
-                  description: s.keys.current[0].description ?? null,
-                  key_masked: null,
-                  active: null,
-                }
-              : null
-          }
+          key_id={formState.key_ids[0] ?? null}
+          key_resource={s.keys.current?.[0] ?? null}
           show_key={s.keys.show}
-          keys={
-            s.keys.resources?.map((k) => ({
-              id: k.id ?? null,
-              name: k.name ?? null,
-              description: k.description ?? null,
-              key_masked: null,
-              active: null,
-            })) ?? []
-          }
+          keys={s.keys.resources ?? []}
           disabled={false}
-          onKeyIdChange={(id) =>
-            setFormState((prev) => ({ ...prev, key_id: id }))
+          onKeyIdChange={(id: string | null) =>
+            setFormState((prev) => ({ ...prev, key_ids: id ? [id] : [] }))
           }
         />
       )}

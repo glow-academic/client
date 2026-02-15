@@ -10747,6 +10747,28 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/socket/v4/server/provider_generation_started": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Provider Generation Started Api
+         * @description Server-to-client event: Provider generation started.
+         *
+         *     Emitted when provider generation begins, listing resource types being generated.
+         */
+        post: operations["provider_generation_started_api_socket_v4_server_provider_generation_started_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/socket/v4/server/provider_generation_progress": {
         parameters: {
             query?: never;
@@ -36538,6 +36560,26 @@ export interface components {
             /** Type */
             type?: string | null;
         };
+        /**
+         * ProviderGenerationStartedEvent
+         * @description Server-to-client event: provider_generation_started.
+         *
+         *     Emitted when provider generation begins, listing which resource types
+         *     will be generated.
+         */
+        ProviderGenerationStartedEvent: {
+            /**
+             * Artifact Type
+             * @default provider
+             */
+            artifact_type: string;
+            /** Group Id */
+            group_id: string;
+            /** Run Id */
+            run_id: string;
+            /** Resource Types */
+            resource_types: string[];
+        };
         /** ProviderKeySection */
         ProviderKeySection: {
             /**
@@ -40616,15 +40658,13 @@ export interface components {
          * @description Response model for save agent endpoint.
          */
         SaveAgentApiResponse: {
-            /** Success */
-            success: boolean;
             /**
              * Agent Id
              * Format: uuid
              */
             agent_id: string;
-            /** Message */
-            message: string;
+            /** Actor Name */
+            actor_name?: string | null;
         };
         /**
          * SaveAuthApiRequest
@@ -69689,6 +69729,41 @@ export interface operations {
                 "application/json": {
                     [key: string]: unknown;
                 };
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    provider_generation_started_api_socket_v4_server_provider_generation_started_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProviderGenerationStartedEvent"];
             };
         };
         responses: {

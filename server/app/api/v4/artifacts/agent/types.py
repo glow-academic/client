@@ -218,9 +218,87 @@ class SaveAgentApiRequest(BaseModel):
 class SaveAgentApiResponse(BaseModel):
     """Response model for save agent endpoint."""
 
-    success: bool
     agent_id: UUID
-    message: str
+    actor_name: str | None = None
+
+
+class SaveAgentSqlParams(BaseModel):
+    """SQL parameters for save agent - builds composites from flat IDs."""
+
+    profile_id: UUID
+    input_agent_id: UUID | None = None
+    group_id: UUID | None = None
+    names: AgentResourceAction
+    descriptions: AgentResourceAction
+    models: AgentResourceAction
+    prompts: AgentResourceAction
+    instructions: AgentResourceAction
+    flags: AgentResourceAction
+    temperature_levels: AgentResourceAction
+    reasoning_levels: AgentResourceAction
+    departments: AgentMultiResourceAction
+    tools: AgentMultiResourceAction
+    voices: AgentMultiResourceAction
+
+    @classmethod
+    def from_request(
+        cls,
+        request: SaveAgentApiRequest,
+        profile_id: UUID,
+        group_id: UUID | None,
+    ) -> SaveAgentSqlParams:
+        return cls(
+            profile_id=profile_id,
+            input_agent_id=request.input_agent_id,
+            group_id=group_id,
+            names=AgentResourceAction(resource_id=request.name_id),
+            descriptions=AgentResourceAction(resource_id=request.description_id),
+            models=AgentResourceAction(resource_id=request.model_id),
+            prompts=AgentResourceAction(resource_id=request.prompt_id),
+            instructions=AgentResourceAction(resource_id=request.instructions_id),
+            flags=AgentResourceAction(resource_id=request.active_flag_id),
+            temperature_levels=AgentResourceAction(
+                resource_id=request.temperature_level_id
+            ),
+            reasoning_levels=AgentResourceAction(
+                resource_id=request.reasoning_level_id
+            ),
+            departments=AgentMultiResourceAction(resource_ids=request.department_ids),
+            tools=AgentMultiResourceAction(resource_ids=request.tool_ids),
+            voices=AgentMultiResourceAction(resource_ids=request.voice_ids),
+        )
+
+    def to_tuple(self) -> tuple:
+        """Convert to tuple for SQL execution."""
+
+        def single(a: AgentResourceAction) -> tuple:
+            return (a.resource_id, a.create_tool_id, a.link_tool_id)
+
+        def multi(a: AgentMultiResourceAction) -> tuple:
+            return (a.resource_ids, a.create_tool_id, a.link_tool_id)
+
+        return (
+            self.profile_id,
+            self.input_agent_id,
+            self.group_id,
+            single(self.names),
+            single(self.descriptions),
+            single(self.models),
+            single(self.prompts),
+            single(self.instructions),
+            single(self.flags),
+            single(self.temperature_levels),
+            single(self.reasoning_levels),
+            multi(self.departments),
+            multi(self.tools),
+            multi(self.voices),
+        )
+
+
+class SaveAgentSqlRow(BaseModel):
+    """SQL row for save agent."""
+
+    agent_id: UUID | None = None
 
 
 class DeleteAgentApiRequest(BaseModel):

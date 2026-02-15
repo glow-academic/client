@@ -310,9 +310,6 @@ export default function Models({
     [updateModelsParams]
   );
 
-  // Server-driven filter IDs
-  const serverFilterIds = useMemo(() => new Set(["provider", "departments", "agents"]), []);
-
   // Sync column filters to URL when they change (only server-driven ones)
   const handleColumnFiltersChange = useCallback(
     (updater: ColumnFiltersState | ((prev: ColumnFiltersState) => ColumnFiltersState)) => {

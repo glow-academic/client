@@ -222,3 +222,16 @@ class ModelGenerationStartedEvent(BaseModel):
     group_id: str
     run_id: str
     resource_types: list[str]
+
+
+class ProviderGenerationStartedEvent(BaseModel):
+    """Server-to-client event: provider_generation_started.
+
+    Emitted when provider generation begins, listing which resource types
+    will be generated.
+    """
+
+    artifact_type: str = "provider"
+    group_id: str
+    run_id: str
+    resource_types: list[str]

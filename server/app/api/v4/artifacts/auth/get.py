@@ -45,7 +45,8 @@ from app.api.v4.artifacts.auth.types import (
     GetAuthWebsocketResponse,
 )
 from app.api.v4.auth.profile import get_auth_profile_internal
-from app.api.v4.permissions import select_agents_for_artifact
+from app.api.v4.auth.settings import get_auth_settings_internal
+from app.api.v4.permissions import has_tools_for_resource, resolve_agents_for_artifact
 from app.api.v4.resources.agents.get import get_agents_internal
 from app.api.v4.resources.descriptions.get import get_descriptions_internal
 from app.api.v4.resources.descriptions.search import search_descriptions_internal
@@ -61,7 +62,6 @@ from app.api.v4.resources.providers.get import get_providers_internal
 from app.api.v4.resources.slugs.get import get_slugs_internal
 from app.api.v4.resources.slugs.search import search_slugs_internal
 from app.api.v4.resources.tools.get import get_tools_internal
-from app.api.v4.types import CandidateAgent
 from app.api.v4.views.drafts.get import get_draft_auth_internal
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
@@ -227,32 +227,22 @@ async def get_auth_internal(
         if draft_item.slug_ids:
             selected_slug_ids = draft_item.slug_ids
 
-    names_has_tools = ids_result.names_has_tools or False
-    protocols_has_tools = ids_result.protocols_has_tools or False
-    slugs_has_tools = ids_result.slugs_has_tools or False
+    # === RESOLVE AGENTS FROM SETTINGS (source of truth) ===
+    async with pool.acquire() as settings_conn:
+        settings_data = await get_auth_settings_internal(
+            settings_conn, profile_id, bypass_cache
+        )
 
-    # Agent scoring
-    candidate_agents = CandidateAgent.from_sql_rows(ids_result.candidate_agents)
-    user_dept_set = set(user_department_ids) if user_department_ids else None
-    resource_agent_ids = select_agents_for_artifact(
-        candidates=candidate_agents,
-        artifact_resources=AUTH_RESOURCES,
-        resources_needed=list(AUTH_RESOURCES),
-        user_department_ids=user_dept_set,
-        require_mcp=False,
+    resource_agent_ids, create_tool_ids_map, link_tool_ids_map = (
+        resolve_agents_for_artifact(settings_data.agent_tool_entries, AUTH_RESOURCES)
     )
 
-    create_tool_ids_map: dict[str, UUID | None] = {}
-    link_tool_ids_map: dict[str, UUID | None] = {}
-    for resource in AUTH_RESOURCES:
-        selected_agent_id = resource_agent_ids.get(resource)
-        if not selected_agent_id:
-            continue
-        for candidate in candidate_agents:
-            if candidate.agent_id == selected_agent_id:
-                create_tool_ids_map[resource] = candidate.create_tool_ids.get(resource)
-                link_tool_ids_map[resource] = candidate.link_tool_ids.get(resource)
-                break
+    # Derive has_tools flags from settings
+    names_has_tools = has_tools_for_resource(settings_data.agent_tool_entries, "names")
+    protocols_has_tools = has_tools_for_resource(
+        settings_data.agent_tool_entries, "protocols"
+    )
+    slugs_has_tools = has_tools_for_resource(settings_data.agent_tool_entries, "slugs")
 
     def compute_show_ai_generate(resource: str) -> bool:
         return resource_agent_ids.get(resource) is not None
@@ -464,31 +454,26 @@ async def get_auth_internal(
         else []
     )
 
-    selected_agent_ids = [aid for aid in resource_agent_ids.values() if aid is not None]
-    selected_agent_ids = list(dict.fromkeys(selected_agent_ids))
+    # Fetch config resources for websocket generation context (from settings agents).
+    config_agent_resource_ids = [a.id for a in settings_data.settings_agents if a.id]
+    config_model_resource_ids = [
+        a.model_id for a in settings_data.settings_agents if a.model_id
+    ]
+
     config_agents: list[Any] = []
     config_models: list[Any] = []
     config_providers: list[Any] = []
     config_tools: list[Any] = []
-    if selected_agent_ids:
+    if config_agent_resource_ids:
         async with pool.acquire() as c:
             config_agents = await get_agents_internal(
-                c,
-                selected_agent_ids,
-                bypass_cache=bypass_cache,
+                c, config_agent_resource_ids, bypass_cache=bypass_cache
             )
-
-        model_ids = list(
-            dict.fromkeys([a.model_id for a in config_agents if a.model_id is not None])
-        )
-        if model_ids:
-            async with pool.acquire() as c:
-                config_models = await get_models_internal(
-                    c,
-                    model_ids,
-                    bypass_cache=bypass_cache,
-                )
-
+    if config_model_resource_ids:
+        async with pool.acquire() as c:
+            config_models = await get_models_internal(
+                c, config_model_resource_ids, bypass_cache=bypass_cache
+            )
         provider_ids = list(
             dict.fromkeys(
                 [m.provider_id for m in config_models if m.provider_id is not None]
@@ -497,23 +482,18 @@ async def get_auth_internal(
         if provider_ids:
             async with pool.acquire() as c:
                 config_providers = await get_providers_internal(
-                    c,
-                    provider_ids,
-                    bypass_cache=bypass_cache,
+                    c, provider_ids, bypass_cache=bypass_cache
                 )
-
-        tool_ids: list[UUID] = []
-        for agent in config_agents:
-            raw = getattr(agent, "tool_ids", None) or []
-            tool_ids.extend([tid for tid in raw if tid is not None])
-        tool_ids = list(dict.fromkeys(tool_ids))
-        if tool_ids:
-            async with pool.acquire() as c:
-                config_tools = await get_tools_internal(
-                    c,
-                    tool_ids,
-                    bypass_cache=bypass_cache,
-                )
+    tool_ids: list[UUID] = []
+    for agent in config_agents:
+        raw = getattr(agent, "tool_ids", None) or []
+        tool_ids.extend([tid for tid in raw if tid is not None])
+    tool_ids = list(dict.fromkeys(tool_ids))
+    if tool_ids:
+        async with pool.acquire() as c:
+            config_tools = await get_tools_internal(
+                c, tool_ids, bypass_cache=bypass_cache
+            )
 
     return AuthInternalData(
         actor_name=actor_name,

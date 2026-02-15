@@ -2,7 +2,7 @@ import BenchmarkBundle, {
   type BenchmarkBundleData,
 } from "@/components/artifacts/benchmark/BenchmarkBundle";
 import { api } from "@/lib/api/client";
-import type { OutputOf } from "@/lib/api/types";
+import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
 
 /** ---- Strong types from OpenAPI ---- */
@@ -10,15 +10,25 @@ type GetBenchmarkBundleOut = OutputOf<
   "/api/v4/artifacts/benchmark/bundle/get",
   "post"
 >;
+type PatchBenchmarkDraftIn = InputOf<
+  "/api/v4/artifacts/benchmark/draft",
+  "patch"
+>;
+type PatchBenchmarkDraftOut = OutputOf<
+  "/api/v4/artifacts/benchmark/draft",
+  "patch"
+>;
 
 const getBenchmarkBundle = async (
   bundleId: string,
+  draftId: string | null,
 ): Promise<GetBenchmarkBundleOut> => {
   return api.post(
     "/artifacts/benchmark/bundle/get",
     {
       body: {
         benchmark_bundle_entry_id: bundleId,
+        draft_id: draftId,
       },
     },
     {
@@ -30,6 +40,13 @@ const getBenchmarkBundle = async (
   );
 };
 
+async function patchBenchmarkDraft(
+  input: PatchBenchmarkDraftIn,
+): Promise<PatchBenchmarkDraftOut> {
+  "use server";
+  return api.patch("/artifacts/benchmark/draft", input);
+}
+
 export async function generateMetadata(): Promise<Metadata> {
   return {
     title: "Customize Benchmark",
@@ -39,12 +56,28 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function BenchmarkBundlePage({
   params,
+  searchParams,
 }: {
   params: Promise<{ testId: string; bundleId: string }>;
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
   const { testId, bundleId } = await params;
+  const sp = await searchParams;
+  const rawDraftId = sp["draftId"];
+  const draftId =
+    typeof rawDraftId === "string"
+      ? rawDraftId
+      : Array.isArray(rawDraftId)
+        ? (rawDraftId[0] ?? null)
+        : null;
 
-  const bundleData = await getBenchmarkBundle(bundleId);
+  const bundleData = await getBenchmarkBundle(bundleId, draftId);
 
-  return <BenchmarkBundle bundleData={bundleData as BenchmarkBundleData} testId={testId} />;
+  return (
+    <BenchmarkBundle
+      bundleData={bundleData as BenchmarkBundleData}
+      testId={testId}
+      patchBenchmarkDraftAction={patchBenchmarkDraft}
+    />
+  );
 }

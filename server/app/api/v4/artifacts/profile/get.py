@@ -69,7 +69,6 @@ from app.api.v4.resources.providers.get import get_providers_internal
 from app.api.v4.resources.request_limits.get import get_request_limits_internal
 from app.api.v4.resources.request_limits.search import search_request_limits_internal
 from app.api.v4.resources.tools.get import get_tools_internal
-from app.api.v4.types import CandidateAgent
 from app.api.v4.views.drafts.get import get_draft_profile_internal
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
@@ -278,39 +277,24 @@ async def get_profile_internal(
         if draft_item.department_ids:
             selected_department_ids = draft_item.department_ids
 
-    # Get tools existence flags from Query 2 (used for show_* UI flags)
-    names_has_tools = ids_result.names_has_tools or False
-    emails_has_tools = ids_result.emails_has_tools or False
-    request_limits_has_tools = ids_result.request_limits_has_tools or False
+    # === RESOLVE AGENTS FROM SETTINGS (source of truth) ===
+    async with pool.acquire() as settings_conn:
+        settings_data = await get_auth_settings_internal(
+            settings_conn, profile_id, bypass_cache
+        )
 
-    # === PARSE CANDIDATE AGENTS FROM QUERY 2 AND COMPUTE AGENT IDS IN PYTHON ===
-    candidate_agents = CandidateAgent.from_sql_rows(ids_result.candidate_agents)
-
-    # Use Python scoring to select best agents for each resource
-    user_dept_set = set(user_department_ids) if user_department_ids else None
-    resources_needed = list(PROFILE_RESOURCES)
-    agent_ids = select_agents_for_artifact(
-        candidates=candidate_agents,
-        artifact_resources=PROFILE_RESOURCES,
-        resources_needed=resources_needed,
-        user_department_ids=user_dept_set,
-        require_mcp=False,
+    agent_ids, create_tool_ids_map, link_tool_ids_map = resolve_agents_for_artifact(
+        settings_data.agent_tool_entries, PROFILE_RESOURCES
     )
 
-    # === BUILD TOOL_IDS MAPS FROM SELECTED AGENTS ===
-    create_tool_ids_map: dict[str, UUID | None] = {}
-    link_tool_ids_map: dict[str, UUID | None] = {}
-
-    for resource in PROFILE_RESOURCES:
-        selected_agent_id = agent_ids.get(resource)
-        if selected_agent_id:
-            for candidate in candidate_agents:
-                if candidate.agent_id == selected_agent_id:
-                    create_tool_ids_map[resource] = candidate.create_tool_ids.get(
-                        resource
-                    )
-                    link_tool_ids_map[resource] = candidate.link_tool_ids.get(resource)
-                    break
+    # Derive has_tools flags from settings
+    names_has_tools = has_tools_for_resource(settings_data.agent_tool_entries, "names")
+    emails_has_tools = has_tools_for_resource(
+        settings_data.agent_tool_entries, "emails"
+    )
+    request_limits_has_tools = has_tools_for_resource(
+        settings_data.agent_tool_entries, "request_limits"
+    )
 
     # === COMPUTE SHOW_AI_GENERATE FLAGS ===
     def compute_show_ai_generate(resource: str) -> bool:
@@ -460,20 +444,18 @@ async def get_profile_internal(
             return (selected, suggestions)
 
     async def fetch_generation_config():
-        selected_agent_ids = list(
-            {aid for aid in agent_ids.values() if aid is not None}
-        )
-        if not selected_agent_ids:
+        config_agent_ids = [a.id for a in settings_data.settings_agents if a.id]
+        config_model_ids = [
+            a.model_id for a in settings_data.settings_agents if a.model_id
+        ]
+        if not config_agent_ids:
             return (None, None, None, None)
 
         async with pool.acquire() as c:
-            agents = await get_agents_internal(c, selected_agent_ids, bypass_cache)
-            model_ids = list(
-                {a.model_id for a in agents if getattr(a, "model_id", None) is not None}
-            )
+            agents = await get_agents_internal(c, config_agent_ids, bypass_cache)
             models = (
-                await get_models_internal(c, model_ids, bypass_cache)
-                if model_ids
+                await get_models_internal(c, config_model_ids, bypass_cache)
+                if config_model_ids
                 else []
             )
             provider_ids = list(

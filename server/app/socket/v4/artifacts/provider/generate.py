@@ -1,4 +1,15 @@
-"""Provider generation router - unified handler for provider resource types."""
+"""Provider generation router - unified handler for provider resource types.
+
+This module handles all business logic for provider generation:
+- Rate limit validation (fail fast)
+- Group/run creation
+- Agent/model context from pre-fetched resources (denormalized chain)
+- Jinja template rendering for developer instructions
+- Message insertion with deduplication
+- Multi-agent dispatch via generation tracker
+
+The AI handler (generate.py) receives a simplified payload with pre-rendered content.
+"""
 
 import asyncio
 import uuid
@@ -13,18 +24,25 @@ from app.api.v4.resources.prompts.get import get_prompts_internal
 from app.api.v4.views.config.get import get_config_internal
 from app.infra.v4.generation import convert_tools_to_dict, render_developer_instructions
 from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
+from app.infra.v4.websocket.generation_tracker import (
+    init_generation,
+    init_resource_progress,
+)
 from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.infra.v4.websocket.typed_emit import emit_to_internal
 from app.main import get_internal_sio, get_pool, sio
 from app.socket.v4.artifacts.provider.types import GenerateProviderPayload
-from app.socket.v4.artifacts.types import GenerateErrorApiRequest
+from app.socket.v4.artifacts.types import (
+    GenerateErrorApiRequest,
+    ProviderGenerationStartedEvent,
+)
 from app.sql.types import (
     GetAgentToolsSqlParams,
     GetAgentToolsSqlRow,
-    GetPersonaGenerationContextSqlParams,
-    GetPersonaGenerationContextSqlRow,
-    PreparePersonaGenerationSqlParams,
-    PreparePersonaGenerationSqlRow,
+    GetProviderGenerationContextSqlParams,
+    GetProviderGenerationContextSqlRow,
+    PrepareProviderGenerationSqlParams,
+    PrepareProviderGenerationSqlRow,
 )
 from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import execute_sql_typed, load_sql
@@ -36,10 +54,10 @@ client_router = APIRouter()
 server_router = APIRouter()
 
 SQL_PATH_CONTEXT = (
-    "app/sql/v4/queries/generate/persona/get_persona_generation_context_complete.sql"
+    "app/sql/v4/queries/generate/provider/get_provider_generation_context_complete.sql"
 )
 SQL_PATH_PREPARE = (
-    "app/sql/v4/queries/generate/persona/prepare_persona_generation_complete.sql"
+    "app/sql/v4/queries/generate/provider/prepare_provider_generation_complete.sql"
 )
 SQL_PATH_AGENT_TOOLS = (
     "app/sql/v4/queries/generate/persona/get_agent_tools_complete.sql"
@@ -71,6 +89,7 @@ async def _provider_generate_impl(
     sid: str, data: GenerateProviderPayload, profile_id: uuid.UUID
 ) -> None:
     try:
+        # Validate resource_types
         if not data.resource_types:
             await emit_to_internal(
                 "generate_call_error",
@@ -132,18 +151,31 @@ async def _provider_generate_impl(
             )
             return
 
+        # Step 1: Fetch pre-hydrated provider data
         result = await get_provider_websocket(
             profile_id=profile_id,
             provider_id=data.provider_id,
             draft_id=data.draft_id,
         )
         resource_agent_ids = result.resource_agent_ids or {}
-        agent_id: uuid.UUID | None = None
+
+        # Step 2: Build agent_groups: {agent_id: [resource_types]}
+        agent_groups: dict[uuid.UUID, list[str]] = {}
         for rt in resource_types:
             aid = resource_agent_ids.get(rt)
             if aid is not None:
-                agent_id = aid
-                break
+                agent_groups.setdefault(aid, []).append(rt)
+
+        # Fallback: if no agent found for any resource type, pick first available
+        if not agent_groups:
+            for _rt, aid in resource_agent_ids.items():
+                if aid is not None:
+                    agent_groups[aid] = resource_types
+                    break
+
+        # Use first agent_id for validation (all share same config chain)
+        agent_id: uuid.UUID | None = next(iter(agent_groups)) if agent_groups else None
+
         if not agent_id:
             await emit_to_internal(
                 "generate_call_error",
@@ -158,6 +190,7 @@ async def _provider_generate_impl(
             )
             return
 
+        # Step 3: Extract LLM config from pre-fetched resources
         config_agents = result.resources.agents or []
         config_models = result.resources.models or []
         config_providers = result.resources.providers or []
@@ -214,14 +247,13 @@ async def _provider_generate_impl(
             )
             return
 
-        provider_jinja_context = _build_provider_jinja_context(result, resource_types)
-
+        # Step 4: Rate limit check (fail fast)
         async with get_db_connection() as conn:
-            context_params = GetPersonaGenerationContextSqlParams(
+            context_params = GetProviderGenerationContextSqlParams(
                 p_profile_id=profile_id,
             )
             context_row = cast(
-                GetPersonaGenerationContextSqlRow,
+                GetProviderGenerationContextSqlRow,
                 await execute_sql_typed(conn, SQL_PATH_CONTEXT, params=context_params),
             )
             requests_per_day = context_row.requests_per_day
@@ -240,14 +272,16 @@ async def _provider_generate_impl(
                 )
                 return
 
+        provider_jinja_context = _build_provider_jinja_context(result, resource_types)
         existing_group_id = result.group_id
 
+        # Step 5: Parallel fetch tools/prompts/instructions + prepare generation
         async with get_db_connection() as conn:
             pool = get_pool()
             if not pool:
                 raise RuntimeError("Database pool not initialized")
 
-            async def fetch_tools() -> list[Any]:
+            async def fetch_tools():
                 async with pool.acquire() as c:
                     tools_params = GetAgentToolsSqlParams(
                         p_agent_id=agent_id,
@@ -261,7 +295,7 @@ async def _provider_generate_impl(
                     )
                     return tools_row.tools if tools_row else []
 
-            async def fetch_system_prompt() -> str:
+            async def fetch_system_prompt():
                 prompt_id = (
                     agent_resource.prompt_id
                     if hasattr(agent_resource, "prompt_id")
@@ -275,7 +309,7 @@ async def _provider_generate_impl(
                         return prompts[0].system_prompt
                     return ""
 
-            async def fetch_developer_instructions() -> list[str]:
+            async def fetch_developer_instructions():
                 instruction_ids = (
                     agent_resource.instruction_ids
                     if hasattr(agent_resource, "instruction_ids")
@@ -297,7 +331,8 @@ async def _provider_generate_impl(
                 fetch_developer_instructions(),
             )
 
-            prepare_params = PreparePersonaGenerationSqlParams(
+            # Step 6: Prepare generation (create group/run/config)
+            prepare_params = PrepareProviderGenerationSqlParams(
                 p_profile_id=profile_id,
                 p_group_id=existing_group_id,
                 p_agents_resource_id=agent_resource.id,
@@ -305,7 +340,7 @@ async def _provider_generate_impl(
                 p_providers_resource_id=provider_resource.id,
             )
             prepare_row = cast(
-                PreparePersonaGenerationSqlRow,
+                PrepareProviderGenerationSqlRow,
                 await execute_sql_typed(conn, SQL_PATH_PREPARE, params=prepare_params),
             )
             if not prepare_row.run_id:
@@ -326,8 +361,10 @@ async def _provider_generate_impl(
             group_id = prepare_row.group_id
             trace_id = prepare_row.trace_id
             config_id = prepare_row.config_id
-            jinja_context = provider_jinja_context
+            _ = trace_id  # Available for future tracing
 
+            # Step 7: Config view injection into Jinja context
+            jinja_context = provider_jinja_context
             if config_id:
                 async with pool.acquire() as config_conn:
                     config_view_items = await get_config_internal(
@@ -351,11 +388,13 @@ async def _provider_generate_impl(
                 "draft_provider": draft_view,
             }
 
+            # Step 8: Render developer instructions with Jinja
             rendered_developer_messages = render_developer_instructions(
                 templates=developer_instruction_templates,
                 jinja_context=jinja_context,
             )
 
+            # Step 9: Insert pre-rendered messages
             messages: list[dict[str, str]] = []
             create_message_sql = load_sql(SQL_PATH_CREATE_MESSAGE_WITH_TEXT)
             if system_prompt:
@@ -375,33 +414,53 @@ async def _provider_generate_impl(
                         create_message_sql, run_id, "user", instruction, True, False
                     )
 
-            await internal_sio.emit(
-                "generate_artifact",
-                {
-                    "sid": sid,
-                    "artifact_type": "provider",
-                    "resource_type": resource_types[0]
-                    if resource_types
-                    else "provider",
-                    "run_id": str(run_id),
-                    "group_id": str(group_id) if group_id else None,
-                    "message_id": None,
-                    "messages": messages,
-                    "llm_config": {
-                        "model": model_name,
-                        "api_key": api_key,
-                        "base_url": base_url,
-                        "temperature": temperature,
-                        "reasoning": reasoning,
-                        "provider": provider_name,
-                        "voice": voice,
-                        "quality": quality,
-                        "length_seconds": None,
-                        "tool_choice": "required",
-                    },
-                    "tools": convert_tools_to_dict(tools),
-                },
+            # Step 10: Initialize generation tracker for multi-agent support
+            num_agents = len(agent_groups)
+            await init_generation(str(run_id), num_agents)
+            await init_resource_progress(str(run_id), len(resource_types))
+
+            # Emit provider_generation_started to client
+            await sio.emit(
+                "provider_generation_started",
+                ProviderGenerationStartedEvent(
+                    artifact_type="provider",
+                    group_id=str(group_id) if group_id else "",
+                    run_id=str(run_id),
+                    resource_types=resource_types,
+                ).model_dump(mode="json"),
+                room=sid,
             )
+
+            # Step 11: Dispatch to generate_artifact handler(s)
+            for _agent_group_id, agent_resource_types in agent_groups.items():
+                await internal_sio.emit(
+                    "generate_artifact",
+                    {
+                        "sid": sid,
+                        "artifact_type": "provider",
+                        "resource_type": agent_resource_types[0]
+                        if agent_resource_types
+                        else "provider",
+                        "run_id": str(run_id),
+                        "group_id": str(group_id) if group_id else None,
+                        "message_id": None,
+                        "messages": messages,
+                        "llm_config": {
+                            "model": model_name,
+                            "api_key": api_key,
+                            "base_url": base_url,
+                            "temperature": temperature,
+                            "reasoning": reasoning,
+                            "provider": provider_name,
+                            "voice": voice,
+                            "quality": quality,
+                            "length_seconds": None,
+                            "tool_choice": "required",
+                        },
+                        "tools": convert_tools_to_dict(tools),
+                        "save": data.save,
+                    },
+                )
 
     except Exception as e:
         logger.exception(f"Failed to generate provider resources: {str(e)}")
@@ -485,3 +544,19 @@ async def provider_generate_internal(data: dict[str, Any]) -> None:
             ),
             sid=sid,
         )
+
+
+# =============================================================================
+# FastAPI endpoint for OpenAPI documentation
+# =============================================================================
+
+
+@server_router.post("/provider_generation_started")
+async def provider_generation_started_api(
+    request: ProviderGenerationStartedEvent,
+) -> dict[str, bool]:
+    """Server-to-client event: Provider generation started.
+
+    Emitted when provider generation begins, listing resource types being generated.
+    """
+    return {"success": True}

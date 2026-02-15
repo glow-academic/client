@@ -517,40 +517,50 @@ class PatchAgentDraftApiResponse(BaseModel):
 # Generated from: save_agent
 
 
+class AgentMultiResourceAction(BaseModel):
+    resource_ids: list[UUID] | None
+    create_tool_id: UUID | None
+    link_tool_id: UUID | None
+
+
+class AgentResourceAction(BaseModel):
+    resource_id: UUID | None
+    create_tool_id: UUID | None
+    link_tool_id: UUID | None
+
+
 class SaveAgentSqlParams(BaseModel):
-    name: str
-    model_id: UUID
     profile_id: UUID
-    description: str | None = None
-    prompt_id: UUID | None = None
-    system_prompt: str | None = None
-    instructions_id: UUID | None = None
-    active_flag_id: UUID | None = None
-    department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    artifact_name: str | None = None
     input_agent_id: UUID | None = None
-    temperature_level_id: UUID | None = None
-    reasoning_level_id: UUID | None = None
-    voice_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    tool_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    group_id: UUID | None = None
+    names: AgentResourceAction | None = None
+    descriptions: AgentResourceAction | None = None
+    models: AgentResourceAction | None = None
+    prompts: AgentResourceAction | None = None
+    instructions: AgentResourceAction | None = None
+    flags: AgentResourceAction | None = None
+    temperature_levels: AgentResourceAction | None = None
+    reasoning_levels: AgentResourceAction | None = None
+    departments: AgentMultiResourceAction | None = None
+    tools: AgentMultiResourceAction | None = None
+    voices: AgentMultiResourceAction | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
-            self.name,
-            self.model_id,
             self.profile_id,
-            self.description,
-            self.prompt_id,
-            self.system_prompt,
-            self.instructions_id,
-            self.active_flag_id,
-            self.department_ids,
-            self.artifact_name,
             self.input_agent_id,
-            self.temperature_level_id,
-            self.reasoning_level_id,
-            self.voice_ids,
-            self.tool_ids,
+            self.group_id,
+            self.names,
+            self.descriptions,
+            self.models,
+            self.prompts,
+            self.instructions,
+            self.flags,
+            self.temperature_levels,
+            self.reasoning_levels,
+            self.departments,
+            self.tools,
+            self.voices,
         )
 
 
@@ -559,20 +569,19 @@ class SaveAgentSqlRow(BaseModel):
 
 
 class SaveAgentApiRequest(BaseModel):
-    name: str
-    model_id: UUID
-    description: str | None = None
-    prompt_id: UUID | None = None
-    system_prompt: str | None = None
-    instructions_id: UUID | None = None
-    active_flag_id: UUID | None = None
-    department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    artifact_name: str | None = None
     input_agent_id: UUID | None = None
-    temperature_level_id: UUID | None = None
-    reasoning_level_id: UUID | None = None
-    voice_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    tool_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    group_id: UUID | None = None
+    names: AgentResourceAction | None = None
+    descriptions: AgentResourceAction | None = None
+    models: AgentResourceAction | None = None
+    prompts: AgentResourceAction | None = None
+    instructions: AgentResourceAction | None = None
+    flags: AgentResourceAction | None = None
+    temperature_levels: AgentResourceAction | None = None
+    reasoning_levels: AgentResourceAction | None = None
+    departments: AgentMultiResourceAction | None = None
+    tools: AgentMultiResourceAction | None = None
+    voices: AgentMultiResourceAction | None = None
 
 
 class SaveAgentApiResponse(BaseModel):
@@ -1642,10 +1651,6 @@ class GetAuthIdsSqlRow(BaseModel):
     protocol_ids: list[UUID] | None = None
     slug_ids: list[UUID] | None = None
     auth_item_ids: list[UUID] | None = None
-    candidate_agents: Any | None = None
-    names_has_tools: bool | None = None
-    protocols_has_tools: bool | None = None
-    slugs_has_tools: bool | None = None
 
 
 class GetAuthIdsApiRequest(BaseModel):
@@ -1662,10 +1667,6 @@ class GetAuthIdsApiResponse(BaseModel):
     protocol_ids: list[UUID] | None = None
     slug_ids: list[UUID] | None = None
     auth_item_ids: list[UUID] | None = None
-    candidate_agents: Any | None = None
-    names_has_tools: bool | None = None
-    protocols_has_tools: bool | None = None
-    slugs_has_tools: bool | None = None
 
 
 # Generated from: get_auth_list
@@ -3397,21 +3398,6 @@ class GetDocumentIdsSqlRow(BaseModel):
     upload_suggestions: list[UUID] | None = None
     image_suggestions: list[UUID] | None = None
     text_suggestions: list[UUID] | None = None
-    candidate_agents: Any | None = None
-    names_has_tools: bool | None = None
-    departments_has_tools: bool | None = None
-    fields_has_tools: bool | None = None
-    uploads_has_tools: bool | None = None
-    images_has_tools: bool | None = None
-    texts_has_tools: bool | None = None
-    name_domain_id: UUID | None = None
-    description_domain_id: UUID | None = None
-    flag_domain_id: UUID | None = None
-    departments_domain_id: UUID | None = None
-    fields_domain_id: UUID | None = None
-    uploads_domain_id: UUID | None = None
-    images_domain_id: UUID | None = None
-    texts_domain_id: UUID | None = None
 
 
 class GetDocumentIdsApiRequest(BaseModel):
@@ -3437,21 +3423,6 @@ class GetDocumentIdsApiResponse(BaseModel):
     upload_suggestions: list[UUID] | None = None
     image_suggestions: list[UUID] | None = None
     text_suggestions: list[UUID] | None = None
-    candidate_agents: Any | None = None
-    names_has_tools: bool | None = None
-    departments_has_tools: bool | None = None
-    fields_has_tools: bool | None = None
-    uploads_has_tools: bool | None = None
-    images_has_tools: bool | None = None
-    texts_has_tools: bool | None = None
-    name_domain_id: UUID | None = None
-    description_domain_id: UUID | None = None
-    flag_domain_id: UUID | None = None
-    departments_domain_id: UUID | None = None
-    fields_domain_id: UUID | None = None
-    uploads_domain_id: UUID | None = None
-    images_domain_id: UUID | None = None
-    texts_domain_id: UUID | None = None
 
 
 # Generated from: get_document_resource_data
@@ -6141,6 +6112,72 @@ class PrepareProfileGenerationApiRequest(BaseModel):
 
 
 class PrepareProfileGenerationApiResponse(BaseModel):
+    run_id: UUID | None = None
+    group_id: UUID | None = None
+    trace_id: str | None = None
+    config_id: UUID | None = None
+
+
+# Generated from: get_provider_generation_context
+
+
+class GetProviderGenerationContextSqlParams(BaseModel):
+    p_profile_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (self.p_profile_id,)
+
+
+class GetProviderGenerationContextSqlRow(BaseModel):
+    requests_per_day: int | None = None
+    runs_today: int | None = None
+
+
+class GetProviderGenerationContextApiRequest(BaseModel):
+    p_profile_id: UUID
+
+
+class GetProviderGenerationContextApiResponse(BaseModel):
+    requests_per_day: int | None = None
+    runs_today: int | None = None
+
+
+# Generated from: prepare_provider_generation
+
+
+class PrepareProviderGenerationSqlParams(BaseModel):
+    p_profile_id: UUID
+    p_group_id: UUID | None = None
+    p_agents_resource_id: UUID | None = None
+    p_models_resource_id: UUID | None = None
+    p_providers_resource_id: UUID | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.p_profile_id,
+            self.p_group_id,
+            self.p_agents_resource_id,
+            self.p_models_resource_id,
+            self.p_providers_resource_id,
+        )
+
+
+class PrepareProviderGenerationSqlRow(BaseModel):
+    run_id: UUID | None = None
+    group_id: UUID | None = None
+    trace_id: str | None = None
+    config_id: UUID | None = None
+
+
+class PrepareProviderGenerationApiRequest(BaseModel):
+    p_profile_id: UUID
+    p_group_id: UUID | None = None
+    p_agents_resource_id: UUID | None = None
+    p_models_resource_id: UUID | None = None
+    p_providers_resource_id: UUID | None = None
+
+
+class PrepareProviderGenerationApiResponse(BaseModel):
     run_id: UUID | None = None
     group_id: UUID | None = None
     trace_id: str | None = None
@@ -10873,19 +10910,6 @@ class GetProfileIdsSqlRow(BaseModel):
     department_ids: list[UUID] | None = None
     cohort_ids: list[UUID] | None = None
     role: str | None = None
-    candidate_agents: Any | None = None
-    names_has_tools: bool | None = None
-    emails_has_tools: bool | None = None
-    request_limits_has_tools: bool | None = None
-    flags_has_tools: bool | None = None
-    departments_has_tools: bool | None = None
-    cohorts_has_tools: bool | None = None
-    name_domain_id: UUID | None = None
-    emails_domain_id: UUID | None = None
-    request_limits_domain_id: UUID | None = None
-    flag_domain_id: UUID | None = None
-    departments_domain_id: UUID | None = None
-    cohorts_domain_id: UUID | None = None
 
 
 class GetProfileIdsApiRequest(BaseModel):
@@ -10903,19 +10927,6 @@ class GetProfileIdsApiResponse(BaseModel):
     department_ids: list[UUID] | None = None
     cohort_ids: list[UUID] | None = None
     role: str | None = None
-    candidate_agents: Any | None = None
-    names_has_tools: bool | None = None
-    emails_has_tools: bool | None = None
-    request_limits_has_tools: bool | None = None
-    flags_has_tools: bool | None = None
-    departments_has_tools: bool | None = None
-    cohorts_has_tools: bool | None = None
-    name_domain_id: UUID | None = None
-    emails_domain_id: UUID | None = None
-    request_limits_domain_id: UUID | None = None
-    flag_domain_id: UUID | None = None
-    departments_domain_id: UUID | None = None
-    cohorts_domain_id: UUID | None = None
 
 
 # Generated from: get_profile_resource_ids_by_group_id
@@ -22530,18 +22541,6 @@ class GetToolIdsSqlRow(BaseModel):
     args_ids: list[UUID] | None = None
     arg_position_ids: list[UUID] | None = None
     args_outputs_ids: list[UUID] | None = None
-    candidate_agents: Any | None = None
-    names_has_tools: bool | None = None
-    descriptions_has_tools: bool | None = None
-    args_has_tools: bool | None = None
-    arg_positions_has_tools: bool | None = None
-    args_outputs_has_tools: bool | None = None
-    name_domain_id: UUID | None = None
-    description_domain_id: UUID | None = None
-    flag_domain_id: UUID | None = None
-    args_domain_id: UUID | None = None
-    arg_positions_domain_id: UUID | None = None
-    args_outputs_domain_id: UUID | None = None
 
 
 class GetToolIdsApiRequest(BaseModel):
@@ -22558,18 +22557,6 @@ class GetToolIdsApiResponse(BaseModel):
     args_ids: list[UUID] | None = None
     arg_position_ids: list[UUID] | None = None
     args_outputs_ids: list[UUID] | None = None
-    candidate_agents: Any | None = None
-    names_has_tools: bool | None = None
-    descriptions_has_tools: bool | None = None
-    args_has_tools: bool | None = None
-    arg_positions_has_tools: bool | None = None
-    args_outputs_has_tools: bool | None = None
-    name_domain_id: UUID | None = None
-    description_domain_id: UUID | None = None
-    flag_domain_id: UUID | None = None
-    args_domain_id: UUID | None = None
-    arg_positions_domain_id: UUID | None = None
-    args_outputs_domain_id: UUID | None = None
 
 
 # Generated from: get_tools_list
@@ -26523,6 +26510,18 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "PrepareProfileGenerationApiRequest",
         "PrepareProfileGenerationApiResponse",
     ),
+    "app/sql/v4/queries/generate/provider/get_provider_generation_context_complete.sql": (
+        "GetProviderGenerationContextSqlParams",
+        "GetProviderGenerationContextSqlRow",
+        "GetProviderGenerationContextApiRequest",
+        "GetProviderGenerationContextApiResponse",
+    ),
+    "app/sql/v4/queries/generate/provider/prepare_provider_generation_complete.sql": (
+        "PrepareProviderGenerationSqlParams",
+        "PrepareProviderGenerationSqlRow",
+        "PrepareProviderGenerationApiRequest",
+        "PrepareProviderGenerationApiResponse",
+    ),
     "app/sql/v4/queries/generate/scenario/get_scenario_generation_context_complete.sql": (
         "GetScenarioGenerationContextSqlParams",
         "GetScenarioGenerationContextSqlRow",
@@ -30384,6 +30383,20 @@ if TYPE_CHECKING:
     def load_sql_query(
         file_path: Literal[
             "app/sql/v4/queries/generate/profile/prepare_profile_generation_complete.sql"
+        ],
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal[
+            "app/sql/v4/queries/generate/provider/get_provider_generation_context_complete.sql"
+        ],
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal[
+            "app/sql/v4/queries/generate/provider/prepare_provider_generation_complete.sql"
         ],
     ) -> SqlString: ...
 
