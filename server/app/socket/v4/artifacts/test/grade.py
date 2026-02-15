@@ -82,7 +82,7 @@ async def _test_grade_impl(
     1. Fetches test data via get_test_websocket() (cached, includes config chain)
     2. Extracts LLM config from pre-fetched resources (agent/model/provider)
     3. Validates prerequisites (agent, model, provider, API key)
-    4. Finds invocation by chat_id, resolves group_id
+    4. Finds invocation by invocation_id, resolves group_id
     5. Parallel fetches tools, prompts, and instructions
     6. Calls slim prepare SQL (mutations only: run/config/grade creation)
     7. Builds jinja context in Python from views + resources
@@ -223,7 +223,7 @@ async def _test_grade_impl(
             )
             return
 
-        # Step 3: Find invocation by chat_id
+        # Step 3: Find invocation by invocation_id
         if not result.views or not result.views.benchmark_invocations:
             await emit_to_internal(
                 "generate_call_error",
@@ -238,12 +238,12 @@ async def _test_grade_impl(
             )
             return
 
-        chat_id_str = str(data.chat_id)
+        invocation_id_str = str(data.invocation_id)
         invocation = next(
             (
                 inv
                 for inv in result.views.benchmark_invocations
-                if str(inv.invocation_id) == chat_id_str
+                if str(inv.invocation_id) == invocation_id_str
             ),
             None,
         )
@@ -333,7 +333,7 @@ async def _test_grade_impl(
             prepare_params = PrepareTestGradeSqlParams(
                 p_profile_id=profile_id,
                 p_group_id=group_id,
-                p_invocation_id=data.chat_id,
+                p_invocation_id=data.invocation_id,
                 p_run_id=data.run_id,
                 p_rubric_id=invocation.rubric_id,
                 p_agents_resource_id=agent_resource.id,
@@ -433,7 +433,8 @@ async def _test_grade_impl(
                     "modality": "call",
                     "run_id": str(grade_run_id),
                     "group_id": str(group_id),
-                    "chat_id": str(data.chat_id),
+                    "invocation_id": invocation_id_str,
+                    "chat_id": invocation_id_str,
                     "test_id": str(data.test_id),
                     "grade_id": str(grade_id) if grade_id else None,
                     "message_id": None,

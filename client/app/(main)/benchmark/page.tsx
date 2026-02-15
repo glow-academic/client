@@ -23,8 +23,6 @@ type BenchmarkOverviewIn = InputOf<"/api/v4/artifacts/benchmark/list", "post">;
 type BenchmarkOverviewOut = OutputOf<"/api/v4/artifacts/benchmark/list", "post">;
 type BenchmarkHistoryIn = InputOf<"/api/v4/artifacts/test/list", "post">;
 type BenchmarkHistoryOut = OutputOf<"/api/v4/artifacts/test/list", "post">;
-type CreateTestIn = InputOf<"/api/v4/artifacts/test/create", "post">;
-type CreateTestOut = OutputOf<"/api/v4/artifacts/test/create", "post">;
 // For backward compatibility, extract evals list structure from overview
 type EvalsListOut = {
   evals: BenchmarkOverviewOut["evals"];
@@ -79,13 +77,6 @@ const getBenchmarkHistory = async (
     }),
   });
 };
-
-async function createTestAction(
-  input: CreateTestIn,
-): Promise<CreateTestOut> {
-  "use server";
-  return api.post("/artifacts/test/create", input);
-}
 
 /** ---- Docs types for page metadata ---- */
 type DocsIn = InputOf<"/api/v4/artifacts/benchmark/docs", "post">;
@@ -329,7 +320,6 @@ export default async function BenchmarkPage({
       <Benchmark
         evalsData={evalsData}
         rubricMappings={rubricMappings}
-        createTestAction={createTestAction}
       />
 
       {/* History section moved out of Benchmark, fully server-driven */}
@@ -426,7 +416,5 @@ export type {
   BenchmarkHistoryOut,
   BenchmarkOverviewIn,
   BenchmarkOverviewOut,
-  CreateTestIn,
-  CreateTestOut,
   EvalsListOut,
 };

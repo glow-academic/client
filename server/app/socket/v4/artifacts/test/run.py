@@ -153,7 +153,7 @@ async def _test_run_impl(sid: str, data: TestRunPayload, profile_id: uuid.UUID) 
     8. Renders developer instructions and builds messages
     9. Emits to generate_artifact handler
     """
-    chat_id_str = str(data.chat_id)
+    invocation_id_str = str(data.invocation_id)
 
     try:
         pool = get_pool()
@@ -172,7 +172,7 @@ async def _test_run_impl(sid: str, data: TestRunPayload, profile_id: uuid.UUID) 
             await sio.emit(
                 "test_error",
                 TestErrorEvent(
-                    chat_id=chat_id_str,
+                    invocation_id=invocation_id_str,
                     message="Failed to fetch test data",
                     error_type="context",
                 ).model_dump(mode="json"),
@@ -185,7 +185,7 @@ async def _test_run_impl(sid: str, data: TestRunPayload, profile_id: uuid.UUID) 
             (
                 inv
                 for inv in result.views.benchmark_invocations
-                if str(inv.invocation_id) == chat_id_str
+                if str(inv.invocation_id) == invocation_id_str
             ),
             None,
         )
@@ -194,7 +194,7 @@ async def _test_run_impl(sid: str, data: TestRunPayload, profile_id: uuid.UUID) 
             await sio.emit(
                 "test_error",
                 TestErrorEvent(
-                    chat_id=chat_id_str,
+                    invocation_id=invocation_id_str,
                     message="Test chat does not exist",
                     error_type="validation",
                 ).model_dump(mode="json"),
@@ -212,7 +212,7 @@ async def _test_run_impl(sid: str, data: TestRunPayload, profile_id: uuid.UUID) 
             await sio.emit(
                 "test_error",
                 TestErrorEvent(
-                    chat_id=chat_id_str,
+                    invocation_id=invocation_id_str,
                     message="No pending runs to execute",
                     error_type="validation",
                 ).model_dump(mode="json"),
@@ -225,7 +225,7 @@ async def _test_run_impl(sid: str, data: TestRunPayload, profile_id: uuid.UUID) 
             await sio.emit(
                 "test_error",
                 TestErrorEvent(
-                    chat_id=chat_id_str,
+                    invocation_id=invocation_id_str,
                     message="No configuration found for test",
                     error_type="validation",
                 ).model_dump(mode="json"),
@@ -246,7 +246,7 @@ async def _test_run_impl(sid: str, data: TestRunPayload, profile_id: uuid.UUID) 
             await sio.emit(
                 "test_error",
                 TestErrorEvent(
-                    chat_id=chat_id_str,
+                    invocation_id=invocation_id_str,
                     message="No agent configuration found",
                     error_type="validation",
                 ).model_dump(mode="json"),
@@ -258,7 +258,7 @@ async def _test_run_impl(sid: str, data: TestRunPayload, profile_id: uuid.UUID) 
             await sio.emit(
                 "test_error",
                 TestErrorEvent(
-                    chat_id=chat_id_str,
+                    invocation_id=invocation_id_str,
                     message=f"Agent '{agent_resource.name}' has no model configured",
                     error_type="validation",
                 ).model_dump(mode="json"),
@@ -270,7 +270,7 @@ async def _test_run_impl(sid: str, data: TestRunPayload, profile_id: uuid.UUID) 
             await sio.emit(
                 "test_error",
                 TestErrorEvent(
-                    chat_id=chat_id_str,
+                    invocation_id=invocation_id_str,
                     message=f"Model '{model_resource.name}' has no provider configured",
                     error_type="validation",
                 ).model_dump(mode="json"),
@@ -297,7 +297,7 @@ async def _test_run_impl(sid: str, data: TestRunPayload, profile_id: uuid.UUID) 
             await sio.emit(
                 "test_error",
                 TestErrorEvent(
-                    chat_id=chat_id_str,
+                    invocation_id=invocation_id_str,
                     message=f"No API key configured for provider '{provider_name}'",
                     error_type="validation",
                 ).model_dump(mode="json"),
@@ -310,7 +310,7 @@ async def _test_run_impl(sid: str, data: TestRunPayload, profile_id: uuid.UUID) 
             await sio.emit(
                 "test_error",
                 TestErrorEvent(
-                    chat_id=chat_id_str,
+                    invocation_id=invocation_id_str,
                     message="Test configuration (group) not found",
                     error_type="validation",
                 ).model_dump(mode="json"),
@@ -515,12 +515,12 @@ async def _test_run_impl(sid: str, data: TestRunPayload, profile_id: uuid.UUID) 
             if not prepare_row or not prepare_row.run_id:
                 logger.error(
                     f"Test run preparation failed - "
-                    f"profile_id={profile_id}, chat_id={data.chat_id}"
+                    f"profile_id={profile_id}, invocation_id={data.invocation_id}"
                 )
                 await sio.emit(
                     "test_error",
                     TestErrorEvent(
-                        chat_id=chat_id_str,
+                        invocation_id=invocation_id_str,
                         message="Failed to prepare test run",
                         error_type="prepare",
                     ).model_dump(mode="json"),
@@ -557,7 +557,7 @@ async def _test_run_impl(sid: str, data: TestRunPayload, profile_id: uuid.UUID) 
             prepare_row.created_at.isoformat() if prepare_row.created_at else ""
         )
         start_event = TestRunStartEvent(
-            chat_id=chat_id_str,
+            invocation_id=invocation_id_str,
             run_id=run_id,
             original_run_resource_id=str(next_run_resource_id),
             current_run=current_run,
@@ -573,7 +573,7 @@ async def _test_run_impl(sid: str, data: TestRunPayload, profile_id: uuid.UUID) 
         await sio.emit(
             "test_run_start",
             start_event.model_dump(mode="json"),
-            room=f"test_{chat_id_str}",
+            room=f"test_{invocation_id_str}",
         )
 
         # Step 9: Emit to generate_artifact handler
@@ -586,12 +586,12 @@ async def _test_run_impl(sid: str, data: TestRunPayload, profile_id: uuid.UUID) 
                 "modality": "text",
                 "run_id": run_id,
                 "group_id": str(group_id),
-                "chat_id": chat_id_str,
+                "invocation_id": invocation_id_str,
+                "chat_id": invocation_id_str,
                 "test_id": str(data.test_id),
                 "original_run_resource_id": str(next_run_resource_id),
                 "current_run": current_run,
                 "total_runs": total_runs,
-                "run_all": data.run_all,
                 "messages": messages,
                 "llm_config": llm_config,
                 "tools": convert_tools_to_dict(tools),
@@ -600,7 +600,7 @@ async def _test_run_impl(sid: str, data: TestRunPayload, profile_id: uuid.UUID) 
 
         logger.info(
             f"Test run started - "
-            f"profile_id={profile_id}, chat_id={data.chat_id}, "
+            f"profile_id={profile_id}, invocation_id={data.invocation_id}, "
             f"run_id={run_id}, current={current_run}/{total_runs}"
         )
 
@@ -609,7 +609,7 @@ async def _test_run_impl(sid: str, data: TestRunPayload, profile_id: uuid.UUID) 
         await sio.emit(
             "test_error",
             TestErrorEvent(
-                chat_id=chat_id_str,
+                invocation_id=invocation_id_str,
                 message=f"Invalid UUID format: {str(e)}",
                 error_type="validation",
             ).model_dump(mode="json"),
@@ -620,7 +620,7 @@ async def _test_run_impl(sid: str, data: TestRunPayload, profile_id: uuid.UUID) 
         await sio.emit(
             "test_error",
             TestErrorEvent(
-                chat_id=chat_id_str,
+                invocation_id=invocation_id_str,
                 message=f"Failed to run test: {str(e)}",
                 error_type="internal",
             ).model_dump(mode="json"),
@@ -642,7 +642,7 @@ async def test_run(sid: str, data: dict[str, Any]) -> None:
             await sio.emit(
                 "test_error",
                 TestErrorEvent(
-                    chat_id=str(data.get("chat_id", "")),
+                    invocation_id=str(data.get("invocation_id", "")),
                     message="Profile not found. Please reconnect.",
                     error_type="auth",
                 ).model_dump(mode="json"),
@@ -656,7 +656,7 @@ async def test_run(sid: str, data: dict[str, Any]) -> None:
         await sio.emit(
             "test_error",
             TestErrorEvent(
-                chat_id=str(data.get("chat_id", "")),
+                invocation_id=str(data.get("invocation_id", "")),
                 message=f"Invalid request: {str(e)}",
                 error_type="validation",
             ).model_dump(mode="json"),
@@ -677,7 +677,7 @@ async def test_run_internal(data: dict[str, Any]) -> None:
             await sio.emit(
                 "test_error",
                 TestErrorEvent(
-                    chat_id=str(data.get("chat_id", "")),
+                    invocation_id=str(data.get("invocation_id", "")),
                     message="Profile not found. Please reconnect.",
                     error_type="auth",
                 ).model_dump(mode="json"),
@@ -695,7 +695,7 @@ async def test_run_internal(data: dict[str, Any]) -> None:
             await sio.emit(
                 "test_error",
                 TestErrorEvent(
-                    chat_id=str(data.get("chat_id", "")),
+                    invocation_id=str(data.get("invocation_id", "")),
                     message=f"Invalid request: {str(e)}",
                     error_type="validation",
                 ).model_dump(mode="json"),

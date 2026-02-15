@@ -18,14 +18,14 @@ server_router = APIRouter()
 @internal_sio.on("test_progress_update")  # type: ignore
 async def handle_test_progress(data: dict[str, Any]) -> None:
     """Handle test progress update events and emit test_progress."""
-    chat_id = data.get("chat_id")
-    if not chat_id:
+    invocation_id = data.get("invocation_id") or data.get("chat_id")
+    if not invocation_id:
         return
 
-    chat_id_str = str(chat_id)
+    invocation_id_str = str(invocation_id)
 
     event = TestProgressEvent(
-        chat_id=chat_id_str,
+        invocation_id=invocation_id_str,
         type=data.get("type", "progress"),
         run_id=data.get("run_id"),
         current_run=data.get("current_run"),
@@ -40,7 +40,7 @@ async def handle_test_progress(data: dict[str, Any]) -> None:
     await sio.emit(
         "test_progress",
         event.model_dump(mode="json"),
-        room=f"test_{chat_id_str}",
+        room=f"test_{invocation_id_str}",
     )
 
 

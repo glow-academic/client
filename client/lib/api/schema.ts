@@ -3523,26 +3523,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v4/artifacts/test/create": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Create Test
-         * @description Create a new benchmark test via REST.
-         */
-        post: operations["create_test_api_v4_artifacts_test_create_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v4/resources/agents/get": {
         parameters: {
             query?: never;
@@ -8725,6 +8705,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/socket/v4/client/test/start": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Test Start Api
+         * @description Client-to-server event: Start or proceed with a test.
+         */
+        post: operations["test_start_api_socket_v4_client_test_start_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/socket/v4/client/test/join": {
         parameters: {
             query?: never;
@@ -8799,26 +8799,6 @@ export interface paths {
          * @description Client-to-server event: Run one auto-regressive replay.
          */
         post: operations["test_run_api_socket_v4_client_test_run_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/socket/v4/client/test/run_all": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Test Run All Api
-         * @description Client-to-server event: Run all remaining auto-regressive replays.
-         */
-        post: operations["test_run_all_api_socket_v4_client_test_run_all_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -9589,6 +9569,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/socket/v4/server/test/started": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Test Started Api
+         * @description Server-to-client event: Test created.
+         */
+        post: operations["test_started_api_socket_v4_server_test_started_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/socket/v4/server/test/joined": {
         parameters: {
             query?: never;
@@ -9703,26 +9703,6 @@ export interface paths {
          * @description Server-to-client event: Test run started.
          */
         post: operations["test_run_start_api_socket_v4_server_test_run_start_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/socket/v4/server/test/all_complete": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Test All Complete Api
-         * @description Server-to-client event: All test runs completed.
-         */
-        post: operations["test_all_complete_api_socket_v4_server_test_all_complete_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -21646,27 +21626,6 @@ export interface components {
             success: boolean;
             /** Message */
             message: string;
-        };
-        /** CreateTestRequest */
-        CreateTestRequest: {
-            /**
-             * Eval Id
-             * Format: uuid
-             */
-            eval_id: string;
-            /**
-             * Infinite Mode
-             * @default false
-             */
-            infinite_mode: boolean;
-        };
-        /** CreateTestResponse */
-        CreateTestResponse: {
-            /**
-             * Test Id
-             * Format: uuid
-             */
-            test_id: string;
         };
         /** DashboardFieldMeta */
         DashboardFieldMeta: {
@@ -47790,31 +47749,14 @@ export interface components {
             tool_name?: string | null;
         };
         /**
-         * TestAllCompleteEvent
-         * @description Server-to-client event: test_all_complete.
-         *
-         *     Emitted when all runs are complete.
-         */
-        TestAllCompleteEvent: {
-            /** Chat Id */
-            chat_id: string;
-            /** Total Runs */
-            total_runs: number;
-            /**
-             * Success
-             * @default true
-             */
-            success: boolean;
-        };
-        /**
          * TestErrorEvent
          * @description Server-to-client event: test_error.
          *
          *     Emitted on errors.
          */
         TestErrorEvent: {
-            /** Chat Id */
-            chat_id?: string | null;
+            /** Invocation Id */
+            invocation_id?: string | null;
             /** Run Id */
             run_id?: string | null;
             /** Message */
@@ -47830,10 +47772,10 @@ export interface components {
          */
         TestGradePayload: {
             /**
-             * Chat Id
+             * Invocation Id
              * Format: uuid
              */
-            chat_id: string;
+            invocation_id: string;
             /**
              * Test Id
              * Format: uuid
@@ -47852,8 +47794,8 @@ export interface components {
          *     Emitted when grading completes.
          */
         TestGradedEvent: {
-            /** Chat Id */
-            chat_id: string;
+            /** Invocation Id */
+            invocation_id: string;
             /** Grade Id */
             grade_id?: string | null;
             /** Score */
@@ -47871,10 +47813,10 @@ export interface components {
          */
         TestJoinPayload: {
             /**
-             * Chat Id
+             * Invocation Id
              * Format: uuid
              */
-            chat_id: string;
+            invocation_id: string;
         };
         /**
          * TestJoinedEvent
@@ -47883,8 +47825,8 @@ export interface components {
          *     Emitted when a client successfully joins a test room.
          */
         TestJoinedEvent: {
-            /** Chat Id */
-            chat_id: string;
+            /** Invocation Id */
+            invocation_id: string;
             /**
              * Success
              * @default true
@@ -47899,10 +47841,10 @@ export interface components {
          */
         TestLeavePayload: {
             /**
-             * Chat Id
+             * Invocation Id
              * Format: uuid
              */
-            chat_id: string;
+            invocation_id: string;
         };
         /**
          * TestListFilterOption
@@ -47971,8 +47913,8 @@ export interface components {
          *     Emitted during test execution.
          */
         TestProgressEvent: {
-            /** Chat Id */
-            chat_id: string;
+            /** Invocation Id */
+            invocation_id: string;
             /** Type */
             type: string;
             /** Run Id */
@@ -48007,32 +47949,14 @@ export interface components {
             } | null;
         };
         /**
-         * TestRunAllPayload
-         * @description Request payload for test_run_all WebSocket event.
-         *
-         *     Runs ALL remaining auto-regressive replays sequentially.
-         */
-        TestRunAllPayload: {
-            /**
-             * Chat Id
-             * Format: uuid
-             */
-            chat_id: string;
-            /**
-             * Test Id
-             * Format: uuid
-             */
-            test_id: string;
-        };
-        /**
          * TestRunCompleteEvent
          * @description Server-to-client event: test_run_complete.
          *
          *     Emitted when a single run replay completes.
          */
         TestRunCompleteEvent: {
-            /** Chat Id */
-            chat_id: string;
+            /** Invocation Id */
+            invocation_id: string;
             /** Run Id */
             run_id: string;
             /** Original Run Resource Id */
@@ -48085,20 +48009,15 @@ export interface components {
          */
         TestRunPayload: {
             /**
-             * Chat Id
+             * Invocation Id
              * Format: uuid
              */
-            chat_id: string;
+            invocation_id: string;
             /**
              * Test Id
              * Format: uuid
              */
             test_id: string;
-            /**
-             * Run All
-             * @default false
-             */
-            run_all: boolean;
         };
         /**
          * TestRunStartEvent
@@ -48107,8 +48026,8 @@ export interface components {
          *     Emitted when a run replay starts.
          */
         TestRunStartEvent: {
-            /** Chat Id */
-            chat_id: string;
+            /** Invocation Id */
+            invocation_id: string;
             /** Run Id */
             run_id: string;
             /** Original Run Resource Id */
@@ -48119,6 +48038,35 @@ export interface components {
             total_runs: number;
             /** Created At */
             created_at: string;
+        };
+        /**
+         * TestStartPayload
+         * @description Request payload for test_start WebSocket event.
+         *
+         *     Dual-mode:
+         *     - Create mode (has eval_id, no test_id): Create test + invocations
+         *     - Next mode (has test_id): Find next invocation with pending runs
+         */
+        TestStartPayload: {
+            /** Eval Id */
+            eval_id?: string | null;
+            /** Test Id */
+            test_id?: string | null;
+            /**
+             * Infinite Mode
+             * @default false
+             */
+            infinite_mode: boolean;
+        };
+        /**
+         * TestStartedEvent
+         * @description Server-to-client event: test_started.
+         *
+         *     Emitted when a test is created successfully.
+         */
+        TestStartedEvent: {
+            /** Test Id */
+            test_id: string;
         };
         /** TestStatusSummary */
         TestStatusSummary: {
@@ -48151,10 +48099,10 @@ export interface components {
          */
         TestStopPayload: {
             /**
-             * Chat Id
+             * Invocation Id
              * Format: uuid
              */
-            chat_id: string;
+            invocation_id: string;
         };
         /**
          * TestStoppedEvent
@@ -48163,8 +48111,8 @@ export interface components {
          *     Emitted when generation is stopped.
          */
         TestStoppedEvent: {
-            /** Chat Id */
-            chat_id: string;
+            /** Invocation Id */
+            invocation_id: string;
             /**
              * Success
              * @default true
@@ -57028,43 +56976,6 @@ export interface operations {
                     "application/json": {
                         [key: string]: unknown;
                     };
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    create_test_api_v4_artifacts_test_create_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CreateTestRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CreateTestResponse"];
                 };
             };
             /** @description Validation Error */
@@ -66455,6 +66366,41 @@ export interface operations {
             };
         };
     };
+    test_start_api_socket_v4_client_test_start_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TestStartPayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     test_join_api_socket_v4_client_test_join_post: {
         parameters: {
             query?: never;
@@ -66570,41 +66516,6 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["TestRunPayload"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: boolean;
-                    };
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    test_run_all_api_socket_v4_client_test_run_all_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["TestRunAllPayload"];
             };
         };
         responses: {
@@ -67925,6 +67836,41 @@ export interface operations {
             };
         };
     };
+    test_started_api_socket_v4_server_test_started_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TestStartedEvent"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     test_joined_api_socket_v4_server_test_joined_post: {
         parameters: {
             query?: never;
@@ -68110,41 +68056,6 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["TestRunStartEvent"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: boolean;
-                    };
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    test_all_complete_api_socket_v4_server_test_all_complete_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["TestAllCompleteEvent"];
             };
         };
         responses: {

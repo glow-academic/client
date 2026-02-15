@@ -1,8 +1,10 @@
 """Test complete handler.
 
-Handles test run completion events and optionally chains to next run.
+Handles test run completion events.
 Also handles grade completion events from the grading LLM generation.
 Emits test_run_complete and test_graded to clients.
+
+After grading completes, emits test_invocation for auto-proceed.
 """
 
 import uuid
@@ -14,7 +16,6 @@ from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
 from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.main import get_internal_sio, sio
 from app.socket.v4.artifacts.test.types import (
-    TestAllCompleteEvent,
     TestGradedEvent,
     TestRunCompleteEvent,
 )
@@ -35,23 +36,20 @@ SQL_PATH_COMPLETE_GRADE = (
 
 @internal_sio.on("test_run_done")  # type: ignore
 async def handle_test_run_complete(data: dict[str, Any]) -> None:
-    """Handle test run completion and optionally chain to next run.
+    """Handle test run completion.
 
     This handler:
     1. Emits test_run_complete to clients
     2. Fire-and-forget: triggers grading for the completed run
-    3. If run_all flag is set and there are more pending runs, triggers next run
-    4. If no more pending runs, emits test_all_complete
     """
     sid = data.get("sid")
-    chat_id = data.get("chat_id")
+    invocation_id = data.get("invocation_id") or data.get("chat_id")
     run_id = data.get("run_id")
-    run_all = data.get("run_all", False)
 
-    if not chat_id:
+    if not invocation_id:
         return
 
-    chat_id_str = str(chat_id)
+    invocation_id_str = str(invocation_id)
 
     # Get run completion details from data
     current_run = data.get("current_run", 1)
@@ -64,7 +62,7 @@ async def handle_test_run_complete(data: dict[str, Any]) -> None:
 
     # Emit test_run_complete
     event = TestRunCompleteEvent(
-        chat_id=chat_id_str,
+        invocation_id=invocation_id_str,
         run_id=str(run_id) if run_id else None,
         original_run_resource_id=str(original_run_resource_id)
         if original_run_resource_id
@@ -81,7 +79,7 @@ async def handle_test_run_complete(data: dict[str, Any]) -> None:
     await sio.emit(
         "test_run_complete",
         event.model_dump(mode="json"),
-        room=f"test_{chat_id_str}",
+        room=f"test_{invocation_id_str}",
     )
 
     # Fire-and-forget: trigger grading for the completed run
@@ -91,46 +89,10 @@ async def handle_test_run_complete(data: dict[str, Any]) -> None:
             "test_grade",
             {
                 "sid": sid,
-                "chat_id": chat_id_str,
+                "invocation_id": invocation_id_str,
                 "test_id": str(test_id),
                 "run_id": str(run_id),
             },
-        )
-
-    # If run_all and there are more runs, trigger next
-    if run_all and remaining_runs > 0:
-        logger.info(
-            f"Chaining to next run - chat_id={chat_id_str}, remaining={remaining_runs}"
-        )
-        await internal_sio.emit(
-            "test_run",
-            {
-                "sid": sid,
-                "chat_id": chat_id_str,
-                "test_id": str(test_id) if test_id else chat_id_str,
-                "run_all": True,
-            },
-        )
-    elif run_all:
-        # All runs complete
-        all_complete_event = TestAllCompleteEvent(
-            chat_id=chat_id_str,
-            total_runs=total_runs,
-            success=True,
-        )
-        if sid:
-            await sio.emit(
-                "test_all_complete",
-                all_complete_event.model_dump(mode="json"),
-                room=sid,
-            )
-        await sio.emit(
-            "test_all_complete",
-            all_complete_event.model_dump(mode="json"),
-            room=f"test_{chat_id_str}",
-        )
-        logger.info(
-            f"All test runs complete - chat_id={chat_id_str}, total={total_runs}"
         )
 
 
@@ -140,6 +102,8 @@ async def handle_test_grade_complete(data: dict[str, Any]) -> None:
 
     Fires when the grading LLM generation finishes. Extracts score/passed/feedback
     from tool results, updates the benchmark_grades_entry, and emits test_graded.
+
+    After grading, emits test_invocation for auto-proceed chain.
     """
     if data.get("artifact_type") != "test":
         return
@@ -156,7 +120,7 @@ async def handle_test_grade_complete(data: dict[str, Any]) -> None:
         return
 
     grade_id = data.get("grade_id")
-    chat_id = data.get("chat_id")
+    invocation_id = data.get("invocation_id") or data.get("chat_id")
     run_id = data.get("run_id")  # grade_run_id
 
     # Extract score/passed/feedback from tool_results
@@ -185,8 +149,9 @@ async def handle_test_grade_complete(data: dict[str, Any]) -> None:
             )
 
         # Emit test_graded to client
+        invocation_id_str = str(invocation_id) if invocation_id else ""
         event = TestGradedEvent(
-            chat_id=str(chat_id) if chat_id else "",
+            invocation_id=invocation_id_str,
             grade_id=str(grade_id) if grade_id else None,
             score=score,
             passed=passed,
@@ -194,17 +159,29 @@ async def handle_test_grade_complete(data: dict[str, Any]) -> None:
         )
         if sid:
             await sio.emit("test_graded", event.model_dump(mode="json"), room=sid)
-        if chat_id:
+        if invocation_id:
             await sio.emit(
                 "test_graded",
                 event.model_dump(mode="json"),
-                room=f"test_{str(chat_id)}",
+                room=f"test_{invocation_id_str}",
             )
 
         logger.info(
-            f"Test grading complete - chat_id={chat_id}, "
+            f"Test grading complete - invocation_id={invocation_id}, "
             f"grade_id={grade_id}, score={score}, passed={passed}"
         )
+
+        # Auto-proceed: emit to invocation handler
+        test_id = data.get("test_id")
+        if test_id and invocation_id:
+            await internal_sio.emit(
+                "test_invocation",
+                {
+                    "sid": sid,
+                    "test_id": str(test_id),
+                    "invocation_id": invocation_id_str,
+                },
+            )
 
     except Exception as e:
         logger.exception(f"Failed to handle test grade completion: {str(e)}")

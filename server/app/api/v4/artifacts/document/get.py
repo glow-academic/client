@@ -484,7 +484,7 @@ async def get_document_internal(
     departments = _dedupe_by_id(
         departments_selected + departments_suggestions, "department_id"
     )
-    fields = _dedupe_by_id(fields_selected + fields_suggestions, "field_id")
+    fields = _dedupe_by_id(fields_selected, "field_id")
     uploads = _dedupe_by_id(uploads_selected + uploads_suggestions, "uploads_id")
     images = _dedupe_by_id(images_selected + images_suggestions, "image_id")
     texts = _dedupe_by_id(texts_selected + texts_suggestions, "texts_id")

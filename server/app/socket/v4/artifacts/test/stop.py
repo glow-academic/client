@@ -24,7 +24,7 @@ server_router = APIRouter()
 
 async def _test_stop_impl(sid: str, data: TestStopPayload) -> None:
     """Handle test_stop - signal to stop current test execution."""
-    chat_id_str = str(data.chat_id)
+    invocation_id_str = str(data.invocation_id)
 
     try:
         # For now, just emit stopped event
@@ -32,7 +32,7 @@ async def _test_stop_impl(sid: str, data: TestStopPayload) -> None:
         await sio.emit(
             "test_stopped",
             TestStoppedEvent(
-                chat_id=chat_id_str,
+                invocation_id=invocation_id_str,
                 success=True,
                 message="Test execution stopped",
             ).model_dump(mode="json"),
@@ -41,21 +41,21 @@ async def _test_stop_impl(sid: str, data: TestStopPayload) -> None:
         await sio.emit(
             "test_stopped",
             TestStoppedEvent(
-                chat_id=chat_id_str,
+                invocation_id=invocation_id_str,
                 success=True,
                 message="Test execution stopped",
             ).model_dump(mode="json"),
-            room=f"test_{chat_id_str}",
+            room=f"test_{invocation_id_str}",
         )
 
-        logger.info(f"Test stopped - chat_id={chat_id_str}")
+        logger.info(f"Test stopped - invocation_id={invocation_id_str}")
 
     except Exception as e:
         logger.exception(f"Failed to stop test: {str(e)}")
         await sio.emit(
             "test_error",
             TestErrorEvent(
-                chat_id=chat_id_str,
+                invocation_id=invocation_id_str,
                 message=f"Failed to stop test: {str(e)}",
                 error_type="stop",
             ).model_dump(mode="json"),
@@ -73,7 +73,7 @@ async def test_stop(sid: str, data: dict[str, Any]) -> None:
         await sio.emit(
             "test_error",
             TestErrorEvent(
-                chat_id=str(data.get("chat_id", "")),
+                invocation_id=str(data.get("invocation_id", "")),
                 message=f"Invalid request: {str(e)}",
                 error_type="stop",
             ).model_dump(mode="json"),

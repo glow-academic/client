@@ -22,8 +22,8 @@ async def test_leave(sid: str, data: dict[str, Any]) -> None:
     """Handle test_leave event - leave a test room."""
     try:
         payload = TestLeavePayload(**data)
-        chat_id_str = str(payload.chat_id)
-        room_name = f"test_{chat_id_str}"
+        invocation_id_str = str(payload.invocation_id)
+        room_name = f"test_{invocation_id_str}"
         await sio.leave_room(sid, room_name)
         logger.info(f"Client {sid} left room {room_name}")
     except Exception as e:

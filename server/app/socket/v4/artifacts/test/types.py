@@ -1,8 +1,8 @@
 """Types for test socket events.
 
 Defines payload and event types for the test WebSocket handlers:
+- TestStartPayload: Start test (create or next mode)
 - TestRunPayload: Run one auto-regressive replay
-- TestRunAllPayload: Run all remaining auto-regressive replays
 - TestGradePayload: Grade a test
 
 Entry types are predefined per handler (not in payload):
@@ -30,24 +30,26 @@ TEST_GRADE_ENTRY_TYPES = ["grades", "feedbacks"]
 # =============================================================================
 
 
+class TestStartPayload(BaseModel):
+    """Request payload for test_start WebSocket event.
+
+    Dual-mode:
+    - Create mode (has eval_id, no test_id): Create test + invocations
+    - Next mode (has test_id): Find next invocation with pending runs
+    """
+
+    eval_id: UUID | None = None
+    test_id: UUID | None = None
+    infinite_mode: bool = False
+
+
 class TestRunPayload(BaseModel):
     """Request payload for test_run WebSocket event.
 
     Runs ONE auto-regressive replay for the next pending run.
     """
 
-    chat_id: UUID
-    test_id: UUID
-    run_all: bool = False
-
-
-class TestRunAllPayload(BaseModel):
-    """Request payload for test_run_all WebSocket event.
-
-    Runs ALL remaining auto-regressive replays sequentially.
-    """
-
-    chat_id: UUID
+    invocation_id: UUID
     test_id: UUID
 
 
@@ -57,7 +59,7 @@ class TestGradePayload(BaseModel):
     Triggers grading via rubric after runs complete.
     """
 
-    chat_id: UUID  # invocation_id (which invocation)
+    invocation_id: UUID  # which invocation
     test_id: UUID  # for get_test_websocket()
     run_id: UUID  # the replay run being graded
 
@@ -68,7 +70,7 @@ class TestJoinPayload(BaseModel):
     Joins a test room for real-time updates.
     """
 
-    chat_id: UUID
+    invocation_id: UUID
 
 
 class TestLeavePayload(BaseModel):
@@ -77,7 +79,7 @@ class TestLeavePayload(BaseModel):
     Leaves a test room.
     """
 
-    chat_id: UUID
+    invocation_id: UUID
 
 
 class TestStopPayload(BaseModel):
@@ -86,12 +88,21 @@ class TestStopPayload(BaseModel):
     Stops the current run generation.
     """
 
-    chat_id: UUID
+    invocation_id: UUID
 
 
 # =============================================================================
 # Server-to-Client Event Types
 # =============================================================================
+
+
+class TestStartedEvent(BaseModel):
+    """Server-to-client event: test_started.
+
+    Emitted when a test is created successfully.
+    """
+
+    test_id: str
 
 
 class TestJoinedEvent(BaseModel):
@@ -100,7 +111,7 @@ class TestJoinedEvent(BaseModel):
     Emitted when a client successfully joins a test room.
     """
 
-    chat_id: str
+    invocation_id: str
     success: bool = True
 
 
@@ -110,7 +121,7 @@ class TestRunStartEvent(BaseModel):
     Emitted when a run replay starts.
     """
 
-    chat_id: str
+    invocation_id: str
     run_id: str
     original_run_resource_id: str | None = None
     current_run: int
@@ -124,7 +135,7 @@ class TestRunDeltaEvent(BaseModel):
     Emitted during generation with progress.
     """
 
-    chat_id: str
+    invocation_id: str
     run_id: str
     content: str  # accumulated content
 
@@ -135,7 +146,7 @@ class TestRunCompleteEvent(BaseModel):
     Emitted when a single run replay completes.
     """
 
-    chat_id: str
+    invocation_id: str
     run_id: str
     original_run_resource_id: str | None = None
     tool_calls: list[dict[str, Any]] | None = None
@@ -150,7 +161,7 @@ class TestAllCompleteEvent(BaseModel):
     Emitted when all runs are complete.
     """
 
-    chat_id: str
+    invocation_id: str
     total_runs: int
     success: bool = True
 
@@ -161,7 +172,7 @@ class TestGradedEvent(BaseModel):
     Emitted when grading completes.
     """
 
-    chat_id: str
+    invocation_id: str
     grade_id: str | None = None
     score: float | None = None
     passed: bool | None = None
@@ -174,7 +185,7 @@ class TestProgressEvent(BaseModel):
     Emitted during test execution.
     """
 
-    chat_id: str
+    invocation_id: str
     type: str  # "run_start", "run_delta", "run_complete", "grading", etc.
     run_id: str | None = None
     current_run: int | None = None
@@ -188,7 +199,7 @@ class TestStoppedEvent(BaseModel):
     Emitted when generation is stopped.
     """
 
-    chat_id: str
+    invocation_id: str
     success: bool = True
     message: str | None = None
 
@@ -199,7 +210,7 @@ class TestErrorEvent(BaseModel):
     Emitted on errors.
     """
 
-    chat_id: str | None = None
+    invocation_id: str | None = None
     run_id: str | None = None
     message: str
     error_type: str | None = None

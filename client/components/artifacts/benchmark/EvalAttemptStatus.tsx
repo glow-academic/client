@@ -20,7 +20,7 @@ import {
 import { useProfile } from "@/contexts/profile-context";
 import { useSocket } from "@/contexts/socket-context";
 import type { OutputOf } from "@/lib/api/types";
-import { AlertCircle, CheckCircle2, Clock, Play, Square, PlaySquare, Settings } from "lucide-react";
+import { AlertCircle, CheckCircle2, Clock, Play, Square, Settings } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -47,243 +47,177 @@ export default function EvalAttemptStatus({
 
   const [infiniteMode] = useState(attemptData.infinite_mode || false);
 
-    // Join benchmark room on mount for real-time updates
+    // Join test room on mount for real-time updates
   useEffect(() => {
     if (!socket || !isConnected) return;
 
-    // Join benchmark room
-    socket.emit("benchmark_join", { attempt_id: attemptId });
+    // Join test room using invocation_id
+    // For now, join with first run's chat_id as invocation_id
+    const firstRun = runs[0];
+    const invocationId = firstRun?.chat_id;
+    if (invocationId) {
+      socket.emit("test_join", { invocation_id: invocationId });
+    }
 
-    // Listen for status updates
-    const handleStatusUpdate = (data: {
-      eval_id: string;
+    // Listen for test run start
+    const handleRunStart = (data: {
+      invocation_id: string;
       run_id: string;
-      status?: string;
-      test_id?: string;
+      current_run: number;
+      total_runs: number;
+    }) => {
+      setStartingRunIds((prev) => {
+        const next = new Set(prev);
+        next.delete(data.run_id);
+        return next;
+      });
+      setRuns((prevRuns) =>
+        prevRuns.map((run) => {
+          if (run.chat_id === data.invocation_id) {
+            return { ...run, status: "in_progress" };
+          }
+          return run;
+        })
+      );
+    };
+
+    // Listen for test run complete
+    const handleRunComplete = (data: {
+      invocation_id: string;
+      run_id: string;
+      current_run: number;
+      total_runs: number;
+      remaining_runs: number;
+    }) => {
+      setRuns((prevRuns) =>
+        prevRuns.map((run) => {
+          if (run.chat_id === data.invocation_id) {
+            return { ...run, status: "completed" };
+          }
+          return run;
+        })
+      );
+    };
+
+    // Listen for test graded
+    const handleGraded = (data: {
+      invocation_id: string;
+      grade_id?: string;
+      score?: number;
+      passed?: boolean;
+    }) => {
+      setRuns((prevRuns) =>
+        prevRuns.map((run) => {
+          if (run.chat_id === data.invocation_id) {
+            return {
+              ...run,
+              grade_score: data.score ?? run.grade_score,
+              grade_passed: data.passed ?? run.grade_passed,
+            };
+          }
+          return run;
+        })
+      );
+    };
+
+    // Listen for all complete
+    const handleAllComplete = (data: {
+      invocation_id: string;
+      total_runs: number;
+    }) => {
+      toast.success("All test runs complete!");
+    };
+
+    // Listen for test stopped
+    const handleStopped = (data: {
+      invocation_id: string;
+      success: boolean;
       message?: string;
-      grade_id?: string;
     }) => {
-      setRuns((prevRuns) =>
-        prevRuns.map((run) => {
-          if (run.run_id === data.run_id) {
-            return {
-              ...run,
-              status: data.status || run.status,
-            };
-          }
-          return run;
-        }),
-      );
-    };
-
-    const handleRunCompleted = (data: {
-      eval_id: string;
-      run_id: string;
-      test_id: string;
-      status: string;
-      message: string;
-      grade_id?: string;
-    }) => {
-      setRuns((prevRuns) =>
-        prevRuns.map((run) => {
-          if (run.run_id === data.run_id) {
-            return {
-              ...run,
-              status: "completed",
-            };
-          }
-          return run;
-        }),
-      );
-    };
-
-    const handleCompleted = (data: {
-      eval_id: string;
-      attempt_id: string;
-      message: string;
-    }) => {
-      toast.success(data.message);
-    };
-
-    const handleRunStarted = (data: {
-      success: boolean;
-      message: string;
-      attempt_id: string;
-      run_id: string;
-    }) => {
-      if (data.attempt_id !== attemptId) return;
-      setStartingRunIds((prev) => {
-        const next = new Set(prev);
-        next.delete(data.run_id);
-        return next;
-      });
-      if (data.success) {
-        setRuns((prevRuns) =>
-          prevRuns.map((run) => {
-            if (run.run_id === data.run_id) {
-              return { ...run, status: "in_progress" };
-            }
-            return run;
-          })
-        );
-        toast.success(data.message);
-      } else {
-        toast.error(data.message);
-      }
-    };
-
-    const handleRunStartError = (data: {
-      success: boolean;
-      message: string;
-      run_id: string;
-    }) => {
-      setStartingRunIds((prev) => {
-        const next = new Set(prev);
-        next.delete(data.run_id);
-        return next;
-      });
-      toast.error(data.message);
-    };
-
-    const handleRunStopped = (data: {
-      success: boolean;
-      message: string;
-      attempt_id: string;
-      run_id: string;
-    }) => {
-      if (data.attempt_id !== attemptId) return;
       setStoppingRunIds((prev) => {
         const next = new Set(prev);
-        next.delete(data.run_id);
-        return next;
+        // Clear all stopping states
+        return new Set();
       });
       if (data.success) {
         setRuns((prevRuns) =>
           prevRuns.map((run) => {
-            if (run.run_id === data.run_id) {
+            if (run.chat_id === data.invocation_id) {
               return { ...run, status: "not_started" };
             }
             return run;
           })
         );
-        toast.success(data.message);
+        toast.success(data.message || "Test stopped.");
       } else {
-        toast.error(data.message);
+        toast.error(data.message || "Failed to stop test.");
       }
     };
 
-    const handleRunStopError = (data: {
-      success: boolean;
+    // Listen for test errors
+    const handleError = (data: {
+      invocation_id?: string;
       message: string;
-      run_id: string;
+      error_type?: string;
     }) => {
-      setStoppingRunIds((prev) => {
-        const next = new Set(prev);
-        next.delete(data.run_id);
-        return next;
-      });
+      setStartingRunIds(new Set());
+      setStoppingRunIds(new Set());
       toast.error(data.message);
     };
 
-    const handleRunsStartAllStarted = (data: {
-      success: boolean;
-      message: string;
-      attempt_id: string;
-      started_count: number;
-    }) => {
-      if (data.attempt_id !== attemptId) return;
-      if (data.success) {
-        toast.success(data.message);
-      } else {
-        toast.error(data.message);
-      }
-    };
-
-    const handleRunsStartAllError = (data: {
-      success: boolean;
-      message: string;
-      attempt_id: string;
-    }) => {
-      if (data.attempt_id !== attemptId) return;
-      toast.error(data.message);
-    };
-
-    socket.on("benchmarks_status_update", handleStatusUpdate);
-    socket.on("benchmarks_run_completed", handleRunCompleted);
-    socket.on("benchmarks_completed", handleCompleted);
-    socket.on("benchmarks_run_started", handleRunStarted);
-    socket.on("benchmarks_run_start_error", handleRunStartError);
-    socket.on("benchmarks_run_stopped", handleRunStopped);
-    socket.on("benchmarks_run_stop_error", handleRunStopError);
-    socket.on("benchmarks_runs_start_all_started", handleRunsStartAllStarted);
-    socket.on("benchmarks_runs_start_all_error", handleRunsStartAllError);
+    socket.on("test_run_start", handleRunStart);
+    socket.on("test_run_complete", handleRunComplete);
+    socket.on("test_graded", handleGraded);
+    socket.on("test_all_complete", handleAllComplete);
+    socket.on("test_stopped", handleStopped);
+    socket.on("test_error", handleError);
 
     return () => {
-      // Leave benchmark room on unmount
-      socket.emit("benchmark_leave", { attempt_id: attemptId });
-      socket.off("benchmarks_status_update", handleStatusUpdate);
-      socket.off("benchmarks_run_completed", handleRunCompleted);
-      socket.off("benchmarks_completed", handleCompleted);
-      socket.off("benchmarks_run_started", handleRunStarted);
-      socket.off("benchmarks_run_start_error", handleRunStartError);
-      socket.off("benchmarks_run_stopped", handleRunStopped);
-      socket.off("benchmarks_run_stop_error", handleRunStopError);
-      socket.off("benchmarks_runs_start_all_started", handleRunsStartAllStarted);
-      socket.off("benchmarks_runs_start_all_error", handleRunsStartAllError);
+      // Leave test room on unmount
+      if (invocationId) {
+        socket.emit("test_leave", { invocation_id: invocationId });
+      }
+      socket.off("test_run_start", handleRunStart);
+      socket.off("test_run_complete", handleRunComplete);
+      socket.off("test_graded", handleGraded);
+      socket.off("test_all_complete", handleAllComplete);
+      socket.off("test_stopped", handleStopped);
+      socket.off("test_error", handleError);
     };
-  }, [socket, isConnected, attemptId]);
+  }, [socket, isConnected, attemptId, runs]);
 
   const handleStartRun = useCallback(
-    (runId: string) => {
+    (invocationId: string) => {
       if (!socket || !isConnected) {
         toast.error("WebSocket not connected. Please wait for connection.");
         return;
       }
 
-      setStartingRunIds((prev) => new Set(prev).add(runId));
+      setStartingRunIds((prev) => new Set(prev).add(invocationId));
 
-      const profileIdForEmit = String(profile?.id || "");
-
-      socket.emit("benchmark_run_start", {
-        attempt_id: attemptId,
-        run_id: runId,
-        profile_id: profileIdForEmit || null,
-      });
-    },
-    [socket, isConnected, attemptId, profile]
-  );
-
-  const handleStopRun = useCallback(
-    (runId: string) => {
-      if (!socket || !isConnected) {
-        toast.error("WebSocket not connected. Please wait for connection.");
-        return;
-      }
-
-      setStoppingRunIds((prev) => new Set(prev).add(runId));
-
-      socket.emit("benchmark_run_stop", {
-        attempt_id: attemptId,
-        run_id: runId,
+      socket.emit("test_run", {
+        invocation_id: invocationId,
+        test_id: attemptId,
       });
     },
     [socket, isConnected, attemptId]
   );
 
-  const handleRunAll = useCallback(() => {
-    if (!socket || !isConnected) {
-      toast.error("WebSocket not connected. Please wait for connection.");
-      return;
-    }
+  const handleStopRun = useCallback(
+    (invocationId: string) => {
+      if (!socket || !isConnected) {
+        toast.error("WebSocket not connected. Please wait for connection.");
+        return;
+      }
 
-    const profileIdForEmit =
-      profile?.role === "guest" ? "" : String(profile!.id);
+      setStoppingRunIds((prev) => new Set(prev).add(invocationId));
 
-    socket.emit("benchmark_runs_start_all", {
-      attempt_id: attemptId,
-      profile_id: profileIdForEmit || null,
-    });
-  }, [socket, isConnected, attemptId, profile]);
+      socket.emit("test_stop", {
+        invocation_id: invocationId,
+      });
+    },
+    [socket, isConnected]
+  );
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -312,10 +246,6 @@ export default function EvalAttemptStatus({
   };
 
   const statusSummary = attemptData.status_summary ?? null;
-  const notStartedRuns = useMemo(
-    () => runs.filter((run) => run.status === "not_started"),
-    [runs]
-  );
 
   return (
     <div className="space-y-6">
@@ -374,17 +304,6 @@ export default function EvalAttemptStatus({
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardTitle>Evaluation Runs</CardTitle>
-            {notStartedRuns.length > 0 && (
-              <Button
-                onClick={handleRunAll}
-                variant="default"
-                size="sm"
-                disabled={!isConnected}
-              >
-                <PlaySquare className="h-4 w-4 mr-2" />
-                Run All ({notStartedRuns.length})
-              </Button>
-            )}
           </div>
         </CardHeader>
         <CardContent>
@@ -422,30 +341,30 @@ export default function EvalAttemptStatus({
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-1">
-                        {run.status === "not_started" && run.run_id && (
+                        {run.status === "not_started" && run.chat_id && (
                           <Button
-                            onClick={() => handleStartRun(run.run_id!)}
+                            onClick={() => handleStartRun(run.chat_id!)}
                             variant="outline"
                             size="sm"
                             disabled={
-                              !isConnected || startingRunIds.has(run.run_id)
+                              !isConnected || startingRunIds.has(run.chat_id)
                             }
                           >
                             <Play className="h-3 w-3 mr-1" />
-                            {startingRunIds.has(run.run_id) ? "Starting..." : "Start"}
+                            {startingRunIds.has(run.chat_id) ? "Starting..." : "Start"}
                           </Button>
                         )}
-                        {run.status === "in_progress" && run.run_id && (
+                        {run.status === "in_progress" && run.chat_id && (
                           <Button
-                            onClick={() => handleStopRun(run.run_id!)}
+                            onClick={() => handleStopRun(run.chat_id!)}
                             variant="destructive"
                             size="sm"
                             disabled={
-                              !isConnected || stoppingRunIds.has(run.run_id)
+                              !isConnected || stoppingRunIds.has(run.chat_id)
                             }
                           >
                             <Square className="h-3 w-3 mr-1" />
-                            {stoppingRunIds.has(run.run_id) ? "Stopping..." : "Stop"}
+                            {stoppingRunIds.has(run.chat_id) ? "Stopping..." : "Stop"}
                           </Button>
                         )}
                         {(run as RunItem & { benchmark_bundle_entry_id?: string | null }).benchmark_bundle_entry_id && (

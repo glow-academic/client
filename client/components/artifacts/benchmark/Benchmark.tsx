@@ -5,7 +5,7 @@
  * 01/XX/2025
  */
 "use client";
-import type { CreateTestIn, CreateTestOut, EvalsListOut } from "@/app/(main)/benchmark/page";
+import type { EvalsListOut } from "@/app/(main)/benchmark/page";
 import { useRouter } from "next/navigation";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -31,13 +31,11 @@ type RubricMapping = {
 export interface BenchmarkProps {
   evalsData: EvalsListOut;
   rubricMappings?: Record<string, RubricMapping>; // keyed by rubric_id
-  createTestAction?: (input: CreateTestIn) => Promise<CreateTestOut>;
 }
 
 export default function Benchmark({
   evalsData,
   rubricMappings,
-  createTestAction,
 }: BenchmarkProps) {
   const router = useRouter();
 
@@ -62,12 +60,11 @@ export default function Benchmark({
     }));
   }, [evalsData?.evals]);
 
-  // Set up eval-specific event listeners using global WebSocket
+  // Set up WebSocket listeners for test_started / test_error
   useEffect(() => {
     if (!socket) return;
 
-    // Listen for successful eval starts to handle navigation
-    const handleEvalStarted = async (event: CustomEvent) => {
+    const handleTestStarted = (data: { test_id: string }) => {
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current);
       }
@@ -76,14 +73,13 @@ export default function Benchmark({
         setLoadingToastId(null);
       }
       setStartingEvalId(null);
-      const { attemptId } = event.detail;
-      // Server-side Redis cache is already invalidated by the WebSocket handler
-      router.refresh(); // Refresh current page data so it's updated when user returns
-      router.push(`/benchmark/${attemptId}`);
+
+      toast.success("Eval started successfully.");
+      router.refresh();
+      router.push(`/benchmark/${data.test_id}`);
     };
 
-    // Listen for eval errors to reset loading state
-    const handleEvalError = () => {
+    const handleTestError = (data: { message?: string }) => {
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current);
       }
@@ -92,67 +88,20 @@ export default function Benchmark({
         setLoadingToastId(null);
       }
       setStartingEvalId(null);
-      toast.error("Failed to start eval. Please try again.");
+      toast.error(data.message || "Failed to start eval. Please try again.");
     };
 
-    window.addEventListener(
-      "evalStarted",
-      handleEvalStarted as unknown as EventListener
-    );
-    window.addEventListener("evalError", handleEvalError);
+    socket.on("test_started", handleTestStarted);
+    socket.on("test_error", handleTestError);
 
     return () => {
-      window.removeEventListener(
-        "evalStarted",
-        handleEvalStarted as unknown as EventListener
-      );
-      window.removeEventListener("evalError", handleEvalError);
+      socket.off("test_started", handleTestStarted);
+      socket.off("test_error", handleTestError);
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current);
       }
     };
-  }, [router, loadingToastId, socket, setStartingEvalId]);
-
-  // Set up WebSocket listeners for eval events
-  useEffect(() => {
-    if (!socket) return;
-
-    const handleBenchmarksStarted = (data: {
-      success: boolean;
-      message: string;
-      attempt_id: string;
-    }) => {
-      setStartingEvalId(null);
-      if (data.success) {
-        toast.success(data.message);
-        window.dispatchEvent(
-          new CustomEvent("evalStarted", {
-            detail: { attemptId: data.attempt_id },
-          })
-        );
-      } else {
-        toast.error(data.message);
-        window.dispatchEvent(new CustomEvent("evalError"));
-      }
-    };
-
-    const handleBenchmarksStartError = (data: {
-      success: boolean;
-      message: string;
-    }) => {
-      setStartingEvalId(null);
-      toast.error(data.message);
-      window.dispatchEvent(new CustomEvent("evalError"));
-    };
-
-    socket.on("benchmark_started", handleBenchmarksStarted);
-    socket.on("benchmark_error", handleBenchmarksStartError);
-
-    return () => {
-      socket.off("benchmark_started", handleBenchmarksStarted);
-      socket.off("benchmark_error", handleBenchmarksStartError);
-    };
-  }, [socket, setStartingEvalId]);
+  }, [router, loadingToastId, socket]);
 
   const handleStartEval = useCallback(
     async (evalId: string, infiniteMode: boolean = false) => {
@@ -162,51 +111,9 @@ export default function Benchmark({
           return;
         }
 
-        // Use REST endpoint if available
-        if (createTestAction) {
-          const toastId = toast.loading(
-            infiniteMode ? "Starting infinite mode eval..." : "Starting eval...",
-            { dismissible: true }
-          );
-          setLoadingToastId(toastId);
-          setStartingEvalId(evalId);
-
-          try {
-            const result = await createTestAction({
-              body: { eval_id: evalId, infinite_mode: infiniteMode },
-            });
-
-            toast.dismiss(toastId);
-            setLoadingToastId(null);
-            setStartingEvalId(null);
-
-            if (result.test_id) {
-              toast.success("Eval started successfully.");
-              router.refresh();
-              router.push(`/benchmark/${result.test_id}`);
-            } else {
-              toast.error("Failed to start eval. Please try again.");
-            }
-          } catch {
-            toast.dismiss(toastId);
-            toast.error("Failed to start eval. Please try again.");
-            setLoadingToastId(null);
-            setStartingEvalId(null);
-          }
-          return;
-        }
-
-        // Fallback to WebSocket
-        if (!isConnected) {
+        if (!isConnected || !socket) {
           toast.error(
             "WebSocket not connected. Please wait for connection or refresh the page."
-          );
-          return;
-        }
-
-        if (!socket) {
-          toast.error(
-            "WebSocket socket not available. Please refresh the page."
           );
           return;
         }
@@ -218,14 +125,10 @@ export default function Benchmark({
           }
         );
         setLoadingToastId(toastId);
-
         setStartingEvalId(evalId);
 
-        const profileIdForEmit = String(profile?.id || "");
-
-        socket.emit("benchmark_start", {
+        socket.emit("test_start", {
           eval_id: evalId,
-          profile_id: profileIdForEmit || null,
           infinite_mode: infiniteMode,
         });
 
@@ -249,8 +152,6 @@ export default function Benchmark({
       isConnected,
       socket,
       loadingToastId,
-      createTestAction,
-      router,
     ]
   );
 

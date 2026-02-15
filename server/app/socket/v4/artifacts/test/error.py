@@ -18,12 +18,12 @@ server_router = APIRouter()
 @internal_sio.on("test_error_event")  # type: ignore
 async def handle_test_error(data: dict[str, Any]) -> None:
     """Handle test error events and emit test_error."""
-    chat_id = data.get("chat_id")
+    invocation_id = data.get("invocation_id") or data.get("chat_id")
     run_id = data.get("run_id")
     message = data.get("error_message") or data.get("message", "Test error")
 
     event = TestErrorEvent(
-        chat_id=str(chat_id) if chat_id else None,
+        invocation_id=str(invocation_id) if invocation_id else None,
         run_id=str(run_id) if run_id else None,
         message=message,
         error_type=data.get("error_type"),
@@ -33,11 +33,11 @@ async def handle_test_error(data: dict[str, Any]) -> None:
     if sid:
         await sio.emit("test_error", event.model_dump(mode="json"), room=sid)
 
-    if chat_id:
+    if invocation_id:
         await sio.emit(
             "test_error",
             event.model_dump(mode="json"),
-            room=f"test_{chat_id}",
+            room=f"test_{invocation_id}",
         )
 
 
