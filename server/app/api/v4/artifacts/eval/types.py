@@ -9,6 +9,7 @@ from pydantic import BaseModel
 
 from app.api.v4.types import ListFilterSection
 from app.api.v4.views.drafts.types import DraftEvalViewItem
+from app.api.v4.views.run.list.types import GetRunListViewResponse
 from app.sql.types import (
     QGetAgentsV4Item,
     QGetDepartmentsV4Item,
@@ -17,6 +18,7 @@ from app.sql.types import (
     QGetGroupRubricsV4Item,
     QGetModelsV4Item,
     QGetNamesV4Item,
+    QGetProfilesV4Item,
     QGetProvidersV4Item,
     QGetRunPositionsV4Item,
     QGetRunRubricsV4Item,
@@ -201,6 +203,7 @@ class GetEvalApiResponse(BaseModel):
 
 class EvalWebsocketViews(BaseModel):
     draft_eval: DraftEvalViewItem | None = None
+    runs: GetRunListViewResponse | None = None
 
 
 class EvalWebsocketResources(BaseModel):
@@ -218,6 +221,7 @@ class EvalWebsocketResources(BaseModel):
     models: list[QGetModelsV4Item] | None = None
     providers: list[QGetProvidersV4Item] | None = None
     tools: list[QGetToolsV4Item] | None = None
+    config_profile: list[QGetProfilesV4Item] | None = None
 
 
 class GetEvalWebsocketResponse(BaseModel):

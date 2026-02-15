@@ -10,6 +10,7 @@ from pydantic import BaseModel
 
 from app.api.v4.types import BaseResourceSection, ListFilterSection
 from app.api.v4.views.drafts.types import DraftToolViewItem
+from app.api.v4.views.run.list.types import GetRunListViewResponse
 from app.sql.types import (
     QGetAgentsV4Item,
     QGetArgPositionsV4Item,
@@ -18,6 +19,7 @@ from app.sql.types import (
     QGetDescriptionsV4Item,
     QGetModelsV4Item,
     QGetNamesV4Item,
+    QGetProfilesV4Item,
     QGetProvidersV4Item,
     QGetToolsV4Item,
 )
@@ -94,6 +96,7 @@ class GetToolApiResponse(BaseModel):
 
 class ToolWebsocketViews(BaseModel):
     draft_tool: DraftToolViewItem | None = None
+    runs: GetRunListViewResponse | None = None
 
 
 class ToolWebsocketResources(BaseModel):
@@ -108,6 +111,8 @@ class ToolWebsocketResources(BaseModel):
     models: list[QGetModelsV4Item] | None = None
     providers: list[QGetProvidersV4Item] | None = None
     tools: list[QGetToolsV4Item] | None = None
+    # Profile config (for rate limiting)
+    config_profile: list[QGetProfilesV4Item] | None = None
 
 
 class GetToolWebsocketResponse(BaseModel):

@@ -43,7 +43,8 @@ SELECT
     pgc.profiles_id AS grantor_id,
     ee.id           AS emulation_id,
     pec.profiles_id AS emulated_id,
-    COALESCE(ge.session_id, ee.session_id) AS session_id,
+    ge.session_id  AS grant_session_id,
+    ee.session_id  AS emulation_session_id,
     ge.expires_at,
     ge.used_at,
     ge.revoked_at,
@@ -73,9 +74,13 @@ CREATE INDEX mv_grants_emulated_id_idx
     ON mv_grants (emulated_id)
     WHERE emulated_id IS NOT NULL;
 
-CREATE INDEX mv_grants_session_id_idx
-    ON mv_grants (session_id)
-    WHERE session_id IS NOT NULL;
+CREATE INDEX mv_grants_grant_session_id_idx
+    ON mv_grants (grant_session_id)
+    WHERE grant_session_id IS NOT NULL;
+
+CREATE INDEX mv_grants_emulation_session_id_idx
+    ON mv_grants (emulation_session_id)
+    WHERE emulation_session_id IS NOT NULL;
 
 CREATE INDEX mv_grants_created_at_idx
     ON mv_grants (created_at DESC);

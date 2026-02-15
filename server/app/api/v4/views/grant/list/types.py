@@ -13,7 +13,8 @@ class GrantViewItem(BaseModel):
     grantor_id: UUID | None = None
     emulation_id: UUID | None = None
     emulated_id: UUID | None = None
-    session_id: UUID | None = None
+    grant_session_id: UUID | None = None
+    emulation_session_id: UUID | None = None
     expires_at: datetime | None = None
     used_at: datetime | None = None
     revoked_at: datetime | None = None

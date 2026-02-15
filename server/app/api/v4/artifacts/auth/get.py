@@ -8,6 +8,7 @@ This implements the three-layer BFF pattern:
 
 import asyncio
 from dataclasses import dataclass
+from datetime import UTC
 from typing import Annotated, Any, cast
 from uuid import UUID
 
@@ -56,6 +57,7 @@ from app.api.v4.resources.items.get import get_items_internal
 from app.api.v4.resources.models.get import get_models_internal
 from app.api.v4.resources.names.get import get_names_internal
 from app.api.v4.resources.names.search import search_names_internal
+from app.api.v4.resources.profiles.get import get_profiles_internal
 from app.api.v4.resources.protocols.get import get_protocols_internal
 from app.api.v4.resources.protocols.search import search_protocols_internal
 from app.api.v4.resources.providers.get import get_providers_internal
@@ -63,6 +65,7 @@ from app.api.v4.resources.slugs.get import get_slugs_internal
 from app.api.v4.resources.slugs.search import search_slugs_internal
 from app.api.v4.resources.tools.get import get_tools_internal
 from app.api.v4.views.drafts.get import get_draft_auth_internal
+from app.api.v4.views.run.list.get import get_run_list_view_internal
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
@@ -539,15 +542,56 @@ async def get_auth_websocket(
     bypass_cache: bool = False,
 ) -> GetAuthWebsocketResponse:
     """Minimal response for websocket handlers."""
-    data = await get_auth_internal(
-        profile_id=profile_id,
-        auth_id=auth_id,
-        draft_id=draft_id,
-        bypass_cache=bypass_cache,
+    pool = get_pool()
+
+    async def fetch_data():
+        return await get_auth_internal(
+            profile_id=profile_id,
+            auth_id=auth_id,
+            draft_id=draft_id,
+            bypass_cache=bypass_cache,
+        )
+
+    async def fetch_config_profile():
+        if not pool:
+            return None
+        async with pool.acquire() as conn:
+            return await get_profiles_internal(conn, [profile_id], bypass_cache)
+
+    async def fetch_runs_today():
+        if not pool:
+            return None
+        from datetime import datetime
+
+        today_utc = datetime.now(UTC).replace(hour=0, minute=0, second=0, microsecond=0)
+        tomorrow_utc = today_utc.replace(hour=23, minute=59, second=59)
+        async with pool.acquire() as conn:
+            return await get_run_list_view_internal(
+                conn=conn,
+                profile_id_filter=profile_id,
+                date_from=today_utc,
+                date_to=tomorrow_utc,
+                page_limit=1,
+                bypass_cache=True,
+            )
+
+    (
+        data,
+        config_profile_result,
+        runs_result,
+    ) = await asyncio.gather(
+        fetch_data(),
+        fetch_config_profile(),
+        fetch_runs_today(),
+    )
+
+    views = AuthWebsocketViews(
+        draft_auth=data.draft_view,
+        runs=runs_result,
     )
 
     return GetAuthWebsocketResponse(
-        views=AuthWebsocketViews(draft_auth=data.draft_view),
+        views=views if data.draft_view or runs_result else None,
         resources=AuthWebsocketResources(
             names=data.names_current,
             descriptions=data.descriptions_current,
@@ -559,6 +603,7 @@ async def get_auth_websocket(
             models=data.config_models,
             providers=data.config_providers,
             tools=data.config_tools,
+            config_profile=config_profile_result or None,
         ),
         resource_agent_ids=data.resource_agent_ids,
         group_id=data.group_id,

@@ -8,11 +8,13 @@ from pydantic import BaseModel
 
 from app.api.v4.types import BaseResourceSection, ListFilterSection
 from app.api.v4.views.drafts.types import DraftAuthViewItem
+from app.api.v4.views.run.list.types import GetRunListViewResponse
 from app.sql.types import (
     QGetAgentsV4Item,
     QGetDescriptionsV4Item,
     QGetModelsV4Item,
     QGetNamesV4Item,
+    QGetProfilesV4Item,
     QGetProtocolsV4Item,
     QGetProvidersV4Item,
     QGetSlugsV4Item,
@@ -106,6 +108,7 @@ class GetAuthApiResponse(BaseModel):
 
 class AuthWebsocketViews(BaseModel):
     draft_auth: DraftAuthViewItem | None = None
+    runs: GetRunListViewResponse | None = None
 
 
 class AuthWebsocketResources(BaseModel):
@@ -119,6 +122,7 @@ class AuthWebsocketResources(BaseModel):
     models: list[QGetModelsV4Item] | None = None
     providers: list[QGetProvidersV4Item] | None = None
     tools: list[QGetToolsV4Item] | None = None
+    config_profile: list[QGetProfilesV4Item] | None = None
 
 
 class GetAuthWebsocketResponse(BaseModel):

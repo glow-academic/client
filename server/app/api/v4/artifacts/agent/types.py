@@ -9,6 +9,7 @@ from pydantic import BaseModel
 
 from app.api.v4.types import BaseResourceSection, ListFilterSection
 from app.api.v4.views.drafts.types import DraftAgentViewItem
+from app.api.v4.views.run.list.types import GetRunListViewResponse
 from app.sql.types import (
     QGetAgentsV4Item,
     QGetDepartmentsV4Item,
@@ -16,6 +17,7 @@ from app.sql.types import (
     QGetInstructionsV4Item,
     QGetModelsV4Item,
     QGetNamesV4Item,
+    QGetProfilesV4Item,
     QGetPromptsV4Item,
     QGetProvidersV4Item,
     QGetReasoningLevelsV4Item,
@@ -130,6 +132,7 @@ class AgentWebsocketViews(BaseModel):
     """Views data for websocket response."""
 
     draft_agent: DraftAgentViewItem | None = None
+    runs: GetRunListViewResponse | None = None
 
 
 class AgentWebsocketResources(BaseModel):
@@ -148,6 +151,7 @@ class AgentWebsocketResources(BaseModel):
     voices: list[QGetVoicesV4Item] | None = None
     agents: list[QGetAgentsV4Item] | None = None
     providers: list[QGetProvidersV4Item] | None = None
+    config_profile: list[QGetProfilesV4Item] | None = None
 
 
 class GetAgentWebsocketResponse(BaseModel):

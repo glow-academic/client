@@ -11,6 +11,7 @@ The presentation layers transform internal data into consumer-specific formats.
 
 import asyncio
 from dataclasses import dataclass
+from datetime import UTC, datetime
 from typing import Annotated, Any, cast
 from uuid import UUID
 
@@ -54,10 +55,12 @@ from app.api.v4.resources.flags.search import search_flags_internal
 from app.api.v4.resources.models.get import get_models_internal
 from app.api.v4.resources.names.get import get_names_internal
 from app.api.v4.resources.names.search import search_names_internal
+from app.api.v4.resources.profiles.get import get_profiles_internal
 from app.api.v4.resources.providers.get import get_providers_internal
 from app.api.v4.resources.settings.get import get_settings_internal
 from app.api.v4.resources.tools.get import get_tools_internal
 from app.api.v4.views.drafts.get import get_draft_department_internal
+from app.api.v4.views.run.list.get import get_run_list_view_internal
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
@@ -525,20 +528,73 @@ async def get_department_websocket(
         draft_id=draft_id,
         bypass_cache=bypass_cache,
     )
-    draft_view = None
-    if draft_id is not None:
-        pool = get_pool()
-        if pool:
-            async with pool.acquire() as c:
-                draft_items = await get_draft_department_internal(
-                    conn=c,
-                    draft_ids=[draft_id],
-                    bypass_cache=bypass_cache,
-                )
-                draft_view = draft_items[0] if draft_items else None
+
+    # Fetch draft department view, config_profile, runs_today, and tools in parallel
+    pool = get_pool()
+
+    async def fetch_draft():
+        if not draft_id or not pool:
+            return None
+        async with pool.acquire() as conn:
+            draft_items = await get_draft_department_internal(
+                conn=conn,
+                draft_ids=[draft_id],
+                bypass_cache=bypass_cache,
+            )
+            return draft_items[0] if draft_items else None
+
+    async def fetch_config_profile():
+        if not pool:
+            return None
+        async with pool.acquire() as conn:
+            return await get_profiles_internal(conn, [profile_id], bypass_cache)
+
+    async def fetch_runs_today():
+        if not pool:
+            return None
+        today_utc = datetime.now(UTC).replace(hour=0, minute=0, second=0, microsecond=0)
+        tomorrow_utc = today_utc.replace(hour=23, minute=59, second=59)
+        async with pool.acquire() as conn:
+            return await get_run_list_view_internal(
+                conn=conn,
+                profile_id_filter=profile_id,
+                date_from=today_utc,
+                date_to=tomorrow_utc,
+                page_limit=1,
+                bypass_cache=True,
+            )
+
+    async def fetch_tools():
+        if not data.config_agents or not pool:
+            return []
+        agent_resource = data.config_agents[0] if data.config_agents else None
+        if not agent_resource or not agent_resource.tool_ids:
+            return []
+        async with pool.acquire() as c:
+            return await get_tools_internal(
+                c, list(agent_resource.tool_ids), bypass_cache
+            )
+
+    (
+        draft_department,
+        config_profile_result,
+        runs_result,
+        tools_result,
+    ) = await asyncio.gather(
+        fetch_draft(),
+        fetch_config_profile(),
+        fetch_runs_today(),
+        fetch_tools(),
+    )
+
+    # Build views (always construct — both fields optional now)
+    views = DepartmentWebsocketViews(
+        draft_department=draft_department,
+        runs=runs_result,
+    )
 
     return GetDepartmentWebsocketResponse(
-        views=DepartmentWebsocketViews(draft_department=draft_view),
+        views=views if draft_department or runs_result else None,
         resources=DepartmentWebsocketResources(
             names=data.names_current,
             descriptions=data.descriptions_current,
@@ -547,7 +603,8 @@ async def get_department_websocket(
             agents=data.config_agents,
             models=data.config_models,
             providers=data.config_providers,
-            tools=data.config_tools,
+            tools=tools_result or None,
+            config_profile=config_profile_result or None,
         ),
         resource_agent_ids=data.resource_agent_ids,
         group_id=data.group_id,

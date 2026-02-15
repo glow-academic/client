@@ -10,6 +10,7 @@ from pydantic import BaseModel
 
 from app.api.v4.types import BaseResourceSection, ListFilterSection
 from app.api.v4.views.drafts.types import DraftParameterViewItem
+from app.api.v4.views.run.list.types import GetRunListViewResponse
 from app.sql.types import (
     QGetAgentsV4Item,
     QGetDepartmentsV4Item,
@@ -17,6 +18,7 @@ from app.sql.types import (
     QGetModelsV4Item,
     QGetNamesV4Item,
     QGetParameterFieldsV4Item,
+    QGetProfilesV4Item,
     QGetProvidersV4Item,
     QGetToolsV4Item,
 )
@@ -91,6 +93,7 @@ class GetParameterApiResponse(BaseModel):
 
 class ParameterWebsocketViews(BaseModel):
     draft_parameter: DraftParameterViewItem | None = None
+    runs: GetRunListViewResponse | None = None
 
 
 class ParameterWebsocketResources(BaseModel):
@@ -107,6 +110,7 @@ class ParameterWebsocketResources(BaseModel):
     models: list[QGetModelsV4Item] | None = None
     providers: list[QGetProvidersV4Item] | None = None
     tools: list[QGetToolsV4Item] | None = None
+    config_profile: list[QGetProfilesV4Item] | None = None
 
 
 class GetParameterWebsocketResponse(BaseModel):

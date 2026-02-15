@@ -8263,26 +8263,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v4/views/audio/list/get": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Audios
-         * @description Get audio data from the materialized view.
-         */
-        post: operations["get_audios_api_v4_views_audio_list_get_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v4/views/grant/list/get": {
         parameters: {
             query?: never;
@@ -17288,56 +17268,22 @@ export interface components {
         };
         /**
          * ActivityViewItem
-         * @description Single activity row from the activity list view.
+         * @description Single activity from the activity list view.
          */
         ActivityViewItem: {
             /**
-             * Date Key
-             * Format: date
+             * Activity Id
+             * Format: uuid
              */
-            date_key: string;
-            /** Event Type */
-            event_type?: string | null;
-            /**
-             * Event Count
-             * @default 0
-             */
-            event_count: number;
-            /**
-             * Unique Profiles
-             * @default 0
-             */
-            unique_profiles: number;
-            /**
-             * Saved Count
-             * @default 0
-             */
-            saved_count: number;
-            /**
-             * Created Count
-             * @default 0
-             */
-            created_count: number;
-            /**
-             * Duplicated Count
-             * @default 0
-             */
-            duplicated_count: number;
-            /**
-             * Uploaded Count
-             * @default 0
-             */
-            uploaded_count: number;
-            /**
-             * Deleted Count
-             * @default 0
-             */
-            deleted_count: number;
-            /**
-             * Updated Count
-             * @default 0
-             */
-            updated_count: number;
+            activity_id: string;
+            /** Profile Id */
+            profile_id?: string | null;
+            /** Session Id */
+            session_id?: string | null;
+            /** Last Active */
+            last_active?: string | null;
+            /** Created At */
+            created_at?: string | null;
         };
         /**
          * ActivityViews
@@ -19340,33 +19286,6 @@ export interface components {
             simulation_chats?: components["schemas"]["ChatData"][] | null;
             /** Simulation Messages */
             simulation_messages?: components["schemas"]["MessageData"][] | null;
-        };
-        /**
-         * AudioViewItem
-         * @description Single audio from the audio list view.
-         */
-        AudioViewItem: {
-            /**
-             * Audio Id
-             * Format: uuid
-             */
-            audio_id: string;
-            /** Uploads Id */
-            uploads_id?: string | null;
-            /** Upload Id */
-            upload_id?: string | null;
-            /** Call Id */
-            call_id?: string | null;
-            /** Message Id */
-            message_id?: string | null;
-            /** File Path */
-            file_path?: string | null;
-            /** Mime Type */
-            mime_type?: string | null;
-            /** Size */
-            size?: number | null;
-            /** Created At */
-            created_at?: string | null;
         };
         /**
          * AuditViewItem
@@ -25753,23 +25672,6 @@ export interface components {
             profile_options?: components["schemas"]["app__api__v4__views__attempt__list__types__FilterOption"][] | null;
         };
         /**
-         * GetAudioListViewResponse
-         * @description Response containing audio list data.
-         */
-        GetAudioListViewResponse: {
-            /**
-             * Items
-             * @description Audio data items
-             */
-            items?: components["schemas"]["AudioViewItem"][];
-            /**
-             * Total Count
-             * @description Total count before pagination
-             * @default 0
-             */
-            total_count: number;
-        };
-        /**
          * GetAuditListViewResponse
          * @description Response containing audit list data.
          */
@@ -29525,6 +29427,10 @@ export interface components {
             emulation_id?: string | null;
             /** Emulated Id */
             emulated_id?: string | null;
+            /** Grant Session Id */
+            grant_session_id?: string | null;
+            /** Emulation Session Id */
+            emulation_session_id?: string | null;
             /** Expires At */
             expires_at?: string | null;
             /** Used At */
@@ -32281,6 +32187,8 @@ export interface components {
             login_id: string;
             /** Profile Id */
             profile_id?: string | null;
+            /** Session Id */
+            session_id?: string | null;
             /** Last Login */
             last_login?: string | null;
             /** Login Created At */
@@ -65955,39 +65863,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["GetVideoListViewResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_audios_api_v4_views_audio_list_get_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GetAudioListViewResponse"];
                 };
             };
             /** @description Validation Error */

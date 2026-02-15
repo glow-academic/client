@@ -204,11 +204,10 @@ branch_agg AS (
         SELECT * FROM walk
     ) sub
 ),
--- Audio resource ID per message
+-- Audio entry ID per message
 audio_agg AS (
-    SELECT ae.message_id, aac.audios_id AS audio_id
+    SELECT ae.message_id, ae.id AS audio_id
     FROM audios_entry ae
-    JOIN audios_audios_connection aac ON aac.audio_id = ae.id AND aac.active = true
     WHERE ae.active = true AND ae.message_id IS NOT NULL
 ),
 -- Get runs_id (resource) for each run_id (entry)

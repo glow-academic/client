@@ -10,6 +10,7 @@ from pydantic import BaseModel
 
 from app.api.v4.types import BaseResourceSection, ListFilterSection
 from app.api.v4.views.drafts.types import DraftProviderViewItem
+from app.api.v4.views.run.list.types import GetRunListViewResponse
 from app.sql.types import (
     QGetAgentsV4Item,
     QGetDepartmentsV4Item,
@@ -18,6 +19,7 @@ from app.sql.types import (
     QGetKeysV4Item,
     QGetModelsV4Item,
     QGetNamesV4Item,
+    QGetProfilesV4Item,
     QGetProvidersV4Item,
     QGetToolsV4Item,
     QGetValuesV4Item,
@@ -105,6 +107,7 @@ class ProviderWebsocketViews(BaseModel):
     """Views data for websocket response."""
 
     draft_provider: DraftProviderViewItem | None = None
+    runs: GetRunListViewResponse | None = None
 
 
 class ProviderWebsocketResources(BaseModel):
@@ -121,6 +124,7 @@ class ProviderWebsocketResources(BaseModel):
     models: list[QGetModelsV4Item] | None = None
     providers: list[QGetProvidersV4Item] | None = None
     tools: list[QGetToolsV4Item] | None = None
+    config_profile: list[QGetProfilesV4Item] | None = None
 
 
 class GetProviderWebsocketResponse(BaseModel):

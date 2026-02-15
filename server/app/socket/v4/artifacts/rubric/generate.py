@@ -40,8 +40,6 @@ from app.socket.v4.artifacts.types import (
 from app.sql.types import (
     GetAgentToolsSqlParams,
     GetAgentToolsSqlRow,
-    GetRubricGenerationContextSqlParams,
-    GetRubricGenerationContextSqlRow,
     PrepareRubricGenerationSqlParams,
     PrepareRubricGenerationSqlRow,
 )
@@ -54,9 +52,6 @@ internal_sio = get_internal_sio()
 client_router = APIRouter()
 server_router = APIRouter()
 
-SQL_PATH_CONTEXT = (
-    "app/sql/v4/queries/generate/rubric/get_rubric_generation_context_complete.sql"
-)
 SQL_PATH_PREPARE = (
     "app/sql/v4/queries/generate/rubric/prepare_rubric_generation_complete.sql"
 )
@@ -269,30 +264,38 @@ async def _generate_rubric_impl(
             )
             return
 
-        # Step 4: Rate limit check (fail fast)
-        async with get_db_connection() as conn:
-            context_params = GetRubricGenerationContextSqlParams(
-                p_profile_id=profile_id,
+        # Step 4: Check rate limit from pre-fetched config_profile + runs
+        config_profile = (
+            result.resources.config_profile[0]
+            if result.resources.config_profile
+            else None
+        )
+        requests_per_day = config_profile.requests_per_day if config_profile else None
+        runs_today = (
+            result.views.runs.total_count if result.views and result.views.runs else 0
+        )
+
+        if requests_per_day is not None and runs_today >= requests_per_day:
+            error_msg = (
+                f"Rate limit exceeded ({runs_today}/{requests_per_day} requests today)"
             )
-            context_row = cast(
-                GetRubricGenerationContextSqlRow,
-                await execute_sql_typed(conn, SQL_PATH_CONTEXT, params=context_params),
+            logger.error(
+                f"Rubric generation rate limit exceeded - "
+                f"profile_id={profile_id}, agent_id={agent_id}, "
+                f"reason: {error_msg}"
             )
-            requests_per_day = context_row.requests_per_day
-            runs_today = context_row.runs_today or 0
-            if requests_per_day is not None and runs_today >= requests_per_day:
-                await emit_to_internal(
-                    "generate_call_error",
-                    GenerateErrorApiRequest(
-                        sid=sid,
-                        error_message=f"Rate limit exceeded ({runs_today}/{requests_per_day} requests today)",
-                        artifact_type="rubric",
-                        group_id=str(result.group_id) if result.group_id else None,
-                        resource_type="rubric",
-                    ),
+            await emit_to_internal(
+                "generate_call_error",
+                GenerateErrorApiRequest(
                     sid=sid,
-                )
-                return
+                    error_message=f"Failed to prepare rubric generation: {error_msg}",
+                    artifact_type="rubric",
+                    group_id=str(result.group_id) if result.group_id else None,
+                    resource_type="rubric",
+                ),
+                sid=sid,
+            )
+            return
 
         # Build rubric context for standard descriptions if needed
         rubric_context_text: str | None = None

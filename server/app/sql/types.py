@@ -5059,33 +5059,6 @@ class SaveFieldApiResponse(BaseModel):
 
 
 
-# Generated from: get_agent_generation_context
-
-class GetAgentGenerationContextSqlParams(BaseModel):
-
-    p_profile_id: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.p_profile_id,
-        )
-
-class GetAgentGenerationContextSqlRow(BaseModel):
-
-    requests_per_day: int | None = None
-    runs_today: int | None = None
-
-class GetAgentGenerationContextApiRequest(BaseModel):
-
-    p_profile_id: UUID
-
-class GetAgentGenerationContextApiResponse(BaseModel):
-
-    requests_per_day: int | None = None
-    runs_today: int | None = None
-
-
-
 # Generated from: prepare_agent_generation
 
 class PrepareAgentGenerationSqlParams(BaseModel):
@@ -5797,33 +5770,6 @@ class UsePreviousAttemptGradesApiResponse(BaseModel):
 
 
 
-# Generated from: get_auth_generation_context
-
-class GetAuthGenerationContextSqlParams(BaseModel):
-
-    p_profile_id: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.p_profile_id,
-        )
-
-class GetAuthGenerationContextSqlRow(BaseModel):
-
-    requests_per_day: int | None = None
-    runs_today: int | None = None
-
-class GetAuthGenerationContextApiRequest(BaseModel):
-
-    p_profile_id: UUID
-
-class GetAuthGenerationContextApiResponse(BaseModel):
-
-    requests_per_day: int | None = None
-    runs_today: int | None = None
-
-
-
 # Generated from: prepare_auth_generation
 
 class PrepareAuthGenerationSqlParams(BaseModel):
@@ -6013,33 +5959,6 @@ class PrepareCohortGenerationApiResponse(BaseModel):
 
 
 
-# Generated from: get_department_generation_context
-
-class GetDepartmentGenerationContextSqlParams(BaseModel):
-
-    p_profile_id: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.p_profile_id,
-        )
-
-class GetDepartmentGenerationContextSqlRow(BaseModel):
-
-    requests_per_day: int | None = None
-    runs_today: int | None = None
-
-class GetDepartmentGenerationContextApiRequest(BaseModel):
-
-    p_profile_id: UUID
-
-class GetDepartmentGenerationContextApiResponse(BaseModel):
-
-    requests_per_day: int | None = None
-    runs_today: int | None = None
-
-
-
 # Generated from: prepare_department_generation
 
 class PrepareDepartmentGenerationSqlParams(BaseModel):
@@ -6126,33 +6045,6 @@ class PrepareDocumentGenerationApiResponse(BaseModel):
 
 
 
-# Generated from: get_eval_generation_context
-
-class GetEvalGenerationContextSqlParams(BaseModel):
-
-    p_profile_id: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.p_profile_id,
-        )
-
-class GetEvalGenerationContextSqlRow(BaseModel):
-
-    requests_per_day: int | None = None
-    runs_today: int | None = None
-
-class GetEvalGenerationContextApiRequest(BaseModel):
-
-    p_profile_id: UUID
-
-class GetEvalGenerationContextApiResponse(BaseModel):
-
-    requests_per_day: int | None = None
-    runs_today: int | None = None
-
-
-
 # Generated from: prepare_eval_generation
 
 class PrepareEvalGenerationSqlParams(BaseModel):
@@ -6193,33 +6085,6 @@ class PrepareEvalGenerationApiResponse(BaseModel):
     group_id: UUID | None = None
     trace_id: str | None = None
     config_id: UUID | None = None
-
-
-
-# Generated from: get_field_generation_context
-
-class GetFieldGenerationContextSqlParams(BaseModel):
-
-    p_profile_id: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.p_profile_id,
-        )
-
-class GetFieldGenerationContextSqlRow(BaseModel):
-
-    requests_per_day: int | None = None
-    runs_today: int | None = None
-
-class GetFieldGenerationContextApiRequest(BaseModel):
-
-    p_profile_id: UUID
-
-class GetFieldGenerationContextApiResponse(BaseModel):
-
-    requests_per_day: int | None = None
-    runs_today: int | None = None
 
 
 
@@ -6266,33 +6131,6 @@ class PrepareFieldGenerationApiResponse(BaseModel):
 
 
 
-# Generated from: get_model_generation_context
-
-class GetModelGenerationContextSqlParams(BaseModel):
-
-    p_profile_id: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.p_profile_id,
-        )
-
-class GetModelGenerationContextSqlRow(BaseModel):
-
-    requests_per_day: int | None = None
-    runs_today: int | None = None
-
-class GetModelGenerationContextApiRequest(BaseModel):
-
-    p_profile_id: UUID
-
-class GetModelGenerationContextApiResponse(BaseModel):
-
-    requests_per_day: int | None = None
-    runs_today: int | None = None
-
-
-
 # Generated from: prepare_model_generation
 
 class PrepareModelGenerationSqlParams(BaseModel):
@@ -6333,33 +6171,6 @@ class PrepareModelGenerationApiResponse(BaseModel):
     group_id: UUID | None = None
     trace_id: str | None = None
     config_id: UUID | None = None
-
-
-
-# Generated from: get_parameter_generation_context
-
-class GetParameterGenerationContextSqlParams(BaseModel):
-
-    p_profile_id: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.p_profile_id,
-        )
-
-class GetParameterGenerationContextSqlRow(BaseModel):
-
-    requests_per_day: int | None = None
-    runs_today: int | None = None
-
-class GetParameterGenerationContextApiRequest(BaseModel):
-
-    p_profile_id: UUID
-
-class GetParameterGenerationContextApiResponse(BaseModel):
-
-    requests_per_day: int | None = None
-    runs_today: int | None = None
 
 
 
@@ -6520,33 +6331,6 @@ class PrepareProfileGenerationApiResponse(BaseModel):
 
 
 
-# Generated from: get_provider_generation_context
-
-class GetProviderGenerationContextSqlParams(BaseModel):
-
-    p_profile_id: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.p_profile_id,
-        )
-
-class GetProviderGenerationContextSqlRow(BaseModel):
-
-    requests_per_day: int | None = None
-    runs_today: int | None = None
-
-class GetProviderGenerationContextApiRequest(BaseModel):
-
-    p_profile_id: UUID
-
-class GetProviderGenerationContextApiResponse(BaseModel):
-
-    requests_per_day: int | None = None
-    runs_today: int | None = None
-
-
-
 # Generated from: prepare_provider_generation
 
 class PrepareProviderGenerationSqlParams(BaseModel):
@@ -6587,33 +6371,6 @@ class PrepareProviderGenerationApiResponse(BaseModel):
     group_id: UUID | None = None
     trace_id: str | None = None
     config_id: UUID | None = None
-
-
-
-# Generated from: get_rubric_generation_context
-
-class GetRubricGenerationContextSqlParams(BaseModel):
-
-    p_profile_id: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.p_profile_id,
-        )
-
-class GetRubricGenerationContextSqlRow(BaseModel):
-
-    requests_per_day: int | None = None
-    runs_today: int | None = None
-
-class GetRubricGenerationContextApiRequest(BaseModel):
-
-    p_profile_id: UUID
-
-class GetRubricGenerationContextApiResponse(BaseModel):
-
-    requests_per_day: int | None = None
-    runs_today: int | None = None
 
 
 
@@ -6700,33 +6457,6 @@ class PrepareScenarioGenerationApiResponse(BaseModel):
     group_id: UUID | None = None
     trace_id: str | None = None
     config_id: UUID | None = None
-
-
-
-# Generated from: get_setting_generation_context
-
-class GetSettingGenerationContextSqlParams(BaseModel):
-
-    p_profile_id: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.p_profile_id,
-        )
-
-class GetSettingGenerationContextSqlRow(BaseModel):
-
-    requests_per_day: int | None = None
-    runs_today: int | None = None
-
-class GetSettingGenerationContextApiRequest(BaseModel):
-
-    p_profile_id: UUID
-
-class GetSettingGenerationContextApiResponse(BaseModel):
-
-    requests_per_day: int | None = None
-    runs_today: int | None = None
 
 
 
@@ -7146,33 +6876,6 @@ class GetTextRunContextForExistingRunApiResponse(BaseModel):
     upload_id: UUID | None = None
     file_path: str | None = None
     mime_type: str | None = None
-
-
-
-# Generated from: get_tool_generation_context
-
-class GetToolGenerationContextSqlParams(BaseModel):
-
-    p_profile_id: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.p_profile_id,
-        )
-
-class GetToolGenerationContextSqlRow(BaseModel):
-
-    requests_per_day: int | None = None
-    runs_today: int | None = None
-
-class GetToolGenerationContextApiRequest(BaseModel):
-
-    p_profile_id: UUID
-
-class GetToolGenerationContextApiResponse(BaseModel):
-
-    requests_per_day: int | None = None
-    runs_today: int | None = None
 
 
 
@@ -24593,35 +24296,26 @@ class CreateGenerationAndLinkApiResponse(BaseModel):
 
 class GetActivityListViewSqlParams(BaseModel):
 
-    event_type_filter: str | None = None
-    date_from: date | None = None
-    date_to: date | None = None
-    sort_order_field: str | None = None
-    page_limit_val: int | None = 1000
+    profile_id_filter: UUID | None = None
+    session_id_filter: UUID | None = None
+    page_limit_val: int | None = 10000
     page_offset_val: int | None = 0
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
-            self.event_type_filter,
-            self.date_from,
-            self.date_to,
-            self.sort_order_field,
+            self.profile_id_filter,
+            self.session_id_filter,
             self.page_limit_val,
             self.page_offset_val,
         )
 
 class QGetActivityListViewV4Item(BaseModel):
 
-    date_key: str | None
-    event_type: str | None
-    event_count: int | None
-    unique_profiles: int | None
-    saved_count: int | None
-    created_count: int | None
-    duplicated_count: int | None
-    uploaded_count: int | None
-    deleted_count: int | None
-    updated_count: int | None
+    activity_id: UUID | None
+    profile_id: UUID | None
+    session_id: UUID | None
+    last_active: datetime | None
+    created_at: datetime | None
 
 class GetActivityListViewSqlRow(BaseModel):
 
@@ -24630,11 +24324,9 @@ class GetActivityListViewSqlRow(BaseModel):
 
 class GetActivityListViewApiRequest(BaseModel):
 
-    event_type_filter: str | None = None
-    date_from: date | None = None
-    date_to: date | None = None
-    sort_order_field: str | None = None
-    page_limit_val: int | None = 1000
+    profile_id_filter: UUID | None = None
+    session_id_filter: UUID | None = None
+    page_limit_val: int | None = 10000
     page_offset_val: int | None = 0
 
 class GetActivityListViewApiResponse(BaseModel):
@@ -25298,54 +24990,6 @@ class GetAttemptMessagesViewApiRequest(BaseModel):
 class GetAttemptMessagesViewApiResponse(BaseModel):
 
     items: list[QGetAttemptMessagesViewV4Item] | None = None
-
-
-
-# Generated from: get_audio_list_view
-
-class GetAudioListViewSqlParams(BaseModel):
-
-    uploads_id_filter: UUID | None = None
-    message_id_filter: UUID | None = None
-    page_limit_val: int | None = 10000
-    page_offset_val: int | None = 0
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.uploads_id_filter,
-            self.message_id_filter,
-            self.page_limit_val,
-            self.page_offset_val,
-        )
-
-class QGetAudioListViewV4Item(BaseModel):
-
-    audio_id: UUID | None
-    uploads_id: UUID | None
-    upload_id: UUID | None
-    call_id: UUID | None
-    message_id: UUID | None
-    file_path: str | None
-    mime_type: str | None
-    size: int | None
-    created_at: datetime | None
-
-class GetAudioListViewSqlRow(BaseModel):
-
-    items: list[QGetAudioListViewV4Item] | None = None
-    total_count: int | None = None
-
-class GetAudioListViewApiRequest(BaseModel):
-
-    uploads_id_filter: UUID | None = None
-    message_id_filter: UUID | None = None
-    page_limit_val: int | None = 10000
-    page_offset_val: int | None = 0
-
-class GetAudioListViewApiResponse(BaseModel):
-
-    items: list[QGetAudioListViewV4Item] | None = None
-    total_count: int | None = None
 
 
 
@@ -26575,6 +26219,8 @@ class QGetGrantListViewV4Item(BaseModel):
     grantor_id: UUID | None
     emulation_id: UUID | None
     emulated_id: UUID | None
+    grant_session_id: UUID | None
+    emulation_session_id: UUID | None
     expires_at: datetime | None
     used_at: datetime | None
     revoked_at: datetime | None
@@ -26785,6 +26431,7 @@ class QGetLoginListViewV4Item(BaseModel):
 
     login_id: UUID | None
     profile_id: UUID | None
+    session_id: UUID | None
     last_login: datetime | None
     login_created_at: datetime | None
     active: bool | None
@@ -28044,12 +27691,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "SaveFieldApiRequest",
         "SaveFieldApiResponse",
     ),
-    "app/sql/v4/queries/generate/agent/get_agent_generation_context_complete.sql": (
-        "GetAgentGenerationContextSqlParams",
-        "GetAgentGenerationContextSqlRow",
-        "GetAgentGenerationContextApiRequest",
-        "GetAgentGenerationContextApiResponse",
-    ),
     "app/sql/v4/queries/generate/agent/prepare_agent_generation_complete.sql": (
         "PrepareAgentGenerationSqlParams",
         "PrepareAgentGenerationSqlRow",
@@ -28164,12 +27805,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "UsePreviousAttemptGradesApiRequest",
         "UsePreviousAttemptGradesApiResponse",
     ),
-    "app/sql/v4/queries/generate/auth/get_auth_generation_context_complete.sql": (
-        "GetAuthGenerationContextSqlParams",
-        "GetAuthGenerationContextSqlRow",
-        "GetAuthGenerationContextApiRequest",
-        "GetAuthGenerationContextApiResponse",
-    ),
     "app/sql/v4/queries/generate/auth/prepare_auth_generation_complete.sql": (
         "PrepareAuthGenerationSqlParams",
         "PrepareAuthGenerationSqlRow",
@@ -28200,12 +27835,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "PrepareCohortGenerationApiRequest",
         "PrepareCohortGenerationApiResponse",
     ),
-    "app/sql/v4/queries/generate/department/get_department_generation_context_complete.sql": (
-        "GetDepartmentGenerationContextSqlParams",
-        "GetDepartmentGenerationContextSqlRow",
-        "GetDepartmentGenerationContextApiRequest",
-        "GetDepartmentGenerationContextApiResponse",
-    ),
     "app/sql/v4/queries/generate/department/prepare_department_generation_complete.sql": (
         "PrepareDepartmentGenerationSqlParams",
         "PrepareDepartmentGenerationSqlRow",
@@ -28218,23 +27847,11 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "PrepareDocumentGenerationApiRequest",
         "PrepareDocumentGenerationApiResponse",
     ),
-    "app/sql/v4/queries/generate/eval/get_eval_generation_context_complete.sql": (
-        "GetEvalGenerationContextSqlParams",
-        "GetEvalGenerationContextSqlRow",
-        "GetEvalGenerationContextApiRequest",
-        "GetEvalGenerationContextApiResponse",
-    ),
     "app/sql/v4/queries/generate/eval/prepare_eval_generation_complete.sql": (
         "PrepareEvalGenerationSqlParams",
         "PrepareEvalGenerationSqlRow",
         "PrepareEvalGenerationApiRequest",
         "PrepareEvalGenerationApiResponse",
-    ),
-    "app/sql/v4/queries/generate/field/get_field_generation_context_complete.sql": (
-        "GetFieldGenerationContextSqlParams",
-        "GetFieldGenerationContextSqlRow",
-        "GetFieldGenerationContextApiRequest",
-        "GetFieldGenerationContextApiResponse",
     ),
     "app/sql/v4/queries/generate/field/prepare_field_generation_complete.sql": (
         "PrepareFieldGenerationSqlParams",
@@ -28242,23 +27859,11 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "PrepareFieldGenerationApiRequest",
         "PrepareFieldGenerationApiResponse",
     ),
-    "app/sql/v4/queries/generate/model/get_model_generation_context_complete.sql": (
-        "GetModelGenerationContextSqlParams",
-        "GetModelGenerationContextSqlRow",
-        "GetModelGenerationContextApiRequest",
-        "GetModelGenerationContextApiResponse",
-    ),
     "app/sql/v4/queries/generate/model/prepare_model_generation_complete.sql": (
         "PrepareModelGenerationSqlParams",
         "PrepareModelGenerationSqlRow",
         "PrepareModelGenerationApiRequest",
         "PrepareModelGenerationApiResponse",
-    ),
-    "app/sql/v4/queries/generate/parameter/get_parameter_generation_context_complete.sql": (
-        "GetParameterGenerationContextSqlParams",
-        "GetParameterGenerationContextSqlRow",
-        "GetParameterGenerationContextApiRequest",
-        "GetParameterGenerationContextApiResponse",
     ),
     "app/sql/v4/queries/generate/parameter/prepare_parameter_generation_complete.sql": (
         "PrepareParameterGenerationSqlParams",
@@ -28284,23 +27889,11 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "PrepareProfileGenerationApiRequest",
         "PrepareProfileGenerationApiResponse",
     ),
-    "app/sql/v4/queries/generate/provider/get_provider_generation_context_complete.sql": (
-        "GetProviderGenerationContextSqlParams",
-        "GetProviderGenerationContextSqlRow",
-        "GetProviderGenerationContextApiRequest",
-        "GetProviderGenerationContextApiResponse",
-    ),
     "app/sql/v4/queries/generate/provider/prepare_provider_generation_complete.sql": (
         "PrepareProviderGenerationSqlParams",
         "PrepareProviderGenerationSqlRow",
         "PrepareProviderGenerationApiRequest",
         "PrepareProviderGenerationApiResponse",
-    ),
-    "app/sql/v4/queries/generate/rubric/get_rubric_generation_context_complete.sql": (
-        "GetRubricGenerationContextSqlParams",
-        "GetRubricGenerationContextSqlRow",
-        "GetRubricGenerationContextApiRequest",
-        "GetRubricGenerationContextApiResponse",
     ),
     "app/sql/v4/queries/generate/rubric/prepare_rubric_generation_complete.sql": (
         "PrepareRubricGenerationSqlParams",
@@ -28313,12 +27906,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "PrepareScenarioGenerationSqlRow",
         "PrepareScenarioGenerationApiRequest",
         "PrepareScenarioGenerationApiResponse",
-    ),
-    "app/sql/v4/queries/generate/setting/get_setting_generation_context_complete.sql": (
-        "GetSettingGenerationContextSqlParams",
-        "GetSettingGenerationContextSqlRow",
-        "GetSettingGenerationContextApiRequest",
-        "GetSettingGenerationContextApiResponse",
     ),
     "app/sql/v4/queries/generate/setting/prepare_setting_generation_complete.sql": (
         "PrepareSettingGenerationSqlParams",
@@ -28373,12 +27960,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetTextRunContextForExistingRunSqlRow",
         "GetTextRunContextForExistingRunApiRequest",
         "GetTextRunContextForExistingRunApiResponse",
-    ),
-    "app/sql/v4/queries/generate/tool/get_tool_generation_context_complete.sql": (
-        "GetToolGenerationContextSqlParams",
-        "GetToolGenerationContextSqlRow",
-        "GetToolGenerationContextApiRequest",
-        "GetToolGenerationContextApiResponse",
     ),
     "app/sql/v4/queries/generate/tool/prepare_tool_generation_complete.sql": (
         "PrepareToolGenerationSqlParams",
@@ -30936,12 +30517,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetAttemptMessagesViewApiRequest",
         "GetAttemptMessagesViewApiResponse",
     ),
-    "app/sql/v4/queries/views/audio/list/get_audio_list_view_complete.sql": (
-        "GetAudioListViewSqlParams",
-        "GetAudioListViewSqlRow",
-        "GetAudioListViewApiRequest",
-        "GetAudioListViewApiResponse",
-    ),
     "app/sql/v4/queries/views/audit/list/get_audit_list_view_complete.sql": (
         "GetAuditListViewSqlParams",
         "GetAuditListViewSqlRow",
@@ -31832,11 +31407,6 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/queries/generate/agent/get_agent_generation_context_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
         file_path: Literal["app/sql/v4/queries/generate/agent/prepare_agent_generation_complete.sql"]
     ) -> SqlString: ...
 
@@ -31932,11 +31502,6 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/queries/generate/auth/get_auth_generation_context_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
         file_path: Literal["app/sql/v4/queries/generate/auth/prepare_auth_generation_complete.sql"]
     ) -> SqlString: ...
 
@@ -31962,11 +31527,6 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/queries/generate/department/get_department_generation_context_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
         file_path: Literal["app/sql/v4/queries/generate/department/prepare_department_generation_complete.sql"]
     ) -> SqlString: ...
 
@@ -31977,17 +31537,7 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/queries/generate/eval/get_eval_generation_context_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
         file_path: Literal["app/sql/v4/queries/generate/eval/prepare_eval_generation_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/queries/generate/field/get_field_generation_context_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -31997,17 +31547,7 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/queries/generate/model/get_model_generation_context_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
         file_path: Literal["app/sql/v4/queries/generate/model/prepare_model_generation_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/queries/generate/parameter/get_parameter_generation_context_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -32032,17 +31572,7 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/queries/generate/provider/get_provider_generation_context_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
         file_path: Literal["app/sql/v4/queries/generate/provider/prepare_provider_generation_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/queries/generate/rubric/get_rubric_generation_context_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -32053,11 +31583,6 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/queries/generate/scenario/prepare_scenario_generation_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/queries/generate/setting/get_setting_generation_context_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -32103,11 +31628,6 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/queries/generate/text/get_text_run_context_for_existing_run_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/queries/generate/tool/get_tool_generation_context_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -34238,11 +33758,6 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/queries/views/attempt/messages/get_attempt_messages_view_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/queries/views/audio/list/get_audio_list_view_complete.sql"]
     ) -> SqlString: ...
 
     @overload

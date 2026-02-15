@@ -8,6 +8,7 @@ from pydantic import BaseModel
 
 from app.api.v4.types import BaseResourceSection, ListFilterSection
 from app.api.v4.views.drafts.types import DraftRubricViewItem
+from app.api.v4.views.run.list.types import GetRunListViewResponse
 from app.sql.types import (
     QGetAgentsV4Item,
     QGetDepartmentsV4Item,
@@ -15,6 +16,7 @@ from app.sql.types import (
     QGetModelsV4Item,
     QGetNamesV4Item,
     QGetPointsV4Item,
+    QGetProfilesV4Item,
     QGetProvidersV4Item,
     QGetStandardGroupsV4Item,
     QGetStandardsV4Item,
@@ -105,6 +107,7 @@ class GetRubricApiResponse(BaseModel):
 
 class RubricWebsocketViews(BaseModel):
     draft_rubric: DraftRubricViewItem | None = None
+    runs: GetRunListViewResponse | None = None
 
 
 class RubricWebsocketResources(BaseModel):
@@ -120,6 +123,8 @@ class RubricWebsocketResources(BaseModel):
     models: list[QGetModelsV4Item] | None = None
     providers: list[QGetProvidersV4Item] | None = None
     tools: list[QGetToolsV4Item] | None = None
+    # Profile config (for rate limiting)
+    config_profile: list[QGetProfilesV4Item] | None = None
 
 
 class GetRubricWebsocketResponse(BaseModel):

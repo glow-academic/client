@@ -54,9 +54,11 @@ from app.api.v4.resources.names.get import get_names_internal
 from app.api.v4.resources.names.search import search_names_internal
 from app.api.v4.resources.parameters.get import get_parameters_internal
 from app.api.v4.resources.parameters.search import search_parameters_internal
+from app.api.v4.resources.profiles.get import get_profiles_internal
 from app.api.v4.resources.providers.get import get_providers_internal
 from app.api.v4.resources.tools.get import get_tools_internal
 from app.api.v4.views.drafts.get import get_draft_field_internal
+from app.api.v4.views.run.list.get import get_run_list_view_internal
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
@@ -520,9 +522,75 @@ async def get_field_websocket(
         draft_id=draft_id,
         bypass_cache=bypass_cache,
     )
+
+    # Fetch draft, config_profile, runs_today, and tools in parallel
+    pool = get_pool()
+
+    async def fetch_draft():
+        if not draft_id or not pool:
+            return None
+        async with pool.acquire() as conn:
+            draft_items = await get_draft_field_internal(
+                conn=conn,
+                draft_ids=[draft_id],
+                bypass_cache=bypass_cache,
+            )
+            return draft_items[0] if draft_items else None
+
+    async def fetch_config_profile():
+        if not pool:
+            return None
+        async with pool.acquire() as conn:
+            return await get_profiles_internal(conn, [profile_id], bypass_cache)
+
+    async def fetch_runs_today():
+        if not pool:
+            return None
+        from datetime import UTC, datetime
+
+        today_utc = datetime.now(UTC).replace(hour=0, minute=0, second=0, microsecond=0)
+        tomorrow_utc = today_utc.replace(hour=23, minute=59, second=59)
+        async with pool.acquire() as conn:
+            return await get_run_list_view_internal(
+                conn=conn,
+                profile_id_filter=profile_id,
+                date_from=today_utc,
+                date_to=tomorrow_utc,
+                page_limit=1,
+                bypass_cache=True,
+            )
+
+    async def fetch_tools():
+        if not data.config_agents or not pool:
+            return []
+        agent_resource = data.config_agents[0]
+        if not agent_resource or not agent_resource.tool_ids:
+            return []
+        async with pool.acquire() as c:
+            return await get_tools_internal(
+                c, list(agent_resource.tool_ids), bypass_cache
+            )
+
+    (
+        draft_field,
+        config_profile_result,
+        runs_result,
+        tools_result,
+    ) = await asyncio.gather(
+        fetch_draft(),
+        fetch_config_profile(),
+        fetch_runs_today(),
+        fetch_tools(),
+    )
+
+    # Build views (always construct — both fields optional now)
+    views = FieldWebsocketViews(
+        draft_field=draft_field,
+        runs=runs_result,
+    )
+
     return GetFieldWebsocketResponse(
-        group_id=data.group_id,
-        views=FieldWebsocketViews(draft_field=data.draft_view),
+        views=views if draft_field or runs_result else None,
         resources=FieldWebsocketResources(
             names=data.selected_names,
             descriptions=data.selected_descriptions,
@@ -532,9 +600,11 @@ async def get_field_websocket(
             agents=data.config_agents,
             models=data.config_models,
             providers=data.config_providers,
-            tools=data.config_tools,
+            tools=tools_result or None,
+            config_profile=config_profile_result or None,
         ),
         resource_agent_ids=data.agent_ids,
+        group_id=data.group_id,
     )
 
 

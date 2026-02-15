@@ -9,11 +9,13 @@ from pydantic import BaseModel
 
 from app.api.v4.types import BaseResourceSection
 from app.api.v4.views.drafts.types import DraftDepartmentViewItem
+from app.api.v4.views.run.list.types import GetRunListViewResponse
 from app.sql.types import (
     QGetAgentsV4Item,
     QGetDescriptionsV4Item,
     QGetModelsV4Item,
     QGetNamesV4Item,
+    QGetProfilesV4Item,
     QGetProvidersV4Item,
     QGetSettingsV4Item,
     QGetToolsV4Item,
@@ -76,6 +78,7 @@ class GetDepartmentApiResponse(BaseModel):
 
 class DepartmentWebsocketViews(BaseModel):
     draft_department: DraftDepartmentViewItem | None = None
+    runs: GetRunListViewResponse | None = None
 
 
 class DepartmentWebsocketResources(BaseModel):
@@ -87,6 +90,8 @@ class DepartmentWebsocketResources(BaseModel):
     models: list[QGetModelsV4Item] | None = None
     providers: list[QGetProvidersV4Item] | None = None
     tools: list[QGetToolsV4Item] | None = None
+    # Profile config (for rate limiting)
+    config_profile: list[QGetProfilesV4Item] | None = None
 
 
 class GetDepartmentWebsocketResponse(BaseModel):

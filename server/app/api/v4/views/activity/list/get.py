@@ -1,7 +1,7 @@
 """Get endpoint for activity list view."""
 
-from datetime import date
 from typing import Annotated
+from uuid import UUID
 
 import asyncpg
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
@@ -25,11 +25,9 @@ router = APIRouter()
 
 async def get_activity_list_view_internal(
     conn: asyncpg.Connection,
-    event_type_filter: str | None = None,
-    date_from: date | None = None,
-    date_to: date | None = None,
-    sort_order: str = "desc",
-    page_limit: int = 1000,
+    profile_id_filter: UUID | None = None,
+    session_id_filter: UUID | None = None,
+    page_limit: int = 10000,
     page_offset: int = 0,
     bypass_cache: bool = False,
 ) -> GetActivityListViewResponse:
@@ -39,10 +37,8 @@ async def get_activity_list_view_internal(
     cache_key_val = cache_key(
         "views/activity/list/get",
         {
-            "event_type_filter": event_type_filter,
-            "date_from": date_from.isoformat() if date_from else None,
-            "date_to": date_to.isoformat() if date_to else None,
-            "sort_order": sort_order,
+            "profile_id_filter": str(profile_id_filter) if profile_id_filter else None,
+            "session_id_filter": str(session_id_filter) if session_id_filter else None,
             "page_limit": page_limit,
             "page_offset": page_offset,
         },
@@ -54,10 +50,8 @@ async def get_activity_list_view_internal(
             return GetActivityListViewResponse.model_validate(cached)
 
     params = GetActivityListViewSqlParams(
-        event_type_filter=event_type_filter,
-        date_from=date_from,
-        date_to=date_to,
-        sort_order_field=sort_order,
+        profile_id_filter=profile_id_filter,
+        session_id_filter=session_id_filter,
         page_limit_val=page_limit,
         page_offset_val=page_offset,
     )
@@ -69,16 +63,11 @@ async def get_activity_list_view_internal(
         for item in result.items:
             items.append(
                 ActivityViewItem(
-                    date_key=item.date_key,
-                    event_type=item.event_type,
-                    event_count=item.event_count or 0,
-                    unique_profiles=item.unique_profiles or 0,
-                    saved_count=item.saved_count or 0,
-                    created_count=item.created_count or 0,
-                    duplicated_count=item.duplicated_count or 0,
-                    uploaded_count=item.uploaded_count or 0,
-                    deleted_count=item.deleted_count or 0,
-                    updated_count=item.updated_count or 0,
+                    activity_id=item.activity_id,
+                    profile_id=item.profile_id,
+                    session_id=item.session_id,
+                    last_active=item.last_active,
+                    created_at=item.created_at,
                 )
             )
 
