@@ -39,6 +39,7 @@ import { useProfile } from "@/contexts/profile-context";
 import { useSocket } from "@/contexts/socket-context";
 import { useDrafts } from "@/contexts/draft-context";
 import { StepCardAiButton } from "@/components/common/forms/StepCardAiButton";
+import { useArtifactGeneration } from "@/hooks/use-artifact-generation";
 import { useConditionalParameterToggle } from "@/hooks/use-conditional-parameter-toggle";
 import { useDraftLifecycle } from "@/hooks/use-draft-lifecycle";
 import { useFlushRegistry } from "@/hooks/use-flush-registry";
@@ -235,105 +236,12 @@ function PersonaComponent({
     useFlushRegistry<FlushResult>(FLUSH_KEYS);
 
   // --- AI Generation State ---
-  // Local generatingResources state (previously inside useAiGeneration)
-  const [generatingResources, setGeneratingResources] = useState<Set<ResourceType>>(
-    new Set(),
-  );
-  const [_generationProgress, setGenerationProgress] = useState<number>(0);
-
-  const isGenerating = useCallback(
-    (resourceType: string) => generatingResources.has(resourceType as ResourceType),
-    [generatingResources],
-  );
-
-  // Top-level group_id from server response
-  const groupId = personaData?.group_id;
-
-  // Socket listeners for coarse-grained persona events
-  useEffect(() => {
-    if (!socket || !isConnected) return;
-
-    const handleStarted = (data: {
-      group_id?: string;
-      resource_types?: string[];
-    }) => {
-      if (data.group_id !== groupId) return;
-      if (data.resource_types) {
-        setGeneratingResources((prev) => {
-          const next = new Set(prev);
-          data.resource_types!.forEach((rt) => next.add(rt as ResourceType));
-          return next;
-        });
-      }
-      setGenerationProgress(0);
-    };
-
-    const handleError = (data: {
-      artifact_type: string;
-      group_id?: string | null;
-      resource_types?: string[] | null;
-      resource_type?: string | null;
-      resource_id?: string | null;
-      run_id?: string | null;
-      success: boolean;
-      message: string;
-      trace_id?: string | null;
-    }) => {
-      if (data.group_id && data.group_id !== groupId) return;
-      const resourceTypes =
-        data.resource_types ||
-        (data.resource_type ? [data.resource_type] : []);
-      setGeneratingResources((prev) => {
-        const next = new Set(prev);
-        resourceTypes.forEach((rt) => {
-          if (VALID_RESOURCE_TYPES.includes(rt as ResourceType)) {
-            next.delete(rt as ResourceType);
-          }
-        });
-        return next;
-      });
-      toast.error(data.message || "Generation failed");
-    };
-
-    const handleComplete = (data: { group_id?: string }) => {
-      if (data.group_id && data.group_id !== groupId) return;
-      // All agents finished - clear all generating resources
-      setGeneratingResources(new Set());
-      setGenerationProgress(0);
-    };
-
-    const handleProgress = (data: {
-      group_id?: string;
-      percentage?: number;
-    }) => {
-      if (data.group_id !== groupId) return;
-      setGenerationProgress(data.percentage ?? 0);
-    };
-
-    socket.on("persona_generation_started", handleStarted);
-    socket.on("persona_generation_error", handleError);
-    socket.on("persona_generation_complete", handleComplete);
-    socket.on("persona_generation_progress", handleProgress);
-
-    return () => {
-      socket.off("persona_generation_started", handleStarted);
-      socket.off("persona_generation_error", handleError);
-      socket.off("persona_generation_complete", handleComplete);
-      socket.off("persona_generation_progress", handleProgress);
-    };
-  }, [socket, isConnected, groupId]);
-
-  // Callback for resource components to clear their generating state
-  const makeOnGenerationComplete = useCallback(
-    (resourceType: ResourceType) => () => {
-      setGeneratingResources((prev) => {
-        const next = new Set(prev);
-        next.delete(resourceType);
-        return next;
-      });
-    },
-    [],
-  );
+  const { isGenerating, makeOnGenerationComplete, startGenerating } =
+    useArtifactGeneration({
+      artifactType: "persona",
+      groupId: personaData?.group_id,
+      validResourceTypes: VALID_RESOURCE_TYPES as string[],
+    });
 
   // nuqs parsers for URL-backed state (will be passed to GenericForm)
   const personaSearchParamsClient = useMemo(
@@ -748,11 +656,7 @@ function PersonaComponent({
         return;
       }
 
-      setGeneratingResources((prev) => {
-        const next = new Set(prev);
-        resourceTypes.forEach((rt) => next.add(rt));
-        return next;
-      });
+      startGenerating(resourceTypes);
 
       const formData = formDataRef.current;
       socket.emit("persona_generate", {
@@ -780,7 +684,7 @@ function PersonaComponent({
       personaId,
       flushAllAndSave,
       formDataRef,
-      setGeneratingResources,
+      startGenerating,
     ],
   );
 

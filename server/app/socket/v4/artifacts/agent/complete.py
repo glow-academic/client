@@ -1,34 +1,36 @@
-"""Agent completion handler - emits hydrated completion payloads."""
+"""Agent completion handler - handles run/text completion.
+
+Resource-level tool_call_complete/tool_result events are now handled by the shared
+resource_complete.py handler. This module handles:
+- text_complete: save assistant messages
+- run_complete: save assistant output and update token counts
+"""
 
 import uuid
 from typing import Any
 
 from fastapi import APIRouter
 
-from app.api.v4.resources.departments.get import get_departments_internal
-from app.api.v4.resources.descriptions.get import get_descriptions_internal
-from app.api.v4.resources.flags.get import get_flags_internal
-from app.api.v4.resources.instructions.get import get_instructions_internal
-from app.api.v4.resources.models.get import get_models_internal
-from app.api.v4.resources.names.get import get_names_internal
-from app.api.v4.resources.prompts.get import get_prompts_internal
-from app.api.v4.resources.reasoning_levels.get import get_reasoning_levels_internal
-from app.api.v4.resources.temperature_levels.get import get_temperature_levels_internal
-from app.api.v4.resources.tools.get import get_tools_internal
-from app.api.v4.resources.voices.get import get_voices_internal
-from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
 from app.infra.v4.websocket.get_db_connection import get_db_connection
-from app.main import get_internal_sio, sio
+from app.main import get_internal_sio
+from app.utils.logging.db_logger import get_logger
+from app.utils.sql_helper import load_sql
+
+logger = get_logger(__name__)
 
 internal_sio = get_internal_sio()
+SQL_PATH_CREATE_MESSAGE_WITH_TEXT = (
+    "app/sql/v4/queries/messages/create_message_with_text_complete.sql"
+)
 
 client_router = APIRouter()
 server_router = APIRouter()
 
 
 @internal_sio.on("generate_call_complete")  # type: ignore
+@internal_sio.on("generate_text_complete")  # type: ignore
 async def handle_agent_artifact_complete(data: dict[str, Any]) -> None:
-    """Handle generation completion and emit hydrated agent resource payload."""
+    """Handle generate_call_complete and generate_text_complete events - filter by agent artifact_type."""
     if data.get("artifact_type") != "agent":
         return
 
@@ -36,117 +38,94 @@ async def handle_agent_artifact_complete(data: dict[str, Any]) -> None:
     if not sid:
         return
 
-    profile_id_str = await find_profile_by_socket(sid)
-    if not profile_id_str:
-        return
     event_type = data.get("event_type")
-    if event_type not in ("tool_call_complete", "tool_result"):
+
+    if event_type == "text_complete":
+        await _handle_agent_text_complete(sid, data)
         return
 
-    tool_result = data.get("result") or {}
-    tool_results = data.get("tool_results") or []
-    if not tool_result and tool_results:
-        tool_result = tool_results[0]
-    if event_type == "tool_call_complete" and not tool_result and not tool_results:
+    if event_type == "run_complete":
+        await _handle_agent_run_complete(sid, data)
         return
 
-    if tool_result and tool_result.get("success") is False:
+    # tool_call_complete and tool_result events are now handled by
+    # resource_complete.py (shared handler) - nothing to do here
+
+
+async def _handle_agent_text_complete(sid: str, data: dict[str, Any]) -> None:
+    """Handle agent text generation completion - save assistant message."""
+    run_id = data.get("run_id")
+    final_content = data.get("text") or ""
+
+    if not run_id or not final_content:
         return
 
-    resource_type = data.get("resource_type")
-    resource_id_str = tool_result.get("resource_id")
-    group_id = data.get("group_id")
-    if not resource_type or not resource_id_str:
-        await sio.emit(
-            "agent_generation_error",
-            {
-                "artifact_type": "agent",
-                "resource_type": resource_type,
-                "group_id": group_id,
-                "success": False,
-                "message": f"Missing resource_type/resource_id for {resource_type}",
-            },
-            room=sid,
-        )
+    try:
+        async with get_db_connection() as conn:
+            create_message_sql = load_sql(SQL_PATH_CREATE_MESSAGE_WITH_TEXT)
+            await conn.fetchval(
+                create_message_sql,
+                uuid.UUID(run_id),
+                "assistant",
+                final_content,
+                True,
+                False,
+            )
+    except Exception as e:
+        logger.exception(f"Failed to save agent text message: {str(e)}")
+
+
+async def _handle_agent_run_complete(sid: str, data: dict[str, Any]) -> None:
+    """Handle agent generation run completion - save assistant output and update token counts."""
+    run_id = data.get("run_id")
+    assistant_output = data.get("assistant_output") or ""
+    input_tokens = data.get("input_text_tokens", 0)
+    output_tokens = data.get("output_text_tokens", 0)
+
+    if not run_id:
         return
 
-    resource_id = uuid.UUID(resource_id_str)
-    payload: dict[str, Any] = {
-        "artifact_type": "agent",
-        "group_id": group_id,
-        "resource_type": resource_type,
-        "success": True,
-        "message": f"{resource_type} generation completed successfully",
-        "run_id": data.get("run_id"),
-        "type": data.get("type", "complete"),
-    }
+    try:
+        async with get_db_connection() as conn:
+            if assistant_output:
+                existing = await conn.fetchval(
+                    """
+                    SELECT id FROM messages_entry
+                    WHERE run_id = $1 AND role = 'assistant'::message_type
+                    LIMIT 1
+                    """,
+                    uuid.UUID(run_id),
+                )
+                if not existing:
+                    create_message_sql = load_sql(SQL_PATH_CREATE_MESSAGE_WITH_TEXT)
+                    await conn.fetchval(
+                        create_message_sql,
+                        uuid.UUID(run_id),
+                        "assistant",
+                        assistant_output,
+                        True,
+                        False,
+                    )
 
-    async with get_db_connection() as conn:
-        if resource_type == "names":
-            items = await get_names_internal(conn, [resource_id], bypass_cache=True)
-            payload["name_resource"] = (
-                items[0].model_dump(mode="json") if items else None
-            )
-        elif resource_type == "descriptions":
-            items = await get_descriptions_internal(
-                conn, [resource_id], bypass_cache=True
-            )
-            payload["description_resource"] = (
-                items[0].model_dump(mode="json") if items else None
-            )
-        elif resource_type == "models":
-            items = await get_models_internal(conn, [resource_id], bypass_cache=True)
-            payload["model_resource"] = (
-                items[0].model_dump(mode="json") if items else None
-            )
-        elif resource_type == "prompts":
-            items = await get_prompts_internal(conn, [resource_id], bypass_cache=True)
-            payload["prompt_resource"] = (
-                items[0].model_dump(mode="json") if items else None
-            )
-        elif resource_type == "instructions":
-            items = await get_instructions_internal(
-                conn, [resource_id], bypass_cache=True
-            )
-            payload["instructions_resource"] = (
-                items[0].model_dump(mode="json") if items else None
-            )
-        elif resource_type == "flags":
-            items = await get_flags_internal(conn, [resource_id], bypass_cache=True)
-            payload["flag_resource"] = (
-                items[0].model_dump(mode="json") if items else None
-            )
-        elif resource_type == "temperature_levels":
-            items = await get_temperature_levels_internal(
-                conn, [resource_id], bypass_cache=True
-            )
-            payload["temperature_level_resource"] = (
-                items[0].model_dump(mode="json") if items else None
-            )
-        elif resource_type == "reasoning_levels":
-            items = await get_reasoning_levels_internal(
-                conn, [resource_id], bypass_cache=True
-            )
-            payload["reasoning_level_resource"] = (
-                items[0].model_dump(mode="json") if items else None
-            )
-        elif resource_type == "departments":
-            items = await get_departments_internal(
-                conn, [resource_id], bypass_cache=True
-            )
-            payload["department_resources"] = [
-                item.model_dump(mode="json") for item in items
-            ]
-        elif resource_type == "tools":
-            items = await get_tools_internal(conn, [resource_id], bypass_cache=True)
-            payload["tool_resources"] = [item.model_dump(mode="json") for item in items]
-        elif resource_type == "voices":
-            items = await get_voices_internal(conn, [resource_id], bypass_cache=True)
-            payload["voice_resources"] = [
-                item.model_dump(mode="json") for item in items
-            ]
+            if input_tokens or output_tokens:
+                await conn.execute(
+                    """
+                    UPDATE runs_entry
+                    SET input_tokens = COALESCE($2, input_tokens),
+                        output_tokens = COALESCE($3, output_tokens)
+                    WHERE id = $1
+                    """,
+                    uuid.UUID(run_id),
+                    input_tokens,
+                    output_tokens,
+                )
+    except Exception as e:
+        logger.exception(f"Failed to save agent run complete: {str(e)}")
 
-    await sio.emit("agent_generation_complete", payload, room=sid)
+
+# =============================================================================
+# FastAPI endpoint for OpenAPI documentation
+# =============================================================================
 
 
 @server_router.post("/agent_generation_complete")

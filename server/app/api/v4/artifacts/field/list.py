@@ -8,9 +8,7 @@ Filter option names hydrated from cached *_internal() functions.
 Search filtering applied in Python.
 """
 
-import asyncio
 from typing import Annotated, Any, cast
-from uuid import UUID
 
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
@@ -21,16 +19,11 @@ from app.api.v4.artifacts.field.permissions import (
     compute_can_edit,
 )
 from app.api.v4.artifacts.field.types import (
-    ListFieldApiConditionalParameter,
-    ListFieldApiDepartment,
     ListFieldApiField,
-    ListFieldApiPersona,
     ListFieldApiResponse,
 )
 from app.api.v4.auth.profile import get_auth_profile_internal
-from app.api.v4.resources.departments.get import get_departments_internal
-from app.api.v4.resources.parameters.get import get_parameters_internal
-from app.api.v4.resources.personas.get import get_personas_internal
+from app.api.v4.types import ListFilterSection
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
@@ -113,7 +106,18 @@ async def get_field_list(
             user_role = None
             user_department_ids = []
 
-        params = GetFieldsListSqlParams(profile_id=profile_id)
+        params = GetFieldsListSqlParams(
+            profile_id=profile_id,
+            search=request.search,
+            parameter_ids=request.parameter_ids,
+            persona_ids=request.persona_ids,
+            filter_department_ids=request.filter_department_ids,
+            parameter_search=request.parameter_search,
+            persona_search=request.persona_search,
+            department_search=request.department_search,
+            page_size=request.page_size,
+            page_offset=request.page_offset,
+        )
         sql_params = params.to_tuple()
 
         result = cast(
@@ -163,128 +167,25 @@ async def get_field_list(
                 )
             )
 
-        # --- Python hydration: filter option names from cached *_internal() ---
-        # Extract option IDs and counts from SQL result
-        parameter_option_ids = getattr(result, "parameter_option_ids", None) or []
-        persona_option_ids = getattr(result, "persona_option_ids", None) or []
-        department_option_ids = getattr(result, "department_option_ids", None) or []
-
-        # Build ID -> count maps
-        parameter_count_map: dict[UUID, int] = {}
-        parameter_ids_to_fetch: list[UUID] = []
-        for opt in parameter_option_ids:
-            opt_id = getattr(opt, "id", None)
-            opt_count = getattr(opt, "count", 0)
-            if opt_id:
-                uid = UUID(str(opt_id)) if not isinstance(opt_id, UUID) else opt_id
-                parameter_count_map[uid] = int(opt_count or 0)
-                parameter_ids_to_fetch.append(uid)
-
-        persona_count_map: dict[UUID, int] = {}
-        persona_ids_to_fetch: list[UUID] = []
-        for opt in persona_option_ids:
-            opt_id = getattr(opt, "id", None)
-            opt_count = getattr(opt, "count", 0)
-            if opt_id:
-                uid = UUID(str(opt_id)) if not isinstance(opt_id, UUID) else opt_id
-                persona_count_map[uid] = int(opt_count or 0)
-                persona_ids_to_fetch.append(uid)
-
-        department_count_map: dict[UUID, int] = {}
-        department_ids_to_fetch: list[UUID] = []
-        for opt in department_option_ids:
-            opt_id = getattr(opt, "id", None)
-            opt_count = getattr(opt, "count", 0)
-            if opt_id:
-                uid = UUID(str(opt_id)) if not isinstance(opt_id, UUID) else opt_id
-                department_count_map[uid] = int(opt_count or 0)
-                department_ids_to_fetch.append(uid)
-
-        # Parallel fetch names from cached *_internal() functions
-        parameters_data = []
-        personas_data = []
-        departments_data = []
-
-        pool = get_pool()
-        has_ids = any(
-            [parameter_ids_to_fetch, persona_ids_to_fetch, department_ids_to_fetch]
-        )
-
-        if pool and has_ids:
-
-            async def fetch_parameters() -> list:
-                if not parameter_ids_to_fetch:
-                    return []
-                async with pool.acquire() as c:
-                    return await get_parameters_internal(
-                        c, parameter_ids_to_fetch, bypass_cache
-                    )
-
-            async def fetch_personas() -> list:
-                if not persona_ids_to_fetch:
-                    return []
-                async with pool.acquire() as c:
-                    return await get_personas_internal(
-                        c, persona_ids_to_fetch, bypass_cache
-                    )
-
-            async def fetch_departments() -> list:
-                if not department_ids_to_fetch:
-                    return []
-                async with pool.acquire() as c:
-                    return await get_departments_internal(
-                        c, department_ids_to_fetch, bypass_cache
-                    )
-
-            parameters_data, personas_data, departments_data = await asyncio.gather(
-                fetch_parameters(), fetch_personas(), fetch_departments()
-            )
-
-        # Merge names with counts, apply search filtering in Python
-        conditional_parameters: list[ListFieldApiConditionalParameter] = [
-            ListFieldApiConditionalParameter(
-                parameter_id=p.parameter_id,
-                name=p.name,
-                description=p.description or "",
-                count=parameter_count_map.get(p.parameter_id, 0)
-                if p.parameter_id
-                else 0,
-            )
-            for p in parameters_data
-            if p.parameter_id
-        ]
-
-        personas: list[ListFieldApiPersona] = [
-            ListFieldApiPersona(
-                persona_id=p.persona_id,
-                name=p.name,
-                description=p.description or "",
-                count=persona_count_map.get(p.persona_id, 0) if p.persona_id else 0,
-            )
-            for p in personas_data
-            if p.persona_id
-        ]
-
-        departments: list[ListFieldApiDepartment] = [
-            ListFieldApiDepartment(
-                department_id=d.department_id,
-                name=d.name,
-                description=d.description or "",
-                count=department_count_map.get(d.department_id, 0)
-                if d.department_id
-                else 0,
-            )
-            for d in departments_data
-            if d.department_id
-        ]
-
-        # Build API response with computed permissions
+        # Build API response with filter sections (names resolved in SQL)
         api_response = ListFieldApiResponse(
             actor_name=actor_name,
             fields=fields_with_permissions,
-            conditional_parameters=conditional_parameters,
-            personas=personas,
-            departments=departments,
+            parameter_filter=ListFilterSection.from_sql_options(
+                result.parameter_options,
+                request.parameter_ids,
+                request.parameter_search,
+            ),
+            persona_filter=ListFilterSection.from_sql_options(
+                result.persona_options,
+                request.persona_ids,
+                request.persona_search,
+            ),
+            department_filter=ListFilterSection.from_sql_options(
+                result.department_options,
+                request.filter_department_ids,
+                request.department_search,
+            ),
             total_count=result.total_count,
         )
 

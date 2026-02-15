@@ -88,39 +88,17 @@ async def save_agent(
             user_role = None
             user_department_ids = []
 
-        name_id = request.names.resource_id if request.names else None
-        model_id = request.models.resource_id if request.models else None
-        description_id = (
-            request.descriptions.resource_id
-            if request.descriptions is not None
-            else None
-        )
-        prompt_id = request.prompts.resource_id if request.prompts is not None else None
-        instructions_id = (
-            request.instructions.resource_id
-            if request.instructions is not None
-            else None
-        )
-        active_flag_id = (
-            request.flags.resource_id if request.flags is not None else None
-        )
-        temperature_level_id = (
-            request.temperature_levels.resource_id
-            if request.temperature_levels is not None
-            else None
-        )
-        reasoning_level_id = (
-            request.reasoning_levels.resource_id
-            if request.reasoning_levels is not None
-            else None
-        )
-        department_ids = (
-            request.departments.resource_ids
-            if request.departments is not None
-            else None
-        )
-        tool_ids = request.tools.resource_ids if request.tools is not None else None
-        voice_ids = request.voices.resource_ids if request.voices is not None else None
+        name_id = request.name_id
+        model_id = request.model_id
+        description_id = request.description_id
+        prompt_id = request.prompt_id
+        instructions_id = request.instructions_id
+        active_flag_id = request.active_flag_id
+        temperature_level_id = request.temperature_level_id
+        reasoning_level_id = request.reasoning_level_id
+        department_ids = request.department_ids
+        tool_ids = request.tool_ids
+        voice_ids = request.voice_ids
 
         # Permission checks
         if request.input_agent_id:
@@ -166,20 +144,25 @@ async def save_agent(
                     detail="You don't have permission to create agents.",
                 )
 
-        # Validate required section actions
+        # Validate required fields
         if not name_id:
-            raise HTTPException(status_code=400, detail="names.resource_id is required")
+            raise HTTPException(status_code=400, detail="name_id is required")
 
         if not model_id:
             raise HTTPException(
-                status_code=400, detail="models.resource_id is required"
+                status_code=400, detail="model_id is required"
             )
 
         async with conn.transaction():
+            # Server-resolved group_id
+            group_id = await conn.fetchval(
+                "INSERT INTO groups_entry DEFAULT VALUES RETURNING id"
+            )
+
             # Convert API request to SQL params (add profile_id from header)
             params = SaveAgentSqlParams(
                 profile_id=profile_id,
-                group_id=request.group_id,
+                group_id=group_id,
                 input_agent_id=request.input_agent_id,
                 name_id=name_id,
                 model_id=model_id,

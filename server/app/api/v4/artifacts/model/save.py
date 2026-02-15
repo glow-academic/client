@@ -143,8 +143,8 @@ async def save_model(
             else:
                 # Create mode
                 request_department_ids = (
-                    [str(d) for d in (request.departments.resource_ids or [])]
-                    if request.departments.resource_ids
+                    [str(d) for d in (request.department_ids or [])]
+                    if request.department_ids
                     else []
                 )
                 if not compute_can_create(user_role, request_department_ids):
@@ -155,8 +155,15 @@ async def save_model(
 
         # Pass 2: Execute save
         async with conn.transaction():
-            # Convert nested resource actions to SQL params
-            params = SaveModelSqlParams.from_request(request, profile_id=profile_id)
+            # Server-resolved group_id
+            group_id = await conn.fetchval(
+                "INSERT INTO groups_entry DEFAULT VALUES RETURNING id"
+            )
+
+            # Convert flat IDs to SQL params
+            params = SaveModelSqlParams.from_request(
+                request, profile_id=profile_id, group_id=group_id
+            )
             sql_params = params.to_tuple()
 
             # Execute SQL with typed helper
@@ -182,9 +189,9 @@ async def save_model(
                 }
                 if request.input_model_id:
                     model_name = "Model"
-                    if request.names and request.names.resource_id:
+                    if request.name_id:
                         name_params = GetNameByIdSqlParams(
-                            name_id=request.names.resource_id
+                            name_id=request.name_id
                         )
                         name_result = cast(
                             GetNameByIdSqlRow,

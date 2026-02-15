@@ -88,26 +88,39 @@ export default function Fields({
   // Extract data from response
   const fields = useMemo(() => fieldsData?.fields || [], [fieldsData?.fields]);
 
-  // Use server-provided facet options directly (no client-side computation)
+  // Use server-provided facet options directly (ListFilterSection pattern)
   const parameterOptions = useMemo(
     () =>
-      (fieldsData?.parameters || [])
+      (fieldsData?.parameter_filter?.options || [])
         .map((opt) => ({
-          value: opt.parameter_id as string,
+          value: opt.id as string,
           label: opt.name as string,
+          count: opt.count ?? undefined,
         }))
         .filter((opt) => opt.value && opt.label),
-    [fieldsData?.parameters]
+    [fieldsData?.parameter_filter],
+  );
+  const personaOptions = useMemo(
+    () =>
+      (fieldsData?.persona_filter?.options || [])
+        .map((opt) => ({
+          value: opt.id as string,
+          label: opt.name as string,
+          count: opt.count ?? undefined,
+        }))
+        .filter((opt) => opt.value && opt.label),
+    [fieldsData?.persona_filter],
   );
   const departmentOptions = useMemo(
     () =>
-      (fieldsData?.departments || [])
+      (fieldsData?.department_filter?.options || [])
         .map((opt) => ({
-          value: opt.department_id as string,
+          value: opt.id as string,
           label: opt.name as string,
+          count: opt.count ?? undefined,
         }))
         .filter((opt) => opt.value && opt.label),
-    [fieldsData?.departments]
+    [fieldsData?.department_filter],
   );
 
   // Define table columns inline
@@ -135,6 +148,21 @@ export default function Fields({
         accessorFn: (row: (typeof fields)[number]) => row.parameter_ids ?? [],
         filterFn: (row, _id, value: string[]) => {
           const rowIds = (row.getValue("parameters") as string[]) ?? [];
+          if (value.length === 0) return true;
+          if (rowIds.length === 0) return true;
+          return value.some((v) => rowIds.includes(v));
+        },
+      },
+      // Hidden faceting column for Personas (array of IDs)
+      {
+        id: "personas",
+        header: () => null,
+        cell: () => null,
+        enableHiding: true,
+        enableSorting: false,
+        accessorFn: (row: (typeof fields)[number]) => row.persona_ids ?? [],
+        filterFn: (row, _id, value: string[]) => {
+          const rowIds = (row.getValue("personas") as string[]) ?? [];
           if (value.length === 0) return true;
           if (rowIds.length === 0) return true;
           return value.some((v) => rowIds.includes(v));
@@ -432,6 +460,7 @@ export default function Fields({
   // Get column references for toolbar
   const nameColumn = table.getColumn("name");
   const parameterColumn = table.getColumn("parameters");
+  const personaColumn = table.getColumn("personas");
   const departmentsColumn = table.getColumn("departments");
   const isFiltered = table.getState().columnFilters.length > 0;
 
@@ -470,6 +499,15 @@ export default function Fields({
                     column={parameterColumn}
                     title="Parameter"
                     options={parameterOptions}
+                  />
+                )}
+
+                {/* Persona Filter */}
+                {personaColumn && personaOptions.length > 0 && (
+                  <DataTableFacetedFilter
+                    column={personaColumn}
+                    title="Persona"
+                    options={personaOptions}
                   />
                 )}
 

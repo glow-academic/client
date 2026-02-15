@@ -52,31 +52,17 @@ async def patch_agent_draft(
         async with conn.transaction():
             params_payload = {
                 "input_draft_id": request.input_draft_id,
-                "name_id": request.names.resource_id if request.names else None,
-                "description_id": (
-                    request.descriptions.resource_id if request.descriptions else None
-                ),
-                "model_id": request.models.resource_id if request.models else None,
-                "prompt_id": request.prompts.resource_id if request.prompts else None,
-                "instructions_id": (
-                    request.instructions.resource_id if request.instructions else None
-                ),
-                "active_flag_id": request.flags.resource_id if request.flags else None,
-                "temperature_level_id": (
-                    request.temperature_levels.resource_id
-                    if request.temperature_levels
-                    else None
-                ),
-                "reasoning_level_id": (
-                    request.reasoning_levels.resource_id
-                    if request.reasoning_levels
-                    else None
-                ),
-                "department_ids": (
-                    request.departments.resource_ids if request.departments else None
-                ),
-                "tool_ids": request.tools.resource_ids if request.tools else None,
-                "voice_ids": request.voices.resource_ids if request.voices else None,
+                "name_id": request.name_id,
+                "description_id": request.description_id,
+                "model_id": request.model_id,
+                "prompt_id": request.prompt_id,
+                "instructions_id": request.instructions_id,
+                "active_flag_id": request.active_flag_id,
+                "temperature_level_id": request.temperature_level_id,
+                "reasoning_level_id": request.reasoning_level_id,
+                "department_ids": request.department_ids,
+                "tool_ids": request.tool_ids,
+                "voice_ids": request.voice_ids,
                 "expected_version": request.expected_version,
             }
             params = PatchAgentDraftSqlParams(**params_payload, profile_id=profile_id)

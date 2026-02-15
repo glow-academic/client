@@ -103,38 +103,39 @@ export default function Parameters({
     [parametersData]
   );
 
-  // Use server-provided facet options directly (no client-side computation)
+  // Use server-provided facet options directly (ListFilterSection pattern)
   const scenarioOptions = useMemo(
     () =>
-      (parametersData?.scenario_options || [])
+      (parametersData?.scenario_filter?.options || [])
         .map((opt) => ({
-          value: opt["value"] as string,
-          label: opt["label"] as string,
+          value: opt.id as string,
+          label: opt.name as string,
+          count: opt.count ?? undefined,
         }))
         .filter((opt) => opt.value && opt.label),
-    [parametersData?.scenario_options]
+    [parametersData?.scenario_filter],
   );
-  const departmentOptions = useMemo(() => {
-    const departments = parametersData?.departments || [];
-    return departments
-      .map((dept) => ({
-        value: dept.department_id,
-        label: dept.name,
-      }))
-      .filter(
-        (item): item is { value: string; label: string } =>
-          item.value !== null && item.label !== null
-      );
-  }, [parametersData?.departments]);
-  const documentOptions = useMemo(
+  const fieldOptions = useMemo(
     () =>
-      (parametersData?.document_options || [])
+      (parametersData?.field_filter?.options || [])
         .map((opt) => ({
-          value: opt["value"] as string,
-          label: opt["label"] as string,
+          value: opt.id as string,
+          label: opt.name as string,
+          count: opt.count ?? undefined,
         }))
         .filter((opt) => opt.value && opt.label),
-    [parametersData?.document_options]
+    [parametersData?.field_filter],
+  );
+  const departmentOptions = useMemo(
+    () =>
+      (parametersData?.department_filter?.options || [])
+        .map((opt) => ({
+          value: opt.id as string,
+          label: opt.name as string,
+          count: opt.count ?? undefined,
+        }))
+        .filter((opt) => opt.value && opt.label),
+    [parametersData?.department_filter],
   );
 
   // Column definitions for TanStack Table
@@ -178,9 +179,9 @@ export default function Parameters({
           return value.some((v) => rowIds.includes(v));
         },
       },
-      // Hidden faceting column for Documents (array of IDs)
+      // Hidden faceting column for Fields (array of IDs)
       {
-        id: "documents",
+        id: "fields",
         header: () => null,
         cell: () => null,
         enableHiding: true,
@@ -188,9 +189,9 @@ export default function Parameters({
         accessorFn: (row: (typeof parameters)[number]) =>
           row.document_ids ?? [],
         filterFn: (row, _id, value: string[]) => {
-          const rowIds = (row.getValue("documents") as string[]) ?? [];
+          const rowIds = (row.getValue("fields") as string[]) ?? [];
           if (value.length === 0) return true;
-          if (rowIds.length === 0) return true; // Show parameters with no documents when no filter
+          if (rowIds.length === 0) return true;
           return value.some((v) => rowIds.includes(v));
         },
       },
@@ -515,7 +516,7 @@ export default function Parameters({
   // Get column references for toolbar
   const nameColumn = table.getColumn("name");
   const scenarioColumn = table.getColumn("scenarios");
-  const documentsColumn = table.getColumn("documents");
+  const fieldsColumn = table.getColumn("fields");
   const departmentsColumn = table.getColumn("departments");
   const isFiltered = table.getState().columnFilters.length > 0;
 
@@ -557,12 +558,12 @@ export default function Parameters({
                   />
                 )}
 
-                {/* Document Filter */}
-                {documentsColumn && documentOptions.length > 0 && (
+                {/* Field Filter */}
+                {fieldsColumn && fieldOptions.length > 0 && (
                   <DataTableFacetedFilter
-                    column={documentsColumn}
-                    title="Document"
-                    options={documentOptions}
+                    column={fieldsColumn}
+                    title="Field"
+                    options={fieldOptions}
                   />
                 )}
 

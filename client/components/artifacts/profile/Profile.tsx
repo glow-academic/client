@@ -52,7 +52,7 @@ import { useGenerationModal } from "@/hooks/use-generation-modal";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import {
   type ResourceConfig,
-  buildResourceActions,
+  buildDraftPayload,
   checkHasResourceIds,
   computeEffectiveFormState,
 } from "@/lib/resources/action-builders";
@@ -68,8 +68,6 @@ type PatchProfileDraftOut = {
 
 type SaveStaffIn = InputOf<"/api/v4/artifacts/profiles/save", "post">;
 type SaveStaffOut = OutputOf<"/api/v4/artifacts/profiles/save", "post">;
-type SaveStaffBody = NonNullable<SaveStaffIn["body"]>;
-
 type CreateDraftNamesIn = Parameters<NonNullable<NamesProps["createNamesAction"]>>[0];
 type CreateDraftNamesOut = Awaited<
   ReturnType<NonNullable<NamesProps["createNamesAction"]>>
@@ -526,94 +524,57 @@ function ProfileComponent({
       expectedVersion: number,
       flushResults?: Record<string, unknown>
     ): Record<string, unknown> => {
-      const resourceActions = buildResourceActions(PROFILE_RESOURCES, {
-        formState: formStateRef.current,
-        referenceState: lastPatchedFormStateRef.current as Record<
-          string,
-          unknown
-        > | null,
-        flushResults: flushResults ?? {},
-        entityData: currentStaffData as Record<string, unknown> | null,
-      });
-
-      const namesAction = resourceActions["names"] as
-        | {
-            resource_id?: string | null;
-            create_tool_id?: string | null;
-          }
-        | undefined;
-      const flagsAction = resourceActions["flags"] as
-        | {
-            resource_id?: string | null;
-            create_tool_id?: string | null;
-          }
-        | undefined;
-      const requestLimitsAction = resourceActions["request_limits"] as
-        | {
-            resource_id?: string | null;
-            create_tool_id?: string | null;
-          }
-        | undefined;
-      const departmentsAction = resourceActions["departments"] as
-        | {
-            resource_ids?: string[] | null;
-            create_tool_id?: string | null;
-          }
-        | undefined;
-      const emailsAction = resourceActions["emails"] as
-        | {
-            resource_ids?: string[] | null;
-            create_tool_id?: string | null;
-          }
-        | undefined;
-      const cohortsAction = resourceActions["cohorts"] as
-        | {
-            resource_ids?: string[] | null;
-            create_tool_id?: string | null;
-          }
-        | undefined;
-
       const current = computeEffectiveFormState(
         PROFILE_RESOURCES,
         formStateRef.current,
         flushResults ?? {}
       ) as ProfileFormState;
 
+      const refState = lastPatchedFormStateRef.current as
+        | (ProfileFormState & Record<string, unknown>)
+        | null;
+
+      // Build flat draft payload for simple resources (only changed fields)
+      const draftFields = buildDraftPayload(PROFILE_RESOURCES, {
+        formState: formStateRef.current,
+        referenceState: refState,
+        flushResults: (flushResults ?? {}) as Record<string, unknown>,
+      });
+
+      // Override department_ids/email_ids with ordering if present
+      if (draftFields["department_ids"] !== undefined) {
+        draftFields["department_ids"] = orderDepartmentsByPrimary(
+          (draftFields["department_ids"] as string[]) ?? [],
+          current.primary_department_id
+        );
+        if (
+          (draftFields["department_ids"] as string[] | null)?.length === 0
+        ) {
+          draftFields["department_ids"] = null;
+        }
+      }
+      if (draftFields["email_ids"] !== undefined) {
+        draftFields["email_ids"] = orderEmailsByPrimary(
+          (draftFields["email_ids"] as string[]) ?? [],
+          current.primary_email_index ?? 0
+        );
+        if ((draftFields["email_ids"] as string[] | null)?.length === 0) {
+          draftFields["email_ids"] = null;
+        }
+      }
+
+      // Add role if changed
+      const roleChanged = refState
+        ? current.role !== refState["role"]
+        : !!current.role;
+      if (roleChanged) {
+        draftFields["role"] = current.role || null;
+      }
+
       return {
         input_draft_id: draftId || null,
         group_id: currentStaffData?.group_id ?? null,
-        names: {
-          resource_id: namesAction?.resource_id ?? current.name_id,
-          create_tool_id: namesAction?.create_tool_id ?? null,
-        },
-        flags: {
-          resource_id: flagsAction?.resource_id ?? current.active_flag_id,
-          create_tool_id: flagsAction?.create_tool_id ?? null,
-        },
-        request_limits: {
-          resource_id:
-            requestLimitsAction?.resource_id ?? current.request_limit_id,
-          create_tool_id: requestLimitsAction?.create_tool_id ?? null,
-        },
-        departments: {
-          resource_ids: orderDepartmentsByPrimary(
-            departmentsAction?.resource_ids ?? current.department_ids ?? [],
-            current.primary_department_id
-          ),
-          create_tool_id: departmentsAction?.create_tool_id ?? null,
-        },
-        emails: {
-          resource_ids: orderEmailsByPrimary(
-            emailsAction?.resource_ids ?? current.email_ids ?? [],
-            current.primary_email_index ?? 0
-          ),
-          create_tool_id: emailsAction?.create_tool_id ?? null,
-        },
-        cohorts: {
-          resource_ids: cohortsAction?.resource_ids ?? current.cohort_ids ?? [],
-          create_tool_id: cohortsAction?.create_tool_id ?? null,
-        },
-        role: current.role || null,
+        ...draftFields,
         expected_version: expectedVersion,
       };
     },
@@ -911,28 +872,22 @@ function ProfileComponent({
       }
 
       try {
-        const initialState = getInitialFormState();
-        const saveActions = buildResourceActions(PROFILE_RESOURCES, {
-          formState: formStateRef.current,
-          referenceState: initialState as unknown as Record<string, unknown>,
-          flushResults,
-          entityData: currentStaffData as Record<string, unknown> | null,
-        }) as Pick<
-          SaveStaffBody,
-          | "names"
-          | "flags"
-          | "request_limits"
-          | "emails"
-          | "departments"
-          | "cohorts"
-        >;
-
         await saveStaffAction({
           body: {
             input_profile_id: isEditMode && staffId ? staffId : null,
-            group_id: currentStaffData?.group_id ?? null,
             role: effectiveFormState.role || null,
-            ...saveActions,
+            name_id: effectiveFormState.name_id!,
+            flag_id: effectiveFormState.active_flag_id ?? null,
+            request_limit_id: effectiveFormState.request_limit_id ?? null,
+            email_ids: effectiveFormState.email_ids?.length
+              ? effectiveFormState.email_ids
+              : null,
+            department_ids: effectiveFormState.department_ids?.length
+              ? effectiveFormState.department_ids
+              : null,
+            cohort_ids: effectiveFormState.cohort_ids?.length
+              ? effectiveFormState.cohort_ids
+              : null,
             expected_version: currentStaffData?.draft_version ?? 0,
           },
         });

@@ -381,22 +381,21 @@ class ModelMultiResourceAction(BaseModel):
 
 
 class SaveModelApiRequest(BaseModel):
-    """Request for saving a model - nested resource actions."""
+    """Flat-ID save request for model endpoint."""
 
-    group_id: UUID
     input_model_id: UUID | None = None
-    names: ModelResourceAction
-    descriptions: ModelResourceAction
-    values: ModelResourceAction
-    providers: ModelResourceAction
-    flags: ModelMultiResourceAction
-    departments: ModelMultiResourceAction
-    modalities: ModelMultiResourceAction
-    temperature_levels: ModelMultiResourceAction
-    pricing: ModelMultiResourceAction
-    reasoning_levels: ModelMultiResourceAction
-    qualities: ModelMultiResourceAction
-    voices: ModelMultiResourceAction
+    name_id: UUID
+    description_id: UUID | None = None
+    value_id: UUID | None = None
+    provider_id: UUID | None = None
+    flag_ids: list[UUID] | None = None
+    department_ids: list[UUID] | None = None
+    modality_ids: list[UUID] | None = None
+    temperature_level_ids: list[UUID] | None = None
+    pricing_ids: list[UUID] | None = None
+    reasoning_level_ids: list[UUID] | None = None
+    quality_ids: list[UUID] | None = None
+    voice_ids: list[UUID] | None = None
 
 
 class SaveModelApiResponse(BaseModel):
@@ -427,24 +426,31 @@ class SaveModelSqlParams(BaseModel):
 
     @classmethod
     def from_request(
-        cls, request: SaveModelApiRequest, profile_id: UUID
+        cls,
+        request: SaveModelApiRequest,
+        profile_id: UUID,
+        group_id: UUID,
     ) -> SaveModelSqlParams:
         return cls(
             profile_id=profile_id,
             input_model_id=request.input_model_id,
-            group_id=request.group_id,
-            names=request.names,
-            descriptions=request.descriptions,
-            values=request.values,
-            providers=request.providers,
-            flags=request.flags,
-            departments=request.departments,
-            modalities=request.modalities,
-            temperature_levels=request.temperature_levels,
-            pricing=request.pricing,
-            reasoning_levels=request.reasoning_levels,
-            qualities=request.qualities,
-            voices=request.voices,
+            group_id=group_id,
+            names=ModelResourceAction(resource_id=request.name_id),
+            descriptions=ModelResourceAction(resource_id=request.description_id),
+            values=ModelResourceAction(resource_id=request.value_id),
+            providers=ModelResourceAction(resource_id=request.provider_id),
+            flags=ModelMultiResourceAction(resource_ids=request.flag_ids),
+            departments=ModelMultiResourceAction(resource_ids=request.department_ids),
+            modalities=ModelMultiResourceAction(resource_ids=request.modality_ids),
+            temperature_levels=ModelMultiResourceAction(
+                resource_ids=request.temperature_level_ids
+            ),
+            pricing=ModelMultiResourceAction(resource_ids=request.pricing_ids),
+            reasoning_levels=ModelMultiResourceAction(
+                resource_ids=request.reasoning_level_ids
+            ),
+            qualities=ModelMultiResourceAction(resource_ids=request.quality_ids),
+            voices=ModelMultiResourceAction(resource_ids=request.voice_ids),
         )
 
     def to_tuple(self) -> tuple[Any, ...]:
@@ -527,22 +533,22 @@ class DuplicateModelApiResponse(BaseModel):
 
 
 class PatchModelDraftApiRequest(BaseModel):
-    """Request for patching a model draft - nested resource actions."""
+    """Flat-ID patch draft request for model endpoint."""
 
     input_draft_id: UUID | None = None
     group_id: UUID | None = None
-    names: ModelResourceAction | None = None
-    descriptions: ModelResourceAction | None = None
-    values: ModelResourceAction | None = None
-    providers: ModelResourceAction | None = None
-    flags: ModelMultiResourceAction | None = None
-    departments: ModelMultiResourceAction | None = None
-    modalities: ModelMultiResourceAction | None = None
-    temperature_levels: ModelMultiResourceAction | None = None
-    pricing: ModelMultiResourceAction | None = None
-    reasoning_levels: ModelMultiResourceAction | None = None
-    qualities: ModelMultiResourceAction | None = None
-    voices: ModelMultiResourceAction | None = None
+    name_id: UUID | None = None
+    description_id: UUID | None = None
+    value_id: UUID | None = None
+    provider_id: UUID | None = None
+    flag_ids: list[UUID] | None = None
+    department_ids: list[UUID] | None = None
+    modality_ids: list[UUID] | None = None
+    temperature_level_ids: list[UUID] | None = None
+    pricing_ids: list[UUID] | None = None
+    reasoning_level_ids: list[UUID] | None = None
+    quality_ids: list[UUID] | None = None
+    voice_ids: list[UUID] | None = None
     expected_version: int | None = 0
 
 
@@ -579,24 +585,26 @@ class PatchModelDraftSqlParams(BaseModel):
     def from_request(
         cls, request: PatchModelDraftApiRequest, profile_id: UUID
     ) -> PatchModelDraftSqlParams:
-        _empty_single = ModelResourceAction()
-        _empty_multi = ModelMultiResourceAction()
         return cls(
             profile_id=profile_id,
             input_draft_id=request.input_draft_id,
             group_id=request.group_id,
-            names=request.names or _empty_single,
-            descriptions=request.descriptions or _empty_single,
-            values=request.values or _empty_single,
-            providers=request.providers or _empty_single,
-            flags=request.flags or _empty_multi,
-            departments=request.departments or _empty_multi,
-            modalities=request.modalities or _empty_multi,
-            temperature_levels=request.temperature_levels or _empty_multi,
-            pricing=request.pricing or _empty_multi,
-            reasoning_levels=request.reasoning_levels or _empty_multi,
-            qualities=request.qualities or _empty_multi,
-            voices=request.voices or _empty_multi,
+            names=ModelResourceAction(resource_id=request.name_id),
+            descriptions=ModelResourceAction(resource_id=request.description_id),
+            values=ModelResourceAction(resource_id=request.value_id),
+            providers=ModelResourceAction(resource_id=request.provider_id),
+            flags=ModelMultiResourceAction(resource_ids=request.flag_ids),
+            departments=ModelMultiResourceAction(resource_ids=request.department_ids),
+            modalities=ModelMultiResourceAction(resource_ids=request.modality_ids),
+            temperature_levels=ModelMultiResourceAction(
+                resource_ids=request.temperature_level_ids
+            ),
+            pricing=ModelMultiResourceAction(resource_ids=request.pricing_ids),
+            reasoning_levels=ModelMultiResourceAction(
+                resource_ids=request.reasoning_level_ids
+            ),
+            qualities=ModelMultiResourceAction(resource_ids=request.quality_ids),
+            voices=ModelMultiResourceAction(resource_ids=request.voice_ids),
             expected_version=request.expected_version,
         )
 

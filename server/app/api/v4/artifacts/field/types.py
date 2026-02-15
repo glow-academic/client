@@ -8,7 +8,7 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
-from app.api.v4.types import BaseResourceSection
+from app.api.v4.types import BaseResourceSection, ListFilterSection
 from app.api.v4.views.drafts.types import DraftFieldViewItem
 from app.sql.types import (
     QGetAgentsV4Item,
@@ -166,33 +166,12 @@ class ListFieldApiField(BaseModel):
     updated_at: datetime | None = None
 
 
-class ListFieldApiConditionalParameter(BaseModel):
-    parameter_id: UUID | None = None
-    name: str | None = None
-    description: str | None = None
-    count: int | None = None
-
-
-class ListFieldApiPersona(BaseModel):
-    persona_id: UUID | None = None
-    name: str | None = None
-    description: str | None = None
-    count: int | None = None
-
-
-class ListFieldApiDepartment(BaseModel):
-    department_id: UUID | None = None
-    name: str | None = None
-    description: str | None = None
-    count: int | None = None
-
-
 class ListFieldApiResponse(BaseModel):
     actor_name: str | None = None
     fields: list[ListFieldApiField] | None = None
-    conditional_parameters: list[ListFieldApiConditionalParameter] | None = None
-    personas: list[ListFieldApiPersona] | None = None
-    departments: list[ListFieldApiDepartment] | None = None
+    parameter_filter: ListFilterSection | None = None
+    persona_filter: ListFilterSection | None = None
+    department_filter: ListFilterSection | None = None
     total_count: int | None = None
 
 

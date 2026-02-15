@@ -39,6 +39,7 @@ import {
 import { useDrafts } from "@/contexts/draft-context";
 import { useProfile } from "@/contexts/profile-context";
 import { useSocket } from "@/contexts/socket-context";
+import { useArtifactGeneration } from "@/hooks/use-artifact-generation";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { ResourceType } from "@/lib/resources/types";
 import { Loader2, Sparkles } from "lucide-react";
@@ -148,10 +149,16 @@ function SettingComponent({
   const { profile } = useProfile();
   const { selectedDraftId, setSelectedDraftId } = useDrafts();
   const { socket, isConnected } = useSocket();
-  // Generation state for AI workflows - simplified using ResourceType
-  const [generatingResources, setGeneratingResources] = useState<
-    Set<ResourceType>
-  >(new Set());
+  // Generation state for AI workflows
+  const VALID_SETTING_RESOURCE_TYPES: ResourceType[] = [
+    "names", "descriptions", "colors", "flags", "departments",
+  ];
+  const { isGenerating, startGenerating, makeOnGenerationComplete } =
+    useArtifactGeneration({
+      artifactType: "setting",
+      groupId: settingData?.group_id,
+      validResourceTypes: VALID_SETTING_RESOURCE_TYPES,
+    });
 
   // Modal state for generate/regenerate
   const [showGenerateModal, setShowGenerateModal] = useState(false);
@@ -162,11 +169,6 @@ function SettingComponent({
     GenerateRegenerateModalResource[]
   >([]);
   const [modalInstructions, setModalInstructions] = useState("");
-
-  const isGenerating = useCallback(
-    (resourceType: ResourceType) => generatingResources.has(resourceType),
-    [generatingResources]
-  );
 
   // nuqs parsers for URL-backed state (will be passed to GenericForm)
   // Memoize to prevent new object reference on every render
@@ -848,11 +850,7 @@ function SettingComponent({
         return;
       }
 
-      setGeneratingResources((prev) => {
-        const next = new Set(prev);
-        resourceTypes.forEach((rt) => next.add(rt));
-        return next;
-      });
+      startGenerating(resourceTypes);
 
       const formData = formDataRef.current;
       const draftId = (formData["draftId"] as string | undefined) ?? null;
@@ -867,126 +865,8 @@ function SettingComponent({
         setting_id: settingId || null,
       });
     },
-    [socket, isConnected, settingId]
+    [socket, isConnected, settingId, startGenerating]
   );
-
-  useEffect(() => {
-    if (!socket || !isConnected) return;
-
-    const currentGroupId = settingData?.group_id;
-    const validResourceTypes: ResourceType[] = [
-      "names",
-      "descriptions",
-      "colors",
-      "flags",
-      "departments",
-    ];
-
-    const handleGenerationComplete = (data: {
-      artifact_type?: string;
-      group_id?: string;
-      resource_type?: string;
-      name_id?: string | null;
-      description_id?: string | null;
-      active_flag_id?: string | null;
-      color_ids?: string[];
-      department_ids?: string[];
-      message?: string;
-      success?: boolean;
-    }) => {
-      if (
-        data.artifact_type !== "setting" ||
-        !data.group_id ||
-        data.group_id !== currentGroupId
-      ) {
-        return;
-      }
-
-      if (
-        data.resource_type &&
-        validResourceTypes.includes(data.resource_type as ResourceType)
-      ) {
-        setFormState((prev) => ({
-          ...prev,
-          name_id: data.name_id ?? prev.name_id,
-          description_id: data.description_id ?? prev.description_id,
-          active_flag_id: data.active_flag_id ?? prev.active_flag_id,
-          color_ids: data.color_ids ?? prev.color_ids,
-          department_ids: data.department_ids ?? prev.department_ids,
-        }));
-      }
-
-      const completedTypes = data.resource_type ? [data.resource_type] : [];
-      setGeneratingResources((prev) => {
-        const next = new Set(prev);
-        completedTypes.forEach((rt) => {
-          if (validResourceTypes.includes(rt as ResourceType)) {
-            next.delete(rt as ResourceType);
-          }
-        });
-        return next;
-      });
-
-      if (data.success) {
-        toast.success(data.message || "Generation completed");
-      } else {
-        toast.error(data.message || "Generation failed");
-      }
-    };
-
-    const handleGenerationError = (data: {
-      artifact_type?: string;
-      group_id?: string;
-      resource_type?: string;
-      resource_types?: string[];
-      message?: string;
-    }) => {
-      if (
-        data.artifact_type !== "setting" ||
-        !data.group_id ||
-        data.group_id !== currentGroupId
-      ) {
-        return;
-      }
-
-      const resourceTypes =
-        data.resource_types || (data.resource_type ? [data.resource_type] : []);
-
-      setGeneratingResources((prev) => {
-        const next = new Set(prev);
-        resourceTypes.forEach((rt) => {
-          if (validResourceTypes.includes(rt as ResourceType)) {
-            next.delete(rt as ResourceType);
-          }
-        });
-        return next;
-      });
-      toast.error(data.message || "Generation failed");
-    };
-
-    const handleGenerationProgress = (data: {
-      artifact_type?: string;
-      group_id?: string;
-    }) => {
-      if (
-        data.artifact_type !== "setting" ||
-        !data.group_id ||
-        data.group_id !== currentGroupId
-      ) {
-        return;
-      }
-    };
-
-    socket.on("setting_generation_progress", handleGenerationProgress);
-    socket.on("setting_generation_complete", handleGenerationComplete);
-    socket.on("setting_generation_error", handleGenerationError);
-
-    return () => {
-      socket.off("setting_generation_progress", handleGenerationProgress);
-      socket.off("setting_generation_complete", handleGenerationComplete);
-      socket.off("setting_generation_error", handleGenerationError);
-    };
-  }, [socket, isConnected, settingData?.group_id]);
 
   // Handler to open modal for step card generation
   const handleOpenStepCardModal = useCallback(

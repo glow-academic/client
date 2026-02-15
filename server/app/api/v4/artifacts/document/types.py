@@ -277,7 +277,9 @@ class SaveDocumentSqlParams(BaseModel):
             names=DocumentResourceAction(resource_id=request.name_id),
             descriptions=DocumentResourceAction(resource_id=request.description_id),
             flags=DocumentResourceAction(resource_id=request.flag_id),
-            departments=DocumentMultiResourceAction(resource_ids=request.department_ids),
+            departments=DocumentMultiResourceAction(
+                resource_ids=request.department_ids
+            ),
             fields=DocumentMultiResourceAction(resource_ids=request.field_ids),
             uploads=DocumentMultiResourceAction(resource_ids=request.upload_ids),
             images=DocumentMultiResourceAction(resource_ids=request.image_ids),
@@ -405,7 +407,9 @@ class PatchDocumentDraftSqlParams(BaseModel):
             names=DocumentResourceAction(resource_id=request.name_id),
             descriptions=DocumentResourceAction(resource_id=request.description_id),
             flags=DocumentResourceAction(resource_id=request.flag_id),
-            departments=DocumentMultiResourceAction(resource_ids=request.department_ids),
+            departments=DocumentMultiResourceAction(
+                resource_ids=request.department_ids
+            ),
             fields=DocumentMultiResourceAction(resource_ids=request.field_ids),
             uploads=DocumentMultiResourceAction(resource_ids=request.upload_ids),
             images=DocumentMultiResourceAction(resource_ids=request.image_ids),

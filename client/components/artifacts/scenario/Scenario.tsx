@@ -41,6 +41,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { useProfile } from "@/contexts/profile-context";
 import { useSocket } from "@/contexts/socket-context";
 import { useDrafts } from "@/contexts/draft-context";
+import { useArtifactGeneration } from "@/hooks/use-artifact-generation";
 import { useConditionalParameterToggle } from "@/hooks/use-conditional-parameter-toggle";
 import { useDraftLifecycle } from "@/hooks/use-draft-lifecycle";
 import { useFlushRegistry } from "@/hooks/use-flush-registry";
@@ -303,104 +304,12 @@ function ScenarioComponent({
     useFlushRegistry<FlushResult>(FLUSH_KEYS);
 
   // --- AI Generation State ---
-  const [generatingResources, setGeneratingResources] = useState<
-    Set<ScenarioResourceType>
-  >(new Set());
-  const [_generationProgress, setGenerationProgress] = useState<number>(0);
-
-  const isGenerating = useCallback(
-    (resourceType: string) =>
-      generatingResources.has(resourceType as ScenarioResourceType),
-    [generatingResources],
-  );
-
-  const groupId = scenarioData?.group_id;
-
-  // Socket listeners for scenario generation events
-  useEffect(() => {
-    if (!socket || !isConnected) return;
-
-    const handleStarted = (data: {
-      group_id?: string;
-      resource_types?: string[];
-    }) => {
-      if (data.group_id !== groupId) return;
-      if (data.resource_types) {
-        setGeneratingResources((prev) => {
-          const next = new Set(prev);
-          data.resource_types!.forEach((rt) =>
-            next.add(rt as ScenarioResourceType),
-          );
-          return next;
-        });
-      }
-      setGenerationProgress(0);
-    };
-
-    const handleError = (data: {
-      artifact_type: string;
-      group_id?: string | null;
-      resource_types?: string[] | null;
-      resource_type?: string | null;
-      resource_id?: string | null;
-      run_id?: string | null;
-      success: boolean;
-      message: string;
-      trace_id?: string | null;
-    }) => {
-      if (data.group_id && data.group_id !== groupId) return;
-      const resourceTypes =
-        data.resource_types || (data.resource_type ? [data.resource_type] : []);
-      setGeneratingResources((prev) => {
-        const next = new Set(prev);
-        resourceTypes.forEach((rt) => {
-          if (VALID_RESOURCE_TYPES.includes(rt as ScenarioResourceType)) {
-            next.delete(rt as ScenarioResourceType);
-          }
-        });
-        return next;
-      });
-      toast.error(data.message || "Generation failed");
-    };
-
-    const handleComplete = (data: { group_id?: string }) => {
-      if (data.group_id && data.group_id !== groupId) return;
-      setGeneratingResources(new Set());
-      setGenerationProgress(0);
-    };
-
-    const handleProgress = (data: {
-      group_id?: string;
-      percentage?: number;
-    }) => {
-      if (data.group_id !== groupId) return;
-      setGenerationProgress(data.percentage ?? 0);
-    };
-
-    socket.on("scenario_generation_started", handleStarted);
-    socket.on("scenario_generation_error", handleError);
-    socket.on("scenario_generation_complete", handleComplete);
-    socket.on("scenario_generation_progress", handleProgress);
-
-    return () => {
-      socket.off("scenario_generation_started", handleStarted);
-      socket.off("scenario_generation_error", handleError);
-      socket.off("scenario_generation_complete", handleComplete);
-      socket.off("scenario_generation_progress", handleProgress);
-    };
-  }, [socket, isConnected, groupId]);
-
-  // Callback for resource components to clear their generating state
-  const makeOnGenerationComplete = useCallback(
-    (resourceType: ScenarioResourceType) => () => {
-      setGeneratingResources((prev) => {
-        const next = new Set(prev);
-        next.delete(resourceType);
-        return next;
-      });
-    },
-    [],
-  );
+  const { isGenerating, makeOnGenerationComplete, startGenerating } =
+    useArtifactGeneration({
+      artifactType: "scenario",
+      groupId: scenarioData?.group_id,
+      validResourceTypes: VALID_RESOURCE_TYPES as string[],
+    });
 
   // nuqs parsers for URL-backed state (search/filter params only)
   const scenarioSearchParamsClient = useMemo(
@@ -1034,11 +943,7 @@ function ScenarioComponent({
         return;
       }
 
-      setGeneratingResources((prev) => {
-        const next = new Set(prev);
-        resourceTypes.forEach((rt) => next.add(rt));
-        return next;
-      });
+      startGenerating(resourceTypes);
 
       const formData = formDataRef.current;
       const personaSearch =
@@ -1103,7 +1008,7 @@ function ScenarioComponent({
       formState.persona_ids,
       formState.parameter_ids,
       formDataRef,
-      setGeneratingResources,
+      startGenerating,
     ],
   );
 

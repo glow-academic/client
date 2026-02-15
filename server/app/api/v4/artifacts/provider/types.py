@@ -224,17 +224,16 @@ class ListProviderApiResponse(BaseModel):
 
 
 class SaveProviderApiRequest(BaseModel):
-    """Request model for save provider endpoint."""
+    """Flat-ID save request for provider endpoint."""
 
-    group_id: UUID | None = None
     input_provider_id: UUID | None = None
-    names: ProviderResourceAction
-    descriptions: ProviderResourceAction
-    flags: ProviderResourceAction
-    departments: ProviderMultiResourceAction
-    values: ProviderResourceAction
-    endpoints: ProviderResourceAction
-    keys: ProviderResourceAction
+    name_id: UUID
+    description_id: UUID | None = None
+    flag_id: UUID | None = None
+    department_ids: list[UUID] | None = None
+    value_id: UUID | None = None
+    endpoint_id: UUID | None = None
+    key_id: UUID | None = None
 
 
 class SaveProviderApiResponse(BaseModel):
@@ -259,9 +258,25 @@ class SaveProviderSqlParams(BaseModel):
 
     @classmethod
     def from_request(
-        cls, request: SaveProviderApiRequest, profile_id: UUID
+        cls,
+        request: SaveProviderApiRequest,
+        profile_id: UUID,
+        group_id: UUID | None = None,
     ) -> SaveProviderSqlParams:
-        return cls(profile_id=profile_id, **request.model_dump())
+        return cls(
+            profile_id=profile_id,
+            group_id=group_id,
+            input_provider_id=request.input_provider_id,
+            names=ProviderResourceAction(resource_id=request.name_id),
+            descriptions=ProviderResourceAction(resource_id=request.description_id),
+            flags=ProviderResourceAction(resource_id=request.flag_id),
+            departments=ProviderMultiResourceAction(
+                resource_ids=request.department_ids
+            ),
+            values=ProviderResourceAction(resource_id=request.value_id),
+            endpoints=ProviderResourceAction(resource_id=request.endpoint_id),
+            keys=ProviderResourceAction(resource_id=request.key_id),
+        )
 
     def to_tuple(self) -> tuple:
         def single(a: ProviderResourceAction) -> tuple:
@@ -309,15 +324,17 @@ class DuplicateProviderApiResponse(BaseModel):
 
 
 class PatchProviderDraftApiRequest(BaseModel):
+    """Flat-ID patch draft request for provider endpoint."""
+
     input_draft_id: UUID | None = None
     group_id: UUID | None = None
-    names: ProviderResourceAction | None = None
-    descriptions: ProviderResourceAction | None = None
-    flags: ProviderResourceAction | None = None
-    departments: ProviderMultiResourceAction | None = None
-    values: ProviderResourceAction | None = None
-    endpoints: ProviderResourceAction | None = None
-    keys: ProviderResourceAction | None = None
+    name_id: UUID | None = None
+    description_id: UUID | None = None
+    flag_id: UUID | None = None
+    department_ids: list[UUID] | None = None
+    value_id: UUID | None = None
+    endpoint_id: UUID | None = None
+    key_id: UUID | None = None
     expected_version: int = 0
 
 
@@ -357,19 +374,19 @@ class PatchProviderDraftSqlParams(BaseModel):
     def from_request(
         cls, request: PatchProviderDraftApiRequest, profile_id: UUID
     ) -> PatchProviderDraftSqlParams:
-        empty_single = ProviderResourceAction()
-        empty_multi = ProviderMultiResourceAction()
         return cls(
             profile_id=profile_id,
             input_draft_id=request.input_draft_id,
             group_id=request.group_id,
-            names=request.names or empty_single,
-            descriptions=request.descriptions or empty_single,
-            flags=request.flags or empty_single,
-            departments=request.departments or empty_multi,
-            values=request.values or empty_single,
-            endpoints=request.endpoints or empty_single,
-            keys=request.keys or empty_single,
+            names=ProviderResourceAction(resource_id=request.name_id),
+            descriptions=ProviderResourceAction(resource_id=request.description_id),
+            flags=ProviderResourceAction(resource_id=request.flag_id),
+            departments=ProviderMultiResourceAction(
+                resource_ids=request.department_ids
+            ),
+            values=ProviderResourceAction(resource_id=request.value_id),
+            endpoints=ProviderResourceAction(resource_id=request.endpoint_id),
+            keys=ProviderResourceAction(resource_id=request.key_id),
             expected_version=request.expected_version,
         )
 

@@ -431,12 +431,20 @@ export default function Staff({
     [serverListData?.staff]
   );
   const cohorts = useMemo(
-    () => serverListData?.cohorts || [],
-    [serverListData?.cohorts]
+    () =>
+      (serverListData?.cohort_filter?.options || []).map((opt) => ({
+        cohort_id: opt.id,
+        name: opt.name,
+      })),
+    [serverListData?.cohort_filter],
   );
   const departments = useMemo(
-    () => serverListData?.departments || [],
-    [serverListData?.departments]
+    () =>
+      (serverListData?.department_filter?.options || []).map((opt) => ({
+        department_id: opt.id,
+        name: opt.name,
+      })),
+    [serverListData?.department_filter],
   );
   // Refresh data by revalidating server-side data
   const handleRefresh = async () => {
@@ -451,30 +459,40 @@ export default function Staff({
     }
   };
 
-  // Use server-provided filter options directly
-  const roleOptions = useMemo(() => {
-    const options = serverListData?.role_options;
-    if (!options || !Array.isArray(options)) return [];
-    return options
-      .map((opt: unknown) => {
-        if (
-          opt &&
-          typeof opt === "object" &&
-          "value" in opt &&
-          "label" in opt
-        ) {
-          return {
-            value: String(opt.value),
-            label: String(opt.label),
-          };
-        }
-        return null;
-      })
-      .filter(
-        (opt): opt is { value: string; label: string } =>
-          opt !== null && !!opt.value && !!opt.label
-      );
-  }, [serverListData?.role_options]);
+  // Use server-provided filter options directly (ListFilterSection pattern)
+  const cohortOptions = useMemo(
+    () =>
+      (serverListData?.cohort_filter?.options || [])
+        .map((opt) => ({
+          value: opt.id as string,
+          label: opt.name as string,
+          count: opt.count ?? undefined,
+        }))
+        .filter((opt) => opt.value && opt.label),
+    [serverListData?.cohort_filter],
+  );
+  const departmentOptions = useMemo(
+    () =>
+      (serverListData?.department_filter?.options || [])
+        .map((opt) => ({
+          value: opt.id as string,
+          label: opt.name as string,
+          count: opt.count ?? undefined,
+        }))
+        .filter((opt) => opt.value && opt.label),
+    [serverListData?.department_filter],
+  );
+  const roleOptions = useMemo(
+    () =>
+      (serverListData?.role_filter?.options || [])
+        .map((opt) => ({
+          value: opt.id as string,
+          label: opt.name as string,
+          count: opt.count ?? undefined,
+        }))
+        .filter((opt) => opt.value && opt.label),
+    [serverListData?.role_filter],
+  );
 
   // Transform mappings for CSV import
   const departmentMappingForCSV = useMemo(() => {
@@ -1365,6 +1383,7 @@ export default function Staff({
   // Toolbar state
   const isFiltered = table.getState().columnFilters.length > 0;
   const nameColumn = table.getColumn("search");
+  const cohortIdsColumn = table.getColumn("cohort_ids");
   const roleColumn = table.getColumn("role");
   const departmentIdsColumn = table.getColumn("department_ids");
   const selectedCount = selectedStaffIds.length;
@@ -1400,6 +1419,15 @@ export default function Staff({
               </div>
 
               <div className="flex items-center space-x-2 flex-wrap mb-2">
+                {/* Cohort Filter */}
+                {cohortIdsColumn && cohortOptions.length > 0 && (
+                  <DataTableFacetedFilter
+                    column={cohortIdsColumn}
+                    title="Cohort"
+                    options={cohortOptions}
+                  />
+                )}
+
                 {/* Role Filter */}
                 {roleColumn && roleOptions.length > 0 && (
                   <DataTableFacetedFilter
@@ -1410,16 +1438,11 @@ export default function Staff({
                 )}
 
                 {/* Departments Filter */}
-                {departmentIdsColumn && profileDepartmentIds.length > 1 && (
+                {departmentIdsColumn && departmentOptions.length > 0 && (
                   <DataTableFacetedFilter
                     column={departmentIdsColumn}
                     title="Department"
-                    options={departments
-                      .filter((dept) => dept.department_id && dept.name)
-                      .map((dept) => ({
-                        value: dept.department_id!,
-                        label: dept.name!,
-                      }))}
+                    options={departmentOptions}
                   />
                 )}
 

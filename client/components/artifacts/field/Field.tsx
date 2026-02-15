@@ -32,7 +32,7 @@ import { useGenerationModal } from "@/hooks/use-generation-modal";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import {
   type ResourceConfig,
-  buildResourceActions,
+  buildDraftPayload,
   checkHasResourceIds,
   computeEffectiveFormState,
 } from "@/lib/resources/action-builders";
@@ -394,14 +394,13 @@ function FieldComponent({
       return {
         input_draft_id: draftId || null,
         group_id: stableFieldData?.group_id ?? null,
-        ...buildResourceActions(FIELD_RESOURCES, {
+        ...buildDraftPayload(FIELD_RESOURCES, {
           formState: formStateRef.current,
-          referenceState: lastPatchedFormStateRef.current as Record<
+          referenceState: lastPatchedFormStateRef.current as unknown as Record<
             string,
             unknown
           > | null,
           flushResults: (flushResults ?? {}) as Record<string, unknown>,
-          entityData: stableFieldData as Record<string, unknown> | null,
         }),
         expected_version: expectedVersion,
       };
@@ -548,20 +547,22 @@ function FieldComponent({
       flushResults as Record<string, unknown>,
     );
 
+    const efs = effectiveFormState as Record<string, unknown>;
     await saveFieldAction({
       body: {
-        group_id: stableFieldData.group_id,
         input_field_id: isEditMode && fieldId ? fieldId : null,
-        ...buildResourceActions(FIELD_RESOURCES, {
-          formState: effectiveFormState,
-          referenceState: lastPatchedFormStateRef.current as Record<
-            string,
-            unknown
-          > | null,
-          flushResults: flushResults as Record<string, unknown>,
-          entityData: stableFieldData as Record<string, unknown>,
-        }),
-      } as SaveFieldIn["body"],
+        name_id: efs["name_id"] as string,
+        description_id: (efs["description_id"] as string) ?? null,
+        flag_id: (efs["active_flag_id"] as string) ?? null,
+        department_ids: (efs["department_ids"] as string[])?.length
+          ? (efs["department_ids"] as string[])
+          : null,
+        conditional_parameter_ids: (
+          efs["conditional_parameter_ids"] as string[]
+        )?.length
+          ? (efs["conditional_parameter_ids"] as string[])
+          : null,
+      },
     });
 
     toast.success(`Field ${isEditMode ? "updated" : "created"} successfully`);

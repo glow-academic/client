@@ -9758,9 +9758,6 @@ export interface paths {
         /**
          * Simulation Generation Complete Api
          * @description Server-to-client event: Simulation generation completed.
-         *
-         *     Emitted when a simulation resource is successfully generated.
-         *     Contains full resource objects for immediate frontend use.
          */
         post: operations["simulation_generation_complete_api_socket_v4_server_simulation_generation_complete_post"];
         delete?: never;
@@ -9944,9 +9941,6 @@ export interface paths {
         /**
          * Document Generation Complete Api
          * @description Server-to-client event: Document generation completed.
-         *
-         *     Emitted when a document resource is successfully generated.
-         *     Contains full resource objects for immediate frontend use.
          */
         post: operations["document_generation_complete_api_socket_v4_server_document_generation_complete_post"];
         delete?: never;
@@ -10217,9 +10211,6 @@ export interface paths {
         /**
          * Profile Generation Complete Api
          * @description Server-to-client event: Profile generation completed.
-         *
-         *     Emitted when a profile resource is successfully generated.
-         *     Contains full resource objects for immediate frontend use.
          */
         post: operations["profile_generation_complete_api_socket_v4_server_profile_generation_complete_post"];
         delete?: never;
@@ -10277,9 +10268,6 @@ export interface paths {
         /**
          * Parameter Generation Complete Api
          * @description Server-to-client event: Parameter generation completed.
-         *
-         *     Emitted when a parameter resource is successfully generated.
-         *     Contains full resource objects for immediate frontend use.
          */
         post: operations["parameter_generation_complete_api_socket_v4_server_parameter_generation_complete_post"];
         delete?: never;
@@ -10339,9 +10327,6 @@ export interface paths {
         /**
          * Field Generation Complete Api
          * @description Server-to-client event: Field generation completed.
-         *
-         *     Emitted when a field resource is successfully generated.
-         *     Contains full resource objects for immediate frontend use.
          */
         post: operations["field_generation_complete_api_socket_v4_server_field_generation_complete_post"];
         delete?: never;
@@ -10401,9 +10386,6 @@ export interface paths {
         /**
          * Model Generation Complete Api
          * @description Server-to-client event: Model generation completed.
-         *
-         *     Emitted when a model resource is successfully generated.
-         *     Contains full resource objects for immediate frontend use.
          */
         post: operations["model_generation_complete_api_socket_v4_server_model_generation_complete_post"];
         delete?: never;
@@ -10463,9 +10445,6 @@ export interface paths {
         /**
          * Tool Generation Complete Api
          * @description Server-to-client event: Tool generation completed.
-         *
-         *     Emitted when a tool resource is successfully generated.
-         *     Contains full resource objects for immediate frontend use.
          */
         post: operations["tool_generation_complete_api_socket_v4_server_tool_generation_complete_post"];
         delete?: never;
@@ -10576,9 +10555,6 @@ export interface paths {
         /**
          * Provider Generation Complete Api
          * @description Server-to-client event: Provider generation completed.
-         *
-         *     Emitted when a provider resource is successfully generated.
-         *     Contains full resource objects for immediate frontend use.
          */
         post: operations["provider_generation_complete_api_socket_v4_server_provider_generation_complete_post"];
         delete?: never;
@@ -10687,9 +10663,6 @@ export interface paths {
         /**
          * Setting Generation Complete Api
          * @description Server-to-client event: Setting generation completed.
-         *
-         *     Emitted when a setting resource is successfully generated.
-         *     Contains full resource objects for immediate frontend use.
          */
         post: operations["setting_generation_complete_api_socket_v4_server_setting_generation_complete_post"];
         delete?: never;
@@ -17106,18 +17079,6 @@ export interface components {
             /** Resources */
             resources?: components["schemas"]["QGetModelsV4Item"][] | null;
         };
-        /**
-         * AgentMultiResourceAction
-         * @description Multi-select action payload.
-         */
-        AgentMultiResourceAction: {
-            /** Resource Ids */
-            resource_ids?: string[] | null;
-            /** Create Tool Id */
-            create_tool_id?: string | null;
-            /** Link Tool Id */
-            link_tool_id?: string | null;
-        };
         /** AgentNameSection */
         AgentNameSection: {
             /**
@@ -17192,18 +17153,6 @@ export interface components {
             resource?: components["schemas"]["QGetReasoningLevelsV4Item"] | null;
             /** Resources */
             resources?: components["schemas"]["QGetReasoningLevelsV4Item"][] | null;
-        };
-        /**
-         * AgentResourceAction
-         * @description Single-select action payload.
-         */
-        AgentResourceAction: {
-            /** Resource Id */
-            resource_id?: string | null;
-            /** Create Tool Id */
-            create_tool_id?: string | null;
-            /** Link Tool Id */
-            link_tool_id?: string | null;
         };
         /** AgentTemperatureLevelSection */
         AgentTemperatureLevelSection: {
@@ -26153,7 +26102,32 @@ export interface components {
             items?: components["schemas"]["QGetFieldsV4Item"][] | null;
         };
         /** GetFieldsListApiRequest */
-        GetFieldsListApiRequest: Record<string, never>;
+        GetFieldsListApiRequest: {
+            /** Search */
+            search?: string | null;
+            /** Parameter Ids */
+            parameter_ids?: string[] | null;
+            /** Persona Ids */
+            persona_ids?: string[] | null;
+            /** Filter Department Ids */
+            filter_department_ids?: string[] | null;
+            /** Parameter Search */
+            parameter_search?: string | null;
+            /** Persona Search */
+            persona_search?: string | null;
+            /** Department Search */
+            department_search?: string | null;
+            /**
+             * Page Size
+             * @default 12
+             */
+            page_size: number | null;
+            /**
+             * Page Offset
+             * @default 0
+             */
+            page_offset: number | null;
+        };
         /** GetFlagsApiRequest */
         GetFlagsApiRequest: {
             /** Ids */
@@ -30931,28 +30905,6 @@ export interface components {
             /** User Role */
             user_role?: string | null;
         };
-        /** ListFieldApiConditionalParameter */
-        ListFieldApiConditionalParameter: {
-            /** Parameter Id */
-            parameter_id?: string | null;
-            /** Name */
-            name?: string | null;
-            /** Description */
-            description?: string | null;
-            /** Count */
-            count?: number | null;
-        };
-        /** ListFieldApiDepartment */
-        ListFieldApiDepartment: {
-            /** Department Id */
-            department_id?: string | null;
-            /** Name */
-            name?: string | null;
-            /** Description */
-            description?: string | null;
-            /** Count */
-            count?: number | null;
-        };
         /** ListFieldApiField */
         ListFieldApiField: {
             /** Field Id */
@@ -30978,29 +30930,15 @@ export interface components {
             /** Updated At */
             updated_at?: string | null;
         };
-        /** ListFieldApiPersona */
-        ListFieldApiPersona: {
-            /** Persona Id */
-            persona_id?: string | null;
-            /** Name */
-            name?: string | null;
-            /** Description */
-            description?: string | null;
-            /** Count */
-            count?: number | null;
-        };
         /** ListFieldApiResponse */
         ListFieldApiResponse: {
             /** Actor Name */
             actor_name?: string | null;
             /** Fields */
             fields?: components["schemas"]["ListFieldApiField"][] | null;
-            /** Conditional Parameters */
-            conditional_parameters?: components["schemas"]["ListFieldApiConditionalParameter"][] | null;
-            /** Personas */
-            personas?: components["schemas"]["ListFieldApiPersona"][] | null;
-            /** Departments */
-            departments?: components["schemas"]["ListFieldApiDepartment"][] | null;
+            parameter_filter?: components["schemas"]["ListFilterSection"] | null;
+            persona_filter?: components["schemas"]["ListFilterSection"] | null;
+            department_filter?: components["schemas"]["ListFilterSection"] | null;
             /** Total Count */
             total_count?: number | null;
         };
@@ -32161,18 +32099,6 @@ export interface components {
             /** Resources */
             resources?: components["schemas"]["QGetModalitiesV4Item"][] | null;
         };
-        /**
-         * ModelMultiResourceAction
-         * @description Multi-select resource action with tool call tracking.
-         */
-        ModelMultiResourceAction: {
-            /** Resource Ids */
-            resource_ids?: string[] | null;
-            /** Create Tool Id */
-            create_tool_id?: string | null;
-            /** Link Tool Id */
-            link_tool_id?: string | null;
-        };
         /** ModelNameSection */
         ModelNameSection: {
             /**
@@ -32300,18 +32226,6 @@ export interface components {
             current?: components["schemas"]["QGetReasoningLevelsV4Item"][] | null;
             /** Resources */
             resources?: components["schemas"]["QGetReasoningLevelsV4Item"][] | null;
-        };
-        /**
-         * ModelResourceAction
-         * @description Single-select resource action with tool call tracking.
-         */
-        ModelResourceAction: {
-            /** Resource Id */
-            resource_id?: string | null;
-            /** Create Tool Id */
-            create_tool_id?: string | null;
-            /** Link Tool Id */
-            link_tool_id?: string | null;
         };
         /** ModelTemperatureLevelSection */
         ModelTemperatureLevelSection: {
@@ -33490,24 +33404,35 @@ export interface components {
         };
         /**
          * PatchAgentDraftApiRequest
-         * @description Section-action patch draft request for agent endpoint.
+         * @description Flat-ID patch draft request for agent endpoint.
          */
         PatchAgentDraftApiRequest: {
             /** Input Draft Id */
             input_draft_id?: string | null;
             /** Group Id */
             group_id?: string | null;
-            names?: components["schemas"]["AgentResourceAction"] | null;
-            descriptions?: components["schemas"]["AgentResourceAction"] | null;
-            models?: components["schemas"]["AgentResourceAction"] | null;
-            prompts?: components["schemas"]["AgentResourceAction"] | null;
-            instructions?: components["schemas"]["AgentResourceAction"] | null;
-            flags?: components["schemas"]["AgentResourceAction"] | null;
-            temperature_levels?: components["schemas"]["AgentResourceAction"] | null;
-            reasoning_levels?: components["schemas"]["AgentResourceAction"] | null;
-            departments?: components["schemas"]["AgentMultiResourceAction"] | null;
-            tools?: components["schemas"]["AgentMultiResourceAction"] | null;
-            voices?: components["schemas"]["AgentMultiResourceAction"] | null;
+            /** Name Id */
+            name_id?: string | null;
+            /** Model Id */
+            model_id?: string | null;
+            /** Description Id */
+            description_id?: string | null;
+            /** Prompt Id */
+            prompt_id?: string | null;
+            /** Instructions Id */
+            instructions_id?: string | null;
+            /** Active Flag Id */
+            active_flag_id?: string | null;
+            /** Temperature Level Id */
+            temperature_level_id?: string | null;
+            /** Reasoning Level Id */
+            reasoning_level_id?: string | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
+            /** Tool Ids */
+            tool_ids?: string[] | null;
+            /** Voice Ids */
+            voice_ids?: string[] | null;
             /**
              * Expected Version
              * @default 0
@@ -33761,25 +33686,37 @@ export interface components {
         };
         /**
          * PatchModelDraftApiRequest
-         * @description Request for patching a model draft - nested resource actions.
+         * @description Flat-ID patch draft request for model endpoint.
          */
         PatchModelDraftApiRequest: {
             /** Input Draft Id */
             input_draft_id?: string | null;
             /** Group Id */
             group_id?: string | null;
-            names?: components["schemas"]["ModelResourceAction"] | null;
-            descriptions?: components["schemas"]["ModelResourceAction"] | null;
-            values?: components["schemas"]["ModelResourceAction"] | null;
-            providers?: components["schemas"]["ModelResourceAction"] | null;
-            flags?: components["schemas"]["ModelMultiResourceAction"] | null;
-            departments?: components["schemas"]["ModelMultiResourceAction"] | null;
-            modalities?: components["schemas"]["ModelMultiResourceAction"] | null;
-            temperature_levels?: components["schemas"]["ModelMultiResourceAction"] | null;
-            pricing?: components["schemas"]["ModelMultiResourceAction"] | null;
-            reasoning_levels?: components["schemas"]["ModelMultiResourceAction"] | null;
-            qualities?: components["schemas"]["ModelMultiResourceAction"] | null;
-            voices?: components["schemas"]["ModelMultiResourceAction"] | null;
+            /** Name Id */
+            name_id?: string | null;
+            /** Description Id */
+            description_id?: string | null;
+            /** Value Id */
+            value_id?: string | null;
+            /** Provider Id */
+            provider_id?: string | null;
+            /** Flag Ids */
+            flag_ids?: string[] | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
+            /** Modality Ids */
+            modality_ids?: string[] | null;
+            /** Temperature Level Ids */
+            temperature_level_ids?: string[] | null;
+            /** Pricing Ids */
+            pricing_ids?: string[] | null;
+            /** Reasoning Level Ids */
+            reasoning_level_ids?: string[] | null;
+            /** Quality Ids */
+            quality_ids?: string[] | null;
+            /** Voice Ids */
+            voice_ids?: string[] | null;
             /**
              * Expected Version
              * @default 0
@@ -40464,27 +40401,39 @@ export interface components {
         };
         /**
          * SaveAgentApiRequest
-         * @description Section-action save request for agent endpoint.
+         * @description Flat-ID save request for agent endpoint.
          */
         SaveAgentApiRequest: {
-            /**
-             * Group Id
-             * Format: uuid
-             */
-            group_id: string;
             /** Input Agent Id */
             input_agent_id?: string | null;
-            names: components["schemas"]["AgentResourceAction"];
-            models: components["schemas"]["AgentResourceAction"];
-            descriptions?: components["schemas"]["AgentResourceAction"] | null;
-            prompts?: components["schemas"]["AgentResourceAction"] | null;
-            instructions?: components["schemas"]["AgentResourceAction"] | null;
-            flags?: components["schemas"]["AgentResourceAction"] | null;
-            temperature_levels?: components["schemas"]["AgentResourceAction"] | null;
-            reasoning_levels?: components["schemas"]["AgentResourceAction"] | null;
-            departments?: components["schemas"]["AgentMultiResourceAction"] | null;
-            tools?: components["schemas"]["AgentMultiResourceAction"] | null;
-            voices?: components["schemas"]["AgentMultiResourceAction"] | null;
+            /**
+             * Name Id
+             * Format: uuid
+             */
+            name_id: string;
+            /**
+             * Model Id
+             * Format: uuid
+             */
+            model_id: string;
+            /** Description Id */
+            description_id?: string | null;
+            /** Prompt Id */
+            prompt_id?: string | null;
+            /** Instructions Id */
+            instructions_id?: string | null;
+            /** Active Flag Id */
+            active_flag_id?: string | null;
+            /** Temperature Level Id */
+            temperature_level_id?: string | null;
+            /** Reasoning Level Id */
+            reasoning_level_id?: string | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
+            /** Tool Ids */
+            tool_ids?: string[] | null;
+            /** Voice Ids */
+            voice_ids?: string[] | null;
         };
         /**
          * SaveAgentApiResponse
@@ -40692,28 +40641,38 @@ export interface components {
         };
         /**
          * SaveModelApiRequest
-         * @description Request for saving a model - nested resource actions.
+         * @description Flat-ID save request for model endpoint.
          */
         SaveModelApiRequest: {
-            /**
-             * Group Id
-             * Format: uuid
-             */
-            group_id: string;
             /** Input Model Id */
             input_model_id?: string | null;
-            names: components["schemas"]["ModelResourceAction"];
-            descriptions: components["schemas"]["ModelResourceAction"];
-            values: components["schemas"]["ModelResourceAction"];
-            providers: components["schemas"]["ModelResourceAction"];
-            flags: components["schemas"]["ModelMultiResourceAction"];
-            departments: components["schemas"]["ModelMultiResourceAction"];
-            modalities: components["schemas"]["ModelMultiResourceAction"];
-            temperature_levels: components["schemas"]["ModelMultiResourceAction"];
-            pricing: components["schemas"]["ModelMultiResourceAction"];
-            reasoning_levels: components["schemas"]["ModelMultiResourceAction"];
-            qualities: components["schemas"]["ModelMultiResourceAction"];
-            voices: components["schemas"]["ModelMultiResourceAction"];
+            /**
+             * Name Id
+             * Format: uuid
+             */
+            name_id: string;
+            /** Description Id */
+            description_id?: string | null;
+            /** Value Id */
+            value_id?: string | null;
+            /** Provider Id */
+            provider_id?: string | null;
+            /** Flag Ids */
+            flag_ids?: string[] | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
+            /** Modality Ids */
+            modality_ids?: string[] | null;
+            /** Temperature Level Ids */
+            temperature_level_ids?: string[] | null;
+            /** Pricing Ids */
+            pricing_ids?: string[] | null;
+            /** Reasoning Level Ids */
+            reasoning_level_ids?: string[] | null;
+            /** Quality Ids */
+            quality_ids?: string[] | null;
+            /** Voice Ids */
+            voice_ids?: string[] | null;
         };
         /**
          * SaveModelApiResponse

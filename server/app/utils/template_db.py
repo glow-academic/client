@@ -65,6 +65,15 @@ async def clone_from_template(
         "SELECT 1 FROM pg_database WHERE datname = $1", target_db
     )
     if existing:
+        # Terminate lingering connections before dropping
+        await admin_conn.execute(
+            """
+            SELECT pg_terminate_backend(pid)
+            FROM pg_stat_activity
+            WHERE datname = $1 AND pid <> pg_backend_pid()
+            """,
+            target_db,
+        )
         await admin_conn.execute(f'DROP DATABASE "{target_db}"')
 
     await admin_conn.execute(

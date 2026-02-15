@@ -239,7 +239,9 @@ class SaveParameterSqlParams(BaseModel):
             names=ParameterResourceAction(resource_id=request.name_id),
             descriptions=ParameterResourceAction(resource_id=request.description_id),
             flags=ParameterMultiResourceAction(resource_ids=request.flag_ids),
-            departments=ParameterMultiResourceAction(resource_ids=request.department_ids),
+            departments=ParameterMultiResourceAction(
+                resource_ids=request.department_ids
+            ),
             fields=ParameterMultiResourceAction(resource_ids=request.field_ids),
         )
 
@@ -309,7 +311,9 @@ class PatchParameterDraftSqlParams(BaseModel):
             names=ParameterResourceAction(resource_id=request.name_id),
             descriptions=ParameterResourceAction(resource_id=request.description_id),
             flags=ParameterMultiResourceAction(resource_ids=request.flag_ids),
-            departments=ParameterMultiResourceAction(resource_ids=request.department_ids),
+            departments=ParameterMultiResourceAction(
+                resource_ids=request.department_ids
+            ),
             fields=ParameterMultiResourceAction(resource_ids=request.field_ids),
             expected_version=request.expected_version,
         )

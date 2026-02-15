@@ -42,6 +42,7 @@ import {
 import { useDrafts } from "@/contexts/draft-context";
 import { useProfile } from "@/contexts/profile-context";
 import { useSocket } from "@/contexts/socket-context";
+import { useArtifactGeneration } from "@/hooks/use-artifact-generation";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { ResourceType } from "@/lib/resources/types";
 import { Loader2, Sparkles } from "lucide-react";
@@ -251,9 +252,16 @@ function EvalComponent({
   }, [evalData]);
 
   // Generation state for AI workflows
-  const [generatingResources, setGeneratingResources] = useState<
-    Set<EvalResourceType>
-  >(new Set());
+  const VALID_EVAL_RESOURCE_TYPES: EvalResourceType[] = [
+    "names", "descriptions", "flags", "departments", "agents",
+    "rubrics", "run_positions", "group_positions", "run_rubrics", "group_rubrics",
+  ];
+  const { isGenerating, startGenerating, makeOnGenerationComplete } =
+    useArtifactGeneration({
+      artifactType: "eval",
+      groupId: s?.group_id,
+      validResourceTypes: VALID_EVAL_RESOURCE_TYPES,
+    });
 
   // Modal state for generate/regenerate
   const [showGenerateModal, setShowGenerateModal] = useState(false);
@@ -264,11 +272,6 @@ function EvalComponent({
     GenerateRegenerateModalResource[]
   >([]);
   const [modalInstructions, setModalInstructions] = useState("");
-
-  const isGenerating = useCallback(
-    (resourceType: EvalResourceType) => generatingResources.has(resourceType),
-    [generatingResources]
-  );
 
   // nuqs parsers for URL-backed state (will be passed to GenericForm)
   const evalSearchParamsClient = useMemo(
@@ -720,164 +723,6 @@ function EvalComponent({
     [s]
   );
 
-  // WebSocket handlers for AI generation
-  useEffect(() => {
-    if (!socket || !isConnected) return;
-
-    const currentGroupId = s?.group_id;
-
-    const handleGenerationComplete = (data: {
-      artifact_type?: string;
-      group_id?: string;
-      resource_type?: string;
-      resource_types?: string[];
-      name_resource?: { id?: string | null } | null;
-      description_resource?: { id?: string | null } | null;
-      flag_resource?: { id?: string | null } | null;
-      department_resources?: Array<{ department_id?: string | null }> | null;
-      agent_resources?: Array<{ id?: string | null }> | null;
-      run_rubric_resources?: Array<{
-        runs_id?: string | null;
-        rubric_id?: string | null;
-      }> | null;
-      group_rubric_resources?: Array<{
-        groups_id?: string | null;
-        rubric_id?: string | null;
-      }> | null;
-      success?: boolean;
-      message?: string;
-    }) => {
-      if (
-        data.artifact_type !== "eval" ||
-        !data.group_id ||
-        data.group_id !== currentGroupId
-      ) {
-        return;
-      }
-
-      setFormState((prev) => {
-        const updates: Partial<EvalFormState> = {};
-        if (data.name_resource?.id) updates.name_id = data.name_resource.id;
-        if (data.description_resource?.id) {
-          updates.description_id = data.description_resource.id;
-        }
-        if (data.flag_resource?.id) updates.active_flag_id = data.flag_resource.id;
-        const generatedDepartmentIds = (data.department_resources ?? [])
-          .map((d) => d.department_id)
-          .filter(Boolean) as string[];
-        if (generatedDepartmentIds.length > 0) {
-          const newIds = generatedDepartmentIds.filter(
-            (id) => !prev.department_ids.includes(id)
-          );
-          updates.department_ids = [...prev.department_ids, ...newIds];
-        }
-        const generatedAgentIds = (data.agent_resources ?? [])
-          .map((a) => a.id)
-          .filter(Boolean) as string[];
-        if (generatedAgentIds.length > 0) {
-          const newIds = generatedAgentIds.filter(
-            (id) => !prev.agent_ids.includes(id)
-          );
-          updates.agent_ids = [...prev.agent_ids, ...newIds];
-        }
-        let next = { ...prev, ...updates } as EvalFormState;
-
-        for (const item of data.run_rubric_resources ?? []) {
-          if (!item.runs_id || !item.rubric_id) continue;
-          const existing = new Set(next.run_rubric_links[item.runs_id] ?? []);
-          existing.add(item.rubric_id);
-          next = {
-            ...next,
-            run_rubric_links: {
-              ...next.run_rubric_links,
-              [item.runs_id]: Array.from(existing),
-            },
-          };
-        }
-        for (const item of data.group_rubric_resources ?? []) {
-          if (!item.groups_id || !item.rubric_id) continue;
-          const existing = new Set(
-            next.group_rubric_links[item.groups_id] ?? []
-          );
-          existing.add(item.rubric_id);
-          next = {
-            ...next,
-            group_rubric_links: {
-              ...next.group_rubric_links,
-              [item.groups_id]: Array.from(existing),
-            },
-          };
-        }
-
-        return next;
-      });
-
-      const resourceTypes =
-        data.resource_types || (data.resource_type ? [data.resource_type] : []);
-      setGeneratingResources((prev) => {
-        const next = new Set(prev);
-        resourceTypes.forEach((rt) => next.delete(rt as EvalResourceType));
-        return next;
-      });
-
-      if (data.success) {
-        toast.success(
-          data.message || `${data.resource_type} generated successfully`
-        );
-      } else {
-        toast.error(data.message || `Failed to generate ${data.resource_type}`);
-      }
-    };
-
-    const handleGenerationProgress = (data: {
-      artifact_type?: string;
-      group_id?: string;
-    }) => {
-      if (
-        data.artifact_type !== "eval" ||
-        !data.group_id ||
-        data.group_id !== currentGroupId
-      ) {
-        return;
-      }
-    };
-
-    const handleGenerationError = (data: {
-      artifact_type?: string;
-      group_id?: string;
-      message?: string;
-      resource_type?: string;
-      resource_types?: string[];
-    }) => {
-      if (
-        data.artifact_type !== "eval" ||
-        !data.group_id ||
-        data.group_id !== currentGroupId
-      ) {
-        return;
-      }
-
-      const resourceTypes =
-        data.resource_types || (data.resource_type ? [data.resource_type] : []);
-      setGeneratingResources((prev) => {
-        const next = new Set(prev);
-        resourceTypes.forEach((rt) => next.delete(rt as EvalResourceType));
-        return next;
-      });
-      toast.error(data.message || "Generation failed");
-    };
-
-    socket.on("eval_generation_progress", handleGenerationProgress);
-    socket.on("eval_generation_complete", handleGenerationComplete);
-    socket.on("eval_generation_error", handleGenerationError);
-
-    return () => {
-      socket.off("eval_generation_progress", handleGenerationProgress);
-      socket.off("eval_generation_complete", handleGenerationComplete);
-      socket.off("eval_generation_error", handleGenerationError);
-    };
-  }, [socket, isConnected, s?.group_id]);
-
   // Step-to-resources mapping for multi-generation
   const stepResources: Record<string, EvalResourceType[]> = useMemo(
     () => ({
@@ -927,11 +772,7 @@ function EvalComponent({
         return;
       }
 
-      setGeneratingResources((prev) => {
-        const next = new Set(prev);
-        resourceTypes.forEach((rt) => next.add(rt));
-        return next;
-      });
+      startGenerating(resourceTypes);
 
       const formData = formDataRef.current;
       const draftId = (formData["draftId"] as string | undefined) ?? null;

@@ -49,21 +49,31 @@ CREATE TYPE types.q_list_fields_v4_field AS (
     persona_ids uuid[]
 );
 
--- Filter option types simplified: id + count only (names hydrated in Python from cache)
-CREATE TYPE types.q_list_fields_v4_option_id AS (
-    id uuid,
+-- Filter option type: value/label/count (names resolved in SQL)
+CREATE TYPE types.q_list_fields_v4_option AS (
+    value text,
+    label text,
     count bigint
 );
 
 -- 4) Recreate function
 CREATE OR REPLACE FUNCTION api_list_fields_v4(
-    profile_id uuid
+    profile_id uuid,
+    search text DEFAULT NULL,
+    parameter_ids uuid[] DEFAULT NULL,
+    persona_ids uuid[] DEFAULT NULL,
+    filter_department_ids uuid[] DEFAULT NULL,
+    parameter_search text DEFAULT NULL,
+    persona_search text DEFAULT NULL,
+    department_search text DEFAULT NULL,
+    page_size int DEFAULT 12,
+    page_offset int DEFAULT 0
 )
 RETURNS TABLE (
     fields types.q_list_fields_v4_field[],
-    parameter_option_ids types.q_list_fields_v4_option_id[],
-    persona_option_ids types.q_list_fields_v4_option_id[],
-    department_option_ids types.q_list_fields_v4_option_id[],
+    parameter_options types.q_list_fields_v4_option[],
+    persona_options types.q_list_fields_v4_option[],
+    department_options types.q_list_fields_v4_option[],
     total_count bigint
 )
 LANGUAGE sql
@@ -166,68 +176,94 @@ fields_data AS (
     )
     GROUP BY f.id, (SELECT n.name FROM field_names_junction fn JOIN names_resource n ON fn.name_id = n.id WHERE fn.field_id = f.id LIMIT 1), (SELECT d.description FROM field_descriptions_junction fd JOIN descriptions_resource d ON fd.description_id = d.id WHERE fd.field_id = f.id LIMIT 1), EXISTS (SELECT 1 FROM field_flags_junction ff JOIN flags_resource fl ON ff.flag_id = fl.id WHERE ff.field_id = f.id AND fl.name = 'field_active' AND ff.value = TRUE), f.created_at, f.updated_at, fdd.department_ids, fpa.parameter_ids, fcpa.conditional_parameter_ids, fcpa.active_parameter_count, up.role, fpd.persona_ids
 ),
--- Filter option IDs with counts (names hydrated in Python from cached *_internal() functions)
-all_parameter_ids AS (
+-- Apply server-side filters
+filtered_fields AS (
+    SELECT fd.*
+    FROM fields_data fd
+    WHERE
+        -- Search filter: match name or description (case-insensitive)
+        (search IS NULL OR LOWER(fd.name) LIKE '%' || LOWER(search) || '%' OR LOWER(fd.description) LIKE '%' || LOWER(search) || '%')
+        -- Parameter filter: field must be linked to at least one selected parameter
+        AND (api_list_fields_v4.parameter_ids IS NULL OR fd.parameter_ids && api_list_fields_v4.parameter_ids::text[])
+        -- Persona filter: field must be linked to at least one selected persona
+        AND (api_list_fields_v4.persona_ids IS NULL OR fd.persona_ids && api_list_fields_v4.persona_ids)
+        -- Department filter: field must belong to at least one selected department
+        AND (filter_department_ids IS NULL OR fd.department_ids && filter_department_ids::text[])
+),
+-- Count total filtered results (before pagination)
+filtered_count AS (
+    SELECT COUNT(*)::bigint as total_count FROM filtered_fields
+),
+-- Paginate filtered results
+paginated_fields AS (
+    SELECT ff.*
+    FROM filtered_fields ff
+    ORDER BY ff.updated_at DESC NULLS LAST
+    LIMIT page_size OFFSET page_offset
+),
+-- Filter options with value/label/count (names resolved in SQL)
+all_parameter_ids_options AS (
     SELECT DISTINCT unnest(parameter_ids)::uuid as parameter_id
     FROM field_parameters_agg
 ),
-parameter_option_data AS (
-    SELECT
-        pr.id,
-        (SELECT COUNT(*) FROM fields_data fd WHERE pr.id::text = ANY(fd.parameter_ids))::bigint as count
-    FROM parameters_resource pr
-    WHERE pr.id IN (SELECT parameter_id FROM all_parameter_ids)
-),
-all_persona_ids AS (
+all_persona_ids_options AS (
     SELECT DISTINCT unnest(persona_ids) as persona_id
     FROM fields_data
     WHERE persona_ids IS NOT NULL AND array_length(persona_ids, 1) > 0
 ),
-persona_option_data AS (
-    SELECT
-        pa.id,
-        (SELECT COUNT(*) FROM fields_data fd WHERE pa.id = ANY(fd.persona_ids))::bigint as count
-    FROM persona_artifact pa
-    WHERE pa.id IN (SELECT persona_id FROM all_persona_ids)
-),
-department_option_data AS (
-    SELECT
-        dr.id,
-        (SELECT COUNT(*) FROM fields_data)::bigint as count
-    FROM departments_resource dr
-    WHERE dr.id IN (SELECT department_id FROM user_departments)
+all_department_ids_options AS (
+    SELECT DISTINCT department_id
+    FROM user_departments
 )
 SELECT
-    -- Aggregate fields
+    -- Aggregate paginated fields
     COALESCE(
         (SELECT ARRAY_AGG(
             (fd.field_id, fd.name, fd.description, fd.active, fd.created_at, fd.updated_at, fd.department_ids, fd.parameter_ids, fd.conditional_parameter_ids, fd.active_parameter_count, fd.is_inactive, fd.persona_ids)::types.q_list_fields_v4_field
-            ORDER BY fd.name
-        ) FROM fields_data fd),
+            ORDER BY fd.updated_at DESC NULLS LAST
+        ) FROM paginated_fields fd),
         '{}'::types.q_list_fields_v4_field[]
     ) as fields,
-    -- Parameter option IDs with counts (names hydrated in Python)
+    -- Parameter filter options (value/label/count resolved in SQL)
     COALESCE(
         (SELECT ARRAY_AGG(
-            (pod.id, pod.count)::types.q_list_fields_v4_option_id
-        ) FROM parameter_option_data pod),
-        '{}'::types.q_list_fields_v4_option_id[]
-    ) as parameter_option_ids,
-    -- Persona option IDs with counts (names hydrated in Python)
+            (pr.id::text, pn_name.name, (SELECT COUNT(*) FROM fields_data fd WHERE pr.id::text = ANY(fd.parameter_ids)))::types.q_list_fields_v4_option
+            ORDER BY pn_name.name
+         )
+         FROM parameters_resource pr
+         JOIN parameter_parameters_junction ppj ON ppj.parameters_id = pr.id
+         JOIN (SELECT pn.parameter_id, n.name FROM parameter_names_junction pn JOIN names_resource n ON pn.name_id = n.id) pn_name ON pn_name.parameter_id = ppj.parameter_id
+         WHERE pr.id IN (SELECT parameter_id FROM all_parameter_ids_options)
+           AND (parameter_search IS NULL OR LOWER(pn_name.name) LIKE '%' || LOWER(parameter_search) || '%')),
+        '{}'::types.q_list_fields_v4_option[]
+    ) as parameter_options,
+    -- Persona filter options (value/label/count resolved in SQL)
     COALESCE(
         (SELECT ARRAY_AGG(
-            (peod.id, peod.count)::types.q_list_fields_v4_option_id
-        ) FROM persona_option_data peod),
-        '{}'::types.q_list_fields_v4_option_id[]
-    ) as persona_option_ids,
-    -- Department option IDs with counts (names hydrated in Python)
+            (pr.id::text, pn_name.name, (SELECT COUNT(*) FROM fields_data fd WHERE pr.id = ANY(fd.persona_ids)))::types.q_list_fields_v4_option
+            ORDER BY pn_name.name
+         )
+         FROM personas_resource pr
+         JOIN persona_personas_junction ppj ON ppj.personas_id = pr.id
+         JOIN (SELECT pn.persona_id, n.name FROM persona_names_junction pn JOIN names_resource n ON pn.name_id = n.id) pn_name ON pn_name.persona_id = ppj.persona_id
+         WHERE pr.id IN (SELECT persona_id FROM all_persona_ids_options)
+           AND (persona_search IS NULL OR LOWER(pn_name.name) LIKE '%' || LOWER(persona_search) || '%')),
+        '{}'::types.q_list_fields_v4_option[]
+    ) as persona_options,
+    -- Department filter options (value/label/count resolved in SQL)
     COALESCE(
         (SELECT ARRAY_AGG(
-            (dod.id, dod.count)::types.q_list_fields_v4_option_id
-        ) FROM department_option_data dod),
-        '{}'::types.q_list_fields_v4_option_id[]
-    ) as department_option_ids,
-    -- Total count
-    (SELECT COUNT(*) FROM fields_data)::bigint as total_count
+            (dr.id::text, dn_name.name, (SELECT COUNT(*) FROM fields_data fd WHERE dr.id::text = ANY(fd.department_ids)))::types.q_list_fields_v4_option
+            ORDER BY dn_name.name
+         )
+         FROM departments_resource dr
+         JOIN department_departments_junction ddj ON ddj.departments_id = dr.id
+         JOIN (SELECT dn.department_id, n.name FROM department_names_junction dn JOIN names_resource n ON dn.name_id = n.id) dn_name ON dn_name.department_id = ddj.department_id
+         WHERE dr.id IN (SELECT department_id FROM all_department_ids_options)
+           AND (department_search IS NULL OR LOWER(dn_name.name) LIKE '%' || LOWER(department_search) || '%')),
+        '{}'::types.q_list_fields_v4_option[]
+    ) as department_options,
+    -- Total count of filtered fields (before pagination)
+    (SELECT total_count FROM filtered_count) as total_count
 $$;
 

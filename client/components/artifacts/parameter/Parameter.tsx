@@ -29,7 +29,7 @@ import { useFlushRegistry } from "@/hooks/use-flush-registry";
 import { useGenerationModal } from "@/hooks/use-generation-modal";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import {
-  buildResourceActions,
+  buildDraftPayload,
   checkHasResourceIds,
   computeEffectiveFormState,
   type ResourceConfig,
@@ -357,16 +357,17 @@ function ParameterComponent({
       return {
         input_draft_id: inputDraftId || null,
         group_id: s?.group_id ?? null,
-        ...buildResourceActions(PARAMETER_RESOURCES, {
+        ...buildDraftPayload(PARAMETER_RESOURCES, {
           formState: effective as unknown as Record<string, unknown>,
           referenceState: refState,
-          flushResults: flushResults ?? {},
-          entityData: s as unknown as Record<string, unknown> | null,
+          flushResults: (flushResults ?? {}) as Record<string, unknown>,
         }),
-        flags: {
-          resource_ids: effectiveFlags.length > 0 ? effectiveFlags : null,
-          create_tool_id: null,
-        },
+        ...(flagsChanged
+          ? {
+              flag_ids:
+                effectiveFlags.length > 0 ? effectiveFlags : null,
+            }
+          : {}),
         expected_version: expectedVersion,
       };
     },
@@ -581,32 +582,23 @@ function ParameterComponent({
         throw new Error("Profile not loaded");
       }
 
-      if (!saveParameterAction || !s?.group_id) {
+      if (!saveParameterAction) {
         toast.error("Save action not available");
         throw new Error("Save action not available");
       }
 
-      const initial = getInitialFormState();
-      const saveActions = buildResourceActions(PARAMETER_RESOURCES, {
-        formState: effective as unknown as Record<string, unknown>,
-        referenceState: initial as unknown as Record<string, unknown>,
-        flushResults,
-        entityData: s as unknown as Record<string, unknown> | null,
-      });
-      const flagChanged =
-        JSON.stringify(effectiveFlags) !== JSON.stringify(initial.flag_ids);
-
       await saveParameterAction({
         body: {
-          group_id: s.group_id,
           input_parameter_id: isEditMode && parameterId ? parameterId : null,
-          ...saveActions,
-          flags: {
-            resource_ids: effectiveFlags.length > 0 ? effectiveFlags : null,
-            create_tool_id: null,
-          },
-        } as unknown,
-      } as SaveParameterIn);
+          name_id: effective.name_id!,
+          description_id: effective.description_id ?? null,
+          flag_ids: effectiveFlags.length > 0 ? effectiveFlags : null,
+          department_ids: effective.department_ids?.length
+            ? effective.department_ids
+            : null,
+          field_ids: effective.field_ids?.length ? effective.field_ids : null,
+        },
+      });
 
       toast.success(
         `Parameter ${isEditMode ? "updated" : "created"} successfully!`

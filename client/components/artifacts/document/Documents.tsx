@@ -150,13 +150,28 @@ export default function Documents({
     [documentsData]
   );
   const scenarios = useMemo(
-    () => documentsData?.scenarios || [],
-    [documentsData]
+    () =>
+      (documentsData?.scenario_filter?.options || []).map((opt) => ({
+        scenario_id: opt.id,
+        name: opt.name,
+      })),
+    [documentsData?.scenario_filter],
   );
-  const fields = useMemo(() => documentsData?.fields || [], [documentsData]);
+  const fields = useMemo(
+    () =>
+      (documentsData?.field_filter?.options || []).map((opt) => ({
+        field_id: opt.id,
+        name: opt.name,
+      })),
+    [documentsData?.field_filter],
+  );
   const departments = useMemo(
-    () => documentsData?.departments || [],
-    [documentsData]
+    () =>
+      (documentsData?.department_filter?.options || []).map((opt) => ({
+        department_id: opt.id,
+        name: opt.name,
+      })),
+    [documentsData?.department_filter]
   );
 
   // Create lookup maps from arrays for performance (replacing old mappings)
@@ -190,26 +205,39 @@ export default function Documents({
     return map;
   }, [departments]);
 
-  // Use server-provided filter options directly (already composite type arrays)
+  // Use server-provided filter options directly (ListFilterSection pattern)
   const scenarioOptions = useMemo(
     () =>
-      (documentsData?.scenario_options_junction || [])
-        .filter((opt: { value?: string | null; label?: string | null }) => opt.value && opt.label)
-        .map((opt: { value?: string | null; label?: string | null }) => ({
-          value: opt.value!,
-          label: opt.label!,
-        })),
-    [documentsData?.scenario_options_junction]
+      (documentsData?.scenario_filter?.options || [])
+        .map((opt) => ({
+          value: opt.id as string,
+          label: opt.name as string,
+          count: opt.count ?? undefined,
+        }))
+        .filter((opt) => opt.value && opt.label),
+    [documentsData?.scenario_filter],
+  );
+  const fieldFilterOptions = useMemo(
+    () =>
+      (documentsData?.field_filter?.options || [])
+        .map((opt) => ({
+          value: opt.id as string,
+          label: opt.name as string,
+          count: opt.count ?? undefined,
+        }))
+        .filter((opt) => opt.value && opt.label),
+    [documentsData?.field_filter],
   );
   const departmentOptions = useMemo(
     () =>
-      (documentsData?.department_options || [])
-        .filter((opt) => opt.value && opt.label)
+      (documentsData?.department_filter?.options || [])
         .map((opt) => ({
-          value: opt.value!,
-          label: opt.label!,
-        })),
-    [documentsData?.department_options]
+          value: opt.id as string,
+          label: opt.name as string,
+          count: opt.count ?? undefined,
+        }))
+        .filter((opt) => opt.value && opt.label),
+    [documentsData?.department_filter],
   );
 
   // Permission checking using server-provided flags
@@ -285,6 +313,12 @@ export default function Documents({
         header: ({ column }) => (
           <DataTableColumnHeader column={column} title="Fields" />
         ),
+        filterFn: (row, _id, value: string[]) => {
+          const rowIds = (row.getValue("field_ids") as string[]) ?? [];
+          if (value.length === 0) return true;
+          if (rowIds.length === 0) return true;
+          return value.some((v) => rowIds.includes(v));
+        },
         cell: ({ row }) => {
           const itemIds = row.getValue("field_ids") as string[];
           if (!itemIds.length) {
@@ -583,16 +617,22 @@ export default function Documents({
                     aria-controls="documents-list"
                   />
                 </div>
-                {table.getColumn("scenario_ids") && (
+                {table.getColumn("scenario_ids") && scenarioOptions.length > 0 && (
                   <DataTableFacetedFilter
                     column={table.getColumn("scenario_ids")!}
                     title="Scenarios"
                     options={scenarioOptions}
                   />
                 )}
+                {table.getColumn("field_ids") && fieldFilterOptions.length > 0 && (
+                  <DataTableFacetedFilter
+                    column={table.getColumn("field_ids")!}
+                    title="Fields"
+                    options={fieldFilterOptions}
+                  />
+                )}
                 {table.getColumn("departments") &&
-                  departmentOptions.length > 0 &&
-                  departmentIds.length > 1 && (
+                  departmentOptions.length > 0 && (
                     <DataTableFacetedFilter
                       column={table.getColumn("departments")!}
                       title="Department"

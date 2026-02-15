@@ -199,21 +199,20 @@ class AgentMultiResourceAction(BaseModel):
 
 
 class SaveAgentApiRequest(BaseModel):
-    """Section-action save request for agent endpoint."""
+    """Flat-ID save request for agent endpoint."""
 
-    group_id: UUID
     input_agent_id: UUID | None = None
-    names: AgentResourceAction
-    models: AgentResourceAction
-    descriptions: AgentResourceAction | None = None
-    prompts: AgentResourceAction | None = None
-    instructions: AgentResourceAction | None = None
-    flags: AgentResourceAction | None = None
-    temperature_levels: AgentResourceAction | None = None
-    reasoning_levels: AgentResourceAction | None = None
-    departments: AgentMultiResourceAction | None = None
-    tools: AgentMultiResourceAction | None = None
-    voices: AgentMultiResourceAction | None = None
+    name_id: UUID
+    model_id: UUID
+    description_id: UUID | None = None
+    prompt_id: UUID | None = None
+    instructions_id: UUID | None = None
+    active_flag_id: UUID | None = None
+    temperature_level_id: UUID | None = None
+    reasoning_level_id: UUID | None = None
+    department_ids: list[UUID] | None = None
+    tool_ids: list[UUID] | None = None
+    voice_ids: list[UUID] | None = None
 
 
 class SaveAgentApiResponse(BaseModel):
@@ -252,21 +251,21 @@ class DuplicateAgentApiResponse(BaseModel):
 
 
 class PatchAgentDraftApiRequest(BaseModel):
-    """Section-action patch draft request for agent endpoint."""
+    """Flat-ID patch draft request for agent endpoint."""
 
     input_draft_id: UUID | None = None
     group_id: UUID | None = None
-    names: AgentResourceAction | None = None
-    descriptions: AgentResourceAction | None = None
-    models: AgentResourceAction | None = None
-    prompts: AgentResourceAction | None = None
-    instructions: AgentResourceAction | None = None
-    flags: AgentResourceAction | None = None
-    temperature_levels: AgentResourceAction | None = None
-    reasoning_levels: AgentResourceAction | None = None
-    departments: AgentMultiResourceAction | None = None
-    tools: AgentMultiResourceAction | None = None
-    voices: AgentMultiResourceAction | None = None
+    name_id: UUID | None = None
+    model_id: UUID | None = None
+    description_id: UUID | None = None
+    prompt_id: UUID | None = None
+    instructions_id: UUID | None = None
+    active_flag_id: UUID | None = None
+    temperature_level_id: UUID | None = None
+    reasoning_level_id: UUID | None = None
+    department_ids: list[UUID] | None = None
+    tool_ids: list[UUID] | None = None
+    voice_ids: list[UUID] | None = None
     expected_version: int = 0
 
 

@@ -30,6 +30,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { useProfile } from "@/contexts/profile-context";
 import { useDrafts } from "@/contexts/draft-context";
 import { useSocket } from "@/contexts/socket-context";
+import { useArtifactGeneration } from "@/hooks/use-artifact-generation";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 import { Check } from "lucide-react";
@@ -123,9 +124,13 @@ function ToolComponent({
   const { socket, isConnected } = useSocket();
   const { selectedDraftId, setSelectedDraftId } = useDrafts();
   // Generation state for AI workflows
-  const [generatingResources, setGeneratingResources] = useState<
-    Set<ToolResourceType>
-  >(new Set());
+  const VALID_TOOL_RESOURCE_TYPES: ToolResourceType[] = ["args", "arg_positions", "args_outputs"];
+  const { isGenerating, startGenerating, makeOnGenerationComplete } =
+    useArtifactGeneration({
+      artifactType: "tool",
+      groupId: toolData?.group_id,
+      validResourceTypes: VALID_TOOL_RESOURCE_TYPES,
+    });
 
   // Modal state for generate/regenerate
   const [showGenerateModal, setShowGenerateModal] = useState(false);
@@ -136,11 +141,6 @@ function ToolComponent({
     GenerateRegenerateModalResource[]
   >([]);
   const [modalInstructions, setModalInstructions] = useState("");
-
-  const isGenerating = useCallback(
-    (resourceType: ToolResourceType) => generatingResources.has(resourceType),
-    [generatingResources]
-  );
 
   // nuqs parsers for URL-backed state (will be passed to GenericForm)
   const toolSearchParamsClient = useMemo(
@@ -595,169 +595,6 @@ function ToolComponent({
     formState.args_outputs_ids,
   ]);
 
-  // WebSocket handlers for AI generation
-  useEffect(() => {
-    if (!socket || !isConnected) return;
-
-    const currentGroupId = toolData?.group_id;
-
-    const handleGenerationComplete = (data: {
-      artifact_type?: string;
-      group_id?: string;
-      resource_type?: string;
-      args_resources?: Array<{ id?: string | null }>;
-      arg_position_resources?: Array<{ id?: string | null }>;
-      args_outputs_resources?: Array<{ id?: string | null }>;
-      message?: string;
-      success?: boolean;
-      [key: string]: unknown;
-    }) => {
-      // Filter by artifact_type and group_id
-      if (
-        data.artifact_type !== "tool" ||
-        !data.group_id ||
-        data.group_id !== currentGroupId
-      ) {
-        return;
-      }
-
-      const validResourceTypes: ToolResourceType[] = [
-        "args",
-        "arg_positions",
-        "args_outputs",
-      ];
-      if (
-        data.resource_type &&
-        validResourceTypes.includes(data.resource_type as ToolResourceType)
-      ) {
-        // Update formState with the resource IDs that were generated
-        setFormState((prev) => {
-          const updates: Partial<typeof prev> = {};
-
-          if (data.args_resources && data.args_resources.length > 0) {
-            // For arrays, append new IDs (avoid duplicates)
-            const newArgsIds = data.args_resources
-              .map((r) => r?.id)
-              .filter((id): id is string => !!id)
-              .filter(
-              (id) => !prev.args_ids.includes(id)
-            );
-            updates.args_ids = [...prev.args_ids, ...newArgsIds];
-          }
-          if (
-            data.arg_position_resources &&
-            data.arg_position_resources.length > 0
-          ) {
-            const newArgPositionIds = data.arg_position_resources
-              .map((r) => r?.id)
-              .filter((id): id is string => !!id)
-              .filter((id) => !prev.arg_position_ids.includes(id));
-            updates.arg_position_ids = [
-              ...prev.arg_position_ids,
-              ...newArgPositionIds,
-            ];
-          }
-          if (
-            data.args_outputs_resources &&
-            data.args_outputs_resources.length > 0
-          ) {
-            // For arrays, append new IDs (avoid duplicates)
-            const newArgsOutputsIds = data.args_outputs_resources
-              .map((r) => r?.id)
-              .filter((id): id is string => !!id)
-              .filter(
-              (id) => !prev.args_outputs_ids.includes(id)
-            );
-            updates.args_outputs_ids = [
-              ...prev.args_outputs_ids,
-              ...newArgsOutputsIds,
-            ];
-          }
-
-          return { ...prev, ...updates };
-        });
-
-        setGeneratingResources((prev) => {
-          const next = new Set(prev);
-          next.delete(data.resource_type as ToolResourceType);
-          return next;
-        });
-        if (data.success) {
-          toast.success(
-            data.message || `${data.resource_type} generated successfully`
-          );
-        } else {
-          toast.error(
-            data.message || `Failed to generate ${data.resource_type}`
-          );
-        }
-      }
-    };
-
-    const handleGenerationProgress = (data: {
-      artifact_type?: string;
-      group_id?: string;
-      resource_type?: string;
-      [key: string]: unknown;
-    }) => {
-      // Filter by artifact_type and group_id
-      if (
-        data.artifact_type !== "tool" ||
-        !data.group_id ||
-        data.group_id !== currentGroupId
-      ) {
-        return;
-      }
-      // Handle progress updates if needed
-    };
-
-    const handleGenerationError = (data: {
-      artifact_type?: string;
-      group_id?: string;
-      message?: string;
-      resource_type?: string;
-      resource_types?: string[];
-    }) => {
-      // Filter by artifact_type and group_id
-      if (
-        data.artifact_type !== "tool" ||
-        !data.group_id ||
-        data.group_id !== currentGroupId
-      ) {
-        return;
-      }
-
-      const validResourceTypes: ToolResourceType[] = [
-        "args",
-        "arg_positions",
-        "args_outputs",
-      ];
-      const resourceTypes =
-        data.resource_types || (data.resource_type ? [data.resource_type] : []);
-      setGeneratingResources((prev) => {
-        const next = new Set(prev);
-        resourceTypes.forEach((rt) => {
-          if (validResourceTypes.includes(rt as ToolResourceType)) {
-            next.delete(rt as ToolResourceType);
-          }
-        });
-        return next;
-      });
-      toast.error(data.message || "Generation failed");
-    };
-
-    // Listen to tool-specific events filtered by artifact_type and group_id
-    socket.on("tool_generation_progress", handleGenerationProgress);
-    socket.on("tool_generation_complete", handleGenerationComplete);
-    socket.on("tool_generation_error", handleGenerationError);
-
-    return () => {
-      socket.off("tool_generation_progress", handleGenerationProgress);
-      socket.off("tool_generation_complete", handleGenerationComplete);
-      socket.off("tool_generation_error", handleGenerationError);
-    };
-  }, [socket, isConnected, toolData?.group_id]);
-
   const handleGenerateResources = useCallback(
     async (
       resourceTypes: ToolResourceType[],
@@ -770,11 +607,7 @@ function ToolComponent({
       }
 
       // Set all resources as generating
-      setGeneratingResources((prev) => {
-        const next = new Set(prev);
-        resourceTypes.forEach((rt) => next.add(rt));
-        return next;
-      });
+      startGenerating(resourceTypes);
 
       // Read draftId from formData
       const formData = formDataRef.current;
