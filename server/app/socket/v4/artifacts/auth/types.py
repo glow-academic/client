@@ -22,6 +22,7 @@ class GenerateAuthPayload(GetAuthApiRequest):
 
     resource_types: list[str]
     user_instructions: list[str] | None = None
+    save: bool = True
 
 
 class AuthGenerationCompleteEvent(GenerationCompleteEvent):

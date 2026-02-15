@@ -19,6 +19,7 @@ class GenerateEvalPayload(BaseModel):
     draft_id: UUID | None = None
     resource_types: list[str]
     user_instructions: list[str] | None = None
+    save: bool = True
 
 
 # =============================================================================
@@ -34,6 +35,7 @@ class EvalGenerationCompleteEvent(GenerationCompleteEvent):
     """
 
     artifact_type: str = "eval"
+    eval_id: str | None = None
 
 
 class EvalGenerationProgressEvent(GenerationProgressEvent):

@@ -8,7 +8,7 @@
 "use client";
 import { Copy, Edit, Eye, Play, Search, Trash2, Users, X } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import type {
@@ -50,7 +50,8 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { GenerateRegenerateModal, type GenerateRegenerateModalResource } from "@/components/common/forms/GenerateRegenerateModal";
+import { GenerateRegenerateModal } from "@/components/common/forms/GenerateRegenerateModal";
+import { useGenerationModal } from "@/hooks/use-generation-modal";
 import { useSocket } from "@/contexts/socket-context";
 
 export interface CohortsProps {
@@ -93,54 +94,33 @@ export default function Cohorts({
   const [isDeleting, setIsDeleting] = useState(false);
   const [isDuplicating, setIsDuplicating] = useState<string | null>(null);
 
-  // Generation modal state
-  const [showGenerateModal, setShowGenerateModal] = useState(false);
-  const [modalResources, setModalResources] = useState<GenerateRegenerateModalResource[]>([]);
-  const [modalInstructions, setModalInstructions] = useState("");
-  const [isGenerating, setIsGenerating] = useState(false);
-
-  // Handle opening the generate modal
-  const handleOpenGenerateModal = useCallback(() => {
-    const resources: GenerateRegenerateModalResource[] = [
-      { id: "names", label: "Name", active: true },
-      { id: "descriptions", label: "Description", active: true },
-      { id: "flags", label: "Configuration", active: true },
-      { id: "departments", label: "Departments", active: true },
-      { id: "simulations", label: "Simulations", active: true },
-      { id: "simulation_positions", label: "Simulation Positions", active: true },
-    ];
-    setModalResources(resources);
-    setModalInstructions("");
-    setShowGenerateModal(true);
-  }, []);
-
-  // Listen for full-page-generate event
-  useEffect(() => {
-    const handleFullPageGenerate = () => {
-      handleOpenGenerateModal();
-    };
-    window.addEventListener("full-page-generate", handleFullPageGenerate);
-    return () =>
-      window.removeEventListener("full-page-generate", handleFullPageGenerate);
-  }, [handleOpenGenerateModal]);
-
-  // Handle modal generate (create new cohort + generate)
-  const handleModalGenerate = useCallback(
-    async (selectedResources: string[], instructions: string) => {
+  // Generation modal via shared hook
+  type CohortResourceType = "names" | "descriptions" | "flags" | "departments" | "simulations" | "simulation_positions";
+  const { handleOpenStepCardModal, modalProps } = useGenerationModal<CohortResourceType>({
+    stepResources: {
+      all: ["names", "descriptions", "flags", "departments", "simulations", "simulation_positions"],
+    },
+    resourceLabels: {
+      names: "Name",
+      descriptions: "Description",
+      flags: "Configuration",
+      departments: "Departments",
+      simulations: "Simulations",
+      simulation_positions: "Simulation Positions",
+    },
+    canRegenerate: () => true,
+    onGenerate: (selectedResources, instructions) => {
       if (!socket || !isConnected) return;
-      setIsGenerating(true);
       socket.emit("cohort_generate", {
         resource_types: selectedResources,
-        user_instructions: instructions.trim() ? [instructions.trim()] : null,
+        user_instructions: instructions?.trim() ? [instructions.trim()] : null,
         cohort_id: null,
         mcp: false,
       });
-      setShowGenerateModal(false);
-      setIsGenerating(false);
       toast.success("Generation started for new cohort");
     },
-    [socket, isConnected]
-  );
+    isGenerating: () => false,
+  });
 
   // Debounce refs
   const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -773,17 +753,7 @@ export default function Cohorts({
           </AlertDialogContent>
         </AlertDialog>
 
-        <GenerateRegenerateModal
-          open={showGenerateModal}
-          onOpenChange={setShowGenerateModal}
-          resources={modalResources}
-          onResourcesChange={setModalResources}
-          instructions={modalInstructions}
-          onInstructionsChange={setModalInstructions}
-          onGenerate={handleModalGenerate}
-          isGenerating={isGenerating}
-          mode="generate"
-        />
+        <GenerateRegenerateModal {...modalProps} />
       </div>
     </TooltipProvider>
   );

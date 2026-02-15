@@ -2,6 +2,7 @@
 Unified endpoint that handles both create (tool_id = NULL) and update (tool_id provided).
 """
 
+import uuid
 from typing import Annotated, Any, cast
 
 import asyncpg  # type: ignore
@@ -16,6 +17,8 @@ from app.api.v4.artifacts.tool.types import (
     SaveToolApiResponse,
     SaveToolSqlParams,
     SaveToolSqlRow,
+    ToolMultiResourceAction,
+    ToolResourceAction,
 )
 from app.api.v4.auth.profile import get_auth_profile_internal
 from app.infra.v4.activity.audit import audit_activity, audit_set
@@ -27,7 +30,10 @@ from app.sql.types import (
     load_sql_query,
 )
 from app.utils.cache.invalidate_tags import invalidate_tags
+from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import execute_sql_typed
+
+logger = get_logger(__name__)
 
 # SQL paths
 ACCESS_CHECK_SQL_PATH = "app/sql/v4/queries/tools/check_tool_save_access_complete.sql"
@@ -35,6 +41,67 @@ SQL_PATH = "app/sql/v4/queries/tools/save_tool_complete.sql"
 
 
 router = APIRouter()
+
+
+async def save_tool_internal(
+    conn: asyncpg.Connection,
+    profile_id: uuid.UUID,
+    group_id: uuid.UUID,
+    resource_actions: dict[str, Any],
+    tool_id: uuid.UUID | None = None,
+) -> uuid.UUID | None:
+    """Save a tool from resource actions dict (used by generation complete handler).
+
+    Builds SaveToolSqlParams from a flat resource_actions dict, executes the
+    save SQL in a transaction, and invalidates cache.
+
+    Returns the tool_id on success, None on failure.
+    """
+    try:
+
+        def _single(key: str) -> ToolResourceAction:
+            val = resource_actions.get(key, {})
+            if isinstance(val, dict):
+                return ToolResourceAction(
+                    resource_id=val.get("resource_id"),
+                )
+            return ToolResourceAction()
+
+        def _multi(key: str) -> ToolMultiResourceAction:
+            val = resource_actions.get(key, {})
+            if isinstance(val, dict):
+                return ToolMultiResourceAction(
+                    resource_ids=val.get("resource_ids"),
+                )
+            return ToolMultiResourceAction()
+
+        params = SaveToolSqlParams(
+            profile_id=profile_id,
+            input_tool_id=tool_id,
+            group_id=group_id,
+            names=_single("names"),
+            descriptions=_single("descriptions"),
+            flags=_single("flags"),
+            args=_multi("args"),
+            arg_positions=_multi("arg_positions"),
+            args_outputs=_multi("args_outputs"),
+        )
+
+        async with conn.transaction():
+            result = cast(
+                SaveToolSqlRow,
+                await execute_sql_typed(conn, SQL_PATH, params=params),
+            )
+
+            if not result or not result.tool_id:
+                return None
+
+        await invalidate_tags(["tools"])
+        return result.tool_id
+
+    except Exception as e:
+        logger.exception(f"save_tool_internal failed: {e}")
+        return None
 
 
 @router.post(

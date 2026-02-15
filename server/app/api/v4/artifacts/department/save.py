@@ -2,6 +2,7 @@
 Unified endpoint that handles both create (department_id = NULL) and update (department_id provided).
 """
 
+import uuid
 from typing import Annotated, Any, cast
 
 import asyncpg  # type: ignore
@@ -12,6 +13,8 @@ from app.api.v4.artifacts.department.permissions import (
     compute_can_edit,
 )
 from app.api.v4.artifacts.department.types import (
+    DepartmentMultiResourceAction,
+    DepartmentResourceAction,
     SaveDepartmentApiRequest,
     SaveDepartmentApiResponse,
     SaveDepartmentSqlParams,
@@ -27,7 +30,10 @@ from app.sql.types import (
     load_sql_query,
 )
 from app.utils.cache.invalidate_tags import invalidate_tags
+from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import execute_sql_typed
+
+logger = get_logger(__name__)
 
 # SQL paths
 ACCESS_CHECK_SQL_PATH = (
@@ -37,6 +43,65 @@ SQL_PATH = "app/sql/v4/queries/departments/save_department_complete.sql"
 
 
 router = APIRouter()
+
+
+async def save_department_internal(
+    conn: asyncpg.Connection,
+    profile_id: uuid.UUID,
+    group_id: uuid.UUID,
+    resource_actions: dict[str, Any],
+    department_id: uuid.UUID | None = None,
+) -> uuid.UUID | None:
+    """Save a department from resource actions dict (used by generation complete handler).
+
+    Builds SaveDepartmentSqlParams from a flat resource_actions dict, executes the
+    save SQL in a transaction, and invalidates cache.
+
+    Returns the department_id on success, None on failure.
+    """
+    try:
+
+        def _single(key: str) -> DepartmentResourceAction:
+            val = resource_actions.get(key, {})
+            if isinstance(val, dict):
+                return DepartmentResourceAction(
+                    resource_id=val.get("resource_id"),
+                )
+            return DepartmentResourceAction()
+
+        def _multi(key: str) -> DepartmentMultiResourceAction:
+            val = resource_actions.get(key, {})
+            if isinstance(val, dict):
+                return DepartmentMultiResourceAction(
+                    resource_ids=val.get("resource_ids"),
+                )
+            return DepartmentMultiResourceAction()
+
+        params = SaveDepartmentSqlParams(
+            profile_id=profile_id,
+            input_department_id=department_id,
+            group_id=group_id,
+            names=_single("names"),
+            descriptions=_single("descriptions"),
+            flags=_single("flags"),
+            settings=_multi("settings"),
+        )
+
+        async with conn.transaction():
+            result = cast(
+                SaveDepartmentSqlRow,
+                await execute_sql_typed(conn, SQL_PATH, params=params),
+            )
+
+            if not result or not result.department_id:
+                return None
+
+        await invalidate_tags(["departments"])
+        return result.department_id
+
+    except Exception as e:
+        logger.exception(f"save_department_internal failed: {e}")
+        return None
 
 
 @router.post(

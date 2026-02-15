@@ -2,6 +2,7 @@
 Unified endpoint that handles both create (eval_id = NULL) and update (eval_id provided).
 """
 
+import uuid
 from typing import Annotated, Any, cast
 
 import asyncpg  # type: ignore
@@ -27,7 +28,10 @@ from app.sql.types import (
     load_sql_query,
 )
 from app.utils.cache.invalidate_tags import invalidate_tags
+from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import execute_sql_typed
+
+logger = get_logger(__name__)
 
 # SQL paths
 ACCESS_CHECK_SQL_PATH = "app/sql/v4/queries/evals/check_eval_save_access_complete.sql"
@@ -35,6 +39,76 @@ SQL_PATH = "app/sql/v4/queries/evals/save_eval_complete.sql"
 
 
 router = APIRouter()
+
+
+async def save_eval_internal(
+    conn: asyncpg.Connection,
+    profile_id: uuid.UUID,
+    group_id: uuid.UUID,
+    resource_actions: dict[str, Any],
+    eval_id: uuid.UUID | None = None,
+) -> uuid.UUID | None:
+    """Save an eval from resource actions dict (used by generation complete handler).
+
+    Builds SaveEvalSqlParams from a flat resource_actions dict, executes the
+    save SQL in a transaction, and invalidates cache.
+
+    Returns the eval_id on success, None on failure.
+    """
+    try:
+
+        def _single_id(key: str) -> uuid.UUID | None:
+            val = resource_actions.get(key, {})
+            if isinstance(val, dict):
+                rid = val.get("resource_id")
+                if rid:
+                    return uuid.UUID(rid) if isinstance(rid, str) else rid
+            return None
+
+        def _multi_ids(key: str) -> list[uuid.UUID] | None:
+            val = resource_actions.get(key, {})
+            if isinstance(val, dict):
+                rids = val.get("resource_ids")
+                if rids:
+                    return [
+                        uuid.UUID(r) if isinstance(r, str) else r for r in rids
+                    ]
+            return None
+
+        name_id = _single_id("names")
+        if not name_id:
+            return None
+
+        params = SaveEvalSqlParams(
+            profile_id=profile_id,
+            group_id=group_id,
+            input_eval_id=eval_id,
+            name_id=name_id,
+            description_id=_single_id("descriptions"),
+            flag_ids=_multi_ids("flags"),
+            department_ids=_multi_ids("departments"),
+            agent_ids=_multi_ids("agents"),
+            model_run_ids=_multi_ids("runs"),
+            group_ids=_multi_ids("groups"),
+            run_position_ids=_multi_ids("run_positions"),
+            group_position_ids=_multi_ids("group_positions"),
+        )
+
+        async with conn.transaction():
+            result = cast(
+                SaveEvalSqlRow,
+                await execute_sql_typed(conn, SQL_PATH, params=params),
+            )
+
+            if not result or not result.eval_id:
+                return None
+
+        await invalidate_tags(["evals"])
+        return result.eval_id
+
+    except Exception as e:
+        logger.exception(f"save_eval_internal failed: {e}")
+        return None
 
 
 @router.post(

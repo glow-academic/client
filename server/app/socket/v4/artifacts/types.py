@@ -274,3 +274,29 @@ class RubricGenerationStartedEvent(BaseModel):
     group_id: str
     run_id: str
     resource_types: list[str]
+
+
+class EvalGenerationStartedEvent(BaseModel):
+    """Server-to-client event: eval_generation_started.
+
+    Emitted when eval generation begins, listing which resource types
+    will be generated.
+    """
+
+    artifact_type: str = "eval"
+    group_id: str
+    run_id: str
+    resource_types: list[str]
+
+
+class AuthGenerationStartedEvent(BaseModel):
+    """Server-to-client event: auth_generation_started.
+
+    Emitted when auth generation begins, listing which resource types
+    will be generated.
+    """
+
+    artifact_type: str = "auth"
+    group_id: str
+    run_id: str
+    resource_types: list[str]

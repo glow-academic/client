@@ -8905,6 +8905,28 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/socket/v4/server/auth_generation_started": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Auth Generation Started Api
+         * @description Server-to-client event: Auth generation started.
+         *
+         *     Emitted when auth generation begins, listing resource types being generated.
+         */
+        post: operations["auth_generation_started_api_socket_v4_server_auth_generation_started_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/socket/v4/server/auth_generation_progress": {
         parameters: {
             query?: never;
@@ -10883,6 +10905,28 @@ export interface paths {
         put?: never;
         /** Provider Generation Error Api */
         post: operations["provider_generation_error_api_socket_v4_server_provider_generation_error_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v4/server/eval_generation_started": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Eval Generation Started Api
+         * @description Server-to-client event: Eval generation started.
+         *
+         *     Emitted when eval generation begins, listing resource types being generated.
+         */
+        post: operations["eval_generation_started_api_socket_v4_server_eval_generation_started_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -19356,6 +19400,26 @@ export interface components {
             /** Trace Id */
             trace_id?: string | null;
         };
+        /**
+         * AuthGenerationStartedEvent
+         * @description Server-to-client event: auth_generation_started.
+         *
+         *     Emitted when auth generation begins, listing which resource types
+         *     will be generated.
+         */
+        AuthGenerationStartedEvent: {
+            /**
+             * Artifact Type
+             * @default auth
+             */
+            artifact_type: string;
+            /** Group Id */
+            group_id: string;
+            /** Run Id */
+            run_id: string;
+            /** Resource Types */
+            resource_types: string[];
+        };
         /** AuthItemKeysApiRequest */
         AuthItemKeysApiRequest: {
             /**
@@ -22421,6 +22485,8 @@ export interface components {
             message: string;
             /** Type */
             type?: string | null;
+            /** Department Id */
+            department_id?: string | null;
         };
         /**
          * DepartmentGenerationStartedEvent
@@ -24217,6 +24283,28 @@ export interface components {
             message: string;
             /** Type */
             type?: string | null;
+            /** Eval Id */
+            eval_id?: string | null;
+        };
+        /**
+         * EvalGenerationStartedEvent
+         * @description Server-to-client event: eval_generation_started.
+         *
+         *     Emitted when eval generation begins, listing which resource types
+         *     will be generated.
+         */
+        EvalGenerationStartedEvent: {
+            /**
+             * Artifact Type
+             * @default eval
+             */
+            artifact_type: string;
+            /** Group Id */
+            group_id: string;
+            /** Run Id */
+            run_id: string;
+            /** Resource Types */
+            resource_types: string[];
         };
         /**
          * EvalGroupRubricMapping
@@ -48516,6 +48604,8 @@ export interface components {
             message: string;
             /** Type */
             type?: string | null;
+            /** Tool Id */
+            tool_id?: string | null;
         };
         /**
          * ToolGenerationErrorEvent
@@ -66683,6 +66773,41 @@ export interface operations {
             };
         };
     };
+    auth_generation_started_api_socket_v4_server_auth_generation_started_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AuthGenerationStartedEvent"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     auth_generation_progress_api_socket_v4_server_auth_generation_progress_post: {
         parameters: {
             query?: never;
@@ -70128,6 +70253,41 @@ export interface operations {
                 "application/json": {
                     [key: string]: unknown;
                 };
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    eval_generation_started_api_socket_v4_server_eval_generation_started_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EvalGenerationStartedEvent"];
             };
         };
         responses: {

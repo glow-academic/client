@@ -38,6 +38,7 @@ class DepartmentGenerationCompleteEvent(GenerationCompleteEvent):
     """
 
     artifact_type: str = "department"
+    department_id: str | None = None
 
 
 class DepartmentGenerationProgressEvent(GenerationProgressEvent):

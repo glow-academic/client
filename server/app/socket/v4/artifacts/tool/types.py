@@ -43,6 +43,7 @@ class ToolGenerationCompleteEvent(GenerationCompleteEvent):
     """
 
     artifact_type: str = "tool"
+    tool_id: str | None = None
 
 
 class ToolGenerationProgressEvent(GenerationProgressEvent):
