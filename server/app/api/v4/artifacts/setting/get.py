@@ -69,7 +69,8 @@ from app.api.v4.artifacts.setting.types import (
     SettingWebsocketViews,
 )
 from app.api.v4.auth.profile import get_auth_profile_internal
-from app.api.v4.permissions import select_agents_for_artifact
+from app.api.v4.auth.settings import get_auth_settings_internal
+from app.api.v4.permissions import has_tools_for_resource, resolve_agents_for_artifact
 from app.api.v4.resources.agents.get import get_agents_internal
 from app.api.v4.resources.auth_item_keys.get import get_auth_item_keys_internal
 from app.api.v4.resources.auth_item_keys.search import search_auth_item_keys_internal
@@ -96,7 +97,6 @@ from app.api.v4.resources.role_routes.search import search_role_routes_internal
 from app.api.v4.resources.roles.get import get_roles_internal
 from app.api.v4.resources.roles.search import search_roles_internal
 from app.api.v4.resources.tools.get import get_tools_internal
-from app.api.v4.types import CandidateAgent
 from app.api.v4.views.drafts.get import get_draft_setting_internal
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
@@ -223,38 +223,21 @@ async def get_setting_internal(
     selected_auth_item_key_ids = ids_result.auth_item_key_ids or []
     selected_role_route_ids = ids_result.role_route_ids or []
 
-    # Config chain resource IDs
-    config_agent_resource_ids = ids_result.config_agent_resource_ids or []
-    config_model_resource_ids = ids_result.config_model_resource_ids or []
-    config_provider_resource_ids = ids_result.config_provider_resource_ids or []
+    # Config chain resource IDs from settings agents
+    config_agent_resource_ids = [a.id for a in settings_data.settings_agents if a.id]
+    config_model_resource_ids = [
+        a.model_id for a in settings_data.settings_agents if a.model_id
+    ]
+    config_provider_resource_ids: list[UUID] = []
 
-    # === PARSE CANDIDATE AGENTS + COMPUTE AGENT IDS IN PYTHON ===
-    candidate_agents = CandidateAgent.from_sql_rows(ids_result.candidate_agents)
-
-    user_dept_set = set(user_department_ids) if user_department_ids else None
-    resources_needed = list(SETTING_RESOURCES)
-    agent_ids = select_agents_for_artifact(
-        candidates=candidate_agents,
-        artifact_resources=SETTING_RESOURCES,
-        resources_needed=resources_needed,
-        user_department_ids=user_dept_set,
-        require_mcp=False,
+    # === RESOLVE AGENTS FROM SETTINGS ===
+    async with pool.acquire() as settings_conn:
+        settings_data = await get_auth_settings_internal(
+            settings_conn, profile_id, bypass_cache
+        )
+    agent_ids, create_tool_ids_map, link_tool_ids_map = resolve_agents_for_artifact(
+        settings_data.agent_tool_entries, SETTING_RESOURCES
     )
-
-    # === BUILD TOOL_IDS MAPS FROM SELECTED AGENTS ===
-    create_tool_ids_map: dict[str, UUID | None] = {}
-    link_tool_ids_map: dict[str, UUID | None] = {}
-
-    for resource in SETTING_RESOURCES:
-        selected_agent_id = agent_ids.get(resource)
-        if selected_agent_id:
-            for candidate in candidate_agents:
-                if candidate.agent_id == selected_agent_id:
-                    create_tool_ids_map[resource] = candidate.create_tool_ids.get(
-                        resource
-                    )
-                    link_tool_ids_map[resource] = candidate.link_tool_ids.get(resource)
-                    break
 
     # === COMPUTE SHOW_AI_GENERATE FLAGS ===
     show_ai_generate_map = {

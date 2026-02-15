@@ -17,11 +17,12 @@ import {
   X,
 } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
-import { GenerateRegenerateModal, type GenerateRegenerateModalResource } from "@/components/common/forms/GenerateRegenerateModal";
+import { GenerateRegenerateModal } from "@/components/common/forms/GenerateRegenerateModal";
 import { useSocket } from "@/contexts/socket-context";
+import { useGenerationModal } from "@/hooks/use-generation-modal";
 
 import type {
   DeleteScenarioIn,
@@ -106,12 +107,43 @@ export function Scenarios({
     new Set(),
   );
 
-  // Generation modal state
+  // Generation modal via shared hook
   const { socket, isConnected } = useSocket();
-  const [showGenerateModal, setShowGenerateModal] = useState(false);
-  const [modalResources, setModalResources] = useState<GenerateRegenerateModalResource[]>([]);
-  const [modalInstructions, setModalInstructions] = useState("");
-  const [isGenerating, setIsGenerating] = useState(false);
+
+  type ScenarioResourceType = "names" | "descriptions" | "problem_statements" | "objectives" | "scenario_flags" | "departments" | "personas" | "documents" | "parameters" | "fields" | "images" | "videos" | "questions";
+
+  const { handleOpenStepCardModal, modalProps } = useGenerationModal<ScenarioResourceType>({
+    stepResources: {
+      all: ["names", "descriptions", "problem_statements", "objectives", "scenario_flags", "departments", "personas", "documents", "parameters", "fields", "images", "videos", "questions"],
+    },
+    resourceLabels: {
+      names: "Name",
+      descriptions: "Description",
+      problem_statements: "Problem Statement",
+      objectives: "Objectives",
+      scenario_flags: "Configuration",
+      departments: "Departments",
+      personas: "Personas",
+      documents: "Documents",
+      parameters: "Parameters",
+      fields: "Fields",
+      images: "Images",
+      videos: "Videos",
+      questions: "Questions",
+    },
+    canRegenerate: () => true,
+    onGenerate: (selectedResources, instructions) => {
+      if (!socket || !isConnected) return;
+      socket.emit("scenario_generate", {
+        resource_types: selectedResources,
+        user_instructions: instructions?.trim() ? [instructions.trim()] : null,
+        scenario_id: null,
+        mcp: false,
+      });
+      toast.success("Generation started for new scenario");
+    },
+    isGenerating: () => false,
+  });
 
   // Debounce refs
   const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -582,55 +614,6 @@ export function Scenarios({
     });
   }, [updateScenariosParams]);
 
-  // Listen for full-page-generate event
-  const handleOpenGenerateModal = useCallback(() => {
-    const resources: GenerateRegenerateModalResource[] = [
-      { id: "names", label: "Name", active: true },
-      { id: "descriptions", label: "Description", active: true },
-      { id: "problem_statements", label: "Problem Statement", active: true },
-      { id: "objectives", label: "Objectives", active: true },
-      { id: "scenario_flags", label: "Configuration", active: true },
-      { id: "departments", label: "Departments", active: true },
-      { id: "personas", label: "Personas", active: true },
-      { id: "documents", label: "Documents", active: true },
-      { id: "parameters", label: "Parameters", active: true },
-      { id: "fields", label: "Fields", active: true },
-      { id: "images", label: "Images", active: true },
-      { id: "videos", label: "Videos", active: true },
-      { id: "questions", label: "Questions", active: true },
-    ];
-    setModalResources(resources);
-    setModalInstructions("");
-    setShowGenerateModal(true);
-  }, []);
-
-  useEffect(() => {
-    const handleFullPageGenerate = () => {
-      handleOpenGenerateModal();
-    };
-    window.addEventListener("full-page-generate", handleFullPageGenerate);
-    return () =>
-      window.removeEventListener("full-page-generate", handleFullPageGenerate);
-  }, [handleOpenGenerateModal]);
-
-  // Handle modal generate (create new scenario + generate)
-  const handleModalGenerate = useCallback(
-    async (selectedResources: string[], instructions: string) => {
-      if (!socket || !isConnected) return;
-      setIsGenerating(true);
-      socket.emit("scenario_generate", {
-        resource_types: selectedResources,
-        user_instructions: instructions.trim() ? [instructions.trim()] : null,
-        scenario_id: null,
-        mcp: false,
-      });
-      setShowGenerateModal(false);
-      setIsGenerating(false);
-      toast.success("Generation started for new scenario");
-    },
-    [socket, isConnected]
-  );
-
   const renderScenarioCard = (
     scenario: (typeof scenarios)[number],
     isChild: boolean = false,
@@ -1087,17 +1070,7 @@ export function Scenarios({
           </AlertDialogContent>
         </AlertDialog>
 
-        <GenerateRegenerateModal
-          open={showGenerateModal}
-          onOpenChange={setShowGenerateModal}
-          resources={modalResources}
-          onResourcesChange={setModalResources}
-          instructions={modalInstructions}
-          onInstructionsChange={setModalInstructions}
-          onGenerate={handleModalGenerate}
-          isGenerating={isGenerating}
-          mode="generate"
-        />
+        <GenerateRegenerateModal {...modalProps} />
       </div>
     </TooltipProvider>
   );

@@ -10629,6 +10629,28 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/socket/v4/server/tool_generation_started": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Tool Generation Started Api
+         * @description Server-to-client event: Tool generation started.
+         *
+         *     Emitted when tool generation begins, listing resource types being generated.
+         */
+        post: operations["tool_generation_started_api_socket_v4_server_tool_generation_started_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/socket/v4/server/tool_generation_progress": {
         parameters: {
             query?: never;
@@ -48456,6 +48478,26 @@ export interface components {
             /** Trace Id */
             trace_id?: string | null;
         };
+        /**
+         * ToolGenerationStartedEvent
+         * @description Server-to-client event: tool_generation_started.
+         *
+         *     Emitted when tool generation begins, listing which resource types
+         *     will be generated.
+         */
+        ToolGenerationStartedEvent: {
+            /**
+             * Artifact Type
+             * @default tool
+             */
+            artifact_type: string;
+            /** Group Id */
+            group_id: string;
+            /** Run Id */
+            run_id: string;
+            /** Resource Types */
+            resource_types: string[];
+        };
         /** ToolNameSection */
         ToolNameSection: {
             /**
@@ -69513,6 +69555,41 @@ export interface operations {
                 "application/json": {
                     [key: string]: unknown;
                 };
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    tool_generation_started_api_socket_v4_server_tool_generation_started_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ToolGenerationStartedEvent"];
             };
         };
         responses: {

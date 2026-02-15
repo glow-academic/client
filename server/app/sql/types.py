@@ -5968,6 +5968,76 @@ class PrepareCohortGenerationApiResponse(BaseModel):
 
 
 
+# Generated from: get_department_generation_context
+
+class GetDepartmentGenerationContextSqlParams(BaseModel):
+
+    p_profile_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.p_profile_id,
+        )
+
+class GetDepartmentGenerationContextSqlRow(BaseModel):
+
+    requests_per_day: int | None = None
+    runs_today: int | None = None
+
+class GetDepartmentGenerationContextApiRequest(BaseModel):
+
+    p_profile_id: UUID
+
+class GetDepartmentGenerationContextApiResponse(BaseModel):
+
+    requests_per_day: int | None = None
+    runs_today: int | None = None
+
+
+
+# Generated from: prepare_department_generation
+
+class PrepareDepartmentGenerationSqlParams(BaseModel):
+
+    p_profile_id: UUID
+    p_group_id: UUID | None = None
+    p_agents_resource_id: UUID | None = None
+    p_models_resource_id: UUID | None = None
+    p_providers_resource_id: UUID | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.p_profile_id,
+            self.p_group_id,
+            self.p_agents_resource_id,
+            self.p_models_resource_id,
+            self.p_providers_resource_id,
+        )
+
+class PrepareDepartmentGenerationSqlRow(BaseModel):
+
+    run_id: UUID | None = None
+    group_id: UUID | None = None
+    trace_id: str | None = None
+    config_id: UUID | None = None
+
+class PrepareDepartmentGenerationApiRequest(BaseModel):
+
+    p_profile_id: UUID
+    p_group_id: UUID | None = None
+    p_agents_resource_id: UUID | None = None
+    p_models_resource_id: UUID | None = None
+    p_providers_resource_id: UUID | None = None
+
+class PrepareDepartmentGenerationApiResponse(BaseModel):
+
+    run_id: UUID | None = None
+    group_id: UUID | None = None
+    trace_id: str | None = None
+    config_id: UUID | None = None
+
+
+
 # Generated from: get_document_generation_context
 
 class GetDocumentGenerationContextSqlParams(BaseModel):
@@ -27782,6 +27852,18 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "PrepareCohortGenerationApiRequest",
         "PrepareCohortGenerationApiResponse",
     ),
+    "app/sql/v4/queries/generate/department/get_department_generation_context_complete.sql": (
+        "GetDepartmentGenerationContextSqlParams",
+        "GetDepartmentGenerationContextSqlRow",
+        "GetDepartmentGenerationContextApiRequest",
+        "GetDepartmentGenerationContextApiResponse",
+    ),
+    "app/sql/v4/queries/generate/department/prepare_department_generation_complete.sql": (
+        "PrepareDepartmentGenerationSqlParams",
+        "PrepareDepartmentGenerationSqlRow",
+        "PrepareDepartmentGenerationApiRequest",
+        "PrepareDepartmentGenerationApiResponse",
+    ),
     "app/sql/v4/queries/generate/document/get_document_generation_context_complete.sql": (
         "GetDocumentGenerationContextSqlParams",
         "GetDocumentGenerationContextSqlRow",
@@ -31471,6 +31553,16 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/queries/generate/cohort/prepare_cohort_generation_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/generate/department/get_department_generation_context_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/generate/department/prepare_department_generation_complete.sql"]
     ) -> SqlString: ...
 
     @overload

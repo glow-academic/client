@@ -235,3 +235,29 @@ class ProviderGenerationStartedEvent(BaseModel):
     group_id: str
     run_id: str
     resource_types: list[str]
+
+
+class ToolGenerationStartedEvent(BaseModel):
+    """Server-to-client event: tool_generation_started.
+
+    Emitted when tool generation begins, listing which resource types
+    will be generated.
+    """
+
+    artifact_type: str = "tool"
+    group_id: str
+    run_id: str
+    resource_types: list[str]
+
+
+class DepartmentGenerationStartedEvent(BaseModel):
+    """Server-to-client event: department_generation_started.
+
+    Emitted when department generation begins, listing which resource types
+    will be generated.
+    """
+
+    artifact_type: str = "department"
+    group_id: str
+    run_id: str
+    resource_types: list[str]

@@ -69,7 +69,8 @@ from app.api.v4.artifacts.agent.types import (
     GetAgentWebsocketResponse,
 )
 from app.api.v4.auth.profile import get_auth_profile_internal
-from app.api.v4.permissions import select_agents_for_artifact
+from app.api.v4.auth.settings import get_auth_settings_internal
+from app.api.v4.permissions import has_tools_for_resource, resolve_agents_for_artifact
 from app.api.v4.resources.agents.get import get_agents_internal
 from app.api.v4.resources.departments.get import get_departments_internal
 from app.api.v4.resources.departments.search import search_departments_internal
@@ -100,7 +101,6 @@ from app.api.v4.resources.tools.get import get_tools_internal
 from app.api.v4.resources.tools.search import search_tools_internal
 from app.api.v4.resources.voices.get import get_voices_internal
 from app.api.v4.resources.voices.search import search_voices_internal
-from app.api.v4.types import CandidateAgent
 from app.api.v4.views.drafts.get import get_draft_agent_internal
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
@@ -305,46 +305,44 @@ async def get_agent_internal(
         if draft_item.voice_ids:
             selected_voice_ids = draft_item.voice_ids
 
-    # Get tools existence flags from Query 2 (used for show_* UI flags)
-    names_has_tools = ids_result.names_has_tools or False
-    descriptions_has_tools = ids_result.descriptions_has_tools or False
-    models_has_tools = ids_result.models_has_tools or False
-    prompts_has_tools = ids_result.prompts_has_tools or False
-    instructions_has_tools = ids_result.instructions_has_tools or False
-    departments_has_tools = ids_result.departments_has_tools or False
-    tools_has_tools = ids_result.tools_has_tools or False
-    temperature_levels_has_tools = ids_result.temperature_levels_has_tools or False
-    reasoning_levels_has_tools = ids_result.reasoning_levels_has_tools or False
-    voices_has_tools = ids_result.voices_has_tools or False
-
-    # === PARSE CANDIDATE AGENTS FROM QUERY 2 AND COMPUTE AGENT IDS IN PYTHON ===
-    candidate_agents = CandidateAgent.from_sql_rows(ids_result.candidate_agents)
-
-    # Use Python scoring to select best agents for each resource
-    user_dept_set = set(user_department_ids) if user_department_ids else None
-    resources_needed = list(AGENT_RESOURCES)
-    agent_ids = select_agents_for_artifact(
-        candidates=candidate_agents,
-        artifact_resources=AGENT_RESOURCES,
-        resources_needed=resources_needed,
-        user_department_ids=user_dept_set,
-        require_mcp=False,
+    # === RESOLVE AGENTS FROM SETTINGS ===
+    async with pool.acquire() as settings_conn:
+        settings_data = await get_auth_settings_internal(
+            settings_conn, profile_id, bypass_cache
+        )
+    agent_ids, create_tool_ids_map, link_tool_ids_map = resolve_agents_for_artifact(
+        settings_data.agent_tool_entries, AGENT_RESOURCES
     )
-
-    # === BUILD TOOL_IDS MAPS FROM SELECTED AGENTS ===
-    create_tool_ids_map: dict[str, UUID | None] = {}
-    link_tool_ids_map: dict[str, UUID | None] = {}
-
-    for resource in AGENT_RESOURCES:
-        selected_agent_id = agent_ids.get(resource)
-        if selected_agent_id:
-            for candidate in candidate_agents:
-                if candidate.agent_id == selected_agent_id:
-                    create_tool_ids_map[resource] = candidate.create_tool_ids.get(
-                        resource
-                    )
-                    link_tool_ids_map[resource] = candidate.link_tool_ids.get(resource)
-                    break
+    names_has_tools = has_tools_for_resource(
+        settings_data.agent_tool_entries, "names"
+    )
+    descriptions_has_tools = has_tools_for_resource(
+        settings_data.agent_tool_entries, "descriptions"
+    )
+    models_has_tools = has_tools_for_resource(
+        settings_data.agent_tool_entries, "models"
+    )
+    prompts_has_tools = has_tools_for_resource(
+        settings_data.agent_tool_entries, "prompts"
+    )
+    instructions_has_tools = has_tools_for_resource(
+        settings_data.agent_tool_entries, "instructions"
+    )
+    departments_has_tools = has_tools_for_resource(
+        settings_data.agent_tool_entries, "departments"
+    )
+    tools_has_tools = has_tools_for_resource(
+        settings_data.agent_tool_entries, "tools"
+    )
+    temperature_levels_has_tools = has_tools_for_resource(
+        settings_data.agent_tool_entries, "temperature_levels"
+    )
+    reasoning_levels_has_tools = has_tools_for_resource(
+        settings_data.agent_tool_entries, "reasoning_levels"
+    )
+    voices_has_tools = has_tools_for_resource(
+        settings_data.agent_tool_entries, "voices"
+    )
 
     # === COMPUTE SHOW_AI_GENERATE FLAGS ===
     def compute_show_ai_generate(resource: str) -> bool:

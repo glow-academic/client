@@ -44,7 +44,8 @@ from app.api.v4.artifacts.provider.types import (
     ProviderWebsocketViews,
 )
 from app.api.v4.auth.profile import get_auth_profile_internal
-from app.api.v4.permissions import select_agents_for_artifact
+from app.api.v4.auth.settings import get_auth_settings_internal
+from app.api.v4.permissions import has_tools_for_resource, resolve_agents_for_artifact
 from app.api.v4.resources.agents.get import get_agents_internal
 from app.api.v4.resources.departments.get import get_departments_internal
 from app.api.v4.resources.departments.search import search_departments_internal
@@ -61,7 +62,6 @@ from app.api.v4.resources.providers.get import get_providers_internal
 from app.api.v4.resources.tools.get import get_tools_internal
 from app.api.v4.resources.values.get import get_values_internal
 from app.api.v4.resources.values.search import search_values_internal
-from app.api.v4.types import CandidateAgent
 from app.api.v4.views.drafts.get import get_draft_provider_internal
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
@@ -189,26 +189,14 @@ async def get_provider_internal(
         if draft_item.department_ids:
             selected_department_ids = draft_item.department_ids
 
-    candidate_agents = CandidateAgent.from_sql_rows(ids_result.candidate_agents)
-    agent_ids = select_agents_for_artifact(
-        candidates=candidate_agents,
-        artifact_resources=PROVIDER_RESOURCES,
-        resources_needed=list(PROVIDER_RESOURCES),
-        user_department_ids=set(user_department_ids) if user_department_ids else None,
-        require_mcp=False,
+    # === RESOLVE AGENTS FROM SETTINGS ===
+    async with pool.acquire() as settings_conn:
+        settings_data = await get_auth_settings_internal(
+            settings_conn, profile_id, bypass_cache
+        )
+    agent_ids, create_tool_ids_map, link_tool_ids_map = resolve_agents_for_artifact(
+        settings_data.agent_tool_entries, PROVIDER_RESOURCES
     )
-
-    create_tool_ids_map: dict[str, UUID | None] = {}
-    link_tool_ids_map: dict[str, UUID | None] = {}
-    for resource in PROVIDER_RESOURCES:
-        selected_agent_id = agent_ids.get(resource)
-        if selected_agent_id is None:
-            continue
-        for candidate in candidate_agents:
-            if candidate.agent_id == selected_agent_id:
-                create_tool_ids_map[resource] = candidate.create_tool_ids.get(resource)
-                link_tool_ids_map[resource] = candidate.link_tool_ids.get(resource)
-                break
 
     show_ai_generate_map = {
         resource: agent_ids.get(resource) is not None for resource in PROVIDER_RESOURCES
@@ -374,7 +362,7 @@ async def get_provider_internal(
     ]
 
     show_flags_map = {
-        "names": compute_show_name(ids_result.names_has_tools or False),
+        "names": compute_show_name(has_tools_for_resource(settings_data.agent_tool_entries, "names")),
         "descriptions": compute_show_description(),
         "flags": compute_show_flag(),
         "departments": compute_show_departments(len(departments)),
@@ -418,29 +406,23 @@ async def get_provider_internal(
     )
     selected_flags = [selected_flag] if selected_flag else []
 
-    selected_agent_ids = [aid for aid in agent_ids.values() if aid]
-    unique_agent_ids = list(dict.fromkeys(selected_agent_ids))
+    config_agent_resource_ids = [a.id for a in settings_data.settings_agents if a.id]
+    config_model_resource_ids = [
+        a.model_id for a in settings_data.settings_agents if a.model_id
+    ]
+
     config_agents_result: list[Any] = []
     config_models_result: list[Any] = []
     config_providers_result: list[Any] = []
-    if unique_agent_ids:
+    if config_agent_resource_ids:
         async with pool.acquire() as c:
             config_agents_result = await get_agents_internal(
-                c, unique_agent_ids, bypass_cache
+                c, config_agent_resource_ids, bypass_cache
             )
-    model_ids_for_config = list(
-        dict.fromkeys(
-            [
-                getattr(agent, "model_id", None)
-                for agent in config_agents_result
-                if getattr(agent, "model_id", None) is not None
-            ]
-        )
-    )
-    if model_ids_for_config:
+    if config_model_resource_ids:
         async with pool.acquire() as c:
             config_models_result = await get_models_internal(
-                c, model_ids_for_config, bypass_cache
+                c, config_model_resource_ids, bypass_cache
             )
     provider_ids_for_config = list(
         dict.fromkeys(

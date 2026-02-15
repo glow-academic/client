@@ -27,6 +27,7 @@ class GenerateToolPayload(GetToolApiRequest):
     # Generation-specific fields - resource-type-based API
     resource_types: list[str]
     user_instructions: list[str] | None = None  # Optional: user instructions
+    save: bool = True  # Whether to auto-save on completion
 
 
 # =============================================================================
