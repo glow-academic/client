@@ -28,10 +28,11 @@ Reference: `server/app/api/v4/artifacts/persona/get.py`
   - Params: `profile_id`, `artifact_id`, `draft_id`
   - Returns: `user_role`, `user_department_ids`, `artifact_department_ids`, `active_usage_count`, `group_id`, `draft_version`
   - SQL file: `get_{artifact}_access_complete.sql`
-- **Q2 (ID Fetching)**: Gets all resource IDs, candidate agents, config chain IDs, and tool existence flags.
+- **Q2 (ID Fetching)**: Gets all resource IDs for parallel resource fetching.
   - Params: `profile_id`, `artifact_id`, `draft_id`, `group_id`, `user_department_ids`
-  - Returns: selected resource IDs per type, `candidate_agents` array, `config_agent_resource_ids`, `config_model_resource_ids`, `config_provider_resource_ids`, `*_has_tools` flags
+  - Returns: selected resource IDs per type (junction-table lookups only)
   - SQL file: `get_{artifact}_ids_complete.sql`
+  - **Note**: For the 4 main artifacts (persona, scenario, simulation, cohort), Q2 no longer returns `candidate_agents`, `config_*_resource_ids`, or `*_has_tools` flags — these are resolved via `get_auth_settings_internal()` in Python.
 
 No additional SQL queries in the internal function beyond Q1 and Q2.
 
@@ -44,7 +45,7 @@ The internal function must fetch user context (actor name, user role, department
 The auth layer is split into two cached internal functions:
 
 - **`get_auth_profile_internal()`** (`auth/profile.py`) — Returns `AuthProfileInternalData`: access row + hydrated departments + cohorts + role resources + session. Use this for identity, permissions, and department-scoped filtering.
-- **`get_auth_settings_internal()`** (`auth/settings.py`) — Returns `AuthSettingsInternalData`: hydrated settings resource + agents + tools + theme tokens + generation map. Use this only when the artifact needs settings-level agents/tools (most artifacts do NOT).
+- **`get_auth_settings_internal()`** (`auth/settings.py`) — Returns `AuthSettingsInternalData`: hydrated settings resource + agents + tools + theme tokens + generation map + `agent_tool_entries` (flat agent→tool→resource entries). The 4 main artifacts (persona, scenario, simulation, cohort) call this for agent/tool resolution via `resolve_agents_for_artifact()`.
 
 Both rely on individually-cached resource internals (`get_access_internal()`, `get_departments_internal()`, etc.), so repeated calls within the same request window are cheap.
 
@@ -73,26 +74,32 @@ name_resource_id = draft_name_id or canonical_name_id
 
 Reference: `server/app/api/v4/artifacts/persona/get.py:226-248`
 
-### Rule 4: Agent scoring happens in Python
+### Rule 4: Agent resolution happens in Python
 
-`select_agents_for_artifact()` scores candidate agents (from Q2) and returns a `dict[str, UUID | None]` mapping resource type strings to the best agent UUID for that resource. This is pure Python — no SQL.
+For the 4 main artifacts (persona, scenario, simulation, cohort), agent resolution uses `resolve_agents_for_artifact()` with `settings_data.agent_tool_entries` from `get_auth_settings_internal()`. This replaces the previous `select_agents_for_artifact()` + `CandidateAgent` pattern.
 
 ```python
-resource_agent_ids = select_agents_for_artifact(
-    candidate_agents=candidate_agents,
-    resource_types=PERSONA_RESOURCES,
+from app.api.v4.auth.settings import get_auth_settings_internal
+from app.api.v4.permissions import resolve_agents_for_artifact
+
+settings_data = await get_auth_settings_internal(conn, profile_id, bypass_cache)
+agent_ids, create_tool_ids, link_tool_ids = resolve_agents_for_artifact(
+    settings_data.agent_tool_entries, ARTIFACT_RESOURCES
 )
 ```
 
-Reference: `server/app/api/v4/artifacts/persona/get.py:261-273`
+For the remaining 13 artifacts, the legacy pattern using `select_agents_for_artifact()` with `CandidateAgent.from_sql_rows()` (from Q2 SQL) is still used.
 
-### Rule 5: Tool ID map built from selected agents
+Reference: `server/app/api/v4/permissions.py`, `server/app/api/v4/artifacts/persona/get.py`
 
-After agent scoring, a single tool ID map is built per resource type:
+### Rule 5: Tool ID map built from agent resolution
 
-- `tool_ids: dict[str, UUID | None]` — extracted via `tool_ids_map()`
+After agent resolution, tool ID maps are returned directly by `resolve_agents_for_artifact()`:
 
-This map is derived from the selected agents' tool definitions. Each resource type maps to a single `tool_id` (replacing the previous `create_tool_id` + `link_tool_id` split). The server uses this map to resolve tool IDs for save/draft tracking — the client does not send tool IDs.
+- `create_tool_ids: dict[str, UUID | None]` — create tool per resource
+- `link_tool_ids: dict[str, UUID | None]` — link tool per resource
+
+The server uses these maps to resolve tool IDs for save/draft tracking — the client does not send tool IDs.
 
 Reference: `server/app/api/v4/artifacts/persona/get.py`
 
@@ -102,7 +109,7 @@ Pass 2 fetches all resource data in parallel using `asyncio.gather()` with separ
 
 - Selected resources for each resource type
 - Suggestion resources for each resource type
-- Config resources: agents, models, providers (from config chain IDs in Q2)
+- Config resources: agents, models, providers (from `settings_data.settings_agents` for main 4 artifacts, from config chain IDs in Q2 for others)
 
 All resources are deduped via `_dedupe_by_id()`.
 
@@ -522,5 +529,5 @@ Completion handler compliant: {N}
 2. **The persona artifact is the gold standard.** All patterns reference `server/app/api/v4/artifacts/persona/`.
 3. **Known deviations**: Some artifacts may use shared SQL (`get_generation_run_context_and_create_run_complete.sql`) instead of artifact-specific prepare SQL. This is acceptable if documented.
 4. **Socket handlers**: Both client-facing (`@sio.event`) and internal bus (`@internal_sio.on`) handlers should follow the same flow.
-5. **Config chain**: The config chain (profile → departments → settings → agents → models → providers) is resolved in Q2 SQL and passed through to all layers. No additional SQL hops needed in socket handlers.
+5. **Config chain**: For the 4 main artifacts, the config chain is resolved via `get_auth_settings_internal()` in Python (cached per-request). For other artifacts, it is resolved in Q2 SQL. No additional SQL hops needed in socket handlers.
 6. **`resource_agent_ids`** is included in the HTTP client response for frontend AI button visibility computation, but the frontend never sends agent IDs back — it sends `resource_types` for generation.

@@ -66,9 +66,7 @@ async def resolve_profile_ids_for_filters(
 
 async def get_drafts_count(conn: asyncpg.Connection) -> int:
     """Get total count of active drafts across all artifact types."""
-    count = await conn.fetchval(
-        "SELECT COUNT(*) FROM drafts_entry WHERE active = true"
-    )
+    count = await conn.fetchval("SELECT COUNT(*) FROM drafts_entry WHERE active = true")
     return count or 0
 
 

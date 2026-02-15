@@ -365,8 +365,7 @@ async def get_scenario_internal(
 
     # === COMPUTE SHOW_AI_GENERATE FLAGS ===
     show_ai_generate_map = {
-        resource: agent_ids.get(resource) is not None
-        for resource in SCENARIO_RESOURCES
+        resource: agent_ids.get(resource) is not None for resource in SCENARIO_RESOURCES
     }
 
     basic_show_ai_generate = any(

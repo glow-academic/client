@@ -150,9 +150,7 @@ class TestScenarioGetExisting:
         assert departments is not None
         assert "resources" in departments
 
-    async def test_get_existing_has_personas(
-        self, client: httpx.AsyncClient
-    ) -> None:
+    async def test_get_existing_has_personas(self, client: httpx.AsyncClient) -> None:
         """GET existing scenario returns personas section with seed data."""
         response = await client.post(
             "/api/v4/artifacts/scenarios/get",
@@ -181,9 +179,7 @@ class TestScenarioGetExisting:
             assert "key" in first_flag
             assert "label" in first_flag
 
-    async def test_get_existing_has_objectives(
-        self, client: httpx.AsyncClient
-    ) -> None:
+    async def test_get_existing_has_objectives(self, client: httpx.AsyncClient) -> None:
         """GET existing scenario returns objectives section."""
         response = await client.post(
             "/api/v4/artifacts/scenarios/get",
@@ -212,9 +208,7 @@ class TestScenarioGetExisting:
 class TestScenarioGetErrors:
     """Tests for POST /api/v4/artifacts/scenarios/get error cases."""
 
-    async def test_get_nonexistent_returns_404(
-        self, client: httpx.AsyncClient
-    ) -> None:
+    async def test_get_nonexistent_returns_404(self, client: httpx.AsyncClient) -> None:
         """GET with nonexistent scenario_id returns 404."""
         response = await client.post(
             "/api/v4/artifacts/scenarios/get",
@@ -224,9 +218,7 @@ class TestScenarioGetErrors:
 
         assert response.status_code == 404
 
-    async def test_get_no_profile_returns_401(
-        self, client: httpx.AsyncClient
-    ) -> None:
+    async def test_get_no_profile_returns_401(self, client: httpx.AsyncClient) -> None:
         """GET without X-Profile-Id returns 401."""
         response = await client.post(
             "/api/v4/artifacts/scenarios/get",

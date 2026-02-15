@@ -162,7 +162,7 @@ flag_resource_data AS (
            AND pf.value = TRUE
          LIMIT 1) as active_flag_id
     FROM params
-),
+)
 SELECT
     -- Single-select resource IDs
     (SELECT name_id FROM name_resource_data) as name_id,

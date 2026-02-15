@@ -11,28 +11,15 @@
 
 import { Button } from "@/components/ui/button";
 import { useSettings } from "@/contexts/settings-context";
-import { normalizeUrlPathToArtifactType } from "@/utils/resource-type-utils";
 import { Sparkles } from "lucide-react";
-import { usePathname } from "next/navigation";
-import { useCallback, useMemo } from "react";
+import { useCallback } from "react";
 
-export function FullPageGenerateButton() {
-  const pathname = usePathname();
+interface FullPageGenerateButtonProps {
+  artifactType?: string | null;
+}
+
+export function FullPageGenerateButton({ artifactType }: FullPageGenerateButtonProps) {
   const { artifactHasGeneration } = useSettings();
-
-  // Compute artifactType from URL (same logic as layout-client)
-  const urlPathSegment = useMemo(() => {
-    const match = pathname?.match(
-      /^\/(create|management|engine|system)\/([^/]+)/
-    );
-    return match ? match[2] : null;
-  }, [pathname]);
-
-  const artifactType = useMemo(() => {
-    return urlPathSegment
-      ? normalizeUrlPathToArtifactType(urlPathSegment)
-      : null;
-  }, [urlPathSegment]);
 
   const hasGeneration = artifactType ? artifactHasGeneration[artifactType] ?? false : false;
 

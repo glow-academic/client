@@ -533,9 +533,7 @@ async def list_attempts(
         )
 
         if actor_name:
-            audit_set(
-                http_request, actor={"name": actor_name, "id": profile_id}
-            )
+            audit_set(http_request, actor={"name": actor_name, "id": profile_id})
 
         result = await get_attempt_list_artifact_internal(
             conn=conn,

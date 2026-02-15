@@ -2,6 +2,7 @@
 
 from collections import defaultdict
 from datetime import date, datetime
+from typing import Any
 
 from app.api.v4.artifacts.reports.types import (
     ReportsDataPoint,
@@ -20,8 +21,6 @@ from app.api.v4.artifacts.reports.types import (
     ReportsTrendPoint,
     ReportsTrendsSection,
 )
-from typing import Any
-
 from app.api.v4.views.analytics.profile_facts.types import ProfileFactsItem
 
 # Type aliases for deprecated v1 types (modules deleted in DELETE OLD VIEWS)

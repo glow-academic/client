@@ -115,7 +115,7 @@ function MainLayoutContent({
   };
 
   // Use server-driven page metadata for create/edit detection
-  const isCreateOrEditPage = pageMetadata?.show_save_toolbar ?? false;
+  const showDrafts = pageMetadata?.show_drafts ?? false;
   const artifactType = pageMetadata?.artifact_type ?? null;
 
   // Server-driven action button from pageMetadata
@@ -156,8 +156,8 @@ function MainLayoutContent({
               <AnalyticsFilters refreshPage={refreshPageAction} />
             )}
 
-            {/* SimulationControls - Server gates via show_controls */}
-            {attemptControls?.show_controls && (
+            {/* Mutual exclusivity: End Session > Drafts > New X */}
+            {attemptControls?.show_controls ? (
               <div className="pr-4">
                 <SimulationControls
                   attemptId={attemptControls.attempt_id!}
@@ -166,17 +166,16 @@ function MainLayoutContent({
                   hasMessages={attemptControls.has_messages ?? false}
                 />
               </div>
+            ) : (
+              <>
+                <FullPageGenerateButton artifactType={artifactType} />
+                {showDrafts && artifactType ? (
+                  <SaveToolbar artifactType={artifactType} />
+                ) : (
+                  actionButton && <div className="pr-4">{actionButton}</div>
+                )}
+              </>
             )}
-
-            {/* Generate Button - self-gates via GenerationCapability context (works on both create/edit and list pages) */}
-            <FullPageGenerateButton />
-
-            {/* SaveToolbar - Show on create/edit pages */}
-            {isCreateOrEditPage && artifactType && (
-              <SaveToolbar artifactType={artifactType} />
-            )}
-
-            {actionButton && <div className="pr-4">{actionButton}</div>}
           </header>
 
           <div className="flex flex-1 flex-col gap-4 p-4 pt-0">

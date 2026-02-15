@@ -1,11 +1,10 @@
 """Types for reports artifact get bundle."""
 
 from datetime import datetime
+from typing import Any
 from uuid import UUID
 
 from pydantic import BaseModel, Field
-
-from typing import Any
 
 from app.api.v4.artifacts.types import FilterOption
 

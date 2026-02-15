@@ -92,9 +92,7 @@ class TestPersonaSaveUpdate:
 class TestPersonaSaveErrors:
     """Tests for POST /api/v4/artifacts/personas/save error cases."""
 
-    async def test_save_no_profile_returns_401(
-        self, client: httpx.AsyncClient
-    ) -> None:
+    async def test_save_no_profile_returns_401(self, client: httpx.AsyncClient) -> None:
         """SAVE without X-Profile-Id returns 401."""
         payload = _build_save_request(persona_id=None)
 

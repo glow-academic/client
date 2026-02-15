@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/tooltip";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
+import { useSocket } from "@/contexts/socket-context";
 import { Check, Loader2, Sparkles, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
@@ -84,6 +85,7 @@ export interface ScenarioRubricsProps {
   aiScenarioRubricResources?: Pick<ScenarioRubricResourceItem, "id" | "scenario_id" | "rubric_id">[] | null;
   onAccept?: () => void;
   onReject?: () => void;
+  onGenerationComplete?: () => void;
 }
 
 const NONE_OPTION = "__none__";
@@ -123,6 +125,7 @@ export function ScenarioRubrics({
   aiScenarioRubricResources,
   onAccept,
   onReject,
+  onGenerationComplete,
 }: ScenarioRubricsProps) {
   const show = show_scenario_rubrics ?? false;
   const currentResources = useMemo(
@@ -130,6 +133,39 @@ export function ScenarioRubrics({
     [scenario_rubric_resources]
   );
   const allRubrics = useMemo(() => rubrics ?? [], [rubrics]);
+
+  // Socket-based AI suggestion handling
+  const { socket: aiSocket, isConnected: aiIsConnected } = useSocket();
+  const [internalAiScenarioRubricResources, setInternalAiScenarioRubricResources] = useState<
+    Pick<ScenarioRubricResourceItem, "id" | "scenario_id" | "rubric_id">[] | null
+  >(null);
+
+  useEffect(() => {
+    if (!aiSocket || !aiIsConnected) return;
+    const handleResourceComplete = (data: {
+      group_id?: string;
+      id?: string | null;
+      scenario_id?: string | null;
+      rubric_id?: string | null;
+    }) => {
+      if (group_id && data.group_id !== group_id) return;
+      if (data.id) {
+        setInternalAiScenarioRubricResources([
+          { id: data.id, scenario_id: data.scenario_id ?? null, rubric_id: data.rubric_id ?? null },
+        ]);
+      }
+      onGenerationComplete?.();
+    };
+    aiSocket.on("scenario_rubrics_generation_complete", handleResourceComplete);
+    return () => {
+      aiSocket.off("scenario_rubrics_generation_complete", handleResourceComplete);
+    };
+  }, [aiSocket, aiIsConnected, group_id, onGenerationComplete]);
+
+  // Effective AI resources: internal (socket) takes priority, then prop fallback
+  const effectiveAiScenarioRubricResources =
+    internalAiScenarioRubricResources ?? aiScenarioRubricResources ?? null;
+
   const scenarioLabelMap = useMemo(() => {
     const map = new Map<string, string>();
     // Use full scenarios list as base (keyed by scenario_id to match scenario_ids)

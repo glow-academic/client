@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/tooltip";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
+import { useSocket } from "@/contexts/socket-context";
 import { Check, Clock, Loader2, Sparkles, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
@@ -78,6 +79,7 @@ export interface ScenarioTimeLimitsProps {
   aiScenarioTimeLimitResources?: Pick<ScenarioTimeLimitResourceItem, "id" | "scenario_id" | "time_limit_seconds">[] | null;
   onAccept?: () => void;
   onReject?: () => void;
+  onGenerationComplete?: () => void;
 }
 
 export function ScenarioTimeLimits({
@@ -105,6 +107,7 @@ export function ScenarioTimeLimits({
   aiScenarioTimeLimitResources,
   onAccept,
   onReject,
+  onGenerationComplete,
 }: ScenarioTimeLimitsProps) {
   const show = show_scenario_time_limits ?? false;
   const timeLimitResources = useMemo(

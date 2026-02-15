@@ -189,8 +189,10 @@ async def get_simulation_list(
             if items is None:
                 return None
             return [
-                item if isinstance(item, dict)
-                else item.model_dump() if hasattr(item, "model_dump")
+                item
+                if isinstance(item, dict)
+                else item.model_dump()
+                if hasattr(item, "model_dump")
                 else item
                 for item in items
             ]

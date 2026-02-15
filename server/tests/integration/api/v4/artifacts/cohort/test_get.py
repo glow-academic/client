@@ -210,9 +210,7 @@ class TestCohortGetExisting:
 class TestCohortGetErrors:
     """Tests for POST /api/v4/artifacts/cohorts/get error cases."""
 
-    async def test_get_nonexistent_returns_404(
-        self, client: httpx.AsyncClient
-    ) -> None:
+    async def test_get_nonexistent_returns_404(self, client: httpx.AsyncClient) -> None:
         """GET with nonexistent cohort_id returns 404."""
         response = await client.post(
             "/api/v4/artifacts/cohorts/get",

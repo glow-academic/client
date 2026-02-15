@@ -12,9 +12,9 @@ from collections.abc import AsyncGenerator
 import asyncpg  # type: ignore
 import httpx
 import pytest_asyncio
+from tests.seed_helpers import TEST_SUPERADMIN_PROFILE_ID
 
 from app.main import fastapi_app, get_db, get_pool
-from tests.seed_helpers import TEST_SUPERADMIN_PROFILE_ID
 
 # Ensure the test superadmin profile is linked to the Purdue CS department so
 # that artifact GET endpoints (which require ≥1 accessible department) work.

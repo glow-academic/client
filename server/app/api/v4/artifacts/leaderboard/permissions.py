@@ -9,6 +9,7 @@ import json
 from collections import defaultdict
 from datetime import date, datetime
 from statistics import mean
+from typing import Any
 
 from app.api.v4.artifacts.leaderboard.types import (
     LeaderboardAccoladeWinner,
@@ -20,8 +21,6 @@ from app.api.v4.artifacts.leaderboard.types import (
     LeaderboardSections,
     LeaderboardSectionStatus,
 )
-from typing import Any
-
 from app.api.v4.views.analytics.profile_facts.types import ProfileFactsItem
 
 # Type aliases for deprecated v1 types (modules deleted in DELETE OLD VIEWS)

@@ -25,7 +25,7 @@ def resolve_agents_for_artifact(
         (agent_ids, create_tool_ids, link_tool_ids) — all resource→UUID|None dicts
     """
     if not entries:
-        empty: dict[str, UUID | None] = {r: None for r in artifact_resources}
+        empty: dict[str, UUID | None] = dict.fromkeys(artifact_resources)
         return empty, dict(empty), dict(empty)
 
     # Group entries by agent: agent_id -> list of entries
@@ -61,9 +61,7 @@ def resolve_agents_for_artifact(
 
         # Find create/link tool IDs for this agent+resource
         agent_resource_entries = [
-            e
-            for e in resource_entries
-            if e.agent_id == best_entry.agent_id
+            e for e in resource_entries if e.agent_id == best_entry.agent_id
         ]
         create_tool_ids[resource] = next(
             (e.tool_id for e in agent_resource_entries if e.is_creatable), None

@@ -25,6 +25,7 @@ import type { InputOf, OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 import { Check, Loader2, Sparkles, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useSocket } from "@/contexts/socket-context";
 
 type CreateDraftScenarioPersonasIn = InputOf<
   "/api/v4/resources/scenario_personas",
@@ -98,6 +99,7 @@ export interface ScenarioPersonasProps {
   aiScenarioPersonaResources?: Pick<ScenarioPersonasResourceItem, "id" | "scenario_id" | "persona_id">[] | null;
   onAccept?: () => void;
   onReject?: () => void;
+  onGenerationComplete?: () => void;
 }
 
 export function ScenarioPersonas({
@@ -129,6 +131,7 @@ export function ScenarioPersonas({
   aiScenarioPersonaResources,
   onAccept,
   onReject,
+  onGenerationComplete,
 }: ScenarioPersonasProps) {
   const show = show_scenario_personas ?? false;
   const allPersonas = useMemo(() => scenario_personas ?? [], [scenario_personas]);
@@ -136,6 +139,38 @@ export function ScenarioPersonas({
     () => scenario_persona_resources ?? [],
     [scenario_persona_resources]
   );
+
+  // Socket-based AI suggestion handling
+  const { socket: aiSocket, isConnected: aiIsConnected } = useSocket();
+  const [internalAiScenarioPersonaResources, setInternalAiScenarioPersonaResources] = useState<
+    Pick<ScenarioPersonasResourceItem, "id" | "scenario_id" | "persona_id">[] | null
+  >(null);
+
+  useEffect(() => {
+    if (!aiSocket || !aiIsConnected) return;
+    const handleResourceComplete = (data: {
+      group_id?: string;
+      id?: string | null;
+      scenario_id?: string | null;
+      persona_id?: string | null;
+    }) => {
+      if (group_id && data.group_id !== group_id) return;
+      if (data.id) {
+        setInternalAiScenarioPersonaResources([
+          { id: data.id, scenario_id: data.scenario_id ?? null, persona_id: data.persona_id ?? null },
+        ]);
+      }
+      onGenerationComplete?.();
+    };
+    aiSocket.on("scenario_personas_generation_complete", handleResourceComplete);
+    return () => {
+      aiSocket.off("scenario_personas_generation_complete", handleResourceComplete);
+    };
+  }, [aiSocket, aiIsConnected, group_id, onGenerationComplete]);
+
+  // Effective AI resources: internal (socket) takes priority, then prop fallback
+  const effectiveAiScenarioPersonaResources =
+    internalAiScenarioPersonaResources ?? aiScenarioPersonaResources ?? null;
 
   const scenarioLabelMap = useMemo(() => {
     const map = new Map<string, string>();
@@ -366,32 +401,34 @@ export function ScenarioPersonas({
   );
 
   // AI suggestion state
-  const showDiff = !!aiScenarioPersonaResources?.length;
+  const showDiff = !!effectiveAiScenarioPersonaResources?.length;
 
   // Set of AI-suggested scenario IDs for styling
   const aiSuggestedScenarioIds = useMemo(
     () =>
       new Set(
-        aiScenarioPersonaResources
+        effectiveAiScenarioPersonaResources
           ?.map((r) => r.scenario_id)
           .filter(Boolean) as string[]
       ),
-    [aiScenarioPersonaResources]
+    [effectiveAiScenarioPersonaResources]
   );
 
   // Accept AI suggestion - apply AI-suggested persona assignments
   const handleAccept = useCallback(() => {
-    if (!aiScenarioPersonaResources?.length) return;
-    aiScenarioPersonaResources.forEach((r) => {
+    if (!effectiveAiScenarioPersonaResources?.length) return;
+    effectiveAiScenarioPersonaResources.forEach((r) => {
       if (r.scenario_id && r.persona_id) {
         handlePersonaChange(r.scenario_id, r.persona_id);
       }
     });
+    setInternalAiScenarioPersonaResources(null);
     onAccept?.();
-  }, [aiScenarioPersonaResources, handlePersonaChange, onAccept]);
+  }, [effectiveAiScenarioPersonaResources, handlePersonaChange, onAccept]);
 
   // Reject AI suggestion - just clear the pending state
   const handleReject = useCallback(() => {
+    setInternalAiScenarioPersonaResources(null);
     onReject?.();
   }, [onReject]);
 
@@ -475,7 +512,7 @@ export function ScenarioPersonas({
         </div>
       )}
       {/* AI-suggested persona assignments preview */}
-      {showDiff && aiScenarioPersonaResources && aiScenarioPersonaResources.length > 0 && (
+      {showDiff && effectiveAiScenarioPersonaResources && effectiveAiScenarioPersonaResources.length > 0 && (
         <div className="mb-4 space-y-2">
           <p className="text-sm font-medium text-success">AI Suggested Persona Assignments</p>
           <div className="space-y-2">

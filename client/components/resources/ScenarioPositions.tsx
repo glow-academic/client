@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/tooltip";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
+import { useSocket } from "@/contexts/socket-context";
 import { Check, ChevronLeft, ChevronRight, GripVertical, Loader2, Sparkles, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
@@ -87,6 +88,7 @@ export interface ScenarioPositionsProps {
   aiScenarioPositionResources?: Pick<ScenarioPositionResourceItem, "id" | "scenario_id" | "value">[] | null;
   onAccept?: () => void;
   onReject?: () => void;
+  onGenerationComplete?: () => void;
 }
 
 export function ScenarioPositions({
@@ -118,6 +120,7 @@ export function ScenarioPositions({
   aiScenarioPositionResources,
   onAccept,
   onReject,
+  onGenerationComplete,
 }: ScenarioPositionsProps) {
   const show = show_scenario_positions ?? false;
   const allPositions = useMemo(() => scenario_positions ?? [], [scenario_positions]);
@@ -154,6 +157,39 @@ export function ScenarioPositions({
     });
     return map;
   }, [scenarios, scenario_resources]);
+
+  // Socket-based AI suggestion handling
+  const { socket: aiSocket, isConnected: aiIsConnected } = useSocket();
+  const [internalAiScenarioPositionResources, setInternalAiScenarioPositionResources] = useState<
+    Pick<ScenarioPositionResourceItem, "id" | "scenario_id" | "value">[] | null
+  >(null);
+
+  useEffect(() => {
+    if (!aiSocket || !aiIsConnected) return;
+    const handleResourceComplete = (data: {
+      group_id?: string;
+      id?: string | null;
+      scenario_id?: string | null;
+      value?: number | null;
+    }) => {
+      if (group_id && data.group_id !== group_id) return;
+      if (data.id) {
+        setInternalAiScenarioPositionResources([
+          { id: data.id, scenario_id: data.scenario_id ?? null, value: data.value ?? null },
+        ]);
+      }
+      onGenerationComplete?.();
+    };
+    aiSocket.on("scenario_positions_generation_complete", handleResourceComplete);
+    return () => {
+      aiSocket.off("scenario_positions_generation_complete", handleResourceComplete);
+    };
+  }, [aiSocket, aiIsConnected, group_id, onGenerationComplete]);
+
+  // Effective AI resources: internal (socket) takes priority, then prop fallback
+  const effectiveAiScenarioPositionResources =
+    internalAiScenarioPositionResources ?? aiScenarioPositionResources ?? null;
+
   // Map resource ID → artifact ID for API calls (API expects scenario_artifact.id)
   // From get_simulation SQL: s.id = scenarios_resource.id, s.scenario_id = scenario_artifact.id (via junction)
   const artifactIdMap = useMemo(() => {
@@ -396,23 +432,23 @@ export function ScenarioPositions({
   }, [localPositions]);
 
   // AI suggestion state
-  const showDiff = !!aiScenarioPositionResources?.length;
+  const showDiff = !!effectiveAiScenarioPositionResources?.length;
   const aiSuggestedIds = useMemo(
     () =>
       new Set(
-        aiScenarioPositionResources
+        effectiveAiScenarioPositionResources
           ?.map((r) => r.scenario_id)
           .filter(Boolean) as string[]
       ),
-    [aiScenarioPositionResources]
+    [effectiveAiScenarioPositionResources]
   );
 
   // Accept AI suggestion - apply AI-suggested positions
   const handleAccept = useCallback(() => {
-    if (!aiScenarioPositionResources?.length) return;
+    if (!effectiveAiScenarioPositionResources?.length) return;
     // Apply AI positions to local state
     const newPositions = new Map(localPositions);
-    aiScenarioPositionResources.forEach((pos) => {
+    effectiveAiScenarioPositionResources.forEach((pos) => {
       if (pos.scenario_id && pos.value !== null && pos.value !== undefined) {
         newPositions.set(pos.scenario_id, pos.value);
       }

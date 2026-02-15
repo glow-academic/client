@@ -15,6 +15,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useSocket } from "@/contexts/socket-context";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { getIconComponent } from "@/utils/icons";
 import { cn } from "@/lib/utils";
@@ -90,6 +91,7 @@ export interface ScenarioFlagsProps {
   aiFlagResources?: Pick<ScenarioFlagsResourceItem, "id">[] | null;
   onAccept?: () => void;
   onReject?: () => void;
+  onGenerationComplete?: () => void;
 }
 
 type ScenarioFlagOption = {
@@ -124,6 +126,7 @@ export function ScenarioFlags({
   aiFlagResources,
   onAccept,
   onReject,
+  onGenerationComplete,
 }: ScenarioFlagsProps) {
   const show = show_scenario_flags ?? false;
   const allFlags = useMemo(() => scenario_flags ?? [], [scenario_flags]);
@@ -193,6 +196,34 @@ export function ScenarioFlags({
 
   // Ref for flush function (stable reference for registerFlush)
   const flushRef = useRef<(() => Promise<{ scenario_flag_ids: string[] } | void>) | null>(null);
+
+  // Socket-based AI suggestion handling
+  const { socket: aiSocket, isConnected: aiIsConnected } = useSocket();
+  const [internalAiFlagResources, setInternalAiFlagResources] = useState<
+    Pick<ScenarioFlagsResourceItem, "id">[] | null
+  >(null);
+
+  useEffect(() => {
+    if (!aiSocket || !aiIsConnected) return;
+    const handleResourceComplete = (data: {
+      group_id?: string;
+      id?: string | null;
+    }) => {
+      if (group_id && data.group_id !== group_id) return;
+      if (data.id) {
+        setInternalAiFlagResources([{ id: data.id }]);
+      }
+      onGenerationComplete?.();
+    };
+    aiSocket.on("scenario_flags_generation_complete", handleResourceComplete);
+    return () => {
+      aiSocket.off("scenario_flags_generation_complete", handleResourceComplete);
+    };
+  }, [aiSocket, aiIsConnected, group_id, onGenerationComplete]);
+
+  // Effective AI resources: internal (socket) takes priority, then prop fallback
+  const effectiveAiFlagResources =
+    internalAiFlagResources ?? aiFlagResources ?? null;
 
   useEffect(() => {
     const nextSelected = new Map<string, Set<string>>();
@@ -422,20 +453,20 @@ export function ScenarioFlags({
   }, [currentResources]);
 
   // AI suggestion state
-  const showDiff = !!aiFlagResources?.length;
+  const showDiff = !!effectiveAiFlagResources?.length;
   const aiSuggestedFlagIds = useMemo(
     () =>
       new Set(
-        aiFlagResources?.map((f) => f.id).filter(Boolean) as string[]
+        effectiveAiFlagResources?.map((f) => f.id).filter(Boolean) as string[]
       ),
-    [aiFlagResources]
+    [effectiveAiFlagResources]
   );
 
   // Accept AI suggestion - apply all AI-suggested flags
   const handleAccept = useCallback(() => {
-    if (!aiFlagResources?.length) return;
+    if (!effectiveAiFlagResources?.length) return;
 
-    for (const aiFlag of aiFlagResources) {
+    for (const aiFlag of effectiveAiFlagResources) {
       if (!aiFlag.id) continue;
       // Find which scenario and flag this applies to
       // For ScenarioFlags, the AI returns flag_ids that correspond to flag options
@@ -447,11 +478,13 @@ export function ScenarioFlags({
         }
       }
     }
+    setInternalAiFlagResources(null);
     onAccept?.();
-  }, [aiFlagResources, filteredFlagOptionsByScenario, handleToggle, onAccept]);
+  }, [effectiveAiFlagResources, filteredFlagOptionsByScenario, handleToggle, onAccept]);
 
   // Reject AI suggestion - just clear the pending state
   const handleReject = useCallback(() => {
+    setInternalAiFlagResources(null);
     onReject?.();
   }, [onReject]);
 

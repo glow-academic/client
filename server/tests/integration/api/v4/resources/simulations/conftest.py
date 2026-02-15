@@ -38,7 +38,9 @@ async def seed_simulations_resource_data() -> None:
 
 
 @pytest_asyncio.fixture(loop_scope="session", scope="session")
-async def db(seed_simulations_resource_data: None) -> AsyncGenerator[asyncpg.Connection, None]:
+async def db(
+    seed_simulations_resource_data: None,
+) -> AsyncGenerator[asyncpg.Connection, None]:
     """Session-scoped database connection using the test pool."""
     pool = get_pool()
     if pool is None:

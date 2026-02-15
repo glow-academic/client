@@ -17,7 +17,6 @@ from app.api.v4.artifacts.benchmark.types import (
 from app.api.v4.artifacts.types import FilterOption
 from app.api.v4.resources.departments.get import get_departments_internal
 from app.api.v4.resources.evals.get import get_evals_internal
-from app.api.v4.resources.names.get import get_names_internal
 from app.api.v4.views.benchmark.tests.get import get_benchmark_tests_internal
 from app.api.v4.views.benchmark.tests.types import BenchmarkTestViewItem
 from app.infra.v4.activity.audit import audit_activity
@@ -151,9 +150,7 @@ async def get_benchmark(
                     name=ev.name,
                     description=ev.description,
                     department_ids=(
-                        [str(d) for d in ev.department_ids]
-                        if ev.department_ids
-                        else []
+                        [str(d) for d in ev.department_ids] if ev.department_ids else []
                     ),
                 )
             )

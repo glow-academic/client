@@ -272,23 +272,17 @@ async def get_persona_internal(
     )
 
     # Derive has_tools flags from settings
-    names_has_tools = has_tools_for_resource(
-        settings_data.agent_tool_entries, "names"
-    )
+    names_has_tools = has_tools_for_resource(settings_data.agent_tool_entries, "names")
     colors_has_tools = has_tools_for_resource(
         settings_data.agent_tool_entries, "colors"
     )
-    icons_has_tools = has_tools_for_resource(
-        settings_data.agent_tool_entries, "icons"
-    )
+    icons_has_tools = has_tools_for_resource(settings_data.agent_tool_entries, "icons")
     instructions_has_tools = has_tools_for_resource(
         settings_data.agent_tool_entries, "instructions"
     )
 
     # Config chain resource IDs (derived from settings agents)
-    config_agent_resource_ids = [
-        a.id for a in settings_data.settings_agents if a.id
-    ]
+    config_agent_resource_ids = [a.id for a in settings_data.settings_agents if a.id]
     config_model_resource_ids = [
         a.model_id for a in settings_data.settings_agents if a.model_id
     ]

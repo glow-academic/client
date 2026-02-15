@@ -45,9 +45,7 @@ class TestResourceSimulationsGet:
         assert data["items"] is not None
         assert len(data["items"]) == 0
 
-    async def test_get_no_profile_returns_401(
-        self, client: httpx.AsyncClient
-    ) -> None:
+    async def test_get_no_profile_returns_401(self, client: httpx.AsyncClient) -> None:
         """GET without X-Profile-Id returns 401."""
         response = await client.post(
             "/api/v4/resources/simulations/get",

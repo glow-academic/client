@@ -13,9 +13,7 @@ HEADERS = {**BYPASS_CACHE_HEADERS, "X-Profile-Id": TEST_SUPERADMIN_PROFILE_ID}
 class TestResourceSimulationsSearch:
     """Tests for POST /api/v4/resources/simulations/search endpoint."""
 
-    async def test_search_returns_simulations(
-        self, client: httpx.AsyncClient
-    ) -> None:
+    async def test_search_returns_simulations(self, client: httpx.AsyncClient) -> None:
         """SEARCH with no filters returns simulations from seed data."""
         response = await client.post(
             "/api/v4/resources/simulations/search",
@@ -28,9 +26,7 @@ class TestResourceSimulationsSearch:
         assert data["items"] is not None
         assert len(data["items"]) > 0
 
-    async def test_search_with_search_term(
-        self, client: httpx.AsyncClient
-    ) -> None:
+    async def test_search_with_search_term(self, client: httpx.AsyncClient) -> None:
         """SEARCH with a search term filters results."""
         response = await client.post(
             "/api/v4/resources/simulations/search",
@@ -42,9 +38,7 @@ class TestResourceSimulationsSearch:
         data = response.json()
         assert data["items"] is not None
 
-    async def test_search_respects_limit(
-        self, client: httpx.AsyncClient
-    ) -> None:
+    async def test_search_respects_limit(self, client: httpx.AsyncClient) -> None:
         """SEARCH respects limit_count parameter."""
         response = await client.post(
             "/api/v4/resources/simulations/search",

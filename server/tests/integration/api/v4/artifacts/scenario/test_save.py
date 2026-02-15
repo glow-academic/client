@@ -78,9 +78,7 @@ class TestScenarioSaveUpdate:
 class TestScenarioSaveErrors:
     """Tests for POST /api/v4/artifacts/scenarios/save error cases."""
 
-    async def test_save_no_profile_returns_401(
-        self, client: httpx.AsyncClient
-    ) -> None:
+    async def test_save_no_profile_returns_401(self, client: httpx.AsyncClient) -> None:
         """SAVE without X-Profile-Id returns 401."""
         payload = {
             "input_scenario_id": None,

@@ -123,6 +123,37 @@ export function Videos({
     [video_suggestions]
   );
 
+  // Socket-based AI suggestion handling
+  const { socket: aiSocket, isConnected: aiIsConnected } = useSocket();
+  const [internalAiVideoResources, setInternalAiVideoResources] = useState<
+    Pick<VideoResourceItem, "video_id" | "name">[] | null
+  >(null);
+
+  useEffect(() => {
+    if (!aiSocket || !aiIsConnected) return;
+    const handleResourceComplete = (data: {
+      group_id?: string;
+      video_id?: string | null;
+      name?: string | null;
+    }) => {
+      if (group_id && data.group_id !== group_id) return;
+      if (data.video_id) {
+        setInternalAiVideoResources([
+          { video_id: data.video_id, name: data.name ?? null },
+        ]);
+      }
+      onGenerationComplete?.();
+    };
+    aiSocket.on("videos_generation_complete", handleResourceComplete);
+    return () => {
+      aiSocket.off("videos_generation_complete", handleResourceComplete);
+    };
+  }, [aiSocket, aiIsConnected, group_id, onGenerationComplete]);
+
+  // Effective AI resources: internal (socket) takes priority, then prop fallback
+  const effectiveAiVideoResources =
+    internalAiVideoResources ?? aiVideoResources ?? null;
+
   // Internal state for selected video (single select for videos)
   // API returns video_id, not id
   const [selectedVideo, setSelectedVideo] = useState<{
@@ -507,29 +538,31 @@ export function Videos({
   }, [video_resources]);
 
   // AI suggestion state
-  const showDiff = !!aiVideoResources?.length;
+  const showDiff = !!effectiveAiVideoResources?.length;
   const aiSuggestedIds = useMemo(
     () =>
       new Set(
-        aiVideoResources
+        effectiveAiVideoResources
           ?.map((v) => v.video_id)
           .filter(Boolean) as string[]
       ),
-    [aiVideoResources]
+    [effectiveAiVideoResources]
   );
 
   // Accept AI suggestion - select the first AI-suggested video
   const handleAccept = useCallback(() => {
-    if (!aiVideoResources?.length) return;
-    const firstSuggested = aiVideoResources[0];
+    if (!effectiveAiVideoResources?.length) return;
+    const firstSuggested = effectiveAiVideoResources[0];
     if (firstSuggested?.video_id) {
       onChange([firstSuggested.video_id]);
     }
+    setInternalAiVideoResources(null);
     onAccept?.();
-  }, [aiVideoResources, onChange, onAccept]);
+  }, [effectiveAiVideoResources, onChange, onAccept]);
 
   // Reject AI suggestion - just clear the pending state
   const handleReject = useCallback(() => {
+    setInternalAiVideoResources(null);
     onReject?.();
   }, [onReject]);
 
@@ -683,12 +716,12 @@ export function Videos({
       </div>
 
       {/* AI Suggested Video Preview */}
-      {showDiff && aiVideoResources && aiVideoResources.length > 0 && (
+      {showDiff && effectiveAiVideoResources && effectiveAiVideoResources.length > 0 && (
         <div className="mb-2 p-3 rounded-lg border-2 border-success bg-success/10">
           <p className="text-sm font-medium text-success mb-2">AI Suggested Video</p>
           <div className="flex items-center gap-2">
             <Video className="h-4 w-4 text-success" />
-            <span className="text-sm">{aiVideoResources[0]?.name || "Video"}</span>
+            <span className="text-sm">{effectiveAiVideoResources[0]?.name || "Video"}</span>
           </div>
         </div>
       )}

@@ -124,8 +124,7 @@ class TestCohortSaveUpdate:
             else None
         )
         dept_ids = [
-            d["department_id"]
-            for d in (get_data["departments"]["current"] or [])
+            d["department_id"] for d in (get_data["departments"]["current"] or [])
         ]
 
         # Act
@@ -151,9 +150,7 @@ class TestCohortSaveUpdate:
 class TestCohortSaveErrors:
     """Tests for POST /api/v4/artifacts/cohorts/save error cases."""
 
-    async def test_save_no_profile_returns_401(
-        self, client: httpx.AsyncClient
-    ) -> None:
+    async def test_save_no_profile_returns_401(self, client: httpx.AsyncClient) -> None:
         """SAVE without X-Profile-Id returns 401."""
         payload = _build_save_request(
             group_id="00000000-0000-0000-0000-000000000000",

@@ -97,8 +97,7 @@ async def get_dashboard_header(
                 else []
             )
         simulation_scenario_counts = {
-            str(r["simulation_id"]): r["scenario_count"]
-            for r in scenario_count_rows
+            str(r["simulation_id"]): r["scenario_count"] for r in scenario_count_rows
         }
 
         # 5. Compute header metrics

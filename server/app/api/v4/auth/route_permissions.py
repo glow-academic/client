@@ -104,6 +104,7 @@ class PageMetadata(BaseModel):
     is_analytics_page: bool = False
     show_analytics_filters: bool = False
     show_save_toolbar: bool = False
+    show_drafts: bool = False
     artifact_type: str | None = None
     create_url: str | None = None
     create_label: str | None = None
@@ -964,6 +965,16 @@ def compute_page_access(
     )
 
 
+_CORE_ARTIFACT_SECTIONS = {
+    "training",
+    "management",
+    "intelligence",
+    "system",
+    "settings",
+}
+_BUNDLE_SECTIONS = {"home", "practice", "benchmark"}
+
+
 def compute_page_metadata(
     pathname: str,
     available_routes: list[str],
@@ -987,10 +998,18 @@ def compute_page_metadata(
     is_analytics = section in analytics_sections
     show_analytics_filters = section in analytics_sections
 
+    # Count UUID segments for bundle/attempt detection
+    uuid_segments = [s for s in segments if _is_uuid(s)]
+
+    # Bundle pages: /home|practice|benchmark/[id]/[id]
+    is_bundle = section in _BUNDLE_SECTIONS and len(uuid_segments) >= 2
+    # Attempt pages: /home|practice|benchmark/[id] (exactly 1 UUID)
+    is_attempt = section in _BUNDLE_SECTIONS and len(uuid_segments) == 1
+
     # Determine page type
     is_create = len(segments) >= 2 and segments[-1] == "new"
-    has_uuid = any(_is_uuid(s) for s in segments)
-    is_detail = has_uuid and not is_create
+    has_uuid = len(uuid_segments) > 0
+    is_detail = has_uuid and not is_create and not is_bundle and not is_attempt
 
     # A list page is one that matches a known list route (no UUID, not "new")
     is_list = not is_create and not has_uuid and len(segments) >= 1
@@ -1005,20 +1024,14 @@ def compute_page_metadata(
         for rp in sp.routes:
             if _match_route_pattern(rp.path, pathname):
                 artifact_type = rp.artifact_type
-                if is_list and rp.create_label:
+                if is_list and rp.create_label and section in _CORE_ARTIFACT_SECTIONS:
                     create_label = rp.create_label
-                    # Check if the /new route is available
+                    # Check if the /new route is available in user's routes
                     new_path = pathname.rstrip("/") + "/new"
                     for avail in available_routes:
                         if _match_route_pattern(avail, new_path):
                             create_url = new_path
                             break
-                    # If no pattern match, check if /new route exists in permissions
-                    if not create_url:
-                        for rp2 in sp.routes:
-                            if rp2.path == pathname.rstrip("/") + "/new":
-                                create_url = rp2.path
-                                break
                 break
         if artifact_type is not None or create_label is not None:
             break
@@ -1045,7 +1058,19 @@ def compute_page_metadata(
             )
             artifact_type = singular
 
-    show_save_toolbar = is_create or is_detail
+    # Bundle pages get artifact_type based on section
+    if is_bundle and not artifact_type:
+        if section in {"home", "practice"}:
+            artifact_type = "training"
+        elif section == "benchmark":
+            artifact_type = "eval"
+
+    # show_drafts: create/edit pages for core artifacts, or bundle pages
+    is_core_artifact_page = section in _CORE_ARTIFACT_SECTIONS and (
+        is_create or is_detail
+    )
+    show_drafts = is_core_artifact_page or is_bundle
+    show_save_toolbar = show_drafts
 
     return PageMetadata(
         is_list_page=is_list,
@@ -1054,6 +1079,7 @@ def compute_page_metadata(
         is_analytics_page=is_analytics,
         show_analytics_filters=show_analytics_filters,
         show_save_toolbar=show_save_toolbar,
+        show_drafts=show_drafts,
         artifact_type=artifact_type,
         create_url=create_url,
         create_label=create_label,

@@ -83,9 +83,7 @@ async def get_pricing(
                     c, list(model_ids_set), bypass_cache=bypass_cache
                 )
 
-        agents_list, models_list = await asyncio.gather(
-            fetch_agents(), fetch_models()
-        )
+        agents_list, models_list = await asyncio.gather(fetch_agents(), fetch_models())
 
         # Build resource maps
         agent_map = {str(a.id): {"name": a.name} for a in agents_list if a.id}
@@ -93,14 +91,10 @@ async def get_pricing(
 
         # Build filter options
         model_options = [
-            FilterOption(value=str(m.id), label=m.name)
-            for m in models_list
-            if m.id
+            FilterOption(value=str(m.id), label=m.name) for m in models_list if m.id
         ]
         agent_options = [
-            FilterOption(value=str(a.id), label=a.name)
-            for a in agents_list
-            if a.id
+            FilterOption(value=str(a.id), label=a.name) for a in agents_list if a.id
         ]
 
         response.headers["X-Cache-Tags"] = ",".join(tags)

@@ -177,9 +177,7 @@ class TestSimulationGetExisting:
 class TestSimulationGetErrors:
     """Tests for POST /api/v4/artifacts/simulations/get error cases."""
 
-    async def test_get_nonexistent_returns_404(
-        self, client: httpx.AsyncClient
-    ) -> None:
+    async def test_get_nonexistent_returns_404(self, client: httpx.AsyncClient) -> None:
         """GET with nonexistent simulation_id returns 404."""
         response = await client.post(
             "/api/v4/artifacts/simulations/get",
@@ -189,9 +187,7 @@ class TestSimulationGetErrors:
 
         assert response.status_code == 404
 
-    async def test_get_no_profile_returns_401(
-        self, client: httpx.AsyncClient
-    ) -> None:
+    async def test_get_no_profile_returns_401(self, client: httpx.AsyncClient) -> None:
         """GET without X-Profile-Id returns 401."""
         response = await client.post(
             "/api/v4/artifacts/simulations/get",

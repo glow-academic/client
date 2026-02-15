@@ -204,9 +204,7 @@ class TestPersonaGetExisting:
 class TestPersonaGetErrors:
     """Tests for POST /api/v4/artifacts/personas/get error cases."""
 
-    async def test_get_nonexistent_returns_404(
-        self, client: httpx.AsyncClient
-    ) -> None:
+    async def test_get_nonexistent_returns_404(self, client: httpx.AsyncClient) -> None:
         """GET with nonexistent persona_id returns 404."""
         response = await client.post(
             "/api/v4/artifacts/personas/get",
@@ -216,9 +214,7 @@ class TestPersonaGetErrors:
 
         assert response.status_code == 404
 
-    async def test_get_no_profile_returns_401(
-        self, client: httpx.AsyncClient
-    ) -> None:
+    async def test_get_no_profile_returns_401(self, client: httpx.AsyncClient) -> None:
         """GET without X-Profile-Id returns 401."""
         response = await client.post(
             "/api/v4/artifacts/personas/get",

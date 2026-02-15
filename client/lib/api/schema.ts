@@ -33248,6 +33248,11 @@ export interface components {
              * @default false
              */
             show_save_toolbar: boolean;
+            /**
+             * Show Drafts
+             * @default false
+             */
+            show_drafts: boolean;
             /** Artifact Type */
             artifact_type?: string | null;
             /** Create Url */

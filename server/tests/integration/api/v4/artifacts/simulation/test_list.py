@@ -127,9 +127,7 @@ class TestSimulationList:
         data = response.json()
         assert "scenarios" in data
 
-    async def test_list_no_profile_returns_401(
-        self, client: httpx.AsyncClient
-    ) -> None:
+    async def test_list_no_profile_returns_401(self, client: httpx.AsyncClient) -> None:
         """LIST without X-Profile-Id returns 401."""
         response = await client.post(
             "/api/v4/artifacts/simulations/list",
