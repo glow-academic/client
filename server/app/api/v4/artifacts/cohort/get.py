@@ -314,8 +314,12 @@ async def get_cohort_internal(
     # === PYTHON BUSINESS LOGIC ===
 
     # Compute permissions
-    can_edit = compute_can_edit(user_role, cohort_department_ids, user_department_ids=user_department_ids)
-    disabled_reason = compute_disabled_reason(user_role, cohort_department_ids, user_department_ids=user_department_ids)
+    can_edit = compute_can_edit(
+        user_role, cohort_department_ids, user_department_ids=user_department_ids
+    )
+    disabled_reason = compute_disabled_reason(
+        user_role, cohort_department_ids, user_department_ids=user_department_ids
+    )
 
     # === PASS 2: Parallel Resource Fetching (each endpoint handles own cache) ===
 

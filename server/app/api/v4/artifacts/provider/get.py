@@ -226,6 +226,7 @@ async def get_provider_internal(
         user_role=user_role,
         provider_department_ids=provider_department_ids,
         model_usage_count=model_usage_count,
+        user_department_ids=user_department_ids,
     )
     disabled_reason = compute_disabled_reason(
         user_role=user_role,

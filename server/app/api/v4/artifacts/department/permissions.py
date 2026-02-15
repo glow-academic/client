@@ -31,15 +31,13 @@ def compute_can_edit(
     """Unified can_edit logic for both get and list views.
 
     Constraints:
-    1. Not in use by entities (unless superadmin)
-    2. User has admin/instructional/superadmin role
+    1. Not in use by entities
+    2. User has superadmin role
     """
-    # Departments in use cannot be edited (except by superadmin)
-    if usage_count > 0 and user_role != "superadmin":
+    if usage_count > 0:
         return False
 
-    # Role check
-    return user_role in ("admin", "instructional", "superadmin")
+    return user_role == "superadmin"
 
 
 def compute_disabled_reason(
@@ -50,15 +48,13 @@ def compute_disabled_reason(
 
     Returns None if editing is allowed.
     """
-    # Departments in use cannot be edited
-    if usage_count > 0 and user_role != "superadmin":
+    if usage_count > 0:
         return (
             "This department is currently in use and cannot be edited. "
             "You can view the details but cannot make changes."
         )
 
-    # Role check
-    if user_role not in ("admin", "instructional", "superadmin"):
+    if user_role != "superadmin":
         return (
             "This department cannot be edited. "
             "You can view the details but cannot make changes."
@@ -91,7 +87,7 @@ def has_access(
     Access rules:
     - Departments are accessible to all members and above
     """
-    return user_role in ("member", "admin", "instructional", "superadmin")
+    return user_role in ("member", "admin", "superadmin")
 
 
 def compute_show_name(names_has_tools: bool) -> bool:
@@ -144,22 +140,22 @@ def compute_can_delete(
     """Compute can_delete permission.
 
     Business logic:
-    - Departments with any entity links cannot be deleted
-    - Only admins, instructional, and superadmins can delete
+    - Departments with any active entity links cannot be deleted
+    - Only superadmins can delete
     """
     if total_usage > 0:
         return False
 
-    return user_role in ("admin", "instructional", "superadmin")
+    return user_role == "superadmin"
 
 
 def compute_can_duplicate(user_role: str | None) -> bool:
     """Compute can_duplicate permission.
 
     Business logic:
-    - Anyone with edit permissions can duplicate
+    - Only superadmins can duplicate
     """
-    return user_role in ("admin", "instructional", "superadmin")
+    return user_role == "superadmin"
 
 
 # ========== Save/Create Endpoint Permission Functions ==========
@@ -169,9 +165,9 @@ def compute_can_create(user_role: str | None) -> bool:
     """Compute permission to create a new department.
 
     Business logic:
-    - Only admin/instructional/superadmin can create departments
+    - Only superadmins can create departments
     """
-    return user_role in ("admin", "instructional", "superadmin")
+    return user_role == "superadmin"
 
 
 def compute_can_save(
@@ -181,13 +177,13 @@ def compute_can_save(
     """Compute permission to save/update an existing department.
 
     Business logic:
-    - Departments in use cannot be edited (except by superadmin)
-    - Only admin/instructional/superadmin can save
+    - Departments in use cannot be saved
+    - Only superadmins can save
     """
-    if user_role not in ("admin", "instructional", "superadmin"):
+    if user_role != "superadmin":
         return False
 
-    if usage_count > 0 and user_role != "superadmin":
+    if usage_count > 0:
         return False
 
     return True
@@ -200,9 +196,9 @@ def compute_can_draft(user_role: str | None) -> bool:
     """Compute permission to create or update a draft.
 
     Business logic:
-    - Only admin/instructional/superadmin can create/edit drafts
+    - Only superadmins can create/edit drafts
     """
-    return user_role in ("admin", "instructional", "superadmin")
+    return user_role == "superadmin"
 
 
 # ========== Agent Scoring - Department-specific Constants ==========

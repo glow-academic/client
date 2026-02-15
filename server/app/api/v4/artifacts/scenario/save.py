@@ -114,8 +114,13 @@ async def save_scenario(
                 )
             if not compute_can_edit(
                 user_role=user_role,
-                scenario_department_ids=getattr(access_result, "scenario_department_ids", None) or [],
-                active_simulation_count=getattr(access_result, "active_simulation_count", 0),
+                scenario_department_ids=getattr(
+                    access_result, "scenario_department_ids", None
+                )
+                or [],
+                active_simulation_count=getattr(
+                    access_result, "active_simulation_count", 0
+                ),
                 user_department_ids=user_department_ids,
             ):
                 raise HTTPException(

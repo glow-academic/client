@@ -148,7 +148,7 @@ async def get_rubric_list(
             can_delete_val = compute_can_delete(
                 user_role=user_role,
                 rubric_department_ids=rubric.department_ids,
-                total_simulation_links=rubric.total_simulation_links or 0,
+                active_simulation_count=rubric.active_simulation_count or 0,
             )
             can_duplicate_val = compute_can_duplicate(user_role=user_role)
 
@@ -163,7 +163,6 @@ async def get_rubric_list(
                     department_ids=rubric.department_ids,
                     simulation_ids=rubric.simulation_ids,
                     active_simulation_count=rubric.active_simulation_count,
-                    total_simulation_links=rubric.total_simulation_links,
                     can_edit=can_edit_val,
                     can_delete=can_delete_val,
                     can_duplicate=can_duplicate_val,

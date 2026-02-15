@@ -24,7 +24,7 @@ CREATE OR REPLACE FUNCTION api_check_rubric_delete_access_v4(
 RETURNS TABLE (
     -- Rubric state for Python permission logic
     rubric_department_ids text[],
-    total_simulation_links bigint
+    active_simulation_count bigint
 )
 LANGUAGE sql
 STABLE
@@ -44,21 +44,23 @@ rubric_departments_data AS (
     FROM params x
     LEFT JOIN rubric_departments_junction rd ON rd.rubric_id = x.rubric_id AND rd.active = true
 ),
--- Count total simulation links (active or not)
+-- Count active simulation links only
 simulation_links AS (
     SELECT COALESCE(
         (SELECT COUNT(DISTINCT ss.simulation_id)
          FROM simulation_scenarios_junction ss
          JOIN simulation_scenario_rubrics_junction ssr ON ssr.simulation_id = ss.simulation_id
          JOIN scenario_rubrics_resource srr ON srr.id = ssr.scenario_rubric_id AND srr.scenario_id = ss.scenario_id
+         JOIN simulation_artifact s ON s.id = ss.simulation_id
          WHERE srr.rubric_id = (SELECT rubric_id FROM params)
+         AND EXISTS (SELECT 1 FROM simulation_scenario_flags_junction ssf JOIN scenario_flags_resource sfr ON ssf.scenario_flag_id = sfr.id JOIN flags_resource f ON sfr.flag_id = f.id WHERE ssf.simulation_id = ss.simulation_id AND sfr.scenario_id = ss.scenario_id AND f.name = 'scenario_active' AND ssf.value = true)
+         AND EXISTS (SELECT 1 FROM scenario_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = s.id AND f.name = 'scenario_active' AND sf.value = true)
         ),
         0
-    )::bigint as total_links
+    )::bigint as active_count
 )
 SELECT
     (SELECT department_ids FROM rubric_departments_data) as rubric_department_ids,
-    (SELECT total_links FROM simulation_links) as total_simulation_links
+    (SELECT active_count FROM simulation_links) as active_simulation_count
 FROM params x
 $$;
-

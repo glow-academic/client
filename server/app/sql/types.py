@@ -1159,6 +1159,7 @@ class CheckAuthDeleteAccessSqlParams(BaseModel):
 class CheckAuthDeleteAccessSqlRow(BaseModel):
 
     auth_exists: bool | None = None
+    active_settings_count: int | None = None
 
 class CheckAuthDeleteAccessApiRequest(BaseModel):
 
@@ -1167,6 +1168,7 @@ class CheckAuthDeleteAccessApiRequest(BaseModel):
 class CheckAuthDeleteAccessApiResponse(BaseModel):
 
     auth_exists: bool | None = None
+    active_settings_count: int | None = None
 
 
 
@@ -1766,6 +1768,7 @@ class QGetAuthListV4Auth(BaseModel):
     num_items: int | None
     sample_items: list[QGetAuthListV4AuthItem] | None
     department_ids: list[str] | None
+    active_settings_count: int | None
 
 
 
@@ -3359,43 +3362,6 @@ class DuplicateDocumentApiResponse(BaseModel):
 
     new_document_id: UUID | None = None
     original_name: str | None = None
-
-
-
-# Generated from: get_certificate_data
-
-class GetCertificateDataSqlParams(BaseModel):
-
-    profile_id: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.profile_id,
-        )
-
-class GetCertificateDataSqlRow(BaseModel):
-
-    profile_name: str | None = None
-    cohort_id: UUID | None = None
-    cohort_name: str | None = None
-    simulation_id: UUID | None = None
-    simulation_name: str | None = None
-    expected_scenarios: int | None = None
-    pass_threshold_percent: float | None = None
-
-class GetCertificateDataApiRequest(BaseModel):
-
-    pass
-
-class GetCertificateDataApiResponse(BaseModel):
-
-    profile_name: str | None = None
-    cohort_id: UUID | None = None
-    cohort_name: str | None = None
-    simulation_id: UUID | None = None
-    simulation_name: str | None = None
-    expected_scenarios: int | None = None
-    pass_threshold_percent: float | None = None
 
 
 
@@ -19534,7 +19500,6 @@ class QGetRubricsListV4Rubric(BaseModel):
     department_ids: list[str] | None
     simulation_ids: list[str] | None
     active_simulation_count: int | None
-    total_simulation_links: int | None
     standard_group_ids: list[UUID] | None
 
 
@@ -19606,7 +19571,7 @@ class CheckRubricDeleteAccessSqlParams(BaseModel):
 class CheckRubricDeleteAccessSqlRow(BaseModel):
 
     rubric_department_ids: list[str] | None = None
-    total_simulation_links: int | None = None
+    active_simulation_count: int | None = None
 
 class CheckRubricDeleteAccessApiRequest(BaseModel):
 
@@ -19615,7 +19580,7 @@ class CheckRubricDeleteAccessApiRequest(BaseModel):
 class CheckRubricDeleteAccessApiResponse(BaseModel):
 
     rubric_department_ids: list[str] | None = None
-    total_simulation_links: int | None = None
+    active_simulation_count: int | None = None
 
 
 
@@ -26760,12 +26725,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "DuplicateDocumentApiRequest",
         "DuplicateDocumentApiResponse",
     ),
-    "app/sql/v4/queries/documents/get_certificate_data_complete.sql": (
-        "GetCertificateDataSqlParams",
-        "GetCertificateDataSqlRow",
-        "GetCertificateDataApiRequest",
-        "GetCertificateDataApiResponse",
-    ),
     "app/sql/v4/queries/documents/get_document_access_complete.sql": (
         "GetDocumentAccessSqlParams",
         "GetDocumentAccessSqlRow",
@@ -30387,11 +30346,6 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/queries/documents/duplicate_document_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/queries/documents/get_certificate_data_complete.sql"]
     ) -> SqlString: ...
 
     @overload

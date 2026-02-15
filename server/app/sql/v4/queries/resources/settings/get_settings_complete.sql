@@ -87,18 +87,16 @@ LANGUAGE sql
 STABLE
 AS $$
 WITH resolved_resources AS (
-    -- Resolve setting artifact IDs to settings_resource
-    SELECT sr.*, ssj.setting_id as artifact_id
-    FROM setting_settings_junction ssj
-    JOIN settings_resource sr ON sr.id = ssj.settings_id
-    WHERE ssj.setting_id = ANY(ids)
-      AND ssj.active = true
+    -- Fetch settings_resource rows directly by ID
+    SELECT sr.*
+    FROM settings_resource sr
+    WHERE sr.id = ANY(ids)
       AND sr.active = true
 ),
 settings_auths_data AS (
     -- Get auth details from auths_resource using auth_ids on settings_resource
     SELECT
-        rr.artifact_id,
+        rr.id as resource_id,
         ARRAY_AGG(a.id::text ORDER BY COALESCE(a.name, '')) as auth_ids,
         COALESCE(
             ARRAY_AGG(
@@ -110,12 +108,12 @@ settings_auths_data AS (
     FROM resolved_resources rr
     CROSS JOIN LATERAL unnest(COALESCE(rr.auth_ids, ARRAY[]::uuid[])) AS auth_id_val
     JOIN auths_resource a ON a.id = auth_id_val AND a.active = true
-    GROUP BY rr.artifact_id
+    GROUP BY rr.id
 )
 SELECT COALESCE(
     ARRAY_AGG(
         (
-            rr.artifact_id::text,
+            rr.id::text,
             rr.created_at,
             rr.active,
             COALESCE(rr.name, ''),
@@ -131,5 +129,5 @@ SELECT COALESCE(
     ARRAY[]::types.q_get_settings_v4_item[]
 ) as items
 FROM resolved_resources rr
-LEFT JOIN settings_auths_data sad ON sad.artifact_id = rr.artifact_id;
+LEFT JOIN settings_auths_data sad ON sad.resource_id = rr.id;
 $$;

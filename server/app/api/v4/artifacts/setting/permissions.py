@@ -44,20 +44,35 @@ def has_access(
 
 def compute_can_edit(
     user_role: str | None,
-    user_department_ids: list[UUID],
-    setting_department_ids: list[UUID],
+    active_department_count: int,
 ) -> bool:
-    return has_access(user_role, user_department_ids, setting_department_ids)
+    """Unified can_edit logic.
+
+    Constraints:
+    1. Not linked to active departments
+    2. User has admin/superadmin role
+    """
+    if active_department_count > 0:
+        return False
+    return user_role in ("admin", "superadmin")
 
 
 def compute_disabled_reason(
     user_role: str | None,
-    user_department_ids: list[UUID],
-    setting_department_ids: list[UUID],
+    active_department_count: int,
 ) -> str | None:
-    if compute_can_edit(user_role, user_department_ids, setting_department_ids):
-        return None
-    return "You don't have access to edit this setting."
+    """Compute the reason why editing is disabled, if any."""
+    if active_department_count > 0:
+        return (
+            "This setting is currently linked to departments and cannot be edited. "
+            "You can view the details but cannot make changes."
+        )
+    if user_role not in ("admin", "superadmin"):
+        return (
+            "This setting cannot be edited. "
+            "You can view the details but cannot make changes."
+        )
+    return None
 
 
 def compute_show_name() -> bool:
@@ -170,18 +185,24 @@ def derive_flag_key_and_label(name: str | None) -> tuple[str, str]:
 
 def compute_can_delete(
     user_role: str | None,
-    user_department_ids: list[UUID],
-    setting_department_ids: list[UUID],
+    active_department_count: int,
 ) -> bool:
-    """Settings can only be deleted by users with access."""
-    return has_access(user_role, user_department_ids, setting_department_ids)
+    """Compute can_delete permission.
+
+    Business logic:
+    - Settings linked to active departments cannot be deleted
+    - Only admins and superadmins can delete
+    """
+    if active_department_count > 0:
+        return False
+    return user_role in ("admin", "superadmin")
 
 
 def compute_can_duplicate(user_role: str | None) -> bool:
-    """Any authenticated user can duplicate a setting."""
-    return user_role is not None
+    """Compute can_duplicate permission."""
+    return user_role in ("admin", "superadmin")
 
 
 def compute_can_draft(user_role: str | None) -> bool:
-    """Any authenticated user can create or edit drafts."""
-    return user_role is not None
+    """Compute permission to create or update a draft."""
+    return user_role in ("admin", "superadmin")

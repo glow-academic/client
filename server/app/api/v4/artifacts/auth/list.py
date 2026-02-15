@@ -128,8 +128,15 @@ async def get_auth_list(
         # Compute permissions for each auth in Python
         auths_list: list[ListAuthApiAuth] = []
         for auth in result.auths or []:
-            can_edit_val = compute_can_edit(user_role=user_role)
-            can_delete_val = compute_can_delete(user_role=user_role)
+            active_settings_count = auth.active_settings_count or 0
+            can_edit_val = compute_can_edit(
+                user_role=user_role,
+                active_settings_count=active_settings_count,
+            )
+            can_delete_val = compute_can_delete(
+                user_role=user_role,
+                active_settings_count=active_settings_count,
+            )
             can_duplicate_val = compute_can_duplicate(user_role=user_role)
 
             auths_list.append(

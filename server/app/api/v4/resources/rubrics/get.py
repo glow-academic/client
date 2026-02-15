@@ -107,6 +107,8 @@ async def get_rubrics_internal(
         List of rubric items
     """
     effective_ids = ids or []
+    if not effective_ids:
+        return []
 
     # Generate cache key
     cache_key_val = cache_key(

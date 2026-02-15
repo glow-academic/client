@@ -101,7 +101,9 @@ async def delete_profile(
             user_role=user_role,
             target_is_self=access_result.target_is_self or False,
             target_role=getattr(access_result, "target_role", None),
-            active_cohort_count=int(getattr(access_result, "active_cohort_count", 0) or 0),
+            active_cohort_count=int(
+                getattr(access_result, "active_cohort_count", 0) or 0
+            ),
         )
 
         if not can_delete:

@@ -311,7 +311,6 @@ class ListRubricApiRubric(BaseModel):
     department_ids: list[str] | None = None
     simulation_ids: list[str] | None = None
     active_simulation_count: int | None = None
-    total_simulation_links: int | None = None
     can_edit: bool | None = None
     can_delete: bool | None = None
     can_duplicate: bool | None = None

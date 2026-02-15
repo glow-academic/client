@@ -11,7 +11,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 from app.api.v4.artifacts.model.permissions import (
     compute_can_create,
-    compute_can_save,
+    compute_can_edit,
     has_access,
 )
 from app.api.v4.artifacts.model.types import (
@@ -130,11 +130,11 @@ async def save_model(
                         status_code=403,
                         detail="You don't have access to this model.",
                     )
-                if not compute_can_save(
-                    user_role,
-                    user_department_ids,
-                    model_department_ids,
-                    active_persona_count,
+                if not compute_can_edit(
+                    user_role=user_role,
+                    model_department_ids=model_department_ids,
+                    active_agent_count=active_persona_count,
+                    user_department_ids=user_department_ids,
                 ):
                     raise HTTPException(
                         status_code=403,

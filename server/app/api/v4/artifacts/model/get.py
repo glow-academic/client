@@ -342,6 +342,7 @@ async def get_model_internal(
         user_role=user_role,
         model_department_ids=model_department_ids,
         active_persona_count=active_persona_count,
+        user_department_ids=user_department_ids,
     )
     disabled_reason = compute_disabled_reason(
         user_role=user_role,

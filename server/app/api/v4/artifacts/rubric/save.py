@@ -117,7 +117,6 @@ async def save_rubric(
         else:
             can_save_result = compute_can_save(
                 user_role=user_role,
-                user_department_ids=user_department_ids,
                 rubric_department_ids=access_result.rubric_department_ids,
                 active_simulation_count=access_result.active_simulation_count or 0,
             )

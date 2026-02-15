@@ -1,5 +1,5 @@
 -- Auth Delete Access Check
--- Returns user role for Python to compute delete permissions
+-- Returns auth state for Python to compute delete permissions
 
 -- Drop function if exists (handles signature variations)
 DO $$
@@ -22,7 +22,8 @@ CREATE OR REPLACE FUNCTION api_check_auth_delete_access_v4(
     auth_id uuid
 )
 RETURNS TABLE (
-    auth_exists boolean
+    auth_exists boolean,
+    active_settings_count bigint
 )
 LANGUAGE sql
 STABLE
@@ -36,9 +37,15 @@ WITH params AS (
 -- Check if auth exists
 auth_exists_check AS (
     SELECT EXISTS(SELECT 1 FROM auths_resource WHERE id = (SELECT auth_id FROM params))::boolean as auth_exists
+),
+-- Count active settings linked to this auth
+settings_links AS (
+    SELECT COALESCE(COUNT(DISTINCT sa.settings_id), 0)::bigint as active_count
+    FROM params x
+    LEFT JOIN setting_auths_junction sa ON sa.auth_id = x.auth_id AND sa.active = true
 )
 SELECT
-    (SELECT auth_exists FROM auth_exists_check) as auth_exists
+    (SELECT auth_exists FROM auth_exists_check) as auth_exists,
+    (SELECT active_count FROM settings_links) as active_settings_count
 FROM params x
 $$;
-

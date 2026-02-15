@@ -40,7 +40,7 @@ AS $$
 SELECT COALESCE(
     ARRAY_AGG(
         (q.id, q.name, q.description, q.hex_code, q.generated)::types.q_get_colors_v4_item
-        ORDER BY q.name
+        ORDER BY q.name, q.id
     ),
     ARRAY[]::types.q_get_colors_v4_item[]
 ) as items
@@ -74,7 +74,7 @@ FROM (
       -- Artifact boolean filters (each filters to resources linked to at least one of that artifact type)
       AND (NOT persona OR EXISTS (SELECT 1 FROM persona_colors_junction j WHERE j.color_id = c.id AND j.active = true))
       AND (NOT setting OR EXISTS (SELECT 1 FROM setting_colors_junction j WHERE j.color_id = c.id AND j.active = true))
-    ORDER BY c.name
+    ORDER BY c.name, c.id
     LIMIT limit_count
     OFFSET offset_count
 ) q;

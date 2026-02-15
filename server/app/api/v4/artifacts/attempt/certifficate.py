@@ -1,5 +1,6 @@
 """Document certificate generation endpoint - v4 API following DHH principles."""
 
+import asyncio
 import io
 import os
 import subprocess
@@ -7,7 +8,7 @@ import tempfile
 import uuid
 from collections import defaultdict
 from dataclasses import dataclass, field
-from typing import Annotated, Any, cast
+from typing import Annotated, Any
 from uuid import UUID
 
 import asyncpg  # type: ignore
@@ -15,22 +16,15 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import Response
 
 from app.api.v4.auth.profile import get_auth_profile_internal
-from app.api.v4.views.attempt.chats.get import get_attempt_chats_internal
-from app.api.v4.views.attempt.list.get import get_attempt_list_internal
+from app.api.v4.resources.cohorts.get import get_cohorts_internal
+from app.api.v4.resources.profiles.get import get_profiles_internal
+from app.api.v4.resources.simulations.get import get_simulations_internal
+from app.api.v4.views.analytics.profile_facts.get import get_profile_facts_internal
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.main import get_db, get_pool
-from app.sql.types import (
-    GetCertificateDataApiRequest,
-    GetCertificateDataSqlParams,
-    GetCertificateDataSqlRow,
-)
 from app.utils.logging.db_logger import get_logger
-from app.utils.sql_helper import execute_sql_typed
 
 logger = get_logger(__name__)
-
-# Load SQL with types at module level - makes it clear what SQL file is used
-SQL_PATH = "app/sql/v4/queries/documents/get_certificate_data_complete.sql"
 
 
 @dataclass
@@ -52,126 +46,146 @@ class CohortResult:
 
 
 async def _compute_certificate_scores(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     profile_id: UUID,
-    structure_rows: list[GetCertificateDataSqlRow],
-) -> list[CohortResult]:
-    """Compute certificate scores using attempt view internals.
+) -> tuple[str, list[CohortResult]]:
+    """Compute certificate scores using MV + resource hydration pattern.
 
-    Fetches attempt/chat data via view internal APIs, computes per-simulation
-    scores, and builds cohort/simulation results for rendering.
+    Pass 1: Fetch chat-grain rows from mv_profile_facts.
+    Pass 2: Hydrate cohort/simulation/profile resources in parallel.
+    Compute scores from MV data and build CohortResult/SimulationResult.
+
+    Returns (profile_name, cohort_results).
     """
-    if not structure_rows:
-        return []
-
-    # Extract simulation_ids and build lookup maps
-    simulation_ids = list(
-        {row.simulation_id for row in structure_rows if row.simulation_id}
-    )
-    expected_scenarios: dict[UUID, int] = {}
-    pass_thresholds: dict[UUID, float] = {}
-    for row in structure_rows:
-        if row.simulation_id:
-            expected_scenarios[row.simulation_id] = row.expected_scenarios or 0
-            pass_thresholds[row.simulation_id] = float(row.pass_threshold_percent or 70)
-
-    # Fetch non-practice, non-archived attempts for this profile
-    attempts_response = await get_attempt_list_internal(
-        conn=conn,
-        profile_id_filter=profile_id,
-        practice_filter=False,
-        is_archived_filter=False,
-        page_limit=10000,
-        bypass_cache=True,
-    )
-
-    # Filter to only relevant simulations
-    relevant_attempts = [
-        a
-        for a in attempts_response.items
-        if a.simulation_id and a.simulation_id in simulation_ids
-    ]
-
-    # Fetch chats for those attempts
-    chats = []
-    if relevant_attempts:
-        attempt_ids = [a.attempt_id for a in relevant_attempts]
-        chats = await get_attempt_chats_internal(
+    # Pass 1 — MV fetch
+    async with pool.acquire() as conn:
+        facts = await get_profile_facts_internal(
             conn=conn,
-            attempt_ids=attempt_ids,
+            profile_id=profile_id,
+            attempt_type="general",
+            is_archived=False,
             bypass_cache=True,
         )
 
-    # Map attempt_id -> simulation_id
-    sim_by_attempt: dict[UUID, UUID] = {}
-    for a in relevant_attempts:
-        if a.simulation_id:
-            sim_by_attempt[a.attempt_id] = a.simulation_id
+    if not facts.items:
+        return "Unknown", []
 
-    # Group chats by attempt_id
-    chats_by_attempt: dict[UUID, list[Any]] = defaultdict(list)
-    for chat in chats:
-        if chat.attempt_id:
-            chats_by_attempt[chat.attempt_id].append(chat)
+    # Extract unique IDs from MV items
+    cohort_ids = list({item.cohort_id for item in facts.items if item.cohort_id})
+    simulation_ids = list({item.simulation_id for item in facts.items})
 
-    # Compute per-attempt, per-simulation scores
-    # For each attempt: sum grade_score of completed chats / expected_scenarios
+    # Pass 2 — Parallel resource hydration (each gets its own connection)
+    async def fetch_profiles(ids: list[UUID]) -> list[Any]:
+        async with pool.acquire() as conn:
+            return await get_profiles_internal(conn=conn, ids=ids)
+
+    async def fetch_cohorts(ids: list[UUID]) -> list[Any]:
+        async with pool.acquire() as conn:
+            return await get_cohorts_internal(conn=conn, ids=ids)
+
+    async def fetch_simulations(ids: list[UUID]) -> list[Any]:
+        async with pool.acquire() as conn:
+            return await get_simulations_internal(conn=conn, ids=ids)
+
+    profiles, cohorts, simulations = await asyncio.gather(
+        fetch_profiles([profile_id]),
+        fetch_cohorts(cohort_ids),
+        fetch_simulations(simulation_ids),
+    )
+
+    # Get profile name
+    profile_name = profiles[0].name if profiles and profiles[0].name else "Unknown"
+
+    # Filter by active cohorts/simulations
+    active_cohort_ids = {c.cohort_id for c in cohorts if c.active}
+    active_simulation_ids = {s.simulation_id for s in simulations if s.active}
+    relevant_items = [
+        item
+        for item in facts.items
+        if item.cohort_id in active_cohort_ids
+        and item.simulation_id in active_simulation_ids
+    ]
+
+    if not relevant_items:
+        return profile_name, []
+
+    # Build lookup maps for names
+    cohort_names: dict[UUID, str] = {
+        c.cohort_id: c.title or "Unknown Cohort"
+        for c in cohorts
+        if c.cohort_id and c.active
+    }
+    simulation_names: dict[UUID, str] = {
+        s.simulation_id: s.name or "Unknown Simulation"
+        for s in simulations
+        if s.simulation_id and s.active
+    }
+
+    # Group by (attempt_id, simulation_id) — each group = one attempt's chats for a simulation
+    attempt_sim_chats: dict[tuple[UUID, UUID], list[Any]] = defaultdict(list)
+    for item in relevant_items:
+        attempt_sim_chats[(item.attempt_id, item.simulation_id)].append(item)
+
+    # Per attempt score = sum(grade_percent of completed chats) / count(all chats in group)
+    # Incomplete chats contribute 0 to numerator, 1 to denominator
     sim_attempt_scores: dict[UUID, list[float]] = defaultdict(list)
-    for attempt_id, attempt_chats in chats_by_attempt.items():
-        sim_id = sim_by_attempt.get(attempt_id)
-        if not sim_id:
-            continue
-        sum_completed_pct = sum(
-            (chat.grade.score or 0)
-            for chat in attempt_chats
-            if chat.completed and chat.grade and chat.grade.score is not None
+    sim_attempt_passed: dict[UUID, list[bool]] = defaultdict(list)
+
+    for (_attempt_id, sim_id), chats in attempt_sim_chats.items():
+        total_chats = len(chats)
+        sum_grade = sum(
+            (chat.grade_percent or 0)
+            for chat in chats
+            if chat.completed and chat.grade_percent is not None
         )
-        expected = expected_scenarios.get(sim_id, 0)
-        avg_pct = sum_completed_pct / expected if expected > 0 else 0
+        avg_pct = sum_grade / total_chats if total_chats > 0 else 0
         sim_attempt_scores[sim_id].append(avg_pct)
+
+        # An attempt passes if ALL chats have passed=True
+        all_passed = all(chat.passed is True for chat in chats)
+        sim_attempt_passed[sim_id].append(all_passed)
 
     # Per simulation: best attempt score and pass check
     sim_results: dict[UUID, tuple[int, bool]] = {}
-    for sim_id, scores in sim_attempt_scores.items():
+    for sim_id in set(
+        list(sim_attempt_scores.keys()) + list(sim_attempt_passed.keys())
+    ):
+        scores = sim_attempt_scores.get(sim_id, [])
         best = max(scores) if scores else 0
-        threshold = pass_thresholds.get(sim_id, 70)
-        passed = any(s >= threshold for s in scores)
+        passed = any(sim_attempt_passed.get(sim_id, []))
         sim_results[sim_id] = (round(best), passed)
 
     # Build cohort -> simulation nested structure
-    cohort_map: dict[UUID, CohortResult] = {}
-    cohort_order: list[UUID] = []
-    for row in structure_rows:
-        cid = row.cohort_id
-        if not cid:
-            continue
-        if cid not in cohort_map:
-            cohort_map[cid] = CohortResult(
-                name=row.cohort_name or "Unknown Cohort",
-                passed=False,
-                simulations=[],
-            )
-            cohort_order.append(cid)
+    # Track which simulations belong to which cohorts
+    cohort_sim_ids: dict[UUID, set[UUID]] = defaultdict(set)
+    for item in relevant_items:
+        if item.cohort_id:
+            cohort_sim_ids[item.cohort_id].add(item.simulation_id)
 
-        sim_id = row.simulation_id
-        if sim_id:
+    cohort_results: list[CohortResult] = []
+    for cohort_id in sorted(
+        cohort_sim_ids.keys(), key=lambda cid: cohort_names.get(cid, "")
+    ):
+        sims = []
+        for sim_id in cohort_sim_ids[cohort_id]:
             score, passed = sim_results.get(sim_id, (0, False))
-            cohort_map[cid].simulations.append(
+            sims.append(
                 SimulationResult(
-                    name=row.simulation_name or "Unknown Simulation",
+                    name=simulation_names.get(sim_id, "Unknown Simulation"),
                     score=score,
                     passed=passed,
                 )
             )
-
-    # Determine cohort pass status
-    for cohort in cohort_map.values():
-        cohort.passed = (
-            all(s.passed for s in cohort.simulations) if cohort.simulations else False
+        cohort_passed = all(s.passed for s in sims) if sims else False
+        cohort_results.append(
+            CohortResult(
+                name=cohort_names.get(cohort_id, "Unknown Cohort"),
+                passed=cohort_passed,
+                simulations=sims,
+            )
         )
 
-    # Sort by cohort name
-    return sorted(cohort_map.values(), key=lambda c: c.name)
+    return profile_name, cohort_results
 
 
 router = APIRouter()
@@ -187,7 +201,6 @@ router = APIRouter()
     ],
 )
 async def export_certificate(
-    request: GetCertificateDataApiRequest,
     http_request: Request,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> Response:
@@ -214,29 +227,16 @@ async def export_certificate(
         else:
             actor_name = None
 
-        # Fetch cohort/simulation structure from SQL (flat rows)
-        params = GetCertificateDataSqlParams(
-            **request.model_dump(), profile_id=profile_id
-        )
-        structure_rows = cast(
-            list[GetCertificateDataSqlRow],
-            await execute_sql_typed(
-                conn,
-                SQL_PATH,
-                params=params,
-                multi_row=True,
-            ),
-        )
+        if not pool:
+            raise HTTPException(status_code=500, detail="Database pool not available")
 
-        if not structure_rows:
+        # Compute scores via MV + resource hydration
+        profile_name, cohorts = await _compute_certificate_scores(pool, profile_id)
+
+        if not cohorts:
             raise HTTPException(
                 status_code=404, detail="Profile not found or no cohort data available"
             )
-
-        profile_name = structure_rows[0].profile_name or "Unknown"
-
-        # Compute scores via attempt view internals
-        cohorts = await _compute_certificate_scores(conn, profile_id, structure_rows)
 
         # Set audit context
         if actor_name:

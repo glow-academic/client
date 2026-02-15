@@ -29,13 +29,29 @@ def compute_can_edit(
     user_role: str | None,
     model_department_ids: list[str] | list[UUID] | None,
     active_agent_count: int,
+    user_department_ids: list[str] | list[UUID] | None = None,
 ) -> bool:
-    """Unified can_edit logic for both get and list views."""
+    """Unified can_edit logic for get, list, and save views.
+
+    Constraints:
+    1. Default models (no departments) can only be edited by superadmin
+    2. Models linked to active agents cannot be edited
+    3. User has admin/superadmin role
+    4. Non-superadmins must belong to ALL of the model's departments
+    """
     if not model_department_ids and user_role != "superadmin":
         return False
     if active_agent_count > 0:
         return False
-    return user_role in ("admin", "superadmin")
+    if user_role not in ("admin", "superadmin"):
+        return False
+    # Department subset check (when user_department_ids is available)
+    if user_department_ids is not None and user_role != "superadmin" and model_department_ids:
+        user_dept_set = {str(d) for d in user_department_ids}
+        model_dept_set = {str(d) for d in model_department_ids}
+        if not model_dept_set.issubset(user_dept_set):
+            return False
+    return True
 
 
 def compute_disabled_reason(
@@ -237,28 +253,6 @@ def compute_can_create(
         return False
     if user_role != "superadmin" and not department_ids:
         return False
-    return True
-
-
-def compute_can_save(
-    user_role: str | None,
-    user_department_ids: list[str] | list[UUID] | None,
-    model_department_ids: list[str] | list[UUID] | None,
-    active_agent_count: int,
-) -> bool:
-    if user_role not in ("admin", "superadmin"):
-        return False
-    if not model_department_ids and user_role != "superadmin":
-        return False
-    if active_agent_count > 0:
-        return False
-    if user_role != "superadmin" and model_department_ids:
-        if not user_department_ids:
-            return False
-        user_dept_set = {str(d) for d in user_department_ids}
-        model_dept_set = {str(d) for d in model_department_ids}
-        if not model_dept_set.issubset(user_dept_set):
-            return False
     return True
 
 

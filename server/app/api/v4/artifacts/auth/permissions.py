@@ -26,17 +26,34 @@ __all__ = [
 ]
 
 
-def compute_can_edit(user_role: str | None) -> bool:
+def compute_can_edit(
+    user_role: str | None,
+    active_settings_count: int = 0,
+) -> bool:
     """Unified can_edit logic for both get and list views.
 
-    Auth is role-based only: admin/superadmin can edit.
+    Constraints:
+    1. Not linked to active settings
+    2. User has superadmin role
     """
-    return user_role in ("admin", "superadmin")
+    if active_settings_count > 0:
+        return False
+
+    return user_role == "superadmin"
 
 
-def compute_disabled_reason(user_role: str | None) -> str | None:
+def compute_disabled_reason(
+    user_role: str | None,
+    active_settings_count: int = 0,
+) -> str | None:
     """Compute the reason why editing is disabled, if any."""
-    if user_role not in ("admin", "superadmin"):
+    if active_settings_count > 0:
+        return (
+            "This auth entry is currently linked to settings and cannot be edited. "
+            "You can view the details but cannot make changes."
+        )
+
+    if user_role != "superadmin":
         return (
             "This auth entry cannot be edited. "
             "You can view the details but cannot make changes."
@@ -44,29 +61,46 @@ def compute_disabled_reason(user_role: str | None) -> str | None:
     return None
 
 
-def compute_can_delete(user_role: str | None) -> bool:
-    """Compute can_delete permission."""
-    return user_role in ("admin", "superadmin")
+def compute_can_delete(
+    user_role: str | None,
+    active_settings_count: int = 0,
+) -> bool:
+    """Compute can_delete permission.
+
+    Business logic:
+    - Auths linked to active settings cannot be deleted
+    - Only superadmins can delete
+    """
+    if active_settings_count > 0:
+        return False
+
+    return user_role == "superadmin"
 
 
 def compute_can_duplicate(user_role: str | None) -> bool:
     """Compute can_duplicate permission."""
-    return user_role in ("admin", "superadmin")
+    return user_role == "superadmin"
 
 
-def compute_can_save(user_role: str | None) -> bool:
+def compute_can_save(
+    user_role: str | None,
+    active_settings_count: int = 0,
+) -> bool:
     """Compute permission to save/update an existing auth."""
-    return user_role in ("admin", "superadmin")
+    if active_settings_count > 0:
+        return False
+
+    return user_role == "superadmin"
 
 
 def compute_can_create(user_role: str | None) -> bool:
     """Compute permission to create a new auth."""
-    return user_role in ("admin", "superadmin")
+    return user_role == "superadmin"
 
 
 def compute_can_draft(user_role: str | None) -> bool:
     """Compute permission to create or update a draft."""
-    return user_role in ("admin", "superadmin")
+    return user_role == "superadmin"
 
 
 def compute_show_name(names_has_tools: bool) -> bool:

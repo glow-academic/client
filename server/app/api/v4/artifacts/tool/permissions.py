@@ -189,20 +189,6 @@ def compute_can_create(
     return user_role in ("admin", "superadmin")
 
 
-def compute_can_save(
-    user_role: str | None,
-    active_agent_count: int,
-) -> bool:
-    """Compute permission to save/update an existing tool."""
-    if user_role not in ("admin", "superadmin"):
-        return False
-
-    if active_agent_count > 0:
-        return False
-
-    return True
-
-
 # ========== Draft Endpoint Permission Functions ==========
 
 

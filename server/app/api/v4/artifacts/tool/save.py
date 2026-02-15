@@ -9,7 +9,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 from app.api.v4.artifacts.tool.permissions import (
     compute_can_create,
-    compute_can_save,
+    compute_can_edit,
 )
 from app.api.v4.artifacts.tool.types import (
     SaveToolApiRequest,
@@ -109,9 +109,9 @@ async def save_tool(
                 user_role=user_role,
             )
         else:
-            can_save_result = compute_can_save(
+            can_save_result = compute_can_edit(
                 user_role=user_role,
-                active_usage_count=access_result.active_usage_count or 0,
+                active_agent_count=access_result.active_usage_count or 0,
             )
 
         if not can_save_result:

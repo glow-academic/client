@@ -84,7 +84,11 @@ def compute_can_edit(
         return False
 
     # Department subset check (when user_department_ids is available)
-    if user_department_ids is not None and user_role != "superadmin" and simulation_department_ids:
+    if (
+        user_department_ids is not None
+        and user_role != "superadmin"
+        and simulation_department_ids
+    ):
         user_dept_set = {str(d) for d in user_department_ids}
         sim_dept_set = {str(d) for d in simulation_department_ids}
         if not sim_dept_set.issubset(user_dept_set):
@@ -122,7 +126,11 @@ def compute_disabled_reason(
         )
 
     # Department subset check
-    if user_department_ids is not None and user_role != "superadmin" and simulation_department_ids:
+    if (
+        user_department_ids is not None
+        and user_role != "superadmin"
+        and simulation_department_ids
+    ):
         user_dept_set = {str(d) for d in user_department_ids}
         sim_dept_set = {str(d) for d in simulation_department_ids}
         if not sim_dept_set.issubset(user_dept_set):

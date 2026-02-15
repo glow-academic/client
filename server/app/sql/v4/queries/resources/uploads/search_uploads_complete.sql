@@ -36,7 +36,7 @@ AS $$
 SELECT COALESCE(
     ARRAY_AGG(
         (q.uploads_id, q.upload_id, q.generated)::types.q_get_uploads_v4_item
-        ORDER BY q.created_at DESC
+        ORDER BY q.created_at DESC, q.uploads_id
     ),
     ARRAY[]::types.q_get_uploads_v4_item[]
 ) as items
@@ -52,7 +52,7 @@ FROM (
       AND (exclude_ids IS NULL OR NOT (ur.id = ANY(exclude_ids)))
       -- Artifact boolean filters (each filters to resources linked to at least one of that artifact type)
       AND (NOT document OR EXISTS (SELECT 1 FROM document_uploads_junction j WHERE j.uploads_id = ur.id AND j.active = true))
-    ORDER BY ur.created_at DESC
+    ORDER BY ur.created_at DESC, ur.id
     LIMIT limit_count
     OFFSET offset_count
 ) q;

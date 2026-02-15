@@ -28,13 +28,15 @@ def compute_can_edit(
     user_role: str | None,
     provider_department_ids: list[str] | list[UUID] | None,
     active_model_count: int,
+    user_department_ids: list[str] | list[UUID] | None = None,
 ) -> bool:
-    """Unified can_edit logic for both get and list views.
+    """Unified can_edit logic for get, list, and save views.
 
     Constraints:
     1. Not a default provider (unless superadmin)
     2. Not linked to active models
     3. User has admin/superadmin role
+    4. Non-superadmins must belong to ALL of the provider's departments
     """
     # Default providers can only be edited by superadmin
     if not provider_department_ids and user_role != "superadmin":
@@ -45,7 +47,17 @@ def compute_can_edit(
         return False
 
     # Role check
-    return user_role in ("admin", "superadmin")
+    if user_role not in ("admin", "superadmin"):
+        return False
+
+    # Department subset check (when user_department_ids is available)
+    if user_department_ids is not None and user_role != "superadmin" and provider_department_ids:
+        user_dept_set = {str(d) for d in user_department_ids}
+        provider_dept_set = {str(d) for d in provider_department_ids}
+        if not provider_dept_set.issubset(user_dept_set):
+            return False
+
+    return True
 
 
 def compute_disabled_reason(
@@ -250,40 +262,6 @@ def compute_can_create(
     # Non-superadmins cannot create general objects (no departments)
     if user_role != "superadmin" and not department_ids:
         return False
-
-    return True
-
-
-def compute_can_save(
-    user_role: str | None,
-    user_department_ids: list[str] | list[UUID] | None,
-    provider_department_ids: list[str] | list[UUID] | None,
-    active_model_count: int,
-) -> bool:
-    """Compute permission to save/update an existing provider.
-
-    Business logic:
-    - Not a default provider (unless superadmin)
-    - Not linked to active models
-    - User has admin/superadmin role
-    - Non-superadmins must belong to ALL of the provider's departments
-    """
-    # Role check first
-    if user_role not in ("admin", "superadmin"):
-        return False
-
-    # Default providers can only be edited by superadmin
-    if not provider_department_ids and user_role != "superadmin":
-        return False
-
-    # Non-superadmins must belong to ALL of the provider's departments
-    if user_role != "superadmin" and provider_department_ids:
-        if not user_department_ids:
-            return False
-        user_dept_set = {str(d) for d in user_department_ids}
-        provider_dept_set = {str(d) for d in provider_department_ids}
-        if not provider_dept_set.issubset(user_dept_set):
-            return False
 
     return True
 

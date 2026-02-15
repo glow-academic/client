@@ -84,6 +84,5 @@ SELECT COALESCE(
     ARRAY[]::types.q_get_cohorts_v4_item[]
 ) as items
 FROM cohorts_resource cr
-WHERE cr.id = ANY(ids)
-  AND cr.active = true;
+WHERE cr.id = ANY(ids);
 $$;

@@ -9,7 +9,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 from app.api.v4.artifacts.provider.permissions import (
     compute_can_create,
-    compute_can_save,
+    compute_can_edit,
 )
 from app.api.v4.artifacts.provider.types import (
     SaveProviderApiRequest,
@@ -116,11 +116,11 @@ async def save_provider(
                 department_ids=request.departments.resource_ids,  # Validated in SQL
             )
         else:
-            can_save_result = compute_can_save(
+            can_save_result = compute_can_edit(
                 user_role=user_role,
-                user_department_ids=user_department_ids,
                 provider_department_ids=access_result.provider_department_ids,
-                model_usage_count=access_result.model_usage_count or 0,
+                active_model_count=access_result.model_usage_count or 0,
+                user_department_ids=user_department_ids,
             )
 
         if not can_save_result:

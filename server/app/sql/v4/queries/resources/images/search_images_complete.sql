@@ -37,24 +37,28 @@ AS $$
 SELECT COALESCE(
     ARRAY_AGG(
         (
-            i.id,
-            i.name,
-            COALESCE(i.description, ''),
-            i.upload_id,
-            COALESCE(i.generated, false)
+            q.id,
+            q.name,
+            q.description,
+            q.upload_id,
+            q.generated
         )::types.q_get_images_v4_item
-        ORDER BY i.name
+        ORDER BY q.name
     ),
     ARRAY[]::types.q_get_images_v4_item[]
 ) as items
-FROM images_resource i
-WHERE i.active = true
-  AND (exclude_ids IS NULL OR NOT (i.id = ANY(exclude_ids)))
-  AND (COALESCE(array_length(upload_ids, 1), 0) = 0 OR i.upload_id = ANY(upload_ids))
-  AND (completed IS NULL OR i.completed = completed)
-  AND (search IS NULL OR search = '' OR LOWER(i.name) LIKE '%' || LOWER(search) || '%')
-  -- Artifact boolean filters (each filters to resources linked to at least one of that artifact type)
-  AND (NOT scenario OR EXISTS (SELECT 1 FROM scenario_images_junction j WHERE j.image_id = i.id AND j.active = true))
-LIMIT limit_count
-OFFSET offset_count;
+FROM (
+    SELECT i.id, i.name, COALESCE(i.description, '') AS description, i.upload_id, COALESCE(i.generated, false) AS generated
+    FROM images_resource i
+    WHERE i.active = true
+      AND (exclude_ids IS NULL OR NOT (i.id = ANY(exclude_ids)))
+      AND (COALESCE(array_length(upload_ids, 1), 0) = 0 OR i.upload_id = ANY(upload_ids))
+      AND (completed IS NULL OR i.completed = completed)
+      AND (search IS NULL OR search = '' OR LOWER(i.name) LIKE '%' || LOWER(search) || '%')
+      -- Artifact boolean filters (each filters to resources linked to at least one of that artifact type)
+      AND (NOT scenario OR EXISTS (SELECT 1 FROM scenario_images_junction j WHERE j.image_id = i.id AND j.active = true))
+    ORDER BY i.name
+    LIMIT limit_count
+    OFFSET offset_count
+) q;
 $$;

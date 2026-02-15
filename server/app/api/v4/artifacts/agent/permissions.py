@@ -288,25 +288,6 @@ def compute_can_create(
     return len(user_department_ids) > 0
 
 
-def compute_can_save(
-    user_role: str | None,
-    user_department_ids: list[str] | list[UUID] | None,
-    agent_department_ids: list[str] | list[UUID] | None,
-) -> bool:
-    """Compute permission to save/update an existing agent.
-
-    Business logic:
-    - User can save agent if they have access
-    """
-    user_uuids = (
-        [UUID(str(d)) for d in user_department_ids] if user_department_ids else None
-    )
-    agent_uuids = (
-        [UUID(str(d)) for d in agent_department_ids] if agent_department_ids else None
-    )
-    return has_access(user_role, user_uuids, agent_uuids)
-
-
 # ========== Draft Endpoint Permission Functions ==========
 
 

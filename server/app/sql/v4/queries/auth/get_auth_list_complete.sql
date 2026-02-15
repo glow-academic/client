@@ -48,7 +48,8 @@ CREATE TYPE types.q_get_auth_list_v4_auth AS (
     updated_at timestamptz,
     num_items integer,
     sample_items types.q_get_auth_list_v4_auth_item[],
-    department_ids text[]
+    department_ids text[],
+    active_settings_count bigint
 );
 
 -- Filter option type: id + count only (names hydrated in Python from cache)
@@ -119,6 +120,15 @@ auth_sample_items AS (
     WHERE ai.rn <= 3
     GROUP BY ai.auths_id
 ),
+-- Count active settings linked to each auth via setting_auths_junction
+auth_settings_counts AS (
+    SELECT
+        sa.auth_id,
+        COUNT(DISTINCT sa.settings_id)::bigint as active_settings_count
+    FROM setting_auths_junction sa
+    WHERE sa.active = true
+    GROUP BY sa.auth_id
+),
 -- Core entity data with department visibility check
 auth_data_base AS (
     SELECT
@@ -129,10 +139,12 @@ auth_data_base AS (
         a.created_at as updated_at,
         COALESCE(aic.num_items, 0) as num_items,
         COALESCE(asi.sample_items, '{}'::types.q_get_auth_list_v4_auth_item[]) as sample_items,
-        COALESCE(add_data.department_ids, NULL) as department_ids
+        COALESCE(add_data.department_ids, NULL) as department_ids,
+        COALESCE(asc_data.active_settings_count, 0) as active_settings_count
     FROM auths_resource a
     LEFT JOIN auth_item_counts aic ON aic.auths_id = a.id
     LEFT JOIN auth_sample_items asi ON asi.auths_id = a.id
+    LEFT JOIN auth_settings_counts asc_data ON asc_data.auth_id = a.id
     -- Department data via auth_auths_junction -> auth_artifact -> auth_departments_junction
     LEFT JOIN auth_auths_junction aaj ON aaj.auths_id = a.id
     LEFT JOIN auth_departments_data add_data ON add_data.auth_id = aaj.auth_id
@@ -142,7 +154,7 @@ auth_data_base AS (
         (SELECT n.name FROM auth_auths_junction aaj_n JOIN auth_names_junction an ON an.auth_id = aaj_n.auth_id JOIN names_resource n ON an.name_id = n.id WHERE aaj_n.auths_id = a.id LIMIT 1),
         (SELECT d.description FROM auth_auths_junction aaj_d JOIN auth_descriptions_junction ad ON ad.auth_id = aaj_d.auth_id JOIN descriptions_resource d ON ad.description_id = d.id WHERE aaj_d.auths_id = a.id LIMIT 1),
         NOT EXISTS (SELECT 1 FROM auth_auths_junction aaj_f JOIN auth_flags_junction af ON af.auth_id = aaj_f.auth_id JOIN flags_resource f ON af.flag_id = f.id WHERE aaj_f.auths_id = a.id AND f.name = 'auth_active' AND af.value = TRUE),
-        a.created_at, aic.num_items, asi.sample_items, add_data.department_ids
+        a.created_at, aic.num_items, asi.sample_items, add_data.department_ids, asc_data.active_settings_count
     HAVING COUNT(adv.auth_id) > 0 OR NOT EXISTS (
         SELECT 1 FROM auth_auths_junction aaj2 JOIN auth_departments_junction ad2 ON ad2.auth_id = aaj2.auth_id WHERE aaj2.auths_id = a.id
     )
@@ -187,7 +199,8 @@ SELECT
             (pa.auth_id, pa.auth_name, pa.description,
              pa.is_inactive, pa.updated_at,
              pa.num_items, pa.sample_items,
-             pa.department_ids
+             pa.department_ids,
+             pa.active_settings_count
             )::types.q_get_auth_list_v4_auth
             ORDER BY pa.updated_at DESC NULLS LAST
         ) FROM paginated_auths pa),

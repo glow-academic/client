@@ -25,29 +25,20 @@ __all__ = [
 
 def compute_can_edit(
     user_role: str | None,
-    eval_department_ids: list[str] | list[UUID] | None,
-    active_usage_count: int,
 ) -> bool:
     """Unified can_edit logic for both get and list views.
 
     Constraints:
-    1. User has admin/instructional/superadmin role
-    2. Eval not in active use (benchmarks running)
+    1. User has superadmin role
     """
-    # Role check
-    if user_role not in ("admin", "instructional", "superadmin"):
-        return False
-
-    return True
+    return user_role == "superadmin"
 
 
 def compute_disabled_reason(
     user_role: str | None,
-    eval_department_ids: list[str] | list[UUID] | None,
-    active_usage_count: int,
 ) -> str | None:
     """Compute the reason why editing is disabled, if any."""
-    if user_role not in ("admin", "instructional", "superadmin"):
+    if user_role != "superadmin":
         return (
             "This eval cannot be edited. "
             "You can view the details but cannot make changes."
@@ -199,24 +190,18 @@ def compute_rubrics_required(show_rubrics: bool) -> bool:
 
 def compute_can_delete(
     user_role: str | None,
-    eval_department_ids: list[str] | None,
-    total_usage_links: int,
 ) -> bool:
     """Compute can_delete permission.
 
     Business logic:
-    - Evals with active usage links cannot be deleted
-    - Only admins, instructional, and superadmins can delete
+    - Only superadmins can delete (no parent check needed)
     """
-    if total_usage_links > 0:
-        return False
-
-    return user_role in ("admin", "instructional", "superadmin")
+    return user_role == "superadmin"
 
 
 def compute_can_duplicate(user_role: str | None) -> bool:
     """Compute can_duplicate permission."""
-    return user_role in ("admin", "instructional", "superadmin")
+    return user_role == "superadmin"
 
 
 # ========== Save/Create Endpoint Permission Functions ==========
@@ -224,30 +209,16 @@ def compute_can_duplicate(user_role: str | None) -> bool:
 
 def compute_can_create(
     user_role: str | None,
-    department_ids: list[str] | list[UUID] | None,
 ) -> bool:
     """Compute permission to create a new eval."""
-    if user_role not in ("admin", "instructional", "superadmin"):
-        return False
-
-    # Non-superadmins cannot create general objects (no departments)
-    if user_role != "superadmin" and not department_ids:
-        return False
-
-    return True
+    return user_role == "superadmin"
 
 
 def compute_can_save(
     user_role: str | None,
-    user_department_ids: list[str] | list[UUID] | None,
-    eval_department_ids: list[str] | list[UUID] | None,
-    active_usage_count: int,
 ) -> bool:
     """Compute permission to save/update an existing eval."""
-    if user_role not in ("admin", "instructional", "superadmin"):
-        return False
-
-    return True
+    return user_role == "superadmin"
 
 
 # ========== Draft Endpoint Permission Functions ==========
@@ -255,7 +226,7 @@ def compute_can_save(
 
 def compute_can_draft(user_role: str | None) -> bool:
     """Compute permission to create or update a draft."""
-    return user_role in ("admin", "instructional", "superadmin")
+    return user_role == "superadmin"
 
 
 # ========== Agent Scoring - Eval-specific Constants ==========

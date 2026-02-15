@@ -136,16 +136,8 @@ async def get_eval_list(
         # Compute permissions for each eval in Python
         evals_with_permissions: list[ListEvalApiEval] = []
         for eval_item in result.evals or []:
-            can_edit_val = compute_can_edit(
-                user_role=user_role,
-                eval_department_ids=eval_item.department_ids,
-                active_usage_count=0,
-            )
-            can_delete_val = compute_can_delete(
-                user_role=user_role,
-                eval_department_ids=eval_item.department_ids,
-                total_usage_links=0,
-            )
+            can_edit_val = compute_can_edit(user_role=user_role)
+            can_delete_val = compute_can_delete(user_role=user_role)
             can_duplicate_val = compute_can_duplicate(user_role)
 
             evals_with_permissions.append(

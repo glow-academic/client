@@ -226,7 +226,6 @@ def _sort_sql_files(sql_file: Path, server_root: Path) -> tuple[int, str]:
     # Files that depend on analytics view must come after analytics
     analytics_dependent_paths = [
         f"app/sql/{VERSION}/queries/dashboard/get_dashboard_bundle_complete.sql",
-        f"app/sql/{VERSION}/queries/documents/get_certificate_data_complete.sql",
         f"app/sql/{VERSION}/queries/home/get_home_overview_complete.sql",
         f"app/sql/{VERSION}/queries/leaderboard/get_leaderboard_bundle_complete.sql",
         f"app/sql/{VERSION}/queries/practice/get_practice_overview_complete.sql",

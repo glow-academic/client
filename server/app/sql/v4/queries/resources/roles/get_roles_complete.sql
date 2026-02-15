@@ -86,5 +86,5 @@ FROM roles_resource r
 LEFT JOIN icons_resource i ON i.id = r.icon_id
 LEFT JOIN colors_resource c ON c.id = r.color_id
 WHERE r.active = true
-  AND (COALESCE(array_length(ids, 1), 0) = 0 OR r.id = ANY(ids));
+  AND r.id = ANY(ids);
 $$;

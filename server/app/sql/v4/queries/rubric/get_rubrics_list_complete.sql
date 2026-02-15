@@ -47,7 +47,6 @@ CREATE TYPE types.q_get_rubrics_list_v4_rubric AS (
     department_ids text[],
     simulation_ids text[],
     active_simulation_count int,
-    total_simulation_links int,
     standard_group_ids uuid[]
 );
 
@@ -116,16 +115,6 @@ rubric_active_simulation_links AS (
     WHERE EXISTS (SELECT 1 FROM simulation_scenario_flags_junction ssf JOIN scenario_flags_resource sfr ON ssf.scenario_flag_id = sfr.id JOIN flags_resource f ON sfr.flag_id = f.id WHERE ssf.simulation_id = ss.simulation_id AND sfr.scenario_id = ss.scenario_id AND f.name = 'scenario_active' AND ssf.value = true) AND EXISTS (SELECT 1 FROM scenario_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = s.id AND f.name = 'scenario_active' AND sf.value = true) AND srr.rubric_id IS NOT NULL
     GROUP BY srr.rubric_id
 ),
-rubric_all_simulation_links AS (
-    SELECT
-        srr.rubric_id,
-        COUNT(DISTINCT ss.simulation_id) as total_simulation_links
-    FROM simulation_scenarios_junction ss
-    JOIN simulation_scenario_rubrics_junction ssr ON ssr.simulation_id = ss.simulation_id
-    JOIN scenario_rubrics_resource srr ON srr.id = ssr.scenario_rubric_id AND srr.scenario_id = ss.scenario_id
-    WHERE srr.rubric_id IS NOT NULL
-    GROUP BY srr.rubric_id
-),
 simulation_department_access_for_rubrics AS (
     SELECT
         s.id as simulation_id,
@@ -175,15 +164,13 @@ rubric_data AS (
         (SELECT p.value FROM rubric_points_junction rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = r.id AND rp.type = 'pass'::point_type LIMIT 1) as pass_points,
         COALESCE(rdd.department_ids, NULL) as department_ids,
         COALESCE(rsd.simulation_ids, ARRAY[]::text[]) as simulation_ids,
-        COALESCE(rasl.active_simulation_count, 0) as active_simulation_count,
-        COALESCE(rasl_all.total_simulation_links, 0) as total_simulation_links
+        COALESCE(rasl.active_simulation_count, 0) as active_simulation_count
     FROM rubric_artifact r
     LEFT JOIN rubric_departments_junction rd ON rd.rubric_id = r.id AND rd.active = true
     LEFT JOIN rubric_departments_data rdd ON rdd.rubric_id = r.id
     LEFT JOIN rubric_simulations_data rsd ON rsd.rubric_id = r.id
     LEFT JOIN rubric_active_simulation_links rasl ON rasl.rubric_id = r.id
-    LEFT JOIN rubric_all_simulation_links rasl_all ON rasl_all.rubric_id = r.id
-    GROUP BY r.id, (SELECT n.name FROM rubric_names_junction rn JOIN names_resource n ON rn.name_id = n.id WHERE rn.rubric_id = r.id LIMIT 1), (SELECT d.description FROM rubric_descriptions_junction rd JOIN descriptions_resource d ON rd.description_id = d.id WHERE rd.rubric_id = r.id LIMIT 1), (SELECT p.value FROM rubric_points_junction rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = r.id AND rp.type = 'total'::point_type LIMIT 1), (SELECT p.value FROM rubric_points_junction rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = r.id AND rp.type = 'pass'::point_type LIMIT 1), rdd.department_ids, rsd.simulation_ids, rasl.active_simulation_count, rasl_all.total_simulation_links
+    GROUP BY r.id, (SELECT n.name FROM rubric_names_junction rn JOIN names_resource n ON rn.name_id = n.id WHERE rn.rubric_id = r.id LIMIT 1), (SELECT d.description FROM rubric_descriptions_junction rd JOIN descriptions_resource d ON rd.description_id = d.id WHERE rd.rubric_id = r.id LIMIT 1), (SELECT p.value FROM rubric_points_junction rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = r.id AND rp.type = 'total'::point_type LIMIT 1), (SELECT p.value FROM rubric_points_junction rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = r.id AND rp.type = 'pass'::point_type LIMIT 1), rdd.department_ids, rsd.simulation_ids, rasl.active_simulation_count
     HAVING
         COUNT(rd.rubric_id) FILTER (WHERE rd.department_id IN (SELECT department_id FROM user_departments)) > 0
         OR NOT EXISTS (SELECT 1 FROM rubric_departments_junction rd2 WHERE rd2.rubric_id = r.id AND rd2.active = true)
@@ -302,7 +289,6 @@ SELECT
              pr.department_ids,
              pr.simulation_ids,
              pr.active_simulation_count,
-             pr.total_simulation_links,
              COALESCE(rsgi.standard_group_ids, ARRAY[]::uuid[])
             )::types.q_get_rubrics_list_v4_rubric
             ORDER BY pr.name

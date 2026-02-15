@@ -38,21 +38,25 @@ SELECT COALESCE(
         (
             q.id,
             q.question_text,
-            COALESCE(q.allow_multiple, false),
-            COALESCE(q.generated, false),
+            q.allow_multiple,
+            q.generated,
             q.time
         )::types.q_get_questions_v4_item
         ORDER BY q.question_text
     ),
     ARRAY[]::types.q_get_questions_v4_item[]
 ) as items
-FROM questions_resource q
-WHERE q.active = true
-  AND (exclude_ids IS NULL OR NOT (q.id = ANY(exclude_ids)))
-  AND (search IS NULL OR search = '' OR LOWER(q.question_text) LIKE '%' || LOWER(search) || '%')
-  AND (allow_multiple IS NULL OR q.allow_multiple = allow_multiple)
-  -- Artifact boolean filters (each filters to resources linked to at least one of that artifact type)
-  AND (NOT scenario OR EXISTS (SELECT 1 FROM scenario_questions_junction j WHERE j.question_id = q.id AND j.active = true))
-LIMIT limit_count
-OFFSET offset_count;
+FROM (
+    SELECT qr.id, qr.question_text, COALESCE(qr.allow_multiple, false) AS allow_multiple, COALESCE(qr.generated, false) AS generated, qr.time
+    FROM questions_resource qr
+    WHERE qr.active = true
+      AND (exclude_ids IS NULL OR NOT (qr.id = ANY(exclude_ids)))
+      AND (search IS NULL OR search = '' OR LOWER(qr.question_text) LIKE '%' || LOWER(search) || '%')
+      AND (api_search_questions_v4.allow_multiple IS NULL OR qr.allow_multiple = api_search_questions_v4.allow_multiple)
+      -- Artifact boolean filters (each filters to resources linked to at least one of that artifact type)
+      AND (NOT scenario OR EXISTS (SELECT 1 FROM scenario_questions_junction j WHERE j.question_id = qr.id AND j.active = true))
+    ORDER BY qr.question_text
+    LIMIT limit_count
+    OFFSET offset_count
+) q;
 $$;

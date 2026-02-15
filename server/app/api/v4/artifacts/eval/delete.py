@@ -97,11 +97,7 @@ async def delete_eval(
                 detail="Unable to verify user permissions.",
             )
 
-        can_delete = compute_can_delete(
-            user_role=user_role,
-            eval_department_ids=access_result.eval_department_ids,
-            total_usage_links=access_result.total_usage_links or 0,
-        )
+        can_delete = compute_can_delete(user_role=user_role)
 
         if not can_delete:
             raise HTTPException(

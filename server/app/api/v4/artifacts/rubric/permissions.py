@@ -34,7 +34,7 @@ def compute_can_edit(
     Constraints:
     1. Not a default rubric (unless superadmin)
     2. Not linked to active simulations
-    3. User has admin/instructional/superadmin role
+    3. User has superadmin role
     """
     if not rubric_department_ids and user_role != "superadmin":
         return False
@@ -42,7 +42,7 @@ def compute_can_edit(
     if active_simulation_count > 0:
         return False
 
-    return user_role in ("admin", "instructional", "superadmin")
+    return user_role == "superadmin"
 
 
 def compute_disabled_reason(
@@ -66,7 +66,7 @@ def compute_disabled_reason(
             "You can view the details but cannot make changes."
         )
 
-    if user_role not in ("admin", "instructional", "superadmin"):
+    if user_role != "superadmin":
         return (
             "This rubric cannot be edited. "
             "You can view the details but cannot make changes."
@@ -187,27 +187,27 @@ def compute_standards_required() -> bool:
 def compute_can_delete(
     user_role: str | None,
     rubric_department_ids: list[str] | None,
-    total_simulation_links: int,
+    active_simulation_count: int,
 ) -> bool:
     """Compute can_delete permission.
 
     Business logic:
     - Default rubrics (no departments) cannot be deleted except by superadmin
-    - Rubrics linked to ANY simulation (active or not) cannot be deleted
-    - Only admins, instructional, and superadmins can delete
+    - Rubrics linked to active simulations cannot be deleted
+    - Only superadmins can delete
     """
     if not rubric_department_ids and user_role != "superadmin":
         return False
 
-    if total_simulation_links > 0:
+    if active_simulation_count > 0:
         return False
 
-    return user_role in ("admin", "instructional", "superadmin")
+    return user_role == "superadmin"
 
 
 def compute_can_duplicate(user_role: str | None) -> bool:
     """Compute can_duplicate permission."""
-    return user_role in ("admin", "instructional", "superadmin")
+    return user_role == "superadmin"
 
 
 # ========== Save/Create Endpoint Permission Functions ==========
@@ -218,10 +218,7 @@ def compute_can_create(
     department_ids: list[str] | list[UUID] | None,
 ) -> bool:
     """Compute permission to create a new rubric."""
-    if user_role not in ("admin", "instructional", "superadmin"):
-        return False
-
-    if user_role != "superadmin" and not department_ids:
+    if user_role != "superadmin":
         return False
 
     return True
@@ -229,12 +226,11 @@ def compute_can_create(
 
 def compute_can_save(
     user_role: str | None,
-    user_department_ids: list[str] | list[UUID] | None,
     rubric_department_ids: list[str] | list[UUID] | None,
     active_simulation_count: int,
 ) -> bool:
     """Compute permission to save/update an existing rubric."""
-    if user_role not in ("admin", "instructional", "superadmin"):
+    if user_role != "superadmin":
         return False
 
     if not rubric_department_ids and user_role != "superadmin":
@@ -242,14 +238,6 @@ def compute_can_save(
 
     if active_simulation_count > 0:
         return False
-
-    if user_role != "superadmin" and rubric_department_ids:
-        if not user_department_ids:
-            return False
-        user_dept_set = {str(d) for d in user_department_ids}
-        rubric_dept_set = {str(d) for d in rubric_department_ids}
-        if not rubric_dept_set.issubset(user_dept_set):
-            return False
 
     return True
 
@@ -259,7 +247,7 @@ def compute_can_save(
 
 def compute_can_draft(user_role: str | None) -> bool:
     """Compute permission to create or update a draft."""
-    return user_role in ("admin", "instructional", "superadmin")
+    return user_role == "superadmin"
 
 
 # ========== Agent Scoring - Rubric-specific Constants ==========

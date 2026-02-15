@@ -37,19 +37,15 @@ RETURNS TABLE (
 LANGUAGE sql
 STABLE
 AS $$
-WITH params AS (
-    SELECT simulation_ids AS sim_ids
-),
-position_data AS (
+WITH position_data AS (
     SELECT
         spr.id,
         spr.simulation_id,
         spr.value,
         COALESCE(spr.generated, false) as generated,
         COALESCE(spr.mcp, false) as mcp
-    FROM params p
-    CROSS JOIN LATERAL unnest(p.sim_ids) AS sid
-    JOIN simulation_positions_resource spr ON spr.simulation_id = sid
+    FROM simulation_positions_resource spr
+    WHERE spr.id = ANY(simulation_ids)
 )
 SELECT
     COALESCE(

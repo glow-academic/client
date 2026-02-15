@@ -35,21 +35,25 @@ AS $$
 SELECT COALESCE(
     ARRAY_AGG(
         (
-            ps.id,
-            ps.name,
-            ps.problem_statement,
-            COALESCE(ps.generated, false)
+            q.id,
+            q.name,
+            q.problem_statement,
+            q.generated
         )::types.q_get_problem_statements_v4_item
-        ORDER BY ps.name
+        ORDER BY q.name
     ),
     ARRAY[]::types.q_get_problem_statements_v4_item[]
 ) as items
-FROM problem_statements_resource ps
-WHERE ps.active = true
-  AND (exclude_ids IS NULL OR NOT (ps.id = ANY(exclude_ids)))
-  AND (search IS NULL OR search = '' OR LOWER(ps.name) LIKE '%' || LOWER(search) || '%' OR LOWER(ps.problem_statement) LIKE '%' || LOWER(search) || '%')
-  -- Artifact boolean filters (each filters to resources linked to at least one of that artifact type)
-  AND (NOT scenario OR EXISTS (SELECT 1 FROM scenario_problem_statements_junction j WHERE j.problem_statement_id = ps.id AND j.active = true))
-LIMIT limit_count
-OFFSET offset_count;
+FROM (
+    SELECT ps.id, ps.name, ps.problem_statement, COALESCE(ps.generated, false) AS generated
+    FROM problem_statements_resource ps
+    WHERE ps.active = true
+      AND (exclude_ids IS NULL OR NOT (ps.id = ANY(exclude_ids)))
+      AND (search IS NULL OR search = '' OR LOWER(ps.name) LIKE '%' || LOWER(search) || '%' OR LOWER(ps.problem_statement) LIKE '%' || LOWER(search) || '%')
+      -- Artifact boolean filters (each filters to resources linked to at least one of that artifact type)
+      AND (NOT scenario OR EXISTS (SELECT 1 FROM scenario_problem_statements_junction j WHERE j.problem_statement_id = ps.id AND j.active = true))
+    ORDER BY ps.name
+    LIMIT limit_count
+    OFFSET offset_count
+) q;
 $$;

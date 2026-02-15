@@ -1,7 +1,6 @@
 """Settings list endpoint."""
 
 from typing import Annotated, Any, cast
-from uuid import UUID
 
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
@@ -96,13 +95,6 @@ async def get_setting_list(
             actor_name = None
             user_role = None
 
-        # Extract user department IDs for permission checks
-        user_department_ids: list[UUID] = [
-            d.department_id
-            for d in (profile_ctx.departments if pool else [])
-            if d.department_id
-        ]
-
         # Convert API request to SQL params (add profile_id from header)
         params = GetSettingsListSqlParams(profile_id=profile_id)
         sql_params = params.to_tuple()
@@ -124,17 +116,15 @@ async def get_setting_list(
         # Compute permissions for each setting in Python
         settings_with_permissions: list[ListSettingApiSetting] = []
         for setting in result.settings or []:
-            setting_dept_uuids = [UUID(d) for d in (setting.department_ids or [])]
+            active_department_count = len(setting.department_ids or [])
 
             can_edit_val = compute_can_edit(
                 user_role=user_role,
-                user_department_ids=user_department_ids,
-                setting_department_ids=setting_dept_uuids,
+                active_department_count=active_department_count,
             )
             can_delete_val = compute_can_delete(
                 user_role=user_role,
-                user_department_ids=user_department_ids,
-                setting_department_ids=setting_dept_uuids,
+                active_department_count=active_department_count,
             )
             can_duplicate_val = compute_can_duplicate(user_role)
 

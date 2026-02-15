@@ -42,6 +42,8 @@ async def get_roles_internal(
     Can be called directly from other routes without HTTP overhead.
     """
     effective_ids = ids or []
+    if not effective_ids:
+        return []
     tags = ["resources", "roles"]
     cache_key_val = cache_key(
         "/api/v4/resources/roles/get",

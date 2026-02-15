@@ -107,7 +107,10 @@ async def delete_auth(
             )
 
         # Permission check using centralized permissions logic
-        can_delete = compute_can_delete(user_role=user_role)
+        can_delete = compute_can_delete(
+            user_role=user_role,
+            active_settings_count=access_result.active_settings_count or 0,
+        )
 
         if not can_delete:
             raise HTTPException(

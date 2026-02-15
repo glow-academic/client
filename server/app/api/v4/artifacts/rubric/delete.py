@@ -101,7 +101,7 @@ async def delete_rubric(
         can_delete = compute_can_delete(
             user_role=user_role,
             rubric_department_ids=access_result.rubric_department_ids,
-            total_simulation_links=access_result.total_simulation_links or 0,
+            active_simulation_count=access_result.active_simulation_count or 0,
         )
 
         if not can_delete:

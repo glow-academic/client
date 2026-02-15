@@ -1,7 +1,6 @@
 """Setting delete endpoint - v4 API following DHH principles."""
 
 from typing import Annotated, Any, cast
-from uuid import UUID
 
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
@@ -79,13 +78,6 @@ async def delete_setting(
             actor_name = None
             user_role = None
 
-        # Extract user department IDs for permission checks
-        user_department_ids: list[UUID] = [
-            d.department_id
-            for d in (profile_ctx.departments if pool else [])
-            if d.department_id
-        ]
-
         # Permission check: get setting department_ids and name using typed SQL
         access_params = CheckSettingDeleteAccessSqlParams(
             profile_id=profile_id,
@@ -108,8 +100,7 @@ async def delete_setting(
 
         can_delete = compute_can_delete(
             user_role=user_role,
-            user_department_ids=user_department_ids,
-            setting_department_ids=access_result.setting_department_ids or [],
+            active_department_count=len(access_result.setting_department_ids or []),
         )
 
         if not can_delete:

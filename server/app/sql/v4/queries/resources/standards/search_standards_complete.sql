@@ -36,7 +36,7 @@ AS $$
 SELECT COALESCE(
     ARRAY_AGG(
         (q.standard_id, q.standard_group_id, q.name, q.description, q.points)::types.q_get_standards_v4_item
-        ORDER BY q.name
+        ORDER BY q.name, q.standard_id
     ),
     ARRAY[]::types.q_get_standards_v4_item[]
 ) as items
@@ -54,7 +54,7 @@ FROM (
       AND (COALESCE(array_length(standard_group_ids, 1), 0) = 0 OR r.standard_group_id = ANY(standard_group_ids))
       -- Artifact boolean filters (each filters to resources linked to at least one of that artifact type)
       AND (NOT rubric OR EXISTS (SELECT 1 FROM rubric_standards_junction j WHERE j.standard_id = r.id AND j.active = true))
-    ORDER BY r.name
+    ORDER BY r.name, r.id
     LIMIT limit_count
     OFFSET offset_count
 ) q;
