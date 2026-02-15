@@ -102,8 +102,7 @@ async def delete_model(
         can_delete = compute_can_delete(
             user_role=user_role,
             model_department_ids=access_result.model_department_ids,
-            total_persona_links=access_result.total_persona_links or 0,
-            agents_usage_count=access_result.agents_usage_count or 0,
+            active_agent_count=access_result.active_agent_count or 0,
         )
 
         if not can_delete:

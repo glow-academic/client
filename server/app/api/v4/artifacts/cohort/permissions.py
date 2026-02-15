@@ -114,19 +114,31 @@ def build_domain_data(
 def compute_can_edit(
     user_role: str | None,
     cohort_department_ids: list[str] | list[UUID] | None,
+    user_department_ids: list[str] | list[UUID] | None = None,
 ) -> bool:
-    """Compute if user can edit the cohort.
+    """Unified can_edit logic for get, list, and save views.
 
     Constraints:
     1. Not a default cohort (unless superadmin)
     2. User has admin/instructional/superadmin role
+    3. Non-superadmins must belong to ALL of the cohort's departments
     """
     # Default cohorts can only be edited by superadmin
     if not cohort_department_ids and user_role != "superadmin":
         return False
 
     # Role check
-    return user_role in ("admin", "instructional", "superadmin")
+    if user_role not in ("admin", "instructional", "superadmin"):
+        return False
+
+    # Department subset check (when user_department_ids is available)
+    if user_department_ids is not None and user_role != "superadmin" and cohort_department_ids:
+        user_dept_set = {str(d) for d in user_department_ids}
+        cohort_dept_set = {str(d) for d in cohort_department_ids}
+        if not cohort_dept_set.issubset(user_dept_set):
+            return False
+
+    return True
 
 
 def compute_can_delete(
@@ -169,6 +181,7 @@ def compute_can_leave(is_member: bool) -> bool:
 def compute_disabled_reason(
     user_role: str | None,
     cohort_department_ids: list[str] | list[UUID] | None,
+    user_department_ids: list[str] | list[UUID] | None = None,
 ) -> str | None:
     """Compute the disabled reason for editing a cohort.
 
@@ -178,10 +191,20 @@ def compute_disabled_reason(
     if not cohort_department_ids and user_role != "superadmin":
         return "This is a default cohort that cannot be edited."
 
-    if user_role in ("admin", "instructional", "superadmin"):
-        return None
+    if user_role not in ("admin", "instructional", "superadmin"):
+        return "This cohort cannot be edited."
 
-    return "This cohort cannot be edited."
+    # Department subset check
+    if user_department_ids is not None and user_role != "superadmin" and cohort_department_ids:
+        user_dept_set = {str(d) for d in user_department_ids}
+        cohort_dept_set = {str(d) for d in cohort_department_ids}
+        if not cohort_dept_set.issubset(user_dept_set):
+            return (
+                "You don't have access to all departments for this cohort. "
+                "You can view the details but cannot make changes."
+            )
+
+    return None
 
 
 def has_access(
@@ -326,33 +349,6 @@ def compute_can_create(
         return False
     if user_role != "superadmin" and not department_ids:
         return False
-    return True
-
-
-def compute_can_save(
-    user_role: str | None,
-    user_department_ids: list[str] | list[UUID] | None,
-    cohort_department_ids: list[str] | list[UUID] | None,
-) -> bool:
-    """Compute permission to save/update an existing cohort.
-
-    Business logic:
-    - Not a default cohort (unless superadmin)
-    - User has admin/instructional/superadmin role
-    - Non-superadmins must belong to ALL of the cohort's departments
-    """
-    if user_role not in ("admin", "instructional", "superadmin"):
-        return False
-    if not cohort_department_ids and user_role != "superadmin":
-        return False
-    # Non-superadmins must belong to ALL of the cohort's departments
-    if user_role != "superadmin" and cohort_department_ids:
-        if not user_department_ids:
-            return False
-        user_dept_set = {str(d) for d in user_department_ids}
-        cohort_dept_set = {str(d) for d in cohort_department_ids}
-        if not cohort_dept_set.issubset(user_dept_set):
-            return False
     return True
 
 

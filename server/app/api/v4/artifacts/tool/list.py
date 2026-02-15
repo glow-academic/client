@@ -133,11 +133,11 @@ async def get_tool_list(
             # Compute permissions based on user role and tool state
             can_edit_val = compute_can_edit(
                 user_role=user_role,
-                active_usage_count=tool.active_usage_count or 0,
+                active_agent_count=tool.active_agent_count or 0,
             )
             can_delete_val = compute_can_delete(
                 user_role=user_role,
-                usage_count=tool.total_usage_count or 0,
+                active_agent_count=tool.active_agent_count or 0,
             )
             can_duplicate_val = compute_can_duplicate(user_role)
 

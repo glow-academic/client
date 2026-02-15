@@ -42,14 +42,16 @@ def compute_can_edit(
     target_is_self: bool,
     target_department_ids: list[str] | list[UUID] | None,
     target_role: str | None = None,
+    user_department_ids: list[str] | list[UUID] | None = None,
 ) -> bool:
-    """Unified can_edit logic for both get and list views.
+    """Unified can_edit logic for get, list, and save views.
 
     Constraints:
     1. Always allow editing self
     2. Superadmin can edit all profiles
     3. If target_role provided, use role hierarchy (can only edit lower ranks)
     4. Fallback: admin can edit
+    5. Non-superadmins must belong to ALL of the target's departments
     """
     if target_is_self:
         return True
@@ -57,18 +59,25 @@ def compute_can_edit(
     if user_role == "superadmin":
         return True
 
-    # Only admin/superadmin can edit others
-    if user_role not in ("admin", "superadmin"):
+    # Only admin/instructional/superadmin can edit others
+    if user_role not in ("admin", "instructional", "superadmin"):
         return False
 
     # List view: use role hierarchy (can only edit lower ranks)
     if target_role is not None:
         user_rank = ROLE_HIERARCHY.get(user_role or "", 0)
         target_rank = ROLE_HIERARCHY.get(target_role or "", 0)
-        return user_rank > target_rank
+        if user_rank <= target_rank:
+            return False
 
-    # Fallback: admin can edit
-    return user_role == "admin"
+    # Department subset check (when user_department_ids is available)
+    if user_department_ids is not None and target_department_ids:
+        user_dept_set = {str(d) for d in user_department_ids}
+        target_dept_set = {str(d) for d in target_department_ids}
+        if not target_dept_set.issubset(user_dept_set):
+            return False
+
+    return True
 
 
 def compute_disabled_reason(
@@ -260,31 +269,6 @@ def compute_can_create(
     """
     _ = department_ids
     return user_role in ("admin", "superadmin")
-
-
-def compute_can_save(
-    user_role: str | None,
-    user_department_ids: list[str] | list[UUID] | None,
-    target_department_ids: list[str] | list[UUID] | None,
-) -> bool:
-    """Compute permission to save/update an existing profile.
-
-    Business logic:
-    - Only admin/superadmin can save
-    - Non-superadmins must belong to ALL of the target's departments
-    """
-    if user_role not in ("admin", "superadmin"):
-        return False
-
-    if user_role != "superadmin" and target_department_ids:
-        if not user_department_ids:
-            return False
-        user_dept_set = {str(d) for d in user_department_ids}
-        target_dept_set = {str(d) for d in target_department_ids}
-        if not target_dept_set.issubset(user_dept_set):
-            return False
-
-    return True
 
 
 # ========== Draft Endpoint Permission Functions ==========

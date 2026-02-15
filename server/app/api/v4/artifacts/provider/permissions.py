@@ -27,16 +27,21 @@ __all__ = [
 def compute_can_edit(
     user_role: str | None,
     provider_department_ids: list[str] | list[UUID] | None,
-    model_usage_count: int,
+    active_model_count: int,
 ) -> bool:
     """Unified can_edit logic for both get and list views.
 
     Constraints:
     1. Not a default provider (unless superadmin)
-    2. User has admin/superadmin role
+    2. Not linked to active models
+    3. User has admin/superadmin role
     """
     # Default providers can only be edited by superadmin
     if not provider_department_ids and user_role != "superadmin":
+        return False
+
+    # Providers in use by active models cannot be edited
+    if active_model_count > 0:
         return False
 
     # Role check
@@ -46,7 +51,7 @@ def compute_can_edit(
 def compute_disabled_reason(
     user_role: str | None,
     provider_department_ids: list[str] | list[UUID] | None,
-    model_usage_count: int,
+    active_model_count: int,
 ) -> str | None:
     """Compute the reason why editing is disabled, if any.
 
@@ -56,6 +61,13 @@ def compute_disabled_reason(
     if not provider_department_ids and user_role != "superadmin":
         return (
             "This is a default provider that cannot be edited. "
+            "You can view the details but cannot make changes."
+        )
+
+    # Providers in use by active models cannot be edited
+    if active_model_count > 0:
+        return (
+            "This provider is currently in use by models and cannot be edited. "
             "You can view the details but cannot make changes."
         )
 
@@ -188,21 +200,21 @@ def compute_key_required() -> bool:
 def compute_can_delete(
     user_role: str | None,
     provider_department_ids: list[str] | list[UUID] | None,
-    model_usage_count: int,
+    active_model_count: int,
 ) -> bool:
     """Compute can_delete permission.
 
     Business logic:
     - Default providers (no departments) cannot be deleted except by superadmin
-    - Providers used by models cannot be deleted
+    - Providers linked to active models cannot be deleted
     - Only admins and superadmins can delete
     """
     # Default providers can only be deleted by superadmin
     if not provider_department_ids and user_role != "superadmin":
         return False
 
-    # Providers in use by models cannot be deleted
-    if model_usage_count > 0:
+    # Providers in use by active models cannot be deleted
+    if active_model_count > 0:
         return False
 
     # Only admins and superadmins can delete
@@ -246,12 +258,13 @@ def compute_can_save(
     user_role: str | None,
     user_department_ids: list[str] | list[UUID] | None,
     provider_department_ids: list[str] | list[UUID] | None,
-    model_usage_count: int,
+    active_model_count: int,
 ) -> bool:
     """Compute permission to save/update an existing provider.
 
     Business logic:
     - Not a default provider (unless superadmin)
+    - Not linked to active models
     - User has admin/superadmin role
     - Non-superadmins must belong to ALL of the provider's departments
     """

@@ -9,7 +9,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 from app.api.v4.artifacts.document.permissions import (
     compute_can_create,
-    compute_can_save,
+    compute_can_edit,
 )
 from app.api.v4.artifacts.document.types import (
     SaveDocumentApiRequest,
@@ -118,11 +118,11 @@ async def save_document(
             )
         else:
             # Update mode: full permission check
-            can_save_result = compute_can_save(
+            can_save_result = compute_can_edit(
                 user_role=user_role,
-                user_department_ids=user_department_ids,
                 document_department_ids=access_result.document_department_ids,
                 active_scenario_count=access_result.active_scenario_count or 0,
+                user_department_ids=user_department_ids,
             )
 
         if not can_save_result:

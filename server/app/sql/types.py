@@ -403,7 +403,7 @@ class QListAgentsV4Agent(BaseModel):
     role: str | None
     updated_at: datetime | None
     department_ids: list[str] | None
-    department_link_count: int | None
+    active_settings_count: int | None
 
 
 
@@ -7897,8 +7897,7 @@ class CheckModelDeleteAccessSqlParams(BaseModel):
 class CheckModelDeleteAccessSqlRow(BaseModel):
 
     model_department_ids: list[str] | None = None
-    total_persona_links: int | None = None
-    agents_usage_count: int | None = None
+    active_agent_count: int | None = None
 
 class CheckModelDeleteAccessApiRequest(BaseModel):
 
@@ -7907,8 +7906,7 @@ class CheckModelDeleteAccessApiRequest(BaseModel):
 class CheckModelDeleteAccessApiResponse(BaseModel):
 
     model_department_ids: list[str] | None = None
-    total_persona_links: int | None = None
-    agents_usage_count: int | None = None
+    active_agent_count: int | None = None
 
 
 
@@ -8261,7 +8259,7 @@ class QListModelsV4Model(BaseModel):
     updated_at: datetime | None
     provider_id: UUID | None
     department_ids: list[str] | None
-    agents_usage_count: int | None
+    active_agent_count: int | None
 
 
 
@@ -11258,7 +11256,7 @@ class CheckProviderDeleteAccessSqlParams(BaseModel):
 class CheckProviderDeleteAccessSqlRow(BaseModel):
 
     provider_department_ids: list[UUID] | None = None
-    model_usage_count: int | None = None
+    active_model_count: int | None = None
     provider_name: str | None = None
 
 class CheckProviderDeleteAccessApiRequest(BaseModel):
@@ -11268,7 +11266,7 @@ class CheckProviderDeleteAccessApiRequest(BaseModel):
 class CheckProviderDeleteAccessApiResponse(BaseModel):
 
     provider_department_ids: list[UUID] | None = None
-    model_usage_count: int | None = None
+    active_model_count: int | None = None
     provider_name: str | None = None
 
 
@@ -11554,7 +11552,7 @@ class QListProvidersV4Provider(BaseModel):
     active: bool | None
     updated_at: datetime | None
     department_ids: list[UUID] | None
-    model_usage_count: int | None
+    active_model_count: int | None
     model_ids: list[UUID] | None
 
 
@@ -22659,7 +22657,7 @@ class CheckToolDeleteAccessSqlParams(BaseModel):
 
 class CheckToolDeleteAccessSqlRow(BaseModel):
 
-    usage_count: int | None = None
+    active_agent_count: int | None = None
 
 class CheckToolDeleteAccessApiRequest(BaseModel):
 
@@ -22667,7 +22665,7 @@ class CheckToolDeleteAccessApiRequest(BaseModel):
 
 class CheckToolDeleteAccessApiResponse(BaseModel):
 
-    usage_count: int | None = None
+    active_agent_count: int | None = None
 
 
 
@@ -23138,8 +23136,7 @@ class QGetToolsListV4Tool(BaseModel):
     name: str | None
     description: str | None
     active: bool | None
-    active_usage_count: int | None
-    total_usage_count: int | None
+    active_agent_count: int | None
     updated_at: datetime | None
 
 class GetToolsListSqlRow(BaseModel):

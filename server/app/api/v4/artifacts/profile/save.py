@@ -10,7 +10,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 from app.api.v4.artifacts.profile.permissions import (
     compute_can_create,
-    compute_can_save,
+    compute_can_edit,
 )
 from app.api.v4.artifacts.profile.types import (
     PatchProfileDraftApiRequest,
@@ -120,10 +120,11 @@ async def save_profile(
                 department_ids=None,
             )
         else:
-            can_save_result = compute_can_save(
+            can_save_result = compute_can_edit(
                 user_role=user_role,
-                user_department_ids=user_department_ids,
+                target_is_self=access_result.target_is_self or False,
                 target_department_ids=access_result.target_department_ids,
+                user_department_ids=user_department_ids,
             )
 
         if not can_save_result:

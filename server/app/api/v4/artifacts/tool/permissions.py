@@ -24,39 +24,39 @@ __all__ = [
 
 def compute_can_edit(
     user_role: str | None,
-    active_usage_count: int,
+    active_agent_count: int,
 ) -> bool:
     """Unified can_edit logic for both get and list views.
 
     Constraints:
-    1. Not linked to active usages (agents/calls)
-    2. User has admin/instructional/superadmin role
+    1. Not linked to active agents
+    2. User has admin/superadmin role
     """
-    # Tools in active use cannot be edited
-    if active_usage_count > 0:
+    # Tools in use by active agents cannot be edited
+    if active_agent_count > 0:
         return False
 
     # Role check
-    return user_role in ("admin", "instructional", "superadmin")
+    return user_role in ("admin", "superadmin")
 
 
 def compute_disabled_reason(
     user_role: str | None,
-    active_usage_count: int,
+    active_agent_count: int,
 ) -> str | None:
     """Compute the reason why editing is disabled, if any.
 
     Returns None if editing is allowed.
     """
-    # Tools in active use cannot be edited
-    if active_usage_count > 0:
+    # Tools in use by active agents cannot be edited
+    if active_agent_count > 0:
         return (
             "This tool is currently in use by agents and cannot be edited. "
             "You can view the details but cannot make changes."
         )
 
     # Role check
-    if user_role not in ("admin", "instructional", "superadmin"):
+    if user_role not in ("admin", "superadmin"):
         return (
             "This tool cannot be edited. "
             "You can view the details but cannot make changes."
@@ -160,23 +160,23 @@ def compute_flag_required() -> bool:
 
 def compute_can_delete(
     user_role: str | None,
-    usage_count: int,
+    active_agent_count: int,
 ) -> bool:
     """Compute can_delete permission.
 
     Business logic:
-    - Tools with any usage (agents, calls, resources) cannot be deleted
-    - Only admins, instructional, and superadmins can delete
+    - Tools linked to active agents cannot be deleted
+    - Only admins and superadmins can delete
     """
-    if usage_count > 0:
+    if active_agent_count > 0:
         return False
 
-    return user_role in ("admin", "instructional", "superadmin")
+    return user_role in ("admin", "superadmin")
 
 
 def compute_can_duplicate(user_role: str | None) -> bool:
     """Compute can_duplicate permission."""
-    return user_role in ("admin", "instructional", "superadmin")
+    return user_role in ("admin", "superadmin")
 
 
 # ========== Save/Create Endpoint Permission Functions ==========
@@ -186,18 +186,18 @@ def compute_can_create(
     user_role: str | None,
 ) -> bool:
     """Compute permission to create a new tool."""
-    return user_role in ("admin", "instructional", "superadmin")
+    return user_role in ("admin", "superadmin")
 
 
 def compute_can_save(
     user_role: str | None,
-    active_usage_count: int,
+    active_agent_count: int,
 ) -> bool:
     """Compute permission to save/update an existing tool."""
-    if user_role not in ("admin", "instructional", "superadmin"):
+    if user_role not in ("admin", "superadmin"):
         return False
 
-    if active_usage_count > 0:
+    if active_agent_count > 0:
         return False
 
     return True
@@ -208,7 +208,7 @@ def compute_can_save(
 
 def compute_can_draft(user_role: str | None) -> bool:
     """Compute permission to create or update a draft."""
-    return user_role in ("admin", "instructional", "superadmin")
+    return user_role in ("admin", "superadmin")
 
 
 # ========== Agent Scoring - Tool-specific Constants ==========

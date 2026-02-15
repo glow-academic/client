@@ -99,7 +99,7 @@ async def delete_tool(
 
         can_delete = compute_can_delete(
             user_role=user_role,
-            usage_count=access_result.usage_count or 0,
+            active_agent_count=access_result.active_agent_count or 0,
         )
 
         if not can_delete:

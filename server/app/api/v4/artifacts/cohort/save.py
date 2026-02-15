@@ -9,7 +9,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 from app.api.v4.artifacts.cohort.permissions import (
     compute_can_create,
-    compute_can_save,
+    compute_can_edit,
 )
 from app.api.v4.artifacts.cohort.types import (
     SaveCohortApiRequest,
@@ -94,10 +94,10 @@ async def save_cohort(
                         request.input_cohort_id,
                     )
                     cohort_department_ids = [row["department_id"] for row in rows]
-            if not compute_can_save(
-                user_role or "",
-                user_department_ids,
-                cohort_department_ids,
+            if not compute_can_edit(
+                user_role=user_role or "",
+                cohort_department_ids=cohort_department_ids,
+                user_department_ids=user_department_ids,
             ):
                 raise HTTPException(
                     status_code=403,

@@ -134,7 +134,7 @@ async def get_provider_list(
         if result.providers:
             for p in result.providers:
                 provider_dept_ids = p.department_ids or []
-                model_usage = p.model_usage_count or 0
+                active_model_count = p.active_model_count or 0
 
                 providers_list.append(
                     ListProviderApiProvider(
@@ -145,17 +145,17 @@ async def get_provider_list(
                         active=p.active,
                         updated_at=p.updated_at,
                         department_ids=p.department_ids,
-                        model_usage_count=model_usage,
+                        model_usage_count=active_model_count,
                         model_ids=p.model_ids,
                         can_edit=compute_can_edit(
                             user_role=user_role,
                             provider_department_ids=provider_dept_ids,
-                            model_usage_count=model_usage,
+                            active_model_count=active_model_count,
                         ),
                         can_delete=compute_can_delete(
                             user_role=user_role,
                             provider_department_ids=provider_dept_ids,
-                            model_usage_count=model_usage,
+                            active_model_count=active_model_count,
                         ),
                         can_duplicate=compute_can_duplicate(user_role=user_role),
                     )

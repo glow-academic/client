@@ -23,7 +23,7 @@ CREATE OR REPLACE FUNCTION api_check_tool_delete_access_v4(
 )
 RETURNS TABLE (
     -- Tool state for Python permission logic
-    usage_count bigint
+    active_agent_count bigint
 )
 LANGUAGE sql
 STABLE
@@ -34,21 +34,14 @@ WITH params AS (
         profile_id AS profile_id,
         tool_id AS tool_id
 ),
--- Count total usage from all 3 sources (matching delete mutation SQL)
-tool_usage AS (
-    SELECT (
-        COALESCE((SELECT COUNT(*) FROM tools_calls_connection tcj
-            WHERE tcj.tools_id = (SELECT tool_id FROM params)), 0) +
-        COALESCE((SELECT COUNT(DISTINCT at.agent_id) FROM agent_tools_junction at
-            JOIN tools_resource tr ON tr.id = at.tool_id
-            JOIN tool_tools_junction ttj ON ttj.tools_id = tr.id
-            WHERE ttj.tool_id = (SELECT tool_id FROM params) AND at.active = true), 0) +
-        COALESCE((SELECT COUNT(*) FROM resource_tools_relation rt
-            WHERE rt.tool_id = (SELECT tool_id FROM params)), 0)
-    )::bigint as usage_count
+-- Count active agent links (immediate parent only)
+agent_links AS (
+    SELECT COALESCE(COUNT(DISTINCT atj.agent_id), 0)::bigint as active_count
     FROM params x
+    LEFT JOIN tool_tools_junction ttj ON ttj.tool_id = x.tool_id
+    LEFT JOIN agent_tools_junction atj ON atj.tool_id = ttj.tools_id AND atj.active = true
 )
 SELECT
-    (SELECT usage_count FROM tool_usage) as usage_count
+    (SELECT active_count FROM agent_links) as active_agent_count
 FROM params x
 $$;

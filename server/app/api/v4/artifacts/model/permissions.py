@@ -28,20 +28,20 @@ __all__ = [
 def compute_can_edit(
     user_role: str | None,
     model_department_ids: list[str] | list[UUID] | None,
-    active_persona_count: int,
+    active_agent_count: int,
 ) -> bool:
     """Unified can_edit logic for both get and list views."""
     if not model_department_ids and user_role != "superadmin":
         return False
-    if active_persona_count > 0:
+    if active_agent_count > 0:
         return False
-    return user_role in ("admin", "instructional", "superadmin")
+    return user_role in ("admin", "superadmin")
 
 
 def compute_disabled_reason(
     user_role: str | None,
     model_department_ids: list[str] | list[UUID] | None,
-    active_persona_count: int,
+    active_agent_count: int,
 ) -> str | None:
     """Compute the reason why editing is disabled, if any."""
     if not model_department_ids and user_role != "superadmin":
@@ -49,12 +49,12 @@ def compute_disabled_reason(
             "This is a default model that cannot be edited. "
             "You can view the details but cannot make changes."
         )
-    if active_persona_count > 0:
+    if active_agent_count > 0:
         return (
-            "This model is currently in use by personas and cannot be edited. "
+            "This model is currently in use by agents and cannot be edited. "
             "You can view the details but cannot make changes."
         )
-    if user_role not in ("admin", "instructional", "superadmin"):
+    if user_role not in ("admin", "superadmin"):
         return (
             "This model cannot be edited. "
             "You can view the details but cannot make changes."
@@ -206,21 +206,24 @@ def derive_flag_key_and_label(name: str | None) -> tuple[str, str]:
 def compute_can_delete(
     user_role: str | None,
     model_department_ids: list[str] | None,
-    total_persona_links: int,
-    agents_usage_count: int,
+    active_agent_count: int,
 ) -> bool:
-    """Compute can_delete permission."""
+    """Compute can_delete permission.
+
+    Business logic:
+    - Default models (no departments) cannot be deleted except by superadmin
+    - Models linked to active agents cannot be deleted
+    - Only admins and superadmins can delete
+    """
     if not model_department_ids and user_role != "superadmin":
         return False
-    if total_persona_links > 0:
+    if active_agent_count > 0:
         return False
-    if agents_usage_count > 0:
-        return False
-    return user_role in ("admin", "instructional", "superadmin")
+    return user_role in ("admin", "superadmin")
 
 
 def compute_can_duplicate(user_role: str | None) -> bool:
-    return user_role in ("admin", "instructional", "superadmin")
+    return user_role in ("admin", "superadmin")
 
 
 # ========== Save/Create Endpoint Permission Functions ==========
@@ -230,7 +233,7 @@ def compute_can_create(
     user_role: str | None,
     department_ids: list[str] | list[UUID] | None,
 ) -> bool:
-    if user_role not in ("admin", "instructional", "superadmin"):
+    if user_role not in ("admin", "superadmin"):
         return False
     if user_role != "superadmin" and not department_ids:
         return False
@@ -241,13 +244,13 @@ def compute_can_save(
     user_role: str | None,
     user_department_ids: list[str] | list[UUID] | None,
     model_department_ids: list[str] | list[UUID] | None,
-    active_persona_count: int,
+    active_agent_count: int,
 ) -> bool:
-    if user_role not in ("admin", "instructional", "superadmin"):
+    if user_role not in ("admin", "superadmin"):
         return False
     if not model_department_ids and user_role != "superadmin":
         return False
-    if active_persona_count > 0:
+    if active_agent_count > 0:
         return False
     if user_role != "superadmin" and model_department_ids:
         if not user_department_ids:
@@ -263,7 +266,7 @@ def compute_can_save(
 
 
 def compute_can_draft(user_role: str | None) -> bool:
-    return user_role in ("admin", "instructional", "superadmin")
+    return user_role in ("admin", "superadmin")
 
 
 # ========== Model-specific Resource Definitions ==========

@@ -141,13 +141,12 @@ async def get_model_list(
             can_edit_val = compute_can_edit(
                 user_role=user_role,
                 model_department_ids=model.department_ids,
-                active_persona_count=0,
+                active_agent_count=model.active_agent_count or 0,
             )
             can_delete_val = compute_can_delete(
                 user_role=user_role,
                 model_department_ids=model.department_ids,
-                total_persona_links=0,
-                agents_usage_count=model.agents_usage_count or 0,
+                active_agent_count=model.active_agent_count or 0,
             )
             can_duplicate_val = compute_can_duplicate(user_role)
 

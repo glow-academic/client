@@ -238,12 +238,14 @@ async def get_parameter_internal(
         user_role=user_role,
         parameter_department_ids=parameter_department_ids,
         active_scenario_count=active_scenario_count,
+        user_department_ids=user_department_ids,
     )
 
     disabled_reason = compute_disabled_reason(
         user_role=user_role,
         parameter_department_ids=parameter_department_ids,
         active_scenario_count=active_scenario_count,
+        user_department_ids=user_department_ids,
     )
 
     # === PASS 2: Parallel Resource Fetching ===

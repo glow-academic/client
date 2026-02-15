@@ -25000,25 +25000,6 @@ export interface components {
             /** Items */
             items?: components["schemas"]["QGetAgentsV4Item"][] | null;
         };
-        /** GetAgentsListApiRequest */
-        GetAgentsListApiRequest: {
-            /** Search */
-            search?: string | null;
-            /** Filter Department Ids */
-            filter_department_ids?: string[] | null;
-            /** Department Search */
-            department_search?: string | null;
-            /**
-             * Page Size
-             * @default 12
-             */
-            page_size: number | null;
-            /**
-             * Page Offset
-             * @default 0
-             */
-            page_offset: number | null;
-        };
         /**
          * GetAnalyticsFiltersApiResponse
          * @description Response for POST /api/v4/auth/analytics.
@@ -28266,6 +28247,31 @@ export interface components {
         GetSlugsApiResponse: {
             /** Items */
             items?: components["schemas"]["QGetSlugsV4Item"][] | null;
+        };
+        /** GetStaffListApiRequest */
+        GetStaffListApiRequest: {
+            /** Search */
+            search?: string | null;
+            /** Cohort Ids */
+            cohort_ids?: string[] | null;
+            /** Filter Department Ids */
+            filter_department_ids?: string[] | null;
+            /** Role Filter */
+            role_filter?: string | null;
+            /** Cohort Search */
+            cohort_search?: string | null;
+            /** Department Search */
+            department_search?: string | null;
+            /**
+             * Page Size
+             * @default 12
+             */
+            page_size: number | null;
+            /**
+             * Page Offset
+             * @default 0
+             */
+            page_offset: number | null;
         };
         /** GetStaffSearchApiRequest */
         GetStaffSearchApiRequest: {
@@ -50211,7 +50217,7 @@ export interface components {
             /** Document Id */
             document_id?: string | null;
         };
-        /** GetStaffListApiRequest */
+        /** GetAgentsListApiRequest */
         app__sql__types___build_missing_type___locals____MissingSqlType__1: {
             [key: string]: unknown;
         };
@@ -52793,7 +52799,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["GetAgentsListApiRequest"];
+                "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__1"];
             };
         };
         responses: {
@@ -54088,7 +54094,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__1"];
+                "application/json": components["schemas"]["GetStaffListApiRequest"];
             };
         };
         responses: {

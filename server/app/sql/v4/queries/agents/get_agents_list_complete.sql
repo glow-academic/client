@@ -46,7 +46,7 @@ CREATE TYPE types.q_list_agents_v4_agent AS (
     role text,
     updated_at timestamptz,
     department_ids text[],
-    department_link_count bigint
+    active_settings_count bigint
 );
 
 CREATE TYPE types.q_list_agents_v4_option_id AS (
@@ -84,11 +84,21 @@ user_departments AS (
 agent_departments_data AS (
     SELECT
         ad.agent_id,
-        ARRAY_AGG(ad.department_id::text ORDER BY ad.created_at) as department_ids,
-        COUNT(*)::bigint as department_link_count
+        ARRAY_AGG(ad.department_id::text ORDER BY ad.created_at) as department_ids
     FROM agent_departments_junction ad
     WHERE ad.active = true
     GROUP BY ad.agent_id
+),
+-- Active settings count per agent (via config_agents_connection)
+agent_settings_data AS (
+    SELECT
+        aaj.agent_id,
+        COUNT(DISTINCT cac.config_id)::bigint as active_settings_count
+    FROM agent_agents_junction aaj
+    JOIN agents_resource ar ON ar.id = aaj.agents_id AND ar.active = true
+    JOIN config_agents_connection cac ON cac.agents_id = ar.id AND cac.active = true
+    WHERE aaj.active = true
+    GROUP BY aaj.agent_id
 ),
 agent_data AS (
     SELECT
@@ -99,7 +109,7 @@ agent_data AS (
         ''::text as role,
         a.updated_at,
         COALESCE(add_data.department_ids, NULL) as department_ids,
-        COALESCE(add_data.department_link_count, 0) as department_link_count,
+        COALESCE(asd.active_settings_count, 0) as active_settings_count,
         -- Temperature from junction
         (SELECT tl.temperature FROM agent_temperature_levels_junction atl
          JOIN temperature_levels_resource tl ON tl.id = atl.temperature_level_id AND tl.active = true
@@ -110,9 +120,10 @@ agent_data AS (
          WHERE arl.agent_id = a.id AND arl.active = true LIMIT 1) as reasoning
     FROM agent_artifact a
     LEFT JOIN agent_departments_data add_data ON add_data.agent_id = a.id
+    LEFT JOIN agent_settings_data asd ON asd.agent_id = a.id
     LEFT JOIN agent_departments_junction ad ON ad.agent_id = a.id AND ad.active = true AND ad.department_id IN (SELECT department_id FROM user_departments)
     GROUP BY a.id, a.updated_at,
-        add_data.department_ids, add_data.department_link_count
+        add_data.department_ids, asd.active_settings_count
     HAVING COUNT(ad.department_id) > 0 OR NOT EXISTS (
         SELECT 1 FROM agent_departments_junction ad2 WHERE ad2.agent_id = a.id AND ad2.active = true
     )
@@ -168,7 +179,7 @@ SELECT
              COALESCE(pa.temperature, 0.0),
              pa.model_id, pa.role, pa.updated_at,
              COALESCE(pa.department_ids, ARRAY[]::text[]),
-             pa.department_link_count
+             pa.active_settings_count
             )::types.q_list_agents_v4_agent
             ORDER BY pa.updated_at DESC NULLS LAST
         ) FROM paginated_agents pa),

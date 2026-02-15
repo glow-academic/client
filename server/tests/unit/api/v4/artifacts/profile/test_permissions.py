@@ -11,7 +11,6 @@ from app.api.v4.artifacts.profile.permissions import (
     compute_can_draft,
     compute_can_duplicate,
     compute_can_edit,
-    compute_can_save,
     compute_disabled_reason,
     compute_show_cohorts,
     compute_show_departments,
@@ -206,49 +205,63 @@ class TestComputeCanCreate:
         assert compute_can_create("staff", department_ids=[uuid4()]) is False
 
 
-# ========== compute_can_save ==========
+# ========== compute_can_edit with user_department_ids (save-mode) ==========
 
 
-class TestComputeCanSave:
-    def test_superadmin_can_save(self) -> None:
+class TestComputeCanEditWithDepartments:
+    def test_superadmin_can_edit_any_department(self) -> None:
         assert (
-            compute_can_save(
-                "superadmin", user_department_ids=None, target_department_ids=[uuid4()]
+            compute_can_edit(
+                "superadmin",
+                target_is_self=False,
+                target_department_ids=[uuid4()],
+                user_department_ids=None,
             )
             is True
         )
 
-    def test_admin_can_save_same_dept(self) -> None:
+    def test_admin_can_edit_same_dept(self) -> None:
         dept = uuid4()
         assert (
-            compute_can_save(
-                "admin", user_department_ids=[dept], target_department_ids=[dept]
+            compute_can_edit(
+                "admin",
+                target_is_self=False,
+                target_department_ids=[dept],
+                user_department_ids=[dept],
             )
             is True
         )
 
-    def test_admin_cannot_save_different_dept(self) -> None:
+    def test_admin_cannot_edit_different_dept(self) -> None:
         assert (
-            compute_can_save(
-                "admin", user_department_ids=[uuid4()], target_department_ids=[uuid4()]
+            compute_can_edit(
+                "admin",
+                target_is_self=False,
+                target_department_ids=[uuid4()],
+                user_department_ids=[uuid4()],
             )
             is False
         )
 
-    def test_instructional_can_save(self) -> None:
-        dept = uuid4()
+    def test_self_can_edit_regardless_of_departments(self) -> None:
         assert (
-            compute_can_save(
-                "instructional",
-                user_department_ids=[dept],
-                target_department_ids=[dept],
+            compute_can_edit(
+                "staff",
+                target_is_self=True,
+                target_department_ids=[uuid4()],
+                user_department_ids=[],
             )
             is True
         )
 
-    def test_staff_cannot_save(self) -> None:
+    def test_staff_cannot_edit_others(self) -> None:
         assert (
-            compute_can_save("staff", user_department_ids=[], target_department_ids=[])
+            compute_can_edit(
+                "staff",
+                target_is_self=False,
+                target_department_ids=[],
+                user_department_ids=[],
+            )
             is False
         )
 

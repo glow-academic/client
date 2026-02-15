@@ -139,10 +139,11 @@ async def get_agent_list(
             can_edit_val = compute_list_can_edit(
                 user_role=user_role,
                 agent_department_ids=agent.department_ids,
+                active_settings_count=agent.active_settings_count or 0,
             )
             can_delete_val = compute_can_delete(
                 user_role=user_role,
-                usage_count=agent.department_link_count or 0,
+                active_settings_count=agent.active_settings_count or 0,
             )
             can_duplicate_val = compute_can_duplicate(user_role)
 

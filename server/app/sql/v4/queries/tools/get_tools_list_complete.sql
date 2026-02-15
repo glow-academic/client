@@ -37,8 +37,7 @@ CREATE TYPE types.q_get_tools_list_v4_tool AS (
     name text,
     description text,
     active boolean,
-    active_usage_count bigint,
-    total_usage_count bigint,
+    active_agent_count bigint,
     updated_at timestamptz
 );
 
@@ -60,24 +59,17 @@ AS $$
 WITH params AS (
     SELECT profile_id AS profile_id
 ),
--- Count usage from all 3 sources (matching delete mutation SQL)
-tool_usage_counts AS (
+-- Count active agent links (immediate parent only)
+tool_agent_counts AS (
     SELECT
         t.id as tool_id,
-        -- active_usage_count: direct call usage (for can_edit)
         COALESCE(
-            (SELECT COUNT(*) FROM tools_calls_connection tcj WHERE tcj.tools_id = t.id),
-            0
-        )::bigint as active_usage_count,
-        -- total_usage_count: all 3 sources (for can_delete, matches delete mutation SQL)
-        (
-            COALESCE((SELECT COUNT(*) FROM tools_calls_connection tcj WHERE tcj.tools_id = t.id), 0) +
-            COALESCE((SELECT COUNT(DISTINCT at.agent_id) FROM agent_tools_junction at
-                JOIN tools_resource tr ON tr.id = at.tool_id
+            (SELECT COUNT(DISTINCT atj.agent_id) FROM agent_tools_junction atj
+                JOIN tools_resource tr ON tr.id = atj.tool_id
                 JOIN tool_tools_junction ttj ON ttj.tools_id = tr.id
-                WHERE ttj.tool_id = t.id AND at.active = true), 0) +
-            COALESCE((SELECT COUNT(*) FROM resource_tools_relation rt WHERE rt.tool_id = t.id), 0)
-        )::bigint as total_usage_count
+                WHERE ttj.tool_id = t.id AND atj.active = true),
+            0
+        )::bigint as active_agent_count
     FROM tool_artifact t
 ),
 -- Core tool data
@@ -88,10 +80,9 @@ tool_data AS (
         (SELECT d.description FROM tool_descriptions_junction td JOIN descriptions_resource d ON td.description_id = d.id WHERE td.tool_id = t.id LIMIT 1) as description,
         EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true) as active,
         t.updated_at,
-        COALESCE(tuc.active_usage_count, 0)::bigint as active_usage_count,
-        COALESCE(tuc.total_usage_count, 0)::bigint as total_usage_count
+        COALESCE(tac.active_agent_count, 0)::bigint as active_agent_count
     FROM tool_artifact t
-    LEFT JOIN tool_usage_counts tuc ON tuc.tool_id = t.id
+    LEFT JOIN tool_agent_counts tac ON tac.tool_id = t.id
 ),
 -- Apply search filter
 filtered_tools AS (
@@ -114,7 +105,7 @@ SELECT
     COALESCE(
         (SELECT ARRAY_AGG(
             (pt.tool_id, pt.name, pt.description, pt.active,
-             pt.active_usage_count, pt.total_usage_count, pt.updated_at
+             pt.active_agent_count, pt.updated_at
             )::types.q_get_tools_list_v4_tool
             ORDER BY pt.updated_at DESC NULLS LAST
         ) FROM paginated_tools pt),

@@ -107,9 +107,13 @@ async def get_document_list(
                 )
                 actor_name = profile_ctx.access.actor_name
                 user_role = profile_ctx.access.role
+                user_department_ids = [
+                    d.department_id for d in profile_ctx.departments if d.department_id
+                ]
         else:
             actor_name = None
             user_role = None
+            user_department_ids = []
 
         # Convert API request to SQL params (add profile_id from header + request body fields)
         params = GetDocumentsListSqlParams(
@@ -149,6 +153,7 @@ async def get_document_list(
                 user_role=user_role,
                 document_department_ids=doc.department_ids,
                 active_scenario_count=doc.active_scenario_count or 0,
+                user_department_ids=user_department_ids,
             )
             can_delete_val = compute_can_delete(
                 user_role=user_role,

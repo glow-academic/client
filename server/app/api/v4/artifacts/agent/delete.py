@@ -5,6 +5,7 @@ from typing import Annotated, Any, cast
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
+from app.api.v4.artifacts.agent.permissions import compute_can_delete
 from app.api.v4.auth.profile import get_auth_profile_internal
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
@@ -56,7 +57,7 @@ async def delete_agent(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        # Fetch user context for audit logging
+        # Fetch user context for audit logging and permissions
         pool = get_pool()
         if pool:
             async with pool.acquire() as context_conn:
@@ -66,8 +67,10 @@ async def delete_agent(
                     bypass_cache=False,
                 )
                 actor_name = profile_ctx.access.actor_name
+                user_role = profile_ctx.access.role
         else:
             actor_name = None
+            user_role = None
 
         # Convert API request to SQL params (add profile_id from header)
         params = DeleteAgentSqlParams(**request.model_dump(), profile_id=profile_id)
@@ -83,9 +86,15 @@ async def delete_agent(
             ),
         )
 
-        if result.usage_count and result.usage_count > 0:
+        can_delete = compute_can_delete(
+            user_role=user_role,
+            active_settings_count=result.usage_count or 0,
+        )
+
+        if not can_delete:
             raise HTTPException(
-                status_code=400, detail="Cannot delete agent: agent is in use"
+                status_code=403,
+                detail="You don't have permission to delete this agent.",
             )
 
         # Set audit context with data from SQL query

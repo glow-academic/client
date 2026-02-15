@@ -347,6 +347,7 @@ async def get_profile_internal(
         user_role=user_role,
         target_is_self=target_is_self,
         target_department_ids=target_department_ids,
+        user_department_ids=user_department_ids,
     )
 
     disabled_reason = compute_disabled_reason(

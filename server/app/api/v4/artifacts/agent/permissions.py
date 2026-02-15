@@ -229,26 +229,36 @@ def compute_voices_required() -> bool:
 def compute_list_can_edit(
     user_role: str | None,
     agent_department_ids: list[str] | None,
+    active_settings_count: int = 0,
 ) -> bool:
     """Compute can_edit for list view.
 
     Business logic:
+    - Default agents (no departments) can only be edited by superadmin
+    - Agents linked to active settings cannot be edited
     - Only admins and superadmins can edit agents
     """
+    if not agent_department_ids and user_role != "superadmin":
+        return False
+    if active_settings_count > 0:
+        return False
     return user_role in ("admin", "superadmin")
 
 
-def compute_can_delete(user_role: str | None, usage_count: int) -> bool:
+def compute_can_delete(
+    user_role: str | None,
+    active_settings_count: int,
+) -> bool:
     """Compute can_delete permission.
 
     Business logic:
-    - Agent can be deleted if no active usage
+    - Agents linked to active settings cannot be deleted
     - Only admins and superadmins can delete
     """
     if user_role not in ("superadmin", "admin"):
         return False
 
-    return usage_count == 0
+    return active_settings_count == 0
 
 
 def compute_can_duplicate(user_role: str | None) -> bool:
@@ -304,9 +314,9 @@ def compute_can_draft(user_role: str | None) -> bool:
     """Compute permission to create or update a draft.
 
     Business logic:
-    - Only admin/instructional/superadmin can create/edit drafts
+    - Only admin/superadmin can create/edit drafts
     """
-    return user_role in ("superadmin", "admin", "instructional")
+    return user_role in ("superadmin", "admin")
 
 
 # ========== Helpers ==========

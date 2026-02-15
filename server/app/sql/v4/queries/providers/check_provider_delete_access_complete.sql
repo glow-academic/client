@@ -23,7 +23,7 @@ CREATE OR REPLACE FUNCTION api_check_provider_delete_access_v4(
 )
 RETURNS TABLE (
     provider_department_ids uuid[],
-    model_usage_count int,
+    active_model_count int,
     provider_name text
 )
 LANGUAGE sql
@@ -52,7 +52,7 @@ model_usage AS (
             WHERE ppj.provider_id = (SELECT provider_id FROM params)
         ),
         0
-    ) as model_usage_count
+    ) as active_model_count
 ),
 provider_name_data AS (
     SELECT n.name
@@ -63,7 +63,7 @@ provider_name_data AS (
 )
 SELECT
     COALESCE((SELECT department_ids FROM provider_departments), ARRAY[]::uuid[]) as provider_department_ids,
-    (SELECT model_usage_count FROM model_usage) as model_usage_count,
+    (SELECT active_model_count FROM model_usage) as active_model_count,
     (SELECT name FROM provider_name_data) as provider_name
 FROM params x
 $$;

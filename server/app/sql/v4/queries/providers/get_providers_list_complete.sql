@@ -42,7 +42,7 @@ CREATE TYPE types.q_list_providers_v4_provider AS (
     active boolean,
     updated_at timestamptz,
     department_ids uuid[],
-    model_usage_count int,
+    active_model_count int,
     model_ids uuid[]
 );
 
@@ -111,7 +111,7 @@ provider_data AS (
              FROM models_resource mr
              WHERE mr.provider_id = p.id AND mr.active = true),
             0
-        ) as model_usage_count,
+        ) as active_model_count,
         COALESCE(md.model_ids, ARRAY[]::uuid[]) as model_ids
     FROM providers_resource p
     JOIN provider_providers_junction ppj ON ppj.providers_id = p.id
@@ -125,7 +125,7 @@ providers_agg AS (
     SELECT
         COALESCE(
             ARRAY_AGG(
-                (pd.provider_id, pd.name, pd.description, pd.value, pd.active, pd.updated_at, pd.department_ids, pd.model_usage_count, pd.model_ids)::types.q_list_providers_v4_provider
+                (pd.provider_id, pd.name, pd.description, pd.value, pd.active, pd.updated_at, pd.department_ids, pd.active_model_count, pd.model_ids)::types.q_list_providers_v4_provider
                 ORDER BY pd.updated_at DESC NULLS LAST
             ),
             '{}'::types.q_list_providers_v4_provider[]

@@ -105,9 +105,13 @@ async def get_field_list(
                 )
                 actor_name = profile_ctx.access.actor_name
                 user_role = profile_ctx.access.role
+                user_department_ids = [
+                    d.department_id for d in profile_ctx.departments if d.department_id
+                ]
         else:
             actor_name = None
             user_role = None
+            user_department_ids = []
 
         params = GetFieldsListSqlParams(profile_id=profile_id)
         sql_params = params.to_tuple()
@@ -134,6 +138,7 @@ async def get_field_list(
                 user_role=user_role,
                 field_department_ids=field.department_ids,
                 active_parameter_count=field.active_parameter_count or 0,
+                user_department_ids=user_department_ids,
             )
             can_delete_val = compute_can_delete(
                 user_role=user_role,

@@ -24,8 +24,7 @@ CREATE OR REPLACE FUNCTION api_check_model_delete_access_v4(
 RETURNS TABLE (
     -- Model state for Python permission logic
     model_department_ids text[],
-    total_persona_links bigint,
-    agents_usage_count bigint
+    active_agent_count bigint
 )
 LANGUAGE sql
 STABLE
@@ -45,21 +44,15 @@ model_departments_data AS (
     FROM params x
     LEFT JOIN model_departments_junction md ON md.model_id = x.model_id AND md.active = true
 ),
--- Persona-model direct link removed (migration 44)
--- Always returns 0 since personas are no longer directly linked to models
-persona_links AS (
-    SELECT 0::bigint as total_links
-),
--- Count agent usage
+-- Count active agent links (immediate parent only)
 agent_links AS (
-    SELECT COUNT(am.agent_id)::bigint as total_links
+    SELECT COUNT(am.agent_id)::bigint as active_count
     FROM params x
-    LEFT JOIN agent_models_junction am ON am.model_id = x.model_id
+    LEFT JOIN agent_models_junction am ON am.model_id = x.model_id AND am.active = true
 )
 SELECT
     (SELECT department_ids FROM model_departments_data) as model_department_ids,
-    (SELECT total_links FROM persona_links) as total_persona_links,
-    (SELECT total_links FROM agent_links) as agents_usage_count
+    (SELECT active_count FROM agent_links) as active_agent_count
 FROM params x
 $$;
 

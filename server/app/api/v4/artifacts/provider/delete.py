@@ -103,7 +103,7 @@ async def delete_provider(
         can_delete = compute_can_delete(
             user_role=user_role,
             provider_department_ids=access_result.provider_department_ids,
-            model_usage_count=access_result.model_usage_count or 0,
+            active_model_count=access_result.active_model_count or 0,
         )
 
         if not can_delete:

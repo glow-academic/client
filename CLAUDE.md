@@ -57,6 +57,41 @@ client/components/[resource]/               — UI components
 - **Profile ID**: From `http_request.state.profile_id` (set by X-Profile-Id header)
 - **Declarative SQL filters**: `(param IS NULL OR column = param)` — no dynamic WHERE building
 
+## Permission Pattern
+
+Each artifact has a `permissions.py` with pure Python business logic. The canonical permission functions are:
+
+| Function | Purpose | Used By |
+|----------|---------|---------|
+| `has_access()` | View access — user shares ANY department (intersection) | GET |
+| `compute_can_edit()` | Unified edit permission for UI and save enforcement | GET, LIST, SAVE |
+| `compute_can_delete()` | Delete permission — same as edit + usage check | LIST, DELETE |
+| `compute_can_duplicate()` | Duplicate — role-only check | LIST, DUPLICATE |
+| `compute_can_create()` | Create new artifact — role + department check | SAVE (create mode) |
+| `compute_can_draft()` | Draft — role-only check | DRAFT |
+| `compute_disabled_reason()` | Human-readable reason when editing is disabled | GET |
+
+**`compute_can_edit` is the single source of truth for edit/save permissions.** There is no separate `compute_can_save`. The function accepts an optional `user_department_ids` parameter:
+
+```python
+def compute_can_edit(
+    user_role: str | None,
+    artifact_department_ids: list[str] | list[UUID] | None,
+    usage_count: int,                                        # Domain-specific name
+    user_department_ids: list[str] | list[UUID] | None = None,  # Optional dept check
+) -> bool:
+```
+
+**Constraints (in order):**
+1. Default artifacts (no departments) — only superadmin can edit
+2. Artifacts in use by child artifacts — cannot edit (usage_count > 0)
+3. Role check — must be admin/instructional/superadmin
+4. Department subset check — non-superadmins must belong to ALL artifact departments
+
+When `user_department_ids` is `None` (not passed), the department subset check is skipped. This allows the same function to work in contexts where department info isn't yet available.
+
+**All GET, LIST, and SAVE endpoints pass `user_department_ids`** so the UI `can_edit` flag accurately reflects whether the user can actually save.
+
 ## Database Migrations
 
 ```bash

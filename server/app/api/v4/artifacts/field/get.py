@@ -266,11 +266,14 @@ async def get_field_internal(
     )
 
     can_edit = compute_can_edit(
-        user_role=user_role, field_department_ids=field_department_ids
+        user_role=user_role,
+        field_department_ids=field_department_ids,
+        user_department_ids=user_department_ids,
     )
     disabled_reason = compute_disabled_reason(
         user_role=user_role,
         field_department_ids=field_department_ids,
+        user_department_ids=user_department_ids,
     )
 
     name_ids = [selected_name_id] if selected_name_id else []

@@ -44,7 +44,7 @@ CREATE TYPE types.q_list_models_v4_model AS (
     updated_at timestamptz,
     provider_id uuid,
     department_ids text[],
-    agents_usage_count bigint
+    active_agent_count bigint
 );
 
 -- Filter option types simplified: id + count only (names hydrated in Python from cache)
@@ -98,12 +98,13 @@ model_providers_data AS (
     FROM model_providers_junction mpj
     WHERE mpj.active = true
 ),
--- Agent usage count per model (via agent_models_junction, NOT agent_artifact.model_id)
+-- Active agent count per model (via agent_models_junction with active filter)
 agent_usage AS (
     SELECT
         am.model_id,
-        COUNT(*)::bigint as usage_count
+        COUNT(*)::bigint as active_agent_count
     FROM agent_models_junction am
+    WHERE am.active = true
     GROUP BY am.model_id
 ),
 -- Determine if model is an image model (has 'image' output modality)
@@ -126,7 +127,7 @@ model_data_base AS (
         m.updated_at,
         mpd.provider_id,
         COALESCE(mdd.department_ids, NULL) as department_ids,
-        COALESCE(au.usage_count, 0)::bigint as agents_usage_count
+        COALESCE(au.active_agent_count, 0)::bigint as active_agent_count
     FROM model_artifact m
     LEFT JOIN model_departments_data mdd ON mdd.model_id = m.id
     LEFT JOIN model_providers_data mpd ON mpd.model_id = m.id
@@ -137,7 +138,7 @@ model_data_base AS (
         (SELECT n.name FROM model_names_junction mn JOIN names_resource n ON mn.name_id = n.id WHERE mn.model_id = m.id LIMIT 1),
         (SELECT d.description FROM model_descriptions_junction md JOIN descriptions_resource d ON md.description_id = d.id WHERE md.model_id = m.id LIMIT 1),
         EXISTS (SELECT 1 FROM model_flags_junction mf JOIN flags_resource f ON mf.flag_id = f.id WHERE mf.model_id = m.id AND f.name = 'model_active' AND mf.value = TRUE),
-        imc.image_model, m.updated_at, mpd.provider_id, mdd.department_ids, au.usage_count
+        imc.image_model, m.updated_at, mpd.provider_id, mdd.department_ids, au.active_agent_count
     HAVING COUNT(md.model_id) > 0 OR NOT EXISTS (
         SELECT 1 FROM model_departments_junction md2 WHERE md2.model_id = m.id
     )
@@ -196,7 +197,7 @@ SELECT
             (pm.model_id, pm.model_name, pm.description,
              NOT pm.active, pm.image_model, pm.updated_at,
              pm.provider_id, pm.department_ids,
-             pm.agents_usage_count
+             pm.active_agent_count
             )::types.q_list_models_v4_model
             ORDER BY pm.updated_at DESC NULLS LAST
         ) FROM paginated_models pm),
