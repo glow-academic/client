@@ -23,6 +23,9 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { GenerateRegenerateModal } from "@/components/common/forms/GenerateRegenerateModal";
+import { useSocket } from "@/contexts/socket-context";
+import { useGenerationModal } from "@/hooks/use-generation-modal";
 
 import type {
   DeleteDepartmentIn,
@@ -62,7 +65,36 @@ export default function Departments({
   duplicateDepartmentAction,
   deleteDepartmentAction,
 }: DepartmentsProps) {
+  const { socket, isConnected } = useSocket();
   const router = useRouter();
+
+  // Generation modal via shared hook
+  type DepartmentResourceType = "names" | "descriptions" | "flags" | "settings";
+  const { handleOpenStepCardModal, modalProps } = useGenerationModal<DepartmentResourceType>({
+    stepResources: {
+      all: ["names", "descriptions", "flags", "settings"],
+    },
+    resourceLabels: {
+      names: "Name",
+      descriptions: "Description",
+      flags: "Configuration",
+      settings: "Settings",
+    },
+    canRegenerate: () => true,
+    onGenerate: (selectedResources, instructions) => {
+      if (!socket || !isConnected) return;
+      socket.emit("department_generate", {
+        resource_types: selectedResources,
+        user_instructions: instructions?.trim() ? [instructions.trim()] : null,
+        department_id: null,
+        draft_id: null,
+        save: true,
+      });
+      toast.success("Generation started for new department");
+    },
+    isGenerating: () => false,
+  });
+
   const [isDuplicating, setIsDuplicating] = useState<string | null>(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [deleteItem, setDeleteItem] = useState<{
@@ -432,6 +464,8 @@ export default function Departments({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <GenerateRegenerateModal {...modalProps} />
     </div>
   );
 }

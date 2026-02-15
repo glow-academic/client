@@ -43,7 +43,6 @@ from app.api.v4.artifacts.training.types import (
 )
 from app.api.v4.auth.settings import get_auth_settings_internal
 from app.api.v4.permissions import resolve_agents_for_artifact
-from app.api.v4.resources.agents.get import get_agents_internal
 from app.api.v4.resources.departments.get import get_departments_internal
 from app.api.v4.resources.documents.get import get_documents_internal
 from app.api.v4.resources.images.get import get_images_internal
@@ -56,10 +55,8 @@ from app.api.v4.resources.personas.get import get_personas_internal
 from app.api.v4.resources.problem_statements.get import (
     get_problem_statements_internal,
 )
-from app.api.v4.resources.providers.get import get_providers_internal
 from app.api.v4.resources.questions.get import get_questions_internal
 from app.api.v4.resources.scenarios.get import get_scenarios_internal
-from app.api.v4.resources.tools.get import get_tools_internal
 from app.api.v4.resources.videos.get import get_videos_internal
 from app.api.v4.views.drafts.get import get_draft_training_internal
 from app.api.v4.views.drafts.types import DraftTrainingViewItem
@@ -297,42 +294,29 @@ async def get_training_bundle_internal(
         settings_data.agent_tool_entries, TRAINING_BUNDLE_RESOURCES
     )
 
-    # Config chain from settings agents
-    config_agent_resource_ids = [a.id for a in settings_data.settings_agents if a.id]
-    config_model_resource_ids = [
-        a.model_id for a in settings_data.settings_agents if a.model_id
-    ]
-    config_provider_resource_ids: list[UUID] = []
+    # Config chain from settings (agents + tools already hydrated, models need fetch)
+    config_agents = list(settings_data.settings_agents)
+    config_tools = list(settings_data.settings_tools)
 
-    config_agents: list[Any] = []
+    config_model_resource_ids = list(
+        dict.fromkeys(a.model_id for a in settings_data.settings_agents if a.model_id)
+    )
     config_models: list[Any] = []
-    config_providers: list[Any] = []
-    config_tools: list[Any] = []
-
-    if config_agent_resource_ids:
-        async with pool.acquire() as conn:
-            config_agents = await get_agents_internal(
-                conn, config_agent_resource_ids, bypass_cache
-            )
     if config_model_resource_ids:
         async with pool.acquire() as conn:
             config_models = await get_models_internal(
                 conn, config_model_resource_ids, bypass_cache
             )
+
+    config_provider_resource_ids = list(
+        dict.fromkeys(m.provider_id for m in config_models if m.provider_id)
+    )
+    config_providers: list[Any] = []
     if config_provider_resource_ids:
         async with pool.acquire() as conn:
             config_providers = await get_providers_internal(
                 conn, config_provider_resource_ids, bypass_cache
             )
-
-    tool_ids: list[UUID] = []
-    for agent in config_agents:
-        if agent.tool_ids:
-            tool_ids.extend(agent.tool_ids)
-    if tool_ids:
-        unique_tool_ids = list(dict.fromkeys(tool_ids))
-        async with pool.acquire() as conn:
-            config_tools = await get_tools_internal(conn, unique_tool_ids, bypass_cache)
 
     # 9. Simulation/scenario context (from training websocket)
     selected_department_ids = selected_ids.get("departments", [])
@@ -431,10 +415,10 @@ async def get_training_bundle_websocket(
             images=data.current_resources.get("images") or None,
             problem_statements=data.current_resources.get("problem_statements") or None,
             objectives=data.current_resources.get("objectives") or None,
-            agents=data.config_agents or None,
-            models=data.config_models or None,
-            providers=data.config_providers or None,
-            tools=data.config_tools or None,
+            config_agents=data.config_agents or None,
+            config_models=data.config_models or None,
+            config_providers=data.config_providers or None,
+            config_tools=data.config_tools or None,
         ),
         resource_agent_ids=data.resource_agent_ids,
         group_id=data.group_id,
@@ -511,10 +495,10 @@ async def get_training_bundle_client(
         images=_section("images"),
         problem_statements=_section("problem_statements"),
         objectives=_section("objectives"),
-        agents=data.config_agents or None,
-        models=data.config_models or None,
-        providers=data.config_providers or None,
-        tools=data.config_tools or None,
+        config_agents=data.config_agents or None,
+        config_models=data.config_models or None,
+        config_providers=data.config_providers or None,
+        config_tools=data.config_tools or None,
     )
 
 

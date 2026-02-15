@@ -228,7 +228,7 @@ async def get_setting_internal(
     config_model_resource_ids = [
         a.model_id for a in settings_data.settings_agents if a.model_id
     ]
-    config_provider_resource_ids: list[UUID] = []
+    # Provider IDs derived from models after fetch (sequential, not in gather)
 
     # === RESOLVE AGENTS FROM SETTINGS ===
     async with pool.acquire() as settings_conn:
@@ -443,12 +443,6 @@ async def get_setting_internal(
         async with pool.acquire() as c:
             return await get_models_internal(c, config_model_resource_ids, bypass_cache)
 
-    async def fetch_config_providers():
-        async with pool.acquire() as c:
-            return await get_providers_internal(
-                c, config_provider_resource_ids, bypass_cache
-            )
-
     # === PARALLEL FETCH ===
     (
         (names_selected, names_suggestions),
@@ -464,7 +458,6 @@ async def get_setting_internal(
         (role_routes_selected, role_routes_suggestions),
         config_agents_result,
         config_models_result,
-        config_providers_result,
     ) = await asyncio.gather(
         fetch_names(),
         fetch_descriptions(),
@@ -479,8 +472,20 @@ async def get_setting_internal(
         fetch_role_routes(),
         fetch_config_agents(),
         fetch_config_models(),
-        fetch_config_providers(),
     )
+
+    # Derive providers from fetched models (must be sequential)
+    config_provider_ids = list(
+        dict.fromkeys(
+            m.provider_id for m in (config_models_result or []) if m.provider_id
+        )
+    )
+    config_providers_result: list[Any] = []
+    if config_provider_ids:
+        async with pool.acquire() as c:
+            config_providers_result = await get_providers_internal(
+                c, config_provider_ids, bypass_cache
+            )
 
     # Dedupe selected + suggestions
     names = _dedupe_by_id(names_selected + names_suggestions, "id")

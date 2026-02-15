@@ -416,10 +416,10 @@ class GetTrainingBundleResponse(BaseModel):
     objectives: TrainingBundleObjectiveSection | None = None
 
     # Config chain (hydrated for websocket/generation)
-    agents: list[QGetAgentsV4Item] | None = None
-    models: list[QGetModelsV4Item] | None = None
-    providers: list[QGetProvidersV4Item] | None = None
-    tools: list[QGetToolsV4Item] | None = None
+    config_agents: list[QGetAgentsV4Item] | None = None
+    config_models: list[QGetModelsV4Item] | None = None
+    config_providers: list[QGetProvidersV4Item] | None = None
+    config_tools: list[QGetToolsV4Item] | None = None
 
 
 # =============================================================================
@@ -449,10 +449,10 @@ class TrainingBundleWebsocketResources(BaseModel):
     problem_statements: list[QGetProblemStatementsV4Item] | None = None
     objectives: list[QGetObjectivesV4Item] | None = None
     # Config chain
-    agents: list[QGetAgentsV4Item] | None = None
-    models: list[QGetModelsV4Item] | None = None
-    providers: list[QGetProvidersV4Item] | None = None
-    tools: list[QGetToolsV4Item] | None = None
+    config_agents: list[QGetAgentsV4Item] | None = None
+    config_models: list[QGetModelsV4Item] | None = None
+    config_providers: list[QGetProvidersV4Item] | None = None
+    config_tools: list[QGetToolsV4Item] | None = None
 
 
 class GetTrainingBundleWebsocketResponse(BaseModel):

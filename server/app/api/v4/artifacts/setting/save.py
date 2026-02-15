@@ -13,10 +13,10 @@ from app.api.v4.artifacts.setting.permissions import compute_can_edit
 from app.api.v4.artifacts.setting.types import (
     SaveSettingApiRequest,
     SaveSettingApiResponse,
-    SettingMultiResourceAction,
-    SettingResourceAction,
     SaveSettingSqlParams,
     SaveSettingSqlRow,
+    SettingMultiResourceAction,
+    SettingResourceAction,
 )
 from app.api.v4.auth.profile import get_auth_profile_internal
 from app.infra.v4.activity.audit import audit_activity, audit_set

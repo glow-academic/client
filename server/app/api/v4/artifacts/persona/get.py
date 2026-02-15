@@ -286,8 +286,7 @@ async def get_persona_internal(
     config_model_resource_ids = [
         a.model_id for a in settings_data.settings_agents if a.model_id
     ]
-    # Provider IDs need to be fetched from models, but we'll fetch them in Pass 2
-    config_provider_resource_ids: list[UUID] = []
+    # Provider IDs derived from models after fetch (sequential, not in gather)
 
     # === COMPUTE SHOW_AI_GENERATE FLAGS (BFF pattern - server computes, client consumes) ===
     # Per-resource show_ai_generate flags
@@ -547,12 +546,6 @@ async def get_persona_internal(
         async with pool.acquire() as c:
             return await get_models_internal(c, config_model_resource_ids, bypass_cache)
 
-    async def fetch_config_providers():
-        async with pool.acquire() as c:
-            return await get_providers_internal(
-                c, config_provider_resource_ids, bypass_cache
-            )
-
     # === PARALLEL FETCH (all resources at once) ===
     # Fields are now a top-level catalog resource. Parameters carry field_ids and
     # fields carry conditional_parameter_ids, so no two-phase fetch is needed.
@@ -570,7 +563,6 @@ async def get_persona_internal(
         fields_catalog,
         config_agents_result,
         config_models_result,
-        config_providers_result,
     ) = await asyncio.gather(
         fetch_names(),
         fetch_descriptions(),
@@ -585,8 +577,20 @@ async def get_persona_internal(
         fetch_fields(),
         fetch_config_agents(),
         fetch_config_models(),
-        fetch_config_providers(),
     )
+
+    # Derive providers from fetched models (must be sequential)
+    config_provider_ids = list(
+        dict.fromkeys(
+            m.provider_id for m in (config_models_result or []) if m.provider_id
+        )
+    )
+    config_providers_result: list[Any] = []
+    if config_provider_ids:
+        async with pool.acquire() as c:
+            config_providers_result = await get_providers_internal(
+                c, config_provider_ids, bypass_cache
+            )
 
     names = _dedupe_by_id(names_selected + names_suggestions, "id")
     descriptions = _dedupe_by_id(descriptions_selected + descriptions_suggestions, "id")

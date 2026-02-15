@@ -49,6 +49,9 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { GenerateRegenerateModal } from "@/components/common/forms/GenerateRegenerateModal";
+import { useSocket } from "@/contexts/socket-context";
+import { useGenerationModal } from "@/hooks/use-generation-modal";
 
 export interface RubricsProps {
   // Server-provided data (for server-side rendering)
@@ -78,10 +81,43 @@ export default function Rubrics({
   departmentSearch,
   simulationSearch,
 }: RubricsProps) {
+  const { socket, isConnected } = useSocket();
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const { profile } = useProfile();
+
+  // Generation modal via shared hook
+  type RubricResourceType = "names" | "descriptions" | "departments" | "flags" | "points" | "pass_points" | "standard_groups" | "standards";
+  const { handleOpenStepCardModal, modalProps } = useGenerationModal<RubricResourceType>({
+    stepResources: {
+      all: ["names", "descriptions", "departments", "flags", "points", "pass_points", "standard_groups", "standards"],
+    },
+    resourceLabels: {
+      names: "Name",
+      descriptions: "Description",
+      departments: "Departments",
+      flags: "Configuration",
+      points: "Points",
+      pass_points: "Pass Points",
+      standard_groups: "Standard Groups",
+      standards: "Standards",
+    },
+    canRegenerate: () => true,
+    onGenerate: (selectedResources, instructions) => {
+      if (!socket || !isConnected) return;
+      socket.emit("rubric_generate", {
+        resource_types: selectedResources,
+        user_instructions: instructions?.trim() ? [instructions.trim()] : null,
+        rubric_id: null,
+        draft_id: null,
+        save: true,
+      });
+      toast.success("Generation started for new rubric");
+    },
+    isGenerating: () => false,
+  });
+
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [deleteItem, setDeleteItem] = useState<{
     id: string;
@@ -788,6 +824,8 @@ export default function Rubrics({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <GenerateRegenerateModal {...modalProps} />
     </div>
   );
 }

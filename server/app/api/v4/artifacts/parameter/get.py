@@ -52,15 +52,18 @@ from app.api.v4.artifacts.parameter.types import (
 from app.api.v4.auth.profile import get_auth_profile_internal
 from app.api.v4.auth.settings import get_auth_settings_internal
 from app.api.v4.permissions import has_tools_for_resource, resolve_agents_for_artifact
+from app.api.v4.resources.agents.get import get_agents_internal
 from app.api.v4.resources.departments.get import get_departments_internal
 from app.api.v4.resources.departments.search import search_departments_internal
 from app.api.v4.resources.descriptions.get import get_descriptions_internal
 from app.api.v4.resources.descriptions.search import search_descriptions_internal
 from app.api.v4.resources.flags.get import get_flags_internal
 from app.api.v4.resources.flags.search import search_flags_internal
+from app.api.v4.resources.models.get import get_models_internal
 from app.api.v4.resources.names.get import get_names_internal
 from app.api.v4.resources.names.search import search_names_internal
 from app.api.v4.resources.parameter_fields.get import get_parameter_fields_internal
+from app.api.v4.resources.providers.get import get_providers_internal
 from app.api.v4.resources.parameter_fields.search import (
     search_parameter_fields_internal,
 )
@@ -438,6 +441,34 @@ async def get_parameter_internal(
         "fields": field_suggestion_ids,
     }
 
+    # Config chain from settings (agents + tools already hydrated, models/providers need fetch)
+    config_agent_resource_ids = [a.id for a in settings_data.settings_agents if a.id]
+    config_model_resource_ids = [
+        a.model_id for a in settings_data.settings_agents if a.model_id
+    ]
+
+    config_agents: list[Any] = []
+    config_models: list[Any] = []
+    config_providers: list[Any] = []
+    if config_agent_resource_ids:
+        async with pool.acquire() as c:
+            config_agents = await get_agents_internal(
+                c, config_agent_resource_ids, bypass_cache
+            )
+    if config_model_resource_ids:
+        async with pool.acquire() as c:
+            config_models = await get_models_internal(
+                c, config_model_resource_ids, bypass_cache
+            )
+        provider_ids = list(
+            dict.fromkeys(m.provider_id for m in config_models if m.provider_id)
+        )
+        if provider_ids:
+            async with pool.acquire() as c:
+                config_providers = await get_providers_internal(
+                    c, provider_ids, bypass_cache
+                )
+
     return ParameterInternalData(
         actor_name=actor_name,
         parameter_exists=access_result.parameter_exists,
@@ -455,9 +486,9 @@ async def get_parameter_internal(
         resources_payload=resources_payload,
         create_tool_ids_map=create_tool_ids_map,
         link_tool_ids_map=link_tool_ids_map,
-        config_agent_resources=None,
-        config_model_resources=None,
-        config_provider_resources=None,
+        config_agent_resources=config_agents,
+        config_model_resources=config_models,
+        config_provider_resources=config_providers,
     )
 
 

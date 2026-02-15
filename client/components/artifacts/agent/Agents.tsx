@@ -42,6 +42,9 @@ import {
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table";
+import { GenerateRegenerateModal } from "@/components/common/forms/GenerateRegenerateModal";
+import { useSocket } from "@/contexts/socket-context";
+import { useGenerationModal } from "@/hooks/use-generation-modal";
 import { useProfile } from "@/contexts/profile-context";
 
 export interface AgentsProps {
@@ -73,10 +76,44 @@ export default function Agents({
   modelSearch,
   toolSearch,
 }: AgentsProps) {
+  const { socket, isConnected } = useSocket();
   const { profile } = useProfile();
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+
+  // Generation modal via shared hook
+  type AgentResourceType = "names" | "descriptions" | "models" | "prompts" | "instructions" | "flags" | "departments" | "tools" | "temperature_levels" | "reasoning_levels" | "voices";
+  const { handleOpenStepCardModal, modalProps } = useGenerationModal<AgentResourceType>({
+    stepResources: {
+      all: ["names", "descriptions", "models", "prompts", "instructions", "flags", "departments", "tools", "temperature_levels", "reasoning_levels", "voices"],
+    },
+    resourceLabels: {
+      names: "Name",
+      descriptions: "Description",
+      models: "Models",
+      prompts: "Prompts",
+      instructions: "Instructions",
+      flags: "Configuration",
+      departments: "Departments",
+      tools: "Tools",
+      temperature_levels: "Temperature Levels",
+      reasoning_levels: "Reasoning Levels",
+      voices: "Voices",
+    },
+    canRegenerate: () => true,
+    onGenerate: (selectedResources, instructions) => {
+      if (!socket || !isConnected) return;
+      socket.emit("agent_generate", {
+        resource_types: selectedResources,
+        user_instructions: instructions?.trim() ? [instructions.trim()] : null,
+        agent_id: null,
+        draft_id: null,
+      });
+      toast.success("Generation started for new agent");
+    },
+    isGenerating: () => false,
+  });
 
   // Delete dialog state
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -764,6 +801,8 @@ export default function Agents({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <GenerateRegenerateModal {...modalProps} />
     </div>
   );
 }

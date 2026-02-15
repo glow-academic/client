@@ -39,6 +39,9 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { GenerateRegenerateModal } from "@/components/common/forms/GenerateRegenerateModal";
+import { useSocket } from "@/contexts/socket-context";
+import { useGenerationModal } from "@/hooks/use-generation-modal";
 
 export interface ProvidersProps {
   // Server-provided data (for server-side rendering)
@@ -65,9 +68,39 @@ export default function Providers({
   departmentSearch,
   modelSearch,
 }: ProvidersProps) {
+  const { socket, isConnected } = useSocket();
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+
+  // Generation modal via shared hook
+  type ProviderResourceType = "names" | "descriptions" | "flags" | "departments" | "values" | "endpoints";
+  const { handleOpenStepCardModal, modalProps } = useGenerationModal<ProviderResourceType>({
+    stepResources: {
+      all: ["names", "descriptions", "flags", "departments", "values", "endpoints"],
+    },
+    resourceLabels: {
+      names: "Name",
+      descriptions: "Description",
+      flags: "Configuration",
+      departments: "Departments",
+      values: "Values",
+      endpoints: "Endpoints",
+    },
+    canRegenerate: () => true,
+    onGenerate: (selectedResources, instructions) => {
+      if (!socket || !isConnected) return;
+      socket.emit("provider_generate", {
+        resource_types: selectedResources,
+        user_instructions: instructions?.trim() ? [instructions.trim()] : null,
+        provider_id: null,
+        draft_id: null,
+      });
+      toast.success("Generation started for new provider");
+    },
+    isGenerating: () => false,
+  });
+
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [deleteItem, setDeleteItem] = useState<{
     id: string;
@@ -622,6 +655,8 @@ export default function Providers({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <GenerateRegenerateModal {...modalProps} />
     </div>
   );
 }

@@ -11041,6 +11041,95 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/socket/v4/server/training_bundle_generation_started": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Training Bundle Generation Started Api
+         * @description Server-to-client event: Training bundle generation started.
+         *
+         *     Emitted when training bundle generation begins, listing resource types being generated.
+         */
+        post: operations["training_bundle_generation_started_api_socket_v4_server_training_bundle_generation_started_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v4/server/training_bundle_generation_complete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Training Bundle Generation Complete Api
+         * @description Server-to-client event: Training bundle generation completed.
+         *
+         *     Emitted when all agents have finished generating training bundle resources.
+         */
+        post: operations["training_bundle_generation_complete_api_socket_v4_server_training_bundle_generation_complete_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v4/server/training_bundle_generation_error": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Training Bundle Generation Error Api
+         * @description Server-to-client event: Training bundle generation error.
+         *
+         *     Emitted when training bundle resource generation fails.
+         */
+        post: operations["training_bundle_generation_error_api_socket_v4_server_training_bundle_generation_error_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v4/server/training_bundle_generation_progress": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Training Bundle Generation Progress Api
+         * @description Server-to-client event: Training bundle generation progress.
+         *
+         *     Emitted as individual resources complete during training bundle generation.
+         *     Contains percentage-based progress tracking.
+         */
+        post: operations["training_bundle_generation_progress_api_socket_v4_server_training_bundle_generation_progress_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/socket/v4/server/agents_generation_started": {
         parameters: {
             query?: never;
@@ -25902,6 +25991,14 @@ export interface components {
             reasoning_levels?: components["schemas"]["BenchmarkBundleReasoningLevelSection"] | null;
             tools?: components["schemas"]["BenchmarkBundleToolSection"] | null;
             keys?: components["schemas"]["BenchmarkBundleKeySection"] | null;
+            /** Config Agents */
+            config_agents?: components["schemas"]["QGetAgentsV4Item"][] | null;
+            /** Config Models */
+            config_models?: components["schemas"]["QGetModelsV4Item"][] | null;
+            /** Config Providers */
+            config_providers?: components["schemas"]["QGetProvidersV4Item"][] | null;
+            /** Config Tools */
+            config_tools?: components["schemas"]["QGetToolsV4Item"][] | null;
         };
         /**
          * GetBenchmarkBundleViewResponse
@@ -29078,14 +29175,14 @@ export interface components {
             images?: components["schemas"]["TrainingBundleImageSection"] | null;
             problem_statements?: components["schemas"]["TrainingBundleProblemStatementSection"] | null;
             objectives?: components["schemas"]["TrainingBundleObjectiveSection"] | null;
-            /** Agents */
-            agents?: components["schemas"]["QGetAgentsV4Item"][] | null;
-            /** Models */
-            models?: components["schemas"]["QGetModelsV4Item"][] | null;
-            /** Providers */
-            providers?: components["schemas"]["QGetProvidersV4Item"][] | null;
-            /** Tools */
-            tools?: components["schemas"]["QGetToolsV4Item"][] | null;
+            /** Config Agents */
+            config_agents?: components["schemas"]["QGetAgentsV4Item"][] | null;
+            /** Config Models */
+            config_models?: components["schemas"]["QGetModelsV4Item"][] | null;
+            /** Config Providers */
+            config_providers?: components["schemas"]["QGetProvidersV4Item"][] | null;
+            /** Config Tools */
+            config_tools?: components["schemas"]["QGetToolsV4Item"][] | null;
         };
         /**
          * GetTrainingBundleViewResponse
@@ -48901,6 +48998,108 @@ export interface components {
             current?: components["schemas"]["QGetDocumentsV4Item"][] | null;
             /** Resources */
             resources?: components["schemas"]["QGetDocumentsV4Item"][] | null;
+        };
+        /**
+         * TrainingBundleGenerationCompleteEvent
+         * @description Server-to-client event: training_bundle_generation_complete.
+         *
+         *     Emitted when all agents have finished generating training bundle resources.
+         */
+        TrainingBundleGenerationCompleteEvent: {
+            /**
+             * Artifact Type
+             * @default training_bundle
+             */
+            artifact_type: string;
+            /** Group Id */
+            group_id: string;
+            /** Resource Type */
+            resource_type: string;
+            /** Run Id */
+            run_id?: string | null;
+            /** Success */
+            success: boolean;
+            /** Message */
+            message: string;
+            /** Type */
+            type?: string | null;
+        };
+        /**
+         * TrainingBundleGenerationErrorEvent
+         * @description Server-to-client event: training_bundle_generation_error.
+         *
+         *     Emitted when training bundle resource generation fails.
+         */
+        TrainingBundleGenerationErrorEvent: {
+            /**
+             * Artifact Type
+             * @default training_bundle
+             */
+            artifact_type: string;
+            /** Group Id */
+            group_id?: string | null;
+            /** Resource Type */
+            resource_type?: string | null;
+            /** Resource Types */
+            resource_types?: string[] | null;
+            /** Resource Id */
+            resource_id?: string | null;
+            /** Run Id */
+            run_id?: string | null;
+            /**
+             * Success
+             * @default false
+             */
+            success: boolean;
+            /** Message */
+            message: string;
+            /** Trace Id */
+            trace_id?: string | null;
+        };
+        /**
+         * TrainingBundleGenerationProgressEvent
+         * @description Server-to-client event: training_bundle_generation_progress.
+         *
+         *     Emitted as individual resources complete, providing percentage progress.
+         */
+        TrainingBundleGenerationProgressEvent: {
+            /**
+             * Artifact Type
+             * @default training_bundle
+             */
+            artifact_type: string;
+            /** Group Id */
+            group_id: string;
+            /** Run Id */
+            run_id?: string | null;
+            /** Completed Resources */
+            completed_resources: number;
+            /** Total Resources */
+            total_resources: number;
+            /** Percentage */
+            percentage: number;
+            /** Last Completed Resource */
+            last_completed_resource?: string | null;
+        };
+        /**
+         * TrainingBundleGenerationStartedEvent
+         * @description Server-to-client event: training_bundle_generation_started.
+         *
+         *     Emitted when training bundle generation begins, listing which resource types
+         *     will be generated.
+         */
+        TrainingBundleGenerationStartedEvent: {
+            /**
+             * Artifact Type
+             * @default training_bundle
+             */
+            artifact_type: string;
+            /** Group Id */
+            group_id: string;
+            /** Run Id */
+            run_id: string;
+            /** Resource Types */
+            resource_types: string[];
         };
         /** TrainingBundleImageSection */
         TrainingBundleImageSection: {
@@ -70512,6 +70711,146 @@ export interface operations {
                 "application/json": {
                     [key: string]: unknown;
                 };
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    training_bundle_generation_started_api_socket_v4_server_training_bundle_generation_started_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TrainingBundleGenerationStartedEvent"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    training_bundle_generation_complete_api_socket_v4_server_training_bundle_generation_complete_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TrainingBundleGenerationCompleteEvent"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    training_bundle_generation_error_api_socket_v4_server_training_bundle_generation_error_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TrainingBundleGenerationErrorEvent"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    training_bundle_generation_progress_api_socket_v4_server_training_bundle_generation_progress_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TrainingBundleGenerationProgressEvent"];
             };
         };
         responses: {

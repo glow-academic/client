@@ -32,7 +32,9 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { GenerateRegenerateModal } from "@/components/common/forms/GenerateRegenerateModal";
 import { useSocket } from "@/contexts/socket-context";
+import { useGenerationModal } from "@/hooks/use-generation-modal";
 import {
   ColumnDef,
   ColumnFiltersState,
@@ -65,7 +67,40 @@ export default function Evals({
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const { socket } = useSocket();
+  const { socket, isConnected } = useSocket();
+
+  // Generation modal via shared hook
+  type EvalResourceType = "names" | "descriptions" | "flags" | "departments" | "agents" | "run_positions" | "group_positions" | "run_rubrics" | "group_rubrics";
+  const { handleOpenStepCardModal, modalProps } = useGenerationModal<EvalResourceType>({
+    stepResources: {
+      all: ["names", "descriptions", "flags", "departments", "agents", "run_positions", "group_positions", "run_rubrics", "group_rubrics"],
+    },
+    resourceLabels: {
+      names: "Name",
+      descriptions: "Description",
+      flags: "Configuration",
+      departments: "Departments",
+      agents: "Agents",
+      run_positions: "Run Positions",
+      group_positions: "Group Positions",
+      run_rubrics: "Run Rubrics",
+      group_rubrics: "Group Rubrics",
+    },
+    canRegenerate: () => true,
+    onGenerate: (selectedResources, instructions) => {
+      if (!socket || !isConnected) return;
+      socket.emit("eval_generate", {
+        resource_types: selectedResources,
+        user_instructions: instructions?.trim() ? [instructions.trim()] : null,
+        eval_id: null,
+        draft_id: null,
+        save: true,
+      });
+      toast.success("Generation started for new eval");
+    },
+    isGenerating: () => false,
+  });
+
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [deleteItem, setDeleteItem] = useState<{
     id: string;
@@ -541,6 +576,8 @@ export default function Evals({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <GenerateRegenerateModal {...modalProps} />
     </div>
   );
 }

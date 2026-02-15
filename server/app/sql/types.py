@@ -7191,6 +7191,72 @@ class PrepareTrainingStartApiResponse(BaseModel):
     scenario_id: UUID | None = None
 
 
+# Generated from: get_training_bundle_generation_context
+
+
+class GetTrainingBundleGenerationContextSqlParams(BaseModel):
+    p_profile_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (self.p_profile_id,)
+
+
+class GetTrainingBundleGenerationContextSqlRow(BaseModel):
+    requests_per_day: int | None = None
+    runs_today: int | None = None
+
+
+class GetTrainingBundleGenerationContextApiRequest(BaseModel):
+    p_profile_id: UUID
+
+
+class GetTrainingBundleGenerationContextApiResponse(BaseModel):
+    requests_per_day: int | None = None
+    runs_today: int | None = None
+
+
+# Generated from: prepare_training_bundle_generation
+
+
+class PrepareTrainingBundleGenerationSqlParams(BaseModel):
+    p_profile_id: UUID
+    p_group_id: UUID | None = None
+    p_agents_resource_id: UUID | None = None
+    p_models_resource_id: UUID | None = None
+    p_providers_resource_id: UUID | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.p_profile_id,
+            self.p_group_id,
+            self.p_agents_resource_id,
+            self.p_models_resource_id,
+            self.p_providers_resource_id,
+        )
+
+
+class PrepareTrainingBundleGenerationSqlRow(BaseModel):
+    run_id: UUID | None = None
+    group_id: UUID | None = None
+    trace_id: str | None = None
+    config_id: UUID | None = None
+
+
+class PrepareTrainingBundleGenerationApiRequest(BaseModel):
+    p_profile_id: UUID
+    p_group_id: UUID | None = None
+    p_agents_resource_id: UUID | None = None
+    p_models_resource_id: UUID | None = None
+    p_providers_resource_id: UUID | None = None
+
+
+class PrepareTrainingBundleGenerationApiResponse(BaseModel):
+    run_id: UUID | None = None
+    group_id: UUID | None = None
+    trace_id: str | None = None
+    config_id: UUID | None = None
+
+
 # Generated from: complete_image_generation
 
 
@@ -26923,6 +26989,18 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "PrepareTrainingStartApiRequest",
         "PrepareTrainingStartApiResponse",
     ),
+    "app/sql/v4/queries/generate/training_bundle/get_training_bundle_generation_context_complete.sql": (
+        "GetTrainingBundleGenerationContextSqlParams",
+        "GetTrainingBundleGenerationContextSqlRow",
+        "GetTrainingBundleGenerationContextApiRequest",
+        "GetTrainingBundleGenerationContextApiResponse",
+    ),
+    "app/sql/v4/queries/generate/training_bundle/prepare_training_bundle_generation_complete.sql": (
+        "PrepareTrainingBundleGenerationSqlParams",
+        "PrepareTrainingBundleGenerationSqlRow",
+        "PrepareTrainingBundleGenerationApiRequest",
+        "PrepareTrainingBundleGenerationApiResponse",
+    ),
     "app/sql/v4/queries/images/complete_image_generation_complete.sql": (
         "CompleteImageGenerationSqlParams",
         "CompleteImageGenerationSqlRow",
@@ -30897,6 +30975,20 @@ if TYPE_CHECKING:
     def load_sql_query(
         file_path: Literal[
             "app/sql/v4/queries/generate/training/prepare_training_start_complete.sql"
+        ],
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal[
+            "app/sql/v4/queries/generate/training_bundle/get_training_bundle_generation_context_complete.sql"
+        ],
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal[
+            "app/sql/v4/queries/generate/training_bundle/prepare_training_bundle_generation_complete.sql"
         ],
     ) -> SqlString: ...
 

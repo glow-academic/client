@@ -9,11 +9,13 @@ from app.api.v4.artifacts.types import FilterOption
 from app.api.v4.views.benchmark.tests.types import BenchmarkTestViewItem
 from app.sql.types import (
     BenchmarkBundleMultiResourceAction,
+    QGetAgentsV4Item,
     QGetDepartmentsV4Item,
     QGetInstructionsV4Item,
     QGetKeysV4Item,
     QGetModelsV4Item,
     QGetPromptsV4Item,
+    QGetProvidersV4Item,
     QGetReasoningLevelsV4Item,
     QGetTemperatureLevelsV4Item,
     QGetToolsV4Item,
@@ -194,6 +196,41 @@ class GetBenchmarkBundleResponse(BaseModel):
     reasoning_levels: BenchmarkBundleReasoningLevelSection | None = None
     tools: BenchmarkBundleToolSection | None = None
     keys: BenchmarkBundleKeySection | None = None
+
+    # Config chain (settings-derived, distinct from section resources above)
+    config_agents: list[QGetAgentsV4Item] | None = None
+    config_models: list[QGetModelsV4Item] | None = None
+    config_providers: list[QGetProvidersV4Item] | None = None
+    config_tools: list[QGetToolsV4Item] | None = None
+
+
+# --- Websocket types (mirrors training bundle websocket pattern) ---
+
+
+class BenchmarkBundleWebsocketResources(BaseModel):
+    """Hydrated resources for bundle websocket — selected only."""
+
+    departments: list[QGetDepartmentsV4Item] | None = None
+    models: list[QGetModelsV4Item] | None = None
+    prompts: list[QGetPromptsV4Item] | None = None
+    instructions: list[QGetInstructionsV4Item] | None = None
+    voices: list[QGetVoicesV4Item] | None = None
+    temperature_levels: list[QGetTemperatureLevelsV4Item] | None = None
+    reasoning_levels: list[QGetReasoningLevelsV4Item] | None = None
+    tools: list[QGetToolsV4Item] | None = None
+    keys: list[QGetKeysV4Item] | None = None
+    # Config chain
+    config_agents: list[QGetAgentsV4Item] | None = None
+    config_models: list[QGetModelsV4Item] | None = None
+    config_providers: list[QGetProvidersV4Item] | None = None
+    config_tools: list[QGetToolsV4Item] | None = None
+
+
+class GetBenchmarkBundleWebsocketResponse(BaseModel):
+    """Websocket-facing bundle response with hydrated resources."""
+
+    resources: BenchmarkBundleWebsocketResources
+    resource_agent_ids: dict[str, UUID | None] | None = None
 
 
 # =============================================================================

@@ -21,6 +21,9 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { GenerateRegenerateModal } from "@/components/common/forms/GenerateRegenerateModal";
+import { useSocket } from "@/contexts/socket-context";
+import { useGenerationModal } from "@/hooks/use-generation-modal";
 import { useProfile } from "@/contexts/profile-context";
 
 import type {
@@ -44,8 +47,39 @@ export default function Auths({
   duplicateAuthAction,
   deleteAuthAction,
 }: AuthsProps) {
+  const { socket, isConnected } = useSocket();
   const router = useRouter();
   const { profile } = useProfile();
+
+  // Generation modal via shared hook
+  type AuthResourceType = "names" | "descriptions" | "flags" | "protocols" | "slugs" | "items";
+  const { handleOpenStepCardModal, modalProps } = useGenerationModal<AuthResourceType>({
+    stepResources: {
+      all: ["names", "descriptions", "flags", "protocols", "slugs", "items"],
+    },
+    resourceLabels: {
+      names: "Name",
+      descriptions: "Description",
+      flags: "Configuration",
+      protocols: "Protocols",
+      slugs: "Slugs",
+      items: "Items",
+    },
+    canRegenerate: () => true,
+    onGenerate: (selectedResources, instructions) => {
+      if (!socket || !isConnected) return;
+      socket.emit("auth_generate", {
+        resource_types: selectedResources,
+        user_instructions: instructions?.trim() ? [instructions.trim()] : null,
+        auth_id: null,
+        draft_id: null,
+        save: true,
+      });
+      toast.success("Generation started for new auth");
+    },
+    isGenerating: () => false,
+  });
+
   const [isDuplicating, setIsDuplicating] = useState<string | null>(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [deleteItem, setDeleteItem] = useState<{
@@ -268,6 +302,8 @@ export default function Auths({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <GenerateRegenerateModal {...modalProps} />
     </div>
   );
 }

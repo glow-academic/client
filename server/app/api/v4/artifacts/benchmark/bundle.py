@@ -25,8 +25,10 @@ from app.api.v4.artifacts.benchmark.types import (
     BenchmarkBundleTemperatureLevelSection,
     BenchmarkBundleToolSection,
     BenchmarkBundleVoiceSection,
+    BenchmarkBundleWebsocketResources,
     GetBenchmarkBundleRequest,
     GetBenchmarkBundleResponse,
+    GetBenchmarkBundleWebsocketResponse,
 )
 from app.api.v4.auth.settings import get_auth_settings_internal
 from app.api.v4.permissions import resolve_agents_for_artifact
@@ -35,6 +37,7 @@ from app.api.v4.resources.instructions.get import get_instructions_internal
 from app.api.v4.resources.keys.get import get_keys_internal
 from app.api.v4.resources.models.get import get_models_internal
 from app.api.v4.resources.prompts.get import get_prompts_internal
+from app.api.v4.resources.providers.get import get_providers_internal
 from app.api.v4.resources.reasoning_levels.get import get_reasoning_levels_internal
 from app.api.v4.resources.temperature_levels.get import get_temperature_levels_internal
 from app.api.v4.resources.tools.get import get_tools_internal
@@ -78,6 +81,11 @@ class BenchmarkBundleInternalData:
     all_resources: dict[str, list[Any]] = field(default_factory=dict)
     current_resources: dict[str, list[Any]] = field(default_factory=dict)
     resource_agent_ids: dict[str, UUID | None] = field(default_factory=dict)
+    # Config chain
+    config_agents: list[Any] = field(default_factory=list)
+    config_models: list[Any] = field(default_factory=list)
+    config_providers: list[Any] = field(default_factory=list)
+    config_tools: list[Any] = field(default_factory=list)
 
 
 # =============================================================================
@@ -205,11 +213,31 @@ async def get_benchmark_bundle_internal(
             id_attr,
         )
 
-    # 5. Settings-based agent resolution
+    # 5. Settings-based agent resolution + config chain
     settings_data = await get_auth_settings_internal(conn, profile_id, bypass_cache)
     agent_ids, create_tool_ids_map, link_tool_ids_map = resolve_agents_for_artifact(
         settings_data.agent_tool_entries, BENCHMARK_BUNDLE_RESOURCES
     )
+
+    # Config chain (agents + tools already hydrated, models need fetch)
+    config_agents = list(settings_data.settings_agents)
+    config_tools = list(settings_data.settings_tools)
+
+    config_model_ids = list(
+        dict.fromkeys(a.model_id for a in settings_data.settings_agents if a.model_id)
+    )
+    config_models: list[Any] = []
+    if config_model_ids:
+        config_models = await get_models_internal(conn, config_model_ids, bypass_cache)
+
+    config_provider_ids = list(
+        dict.fromkeys(m.provider_id for m in config_models if m.provider_id)
+    )
+    config_providers: list[Any] = []
+    if config_provider_ids:
+        config_providers = await get_providers_internal(
+            conn, config_provider_ids, bypass_cache
+        )
 
     return BenchmarkBundleInternalData(
         benchmark_bundle_entry_id=view_data.benchmark_bundle_entry_id,
@@ -219,6 +247,10 @@ async def get_benchmark_bundle_internal(
         all_resources=all_resources,
         current_resources=current_resources,
         resource_agent_ids=agent_ids,
+        config_agents=config_agents,
+        config_models=config_models,
+        config_providers=config_providers,
+        config_tools=config_tools,
     )
 
 
@@ -281,6 +313,50 @@ async def get_benchmark_bundle_client(
         reasoning_levels=_section("reasoning_levels"),
         tools=_section("tools"),
         keys=_section("keys"),
+        config_agents=data.config_agents or None,
+        config_models=data.config_models or None,
+        config_providers=data.config_providers or None,
+        config_tools=data.config_tools or None,
+    )
+
+
+# =============================================================================
+# WebSocket Layer
+# =============================================================================
+
+
+async def get_benchmark_bundle_websocket(
+    conn: asyncpg.Connection,
+    profile_id: UUID,
+    benchmark_bundle_entry_id: UUID,
+    draft_id: UUID | None = None,
+    bypass_cache: bool = False,
+) -> GetBenchmarkBundleWebsocketResponse:
+    """Thin wrapper for websocket consumers — selected resources only."""
+    data = await get_benchmark_bundle_internal(
+        conn=conn,
+        profile_id=profile_id,
+        benchmark_bundle_entry_id=benchmark_bundle_entry_id,
+        draft_id=draft_id,
+        bypass_cache=bypass_cache,
+    )
+    return GetBenchmarkBundleWebsocketResponse(
+        resources=BenchmarkBundleWebsocketResources(
+            departments=data.current_resources.get("departments") or None,
+            models=data.current_resources.get("models") or None,
+            prompts=data.current_resources.get("prompts") or None,
+            instructions=data.current_resources.get("instructions") or None,
+            voices=data.current_resources.get("voices") or None,
+            temperature_levels=data.current_resources.get("temperature_levels") or None,
+            reasoning_levels=data.current_resources.get("reasoning_levels") or None,
+            tools=data.current_resources.get("tools") or None,
+            keys=data.current_resources.get("keys") or None,
+            config_agents=data.config_agents or None,
+            config_models=data.config_models or None,
+            config_providers=data.config_providers or None,
+            config_tools=data.config_tools or None,
+        ),
+        resource_agent_ids=data.resource_agent_ids,
     )
 
 

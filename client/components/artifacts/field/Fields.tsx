@@ -48,6 +48,9 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { GenerateRegenerateModal } from "@/components/common/forms/GenerateRegenerateModal";
+import { useSocket } from "@/contexts/socket-context";
+import { useGenerationModal } from "@/hooks/use-generation-modal";
 
 export interface FieldsProps {
   // Server-provided data (for server-side rendering)
@@ -64,7 +67,37 @@ export default function Fields({
   duplicateFieldAction,
   deleteFieldAction,
 }: FieldsProps) {
+  const { socket, isConnected } = useSocket();
   const router = useRouter();
+
+  // Generation modal via shared hook
+  type FieldResourceType = "names" | "descriptions" | "flags" | "departments" | "conditional_parameters";
+  const { handleOpenStepCardModal, modalProps } = useGenerationModal<FieldResourceType>({
+    stepResources: {
+      all: ["names", "descriptions", "flags", "departments", "conditional_parameters"],
+    },
+    resourceLabels: {
+      names: "Name",
+      descriptions: "Description",
+      flags: "Configuration",
+      departments: "Departments",
+      conditional_parameters: "Conditional Parameters",
+    },
+    canRegenerate: () => true,
+    onGenerate: (selectedResources, instructions) => {
+      if (!socket || !isConnected) return;
+      socket.emit("field_generate", {
+        resource_types: selectedResources,
+        user_instructions: instructions?.trim() ? [instructions.trim()] : null,
+        field_id: null,
+        draft_id: null,
+        save: true,
+      });
+      toast.success("Generation started for new field");
+    },
+    isGenerating: () => false,
+  });
+
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [deleteItem, setDeleteItem] = useState<{
     id: string;
@@ -585,6 +618,8 @@ export default function Fields({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <GenerateRegenerateModal {...modalProps} />
     </div>
   );
 }

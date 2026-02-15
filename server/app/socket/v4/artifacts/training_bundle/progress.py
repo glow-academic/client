@@ -1,0 +1,89 @@
+"""Training bundle progress handler - emits percentage-based progress as resources complete.
+
+Listens on generate_call_complete, filters for training_bundle artifact with tool_result events
+that have a resource_id (successful resource creation), and emits training_bundle_generation_progress
+with percentage tracking.
+"""
+
+from typing import Any
+
+from fastapi import APIRouter
+
+from app.infra.v4.websocket.generation_tracker import record_resource_complete
+from app.main import get_internal_sio, sio
+from app.socket.v4.artifacts.training_bundle.types import (
+    TrainingBundleGenerationProgressEvent,
+)
+from app.utils.logging.db_logger import get_logger
+
+logger = get_logger(__name__)
+
+internal_sio = get_internal_sio()
+
+server_router = APIRouter()
+
+
+@internal_sio.on("generate_call_complete")  # type: ignore
+async def handle_training_bundle_resource_progress(data: dict[str, Any]) -> None:
+    """Track resource completions and emit training bundle progress percentage."""
+    artifact_type = data.get("artifact_type")
+    if artifact_type != "training_bundle":
+        return
+
+    event_type = data.get("event_type")
+    if event_type != "tool_result":
+        return
+
+    sid = data.get("sid", "")
+    run_id = data.get("run_id")
+    group_id_str = data.get("group_id", "")
+    if not sid or not run_id:
+        return
+
+    # Only count events with a resource_id (successful resource creation)
+    tool_result = data.get("result") or {}
+    resource_id = tool_result.get("resource_id")
+    if not resource_id:
+        return
+
+    resource_type = tool_result.get("resource_type") or data.get("resource_type", "")
+
+    try:
+        completed, total = await record_resource_complete(run_id, resource_type)
+    except Exception as e:
+        logger.exception(f"Failed to record resource progress: {e}")
+        return
+
+    percentage = round((completed / total) * 100) if total > 0 else 0
+
+    event = TrainingBundleGenerationProgressEvent(
+        group_id=group_id_str,
+        run_id=run_id,
+        completed_resources=completed,
+        total_resources=total,
+        percentage=min(percentage, 100),
+        last_completed_resource=resource_type,
+    )
+
+    await sio.emit(
+        "training_bundle_generation_progress",
+        event.model_dump(mode="json"),
+        room=sid,
+    )
+
+
+# =============================================================================
+# FastAPI endpoint for OpenAPI documentation
+# =============================================================================
+
+
+@server_router.post("/training_bundle_generation_progress")
+async def training_bundle_generation_progress_api(
+    request: TrainingBundleGenerationProgressEvent,
+) -> dict[str, bool]:
+    """Server-to-client event: Training bundle generation progress.
+
+    Emitted as individual resources complete during training bundle generation.
+    Contains percentage-based progress tracking.
+    """
+    return {"success": True}
