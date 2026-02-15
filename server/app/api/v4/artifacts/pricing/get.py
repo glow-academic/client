@@ -14,11 +14,9 @@ from app.api.v4.artifacts.pricing.types import (
     PricingViews,
 )
 from app.api.v4.artifacts.types import FilterOption
-from app.api.v4.resources.names.get import get_names_internal
-from app.api.v4.views.pricing.daily.get import get_pricing_daily_internal
-from app.api.v4.views.pricing.group_summary.get import (
-    get_pricing_group_summary_internal,
-)
+from app.api.v4.resources.agents.get import get_agents_internal
+from app.api.v4.resources.models.get import get_models_internal
+from app.api.v4.views.run.list.get import get_run_list_view_internal
 from app.infra.v4.activity.audit import audit_activity
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
@@ -48,157 +46,68 @@ async def get_pricing(
     pool = get_pool()
 
     try:
-        # Use effective dates (supports both start_date/end_date and date_from/date_to)
         effective_date_from = request.effective_date_from
         effective_date_to = request.effective_date_to
 
-        # Parallel fetch from view internals
-        async def fetch_group_summary():
-            async with pool.acquire() as c:
-                return await get_pricing_group_summary_internal(
-                    conn=c,
-                    profile_id=request.profile_id,
-                    model_id=request.model_id,
-                    agent_id=request.agent_id,
-                    date_from=effective_date_from,
-                    date_to=effective_date_to,
-                    department_ids=request.department_ids,
-                    roles=request.roles,
-                    page_limit=request.page_limit,
-                    page_offset=request.page_offset,
-                    bypass_cache=bypass_cache,
-                )
-
-        async def fetch_daily():
-            async with pool.acquire() as c:
-                return await get_pricing_daily_internal(
-                    conn=c,
-                    model_id=request.model_id,
-                    agent_id=request.agent_id,
-                    date_from=effective_date_from.date()
-                    if effective_date_from
-                    else None,
-                    date_to=effective_date_to.date() if effective_date_to else None,
-                    department_ids=request.department_ids,
-                    roles=request.roles,
-                    page_limit=365,  # Get up to a year of daily data for chart
-                    bypass_cache=bypass_cache,
-                )
-
-        (
-            group_summary_result,
-            daily_result,
-        ) = await asyncio.gather(
-            fetch_group_summary(),
-            fetch_daily(),
-        )
-
-        # Collect artifact IDs and build artifact_id → name_id mappings
-        agent_ids: set[str] = set()
-        model_ids: set[str] = set()
-        profile_ids: set[str] = set()
-        all_name_ids: set[UUID] = set()
-        model_artifact_to_name_id: dict[str, UUID] = {}
-        agent_artifact_to_name_id: dict[str, UUID] = {}
-        profile_artifact_to_name_id: dict[str, UUID] = {}
-
-        for item in group_summary_result.items:
-            if item.primary_agent_id:
-                agent_ids.add(str(item.primary_agent_id))
-                if item.primary_agent_name_id:
-                    agent_artifact_to_name_id[str(item.primary_agent_id)] = (
-                        item.primary_agent_name_id
-                    )
-                    all_name_ids.add(item.primary_agent_name_id)
-            if item.primary_model_id:
-                model_ids.add(str(item.primary_model_id))
-                if item.primary_model_name_id:
-                    model_artifact_to_name_id[str(item.primary_model_id)] = (
-                        item.primary_model_name_id
-                    )
-                    all_name_ids.add(item.primary_model_name_id)
-            if item.profile_id:
-                profile_ids.add(str(item.profile_id))
-                if item.profile_name_id:
-                    profile_artifact_to_name_id[str(item.profile_id)] = (
-                        item.profile_name_id
-                    )
-                    all_name_ids.add(item.profile_name_id)
-            # Collect from arrays for complete coverage
-            if item.agent_name_ids:
-                all_name_ids.update(item.agent_name_ids)
-            if item.model_name_ids:
-                all_name_ids.update(item.model_name_ids)
-
-        for item in daily_result.items:
-            if item.agent_id:
-                agent_ids.add(str(item.agent_id))
-                if item.agent_name_id:
-                    agent_artifact_to_name_id[str(item.agent_id)] = item.agent_name_id
-                    all_name_ids.add(item.agent_name_id)
-            if item.model_id:
-                model_ids.add(str(item.model_id))
-                if item.model_name_id:
-                    model_artifact_to_name_id[str(item.model_id)] = item.model_name_id
-                    all_name_ids.add(item.model_name_id)
-
-        # Hydrate names via get_names_internal (cached, lightweight)
-        name_id_to_str: dict[UUID, str] = {}
-        if all_name_ids:
-            async with pool.acquire() as c:
-                name_items = await get_names_internal(
-                    c, list(all_name_ids), bypass_cache
-                )
-            for ni in name_items:
-                if ni.id and ni.name:
-                    name_id_to_str[ni.id] = ni.name
-
-        # Build artifact_id → name_string maps
-        def resolve_name(
-            artifact_to_name: dict[str, UUID], artifact_id: str
-        ) -> str | None:
-            name_id = artifact_to_name.get(artifact_id)
-            return name_id_to_str.get(name_id) if name_id else None
-
-        views = PricingViews(
-            group_summary=group_summary_result.items,
-            daily=daily_result.items,
-        )
-        resources = PricingResources(
-            agents={
-                aid: {"name": resolve_name(agent_artifact_to_name_id, aid)}
-                for aid in agent_ids
-            },
-            models={
-                mid: {"name": resolve_name(model_artifact_to_name_id, mid)}
-                for mid in model_ids
-            },
-            profiles={
-                pid: {"name": resolve_name(profile_artifact_to_name_id, pid)}
-                for pid in profile_ids
-            },
-        )
-
-        model_options = [
-            FilterOption(
-                value=mid,
-                label=resolve_name(model_artifact_to_name_id, mid),
+        # Step 1: Fetch runs from mv_runs
+        async with pool.acquire() as c:
+            runs_result = await get_run_list_view_internal(
+                conn=c,
+                date_from=effective_date_from,
+                date_to=effective_date_to,
+                page_limit=request.page_limit,
+                page_offset=request.page_offset,
+                bypass_cache=bypass_cache,
             )
-            for mid in sorted(model_ids)
+
+        # Step 2: Collect unique agent/model IDs from runs
+        agent_ids_set: set[UUID] = set()
+        model_ids_set: set[UUID] = set()
+
+        for item in runs_result.items:
+            if item.agent_ids:
+                agent_ids_set.update(item.agent_ids)
+            if item.model_ids:
+                model_ids_set.update(item.model_ids)
+
+        # Step 3: Batch hydrate agents + models in parallel
+        async def fetch_agents():
+            async with pool.acquire() as c:
+                return await get_agents_internal(
+                    c, list(agent_ids_set), bypass_cache=bypass_cache
+                )
+
+        async def fetch_models():
+            async with pool.acquire() as c:
+                return await get_models_internal(
+                    c, list(model_ids_set), bypass_cache=bypass_cache
+                )
+
+        agents_list, models_list = await asyncio.gather(
+            fetch_agents(), fetch_models()
+        )
+
+        # Build resource maps
+        agent_map = {str(a.id): {"name": a.name} for a in agents_list if a.id}
+        model_map = {str(m.id): {"name": m.name} for m in models_list if m.id}
+
+        # Build filter options
+        model_options = [
+            FilterOption(value=str(m.id), label=m.name)
+            for m in models_list
+            if m.id
         ]
         agent_options = [
-            FilterOption(
-                value=aid,
-                label=resolve_name(agent_artifact_to_name_id, aid),
-            )
-            for aid in sorted(agent_ids)
+            FilterOption(value=str(a.id), label=a.name)
+            for a in agents_list
+            if a.id
         ]
 
         response.headers["X-Cache-Tags"] = ",".join(tags)
         return PricingResponse(
-            views=views,
-            resources=resources,
-            total_count=group_summary_result.total_count,
+            views=PricingViews(runs=runs_result.items),
+            resources=PricingResources(agents=agent_map, models=model_map),
+            total_count=runs_result.total_count,
             model_options=model_options,
             agent_options=agent_options,
         )

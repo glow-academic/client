@@ -20,11 +20,15 @@ from app.api.v4.artifacts.reports.types import (
     ReportsTrendPoint,
     ReportsTrendsSection,
 )
-from app.api.v4.views.analytics.attempts.types import AttemptFactsItem
-from app.api.v4.views.analytics.chat_facts.types import ChatFactsItem
-from app.api.v4.views.analytics.daily_metrics.types import DailyMetricsItem
+from typing import Any
+
 from app.api.v4.views.analytics.profile_facts.types import ProfileFactsItem
-from app.api.v4.views.analytics.profile_metrics.types import ProfileMetricsItem
+
+# Type aliases for deprecated v1 types (modules deleted in DELETE OLD VIEWS)
+AttemptFactsItem = Any
+ChatFactsItem = Any
+DailyMetricsItem = Any
+ProfileMetricsItem = Any
 
 
 def _metric(value: float | int | None) -> ReportsMetric:

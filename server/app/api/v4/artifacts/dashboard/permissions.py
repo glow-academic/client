@@ -13,16 +13,18 @@ from app.api.v4.artifacts.dashboard.types import (
     DashboardPrimaryMetrics,
     DashboardSecondaryMetrics,
 )
-from app.api.v4.views.analytics.attempts.types import AttemptFactsItem
-from app.api.v4.views.analytics.chat_facts.types import ChatFactsItem
-from app.api.v4.views.analytics.daily_metrics.types import DailyMetricsItem
-from app.api.v4.views.analytics.first_attempt_pass.types import FirstAttemptPassItem
 from app.api.v4.views.analytics.profile_facts.types import ProfileFactsItem
-from app.api.v4.views.analytics.profile_metrics.types import ProfileMetricsItem
 from app.api.v4.views.analytics.rubric_facts.types import RubricFactsItem
-from app.api.v4.views.analytics.rubric_group_scores.types import RubricGroupScoreItem
 from app.api.v4.views.analytics.scenario_facts.types import ScenarioFactsItem
 from app.api.v4.views.analytics.simulation_facts.types import SimulationFactsItem
+
+# Type aliases for removed analytics types (used by deprecated v1 functions below)
+AttemptFactsItem = Any
+ChatFactsItem = Any
+DailyMetricsItem = Any
+FirstAttemptPassItem = Any
+ProfileMetricsItem = Any
+RubricGroupScoreItem = Any
 
 
 def _empty_header_metric() -> DashboardHeaderMetric:

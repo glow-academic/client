@@ -1,14 +1,11 @@
 """Types for leaderboard artifact get bundle."""
 
+from typing import Any
 from uuid import UUID
 
 from pydantic import BaseModel, Field
 
 from app.api.v4.artifacts.types import FilterOption
-from app.api.v4.views.analytics.attempts.types import AttemptFactsItem
-from app.api.v4.views.analytics.chat_facts.types import ChatFactsItem
-from app.api.v4.views.analytics.daily_metrics.types import DailyMetricsItem
-from app.api.v4.views.analytics.profile_metrics.types import ProfileMetricsItem
 
 
 class LeaderboardRequest(BaseModel):
@@ -131,12 +128,12 @@ class LeaderboardSections(BaseModel):
 
 
 class LeaderboardViews(BaseModel):
-    """Raw MV slices used to compute leaderboard sections."""
+    """Raw MV slices used to compute leaderboard sections (deprecated — always empty)."""
 
-    attempt_facts: list[AttemptFactsItem] = Field(default_factory=list)
-    chat_facts: list[ChatFactsItem] = Field(default_factory=list)
-    daily_metrics: list[DailyMetricsItem] = Field(default_factory=list)
-    profile_metrics: list[ProfileMetricsItem] = Field(default_factory=list)
+    attempt_facts: list[Any] = Field(default_factory=list)
+    chat_facts: list[Any] = Field(default_factory=list)
+    daily_metrics: list[Any] = Field(default_factory=list)
+    profile_metrics: list[Any] = Field(default_factory=list)
 
 
 class LeaderboardProfileResource(BaseModel):

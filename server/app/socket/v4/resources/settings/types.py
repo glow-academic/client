@@ -4,6 +4,8 @@ from typing import Any
 
 from pydantic import BaseModel
 
+from app.sql.types import QGetSettingsV4Auth
+
 
 class SettingsGenerationStartedEvent(BaseModel):
     """Server-to-client event: settings_generation_started."""

@@ -6,8 +6,7 @@ from uuid import UUID
 from pydantic import BaseModel, Field
 
 from app.api.v4.artifacts.types import FilterOption
-from app.api.v4.views.pricing.daily.types import PricingDailyItem
-from app.api.v4.views.pricing.group_summary.types import PricingGroupSummaryItem
+from app.api.v4.views.run.list.types import RunViewItem
 
 
 class PricingRequest(BaseModel):
@@ -20,16 +19,11 @@ class PricingRequest(BaseModel):
     date_to: datetime | None = Field(default=None)
 
     # Resource filters
-    profile_id: UUID | None = Field(default=None)
     model_id: UUID | None = Field(default=None)
     agent_id: UUID | None = Field(default=None)
 
-    # Analytics filters
-    department_ids: list[UUID] = Field(default_factory=list)
-    roles: list[str] = Field(default_factory=list)
-
     # Pagination
-    page_limit: int = Field(default=50, ge=1, le=100)
+    page_limit: int = Field(default=50, ge=1, le=200)
     page_offset: int = Field(default=0, ge=0)
 
     @property
@@ -46,8 +40,7 @@ class PricingRequest(BaseModel):
 class PricingViews(BaseModel):
     """Pricing view data."""
 
-    group_summary: list[PricingGroupSummaryItem] = Field(default_factory=list)
-    daily: list[PricingDailyItem] = Field(default_factory=list)
+    runs: list[RunViewItem] = Field(default_factory=list)
 
 
 class PricingResources(BaseModel):
@@ -55,7 +48,6 @@ class PricingResources(BaseModel):
 
     agents: dict[str, dict] = Field(default_factory=dict)
     models: dict[str, dict] = Field(default_factory=dict)
-    profiles: dict[str, dict] = Field(default_factory=dict)
 
 
 class PricingResponse(BaseModel):

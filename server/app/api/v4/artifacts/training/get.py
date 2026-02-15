@@ -6,6 +6,7 @@ Two functions:
 """
 
 import asyncio
+from collections import defaultdict
 from typing import Annotated, Any, cast
 from uuid import UUID
 
@@ -37,10 +38,10 @@ from app.api.v4.resources.rubrics.get import get_rubrics_internal
 from app.api.v4.resources.simulations.get import get_simulations_internal
 from app.api.v4.resources.standard_groups.get import get_standard_groups_internal
 from app.api.v4.resources.standards.search import search_standards_internal
-from app.api.v4.views.analytics.attempts.get import get_attempt_facts_internal
-from app.api.v4.views.analytics.attempts.types import (
-    AttemptFactsItem,
-    GetAttemptFactsResponse,
+from app.api.v4.views.analytics.profile_facts.get import get_profile_facts_internal
+from app.api.v4.views.analytics.profile_facts.types import (
+    GetProfileFactsResponse,
+    ProfileFactsItem,
 )
 from app.api.v4.views.training.context.get import get_training_context_view_internal
 from app.api.v4.views.training.context.types import GetTrainingContextViewResponse
@@ -90,13 +91,15 @@ async def _fetch_cohort_member_profiles(
 
 
 def _aggregate_personal_stats(
-    items: list[AttemptFactsItem],
+    items: list[ProfileFactsItem],
 ) -> dict[UUID, dict[str, Any]]:
-    """Aggregate personal attempt facts by simulation_id.
+    """Aggregate personal profile facts by simulation_id.
 
     Returns {simulation_id: {attempt_count, highest_score_percent, has_passed}}.
+    Counts distinct attempt_ids per simulation for attempt_count.
     """
     stats: dict[UUID, dict[str, Any]] = {}
+    seen_attempts: dict[UUID, set[UUID]] = defaultdict(set)
     for item in items:
         if not item.simulation_id:
             continue
@@ -108,20 +111,21 @@ def _aggregate_personal_stats(
                 "has_passed": False,
             }
         s = stats[sim_id]
-        s["attempt_count"] += 1
-        if item.score_percent is not None:
-            if (
-                s["highest_score_percent"] is None
-                or item.score_percent > s["highest_score_percent"]
-            ):
-                s["highest_score_percent"] = item.score_percent
-        if item.has_passed:
+        # Count distinct attempts
+        if item.attempt_id and item.attempt_id not in seen_attempts[sim_id]:
+            seen_attempts[sim_id].add(item.attempt_id)
+            s["attempt_count"] += 1
+        if item.grade_percent is not None:
+            score = float(item.grade_percent)
+            if s["highest_score_percent"] is None or score > s["highest_score_percent"]:
+                s["highest_score_percent"] = score
+        if item.passed:
             s["has_passed"] = True
     return stats
 
 
 def _aggregate_instructional_stats(
-    facts_items: list[AttemptFactsItem],
+    facts_items: list[ProfileFactsItem],
     cohort_member_profiles: dict[UUID, set[UUID]],
     simulation_cohort_map: dict[UUID, list[UUID]],
 ) -> dict[UUID, dict[str, Any]]:
@@ -138,7 +142,7 @@ def _aggregate_instructional_stats(
         key = (item.simulation_id, item.profile_id)
         if key not in best:
             best[key] = {"has_passed": False, "has_attempted": True}
-        if item.has_passed:
+        if item.passed:
             best[key]["has_passed"] = True
 
     result: dict[UUID, dict[str, Any]] = {}
@@ -217,9 +221,9 @@ async def get_training_internal(
                 bypass_cache=bypass_cache,
             )
 
-    async def fetch_personal_stats() -> GetAttemptFactsResponse:
+    async def fetch_personal_stats() -> GetProfileFactsResponse:
         async with pool.acquire() as c:
-            return await get_attempt_facts_internal(
+            return await get_profile_facts_internal(
                 conn=c,
                 profile_id=profile_id,
                 attempt_type=attempt_type,
@@ -296,7 +300,7 @@ async def get_training_internal(
 
     async def fetch_cohort_attempt_facts() -> list:
         async with pool.acquire() as c:
-            result = await get_attempt_facts_internal(
+            result = await get_profile_facts_internal(
                 conn=c,
                 profile_id=None,
                 attempt_type=attempt_type,
@@ -328,7 +332,7 @@ async def get_training_internal(
     cohort_list = results_2a[2]
     rubric_list = results_2a[3]
 
-    cohort_facts_items: list[AttemptFactsItem] | None = None
+    cohort_facts_items: list[ProfileFactsItem] | None = None
     cohort_member_profiles: dict[UUID, set[UUID]] | None = None
     if is_instructional:
         cohort_facts_items = results_2a[4]

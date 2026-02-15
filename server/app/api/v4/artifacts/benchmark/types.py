@@ -5,6 +5,7 @@ from uuid import UUID
 from pydantic import BaseModel, Field
 
 from app.api.v4.artifacts.types import FilterOption
+from app.api.v4.views.benchmark.tests.types import BenchmarkTestViewItem
 from app.sql.types import (
     QGetDepartmentsV4Item,
     QGetInstructionsV4Item,
@@ -27,21 +28,12 @@ class BenchmarkRequest(BaseModel):
 
 
 class BenchmarkEvalItem(BaseModel):
-    """Enriched eval item for benchmark overview."""
+    """Eval resource metadata for benchmark hydration."""
 
     eval_id: str
     name: str | None = None
     description: str | None = None
-    rubric_id: str | None = None
-    rubric_name: str | None = None
-    agent_ids: list[str] = Field(default_factory=list)
     department_ids: list[str] = Field(default_factory=list)
-    use_groups: bool = False
-    dynamic: bool = False
-    total_runs: int = 0
-    completed_runs: int = 0
-    pending_runs: int = 0
-    status: str = "pending"
 
 
 class BenchmarkRubricItem(BaseModel):
@@ -101,19 +93,12 @@ class BenchmarkRubricStandardGroupItem(BaseModel):
 class BenchmarkResponse(BaseModel):
     """Response with benchmark data."""
 
+    tests: list[BenchmarkTestViewItem] = Field(default_factory=list)
+    total_count: int = 0
     evals: list[BenchmarkEvalItem] = Field(default_factory=list)
-    rubrics: list[BenchmarkRubricItem] = Field(default_factory=list)
     departments: list[BenchmarkDepartmentItem] = Field(default_factory=list)
-    agents: list[BenchmarkAgentItem] = Field(default_factory=list)
-    standard_groups: list[BenchmarkStandardGroupItem] = Field(default_factory=list)
-    standards: list[BenchmarkStandardItem] = Field(default_factory=list)
-    rubric_standard_groups: list[BenchmarkRubricStandardGroupItem] = Field(
-        default_factory=list
-    )
 
-    rubric_options: list[FilterOption] = Field(default_factory=list)
     department_options: list[FilterOption] = Field(default_factory=list)
-    agent_options: list[FilterOption] = Field(default_factory=list)
     date_range_earliest: str | None = None
     date_range_latest: str | None = None
 

@@ -20,9 +20,6 @@ from app.api.v4.artifacts.dashboard.types import (
 from app.api.v4.artifacts.types import FilterOption
 from app.api.v4.resources.profiles.get import get_profiles_internal
 from app.api.v4.resources.simulations.get import get_simulations_internal
-from app.api.v4.views.analytics.simulation_scenario_counts.get import (
-    get_simulation_scenario_counts_internal,
-)
 from app.infra.v4.activity.audit import audit_activity
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
@@ -78,21 +75,30 @@ async def get_dashboard_header(
         # 3. Collect simulation IDs from profile facts
         simulation_ids_set = {item.simulation_id for item in profile_facts_items}
 
-        # 4. Hydrate simulations + simulation_scenario_counts
+        # 4. Hydrate simulations + compute scenario counts
         async with pool.acquire() as c:
-            simulations, ssc = await asyncio.gather(
-                get_simulations_internal(
-                    conn=c,
-                    ids=list(simulation_ids_set),
-                    bypass_cache=bypass_cache,
-                ),
-                get_simulation_scenario_counts_internal(
-                    conn=c,
-                    simulation_ids=list(simulation_ids_set),
-                ),
+            simulations = await get_simulations_internal(
+                conn=c,
+                ids=list(simulation_ids_set),
+                bypass_cache=bypass_cache,
+            )
+            # Compute simulation → scenario count from scenarios_resource
+            scenario_count_rows = (
+                await c.fetch(
+                    """
+                    SELECT simulation_id, COUNT(*)::int AS scenario_count
+                    FROM scenarios_resource
+                    WHERE simulation_id = ANY($1::uuid[]) AND active = true
+                    GROUP BY simulation_id
+                    """,
+                    list(simulation_ids_set),
+                )
+                if simulation_ids_set
+                else []
             )
         simulation_scenario_counts = {
-            str(i.simulation_id): i.scenario_count for i in ssc.items
+            str(r["simulation_id"]): r["scenario_count"]
+            for r in scenario_count_rows
         }
 
         # 5. Compute header metrics
