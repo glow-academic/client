@@ -46098,6 +46098,8 @@ export interface components {
             message: string;
             /** Type */
             type?: string | null;
+            /** Setting Id */
+            setting_id?: string | null;
         };
         /** SettingNameSection */
         SettingNameSection: {

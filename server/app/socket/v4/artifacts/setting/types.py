@@ -42,6 +42,7 @@ class SettingGenerationCompleteEvent(GenerationCompleteEvent):
     """
 
     artifact_type: str = "setting"
+    setting_id: str | None = None
 
 
 class SettingGenerationProgressEvent(GenerationProgressEvent):

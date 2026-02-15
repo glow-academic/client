@@ -85,6 +85,9 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { GenerateRegenerateModal } from "@/components/common/forms/GenerateRegenerateModal";
+import { useSocket } from "@/contexts/socket-context";
+import { useGenerationModal } from "@/hooks/use-generation-modal";
 import { useProfile } from "@/contexts/profile-context";
 import { cn } from "@/lib/utils";
 import { ICON_MAP } from "@/utils/icons";
@@ -375,12 +378,41 @@ export default function Staff({
   processCSVAction,
   bulkCreateOrUpdateStaffAction,
 }: ProfilesProps) {
+  const { socket, isConnected } = useSocket();
   const router = useRouter();
   const {
     profile,
     roleResources,
   } = useProfile();
   const [isRefreshing, setIsRefreshing] = useState(false);
+
+  // Generation modal via shared hook
+  type ProfileResourceType = "names" | "flags" | "request_limits" | "departments" | "emails" | "cohorts";
+  const { handleOpenStepCardModal, modalProps } = useGenerationModal<ProfileResourceType>({
+    stepResources: {
+      all: ["names", "flags", "request_limits", "departments", "emails", "cohorts"],
+    },
+    resourceLabels: {
+      names: "Names",
+      flags: "Configuration",
+      request_limits: "Request Limits",
+      departments: "Departments",
+      emails: "Emails",
+      cohorts: "Cohorts",
+    },
+    canRegenerate: () => true,
+    onGenerate: (selectedResources, instructions) => {
+      if (!socket || !isConnected) return;
+      socket.emit("profile_generate", {
+        resource_types: selectedResources,
+        user_instructions: instructions?.trim() ? [instructions.trim()] : null,
+        staff_id: null,
+        save: true,
+      });
+      toast.success("Generation started for new profile");
+    },
+    isGenerating: () => false,
+  });
 
   // Selection state
   const [selectedStaffIds, setSelectedStaffIds] = useState<string[]>([]);
@@ -2468,6 +2500,7 @@ export default function Staff({
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
+        <GenerateRegenerateModal {...modalProps} />
       </div>
     </TooltipProvider>
   );

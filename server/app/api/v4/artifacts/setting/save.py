@@ -2,6 +2,7 @@
 Unified endpoint that handles both create (setting_id = NULL) and update (setting_id provided).
 """
 
+import uuid as uuid_mod
 from typing import Annotated, Any, cast
 from uuid import UUID
 
@@ -12,6 +13,8 @@ from app.api.v4.artifacts.setting.permissions import compute_can_edit
 from app.api.v4.artifacts.setting.types import (
     SaveSettingApiRequest,
     SaveSettingApiResponse,
+    SettingMultiResourceAction,
+    SettingResourceAction,
     SaveSettingSqlParams,
     SaveSettingSqlRow,
 )
@@ -25,7 +28,10 @@ from app.sql.types import (
     load_sql_query,
 )
 from app.utils.cache.invalidate_tags import invalidate_tags
+from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import execute_sql_typed
+
+logger = get_logger(__name__)
 
 # SQL paths
 ACCESS_CHECK_SQL_PATH = (
@@ -35,6 +41,72 @@ SQL_PATH = "app/sql/v4/queries/settings/save_setting_complete.sql"
 
 
 router = APIRouter()
+
+
+async def save_setting_internal(
+    conn: asyncpg.Connection,
+    profile_id: uuid_mod.UUID,
+    group_id: uuid_mod.UUID,
+    resource_actions: dict[str, Any],
+    setting_id: uuid_mod.UUID | None = None,
+) -> uuid_mod.UUID | None:
+    """Save a setting from resource actions dict (used by generation complete handler).
+
+    Builds SaveSettingSqlParams from a flat resource_actions dict, executes the
+    save SQL in a transaction, and invalidates cache.
+
+    Returns the setting_id on success, None on failure.
+    """
+    try:
+
+        def _single(key: str) -> SettingResourceAction:
+            val = resource_actions.get(key, {})
+            if isinstance(val, dict):
+                return SettingResourceAction(
+                    resource_id=val.get("resource_id"),
+                )
+            return SettingResourceAction()
+
+        def _multi(key: str) -> SettingMultiResourceAction:
+            val = resource_actions.get(key, {})
+            if isinstance(val, dict):
+                return SettingMultiResourceAction(
+                    resource_ids=val.get("resource_ids"),
+                )
+            return SettingMultiResourceAction()
+
+        params = SaveSettingSqlParams(
+            profile_id=profile_id,
+            input_setting_id=setting_id,
+            group_id=group_id,
+            names=_single("names"),
+            descriptions=_single("descriptions"),
+            flags=_single("flags"),
+            colors=_multi("colors"),
+            departments=_multi("departments"),
+            profiles=_multi("profiles"),
+            auths=_multi("auths"),
+            provider_keys=_multi("provider_keys"),
+            auth_item_keys=_multi("auth_item_keys"),
+            roles=_multi("roles"),
+            role_routes=_multi("role_routes"),
+        )
+
+        async with conn.transaction():
+            result = cast(
+                SaveSettingSqlRow,
+                await execute_sql_typed(conn, SQL_PATH, params=params),
+            )
+
+            if not result or not result.setting_id:
+                return None
+
+        await invalidate_tags(["settings"])
+        return result.setting_id
+
+    except Exception as e:
+        logger.exception(f"save_setting_internal failed: {e}")
+        return None
 
 
 @router.post(
