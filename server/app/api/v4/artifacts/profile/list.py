@@ -1,7 +1,7 @@
 """Staff list endpoint - resource-first pattern with Python permission computation.
 
 Two-pass architecture:
-1. SQL returns raw data with target_is_self and total_cohort_links
+1. SQL returns raw data with target_is_self and active_cohort_count
 2. Python computes permissions (can_edit, can_delete, can_duplicate) via role hierarchy
 
 Filter option names hydrated from cached *_internal() functions.
@@ -141,7 +141,7 @@ async def get_profile_list(
         for s in result.staff or []:
             target_is_self = getattr(s, "target_is_self", False) or False
             target_role = getattr(s, "role", None)
-            total_cohort_links = int(getattr(s, "total_cohort_links", 0) or 0)
+            active_cohort_count = int(getattr(s, "active_cohort_count", 0) or 0)
 
             can_edit_val = compute_can_edit(
                 user_role=user_role,
@@ -153,7 +153,7 @@ async def get_profile_list(
                 user_role=user_role,
                 target_is_self=target_is_self,
                 target_role=target_role,
-                total_cohort_links=total_cohort_links,
+                active_cohort_count=active_cohort_count,
             )
             can_duplicate_val = compute_can_duplicate(user_role)
 

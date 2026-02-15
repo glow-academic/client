@@ -32,15 +32,20 @@ def compute_can_edit(
     """Unified can_edit logic for both get and list views.
 
     Constraints:
-    1. Not linked to active scenarios
-    2. User has admin/instructional/superadmin role
+    1. Default documents (no departments) only editable by superadmin
+    2. Not linked to active scenarios
+    3. User has admin/superadmin role
     """
-    # Documents in use by scenarios cannot be edited
+    # Default documents can only be edited by superadmin
+    if not document_department_ids and user_role != "superadmin":
+        return False
+
+    # Documents in use by active scenarios cannot be edited
     if active_scenario_count > 0:
         return False
 
     # Role check
-    return user_role in ("admin", "instructional", "superadmin")
+    return user_role in ("admin", "superadmin")
 
 
 def compute_disabled_reason(
@@ -52,7 +57,14 @@ def compute_disabled_reason(
 
     Returns None if editing is allowed.
     """
-    # Documents in use by scenarios cannot be edited
+    # Default documents can only be edited by superadmin
+    if not document_department_ids and user_role != "superadmin":
+        return (
+            "This is a default document that cannot be edited. "
+            "You can view the details but cannot make changes."
+        )
+
+    # Documents in use by active scenarios cannot be edited
     if active_scenario_count > 0:
         return (
             "This document is currently in use by scenarios and cannot be edited. "
@@ -60,7 +72,7 @@ def compute_disabled_reason(
         )
 
     # Role check
-    if user_role not in ("admin", "instructional", "superadmin"):
+    if user_role not in ("admin", "superadmin"):
         return (
             "This document cannot be edited. "
             "You can view the details but cannot make changes."
@@ -186,21 +198,26 @@ def compute_uploads_required() -> bool:
 
 def compute_can_delete(
     user_role: str | None,
-    document_department_ids: list[str] | None,
-    total_scenario_links: int,
+    document_department_ids: list[str] | list[UUID] | None,
+    active_scenario_count: int,
 ) -> bool:
     """Compute can_delete permission.
 
     Business logic:
-    - Documents linked to ANY scenario (active or not) cannot be deleted
-    - Only admins, instructional, and superadmins can delete
+    - Default documents (no departments) only deletable by superadmin
+    - Documents linked to active scenarios cannot be deleted
+    - Only admins and superadmins can delete
     """
-    # Documents with any scenario links cannot be deleted
-    if total_scenario_links > 0:
+    # Default documents can only be deleted by superadmin
+    if not document_department_ids and user_role != "superadmin":
         return False
 
-    # Only admins, instructional, and superadmins can delete
-    return user_role in ("admin", "instructional", "superadmin")
+    # Documents with active scenario links cannot be deleted
+    if active_scenario_count > 0:
+        return False
+
+    # Only admins and superadmins can delete
+    return user_role in ("admin", "superadmin")
 
 
 def compute_can_duplicate(user_role: str | None) -> bool:
@@ -208,9 +225,8 @@ def compute_can_duplicate(user_role: str | None) -> bool:
 
     Business logic:
     - Anyone with edit permissions can duplicate
-    - Currently always true for admin/instructional/superadmin
     """
-    return user_role in ("admin", "instructional", "superadmin")
+    return user_role in ("admin", "superadmin")
 
 
 # ========== Save/Create Endpoint Permission Functions ==========
@@ -224,10 +240,10 @@ def compute_can_create(
 
     Business logic:
     - Non-superadmins cannot create general objects (empty department_ids)
-    - Only admin/instructional/superadmin can create documents
+    - Only admin/superadmin can create documents
     """
     # Role check first
-    if user_role not in ("admin", "instructional", "superadmin"):
+    if user_role not in ("admin", "superadmin"):
         return False
 
     # Non-superadmins cannot create general objects (no departments)
@@ -246,11 +262,16 @@ def compute_can_save(
     """Compute permission to save/update an existing document.
 
     Business logic:
+    - Default documents (no departments) only saveable by superadmin
     - Not linked to active scenarios
-    - User has admin/instructional/superadmin role
+    - User has admin/superadmin role
     """
     # Role check first
-    if user_role not in ("admin", "instructional", "superadmin"):
+    if user_role not in ("admin", "superadmin"):
+        return False
+
+    # Default documents can only be saved by superadmin
+    if not document_department_ids and user_role != "superadmin":
         return False
 
     # Documents in use by active scenarios cannot be edited
@@ -267,9 +288,9 @@ def compute_can_draft(user_role: str | None) -> bool:
     """Compute permission to create or update a draft.
 
     Business logic:
-    - Only admin/instructional/superadmin can create/edit drafts
+    - Only admin/superadmin can create/edit drafts
     """
-    return user_role in ("admin", "instructional", "superadmin")
+    return user_role in ("admin", "superadmin")
 
 
 # ========== Agent Scoring - Document-specific Constants ==========

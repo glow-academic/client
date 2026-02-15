@@ -303,7 +303,7 @@ class OpenAIRealtimeAdapter(BaseAudioAdapter):
                     event_type
                     == "conversation.item.input_audio_transcription.completed"
                 ):
-                    # User speech transcribed
+                    # User speech transcribed — this is the final transcript
                     transcript = event.get("transcript", "")
                     item_id = event.get(
                         "item_id", current_user_item_id or f"user-{group_id}"
@@ -311,6 +311,16 @@ class OpenAIRealtimeAdapter(BaseAudioAdapter):
 
                     await internal_sio.emit(
                         "generate_user_speech_delta",
+                        {
+                            "group_id": group_id,
+                            "item_id": item_id,
+                            "transcript": transcript,
+                        },
+                    )
+
+                    # Emit speech complete so the user message gets finalized in DB
+                    await internal_sio.emit(
+                        "generate_user_speech_complete",
                         {
                             "group_id": group_id,
                             "item_id": item_id,

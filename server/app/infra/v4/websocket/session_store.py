@@ -1,6 +1,7 @@
 """Session store for audio generation - tracks queues and WebSocket connections."""
 
 import asyncio
+import time
 from typing import Any
 
 # Global session store: sid or group_id -> session data
@@ -19,8 +20,9 @@ class AudioSession:
         self.sid = sid
         self.group_id = group_id
         self.chat_id = chat_id  # For mapping back to client-facing ID
-        self.inbound_queue: asyncio.Queue[dict[str, Any]] = asyncio.Queue()
+        self.inbound_queue: asyncio.Queue[dict[str, Any]] = asyncio.Queue(maxsize=500)
         self.outbound_queue: asyncio.Queue[dict[str, Any]] = asyncio.Queue()
+        self.last_activity: float = time.monotonic()
         self.muted = False
         self.oa_ws_connection: Any | None = None  # OpenAI WebSocket connection
         self.item_id_to_upload_id: dict[str, str] = {}  # item_id -> upload_id mapping
@@ -66,3 +68,17 @@ def get_session_by_sid(sid: str) -> AudioSession | None:
 def get_session_by_group_id(group_id: str) -> AudioSession | None:
     """Get session by group ID."""
     return get_session(group_id)
+
+
+def get_stale_sessions(timeout: float = 300.0) -> list[AudioSession]:
+    """Return sessions inactive for longer than timeout seconds (default 5 min)."""
+    now = time.monotonic()
+    seen: set[str] = set()
+    stale: list[AudioSession] = []
+    for data in _session_store.values():
+        session = data.get("session")
+        if session and session.group_id not in seen:
+            seen.add(session.group_id)
+            if (now - session.last_activity) > timeout:
+                stale.append(session)
+    return stale

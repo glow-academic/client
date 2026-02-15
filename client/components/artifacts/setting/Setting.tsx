@@ -197,51 +197,59 @@ function SettingComponent({
     if (!settingData) return null;
     return {
       group_id: settingData.group_id,
-      name_resource: settingData.name_resource,
-      show_name: settingData.show_name,
-      name_suggestions: settingData.name_suggestions,
-      names: settingData.names,
-      name_required: settingData.name_required,
-      name_agent_id: settingData.name_agent_id,
-      description_resource: settingData.description_resource,
-      show_description: settingData.show_description,
-      description_suggestions: settingData.description_suggestions,
-      description_required: settingData.description_required,
-      description_agent_id: settingData.description_agent_id,
-      descriptions: settingData.descriptions,
-      department_resources: settingData.department_resources,
-      show_departments: settingData.show_departments,
-      department_suggestions: settingData.department_suggestions,
-      departments_required: settingData.departments_required,
-      departments_agent_id: settingData.departments_agent_id,
-      departments: settingData.departments,
-      department_ids: settingData.department_ids,
-      profile_resources: settingData.profile_resources,
-      show_profiles: settingData.show_profiles,
-      profile_suggestions: settingData.profile_suggestions,
-      profiles_required: settingData.profiles_required,
-      profiles_agent_id: settingData.profiles_agent_id,
-      profiles: settingData.profiles,
-      profile_ids: settingData.profile_ids,
-      flag_resource: settingData.flag_resource,
-      show_flag: settingData.show_flag,
-      flag_required: settingData.flag_required,
-      flag_agent_id: settingData.flag_agent_id,
-      color_resources: settingData.color_resources,
-      show_colors: settingData.show_colors,
-      color_suggestions: settingData.color_suggestions,
-      colors_required: settingData.colors_required,
-      colors_agent_id: settingData.colors_agent_id,
-      colors: settingData.colors,
-      color_ids: settingData.color_ids,
-      auth_resources: settingData.auth_resources,
-      show_auths: settingData.show_auths,
-      auth_suggestions: settingData.auth_suggestions,
-      auths_required: settingData.auths_required,
-      auths_agent_id: settingData.auths_agent_id,
-      auths: settingData.auths,
-      auth_ids: settingData.auth_ids,
-      provider_key_ids: settingData.provider_key_ids,
+      // Names (single-select section)
+      name_resource: settingData.names?.resource ?? null,
+      show_name: settingData.names?.show ?? true,
+      name_suggestions: settingData.names?.suggestions ?? [],
+      names: settingData.names?.resources ?? [],
+      name_required: settingData.names?.required ?? false,
+      name_agent_id: settingData.resource_agent_ids?.names ?? null,
+      // Descriptions (single-select section)
+      description_resource: settingData.descriptions?.resource ?? null,
+      show_description: settingData.descriptions?.show ?? true,
+      description_suggestions: settingData.descriptions?.suggestions ?? [],
+      description_required: settingData.descriptions?.required ?? false,
+      description_agent_id: settingData.resource_agent_ids?.descriptions ?? null,
+      descriptions: settingData.descriptions?.resources ?? [],
+      // Departments (multi-select section)
+      department_resources: settingData.departments?.current ?? [],
+      show_departments: settingData.departments?.show ?? false,
+      department_suggestions: settingData.departments?.suggestions ?? [],
+      departments_required: settingData.departments?.required ?? false,
+      departments_agent_id: settingData.resource_agent_ids?.departments ?? null,
+      departments: settingData.departments?.resources ?? [],
+      department_ids: (settingData.departments?.current ?? []).map((d: { id?: string | null }) => d.id).filter(Boolean),
+      // Profiles (multi-select section)
+      profile_resources: settingData.profiles?.current ?? [],
+      show_profiles: settingData.profiles?.show ?? false,
+      profile_suggestions: settingData.profiles?.suggestions ?? [],
+      profiles_required: settingData.profiles?.required ?? false,
+      profiles_agent_id: settingData.resource_agent_ids?.profiles ?? null,
+      profiles: settingData.profiles?.resources ?? [],
+      profile_ids: (settingData.profiles?.current ?? []).map((p: { id?: string | null }) => p.id).filter(Boolean),
+      // Flags (single-select section)
+      flag_resource: settingData.flags?.current ?? null,
+      show_flag: settingData.flags?.show ?? false,
+      flag_required: settingData.flags?.required ?? false,
+      flag_agent_id: settingData.resource_agent_ids?.flags ?? null,
+      // Colors (multi-select section)
+      color_resources: settingData.colors?.current ?? [],
+      show_colors: settingData.colors?.show ?? false,
+      color_suggestions: settingData.colors?.suggestions ?? [],
+      colors_required: settingData.colors?.required ?? false,
+      colors_agent_id: settingData.resource_agent_ids?.colors ?? null,
+      colors: settingData.colors?.resources ?? [],
+      color_ids: (settingData.colors?.current ?? []).map((c: { id?: string | null }) => c.id).filter(Boolean),
+      // Auths (multi-select section)
+      auth_resources: settingData.auths?.current ?? [],
+      show_auths: settingData.auths?.show ?? false,
+      auth_suggestions: settingData.auths?.suggestions ?? [],
+      auths_required: settingData.auths?.required ?? false,
+      auths_agent_id: settingData.resource_agent_ids?.auths ?? null,
+      auths: settingData.auths?.resources ?? [],
+      auth_ids: (settingData.auths?.current ?? []).map((a: { id?: string | null }) => a.id).filter(Boolean),
+      // Provider keys (multi-select section)
+      provider_key_ids: (settingData.provider_keys?.current ?? []).map((pk: { id?: string | null }) => pk.id).filter(Boolean),
       providers:
         ((settingData as Record<string, unknown>)["providers"] as
           | Array<{
@@ -251,124 +259,98 @@ function SettingComponent({
             }>
           | null
           | undefined) ?? [],
-      provider_key_resources:
-        ((settingData as Record<string, unknown>)["provider_key_resources"] as
-          | Array<{
-              id?: string | null;
-              provider_id?: string | null;
-              key_id?: string | null;
-              provider_name?: string | null;
-              key_name?: string | null;
-              key_description?: string | null;
-              generated?: boolean | null;
-            }>
-          | null
-          | undefined) ?? [],
-      key_resources: settingData.key_resources,
-      show_keys: settingData.show_keys,
-      key_suggestions: settingData.key_suggestions,
-      keys_required: settingData.keys_required,
-      keys_agent_id: settingData.keys_agent_id,
-      keys: settingData.keys,
-      key_ids: settingData.key_ids,
-      auth_item_key_resources:
-        ((settingData as Record<string, unknown>)["auth_item_key_resources"] as
-          | Array<{
-              id?: string | null;
-              auth_id?: string | null;
-              item_id?: string | null;
-              key_id?: string | null;
-              auth_name?: string | null;
-              key_name?: string | null;
-              key_description?: string | null;
-              generated?: boolean | null;
-            }>
-          | null
-          | undefined) ?? [],
-      role_ids: settingData.role_ids,
-      role_resources: settingData.role_resources,
-      show_roles: settingData.show_roles,
-      roles_required: settingData.roles_required,
-      roles: settingData.roles,
-      route_resources: settingData.route_resources,
-      show_routes: settingData.show_routes,
-      routes_required: settingData.routes_required,
-      routes: settingData.routes,
-      role_route_ids: settingData.role_route_ids,
-      role_route_resources: settingData.role_route_resources,
-      show_role_routes: settingData.show_role_routes,
-      role_routes: settingData.role_routes,
+      provider_key_resources: settingData.provider_keys?.current ?? [],
+      // Auth item keys (multi-select section)
+      auth_item_key_resources: settingData.auth_item_keys?.current ?? [],
+      // Keys - not a section in the API, check if it exists
+      key_resources: ((settingData as Record<string, unknown>)["key_resources"] as unknown[]) ?? [],
+      show_keys: ((settingData as Record<string, unknown>)["show_keys"] as boolean) ?? false,
+      key_suggestions: ((settingData as Record<string, unknown>)["key_suggestions"] as string[]) ?? [],
+      keys_required: ((settingData as Record<string, unknown>)["keys_required"] as boolean) ?? false,
+      keys_agent_id: settingData.resource_agent_ids?.keys ?? null,
+      keys: ((settingData as Record<string, unknown>)["keys"] as unknown[]) ?? [],
+      key_ids: ((settingData as Record<string, unknown>)["key_ids"] as string[]) ?? [],
+      // Roles (multi-select section)
+      role_ids: (settingData.roles?.current ?? []).map((r: { id?: string | null }) => r.id).filter(Boolean),
+      role_resources: settingData.roles?.current ?? [],
+      show_roles: settingData.roles?.show ?? false,
+      roles_required: settingData.roles?.required ?? false,
+      roles: settingData.roles?.resources ?? [],
+      // Role routes (multi-select section)
+      route_resources: settingData.role_routes?.current ?? [],
+      show_routes: settingData.role_routes?.show ?? false,
+      routes_required: settingData.role_routes?.required ?? false,
+      routes: settingData.role_routes?.resources ?? [],
+      role_route_ids: (settingData.role_routes?.current ?? []).map((rr: { id?: string | null }) => rr.id).filter(Boolean),
+      role_route_resources: settingData.role_routes?.current ?? [],
+      show_role_routes: settingData.role_routes?.show ?? false,
+      role_routes: settingData.role_routes?.resources ?? [],
     };
     // Intentionally depend on individual fields, not whole settingData object
     // to prevent recreation when only object reference changes
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     settingData?.group_id,
-    settingData?.name_resource,
-    settingData?.show_name,
-    settingData?.name_suggestions,
-    settingData?.names,
-    settingData?.name_required,
-    settingData?.name_agent_id,
-    settingData?.description_resource,
-    settingData?.show_description,
-    settingData?.description_suggestions,
-    settingData?.description_required,
-    settingData?.description_agent_id,
-    settingData?.descriptions,
-    settingData?.department_resources,
-    settingData?.show_departments,
-    settingData?.department_suggestions,
-    settingData?.departments_required,
-    settingData?.departments_agent_id,
-    settingData?.departments,
-    settingData?.department_ids,
-    settingData?.profile_resources,
-    settingData?.show_profiles,
-    settingData?.profile_suggestions,
-    settingData?.profiles_required,
-    settingData?.profiles_agent_id,
-    settingData?.profiles,
-    settingData?.profile_ids,
-    settingData?.flag_resource,
-    settingData?.show_flag,
-    settingData?.flag_required,
-    settingData?.flag_agent_id,
-    settingData?.color_resources,
-    settingData?.show_colors,
-    settingData?.color_suggestions,
-    settingData?.colors_required,
-    settingData?.colors_agent_id,
-    settingData?.colors,
-    settingData?.color_ids,
-    settingData?.auth_resources,
-    settingData?.show_auths,
-    settingData?.auth_suggestions,
-    settingData?.auths_required,
-    settingData?.auths_agent_id,
-    settingData?.auths,
-    settingData?.auth_ids,
-    settingData?.provider_key_ids,
-    settingData?.key_resources,
-    settingData?.show_keys,
-    settingData?.key_suggestions,
-    settingData?.keys_required,
-    settingData?.keys_agent_id,
-    settingData?.keys,
-    settingData?.key_ids,
-    settingData?.role_ids,
-    settingData?.role_resources,
-    settingData?.show_roles,
-    settingData?.roles_required,
-    settingData?.roles,
-    settingData?.route_resources,
-    settingData?.show_routes,
-    settingData?.routes_required,
-    settingData?.routes,
-    settingData?.role_route_ids,
-    settingData?.role_route_resources,
-    settingData?.show_role_routes,
-    settingData?.role_routes,
+    // Names section
+    settingData?.names?.resource,
+    settingData?.names?.show,
+    settingData?.names?.suggestions,
+    settingData?.names?.resources,
+    settingData?.names?.required,
+    settingData?.resource_agent_ids?.names,
+    settingData?.descriptions?.resource,
+    settingData?.descriptions?.show,
+    settingData?.descriptions?.suggestions,
+    settingData?.descriptions?.required,
+    settingData?.resource_agent_ids?.descriptions,
+    settingData?.descriptions?.resources,
+    // Departments section
+    settingData?.departments?.current,
+    settingData?.departments?.show,
+    settingData?.departments?.suggestions,
+    settingData?.departments?.required,
+    settingData?.departments?.resources,
+    settingData?.resource_agent_ids?.departments,
+    // Profiles section
+    settingData?.profiles?.current,
+    settingData?.profiles?.show,
+    settingData?.profiles?.suggestions,
+    settingData?.profiles?.required,
+    settingData?.profiles?.resources,
+    settingData?.resource_agent_ids?.profiles,
+    // Flags section
+    settingData?.flags?.current,
+    settingData?.flags?.show,
+    settingData?.flags?.required,
+    settingData?.resource_agent_ids?.flags,
+    // Colors section
+    settingData?.colors?.current,
+    settingData?.colors?.show,
+    settingData?.colors?.suggestions,
+    settingData?.colors?.required,
+    settingData?.colors?.resources,
+    settingData?.resource_agent_ids?.colors,
+    // Auths section
+    settingData?.auths?.current,
+    settingData?.auths?.show,
+    settingData?.auths?.suggestions,
+    settingData?.auths?.required,
+    settingData?.auths?.resources,
+    settingData?.resource_agent_ids?.auths,
+    // Provider keys section
+    settingData?.provider_keys?.current,
+    // Auth item keys section
+    settingData?.auth_item_keys?.current,
+    // Roles section
+    settingData?.roles?.current,
+    settingData?.roles?.show,
+    settingData?.roles?.required,
+    settingData?.roles?.resources,
+    // Role routes section
+    settingData?.role_routes?.current,
+    settingData?.role_routes?.show,
+    settingData?.role_routes?.required,
+    settingData?.role_routes?.resources,
   ]);
 
   // Helper to check if a resource type can be regenerated

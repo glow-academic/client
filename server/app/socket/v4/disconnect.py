@@ -84,6 +84,17 @@ async def disconnect(sid: str) -> None:
             # Error removing guest - Socket.IO handles logging
             pass
 
+    # Clean up any active voice session for this socket
+    try:
+        from app.infra.v4.websocket.attempt.audio_helpers import cleanup_voice_session
+        from app.infra.v4.websocket.session_store import get_session_by_sid
+
+        voice_session = get_session_by_sid(sid)
+        if voice_session:
+            await cleanup_voice_session(voice_session)
+    except Exception:
+        pass
+
     # Remove from all active connections using Redis
     chat_ids = await find_chats_by_socket(sid)
     for chat_id in chat_ids:

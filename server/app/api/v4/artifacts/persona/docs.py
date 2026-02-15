@@ -33,7 +33,6 @@ CONFIG = ArtifactDocsConfig(
         "compute_can_delete",
         "compute_can_duplicate",
         "compute_can_create",
-        "compute_can_save",
         "compute_can_draft",
         "has_access",
     ],

@@ -46,7 +46,6 @@ CREATE TYPE types.q_list_documents_v4_document AS (
     is_inactive boolean,
     num_scenarios int,
     active_scenario_count int,
-    total_scenario_links int,
     updated_at timestamptz
 );
 
@@ -97,13 +96,6 @@ document_active_scenario_links AS (
     WHERE sd.active = true
     GROUP BY sd.document_id
 ),
-document_all_scenario_links AS (
-    SELECT
-        sd.document_id,
-        COUNT(*) as total_scenario_links
-    FROM scenario_documents_junction sd
-    GROUP BY sd.document_id
-),
 document_scenarios AS (
     SELECT
         sd.document_id,
@@ -148,8 +140,7 @@ document_data AS (
         COALESCE(ds.scenario_ids, ARRAY[]::uuid[]) as scenario_ids,
         COALESCE(dfc.field_ids, ARRAY[]::uuid[]) as field_ids,
         COALESCE(duc.upload_ids, ARRAY[]::uuid[]) as upload_ids,
-        COALESCE(dasl.active_scenario_count, 0) as active_scenario_count,
-        COALESCE(dasl_all.total_scenario_links, 0) as total_scenario_links
+        COALESCE(dasl.active_scenario_count, 0) as active_scenario_count
     FROM document_artifact d
     LEFT JOIN document_departments_junction dd ON dd.document_id = d.id AND dd.active = true
     LEFT JOIN document_departments_data ddd ON ddd.document_id = d.id
@@ -157,12 +148,11 @@ document_data AS (
     LEFT JOIN document_fields_cte dfc ON dfc.document_id = d.id
     LEFT JOIN document_uploads_cte duc ON duc.document_id = d.id
     LEFT JOIN document_active_scenario_links dasl ON dasl.document_id = d.id
-    LEFT JOIN document_all_scenario_links dasl_all ON dasl_all.document_id = d.id
     GROUP BY d.id,
         (SELECT n.name FROM document_names_junction dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.document_id = d.id LIMIT 1),
         EXISTS (SELECT 1 FROM document_flags_junction df JOIN flags_resource f ON df.flag_id = f.id WHERE df.document_id = d.id AND f.name = 'document_active' AND df.value = TRUE),
         d.updated_at,
-        ddd.department_ids, ds.scenario_ids, dfc.field_ids, duc.upload_ids, dasl.active_scenario_count, dasl_all.total_scenario_links
+        ddd.department_ids, ds.scenario_ids, dfc.field_ids, duc.upload_ids, dasl.active_scenario_count
     HAVING
         COUNT(dd.document_id) FILTER (WHERE dd.department_id IN (SELECT department_id FROM user_departments)) > 0
         OR NOT EXISTS (SELECT 1 FROM document_departments_junction dd2 WHERE dd2.document_id = d.id AND dd2.active = true)
@@ -231,7 +221,6 @@ SELECT
              pd.department_ids, pd.scenario_ids, pd.field_ids, pd.upload_ids,
              NOT pd.active, COALESCE(array_length(pd.scenario_ids, 1), 0),
              pd.active_scenario_count,
-             pd.total_scenario_links,
              pd.updated_at
             )::types.q_list_documents_v4_document
             ORDER BY pd.updated_at DESC NULLS LAST

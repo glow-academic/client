@@ -100,6 +100,8 @@ async def attempt_audio_start(sid: str, data: dict[str, Any]) -> None:
             )
 
         if not context_row or not context_row.chat_exists:
+            _voice_sessions.pop(group_id, None)
+            remove_session(group_id)
             await sio.emit(
                 "attempt_error",
                 AttemptUnifiedErrorEvent(
@@ -112,12 +114,38 @@ async def attempt_audio_start(sid: str, data: dict[str, Any]) -> None:
             return
 
         if context_row.chat_is_completed:
+            _voice_sessions.pop(group_id, None)
+            remove_session(group_id)
             await sio.emit(
                 "attempt_error",
                 AttemptUnifiedErrorEvent(
                     group_id=group_id,
                     type="audio",
                     message="Chat is already completed",
+                ).model_dump(mode="json"),
+                room=sid,
+            )
+            return
+
+        # Rate limit validation (mirrors text flow in message.py)
+        requests_per_day = context_row.requests_per_day
+        runs_today = context_row.runs_today or 0
+        if requests_per_day is not None and runs_today >= requests_per_day:
+            _voice_sessions.pop(group_id, None)
+            remove_session(group_id)
+            error_msg = (
+                f"Rate limit exceeded ({runs_today}/{requests_per_day} requests today)"
+            )
+            logger.error(
+                f"Audio start rate limit exceeded - "
+                f"profile_id={profile_id}, chat_id={chat_id}"
+            )
+            await sio.emit(
+                "attempt_error",
+                AttemptUnifiedErrorEvent(
+                    group_id=group_id,
+                    type="audio",
+                    message=error_msg,
                 ).model_dump(mode="json"),
                 room=sid,
             )

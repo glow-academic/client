@@ -9,7 +9,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 from app.api.v4.artifacts.scenario.permissions import (
     compute_can_create,
-    compute_can_save,
+    compute_can_edit,
 )
 from app.api.v4.artifacts.scenario.types import (
     SaveScenarioApiRequest,
@@ -112,11 +112,11 @@ async def save_scenario(
                     status_code=404,
                     detail=f"Scenario {request.input_scenario_id} not found",
                 )
-            if not compute_can_save(
-                user_role,
-                user_department_ids,
-                getattr(access_result, "scenario_department_ids", None) or [],
-                getattr(access_result, "active_simulation_count", 0),
+            if not compute_can_edit(
+                user_role=user_role,
+                scenario_department_ids=getattr(access_result, "scenario_department_ids", None) or [],
+                active_simulation_count=getattr(access_result, "active_simulation_count", 0),
+                user_department_ids=user_department_ids,
             ):
                 raise HTTPException(
                     status_code=403,

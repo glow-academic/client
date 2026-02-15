@@ -133,11 +133,12 @@ async def get_field_list(
             can_edit_val = compute_can_edit(
                 user_role=user_role,
                 field_department_ids=field.department_ids,
+                active_parameter_count=field.active_parameter_count or 0,
             )
             can_delete_val = compute_can_delete(
                 user_role=user_role,
                 field_department_ids=field.department_ids,
-                total_parameter_links=field.total_parameter_links or 0,
+                active_parameter_count=field.active_parameter_count or 0,
             )
             can_duplicate_val = compute_can_duplicate(user_role)
 

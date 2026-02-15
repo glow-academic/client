@@ -381,13 +381,15 @@ async def get_scenario_internal(
     can_edit = compute_can_edit(
         user_role=user_role,
         scenario_department_ids=scenario_department_ids,
-        usage_count=active_simulation_count,
+        active_simulation_count=active_simulation_count,
+        user_department_ids=user_department_ids,
     )
 
     disabled_reason = compute_disabled_reason(
         user_role=user_role,
         scenario_department_ids=scenario_department_ids,
-        usage_count=active_simulation_count,
+        active_simulation_count=active_simulation_count,
+        user_department_ids=user_department_ids,
     )
 
     # === PASS 2: Parallel Resource Fetching ===

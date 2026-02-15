@@ -153,7 +153,7 @@ async def get_document_list(
             can_delete_val = compute_can_delete(
                 user_role=user_role,
                 document_department_ids=doc.department_ids,
-                total_scenario_links=doc.total_scenario_links or 0,
+                active_scenario_count=doc.active_scenario_count or 0,
             )
             can_duplicate_val = compute_can_duplicate(user_role)
 

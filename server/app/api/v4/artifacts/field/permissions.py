@@ -27,15 +27,21 @@ __all__ = [
 def compute_can_edit(
     user_role: str | None,
     field_department_ids: list[str] | list[UUID] | None,
+    active_parameter_count: int = 0,
 ) -> bool:
     """Unified can_edit logic for both get and list views.
 
     Constraints:
     1. Not a default field (unless superadmin)
-    2. User has admin/superadmin role
+    2. Not linked to active parameters
+    3. User has admin/superadmin role
     """
     # Default fields can only be edited by superadmin
     if not field_department_ids and user_role != "superadmin":
+        return False
+
+    # Fields in use by active parameters cannot be edited
+    if active_parameter_count > 0:
         return False
 
     # Role check
@@ -45,6 +51,7 @@ def compute_can_edit(
 def compute_disabled_reason(
     user_role: str | None,
     field_department_ids: list[str] | list[UUID] | None,
+    active_parameter_count: int = 0,
 ) -> str | None:
     """Compute the reason why editing is disabled, if any.
 
@@ -54,6 +61,13 @@ def compute_disabled_reason(
     if not field_department_ids and user_role != "superadmin":
         return (
             "This is a default field that cannot be edited. "
+            "You can view the details but cannot make changes."
+        )
+
+    # Fields in use by active parameters cannot be edited
+    if active_parameter_count > 0:
+        return (
+            "This field is currently in use by parameters and cannot be edited. "
             "You can view the details but cannot make changes."
         )
 
@@ -150,22 +164,22 @@ def compute_conditional_parameters_required() -> bool:
 
 def compute_can_delete(
     user_role: str | None,
-    field_department_ids: list[str] | None,
-    total_parameter_links: int,
+    field_department_ids: list[str] | list[UUID] | None,
+    active_parameter_count: int,
 ) -> bool:
     """Compute can_delete permission.
 
     Business logic:
     - Default fields (no departments) cannot be deleted except by superadmin
-    - Fields linked to parameters cannot be deleted
+    - Fields linked to active parameters cannot be deleted
     - Only admins and superadmins can delete
     """
     # Default fields can only be deleted by superadmin
     if not field_department_ids and user_role != "superadmin":
         return False
 
-    # Fields with parameter links cannot be deleted
-    if total_parameter_links > 0:
+    # Fields with active parameter links cannot be deleted
+    if active_parameter_count > 0:
         return False
 
     # Only admins and superadmins can delete

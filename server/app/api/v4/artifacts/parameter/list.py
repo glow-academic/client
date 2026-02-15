@@ -150,7 +150,7 @@ async def get_parameter_list(
             can_delete_val = compute_can_delete(
                 user_role=user_role,
                 parameter_department_ids=parameter.department_ids,
-                total_scenario_links=parameter.total_scenario_links or 0,
+                active_scenario_count=parameter.active_scenario_count or 0,
             )
             can_duplicate_val = compute_can_duplicate(user_role)
 

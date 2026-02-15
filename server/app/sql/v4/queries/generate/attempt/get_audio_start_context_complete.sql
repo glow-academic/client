@@ -1,5 +1,5 @@
 -- Lightweight chat → attempt resolver for audio/start.py
--- Only resolves chat_id to attempt_id and validates chat exists + active.
+-- Resolves chat_id to attempt_id, validates chat exists + active, and checks rate limits.
 -- Config resources (provider, model, agent) come from get_attempt_websocket().
 
 -- 1) Drop function first
@@ -26,12 +26,33 @@ RETURNS TABLE (
     chat_exists boolean,
     chat_is_completed boolean,
     attempt_id uuid,
-    attempt_is_active boolean
+    attempt_is_active boolean,
+    requests_per_day integer,
+    runs_today bigint
 )
 LANGUAGE sql
 STABLE
 AS $$
-WITH chat_data AS (
+WITH params AS (
+    SELECT
+        p_profile_id AS profile_id,
+        p_chat_id AS chat_id
+),
+rate_limit_data AS (
+    SELECT rl.requests_per_day
+    FROM params p
+    JOIN profile_artifact prof ON prof.id = p.profile_id
+    LEFT JOIN profile_request_limits_junction prl ON prl.profile_id = prof.id AND prl.active = true
+    LEFT JOIN request_limits_resource rl ON prl.request_limit_id = rl.id
+),
+runs_today_data AS (
+    SELECT COUNT(*)::bigint as runs_today
+    FROM params p
+    JOIN profiles_runs_connection prj ON prj.profiles_id = p.profile_id
+    JOIN runs_entry mr ON mr.id = prj.run_id
+    WHERE mr.created_at >= date_trunc('day', NOW() AT TIME ZONE 'UTC') AT TIME ZONE 'UTC'
+),
+chat_data AS (
     SELECT
         c.id as chat_id,
         c.attempt_id,
@@ -55,7 +76,12 @@ SELECT
     COALESCE(cd.chat_id IS NOT NULL, FALSE) as chat_exists,
     COALESCE(cd.chat_is_completed, FALSE) as chat_is_completed,
     atd.attempt_id,
-    COALESCE(atd.attempt_is_active, FALSE) as attempt_is_active
-FROM chat_data cd
+    COALESCE(atd.attempt_is_active, FALSE) as attempt_is_active,
+    rld.requests_per_day,
+    COALESCE(rtd.runs_today, 0)
+FROM params p
+LEFT JOIN rate_limit_data rld ON TRUE
+LEFT JOIN runs_today_data rtd ON TRUE
+LEFT JOIN chat_data cd ON TRUE
 LEFT JOIN attempt_data atd ON TRUE
 $$;

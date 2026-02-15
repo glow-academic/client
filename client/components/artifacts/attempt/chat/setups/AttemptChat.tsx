@@ -226,29 +226,38 @@ export function AttemptChat({
       // Clean up voice optimistic messages matching this user message
       setOptimisticMessages((prev) => {
         const newMap = new Map(prev);
-        const normalizedContent = data.content.trim().toLowerCase();
         let matchedOptimisticId: string | null = null;
 
-        for (const [tempId, optMsg] of newMap.entries()) {
-          if (
-            optMsg.type === "query" &&
-            (tempId.startsWith("optimistic-user-") ||
-              tempId.startsWith("optimistic-user-voice-"))
-          ) {
-            const optContent = optMsg.contents?.[0]?.content || "";
-            const optNormalized = optContent.trim().toLowerCase();
-            if (optNormalized === normalizedContent) {
-              matchedOptimisticId = tempId;
-              break;
-            }
+        // Primary: item_id direct lookup (reliable, no content matching needed)
+        if (data.item_id) {
+          matchedOptimisticId = itemIdToOptimisticIdRef.current.get(data.item_id) ?? null;
+        }
+
+        // Fallback: content matching for backwards compat (text flow or missing item_id)
+        if (!matchedOptimisticId) {
+          const normalizedContent = data.content.trim().toLowerCase();
+
+          for (const [tempId, optMsg] of newMap.entries()) {
             if (
-              optNormalized.length > 5 &&
-              normalizedContent.length > 5 &&
-              (optNormalized.includes(normalizedContent) ||
-                normalizedContent.includes(optNormalized))
+              optMsg.type === "query" &&
+              (tempId.startsWith("optimistic-user-") ||
+                tempId.startsWith("optimistic-user-voice-"))
             ) {
-              if (!matchedOptimisticId || tempId.startsWith("optimistic-user-voice-")) {
+              const optContent = optMsg.contents?.[0]?.content || "";
+              const optNormalized = optContent.trim().toLowerCase();
+              if (optNormalized === normalizedContent) {
                 matchedOptimisticId = tempId;
+                break;
+              }
+              if (
+                optNormalized.length > 5 &&
+                normalizedContent.length > 5 &&
+                (optNormalized.includes(normalizedContent) ||
+                  normalizedContent.includes(optNormalized))
+              ) {
+                if (!matchedOptimisticId || tempId.startsWith("optimistic-user-voice-")) {
+                  matchedOptimisticId = tempId;
+                }
               }
             }
           }

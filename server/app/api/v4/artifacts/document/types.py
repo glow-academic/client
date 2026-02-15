@@ -185,7 +185,6 @@ class ListDocumentApiDocument(BaseModel):
     is_inactive: bool | None = None
     num_scenarios: int | None = None
     active_scenario_count: int | None = None
-    total_scenario_links: int | None = None
     upload_id: UUID | None = None
     # Computed in Python
     can_edit: bool | None = None

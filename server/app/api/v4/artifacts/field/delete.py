@@ -101,7 +101,7 @@ async def delete_field(
         can_delete = compute_can_delete(
             user_role=user_role,
             field_department_ids=access_result.field_department_ids,
-            total_parameter_links=access_result.total_parameter_links or 0,
+            active_parameter_count=access_result.active_parameter_count or 0,
         )
 
         if not can_delete:

@@ -600,7 +600,35 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
         # Note: Socket event types are now extracted from OpenAPI schema via TypeScript type introspection
         # No need to generate ws.json - socket events are already in openapi.json via FastAPI routers
 
+        # Start voice session reaper (cleans up idle sessions every 60s)
+        async def _reap_stale_voice_sessions() -> None:
+            from app.infra.v4.websocket.attempt.audio_helpers import (
+                cleanup_voice_session,
+            )
+            from app.infra.v4.websocket.session_store import get_stale_sessions
+
+            while True:
+                try:
+                    await asyncio.sleep(60)
+                    stale = get_stale_sessions(timeout=300.0)
+                    for session in stale:
+                        logger.info(
+                            f"Reaping stale voice session - group_id={session.group_id}"
+                        )
+                        await cleanup_voice_session(session)
+                except asyncio.CancelledError:
+                    break
+                except Exception as e:
+                    logger.error(f"Voice session reaper error: {e}")
+
+        reaper_task = asyncio.create_task(_reap_stale_voice_sessions())
+
         yield
+
+        # Stop reaper
+        reaper_task.cancel()
+        with contextlib.suppress(asyncio.CancelledError):
+            await reaper_task
 
         # Clean up database pool
         await close_db_pool()

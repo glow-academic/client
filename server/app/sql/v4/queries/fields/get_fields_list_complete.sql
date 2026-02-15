@@ -44,7 +44,7 @@ CREATE TYPE types.q_list_fields_v4_field AS (
     department_ids text[],
     parameter_ids text[],
     conditional_parameter_ids text[],
-    total_parameter_links bigint,
+    active_parameter_count bigint,
     is_inactive boolean,
     persona_ids uuid[]
 );
@@ -108,7 +108,7 @@ field_conditional_parameters_agg AS (
     SELECT
         fcpj.field_id,
         ARRAY_AGG(cpr.parameter_id::text ORDER BY (SELECT n.name FROM parameter_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.parameter_id = pr.id LIMIT 1)) as conditional_parameter_ids,
-        COUNT(*)::bigint as total_parameter_links
+        COUNT(*)::bigint as active_parameter_count
     FROM field_conditional_parameters_junction fcpj
     JOIN conditional_parameters_resource cpr ON cpr.id = fcpj.conditional_parameter_id
     JOIN parameters_resource pr ON pr.id = cpr.parameter_id
@@ -138,7 +138,7 @@ fields_data AS (
         COALESCE(fdd.department_ids, NULL) as department_ids,
         COALESCE(fpa.parameter_ids, ARRAY[]::text[]) as parameter_ids,
         COALESCE(fcpa.conditional_parameter_ids, ARRAY[]::text[]) as conditional_parameter_ids,
-        COALESCE(fcpa.total_parameter_links, 0)::bigint as total_parameter_links,
+        COALESCE(fcpa.active_parameter_count, 0)::bigint as active_parameter_count,
         NOT EXISTS (SELECT 1 FROM field_flags_junction ff JOIN flags_resource fl ON ff.flag_id = fl.id WHERE ff.field_id = f.id AND fl.name = 'field_active' AND ff.value = TRUE) as is_inactive,
         COALESCE(fpd.persona_ids, ARRAY[]::uuid[]) as persona_ids
     FROM params x
@@ -164,7 +164,7 @@ fields_data AS (
             AND fd.active = true
         )
     )
-    GROUP BY f.id, (SELECT n.name FROM field_names_junction fn JOIN names_resource n ON fn.name_id = n.id WHERE fn.field_id = f.id LIMIT 1), (SELECT d.description FROM field_descriptions_junction fd JOIN descriptions_resource d ON fd.description_id = d.id WHERE fd.field_id = f.id LIMIT 1), EXISTS (SELECT 1 FROM field_flags_junction ff JOIN flags_resource fl ON ff.flag_id = fl.id WHERE ff.field_id = f.id AND fl.name = 'field_active' AND ff.value = TRUE), f.created_at, f.updated_at, fdd.department_ids, fpa.parameter_ids, fcpa.conditional_parameter_ids, fcpa.total_parameter_links, up.role, fpd.persona_ids
+    GROUP BY f.id, (SELECT n.name FROM field_names_junction fn JOIN names_resource n ON fn.name_id = n.id WHERE fn.field_id = f.id LIMIT 1), (SELECT d.description FROM field_descriptions_junction fd JOIN descriptions_resource d ON fd.description_id = d.id WHERE fd.field_id = f.id LIMIT 1), EXISTS (SELECT 1 FROM field_flags_junction ff JOIN flags_resource fl ON ff.flag_id = fl.id WHERE ff.field_id = f.id AND fl.name = 'field_active' AND ff.value = TRUE), f.created_at, f.updated_at, fdd.department_ids, fpa.parameter_ids, fcpa.conditional_parameter_ids, fcpa.active_parameter_count, up.role, fpd.persona_ids
 ),
 -- Filter option IDs with counts (names hydrated in Python from cached *_internal() functions)
 all_parameter_ids AS (
@@ -201,7 +201,7 @@ SELECT
     -- Aggregate fields
     COALESCE(
         (SELECT ARRAY_AGG(
-            (fd.field_id, fd.name, fd.description, fd.active, fd.created_at, fd.updated_at, fd.department_ids, fd.parameter_ids, fd.conditional_parameter_ids, fd.total_parameter_links, fd.is_inactive, fd.persona_ids)::types.q_list_fields_v4_field
+            (fd.field_id, fd.name, fd.description, fd.active, fd.created_at, fd.updated_at, fd.department_ids, fd.parameter_ids, fd.conditional_parameter_ids, fd.active_parameter_count, fd.is_inactive, fd.persona_ids)::types.q_list_fields_v4_field
             ORDER BY fd.name
         ) FROM fields_data fd),
         '{}'::types.q_list_fields_v4_field[]

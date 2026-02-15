@@ -11,7 +11,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 from app.api.v4.artifacts.simulation.permissions import (
     compute_can_create,
-    compute_can_save,
+    compute_can_edit,
     has_access,
 )
 from app.api.v4.artifacts.simulation.types import (
@@ -143,11 +143,11 @@ async def save_simulation(
                     )
 
                 # Check save permission using Python
-                if not compute_can_save(
-                    user_role,
-                    user_department_ids,
-                    simulation_department_ids,
-                    cohort_usage_count,
+                if not compute_can_edit(
+                    user_role=user_role,
+                    simulation_department_ids=simulation_department_ids,
+                    cohort_usage_count=cohort_usage_count,
+                    user_department_ids=user_department_ids,
                 ):
                     if cohort_usage_count > 0 and user_role == "staff":
                         raise HTTPException(

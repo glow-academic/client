@@ -178,13 +178,15 @@ def compute_can_edit(
     user_role: str | None,
     scenario_department_ids: list[str] | list[UUID] | None,
     active_simulation_count: int,
+    user_department_ids: list[str] | list[UUID] | None = None,
 ) -> bool:
-    """Compute whether user can edit the scenario.
+    """Unified can_edit logic for get, list, and save views.
 
     Constraints:
     1. Not a default scenario (unless superadmin)
     2. Not linked to active simulations
     3. User has admin/instructional/superadmin role
+    4. Non-superadmins must belong to ALL of the scenario's departments
     """
     # Default scenarios can only be edited by superadmin
     if not scenario_department_ids and user_role != "superadmin":
@@ -195,13 +197,24 @@ def compute_can_edit(
         return False
 
     # Role check
-    return user_role in ("admin", "instructional", "superadmin")
+    if user_role not in ("admin", "instructional", "superadmin"):
+        return False
+
+    # Department subset check (when user_department_ids is available)
+    if user_department_ids is not None and user_role != "superadmin" and scenario_department_ids:
+        user_dept_set = {str(d) for d in user_department_ids}
+        scenario_dept_set = {str(d) for d in scenario_department_ids}
+        if not scenario_dept_set.issubset(user_dept_set):
+            return False
+
+    return True
 
 
 def compute_disabled_reason(
     user_role: str | None,
     scenario_department_ids: list[str] | list[UUID] | None,
     active_simulation_count: int,
+    user_department_ids: list[str] | list[UUID] | None = None,
 ) -> str | None:
     """Compute reason why editing is disabled.
 
@@ -227,6 +240,16 @@ def compute_disabled_reason(
             "This scenario cannot be edited. "
             "You can view the details but cannot make changes."
         )
+
+    # Department subset check
+    if user_department_ids is not None and user_role != "superadmin" and scenario_department_ids:
+        user_dept_set = {str(d) for d in user_department_ids}
+        scenario_dept_set = {str(d) for d in scenario_department_ids}
+        if not scenario_dept_set.issubset(user_dept_set):
+            return (
+                "You don't have access to all departments for this scenario. "
+                "You can view the details but cannot make changes."
+            )
 
     return None
 
@@ -291,44 +314,6 @@ def compute_can_create(
     # Non-superadmins cannot create general objects (no departments)
     if user_role != "superadmin" and not department_ids:
         return False
-
-    return True
-
-
-def compute_can_save(
-    user_role: str | None,
-    user_department_ids: list[str] | list[UUID] | None,
-    scenario_department_ids: list[str] | list[UUID] | None,
-    active_simulation_count: int,
-) -> bool:
-    """Compute permission to save/update an existing scenario.
-
-    Business logic:
-    - Not a default scenario (unless superadmin)
-    - Not linked to active simulations
-    - User has admin/instructional/superadmin role
-    - Non-superadmins must belong to ALL of the scenario's departments
-    """
-    # Role check first
-    if user_role not in ("admin", "instructional", "superadmin"):
-        return False
-
-    # Default scenarios can only be edited by superadmin
-    if not scenario_department_ids and user_role != "superadmin":
-        return False
-
-    # Scenarios in use by active simulations cannot be edited
-    if active_simulation_count > 0:
-        return False
-
-    # Non-superadmins must belong to ALL of the scenario's departments
-    if user_role != "superadmin" and scenario_department_ids:
-        if not user_department_ids:
-            return False
-        user_dept_set = {str(d) for d in user_department_ids}
-        scenario_dept_set = {str(d) for d in scenario_department_ids}
-        if not scenario_dept_set.issubset(user_dept_set):
-            return False
 
     return True
 

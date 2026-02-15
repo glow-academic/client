@@ -48,8 +48,8 @@ def compute_can_edit(
     Constraints:
     1. Always allow editing self
     2. Superadmin can edit all profiles
-    3. If target_role provided, use role hierarchy (list view)
-    4. Fallback: existing get-view logic (admin/instructional can edit)
+    3. If target_role provided, use role hierarchy (can only edit lower ranks)
+    4. Fallback: admin can edit
     """
     if target_is_self:
         return True
@@ -57,17 +57,18 @@ def compute_can_edit(
     if user_role == "superadmin":
         return True
 
-    # List view: use role hierarchy
+    # Only admin/superadmin can edit others
+    if user_role not in ("admin", "superadmin"):
+        return False
+
+    # List view: use role hierarchy (can only edit lower ranks)
     if target_role is not None:
         user_rank = ROLE_HIERARCHY.get(user_role or "", 0)
         target_rank = ROLE_HIERARCHY.get(target_role or "", 0)
         return user_rank > target_rank
 
-    # Fallback: existing get-view logic
-    if user_role in ("admin", "instructional"):
-        return True
-
-    return False
+    # Fallback: admin can edit
+    return user_role == "admin"
 
 
 def compute_disabled_reason(
@@ -201,44 +202,47 @@ def compute_can_delete(
     user_role: str | None,
     target_is_self: bool,
     target_role: str | None = None,
-    total_cohort_links: int = 0,
+    active_cohort_count: int = 0,
 ) -> bool:
     """Compute can_delete permission.
 
     Business logic:
     - Cannot delete own profile
-    - Superadmin can delete anyone (except self)
-    - Profiles with cohort links cannot be deleted (prevent orphaned data)
-    - If target_role provided, use role hierarchy (list view)
-    - Fallback: existing delete-endpoint logic (admin/superadmin can delete)
+    - Profiles with active cohort links cannot be deleted (prevent orphaned data)
+    - Only admin/superadmin can delete (can only delete lower ranks)
     """
     if target_is_self:
         return False
 
+    # Only admin/superadmin can delete
+    if user_role not in ("admin", "superadmin"):
+        return False
+
+    # Profiles with active cohort links cannot be deleted
+    if active_cohort_count > 0:
+        return False
+
+    # Superadmin can delete anyone (except self, checked above)
     if user_role == "superadmin":
         return True
 
-    # Profiles with cohort links cannot be deleted
-    if total_cohort_links > 0:
-        return False
-
-    # List view: use role hierarchy
+    # Use role hierarchy: can only delete lower ranks
     if target_role is not None:
         user_rank = ROLE_HIERARCHY.get(user_role or "", 0)
         target_rank = ROLE_HIERARCHY.get(target_role or "", 0)
         return user_rank > target_rank
 
-    # Fallback: existing delete-endpoint logic
-    return user_role in ("admin", "superadmin")
+    # Fallback: admin can delete
+    return user_role == "admin"
 
 
 def compute_can_duplicate(user_role: str | None) -> bool:
     """Compute can_duplicate permission.
 
     Business logic:
-    - Anyone with admin+ permissions can duplicate
+    - Only admin/superadmin can duplicate
     """
-    return user_role in ("admin", "instructional", "superadmin")
+    return user_role in ("admin", "superadmin")
 
 
 # ========== Save/Create Endpoint Permission Functions ==========
@@ -266,10 +270,10 @@ def compute_can_save(
     """Compute permission to save/update an existing profile.
 
     Business logic:
-    - Only admin/instructional/superadmin can save
+    - Only admin/superadmin can save
     - Non-superadmins must belong to ALL of the target's departments
     """
-    if user_role not in ("admin", "instructional", "superadmin"):
+    if user_role not in ("admin", "superadmin"):
         return False
 
     if user_role != "superadmin" and target_department_ids:
@@ -290,9 +294,9 @@ def compute_can_draft(user_role: str | None) -> bool:
     """Compute permission to create or update a draft.
 
     Business logic:
-    - Only admin/instructional/superadmin can create/edit drafts
+    - Only admin/superadmin can create/edit drafts
     """
-    return user_role in ("admin", "instructional", "superadmin")
+    return user_role in ("admin", "superadmin")
 
 
 def get_missing_tools(

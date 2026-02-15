@@ -22,7 +22,7 @@ CREATE OR REPLACE FUNCTION api_check_parameter_delete_access_v4(
 )
 RETURNS TABLE (
     parameter_department_ids text[],
-    total_scenario_links bigint
+    active_scenario_count bigint
 )
 LANGUAGE sql
 STABLE
@@ -41,17 +41,19 @@ parameter_dept AS (
     FROM params x
     LEFT JOIN parameter_departments_junction pd ON pd.parameter_id = x.parameter_id AND pd.active = true
 ),
--- Count ALL scenario links (active or not) - used for delete check
+-- Count active scenario links only - used for delete check
 parameter_scenario_links AS (
-    SELECT COALESCE(COUNT(DISTINCT spf.scenario_id), 0) as total_scenario_links
+    SELECT COALESCE(COUNT(DISTINCT spf.scenario_id), 0) as active_count
     FROM params x
     LEFT JOIN parameter_fields_resource pfr ON pfr.parameter_id = x.parameter_id AND pfr.active = true
     LEFT JOIN scenario_parameter_fields_junction spf ON spf.parameter_field_id = pfr.id
-    WHERE x.parameter_id IS NOT NULL
+    LEFT JOIN scenario_flags_junction sf ON sf.scenario_id = spf.scenario_id
+    LEFT JOIN flags_resource f ON sf.flag_id = f.id AND f.name = 'scenario_active' AND sf.value = true
+    WHERE x.parameter_id IS NOT NULL AND f.id IS NOT NULL
 )
 SELECT
     (SELECT department_ids FROM parameter_dept) as parameter_department_ids,
-    COALESCE((SELECT total_scenario_links FROM parameter_scenario_links), 0) as total_scenario_links
+    COALESCE((SELECT active_count FROM parameter_scenario_links), 0) as active_scenario_count
 FROM params x
 $$;
 

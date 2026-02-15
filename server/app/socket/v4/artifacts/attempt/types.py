@@ -289,6 +289,7 @@ class AttemptUserCompleteEvent(BaseModel):
     content: str
     created_at: str
     persona_id: str | None = None
+    item_id: str | None = None  # OpenAI Realtime item_id for voice message matching
 
 
 class AttemptAssistantStartEvent(BaseModel):

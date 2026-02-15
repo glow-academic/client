@@ -40,8 +40,7 @@ CREATE TYPE types.q_list_parameters_v4_parameter AS (
     num_items int,
     sample_items types.q_list_parameters_v4_sample_item[],
     -- Raw data for Python permission computation
-    active_scenario_count bigint,
-    total_scenario_links bigint
+    active_scenario_count bigint
 );
 
 -- Filter option type: id + count only (names hydrated in Python from cache)
@@ -104,16 +103,6 @@ parameter_active_scenario_links AS (
     JOIN flags_resource f ON sf.flag_id = f.id AND f.name = 'scenario_active' AND sf.value = true
     GROUP BY ppj.parameter_id
 ),
--- Total scenario links (for delete permission - any scenario link)
-parameter_all_scenario_links AS (
-    SELECT
-        ppj.parameter_id,
-        COUNT(DISTINCT sr.id) as total_scenario_links
-    FROM parameter_parameters_junction ppj
-    JOIN parameters_resource pr ON pr.id = ppj.parameters_id
-    JOIN scenarios_resource sr ON pr.id = ANY(sr.parameter_ids)
-    GROUP BY ppj.parameter_id
-),
 parameter_departments_data AS (
     SELECT
         pd.parameter_id,
@@ -166,14 +155,12 @@ parameter_data_base AS (
              WHERE psi.parameter_id = p.id),
             '{}'::types.q_list_parameters_v4_sample_item[]
         ) as sample_items,
-        COALESCE(pasl.active_scenario_count, 0)::bigint as active_scenario_count,
-        COALESCE(pasl_all.total_scenario_links, 0)::bigint as total_scenario_links
+        COALESCE(pasl.active_scenario_count, 0)::bigint as active_scenario_count
     FROM parameter_artifact p
     LEFT JOIN parameter_scenarios ps ON ps.parameter_id = p.id
     LEFT JOIN parameter_departments_data pdd ON pdd.parameter_id = p.id
     LEFT JOIN parameter_item_counts pic ON pic.parameter_id = p.id
     LEFT JOIN parameter_active_scenario_links pasl ON pasl.parameter_id = p.id
-    LEFT JOIN parameter_all_scenario_links pasl_all ON pasl_all.parameter_id = p.id
     LEFT JOIN parameter_departments_junction pd ON pd.parameter_id = p.id AND pd.active = true AND pd.department_id IN (SELECT department_id FROM user_departments)
     GROUP BY p.id,
         (SELECT n.name FROM parameter_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.parameter_id = p.id LIMIT 1),
@@ -181,7 +168,7 @@ parameter_data_base AS (
         EXISTS (SELECT 1 FROM parameter_flags_junction pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.parameter_id = p.id AND f.name = 'parameter_active' AND pf.value = TRUE),
         p.updated_at,
         pdd.department_ids, ps.scenario_ids, pic.num_items,
-        pasl.active_scenario_count, pasl_all.total_scenario_links
+        pasl.active_scenario_count
     HAVING COUNT(pd.parameter_id) > 0 OR NOT EXISTS (
         SELECT 1 FROM parameter_departments_junction pd2 WHERE pd2.parameter_id = p.id AND pd2.active = true
     )
@@ -238,7 +225,7 @@ SELECT
         (SELECT ARRAY_AGG(
             (pd.parameter_id, pd.parameter_name, pd.description, pd.active, pd.updated_at,
              pd.department_ids, pd.scenario_ids, pd.num_items,
-             pd.sample_items, pd.active_scenario_count, pd.total_scenario_links
+             pd.sample_items, pd.active_scenario_count
             )::types.q_list_parameters_v4_parameter
             ORDER BY pd.updated_at DESC NULLS LAST
         ) FROM paginated_parameters pd),

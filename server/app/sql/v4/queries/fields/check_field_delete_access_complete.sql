@@ -24,7 +24,7 @@ CREATE OR REPLACE FUNCTION api_check_field_delete_access_v4(
 RETURNS TABLE (
     -- Field state for Python permission logic
     field_department_ids text[],
-    total_parameter_links bigint
+    active_parameter_count bigint
 )
 LANGUAGE sql
 STABLE
@@ -44,15 +44,15 @@ field_departments_data AS (
     FROM params x
     LEFT JOIN field_departments_junction fd ON fd.field_id = x.field_id AND fd.active = true
 ),
--- Count total parameter links (fields linked to persona parameters via field_conditional_parameters_junction)
+-- Count active parameter links (fields linked to parameters via field_conditional_parameters_junction)
 parameter_links AS (
-    SELECT COUNT(fcpj.conditional_parameter_id)::bigint as total_links
+    SELECT COUNT(fcpj.conditional_parameter_id)::bigint as active_count
     FROM params x
     LEFT JOIN field_conditional_parameters_junction fcpj ON fcpj.field_id = x.field_id AND fcpj.active = true
 )
 SELECT
     (SELECT department_ids FROM field_departments_data) as field_department_ids,
-    (SELECT total_links FROM parameter_links) as total_parameter_links
+    (SELECT active_count FROM parameter_links) as active_parameter_count
 FROM params x
 $$;
 

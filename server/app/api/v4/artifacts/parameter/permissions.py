@@ -46,7 +46,7 @@ def compute_can_edit(
         return False
 
     # Role check
-    return user_role in ("admin", "instructional", "superadmin")
+    return user_role in ("admin", "superadmin")
 
 
 def compute_disabled_reason(
@@ -65,7 +65,7 @@ def compute_disabled_reason(
             "You can view the details but cannot make changes."
         )
 
-    # Parameters in use by scenarios cannot be edited
+    # Parameters in use by active scenarios cannot be edited
     if active_scenario_count > 0:
         return (
             "This parameter is currently in use by scenarios and cannot be edited. "
@@ -73,7 +73,7 @@ def compute_disabled_reason(
         )
 
     # Role check
-    if user_role not in ("admin", "instructional", "superadmin"):
+    if user_role not in ("admin", "superadmin"):
         return (
             "This parameter cannot be edited. "
             "You can view the details but cannot make changes."
@@ -185,26 +185,26 @@ def compute_fields_required() -> bool:
 
 def compute_can_delete(
     user_role: str | None,
-    parameter_department_ids: list[str] | None,
-    total_scenario_links: int,
+    parameter_department_ids: list[str] | list[UUID] | None,
+    active_scenario_count: int,
 ) -> bool:
     """Compute can_delete permission.
 
     Business logic:
     - Default parameters (no departments) cannot be deleted except by superadmin
-    - Parameters linked to ANY scenario (active or not) cannot be deleted
-    - Only admins, instructional, and superadmins can delete
+    - Parameters linked to active scenarios cannot be deleted
+    - Only admins and superadmins can delete
     """
     # Default parameters can only be deleted by superadmin
     if not parameter_department_ids and user_role != "superadmin":
         return False
 
-    # Parameters with any scenario links cannot be deleted
-    if total_scenario_links > 0:
+    # Parameters with active scenario links cannot be deleted
+    if active_scenario_count > 0:
         return False
 
-    # Only admins, instructional, and superadmins can delete
-    return user_role in ("admin", "instructional", "superadmin")
+    # Only admins and superadmins can delete
+    return user_role in ("admin", "superadmin")
 
 
 def compute_can_duplicate(user_role: str | None) -> bool:
@@ -212,9 +212,8 @@ def compute_can_duplicate(user_role: str | None) -> bool:
 
     Business logic:
     - Anyone with edit permissions can duplicate
-    - Currently always true for admin/instructional/superadmin
     """
-    return user_role in ("admin", "instructional", "superadmin")
+    return user_role in ("admin", "superadmin")
 
 
 # ========== Save/Create Endpoint Permission Functions ==========
@@ -228,10 +227,10 @@ def compute_can_create(
 
     Business logic (from SQL validate_department_create_permissions):
     - Non-superadmins cannot create general objects (empty department_ids)
-    - Only admin/instructional/superadmin can create parameters
+    - Only admin/superadmin can create parameters
     """
     # Role check first
-    if user_role not in ("admin", "instructional", "superadmin"):
+    if user_role not in ("admin", "superadmin"):
         return False
 
     # Non-superadmins cannot create general objects (no departments)
@@ -252,11 +251,11 @@ def compute_can_save(
     Business logic (from SQL validate_department_update_permissions + compute_can_edit):
     - Not a default parameter (unless superadmin)
     - Not linked to active scenarios
-    - User has admin/instructional/superadmin role
+    - User has admin/superadmin role
     - Non-superadmins must belong to ALL of the parameter's departments
     """
     # Role check first
-    if user_role not in ("admin", "instructional", "superadmin"):
+    if user_role not in ("admin", "superadmin"):
         return False
 
     # Default parameters can only be edited by superadmin
@@ -288,9 +287,9 @@ def compute_can_draft(user_role: str | None) -> bool:
     """Compute permission to create or update a draft.
 
     Business logic:
-    - Only admin/instructional/superadmin can create/edit drafts
+    - Only admin/superadmin can create/edit drafts
     """
-    return user_role in ("admin", "instructional", "superadmin")
+    return user_role in ("admin", "superadmin")
 
 
 # ========== Agent Scoring - Parameter-specific Constants ==========

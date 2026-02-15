@@ -306,12 +306,14 @@ async def get_simulation_internal(
         user_role=user_role,
         simulation_department_ids=simulation_department_ids,
         cohort_usage_count=cohort_usage_count,
+        user_department_ids=user_department_ids,
     )
 
     disabled_reason = compute_disabled_reason(
         user_role=user_role,
         simulation_department_ids=simulation_department_ids,
         cohort_usage_count=cohort_usage_count,
+        user_department_ids=user_department_ids,
     )
 
     # === PASS 2: Parallel Resource Fetching ===

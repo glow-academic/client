@@ -9,15 +9,11 @@ from typing import Any
 from fastapi import APIRouter
 
 from app.infra.v4.activity.websocket_logger import log_websocket_activity
-from app.infra.v4.websocket.attempt.audio_helpers import get_audio_adapter
+from app.infra.v4.websocket.attempt.audio_helpers import cleanup_voice_session
 from app.infra.v4.websocket.session_store import (
     get_session_by_sid,
-    remove_session,
 )
 from app.main import (
-    _voice_message_ids,
-    _voice_message_ids_lock,
-    _voice_sessions,
     sio,
 )
 from app.socket.v4.artifacts.attempt.types import (
@@ -50,26 +46,10 @@ async def attempt_audio_stop(sid: str, data: dict[str, Any]) -> None:
         group_id = session.group_id if session else None
 
         if group_id and session:
-            # Stop the audio adapter
-            adapter = get_audio_adapter()
-            try:
-                await adapter.stop_session(session)
-            except Exception as e:
-                logger.warning(f"Error stopping audio adapter: {e}")
-
-            # Get and remove voice session
-            _voice_sessions.pop(group_id, None)
-
-            # Remove from session store (cleans up by both sid and group_id)
-            remove_session(group_id)
+            await cleanup_voice_session(session)
             logger.info(
                 f"Audio session stopped - chat_id={chat_id}, group_id={group_id}"
             )
-
-            # Clear accumulated message IDs for this group
-            async with _voice_message_ids_lock:
-                if group_id in _voice_message_ids:
-                    del _voice_message_ids[group_id]
 
         event = AttemptAudioEndedEvent(
             chat_id=chat_id,

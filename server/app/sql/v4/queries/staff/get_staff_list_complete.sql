@@ -37,7 +37,7 @@ END $$;
 
 -- 3) Recreate types
 -- Staff: NO can_edit/can_delete (moved to Python)
--- Added target_is_self + total_cohort_links for Python permission computation
+-- Added target_is_self + active_cohort_count for Python permission computation
 CREATE TYPE types.q_list_staff_v4_staff AS (
     profile_id uuid,
     emails text[],
@@ -50,7 +50,7 @@ CREATE TYPE types.q_list_staff_v4_staff AS (
     primary_department_id text,
     requests_per_day integer,
     target_is_self boolean,
-    total_cohort_links bigint
+    active_cohort_count bigint
 );
 
 -- Filter option: id + count only (names hydrated in Python)
@@ -108,12 +108,13 @@ profile_cohorts_data AS (
     WHERE cp.active = true
     GROUP BY cp.profile_id
 ),
--- Total cohort links (for delete permission - includes inactive)
-profile_all_cohort_links AS (
+-- Active cohort links (for delete permission - only active links)
+profile_active_cohort_links AS (
     SELECT
         profile_id,
-        COUNT(*) as total_cohort_links
+        COUNT(*) as active_cohort_count
     FROM profile_cohorts_junction
+    WHERE active = true
     GROUP BY profile_id
 ),
 -- Profile's department IDs (already resource IDs)
@@ -166,14 +167,14 @@ staff_rows AS (
         COALESCE(ppd.department_id, '') as primary_department_id,
         -- For Python permission computation
         p.id = (SELECT profile_id FROM params) as target_is_self,
-        COALESCE(pacl_all.total_cohort_links, 0) as total_cohort_links,
+        COALESCE(pacl.active_cohort_count, 0) as active_cohort_count,
         p.updated_at
     FROM profile_artifact p
     LEFT JOIN profile_departments_junction pd ON pd.profile_id = p.id AND pd.active = true
     LEFT JOIN profile_cohorts_data pc ON pc.profile_id = p.id
     LEFT JOIN profile_departments_agg pda ON pda.profile_id = p.id
     LEFT JOIN profile_primary_department ppd ON ppd.profile_id = p.id
-    LEFT JOIN profile_all_cohort_links pacl_all ON pacl_all.profile_id = p.id
+    LEFT JOIN profile_active_cohort_links pacl ON pacl.profile_id = p.id
     LEFT JOIN profile_request_limits_junction prl ON prl.profile_id = p.id AND prl.active = true
     LEFT JOIN request_limits_resource rl ON prl.request_limit_id = rl.id
     CROSS JOIN user_profile up
@@ -194,7 +195,7 @@ staff_rows AS (
         (SELECT r.role FROM profile_roles_junction pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = p.id LIMIT 1),
         rl.requests_per_day,
         pc.cohort_ids, pda.department_ids, ppd.department_id,
-        pacl_all.total_cohort_links, up.role
+        pacl.active_cohort_count, up.role
     ORDER BY p.id, (SELECT n.name FROM profile_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1)
 ),
 -- Apply server-side filters
@@ -253,7 +254,7 @@ SELECT
     COALESCE(
         (SELECT ARRAY_AGG(
             (sr.profile_id, sr.emails, sr.primary_email, sr.name, sr.role, sr.initials, sr.cohort_ids, sr.department_ids, sr.primary_department_id, sr.requests_per_day,
-             sr.target_is_self, sr.total_cohort_links
+             sr.target_is_self, sr.active_cohort_count
             )::types.q_list_staff_v4_staff
             ORDER BY sr.name ASC NULLS LAST
         )

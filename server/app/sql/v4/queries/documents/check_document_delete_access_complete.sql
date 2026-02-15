@@ -24,7 +24,7 @@ CREATE OR REPLACE FUNCTION api_check_document_delete_access_v4(
 RETURNS TABLE (
     -- Document state for Python permission logic
     document_department_ids text[],
-    total_scenario_links bigint
+    active_scenario_count bigint
 )
 LANGUAGE sql
 STABLE
@@ -44,17 +44,17 @@ document_departments_data AS (
     FROM params x
     LEFT JOIN document_departments_junction dd ON dd.document_id = x.document_id
 ),
--- Count total scenario links (active or not)
+-- Count active scenario links only
 -- NOTE: Must use COUNT(column) not COUNT(*) with LEFT JOIN, as COUNT(*)
 -- counts the NULL row when there are no matches
 scenario_links AS (
-    SELECT COUNT(sd.document_id)::bigint as total_links
+    SELECT COUNT(sd.document_id)::bigint as active_count
     FROM params x
-    LEFT JOIN scenario_documents_junction sd ON sd.document_id = x.document_id
+    LEFT JOIN scenario_documents_junction sd ON sd.document_id = x.document_id AND sd.active = true
 )
 SELECT
     (SELECT department_ids FROM document_departments_data) as document_department_ids,
-    (SELECT total_links FROM scenario_links) as total_scenario_links
+    (SELECT active_count FROM scenario_links) as active_scenario_count
 FROM params x
 $$;
 

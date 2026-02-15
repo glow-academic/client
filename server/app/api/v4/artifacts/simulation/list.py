@@ -101,9 +101,13 @@ async def get_simulation_list(
                 )
                 actor_name = profile_ctx.access.actor_name
                 user_role = profile_ctx.access.role
+                user_department_ids = [
+                    d.department_id for d in profile_ctx.departments if d.department_id
+                ]
         else:
             actor_name = None
             user_role = "member"
+            user_department_ids = []
 
         # Convert API request to SQL params
         params = GetSimulationsListSqlParams(
@@ -199,6 +203,7 @@ async def get_simulation_list(
                 user_role=user_role,
                 simulation_department_ids=sim.department_ids,
                 cohort_usage_count=sim.cohort_usage_count or 0,
+                user_department_ids=user_department_ids,
             )
             can_delete_val = compute_can_delete(
                 user_role=user_role,
