@@ -31,7 +31,6 @@ domain:
 # -----------------------------------------------------------------------------
 institution:
   name: "University Name"                   # NEXT_PUBLIC_CAMPUS
-  email_domain: "university.edu"            # NEXT_PUBLIC_CAMPUS_EMAIL
 
 # -----------------------------------------------------------------------------
 # Database
@@ -57,19 +56,21 @@ auth:
     realm: "master"                         # KEYCLOAK_REALM
     client_id: "glow-client"                # AUTH_KEYCLOAK_ID
     client_secret: ""                       # AUTH_KEYCLOAK_SECRET (auto-generated if blank)
+  # Bootstrap only — these are encrypted into the DB, not written to .env.
+  # Use `make bootstrap-keys` after first deploy to encrypt into DB.
   google:
-    client_id: ""                           # GOOGLE_CLIENT_ID
-    client_secret: ""                       # GOOGLE_CLIENT_SECRET
+    client_id: ""                           # Google OAuth client ID
+    client_secret: ""                       # Google OAuth client secret
   microsoft:
-    client_id: ""                           # AUTH_MICROSOFT_ENTRA_ID_ID
-    client_secret: ""                       # AUTH_MICROSOFT_ENTRA_ID_SECRET
+    client_id: ""                           # Microsoft Entra app ID
+    client_secret: ""                       # Microsoft Entra client secret
 
 # -----------------------------------------------------------------------------
-# AI Providers
+# AI Providers (bootstrap only — encrypted into DB, not in .env)
 # -----------------------------------------------------------------------------
 providers:
-  openai_api_key: ""                        # OPENAI_API_KEY
-  gemini_api_key: ""                        # GEMINI_API_KEY
+  openai_api_key: ""                        # OpenAI API key
+  gemini_api_key: ""                        # Gemini API key
 
 # -----------------------------------------------------------------------------
 # Redis

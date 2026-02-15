@@ -571,7 +571,7 @@ async def get_scenario_internal(
                 50,
                 0,
                 all_selected_ids,
-                bypass_cache,
+                bypass_cache=bypass_cache,
                 scenario=True,
             )
             # Filter to only scenario-specific flags (business logic in Python)
@@ -593,7 +593,6 @@ async def get_scenario_internal(
                 suggest_source=dept_source,
                 exclude_ids=selected_department_ids,
                 bypass_cache=bypass_cache,
-                scenario=True,
             )
             return (selected, suggestions)
 
@@ -609,8 +608,8 @@ async def get_scenario_internal(
                 0,
                 user_department_ids,
                 effective_group_id,
-                selected_persona_ids,
-                bypass_cache,
+                exclude_ids=selected_persona_ids,
+                bypass_cache=bypass_cache,
                 scenario=True,
             )
             return (selected, suggestions)
@@ -627,8 +626,8 @@ async def get_scenario_internal(
                 0,
                 user_department_ids,
                 effective_group_id,
-                selected_document_ids,
-                bypass_cache,
+                exclude_ids=selected_document_ids,
+                bypass_cache=bypass_cache,
                 scenario=True,
             )
             return (selected, suggestions)
@@ -682,7 +681,7 @@ async def get_scenario_internal(
                 20,
                 0,
                 selected_image_ids,
-                bypass_cache,
+                bypass_cache=bypass_cache,
                 scenario=True,
             )
             return (selected, suggestions)
