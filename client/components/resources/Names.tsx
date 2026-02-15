@@ -133,7 +133,6 @@ export function Names({
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
   const lastSavedValueRef = useRef<string>(initialValue);
   const isInitialMountRef = useRef(true);
-  const [showSuggestions, setShowSuggestions] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   // Ref for flush function (stable reference for registerFlush)
@@ -202,20 +201,18 @@ export function Names({
     return [];
   }, [suggestionsList, namesArray, resource]);
 
-  // Simple prefix/substring matching for autocomplete filtering
-  const filteredSuggestions = useMemo(() => {
-    if (!internalValue.trim()) return suggestionNames;
-    const valueLower = internalValue.toLowerCase().trim();
-    return suggestionNames
-      .filter((s) => {
-        const sLower = s.toLowerCase().trim();
-        // Skip exact matches
-        if (sLower === valueLower) return false;
-        // Include if starts with or contains the typed text
-        return sLower.startsWith(valueLower) || sLower.includes(valueLower);
-      })
-      .slice(0, 5); // Show top 5 matches
+  // Ghost autocomplete: find first prefix match and compute the untyped suffix
+  const ghostMatch = useMemo(() => {
+    const trimmed = internalValue.trim();
+    if (!trimmed) return null;
+    const valueLower = trimmed.toLowerCase();
+    return suggestionNames.find((s) => {
+      const sLower = s.toLowerCase();
+      return sLower.startsWith(valueLower) && sLower !== valueLower;
+    }) ?? null;
   }, [suggestionNames, internalValue]);
+
+  const ghostSuffix = ghostMatch ? ghostMatch.slice(internalValue.length) : "";
 
   // Update internal value when name_resource changes
   useEffect(() => {
@@ -303,13 +300,6 @@ export function Names({
 
   const handleChange = useCallback((newValue: string) => {
     setInternalValue(newValue);
-    setShowSuggestions(true);
-  }, []);
-
-  const handleSelectSuggestion = useCallback((suggestion: string) => {
-    setInternalValue(suggestion);
-    setShowSuggestions(false);
-    inputRef.current?.focus();
   }, []);
 
   const handleFocus = useCallback(
@@ -333,23 +323,14 @@ export function Names({
     [defaultName]
   );
 
-  const handleInputFocus = useCallback(
-    (e: React.FocusEvent<HTMLInputElement>) => {
-      handleFocus(e);
-      if (internalValue && filteredSuggestions.length > 0) {
-        setShowSuggestions(true);
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLInputElement>) => {
+      if (e.key === "Tab" && ghostSuffix) {
+        e.preventDefault();
+        setInternalValue(ghostMatch!);
       }
     },
-    [internalValue, filteredSuggestions, handleFocus]
-  );
-
-  const handleInputBlur = useCallback(
-    (e: React.FocusEvent<HTMLInputElement>) => {
-      handleBlur(e);
-      // Delay hiding suggestions to allow clicks
-      setTimeout(() => setShowSuggestions(false), 200);
-    },
-    [handleBlur]
+    [ghostSuffix, ghostMatch]
   );
 
   // Accept AI suggestion - update internal value and notify parent
@@ -399,7 +380,7 @@ export function Names({
               aria-hidden="true"
               className="col-start-1 row-start-1 invisible whitespace-pre text-2xl font-semibold px-2 py-0.5"
             >
-              {displayValue || "\u00A0"}
+              {(internalValue || "") + ghostSuffix || displayValue || "\u00A0"}
             </span>
             <input
               ref={inputRef}
@@ -408,29 +389,23 @@ export function Names({
               data-testid={dataTestId}
               value={internalValue || ""}
               onChange={(e) => handleChange(e.target.value)}
-              onFocus={handleInputFocus}
-              onBlur={handleInputBlur}
+              onFocus={handleFocus}
+              onBlur={handleBlur}
+              onKeyDown={handleKeyDown}
               placeholder={placeholder || defaultName || "Enter name"}
               required={required}
               disabled={disabled}
               size={1}
               className="col-start-1 row-start-1 w-full min-w-0 text-2xl font-semibold border-none outline-none bg-transparent px-2 py-0.5 hover:bg-muted/50 rounded transition-all disabled:opacity-50 disabled:cursor-not-allowed focus:bg-muted/50 focus:ring-2 focus:ring-primary/20"
             />
-            {showSuggestions && !disabled && filteredSuggestions.length > 0 && (
-              <div className="absolute left-0 top-full z-50 w-full mt-1 bg-popover border border-border rounded-md shadow-md max-h-48 overflow-auto">
-                <div className="p-1">
-                  {filteredSuggestions.map((suggestion, idx) => (
-                    <div
-                      key={idx}
-                      onClick={() => handleSelectSuggestion(suggestion)}
-                      onMouseDown={(e) => e.preventDefault()}
-                      className="px-2 py-1.5 text-sm cursor-pointer hover:bg-accent hover:text-accent-foreground rounded-sm transition-colors"
-                    >
-                      {suggestion}
-                    </div>
-                  ))}
-                </div>
-              </div>
+            {ghostSuffix && !disabled && (
+              <span
+                aria-hidden="true"
+                className="col-start-1 row-start-1 pointer-events-none whitespace-pre text-2xl font-semibold px-2 py-0.5"
+              >
+                <span className="invisible">{internalValue}</span>
+                <span className="text-muted-foreground/40">{ghostSuffix}</span>
+              </span>
             )}
           </div>
         )}
