@@ -113,7 +113,7 @@ async def save_provider(
         if not request.input_provider_id:
             can_save_result = compute_can_create(
                 user_role=user_role,
-                department_ids=request.departments.resource_ids,  # Validated in SQL
+                department_ids=request.department_ids,
             )
         else:
             can_save_result = compute_can_edit(
@@ -130,8 +130,15 @@ async def save_provider(
             )
 
         async with conn.transaction():
-            # Convert API request to SQL params (add profile_id from header)
-            params = SaveProviderSqlParams.from_request(request, profile_id=profile_id)
+            # Server-resolved group_id
+            group_id = await conn.fetchval(
+                "INSERT INTO groups_entry DEFAULT VALUES RETURNING id"
+            )
+
+            # Convert flat IDs to SQL params
+            params = SaveProviderSqlParams.from_request(
+                request, profile_id=profile_id, group_id=group_id
+            )
             sql_params = params.to_tuple()
 
             # Execute SQL with typed helper

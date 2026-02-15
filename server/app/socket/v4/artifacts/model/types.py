@@ -5,24 +5,11 @@ Types are registered in OpenAPI via FastAPI endpoints, enabling
 automatic type extraction in the frontend via InputOf/OutputOf.
 """
 
-from app.api.v4.artifacts.model.types import GetModelApiRequest, ModelFlagConfig
+from app.api.v4.artifacts.model.types import GetModelApiRequest
 from app.socket.v4.artifacts.types import (
     GenerationCompleteEvent,
     GenerationErrorEvent,
     GenerationProgressEvent,
-)
-from app.sql.types import (
-    QGetDepartmentsV4Item,
-    QGetDescriptionsV4Item,
-    QGetFlagsV4Item,
-    QGetModalitiesV4Item,
-    QGetNamesV4Item,
-    QGetPricingV4Item,
-    QGetQualitiesV4Item,
-    QGetReasoningLevelsV4Item,
-    QGetTemperatureLevelsV4Item,
-    QGetValuesV4Item,
-    QGetVoicesV4Item,
 )
 
 # =============================================================================
@@ -50,27 +37,11 @@ class GenerateModelPayload(GetModelApiRequest):
 class ModelGenerationCompleteEvent(GenerationCompleteEvent):
     """Server-to-client event: model_generation_complete.
 
-    Emitted when a model resource generation completes successfully.
-    Contains full resource objects (not just IDs) for immediate frontend use.
+    Emitted when model generation completes. Resource-level data is now
+    sent via resource_generation_complete events from the shared handler.
     """
 
     artifact_type: str = "model"
-
-    # Single-select resources (full objects, not IDs)
-    name_resource: QGetNamesV4Item | None = None
-    description_resource: QGetDescriptionsV4Item | None = None
-    value_resource: QGetValuesV4Item | None = None
-    flag_resource: QGetFlagsV4Item | None = None
-
-    # Multi-select resources (arrays of full objects)
-    flag_resources: list[ModelFlagConfig] | None = None
-    department_resources: list[QGetDepartmentsV4Item] | None = None
-    modality_resources: list[QGetModalitiesV4Item] | None = None
-    temperature_level_resources: list[QGetTemperatureLevelsV4Item] | None = None
-    pricing_resources: list[QGetPricingV4Item] | None = None
-    reasoning_level_resources: list[QGetReasoningLevelsV4Item] | None = None
-    quality_resources: list[QGetQualitiesV4Item] | None = None
-    voice_resources: list[QGetVoicesV4Item] | None = None
 
 
 class ModelGenerationProgressEvent(GenerationProgressEvent):

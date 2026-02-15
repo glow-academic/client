@@ -11,16 +11,6 @@ from app.socket.v4.artifacts.types import (
     GenerationErrorEvent,
     GenerationProgressEvent,
 )
-from app.sql.types import (
-    QGetDepartmentsV4Item,
-    QGetDescriptionsV4Item,
-    QGetFlagsV4Item,
-    QGetImagesV4Item,
-    QGetNamesV4Item,
-    QGetParameterFieldsV4Item,
-    QGetTextsV4Item,
-    QGetUploadsV4Item,
-)
 
 # =============================================================================
 # Client-to-Server Events (document_generate)
@@ -47,23 +37,11 @@ class GenerateDocumentPayload(GetDocumentApiRequest):
 class DocumentGenerationCompleteEvent(GenerationCompleteEvent):
     """Server-to-client event: document_generation_complete.
 
-    Emitted when a document resource generation completes successfully.
-    Contains full resource objects (not just IDs) for immediate frontend use.
+    Emitted when document generation completes. Resource-level data is now
+    sent via resource_generation_complete events from the shared handler.
     """
 
     artifact_type: str = "document"
-
-    # Single-select resources (full objects, not IDs)
-    name_resource: QGetNamesV4Item | None = None
-    description_resource: QGetDescriptionsV4Item | None = None
-    flag_resource: QGetFlagsV4Item | None = None
-
-    # Multi-select resources (arrays of full objects)
-    department_resources: list[QGetDepartmentsV4Item] | None = None
-    field_resources: list[QGetParameterFieldsV4Item] | None = None
-    upload_resources: list[QGetUploadsV4Item] | None = None
-    image_resources: list[QGetImagesV4Item] | None = None
-    text_resources: list[QGetTextsV4Item] | None = None
 
 
 class DocumentGenerationProgressEvent(GenerationProgressEvent):

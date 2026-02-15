@@ -121,8 +121,15 @@ async def save_tool(
             )
 
         async with conn.transaction():
-            # Convert API request to SQL params (add profile_id from header)
-            params = SaveToolSqlParams.from_request(request, profile_id=profile_id)
+            # Server-resolved group_id
+            group_id = await conn.fetchval(
+                "INSERT INTO groups_entry DEFAULT VALUES RETURNING id"
+            )
+
+            # Convert flat IDs to SQL params
+            params = SaveToolSqlParams.from_request(
+                request, profile_id=profile_id, group_id=group_id
+            )
             sql_params = params.to_tuple()
 
             # Execute SQL with typed helper

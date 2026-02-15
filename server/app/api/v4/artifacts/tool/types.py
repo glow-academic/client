@@ -185,15 +185,15 @@ class ToolMultiResourceAction(BaseModel):
 
 
 class SaveToolApiRequest(BaseModel):
-    group_id: UUID
-    input_tool_id: UUID | None = None
+    """Flat-ID save request for tool endpoint."""
 
-    names: ToolResourceAction
-    descriptions: ToolResourceAction
-    flags: ToolResourceAction
-    args: ToolMultiResourceAction
-    arg_positions: ToolMultiResourceAction
-    args_outputs: ToolMultiResourceAction
+    input_tool_id: UUID | None = None
+    name_id: UUID
+    description_id: UUID | None = None
+    flag_id: UUID | None = None
+    arg_ids: list[UUID] | None = None
+    arg_position_ids: list[UUID] | None = None
+    args_output_ids: list[UUID] | None = None
 
 
 class SaveToolApiResponse(BaseModel):
@@ -216,9 +216,26 @@ class SaveToolSqlParams(BaseModel):
 
     @classmethod
     def from_request(
-        cls, request: SaveToolApiRequest, profile_id: UUID
+        cls,
+        request: SaveToolApiRequest,
+        profile_id: UUID,
+        group_id: UUID | None = None,
     ) -> SaveToolSqlParams:
-        return cls(profile_id=profile_id, **request.model_dump())
+        return cls(
+            profile_id=profile_id,
+            group_id=group_id,
+            input_tool_id=request.input_tool_id,
+            names=ToolResourceAction(resource_id=request.name_id),
+            descriptions=ToolResourceAction(resource_id=request.description_id),
+            flags=ToolResourceAction(resource_id=request.flag_id),
+            args=ToolMultiResourceAction(resource_ids=request.arg_ids),
+            arg_positions=ToolMultiResourceAction(
+                resource_ids=request.arg_position_ids
+            ),
+            args_outputs=ToolMultiResourceAction(
+                resource_ids=request.args_output_ids
+            ),
+        )
 
     def to_tuple(self) -> tuple:
         def single(a: ToolResourceAction) -> tuple:
@@ -265,16 +282,17 @@ class DuplicateToolApiResponse(BaseModel):
 
 
 class PatchToolDraftApiRequest(BaseModel):
+    """Flat-ID patch draft request for tool endpoint."""
+
     input_draft_id: UUID | None = None
     group_id: UUID | None = None
     expected_version: int = 0
-
-    names: ToolResourceAction | None = None
-    descriptions: ToolResourceAction | None = None
-    flags: ToolResourceAction | None = None
-    args: ToolMultiResourceAction | None = None
-    arg_positions: ToolMultiResourceAction | None = None
-    args_outputs: ToolMultiResourceAction | None = None
+    name_id: UUID | None = None
+    description_id: UUID | None = None
+    flag_id: UUID | None = None
+    arg_ids: list[UUID] | None = None
+    arg_position_ids: list[UUID] | None = None
+    args_output_ids: list[UUID] | None = None
 
 
 class PatchToolDraftApiResponse(BaseModel):
@@ -300,18 +318,20 @@ class PatchToolDraftSqlParams(BaseModel):
     def from_request(
         cls, request: PatchToolDraftApiRequest, profile_id: UUID
     ) -> PatchToolDraftSqlParams:
-        empty_single = ToolResourceAction()
-        empty_multi = ToolMultiResourceAction()
         return cls(
             profile_id=profile_id,
             input_draft_id=request.input_draft_id,
             group_id=request.group_id,
-            names=request.names or empty_single,
-            descriptions=request.descriptions or empty_single,
-            flags=request.flags or empty_single,
-            args=request.args or empty_multi,
-            arg_positions=request.arg_positions or empty_multi,
-            args_outputs=request.args_outputs or empty_multi,
+            names=ToolResourceAction(resource_id=request.name_id),
+            descriptions=ToolResourceAction(resource_id=request.description_id),
+            flags=ToolResourceAction(resource_id=request.flag_id),
+            args=ToolMultiResourceAction(resource_ids=request.arg_ids),
+            arg_positions=ToolMultiResourceAction(
+                resource_ids=request.arg_position_ids
+            ),
+            args_outputs=ToolMultiResourceAction(
+                resource_ids=request.args_output_ids
+            ),
             expected_version=request.expected_version,
         )
 

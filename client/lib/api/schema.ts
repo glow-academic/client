@@ -8916,7 +8916,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Auth Generation Complete Api */
+        /**
+         * Auth Generation Complete Api
+         * @description Server-to-client event: auth generation complete.
+         */
         post: operations["auth_generation_complete_api_socket_v4_server_auth_generation_complete_post"];
         delete?: never;
         options?: never;
@@ -9818,9 +9821,6 @@ export interface paths {
         /**
          * Scenario Generation Complete Api
          * @description Server-to-client event: Scenario generation completed.
-         *
-         *     Emitted when a scenario resource is successfully generated.
-         *     Contains full resource objects for immediate frontend use.
          */
         post: operations["scenario_generation_complete_api_socket_v4_server_scenario_generation_complete_post"];
         delete?: never;
@@ -10501,7 +10501,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Department Generation Complete Api */
+        /**
+         * Department Generation Complete Api
+         * @description Server-to-client event: department generation complete.
+         */
         post: operations["department_generation_complete_api_socket_v4_server_department_generation_complete_post"];
         delete?: never;
         options?: never;
@@ -32031,8 +32034,8 @@ export interface components {
          * ModelGenerationCompleteEvent
          * @description Server-to-client event: model_generation_complete.
          *
-         *     Emitted when a model resource generation completes successfully.
-         *     Contains full resource objects (not just IDs) for immediate frontend use.
+         *     Emitted when model generation completes. Resource-level data is now
+         *     sent via resource_generation_complete events from the shared handler.
          */
         ModelGenerationCompleteEvent: {
             /**
@@ -32052,26 +32055,6 @@ export interface components {
             message: string;
             /** Type */
             type?: string | null;
-            name_resource?: components["schemas"]["QGetNamesV4Item"] | null;
-            description_resource?: components["schemas"]["QGetDescriptionsV4Item"] | null;
-            value_resource?: components["schemas"]["QGetValuesV4Item"] | null;
-            flag_resource?: components["schemas"]["QGetFlagsV4Item"] | null;
-            /** Flag Resources */
-            flag_resources?: components["schemas"]["ModelFlagConfig"][] | null;
-            /** Department Resources */
-            department_resources?: components["schemas"]["QGetDepartmentsV4Item"][] | null;
-            /** Modality Resources */
-            modality_resources?: components["schemas"]["QGetModalitiesV4Item"][] | null;
-            /** Temperature Level Resources */
-            temperature_level_resources?: components["schemas"]["QGetTemperatureLevelsV4Item"][] | null;
-            /** Pricing Resources */
-            pricing_resources?: components["schemas"]["QGetPricingV4Item"][] | null;
-            /** Reasoning Level Resources */
-            reasoning_level_resources?: components["schemas"]["QGetReasoningLevelsV4Item"][] | null;
-            /** Quality Resources */
-            quality_resources?: components["schemas"]["QGetQualitiesV4Item"][] | null;
-            /** Voice Resources */
-            voice_resources?: components["schemas"]["QGetVoicesV4Item"][] | null;
         };
         /** ModelModalitySection */
         ModelModalitySection: {
@@ -33872,19 +33855,29 @@ export interface components {
             /** Message */
             message: string;
         };
-        /** PatchProviderDraftApiRequest */
+        /**
+         * PatchProviderDraftApiRequest
+         * @description Flat-ID patch draft request for provider endpoint.
+         */
         PatchProviderDraftApiRequest: {
             /** Input Draft Id */
             input_draft_id?: string | null;
             /** Group Id */
             group_id?: string | null;
-            names?: components["schemas"]["ProviderResourceAction"] | null;
-            descriptions?: components["schemas"]["ProviderResourceAction"] | null;
-            flags?: components["schemas"]["ProviderResourceAction"] | null;
-            departments?: components["schemas"]["ProviderMultiResourceAction"] | null;
-            values?: components["schemas"]["ProviderResourceAction"] | null;
-            endpoints?: components["schemas"]["ProviderResourceAction"] | null;
-            keys?: components["schemas"]["ProviderResourceAction"] | null;
+            /** Name Id */
+            name_id?: string | null;
+            /** Description Id */
+            description_id?: string | null;
+            /** Flag Id */
+            flag_id?: string | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
+            /** Value Id */
+            value_id?: string | null;
+            /** Endpoint Id */
+            endpoint_id?: string | null;
+            /** Key Id */
+            key_id?: string | null;
             /**
              * Expected Version
              * @default 0
@@ -34085,7 +34078,10 @@ export interface components {
             /** Draft Exists */
             draft_exists?: boolean | null;
         };
-        /** PatchToolDraftApiRequest */
+        /**
+         * PatchToolDraftApiRequest
+         * @description Flat-ID patch draft request for tool endpoint.
+         */
         PatchToolDraftApiRequest: {
             /** Input Draft Id */
             input_draft_id?: string | null;
@@ -34096,12 +34092,18 @@ export interface components {
              * @default 0
              */
             expected_version: number;
-            names?: components["schemas"]["ToolResourceAction"] | null;
-            descriptions?: components["schemas"]["ToolResourceAction"] | null;
-            flags?: components["schemas"]["ToolResourceAction"] | null;
-            args?: components["schemas"]["ToolMultiResourceAction"] | null;
-            arg_positions?: components["schemas"]["ToolMultiResourceAction"] | null;
-            args_outputs?: components["schemas"]["ToolMultiResourceAction"] | null;
+            /** Name Id */
+            name_id?: string | null;
+            /** Description Id */
+            description_id?: string | null;
+            /** Flag Id */
+            flag_id?: string | null;
+            /** Arg Ids */
+            arg_ids?: string[] | null;
+            /** Arg Position Ids */
+            arg_position_ids?: string[] | null;
+            /** Args Output Ids */
+            args_output_ids?: string[] | null;
         };
         /** PatchToolDraftApiResponse */
         PatchToolDraftApiResponse: {
@@ -36435,15 +36437,6 @@ export interface components {
             /** Tool Name */
             tool_name?: string | null;
         };
-        /** ProviderMultiResourceAction */
-        ProviderMultiResourceAction: {
-            /** Resource Ids */
-            resource_ids?: string[] | null;
-            /** Create Tool Id */
-            create_tool_id?: string | null;
-            /** Link Tool Id */
-            link_tool_id?: string | null;
-        };
         /** ProviderNameSection */
         ProviderNameSection: {
             /**
@@ -36468,15 +36461,6 @@ export interface components {
             resource?: components["schemas"]["QGetNamesV4Item"] | null;
             /** Resources */
             resources?: components["schemas"]["QGetNamesV4Item"][] | null;
-        };
-        /** ProviderResourceAction */
-        ProviderResourceAction: {
-            /** Resource Id */
-            resource_id?: string | null;
-            /** Create Tool Id */
-            create_tool_id?: string | null;
-            /** Link Tool Id */
-            link_tool_id?: string | null;
         };
         /** ProviderValueSection */
         ProviderValueSection: {
@@ -40816,20 +40800,28 @@ export interface components {
         };
         /**
          * SaveProviderApiRequest
-         * @description Request model for save provider endpoint.
+         * @description Flat-ID save request for provider endpoint.
          */
         SaveProviderApiRequest: {
-            /** Group Id */
-            group_id?: string | null;
             /** Input Provider Id */
             input_provider_id?: string | null;
-            names: components["schemas"]["ProviderResourceAction"];
-            descriptions: components["schemas"]["ProviderResourceAction"];
-            flags: components["schemas"]["ProviderResourceAction"];
-            departments: components["schemas"]["ProviderMultiResourceAction"];
-            values: components["schemas"]["ProviderResourceAction"];
-            endpoints: components["schemas"]["ProviderResourceAction"];
-            keys: components["schemas"]["ProviderResourceAction"];
+            /**
+             * Name Id
+             * Format: uuid
+             */
+            name_id: string;
+            /** Description Id */
+            description_id?: string | null;
+            /** Flag Id */
+            flag_id?: string | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
+            /** Value Id */
+            value_id?: string | null;
+            /** Endpoint Id */
+            endpoint_id?: string | null;
+            /** Key Id */
+            key_id?: string | null;
         };
         /** SaveProviderApiResponse */
         SaveProviderApiResponse: {
@@ -41009,21 +41001,28 @@ export interface components {
             /** Actor Name */
             actor_name?: string | null;
         };
-        /** SaveToolApiRequest */
+        /**
+         * SaveToolApiRequest
+         * @description Flat-ID save request for tool endpoint.
+         */
         SaveToolApiRequest: {
-            /**
-             * Group Id
-             * Format: uuid
-             */
-            group_id: string;
             /** Input Tool Id */
             input_tool_id?: string | null;
-            names: components["schemas"]["ToolResourceAction"];
-            descriptions: components["schemas"]["ToolResourceAction"];
-            flags: components["schemas"]["ToolResourceAction"];
-            args: components["schemas"]["ToolMultiResourceAction"];
-            arg_positions: components["schemas"]["ToolMultiResourceAction"];
-            args_outputs: components["schemas"]["ToolMultiResourceAction"];
+            /**
+             * Name Id
+             * Format: uuid
+             */
+            name_id: string;
+            /** Description Id */
+            description_id?: string | null;
+            /** Flag Id */
+            flag_id?: string | null;
+            /** Arg Ids */
+            arg_ids?: string[] | null;
+            /** Arg Position Ids */
+            arg_position_ids?: string[] | null;
+            /** Args Output Ids */
+            args_output_ids?: string[] | null;
         };
         /** SaveToolApiResponse */
         SaveToolApiResponse: {
@@ -48244,15 +48243,6 @@ export interface components {
             /** Trace Id */
             trace_id?: string | null;
         };
-        /** ToolMultiResourceAction */
-        ToolMultiResourceAction: {
-            /** Resource Ids */
-            resource_ids?: string[] | null;
-            /** Create Tool Id */
-            create_tool_id?: string | null;
-            /** Link Tool Id */
-            link_tool_id?: string | null;
-        };
         /** ToolNameSection */
         ToolNameSection: {
             /**
@@ -48277,15 +48267,6 @@ export interface components {
             resource?: components["schemas"]["QGetNamesV4Item"] | null;
             /** Resources */
             resources?: components["schemas"]["QGetNamesV4Item"][] | null;
-        };
-        /** ToolResourceAction */
-        ToolResourceAction: {
-            /** Resource Id */
-            resource_id?: string | null;
-            /** Create Tool Id */
-            create_tool_id?: string | null;
-            /** Link Tool Id */
-            link_tool_id?: string | null;
         };
         /**
          * ToolsGenerationCompleteEvent

@@ -1,178 +1,132 @@
-"""Cohort completion handler - emits typed cohort completion events."""
+"""Cohort completion handler - handles run/text completion.
+
+Resource-level tool_call_complete/tool_result events are now handled by the shared
+resource_complete.py handler. This module handles:
+- text_complete: save assistant messages
+- run_complete: save assistant output and update token counts
+"""
 
 import uuid
 from typing import Any
 
 from fastapi import APIRouter
 
-from app.api.v4.resources.departments.get import get_departments_internal
-from app.api.v4.resources.descriptions.get import get_descriptions_internal
-from app.api.v4.resources.flags.get import get_flags_internal
-from app.api.v4.resources.names.get import get_names_internal
-from app.api.v4.resources.simulation_positions.get import (
-    get_simulation_positions_internal,
-)
-from app.api.v4.resources.simulations.get import get_simulations_internal
-from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
 from app.infra.v4.websocket.get_db_connection import get_db_connection
-from app.main import get_internal_sio, sio
+from app.main import get_internal_sio
 from app.socket.v4.artifacts.cohort.types import CohortGenerationCompleteEvent
+from app.utils.logging.db_logger import get_logger
+from app.utils.sql_helper import load_sql
+
+logger = get_logger(__name__)
 
 internal_sio = get_internal_sio()
+SQL_PATH_CREATE_MESSAGE_WITH_TEXT = (
+    "app/sql/v4/queries/messages/create_message_with_text_complete.sql"
+)
 
 client_router = APIRouter()
 server_router = APIRouter()
 
 
 @internal_sio.on("generate_call_complete")  # type: ignore
+@internal_sio.on("generate_text_complete")  # type: ignore
 async def handle_cohort_artifact_complete(data: dict[str, Any]) -> None:
-    """Handle generate_call_complete events and emit typed cohort completion."""
-    artifact_type = data.get("artifact_type")
-    if artifact_type != "cohort":
+    """Handle generate_call_complete and generate_text_complete events - filter by cohort artifact_type."""
+    if data.get("artifact_type") != "cohort":
         return
 
     sid = data.get("sid", "")
     if not sid:
         return
 
-    profile_id_str = await find_profile_by_socket(sid)
-    if not profile_id_str:
-        return
-
-    group_id_str = data.get("group_id")
     event_type = data.get("event_type")
-    resource_type = data.get("resource_type")
 
-    if event_type not in ("tool_call_complete", "tool_result"):
+    if event_type == "text_complete":
+        await _handle_cohort_text_complete(sid, data)
         return
 
-    tool_result = data.get("result") or {}
-    tool_results = data.get("tool_results") or []
-    if not tool_result and tool_results:
-        tool_result = tool_results[0]
-    if event_type == "tool_call_complete" and not tool_result and not tool_results:
+    if event_type == "run_complete":
+        await _handle_cohort_run_complete(sid, data)
         return
 
-    resource_id_str = tool_result.get("resource_id")
+    # tool_call_complete and tool_result events are now handled by
+    # resource_complete.py (shared handler) - nothing to do here
 
-    if not group_id_str or not resource_type:
+
+async def _handle_cohort_text_complete(sid: str, data: dict[str, Any]) -> None:
+    """Handle cohort text generation completion - save assistant message."""
+    run_id = data.get("run_id")
+    final_content = data.get("text") or ""
+
+    if not run_id or not final_content:
         return
-
-    if not resource_id_str:
-        tool_success = tool_result.get("success", True)
-        if not tool_success:
-            return
-        await sio.emit(
-            "cohort_generation_error",
-            {
-                "artifact_type": "cohort",
-                "resource_type": resource_type,
-                "group_id": group_id_str,
-                "success": False,
-                "message": f"Missing resource_id for {resource_type} tool result",
-            },
-            room=sid,
-        )
-        return
-
-    resource_id = uuid.UUID(resource_id_str)
-
-    event = CohortGenerationCompleteEvent(
-        artifact_type="cohort",
-        group_id=group_id_str,
-        resource_type=resource_type,
-        run_id=data.get("run_id"),
-        success=True,
-        message=f"{resource_type} generation completed successfully",
-        type=data.get("type", "complete"),
-    )
 
     try:
         async with get_db_connection() as conn:
-            if resource_type == "names":
-                items = await get_names_internal(conn, [resource_id])
-                if items:
-                    item = items[0]
-                    event.name_resource = {
-                        "id": item.id,
-                        "name": item.name,
-                        "generated": item.generated,
-                    }
-            elif resource_type == "descriptions":
-                items = await get_descriptions_internal(conn, [resource_id])
-                if items:
-                    item = items[0]
-                    event.description_resource = {
-                        "id": item.id,
-                        "description": item.description,
-                        "generated": item.generated,
-                    }
-            elif resource_type == "flags":
-                items = await get_flags_internal(conn, [resource_id])
-                if items:
-                    item = items[0]
-                    event.flag_resource = {
-                        "id": item.id,
-                        "name": item.name,
-                        "description": item.description,
-                        "icon": item.icon,
-                        "generated": item.generated,
-                    }
-            elif resource_type == "departments":
-                items = await get_departments_internal(conn, [resource_id])
-                if items:
-                    event.department_resources = [
-                        {
-                            "department_id": d.department_id,
-                            "name": d.name,
-                            "description": d.description,
-                            "generated": d.generated,
-                        }
-                        for d in items
-                    ]
-            elif resource_type == "simulations":
-                items = await get_simulations_internal(conn, [resource_id])
-                if items:
-                    item = items[0]
-                    event.simulation_resources = [
-                        {
-                            "simulation_id": item.simulation_id,
-                            "name": item.name,
-                            "description": item.description,
-                            "generated": item.generated,
-                        }
-                    ]
-            elif resource_type == "simulation_positions":
-                items = await get_simulation_positions_internal(conn, [resource_id])
-                if items:
-                    event.simulation_positions = [
-                        {
-                            "simulation_id": pos.simulation_id,
-                            "value": pos.value,
-                            "generated": pos.generated,
-                            "mcp": pos.mcp,
-                        }
-                        for pos in items
-                    ]
+            create_message_sql = load_sql(SQL_PATH_CREATE_MESSAGE_WITH_TEXT)
+            await conn.fetchval(
+                create_message_sql,
+                uuid.UUID(run_id),
+                "assistant",
+                final_content,
+                True,
+                False,
+            )
     except Exception as e:
-        await sio.emit(
-            "cohort_generation_error",
-            {
-                "artifact_type": "cohort",
-                "resource_type": resource_type,
-                "group_id": group_id_str,
-                "success": False,
-                "message": str(e),
-            },
-            room=sid,
-        )
+        logger.exception(f"Failed to save cohort text message: {str(e)}")
+
+
+async def _handle_cohort_run_complete(sid: str, data: dict[str, Any]) -> None:
+    """Handle cohort generation run completion - save assistant output and update token counts."""
+    run_id = data.get("run_id")
+    assistant_output = data.get("assistant_output") or ""
+    input_tokens = data.get("input_text_tokens", 0)
+    output_tokens = data.get("output_text_tokens", 0)
+
+    if not run_id:
         return
 
-    await sio.emit(
-        "cohort_generation_complete",
-        event.model_dump(mode="json"),
-        room=sid,
-    )
+    try:
+        async with get_db_connection() as conn:
+            if assistant_output:
+                existing = await conn.fetchval(
+                    """
+                    SELECT id FROM messages_entry
+                    WHERE run_id = $1 AND role = 'assistant'::message_type
+                    LIMIT 1
+                    """,
+                    uuid.UUID(run_id),
+                )
+                if not existing:
+                    create_message_sql = load_sql(SQL_PATH_CREATE_MESSAGE_WITH_TEXT)
+                    await conn.fetchval(
+                        create_message_sql,
+                        uuid.UUID(run_id),
+                        "assistant",
+                        assistant_output,
+                        True,
+                        False,
+                    )
+
+            if input_tokens or output_tokens:
+                await conn.execute(
+                    """
+                    UPDATE runs_entry
+                    SET input_tokens = COALESCE($2, input_tokens),
+                        output_tokens = COALESCE($3, output_tokens)
+                    WHERE id = $1
+                    """,
+                    uuid.UUID(run_id),
+                    input_tokens,
+                    output_tokens,
+                )
+    except Exception as e:
+        logger.exception(f"Failed to save cohort run complete: {str(e)}")
+
+
+# =============================================================================
+# FastAPI endpoint for OpenAPI documentation
+# =============================================================================
 
 
 @server_router.post("/cohort_generation_complete")

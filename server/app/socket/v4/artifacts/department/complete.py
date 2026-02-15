@@ -1,113 +1,137 @@
-"""Department completion handler - emits department-specific generation complete events."""
+"""Department completion handler - handles run/text completion.
+
+Resource-level tool_call_complete/tool_result events are now handled by the shared
+resource_complete.py handler. This module handles:
+- text_complete: save assistant messages
+- run_complete: save assistant output and update token counts
+"""
 
 import uuid
 from typing import Any
 
 from fastapi import APIRouter
 
-from app.api.v4.resources.descriptions.get import get_descriptions_internal
-from app.api.v4.resources.flags.get import get_flags_internal
-from app.api.v4.resources.names.get import get_names_internal
-from app.api.v4.resources.settings.get import get_settings_internal
-from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
 from app.infra.v4.websocket.get_db_connection import get_db_connection
-from app.main import get_internal_sio, sio
-from app.socket.v4.artifacts.department.types import DepartmentGenerationCompleteEvent
+from app.main import get_internal_sio
+from app.utils.logging.db_logger import get_logger
+from app.utils.sql_helper import load_sql
+
+logger = get_logger(__name__)
 
 internal_sio = get_internal_sio()
+SQL_PATH_CREATE_MESSAGE_WITH_TEXT = (
+    "app/sql/v4/queries/messages/create_message_with_text_complete.sql"
+)
 
 client_router = APIRouter()
 server_router = APIRouter()
 
 
 @internal_sio.on("generate_call_complete")  # type: ignore
+@internal_sio.on("generate_text_complete")  # type: ignore
 async def handle_department_artifact_complete(data: dict[str, Any]) -> None:
+    """Handle generate_call_complete and generate_text_complete events - filter by department artifact_type."""
     if data.get("artifact_type") != "department":
         return
 
-    sid = data.get("sid")
+    sid = data.get("sid", "")
     if not sid:
         return
 
-    if data.get("event_type") not in ("tool_call_complete", "tool_result"):
+    event_type = data.get("event_type")
+
+    if event_type == "text_complete":
+        await _handle_department_text_complete(sid, data)
         return
 
-    tool_result = data.get("result") or {}
-    tool_results = data.get("tool_results") or []
-    if not tool_result and tool_results:
-        tool_result = tool_results[0]
+    if event_type == "run_complete":
+        await _handle_department_run_complete(sid, data)
+        return
 
-    resource_type = data.get("resource_type")
-    generated_resource_id = tool_result.get("resource_id")
+    # tool_call_complete and tool_result events are now handled by
+    # resource_complete.py (shared handler) - nothing to do here
 
-    artifact_id_str = data.get("resource_id")
-    profile_id_str = await find_profile_by_socket(sid)
-    if not artifact_id_str or not profile_id_str:
+
+async def _handle_department_text_complete(sid: str, data: dict[str, Any]) -> None:
+    """Handle department text generation completion - save assistant message."""
+    run_id = data.get("run_id")
+    final_content = data.get("text") or ""
+
+    if not run_id or not final_content:
         return
 
     try:
-        # Fetch full resource objects using _internal() functions
-        name_resource = None
-        description_resource = None
-        flag_resource = None
-        settings_resources = None
-
-        if generated_resource_id:
-            resource_id = uuid.UUID(generated_resource_id)
-            async with get_db_connection() as conn:
-                if resource_type == "names":
-                    items = await get_names_internal(conn, [resource_id], True)
-                    name_resource = items[0] if items else None
-                elif resource_type == "descriptions":
-                    items = await get_descriptions_internal(conn, [resource_id], True)
-                    description_resource = items[0] if items else None
-                elif resource_type == "flags":
-                    items = await get_flags_internal(conn, [resource_id], True)
-                    flag_resource = items[0] if items else None
-                elif resource_type == "settings":
-                    items = await get_settings_internal(conn, [resource_id], True)
-                    settings_resources = items if items else None
-
+        async with get_db_connection() as conn:
+            create_message_sql = load_sql(SQL_PATH_CREATE_MESSAGE_WITH_TEXT)
+            await conn.fetchval(
+                create_message_sql,
+                uuid.UUID(run_id),
+                "assistant",
+                final_content,
+                True,
+                False,
+            )
     except Exception as e:
-        await sio.emit(
-            "department_generation_error",
-            {
-                "artifact_type": "department",
-                "resource_type": resource_type,
-                "group_id": data.get("group_id"),
-                "message": str(e),
-                "success": False,
-            },
-            room=sid,
-        )
+        logger.exception(f"Failed to save department text message: {str(e)}")
+
+
+async def _handle_department_run_complete(sid: str, data: dict[str, Any]) -> None:
+    """Handle department generation run completion - save assistant output and update token counts."""
+    run_id = data.get("run_id")
+    assistant_output = data.get("assistant_output") or ""
+    input_tokens = data.get("input_text_tokens", 0)
+    output_tokens = data.get("output_text_tokens", 0)
+
+    if not run_id:
         return
 
-    event = DepartmentGenerationCompleteEvent(
-        artifact_type="department",
-        group_id=data.get("group_id", ""),
-        resource_type=resource_type or "department",
-        run_id=data.get("run_id"),
-        success=bool(generated_resource_id),
-        message=f"{resource_type} generation completed"
-        if generated_resource_id
-        else "Missing resource_id in tool result",
-        type=data.get("type", "complete"),
-        name_resource=name_resource,
-        description_resource=description_resource,
-        flag_resource=flag_resource,
-        settings_resources=settings_resources,
-    )
+    try:
+        async with get_db_connection() as conn:
+            if assistant_output:
+                existing = await conn.fetchval(
+                    """
+                    SELECT id FROM messages_entry
+                    WHERE run_id = $1 AND role = 'assistant'::message_type
+                    LIMIT 1
+                    """,
+                    uuid.UUID(run_id),
+                )
+                if not existing:
+                    create_message_sql = load_sql(SQL_PATH_CREATE_MESSAGE_WITH_TEXT)
+                    await conn.fetchval(
+                        create_message_sql,
+                        uuid.UUID(run_id),
+                        "assistant",
+                        assistant_output,
+                        True,
+                        False,
+                    )
 
-    await sio.emit(
-        "department_generation_complete",
-        event.model_dump(mode="json"),
-        room=sid,
-    )
+            if input_tokens or output_tokens:
+                await conn.execute(
+                    """
+                    UPDATE runs_entry
+                    SET input_tokens = COALESCE($2, input_tokens),
+                        output_tokens = COALESCE($3, output_tokens)
+                    WHERE id = $1
+                    """,
+                    uuid.UUID(run_id),
+                    input_tokens,
+                    output_tokens,
+                )
+    except Exception as e:
+        logger.exception(f"Failed to save department run complete: {str(e)}")
+
+
+# =============================================================================
+# FastAPI endpoint for OpenAPI documentation
+# =============================================================================
 
 
 @server_router.post("/department_generation_complete")
 async def department_generation_complete_api(
     request: dict[str, Any],
 ) -> dict[str, bool]:
+    """Server-to-client event: department generation complete."""
     _ = request
     return {"ok": True}
