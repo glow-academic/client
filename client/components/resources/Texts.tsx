@@ -84,7 +84,7 @@ export function Texts({
   searchTerm,
 }: TextsProps) {
   // AI suggestion handling via shared hook
-  const { isGenerating: aiIsGenerating, aiSuggestion, accept: acceptAi, reject: rejectAi } = useResourceAi<
+  const { isGenerating: aiIsGenerating } = useResourceAi<
     Pick<TextResourceItem, "id" | "content">
   >({
     resourceType: "texts",

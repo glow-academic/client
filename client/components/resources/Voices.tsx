@@ -69,7 +69,6 @@ export interface VoicesProps {
 
 export function Voices({
   voice_ids,
-  voice_resources,
   show_voices = false,
   voice_suggestions,
   voices,
@@ -82,17 +81,10 @@ export function Voices({
   searchTerm,
   onSearchChange,
   group_id,
-  create_tool_id,
-  createVoicesAction,
   isAutosaveEnabled: _isAutosaveEnabled = true,
   registerFlush,
   showAiGenerate: _showAiGenerate = false,
   onGenerate: _onGenerate,
-  isGenerating: _isGenerating = false,
-  // AI diff view props (deprecated - now handled by useResourceAi hook)
-  aiVoiceResources: _aiVoiceResources,
-  onAccept: _onAccept,
-  onReject: _onReject,
 }: VoicesProps) {
   const ids = useMemo(() => voice_ids ?? [], [voice_ids]);
   const show = show_voices ?? false;

@@ -71,20 +71,14 @@ export function Simulations({
   label = "Simulations",
   id = "simulations",
   required = false,
-  placeholder = "Select simulations...",
   description,
   group_id,
   onGenerate,
-  isGenerating = false,
   showAiGenerate = false,
   searchTerm = "",
   showSelectedFilter = false,
   // Legacy props for backward compatibility
   simulationIds,
-  // AI diff view props
-  aiSimulationResources,
-  onAccept,
-  onReject,
 }: SimulationsProps) {
   // Use standardized props with fallback to legacy props
   const ids = useMemo(

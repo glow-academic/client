@@ -110,7 +110,6 @@ export function SimulationPositions({
   group_id,
   create_tool_id,
   onGenerate,
-  isGenerating = false,
   showAiGenerate = false,
   createSimulationPositionsAction,
   // AI diff view props

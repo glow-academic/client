@@ -72,7 +72,6 @@ export interface KeysProps {
 
 export function Keys({
   key_id,
-  key_resource,
   show_key = false,
   key_suggestions,
   keys,

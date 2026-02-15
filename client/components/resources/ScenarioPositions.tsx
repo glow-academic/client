@@ -109,10 +109,8 @@ export interface ScenarioPositionsProps {
 }
 
 export function ScenarioPositions({
-  scenario_position_ids,
   scenario_position_resources,
   show_scenario_positions = false,
-  scenario_positions,
   scenarios,
   scenario_resources,
   disabled = false,

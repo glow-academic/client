@@ -73,8 +73,6 @@ export function Tools({
   label = "Tools",
   id = "tools",
   required = false,
-  placeholder = "Select tools...",
-  description,
   group_id,
   onGenerate,
   showAiGenerate = false,

@@ -66,7 +66,6 @@ export function ReasoningLevels({
   reasoning_level_id,
   reasoning_level_resource,
   show_reasoning_levels = true,
-  reasoning_level_suggestions,
   reasoning_levels,
   disabled = false,
   onReasoningLevelIdChange,

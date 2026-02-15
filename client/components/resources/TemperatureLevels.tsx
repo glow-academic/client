@@ -70,14 +70,12 @@ export function TemperatureLevels({
   temperature_level_id,
   temperature_level_resource,
   show_temperature_levels = true,
-  temperature_level_suggestions,
   temperature_levels,
   temperature_lower,
   temperature_upper,
   disabled = false,
   onTemperatureLevelIdChange,
   onGenerate,
-  isGenerating = false,
   showAiGenerate = false,
   label = "Temperature Level",
   placeholder = "Select a temperature level",
@@ -89,10 +87,6 @@ export function TemperatureLevels({
   onSearchChange,
   showSlider = false,
   group_id,
-  // AI diff view props
-  aiTemperatureLevelResources,
-  onAccept,
-  onReject,
 }: TemperatureLevelsProps) {
   const resource = temperature_level_resource ?? null;
   const resourceId = temperature_level_id ?? null;
@@ -113,16 +107,6 @@ export function TemperatureLevels({
 
   // AI suggestion state
   const showDiff = !!aiSuggestion?.temperature_level_id;
-  const _aiSuggestedIds = useMemo(
-    () =>
-      new Set(
-        aiSuggestion?.temperature_level_id
-          ? [aiSuggestion.temperature_level_id]
-          : []
-      ),
-    [aiSuggestion]
-  );
-  // Note: _aiSuggestedIds available for future use in highlighting suggested items
 
   // Accept AI suggestion - select AI-suggested temperature level
   const handleAccept = useCallback(() => {
@@ -136,11 +120,6 @@ export function TemperatureLevels({
     rejectAi();
   }, [rejectAi]);
 
-  const _suggestionsList = useMemo(
-    () => temperature_level_suggestions ?? [],
-    [temperature_level_suggestions]
-  );
-  // Note: _suggestionsList available for future use
   const filteredTemperatureLevels = useMemo(() => {
     if (!searchTerm?.trim()) {
       return temperature_levels ?? [];

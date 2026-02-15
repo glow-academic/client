@@ -103,16 +103,11 @@ export function StandardGroups({
   create_tool_id,
   createStandardGroupsAction,
   onGenerate,
-  isGenerating = false,
   showAiGenerate = false,
   isAutosaveEnabled = true,
   registerFlush,
   // Legacy props for backward compatibility
   standardGroupIds,
-  // AI diff view props
-  aiStandardGroupResources,
-  onAccept,
-  onReject,
 }: StandardGroupsProps) {
   // Use standardized props with fallback to legacy props
   const ids = useMemo(

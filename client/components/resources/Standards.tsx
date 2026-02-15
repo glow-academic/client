@@ -73,12 +73,7 @@ export function Standards({
   description,
   group_id: _group_id,
   onGenerate,
-  isGenerating = false,
   showAiGenerate = false,
-  // AI diff view props
-  aiStandardResources,
-  onAccept,
-  onReject,
 }: StandardsProps) {
   const ids = useMemo(() => standard_ids ?? [], [standard_ids]);
   const show = show_standards ?? false;

@@ -87,16 +87,10 @@ export function Values({
   onSearchChange,
   group_id,
   create_tool_id,
-  createValuesAction,
   onGenerate,
   showAiGenerate = false,
-  isGenerating = false,
   isAutosaveEnabled: _isAutosaveEnabled = true,
   registerFlush,
-  // AI diff view props
-  aiValueResources,
-  onAccept,
-  onReject,
 }: ValuesProps) {
   const ids = useMemo(() => value_ids ?? [], [value_ids]);
   const show = show_values ?? false;

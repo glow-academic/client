@@ -431,15 +431,6 @@ export function Uploads({
 
   // AI suggestion state
   const showDiff = aiSuggestions.length > 0;
-  const aiSuggestedIds = useMemo(
-    () =>
-      new Set(
-        aiSuggestions
-          .map((u) => u.id)
-          .filter(Boolean) as string[]
-      ),
-    [aiSuggestions]
-  );
 
   // Accept AI suggestion - add AI-suggested uploads to selection
   const handleAccept = useCallback(() => {
