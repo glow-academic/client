@@ -3,6 +3,7 @@ Unified endpoint that handles both create (auth_id = NULL) and update (auth_id p
 Uses access check SQL + Python permission logic before executing save.
 """
 
+import uuid
 from typing import Annotated, Any, cast
 
 import asyncpg  # type: ignore
@@ -13,6 +14,9 @@ from app.api.v4.artifacts.auth.permissions import (
     compute_can_edit,
 )
 from app.api.v4.artifacts.auth.types import (
+    AuthItemAction,
+    AuthMultiResourceAction,
+    AuthResourceAction,
     SaveAuthApiRequest,
     SaveAuthApiResponse,
     SaveAuthSqlParams,
@@ -29,7 +33,10 @@ from app.sql.types import (
     load_sql_query,
 )
 from app.utils.cache.invalidate_tags import invalidate_tags
+from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import execute_sql_typed
+
+logger = get_logger(__name__)
 
 # SQL paths
 ACCESS_CHECK_SQL_PATH = "app/sql/v4/queries/auth/check_auth_save_access_complete.sql"
@@ -37,6 +44,67 @@ SQL_PATH = "app/sql/v4/queries/auth/save_auth_complete.sql"
 
 
 router = APIRouter()
+
+
+async def save_auth_internal(
+    conn: asyncpg.Connection,
+    profile_id: uuid.UUID,
+    group_id: uuid.UUID,
+    resource_actions: dict[str, Any],
+    auth_id: uuid.UUID | None = None,
+) -> uuid.UUID | None:
+    """Save an auth from resource actions dict (used by generation complete handler).
+
+    Builds SaveAuthSqlParams from a flat resource_actions dict, executes the
+    save SQL in a transaction, and invalidates cache.
+
+    Returns the auth_id on success, None on failure.
+    """
+    try:
+
+        def _single(key: str) -> AuthResourceAction:
+            val = resource_actions.get(key, {})
+            if isinstance(val, dict):
+                return AuthResourceAction(
+                    resource_id=val.get("resource_id"),
+                )
+            return AuthResourceAction()
+
+        def _multi(key: str) -> AuthMultiResourceAction:
+            val = resource_actions.get(key, {})
+            if isinstance(val, dict):
+                return AuthMultiResourceAction(
+                    resource_ids=val.get("resource_ids"),
+                )
+            return AuthMultiResourceAction()
+
+        params = SaveAuthSqlParams(
+            profile_id=profile_id,
+            input_auth_id=auth_id,
+            group_id=group_id,
+            names=_single("names"),
+            descriptions=_single("descriptions"),
+            flags=_single("flags"),
+            protocols=_multi("protocols"),
+            slugs=_multi("slugs"),
+            items=AuthItemAction(),
+        )
+
+        async with conn.transaction():
+            result = cast(
+                SaveAuthSqlRow,
+                await execute_sql_typed(conn, SQL_PATH, params=params),
+            )
+
+            if not result or not result.auth_id:
+                return None
+
+        await invalidate_tags(["auth"])
+        return result.auth_id
+
+    except Exception as e:
+        logger.exception(f"save_auth_internal failed: {e}")
+        return None
 
 
 @router.post(

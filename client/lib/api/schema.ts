@@ -19332,6 +19332,8 @@ export interface components {
             message: string;
             /** Type */
             type?: string | null;
+            /** Auth Id */
+            auth_id?: string | null;
         };
         /**
          * AuthGenerationErrorEvent
@@ -40156,6 +40158,8 @@ export interface components {
             message: string;
             /** Type */
             type?: string | null;
+            /** Rubric Id */
+            rubric_id?: string | null;
         };
         /**
          * RubricGenerationStartedEvent

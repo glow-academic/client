@@ -300,3 +300,16 @@ class AuthGenerationStartedEvent(BaseModel):
     group_id: str
     run_id: str
     resource_types: list[str]
+
+
+class SettingGenerationStartedEvent(BaseModel):
+    """Server-to-client event: setting_generation_started.
+
+    Emitted when setting generation begins, listing which resource types
+    will be generated.
+    """
+
+    artifact_type: str = "setting"
+    group_id: str
+    run_id: str
+    resource_types: list[str]

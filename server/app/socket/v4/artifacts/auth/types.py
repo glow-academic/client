@@ -33,6 +33,7 @@ class AuthGenerationCompleteEvent(GenerationCompleteEvent):
     """
 
     artifact_type: str = "auth"
+    auth_id: str | None = None
 
 
 class AuthGenerationProgressEvent(GenerationProgressEvent):

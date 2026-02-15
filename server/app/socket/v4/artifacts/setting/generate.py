@@ -2,12 +2,12 @@
 
 This module handles all business logic for setting generation:
 - Rate limit validation (fail fast)
-- Group/run creation
+- Multi-agent grouping from resource_agent_ids
+- Group/run creation via setting-specific prepare SQL
 - Agent/model context from pre-fetched resources (denormalized chain)
+- Generation tracker for multi-agent coordination
 - Jinja template rendering for developer instructions
 - Message insertion with deduplication
-
-The AI handler (generate.py) receives a simplified payload with pre-rendered content.
 """
 
 import asyncio
@@ -23,18 +23,25 @@ from app.api.v4.resources.prompts.get import get_prompts_internal
 from app.api.v4.views.config.get import get_config_internal
 from app.infra.v4.generation import convert_tools_to_dict, render_developer_instructions
 from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
+from app.infra.v4.websocket.generation_tracker import (
+    init_generation,
+    init_resource_progress,
+)
 from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.infra.v4.websocket.typed_emit import emit_to_internal
 from app.main import get_internal_sio, get_pool, sio
 from app.socket.v4.artifacts.setting.types import GenerateSettingPayload
-from app.socket.v4.artifacts.types import GenerateErrorApiRequest
+from app.socket.v4.artifacts.types import (
+    GenerateErrorApiRequest,
+    SettingGenerationStartedEvent,
+)
 from app.sql.types import (
     GetAgentToolsSqlParams,
     GetAgentToolsSqlRow,
-    GetPersonaGenerationContextSqlParams,
-    GetPersonaGenerationContextSqlRow,
-    PreparePersonaGenerationSqlParams,
-    PreparePersonaGenerationSqlRow,
+    GetSettingGenerationContextSqlParams,
+    GetSettingGenerationContextSqlRow,
+    PrepareSettingGenerationSqlParams,
+    PrepareSettingGenerationSqlRow,
 )
 from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import execute_sql_typed, load_sql
@@ -46,12 +53,12 @@ internal_sio = get_internal_sio()
 client_router = APIRouter()
 server_router = APIRouter()
 
-# SQL paths — reuse persona's generic SQL (rate limit + prepare are profile/group-based)
+# SQL paths — setting-specific SQL
 SQL_PATH_CONTEXT = (
-    "app/sql/v4/queries/generate/persona/get_persona_generation_context_complete.sql"
+    "app/sql/v4/queries/generate/setting/get_setting_generation_context_complete.sql"
 )
 SQL_PATH_PREPARE = (
-    "app/sql/v4/queries/generate/persona/prepare_persona_generation_complete.sql"
+    "app/sql/v4/queries/generate/setting/prepare_setting_generation_complete.sql"
 )
 SQL_PATH_AGENT_TOOLS = (
     "app/sql/v4/queries/generate/persona/get_agent_tools_complete.sql"
@@ -91,7 +98,7 @@ async def _setting_generate_impl(
     """Handle setting generation with all business logic.
 
     This function:
-    1. Validates resource_types and resolves agent_id from domain mappings
+    1. Validates resource_types and groups by agent_id for multi-agent dispatch
     2. Fetches setting data via internal function (includes pre-fetched config resources)
     3. Extracts LLM config from pre-fetched agents/models/providers resources
     4. Validates prerequisites (rate limit from SQL, agent/model/provider from resources)
@@ -99,7 +106,7 @@ async def _setting_generate_impl(
     6. Calls prepare SQL (mutations only: group/run/config creation)
     7. Renders developer instructions with Jinja
     8. Inserts pre-rendered messages
-    9. Emits simplified payload to generate_artifact handler
+    9. Dispatches to generate_artifact handler per agent group
     """
     try:
         # Validate resource_types
@@ -157,16 +164,15 @@ async def _setting_generate_impl(
             draft_id=data.draft_id,
         )
 
-        # Get agent_id from the first resource type that has an agent assigned
+        # Multi-agent grouping: group resource_types by agent_id
         resource_agent_ids = result.resource_agent_ids or {}
-        agent_id: uuid.UUID | None = None
+        agent_groups: dict[uuid.UUID, list[str]] = {}
         for rt in resource_types:
             aid = resource_agent_ids.get(rt)
             if aid is not None:
-                agent_id = aid
-                break
+                agent_groups.setdefault(aid, []).append(rt)
 
-        if not agent_id:
+        if not agent_groups:
             await emit_to_internal(
                 "generate_call_error",
                 GenerateErrorApiRequest(
@@ -271,11 +277,11 @@ async def _setting_generate_impl(
 
         # Step 3: Check rate limit
         async with get_db_connection() as conn:
-            context_params = GetPersonaGenerationContextSqlParams(
+            context_params = GetSettingGenerationContextSqlParams(
                 p_profile_id=profile_id,
             )
             context_row = cast(
-                GetPersonaGenerationContextSqlRow,
+                GetSettingGenerationContextSqlRow,
                 await execute_sql_typed(conn, SQL_PATH_CONTEXT, params=context_params),
             )
 
@@ -286,7 +292,7 @@ async def _setting_generate_impl(
                 error_msg = f"Rate limit exceeded ({runs_today}/{requests_per_day} requests today)"
                 logger.error(
                     f"Setting generation rate limit exceeded - "
-                    f"profile_id={profile_id}, agent_id={agent_id}, "
+                    f"profile_id={profile_id}, "
                     f"reason: {error_msg}"
                 )
                 await emit_to_internal(
@@ -313,7 +319,7 @@ async def _setting_generate_impl(
             async def fetch_tools():
                 async with pool.acquire() as c:
                     tools_params = GetAgentToolsSqlParams(
-                        p_agent_id=agent_id,
+                        p_agent_id=agent_resource.id,
                         p_resource_types=resource_types,
                     )
                     tools_row = cast(
@@ -361,7 +367,7 @@ async def _setting_generate_impl(
             )
 
             # Step 6: Prepare generation (mutations only: group/run/config creation)
-            prepare_params = PreparePersonaGenerationSqlParams(
+            prepare_params = PrepareSettingGenerationSqlParams(
                 p_profile_id=profile_id,
                 p_group_id=existing_group_id,
                 p_agents_resource_id=agent_resource.id,
@@ -369,14 +375,14 @@ async def _setting_generate_impl(
                 p_providers_resource_id=provider_resource.id,
             )
             prepare_row = cast(
-                PreparePersonaGenerationSqlRow,
+                PrepareSettingGenerationSqlRow,
                 await execute_sql_typed(conn, SQL_PATH_PREPARE, params=prepare_params),
             )
 
             if not prepare_row.run_id:
                 logger.error(
                     f"Setting generation preparation failed unexpectedly - "
-                    f"profile_id={profile_id}, agent_id={agent_id}"
+                    f"profile_id={profile_id}"
                 )
                 await emit_to_internal(
                     "generate_call_error",
@@ -469,32 +475,53 @@ async def _setting_generate_impl(
                         False,
                     )
 
-            # Step 9: Emit simplified payload to generate_artifact handler
-            await internal_sio.emit(
-                "generate_artifact",
-                {
-                    "sid": sid,
-                    "artifact_type": "setting",
-                    "resource_type": resource_types[0] if resource_types else "setting",
-                    "run_id": str(run_id),
-                    "group_id": str(group_id) if group_id else None,
-                    "message_id": None,
-                    "messages": messages,
-                    "llm_config": {
-                        "model": model_name,
-                        "api_key": api_key,
-                        "base_url": base_url,
-                        "temperature": temperature,
-                        "reasoning": reasoning,
-                        "provider": provider_name,
-                        "voice": voice,
-                        "quality": quality,
-                        "length_seconds": None,
-                        "tool_choice": "required",
-                    },
-                    "tools": convert_tools_to_dict(tools),
-                },
+            # Step 9: Initialize generation tracker and dispatch per agent group
+            await init_generation(str(run_id), len(agent_groups))
+            await init_resource_progress(str(run_id), len(resource_types))
+
+            # Emit started event to client
+            started_event = SettingGenerationStartedEvent(
+                artifact_type="setting",
+                group_id=str(group_id) if group_id else "",
+                run_id=str(run_id),
+                resource_types=resource_types,
             )
+            await sio.emit(
+                "setting_generation_started",
+                started_event.model_dump(mode="json"),
+                room=sid,
+            )
+
+            # Dispatch one generate_artifact event per agent group
+            for _agent_group_id, agent_resource_types in agent_groups.items():
+                await internal_sio.emit(
+                    "generate_artifact",
+                    {
+                        "sid": sid,
+                        "artifact_type": "setting",
+                        "resource_type": agent_resource_types[0]
+                        if agent_resource_types
+                        else "setting",
+                        "run_id": str(run_id),
+                        "group_id": str(group_id) if group_id else None,
+                        "message_id": None,
+                        "messages": messages,
+                        "llm_config": {
+                            "model": model_name,
+                            "api_key": api_key,
+                            "base_url": base_url,
+                            "temperature": temperature,
+                            "reasoning": reasoning,
+                            "provider": provider_name,
+                            "voice": voice,
+                            "quality": quality,
+                            "length_seconds": None,
+                            "tool_choice": "required",
+                        },
+                        "tools": convert_tools_to_dict(tools),
+                        "save": data.save,
+                    },
+                )
 
     except Exception as e:
         logger.exception(f"Failed to generate setting resources: {str(e)}")

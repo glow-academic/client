@@ -70,6 +70,9 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { GenerateRegenerateModal } from "@/components/common/forms/GenerateRegenerateModal";
+import { useSocket } from "@/contexts/socket-context";
+import { useGenerationModal } from "@/hooks/use-generation-modal";
 import { useRouter } from "next/navigation";
 
 // Helper function to truncate text
@@ -122,7 +125,39 @@ export default function Documents({
   listData: serverListData,
   deleteDocumentAction,
 }: DocumentsProps) {
+  const { socket, isConnected } = useSocket();
   const router = useRouter();
+
+  // Generation modal via shared hook
+  type DocumentResourceType = "names" | "descriptions" | "flags" | "departments" | "fields" | "uploads" | "images" | "texts";
+  const { handleOpenStepCardModal, modalProps } = useGenerationModal<DocumentResourceType>({
+    stepResources: {
+      all: ["names", "descriptions", "flags", "departments", "fields", "uploads", "images", "texts"],
+    },
+    resourceLabels: {
+      names: "Name",
+      descriptions: "Description",
+      flags: "Configuration",
+      departments: "Departments",
+      fields: "Fields",
+      uploads: "Files",
+      images: "Images",
+      texts: "Texts",
+    },
+    canRegenerate: () => true,
+    onGenerate: (selectedResources, instructions) => {
+      if (!socket || !isConnected) return;
+      socket.emit("document_generate", {
+        resource_types: selectedResources,
+        user_instructions: instructions?.trim() ? [instructions.trim()] : null,
+        document_id: null,
+        draft_id: null,
+      });
+      toast.success("Generation started for new document");
+    },
+    isGenerating: () => false,
+  });
+
   // Table state for filtering
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [sorting, setSorting] = useState<SortingState>([
@@ -822,6 +857,7 @@ export default function Documents({
             </DialogFooter>
           </DialogContent>
         </Dialog>
+        <GenerateRegenerateModal {...modalProps} />
       </div>
     </TooltipProvider>
   );

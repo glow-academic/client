@@ -1,9 +1,9 @@
-"""Auth completion handler - handles run/text completion.
+"""Auth completion handler - handles run/text completion and multi-agent coordination.
 
 Resource-level tool_call_complete/tool_result events are now handled by the shared
 resource_complete.py handler. This module handles:
 - text_complete: save assistant messages
-- run_complete: save assistant output and update token counts
+- run_complete: coordinate multi-agent completion via generation_tracker
 """
 
 import uuid
@@ -11,8 +11,14 @@ from typing import Any
 
 from fastapi import APIRouter
 
+from app.api.v4.artifacts.auth.save import save_auth_internal
+from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
+from app.infra.v4.websocket.generation_tracker import (
+    cleanup_generation,
+    record_agent_complete,
+)
 from app.infra.v4.websocket.get_db_connection import get_db_connection
-from app.main import get_internal_sio
+from app.main import get_internal_sio, sio
 from app.socket.v4.artifacts.auth.types import AuthGenerationCompleteEvent
 from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import load_sql
@@ -77,11 +83,19 @@ async def _handle_auth_text_complete(sid: str, data: dict[str, Any]) -> None:
 
 
 async def _handle_auth_run_complete(sid: str, data: dict[str, Any]) -> None:
-    """Handle auth generation run completion - save assistant output and update token counts."""
+    """Handle auth generation run completion.
+
+    Coordinates multi-agent completion via generation_tracker:
+    1. Saves assistant message and token counts
+    2. Records this agent's completion
+    3. If all agents done: emits auth_generation_complete
+    4. Cleans up generation tracking
+    """
     run_id = data.get("run_id")
     assistant_output = data.get("assistant_output") or ""
     input_tokens = data.get("input_text_tokens", 0)
     output_tokens = data.get("output_text_tokens", 0)
+    group_id_str = data.get("group_id")
 
     if not run_id:
         return
@@ -122,6 +136,64 @@ async def _handle_auth_run_complete(sid: str, data: dict[str, Any]) -> None:
                 )
     except Exception as e:
         logger.exception(f"Failed to save auth run complete: {str(e)}")
+
+    # Multi-agent coordination via generation tracker
+    tool_results = data.get("tool_results") or []
+    is_complete, _all_tool_results = await record_agent_complete(run_id, tool_results)
+
+    if is_complete:
+        # All agents finished - auto-save auth if save=True (default)
+        auth_id: str | None = None
+
+        should_save = data.get("save", True)
+        profile_id_str = await find_profile_by_socket(sid)
+        if should_save and profile_id_str and group_id_str:
+            try:
+                profile_id = uuid.UUID(profile_id_str)
+                group_id = uuid.UUID(group_id_str)
+
+                # Build resource_actions from all_tool_results
+                resource_actions: dict[str, Any] = {}
+                for tr in _all_tool_results:
+                    if isinstance(tr, dict):
+                        rt = tr.get("resource_type")
+                        rid = tr.get("resource_id")
+                        rids = tr.get("resource_ids")
+                        if rt and rid:
+                            resource_actions[rt] = {"resource_id": rid}
+                        elif rt and rids:
+                            resource_actions[rt] = {"resource_ids": rids}
+
+                async with get_db_connection() as conn:
+                    saved_id = await save_auth_internal(
+                        conn=conn,
+                        profile_id=profile_id,
+                        group_id=group_id,
+                        resource_actions=resource_actions,
+                    )
+                    if saved_id:
+                        auth_id = str(saved_id)
+            except Exception as e:
+                logger.exception(f"Failed to auto-save auth: {str(e)}")
+
+        # Emit auth_generation_complete
+        event = AuthGenerationCompleteEvent(
+            artifact_type="auth",
+            group_id=group_id_str or "",
+            resource_type="auth",
+            run_id=run_id,
+            success=True,
+            message="Auth generation completed",
+            auth_id=auth_id,
+        )
+
+        await sio.emit(
+            "auth_generation_complete",
+            event.model_dump(mode="json"),
+            room=sid,
+        )
+
+        await cleanup_generation(run_id)
 
 
 # =============================================================================

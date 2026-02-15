@@ -70,9 +70,7 @@ async def save_eval_internal(
             if isinstance(val, dict):
                 rids = val.get("resource_ids")
                 if rids:
-                    return [
-                        uuid.UUID(r) if isinstance(r, str) else r for r in rids
-                    ]
+                    return [uuid.UUID(r) if isinstance(r, str) else r for r in rids]
             return None
 
         name_id = _single_id("names")

@@ -43,6 +43,7 @@ class RubricGenerationCompleteEvent(GenerationCompleteEvent):
     """
 
     artifact_type: str = "rubric"
+    rubric_id: str | None = None
 
 
 class RubricGenerationProgressEvent(GenerationProgressEvent):

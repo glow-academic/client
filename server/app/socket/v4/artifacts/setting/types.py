@@ -26,6 +26,7 @@ class GenerateSettingPayload(GetSettingApiRequest):
 
     resource_types: list[str]
     user_instructions: list[str] | None = None
+    save: bool = True
 
 
 # =============================================================================

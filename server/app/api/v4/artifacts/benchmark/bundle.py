@@ -28,6 +28,8 @@ from app.api.v4.artifacts.benchmark.types import (
     GetBenchmarkBundleRequest,
     GetBenchmarkBundleResponse,
 )
+from app.api.v4.auth.settings import get_auth_settings_internal
+from app.api.v4.permissions import resolve_agents_for_artifact
 from app.api.v4.resources.departments.get import get_departments_internal
 from app.api.v4.resources.instructions.get import get_instructions_internal
 from app.api.v4.resources.keys.get import get_keys_internal
@@ -45,6 +47,23 @@ router = APIRouter()
 
 
 # =============================================================================
+# Constants
+# =============================================================================
+
+BENCHMARK_BUNDLE_RESOURCES: set[str] = {
+    "departments",
+    "models",
+    "prompts",
+    "instructions",
+    "voices",
+    "temperature_levels",
+    "reasoning_levels",
+    "tools",
+    "keys",
+}
+
+
+# =============================================================================
 # Internal Data
 # =============================================================================
 
@@ -58,6 +77,7 @@ class BenchmarkBundleInternalData:
     # Per-resource: all (suggestions) and current (selected)
     all_resources: dict[str, list[Any]] = field(default_factory=dict)
     current_resources: dict[str, list[Any]] = field(default_factory=dict)
+    resource_agent_ids: dict[str, UUID | None] = field(default_factory=dict)
 
 
 # =============================================================================
@@ -185,6 +205,12 @@ async def get_benchmark_bundle_internal(
             id_attr,
         )
 
+    # 5. Settings-based agent resolution
+    settings_data = await get_auth_settings_internal(conn, profile_id, bypass_cache)
+    agent_ids, create_tool_ids_map, link_tool_ids_map = resolve_agents_for_artifact(
+        settings_data.agent_tool_entries, BENCHMARK_BUNDLE_RESOURCES
+    )
+
     return BenchmarkBundleInternalData(
         benchmark_bundle_entry_id=view_data.benchmark_bundle_entry_id,
         benchmark_id=view_data.benchmark_id,
@@ -192,6 +218,7 @@ async def get_benchmark_bundle_internal(
         draft_version=draft_item.version if draft_item else None,
         all_resources=all_resources,
         current_resources=current_resources,
+        resource_agent_ids=agent_ids,
     )
 
 
@@ -235,7 +262,7 @@ async def get_benchmark_bundle_client(
         return cls(
             show=True,
             required=False,
-            show_ai_generate=False,
+            show_ai_generate=data.resource_agent_ids.get(resource_key) is not None,
             current=data.current_resources.get(resource_key) or None,
             resources=data.all_resources.get(resource_key) or None,
         )

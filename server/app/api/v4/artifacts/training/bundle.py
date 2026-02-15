@@ -16,7 +16,10 @@ import asyncpg
 from fastapi import APIRouter, HTTPException, Request
 
 from app.api.v4.artifacts.training.get import get_training_websocket
-from app.api.v4.artifacts.training.permissions import compute_bundle_section_show
+from app.api.v4.artifacts.training.permissions import (
+    TRAINING_BUNDLE_RESOURCES,
+    compute_bundle_section_show,
+)
 from app.api.v4.artifacts.training.types import (
     BaseTrainingBundleSection,
     GetTrainingBundleRequest,
@@ -38,6 +41,8 @@ from app.api.v4.artifacts.training.types import (
     TrainingBundleWebsocketResources,
     TrainingBundleWebsocketViews,
 )
+from app.api.v4.auth.settings import get_auth_settings_internal
+from app.api.v4.permissions import resolve_agents_for_artifact
 from app.api.v4.resources.agents.get import get_agents_internal
 from app.api.v4.resources.departments.get import get_departments_internal
 from app.api.v4.resources.documents.get import get_documents_internal
@@ -283,7 +288,53 @@ async def get_training_bundle_internal(
             resource_key, scenario_flags
         )
 
-    # 8. Config chain (department → start context → agent/model/provider/tools)
+    # 8. Settings-based agent resolution + config chain
+    async with pool.acquire() as settings_conn:
+        settings_data = await get_auth_settings_internal(
+            settings_conn, profile_id, bypass_cache
+        )
+    agent_ids, create_tool_ids_map, link_tool_ids_map = resolve_agents_for_artifact(
+        settings_data.agent_tool_entries, TRAINING_BUNDLE_RESOURCES
+    )
+
+    # Config chain from settings agents
+    config_agent_resource_ids = [a.id for a in settings_data.settings_agents if a.id]
+    config_model_resource_ids = [
+        a.model_id for a in settings_data.settings_agents if a.model_id
+    ]
+    config_provider_resource_ids: list[UUID] = []
+
+    config_agents: list[Any] = []
+    config_models: list[Any] = []
+    config_providers: list[Any] = []
+    config_tools: list[Any] = []
+
+    if config_agent_resource_ids:
+        async with pool.acquire() as conn:
+            config_agents = await get_agents_internal(
+                conn, config_agent_resource_ids, bypass_cache
+            )
+    if config_model_resource_ids:
+        async with pool.acquire() as conn:
+            config_models = await get_models_internal(
+                conn, config_model_resource_ids, bypass_cache
+            )
+    if config_provider_resource_ids:
+        async with pool.acquire() as conn:
+            config_providers = await get_providers_internal(
+                conn, config_provider_resource_ids, bypass_cache
+            )
+
+    tool_ids: list[UUID] = []
+    for agent in config_agents:
+        if agent.tool_ids:
+            tool_ids.extend(agent.tool_ids)
+    if tool_ids:
+        unique_tool_ids = list(dict.fromkeys(tool_ids))
+        async with pool.acquire() as conn:
+            config_tools = await get_tools_internal(conn, unique_tool_ids, bypass_cache)
+
+    # 9. Simulation/scenario context (from training websocket)
     selected_department_ids = selected_ids.get("departments", [])
     selected_department_id = (
         selected_department_ids[0] if selected_department_ids else None
@@ -291,11 +342,6 @@ async def get_training_bundle_internal(
     if not selected_department_id and view_data.department_ids:
         selected_department_id = view_data.department_ids[0]
 
-    config_agents: list[Any] = []
-    config_models: list[Any] = []
-    config_providers: list[Any] = []
-    config_tools: list[Any] = []
-    selected_agent_id: UUID | None = None
     simulation_id: UUID | None = None
     scenario_id: UUID | None = None
 
@@ -308,41 +354,10 @@ async def get_training_bundle_internal(
                 department_id=selected_department_id,
                 draft_id=draft_id,
             )
-
-        selected_agent_id = start_ctx.resources.agent_id
-        model_id = start_ctx.resources.model_id
-        provider_id = start_ctx.resources.provider_id
         simulation_id = start_ctx.resources.simulation_id
         scenario_id = start_ctx.resources.scenario_id
 
-        if selected_agent_id:
-            async with pool.acquire() as conn:
-                config_agents = await get_agents_internal(
-                    conn, [selected_agent_id], bypass_cache
-                )
-        if model_id:
-            async with pool.acquire() as conn:
-                config_models = await get_models_internal(
-                    conn, [model_id], bypass_cache
-                )
-        if provider_id:
-            async with pool.acquire() as conn:
-                config_providers = await get_providers_internal(
-                    conn, [provider_id], bypass_cache
-                )
-
-        tool_ids: list[UUID] = []
-        for agent in config_agents:
-            if agent.tool_ids:
-                tool_ids.extend(agent.tool_ids)
-        if tool_ids:
-            unique_tool_ids = list(dict.fromkeys(tool_ids))
-            async with pool.acquire() as conn:
-                config_tools = await get_tools_internal(
-                    conn, unique_tool_ids, bypass_cache
-                )
-
-    # 9. Resolve simulation name
+    # 10. Resolve simulation name
     simulation_name: str | None = None
     if simulation_id:
         from app.api.v4.resources.simulations.get import (
@@ -356,10 +371,8 @@ async def get_training_bundle_internal(
         if sim_list:
             simulation_name = sim_list[0].name
 
-    # 10. Resource agent IDs
-    resource_agent_ids: dict[str, UUID | None] = {
-        rk: selected_agent_id for rk, _va, _da, _fn, _ia in RESOURCE_CONFIG
-    }
+    # 11. Resource agent IDs (from settings-based resolution)
+    resource_agent_ids = agent_ids
 
     return TrainingBundleInternalData(
         training_bundle_entry_id=view_data.training_bundle_entry_id,

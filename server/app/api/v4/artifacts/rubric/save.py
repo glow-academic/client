@@ -2,6 +2,7 @@
 Unified endpoint that handles both create (rubric_id = NULL) and update (rubric_id provided).
 """
 
+import uuid
 from typing import Annotated, Any, cast
 
 import asyncpg  # type: ignore
@@ -12,6 +13,8 @@ from app.api.v4.artifacts.rubric.permissions import (
     compute_can_edit,
 )
 from app.api.v4.artifacts.rubric.types import (
+    RubricMultiResourceAction,
+    RubricResourceAction,
     SaveRubricApiRequest,
     SaveRubricApiResponse,
     SaveRubricSqlParams,
@@ -27,7 +30,10 @@ from app.sql.types import (
     load_sql_query,
 )
 from app.utils.cache.invalidate_tags import invalidate_tags
+from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import execute_sql_typed
+
+logger = get_logger(__name__)
 
 # SQL paths
 ACCESS_CHECK_SQL_PATH = (
@@ -37,6 +43,69 @@ SQL_PATH = "app/sql/v4/queries/rubrics/save_rubric_complete.sql"
 
 
 router = APIRouter()
+
+
+async def save_rubric_internal(
+    conn: asyncpg.Connection,
+    profile_id: uuid.UUID,
+    group_id: uuid.UUID,
+    resource_actions: dict[str, Any],
+    rubric_id: uuid.UUID | None = None,
+) -> uuid.UUID | None:
+    """Save a rubric from resource actions dict (used by generation complete handler).
+
+    Builds SaveRubricSqlParams from a flat resource_actions dict, executes the
+    save SQL in a transaction, and invalidates cache.
+
+    Returns the rubric_id on success, None on failure.
+    """
+    try:
+
+        def _single(key: str) -> RubricResourceAction:
+            val = resource_actions.get(key, {})
+            if isinstance(val, dict):
+                return RubricResourceAction(
+                    resource_id=val.get("resource_id"),
+                )
+            return RubricResourceAction()
+
+        def _multi(key: str) -> RubricMultiResourceAction:
+            val = resource_actions.get(key, {})
+            if isinstance(val, dict):
+                return RubricMultiResourceAction(
+                    resource_ids=val.get("resource_ids"),
+                )
+            return RubricMultiResourceAction()
+
+        params = SaveRubricSqlParams(
+            profile_id=profile_id,
+            input_rubric_id=rubric_id,
+            group_id=group_id,
+            names=_single("names"),
+            descriptions=_single("descriptions"),
+            flags=_single("flags"),
+            departments=_multi("departments"),
+            points=_single("points"),
+            pass_points=_single("pass_points"),
+            standard_groups=_multi("standard_groups"),
+            standards=_multi("standards"),
+        )
+
+        async with conn.transaction():
+            result = cast(
+                SaveRubricSqlRow,
+                await execute_sql_typed(conn, SQL_PATH, params=params),
+            )
+
+            if not result or not result.rubric_id:
+                return None
+
+        await invalidate_tags(["rubrics"])
+        return result.rubric_id
+
+    except Exception as e:
+        logger.exception(f"save_rubric_internal failed: {e}")
+        return None
 
 
 @router.post(

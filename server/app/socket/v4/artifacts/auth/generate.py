@@ -154,9 +154,7 @@ async def _generate_auth_impl(
                     break
 
         # Use first agent_id for validation (all share same config chain)
-        agent_id: uuid.UUID | None = (
-            next(iter(agent_groups)) if agent_groups else None
-        )
+        agent_id: uuid.UUID | None = next(iter(agent_groups)) if agent_groups else None
 
         if not agent_id:
             await emit_to_internal(
@@ -212,9 +210,7 @@ async def _generate_auth_impl(
             agent_resource.reasoning if hasattr(agent_resource, "reasoning") else None
         )
         voice = agent_resource.voice if hasattr(agent_resource, "voice") else None
-        quality = (
-            agent_resource.quality if hasattr(agent_resource, "quality") else None
-        )
+        quality = agent_resource.quality if hasattr(agent_resource, "quality") else None
         provider_name = provider_resource.value or provider_resource.name or ""
 
         if not api_key:
