@@ -111,7 +111,13 @@ async def search_simulations_internal(
         ),
     )
 
-    items = result.items or []
+    # Convert auto-generated Q* types to handcrafted types via dict roundtrip
+    items: list[GetSimulationsV4Item] = [
+        GetSimulationsV4Item.model_validate(
+            item.model_dump() if hasattr(item, "model_dump") else item
+        )
+        for item in (result.items or [])
+    ]
 
     # Cache response
     await set_cached(

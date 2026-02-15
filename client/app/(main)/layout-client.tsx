@@ -76,10 +76,14 @@ function MainLayoutContent({
   }, [serverBreadcrumbs]);
 
   // Derive active section from server breadcrumbs
+  // Use the last breadcrumb with a section (most specific match, e.g. "cohorts" not "training")
   const activeSection = useMemo(() => {
-    const first = breadcrumbs[0];
-    if (breadcrumbs.length > 0 && first?.section) {
-      return first.section;
+    if (breadcrumbs.length > 0) {
+      for (let i = breadcrumbs.length - 1; i >= 0; i--) {
+        if (breadcrumbs[i]?.section) {
+          return breadcrumbs[i].section!;
+        }
+      }
     }
     // Fallback: derive from pathname
     const segments = pathname.split("/").filter(Boolean);

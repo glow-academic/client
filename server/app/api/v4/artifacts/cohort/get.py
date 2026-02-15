@@ -397,7 +397,7 @@ async def get_cohort_internal(
                 50,
                 0,
                 flag_ids,
-                bypass_cache,
+                bypass_cache=bypass_cache,
                 cohort=True,
             )
             # Filter to only cohort-specific flags (business logic in Python)
@@ -417,7 +417,6 @@ async def get_cohort_internal(
                 suggest_source="all",
                 exclude_ids=department_ids,
                 bypass_cache=bypass_cache,
-                cohort=True,
             )
             return (selected, suggestions)
 

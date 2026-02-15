@@ -66,6 +66,7 @@ RETURNS TABLE (
 LANGUAGE plpgsql
 VOLATILE
 AS $$
+#variable_conflict use_column
 DECLARE
     v_draft_id uuid;
     v_new_version int;

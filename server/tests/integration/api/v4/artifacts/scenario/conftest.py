@@ -3,6 +3,7 @@
 SQL types, views, and functions are bootstrapped once per session by
 tests/conftest.py via bootstrap_all_sql(). This file only contains:
 - Seed data for the test profile department link
+- A scenario created via the save endpoint (for list tests)
 - Session-scoped db and client fixtures
 """
 
@@ -13,6 +14,7 @@ import httpx
 import pytest_asyncio
 
 from app.main import fastapi_app, get_db, get_pool
+from tests.seed_helpers import TEST_SUPERADMIN_PROFILE_ID
 
 # Ensure the test superadmin profile is linked to the Purdue CS department so
 # that artifact GET endpoints (which require ≥1 accessible department) work.
@@ -25,13 +27,18 @@ VALUES (
 ) ON CONFLICT (profile_id, department_id) DO NOTHING;
 """
 
+SEED_NAME_ID = "019b995c-8e80-7928-900e-d366eb410e53"
+
 
 @pytest_asyncio.fixture(loop_scope="session", scope="session", autouse=True)
 async def seed_scenario_data() -> None:
     """Seed test data needed by scenario artifact tests.
 
     SQL bootstrap is handled by tests/conftest.py. This only inserts
-    the profile-department link required by GET endpoints.
+    the profile-department link required by GET endpoints, then creates
+    a scenario via the save endpoint so list tests have data (seed
+    scenarios_resource entries all have self-referencing parent_id,
+    which the list SQL excludes as non-root).
     """
     pool = get_pool()
     if pool is None:
@@ -39,6 +46,23 @@ async def seed_scenario_data() -> None:
 
     async with pool.acquire() as conn:
         await conn.execute(_SEED_PROFILE_DEPARTMENT_SQL)
+
+    # Create a scenario via the save endpoint so list tests have a root scenario.
+    # (Seed scenarios_resource entries have parent_id = own id, excluded by list.)
+    async def _override_get_db() -> AsyncGenerator[asyncpg.Connection, None]:
+        async with pool.acquire() as c:
+            yield c
+
+    fastapi_app.dependency_overrides[get_db] = _override_get_db
+    transport = httpx.ASGITransport(app=fastapi_app)
+    async with httpx.AsyncClient(transport=transport, base_url="http://test") as c:
+        headers = {"X-Bypass-Cache": "1", "X-Profile-Id": TEST_SUPERADMIN_PROFILE_ID}
+        await c.post(
+            "/api/v4/artifacts/scenarios/save",
+            json={"input_scenario_id": None, "name_id": SEED_NAME_ID},
+            headers=headers,
+        )
+    fastapi_app.dependency_overrides.clear()
 
 
 @pytest_asyncio.fixture(loop_scope="session", scope="session")

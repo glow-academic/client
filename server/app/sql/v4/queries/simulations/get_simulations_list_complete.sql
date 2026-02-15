@@ -42,7 +42,7 @@ CREATE TYPE types.q_list_simulations_v4_simulation AS (
     can_edit boolean,
     can_delete boolean,
     can_duplicate boolean,
-    scenario_ids uuid[],
+    scenario_ids text[],
     num_cohorts int,
     cohort_ids text[],
     updated_at timestamptz
@@ -99,7 +99,7 @@ user_profile AS (
 simulation_scenarios_data AS (
     SELECT
         ssj.simulation_id,
-        ARRAY_AGG(sr.id ORDER BY sr.name) as scenario_ids,
+        ARRAY_AGG(sr.id::text ORDER BY sr.name) as scenario_ids,
         COUNT(sr.id) as num_scenarios
     FROM simulation_simulations_junction ssj
     JOIN simulations_resource sim_r ON sim_r.id = ssj.simulations_id
@@ -157,7 +157,7 @@ simulation_data AS (
         EXISTS (SELECT 1 FROM simulation_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.simulation_id = s.id AND f.name = 'practice' AND sf.value = TRUE) as practice_simulation,
         s.updated_at,
         COALESCE(sdd.department_ids, NULL) as department_ids,
-        COALESCE(ssd.scenario_ids, ARRAY[]::uuid[]) as scenario_ids,
+        COALESCE(ssd.scenario_ids, ARRAY[]::text[]) as scenario_ids,
         COALESCE(ac.attempt_count, 0) as attempt_count,
         COALESCE(scd.total_cohort_links, 0) as total_cohort_links,
         COALESCE(scd.num_cohorts, 0) as num_cohorts,
@@ -200,8 +200,8 @@ simulation_data AS (
 filtered_simulations AS (
     SELECT sd.*
     FROM simulation_data sd
-    WHERE (search IS NULL OR LOWER(sd.name) LIKE '%' || LOWER(search) || '%' OR LOWER(sd.description) LIKE '%' || LOWER(search) || '%')
-      AND (filter_scenario_ids IS NULL OR sd.scenario_ids && filter_scenario_ids)
+    WHERE (api_list_simulations_v4.search IS NULL OR LOWER(sd.name) LIKE '%' || LOWER(api_list_simulations_v4.search) || '%' OR LOWER(sd.description) LIKE '%' || LOWER(api_list_simulations_v4.search) || '%')
+      AND (filter_scenario_ids IS NULL OR sd.scenario_ids && filter_scenario_ids::text[])
       AND (filter_cohort_ids IS NULL OR sd.cohort_ids && filter_cohort_ids::text[])
       AND (filter_department_ids IS NULL OR sd.department_ids && filter_department_ids::text[])
 ),
@@ -245,11 +245,11 @@ SELECT
     -- Scenario options (from ALL simulations, filtered by search term) — resource-level IDs
     COALESCE(
         (SELECT ARRAY_AGG(
-            (sr.id::text, COALESCE(sr.name, ''), (SELECT COUNT(*) FROM simulation_data sd WHERE sr.id = ANY(sd.scenario_ids)))::types.q_list_simulations_v4_option
+            (sr.id::text, COALESCE(sr.name, ''), (SELECT COUNT(*) FROM simulation_data sd WHERE sr.id::text = ANY(sd.scenario_ids)))::types.q_list_simulations_v4_option
             ORDER BY sr.name
         )
          FROM scenarios_resource sr
-         WHERE sr.id IN (SELECT scenario_id FROM all_scenario_ids_options)
+         WHERE sr.id::text IN (SELECT scenario_id FROM all_scenario_ids_options)
            AND (scenario_search IS NULL OR LOWER(sr.name) LIKE '%' || LOWER(scenario_search) || '%')),
         '{}'::types.q_list_simulations_v4_option[]
     ) as scenario_options,

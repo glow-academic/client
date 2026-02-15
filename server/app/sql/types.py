@@ -21662,6 +21662,8 @@ class CheckSimulationDeleteAccessSqlRow(BaseModel):
     simulation_name: str | None = None
     simulation_department_ids: list[UUID] | None = None
     cohort_usage_count: int | None = None
+    user_role: str | None = None
+    user_department_ids: list[UUID] | None = None
 
 class CheckSimulationDeleteAccessApiRequest(BaseModel):
 
@@ -21673,6 +21675,8 @@ class CheckSimulationDeleteAccessApiResponse(BaseModel):
     simulation_name: str | None = None
     simulation_department_ids: list[UUID] | None = None
     cohort_usage_count: int | None = None
+    user_role: str | None = None
+    user_department_ids: list[UUID] | None = None
 
 
 
@@ -21694,6 +21698,8 @@ class CheckSimulationDuplicateAccessSqlRow(BaseModel):
     simulation_exists: bool | None = None
     simulation_name: str | None = None
     simulation_department_ids: list[UUID] | None = None
+    user_role: str | None = None
+    user_department_ids: list[UUID] | None = None
 
 class CheckSimulationDuplicateAccessApiRequest(BaseModel):
 
@@ -21704,6 +21710,8 @@ class CheckSimulationDuplicateAccessApiResponse(BaseModel):
     simulation_exists: bool | None = None
     simulation_name: str | None = None
     simulation_department_ids: list[UUID] | None = None
+    user_role: str | None = None
+    user_department_ids: list[UUID] | None = None
 
 
 
@@ -21854,6 +21862,7 @@ class GetSimulationAccessSqlRow(BaseModel):
     group_id: UUID | None = None
     draft_version: int | None = None
     cohort_usage_count: int | None = None
+    effective_draft_version: int | None = None
 
 class GetSimulationAccessApiRequest(BaseModel):
 
@@ -21867,6 +21876,7 @@ class GetSimulationAccessApiResponse(BaseModel):
     group_id: UUID | None = None
     draft_version: int | None = None
     cohort_usage_count: int | None = None
+    effective_draft_version: int | None = None
 
 
 
@@ -22092,7 +22102,7 @@ class QListSimulationsV4Simulation(BaseModel):
     can_edit: bool | None
     can_delete: bool | None
     can_duplicate: bool | None
-    scenario_ids: list[UUID] | None
+    scenario_ids: list[str] | None
     num_cohorts: int | None
     cohort_ids: list[str] | None
     updated_at: datetime | None

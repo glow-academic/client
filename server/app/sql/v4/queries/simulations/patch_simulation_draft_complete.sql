@@ -235,16 +235,16 @@ BEGIN
     END IF;
 
     -- Replace draft links
-    DELETE FROM names_drafts_connection WHERE draft_id = v_draft_id;
-    DELETE FROM descriptions_drafts_connection WHERE draft_id = v_draft_id;
-    DELETE FROM flags_drafts_connection WHERE draft_id = v_draft_id;
-    DELETE FROM departments_drafts_connection WHERE draft_id = v_draft_id;
-    DELETE FROM scenarios_drafts_connection WHERE draft_id = v_draft_id;
-    DELETE FROM scenario_flags_drafts_connection WHERE draft_id = v_draft_id;
-    DELETE FROM scenario_positions_drafts_connection WHERE draft_id = v_draft_id;
-    DELETE FROM scenario_rubrics_drafts_connection WHERE draft_id = v_draft_id;
-    DELETE FROM scenario_time_limits_drafts_connection WHERE draft_id = v_draft_id;
-    DELETE FROM scenario_personas_drafts_connection WHERE draft_id = v_draft_id;
+    DELETE FROM names_drafts_connection WHERE names_drafts_connection.draft_id = v_draft_id;
+    DELETE FROM descriptions_drafts_connection WHERE descriptions_drafts_connection.draft_id = v_draft_id;
+    DELETE FROM flags_drafts_connection WHERE flags_drafts_connection.draft_id = v_draft_id;
+    DELETE FROM departments_drafts_connection WHERE departments_drafts_connection.draft_id = v_draft_id;
+    DELETE FROM scenarios_drafts_connection WHERE scenarios_drafts_connection.draft_id = v_draft_id;
+    DELETE FROM scenario_flags_drafts_connection WHERE scenario_flags_drafts_connection.draft_id = v_draft_id;
+    DELETE FROM scenario_positions_drafts_connection WHERE scenario_positions_drafts_connection.draft_id = v_draft_id;
+    DELETE FROM scenario_rubrics_drafts_connection WHERE scenario_rubrics_drafts_connection.draft_id = v_draft_id;
+    DELETE FROM scenario_time_limits_drafts_connection WHERE scenario_time_limits_drafts_connection.draft_id = v_draft_id;
+    DELETE FROM scenario_personas_drafts_connection WHERE scenario_personas_drafts_connection.draft_id = v_draft_id;
 
     IF v_name_id IS NOT NULL THEN
         INSERT INTO names_drafts_connection (draft_id, names_id, version)

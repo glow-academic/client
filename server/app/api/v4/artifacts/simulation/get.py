@@ -413,7 +413,6 @@ async def get_simulation_internal(
                 suggest_source=dept_source,
                 exclude_ids=department_ids,
                 bypass_cache=bypass_cache,
-                simulation=True,
             )
             return (selected, suggestions)
 
@@ -454,7 +453,7 @@ async def get_simulation_internal(
                 c, scenario_persona_ids, bypass_cache
             )
             suggestions = await search_scenario_personas_internal(
-                c, effective_scenario_ids, bypass_cache
+                c, effective_scenario_ids, bypass_cache=bypass_cache
             )
             return (selected, suggestions)
 
@@ -464,7 +463,7 @@ async def get_simulation_internal(
                 c, scenario_position_ids, bypass_cache
             )
             suggestions = await search_scenario_positions_internal(
-                c, effective_scenario_ids, bypass_cache
+                c, effective_scenario_ids, bypass_cache=bypass_cache
             )
             return (selected, suggestions)
 
@@ -474,7 +473,7 @@ async def get_simulation_internal(
                 c, scenario_rubric_ids, bypass_cache
             )
             suggestions = await search_scenario_rubrics_internal(
-                c, effective_scenario_ids, bypass_cache
+                c, effective_scenario_ids, bypass_cache=bypass_cache
             )
             return (selected, suggestions)
 
@@ -484,7 +483,7 @@ async def get_simulation_internal(
                 c, scenario_time_limit_ids, bypass_cache
             )
             suggestions = await search_scenario_time_limits_internal(
-                c, effective_scenario_ids, bypass_cache
+                c, effective_scenario_ids, bypass_cache=bypass_cache
             )
             return (selected, suggestions)
 

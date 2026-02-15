@@ -1,4 +1,4 @@
-"""Shared fixtures for simulation artifact integration tests.
+"""Shared fixtures for simulations resource integration tests.
 
 SQL types, views, and functions are bootstrapped once per session by
 tests/conftest.py via bootstrap_all_sql(). This file only contains:
@@ -15,7 +15,7 @@ import pytest_asyncio
 from app.main import fastapi_app, get_db, get_pool
 
 # Ensure the test superadmin profile is linked to the Purdue CS department so
-# that artifact GET endpoints (which require ≥1 accessible department) work.
+# that resource endpoints (which require profile context) work.
 _SEED_PROFILE_DEPARTMENT_SQL = """
 INSERT INTO profile_departments_junction (profile_id, department_id, is_primary, active, created_at, generated, mcp)
 VALUES (
@@ -23,30 +23,12 @@ VALUES (
     '019bb25e-e624-73da-8cef-166028a1065a',
     true, true, NOW(), false, false
 ) ON CONFLICT (profile_id, department_id) DO NOTHING;
-
-INSERT INTO groups_entry (id, trace_id, generated, mcp, active, name)
-VALUES (
-    '00000000-0000-0000-0000-000000000001',
-    'test-group-trace',
-    false, false, true, 'Test Group'
-) ON CONFLICT (id) DO NOTHING;
-
-INSERT INTO simulation_departments_junction (simulation_id, department_id, active, created_at, generated, mcp)
-VALUES (
-    '019b3be4-3cb8-7aa7-b0e6-8652f2ad09f7',
-    '019bb25e-e624-73da-8cef-166028a1065a',
-    true, NOW(), false, false
-) ON CONFLICT (simulation_id, department_id) DO NOTHING;
 """
 
 
 @pytest_asyncio.fixture(loop_scope="session", scope="session", autouse=True)
-async def seed_simulation_data() -> None:
-    """Seed test data needed by simulation artifact tests.
-
-    SQL bootstrap is handled by tests/conftest.py. This only inserts
-    the profile-department link required by GET endpoints.
-    """
+async def seed_simulations_resource_data() -> None:
+    """Seed test data needed by simulations resource tests."""
     pool = get_pool()
     if pool is None:
         raise RuntimeError("Database pool not available. Did initialize_test_db run?")
@@ -56,12 +38,8 @@ async def seed_simulation_data() -> None:
 
 
 @pytest_asyncio.fixture(loop_scope="session", scope="session")
-async def db(seed_simulation_data: None) -> AsyncGenerator[asyncpg.Connection, None]:
-    """Session-scoped database connection using the test pool.
-
-    NOTE: Session-scoped means mutations are NOT rolled back between tests.
-    Tests should be written to tolerate this.
-    """
+async def db(seed_simulations_resource_data: None) -> AsyncGenerator[asyncpg.Connection, None]:
+    """Session-scoped database connection using the test pool."""
     pool = get_pool()
     if pool is None:
         raise RuntimeError("Database pool not available. Did initialize_test_db run?")

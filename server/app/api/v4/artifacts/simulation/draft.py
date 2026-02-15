@@ -19,8 +19,6 @@ from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
 from app.sql.types import (
-    CheckSimulationDuplicateAccessSqlParams,
-    CheckSimulationDuplicateAccessSqlRow,
     PatchSimulationDraftSqlRow,
     load_sql_query,
 )
@@ -28,9 +26,6 @@ from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.sql_helper import execute_sql_typed
 
 SQL_PATH = "app/sql/v4/queries/simulations/patch_simulation_draft_complete.sql"
-ACCESS_SQL_PATH = (
-    "app/sql/v4/queries/simulations/check_simulation_duplicate_access_complete.sql"
-)
 
 router = APIRouter()
 
@@ -81,18 +76,8 @@ async def patch_simulation_draft(
         else:
             user_role = None
 
-        access_params = CheckSimulationDuplicateAccessSqlParams(profile_id=profile_id)
-        access_result = cast(
-            CheckSimulationDuplicateAccessSqlRow,
-            await execute_sql_typed(
-                conn,
-                ACCESS_SQL_PATH,
-                params=access_params,
-            ),
-        )
-
-        # Check draft permission using Python
-        if not compute_can_draft(user_role if access_result else None):
+        # Check draft permission using Python (role already fetched from profile context)
+        if not compute_can_draft(user_role):
             raise HTTPException(
                 status_code=403,
                 detail="You don't have permission to create or modify drafts.",

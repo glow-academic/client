@@ -183,14 +183,26 @@ async def get_simulation_list(
                 )
             )
 
+        # Convert SQL composite types to dicts so Pydantic can re-validate
+        # into the handcrafted API types (auto-generated Q* types != API types)
+        def to_dicts(items: list[Any] | None) -> list[dict] | None:
+            if items is None:
+                return None
+            return [
+                item if isinstance(item, dict)
+                else item.model_dump() if hasattr(item, "model_dump")
+                else item
+                for item in items
+            ]
+
         # Build API response
         api_response = ListSimulationApiResponse(
             actor_name=actor_name,
-            simulations=result.simulations,
+            simulations=to_dicts(result.simulations),
             scenarios=scenario_mapping,
-            scenario_options=result.scenario_options,
-            cohort_options=result.cohort_options,
-            department_options=result.department_options,
+            scenario_options=to_dicts(result.scenario_options),
+            cohort_options=to_dicts(result.cohort_options),
+            department_options=to_dicts(result.department_options),
             total_count=result.total_count,
         )
 

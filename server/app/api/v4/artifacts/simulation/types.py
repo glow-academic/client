@@ -84,7 +84,7 @@ class SimulationResourceBucket(BaseModel):
     names: list[QGetNamesV4Item] | None = None
     descriptions: list[QGetDescriptionsV4Item] | None = None
     flags: list[SimulationFlagConfig] | None = None
-    departments: list[QGetDepartmentsV4Item] | None = None
+    departments: list[SimulationDepartment] | None = None
     scenarios: list[SimulationScenario] | None = None
     scenario_flags: list[QGetScenarioFlagsV4Item] | None = None
     scenario_personas: list[QGetScenarioPersonasV4Item] | None = None
@@ -128,6 +128,7 @@ class GetSimulationAccessSqlRow(BaseModel):
     user_department_ids: list[UUID] | None = None
     simulation_department_ids: list[UUID] | None = None
     cohort_usage_count: int | None = None
+    effective_draft_version: int | None = None
 
 
 # =============================================================================
@@ -396,7 +397,7 @@ class SimulationWebsocketResources(BaseModel):
     names: list[QGetNamesV4Item] | None = None
     descriptions: list[QGetDescriptionsV4Item] | None = None
     flags: list[SimulationFlagConfig] | None = None
-    departments: list[SimulationDepartment] | None = None
+    departments: list[SimulationDepartment | QGetDepartmentsV4Item] | None = None
     scenarios: list[SimulationScenario] | None = None
     scenario_flags: list[QGetScenarioFlagsV4Item] | None = None
     scenario_personas: list[QGetScenarioPersonasV4Item] | None = None

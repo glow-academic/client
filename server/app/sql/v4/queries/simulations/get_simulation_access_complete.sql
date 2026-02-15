@@ -26,7 +26,8 @@ RETURNS TABLE (
     simulation_exists boolean,
     group_id uuid,
     draft_version int,
-    cohort_usage_count int
+    cohort_usage_count int,
+    effective_draft_version int
 )
 LANGUAGE sql
 STABLE
@@ -86,7 +87,8 @@ SELECT
     END as simulation_exists,
     COALESCE((SELECT group_id FROM simulation_data), (SELECT id FROM groups_entry ORDER BY created_at DESC LIMIT 1)) as group_id,
     (SELECT draft_version FROM simulation_data) as draft_version,
-    COALESCE((SELECT usage_count FROM cohort_usage), 0)::int as cohort_usage_count
+    COALESCE((SELECT usage_count FROM cohort_usage), 0)::int as cohort_usage_count,
+    (SELECT draft_version FROM simulation_data) as effective_draft_version
 FROM user_profile up
 LEFT JOIN user_departments ud ON TRUE
 LEFT JOIN simulation_departments sd ON TRUE

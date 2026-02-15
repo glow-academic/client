@@ -125,9 +125,7 @@ BEGIN
         END IF;
     END IF;
 
-    INSERT INTO simulation_groups_junction (simulation_id, group_id, created_at, active, generated, mcp)
-    VALUES (v_simulation_id, v_group_id, NOW(), true, false, false)
-    ON CONFLICT DO NOTHING;
+    -- NOTE: simulation_groups_junction was dropped in migration 407
 
     -- Validate IDs
     IF v_name_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM names_resource WHERE id = v_name_id) THEN
@@ -196,16 +194,16 @@ BEGIN
 
     -- Deactivate old links on update (workflow semantics)
     IF NOT is_create THEN
-        UPDATE simulation_names_junction SET active = false WHERE simulation_id = v_simulation_id AND active = true;
-        UPDATE simulation_descriptions_junction SET active = false WHERE simulation_id = v_simulation_id AND active = true;
-        UPDATE simulation_flags_junction SET active = false WHERE simulation_id = v_simulation_id AND active = true;
-        UPDATE simulation_departments_junction SET active = false WHERE simulation_id = v_simulation_id AND active = true;
-        UPDATE simulation_scenarios_junction SET active = false WHERE simulation_id = v_simulation_id AND active = true;
-        UPDATE simulation_scenario_flags_junction SET active = false WHERE simulation_id = v_simulation_id AND active = true;
-        UPDATE simulation_scenario_positions_junction SET active = false WHERE simulation_id = v_simulation_id AND active = true;
-        UPDATE simulation_scenario_rubrics_junction SET active = false WHERE simulation_id = v_simulation_id AND active = true;
-        UPDATE simulation_scenario_time_limits_junction SET active = false WHERE simulation_id = v_simulation_id AND active = true;
-        UPDATE simulation_scenario_personas_junction SET active = false WHERE simulation_id = v_simulation_id AND active = true;
+        UPDATE simulation_names_junction SET active = false WHERE simulation_names_junction.simulation_id = v_simulation_id AND simulation_names_junction.active = true;
+        UPDATE simulation_descriptions_junction SET active = false WHERE simulation_descriptions_junction.simulation_id = v_simulation_id AND simulation_descriptions_junction.active = true;
+        UPDATE simulation_flags_junction SET active = false WHERE simulation_flags_junction.simulation_id = v_simulation_id AND simulation_flags_junction.active = true;
+        UPDATE simulation_departments_junction SET active = false WHERE simulation_departments_junction.simulation_id = v_simulation_id AND simulation_departments_junction.active = true;
+        UPDATE simulation_scenarios_junction SET active = false WHERE simulation_scenarios_junction.simulation_id = v_simulation_id AND simulation_scenarios_junction.active = true;
+        UPDATE simulation_scenario_flags_junction SET active = false WHERE simulation_scenario_flags_junction.simulation_id = v_simulation_id AND simulation_scenario_flags_junction.active = true;
+        UPDATE simulation_scenario_positions_junction SET active = false WHERE simulation_scenario_positions_junction.simulation_id = v_simulation_id AND simulation_scenario_positions_junction.active = true;
+        UPDATE simulation_scenario_rubrics_junction SET active = false WHERE simulation_scenario_rubrics_junction.simulation_id = v_simulation_id AND simulation_scenario_rubrics_junction.active = true;
+        UPDATE simulation_scenario_time_limits_junction SET active = false WHERE simulation_scenario_time_limits_junction.simulation_id = v_simulation_id AND simulation_scenario_time_limits_junction.active = true;
+        UPDATE simulation_scenario_personas_junction SET active = false WHERE simulation_scenario_personas_junction.simulation_id = v_simulation_id AND simulation_scenario_personas_junction.active = true;
     END IF;
 
     -- Tool-call tracking: one run per save

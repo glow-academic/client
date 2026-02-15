@@ -20,8 +20,10 @@ from app.api.v4.artifacts.scenario.types import (
     ListScenarioApiDepartment,
     ListScenarioApiField,
     ListScenarioApiObjective,
+    ListScenarioApiOption,
     ListScenarioApiPersona,
     ListScenarioApiResponse,
+    ListScenarioApiScenario,
     ListScenarioApiSimulation,
     ListScenarioSqlRow,
 )
@@ -309,19 +311,37 @@ async def get_scenario_list(
             for d in departments_data
         ]
 
+        # Convert SQL composite types → API types (QListScenariosV4* → ListScenarioApi*)
+        api_scenarios = [
+            ListScenarioApiScenario.model_validate(s.model_dump())
+            for s in (result.scenarios or [])
+        ]
+        api_persona_options = [
+            ListScenarioApiOption.model_validate(o.model_dump())
+            for o in (result.persona_options or [])
+        ]
+        api_simulation_options = [
+            ListScenarioApiOption.model_validate(o.model_dump())
+            for o in (result.simulation_options or [])
+        ]
+        api_department_options = [
+            ListScenarioApiOption.model_validate(o.model_dump())
+            for o in (result.department_options or [])
+        ]
+
         # Build API response
         api_response = ListScenarioApiResponse(
             actor_name=actor_name,
-            scenarios=result.scenarios,
+            scenarios=api_scenarios,
             objectives=api_objectives,
             fields=api_fields,
             cohorts=api_cohorts,
             personas=api_personas,
             simulations=api_simulations,
             departments=api_departments,
-            persona_options=result.persona_options,
-            simulation_options=result.simulation_options,
-            department_options=result.department_options,
+            persona_options=api_persona_options,
+            simulation_options=api_simulation_options,
+            department_options=api_department_options,
             total_count=result.total_count,
         )
 

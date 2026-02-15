@@ -24,7 +24,9 @@ RETURNS TABLE (
     simulation_exists boolean,
     simulation_name text,
     simulation_department_ids uuid[],
-    cohort_usage_count int
+    cohort_usage_count int,
+    user_role text,
+    user_department_ids uuid[]
 )
 LANGUAGE sql
 STABLE
@@ -68,15 +70,25 @@ cohort_usage AS (
     FROM cohort_simulations_junction cs
     WHERE cs.simulation_id = (SELECT p_simulation_id FROM params)
       AND cs.active = true
+),
+-- Get user's department IDs
+user_departments AS (
+    SELECT COALESCE(ARRAY_AGG(pd.department_id), ARRAY[]::uuid[]) as department_ids
+    FROM profile_departments_junction pd
+    WHERE pd.profile_id = (SELECT p_profile_id FROM params)
+      AND pd.active = true
 )
 SELECT
     (SELECT simulation_exists FROM simulation_exists_check),
     snd.simulation_name::text,
     sd.department_ids as simulation_department_ids,
-    COALESCE(cu.usage_count, 0)::int as cohort_usage_count
+    COALESCE(cu.usage_count, 0)::int as cohort_usage_count,
+    up.role::text as user_role,
+    ud.department_ids as user_department_ids
 FROM user_profile up
 CROSS JOIN simulation_departments sd
 CROSS JOIN cohort_usage cu
-CROSS JOIN simulation_name_data snd;
+CROSS JOIN simulation_name_data snd
+CROSS JOIN user_departments ud;
 $$;
 

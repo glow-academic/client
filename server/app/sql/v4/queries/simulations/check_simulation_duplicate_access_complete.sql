@@ -21,15 +21,15 @@ CREATE OR REPLACE FUNCTION api_check_simulation_duplicate_access_v4(
     simulation_id uuid
 )
 RETURNS TABLE (
-    -- User context (role, actor_name, department_ids) comes from get_profile_context_internal()
     simulation_exists boolean,
     simulation_name text,
-    simulation_department_ids uuid[]
+    simulation_department_ids uuid[],
+    user_role text,
+    user_department_ids uuid[]
 )
 LANGUAGE sql
 STABLE
 AS $$
--- User context (actor_name, user_role, department_ids) comes from get_profile_context_internal() in Python
 WITH params AS (
     SELECT
         profile_id AS p_profile_id,
@@ -53,11 +53,29 @@ simulation_departments AS (
     FROM simulation_departments_junction sd
     WHERE sd.simulation_id = (SELECT p_simulation_id FROM params)
       AND sd.active = true
+),
+-- User context
+user_profile AS (
+    SELECT COALESCE(r.role, 'member'::profile_type) as role
+    FROM profile_roles_junction prj
+    JOIN roles_resource r ON prj.role_id = r.id
+    WHERE prj.profile_id = (SELECT p_profile_id FROM params)
+    LIMIT 1
+),
+user_departments AS (
+    SELECT COALESCE(ARRAY_AGG(pd.department_id), ARRAY[]::uuid[]) as department_ids
+    FROM profile_departments_junction pd
+    WHERE pd.profile_id = (SELECT p_profile_id FROM params)
+      AND pd.active = true
 )
 SELECT
     (SELECT simulation_exists FROM simulation_exists_check),
     snd.simulation_name::text,
-    sd.department_ids as simulation_department_ids
+    sd.department_ids as simulation_department_ids,
+    up.role::text as user_role,
+    ud.department_ids as user_department_ids
 FROM simulation_departments sd
-CROSS JOIN simulation_name_data snd;
+CROSS JOIN simulation_name_data snd
+CROSS JOIN user_profile up
+CROSS JOIN user_departments ud;
 $$;

@@ -158,6 +158,8 @@ async def execute_sql_typed(
     if is_function and function_name:
         # JIT-create the function if it doesn't exist (e.g. test functions)
         await conn.execute(sql_text)
+        # Refresh asyncpg's type cache after DROP TYPE/CREATE TYPE changes OIDs
+        await conn.reload_schema_state()
 
         # Call it with SELECT * FROM schema.function_name($1, $2, ...)
         num_params = len(sql_params)

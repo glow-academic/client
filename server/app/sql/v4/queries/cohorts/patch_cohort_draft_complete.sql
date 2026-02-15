@@ -175,12 +175,12 @@ BEGIN
         VALUES (v_draft_id, v_profile_resource_id, v_new_version);
     END IF;
 
-    DELETE FROM names_drafts_connection WHERE draft_id = v_draft_id;
-    DELETE FROM descriptions_drafts_connection WHERE draft_id = v_draft_id;
-    DELETE FROM flags_drafts_connection WHERE draft_id = v_draft_id;
-    DELETE FROM departments_drafts_connection WHERE draft_id = v_draft_id;
-    DELETE FROM simulations_drafts_connection WHERE draft_id = v_draft_id;
-    DELETE FROM simulation_positions_drafts_connection WHERE draft_id = v_draft_id;
+    DELETE FROM names_drafts_connection WHERE names_drafts_connection.draft_id = v_draft_id;
+    DELETE FROM descriptions_drafts_connection WHERE descriptions_drafts_connection.draft_id = v_draft_id;
+    DELETE FROM flags_drafts_connection WHERE flags_drafts_connection.draft_id = v_draft_id;
+    DELETE FROM departments_drafts_connection WHERE departments_drafts_connection.draft_id = v_draft_id;
+    DELETE FROM simulations_drafts_connection WHERE simulations_drafts_connection.draft_id = v_draft_id;
+    DELETE FROM simulation_positions_drafts_connection WHERE simulation_positions_drafts_connection.draft_id = v_draft_id;
 
     IF v_name_id IS NOT NULL THEN
         INSERT INTO names_drafts_connection (draft_id, names_id, version)

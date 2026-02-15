@@ -523,20 +523,6 @@ BEGIN
         END IF;
     END IF;
 
-    IF v_parameter_fields_call_id IS NULL THEN
-        v_parameter_fields_call_id := uuidv7();
-        INSERT INTO calls_entry (
-            id, external_call_id, run_id, completed, created_at, updated_at
-        ) VALUES (
-            v_parameter_fields_call_id,
-            'scenario_save_parameter_fields_' || v_parameter_fields_call_id::text,
-            v_run_id,
-            true,
-            NOW(),
-            NOW()
-        );
-    END IF;
-
     -- Link resources (using parameters directly - no draft queries!)
     IF v_name_id IS NOT NULL THEN
         INSERT INTO scenario_names_junction (scenario_id, name_id, active, created_at)
@@ -615,8 +601,8 @@ BEGIN
     END IF;
 
     IF v_parameter_field_ids IS NOT NULL THEN
-        INSERT INTO scenario_parameter_fields_junction (scenario_id, parameter_field_id, active, call_id, created_at)
-        SELECT v_scenario_id, pfr.id, true, v_parameter_fields_call_id, NOW()
+        INSERT INTO scenario_parameter_fields_junction (scenario_id, parameter_field_id, active, created_at)
+        SELECT v_scenario_id, pfr.id, true, NOW()
         FROM UNNEST(v_parameter_field_ids) as input_field_id
         JOIN parameter_fields_resource pfr ON pfr.field_id = input_field_id
         ON CONFLICT (scenario_id, parameter_field_id) DO UPDATE SET active = true;
