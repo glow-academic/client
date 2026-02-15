@@ -15,6 +15,10 @@ from fastapi import APIRouter
 from app.api.v4.resources.images.get import get_images_internal
 from app.api.v4.resources.videos.get import get_videos_internal
 from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
+from app.infra.v4.websocket.generation_tracker import (
+    cleanup_generation,
+    record_agent_complete,
+)
 from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.main import get_internal_sio, sio
 from app.socket.v4.artifacts.scenario.types import ScenarioGenerationCompleteEvent
@@ -81,17 +85,26 @@ async def _handle_scenario_text_complete(sid: str, data: dict[str, Any]) -> None
 
 
 async def _handle_scenario_run_complete(sid: str, data: dict[str, Any]) -> None:
-    """Handle scenario generation run completion - save assistant output and update token counts."""
+    """Handle scenario generation run completion.
+
+    Coordinates multi-agent completion via generation_tracker:
+    1. Saves assistant message and token counts
+    2. Records this agent's completion
+    3. If all agents done: emits scenario_generation_complete
+    4. Cleans up generation tracking
+    """
     run_id = data.get("run_id")
     assistant_output = data.get("assistant_output") or ""
     input_tokens = data.get("input_text_tokens", 0)
     output_tokens = data.get("output_text_tokens", 0)
+    group_id_str = data.get("group_id")
 
     if not run_id:
         return
 
     try:
         async with get_db_connection() as conn:
+            # Save assistant message if there's text output
             if assistant_output:
                 existing = await conn.fetchval(
                     """
@@ -112,6 +125,7 @@ async def _handle_scenario_run_complete(sid: str, data: dict[str, Any]) -> None:
                         False,
                     )
 
+            # Update run with token counts
             if input_tokens or output_tokens:
                 await conn.execute(
                     """
@@ -126,6 +140,29 @@ async def _handle_scenario_run_complete(sid: str, data: dict[str, Any]) -> None:
                 )
     except Exception as e:
         logger.exception(f"Failed to save scenario run complete: {str(e)}")
+
+    # Multi-agent coordination via generation tracker
+    tool_results = data.get("tool_results") or []
+    is_complete, _all_tool_results = await record_agent_complete(run_id, tool_results)
+
+    if is_complete:
+        # All agents finished - emit scenario_generation_complete
+        event = ScenarioGenerationCompleteEvent(
+            artifact_type="scenario",
+            group_id=group_id_str or "",
+            resource_type="scenario",
+            run_id=run_id,
+            success=True,
+            message="Scenario generation completed",
+        )
+
+        await sio.emit(
+            "scenario_generation_complete",
+            event.model_dump(mode="json"),
+            room=sid,
+        )
+
+        await cleanup_generation(run_id)
 
 
 @internal_sio.on("generate_image_complete")  # type: ignore

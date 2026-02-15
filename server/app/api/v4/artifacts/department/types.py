@@ -143,13 +143,9 @@ class SaveDepartmentSqlParams(BaseModel):
             group_id=group_id,
             input_department_id=request.input_department_id,
             names=DepartmentResourceAction(resource_id=request.name_id),
-            descriptions=DepartmentResourceAction(
-                resource_id=request.description_id
-            ),
+            descriptions=DepartmentResourceAction(resource_id=request.description_id),
             flags=DepartmentResourceAction(resource_id=request.flag_id),
-            settings=DepartmentMultiResourceAction(
-                resource_ids=request.settings_ids
-            ),
+            settings=DepartmentMultiResourceAction(resource_ids=request.settings_ids),
         )
 
     def to_tuple(self) -> tuple:
@@ -230,13 +226,9 @@ class PatchDepartmentDraftSqlParams(BaseModel):
             input_draft_id=request.input_draft_id,
             group_id=request.group_id,
             names=DepartmentResourceAction(resource_id=request.name_id),
-            descriptions=DepartmentResourceAction(
-                resource_id=request.description_id
-            ),
+            descriptions=DepartmentResourceAction(resource_id=request.description_id),
             flags=DepartmentResourceAction(resource_id=request.flag_id),
-            settings=DepartmentMultiResourceAction(
-                resource_ids=request.settings_ids
-            ),
+            settings=DepartmentMultiResourceAction(resource_ids=request.settings_ids),
             expected_version=request.expected_version,
         )
 

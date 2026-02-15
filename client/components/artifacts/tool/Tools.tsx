@@ -14,6 +14,8 @@ import {
   SortingState,
   VisibilityState,
   getCoreRowModel,
+  getFacetedRowModel,
+  getFacetedUniqueValues,
   getFilteredRowModel,
   getPaginationRowModel,
   getSortedRowModel,
@@ -27,6 +29,7 @@ import type {
   DuplicateToolOut,
   ToolsListOut,
 } from "@/app/(main)/intelligence/tools/page";
+import { DataTableFacetedFilter } from "@/components/common/table/DataTableFacetedFilter";
 import { DataTablePagination } from "@/components/common/table/DataTablePagination";
 import {
   AlertDialog,

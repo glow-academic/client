@@ -186,9 +186,7 @@ class SaveRubricSqlParams(BaseModel):
             names=RubricResourceAction(resource_id=request.name_id),
             descriptions=RubricResourceAction(resource_id=request.description_id),
             flags=RubricResourceAction(resource_id=request.flag_id),
-            departments=RubricMultiResourceAction(
-                resource_ids=request.department_ids
-            ),
+            departments=RubricMultiResourceAction(resource_ids=request.department_ids),
             points=RubricResourceAction(resource_id=request.total_points_id),
             pass_points=RubricResourceAction(resource_id=request.pass_points_id),
             standard_groups=RubricMultiResourceAction(
@@ -283,9 +281,7 @@ class PatchRubricDraftSqlParams(BaseModel):
             names=RubricResourceAction(resource_id=request.name_id),
             descriptions=RubricResourceAction(resource_id=request.description_id),
             flags=RubricResourceAction(resource_id=request.flag_id),
-            departments=RubricMultiResourceAction(
-                resource_ids=request.department_ids
-            ),
+            departments=RubricMultiResourceAction(resource_ids=request.department_ids),
             points=RubricResourceAction(resource_id=request.total_points_id),
             pass_points=RubricResourceAction(resource_id=request.pass_points_id),
             standard_groups=RubricMultiResourceAction(

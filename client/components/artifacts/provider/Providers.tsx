@@ -84,26 +84,41 @@ export default function Providers({
     [providersData?.providers]
   );
 
-  // Use server-provided facet options directly (no client-side computation)
-  const providerOptions = useMemo(
+  // Filter options from server-provided ListFilterSection
+  const departmentOptions = useMemo(
     () =>
-      (providersData?.provider_options || [])
+      (providersData?.department_filter?.options || [])
         .map((opt) => ({
-          value: opt["value"] as string,
-          label: opt["label"] as string,
+          value: opt.id as string,
+          label: opt.name as string,
+          count: opt.count ?? 0,
         }))
         .filter((opt) => opt.value && opt.label),
-    [providersData?.provider_options]
+    [providersData?.department_filter]
   );
+
+  const modelOptions = useMemo(
+    () =>
+      (providersData?.model_filter?.options || [])
+        .map((opt) => ({
+          value: opt.id as string,
+          label: opt.name as string,
+          count: opt.count ?? 0,
+        }))
+        .filter((opt) => opt.value && opt.label),
+    [providersData?.model_filter]
+  );
+
   const statusOptions = useMemo(
     () =>
-      (providersData?.status_options || [])
+      (providersData?.status_filter?.options || [])
         .map((opt) => ({
-          value: opt["value"] as string,
-          label: opt["label"] as string,
+          value: opt.id as string,
+          label: opt.name as string,
+          count: opt.count ?? 0,
         }))
         .filter((opt) => opt.value && opt.label),
-    [providersData?.status_options]
+    [providersData?.status_filter]
   );
 
   // Define table columns inline
@@ -136,18 +151,34 @@ export default function Providers({
           return value.includes(rowStatus);
         },
       },
-      // Hidden faceting column for Provider
+      // Hidden faceting column for Departments
       {
-        id: "provider",
+        id: "departments",
         header: () => null,
         cell: () => null,
         enableHiding: true,
         enableSorting: false,
-        accessorFn: (row: (typeof providers)[number]) => row.value,
+        accessorFn: (row: (typeof providers)[number]) => row.department_ids?.map(String) ?? [],
         filterFn: (row, _id, value: string[]) => {
-          const rowProvider = row.getValue("provider") as string;
+          const rowIds = (row.getValue("departments") as string[]) ?? [];
           if (value.length === 0) return true;
-          return value.includes(rowProvider);
+          if (rowIds.length === 0) return true;
+          return value.some((v) => rowIds.includes(v));
+        },
+      },
+      // Hidden faceting column for Models
+      {
+        id: "models",
+        header: () => null,
+        cell: () => null,
+        enableHiding: true,
+        enableSorting: false,
+        accessorFn: (row: (typeof providers)[number]) => row.model_ids?.map(String) ?? [],
+        filterFn: (row, _id, value: string[]) => {
+          const rowIds = (row.getValue("models") as string[]) ?? [];
+          if (value.length === 0) return true;
+          if (rowIds.length === 0) return true;
+          return value.some((v) => rowIds.includes(v));
         },
       },
       {
@@ -377,11 +408,20 @@ export default function Providers({
             className="h-8 w-full md:w-[150px] lg:w-[250px]"
             data-testid="input-search-providers"
           />
-          {providerOptions.length > 0 && table.getColumn("provider") && (
+          {departmentOptions.length > 0 && table.getColumn("departments") && (
             <DataTableFacetedFilter
-              column={table.getColumn("provider")!}
-              title="Provider"
-              options={providerOptions}
+              column={table.getColumn("departments")!}
+              title="Department"
+              options={departmentOptions}
+              isServerDriven
+            />
+          )}
+          {modelOptions.length > 0 && table.getColumn("models") && (
+            <DataTableFacetedFilter
+              column={table.getColumn("models")!}
+              title="Model"
+              options={modelOptions}
+              isServerDriven
             />
           )}
           {statusOptions.length > 0 && table.getColumn("status") && (
@@ -389,6 +429,7 @@ export default function Providers({
               column={table.getColumn("status")!}
               title="Status"
               options={statusOptions}
+              isServerDriven
             />
           )}
           {table.getState().columnFilters.length > 0 && (

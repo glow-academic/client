@@ -306,21 +306,20 @@ class SettingMultiResourceAction(BaseModel):
 
 
 class SaveSettingApiRequest(BaseModel):
-    """Request model for save setting endpoint - accepts nested resource actions."""
+    """Request model for save setting endpoint - flat resource IDs."""
 
     input_setting_id: UUID | None = None
-    group_id: UUID | None = None
-    names: SettingResourceAction
-    descriptions: SettingResourceAction
-    colors: SettingMultiResourceAction
-    flags: SettingResourceAction
-    departments: SettingMultiResourceAction
-    profiles: SettingMultiResourceAction
-    auths: SettingMultiResourceAction
-    provider_keys: SettingMultiResourceAction
-    auth_item_keys: SettingMultiResourceAction
-    roles: SettingMultiResourceAction
-    role_routes: SettingMultiResourceAction
+    name_id: UUID
+    description_id: UUID | None = None
+    flag_id: UUID | None = None
+    color_ids: list[UUID] | None = None
+    department_ids: list[UUID] | None = None
+    profile_ids: list[UUID] | None = None
+    auth_ids: list[UUID] | None = None
+    provider_key_ids: list[UUID] | None = None
+    auth_item_key_ids: list[UUID] | None = None
+    role_ids: list[UUID] | None = None
+    role_route_ids: list[UUID] | None = None
 
 
 class SaveSettingApiResponse(BaseModel):
@@ -352,9 +351,27 @@ class SaveSettingSqlParams(BaseModel):
 
     @classmethod
     def from_request(
-        cls, request: SaveSettingApiRequest, profile_id: UUID
+        cls,
+        request: SaveSettingApiRequest,
+        profile_id: UUID,
+        group_id: UUID | None,
     ) -> SaveSettingSqlParams:
-        return cls(profile_id=profile_id, **request.model_dump())
+        return cls(
+            profile_id=profile_id,
+            group_id=group_id,
+            input_setting_id=request.input_setting_id,
+            names=SettingResourceAction(resource_id=request.name_id),
+            descriptions=SettingResourceAction(resource_id=request.description_id),
+            flags=SettingResourceAction(resource_id=request.flag_id),
+            colors=SettingMultiResourceAction(resource_ids=request.color_ids),
+            departments=SettingMultiResourceAction(resource_ids=request.department_ids),
+            profiles=SettingMultiResourceAction(resource_ids=request.profile_ids),
+            auths=SettingMultiResourceAction(resource_ids=request.auth_ids),
+            provider_keys=SettingMultiResourceAction(resource_ids=request.provider_key_ids),
+            auth_item_keys=SettingMultiResourceAction(resource_ids=request.auth_item_key_ids),
+            roles=SettingMultiResourceAction(resource_ids=request.role_ids),
+            role_routes=SettingMultiResourceAction(resource_ids=request.role_route_ids),
+        )
 
     def to_tuple(self) -> tuple:
         """Convert to tuple for SQL execution."""

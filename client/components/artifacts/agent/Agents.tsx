@@ -431,8 +431,8 @@ export default function Agents({
   // Get column references for toolbar
   const nameColumn = table.getColumn("name");
   const modelColumn = table.getColumn("model_id");
-  const roleColumn = table.getColumn("role");
   const departmentsColumn = table.getColumn("departments");
+  const toolsColumn = table.getColumn("tools");
   const isFiltered = table.getState().columnFilters.length > 0;
 
   return (
@@ -459,30 +459,33 @@ export default function Agents({
             </div>
 
             <div className="flex items-center space-x-2 flex-wrap">
-              {/* Model Filter */}
-              {modelColumn && modelOptions.length > 0 && (
-                <DataTableFacetedFilter
-                  column={modelColumn}
-                  title="Model"
-                  options={modelOptions}
-                />
-              )}
-
-              {/* Role Filter */}
-              {roleColumn && roleOptions.length > 0 && (
-                <DataTableFacetedFilter
-                  column={roleColumn}
-                  title="Role"
-                  options={roleOptions}
-                />
-              )}
-
               {/* Department Filter */}
               {departmentsColumn && departmentOptions.length > 0 && (
                 <DataTableFacetedFilter
                   column={departmentsColumn}
                   title="Department"
                   options={departmentOptions}
+                  isServerDriven
+                />
+              )}
+
+              {/* Model Filter */}
+              {modelColumn && modelOptions.length > 0 && (
+                <DataTableFacetedFilter
+                  column={modelColumn}
+                  title="Model"
+                  options={modelOptions}
+                  isServerDriven
+                />
+              )}
+
+              {/* Tool Filter */}
+              {toolsColumn && toolOptions.length > 0 && (
+                <DataTableFacetedFilter
+                  column={toolsColumn}
+                  title="Tool"
+                  options={toolOptions}
+                  isServerDriven
                 />
               )}
 

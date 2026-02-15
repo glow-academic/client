@@ -9789,6 +9789,28 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/socket/v4/server/scenario_generation_started": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Scenario Generation Started Api
+         * @description Server-to-client event: Scenario generation started.
+         *
+         *     Emitted when scenario generation begins, listing resource types being generated.
+         */
+        post: operations["scenario_generation_started_api_socket_v4_server_scenario_generation_started_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/socket/v4/server/scenario_generation_progress": {
         parameters: {
             query?: never;
@@ -41261,6 +41283,26 @@ export interface components {
             video_resources?: components["schemas"]["QGetVideosV4Item"][] | null;
         };
         /**
+         * ScenarioGenerationStartedEvent
+         * @description Server-to-client event: scenario_generation_started.
+         *
+         *     Emitted when scenario generation begins, listing which resource types
+         *     will be generated.
+         */
+        ScenarioGenerationStartedEvent: {
+            /**
+             * Artifact Type
+             * @default scenario
+             */
+            artifact_type: string;
+            /** Group Id */
+            group_id: string;
+            /** Run Id */
+            run_id: string;
+            /** Resource Types */
+            resource_types: string[];
+        };
+        /**
          * ScenarioImage
          * @description Image for scenario.
          */
@@ -67571,6 +67613,41 @@ export interface operations {
                 "application/json": {
                     [key: string]: unknown;
                 };
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    scenario_generation_started_api_socket_v4_server_scenario_generation_started_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ScenarioGenerationStartedEvent"];
             };
         };
         responses: {

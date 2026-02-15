@@ -87,17 +87,43 @@ export default function Models({
   // Use server-provided data directly
   const models = useMemo(() => modelsData?.models || [], [modelsData?.models]);
 
-  // Use server-provided facet options directly (no client-side computation)
+  // Filter options from server-provided ListFilterSection
   const providerOptions = useMemo(
     () =>
-      (modelsData?.providers || [])
-        .map((p) => ({
-          value: p.provider_id as string,
-          label: p.name as string,
+      (modelsData?.provider_filter?.options || [])
+        .map((opt) => ({
+          value: opt.id as string,
+          label: opt.name as string,
+          count: opt.count ?? 0,
         }))
         .filter((opt) => opt.value && opt.label),
-    [modelsData?.providers]
+    [modelsData?.provider_filter]
   );
+
+  const departmentOptions = useMemo(
+    () =>
+      (modelsData?.department_filter?.options || [])
+        .map((opt) => ({
+          value: opt.id as string,
+          label: opt.name as string,
+          count: opt.count ?? 0,
+        }))
+        .filter((opt) => opt.value && opt.label),
+    [modelsData?.department_filter]
+  );
+
+  const agentOptions = useMemo(
+    () =>
+      (modelsData?.agent_filter?.options || [])
+        .map((opt) => ({
+          value: opt.id as string,
+          label: opt.name as string,
+          count: opt.count ?? 0,
+        }))
+        .filter((opt) => opt.value && opt.label),
+    [modelsData?.agent_filter]
+  );
+
   const statusOptions = useMemo(
     () => [
       { value: "true", label: "Active" },
@@ -167,6 +193,31 @@ export default function Models({
           return value.includes(status);
         },
       },
+      // Hidden faceting column for Departments
+      {
+        id: "departments",
+        header: () => null,
+        cell: () => null,
+        enableHiding: true,
+        enableSorting: false,
+        accessorFn: (row) => row.department_ids ?? [],
+        filterFn: (row, _id, value: string[]) => {
+          const rowIds = (row.getValue("departments") as string[]) ?? [];
+          if (value.length === 0) return true;
+          if (rowIds.length === 0) return true;
+          return value.some((v) => rowIds.includes(v));
+        },
+      },
+      // Hidden faceting column for Agents
+      {
+        id: "agents",
+        header: () => null,
+        cell: () => null,
+        enableHiding: true,
+        enableSorting: false,
+        accessorFn: () => [] as string[],
+        filterFn: () => true,
+      },
       {
         accessorKey: "updated_at",
         header: "Updated",
@@ -222,6 +273,8 @@ export default function Models({
   const providerColumn = table.getColumn("provider");
   const customModelColumn = table.getColumn("is_custom");
   const activeColumn = table.getColumn("active");
+  const departmentsColumn = table.getColumn("departments");
+  const agentsColumn = table.getColumn("agents");
   const isFiltered = table.getState().columnFilters.length > 0;
 
   const handleDelete = async () => {
@@ -421,6 +474,25 @@ export default function Models({
                       column={providerColumn}
                       title="Provider"
                       options={providerOptions}
+                      isServerDriven
+                    />
+                  )}
+
+                  {departmentsColumn && departmentOptions.length > 0 && (
+                    <DataTableFacetedFilter
+                      column={departmentsColumn}
+                      title="Department"
+                      options={departmentOptions}
+                      isServerDriven
+                    />
+                  )}
+
+                  {agentsColumn && agentOptions.length > 0 && (
+                    <DataTableFacetedFilter
+                      column={agentsColumn}
+                      title="Agent"
+                      options={agentOptions}
+                      isServerDriven
                     />
                   )}
 
