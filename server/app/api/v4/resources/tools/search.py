@@ -6,13 +6,13 @@ from uuid import UUID
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
-from app.api.v4.resources.tools.types import SearchToolsParams
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
 from app.sql.types import (
     QGetToolsV4Item,
     SearchToolsApiRequest,
     SearchToolsApiResponse,
+    SearchToolsSqlParams,
     SearchToolsSqlRow,
     load_sql_query,
 )
@@ -66,7 +66,7 @@ async def search_tools_internal(
                 QGetToolsV4Item.model_validate(item) for item in cached.get("items", [])
             ]
 
-    params = SearchToolsParams(
+    params = SearchToolsSqlParams(
         search=search,
         limit_count=limit_count,
         offset_count=offset_count,
@@ -115,6 +115,8 @@ async def search_tools(
             request.offset_count,
             request.exclude_ids,
             bypass_cache=bypass_cache,
+            agent=request.agent or False,
+            tool=request.tool or False,
         )
         response.headers["X-Cache-Tags"] = ",".join(tags)
         return SearchToolsApiResponse(items=items)

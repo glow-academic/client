@@ -6,13 +6,13 @@ from uuid import UUID
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
-from app.api.v4.resources.descriptions.types import SearchDescriptionsParams
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
 from app.sql.types import (
     QGetDescriptionsV4Item,
     SearchDescriptionsApiRequest,
     SearchDescriptionsApiResponse,
+    SearchDescriptionsSqlParams,
     SearchDescriptionsSqlRow,
     load_sql_query,
 )
@@ -93,7 +93,7 @@ async def search_descriptions_internal(
                 for item in cached.get("items", [])
             ]
 
-    params = SearchDescriptionsParams(
+    params = SearchDescriptionsSqlParams(
         search=search,
         limit_count=limit_count,
         offset_count=offset_count,
@@ -159,6 +159,22 @@ async def search_descriptions(
             request.suggest_source,
             request.exclude_ids,
             bypass_cache,
+            agent=request.agent or False,
+            auth=request.auth or False,
+            cohort=request.cohort or False,
+            department=request.department or False,
+            document=request.document or False,
+            eval=request.eval or False,
+            field=request.field or False,
+            model=request.model or False,
+            parameter=request.parameter or False,
+            persona=request.persona or False,
+            provider=request.provider or False,
+            rubric=request.rubric or False,
+            scenario=request.scenario or False,
+            setting=request.setting or False,
+            simulation=request.simulation or False,
+            tool=request.tool or False,
         )
         response.headers["X-Cache-Tags"] = ",".join(tags)
         return SearchDescriptionsApiResponse(items=items)

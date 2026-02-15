@@ -9,15 +9,13 @@ from uuid import UUID
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
-from app.api.v4.resources.scenario_time_limits.types import (
-    SearchScenarioTimeLimitsParams,
-)
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
 from app.sql.types import (
     QGetScenarioTimeLimitsV4Item,
     SearchScenarioTimeLimitsApiRequest,
     SearchScenarioTimeLimitsApiResponse,
+    SearchScenarioTimeLimitsSqlParams,
     SearchScenarioTimeLimitsSqlRow,
     load_sql_query,
 )
@@ -70,7 +68,7 @@ async def search_scenario_time_limits_internal(
             ]
 
     # Execute SQL
-    params = SearchScenarioTimeLimitsParams(
+    params = SearchScenarioTimeLimitsSqlParams(
         scenario_ids=scenario_ids or [],
         negative=negative,
         simulation=simulation,
@@ -132,6 +130,7 @@ async def search_scenario_time_limits(
             conn=conn,
             scenario_ids=request.scenario_ids or [],
             bypass_cache=bypass_cache,
+            simulation=request.simulation or False,
         )
 
         api_response = SearchScenarioTimeLimitsApiResponse(items=items)

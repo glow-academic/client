@@ -15,10 +15,10 @@ from app.api.v4.artifacts.simulation.types import (
     SearchScenariosApiResponse,
     SearchScenariosSqlRow,
 )
-from app.api.v4.resources.scenarios.types import SearchScenariosParams
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
+from app.sql.types import SearchScenariosSqlParams
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
@@ -101,7 +101,7 @@ async def search_scenarios_internal(
                 QGetScenariosV4Item.model_validate(item) for item in cached["items"]
             ]
 
-    params = SearchScenariosParams(
+    params = SearchScenariosSqlParams(
         search=search,
         limit_count=limit_count,
         offset_count=offset_count,
@@ -193,6 +193,8 @@ async def search_scenarios(
             suggest_source=request.suggest_source,
             exclude_ids=request.exclude_ids,
             bypass_cache=bypass_cache,
+            scenario=request.scenario or False,
+            simulation=request.simulation or False,
         )
 
         # Set audit context

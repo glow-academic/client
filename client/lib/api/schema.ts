@@ -43582,10 +43582,7 @@ export interface components {
             /** Items */
             items?: components["schemas"]["QGetDomainsV4Item"][] | null;
         };
-        /**
-         * SearchEmailsApiRequest
-         * @description Request for searching emails.
-         */
+        /** SearchEmailsApiRequest */
         SearchEmailsApiRequest: {
             /** Search */
             search?: string | null;
@@ -43601,11 +43598,13 @@ export interface components {
             offset_count: number | null;
             /** Exclude Ids */
             exclude_ids?: string[] | null;
+            /**
+             * Profile
+             * @default false
+             */
+            profile: boolean | null;
         };
-        /**
-         * SearchEmailsApiResponse
-         * @description Response for searching emails.
-         */
+        /** SearchEmailsApiResponse */
         SearchEmailsApiResponse: {
             /** Items */
             items?: components["schemas"]["QGetEmailsV4Item"][] | null;
@@ -44746,10 +44745,7 @@ export interface components {
             /** Items */
             items?: components["schemas"]["QGetReasoningLevelsV4Item"][] | null;
         };
-        /**
-         * SearchRequestLimitsApiRequest
-         * @description Request for searching request limits.
-         */
+        /** SearchRequestLimitsApiRequest */
         SearchRequestLimitsApiRequest: {
             /** Search */
             search?: string | null;
@@ -44765,11 +44761,13 @@ export interface components {
             offset_count: number | null;
             /** Exclude Ids */
             exclude_ids?: string[] | null;
+            /**
+             * Profile
+             * @default false
+             */
+            profile: boolean | null;
         };
-        /**
-         * SearchRequestLimitsApiResponse
-         * @description Response for searching request limits.
-         */
+        /** SearchRequestLimitsApiResponse */
         SearchRequestLimitsApiResponse: {
             /** Items */
             items?: components["schemas"]["QGetRequestLimitsV4Item"][] | null;

@@ -9,13 +9,13 @@ from uuid import UUID
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
-from app.api.v4.resources.scenario_flags.types import SearchScenarioFlagsParams
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
 from app.sql.types import (
     QGetScenarioFlagsV4Item,
     SearchScenarioFlagsApiRequest,
     SearchScenarioFlagsApiResponse,
+    SearchScenarioFlagsSqlParams,
     SearchScenarioFlagsSqlRow,
     load_sql_query,
 )
@@ -85,7 +85,7 @@ async def search_scenario_flags_internal(
             ]
 
     # Execute SQL
-    params = SearchScenarioFlagsParams(
+    params = SearchScenarioFlagsSqlParams(
         search=search,
         limit_count=limit_count,
         offset_count=offset_count,
@@ -157,6 +157,7 @@ async def search_scenario_flags(
             exclude_ids=request.exclude_ids if hasattr(request, "exclude_ids") else [],
             scenario_ids=request.scenario_ids or [],
             bypass_cache=bypass_cache,
+            simulation=request.simulation or False,
         )
 
         api_response = SearchScenarioFlagsApiResponse(items=items)

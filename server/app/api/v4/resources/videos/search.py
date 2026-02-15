@@ -6,13 +6,13 @@ from uuid import UUID
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
-from app.api.v4.resources.videos.types import SearchVideosParams
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
 from app.sql.types import (
     QGetVideosV4Item,
     SearchVideosApiRequest,
     SearchVideosApiResponse,
+    SearchVideosSqlParams,
     SearchVideosSqlRow,
     load_sql_query,
 )
@@ -63,7 +63,7 @@ async def search_videos_internal(
                 for item in cached.get("items", [])
             ]
 
-    params = SearchVideosParams(
+    params = SearchVideosSqlParams(
         search=search,
         limit_count=limit_count,
         offset_count=offset_count,
@@ -110,6 +110,7 @@ async def search_videos(
             request.offset_count,
             request.exclude_ids,
             bypass_cache=bypass_cache,
+            scenario=request.scenario or False,
         )
         response.headers["X-Cache-Tags"] = ",".join(tags)
         return SearchVideosApiResponse(items=items)

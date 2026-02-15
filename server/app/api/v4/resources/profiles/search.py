@@ -6,13 +6,13 @@ from uuid import UUID
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
-from app.api.v4.resources.profiles.types import SearchProfilesParams
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
 from app.sql.types import (
     QGetProfilesV4Item,
     SearchProfilesApiRequest,
     SearchProfilesApiResponse,
+    SearchProfilesSqlParams,
     SearchProfilesSqlRow,
     load_sql_query,
 )
@@ -71,7 +71,7 @@ async def search_profiles_internal(
                 for item in cached.get("items", [])
             ]
 
-    params = SearchProfilesParams(
+    params = SearchProfilesSqlParams(
         search=search,
         limit_count=limit_count,
         offset_count=offset_count,
@@ -122,6 +122,8 @@ async def search_profiles(
             request.offset_count,
             request.exclude_ids,
             bypass_cache=bypass_cache,
+            profile=request.profile or False,
+            setting=request.setting or False,
         )
         response.headers["X-Cache-Tags"] = ",".join(tags)
         return SearchProfilesApiResponse(items=items)

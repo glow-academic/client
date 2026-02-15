@@ -6,13 +6,13 @@ from uuid import UUID
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
-from app.api.v4.resources.slugs.types import SearchSlugsParams
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
 from app.sql.types import (
     QGetSlugsV4Item,
     SearchSlugsApiRequest,
     SearchSlugsApiResponse,
+    SearchSlugsSqlParams,
     SearchSlugsSqlRow,
     load_sql_query,
 )
@@ -62,7 +62,7 @@ async def search_slugs_internal(
                 QGetSlugsV4Item.model_validate(item) for item in cached.get("items", [])
             ]
 
-    params = SearchSlugsParams(
+    params = SearchSlugsSqlParams(
         search=search,
         limit_count=limit_count,
         offset_count=offset_count,
@@ -111,6 +111,7 @@ async def search_slugs(
             request.suggest_source,
             request.exclude_ids,
             bypass_cache,
+            auth=request.auth or False,
         )
         response.headers["X-Cache-Tags"] = ",".join(tags)
         return SearchSlugsApiResponse(items=items)

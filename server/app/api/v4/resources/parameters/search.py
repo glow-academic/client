@@ -6,7 +6,6 @@ from uuid import UUID
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
-from app.api.v4.resources.parameters.types import SearchParametersParams
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
 from app.sql.types import (
@@ -15,6 +14,7 @@ from app.sql.types import (
     SearchConditionalParametersSqlRow,
     SearchParametersApiRequest,
     SearchParametersApiResponse,
+    SearchParametersSqlParams,
     SearchParametersSqlRow,
     load_sql_query,
 )
@@ -84,7 +84,7 @@ async def search_parameters_internal(
                 for item in cached.get("items", [])
             ]
 
-    params = SearchParametersParams(
+    params = SearchParametersSqlParams(
         search=search,
         limit_count=limit_count,
         offset_count=offset_count,
@@ -194,6 +194,10 @@ async def search_parameters(
             request.suggest_source,
             request.exclude_ids,
             bypass_cache=bypass_cache,
+            document=request.document or False,
+            parameter=request.parameter or False,
+            persona=request.persona or False,
+            scenario=request.scenario or False,
         )
         response.headers["X-Cache-Tags"] = ",".join(tags)
         return SearchParametersApiResponse(items=items)

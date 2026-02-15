@@ -6,16 +6,14 @@ from uuid import UUID
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
-from app.api.v4.resources.request_limits.types import (
-    SearchRequestLimitsApiRequest,
-    SearchRequestLimitsApiResponse,
-    SearchRequestLimitsParams,
-    SearchRequestLimitsSqlRow,
-)
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
 from app.sql.types import (
     QGetRequestLimitsV4Item,
+    SearchRequestLimitsApiRequest,
+    SearchRequestLimitsApiResponse,
+    SearchRequestLimitsSqlParams,
+    SearchRequestLimitsSqlRow,
     load_sql_query,
 )
 from app.utils.cache.cache_key import cache_key
@@ -64,7 +62,7 @@ async def search_request_limits_internal(
                 for item in cached.get("items", [])
             ]
 
-    params = SearchRequestLimitsParams(
+    params = SearchRequestLimitsSqlParams(
         search=search,
         limit_count=limit_count,
         offset_count=offset_count,
@@ -117,6 +115,7 @@ async def search_request_limits(
             request.offset_count,
             request.exclude_ids,
             bypass_cache,
+            profile=request.profile or False,
         )
         response.headers["X-Cache-Tags"] = ",".join(tags)
         return SearchRequestLimitsApiResponse(items=items)

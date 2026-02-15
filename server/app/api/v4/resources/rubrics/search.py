@@ -6,13 +6,13 @@ from uuid import UUID
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
-from app.api.v4.resources.rubrics.types import SearchRubricsParams
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
 from app.sql.types import (
     QGetRubricsV4Item,
     SearchRubricsApiRequest,
     SearchRubricsApiResponse,
+    SearchRubricsSqlParams,
     SearchRubricsSqlRow,
     load_sql_query,
 )
@@ -69,7 +69,7 @@ async def search_rubrics_internal(
                 for item in cached.get("items", [])
             ]
 
-    params = SearchRubricsParams(
+    params = SearchRubricsSqlParams(
         search=search,
         limit_count=limit_count,
         offset_count=offset_count,
@@ -119,6 +119,7 @@ async def search_rubrics(
             request.offset_count,
             request.exclude_ids,
             bypass_cache=bypass_cache,
+            rubric=request.rubric or False,
         )
         response.headers["X-Cache-Tags"] = ",".join(tags)
         return SearchRubricsApiResponse(items=items)

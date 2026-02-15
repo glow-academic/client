@@ -33,7 +33,7 @@ type CreateDraftObjectivesOut = OutputOf<
 type ObjectiveGetResponse = OutputOf<"/api/v4/resources/objectives/get", "post">;
 export type ObjectiveResourceItem = NonNullable<ObjectiveGetResponse["item"]>;
 
-// ObjectiveInputWithAutocomplete component (matching ContentSection pattern)
+// ObjectiveInputWithAutocomplete component (ghost tab autocomplete)
 function ObjectiveInputWithAutocomplete({
   index,
   value,
@@ -63,42 +63,27 @@ function ObjectiveInputWithAutocomplete({
   totalObjectives: number;
   maxObjectives: number;
 }) {
-  const [showSuggestions, setShowSuggestions] = useState(false);
-  const inputRef = useRef<HTMLInputElement>(null);
-
-  const filteredSuggestions = useMemo(() => {
-    if (!value.trim() || !suggestions.length) return [];
-    const valueLower = value.toLowerCase().trim();
-    const matching = suggestions
-      .filter((s) => {
-        const sLower = s.toLowerCase().trim();
-        if (sLower === valueLower) return false;
-        return sLower.startsWith(valueLower) || sLower.includes(valueLower);
-      })
-      .slice(0, 5);
-    return matching;
+  const ghostMatch = useMemo(() => {
+    const trimmed = value.trim();
+    if (!trimmed || !suggestions.length) return null;
+    const valueLower = trimmed.toLowerCase();
+    return suggestions.find((s) => {
+      const sLower = s.toLowerCase();
+      return sLower.startsWith(valueLower) && sLower !== valueLower;
+    }) ?? null;
   }, [suggestions, value]);
 
-  const handleSelect = (suggestion: string) => {
-    onChange(suggestion);
-    setShowSuggestions(false);
-    inputRef.current?.focus();
-  };
+  const ghostSuffix = ghostMatch ? ghostMatch.slice(value.length) : "";
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    onChange(e.target.value);
-    setShowSuggestions(true);
-  };
-
-  const handleFocus = () => {
-    if (value && filteredSuggestions.length > 0) {
-      setShowSuggestions(true);
-    }
-  };
-
-  const handleBlur = () => {
-    setTimeout(() => setShowSuggestions(false), 200);
-  };
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLInputElement>) => {
+      if (e.key === "Tab" && ghostSuffix) {
+        e.preventDefault();
+        onChange(ghostMatch!);
+      }
+    },
+    [ghostSuffix, ghostMatch, onChange]
+  );
 
   return (
     <div
@@ -119,31 +104,22 @@ function ObjectiveInputWithAutocomplete({
         </div>
         <div className="flex-1 relative">
           <Input
-            ref={inputRef}
             value={value}
-            onChange={handleInputChange}
-            onFocus={handleFocus}
-            onBlur={handleBlur}
+            onChange={(e) => onChange(e.target.value)}
+            onKeyDown={handleKeyDown}
             placeholder={placeholder}
             className="flex-1"
             disabled={disabled}
             onDragStart={(e) => e.preventDefault()}
           />
-          {showSuggestions && !disabled && filteredSuggestions.length > 0 && (
-            <div className="absolute z-50 w-full mt-1 bg-popover border border-border rounded-md shadow-md max-h-48 overflow-auto">
-              <div className="p-1">
-                {filteredSuggestions.map((suggestion, idx) => (
-                  <div
-                    key={idx}
-                    onClick={() => handleSelect(suggestion)}
-                    onMouseDown={(e) => e.preventDefault()}
-                    className="px-2 py-1.5 text-sm cursor-pointer hover:bg-accent hover:text-accent-foreground rounded-sm transition-colors"
-                  >
-                    {suggestion}
-                  </div>
-                ))}
-              </div>
-            </div>
+          {ghostSuffix && !disabled && (
+            <span
+              aria-hidden="true"
+              className="absolute left-0 top-0 h-full flex items-center pointer-events-none text-sm px-3"
+            >
+              <span className="invisible">{value}</span>
+              <span className="text-muted-foreground/40">{ghostSuffix}</span>
+            </span>
           )}
         </div>
         {/* Show delete button only if onRemove is provided and more than 1 objective */}

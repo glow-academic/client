@@ -9,13 +9,13 @@ from uuid import UUID
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
-from app.api.v4.resources.scenario_positions.types import SearchScenarioPositionsParams
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
 from app.sql.types import (
     QGetScenarioPositionsV4Item,
     SearchScenarioPositionsApiRequest,
     SearchScenarioPositionsApiResponse,
+    SearchScenarioPositionsSqlParams,
     SearchScenarioPositionsSqlRow,
     load_sql_query,
 )
@@ -66,7 +66,7 @@ async def search_scenario_positions_internal(
             ]
 
     # Execute SQL
-    params = SearchScenarioPositionsParams(
+    params = SearchScenarioPositionsSqlParams(
         scenario_ids=scenario_ids or [],
         simulation=simulation,
     )
@@ -127,6 +127,7 @@ async def search_scenario_positions(
             conn=conn,
             scenario_ids=request.scenario_ids or [],
             bypass_cache=bypass_cache,
+            simulation=request.simulation or False,
         )
 
         api_response = SearchScenarioPositionsApiResponse(items=items)

@@ -6,13 +6,13 @@ from uuid import UUID
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
-from app.api.v4.resources.names.types import SearchNamesParams
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
 from app.sql.types import (
     QGetNamesV4Item,
     SearchNamesApiRequest,
     SearchNamesApiResponse,
+    SearchNamesSqlParams,
     SearchNamesSqlRow,
     load_sql_query,
 )
@@ -100,7 +100,7 @@ async def search_names_internal(
                 QGetNamesV4Item.model_validate(item) for item in cached.get("items", [])
             ]
 
-    params = SearchNamesParams(
+    params = SearchNamesSqlParams(
         search=search,
         limit_count=limit_count,
         offset_count=offset_count,
@@ -166,6 +166,23 @@ async def search_names(
             request.suggest_source,
             request.exclude_ids,
             bypass_cache,
+            agent=request.agent or False,
+            auth=request.auth or False,
+            cohort=request.cohort or False,
+            department=request.department or False,
+            document=request.document or False,
+            eval=request.eval or False,
+            field=request.field or False,
+            model=request.model or False,
+            parameter=request.parameter or False,
+            persona=request.persona or False,
+            profile=request.profile or False,
+            provider=request.provider or False,
+            rubric=request.rubric or False,
+            scenario=request.scenario or False,
+            setting=request.setting or False,
+            simulation=request.simulation or False,
+            tool=request.tool or False,
         )
         response.headers["X-Cache-Tags"] = ",".join(tags)
         return SearchNamesApiResponse(items=items)

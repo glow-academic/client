@@ -6,13 +6,13 @@ from uuid import UUID
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
-from app.api.v4.resources.colors.types import SearchColorsParams
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
 from app.sql.types import (
     QGetColorsV4Item,
     SearchColorsApiRequest,
     SearchColorsApiResponse,
+    SearchColorsSqlParams,
     SearchColorsSqlRow,
     load_sql_query,
 )
@@ -65,7 +65,7 @@ async def search_colors_internal(
                 for item in cached.get("items", [])
             ]
 
-    params = SearchColorsParams(
+    params = SearchColorsSqlParams(
         search=search,
         limit_count=limit_count,
         offset_count=offset_count,
@@ -115,6 +115,8 @@ async def search_colors(
             request.suggest_source,
             request.exclude_ids,
             bypass_cache,
+            persona=request.persona or False,
+            setting=request.setting or False,
         )
         response.headers["X-Cache-Tags"] = ",".join(tags)
         return SearchColorsApiResponse(items=items)

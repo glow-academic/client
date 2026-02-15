@@ -6,16 +6,14 @@ from uuid import UUID
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
-from app.api.v4.resources.emails.types import (
-    SearchEmailsApiRequest,
-    SearchEmailsApiResponse,
-    SearchEmailsParams,
-    SearchEmailsSqlRow,
-)
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
 from app.sql.types import (
     QGetEmailsV4Item,
+    SearchEmailsApiRequest,
+    SearchEmailsApiResponse,
+    SearchEmailsSqlParams,
+    SearchEmailsSqlRow,
     load_sql_query,
 )
 from app.utils.cache.cache_key import cache_key
@@ -62,7 +60,7 @@ async def search_emails_internal(
                 for item in cached.get("items", [])
             ]
 
-    params = SearchEmailsParams(
+    params = SearchEmailsSqlParams(
         search=search,
         limit_count=limit_count,
         offset_count=offset_count,
@@ -113,6 +111,7 @@ async def search_emails(
             request.offset_count,
             request.exclude_ids,
             bypass_cache,
+            profile=request.profile or False,
         )
         response.headers["X-Cache-Tags"] = ",".join(tags)
         return SearchEmailsApiResponse(items=items)

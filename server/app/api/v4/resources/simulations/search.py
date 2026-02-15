@@ -13,13 +13,12 @@ from app.api.v4.resources.simulations.types import (
     GetSimulationsV4Item,
     SearchSimulationsApiRequest,
     SearchSimulationsApiResponse,
-    SearchSimulationsParams,
     SearchSimulationsSqlRow,
 )
 from app.infra.v4.activity.audit import audit_activity
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
-from app.sql.types import load_sql_query
+from app.sql.types import SearchSimulationsSqlParams, load_sql_query
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
@@ -89,7 +88,7 @@ async def search_simulations_internal(
             ]
 
     # Execute SQL
-    params = SearchSimulationsParams(
+    params = SearchSimulationsSqlParams(
         search=search,
         limit_count=limit_count,
         offset_count=offset_count,
@@ -179,6 +178,8 @@ async def search_simulations(
             suggest_source=request.suggest_source,
             exclude_ids=request.exclude_ids,
             bypass_cache=bypass_cache,
+            cohort=request.cohort or False,
+            simulation=request.simulation or False,
         )
 
         api_response = SearchSimulationsApiResponse(items=items)

@@ -6,13 +6,13 @@ from uuid import UUID
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
-from app.api.v4.resources.pricing.types import SearchPricingParams
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
 from app.sql.types import (
     QGetPricingV4Item,
     SearchPricingApiRequest,
     SearchPricingApiResponse,
+    SearchPricingSqlParams,
     SearchPricingSqlRow,
     load_sql_query,
 )
@@ -65,7 +65,7 @@ async def search_pricing_internal(
                 for item in cached.get("items", [])
             ]
 
-    params = SearchPricingParams(
+    params = SearchPricingSqlParams(
         search=search,
         limit_count=limit_count,
         offset_count=offset_count,
@@ -113,6 +113,7 @@ async def search_pricing(
             request.offset_count,
             request.exclude_ids,
             bypass_cache=bypass_cache,
+            model=request.model or False,
         )
         response.headers["X-Cache-Tags"] = ",".join(tags)
         return SearchPricingApiResponse(items=items)

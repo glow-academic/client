@@ -6,13 +6,13 @@ from uuid import UUID
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
-from app.api.v4.resources.fields.types import SearchFieldsParams
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
 from app.sql.types import (
     QGetFieldsV4Item,
     SearchFieldsApiRequest,
     SearchFieldsApiResponse,
+    SearchFieldsSqlParams,
     SearchFieldsSqlRow,
     load_sql_query,
 )
@@ -73,7 +73,7 @@ async def search_fields_internal(
                 for item in cached.get("items", [])
             ]
 
-    params = SearchFieldsParams(
+    params = SearchFieldsSqlParams(
         search=search,
         limit_count=limit_count,
         offset_count=offset_count,
@@ -127,6 +127,8 @@ async def search_fields(
             request.exclude_ids,
             request.parameter_id,
             bypass_cache,
+            field=request.field or False,
+            parameter=request.parameter or False,
         )
         response.headers["X-Cache-Tags"] = ",".join(tags)
         return SearchFieldsApiResponse(items=items)

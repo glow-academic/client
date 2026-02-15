@@ -6,13 +6,13 @@ from uuid import UUID
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
-from app.api.v4.resources.temperature_levels.types import SearchTemperatureLevelsParams
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
 from app.sql.types import (
     QGetTemperatureLevelsV4Item,
     SearchTemperatureLevelsApiRequest,
     SearchTemperatureLevelsApiResponse,
+    SearchTemperatureLevelsSqlParams,
     SearchTemperatureLevelsSqlRow,
     load_sql_query,
 )
@@ -63,7 +63,7 @@ async def search_temperature_levels_internal(
                 for item in cached.get("items", [])
             ]
 
-    params = SearchTemperatureLevelsParams(
+    params = SearchTemperatureLevelsSqlParams(
         search=search,
         limit_count=limit_count,
         offset_count=offset_count,
@@ -112,6 +112,8 @@ async def search_temperature_levels(
             request.offset_count,
             request.exclude_ids,
             bypass_cache,
+            agent=request.agent or False,
+            model=request.model or False,
         )
         response.headers["X-Cache-Tags"] = ",".join(tags)
         return SearchTemperatureLevelsApiResponse(items=items)

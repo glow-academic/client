@@ -9,13 +9,13 @@ from uuid import UUID
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
-from app.api.v4.resources.scenario_rubrics.types import SearchScenarioRubricsParams
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
 from app.sql.types import (
     QGetScenarioRubricsV4Item,
     SearchScenarioRubricsApiRequest,
     SearchScenarioRubricsApiResponse,
+    SearchScenarioRubricsSqlParams,
     SearchScenarioRubricsSqlRow,
     load_sql_query,
 )
@@ -70,7 +70,7 @@ async def search_scenario_rubrics_internal(
             ]
 
     # Execute SQL
-    params = SearchScenarioRubricsParams(
+    params = SearchScenarioRubricsSqlParams(
         scenario_ids=scenario_ids or [],
         rubric_ids=rubric_ids or [],
         simulation=simulation,
@@ -132,6 +132,7 @@ async def search_scenario_rubrics(
             conn=conn,
             scenario_ids=request.scenario_ids or [],
             bypass_cache=bypass_cache,
+            simulation=request.simulation or False,
         )
 
         api_response = SearchScenarioRubricsApiResponse(items=items)

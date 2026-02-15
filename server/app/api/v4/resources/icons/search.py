@@ -6,13 +6,13 @@ from uuid import UUID
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
-from app.api.v4.resources.icons.types import SearchIconsParams
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
 from app.sql.types import (
     QGetIconsV4Item,
     SearchIconsApiRequest,
     SearchIconsApiResponse,
+    SearchIconsSqlParams,
     SearchIconsSqlRow,
     load_sql_query,
 )
@@ -62,7 +62,7 @@ async def search_icons_internal(
                 QGetIconsV4Item.model_validate(item) for item in cached.get("items", [])
             ]
 
-    params = SearchIconsParams(
+    params = SearchIconsSqlParams(
         search=search,
         limit_count=limit_count,
         offset_count=offset_count,
@@ -111,6 +111,7 @@ async def search_icons(
             request.suggest_source,
             request.exclude_ids,
             bypass_cache,
+            persona=request.persona or False,
         )
         response.headers["X-Cache-Tags"] = ",".join(tags)
         return SearchIconsApiResponse(items=items)

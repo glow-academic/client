@@ -6,13 +6,13 @@ from uuid import UUID
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
-from app.api.v4.resources.points.types import SearchPointsParams
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
 from app.sql.types import (
     QGetPointsV4Item,
     SearchPointsApiRequest,
     SearchPointsApiResponse,
+    SearchPointsSqlParams,
     SearchPointsSqlRow,
     load_sql_query,
 )
@@ -61,7 +61,7 @@ async def search_points_internal(
                 for item in cached.get("items", [])
             ]
 
-    params = SearchPointsParams(
+    params = SearchPointsSqlParams(
         search=search,
         limit_count=limit_count,
         offset_count=offset_count,
@@ -107,6 +107,7 @@ async def search_points(
             request.offset_count,
             request.exclude_ids,
             bypass_cache,
+            rubric=request.rubric or False,
         )
         response.headers["X-Cache-Tags"] = ",".join(tags)
         return SearchPointsApiResponse(items=items)

@@ -6,13 +6,13 @@ from uuid import UUID
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
-from app.api.v4.resources.personas.types import SearchPersonasParams
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
 from app.sql.types import (
     QGetPersonasV4Item,
     SearchPersonasApiRequest,
     SearchPersonasApiResponse,
+    SearchPersonasSqlParams,
     SearchPersonasSqlRow,
     load_sql_query,
 )
@@ -67,7 +67,7 @@ async def search_personas_internal(
                 for item in cached.get("items", [])
             ]
 
-    params = SearchPersonasParams(
+    params = SearchPersonasSqlParams(
         search=search,
         limit_count=limit_count,
         offset_count=offset_count,
@@ -119,6 +119,8 @@ async def search_personas(
             request.suggest_source,
             request.exclude_ids,
             bypass_cache,
+            persona=request.persona or False,
+            scenario=request.scenario or False,
         )
         response.headers["X-Cache-Tags"] = ",".join(tags)
         return SearchPersonasApiResponse(items=items)

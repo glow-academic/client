@@ -6,13 +6,13 @@ from uuid import UUID
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
-from app.api.v4.resources.documents.types import SearchDocumentsParams
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
 from app.sql.types import (
     QGetDocumentsV4Item,
     SearchDocumentsApiRequest,
     SearchDocumentsApiResponse,
+    SearchDocumentsSqlParams,
     SearchDocumentsSqlRow,
     load_sql_query,
 )
@@ -75,7 +75,7 @@ async def search_documents_internal(
                 for item in cached.get("items", [])
             ]
 
-    params = SearchDocumentsParams(
+    params = SearchDocumentsSqlParams(
         search=search,
         limit_count=limit_count,
         offset_count=offset_count,
@@ -135,8 +135,8 @@ async def search_documents(
             image_ids=request.image_ids,
             template=request.template,
             bypass_cache=bypass_cache,
-            document=request.document,
-            scenario=request.scenario,
+            document=request.document or False,
+            scenario=request.scenario or False,
         )
         response.headers["X-Cache-Tags"] = ",".join(tags)
         return SearchDocumentsApiResponse(items=items)

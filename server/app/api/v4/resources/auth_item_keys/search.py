@@ -6,13 +6,13 @@ from uuid import UUID
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
-from app.api.v4.resources.auth_item_keys.types import SearchAuthItemKeysParams
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
 from app.sql.types import (
     QGetAuthItemKeysV4Item,
     SearchAuthItemKeysApiRequest,
     SearchAuthItemKeysApiResponse,
+    SearchAuthItemKeysSqlParams,
     SearchAuthItemKeysSqlRow,
     load_sql_query,
 )
@@ -67,7 +67,7 @@ async def search_auth_item_keys_internal(
                 for item in cached.get("items", [])
             ]
 
-    params = SearchAuthItemKeysParams(
+    params = SearchAuthItemKeysSqlParams(
         search=search,
         limit_count=limit_count,
         offset_count=offset_count,
@@ -117,6 +117,7 @@ async def search_auth_item_keys(
             request.offset_count,
             request.exclude_ids,
             bypass_cache=bypass_cache,
+            setting=request.setting or False,
         )
         response.headers["X-Cache-Tags"] = ",".join(tags)
         return SearchAuthItemKeysApiResponse(items=items)

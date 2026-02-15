@@ -6,13 +6,13 @@ from uuid import UUID
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
-from app.api.v4.resources.reasoning_levels.types import SearchReasoningLevelsParams
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
 from app.sql.types import (
     QGetReasoningLevelsV4Item,
     SearchReasoningLevelsApiRequest,
     SearchReasoningLevelsApiResponse,
+    SearchReasoningLevelsSqlParams,
     SearchReasoningLevelsSqlRow,
     load_sql_query,
 )
@@ -67,7 +67,7 @@ async def search_reasoning_levels_internal(
                 for item in cached.get("items", [])
             ]
 
-    params = SearchReasoningLevelsParams(
+    params = SearchReasoningLevelsSqlParams(
         search=search,
         limit_count=limit_count,
         offset_count=offset_count,
@@ -117,6 +117,8 @@ async def search_reasoning_levels(
             request.offset_count,
             request.exclude_ids,
             bypass_cache=bypass_cache,
+            agent=request.agent or False,
+            model=request.model or False,
         )
         response.headers["X-Cache-Tags"] = ",".join(tags)
         return SearchReasoningLevelsApiResponse(items=items)
