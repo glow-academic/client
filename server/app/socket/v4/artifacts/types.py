@@ -261,3 +261,16 @@ class DepartmentGenerationStartedEvent(BaseModel):
     group_id: str
     run_id: str
     resource_types: list[str]
+
+
+class RubricGenerationStartedEvent(BaseModel):
+    """Server-to-client event: rubric_generation_started.
+
+    Emitted when rubric generation begins, listing which resource types
+    will be generated.
+    """
+
+    artifact_type: str = "rubric"
+    group_id: str
+    run_id: str
+    resource_types: list[str]

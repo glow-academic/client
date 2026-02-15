@@ -27,6 +27,7 @@ class GenerateRubricPayload(GetRubricApiRequest):
     # Generation-specific fields - resource-based API
     resource_types: list[str]
     user_instructions: list[str] | None = None
+    save: bool = True
 
 
 # =============================================================================

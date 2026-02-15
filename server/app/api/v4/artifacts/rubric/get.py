@@ -288,13 +288,9 @@ async def get_rubric_internal(
             settings_conn, profile_id, bypass_cache
         )
     resource_agent_ids, create_tool_ids_map, link_tool_ids_map = (
-        resolve_agents_for_artifact(
-            settings_data.agent_tool_entries, RUBRIC_RESOURCES
-        )
+        resolve_agents_for_artifact(settings_data.agent_tool_entries, RUBRIC_RESOURCES)
     )
-    names_has_tools = has_tools_for_resource(
-        settings_data.agent_tool_entries, "names"
-    )
+    names_has_tools = has_tools_for_resource(settings_data.agent_tool_entries, "names")
 
     # === COMPUTE SHOW_AI_GENERATE FLAGS ===
     def compute_show_ai_generate(resource: str) -> bool:
@@ -550,53 +546,53 @@ async def get_rubric_internal(
         )
 
     # Fetch config resources for websocket generation context.
-    selected_agent_ids = [aid for aid in resource_agent_ids.values() if aid is not None]
-    selected_agent_ids = list(dict.fromkeys(selected_agent_ids))
-    config_agents = []
-    config_models = []
-    config_providers = []
-    config_tools = []
-    if selected_agent_ids:
+    config_agent_resource_ids = [a.id for a in settings_data.settings_agents if a.id]
+    config_model_resource_ids = [
+        a.model_id for a in settings_data.settings_agents if a.model_id
+    ]
+
+    config_agents: list[Any] = []
+    config_models: list[Any] = []
+    config_providers: list[Any] = []
+    config_tools: list[Any] = []
+    if config_agent_resource_ids:
         async with pool.acquire() as c:
             config_agents = await get_agents_internal(
                 c,
-                selected_agent_ids,
+                config_agent_resource_ids,
                 bypass_cache=bypass_cache,
             )
-        model_ids = list(
-            dict.fromkeys([a.model_id for a in config_agents if a.model_id is not None])
-        )
-        if model_ids:
-            async with pool.acquire() as c:
-                config_models = await get_models_internal(
-                    c,
-                    model_ids,
-                    bypass_cache=bypass_cache,
-                )
-        provider_ids = list(
-            dict.fromkeys(
-                [m.provider_id for m in config_models if m.provider_id is not None]
+    if config_model_resource_ids:
+        async with pool.acquire() as c:
+            config_models = await get_models_internal(
+                c,
+                config_model_resource_ids,
+                bypass_cache=bypass_cache,
             )
+    provider_ids = list(
+        dict.fromkeys(
+            [m.provider_id for m in config_models if m.provider_id is not None]
         )
-        if provider_ids:
-            async with pool.acquire() as c:
-                config_providers = await get_providers_internal(
-                    c,
-                    provider_ids,
-                    bypass_cache=bypass_cache,
-                )
-        tool_ids: list[UUID] = []
-        for agent in config_agents:
-            raw = getattr(agent, "tool_ids", None) or []
-            tool_ids.extend([tid for tid in raw if tid is not None])
-        tool_ids = list(dict.fromkeys(tool_ids))
-        if tool_ids:
-            async with pool.acquire() as c:
-                config_tools = await get_tools_internal(
-                    c,
-                    tool_ids,
-                    bypass_cache=bypass_cache,
-                )
+    )
+    if provider_ids:
+        async with pool.acquire() as c:
+            config_providers = await get_providers_internal(
+                c,
+                provider_ids,
+                bypass_cache=bypass_cache,
+            )
+    tool_ids: list[UUID] = []
+    for agent in config_agents:
+        raw = getattr(agent, "tool_ids", None) or []
+        tool_ids.extend([tid for tid in raw if tid is not None])
+    tool_ids = list(dict.fromkeys(tool_ids))
+    if tool_ids:
+        async with pool.acquire() as c:
+            config_tools = await get_tools_internal(
+                c,
+                tool_ids,
+                bypass_cache=bypass_cache,
+            )
 
     # Build show_ai_generate map
     show_ai_generate_map = {

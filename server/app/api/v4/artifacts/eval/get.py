@@ -276,9 +276,7 @@ async def get_eval_internal(
     agent_ids, create_tool_ids_map, link_tool_ids_map = resolve_agents_for_artifact(
         settings_data.agent_tool_entries, EVAL_RESOURCES
     )
-    names_has_tools = has_tools_for_resource(
-        settings_data.agent_tool_entries, "names"
-    )
+    names_has_tools = has_tools_for_resource(settings_data.agent_tool_entries, "names")
 
     # === COMPUTE SHOW_AI_GENERATE FLAGS ===
     def compute_show_ai_generate(resource: str) -> bool:
@@ -515,14 +513,25 @@ async def get_eval_internal(
     }
 
     # Config chain hydration for websocket generation parity.
+    config_agent_resource_ids = [a.id for a in settings_data.settings_agents if a.id]
+    config_model_resource_ids = [
+        a.model_id for a in settings_data.settings_agents if a.model_id
+    ]
+
     config_agents: list[Any] = []
-    model_ids = list({a.model_id for a in config_agents if a.model_id})
-    config_models = []
-    config_providers = []
-    config_tools = []
-    if model_ids:
+    config_models: list[Any] = []
+    config_providers: list[Any] = []
+    config_tools: list[Any] = []
+    if config_agent_resource_ids:
         async with pool.acquire() as c:
-            config_models = await get_models_internal(c, model_ids, bypass_cache)
+            config_agents = await get_agents_internal(
+                c, config_agent_resource_ids, bypass_cache
+            )
+    if config_model_resource_ids:
+        async with pool.acquire() as c:
+            config_models = await get_models_internal(
+                c, config_model_resource_ids, bypass_cache
+            )
         provider_ids = list({m.provider_id for m in config_models if m.provider_id})
         if provider_ids:
             async with pool.acquire() as c:

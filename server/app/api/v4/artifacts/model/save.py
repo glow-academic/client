@@ -4,6 +4,7 @@ Handles both create (model_id = NULL) and update (model_id provided).
 Uses two-pass architecture with Python-computed permissions.
 """
 
+import uuid
 from typing import Annotated, Any, cast
 
 import asyncpg  # type: ignore
@@ -15,6 +16,8 @@ from app.api.v4.artifacts.model.permissions import (
     has_access,
 )
 from app.api.v4.artifacts.model.types import (
+    ModelMultiResourceAction,
+    ModelResourceAction,
     SaveModelApiRequest,
     SaveModelApiResponse,
     SaveModelSqlParams,
@@ -32,7 +35,10 @@ from app.sql.types import (
     load_sql_query,
 )
 from app.utils.cache.invalidate_tags import invalidate_tags
+from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import execute_sql_typed
+
+logger = get_logger(__name__)
 
 # SQL paths
 ACCESS_CHECK_SQL_PATH = "app/sql/v4/queries/models/check_model_save_access_complete.sql"
@@ -41,6 +47,73 @@ GET_NAME_SQL_PATH = "app/sql/v4/queries/simulations/get_name_by_id_complete.sql"
 
 
 router = APIRouter()
+
+
+async def save_model_internal(
+    conn: asyncpg.Connection,
+    profile_id: uuid.UUID,
+    group_id: uuid.UUID,
+    resource_actions: dict[str, Any],
+    model_id: uuid.UUID | None = None,
+) -> uuid.UUID | None:
+    """Save a model from resource actions dict (used by generation complete handler).
+
+    Builds SaveModelSqlParams from a flat resource_actions dict, executes the
+    save SQL in a transaction, and invalidates cache.
+
+    Returns the model_id on success, None on failure.
+    """
+    try:
+
+        def _single(key: str) -> ModelResourceAction:
+            val = resource_actions.get(key, {})
+            if isinstance(val, dict):
+                return ModelResourceAction(
+                    resource_id=val.get("resource_id"),
+                )
+            return ModelResourceAction()
+
+        def _multi(key: str) -> ModelMultiResourceAction:
+            val = resource_actions.get(key, {})
+            if isinstance(val, dict):
+                return ModelMultiResourceAction(
+                    resource_ids=val.get("resource_ids"),
+                )
+            return ModelMultiResourceAction()
+
+        params = SaveModelSqlParams(
+            profile_id=profile_id,
+            input_model_id=model_id,
+            group_id=group_id,
+            names=_single("names"),
+            descriptions=_single("descriptions"),
+            values=_single("values"),
+            providers=_single("providers"),
+            flags=_multi("flags"),
+            departments=_multi("departments"),
+            modalities=_multi("modalities"),
+            temperature_levels=_multi("temperature_levels"),
+            pricing=_multi("pricing"),
+            reasoning_levels=_multi("reasoning_levels"),
+            qualities=_multi("qualities"),
+            voices=_multi("voices"),
+        )
+
+        async with conn.transaction():
+            result = cast(
+                SaveModelSqlRow,
+                await execute_sql_typed(conn, SQL_PATH, params=params),
+            )
+
+            if not result or not result.model_id:
+                return None
+
+        await invalidate_tags(["models"])
+        return result.model_id
+
+    except Exception as e:
+        logger.exception(f"save_model_internal failed: {e}")
+        return None
 
 
 @router.post(

@@ -1,6 +1,6 @@
 """Profile save endpoint - v4 API following DHH principles.
 Unified endpoint that handles both create (input_profile_id = NULL) and update (input_profile_id provided).
-Two-pass architecture: access check SQL → Python permissions → mutation SQL.
+Uses two-pass architecture: access check SQL → Python permissions → mutation SQL.
 """
 
 import uuid
@@ -14,9 +14,6 @@ from app.api.v4.artifacts.profile.permissions import (
     compute_can_edit,
 )
 from app.api.v4.artifacts.profile.types import (
-    PatchProfileDraftApiRequest,
-    PatchProfileDraftSqlParams,
-    PatchProfileDraftSqlRow,
     ProfileMultiResourceAction,
     ProfileResourceAction,
     SaveProfileRouteApiRequest,
@@ -44,7 +41,6 @@ ACCESS_CHECK_SQL_PATH = (
     "app/sql/v4/queries/profile/check_profile_save_access_complete.sql"
 )
 SQL_PATH = "app/sql/v4/queries/profile/save_profile_complete.sql"
-PATCH_SQL_PATH = "app/sql/v4/queries/profile/patch_profile_draft_complete.sql"
 
 
 router = APIRouter()
@@ -59,9 +55,8 @@ async def save_profile_internal(
 ) -> uuid.UUID | None:
     """Save a profile from resource actions dict (used by generation complete handler).
 
-    Uses the two-step draft-then-save pattern:
-    1. Patch/create a draft from resource_actions
-    2. Save from that draft
+    Builds SaveProfileSqlParams from a flat resource_actions dict, executes the
+    save SQL in a transaction, and invalidates cache.
 
     Returns the profile_id on success, None on failure.
     """
@@ -83,10 +78,9 @@ async def save_profile_internal(
                 )
             return ProfileMultiResourceAction()
 
-        # Step 1: Patch/create draft from resource actions
-        patch_params = PatchProfileDraftSqlParams(
+        params = SaveProfileSqlParams(
             profile_id=profile_id,
-            input_draft_id=None,
+            input_profile_id=input_profile_id,
             group_id=group_id,
             role=resource_actions.get("role"),
             names=_single("names"),
@@ -95,44 +89,19 @@ async def save_profile_internal(
             emails=_multi("emails"),
             departments=_multi("departments"),
             cohorts=_multi("cohorts"),
-            expected_version=0,
         )
 
         async with conn.transaction():
-            patch_result = cast(
-                PatchProfileDraftSqlRow,
-                await execute_sql_typed(
-                    conn,
-                    PATCH_SQL_PATH,
-                    params=patch_params,
-                ),
-            )
-            resolved_draft_id = patch_result.draft_id if patch_result else None
-
-            if not resolved_draft_id:
-                return None
-
-            # Step 2: Save from draft
-            save_params = SaveProfileSqlParams(
-                draft_id=resolved_draft_id,
-                actor_profile_id=profile_id,
-                input_profile_id=input_profile_id,
-            )
-
             result = cast(
                 SaveProfileSqlRow,
-                await execute_sql_typed(
-                    conn,
-                    SQL_PATH,
-                    params=save_params,
-                ),
+                await execute_sql_typed(conn, SQL_PATH, params=params),
             )
 
-            if not result or not result.profile_id:
+            if not result or not result.out_profile_id:
                 return None
 
         await invalidate_tags(["profile"])
-        return result.profile_id
+        return result.out_profile_id
 
     except Exception as e:
         logger.exception(f"save_profile_internal failed: {e}")
@@ -155,7 +124,7 @@ async def save_profile(
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> SaveProfileRouteApiResponse:
-    """Save profile - handles both create and update via nested resource actions."""
+    """Save profile - handles both create and update via resource action composites."""
     tags = ["profile"]
 
     sql_query = load_sql_query(SQL_PATH)
@@ -228,44 +197,21 @@ async def save_profile(
                 detail="You don't have permission to save this profile.",
             )
 
+        # Server-resolved group_id: create if not updating an existing profile
+        group_id = None
+        if not request.input_profile_id:
+            group_id = await conn.fetchval(
+                "INSERT INTO groups_entry (created_at, updated_at) VALUES (NOW(), NOW()) RETURNING id"
+            )
+
         async with conn.transaction():
-            # Persona parity: save always receives nested resource actions.
-            # We patch/create draft from these actions, then persist from that draft.
-            patch_request = PatchProfileDraftApiRequest(
-                input_draft_id=None,
-                group_id=None,
-                role=request.role,
-                name_id=request.name_id,
-                flag_id=request.flag_id,
-                request_limit_id=request.request_limit_id,
-                email_ids=request.email_ids,
-                department_ids=request.department_ids,
-                cohort_ids=request.cohort_ids,
-                expected_version=request.expected_version,
-            )
-            patch_params = PatchProfileDraftSqlParams.from_request(
-                patch_request, profile_id=profile_id
-            )
-            patch_result = cast(
-                PatchProfileDraftSqlRow,
-                await execute_sql_typed(
-                    conn,
-                    PATCH_SQL_PATH,
-                    params=patch_params,
-                ),
-            )
-            resolved_draft_id = patch_result.draft_id if patch_result else None
-
-            if not resolved_draft_id:
-                raise ValueError("Failed to prepare profile draft for save.")
-
-            params = SaveProfileSqlParams(
-                draft_id=resolved_draft_id,
-                actor_profile_id=profile_id,
-                input_profile_id=request.input_profile_id,
+            # Convert flat resource IDs to SQL params
+            params = SaveProfileSqlParams.from_request(
+                request, profile_id=profile_id, group_id=group_id
             )
             sql_params = params.to_tuple()
 
+            # Execute SQL with typed helper
             result = cast(
                 SaveProfileSqlRow,
                 await execute_sql_typed(
@@ -275,7 +221,7 @@ async def save_profile(
                 ),
             )
 
-            if not result or not result.profile_id:
+            if not result or not result.out_profile_id:
                 if request.input_profile_id:
                     raise ValueError(f"Profile not found: {request.input_profile_id}")
                 else:
@@ -284,20 +230,18 @@ async def save_profile(
             # Set audit context
             if actor_name:
                 audit_ctx = {"actor": {"name": actor_name, "id": profile_id}}
-                audit_ctx["profile"] = {"id": str(result.profile_id)}
+                audit_ctx["profile"] = {"id": str(result.out_profile_id)}
                 audit_set(http_request, **audit_ctx)
 
-        is_update = request.input_profile_id is not None
+        # Convert SQL result to API response
         api_response = SaveProfileRouteApiResponse.model_validate(
             {
-                "success": True,
-                "profile_id": str(result.profile_id),
-                "message": "Profile updated successfully"
-                if is_update
-                else "Profile created successfully",
+                "profile_id": str(result.out_profile_id),
+                "actor_name": actor_name,
             }
         )
 
+        # Invalidate cache after mutation
         await invalidate_tags(tags)
         response.headers["X-Invalidate-Tags"] = ",".join(tags)
 

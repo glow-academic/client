@@ -2,23 +2,6 @@
 -- Fetches all resource IDs using user context from Query 1
 -- This query runs AFTER access check, BEFORE parallel resource fetching
 
--- Drop and recreate composite type for candidate agents
-DO $$
-BEGIN
-    DROP TYPE IF EXISTS setting_candidate_agent CASCADE;
-
-    CREATE TYPE setting_candidate_agent AS (
-        agent_id uuid,
-        agent_name text,
-        tool_resources text[],
-        create_tool_ids uuid[],
-        link_tool_ids uuid[],
-        department_ids uuid[],
-        updated_at timestamptz,
-        is_mcp boolean
-    );
-END $$;
-
 -- Drop function if exists (handles signature variations)
 DO $$
 DECLARE
@@ -33,6 +16,8 @@ BEGIN
         EXECUTE format('DROP FUNCTION IF EXISTS api_get_setting_ids_v4(%s)', r.sig);
     END LOOP;
 END $$;
+
+DROP TYPE IF EXISTS setting_candidate_agent CASCADE;
 
 CREATE OR REPLACE FUNCTION api_get_setting_ids_v4(
     profile_id uuid,
@@ -57,18 +42,6 @@ RETURNS TABLE (
     auth_item_key_ids uuid[],
     role_ids uuid[],
     role_route_ids uuid[],
-
-    -- Candidate agents (for Python-side agent scoring)
-    candidate_agents setting_candidate_agent[],
-
-    -- Tools existence (for Python to compute show_ai_generate flags)
-    names_has_tools boolean,
-    descriptions_has_tools boolean,
-    colors_has_tools boolean,
-    flags_has_tools boolean,
-    departments_has_tools boolean,
-    profiles_has_tools boolean,
-    auths_has_tools boolean,
 
     -- Config chain resource IDs (for pre-fetched generation config)
     config_agent_resource_ids uuid[],
@@ -291,72 +264,6 @@ merged_ids AS (
             ELSE (SELECT role_route_ids FROM canonical_role_routes)
         END as role_route_ids
 ),
--- ========== CANDIDATE AGENTS (for Python-side agent scoring) ==========
-agent_resource_tools AS (
-    SELECT
-        a.id as agent_id,
-        rt.resource::text as resource_name,
-        ta.id as tool_id,
-        COALESCE(tf_create.value, true) as is_creatable
-    FROM agent_artifact a
-    JOIN agent_tools_junction atj ON atj.agent_id = a.id AND atj.active = true
-    JOIN tools_resource tr ON tr.id = atj.tool_id
-    JOIN tool_tools_junction ttj ON ttj.tools_id = tr.id
-    JOIN tool_artifact ta ON ta.id = ttj.tool_id
-    JOIN resource_tools_relation rt ON rt.tool_id = ta.id
-    LEFT JOIN tool_flags_junction tf_active ON tf_active.tool_id = ta.id
-    LEFT JOIN flags_resource f_active ON f_active.id = tf_active.flag_id AND f_active.name = 'tool_active'
-    LEFT JOIN tool_flags_junction tf_create ON tf_create.tool_id = ta.id
-    LEFT JOIN flags_resource f_create ON f_create.id = tf_create.flag_id AND f_create.name = 'tool_creatable'
-    LEFT JOIN agent_flags_junction af_agent ON af_agent.agent_id = a.id
-    LEFT JOIN flags_resource f_agent ON f_agent.id = af_agent.flag_id AND f_agent.name = 'agent_active'
-    WHERE COALESCE(af_agent.value, false) = true
-      AND (tf_active.tool_id IS NULL OR COALESCE(f_active.id, NULL) IS NULL OR COALESCE(tf_active.value, false) = true)
-),
-agent_resource_tool_pairs AS (
-    SELECT
-        art.agent_id,
-        art.resource_name,
-        (ARRAY_AGG(art.tool_id ORDER BY art.tool_id) FILTER (WHERE art.is_creatable = true))[1] as create_tool_id,
-        (ARRAY_AGG(art.tool_id ORDER BY art.tool_id) FILTER (WHERE art.is_creatable = false))[1] as link_tool_id
-    FROM agent_resource_tools art
-    GROUP BY art.agent_id, art.resource_name
-),
-agent_tool_arrays AS (
-    SELECT
-        agent_id,
-        ARRAY_AGG(resource_name ORDER BY resource_name) as tool_resources,
-        ARRAY_AGG(create_tool_id ORDER BY resource_name) as create_tool_ids,
-        ARRAY_AGG(link_tool_id ORDER BY resource_name) as link_tool_ids
-    FROM agent_resource_tool_pairs
-    GROUP BY agent_id
-),
-candidate_agents_data AS (
-    SELECT
-        a.id as agent_id,
-        n.name as agent_name,
-        COALESCE(ata.tool_resources, ARRAY[]::text[]) as tool_resources,
-        COALESCE(ata.create_tool_ids, ARRAY[]::uuid[]) as create_tool_ids,
-        COALESCE(ata.link_tool_ids, ARRAY[]::uuid[]) as link_tool_ids,
-        COALESCE(ARRAY_AGG(DISTINCT ad.department_id) FILTER (WHERE ad.department_id IS NOT NULL), ARRAY[]::uuid[]) as department_ids,
-        a.updated_at,
-        COALESCE(af_mcp.value, false) as is_mcp
-    FROM agent_artifact a
-    JOIN agent_names_junction anj ON anj.agent_id = a.id
-    JOIN names_resource n ON n.id = anj.name_id
-    LEFT JOIN agent_tool_arrays ata ON ata.agent_id = a.id
-    LEFT JOIN agent_departments_junction ad ON ad.agent_id = a.id AND ad.active = true
-    LEFT JOIN agent_flags_junction af_active ON af_active.agent_id = a.id
-    LEFT JOIN flags_resource f_active ON f_active.id = af_active.flag_id AND f_active.name = 'agent_active'
-    LEFT JOIN agent_flags_junction af_mcp ON af_mcp.agent_id = a.id
-    LEFT JOIN flags_resource f_mcp ON f_mcp.id = af_mcp.flag_id AND f_mcp.name = 'mcp'
-    WHERE COALESCE(af_active.value, false) = true
-      AND (
-          NOT EXISTS (SELECT 1 FROM agent_departments_junction ad2 WHERE ad2.agent_id = a.id AND ad2.active = true)
-          OR EXISTS (SELECT 1 FROM agent_departments_junction ad3 WHERE ad3.agent_id = a.id AND ad3.active = true AND ad3.department_id = ANY(user_department_ids))
-      )
-    GROUP BY a.id, n.name, a.updated_at, af_mcp.value, ata.tool_resources, ata.create_tool_ids, ata.link_tool_ids
-),
 -- ========== CONFIG CHAIN (departments -> settings -> agents -> models -> providers) ==========
 config_settings AS (
     SELECT DISTINCT unnest(dr.setting_ids) as setting_id
@@ -402,17 +309,6 @@ config_provider_resource_ids_data AS (
     JOIN LATERAL unnest(cmri.ids) AS model_res_id ON true
     JOIN models_resource mr ON mr.id = model_res_id
     WHERE mr.provider_id IS NOT NULL
-),
--- ========== TOOLS EXISTENCE CHECK ==========
-tools_existence_check AS (
-    SELECT
-        EXISTS (SELECT 1 FROM resource_tools_relation rt JOIN tool_artifact t ON t.id = rt.tool_id WHERE rt.resource = 'names'::resource_type AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)) as names_has_tools,
-        EXISTS (SELECT 1 FROM resource_tools_relation rt JOIN tool_artifact t ON t.id = rt.tool_id WHERE rt.resource = 'descriptions'::resource_type AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)) as descriptions_has_tools,
-        EXISTS (SELECT 1 FROM resource_tools_relation rt JOIN tool_artifact t ON t.id = rt.tool_id WHERE rt.resource = 'colors'::resource_type AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)) as colors_has_tools,
-        EXISTS (SELECT 1 FROM resource_tools_relation rt JOIN tool_artifact t ON t.id = rt.tool_id WHERE rt.resource = 'flags'::resource_type AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)) as flags_has_tools,
-        EXISTS (SELECT 1 FROM resource_tools_relation rt JOIN tool_artifact t ON t.id = rt.tool_id WHERE rt.resource = 'departments'::resource_type AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)) as departments_has_tools,
-        EXISTS (SELECT 1 FROM resource_tools_relation rt JOIN tool_artifact t ON t.id = rt.tool_id WHERE rt.resource = 'profiles'::resource_type AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)) as profiles_has_tools,
-        EXISTS (SELECT 1 FROM resource_tools_relation rt JOIN tool_artifact t ON t.id = rt.tool_id WHERE rt.resource = 'auths'::resource_type AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)) as auths_has_tools
 )
 SELECT
     -- Single-select merged IDs
@@ -430,25 +326,9 @@ SELECT
     m.role_ids,
     m.role_route_ids,
 
-    -- Candidate agents
-    (SELECT COALESCE(
-        ARRAY_AGG(ROW(ca.agent_id, ca.agent_name, ca.tool_resources, ca.create_tool_ids, ca.link_tool_ids, ca.department_ids, ca.updated_at, ca.is_mcp)::setting_candidate_agent),
-        ARRAY[]::setting_candidate_agent[]
-    ) FROM candidate_agents_data ca) as candidate_agents,
-
-    -- Tools existence
-    tec.names_has_tools,
-    tec.descriptions_has_tools,
-    tec.colors_has_tools,
-    tec.flags_has_tools,
-    tec.departments_has_tools,
-    tec.profiles_has_tools,
-    tec.auths_has_tools,
-
     -- Config chain resource IDs
     (SELECT ids FROM config_agent_resource_ids_data) as config_agent_resource_ids,
     (SELECT ids FROM config_model_resource_ids_data) as config_model_resource_ids,
     (SELECT ids FROM config_provider_resource_ids_data) as config_provider_resource_ids
-FROM merged_ids m
-CROSS JOIN tools_existence_check tec;
+FROM merged_ids m;
 $$;

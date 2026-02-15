@@ -313,9 +313,7 @@ async def get_agent_internal(
     agent_ids, create_tool_ids_map, link_tool_ids_map = resolve_agents_for_artifact(
         settings_data.agent_tool_entries, AGENT_RESOURCES
     )
-    names_has_tools = has_tools_for_resource(
-        settings_data.agent_tool_entries, "names"
-    )
+    names_has_tools = has_tools_for_resource(settings_data.agent_tool_entries, "names")
     descriptions_has_tools = has_tools_for_resource(
         settings_data.agent_tool_entries, "descriptions"
     )
@@ -331,9 +329,7 @@ async def get_agent_internal(
     departments_has_tools = has_tools_for_resource(
         settings_data.agent_tool_entries, "departments"
     )
-    tools_has_tools = has_tools_for_resource(
-        settings_data.agent_tool_entries, "tools"
-    )
+    tools_has_tools = has_tools_for_resource(settings_data.agent_tool_entries, "tools")
     temperature_levels_has_tools = has_tools_for_resource(
         settings_data.agent_tool_entries, "temperature_levels"
     )
@@ -737,12 +733,12 @@ async def get_agent_internal(
         ),
     )
 
-    selected_agent_ids = list({aid for aid in agent_ids.values() if aid is not None})
+    config_agent_resource_ids = [a.id for a in settings_data.settings_agents if a.id]
     config_agents: list[QGetAgentsV4Item] = []
-    if selected_agent_ids:
+    if config_agent_resource_ids:
         async with pool.acquire() as c:
             config_agents = await get_agents_internal(
-                c, selected_agent_ids, bypass_cache
+                c, config_agent_resource_ids, bypass_cache
             )
     provider_ids = list({m.provider_id for m in models if m.provider_id is not None})
     config_providers: list[QGetProvidersV4Item] = []

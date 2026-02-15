@@ -1,15 +1,38 @@
--- Unified save profile function - draft-first create/update
--- Converted to PostgreSQL function
--- Uses safe drop/recreate pattern: drop function first, then types (no CASCADE), then recreate
+-- Unified save profile function - handles both create (input_profile_id = NULL) and update (input_profile_id provided)
+-- Accepts composite resource action params directly (no draft intermediate step)
+-- Follows persona/agent save pattern
+
+-- 0) Drop and recreate composite types for resource actions
+DO $$
+BEGIN
+    DROP TYPE IF EXISTS types.profile_resource_action CASCADE;
+    CREATE TYPE types.profile_resource_action AS (
+        resource_id uuid,
+        create_tool_id uuid,
+        link_tool_id uuid
+    );
+EXCEPTION WHEN OTHERS THEN NULL;
+END $$;
+
+DO $$
+BEGIN
+    DROP TYPE IF EXISTS types.profile_multi_resource_action CASCADE;
+    CREATE TYPE types.profile_multi_resource_action AS (
+        resource_ids uuid[],
+        create_tool_id uuid,
+        link_tool_id uuid
+    );
+EXCEPTION WHEN OTHERS THEN NULL;
+END $$;
+
 -- 1) Drop function first (breaks dependency on types)
--- Drop all versions of the function using DO block to handle signature variations
 DO $$
 DECLARE
     r RECORD;
 BEGIN
-    FOR r IN 
-        SELECT oidvectortypes(proargtypes) as sig 
-        FROM pg_proc 
+    FOR r IN
+        SELECT oidvectortypes(proargtypes) as sig
+        FROM pg_proc
         WHERE proname = 'api_save_profile_v4'
           AND pronamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'public')
     LOOP
@@ -17,18 +40,21 @@ BEGIN
     END LOOP;
 END $$;
 
--- 2) Drop types WITHOUT CASCADE
--- No composite types needed for this function (returns simple types)
-
--- 3) Recreate function
+-- 2) Recreate function with composite resource action parameters
 CREATE OR REPLACE FUNCTION api_save_profile_v4(
-    draft_id uuid,
-    actor_profile_id uuid DEFAULT NULL,
+    profile_id uuid,
     input_profile_id uuid DEFAULT NULL,
-    draft_group_id uuid DEFAULT NULL
+    group_id uuid DEFAULT NULL,
+    role text DEFAULT NULL,
+    names types.profile_resource_action DEFAULT NULL,
+    flags types.profile_resource_action DEFAULT NULL,
+    request_limits types.profile_resource_action DEFAULT NULL,
+    emails types.profile_multi_resource_action DEFAULT NULL,
+    departments types.profile_multi_resource_action DEFAULT NULL,
+    cohorts types.profile_multi_resource_action DEFAULT NULL
 )
 RETURNS TABLE (
-    profile_id uuid,
+    out_profile_id uuid,
     actor_name text
 )
 LANGUAGE plpgsql
@@ -42,75 +68,132 @@ DECLARE
     is_create boolean;
     v_primary_email_index integer;
     v_primary_department_index integer;
-    v_draft_profile_id uuid;
-    v_group_id uuid;
-    v_draft_id uuid;
-    v_name text;
-    v_emails text[];
-    v_role text;
-    v_active boolean;
-    v_cohort_ids uuid[];
-    v_department_ids uuid[];
-    v_route_ids uuid[];
-    v_requests_per_day integer;
-    v_role_id uuid;
+    -- Resource IDs extracted from composites
+    v_name_id uuid;
     v_active_flag_id uuid;
     v_request_limit_id uuid;
+    v_email_ids uuid[];
+    v_department_ids uuid[];
+    v_cohort_ids uuid[];
+    -- Derived values
+    v_name text;
+    v_email_texts text[];
+    v_role text;
+    v_role_id uuid;
+    v_active boolean;
+    v_requests_per_day integer;
+    v_route_ids uuid[];
+    -- Call tracking variables
+    v_run_id uuid;
+    v_call_id uuid;
 BEGIN
-    v_draft_id := draft_id;
-    v_actor_profile_id := actor_profile_id;
+    -- Assign parameters to local variables (extract from composites)
+    v_actor_profile_id := profile_id;
+    v_name_id := (names).resource_id;
+    v_active_flag_id := (flags).resource_id;
+    v_request_limit_id := (request_limits).resource_id;
+    v_email_ids := COALESCE((emails).resource_ids, ARRAY[]::uuid[]);
+    v_department_ids := COALESCE((departments).resource_ids, ARRAY[]::uuid[]);
+    v_cohort_ids := COALESCE((cohorts).resource_ids, ARRAY[]::uuid[]);
+    v_role := role;
+
     is_create := (input_profile_id IS NULL);
 
     IF v_actor_profile_id IS NULL THEN
         RAISE EXCEPTION 'Profile ID is required';
     END IF;
 
-    IF v_draft_id IS NULL THEN
-        RAISE EXCEPTION 'Draft ID is required';
+    -- === VALIDATE RESOURCE IDS ===
+    IF v_name_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM names_resource WHERE id = v_name_id) THEN
+        RAISE EXCEPTION 'Name resource not found: %', v_name_id;
     END IF;
 
-    SELECT pdj.profiles_id
-    INTO v_draft_profile_id
-    FROM profiles_drafts_connection pdj
-    WHERE pdj.draft_id = v_draft_id;
-
-    v_group_id := draft_group_id;
-
-    IF v_draft_profile_id IS NULL THEN
-        RAISE EXCEPTION 'Draft not found: %', v_draft_id;
+    IF v_active_flag_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM flags_resource WHERE id = v_active_flag_id) THEN
+        RAISE EXCEPTION 'Flag resource not found: %', v_active_flag_id;
     END IF;
 
-    IF v_draft_profile_id <> v_actor_profile_id THEN
-        RAISE EXCEPTION 'Draft does not belong to profile';
+    IF v_request_limit_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM request_limits_resource WHERE id = v_request_limit_id) THEN
+        RAISE EXCEPTION 'Request limit resource not found: %', v_request_limit_id;
     END IF;
 
-    IF v_group_id IS NULL THEN
-        RAISE EXCEPTION 'Draft group_id not found: %', v_draft_id;
+    -- Resolve department IDs (accept both departments_resource IDs and department_artifact IDs)
+    IF COALESCE(array_length(v_department_ids, 1), 0) > 0 THEN
+        SELECT ARRAY_AGG(COALESCE(dr.id, dr_by_artifact.id) ORDER BY ord)
+        INTO v_department_ids
+        FROM unnest(v_department_ids) WITH ORDINALITY AS input_id(id, ord)
+        LEFT JOIN departments_resource dr ON dr.id = input_id.id
+        LEFT JOIN department_departments_junction ddj ON ddj.department_id = input_id.id
+        LEFT JOIN departments_resource dr_by_artifact ON dr_by_artifact.id = ddj.departments_id;
+
+        IF EXISTS (
+            SELECT 1
+            FROM unnest(v_department_ids) WITH ORDINALITY AS input_id(id, ord)
+            LEFT JOIN departments_resource dr ON dr.id = input_id.id
+            LEFT JOIN department_departments_junction ddj ON ddj.department_id = input_id.id
+            LEFT JOIN departments_resource dr_by_artifact ON dr_by_artifact.id = ddj.departments_id
+            WHERE dr.id IS NULL AND dr_by_artifact.id IS NULL
+        ) THEN
+            RAISE EXCEPTION 'Department resource not found';
+        END IF;
     END IF;
 
-    -- Load draft resources
-    SELECT n.name
-    INTO v_name
-    FROM names_drafts_connection dn
-    JOIN names_resource n ON n.id = dn.names_id
-    WHERE dn.draft_id = v_draft_id
-    LIMIT 1;
+    IF COALESCE(array_length(v_email_ids, 1), 0) > 0 AND EXISTS (
+        SELECT 1
+        FROM unnest(v_email_ids) AS email_id
+        WHERE NOT EXISTS (SELECT 1 FROM emails_resource WHERE id = email_id)
+    ) THEN
+        RAISE EXCEPTION 'Email resource not found';
+    END IF;
 
-    SELECT COALESCE(ARRAY_AGG(e.email ORDER BY de.created_at), ARRAY[]::text[])
-    INTO v_emails
-    FROM emails_drafts_connection de
-    JOIN emails_resource e ON e.id = de.emails_id
-    WHERE de.draft_id = v_draft_id
-      AND de.active = true;
+    -- Resolve cohort IDs (accept both cohort_artifact IDs and cohorts_resource IDs)
+    IF COALESCE(array_length(v_cohort_ids, 1), 0) > 0 THEN
+        SELECT ARRAY_AGG(COALESCE(ca.id, cr.cohort_id) ORDER BY ord)
+        INTO v_cohort_ids
+        FROM unnest(v_cohort_ids) WITH ORDINALITY AS input_id(id, ord)
+        LEFT JOIN cohort_artifact ca ON ca.id = input_id.id
+        LEFT JOIN cohorts_resource cr ON cr.id = input_id.id;
 
-    SELECT r.id, r.role::text
-    INTO v_role_id, v_role
-    FROM roles_drafts_connection dr
-    JOIN roles_resource r ON r.id = dr.roles_id
-    WHERE dr.draft_id = v_draft_id
-      AND dr.active = true
-    LIMIT 1;
+        IF EXISTS (
+            SELECT 1
+            FROM unnest(v_cohort_ids) WITH ORDINALITY AS input_id(id, ord)
+            LEFT JOIN cohort_artifact ca ON ca.id = input_id.id
+            LEFT JOIN cohorts_resource cr ON cr.id = input_id.id
+            WHERE ca.id IS NULL AND cr.id IS NULL
+        ) THEN
+            RAISE EXCEPTION 'Cohort not found';
+        END IF;
+    END IF;
 
+    -- === RESOLVE DERIVED VALUES ===
+
+    -- Get name text from names_resource
+    IF v_name_id IS NOT NULL THEN
+        SELECT n.name INTO v_name FROM names_resource n WHERE n.id = v_name_id;
+    END IF;
+
+    -- Get email texts from emails_resource
+    IF COALESCE(array_length(v_email_ids, 1), 0) > 0 THEN
+        SELECT COALESCE(ARRAY_AGG(e.email ORDER BY ord), ARRAY[]::text[])
+        INTO v_email_texts
+        FROM unnest(v_email_ids) WITH ORDINALITY AS input_id(id, ord)
+        JOIN emails_resource e ON e.id = input_id.id;
+    ELSE
+        v_email_texts := ARRAY[]::text[];
+    END IF;
+
+    -- Resolve role
+    IF v_role IS NOT NULL THEN
+        SELECT r.id INTO v_role_id
+        FROM roles_resource r
+        WHERE r.role = v_role::profile_type
+        LIMIT 1;
+
+        IF v_role_id IS NULL THEN
+            RAISE EXCEPTION 'Role not found: %', v_role;
+        END IF;
+    END IF;
+
+    -- If no role provided for update, keep existing role
     IF v_role IS NULL AND input_profile_id IS NOT NULL THEN
         SELECT r.id, r.role::text
         INTO v_role_id, v_role
@@ -125,20 +208,10 @@ BEGIN
         v_role := 'instructional';
     END IF;
 
-    SELECT df.flags_id
-    INTO v_active_flag_id
-    FROM flags_drafts_connection df
-    WHERE df.draft_id = v_draft_id
-    LIMIT 1;
-
+    -- Resolve active flag
     v_active := (v_active_flag_id IS NOT NULL);
 
-    SELECT drl.request_limits_id
-    INTO v_request_limit_id
-    FROM request_limits_drafts_connection drl
-    WHERE drl.draft_id = v_draft_id
-    LIMIT 1;
-
+    -- Resolve request limit
     IF v_request_limit_id IS NOT NULL THEN
         SELECT rlr.requests_per_day
         INTO v_requests_per_day
@@ -147,39 +220,26 @@ BEGIN
         LIMIT 1;
     END IF;
 
-    SELECT COALESCE(ARRAY_AGG(dd.departments_id ORDER BY dd.created_at), ARRAY[]::uuid[])
-    INTO v_department_ids
-    FROM departments_drafts_connection dd
-    WHERE dd.draft_id = v_draft_id
-      AND dd.active = true;
-
-    SELECT COALESCE(ARRAY_AGG(dc.cohorts_id ORDER BY dc.created_at), ARRAY[]::uuid[])
-    INTO v_cohort_ids
-    FROM cohorts_drafts_connection dc
-    WHERE dc.draft_id = v_draft_id
-      AND dc.active = true;
-
-    SELECT COALESCE(ARRAY_AGG(dr.routes_id ORDER BY dr.created_at), ARRAY[]::uuid[])
-    INTO v_route_ids
-    FROM routes_drafts_connection dr
-    WHERE dr.draft_id = v_draft_id
-      AND dr.active = true;
-
-    IF array_length(v_route_ids, 1) IS NULL THEN
-        v_route_ids := NULL;
+    -- Resolve route IDs from role
+    IF v_role_id IS NOT NULL THEN
+        SELECT COALESCE(
+            ARRAY_AGG(rr.route_id ORDER BY rt.route),
+            ARRAY[]::uuid[]
+        )
+        INTO v_route_ids
+        FROM role_routes_resource rr
+        JOIN routes_resource rt ON rt.id = rr.route_id
+        WHERE rr.role_id = v_role_id AND rr.active = true;
+    ELSE
+        v_route_ids := ARRAY[]::uuid[];
     END IF;
 
-    IF v_emails IS NULL OR array_length(v_emails, 1) = 0 THEN
+    -- Validate emails required
+    IF v_email_texts IS NULL OR array_length(v_email_texts, 1) = 0 THEN
         RAISE EXCEPTION 'At least one email is required';
     END IF;
 
     v_primary_email_index := 0;
-
-    IF array_length(v_emails, 1) IS NOT NULL THEN
-        IF v_primary_email_index < 0 OR v_primary_email_index >= array_length(v_emails, 1) THEN
-            RAISE EXCEPTION 'Invalid primary_email_index';
-        END IF;
-    END IF;
 
     IF array_length(v_department_ids, 1) IS NULL THEN
         v_primary_department_index := NULL;
@@ -188,51 +248,179 @@ BEGIN
     END IF;
 
     -- Get actor name
-    SELECT 
+    SELECT
         COALESCE(
             (SELECT n.name FROM profile_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1),
             ''
         ) INTO v_actor_name
     FROM profile_artifact p
     WHERE p.id = v_actor_profile_id;
-    
-    -- Create or UPDATE profile_artifact first
+
+    -- === CREATE OR UPDATE PROFILE ARTIFACT ===
     IF is_create THEN
-        -- CREATE path: generate new profile_id
         INSERT INTO profile_artifact (id, created_at, updated_at)
         VALUES (gen_random_uuid(), NOW(), NOW())
         RETURNING id INTO v_profile_id;
+
         -- Check if primary email already exists (only for create)
         IF EXISTS (
             SELECT 1 FROM profile_emails_junction pe
             JOIN emails_resource e ON pe.email_id = e.id
-            WHERE e.email = v_emails[v_primary_email_index + 1]
+            WHERE e.email = v_email_texts[v_primary_email_index + 1]
               AND pe.active = true
         ) THEN
             RAISE EXCEPTION 'Email already exists';
         END IF;
     ELSE
-        -- UPDATE path: use provided profile_id
         v_profile_id := input_profile_id;
-        
-        -- Check if profile exists
+
         IF NOT EXISTS (SELECT 1 FROM profile_artifact WHERE id = v_profile_id) THEN
             RAISE EXCEPTION 'Profile not found: %', v_profile_id;
         END IF;
-        
-        -- Update profile_artifact
+
         UPDATE profile_artifact
         SET updated_at = NOW()
         WHERE id = v_profile_id;
     END IF;
-    
-    -- Continue with profile save using SQL
+
+    -- === TOOL CALL TRACKING ===
+    IF group_id IS NOT NULL THEN
+        v_run_id := uuidv7();
+        INSERT INTO runs_entry (id, input_tokens, output_tokens, cached_input_tokens, group_id, created_at, updated_at)
+        VALUES (v_run_id, 0, 0, 0, group_id, NOW(), NOW());
+    END IF;
+
+    -- names
+    IF v_run_id IS NOT NULL AND v_name_id IS NOT NULL THEN
+        IF (names).create_tool_id IS NOT NULL THEN
+            v_call_id := uuidv7();
+            INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
+            VALUES (v_call_id, 'profile_create_names_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+            INSERT INTO tools_calls_connection (tools_id, call_id) VALUES ((names).create_tool_id, v_call_id);
+            INSERT INTO names_calls_connection (names_id, call_id) VALUES (v_name_id, v_call_id);
+        END IF;
+        IF (names).link_tool_id IS NOT NULL THEN
+            v_call_id := uuidv7();
+            INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
+            VALUES (v_call_id, 'profile_link_names_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+            INSERT INTO tools_calls_connection (tools_id, call_id) VALUES ((names).link_tool_id, v_call_id);
+            INSERT INTO names_calls_connection (names_id, call_id) VALUES (v_name_id, v_call_id);
+        END IF;
+    END IF;
+
+    -- flags
+    IF v_run_id IS NOT NULL AND v_active_flag_id IS NOT NULL THEN
+        IF (flags).create_tool_id IS NOT NULL THEN
+            v_call_id := uuidv7();
+            INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
+            VALUES (v_call_id, 'profile_create_flags_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+            INSERT INTO tools_calls_connection (tools_id, call_id) VALUES ((flags).create_tool_id, v_call_id);
+            INSERT INTO flags_calls_connection (flags_id, call_id) VALUES (v_active_flag_id, v_call_id);
+        END IF;
+        IF (flags).link_tool_id IS NOT NULL THEN
+            v_call_id := uuidv7();
+            INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
+            VALUES (v_call_id, 'profile_link_flags_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+            INSERT INTO tools_calls_connection (tools_id, call_id) VALUES ((flags).link_tool_id, v_call_id);
+            INSERT INTO flags_calls_connection (flags_id, call_id) VALUES (v_active_flag_id, v_call_id);
+        END IF;
+    END IF;
+
+    -- request_limits
+    IF v_run_id IS NOT NULL AND v_request_limit_id IS NOT NULL THEN
+        IF (request_limits).create_tool_id IS NOT NULL THEN
+            v_call_id := uuidv7();
+            INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
+            VALUES (v_call_id, 'profile_create_request_limits_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+            INSERT INTO tools_calls_connection (tools_id, call_id) VALUES ((request_limits).create_tool_id, v_call_id);
+            INSERT INTO request_limits_calls_connection (request_limits_id, call_id) VALUES (v_request_limit_id, v_call_id);
+        END IF;
+        IF (request_limits).link_tool_id IS NOT NULL THEN
+            v_call_id := uuidv7();
+            INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
+            VALUES (v_call_id, 'profile_link_request_limits_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+            INSERT INTO tools_calls_connection (tools_id, call_id) VALUES ((request_limits).link_tool_id, v_call_id);
+            INSERT INTO request_limits_calls_connection (request_limits_id, call_id) VALUES (v_request_limit_id, v_call_id);
+        END IF;
+    END IF;
+
+    -- departments (multi-select)
+    IF v_run_id IS NOT NULL AND COALESCE(array_length(v_department_ids, 1), 0) > 0 THEN
+        IF (departments).create_tool_id IS NOT NULL THEN
+            v_call_id := uuidv7();
+            INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
+            VALUES (v_call_id, 'profile_create_departments_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+            INSERT INTO tools_calls_connection (tools_id, call_id) VALUES ((departments).create_tool_id, v_call_id);
+            INSERT INTO departments_calls_connection (departments_id, call_id)
+            SELECT dept_id, v_call_id FROM UNNEST(v_department_ids) AS dept_id;
+        END IF;
+        IF (departments).link_tool_id IS NOT NULL THEN
+            v_call_id := uuidv7();
+            INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
+            VALUES (v_call_id, 'profile_link_departments_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+            INSERT INTO tools_calls_connection (tools_id, call_id) VALUES ((departments).link_tool_id, v_call_id);
+            INSERT INTO departments_calls_connection (departments_id, call_id)
+            SELECT dept_id, v_call_id FROM UNNEST(v_department_ids) AS dept_id;
+        END IF;
+    END IF;
+
+    -- emails (multi-select)
+    IF v_run_id IS NOT NULL AND COALESCE(array_length(v_email_ids, 1), 0) > 0 THEN
+        IF (emails).create_tool_id IS NOT NULL THEN
+            v_call_id := uuidv7();
+            INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
+            VALUES (v_call_id, 'profile_create_emails_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+            INSERT INTO tools_calls_connection (tools_id, call_id) VALUES ((emails).create_tool_id, v_call_id);
+            INSERT INTO emails_calls_connection (emails_id, call_id)
+            SELECT eid, v_call_id FROM UNNEST(v_email_ids) AS eid;
+        END IF;
+        IF (emails).link_tool_id IS NOT NULL THEN
+            v_call_id := uuidv7();
+            INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
+            VALUES (v_call_id, 'profile_link_emails_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+            INSERT INTO tools_calls_connection (tools_id, call_id) VALUES ((emails).link_tool_id, v_call_id);
+            INSERT INTO emails_calls_connection (emails_id, call_id)
+            SELECT eid, v_call_id FROM UNNEST(v_email_ids) AS eid;
+        END IF;
+    END IF;
+
+    -- cohorts (multi-select)
+    IF v_run_id IS NOT NULL AND COALESCE(array_length(v_cohort_ids, 1), 0) > 0 THEN
+        IF (cohorts).create_tool_id IS NOT NULL THEN
+            v_call_id := uuidv7();
+            INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
+            VALUES (v_call_id, 'profile_create_cohorts_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+            INSERT INTO tools_calls_connection (tools_id, call_id) VALUES ((cohorts).create_tool_id, v_call_id);
+            INSERT INTO cohorts_calls_connection (cohorts_id, call_id)
+            SELECT COALESCE(cr.id, ca.cohort_id), v_call_id
+            FROM UNNEST(v_cohort_ids) cid
+            LEFT JOIN cohorts_resource cr ON cr.id = cid
+            LEFT JOIN cohort_artifact ca ON ca.id = cid
+            WHERE COALESCE(cr.id, ca.cohort_id) IS NOT NULL;
+        END IF;
+        IF (cohorts).link_tool_id IS NOT NULL THEN
+            v_call_id := uuidv7();
+            INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
+            VALUES (v_call_id, 'profile_link_cohorts_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+            INSERT INTO tools_calls_connection (tools_id, call_id) VALUES ((cohorts).link_tool_id, v_call_id);
+            INSERT INTO cohorts_calls_connection (cohorts_id, call_id)
+            SELECT COALESCE(cr.id, ca.cohort_id), v_call_id
+            FROM UNNEST(v_cohort_ids) cid
+            LEFT JOIN cohorts_resource cr ON cr.id = cid
+            LEFT JOIN cohort_artifact ca ON ca.id = cid
+            WHERE COALESCE(cr.id, ca.cohort_id) IS NOT NULL;
+        END IF;
+    END IF;
+
+    -- === JUNCTION LINKING ===
     RETURN QUERY
     WITH params AS (
         SELECT
             v_profile_id AS target_profile_id,
             v_name AS name,
-            COALESCE(v_emails, ARRAY[]::text[]) AS emails,
+            v_name_id AS name_id,
+            COALESCE(v_email_texts, ARRAY[]::text[]) AS email_texts,
+            v_email_ids AS email_ids,
             v_role AS role,
             v_role_id AS role_id,
             COALESCE(v_active, true) AS active,
@@ -243,25 +431,9 @@ BEGIN
             v_primary_department_index AS primary_department_index,
             is_create AS is_create,
             v_requests_per_day AS requests_per_day,
+            v_active_flag_id AS active_flag_id,
+            v_request_limit_id AS request_limit_id,
             v_actor_profile_id AS actor_profile_id
-    ),
-    resolved_route_ids AS (
-        SELECT
-            CASE
-                WHEN p.route_ids IS NOT NULL THEN p.route_ids
-                WHEN p.role_id IS NOT NULL THEN COALESCE(
-                    (SELECT ARRAY_AGG(rr.route_id ORDER BY rt.route)
-                     FROM role_routes_resource rr
-                     JOIN routes_resource rt ON rt.id = rr.route_id
-                     WHERE rr.role_id = p.role_id AND rr.active = true),
-                    ARRAY[]::uuid[]
-                )
-                ELSE ARRAY[]::uuid[]
-            END as route_ids
-        FROM params p
-    ),
-    placeholder_call_id AS (
-        SELECT id FROM view_calls_entry LIMIT 1
     ),
     -- Insert/update name in names table if provided
     name_resource AS (
@@ -282,7 +454,7 @@ BEGIN
     -- Link profile to name
     link_profile_name AS (
         INSERT INTO profile_names_junction (profile_id, name_id, created_at)
-        SELECT 
+        SELECT
             x.target_profile_id,
             nr.name_id,
             NOW()
@@ -292,7 +464,7 @@ BEGIN
         ON CONFLICT (profile_id) DO UPDATE SET
             name_id = EXCLUDED.name_id
     ),
-    -- Look up role from roles_resource (use role_id if available, else first active match by profile_type)
+    -- Look up role from roles_resource
     role_resource AS (
         SELECT id as role_id
         FROM roles_resource
@@ -303,8 +475,7 @@ BEGIN
         LIMIT 1
     ),
     profile_type_upsert AS (
-        -- Delete old role link if updating
-        DELETE FROM profile_roles_junction 
+        DELETE FROM profile_roles_junction
         WHERE profile_id = (SELECT target_profile_id FROM params)
           AND EXISTS (SELECT 1 FROM params WHERE NOT is_create)
           AND EXISTS (SELECT 1 FROM role_resource)
@@ -329,25 +500,27 @@ BEGIN
         CROSS JOIN flags_resource f
         WHERE f.name = 'profile_active'
           AND x.active IS NOT NULL
-        ON CONFLICT ON CONSTRAINT profile_flags_pkey DO UPDATE SET 
+        ON CONFLICT ON CONSTRAINT profile_flags_pkey DO UPDATE SET
             value = EXCLUDED.value
     ),
     -- Handle emails if provided
     all_emails_data AS (
-        SELECT 
+        SELECT
             email,
             CASE WHEN ord = (SELECT primary_email_index + 1 FROM params) THEN true ELSE false END as is_primary
-        FROM unnest((SELECT emails FROM params)) WITH ORDINALITY AS e(email, ord)
-        WHERE array_length((SELECT emails FROM params), 1) > 0
+        FROM unnest((SELECT email_texts FROM params)) WITH ORDINALITY AS e(email, ord)
+        WHERE array_length((SELECT email_texts FROM params), 1) > 0
     ),
     email_update AS (
-        -- Deactivate all existing emails if updating
         UPDATE profile_emails_junction SET
             active = false,
             is_primary = false
         WHERE profile_id = (SELECT target_profile_id FROM params)
           AND EXISTS (SELECT 1 FROM params WHERE NOT is_create)
-          AND array_length((SELECT emails FROM params), 1) > 0
+          AND array_length((SELECT email_texts FROM params), 1) > 0
+    ),
+    placeholder_call_id AS (
+        SELECT id FROM view_calls_entry LIMIT 1
     ),
     email_resources AS (
         INSERT INTO emails_resource (email, created_at)
@@ -356,13 +529,13 @@ BEGIN
             (SELECT id FROM placeholder_call_id),
             NOW()
         FROM all_emails_data aed
-        WHERE array_length((SELECT emails FROM params), 1) > 0
+        WHERE array_length((SELECT email_texts FROM params), 1) > 0
         ON CONFLICT (email) DO UPDATE SET created_at = EXCLUDED.created_at
         RETURNING id as email_id, email
     ),
     email_insert AS (
         INSERT INTO profile_emails_junction (profile_id, email, email_id, is_primary, active)
-        SELECT 
+        SELECT
             x.target_profile_id,
             er.email,
             er.email_id,
@@ -371,8 +544,8 @@ BEGIN
         FROM params x
         CROSS JOIN all_emails_data aed
         JOIN email_resources er ON er.email = aed.email
-        WHERE array_length(x.emails, 1) > 0
-        ON CONFLICT (profile_id, email_id) DO UPDATE SET 
+        WHERE array_length(x.email_texts, 1) > 0
+        ON CONFLICT (profile_id, email_id) DO UPDATE SET
             email = EXCLUDED.email,
             is_primary = EXCLUDED.is_primary,
             active = true
@@ -391,7 +564,7 @@ BEGIN
     ),
     cohort_insert AS (
         INSERT INTO profile_cohorts_junction (profile_id, cohort_id, active)
-        SELECT 
+        SELECT
             x.target_profile_id,
             cohort_id,
             true
@@ -416,7 +589,7 @@ BEGIN
     ),
     department_insert AS (
         INSERT INTO profile_departments_junction (profile_id, department_id, is_primary, active)
-        SELECT 
+        SELECT
             x.target_profile_id,
             dept.dept_id,
             (dept.ord - 1 = (SELECT primary_department_index FROM params)) as is_primary,
@@ -435,7 +608,7 @@ BEGIN
     ),
     route_insert AS (
         INSERT INTO profile_routes_junction (profile_id, route_id, active, created_at, generated, mcp)
-        SELECT 
+        SELECT
             x.target_profile_id,
             route_id,
             true,
@@ -443,17 +616,16 @@ BEGIN
             false,
             false
         FROM params x
-        CROSS JOIN resolved_route_ids rri
-        CROSS JOIN UNNEST(rri.route_ids) as route_id
+        CROSS JOIN UNNEST(x.route_ids) as route_id
         WHERE (x.is_create OR x.route_ids IS NOT NULL)
-          AND COALESCE(array_length(rri.route_ids, 1), 0) > 0
+          AND COALESCE(array_length(x.route_ids, 1), 0) > 0
         ON CONFLICT (profile_id, route_id) DO UPDATE SET
             active = true
     ),
     -- Handle requests_per_day if provided
     request_limit_resource AS (
         INSERT INTO request_limits_resource (requests_per_day, created_at)
-        SELECT 
+        SELECT
             x.requests_per_day,
             (SELECT id FROM placeholder_call_id),
             NOW()
@@ -485,7 +657,7 @@ BEGIN
         CROSS JOIN request_limit_resource rlr
         WHERE x.requests_per_day IS NOT NULL
     ),
-    -- Sync linked resources with name (profiles don't have description)
+    -- Sync linked resources with name
     sync_artifact_resources AS (
         UPDATE profiles_resource r
         SET name = nr.name
@@ -497,7 +669,7 @@ BEGIN
         RETURNING r.id
     )
     SELECT
-        x.target_profile_id AS profile_id,
+        x.target_profile_id AS out_profile_id,
         v_actor_name
     FROM params x
     LIMIT 1;

@@ -2106,7 +2106,7 @@ export interface paths {
         put?: never;
         /**
          * Save Profile
-         * @description Save profile - handles both create and update via nested resource actions.
+         * @description Save profile - handles both create and update via resource action composites.
          */
         post: operations["save_profile_api_v4_artifacts_profiles_save_post"];
         delete?: never;
@@ -9913,6 +9913,28 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/socket/v4/server/rubric_generation_started": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Rubric Generation Started Api
+         * @description Server-to-client event: Rubric generation started.
+         *
+         *     Emitted when rubric generation begins, listing resource types being generated.
+         */
+        post: operations["rubric_generation_started_api_socket_v4_server_rubric_generation_started_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/socket/v4/server/rubric_generation_progress": {
         parameters: {
             query?: never;
@@ -9944,7 +9966,7 @@ export interface paths {
         put?: never;
         /**
          * Rubric Generation Complete Api
-         * @description Server-to-client event: rubric generation complete.
+         * @description Server-to-client event: Rubric generation completed.
          */
         post: operations["rubric_generation_complete_api_socket_v4_server_rubric_generation_complete_post"];
         delete?: never;
@@ -10715,6 +10737,28 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/socket/v4/server/department_generation_started": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Department Generation Started Api
+         * @description Server-to-client event: Department generation started.
+         *
+         *     Emitted when department generation begins, listing resource types being generated.
+         */
+        post: operations["department_generation_started_api_socket_v4_server_department_generation_started_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/socket/v4/server/department_generation_progress": {
         parameters: {
             query?: never;
@@ -10743,7 +10787,7 @@ export interface paths {
         put?: never;
         /**
          * Department Generation Complete Api
-         * @description Server-to-client event: department generation complete.
+         * @description Server-to-client event: Department generation completed.
          */
         post: operations["department_generation_complete_api_socket_v4_server_department_generation_complete_post"];
         delete?: never;
@@ -22352,6 +22396,52 @@ export interface components {
             /** Resources */
             resources?: components["schemas"]["DepartmentFlagConfig"][] | null;
         };
+        /**
+         * DepartmentGenerationCompleteEvent
+         * @description Server-to-client event: department_generation_complete.
+         *
+         *     Emitted when department generation completes. Resource-level data is now
+         *     sent via resource_generation_complete events from the shared handler.
+         */
+        DepartmentGenerationCompleteEvent: {
+            /**
+             * Artifact Type
+             * @default department
+             */
+            artifact_type: string;
+            /** Group Id */
+            group_id: string;
+            /** Resource Type */
+            resource_type: string;
+            /** Run Id */
+            run_id?: string | null;
+            /** Success */
+            success: boolean;
+            /** Message */
+            message: string;
+            /** Type */
+            type?: string | null;
+        };
+        /**
+         * DepartmentGenerationStartedEvent
+         * @description Server-to-client event: department_generation_started.
+         *
+         *     Emitted when department generation begins, listing which resource types
+         *     will be generated.
+         */
+        DepartmentGenerationStartedEvent: {
+            /**
+             * Artifact Type
+             * @default department
+             */
+            artifact_type: string;
+            /** Group Id */
+            group_id: string;
+            /** Run Id */
+            run_id: string;
+            /** Resource Types */
+            resource_types: string[];
+        };
         /** DepartmentNameSection */
         DepartmentNameSection: {
             /**
@@ -32221,6 +32311,8 @@ export interface components {
             message: string;
             /** Type */
             type?: string | null;
+            /** Model Id */
+            model_id?: string | null;
         };
         /**
          * ModelGenerationStartedEvent
@@ -39977,6 +40069,26 @@ export interface components {
             /** Type */
             type?: string | null;
         };
+        /**
+         * RubricGenerationStartedEvent
+         * @description Server-to-client event: rubric_generation_started.
+         *
+         *     Emitted when rubric generation begins, listing which resource types
+         *     will be generated.
+         */
+        RubricGenerationStartedEvent: {
+            /**
+             * Artifact Type
+             * @default rubric
+             */
+            artifact_type: string;
+            /** Group Id */
+            group_id: string;
+            /** Run Id */
+            run_id: string;
+            /** Resource Types */
+            resource_types: string[];
+        };
         /** RubricHeatmapCell */
         RubricHeatmapCell: {
             /** Rubric Id */
@@ -41059,15 +41171,13 @@ export interface components {
         };
         /** SaveProfileRouteApiResponse */
         SaveProfileRouteApiResponse: {
-            /** Success */
-            success: boolean;
             /**
              * Profile Id
              * Format: uuid
              */
             profile_id: string;
-            /** Message */
-            message: string;
+            /** Actor Name */
+            actor_name?: string | null;
         };
         /**
          * SaveProviderApiRequest
@@ -68335,6 +68445,41 @@ export interface operations {
             };
         };
     };
+    rubric_generation_started_api_socket_v4_server_rubric_generation_started_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RubricGenerationStartedEvent"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     rubric_generation_progress_api_socket_v4_server_rubric_generation_progress_post: {
         parameters: {
             query?: never;
@@ -69720,6 +69865,41 @@ export interface operations {
             };
         };
     };
+    department_generation_started_api_socket_v4_server_department_generation_started_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DepartmentGenerationStartedEvent"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     department_generation_progress_api_socket_v4_server_department_generation_progress_post: {
         parameters: {
             query?: never;
@@ -69766,9 +69946,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": {
-                    [key: string]: unknown;
-                };
+                "application/json": components["schemas"]["DepartmentGenerationCompleteEvent"];
             };
         };
         responses: {

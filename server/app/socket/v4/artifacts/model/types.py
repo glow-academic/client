@@ -43,6 +43,7 @@ class ModelGenerationCompleteEvent(GenerationCompleteEvent):
     """
 
     artifact_type: str = "model"
+    model_id: str | None = None
 
 
 class ModelGenerationProgressEvent(GenerationProgressEvent):

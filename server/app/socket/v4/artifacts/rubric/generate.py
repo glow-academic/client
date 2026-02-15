@@ -1,27 +1,71 @@
-"""Rubric generation router - unified handler for rubric resource generation."""
+"""Rubric generation router - unified handler for all rubric resource types.
 
+This module handles all business logic for rubric generation:
+- Rate limit validation (fail fast)
+- Group/run creation
+- Agent/model context from pre-fetched resources (denormalized chain)
+- Jinja template rendering for developer instructions
+- Rubric-specific standard description context injection
+- Message insertion with deduplication
+- Multi-agent dispatch via generation tracker
+
+The AI handler (generate.py) receives a simplified payload with pre-rendered content.
+"""
+
+import asyncio
 import uuid
-from typing import Any
+from typing import Any, cast
 
 from fastapi import APIRouter
 
 from app.api.v4.artifacts.rubric.get import get_rubric_websocket
+from app.api.v4.artifacts.rubric.types import GetRubricWebsocketResponse
+from app.api.v4.resources.instructions.get import get_instructions_internal
+from app.api.v4.resources.prompts.get import get_prompts_internal
+from app.api.v4.views.config.get import get_config_internal
 from app.infra.v4.generation import convert_tools_to_dict, render_developer_instructions
 from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
+from app.infra.v4.websocket.generation_tracker import (
+    init_generation,
+    init_resource_progress,
+)
 from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.infra.v4.websocket.typed_emit import emit_to_internal
-from app.main import get_internal_sio, sio
+from app.main import get_internal_sio, get_pool, sio
 from app.socket.v4.artifacts.rubric.types import GenerateRubricPayload
-from app.socket.v4.artifacts.types import GenerateErrorApiRequest
-from app.utils.sql_helper import load_sql
+from app.socket.v4.artifacts.types import (
+    GenerateErrorApiRequest,
+    RubricGenerationStartedEvent,
+)
+from app.sql.types import (
+    GetAgentToolsSqlParams,
+    GetAgentToolsSqlRow,
+    GetRubricGenerationContextSqlParams,
+    GetRubricGenerationContextSqlRow,
+    PrepareRubricGenerationSqlParams,
+    PrepareRubricGenerationSqlRow,
+)
+from app.utils.logging.db_logger import get_logger
+from app.utils.sql_helper import execute_sql_typed, load_sql
 
+logger = get_logger(__name__)
 internal_sio = get_internal_sio()
 
 client_router = APIRouter()
 server_router = APIRouter()
 
-CREATE_RUN_SQL_PATH = "app/sql/v4/queries/generate/start/get_generation_run_context_and_create_run_complete.sql"
-TEXT_RUN_CONTEXT_SQL_PATH = "app/sql/v4/queries/generate/text/get_text_run_context_for_existing_run_complete.sql"
+SQL_PATH_CONTEXT = (
+    "app/sql/v4/queries/generate/rubric/get_rubric_generation_context_complete.sql"
+)
+SQL_PATH_PREPARE = (
+    "app/sql/v4/queries/generate/rubric/prepare_rubric_generation_complete.sql"
+)
+SQL_PATH_AGENT_TOOLS = (
+    "app/sql/v4/queries/generate/persona/get_agent_tools_complete.sql"
+)
+SQL_PATH_CREATE_MESSAGE_WITH_TEXT = (
+    "app/sql/v4/queries/messages/create_message_with_text_complete.sql"
+)
 
 RUBRIC_RESOURCE_TYPES = [
     "names",
@@ -83,11 +127,21 @@ Generate descriptions for ALL combinations of standard groups and standards."""
     return rubric_context_text
 
 
+def _build_rubric_jinja_context(
+    response: GetRubricWebsocketResponse, resource_types: list[str]
+) -> dict[str, Any]:
+    _ = resource_types
+    if response.resources:
+        return response.resources.model_dump()
+    return {}
+
+
 async def _generate_rubric_impl(
     sid: str, data: GenerateRubricPayload, profile_id: uuid.UUID
 ) -> None:
     """Handle rubric generation using resource_types-based pattern."""
     try:
+        # Validate resource_types
         if not data.resource_types:
             await emit_to_internal(
                 "generate_call_error",
@@ -102,17 +156,9 @@ async def _generate_rubric_impl(
             )
             return
 
-        # Step 1: Fetch rubric data via websocket function for resource->agent mapping.
-        result = await get_rubric_websocket(
-            profile_id=profile_id,
-            rubric_id=data.rubric_id,
-            draft_id=data.draft_id,
-        )
-
         resource_types = [
             rt for rt in data.resource_types if rt in RUBRIC_RESOURCE_TYPES
         ]
-
         if not resource_types:
             await emit_to_internal(
                 "generate_call_error",
@@ -127,14 +173,30 @@ async def _generate_rubric_impl(
             )
             return
 
-        # Get agent_id from the first valid resource type.
-        agent_id: uuid.UUID | None = None
+        # Step 1: Fetch pre-hydrated rubric data
+        result = await get_rubric_websocket(
+            profile_id=profile_id,
+            rubric_id=data.rubric_id,
+            draft_id=data.draft_id,
+        )
         resource_agent_ids = result.resource_agent_ids or {}
+
+        # Step 2: Build agent_groups: {agent_id: [resource_types]}
+        agent_groups: dict[uuid.UUID, list[str]] = {}
         for rt in resource_types:
             aid = resource_agent_ids.get(rt)
             if aid is not None:
-                agent_id = aid
-                break
+                agent_groups.setdefault(aid, []).append(rt)
+
+        # Fallback: if no agent found for any resource type, pick first available
+        if not agent_groups:
+            for _rt, aid in resource_agent_ids.items():
+                if aid is not None:
+                    agent_groups[aid] = resource_types
+                    break
+
+        # Use first agent_id for validation (all share same config chain)
+        agent_id: uuid.UUID | None = next(iter(agent_groups)) if agent_groups else None
 
         if not agent_id:
             await emit_to_internal(
@@ -150,6 +212,88 @@ async def _generate_rubric_impl(
             )
             return
 
+        # Step 3: Extract LLM config from pre-fetched resources
+        config_agents = result.resources.agents or []
+        config_models = result.resources.models or []
+        config_providers = result.resources.providers or []
+        agent_resource = config_agents[0] if config_agents else None
+        model_resource = config_models[0] if config_models else None
+        provider_resource = config_providers[0] if config_providers else None
+
+        if not agent_resource or not model_resource or not provider_resource:
+            await emit_to_internal(
+                "generate_call_error",
+                GenerateErrorApiRequest(
+                    sid=sid,
+                    error_message="Incomplete rubric generation configuration (agents/models/providers)",
+                    artifact_type="rubric",
+                    group_id=None,
+                    resource_type="rubric",
+                ),
+                sid=sid,
+            )
+            return
+
+        model_name = (
+            model_resource.value
+            if hasattr(model_resource, "value")
+            else model_resource.name
+        )
+        base_url = (
+            model_resource.endpoint if hasattr(model_resource, "endpoint") else ""
+        )
+        api_key = model_resource.key if hasattr(model_resource, "key") else ""
+        temperature = (
+            agent_resource.temperature
+            if hasattr(agent_resource, "temperature")
+            else 0.0
+        )
+        reasoning = (
+            agent_resource.reasoning if hasattr(agent_resource, "reasoning") else None
+        )
+        voice = agent_resource.voice if hasattr(agent_resource, "voice") else None
+        quality = agent_resource.quality if hasattr(agent_resource, "quality") else None
+        provider_name = provider_resource.value or provider_resource.name or ""
+
+        if not api_key:
+            await emit_to_internal(
+                "generate_call_error",
+                GenerateErrorApiRequest(
+                    sid=sid,
+                    error_message=f"No API key configured for provider '{provider_name}'",
+                    artifact_type="rubric",
+                    group_id=None,
+                    resource_type="rubric",
+                ),
+                sid=sid,
+            )
+            return
+
+        # Step 4: Rate limit check (fail fast)
+        async with get_db_connection() as conn:
+            context_params = GetRubricGenerationContextSqlParams(
+                p_profile_id=profile_id,
+            )
+            context_row = cast(
+                GetRubricGenerationContextSqlRow,
+                await execute_sql_typed(conn, SQL_PATH_CONTEXT, params=context_params),
+            )
+            requests_per_day = context_row.requests_per_day
+            runs_today = context_row.runs_today or 0
+            if requests_per_day is not None and runs_today >= requests_per_day:
+                await emit_to_internal(
+                    "generate_call_error",
+                    GenerateErrorApiRequest(
+                        sid=sid,
+                        error_message=f"Rate limit exceeded ({runs_today}/{requests_per_day} requests today)",
+                        artifact_type="rubric",
+                        group_id=str(result.group_id) if result.group_id else None,
+                        resource_type="rubric",
+                    ),
+                    sid=sid,
+                )
+                return
+
         # Build rubric context for standard descriptions if needed
         rubric_context_text: str | None = None
         if "standards" in resource_types or "standard_groups" in resource_types:
@@ -160,111 +304,215 @@ async def _generate_rubric_impl(
                     resources_bucket.standards,
                 )
 
+        rubric_jinja_context = _build_rubric_jinja_context(result, resource_types)
+        existing_group_id = result.group_id
+
+        # Step 5: Parallel fetch tools/prompts/instructions + prepare generation
         async with get_db_connection() as conn:
-            create_run_sql = load_sql(CREATE_RUN_SQL_PATH)
-            create_run_row = await conn.fetchrow(
-                create_run_sql,
-                agent_id,
-                profile_id,
-                None,
-                None,
-                result.group_id,
-                None,
-                data.user_instructions if data.user_instructions else None,
-                None,
+            pool = get_pool()
+            if not pool:
+                raise RuntimeError("Database pool not initialized")
+
+            async def fetch_tools():
+                async with pool.acquire() as c:
+                    tools_params = GetAgentToolsSqlParams(
+                        p_agent_id=agent_id,
+                        p_resource_types=resource_types,
+                    )
+                    tools_row = cast(
+                        GetAgentToolsSqlRow,
+                        await execute_sql_typed(
+                            c, SQL_PATH_AGENT_TOOLS, params=tools_params
+                        ),
+                    )
+                    return tools_row.tools if tools_row else []
+
+            async def fetch_system_prompt():
+                prompt_id = (
+                    agent_resource.prompt_id
+                    if hasattr(agent_resource, "prompt_id")
+                    else None
+                )
+                if not prompt_id:
+                    return ""
+                async with pool.acquire() as c:
+                    prompts = await get_prompts_internal(c, [prompt_id])
+                    if prompts and prompts[0].system_prompt:
+                        return prompts[0].system_prompt
+                    return ""
+
+            async def fetch_developer_instructions():
+                instruction_ids = (
+                    agent_resource.instruction_ids
+                    if hasattr(agent_resource, "instruction_ids")
+                    else []
+                )
+                if not instruction_ids:
+                    return []
+                async with pool.acquire() as c:
+                    instructions = await get_instructions_internal(c, instruction_ids)
+                    return [inst.template for inst in instructions if inst.template]
+
+            (
+                tools,
+                system_prompt,
+                developer_instruction_templates,
+            ) = await asyncio.gather(
+                fetch_tools(),
+                fetch_system_prompt(),
+                fetch_developer_instructions(),
             )
 
-            if not create_run_row:
+            # Step 6: Prepare generation (create group/run/config)
+            prepare_params = PrepareRubricGenerationSqlParams(
+                p_profile_id=profile_id,
+                p_group_id=existing_group_id,
+                p_agents_resource_id=agent_resource.id,
+                p_models_resource_id=model_resource.id,
+                p_providers_resource_id=provider_resource.id,
+            )
+            prepare_row = cast(
+                PrepareRubricGenerationSqlRow,
+                await execute_sql_typed(conn, SQL_PATH_PREPARE, params=prepare_params),
+            )
+            if not prepare_row.run_id:
                 await emit_to_internal(
                     "generate_call_error",
                     GenerateErrorApiRequest(
                         sid=sid,
-                        error_message="Failed to create generation run",
-                        resource_id=data.rubric_id,
-                        group_id=str(result.group_id) if result.group_id else None,
+                        error_message="Failed to prepare rubric generation",
+                        artifact_type="rubric",
+                        group_id=str(existing_group_id) if existing_group_id else None,
                         resource_type="rubric",
                     ),
                     sid=sid,
                 )
                 return
 
-            run_id = str(create_run_row["run_id"])
-            group_id = create_run_row["group_id"] or result.group_id
-            trace_id = create_run_row.get("trace_id")
+            run_id = prepare_row.run_id
+            group_id = prepare_row.group_id
+            trace_id = prepare_row.trace_id
+            config_id = prepare_row.config_id
+            _ = trace_id  # Available for future tracing
 
-            run_context_sql = load_sql(TEXT_RUN_CONTEXT_SQL_PATH)
-            run_context_row = await conn.fetchrow(
-                run_context_sql,
-                uuid.UUID(run_id),
-                agent_id,
-                None,
-                group_id,
-                None,
+            # Step 7: Config view injection into Jinja context
+            jinja_context = rubric_jinja_context
+            if config_id:
+                async with pool.acquire() as config_conn:
+                    config_view_items = await get_config_internal(
+                        conn=config_conn,
+                        config_id=config_id,
+                        bypass_cache=True,
+                    )
+                    config_view = (
+                        config_view_items[0].model_dump(mode="json")
+                        if config_view_items
+                        else {}
+                    )
+            else:
+                config_view = {}
+
+            draft_view = {}
+            if result.views and result.views.draft_rubric:
+                draft_view = result.views.draft_rubric.model_dump(mode="json")
+            jinja_context["views"] = {
+                "config": config_view,
+                "draft_rubric": draft_view,
+            }
+
+            # Step 8: Render developer instructions with Jinja
+            rendered_developer_messages = render_developer_instructions(
+                templates=developer_instruction_templates,
+                jinja_context=jinja_context,
             )
 
-        if not run_context_row:
-            await emit_to_internal(
-                "generate_call_error",
-                GenerateErrorApiRequest(
-                    sid=sid,
-                    error_message="Failed to load generation context",
-                    resource_id=data.rubric_id,
-                    group_id=str(group_id) if group_id else None,
-                    resource_type="rubric",
-                ),
-                sid=sid,
+            # Step 9: Insert pre-rendered messages
+            messages: list[dict[str, str]] = []
+            create_message_sql = load_sql(SQL_PATH_CREATE_MESSAGE_WITH_TEXT)
+            if system_prompt:
+                messages.append({"role": "system", "content": system_prompt})
+                await conn.fetchval(
+                    create_message_sql, run_id, "system", system_prompt, True, False
+                )
+            for m in rendered_developer_messages:
+                messages.append({"role": "developer", "content": m})
+                await conn.fetchval(
+                    create_message_sql, run_id, "developer", m, True, False
+                )
+            # Inject rubric-specific standard description context
+            if rubric_context_text:
+                messages.append({"role": "user", "content": rubric_context_text})
+                await conn.fetchval(
+                    create_message_sql,
+                    run_id,
+                    "user",
+                    rubric_context_text,
+                    True,
+                    False,
+                )
+            if data.user_instructions:
+                for instruction in data.user_instructions:
+                    messages.append({"role": "user", "content": instruction})
+                    await conn.fetchval(
+                        create_message_sql, run_id, "user", instruction, True, False
+                    )
+
+            # Step 10: Initialize generation tracker for multi-agent support
+            num_agents = len(agent_groups)
+            await init_generation(str(run_id), num_agents)
+            await init_resource_progress(str(run_id), len(resource_types))
+
+            # Emit rubric_generation_started to client
+            await sio.emit(
+                "rubric_generation_started",
+                RubricGenerationStartedEvent(
+                    artifact_type="rubric",
+                    group_id=str(group_id) if group_id else "",
+                    run_id=str(run_id),
+                    resource_types=resource_types,
+                ).model_dump(mode="json"),
+                room=sid,
             )
-            return
 
-        rendered_developer_messages = render_developer_instructions(
-            templates=run_context_row.get("developer_instruction_templates"),
-            jinja_context=run_context_row.get("context"),
-        )
-
-        messages: list[dict[str, Any]] = []
-        if run_context_row.get("system_prompt"):
-            messages.append(
-                {"role": "system", "content": run_context_row["system_prompt"]}
-            )
-        for dev_msg in rendered_developer_messages:
-            messages.append({"role": "developer", "content": dev_msg})
-        if rubric_context_text:
-            messages.append({"role": "user", "content": rubric_context_text})
-        for user_msg in data.user_instructions or []:
-            messages.append({"role": "user", "content": user_msg})
-
-        await internal_sio.emit(
-            "generate_artifact",
-            {
-                "sid": sid,
-                "artifact_type": "rubric",
-                "resource_type": resource_types[0] if resource_types else "rubric",
-                "run_id": run_id,
-                "group_id": str(group_id) if group_id else None,
-                "message_id": None,
-                "messages": messages,
-                "llm_config": {
-                    "model": run_context_row.get("model_name"),
-                    "api_key": run_context_row.get("api_key"),
-                    "base_url": run_context_row.get("base_url"),
-                    "temperature": run_context_row.get("temperature"),
-                    "reasoning": run_context_row.get("reasoning"),
-                    "provider": run_context_row.get("provider"),
-                    "voice": None,
-                    "quality": None,
-                    "length_seconds": None,
-                },
-                "tools": convert_tools_to_dict(run_context_row.get("tools")),
-            },
-        )
+            # Step 11: Dispatch to generate_artifact handler(s)
+            for _agent_group_id, agent_resource_types in agent_groups.items():
+                await internal_sio.emit(
+                    "generate_artifact",
+                    {
+                        "sid": sid,
+                        "artifact_type": "rubric",
+                        "resource_type": agent_resource_types[0]
+                        if agent_resource_types
+                        else "rubric",
+                        "run_id": str(run_id),
+                        "group_id": str(group_id) if group_id else None,
+                        "message_id": None,
+                        "messages": messages,
+                        "llm_config": {
+                            "model": model_name,
+                            "api_key": api_key,
+                            "base_url": base_url,
+                            "temperature": temperature,
+                            "reasoning": reasoning,
+                            "provider": provider_name,
+                            "voice": voice,
+                            "quality": quality,
+                            "length_seconds": None,
+                            "tool_choice": "required",
+                        },
+                        "tools": convert_tools_to_dict(tools),
+                        "save": data.save,
+                    },
+                )
 
     except Exception as e:
+        logger.exception(f"Failed to generate rubric resources: {str(e)}")
         await emit_to_internal(
             "generate_call_error",
             GenerateErrorApiRequest(
                 sid=sid,
                 error_message=f"Failed to generate rubric: {str(e)}",
-                resource_id=data.rubric_id,
+                artifact_type="rubric",
                 group_id=None,
                 resource_type="rubric",
             ),
@@ -277,29 +525,14 @@ async def rubric_generate(sid: str, data: dict[str, Any]) -> None:
     """Handle rubric_generate event (client-to-server)."""
     try:
         payload = GenerateRubricPayload(**data)
-        try:
-            profile_id_str = await find_profile_by_socket(sid)
-        except Exception as lookup_error:
-            await emit_to_internal(
-                "generate_call_error",
-                GenerateErrorApiRequest(
-                    sid=sid,
-                    error_message=f"Profile lookup failed: {str(lookup_error)}. Please reconnect.",
-                    resource_id=data.get("rubric_id"),
-                    group_id=None,
-                    resource_type="rubric",
-                ),
-                sid=sid,
-            )
-            return
-
+        profile_id_str = await find_profile_by_socket(sid)
         if not profile_id_str:
             await emit_to_internal(
                 "generate_call_error",
                 GenerateErrorApiRequest(
                     sid=sid,
                     error_message="Profile not found. Please reconnect.",
-                    resource_id=data.get("rubric_id"),
+                    artifact_type="rubric",
                     group_id=None,
                     resource_type="rubric",
                 ),
@@ -314,7 +547,7 @@ async def rubric_generate(sid: str, data: dict[str, Any]) -> None:
             GenerateErrorApiRequest(
                 sid=sid,
                 error_message=f"Invalid request: {str(e)}",
-                resource_id=data.get("rubric_id"),
+                artifact_type="rubric",
                 group_id=None,
                 resource_type="rubric",
             ),
@@ -326,17 +559,52 @@ async def rubric_generate(sid: str, data: dict[str, Any]) -> None:
 async def rubric_generate_internal(data: dict[str, Any]) -> None:
     """Handle rubric_generate event from internal bus (server-to-server)."""
     try:
-        await internal_sio.emit("generate_artifact", data)
-    except Exception as e:
         sid = data.get("sid", "")
+        if not sid:
+            return
+
+        profile_id_str = await find_profile_by_socket(sid)
+        if not profile_id_str:
+            await emit_to_internal(
+                "generate_call_error",
+                GenerateErrorApiRequest(
+                    sid=sid,
+                    error_message="Profile not found. Please reconnect.",
+                    artifact_type="rubric",
+                    group_id=None,
+                    resource_type="rubric",
+                ),
+                sid=sid,
+            )
+            return
+
+        payload = GenerateRubricPayload(**data)
+        await _generate_rubric_impl(sid, payload, uuid.UUID(profile_id_str))
+    except Exception as e:
         await emit_to_internal(
             "generate_call_error",
             GenerateErrorApiRequest(
                 sid=sid,
-                error_message=f"Failed to route rubric generation: {str(e)}",
-                resource_id=data.get("resource_id"),
-                group_id=data.get("group_id"),
+                error_message=f"Invalid request: {str(e)}",
+                artifact_type="rubric",
+                group_id=None,
                 resource_type="rubric",
             ),
             sid=sid,
         )
+
+
+# =============================================================================
+# FastAPI endpoint for OpenAPI documentation
+# =============================================================================
+
+
+@server_router.post("/rubric_generation_started")
+async def rubric_generation_started_api(
+    request: RubricGenerationStartedEvent,
+) -> dict[str, bool]:
+    """Server-to-client event: Rubric generation started.
+
+    Emitted when rubric generation begins, listing resource types being generated.
+    """
+    return {"success": True}

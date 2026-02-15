@@ -362,7 +362,9 @@ async def get_provider_internal(
     ]
 
     show_flags_map = {
-        "names": compute_show_name(has_tools_for_resource(settings_data.agent_tool_entries, "names")),
+        "names": compute_show_name(
+            has_tools_for_resource(settings_data.agent_tool_entries, "names")
+        ),
         "descriptions": compute_show_description(),
         "flags": compute_show_flag(),
         "departments": compute_show_departments(len(departments)),

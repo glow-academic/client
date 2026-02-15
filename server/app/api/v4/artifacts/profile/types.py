@@ -142,26 +142,71 @@ class SaveProfileRouteApiRequest(BaseModel):
 
 
 class SaveProfileRouteApiResponse(BaseModel):
-    success: bool
     profile_id: UUID
-    message: str
+    actor_name: str | None = None
 
 
 class SaveProfileSqlParams(BaseModel):
-    draft_id: UUID
-    actor_profile_id: UUID
+    """SQL parameters for save profile - builds composites from flat IDs."""
+
+    profile_id: UUID
     input_profile_id: UUID | None = None
+    group_id: UUID | None = None
+    role: str | None = None
+    names: ProfileResourceAction
+    flags: ProfileResourceAction
+    request_limits: ProfileResourceAction
+    emails: ProfileMultiResourceAction
+    departments: ProfileMultiResourceAction
+    cohorts: ProfileMultiResourceAction
+
+    @classmethod
+    def from_request(
+        cls,
+        request: SaveProfileRouteApiRequest,
+        profile_id: UUID,
+        group_id: UUID | None = None,
+    ) -> SaveProfileSqlParams:
+        return cls(
+            profile_id=profile_id,
+            input_profile_id=request.input_profile_id,
+            group_id=group_id,
+            role=request.role,
+            names=ProfileResourceAction(resource_id=request.name_id),
+            flags=ProfileResourceAction(resource_id=request.flag_id),
+            request_limits=ProfileResourceAction(resource_id=request.request_limit_id),
+            emails=ProfileMultiResourceAction(resource_ids=request.email_ids),
+            departments=ProfileMultiResourceAction(resource_ids=request.department_ids),
+            cohorts=ProfileMultiResourceAction(resource_ids=request.cohort_ids),
+        )
 
     def to_tuple(self) -> tuple:
+        """Convert to tuple for SQL execution."""
+
+        def single(a: ProfileResourceAction) -> tuple:
+            return (a.resource_id, a.create_tool_id, a.link_tool_id)
+
+        def multi(a: ProfileMultiResourceAction) -> tuple:
+            return (a.resource_ids, a.create_tool_id, a.link_tool_id)
+
         return (
-            self.draft_id,
-            self.actor_profile_id,
+            self.profile_id,
             self.input_profile_id,
+            self.group_id,
+            self.role,
+            single(self.names),
+            single(self.flags),
+            single(self.request_limits),
+            multi(self.emails),
+            multi(self.departments),
+            multi(self.cohorts),
         )
 
 
 class SaveProfileSqlRow(BaseModel):
-    profile_id: UUID | None = None
+    """SQL row for save profile."""
+
+    out_profile_id: UUID | None = None
     actor_name: str | None = None
 
 

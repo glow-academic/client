@@ -70,7 +70,7 @@ from app.api.v4.artifacts.setting.types import (
 )
 from app.api.v4.auth.profile import get_auth_profile_internal
 from app.api.v4.auth.settings import get_auth_settings_internal
-from app.api.v4.permissions import has_tools_for_resource, resolve_agents_for_artifact
+from app.api.v4.permissions import resolve_agents_for_artifact
 from app.api.v4.resources.agents.get import get_agents_internal
 from app.api.v4.resources.auth_item_keys.get import get_auth_item_keys_internal
 from app.api.v4.resources.auth_item_keys.search import search_auth_item_keys_internal

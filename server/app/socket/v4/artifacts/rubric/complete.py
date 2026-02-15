@@ -1,9 +1,10 @@
-"""Rubric completion handler - handles run/text completion and special rubric logic.
+"""Rubric completion handler - handles run/text completion, multi-agent coordination,
+and special rubric standard_description tool.
 
 Resource-level tool_call_complete/tool_result events are now handled by the shared
 resource_complete.py handler. This module handles:
 - text_complete: save assistant messages
-- run_complete: save assistant output and update token counts
+- run_complete: coordinate multi-agent completion via generation_tracker
 - rubric_end + standard_description tool: special rubric description generation
 """
 
@@ -12,6 +13,10 @@ from typing import Any, cast
 
 from fastapi import APIRouter
 
+from app.infra.v4.websocket.generation_tracker import (
+    cleanup_generation,
+    record_agent_complete,
+)
 from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.main import get_internal_sio, sio
 from app.socket.v4.artifacts.rubric.types import RubricGenerationCompleteEvent
@@ -95,11 +100,19 @@ async def _handle_rubric_text_complete(sid: str, data: dict[str, Any]) -> None:
 
 
 async def _handle_rubric_run_complete(sid: str, data: dict[str, Any]) -> None:
-    """Handle rubric generation run completion - save assistant output and update token counts."""
+    """Handle rubric generation run completion.
+
+    Coordinates multi-agent completion via generation_tracker:
+    1. Saves assistant message and token counts
+    2. Records this agent's completion
+    3. If all agents done: emits rubric_generation_complete
+    4. Cleans up generation tracking
+    """
     run_id = data.get("run_id")
     assistant_output = data.get("assistant_output") or ""
     input_tokens = data.get("input_text_tokens", 0)
     output_tokens = data.get("output_text_tokens", 0)
+    group_id_str = data.get("group_id")
 
     if not run_id:
         return
@@ -140,6 +153,29 @@ async def _handle_rubric_run_complete(sid: str, data: dict[str, Any]) -> None:
                 )
     except Exception as e:
         logger.exception(f"Failed to save rubric run complete: {str(e)}")
+
+    # Multi-agent coordination via generation tracker
+    tool_results = data.get("tool_results") or []
+    is_complete, _all_tool_results = await record_agent_complete(run_id, tool_results)
+
+    if is_complete:
+        # All agents finished - emit rubric_generation_complete
+        event = RubricGenerationCompleteEvent(
+            artifact_type="rubric",
+            group_id=group_id_str or "",
+            resource_type="rubric",
+            run_id=run_id,
+            success=True,
+            message="Rubric generation completed",
+        )
+
+        await sio.emit(
+            "rubric_generation_complete",
+            event.model_dump(mode="json"),
+            room=sid,
+        )
+
+        await cleanup_generation(run_id)
 
 
 async def _handle_rubric_standard_description(sid: str, data: dict[str, Any]) -> None:
@@ -233,9 +269,14 @@ async def _handle_rubric_standard_description(sid: str, data: dict[str, Any]) ->
         )
 
 
+# =============================================================================
+# FastAPI endpoint for OpenAPI documentation
+# =============================================================================
+
+
 @server_router.post("/rubric_generation_complete")
 async def rubric_generation_complete_api(
     request: RubricGenerationCompleteEvent,
 ) -> dict[str, bool]:
-    """Server-to-client event: rubric generation complete."""
-    return {"ok": True}
+    """Server-to-client event: Rubric generation completed."""
+    return {"success": True}

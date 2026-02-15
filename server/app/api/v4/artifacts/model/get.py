@@ -607,9 +607,7 @@ async def get_model_internal(
     ]
 
     # Compute show/required flags
-    names_has_tools = has_tools_for_resource(
-        settings_data.agent_tool_entries, "names"
-    )
+    names_has_tools = has_tools_for_resource(settings_data.agent_tool_entries, "names")
     values_has_tools = has_tools_for_resource(
         settings_data.agent_tool_entries, "values"
     )
