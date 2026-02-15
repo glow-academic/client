@@ -541,31 +541,12 @@ function ToolComponent({
         const result = await patchToolDraftActionRef.current({
           body: {
             input_draft_id: draftId || null,
-            group_id: currentFields?.group_id ?? null,
-            names: {
-              resource_id: currentFields?.names?.resource?.id ?? null,
-              create_tool_id: currentFields?.names?.create_tool_id ?? null,
-            },
-            descriptions: {
-              resource_id: currentFields?.descriptions?.resource?.id ?? null,
-              create_tool_id: currentFields?.descriptions?.create_tool_id ?? null,
-            },
-            flags: {
-              resource_id: currentFields?.flags?.current?.flag_option_id ?? null,
-              create_tool_id: currentFields?.flags?.create_tool_id ?? null,
-            },
-            args: {
-              resource_ids: formState.args_ids,
-              create_tool_id: currentFields?.args?.create_tool_id ?? null,
-            },
-            arg_positions: {
-              resource_ids: formState.arg_position_ids,
-              create_tool_id: currentFields?.arg_positions?.create_tool_id ?? null,
-            },
-            args_outputs: {
-              resource_ids: formState.args_outputs_ids,
-              create_tool_id: currentFields?.args_outputs?.create_tool_id ?? null,
-            },
+            name_id: currentFields?.names?.resource?.id ?? null,
+            description_id: currentFields?.descriptions?.resource?.id ?? null,
+            flag_id: currentFields?.flags?.current?.flag_option_id ?? null,
+            arg_ids: formState.args_ids,
+            arg_position_ids: formState.arg_position_ids,
+            args_output_ids: formState.args_outputs_ids,
             expected_version: lastSavedVersionRef.current,
           },
         } as PatchToolDraftIn);
@@ -676,41 +657,17 @@ function ToolComponent({
         toast.error("A name resource must be selected");
         throw new Error("A name resource must be selected");
       }
-      const groupId = toolData?.group_id;
-      if (!groupId) {
-        toast.error("Group ID is required");
-        throw new Error("Group ID is required");
-      }
 
       try {
         await saveToolAction({
           body: {
-            group_id: groupId,
             input_tool_id: isEditMode && toolId ? toolId : null,
-            names: {
-              resource_id: nameId,
-              create_tool_id: toolData?.names?.create_tool_id ?? null,
-            },
-            descriptions: {
-              resource_id: toolData?.descriptions?.resource?.id ?? null,
-              create_tool_id: toolData?.descriptions?.create_tool_id ?? null,
-            },
-            flags: {
-              resource_id: toolData?.flags?.current?.flag_option_id ?? null,
-              create_tool_id: toolData?.flags?.create_tool_id ?? null,
-            },
-            args: {
-              resource_ids: formState.args_ids,
-              create_tool_id: toolData?.args?.create_tool_id ?? null,
-            },
-            arg_positions: {
-              resource_ids: formState.arg_position_ids,
-              create_tool_id: toolDataAny?.arg_positions?.create_tool_id ?? null,
-            },
-            args_outputs: {
-              resource_ids: formState.args_outputs_ids,
-              create_tool_id: toolData?.args_outputs?.create_tool_id ?? null,
-            },
+            name_id: nameId,
+            description_id: toolData?.descriptions?.resource?.id ?? null,
+            flag_id: toolData?.flags?.current?.flag_option_id ?? null,
+            arg_ids: formState.args_ids?.length ? formState.args_ids : null,
+            arg_position_ids: formState.arg_position_ids?.length ? formState.arg_position_ids : null,
+            args_output_ids: formState.args_outputs_ids?.length ? formState.args_outputs_ids : null,
           },
         } as SaveToolIn);
         toast.success(
@@ -736,15 +693,9 @@ function ToolComponent({
       toolData?.args?.required,
       toolDataAny?.arg_positions?.required,
       toolData?.args_outputs?.required,
-      toolData?.group_id,
       toolData?.names?.resource?.id,
-      toolData?.names?.create_tool_id,
       toolData?.descriptions?.resource?.id,
-      toolData?.descriptions?.create_tool_id,
       toolData?.flags,
-      toolData?.args?.create_tool_id,
-      toolDataAny?.arg_positions?.create_tool_id,
-      toolData?.args_outputs?.create_tool_id,
     ]
   );
 

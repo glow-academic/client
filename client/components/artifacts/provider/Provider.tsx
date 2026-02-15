@@ -27,7 +27,7 @@ import { useFlushRegistry } from "@/hooks/use-flush-registry";
 import { useGenerationModal } from "@/hooks/use-generation-modal";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import {
-  buildResourceActions,
+  buildDraftPayload,
   checkHasResourceIds,
   computeEffectiveFormState,
   type ResourceConfig,
@@ -43,8 +43,6 @@ type PatchProviderDraftOut = OutputOf<
   "/api/v4/artifacts/providers/draft",
   "patch"
 >;
-type SaveProviderBody = SaveProviderIn["body"];
-type PatchProviderDraftBody = PatchProviderDraftIn["body"];
 type CreateDraftNamesIn = InputOf<"/api/v4/resources/names", "post">;
 type CreateDraftNamesOut = OutputOf<"/api/v4/resources/names", "post">;
 type CreateDraftDescriptionsIn = InputOf<
@@ -214,29 +212,22 @@ export default function Provider({
         expectedVersion: number,
         flushResults?: Record<string, unknown>
       ) => {
-        const effectiveState = computeEffectiveFormState(
-          PROVIDER_RESOURCE_CONFIG,
-          formStateRef.current as unknown as Record<string, unknown>,
-          flushResults ?? {}
-        );
-        const resourceActions = buildResourceActions(PROVIDER_RESOURCE_CONFIG, {
-          formState: effectiveState,
-          referenceState: referenceStateRef.current as unknown as Record<
-            string,
-            unknown
-          >,
-          flushResults: flushResults ?? {},
-          entityData: s as unknown as Record<string, unknown> | null,
-        }) as Omit<
-          PatchProviderDraftBody,
-          "input_draft_id" | "group_id" | "expected_version"
-        >;
         return {
           input_draft_id: inputDraftId,
-          group_id: groupId,
-          ...resourceActions,
+          ...buildDraftPayload(PROVIDER_RESOURCE_CONFIG, {
+            formState: computeEffectiveFormState(
+              PROVIDER_RESOURCE_CONFIG,
+              formStateRef.current as unknown as Record<string, unknown>,
+              flushResults ?? {}
+            ),
+            referenceState: referenceStateRef.current as unknown as Record<
+              string,
+              unknown
+            >,
+            flushResults: flushResults ?? {},
+          }),
           expected_version: expectedVersion,
-        } as PatchProviderDraftBody;
+        };
       },
       setSelectedDraftId,
       serverDraftVersion: s?.draft_version ?? null,
@@ -331,20 +322,19 @@ export default function Provider({
     const valueId = effectiveState["value_id"] as string | null;
     if (!nameId) throw new Error("Name is required");
     if (!valueId) throw new Error("Value is required");
-    const saveActions = buildResourceActions(PROVIDER_RESOURCE_CONFIG, {
-      formState: effectiveState,
-      referenceState: isEditMode
-        ? (referenceStateRef.current as unknown as Record<string, unknown>)
-        : null,
-      flushResults,
-      entityData: s as unknown as Record<string, unknown> | null,
-    }) as Omit<SaveProviderBody, "input_provider_id" | "group_id">;
     await saveProviderAction({
       body: {
         input_provider_id: providerId ?? null,
-        group_id: groupId,
-        ...saveActions,
-      } as SaveProviderBody,
+        name_id: nameId,
+        description_id: (effectiveState["description_id"] as string) ?? null,
+        flag_id: (effectiveState["active_flag_id"] as string) ?? null,
+        value_id: valueId,
+        endpoint_id: (effectiveState["endpoint_id"] as string) ?? null,
+        key_id: (effectiveState["key_id"] as string) ?? null,
+        department_ids: (effectiveState["department_ids"] as string[])?.length
+          ? (effectiveState["department_ids"] as string[])
+          : null,
+      },
     });
     toast.success(isEditMode ? "Provider updated" : "Provider created");
     router.push("/intelligence/providers");
@@ -352,7 +342,6 @@ export default function Provider({
   }, [
     saveProviderAction,
     providerId,
-    groupId,
     isEditMode,
     isAutosaveEnabled,
     flushAllResources,

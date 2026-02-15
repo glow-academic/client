@@ -1036,37 +1036,6 @@ export default function Agent({
       isGenerating,
     });
 
-  const mergeById = useCallback(
-    <T extends { id?: string | null }>(base: T[] = [], extra: T[] = []): T[] => {
-      const map = new Map<string, T>();
-      for (const item of base) {
-        if (item.id) map.set(item.id, item);
-      }
-      for (const item of extra) {
-        if (item.id) map.set(item.id, item);
-      }
-      return Array.from(map.values());
-    },
-    [],
-  );
-
-  const mergeByDepartmentId = useCallback(
-    <T extends { department_id?: string | null }>(
-      base: T[] = [],
-      extra: T[] = [],
-    ): T[] => {
-      const map = new Map<string, T>();
-      for (const item of base) {
-        if (item.department_id) map.set(item.department_id, item);
-      }
-      for (const item of extra) {
-        if (item.department_id) map.set(item.department_id, item);
-      }
-      return Array.from(map.values());
-    },
-    [],
-  );
-
   const mergedNames = namesSection?.resources ?? [];
   const mergedDescriptions = descriptionsSection?.resources ?? [];
   const mergedModels = modelsSection?.resources ?? [];
@@ -1250,8 +1219,7 @@ export default function Agent({
                         <Departments
                           department_ids={draftState.departmentIds || []}
                           department_resources={
-                            (aiFormData.department_resources ??
-                              departmentsSection?.current ??
+                            (departmentsSection?.current ??
                               []) as any[]
                           }
                           show_departments={
@@ -1350,7 +1318,7 @@ export default function Agent({
                       <Tools
                         tool_ids={draftState.tool_ids}
                         tool_resources={
-                          (aiFormData.tool_resources ?? toolsSection?.current ?? []) as any[]
+                          (toolsSection?.current ?? []) as any[]
                         }
                         show_tools={toolsSection?.show ?? false}
                         tool_suggestions={toolsSection?.suggestions ?? []}
@@ -1427,7 +1395,7 @@ export default function Agent({
                       <Models
                         model_id={draftState.modelId || null}
                         model_resource={
-                          (aiModelResource ?? modelsSection?.resource ?? null) as any
+                          (modelsSection?.resource ?? null) as any
                         }
                         show_models={modelsSection?.show ?? true}
                         model_suggestions={modelsSection?.suggestions ?? []}
@@ -1490,8 +1458,7 @@ export default function Agent({
                       <TemperatureLevels
                         temperature_level_id={draftState.temperature_level_id}
                         temperature_level_resource={
-                          (aiTemperatureResource ??
-                            temperatureLevelsSection?.resource ??
+                          (temperatureLevelsSection?.resource ??
                             null) as any
                         }
                         show_temperature_levels={
@@ -1556,7 +1523,7 @@ export default function Agent({
                       <ReasoningLevels
                         reasoning_level_id={draftState.reasoning_level_id}
                         reasoning_level_resource={
-                          (aiReasoningResource ?? reasoningLevelsSection?.resource ?? null) as any
+                          (reasoningLevelsSection?.resource ?? null) as any
                         }
                         show_reasoning_levels={
                           reasoningLevelsSection?.show ?? true
@@ -1613,7 +1580,7 @@ export default function Agent({
                       <Voices
                         voice_ids={draftState.voice_ids}
                         voice_resources={
-                          (aiFormData.voice_resources ?? voicesSection?.current ?? []) as any[]
+                          (voicesSection?.current ?? []) as any[]
                         }
                         show_voices={voicesSection?.show ?? true}
                         voice_suggestions={voicesSection?.suggestions ?? []}
@@ -1663,7 +1630,7 @@ export default function Agent({
                       <Prompts
                         prompt_id={draftState.prompt_id}
                         prompt_resource={
-                          (aiPromptResource ?? promptsSection?.resource ?? null) as any
+                          (promptsSection?.resource ?? null) as any
                         }
                         show_prompts={promptsSection?.show ?? true}
                         prompt_suggestions={promptsSection?.suggestions ?? []}
@@ -1717,8 +1684,7 @@ export default function Agent({
                       <Instructions
                         instructions_id={draftState.instructions_id}
                         instructions_resource={
-                          (aiInstructionsResource ??
-                            instructionsSection?.resource ??
+                          (instructionsSection?.resource ??
                             null) as any
                         }
                         show_instructions={instructionsSection?.show ?? true}

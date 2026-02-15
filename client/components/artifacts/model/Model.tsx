@@ -46,7 +46,7 @@ import { useFlushRegistry } from "@/hooks/use-flush-registry";
 import { useGenerationModal } from "@/hooks/use-generation-modal";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import {
-  buildResourceActions,
+  buildDraftPayload,
   checkHasResourceIds,
   computeEffectiveFormState,
   type ResourceConfig,
@@ -78,7 +78,6 @@ const findCurrentFlagId = (
 // Types defined inline using InputOf/OutputOf
 type SaveModelIn = InputOf<"/api/v4/artifacts/models/save", "post">;
 type SaveModelOut = OutputOf<"/api/v4/artifacts/models/save", "post">;
-type SaveModelBody = NonNullable<SaveModelIn["body"]>;
 type PatchModelDraftIn = InputOf<"/api/v4/artifacts/models/draft", "patch">;
 type PatchModelDraftOut = OutputOf<"/api/v4/artifacts/models/draft", "patch">;
 
@@ -519,28 +518,24 @@ function ModelComponent({
 
       return {
         input_draft_id: inputDraftId || null,
-        group_id: s?.group_id || "",
-        ...buildResourceActions(MODEL_RESOURCES, {
+        ...buildDraftPayload(MODEL_RESOURCES, {
           formState: {
             ...effectiveFormState,
             pricing_ids: pricingIds,
           } as unknown as Record<string, unknown>,
           referenceState: lastPatchedFormStateRef.current,
           flushResults: flushResults ?? {},
-          entityData: s as Record<string, unknown> | null,
         }),
-        values: { resource_id: valueId || null },
-        flags: {
-          resource_ids: [
-            effectiveFormState.active_flag_id,
-            effectiveFormState.modalities_enabled_flag_id,
-            effectiveFormState.temperature_enabled_flag_id,
-            effectiveFormState.pricing_enabled_flag_id,
-            effectiveFormState.voices_enabled_flag_id,
-            effectiveFormState.reasoning_levels_enabled_flag_id,
-            effectiveFormState.qualities_enabled_flag_id,
-          ].filter((id): id is string => id != null),
-        },
+        value_id: valueId || null,
+        flag_ids: [
+          effectiveFormState.active_flag_id,
+          effectiveFormState.modalities_enabled_flag_id,
+          effectiveFormState.temperature_enabled_flag_id,
+          effectiveFormState.pricing_enabled_flag_id,
+          effectiveFormState.voices_enabled_flag_id,
+          effectiveFormState.reasoning_levels_enabled_flag_id,
+          effectiveFormState.qualities_enabled_flag_id,
+        ].filter((id): id is string => id != null),
         expected_version: expectedVersion,
       };
     },
@@ -785,49 +780,30 @@ function ModelComponent({
       }
 
       try {
-        const initialState = getInitialFormState() as unknown as Record<
-          string,
-          unknown
-        >;
-        const saveActions = buildResourceActions(MODEL_RESOURCES, {
-          formState: {
-            ...effectiveFormState,
-            pricing_ids: pricingIds,
-          } as unknown as Record<string, unknown>,
-          referenceState: initialState,
-          flushResults,
-          entityData: s as Record<string, unknown> | null,
-        }) as Pick<
-          SaveModelBody,
-          | "names"
-          | "descriptions"
-          | "providers"
-          | "departments"
-          | "modalities"
-          | "temperature_levels"
-          | "pricing"
-          | "reasoning_levels"
-          | "qualities"
-          | "voices"
-        >;
-
+        const efs = effectiveFormState;
         await saveModelAction({
           body: {
             input_model_id: isEditMode && modelId ? modelId : null,
-            group_id: s?.group_id || "",
-            ...saveActions,
-            values: { resource_id: valueId || null },
-            flags: {
-              resource_ids: [
-                effectiveFormState.active_flag_id,
-                effectiveFormState.modalities_enabled_flag_id,
-                effectiveFormState.temperature_enabled_flag_id,
-                effectiveFormState.pricing_enabled_flag_id,
-                effectiveFormState.voices_enabled_flag_id,
-                effectiveFormState.reasoning_levels_enabled_flag_id,
-                effectiveFormState.qualities_enabled_flag_id,
-              ].filter((id): id is string => id != null),
-            },
+            name_id: efs.name_id!,
+            description_id: efs.description_id ?? null,
+            provider_id: efs.provider_id ?? null,
+            value_id: valueId || null,
+            flag_ids: [
+              efs.active_flag_id,
+              efs.modalities_enabled_flag_id,
+              efs.temperature_enabled_flag_id,
+              efs.pricing_enabled_flag_id,
+              efs.voices_enabled_flag_id,
+              efs.reasoning_levels_enabled_flag_id,
+              efs.qualities_enabled_flag_id,
+            ].filter((id): id is string => id != null),
+            department_ids: efs.departmentIds?.length ? efs.departmentIds : null,
+            modality_ids: efs.modality_ids?.length ? efs.modality_ids : null,
+            temperature_level_ids: efs.temperature_level_ids?.length ? efs.temperature_level_ids : null,
+            pricing_ids: pricingIds?.length ? pricingIds : null,
+            reasoning_level_ids: efs.reasoning_level_ids?.length ? efs.reasoning_level_ids : null,
+            quality_ids: efs.quality_ids?.length ? efs.quality_ids : null,
+            voice_ids: efs.voice_ids?.length ? efs.voice_ids : null,
           },
         });
         toast.success(
@@ -847,13 +823,10 @@ function ModelComponent({
       profile?.id,
       saveModelAction,
       router,
-      getInitialFormState,
       isAutosaveEnabled,
       flushAllResources,
       s?.names?.required,
       s?.values?.required,
-      s?.group_id,
-      s,
     ],
   );
 
