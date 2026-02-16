@@ -1,11 +1,11 @@
 <#-- GENERATED FILE: do not edit manually -->
-<#-- Generated at: 2026-02-15T15:44:36.926631 -->
+<#-- Generated at: 2026-02-15T22:40:49.652063 -->
 <#--
   Provider mapping: department_id -> allowed IdP aliases
 
   Enumerated departments:
-    - 019c3f8c-b97b-7350-8d77-632e29b1c3f9: General
     - 019b3be4-3247-7cb0-bd74-9b2467b5e32d: Purdue CS
+    - 019c3f8c-b97b-7350-8d77-632e29b1c3f9: General
 
   Enumerated IdP aliases:
     - auth_google_019b3be4-3117-7aa4-aa34-0041aa51d1d8
@@ -16,8 +16,8 @@
 
 <#-- Departments to show in the picker -->
 <#assign departments = [
-  {"id": "019c3f8c-b97b-7350-8d77-632e29b1c3f9", "title": "General"},
-  {"id": "019b3be4-3247-7cb0-bd74-9b2467b5e32d", "title": "Purdue CS"}
+  {"id": "019b3be4-3247-7cb0-bd74-9b2467b5e32d", "title": "Purdue CS"},
+  {"id": "019c3f8c-b97b-7350-8d77-632e29b1c3f9", "title": "General"}
 ] />
 
 <#-- Map department_id -> allowed IdP aliases -->

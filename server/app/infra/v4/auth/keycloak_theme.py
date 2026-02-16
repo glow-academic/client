@@ -159,7 +159,7 @@ async def generate_keycloak_theme_providers(pool: Any) -> None:
     lines.append("  Provider mapping: department_id -> allowed IdP aliases")
     lines.append("")
     lines.append("  Enumerated departments:")
-    for dept in sorted(departments_list, key=lambda d: d["title"]):
+    for dept in departments_list:
         lines.append(f"    - {dept['id']}: {dept['title']}")
     lines.append("")
     lines.append("  Enumerated IdP aliases:")
@@ -175,7 +175,7 @@ async def generate_keycloak_theme_providers(pool: Any) -> None:
     # Generate departments array
     lines.append("<#-- Departments to show in the picker -->")
     lines.append("<#assign departments = [")
-    for i, dept in enumerate(sorted(departments_list, key=lambda d: d["title"])):
+    for i, dept in enumerate(departments_list):
         comma = "," if i < len(departments_list) - 1 else ""
         lines.append(f'  {{"id": "{dept["id"]}", "title": "{dept["title"]}"}}{comma}')
     lines.append("] />")

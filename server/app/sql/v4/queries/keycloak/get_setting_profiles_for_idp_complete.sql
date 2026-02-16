@@ -56,7 +56,7 @@ AS $$
     ),
     profile_details AS (
         SELECT
-            ppj.profile_id,
+            ppj.profiles_id as profile_id,
             COALESCE(
                 (SELECT n.name
                  FROM profile_names_junction pn
@@ -64,7 +64,7 @@ AS $$
                  WHERE pn.profile_id = ppj.profile_id
                    AND pn.active = true
                  LIMIT 1),
-                ppj.profile_id::text
+                ppj.profiles_id::text
             ) as profile_name,
             COALESCE(
                 (SELECT r.role
