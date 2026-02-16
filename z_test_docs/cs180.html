@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>HW05 — Challenge: NumberWorkshop (Loops + Menu)</title>
+
+  <style>
+    :root{
+      --page-w: 920px;
+      --ink: #111;
+      --muted: #555;
+      --rule: #d8d8d8;
+      --accent: #0b3d91;
+      --bg: #fafafa;
+      --paper: #fff;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono","Courier New", monospace;
+      --serif: ui-serif, "Times New Roman", Times, serif;
+      --sans: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+    }
+    html, body { background: var(--bg); color: var(--ink); }
+    body{ margin: 0; font-family: var(--serif); line-height: 1.35; }
+
+    .page{
+      max-width: var(--page-w);
+      margin: 28px auto;
+      padding: 44px 56px;
+      background: var(--paper);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+      border: 1px solid #eee;
+    }
+
+    header{
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 16px;
+      align-items: end;
+      padding-bottom: 16px;
+      border-bottom: 2px solid var(--rule);
+      margin-bottom: 18px;
+    }
+    .course{ font-family: var(--sans); font-weight: 800; font-size: 18px; }
+    .meta{ font-family: var(--sans); color: var(--muted); font-size: 13px; }
+    .title{ margin-top: 6px; font-size: 26px; font-weight: 800; }
+    .badge{ text-align: right; font-family: var(--sans); font-size: 12px; color: var(--muted); }
+    .badge .due{
+      display: inline-block;
+      border: 1px solid var(--rule);
+      padding: 8px 10px;
+      border-radius: 10px;
+      background: #fcfcff;
+      white-space: nowrap;
+    }
+
+    .callout{
+      border: 1px solid var(--rule);
+      border-left: 6px solid var(--accent);
+      border-radius: 12px;
+      padding: 12px 14px;
+      margin: 14px 0 18px;
+      background: #f8fbff;
+      font-family: var(--sans);
+      font-size: 13px;
+    }
+    .callout b{ color: var(--accent); }
+
+    h2{
+      font-family: var(--sans);
+      font-size: 15px;
+      letter-spacing: 0.3px;
+      text-transform: uppercase;
+      margin: 22px 0 10px;
+    }
+
+    .section{
+      margin: 14px 0 0;
+      padding-top: 14px;
+      border-top: 1px solid var(--rule);
+    }
+    .section:first-of-type{ border-top: none; padding-top: 0; }
+
+    ul{
+      margin: 8px 0 0;
+      padding-left: 18px;
+    }
+    li{ margin: 6px 0; }
+
+    pre.code{
+      margin: 10px 0 0;
+      padding: 12px 14px;
+      border: 1px solid var(--rule);
+      border-radius: 12px;
+      background: #fcfcfc;
+      font-family: var(--mono);
+      font-size: 12.5px;
+      line-height: 1.4;
+      overflow-x: auto;
+    }
+
+    .box{
+      margin-top: 10px;
+      padding: 10px 12px;
+      border: 1px dashed var(--rule);
+      border-radius: 10px;
+      background: #fcfcfc;
+    }
+
+    footer{
+      margin-top: 26px;
+      padding-top: 14px;
+      border-top: 2px solid var(--rule);
+      color: var(--muted);
+      font-family: var(--sans);
+      font-size: 12px;
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    @media print {
+      body { background: white; }
+      .page { box-shadow: none; border: none; margin: 0; padding: 0.75in; }
+    }
+  </style>
+</head>
+
+<body>
+  <main class="page">
+    <header>
+      <div>
+        <div class="course">Intro Programming</div>
+        <div class="meta">HW05 — Challenge • Loops • Menu-Driven Program</div>
+        <div class="title">HW05: NumberWorkshop</div>
+      </div>
+      <div class="badge">
+        <div class="due"><b>Due:</b> (your course LMS) • 11:59 PM</div>
+        <div class="meta" style="margin-top:6px;">Submit: <code>NumberWorkshop.java</code></div>
+      </div>
+    </header>
+
+    <div class="callout">
+      <b>Goal:</b> Write an interactive, menu-based Java program that uses <b>loops</b> to compute number properties.
+      You will implement two operations and keep the program running until the user chooses to quit.
+    </div>
+
+    <section class="section">
+      <h2>Description</h2>
+      <p>
+        In this challenge, you will implement <code>NumberWorkshop.java</code>, a console program that repeatedly
+        displays a menu and performs computations selected by the user. Each computation must be implemented using
+        <b>loops</b> (not built-in shortcuts).
+      </p>
+      <p>
+        The user can choose either:
+      </p>
+      <ul>
+        <li><b>(1) Greatest Common Divisor</b> of two integers</li>
+        <li><b>(2) Prime Factor Breakdown</b> of a positive integer</li>
+        <li><b>(0) Quit</b> to end the program</li>
+      </ul>
+    </section>
+
+    <section class="section">
+      <h2>Operations</h2>
+
+      <h3 style="font-family: var(--sans); margin: 10px 0 6px;">(1) Greatest Common Divisor (GCD)</h3>
+      <p>
+        The GCD of two integers is the largest positive integer that divides both numbers with no remainder.
+        For example, <code>gcd(18, 48) = 6</code> and <code>gcd(21, 21) = 21</code>.
+      </p>
+      <ul>
+        <li>You must compute GCD using a loop (Euclid’s algorithm is recommended).</li>
+        <li>Handle negative inputs by treating the GCD as the GCD of absolute values.</li>
+      </ul>
+
+      <h3 style="font-family: var(--sans); margin: 14px 0 6px;">(2) Prime Factor Breakdown (PFB)</h3>
+      <p>
+        A prime factor breakdown expresses an integer as a product of primes in nondecreasing order.
+        Example: <code>84 = 2 × 2 × 3 × 7</code>.
+      </p>
+      <ul>
+        <li>Input is a positive integer <code>n ≥ 2</code>.</li>
+        <li>Output the prime factors in ascending order, separated by spaces.</li>
+        <li>You must use loops to find factors (no precomputed prime lists).</li>
+      </ul>
+
+      <div class="box">
+        <b>Formatting rule:</b> Print outputs exactly as described below. Autograding is whitespace-sensitive.
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Program Behavior</h2>
+      <p>On each iteration, print a menu like this (exact text/casing recommended):</p>
+      <pre class="code">=== NumberWorkshop ===
+1) Compute GCD
+2) Prime Factor Breakdown
+0) Quit
+Choose an option:</pre>
+
+      <p>Then behave as follows:</p>
+      <ul>
+        <li>If the user enters <code>1</code>, prompt for two integers and print the GCD result.</li>
+        <li>If the user enters <code>2</code>, prompt for one integer and print its prime factors.</li>
+        <li>If the user enters <code>0</code>, print a goodbye message and terminate.</li>
+        <li>For any other input, print an error message and re-display the menu.</li>
+      </ul>
+
+      <p><b>Example I/O (illustrative):</b></p>
+      <pre class="code">Choose an option: 1
+Enter the first integer: 18
+Enter the second integer: 48
+GCD(18, 48) = 6
+
+Choose an option: 2
+Enter an integer >= 2: 84
+Prime factors: 2 2 3 7
+
+Choose an option: 0
+Goodbye!</pre>
+    </section>
+
+    <section class="section">
+      <h2>Implementation Requirements</h2>
+      <ul>
+        <li>File name must be <code>NumberWorkshop.java</code> and contain a <code>public class NumberWorkshop</code>.</li>
+        <li>You must use <b>loops</b> for both operations.</li>
+        <li>Do not use recursion for the prime factor breakdown.</li>
+        <li>Do not use any external libraries beyond standard Java (<code>java.util</code> is fine).</li>
+        <li>Write at least two helper methods, e.g. <code>gcd(int a, int b)</code> and <code>printPrimeFactors(int n)</code>.</li>
+      </ul>
+
+      <p style="margin-top:10px;">
+        Suggested helper signatures (you may adapt):
+      </p>
+      <pre class="code">static int gcd(int a, int b)
+static void printPrimeFactors(int n)</pre>
+    </section>
+
+    <section class="section">
+      <h2>Testing</h2>
+      <ul>
+        <li>Test GCD with: equal numbers, one zero, negatives, co-prime pairs.</li>
+        <li>Test factorization with: prime input (e.g., 97), powers (e.g., 64), and mixed composites (e.g., 420).</li>
+        <li>Test invalid menu options (e.g., 9) and verify the program recovers gracefully.</li>
+      </ul>
+    </section>
+
+    <section class="section">
+      <h2>Submit</h2>
+      <ul>
+        <li>Submit <code>NumberWorkshop.java</code> to your LMS.</li>
+        <li>Make sure your code compiles and runs from the command line.</li>
+      </ul>
+    </section>
+
+    <footer>
+      <div>Student-facing HTML spec • Print-friendly</div>
+      <div>Tip: Export to PDF for reading if you prefer</div>
+    </footer>
+  </main>
+</body>
+</html>

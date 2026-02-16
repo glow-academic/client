@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Discrete Structures — Homework Set 1</title>
+
+  <!-- MathJax for LaTeX-style math rendering -->
+  <script>
+    window.MathJax = {
+      tex: { inlineMath: [['$', '$'], ['\\(', '\\)']] },
+      options: { skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'] }
+    };
+  </script>
+  <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
+
+  <style>
+    :root{
+      --page-w: 860px;
+      --ink: #111;
+      --muted: #555;
+      --rule: #d8d8d8;
+      --accent: #0b3d91;
+      --bg: #fafafa;
+      --paper: #fff;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      --serif: ui-serif, "Times New Roman", Times, serif;
+      --sans: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+    }
+
+    html, body { background: var(--bg); color: var(--ink); }
+    body{
+      margin: 0;
+      font-family: var(--serif);
+      line-height: 1.35;
+    }
+
+    .page{
+      max-width: var(--page-w);
+      margin: 28px auto;
+      padding: 44px 54px;
+      background: var(--paper);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+      border: 1px solid #eee;
+    }
+
+    header{
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 16px;
+      align-items: end;
+      padding-bottom: 16px;
+      border-bottom: 2px solid var(--rule);
+      margin-bottom: 18px;
+    }
+
+    .course{
+      font-family: var(--sans);
+      font-weight: 700;
+      letter-spacing: 0.2px;
+      font-size: 18px;
+    }
+
+    .meta{
+      font-family: var(--sans);
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .title{
+      margin-top: 6px;
+      font-size: 26px;
+      font-weight: 700;
+      font-family: var(--serif);
+    }
+
+    .badge{
+      text-align: right;
+      font-family: var(--sans);
+      font-size: 12px;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+
+    .badge .due{
+      display: inline-block;
+      border: 1px solid var(--rule);
+      padding: 8px 10px;
+      border-radius: 10px;
+      background: #fcfcff;
+    }
+
+    .callout{
+      border: 1px solid var(--rule);
+      border-left: 6px solid var(--accent);
+      border-radius: 12px;
+      padding: 12px 14px;
+      margin: 14px 0 18px;
+      background: #f8fbff;
+      font-family: var(--sans);
+      font-size: 13px;
+      color: #1a1a1a;
+    }
+
+    .callout b{ color: var(--accent); }
+
+    h2{
+      font-family: var(--sans);
+      font-size: 15px;
+      letter-spacing: 0.3px;
+      text-transform: uppercase;
+      color: #1c1c1c;
+      margin: 22px 0 8px;
+    }
+
+    .rules{
+      margin: 0;
+      padding-left: 18px;
+      font-family: var(--sans);
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .problem{
+      margin: 18px 0 0;
+      padding-top: 14px;
+      border-top: 1px solid var(--rule);
+    }
+
+    .problem:first-of-type{
+      border-top: none;
+      padding-top: 0;
+    }
+
+    .phead{
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 6px;
+    }
+
+    .pname{
+      font-family: var(--sans);
+      font-weight: 700;
+      font-size: 15px;
+    }
+
+    .points{
+      font-family: var(--sans);
+      font-size: 12px;
+      color: var(--muted);
+      border: 1px solid var(--rule);
+      padding: 3px 8px;
+      border-radius: 999px;
+      background: #fff;
+      white-space: nowrap;
+    }
+
+    .pbody{
+      font-size: 15px;
+      margin: 6px 0 0;
+    }
+
+    .subparts{
+      margin: 10px 0 0;
+      padding-left: 20px;
+    }
+    .subparts li{
+      margin: 7px 0;
+    }
+
+    .note{
+      margin-top: 10px;
+      font-family: var(--sans);
+      font-size: 12.5px;
+      color: var(--muted);
+    }
+
+    .mathblock{
+      padding: 10px 12px;
+      border: 1px dashed var(--rule);
+      border-radius: 10px;
+      background: #fcfcfc;
+      overflow-x: auto;
+    }
+
+    .signature{
+      margin-top: 10px;
+      padding: 12px 14px;
+      border: 1px solid var(--rule);
+      border-radius: 12px;
+      background: #fffdf7;
+      font-family: var(--sans);
+      font-size: 13px;
+    }
+    .signature code{
+      font-family: var(--mono);
+      font-size: 12px;
+      background: #f3f3f3;
+      padding: 2px 6px;
+      border-radius: 6px;
+    }
+
+    footer{
+      margin-top: 26px;
+      padding-top: 14px;
+      border-top: 2px solid var(--rule);
+      color: var(--muted);
+      font-family: var(--sans);
+      font-size: 12px;
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    @media print {
+      body { background: white; }
+      .page { box-shadow: none; border: none; margin: 0; padding: 0.75in; }
+      .badge .due { border: 1px solid #bbb; }
+    }
+  </style>
+</head>
+
+<body>
+  <main class="page">
+    <header>
+      <div>
+        <div class="course">Discrete Structures</div>
+        <div class="meta">Homework Set 1 • Propositional & Predicate Logic</div>
+        <div class="title">Homework 1</div>
+      </div>
+      <div class="badge">
+        <div class="due"><b>Due:</b> Friday, Feb 7, 2026 • 11:00 PM (ET)</div>
+        <div class="meta" style="margin-top:6px;">Submit as a single PDF export of your typed work</div>
+      </div>
+    </header>
+
+    <div class="callout">
+      <b>Format & Integrity.</b> Write complete solutions in your own words. If you consulted any external
+      resources (notes, websites, AI tools, tutors), disclose them clearly for each problem.
+      Do not post these problems or your solutions publicly.
+    </div>
+
+    <h2>Submission Guidelines</h2>
+    <ul class="rules">
+      <li>Type your solutions. Keep your work legible and well-organized.</li>
+      <li>Start each problem on a new page in your final PDF.</li>
+      <li>When using equivalence transformations, state the law/rule you are applying.</li>
+      <li>Unless explicitly allowed, do not use truth tables when asked to use algebraic equivalences.</li>
+    </ul>
+
+    <section class="problem">
+      <div class="phead">
+        <div class="pname">Problem 1 — Required Statement</div>
+        <div class="points">Required</div>
+      </div>
+      <div class="pbody">
+        Type the following sentence and replace the bracketed text with your full name.
+        <div class="signature">
+          I, <code>[YOUR FULL NAME]</code>, affirm that I completed this assignment without unauthorized help.
+          I wrote my solutions in my own words and I have clearly cited any permitted resources I used.
+        </div>
+      </div>
+    </section>
+
+    <section class="problem">
+      <div class="phead">
+        <div class="pname">Problem 2 — Tautology, Contradiction, or Neither</div>
+        <div class="points">3 × 3 pts</div>
+      </div>
+      <div class="pbody">
+        For each formula, determine whether it is a tautology, a contradiction, or neither.
+        <b>Do not</b> use truth tables. If it is a tautology/contradiction, prove it using equivalence rules
+        (name the rules). If neither, give a counterexample assignment.
+      </div>
+      <ol class="subparts" type="a">
+        <li>
+          $((p \to q) \wedge (q \to r)) \to (p \to r)$
+        </li>
+        <li>
+          $\neg\big(p \wedge (q \vee r)\big) \wedge (p \to q)$
+        </li>
+        <li>
+          $(p \leftrightarrow q) \wedge (q \leftrightarrow \neg p)$
+        </li>
+      </ol>
+      <div class="note">
+        Hint: Common tools include implication elimination ($p\to q \equiv \neg p \vee q$),
+        De Morgan’s laws, distributivity, absorption, and contradiction/tautology identities.
+      </div>
+    </section>
+
+    <section class="problem">
+      <div class="phead">
+        <div class="pname">Problem 3 — Satisfiable or Unsatisfiable</div>
+        <div class="points">3 × 3 pts</div>
+      </div>
+      <div class="pbody">
+        For each statement: either (i) show it is unsatisfiable via equivalences (name the equivalences),
+        or (ii) give an explicit satisfying assignment.
+      </div>
+      <ol class="subparts" type="a">
+        <li>$\neg(p \vee s) \wedge (p \vee s)$</li>
+        <li>$(a \vee b) \wedge (\neg a \vee c) \wedge (\neg b \vee c) \wedge \neg c$</li>
+        <li>$(x \to y) \wedge (y \to x) \wedge (x \vee y)$</li>
+      </ol>
+    </section>
+
+    <section class="problem">
+      <div class="phead">
+        <div class="pname">Problem 4 — Predicate Logic Equivalences</div>
+        <div class="points">3 × 3 pts</div>
+      </div>
+      <div class="pbody">
+        State whether each pair of statements is logically equivalent. If yes, justify (briefly but clearly).
+        If not, give a counterexample structure/interpretation.
+      </div>
+      <ol class="subparts" type="a">
+        <li>
+          $\forall x\,(P(x)\wedge Q(x))$  and  $\forall x\,P(x)\ \wedge\ \forall x\,Q(x)$
+        </li>
+        <li>
+          $\exists x\,(P(x)\vee Q(x))$  and  $\exists x\,P(x)\ \vee\ \exists x\,Q(x)$
+        </li>
+        <li>
+          $\forall x\,\exists y\,R(x,y)$  and  $\exists y\,\forall x\,R(x,y)$
+        </li>
+      </ol>
+      <div class="note">
+        Tip: Watch quantifier order carefully. Swapping $\forall$ and $\exists$ is usually not valid.
+      </div>
+    </section>
+
+    <section class="problem">
+      <div class="phead">
+        <div class="pname">Problem 5 — Formalizing an English Statement</div>
+        <div class="points">2 × 4 pts</div>
+      </div>
+      <div class="pbody">
+        Universe: all integers. Let $N(x)$ mean “$x$ is negative” and $G(x)$ mean “$x$ is greater than $5$.”
+        Consider the English statement:
+        <div class="mathblock">
+          “No negative integer is greater than 5.”
+        </div>
+        For each formula below, decide whether it correctly expresses the statement, and justify.
+      </div>
+      <ol class="subparts" type="a">
+        <li>$\neg\exists x\,\big(N(x)\wedge G(x)\big)$</li>
+        <li>$\forall x\,\big(N(x)\to \neg G(x)\big)$</li>
+      </ol>
+      <div class="note">
+        Your justification can be short: a 1–3 sentence logical explanation or a concrete counterexample.
+      </div>
+    </section>
+
+    <section class="problem">
+      <div class="phead">
+        <div class="pname">Problem 6 — Push Negations Inward</div>
+        <div class="points">14 pts</div>
+      </div>
+      <div class="pbody">
+        Rewrite the following formula so that every negation symbol ($\neg$) appears immediately
+        in front of a predicate (i.e., no negation should apply to a compound formula or quantifier).
+        Show your steps.
+      </div>
+      <div class="mathblock">
+        $\neg\exists x\,\forall y\,\exists z\ \Big( A(x,y)\ \vee\ \neg B(y,z)\ \wedge\ C(z)\Big)$
+      </div>
+      <div class="note">
+        Note: Use quantifier-negation rules (e.g., $\neg\forall x\,\phi \equiv \exists x\,\neg\phi$),
+        De Morgan’s laws, and remember $\wedge$ binds tighter than $\vee$.
+      </div>
+    </section>
+
+    <footer>
+      <div>© Instructor/Staff Handout Style • Student-facing HTML version</div>
+      <div>Tip: Print to PDF from your browser for submission</div>
+    </footer>
+  </main>
+</body>
+</html>

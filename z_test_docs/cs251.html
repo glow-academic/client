@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Data Structures & Algorithms — Problem Set 1</title>
+
+  <!-- MathJax for LaTeX-style math rendering -->
+  <script>
+    window.MathJax = {
+      tex: { inlineMath: [['$', '$'], ['\\(', '\\)']] },
+      options: { skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'] }
+    };
+  </script>
+  <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
+
+  <style>
+    :root{
+      --page-w: 900px;
+      --ink: #111;
+      --muted: #555;
+      --rule: #d8d8d8;
+      --accent: #0b3d91;
+      --bg: #fafafa;
+      --paper: #fff;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      --serif: ui-serif, "Times New Roman", Times, serif;
+      --sans: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+    }
+
+    html, body { background: var(--bg); color: var(--ink); }
+    body{ margin: 0; font-family: var(--serif); line-height: 1.35; }
+
+    .page{
+      max-width: var(--page-w);
+      margin: 28px auto;
+      padding: 44px 56px;
+      background: var(--paper);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+      border: 1px solid #eee;
+    }
+
+    header{
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 16px;
+      align-items: end;
+      padding-bottom: 16px;
+      border-bottom: 2px solid var(--rule);
+      margin-bottom: 18px;
+    }
+
+    .course{ font-family: var(--sans); font-weight: 800; font-size: 18px; letter-spacing: 0.2px; }
+    .meta{ font-family: var(--sans); color: var(--muted); font-size: 13px; }
+    .title{ margin-top: 6px; font-size: 26px; font-weight: 800; font-family: var(--serif); }
+
+    .badge{ text-align: right; font-family: var(--sans); font-size: 12px; color: var(--muted); }
+    .badge .due{
+      display: inline-block;
+      border: 1px solid var(--rule);
+      padding: 8px 10px;
+      border-radius: 10px;
+      background: #fcfcff;
+      white-space: nowrap;
+    }
+
+    .callout{
+      border: 1px solid var(--rule);
+      border-left: 6px solid var(--accent);
+      border-radius: 12px;
+      padding: 12px 14px;
+      margin: 14px 0 18px;
+      background: #f8fbff;
+      font-family: var(--sans);
+      font-size: 13px;
+      color: #1a1a1a;
+    }
+    .callout b{ color: var(--accent); }
+
+    h2{
+      font-family: var(--sans);
+      font-size: 15px;
+      letter-spacing: 0.3px;
+      text-transform: uppercase;
+      color: #1c1c1c;
+      margin: 22px 0 8px;
+    }
+
+    .rules{
+      margin: 0;
+      padding-left: 18px;
+      font-family: var(--sans);
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .problem{ margin: 18px 0 0; padding-top: 14px; border-top: 1px solid var(--rule); }
+    .problem:first-of-type{ border-top: none; padding-top: 0; }
+
+    .phead{
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 6px;
+    }
+    .pname{ font-family: var(--sans); font-weight: 800; font-size: 15px; }
+    .points{
+      font-family: var(--sans);
+      font-size: 12px;
+      color: var(--muted);
+      border: 1px solid var(--rule);
+      padding: 3px 8px;
+      border-radius: 999px;
+      background: #fff;
+      white-space: nowrap;
+    }
+
+    .pbody{ font-size: 15px; margin: 6px 0 0; }
+
+    pre.code{
+      margin: 10px 0 0;
+      padding: 12px 14px;
+      border: 1px solid var(--rule);
+      border-radius: 12px;
+      background: #fcfcfc;
+      font-family: var(--mono);
+      font-size: 12.5px;
+      line-height: 1.4;
+      overflow-x: auto;
+    }
+
+    .subparts{ margin: 10px 0 0; padding-left: 20px; }
+    .subparts li{ margin: 7px 0; }
+
+    .note{
+      margin-top: 10px;
+      font-family: var(--sans);
+      font-size: 12.5px;
+      color: var(--muted);
+    }
+
+    .mathblock{
+      padding: 10px 12px;
+      border: 1px dashed var(--rule);
+      border-radius: 10px;
+      background: #fcfcfc;
+      overflow-x: auto;
+      margin-top: 8px;
+    }
+
+    footer{
+      margin-top: 26px;
+      padding-top: 14px;
+      border-top: 2px solid var(--rule);
+      color: var(--muted);
+      font-family: var(--sans);
+      font-size: 12px;
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    @media print {
+      body { background: white; }
+      .page { box-shadow: none; border: none; margin: 0; padding: 0.75in; }
+      .badge .due { border: 1px solid #bbb; }
+    }
+  </style>
+</head>
+
+<body>
+  <main class="page">
+    <header>
+      <div>
+        <div class="course">Data Structures & Algorithms</div>
+        <div class="meta">Problem Set 1 • Counting Work • Asymptotics</div>
+        <div class="title">PS 1</div>
+      </div>
+      <div class="badge">
+        <div class="due"><b>Due:</b> Friday, Feb 20, 2026 • 11:59 PM (ET)</div>
+        <div class="meta" style="margin-top:6px;">Submit a single PDF (typed)</div>
+      </div>
+    </header>
+
+    <div class="callout">
+      <b>What we’re practicing:</b> translating loops into summations, converting summations to closed forms,
+      and comparing growth rates using $O(\cdot)$, $\Omega(\cdot)$, and $\Theta(\cdot)$.
+    </div>
+
+    <h2>Instructions</h2>
+    <ul class="rules">
+      <li>Assume <code>Work()</code> runs in constant time, with cost $c &gt; 0$ per call, independent of input.</li>
+      <li>For “closed form,” give an exact expression (not just $O(\cdot)$) unless the prompt says otherwise.</li>
+      <li>Show your reasoning: summations are fine, but don’t stop at a raw double-sum.</li>
+      <li>Logarithms are base 2 unless stated otherwise (the base doesn’t matter for asymptotics).</li>
+    </ul>
+
+    <section class="problem">
+      <div class="phead">
+        <div class="pname">Question 1 — Counting Nested Loop Work</div>
+        <div class="points">15 pts</div>
+      </div>
+      <div class="pbody">
+        Let $T(n)$ be the total cost contributed by calls to <code>Work()</code> in the algorithm below.
+        Derive a closed form for $T(n)$ (exact, in terms of $n$ and $c$), and give the tight $\Theta(\cdot)$ bound.
+      </div>
+      <pre class="code">function B1(n: positive integer):
+  total ← 0
+  for i from 1 to n by multiplying by 4 do
+    for j from 1 to i do
+      total ← total + Work()
+    end for
+  end for
+  return total
+end function</pre>
+      <div class="note">
+        Hint: the outer loop visits $i = 1, 4, 16, \dots$ up to $n$. Convert to a geometric series of partial sums.
+      </div>
+    </section>
+
+    <section class="problem">
+      <div class="phead">
+        <div class="pname">Question 2 — Return Value as a Closed Form</div>
+        <div class="points">20 pts</div>
+      </div>
+      <div class="pbody">
+        The following function returns a number (not a runtime). Derive the exact value returned, as a function of $n$.
+        You may assume $n$ is a positive integer.
+      </div>
+      <pre class="code">function B2(n: positive integer):
+  s ← 0
+  for i from 1 to n do
+    for j from 1 to (2i - 1) do
+      s ← s + 1
+    end for
+  end for
+  return s
+end function</pre>
+      <div class="note">
+        Hint: recognize the inner loop length and use a known summation identity.
+      </div>
+    </section>
+
+    <section class="problem">
+      <div class="phead">
+        <div class="pname">Question 3 — True/False on Asymptotic Claims</div>
+        <div class="points">3 × 6 pts</div>
+      </div>
+      <div class="pbody">
+        For each statement, mark it <b>True</b> or <b>False</b>. Provide a short justification:
+        either a proof sketch (e.g., limits, inequalities) or a counterexample.
+      </div>
+      <ol class="subparts" type="a">
+        <li>$n^3 = O(2^n)$</li>
+        <li>$\dfrac{\log n}{\log\log n} = O(\sqrt{\log n})$</li>
+        <li>$n\log n = \Omega(n^{1.1})$</li>
+      </ol>
+      <div class="note">
+        Tip: if you use limits, explicitly state what you’re taking the limit of and why it implies the bound.
+      </div>
+    </section>
+
+    <section class="problem">
+      <div class="phead">
+        <div class="pname">Question 4 — Ordering by Growth Rate + A Property Proof</div>
+        <div class="points">25 pts</div>
+      </div>
+      <div class="pbody">
+        <b>(a)</b> Sort the following functions from slowest growth to fastest growth (increasing order).
+        If two functions are $\Theta(\cdot)$ of each other, group them together and briefly justify.
+        <div class="mathblock">
+          $f_1(n)=n^{2.5},\quad
+          f_2(n)=3^n,\quad
+          f_3(n)=n^2\log n,\quad
+          f_4(n)=2^{n/3}\cdot n^7,\quad
+          f_5(n)=(\log n)^8$
+        </div>
+        <div style="height:10px"></div>
+        <b>(b)</b> Suppose $f(n)$ and $g(n)$ are functions that are eventually positive (there exists $n_0$ such that
+        for all $n\ge n_0$, $f(n)&gt;0$ and $g(n)&gt;0$). Prove:
+        <div class="mathblock">
+          $\min\{f(n), g(n)\} = \Theta\!\left(\dfrac{f(n)\,g(n)}{f(n)+g(n)}\right)$
+        </div>
+        <div style="height:8px"></div>
+        <b>(c)</b> Give an explicit example of functions $f,g$ (eventually positive) such that neither $f=O(g)$
+        nor $g=O(f)$ holds. Briefly justify.
+      </div>
+
+      <div class="note">
+        Tip for (b): bound the expression between constant multiples of $\min\{f,g\}$ using simple inequalities like
+        $f+g \le 2\max\{f,g\}$ and $f+g \ge \max\{f,g\}$.
+      </div>
+    </section>
+
+    <footer>
+      <div>Student-facing HTML handout • Print-friendly</div>
+      <div>Suggestion: export to PDF via browser print dialog</div>
+    </footer>
+  </main>
+</body>
+</html>
