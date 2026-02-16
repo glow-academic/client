@@ -254,10 +254,22 @@ async def get_attempt_internal(
                     )
                     for item in items:
                         if item.image_id:
+                            # Resolve upload_id from uploads_resource to uploads_entry
+                            # via mv_uploads view
+                            entry_upload_id = item.upload_id
+                            if item.upload_id:
+                                upload_view = await get_upload_list_view_internal(
+                                    conn=c,
+                                    uploads_id_filter=item.upload_id,
+                                    bypass_cache=bypass_cache,
+                                )
+                                if upload_view.items:
+                                    entry_upload_id = upload_view.items[0].upload_id
+
                             result["images"][item.image_id] = {
                                 "name": item.name,
                                 "description": item.description,
-                                "upload_id": item.upload_id,
+                                "upload_id": entry_upload_id,
                             }
 
                 # Fetch videos
@@ -267,10 +279,22 @@ async def get_attempt_internal(
                     )
                     for item in items:
                         if item.video_id:
+                            # Resolve upload_id from uploads_resource to uploads_entry
+                            # via mv_uploads view
+                            entry_upload_id = item.upload_id
+                            if item.upload_id:
+                                upload_view = await get_upload_list_view_internal(
+                                    conn=c,
+                                    uploads_id_filter=item.upload_id,
+                                    bypass_cache=bypass_cache,
+                                )
+                                if upload_view.items:
+                                    entry_upload_id = upload_view.items[0].upload_id
+
                             result["videos"][item.video_id] = {
                                 "name": item.name,
                                 "description": item.description,
-                                "upload_id": item.upload_id,
+                                "upload_id": entry_upload_id,
                             }
 
                 # Fetch documents
