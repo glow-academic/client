@@ -95,6 +95,7 @@ from app.api.v4.resources.standards.get import get_standards_internal
 from app.api.v4.resources.tools.get import get_tools_internal
 from app.api.v4.resources.videos.get import get_videos_internal
 from app.api.v4.views.attempt.chats.get import get_attempt_chats_internal
+from app.api.v4.views.upload.list.get import get_upload_list_view_internal
 from app.api.v4.views.attempt.list.get import get_attempt_list_internal
 from app.api.v4.views.attempt.messages.get import get_attempt_messages_internal
 from app.infra.v4.activity.audit import audit_activity, audit_set
@@ -168,15 +169,19 @@ async def get_attempt_internal(
     No caching — consumer layers handle their own caching.
     """
     try:
-        # Resolve profile_id (artifact) to profiles_id (resource) for MV comparison
-        profiles_id = await conn.fetchval(
+        # Resolve profile_id (artifact) to profiles_id (resource) + role
+        requester_row = await conn.fetchrow(
             """
-            SELECT profiles_id FROM profile_profiles_junction
-            WHERE profile_id = $1 AND active = true
+            SELECT ppj.profiles_id, pr.role
+            FROM profile_profiles_junction ppj
+            JOIN profiles_resource pr ON pr.id = ppj.profiles_id
+            WHERE ppj.profile_id = $1 AND ppj.active = true
             LIMIT 1
             """,
             profile_id,
         )
+        profiles_id = requester_row["profiles_id"] if requester_row else None
+        requester_role: str | None = requester_row["role"] if requester_row else None
 
         # Get pool for parallel queries
         pool = get_pool()
@@ -275,11 +280,23 @@ async def get_attempt_internal(
                     )
                     for item in items:
                         if item.document_id:
+                            # Resolve upload_id from uploads_resource to uploads_entry
+                            # via mv_uploads view
+                            entry_upload_id = item.upload_id
+                            if item.upload_id:
+                                upload_view = await get_upload_list_view_internal(
+                                    conn=c,
+                                    uploads_id_filter=item.upload_id,
+                                    bypass_cache=bypass_cache,
+                                )
+                                if upload_view.items:
+                                    entry_upload_id = upload_view.items[0].upload_id
+
                             result["documents"][item.document_id] = {
                                 "name": item.name,
                                 "description": item.description,
-                                "upload_id": item.upload_id,
-                                "html": item.html,
+                                "upload_id": entry_upload_id,
+                                "template": item.template,
                             }
 
                 # Fetch personas
@@ -473,7 +490,20 @@ async def get_attempt_internal(
             fetch_profile_meta(attempt_item.profile_id),
         )
 
-        if not check_attempt_access(attempt_item.profile_id, profiles_id):
+        # Fetch attempt owner's role for permission check
+        attempt_owner_role: str | None = None
+        if attempt_item.profile_id:
+            attempt_owner_role = await conn.fetchval(
+                "SELECT role FROM profiles_resource WHERE id = $1",
+                attempt_item.profile_id,
+            )
+
+        if not check_attempt_access(
+            attempt_item.profile_id,
+            profiles_id,
+            request_role=requester_role,
+            attempt_role=attempt_owner_role,
+        ):
             return AttemptInternalData(
                 actor_name=profile_name,
                 attempt_exists=True,
@@ -683,7 +713,7 @@ async def get_attempt_internal(
                     description=resource_meta["documents"]
                     .get(document_id, {})
                     .get("description"),
-                    html=resource_meta["documents"].get(document_id, {}).get("html"),
+                    template=resource_meta["documents"].get(document_id, {}).get("template"),
                 )
                 for document_id in resource_meta["documents"].keys()
             }

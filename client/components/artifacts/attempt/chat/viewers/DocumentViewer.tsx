@@ -65,7 +65,7 @@ export default function DocumentViewer({
         setContent(null);
 
         // HTML documents (no upload, content stored in texts_entry)
-        if ((document as any).html && !document.upload_id) {
+        if ((document as any).template && !document.upload_id) {
           const response = await fetch("/api/resources/documents/html", {
             method: "POST",
             headers: { "Content-Type": "application/json" },

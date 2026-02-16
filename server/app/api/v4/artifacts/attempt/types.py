@@ -96,7 +96,7 @@ class DocumentEntry(BaseModel):
     upload_id: UUID | None = None
     name: str | None = None
     description: str | None = None
-    html: bool | None = None
+    template: bool | None = None
 
 
 class AnalysisEntry(BaseModel):

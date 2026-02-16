@@ -24,21 +24,53 @@ DEFAULT_ASSISTANT_COLOR = "#06b6d4"  # Cyan
 DEFAULT_ASSISTANT_ICON = "Bot"
 
 
+ROLE_HIERARCHY: dict[str, int] = {
+    "guest": 0,
+    "member": 1,
+    "instructional": 2,
+    "admin": 3,
+    "superadmin": 4,
+}
+
+
 def check_attempt_access(
-    attempt_profile_id: UUID | None, request_profile_id: UUID
+    attempt_profile_id: UUID | None,
+    request_profile_id: UUID,
+    request_role: str | None = None,
+    attempt_role: str | None = None,
 ) -> bool:
     """Check if the requesting user has access to the attempt.
+
+    Access is granted if:
+    1. The requesting user owns the attempt (profile IDs match), OR
+    2. The requesting user's role is strictly higher than the attempt
+       owner's role (instructional > member/guest, admin > instructional,
+       superadmin > all). Guests and members can only see their own.
 
     Args:
         attempt_profile_id: The profile ID associated with the attempt.
         request_profile_id: The profile ID of the requesting user.
+        request_role: The role of the requesting user.
+        attempt_role: The role of the attempt owner.
 
     Returns:
-        True if the user has access (profile IDs match), False otherwise.
+        True if the user has access, False otherwise.
     """
     if attempt_profile_id is None:
         return False
-    return attempt_profile_id == request_profile_id
+    # Own attempt — always allowed
+    if attempt_profile_id == request_profile_id:
+        return True
+    # Role-based access: higher roles can view lower-role attempts
+    req_level = ROLE_HIERARCHY.get(request_role or "", 0)
+    att_level = ROLE_HIERARCHY.get(attempt_role or "", 0)
+    # guests and members (level <= 1) can only see their own
+    if req_level <= 1:
+        return False
+    # superadmin can see everyone (including other superadmins)
+    if req_level == ROLE_HIERARCHY["superadmin"]:
+        return True
+    return req_level > att_level
 
 
 def compute_content_display(

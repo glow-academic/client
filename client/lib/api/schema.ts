@@ -23003,8 +23003,8 @@ export interface components {
             name?: string | null;
             /** Description */
             description?: string | null;
-            /** Html */
-            html?: boolean | null;
+            /** Template */
+            template?: boolean | null;
         };
         /** DocumentFieldSection */
         DocumentFieldSection: {

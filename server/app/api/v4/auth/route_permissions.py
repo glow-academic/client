@@ -996,7 +996,6 @@ def compute_page_metadata(
         "benchmark",
     }
     is_analytics = section in analytics_sections
-    show_analytics_filters = section in analytics_sections
 
     # Count UUID segments for bundle/attempt detection
     uuid_segments = [s for s in segments if _is_uuid(s)]
@@ -1009,6 +1008,9 @@ def compute_page_metadata(
     # Determine page type
     is_create = len(segments) >= 2 and segments[-1] == "new"
     has_uuid = len(uuid_segments) > 0
+
+    # Only show analytics filters on list pages, not detail/attempt/bundle pages
+    show_analytics_filters = is_analytics and not has_uuid
     is_detail = has_uuid and not is_create and not is_bundle and not is_attempt
 
     # A list page is one that matches a known list route (no UUID, not "new")
