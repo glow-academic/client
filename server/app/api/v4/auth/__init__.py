@@ -4,6 +4,7 @@ from fastapi import APIRouter
 
 from app.api.v4.auth.analytics import router as analytics_router
 from app.api.v4.auth.attempt import router as attempt_router
+from app.api.v4.auth.callback import router as callback_router
 from app.api.v4.auth.drafts import router as drafts_router
 from app.api.v4.auth.email import router as email_router
 from app.api.v4.auth.emulate import router as emulate_router
@@ -28,4 +29,5 @@ router.include_router(email_router)
 router.include_router(upsert_router)
 router.include_router(simulatable_router)
 router.include_router(emulate_router)
+router.include_router(callback_router)
 # Note: default_idp_router moved to root level in main.py (infrastructure-level, not versioned)

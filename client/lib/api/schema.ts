@@ -8525,6 +8525,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/auth/callback": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Auth Callback
+         * @description Lightweight redirect resolution — returns only redirect_path.
+         */
+        post: operations["get_auth_callback_api_v4_auth_callback_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/socket/v4/client/connect": {
         parameters: {
             query?: never;
@@ -25894,6 +25914,11 @@ export interface components {
              * @default false
              */
             has_messages: boolean;
+        };
+        /** GetAuthCallbackApiResponse */
+        GetAuthCallbackApiResponse: {
+            /** Redirect Path */
+            redirect_path: string;
         };
         /** GetAuthItemKeysApiRequest */
         GetAuthItemKeysApiRequest: {
@@ -66490,6 +66515,43 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CreateEmulationGrantApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_auth_callback_api_v4_auth_callback_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GetProfileContextApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetAuthCallbackApiResponse"];
                 };
             };
             /** @description Validation Error */

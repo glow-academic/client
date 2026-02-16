@@ -1104,6 +1104,17 @@ def get_available_subsections_for_role(role: ProfileRole) -> list[str]:
     return sorted(subsections)
 
 
+def compute_redirect_path(role: str | None, first_available_route: str | None) -> str:
+    """Compute the landing page redirect path for a profile.
+
+    Business layer override: member/instructional/admin/superadmin always land on /home.
+    All other roles (guest, custom, etc.) use their first available route.
+    """
+    if role in ("member", "instructional", "admin", "superadmin"):
+        return "/home"
+    return first_available_route or "/home"
+
+
 def get_redirect_path_for_role(role: ProfileRole) -> str:
     """Get the redirect path for a user when access is denied."""
     redirect_map = {

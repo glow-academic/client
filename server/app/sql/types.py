@@ -1944,6 +1944,33 @@ class RecordProfileLoginApiResponse(BaseModel):
 
 
 
+# Generated from: resolve_callback_redirect
+
+class ResolveCallbackRedirectSqlParams(BaseModel):
+
+    p_profile_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.p_profile_id,
+        )
+
+class ResolveCallbackRedirectSqlRow(BaseModel):
+
+    role: str | None = None
+    redirect_path: str | None = None
+
+class ResolveCallbackRedirectApiRequest(BaseModel):
+
+    p_profile_id: UUID
+
+class ResolveCallbackRedirectApiResponse(BaseModel):
+
+    role: str | None = None
+    redirect_path: str | None = None
+
+
+
 # Generated from: resolve_default_idp_profile
 
 class ResolveDefaultIdpProfileSqlParams(BaseModel):
@@ -11076,7 +11103,6 @@ class GetProfileContextAccessSqlRow(BaseModel):
     scoped_roles: list[str] | None = None
     available_sections: list[str] | None = None
     available_routes: list[str] | None = None
-    redirect_path: str | None = None
     actor_name: str | None = None
     artifact_agent_ids: list[QGetProfileContextAccessV4ArtifactAgent] | None = None
 
@@ -11100,7 +11126,6 @@ class GetProfileContextAccessApiResponse(BaseModel):
     scoped_roles: list[str] | None = None
     available_sections: list[str] | None = None
     available_routes: list[str] | None = None
-    redirect_path: str | None = None
     actor_name: str | None = None
     artifact_agent_ids: list[QGetProfileContextAccessV4ArtifactAgent] | None = None
 
@@ -27240,6 +27265,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "RecordProfileLoginApiRequest",
         "RecordProfileLoginApiResponse",
     ),
+    "app/sql/v4/queries/auth/resolve_callback_redirect_complete.sql": (
+        "ResolveCallbackRedirectSqlParams",
+        "ResolveCallbackRedirectSqlRow",
+        "ResolveCallbackRedirectApiRequest",
+        "ResolveCallbackRedirectApiResponse",
+    ),
     "app/sql/v4/queries/auth/resolve_default_idp_profile_complete.sql": (
         "ResolveDefaultIdpProfileSqlParams",
         "ResolveDefaultIdpProfileSqlRow",
@@ -31018,6 +31049,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/queries/auth/record_profile_login_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/auth/resolve_callback_redirect_complete.sql"]
     ) -> SqlString: ...
 
     @overload

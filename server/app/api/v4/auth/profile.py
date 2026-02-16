@@ -11,6 +11,7 @@ import asyncpg
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 from app.api.v4.auth.access import get_access_internal
+from app.api.v4.auth.callback import resolve_redirect_path
 from app.api.v4.auth.permissions import convert_role
 from app.api.v4.auth.types import AuthProfileInternalData, GetAuthProfileApiResponse
 from app.api.v4.resources.cohorts.get import get_cohorts_internal
@@ -112,8 +113,20 @@ async def get_auth_profile(
 
         bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
 
+        pool = get_pool()
+        if not pool:
+            raise HTTPException(status_code=500, detail="Database pool not available")
+
         pass1_start = time.time()
-        data = await get_auth_profile_internal(conn, profile_id, bypass_cache)
+
+        async def fetch_redirect():
+            async with pool.acquire() as c:
+                return await resolve_redirect_path(c, profile_id)
+
+        data, redirect_path = await asyncio.gather(
+            get_auth_profile_internal(conn, profile_id, bypass_cache),
+            fetch_redirect(),
+        )
         pass1_time = (time.time() - pass1_start) * 1000
 
         access = data.access
@@ -136,7 +149,7 @@ async def get_auth_profile(
             scoped_roles=access.scoped_roles,
             available_sections=access.available_sections,
             available_routes=access.available_routes,
-            redirect_path=access.redirect_path,
+            redirect_path=redirect_path,
             role_resources=data.role_resources,
             session_id=data.session_id,
             actor_name=access.actor_name,

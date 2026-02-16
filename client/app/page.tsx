@@ -17,7 +17,7 @@ export default function RootPage() {
 
     // Redirect to Keycloak login
     signIn("keycloak", {
-      callbackUrl: "/home",
+      callbackUrl: "/callback",
     });
   }, []);
 

@@ -67,7 +67,6 @@ RETURNS TABLE (
     scoped_roles text[],
     available_sections text[],
     available_routes text[],
-    redirect_path text,
     actor_name text,
     -- Artifact agent IDs
     artifact_agent_ids types.q_get_profile_context_access_v4_artifact_agent[]
@@ -251,25 +250,6 @@ available_sections_computed AS (
           AND split_part(route_path, '/', 2) <> ''
     ) routes
 ),
-redirect_path_computed AS (
-    SELECT
-        CASE
-            WHEN pt.role IS NULL THEN NULL::text
-            WHEN pt.role = 'guest'::profile_type THEN '/practice'::text
-            WHEN pt.role = 'member'::profile_type THEN '/home'::text
-            WHEN pt.role = 'instructional'::profile_type THEN '/analytics/dashboard'::text
-            WHEN pt.role = 'admin'::profile_type THEN '/analytics/dashboard'::text
-            WHEN pt.role = 'superadmin'::profile_type THEN '/analytics/dashboard'::text
-            ELSE COALESCE(
-                (SELECT route_path FROM UNNEST((SELECT available_routes FROM available_routes_data)) as route_path
-                 WHERE route_path NOT LIKE '%[%'
-                 ORDER BY route_path
-                 LIMIT 1),
-                '/home'::text
-            )
-        END as redirect_path
-    FROM profile_type pt
-),
 artifact_agent_ids_data AS (
     -- Check which artifacts have at least one qualifying agent via two paths:
     -- 1. Direct: artifact -> artifact_resources_relation -> tool resources
@@ -371,7 +351,6 @@ SELECT
     (SELECT scoped_roles FROM scoped_roles_computed) as scoped_roles,
     (SELECT available_sections FROM available_sections_computed) as available_sections,
     (SELECT available_routes FROM available_routes_data) as available_routes,
-    (SELECT redirect_path FROM redirect_path_computed) as redirect_path,
     (SELECT actor_name FROM actor_name_computed) as actor_name,
     -- Artifact agent IDs
     (SELECT artifact_agent_ids FROM artifact_agent_ids_data) as artifact_agent_ids
