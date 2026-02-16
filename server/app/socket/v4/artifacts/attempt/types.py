@@ -317,12 +317,12 @@ class AttemptAssistantStartEvent(BaseModel):
 class AttemptAssistantDeltaEvent(BaseModel):
     """Server-to-client event: attempt_assistant_delta.
 
-    Emitted during message generation with accumulated content.
+    Emitted during message generation with resolved content.
+    Frontend listens on group_id, like all other AI generation logic.
     """
 
-    chat_id: str
-    message_id: str
-    content: str  # accumulated content
+    group_id: str
+    content: str
 
 
 class AttemptAssistantAudioEvent(BaseModel):

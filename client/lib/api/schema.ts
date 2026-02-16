@@ -18553,13 +18553,12 @@ export interface components {
          * AttemptAssistantDeltaEvent
          * @description Server-to-client event: attempt_assistant_delta.
          *
-         *     Emitted during message generation with accumulated content.
+         *     Emitted during message generation with resolved content.
+         *     Frontend listens on group_id, like all other AI generation logic.
          */
         AttemptAssistantDeltaEvent: {
-            /** Chat Id */
-            chat_id: string;
-            /** Message Id */
-            message_id: string;
+            /** Group Id */
+            group_id: string;
             /** Content */
             content: string;
         };

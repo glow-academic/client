@@ -8,7 +8,6 @@ from typing import Any
 
 from fastapi import APIRouter
 
-from app.infra.v4.websocket.attempt.run_store import get_run_context
 from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
 from app.main import get_internal_sio, sio
 from app.socket.v4.artifacts.attempt.types import (
@@ -75,26 +74,24 @@ async def handle_attempt_progress(data: dict[str, Any]) -> None:
     # resolved_fields is populated natively by generate.py from the tool's
     # output schema (args_outputs_resource templates). The "content" field
     # maps to the displayable assistant message content.
+    # Frontend listens on group_id, like all other AI generation logic.
     event_type = data.get("event_type")
     if event_type == "tool_call_delta":
-        run_id = data.get("run_id")
-        if run_id:
-            ctx = get_run_context(run_id)
-            if ctx:
-                resolved = data.get("resolved_fields")
-                if isinstance(resolved, dict):
-                    content = resolved.get("content")
-                    if content:
-                        delta_event = AttemptAssistantDeltaEvent(
-                            chat_id=ctx.chat_id,
-                            message_id=ctx.message_id,
-                            content=content,
-                        )
-                        await sio.emit(
-                            "attempt_assistant_delta",
-                            delta_event.model_dump(mode="json"),
-                            room=sid,
-                        )
+        group_id = data.get("group_id")
+        if group_id:
+            resolved = data.get("resolved_fields")
+            if isinstance(resolved, dict):
+                content = resolved.get("content")
+                if content:
+                    delta_event = AttemptAssistantDeltaEvent(
+                        group_id=group_id,
+                        content=content,
+                    )
+                    await sio.emit(
+                        "attempt_assistant_delta",
+                        delta_event.model_dump(mode="json"),
+                        room=sid,
+                    )
 
 
 # =============================================================================

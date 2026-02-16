@@ -27,7 +27,6 @@ from app.api.v4.artifacts.attempt.types import GetAttemptWebsocketResponse
 from app.api.v4.resources.instructions.get import get_instructions_internal
 from app.api.v4.resources.prompts.get import get_prompts_internal
 from app.infra.v4.generation import convert_tools_to_dict, render_developer_instructions
-from app.infra.v4.websocket.attempt.run_store import set_run_context
 from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
 from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.infra.v4.websocket.typed_emit import emit_to_internal
@@ -511,10 +510,7 @@ async def _attempt_message_impl(
         run_id = str(prepare_row.run_id)
         group_id_str = str(group_id) if group_id else None
 
-        # Step 7: Cache run context for streaming deltas (avoids DB query per delta)
-        set_run_context(run_id, str(data.chat_id), assistant_message_id)
-
-        # Step 9: Build Jinja context from pre-fetched data
+        # Step 7: Build Jinja context from pre-fetched data
         jinja_context = _build_attempt_jinja_context(result)
 
         # Inject views into jinja context for template access
