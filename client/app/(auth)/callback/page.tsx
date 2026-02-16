@@ -1,6 +1,7 @@
 /**
- * app/(main)/callback/page.tsx
+ * app/(auth)/callback/page.tsx
  * Post-login routing page — resolves redirect_path via lightweight endpoint and redirects.
+ * Lives in (auth) group to bypass the (main) layout access checks.
  * Only runs once after auth; users are free to navigate anywhere after.
  */
 
