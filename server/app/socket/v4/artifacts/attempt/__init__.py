@@ -35,6 +35,7 @@ from . import (
     end,
     end_all,
     error,
+    generate,
     grade,
     join,
     leave,
@@ -52,6 +53,7 @@ __all__ = [
     "end",
     "end_all",
     "error",
+    "generate",
     "grade",
     "join",
     "leave",
@@ -67,6 +69,7 @@ client_router = APIRouter()
 server_router = APIRouter()
 
 # Register client-to-server events
+client_router.include_router(generate.client_router)
 client_router.include_router(message.client_router)
 client_router.include_router(grade.client_router)
 client_router.include_router(join.client_router)
@@ -79,6 +82,7 @@ client_router.include_router(responses.client_router)
 client_router.include_router(start.client_router)
 
 # Register server-to-client events
+server_router.include_router(generate.server_router)
 server_router.include_router(message.server_router)
 server_router.include_router(grade.server_router)
 server_router.include_router(progress.server_router)

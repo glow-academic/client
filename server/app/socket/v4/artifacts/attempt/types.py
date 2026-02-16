@@ -34,6 +34,16 @@ ATTEMPT_GRADE_ENTRY_TYPES = [
     "highlights",
     "replacements",
 ]
+ATTEMPT_ENTRY_TYPES = [
+    "contents",
+    "hints",
+    "feedbacks",
+    "strengths",
+    "improvements",
+    "analyses",
+    "highlights",
+    "replacements",
+]
 
 
 # =============================================================================
@@ -496,3 +506,34 @@ class AttemptUnifiedErrorEvent(BaseModel):
     run_id: str | None = None
     type: str | None = None  # "send", "stop", "end", "audio", "quiz", "hint"
     message: str
+
+
+# =============================================================================
+# Unified Generate Event Types (attempt_generate)
+# =============================================================================
+
+
+class GenerateAttemptPayload(BaseModel):
+    """Request payload for attempt_generate WebSocket event.
+
+    Unified handler that accepts entry_types to filter which tools are fetched.
+    Callers (message.py, grade.py) handle domain-specific mutations outside,
+    then call attempt_generate with their entry_types and messages.
+    """
+
+    attempt_id: UUID
+    entry_types: list[str]
+    user_instructions: list[str] | None = None
+
+
+class AttemptGenerationStartedEvent(BaseModel):
+    """Server-to-client event: attempt_generation_started.
+
+    Emitted when attempt generation begins, listing which entry types
+    will be generated.
+    """
+
+    artifact_type: str = "attempt"
+    group_id: str
+    run_id: str
+    entry_types: list[str]

@@ -15,9 +15,11 @@ from pydantic import BaseModel, Field
 from app.api.v4.views.attempt.chats.types import ChatViewItem
 from app.api.v4.views.attempt.list.types import AttemptViewItem
 from app.api.v4.views.attempt.messages.types import MessageViewItem
+from app.api.v4.views.run.list.types import GetRunListViewResponse
 from app.sql.types import (
     QGetAgentsV4Item,
     QGetModelsV4Item,
+    QGetProfilesV4Item,
     QGetProvidersV4Item,
     QGetToolsV4Item,
 )
@@ -498,6 +500,7 @@ class AttemptViews(BaseModel):
     simulation_attempts: list[AttemptViewItem] | None = None
     simulation_chats: list[ChatData] | None = None
     simulation_messages: list[MessageData] | None = None
+    runs: GetRunListViewResponse | None = None
 
 
 class SimulationData(BaseModel):
@@ -704,6 +707,8 @@ class AttemptWebsocketResources(BaseModel):
     models: list[QGetModelsV4Item] | None = None
     providers: list[QGetProvidersV4Item] | None = None
     tools: list[QGetToolsV4Item] | None = None
+    # Profile config (for rate limiting)
+    config_profile: list[QGetProfilesV4Item] | None = None
 
 
 class GetAttemptWebsocketResponse(BaseModel):
