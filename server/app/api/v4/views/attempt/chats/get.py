@@ -1,4 +1,4 @@
-"""Get endpoint for attempt chats view."""
+"""Get endpoint for attempt chats view (lean — no composites)."""
 
 from typing import Annotated, Any
 from uuid import UUID
@@ -7,13 +7,10 @@ import asyncpg
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 from app.api.v4.views.attempt.chats.types import (
-    AnalysisItem,
     ChatViewItem,
-    FeedbackItem,
     GetChatsRequest,
     GetChatsResponse,
     GradeItem,
-    ResponseItem,
 )
 from app.infra.v4.activity.audit import audit_activity
 from app.infra.v4.error.handle_route_error import handle_route_error
@@ -34,18 +31,10 @@ async def get_attempt_chats_internal(
     attempt_ids: list[UUID] | None = None,
     bypass_cache: bool = False,
 ) -> list[ChatViewItem]:
-    """Internal function for fetching chat data.
+    """Internal function for fetching lean chat data.
 
-    This can be reused by analytics routes that need chat data.
-
-    Args:
-        conn: Database connection
-        attempt_id: Single attempt ID (backward compat, wraps to list)
-        attempt_ids: Multiple attempt IDs to fetch chats for
-        bypass_cache: Skip cache lookup
-
-    Returns:
-        List of ChatViewItem objects
+    Lean: entry attrs + resource IDs + grade scalars only. Composites
+    (feedbacks, analyses, responses) fetched via simulation/* views.
     """
     from app.sql.types import (
         GetAttemptChatsViewSqlParams,
@@ -68,37 +57,10 @@ async def get_attempt_chats_internal(
 
     result = await execute_sql_typed(conn, SQL_PATH, params=params)
 
-    # Transform to response items
+    # Transform to response items (no composite transforms needed)
     items: list[ChatViewItem] = []
     if result and result.items:
         for item in result.items:
-            # Transform feedbacks
-            feedbacks = None
-            if item.feedbacks:
-                feedbacks = [
-                    FeedbackItem(
-                        id=f.id,
-                        standard_id=f.standard_id,
-                        standard_name=f.standard_name,
-                        total=f.total,
-                        feedback=f.feedback,
-                    )
-                    for f in item.feedbacks
-                ]
-
-            # Transform responses
-            responses = None
-            if item.responses:
-                responses = [
-                    ResponseItem(
-                        question_id=r.question_id,
-                        option_id=r.option_id,
-                        completed=r.completed,
-                        created_at=r.created_at,
-                    )
-                    for r in item.responses
-                ]
-
             # Transform grade
             grade = None
             if item.grade:
@@ -109,11 +71,6 @@ async def get_attempt_chats_internal(
                     total_points=item.grade.total_points,
                     pass_points=item.grade.pass_points,
                 )
-
-            # Transform analyses
-            analyses = None
-            if item.analyses:
-                analyses = [AnalysisItem(content=a.content) for a in item.analyses]
 
             items.append(
                 ChatViewItem(
@@ -130,31 +87,20 @@ async def get_attempt_chats_internal(
                     show_images=item.show_images,
                     show_objectives=item.show_objectives,
                     show_problem_statement=item.show_problem_statement,
-                    # Time limit (denormalized)
                     time_limit_seconds=item.time_limit_seconds,
-                    # Negative time flag (allows timer to go negative)
                     negative=item.negative,
-                    # Chat metadata (top-level, position/is_current derived in service layer)
                     created_at=item.created_at,
                     completed=item.completed or False,
-                    # Grade (composite)
                     grade=grade,
-                    feedbacks=feedbacks,
-                    analyses=analyses,
-                    # Resource IDs - Normal/General View
                     persona_ids=list(item.persona_ids) if item.persona_ids else None,
                     objective_ids=list(item.objective_ids)
                     if item.objective_ids
                     else None,
-                    # Resource IDs - Video/Quiz View
                     question_ids=list(item.question_ids) if item.question_ids else None,
                     option_ids=list(item.option_ids) if item.option_ids else None,
-                    responses=responses,
-                    # Resource IDs - Both Views
                     image_ids=list(item.image_ids) if item.image_ids else None,
                     video_ids=list(item.video_ids) if item.video_ids else None,
                     document_ids=list(item.document_ids) if item.document_ids else None,
-                    # Rubric/Grade resource IDs
                     standard_group_ids=list(item.standard_group_ids)
                     if item.standard_group_ids
                     else None,
@@ -189,10 +135,7 @@ async def get_chats(
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> GetChatsResponse:
-    """Get attempt chat data from the materialized view.
-
-    This endpoint fetches chat-level data with resource metadata JOINed.
-    """
+    """Get attempt chat data from the materialized view."""
     tags = ["views", "attempt", "chats"]
 
     # Check for cache bypass header

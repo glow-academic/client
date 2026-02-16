@@ -2,39 +2,6 @@
 -- Chat-level data for attempt detail views.
 
 DO $$
-BEGIN
-    CREATE TYPE types.mv_feedback AS (
-        id uuid,
-        standard_id uuid,
-        total float,
-        feedback text
-    );
-EXCEPTION WHEN duplicate_object THEN
-    NULL;
-END $$;
-
-DO $$
-BEGIN
-    CREATE TYPE types.mv_response AS (
-        question_id uuid,
-        option_id uuid,
-        completed boolean,
-        created_at timestamptz
-    );
-EXCEPTION WHEN duplicate_object THEN
-    NULL;
-END $$;
-
-DO $$
-BEGIN
-    CREATE TYPE types.mv_analysis AS (
-        content text
-    );
-EXCEPTION WHEN duplicate_object THEN
-    NULL;
-END $$;
-
-DO $$
 DECLARE
     r RECORD;
 BEGIN
@@ -64,28 +31,6 @@ latest_grade AS (
     FROM simulation_grades_entry g
     WHERE g.active = TRUE
     ORDER BY g.chat_id, g.created_at DESC
-),
-feedbacks_agg AS (
-    SELECT
-        fe.grade_id,
-        ARRAY_AGG(
-            (fe.id, fsc.standard_id, fe.total::float, fe.feedback)::types.mv_feedback
-            ORDER BY fe.created_at
-        ) AS feedbacks
-    FROM simulation_feedbacks_entry fe
-    LEFT JOIN feedbacks_standards_connection fsc ON fsc.feedbacks_id = fe.id
-    WHERE fe.active = TRUE
-    GROUP BY fe.grade_id
-),
-analyses_agg AS (
-    SELECT
-        ae.grade_id,
-        ARRAY_AGG(
-            ROW(ae.content)::types.mv_analysis
-            ORDER BY ae.created_at
-        ) AS analyses
-    FROM simulation_analyses_entry ae
-    GROUP BY ae.grade_id
 ),
 subbundle_snapshot AS (
     SELECT
@@ -140,24 +85,6 @@ subbundle_snapshot AS (
         te.show_images,
         te.show_objectives,
         te.show_problem_statement
-),
-responses_agg AS (
-    SELECT
-        r.chat_id,
-        ARRAY_AGG(
-            (
-                rqc.question_id,
-                roc.option_id,
-                r.completed,
-                r.created_at
-            )::types.mv_response
-            ORDER BY r.created_at
-        ) FILTER (WHERE r.id IS NOT NULL) AS responses
-    FROM responses_entry r
-    LEFT JOIN responses_questions_connection rqc ON rqc.responses_id = r.id AND rqc.active = TRUE
-    LEFT JOIN responses_options_connection roc ON roc.responses_id = r.id AND roc.active = TRUE
-    WHERE r.active = TRUE
-    GROUP BY r.chat_id
 ),
 legacy_rubric AS (
     SELECT DISTINCT ON (grc.grade_id)
@@ -227,14 +154,11 @@ SELECT
     lg.grade_time_taken,
     lg.grade_total_points,
     lg.grade_pass_points,
-    COALESCE(fa.feedbacks, ARRAY[]::types.mv_feedback[]) AS feedbacks,
-    COALESCE(aa.analyses, ARRAY[]::types.mv_analysis[]) AS analyses,
     bc.problem_statement_id,
     bc.persona_ids,
     bc.objective_ids,
     bc.question_ids,
     bc.option_ids,
-    COALESCE(ra.responses, ARRAY[]::types.mv_response[]) AS responses,
     bc.image_ids,
     bc.video_ids,
     bc.document_ids,
@@ -242,9 +166,6 @@ SELECT
     bc.standard_ids
 FROM base_chats bc
 LEFT JOIN latest_grade lg ON lg.chat_id = bc.chat_id
-LEFT JOIN feedbacks_agg fa ON fa.grade_id = bc.grade_id
-LEFT JOIN analyses_agg aa ON aa.grade_id = bc.grade_id
-LEFT JOIN responses_agg ra ON ra.chat_id = bc.chat_id
 WITH NO DATA;
 
 CREATE UNIQUE INDEX mv_attempt_chats_pk

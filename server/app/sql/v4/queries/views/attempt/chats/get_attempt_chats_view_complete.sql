@@ -44,23 +44,6 @@ END $$;
 -- Step 3: Create composite types
 -- ============================================================================
 
--- Feedback item type
-CREATE TYPE types.q_get_attempt_chats_view_v4_feedback AS (
-    id uuid,
-    standard_id uuid,
-    standard_name text,
-    total float,
-    feedback text
-);
-
--- Response item type (matches types.mv_response from MV - no response_id)
-CREATE TYPE types.q_get_attempt_chats_view_v4_response AS (
-    question_id uuid,
-    option_id uuid,
-    completed boolean,
-    created_at timestamptz
-);
-
 -- Grade composite type (no grade_id - not a resource)
 CREATE TYPE types.q_get_attempt_chats_view_v4_grade AS (
     score float,
@@ -68,11 +51,6 @@ CREATE TYPE types.q_get_attempt_chats_view_v4_grade AS (
     time_taken int,
     total_points int,
     pass_points int
-);
-
--- Analysis item type
-CREATE TYPE types.q_get_attempt_chats_view_v4_analysis AS (
-    content text
 );
 
 -- Main chat item type (IDs from MV - metadata fetched separately via internal handlers)
@@ -112,12 +90,6 @@ CREATE TYPE types.q_get_attempt_chats_view_v4_item AS (
     -- Grade (composite type - no id, no rubric points)
     grade types.q_get_attempt_chats_view_v4_grade,
 
-    -- Feedbacks (with standard name JOINed)
-    feedbacks types.q_get_attempt_chats_view_v4_feedback[],
-
-    -- Analyses (chat-level analysis content)
-    analyses types.q_get_attempt_chats_view_v4_analysis[],
-
     -- Resource IDs - Normal/General View (plural arrays)
     persona_ids uuid[],
     objective_ids uuid[],
@@ -125,7 +97,6 @@ CREATE TYPE types.q_get_attempt_chats_view_v4_item AS (
     -- Resource IDs - Video/Quiz View (plural arrays)
     question_ids uuid[],
     option_ids uuid[],
-    responses types.q_get_attempt_chats_view_v4_response[],
 
     -- Resource IDs - Both Views (plural arrays)
     image_ids uuid[],
@@ -157,63 +128,7 @@ AS $$
         FROM mv_attempt_chats mv
         WHERE mv.attempt_id = ANY(attempt_ids_filter)
     ),
-    -- Transform feedbacks with standard names
-    feedbacks_transformed AS (
-        SELECT
-            mv.chat_id,
-            COALESCE(
-                ARRAY_AGG(
-                    (
-                        (f).id,
-                        (f).standard_id,
-                        std.name,
-                        (f).total,
-                        (f).feedback
-                    )::types.q_get_attempt_chats_view_v4_feedback
-                    ORDER BY (f).id
-                ) FILTER (WHERE (f).id IS NOT NULL),
-                ARRAY[]::types.q_get_attempt_chats_view_v4_feedback[]
-            ) AS feedbacks
-        FROM mv_data mv
-        LEFT JOIN LATERAL unnest(mv.feedbacks) AS f ON true
-        LEFT JOIN standards_resource std ON std.id = (f).standard_id AND std.active = TRUE
-        GROUP BY mv.chat_id
-    ),
-    -- Transform responses to query type
-    responses_transformed AS (
-        SELECT
-            mv.chat_id,
-            COALESCE(
-                ARRAY_AGG(
-                    (
-                        (r).question_id,
-                        (r).option_id,
-                        (r).completed,
-                        (r).created_at
-                    )::types.q_get_attempt_chats_view_v4_response
-                    ORDER BY (r).created_at
-                ) FILTER (WHERE (r).question_id IS NOT NULL),
-                ARRAY[]::types.q_get_attempt_chats_view_v4_response[]
-            ) AS responses
-        FROM mv_data mv
-        LEFT JOIN LATERAL unnest(mv.responses) AS r ON true
-        GROUP BY mv.chat_id
-    ),
-    -- Transform analyses to query type
-    analyses_transformed AS (
-        SELECT
-            mv.chat_id,
-            COALESCE(
-                ARRAY_AGG(
-                    ROW((a).content)::types.q_get_attempt_chats_view_v4_analysis
-                ) FILTER (WHERE (a).content IS NOT NULL),
-                ARRAY[]::types.q_get_attempt_chats_view_v4_analysis[]
-            ) AS analyses
-        FROM mv_data mv
-        LEFT JOIN LATERAL unnest(mv.analyses) AS a ON true
-        GROUP BY mv.chat_id
-    ),
-    -- No resource JOINs needed - all metadata fetched via internal handlers
+    -- Pass through from mv_data - no resource JOINs needed
     with_resources AS (
         SELECT
             mv.chat_id,
@@ -239,17 +154,12 @@ AS $$
             mv.chat_completed AS completed,
             -- Grade (composite type)
             (mv.grade_score, mv.grade_passed, mv.grade_time_taken, mv.grade_total_points, mv.grade_pass_points)::types.q_get_attempt_chats_view_v4_grade AS grade,
-            -- Feedbacks
-            ft.feedbacks,
-            -- Analyses
-            at.analyses,
             -- Resource IDs - Normal/General View
             mv.persona_ids,
             mv.objective_ids,
             -- Resource IDs - Video/Quiz View
             mv.question_ids,
             mv.option_ids,
-            rt.responses,
             -- Resource IDs - Both Views
             mv.image_ids,
             mv.video_ids,
@@ -258,9 +168,6 @@ AS $$
             mv.standard_group_ids,
             mv.standard_ids
         FROM mv_data mv
-        LEFT JOIN feedbacks_transformed ft ON ft.chat_id = mv.chat_id
-        LEFT JOIN responses_transformed rt ON rt.chat_id = mv.chat_id
-        LEFT JOIN analyses_transformed at ON at.chat_id = mv.chat_id
     ),
     -- Aggregate into array
     items_agg AS (
@@ -285,13 +192,10 @@ AS $$
                     created_at,
                     completed,
                     grade,
-                    feedbacks,
-                    analyses,
                     persona_ids,
                     objective_ids,
                     question_ids,
                     option_ids,
-                    responses,
                     image_ids,
                     video_ids,
                     document_ids,

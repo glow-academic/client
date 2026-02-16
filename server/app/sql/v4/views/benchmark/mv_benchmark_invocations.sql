@@ -6,30 +6,14 @@
 --
 -- Purpose: Provides invocation-level resource IDs and grade data for
 -- parallel fetching. Follows mv_attempt_chats pattern: resource-ID-rich
--- via bundle_snapshot, grade/feedback data denormalized.
+-- via bundle_snapshot, grade data denormalized. Feedbacks fetched separately
+-- via mv_benchmark_feedbacks using grade_id.
 --
 -- Two sources of run IDs:
 --   invocation_run_ids: actual execution runs (benchmark_invocations_runs_connection)
 --   run_ids: configured template runs (benchmark_bundle_departments_runs_connection)
 --
 -- Dependencies: Only uses _entry and _connection tables
--- ============================================================================
--- Step 0: Create composite type for benchmark feedback
--- ============================================================================
-
-DO $$
-BEGIN
-    CREATE TYPE types.mv_benchmark_feedback AS (
-        id uuid,
-        total integer,
-        feedback text,
-        total_points integer,
-        pass_points integer
-    );
-EXCEPTION WHEN duplicate_object THEN
-    NULL;
-END $$;
-
 -- ============================================================================
 -- Step 1: Drop all indexes on mv_benchmark_invocations materialized view (if it exists)
 -- ============================================================================
@@ -89,18 +73,6 @@ grade_rubric AS (
     FROM latest_grade lg
     JOIN benchmark_grades_rubrics_connection grc ON grc.grade_id = lg.grade_id
     ORDER BY lg.invocation_id
-),
--- Feedbacks aggregated per grade
-feedbacks_agg AS (
-    SELECT
-        fe.grade_id,
-        ARRAY_AGG(
-            (fe.id, fe.total, fe.feedback, fe.total_points, fe.pass_points)::types.mv_benchmark_feedback
-            ORDER BY fe.created_at
-        ) AS feedbacks
-    FROM benchmark_feedbacks_entry fe
-    WHERE fe.active = TRUE
-    GROUP BY fe.grade_id
 ),
 -- ============================================================================
 -- Bundle snapshot: configured resource IDs from benchmark_bundle_departments_*
@@ -167,11 +139,11 @@ SELECT
 
     -- Grade data
     (lg.invocation_id IS NOT NULL) AS invocation_completed,
+    lg.grade_id,
     lg.grade_score,
     lg.grade_passed,
     lg.grade_time_taken,
     gr.rubric_id,
-    COALESCE(fa.feedbacks, ARRAY[]::types.mv_benchmark_feedback[]) AS feedbacks,
 
     -- Actual execution runs (from invocation-level connection)
     COALESCE(irl.invocation_run_ids, ARRAY[]::uuid[]) AS invocation_run_ids,
@@ -197,7 +169,6 @@ FROM benchmark_invocations_entry i
 LEFT JOIN invocation_run_links irl ON irl.invocation_id = i.id
 LEFT JOIN latest_grade lg ON lg.invocation_id = i.id
 LEFT JOIN grade_rubric gr ON gr.invocation_id = i.id
-LEFT JOIN feedbacks_agg fa ON fa.grade_id = lg.grade_id
 LEFT JOIN bundle_snapshot bs ON bs.benchmark_bundle_department_id = i.benchmark_bundle_department_id
 LEFT JOIN historical_runs hr ON hr.invocation_id = i.id
 WHERE i.active = true

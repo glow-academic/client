@@ -5,68 +5,10 @@
 -- Filter: archived = FALSE only
 -- Note: Practice filtering done at attempt level, position derived in service layer
 --
--- Purpose: Provides message-level data with strengths/improvements for parallel fetching
+-- Purpose: Provides lean message-level data for parallel fetching
 -- Section: ATTEMPT (unified view - both home and practice)
 --
 -- Dependencies: Only uses _entry and _connection tables
--- ============================================================================
--- Step 0: Drop and recreate composite types for message feedback
--- ============================================================================
-
--- Create types if they don't exist (shared with mv_home_messages)
--- Note: message_id removed from nested types - implied by parent message
-DO $$
-BEGIN
-    CREATE TYPE types.mv_highlight AS (
-        section text,
-        idx int
-    );
-EXCEPTION WHEN duplicate_object THEN
-    NULL;
-END $$;
-
-DO $$
-BEGIN
-    CREATE TYPE types.mv_replacement AS (
-        section text,
-        replace_text text,
-        idx int
-    );
-EXCEPTION WHEN duplicate_object THEN
-    NULL;
-END $$;
-
--- Drop and recreate strength type (id/message_id removed - implied by parent)
-DROP TYPE IF EXISTS types.mv_strength CASCADE;
-CREATE TYPE types.mv_strength AS (
-    name text,
-    description text,
-    highlights types.mv_highlight[]
-);
-
--- Drop and recreate improvement type (id/message_id removed - implied by parent)
-DROP TYPE IF EXISTS types.mv_improvement CASCADE;
-CREATE TYPE types.mv_improvement AS (
-    name text,
-    description text,
-    replacements types.mv_replacement[]
-);
-
--- Drop and recreate hint type (message_id removed - implied by parent)
-DROP TYPE IF EXISTS types.mv_hint CASCADE;
-CREATE TYPE types.mv_hint AS (
-    hint text,
-    idx int
-);
-
--- Drop and recreate mv_content type (id removed, only persona_id - metadata fetched via handler)
-DROP TYPE IF EXISTS types.mv_content CASCADE;
-CREATE TYPE types.mv_content AS (
-    content text,
-    persona_id uuid,        -- persona ID (NULL for user messages, fetch metadata via handler)
-    created_at timestamptz
-);
-
 -- ============================================================================
 -- Step 1: Drop all indexes on mv_attempt_messages materialized view (if it exists)
 -- ============================================================================
@@ -97,113 +39,6 @@ DROP MATERIALIZED VIEW IF EXISTS mv_attempt_messages CASCADE;
 
 CREATE MATERIALIZED VIEW mv_attempt_messages AS
 WITH
--- Aggregate highlights per strength
-highlights_agg AS (
-    SELECT
-        h.strength_id,
-        ARRAY_AGG(
-            (h.section, h.idx)::types.mv_highlight
-            ORDER BY h.idx
-        ) AS highlights
-    FROM simulation_highlights_entry h
-    WHERE h.active = TRUE
-    GROUP BY h.strength_id
-),
--- Aggregate strengths per message with their highlights (id/message_id removed - implied)
-strengths_agg AS (
-    SELECT
-        s.message_id,
-        ARRAY_AGG(
-            (s.name, s.description,
-             COALESCE(ha.highlights, ARRAY[]::types.mv_highlight[]))::types.mv_strength
-            ORDER BY s.created_at
-        ) AS strengths
-    FROM simulation_strengths_entry s
-    LEFT JOIN highlights_agg ha ON ha.strength_id = s.id
-    WHERE s.active = TRUE
-    GROUP BY s.message_id
-),
--- Aggregate replacements per improvement
-replacements_agg AS (
-    SELECT
-        r.improvement_id,
-        ARRAY_AGG(
-            (r.section, r.replace, r.idx)::types.mv_replacement
-            ORDER BY r.idx
-        ) AS replacements
-    FROM simulation_replacements_entry r
-    WHERE r.active = TRUE
-    GROUP BY r.improvement_id
-),
--- Aggregate improvements per message with their replacements (id/message_id removed - implied)
-improvements_agg AS (
-    SELECT
-        i.message_id,
-        ARRAY_AGG(
-            (i.name, i.description,
-             COALESCE(ra.replacements, ARRAY[]::types.mv_replacement[]))::types.mv_improvement
-            ORDER BY i.created_at
-        ) AS improvements
-    FROM simulation_improvements_entry i
-    LEFT JOIN replacements_agg ra ON ra.improvement_id = i.id
-    WHERE i.active = TRUE
-    GROUP BY i.message_id
-),
--- Aggregate hints per message (PRACTICE-specific, message_id removed - implied)
-hints_agg AS (
-    SELECT
-        h.message_id,
-        ARRAY_AGG(
-            (h.hint, h.idx)::types.mv_hint
-            ORDER BY h.idx
-        ) AS hints
-    FROM (
-        SELECT
-            h.message_id,
-            h.hint,
-            (ROW_NUMBER() OVER (PARTITION BY h.message_id ORDER BY h.created_at) - 1)::int AS idx
-        FROM simulation_hints_entry h
-        WHERE h.active = TRUE
-    ) h
-    GROUP BY h.message_id
-),
--- Aggregate contents per message (id removed, only persona_id - metadata fetched via handler)
-contents_agg AS (
-    SELECT
-        sce.message_id AS message_id,
-        ARRAY_AGG(
-            (
-                sce.content,
-                sce.persona_id,
-                sce.created_at
-            )::types.mv_content
-            ORDER BY sce.created_at
-        ) AS contents
-    FROM simulation_contents_entry sce
-    WHERE sce.active = TRUE
-    GROUP BY sce.message_id
-),
--- Recursive branch construction
--- Roots = messages that never appear as child_id in the tree
-branch_agg AS (
-    SELECT message_id, branch_path, depth FROM (
-        WITH RECURSIVE walk AS (
-            SELECT sm.id AS message_id, sm.chat_id,
-                   ARRAY[sm.id] AS branch_path, 0 AS depth
-            FROM simulation_messages_entry sm
-            LEFT JOIN simulation_message_tree_entry smt
-                ON smt.child_id = sm.id AND smt.active = true
-            WHERE smt.child_id IS NULL
-            UNION ALL
-            SELECT smt.child_id, w.chat_id,
-                   w.branch_path || smt.child_id, w.depth + 1
-            FROM simulation_message_tree_entry smt
-            JOIN walk w ON w.message_id = smt.parent_id
-            WHERE smt.active = true
-        )
-        SELECT * FROM walk
-    ) sub
-),
 -- Audio entry ID per message
 audio_agg AS (
     SELECT ae.message_id, ae.id AS audio_id
@@ -231,9 +66,6 @@ base_messages AS (
         rra.runs_id,
         -- History content (for LLM context)
         te.content AS history_content,
-        -- Branch path and depth
-        ba.branch_path,
-        ba.depth,
         -- Audio resource ID
         aa.audio_id
     FROM simulation_messages_entry sm
@@ -242,7 +74,6 @@ base_messages AS (
     JOIN simulation_attempts_entry a ON a.id = c.attempt_id
     LEFT JOIN runs_resource_agg rra ON rra.run_id = m.run_id
     LEFT JOIN texts_entry te ON te.id = m.text_id
-    LEFT JOIN branch_agg ba ON ba.message_id = sm.id
     LEFT JOIN audio_agg aa ON aa.message_id = sm.id
     WHERE m.active = TRUE
       AND c.active = TRUE
@@ -269,30 +100,10 @@ SELECT
     -- History content (for LLM context)
     bm.history_content,
 
-    -- Contents array with persona_id (metadata fetched via handler)
-    COALESCE(ca.contents, ARRAY[]::types.mv_content[]) AS contents,
-
-    -- Strengths with highlights (denormalized, message_id implied)
-    COALESCE(sa.strengths, ARRAY[]::types.mv_strength[]) AS strengths,
-
-    -- Improvements with replacements (denormalized, message_id implied)
-    COALESCE(ia.improvements, ARRAY[]::types.mv_improvement[]) AS improvements,
-
-    -- Hints (PRACTICE-specific, denormalized, message_id implied)
-    COALESCE(ha.hints, ARRAY[]::types.mv_hint[]) AS hints,
-
-    -- Branch path and depth (from recursive tree walk)
-    COALESCE(bm.branch_path, ARRAY[bm.message_id]) AS branch_path,
-    COALESCE(bm.depth, 0) AS depth,
-
     -- Audio resource ID
     bm.audio_id
 
 FROM base_messages bm
-LEFT JOIN contents_agg ca ON ca.message_id = bm.message_id
-LEFT JOIN strengths_agg sa ON sa.message_id = bm.message_id
-LEFT JOIN improvements_agg ia ON ia.message_id = bm.message_id
-LEFT JOIN hints_agg ha ON ha.message_id = bm.message_id
 WITH NO DATA;
 
 -- ============================================================================

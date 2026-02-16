@@ -97,6 +97,26 @@ from app.api.v4.resources.videos.get import get_videos_internal
 from app.api.v4.views.attempt.chats.get import get_attempt_chats_internal
 from app.api.v4.views.attempt.list.get import get_attempt_list_internal
 from app.api.v4.views.attempt.messages.get import get_attempt_messages_internal
+from app.api.v4.views.simulation.analyses.get import get_simulation_analyses_internal
+from app.api.v4.views.simulation.contents.get import get_simulation_contents_internal
+from app.api.v4.views.simulation.feedbacks.get import get_simulation_feedbacks_internal
+from app.api.v4.views.simulation.grades.get import get_simulation_grades_internal
+from app.api.v4.views.simulation.highlights.get import (
+    get_simulation_highlights_internal,
+)
+from app.api.v4.views.simulation.hints.get import get_simulation_hints_internal
+from app.api.v4.views.simulation.improvements.get import (
+    get_simulation_improvements_internal,
+)
+from app.api.v4.views.simulation.replacements.get import (
+    get_simulation_replacements_internal,
+)
+from app.api.v4.views.simulation.responses.get import (
+    get_simulation_responses_internal,
+)
+from app.api.v4.views.simulation.strengths.get import (
+    get_simulation_strengths_internal,
+)
 from app.api.v4.views.upload.list.get import get_upload_list_view_internal
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
@@ -442,12 +462,198 @@ async def get_attempt_internal(
 
             return result
 
-        # === EXECUTE ALL QUERIES IN PARALLEL ===
+        # === EXECUTE PASS 1: CORE VIEWS IN PARALLEL ===
         attempt_result, chats_result, messages_result = await asyncio.gather(
             fetch_attempt(attempt_id),
             fetch_chats(attempt_id),
             fetch_messages(attempt_id),
         )
+
+        # === PASS 2: FETCH ENTRY-LEVEL DATA BY PARENT IDs ===
+        message_ids = [m.message_id for m in (messages_result or [])]
+        chat_ids = [c.chat_id for c in (chats_result or [])]
+
+        if message_ids or chat_ids:
+
+            async def fetch_contents() -> list:
+                if not message_ids:
+                    return []
+                async with pool.acquire() as c:
+                    return await get_simulation_contents_internal(
+                        c, message_ids=message_ids, bypass_cache=bypass_cache
+                    )
+
+            async def fetch_strengths() -> list:
+                if not message_ids:
+                    return []
+                async with pool.acquire() as c:
+                    return await get_simulation_strengths_internal(
+                        c, message_ids=message_ids, bypass_cache=bypass_cache
+                    )
+
+            async def fetch_improvements() -> list:
+                if not message_ids:
+                    return []
+                async with pool.acquire() as c:
+                    return await get_simulation_improvements_internal(
+                        c, message_ids=message_ids, bypass_cache=bypass_cache
+                    )
+
+            async def fetch_hints() -> list:
+                if not message_ids:
+                    return []
+                async with pool.acquire() as c:
+                    return await get_simulation_hints_internal(
+                        c, message_ids=message_ids, bypass_cache=bypass_cache
+                    )
+
+            async def fetch_grades() -> list:
+                if not chat_ids:
+                    return []
+                async with pool.acquire() as c:
+                    return await get_simulation_grades_internal(
+                        c, chat_ids=chat_ids, bypass_cache=bypass_cache
+                    )
+
+            async def fetch_responses() -> list:
+                if not chat_ids:
+                    return []
+                async with pool.acquire() as c:
+                    return await get_simulation_responses_internal(
+                        c, chat_ids=chat_ids, bypass_cache=bypass_cache
+                    )
+
+            (
+                contents_result,
+                strengths_result,
+                improvements_result,
+                hints_result,
+                grades_result,
+                responses_result,
+            ) = await asyncio.gather(
+                fetch_contents(),
+                fetch_strengths(),
+                fetch_improvements(),
+                fetch_hints(),
+                fetch_grades(),
+                fetch_responses(),
+            )
+        else:
+            contents_result = []
+            strengths_result = []
+            improvements_result = []
+            hints_result = []
+            grades_result = []
+            responses_result = []
+
+        # === PASS 3: FETCH GRANDCHILD DATA ===
+        strength_ids = [s.strength_id for s in strengths_result]
+        improvement_ids = [i.improvement_id for i in improvements_result]
+        grade_ids = [g.grade_id for g in grades_result]
+
+        if strength_ids or improvement_ids or grade_ids:
+
+            async def fetch_highlights() -> list:
+                if not strength_ids:
+                    return []
+                async with pool.acquire() as c:
+                    return await get_simulation_highlights_internal(
+                        c, strength_ids=strength_ids, bypass_cache=bypass_cache
+                    )
+
+            async def fetch_replacements() -> list:
+                if not improvement_ids:
+                    return []
+                async with pool.acquire() as c:
+                    return await get_simulation_replacements_internal(
+                        c, improvement_ids=improvement_ids, bypass_cache=bypass_cache
+                    )
+
+            async def fetch_feedbacks() -> list:
+                if not grade_ids:
+                    return []
+                async with pool.acquire() as c:
+                    return await get_simulation_feedbacks_internal(
+                        c, grade_ids=grade_ids, bypass_cache=bypass_cache
+                    )
+
+            async def fetch_analyses() -> list:
+                if not grade_ids:
+                    return []
+                async with pool.acquire() as c:
+                    return await get_simulation_analyses_internal(
+                        c, grade_ids=grade_ids, bypass_cache=bypass_cache
+                    )
+
+            (
+                highlights_result,
+                replacements_result,
+                feedbacks_result,
+                analyses_result,
+            ) = await asyncio.gather(
+                fetch_highlights(),
+                fetch_replacements(),
+                fetch_feedbacks(),
+                fetch_analyses(),
+            )
+        else:
+            highlights_result = []
+            replacements_result = []
+            feedbacks_result = []
+            analyses_result = []
+
+        # === BUILD LOOKUP DICTS (group children by parent FK) ===
+        from collections import defaultdict as _defaultdict
+
+        contents_by_message: dict[UUID, list] = _defaultdict(list)
+        for c in contents_result:
+            if c.message_id:
+                contents_by_message[c.message_id].append(c)
+
+        strengths_by_message: dict[UUID, list] = _defaultdict(list)
+        for s in strengths_result:
+            if s.message_id:
+                strengths_by_message[s.message_id].append(s)
+
+        improvements_by_message: dict[UUID, list] = _defaultdict(list)
+        for i in improvements_result:
+            if i.message_id:
+                improvements_by_message[i.message_id].append(i)
+
+        hints_by_message: dict[UUID, list] = _defaultdict(list)
+        for h in hints_result:
+            if h.message_id:
+                hints_by_message[h.message_id].append(h)
+
+        highlights_by_strength: dict[UUID, list] = _defaultdict(list)
+        for h in highlights_result:
+            if h.strength_id:
+                highlights_by_strength[h.strength_id].append(h)
+
+        replacements_by_improvement: dict[UUID, list] = _defaultdict(list)
+        for r in replacements_result:
+            if r.improvement_id:
+                replacements_by_improvement[r.improvement_id].append(r)
+
+        grades_by_chat: dict[UUID, Any] = {}
+        for g in grades_result:
+            if g.chat_id:
+                grades_by_chat[g.chat_id] = g
+
+        feedbacks_by_grade: dict[UUID, list] = _defaultdict(list)
+        for f in feedbacks_result:
+            if f.grade_id:
+                feedbacks_by_grade[f.grade_id].append(f)
+
+        analyses_by_grade: dict[UUID, list] = _defaultdict(list)
+        for a in analyses_result:
+            if a.grade_id:
+                analyses_by_grade[a.grade_id].append(a)
+
+        responses_by_chat: dict[UUID, list] = _defaultdict(list)
+        for r in responses_result:
+            if r.chat_id:
+                responses_by_chat[r.chat_id].append(r)
 
         if not attempt_result or not attempt_result.items:
             return AttemptInternalData(
@@ -896,59 +1102,64 @@ async def get_attempt_internal(
         is_own_attempt = attempt_item.profile_id == profiles_id
 
         for msg in messages_result or []:
-            feedbacks: list[MessageFeedbackEntry] = []
-            if msg.strengths:
-                for idx, s in enumerate(msg.strengths):
-                    highlights: list[HighlightEntry] = []
-                    if s.highlights:
-                        for h in s.highlights:
-                            highlights.append(
-                                HighlightEntry(section=h.section, idx=h.idx)
-                            )
-                    feedback_id = f"{msg.message_id}-strength-{idx}"
-                    feedbacks.append(
-                        MessageFeedbackEntry(
-                            id=feedback_id,
-                            name=s.name,
-                            description=s.description,
-                            type="strength",
-                            highlights=highlights,
-                            replaces=None,
+            msg_feedbacks: list[MessageFeedbackEntry] = []
+
+            # Strengths (from parallel-fetched lookup)
+            msg_strengths = strengths_by_message.get(msg.message_id, [])
+            for idx, s in enumerate(msg_strengths):
+                highlights: list[HighlightEntry] = []
+                for h in highlights_by_strength.get(s.strength_id, []):
+                    highlights.append(HighlightEntry(section=h.section, idx=h.idx))
+                feedback_id = f"{msg.message_id}-strength-{idx}"
+                msg_feedbacks.append(
+                    MessageFeedbackEntry(
+                        id=feedback_id,
+                        name=s.name,
+                        description=s.description,
+                        type="strength",
+                        highlights=highlights if highlights else None,
+                        replaces=None,
+                    )
+                )
+
+            # Improvements (from parallel-fetched lookup)
+            msg_improvements = improvements_by_message.get(msg.message_id, [])
+            for idx, i in enumerate(msg_improvements):
+                replaces: list[ReplacementEntry] = []
+                for r in replacements_by_improvement.get(i.improvement_id, []):
+                    replaces.append(
+                        ReplacementEntry(
+                            section=r.section,
+                            replace=r.replace_text,
+                            idx=r.idx,
                         )
                     )
-
-            if msg.improvements:
-                for idx, i in enumerate(msg.improvements):
-                    replaces: list[ReplacementEntry] = []
-                    if i.replacements:
-                        for r in i.replacements:
-                            replaces.append(
-                                ReplacementEntry(
-                                    section=r.section,
-                                    replace=r.replace_text,
-                                    idx=r.idx,
-                                )
-                            )
-                    feedback_id = f"{msg.message_id}-improvement-{idx}"
-                    feedbacks.append(
-                        MessageFeedbackEntry(
-                            id=feedback_id,
-                            name=i.name,
-                            description=i.description,
-                            type="improvement",
-                            highlights=None,
-                            replaces=replaces,
-                        )
+                feedback_id = f"{msg.message_id}-improvement-{idx}"
+                msg_feedbacks.append(
+                    MessageFeedbackEntry(
+                        id=feedback_id,
+                        name=i.name,
+                        description=i.description,
+                        type="improvement",
+                        highlights=None,
+                        replaces=replaces if replaces else None,
                     )
+                )
 
-            hints: list[HintEntry] | None = None
-            if msg.hints:
-                hints = [HintEntry(hint=h.hint, idx=h.idx) for h in msg.hints]
+            # Hints (from parallel-fetched lookup)
+            msg_hints_list = hints_by_message.get(msg.message_id, [])
+            hints: list[HintEntry] | None = (
+                [HintEntry(hint=h.hint, idx=h.idx) for h in msg_hints_list]
+                if msg_hints_list
+                else None
+            )
 
+            # Contents (from parallel-fetched lookup)
+            msg_contents = contents_by_message.get(msg.message_id, [])
             contents: list[ContentEntry] | None = None
-            if msg.contents:
+            if msg_contents:
                 contents = []
-                for c in msg.contents:
+                for c in msg_contents:
                     persona_meta = (
                         resource_meta["personas"].get(c.persona_id, {})
                         if c.persona_id
@@ -987,7 +1198,7 @@ async def get_attempt_internal(
                     created_at=(msg.created_at.isoformat() if msg.created_at else None),
                     completed=msg.completed,
                     contents=contents,
-                    feedbacks=feedbacks if feedbacks else None,
+                    feedbacks=msg_feedbacks if msg_feedbacks else None,
                     hints=hints,
                 )
             )
@@ -1010,39 +1221,50 @@ async def get_attempt_internal(
                     pass_points=rubric_meta.get("pass_points"),
                 )
 
-            feedbacks: list[FeedbackEntry] = []
-            if chat_item.feedbacks:
-                for fb in chat_item.feedbacks:
-                    std_group_id = None
-                    if fb.standard_id:
-                        std_meta = resource_meta["standards"].get(fb.standard_id, {})
-                        std_group_id = std_meta.get("standard_group_id")
-                    feedbacks.append(
-                        FeedbackEntry(
-                            id=fb.id,
-                            standard_id=fb.standard_id,
-                            standard_group_id=std_group_id,
-                            total=fb.total,
-                            feedback=fb.feedback,
-                        )
-                    )
+            # Get grade object for this chat to look up feedbacks/analyses
+            chat_grade_obj = grades_by_chat.get(chat_item.chat_id)
+            chat_grade_id = chat_grade_obj.grade_id if chat_grade_obj else None
 
+            # Feedbacks from simulation feedbacks view (keyed by grade_id)
+            feedbacks: list[FeedbackEntry] = []
+            chat_feedbacks = (
+                feedbacks_by_grade.get(chat_grade_id, []) if chat_grade_id else []
+            )
+            for fb in chat_feedbacks:
+                std_group_id = None
+                if fb.standard_id:
+                    std_meta = resource_meta["standards"].get(fb.standard_id, {})
+                    std_group_id = std_meta.get("standard_group_id")
+                feedbacks.append(
+                    FeedbackEntry(
+                        id=fb.feedback_id,
+                        standard_id=fb.standard_id,
+                        standard_group_id=std_group_id,
+                        total=fb.total,
+                        feedback=fb.feedback,
+                    )
+                )
+
+            # Analyses from simulation analyses view (keyed by grade_id)
             analyses_entries: list[AnalysisEntry] | None = None
-            if chat_item.analyses:
+            chat_analyses = (
+                analyses_by_grade.get(chat_grade_id, []) if chat_grade_id else []
+            )
+            if chat_analyses:
                 analyses_entries = [
-                    AnalysisEntry(content=a.content) for a in chat_item.analyses
+                    AnalysisEntry(content=a.content) for a in chat_analyses
                 ]
 
             grading_state_data: GradingStateData | None = None
-            if chat_item.grade or chat_item.feedbacks:
+            if chat_item.grade or chat_feedbacks:
                 achieved_dict: dict[str, bool] = {}
                 passed_dict: dict[str, bool] = {}
                 feedback_dict: dict[str, str] = {}
 
-                if chat_item.feedbacks:
+                if chat_feedbacks:
                     feedbacks_dicts = [
                         {"standard_id": fb.standard_id, "total": fb.total}
-                        for fb in chat_item.feedbacks
+                        for fb in chat_feedbacks
                     ]
 
                     achieved_raw = compute_achieved_standards(feedbacks_dicts)
@@ -1063,7 +1285,7 @@ async def get_attempt_internal(
                             if std_id:
                                 passed_dict[str(std_id)] = p.get("passed", False)
 
-                    for fb in chat_item.feedbacks:
+                    for fb in chat_feedbacks:
                         if fb.standard_id and fb.feedback:
                             feedback_dict[str(fb.standard_id)] = fb.feedback
 
@@ -1107,10 +1329,9 @@ async def get_attempt_internal(
                                 completed=r.completed,
                                 created_at=r.created_at,
                             )
-                            for r in chat_item.responses
+                            for r in responses_by_chat.get(chat_item.chat_id, [])
                         ]
-                        if chat_item.responses
-                        else None
+                        or None
                     ),
                     document_ids=chat_item.document_ids,
                     rubric_id=chat_item.rubric_id,

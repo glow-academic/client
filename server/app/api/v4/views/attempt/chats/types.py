@@ -1,28 +1,9 @@
-"""Types for attempt chats view."""
+"""Types for attempt chats view (lean — no composites)."""
 
 from datetime import datetime
 from uuid import UUID
 
 from pydantic import BaseModel, Field
-
-
-class FeedbackItem(BaseModel):
-    """Feedback item with standard info."""
-
-    id: UUID
-    standard_id: UUID | None = None
-    standard_name: str | None = None
-    total: float | None = None
-    feedback: str | None = None
-
-
-class ResponseItem(BaseModel):
-    """Quiz response item (no response_id - not a resource)."""
-
-    question_id: UUID | None = None
-    option_id: UUID | None = None
-    completed: bool | None = None
-    created_at: datetime | None = None
 
 
 class GradeItem(BaseModel):
@@ -35,14 +16,12 @@ class GradeItem(BaseModel):
     pass_points: int | None = None
 
 
-class AnalysisItem(BaseModel):
-    """Analysis item with content."""
-
-    content: str | None = None
-
-
 class ChatViewItem(BaseModel):
-    """Single chat from the attempt chats view."""
+    """Single chat from the attempt chats view.
+
+    Lean: entry attrs + resource IDs + grade scalars only. Composites
+    (feedbacks, analyses, responses) fetched via simulation/* views.
+    """
 
     # Primary key
     chat_id: UUID
@@ -79,12 +58,6 @@ class ChatViewItem(BaseModel):
     # Grade (composite type - no id, no rubric points)
     grade: GradeItem | None = None
 
-    # Feedbacks
-    feedbacks: list[FeedbackItem] | None = None
-
-    # Analyses
-    analyses: list[AnalysisItem] | None = None
-
     # Resource IDs - Normal/General View (plural arrays)
     persona_ids: list[UUID] | None = None
     objective_ids: list[UUID] | None = None
@@ -92,7 +65,6 @@ class ChatViewItem(BaseModel):
     # Resource IDs - Video/Quiz View (plural arrays)
     question_ids: list[UUID] | None = None
     option_ids: list[UUID] | None = None
-    responses: list[ResponseItem] | None = None
 
     # Resource IDs - Both Views (plural arrays)
     image_ids: list[UUID] | None = None

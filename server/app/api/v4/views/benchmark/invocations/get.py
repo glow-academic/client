@@ -1,4 +1,4 @@
-"""Get endpoint for benchmark invocations view (mv_benchmark_invocations)."""
+"""Get endpoint for benchmark invocations view (lean — no composites)."""
 
 from typing import Annotated
 from uuid import UUID
@@ -7,7 +7,6 @@ import asyncpg
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 from app.api.v4.views.benchmark.invocations.types import (
-    BenchmarkFeedbackItem,
     BenchmarkInvocationViewItem,
     GetBenchmarkInvocationsRequest,
     GetBenchmarkInvocationsResponse,
@@ -31,7 +30,11 @@ async def get_benchmark_invocations_internal(
     invocation_ids: list[UUID] | None = None,
     bypass_cache: bool = False,
 ) -> list[BenchmarkInvocationViewItem]:
-    """Internal function for reading benchmark invocation rows."""
+    """Internal function for reading lean benchmark invocation rows.
+
+    Lean: entry attrs + resource IDs + grade scalars only. Feedbacks
+    fetched via simulation/benchmark_feedbacks view.
+    """
     from app.sql.types import GetBenchmarkInvocationsViewSqlParams
 
     normalized_invocation_ids = invocation_ids or []
@@ -61,20 +64,6 @@ async def get_benchmark_invocations_internal(
     items: list[BenchmarkInvocationViewItem] = []
     if result and result.items:
         for item in result.items:
-            # Transform feedbacks
-            feedbacks = None
-            if item.feedbacks:
-                feedbacks = [
-                    BenchmarkFeedbackItem(
-                        id=f.id,
-                        total=f.total,
-                        feedback=f.feedback,
-                        total_points=f.total_points,
-                        pass_points=f.pass_points,
-                    )
-                    for f in item.feedbacks
-                ]
-
             items.append(
                 BenchmarkInvocationViewItem(
                     invocation_id=item.invocation_id,
@@ -88,7 +77,7 @@ async def get_benchmark_invocations_internal(
                     grade_passed=item.grade_passed,
                     grade_time_taken=item.grade_time_taken,
                     rubric_id=item.rubric_id,
-                    feedbacks=feedbacks,
+                    grade_id=item.grade_id,
                     invocation_run_ids=list(item.invocation_run_ids)
                     if item.invocation_run_ids
                     else [],

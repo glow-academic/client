@@ -1,4 +1,4 @@
-"""Types for benchmark invocations view (mv_benchmark_invocations)."""
+"""Types for benchmark invocations view (lean — no composites)."""
 
 from datetime import datetime
 from uuid import UUID
@@ -6,18 +6,12 @@ from uuid import UUID
 from pydantic import BaseModel, Field
 
 
-class BenchmarkFeedbackItem(BaseModel):
-    """Feedback item from benchmark grade."""
-
-    id: UUID | None = None
-    total: int | None = None
-    feedback: str | None = None
-    total_points: int | None = None
-    pass_points: int | None = None
-
-
 class BenchmarkInvocationViewItem(BaseModel):
-    """Single benchmark invocation row from mv_benchmark_invocations."""
+    """Single benchmark invocation row from mv_benchmark_invocations.
+
+    Lean: entry attrs + resource IDs + grade scalars only. Feedbacks
+    fetched via simulation/benchmark_feedbacks view.
+    """
 
     # Primary key
     invocation_id: UUID
@@ -37,9 +31,7 @@ class BenchmarkInvocationViewItem(BaseModel):
     grade_passed: bool | None = None
     grade_time_taken: int | None = None
     rubric_id: UUID | None = None
-
-    # Feedbacks
-    feedbacks: list[BenchmarkFeedbackItem] | None = None
+    grade_id: UUID | None = None
 
     # Actual execution runs (from invocation-level connection)
     invocation_run_ids: list[UUID] = Field(default_factory=list)

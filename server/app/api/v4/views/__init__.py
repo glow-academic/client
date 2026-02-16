@@ -24,6 +24,7 @@ from app.api.v4.views.metric import router as metric_router
 from app.api.v4.views.problem import router as problem_router
 from app.api.v4.views.run import router as run_router
 from app.api.v4.views.session import router as session_router
+from app.api.v4.views.simulation import router as simulation_router
 from app.api.v4.views.text import router as text_router
 from app.api.v4.views.training import router as training_router
 from app.api.v4.views.upload import router as upload_router
@@ -53,3 +54,4 @@ router.include_router(image_router)
 router.include_router(video_router)
 router.include_router(grant_router)
 router.include_router(audio_router)
+router.include_router(simulation_router)

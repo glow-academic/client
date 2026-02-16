@@ -1,4 +1,4 @@
-"""Get endpoint for attempt messages view."""
+"""Get endpoint for attempt messages view (lean — no composites)."""
 
 from typing import Annotated, Any
 from uuid import UUID
@@ -7,15 +7,9 @@ import asyncpg
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 from app.api.v4.views.attempt.messages.types import (
-    ContentItem,
     GetMessagesRequest,
     GetMessagesResponse,
-    HighlightItem,
-    HintItem,
-    ImprovementItem,
     MessageViewItem,
-    ReplacementItem,
-    StrengthItem,
 )
 from app.infra.v4.activity.audit import audit_activity
 from app.infra.v4.error.handle_route_error import handle_route_error
@@ -37,18 +31,10 @@ async def get_attempt_messages_internal(
     attempt_id: UUID,
     bypass_cache: bool = False,
 ) -> list[MessageViewItem]:
-    """Internal function for fetching message data.
+    """Internal function for fetching lean message data.
 
-    This can be reused by analytics routes that need message data.
-    Note: Practice filtering is done at attempt level, not here.
-
-    Args:
-        conn: Database connection
-        attempt_id: Attempt ID to fetch messages for
-        bypass_cache: Skip cache lookup
-
-    Returns:
-        List of MessageViewItem objects
+    Lean: entry attrs + resource IDs only. Composites (contents, strengths,
+    improvements, hints, branch_path) fetched via simulation/* views.
     """
     from app.sql.types import (
         GetAttemptMessagesViewSqlParams,
@@ -69,71 +55,10 @@ async def get_attempt_messages_internal(
 
     result = await execute_sql_typed(conn, SQL_PATH, params=params)
 
-    # Transform to response items
+    # Transform to response items (flat — no composite transforms needed)
     items: list[MessageViewItem] = []
     if result and result.items:
         for item in result.items:
-            # Transform strengths (id/message_id implied by parent)
-            strengths = None
-            if item.strengths:
-                strengths = [
-                    StrengthItem(
-                        name=s.name,
-                        description=s.description,
-                        highlights=[
-                            HighlightItem(section=h.section, idx=h.idx)
-                            for h in (s.highlights or [])
-                        ]
-                        if s.highlights
-                        else None,
-                    )
-                    for s in item.strengths
-                ]
-
-            # Transform improvements (id/message_id implied by parent)
-            improvements = None
-            if item.improvements:
-                improvements = [
-                    ImprovementItem(
-                        name=i.name,
-                        description=i.description,
-                        replacements=[
-                            ReplacementItem(
-                                section=r.section,
-                                replace_text=r.replace_text,
-                                idx=r.idx,
-                            )
-                            for r in (i.replacements or [])
-                        ]
-                        if i.replacements
-                        else None,
-                    )
-                    for i in item.improvements
-                ]
-
-            # Transform hints (message_id implied by parent)
-            hints = None
-            if item.hints:
-                hints = [
-                    HintItem(
-                        hint=h.hint,
-                        idx=h.idx,
-                    )
-                    for h in item.hints
-                ]
-
-            # Transform contents (id removed, only persona_id - metadata fetched via handler)
-            contents = None
-            if item.contents:
-                contents = [
-                    ContentItem(
-                        content=c.content,
-                        persona_id=c.persona_id,
-                        created_at=c.created_at,
-                    )
-                    for c in item.contents
-                ]
-
             items.append(
                 MessageViewItem(
                     message_id=item.message_id,
@@ -144,10 +69,7 @@ async def get_attempt_messages_internal(
                     completed=item.completed or False,
                     runs_id=item.runs_id,
                     history_content=item.history_content,
-                    contents=contents,
-                    strengths=strengths,
-                    improvements=improvements,
-                    hints=hints,
+                    audio_id=item.audio_id,
                 )
             )
 
@@ -178,10 +100,7 @@ async def get_messages(
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> GetMessagesResponse:
-    """Get attempt message data from the materialized view.
-
-    This endpoint fetches message-level data with strengths/improvements.
-    """
+    """Get attempt message data from the materialized view."""
     tags = ["views", "attempt", "messages"]
 
     # Check for cache bypass header

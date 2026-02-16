@@ -1,0 +1,47 @@
+"""Refresh endpoint for simulation hints view."""
+
+import time
+from typing import Annotated
+
+import asyncpg
+from fastapi import APIRouter, Depends, HTTPException, Request
+
+from app.api.v4.views.types import RefreshResponse
+from app.infra.v4.activity.audit import audit_activity
+from app.main import get_db
+from app.utils.cache.invalidate_tags import invalidate_tags
+
+router = APIRouter()
+
+
+@router.post(
+    "/refresh",
+    response_model=RefreshResponse,
+    dependencies=[
+        audit_activity(
+            "views.simulation.hints.refresh",
+            "{{ actor.name }} refreshed simulation hints view",
+        )
+    ],
+)
+async def refresh_hints_view(
+    http_request: Request,
+    conn: Annotated[asyncpg.Connection, Depends(get_db)],
+) -> RefreshResponse:
+    """Refresh the mv_simulation_hints materialized view concurrently."""
+    tags = ["views", "simulation", "hints"]
+    try:
+        start_time = time.time()
+        await conn.execute("REFRESH MATERIALIZED VIEW CONCURRENTLY mv_simulation_hints")
+        duration_ms = int((time.time() - start_time) * 1000)
+        await invalidate_tags(tags)
+        return RefreshResponse(
+            success=True,
+            method="concurrent",
+            message=f"Refreshed mv_simulation_hints in {duration_ms}ms",
+            duration_ms=duration_ms,
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, detail=f"Failed to refresh mv_simulation_hints: {str(e)}"
+        ) from e

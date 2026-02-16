@@ -44,15 +44,6 @@ END $$;
 -- Step 3: Create composite types
 -- ============================================================================
 
--- Feedback item type
-CREATE TYPE types.q_get_benchmark_invocations_view_v4_feedback AS (
-    id uuid,
-    total integer,
-    feedback text,
-    total_points integer,
-    pass_points integer
-);
-
 -- Main invocation item type (IDs from MV - metadata fetched separately via internal handlers)
 CREATE TYPE types.q_get_benchmark_invocations_view_v4_item AS (
     -- Primary key
@@ -73,9 +64,7 @@ CREATE TYPE types.q_get_benchmark_invocations_view_v4_item AS (
     grade_passed boolean,
     grade_time_taken integer,
     rubric_id uuid,
-
-    -- Feedbacks
-    feedbacks types.q_get_benchmark_invocations_view_v4_feedback[],
+    grade_id uuid,
 
     -- Actual execution runs (from invocation-level connection)
     invocation_run_ids uuid[],
@@ -120,27 +109,6 @@ AS $$
         WHERE (test_id_filter IS NULL OR mv.test_id = test_id_filter)
           AND (invocation_ids_filter IS NULL OR mv.invocation_id = ANY(invocation_ids_filter))
     ),
-    -- Transform feedbacks from MV composite type to query composite type
-    feedbacks_transformed AS (
-        SELECT
-            mv.invocation_id,
-            COALESCE(
-                ARRAY_AGG(
-                    (
-                        (f).id,
-                        (f).total,
-                        (f).feedback,
-                        (f).total_points,
-                        (f).pass_points
-                    )::types.q_get_benchmark_invocations_view_v4_feedback
-                    ORDER BY (f).id
-                ) FILTER (WHERE (f).id IS NOT NULL),
-                ARRAY[]::types.q_get_benchmark_invocations_view_v4_feedback[]
-            ) AS feedbacks
-        FROM mv_data mv
-        LEFT JOIN LATERAL unnest(mv.feedbacks) AS f ON true
-        GROUP BY mv.invocation_id
-    ),
     -- No resource JOINs needed - all metadata fetched via internal handlers
     with_resources AS (
         SELECT
@@ -155,7 +123,7 @@ AS $$
             mv.grade_passed,
             mv.grade_time_taken,
             mv.rubric_id,
-            ft.feedbacks,
+            mv.grade_id,
             -- Actual execution runs
             mv.invocation_run_ids,
             -- Configured resource IDs (from bundle department snapshot)
@@ -172,7 +140,6 @@ AS $$
             -- Historical runs
             mv.historical_run_ids
         FROM mv_data mv
-        LEFT JOIN feedbacks_transformed ft ON ft.invocation_id = mv.invocation_id
     ),
     -- Aggregate into array
     items_agg AS (
@@ -190,7 +157,7 @@ AS $$
                     grade_passed,
                     grade_time_taken,
                     rubric_id,
-                    feedbacks,
+                    grade_id,
                     invocation_run_ids,
                     run_ids,
                     group_ids,
