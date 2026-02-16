@@ -9,7 +9,7 @@ INSERT INTO public.args_resource (id, name, description, field_type, required, d
 INSERT INTO public.arg_positions_resource (id, args_id, value, created_at, active, generated, mcp) VALUES ('019c4e6b-2c29-794d-ae20-d0b93226bbb7', '019c06a8-2afd-7590-89aa-81ae6b3daaef', 0, '2026-02-11T20:36:12.457770+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.args_outputs_resource (id, args_id, name, template, created_at, active, generated, mcp) VALUES ('2b843f8b-d4f6-480c-a6a7-e9551d62ce68', '019c06a8-2afd-7590-89aa-81ae6b3daaef', 'id', '{{ name_id }}', '2026-01-30T14:58:36.217917+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.names_resource (id, name, created_at, active, generated, mcp) VALUES ('019c06a8-2af8-7e81-aa75-8c775f2e2513', 'use_names', '2026-01-28T22:10:10.283595+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
-INSERT INTO public.tools_resource (id, created_at, generated, mcp, active, name, description, department_ids, createable) VALUES ('019c06a8-2af6-727b-b94a-71bddc4d76de', '2026-01-28T22:10:10.283595+00:00', false, false, true, 'use_names', 'Use an existing name resource instead of creating a new one', '{}', false) ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.tools_resource (id, created_at, generated, mcp, active, name, description, department_ids, createable, args_ids, args_output_ids) VALUES ('019c06a8-2af6-727b-b94a-71bddc4d76de', '2026-01-28T22:10:10.283595+00:00', false, false, true, 'use_names', 'Use an existing name resource instead of creating a new one', '{}', false, '{019c06a8-2afd-7590-89aa-81ae6b3daaef}', '{2b843f8b-d4f6-480c-a6a7-e9551d62ce68}') ON CONFLICT (id) DO NOTHING;
 
 -- Artifact
 -- tool_artifact

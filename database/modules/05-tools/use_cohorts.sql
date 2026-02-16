@@ -9,7 +9,7 @@ INSERT INTO public.args_resource (id, name, description, field_type, required, d
 INSERT INTO public.arg_positions_resource (id, args_id, value, created_at, active, generated, mcp) VALUES ('019c4f27-1775-76af-bc48-e4cf1cbe1d1b', '019c4f27-1775-745a-a096-f4de5bc27d3f', 0, '2026-02-12T00:01:27.881501+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.descriptions_resource (id, description, created_at, active, generated, mcp) VALUES ('019c4f27-1774-7fbb-8439-ad4896b74cfa', 'Use an existing cohort resource instead of creating a new one', '2026-02-12T00:01:27.881501+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.names_resource (id, name, created_at, active, generated, mcp) VALUES ('019c4f27-1774-7e36-b2ab-c0b69abc135f', 'use_cohorts', '2026-02-12T00:01:27.881501+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
-INSERT INTO public.tools_resource (id, created_at, generated, mcp, active, name, description, department_ids, createable) VALUES ('019c4f27-1774-759b-acb1-e09575f36f0d', '2026-02-12T00:01:27.881501+00:00', false, false, true, 'use_cohorts', 'Use an existing cohort resource instead of creating a new one', '{}', false) ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.tools_resource (id, created_at, generated, mcp, active, name, description, department_ids, createable, args_ids, args_output_ids) VALUES ('019c4f27-1774-759b-acb1-e09575f36f0d', '2026-02-12T00:01:27.881501+00:00', false, false, true, 'use_cohorts', 'Use an existing cohort resource instead of creating a new one', '{}', false, '{019c4f27-1775-745a-a096-f4de5bc27d3f}', '{}') ON CONFLICT (id) DO NOTHING;
 
 -- Artifact
 -- tool_artifact

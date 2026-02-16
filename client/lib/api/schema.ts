@@ -38498,6 +38498,10 @@ export interface components {
             description: string | null;
             /** Generated */
             generated: boolean | null;
+            /** Args Ids */
+            args_ids: string[] | null;
+            /** Args Output Ids */
+            args_output_ids: string[] | null;
         };
         /** QGetUploadsV4Item */
         QGetUploadsV4Item: {

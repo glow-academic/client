@@ -9,7 +9,7 @@ INSERT INTO public.args_resource (id, name, description, field_type, required, d
 INSERT INTO public.arg_positions_resource (id, args_id, value, created_at, active, generated, mcp) VALUES ('019c4f27-177a-76a2-9345-70f4945d988e', '019c4f27-1779-7eb3-a4bc-57320ecfad6b', 0, '2026-02-12T00:01:27.881501+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.descriptions_resource (id, description, created_at, active, generated, mcp) VALUES ('019c4f27-1779-76b8-bc53-1e5ae8b096f5', 'Use an existing field resource instead of creating a new one', '2026-02-12T00:01:27.881501+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.names_resource (id, name, created_at, active, generated, mcp) VALUES ('019c4f27-1778-7d02-8698-2044fb15c804', 'use_fields', '2026-02-12T00:01:27.881501+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
-INSERT INTO public.tools_resource (id, created_at, generated, mcp, active, name, description, department_ids, createable) VALUES ('019c4f27-1778-7a54-b3bb-1574ff2c0357', '2026-02-12T00:01:27.881501+00:00', false, false, true, 'use_fields', 'Use an existing field resource instead of creating a new one', '{}', false) ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.tools_resource (id, created_at, generated, mcp, active, name, description, department_ids, createable, args_ids, args_output_ids) VALUES ('019c4f27-1778-7a54-b3bb-1574ff2c0357', '2026-02-12T00:01:27.881501+00:00', false, false, true, 'use_fields', 'Use an existing field resource instead of creating a new one', '{}', false, '{019c4f27-1779-7eb3-a4bc-57320ecfad6b}', '{}') ON CONFLICT (id) DO NOTHING;
 
 -- Artifact
 -- tool_artifact

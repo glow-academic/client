@@ -9,7 +9,7 @@ INSERT INTO public.args_resource (id, name, description, field_type, required, d
 INSERT INTO public.arg_positions_resource (id, args_id, value, created_at, active, generated, mcp) VALUES ('019c4e6b-2c29-795b-8726-6f9e5c53ddd3', '019c06a8-2afd-7525-a220-6e48dc0863e2', 0, '2026-02-11T20:36:12.457770+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.args_outputs_resource (id, args_id, name, template, created_at, active, generated, mcp) VALUES ('fabd979f-9ece-49ed-b1ab-93510b28085a', '019c06a8-2afd-7525-a220-6e48dc0863e2', 'id', '{{ flag_id }}', '2026-01-30T14:58:36.217917+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.names_resource (id, name, created_at, active, generated, mcp) VALUES ('019c06a8-2af8-7dd5-ab5a-e056fac9daed', 'use_flags', '2026-01-28T22:10:10.283595+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
-INSERT INTO public.tools_resource (id, created_at, generated, mcp, active, name, description, department_ids, createable) VALUES ('019c06a8-2af5-766c-9713-315ab9567235', '2026-01-28T22:10:10.283595+00:00', false, false, true, 'use_flags', 'Use an existing flag resource instead of creating a new one', '{}', false) ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.tools_resource (id, created_at, generated, mcp, active, name, description, department_ids, createable, args_ids, args_output_ids) VALUES ('019c06a8-2af5-766c-9713-315ab9567235', '2026-01-28T22:10:10.283595+00:00', false, false, true, 'use_flags', 'Use an existing flag resource instead of creating a new one', '{}', false, '{019c06a8-2afd-7525-a220-6e48dc0863e2}', '{fabd979f-9ece-49ed-b1ab-93510b28085a}') ON CONFLICT (id) DO NOTHING;
 
 -- Artifact
 -- tool_artifact

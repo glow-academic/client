@@ -9,7 +9,7 @@ INSERT INTO public.args_resource (id, name, description, field_type, required, d
 INSERT INTO public.arg_positions_resource (id, args_id, value, created_at, active, generated, mcp) VALUES ('019c4e6b-2c29-7985-8f97-88a3b73b629c', '019c0a2d-fc3b-7ed3-9540-bc9f25fd77fc', 0, '2026-02-11T20:36:12.457770+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.args_outputs_resource (id, args_id, name, template, created_at, active, generated, mcp) VALUES ('fd340494-667f-46da-8437-d1062b446449', '019c0a2d-fc3b-7ed3-9540-bc9f25fd77fc', 'id', '{{ objective_id }}', '2026-01-31T02:04:17.083661+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.names_resource (id, name, created_at, active, generated, mcp) VALUES ('019c0a2d-fc3a-7f6c-bfeb-e4d8fe48b7f7', 'use_objectives', '2026-01-29T14:35:11.795021+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
-INSERT INTO public.tools_resource (id, created_at, generated, mcp, active, name, description, department_ids, createable) VALUES ('019c0a2d-fc36-785a-9b6d-02eca12bb6e6', '2026-01-29T14:35:11.795021+00:00', false, false, true, 'use_objectives', 'Use an existing objective resource instead of creating a new one', '{}', false) ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.tools_resource (id, created_at, generated, mcp, active, name, description, department_ids, createable, args_ids, args_output_ids) VALUES ('019c0a2d-fc36-785a-9b6d-02eca12bb6e6', '2026-01-29T14:35:11.795021+00:00', false, false, true, 'use_objectives', 'Use an existing objective resource instead of creating a new one', '{}', false, '{019c0a2d-fc3b-7ed3-9540-bc9f25fd77fc}', '{fd340494-667f-46da-8437-d1062b446449}') ON CONFLICT (id) DO NOTHING;
 
 -- Artifact
 -- tool_artifact

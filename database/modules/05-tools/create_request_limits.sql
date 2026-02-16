@@ -10,7 +10,7 @@ INSERT INTO public.arg_positions_resource (id, args_id, value, created_at, activ
 INSERT INTO public.args_outputs_resource (id, args_id, name, template, created_at, active, generated, mcp) VALUES ('019bbf87-096b-7282-bdf7-f2c69c7c928c', '019bbf87-091f-73d5-a8ad-732972c98ac4', 'requests_per_day', '{{ requests_per_day }}', '2026-01-13T03:08:53.447664+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.descriptions_resource (id, description, created_at, active, generated, mcp) VALUES ('019bbabc-5a32-7bc1-9d27-945bcfb9e408', 'Create a new request limit resource', '2026-01-13T03:08:53.448220+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.names_resource (id, name, created_at, active, generated, mcp) VALUES ('019bbabc-5a32-7b2b-a01d-8db087986591', 'create_request_limits', '2026-01-13T03:08:53.448220+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
-INSERT INTO public.tools_resource (id, created_at, generated, mcp, active, name, description, department_ids, createable) VALUES ('019bebc4-d436-7cbe-a7bf-4b364674f3e0', '2026-01-17T17:57:40.632192+00:00', false, false, true, 'create_request_limits', 'Create a new request limit resource', '{}', false) ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.tools_resource (id, created_at, generated, mcp, active, name, description, department_ids, createable, args_ids, args_output_ids) VALUES ('019bebc4-d436-7cbe-a7bf-4b364674f3e0', '2026-01-17T17:57:40.632192+00:00', false, false, true, 'create_request_limits', 'Create a new request limit resource', '{}', false, '{019bbf87-091f-73d5-a8ad-732972c98ac4}', '{019bbf87-096b-7282-bdf7-f2c69c7c928c}') ON CONFLICT (id) DO NOTHING;
 
 -- Artifact
 -- tool_artifact

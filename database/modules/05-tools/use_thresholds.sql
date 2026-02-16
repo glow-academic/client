@@ -9,7 +9,7 @@ INSERT INTO public.args_resource (id, name, description, field_type, required, d
 INSERT INTO public.arg_positions_resource (id, args_id, value, created_at, active, generated, mcp) VALUES ('019c4f27-1785-7dc5-bbbb-506e97f7cc14', '019c4f27-1785-79cc-ab77-07debbfadcad', 0, '2026-02-12T00:01:27.881501+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.descriptions_resource (id, description, created_at, active, generated, mcp) VALUES ('019c4f27-1785-762f-a187-48d841e0aee2', 'Use an existing threshold resource instead of creating a new one', '2026-02-12T00:01:27.881501+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.names_resource (id, name, created_at, active, generated, mcp) VALUES ('019c4f27-1785-7591-a09e-97bcfed44f66', 'use_thresholds', '2026-02-12T00:01:27.881501+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
-INSERT INTO public.tools_resource (id, created_at, generated, mcp, active, name, description, department_ids, createable) VALUES ('019c4f27-1785-74f4-92c1-b909e5b7a7af', '2026-02-12T00:01:27.881501+00:00', false, false, true, 'use_thresholds', 'Use an existing threshold resource instead of creating a new one', '{}', false) ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.tools_resource (id, created_at, generated, mcp, active, name, description, department_ids, createable, args_ids, args_output_ids) VALUES ('019c4f27-1785-74f4-92c1-b909e5b7a7af', '2026-02-12T00:01:27.881501+00:00', false, false, true, 'use_thresholds', 'Use an existing threshold resource instead of creating a new one', '{}', false, '{019c4f27-1785-79cc-ab77-07debbfadcad}', '{}') ON CONFLICT (id) DO NOTHING;
 
 -- Artifact
 -- tool_artifact

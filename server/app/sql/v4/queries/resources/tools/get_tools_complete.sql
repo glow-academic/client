@@ -53,7 +53,9 @@ CREATE TYPE types.q_get_tools_v4_item AS (
     id uuid,
     name text,
     description text,
-    generated boolean
+    generated boolean,
+    args_ids uuid[],
+    args_output_ids uuid[]
 );
 
 -- Create function
@@ -68,7 +70,7 @@ STABLE
 AS $$
 SELECT COALESCE(
     ARRAY_AGG(
-        (t.id, t.name, t.description, COALESCE(t.generated, false))::types.q_get_tools_v4_item
+        (t.id, t.name, t.description, COALESCE(t.generated, false), COALESCE(t.args_ids, ARRAY[]::uuid[]), COALESCE(t.args_output_ids, ARRAY[]::uuid[]))::types.q_get_tools_v4_item
         ORDER BY array_position(ids, t.id)
     ),
     ARRAY[]::types.q_get_tools_v4_item[]

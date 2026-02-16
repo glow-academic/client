@@ -10,7 +10,7 @@ INSERT INTO public.arg_positions_resource (id, args_id, value, created_at, activ
 INSERT INTO public.args_outputs_resource (id, args_id, name, template, created_at, active, generated, mcp) VALUES ('019bbf87-096a-7be8-96c2-0d6165087851', '019bbf87-091e-7aff-956e-478264bfba4c', 'example', '{{ example }}', '2026-01-08T15:38:57.769696+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.descriptions_resource (id, description, created_at, active, generated, mcp) VALUES ('019bbabc-5a30-78b0-8fd7-7f51d7bd2ca9', 'Create a new examples resource', '2026-01-08T20:52:05.827256+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.names_resource (id, name, created_at, active, generated, mcp) VALUES ('019bbabc-5a30-781c-a223-60afc48d9a4e', 'create_examples', '2026-01-08T20:52:05.827256+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
-INSERT INTO public.tools_resource (id, created_at, generated, mcp, active, name, description, department_ids, createable) VALUES ('019bebc4-d436-7c0f-9471-cfe52d274678', '2026-01-13T23:48:20.098044+00:00', false, false, true, 'create_examples', 'Create a new examples resource', '{}', false) ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.tools_resource (id, created_at, generated, mcp, active, name, description, department_ids, createable, args_ids, args_output_ids) VALUES ('019bebc4-d436-7c0f-9471-cfe52d274678', '2026-01-13T23:48:20.098044+00:00', false, false, true, 'create_examples', 'Create a new examples resource', '{}', false, '{019bbf87-091e-7aff-956e-478264bfba4c}', '{019bbf87-096a-7be8-96c2-0d6165087851}') ON CONFLICT (id) DO NOTHING;
 
 -- Artifact
 -- tool_artifact

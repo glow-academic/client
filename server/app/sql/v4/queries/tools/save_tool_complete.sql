@@ -196,6 +196,14 @@ BEGIN
             mcp = EXCLUDED.mcp;
     END IF;
 
+    -- Sync denormalized args_ids and args_output_ids on tools_resource
+    UPDATE tools_resource
+    SET args_ids = v_args_ids,
+        args_output_ids = v_args_outputs_ids
+    FROM tool_tools_junction ttj
+    WHERE ttj.tool_id = v_tool_id
+    AND tools_resource.id = ttj.tools_id;
+
     -- Tool call lineage for save
     v_run_id := uuidv7();
     INSERT INTO runs_entry (id, input_tokens, output_tokens, cached_input_tokens, group_id, created_at, updated_at)
