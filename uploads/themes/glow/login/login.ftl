@@ -142,17 +142,21 @@
               <#-- Provider buttons (all rendered, filtered client-side by JavaScript) -->
               <#-- Includes regular IdPs (Google, Microsoft, etc.) and default-idp instances -->
               <#if social.providers?? && social.providers?size gt 0>
-                <#-- Separate providers into non-guest and guest -->
-                <#-- Use explicit prefix match to avoid false positives -->
-                <#assign nonGuestProviders = [] />
+                <#-- Separate providers into auth providers, profile providers, and guest providers -->
+                <#assign authProviders = [] />
+                <#assign profileProviders = [] />
                 <#assign guestProviders = [] />
                 <#list social.providers as p>
                   <#if p.alias?starts_with("default-idp-guest-")>
                     <#assign guestProviders = guestProviders + [p] />
+                  <#elseif p.alias?starts_with("default-idp-profile-")>
+                    <#assign profileProviders = profileProviders + [p] />
                   <#else>
-                    <#assign nonGuestProviders = nonGuestProviders + [p] />
+                    <#assign authProviders = authProviders + [p] />
                   </#if>
                 </#list>
+                <#-- Combine: auth providers first, then profile providers -->
+                <#assign nonGuestProviders = authProviders + profileProviders />
                 
                 <#-- Render non-guest providers first (all rendered, filtered client-side) -->
                 <#list nonGuestProviders as p>
@@ -196,12 +200,10 @@
                       <#-- Spinner (hidden by default, shown when loading) -->
                       <div class="action-button-spinner"></div>
                       <#-- Text -->
-                      <#if p.alias?starts_with("default-idp-")>
-                        <#if p.alias?contains("default")>
-                          <span class="action-button-text">Continue as Default Account</span>
-                        <#else>
-                          <span class="action-button-text">${p.displayName!}</span>
-                        </#if>
+                      <#if p.alias?starts_with("default-idp-profile-")>
+                        <span class="action-button-text">Continue as ${p.displayName!}</span>
+                      <#elseif p.alias?starts_with("default-idp-")>
+                        <span class="action-button-text">Continue as Default Account</span>
                       <#else>
                         <span class="action-button-text">Continue with ${p.displayName!}</span>
                       </#if>

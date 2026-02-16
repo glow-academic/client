@@ -160,7 +160,7 @@ async def authorize(
             "app/sql/v4/queries/auth/resolve_default_idp_profile_complete.sql"
         )
         profile_params = ResolveDefaultIdpProfileSqlParams(
-            profile_id=resolved_profile_id,
+            p_profile_id=resolved_profile_id,
         )
         sql_params = profile_params.to_tuple()
 

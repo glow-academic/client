@@ -10,7 +10,7 @@ END $$;
 
 -- Create function
 CREATE OR REPLACE FUNCTION api_resolve_default_idp_profile_v4(
-    profile_id uuid
+    p_profile_id uuid
 )
 RETURNS TABLE (
     profile_id uuid,
@@ -22,9 +22,16 @@ LANGUAGE sql
 STABLE
 AS $$
     WITH resolved_profile AS (
-        SELECT 
-            profile_id as resolved_profile_id
-        WHERE profile_id IS NOT NULL
+        -- Resolve to the actual profile_artifact.id
+        -- Input may be a profile_artifact.id directly, or a profiles_resource.id
+        -- (from setting_profiles_junction which stores profiles_resource IDs)
+        SELECT COALESCE(
+            -- Try direct match on profile_artifact first
+            (SELECT pa.id FROM profile_artifact pa WHERE pa.id = p_profile_id),
+            -- Fall back to resolving via profile_profiles_junction (profiles_resource.id -> profile_artifact.id)
+            (SELECT ppj.profile_id FROM profile_profiles_junction ppj WHERE ppj.profiles_id = p_profile_id LIMIT 1)
+        ) as resolved_profile_id
+        WHERE p_profile_id IS NOT NULL
     ),
     profile_with_details AS (
         SELECT
@@ -50,15 +57,9 @@ AS $$
              WHERE pr.profile_id = rp.resolved_profile_id
              LIMIT 1) as role
         FROM resolved_profile rp
-        -- Verify profile exists in profile_artifact (not just setting_profiles_junction)
-        -- This allows emulation of any profile, not just those linked to settings
         WHERE rp.resolved_profile_id IS NOT NULL
-          AND EXISTS (
-              SELECT 1 FROM profile_artifact pa
-              WHERE pa.id = rp.resolved_profile_id
-          )
     )
-    SELECT 
+    SELECT
         profile_id,
         primary_email,
         name,
