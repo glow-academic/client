@@ -216,9 +216,9 @@ async def _eval_generate_impl(
             else model_resource.name
         )
         base_url = (
-            model_resource.endpoint if hasattr(model_resource, "endpoint") else ""
+            provider_resource.endpoint if hasattr(provider_resource, "endpoint") else ""
         )
-        api_key = model_resource.key if hasattr(model_resource, "key") else ""
+        api_key = provider_resource.key if hasattr(provider_resource, "key") else ""
         temperature = (
             agent_resource.temperature
             if hasattr(agent_resource, "temperature")
