@@ -1,15 +1,15 @@
 """Attempt generation router - unified handler for all attempt entry types.
 
 This module handles all business logic for attempt generation:
-- Rate limit validation (fail fast)
-- Group/run creation
+- Rate limit validation (fail fast) — skipped when handler already validated
+- Group/run creation — skipped when handler already created via prepare SQL
 - Agent/model context from pre-fetched resources (denormalized chain)
 - Jinja template rendering for developer instructions
+- Chat history from views (simulation_messages)
 - Message insertion with deduplication
 
-The AI handler (generate.py) receives a simplified payload with pre-rendered content.
-Callers (message.py, grade.py) will be refactored to call attempt_generate
-instead of duplicating the pipeline.
+Callers (message.py, grade.py, audio/start.py) handle domain-specific mutations,
+then delegate to attempt_generate via internal bus with pre-created run_id/group_id.
 """
 
 import asyncio
@@ -33,6 +33,7 @@ from app.infra.v4.websocket.typed_emit import emit_to_internal
 from app.main import get_internal_sio, get_pool, sio
 from app.socket.v4.artifacts.attempt.types import (
     ATTEMPT_ENTRY_TYPES,
+    ATTEMPT_GRADE_ENTRY_TYPES,
     AttemptGenerationStartedEvent,
     GenerateAttemptPayload,
 )
@@ -80,20 +81,16 @@ def _build_attempt_jinja_context(
 
 
 async def _attempt_generate_impl(
-    sid: str, data: GenerateAttemptPayload, profile_id: uuid.UUID
+    sid: str,
+    data: GenerateAttemptPayload,
+    profile_id: uuid.UUID,
+    extra: dict[str, Any] | None = None,
 ) -> None:
     """Handle attempt generation with all business logic.
 
-    This function:
-    1. Validates entry_types against ATTEMPT_ENTRY_TYPES
-    2. Fetches attempt data via internal function (includes pre-fetched config resources)
-    3. Extracts LLM config from pre-fetched agents/models/providers resources
-    4. Validates prerequisites (rate limit from pre-fetched config_profile + runs)
-    5. Calls prepare SQL (mutations only: group/run/config creation)
-    6. Fetches tools, prompts, instructions in parallel
-    7. Renders developer instructions with Jinja
-    8. Inserts pre-rendered messages
-    9. Emits simplified payload to generate_artifact handler
+    When called directly (client → attempt_generate), runs full pipeline.
+    When called from handlers (message/grade/audio via internal bus),
+    extra dict carries pre-created run_id/group_id — skips rate limit + prepare.
     """
     try:
         # Validate entry_types
@@ -127,6 +124,26 @@ async def _attempt_generate_impl(
                 sid=sid,
             )
             return
+
+        # Extract pre-created IDs from handler (passed via internal bus)
+        pre_run_id: uuid.UUID | None = None
+        pre_group_id: uuid.UUID | None = None
+        extra_chat_id: uuid.UUID | None = None
+        extra_grade_id: uuid.UUID | None = None
+        if extra:
+            if extra.get("run_id"):
+                pre_run_id = uuid.UUID(str(extra["run_id"]))
+            if extra.get("group_id"):
+                pre_group_id = uuid.UUID(str(extra["group_id"]))
+            if extra.get("chat_id"):
+                extra_chat_id = uuid.UUID(str(extra["chat_id"]))
+            if extra.get("grade_id"):
+                extra_grade_id = uuid.UUID(str(extra["grade_id"]))
+
+        # Detect modality and resource_type from entry_types
+        is_grade = any(et in ATTEMPT_GRADE_ENTRY_TYPES for et in entry_types)
+        resource_type = "grade" if is_grade else "attempt"
+        modality = "call" if is_grade else "text"
 
         # Step 1: Fetch attempt data (includes pre-fetched config resources)
         async with get_db_connection() as conn:
@@ -251,43 +268,46 @@ async def _attempt_generate_impl(
 
         attempt_jinja_context = _build_attempt_jinja_context(result, entry_types)
 
-        # Step 3: Check rate limit from pre-fetched config_profile + runs
-        config_profile = (
-            result.resources.config_profile[0]
-            if result.resources and result.resources.config_profile
-            else None
-        )
-        requests_per_day = config_profile.requests_per_day if config_profile else None
-        runs_today = (
-            result.views.runs.total_count if result.views and result.views.runs else 0
-        )
+        # Step 3: Check rate limit — skip when handler already validated
+        if not pre_run_id:
+            config_profile = (
+                result.resources.config_profile[0]
+                if result.resources and result.resources.config_profile
+                else None
+            )
+            requests_per_day = (
+                config_profile.requests_per_day if config_profile else None
+            )
+            runs_today = (
+                result.views.runs.total_count
+                if result.views and result.views.runs
+                else 0
+            )
 
-        if requests_per_day is not None and runs_today >= requests_per_day:
-            error_msg = (
-                f"Rate limit exceeded ({runs_today}/{requests_per_day} requests today)"
-            )
-            logger.error(
-                f"Attempt generation rate limit exceeded - "
-                f"profile_id={profile_id}, agent_id={agent_id}, "
-                f"reason: {error_msg}"
-            )
-            await emit_to_internal(
-                "generate_call_error",
-                GenerateErrorApiRequest(
+            if requests_per_day is not None and runs_today >= requests_per_day:
+                error_msg = f"Rate limit exceeded ({runs_today}/{requests_per_day} requests today)"
+                logger.error(
+                    f"Attempt generation rate limit exceeded - "
+                    f"profile_id={profile_id}, agent_id={agent_id}, "
+                    f"reason: {error_msg}"
+                )
+                await emit_to_internal(
+                    "generate_call_error",
+                    GenerateErrorApiRequest(
+                        sid=sid,
+                        error_message=f"Failed to prepare attempt generation: {error_msg}",
+                        artifact_type="attempt",
+                        group_id=str(result.group_id) if result.group_id else None,
+                        resource_type="attempt",
+                    ),
                     sid=sid,
-                    error_message=f"Failed to prepare attempt generation: {error_msg}",
-                    artifact_type="attempt",
-                    group_id=str(result.group_id) if result.group_id else None,
-                    resource_type="attempt",
-                ),
-                sid=sid,
-            )
-            return
+                )
+                return
 
-        existing_group_id = result.group_id
+        existing_group_id = pre_group_id or result.group_id
 
         async with get_db_connection() as conn:
-            # Step 5: Fetch tools, prompts, and instructions in parallel
+            # Fetch tools, prompts, and instructions in parallel
             pool = get_pool()
             if not pool:
                 raise RuntimeError("Database pool not initialized")
@@ -342,45 +362,58 @@ async def _attempt_generate_impl(
                 fetch_developer_instructions(),
             )
 
-            # Step 6: Prepare generation (mutations only: group/run/config creation)
-            prepare_params = PreparePersonaGenerationSqlParams(
-                p_profile_id=profile_id,
-                p_group_id=existing_group_id,
-                p_agents_resource_id=agent_resource.id,
-                p_models_resource_id=model_resource.id,
-                p_providers_resource_id=provider_resource.id,
-            )
-            prepare_row = cast(
-                PreparePersonaGenerationSqlRow,
-                await execute_sql_typed(conn, SQL_PATH_PREPARE, params=prepare_params),
-            )
-
-            if not prepare_row.run_id:
-                logger.error(
-                    f"Attempt generation preparation failed unexpectedly - "
-                    f"profile_id={profile_id}, agent_id={agent_id}"
+            # Prepare generation — skip when handler already created run/config
+            if pre_run_id:
+                run_id = pre_run_id
+                group_id = existing_group_id
+            else:
+                prepare_params = PreparePersonaGenerationSqlParams(
+                    p_profile_id=profile_id,
+                    p_group_id=existing_group_id,
+                    p_agents_resource_id=agent_resource.id,
+                    p_models_resource_id=model_resource.id,
+                    p_providers_resource_id=provider_resource.id,
                 )
-                await emit_to_internal(
-                    "generate_call_error",
-                    GenerateErrorApiRequest(
-                        sid=sid,
-                        error_message="Failed to prepare attempt generation: Unknown error",
-                        artifact_type="attempt",
-                        group_id=str(existing_group_id) if existing_group_id else None,
-                        resource_type="attempt",
+                prepare_row = cast(
+                    PreparePersonaGenerationSqlRow,
+                    await execute_sql_typed(
+                        conn, SQL_PATH_PREPARE, params=prepare_params
                     ),
-                    sid=sid,
                 )
-                return
 
-            run_id = prepare_row.run_id
-            group_id = prepare_row.group_id
+                if not prepare_row.run_id:
+                    logger.error(
+                        f"Attempt generation preparation failed unexpectedly - "
+                        f"profile_id={profile_id}, agent_id={agent_id}"
+                    )
+                    await emit_to_internal(
+                        "generate_call_error",
+                        GenerateErrorApiRequest(
+                            sid=sid,
+                            error_message="Failed to prepare attempt generation: Unknown error",
+                            artifact_type="attempt",
+                            group_id=str(existing_group_id)
+                            if existing_group_id
+                            else None,
+                            resource_type="attempt",
+                        ),
+                        sid=sid,
+                    )
+                    return
+
+                run_id = prepare_row.run_id
+                group_id = prepare_row.group_id
 
             jinja_context = attempt_jinja_context
 
             # Inject views into Jinja context for template access
             if result.views:
                 views_dict: dict[str, Any] = {}
+                if result.views.simulation_attempts:
+                    views_dict["simulation_attempts"] = [
+                        a.model_dump(mode="json")
+                        for a in result.views.simulation_attempts
+                    ]
                 if result.views.simulation_chats:
                     views_dict["simulation_chats"] = [
                         c.model_dump(mode="json") for c in result.views.simulation_chats
@@ -392,13 +425,17 @@ async def _attempt_generate_impl(
                     ]
                 jinja_context["views"] = views_dict
 
-            # Step 7: Render developer instructions with Jinja
+            # Inject grade data if present (from handler's prepare SQL)
+            if extra_grade_id:
+                jinja_context["grade"] = {"id": str(extra_grade_id)}
+
+            # Render developer instructions with Jinja
             rendered_developer_messages = render_developer_instructions(
                 templates=developer_instruction_templates,
                 jinja_context=jinja_context,
             )
 
-            # Step 8: Build messages for LLM AND persist to database
+            # Build messages for LLM AND persist to database
             messages: list[dict[str, str]] = []
             create_message_sql = load_sql(SQL_PATH_CREATE_MESSAGE_WITH_TEXT)
 
@@ -426,6 +463,29 @@ async def _attempt_generate_impl(
                     False,
                 )
 
+            # Build chat history from views (for message handlers)
+            # Resolve chat_id: from extra context, or first active chat in views
+            chat_id_for_history = extra_chat_id
+            if (
+                not chat_id_for_history
+                and result.views
+                and result.views.simulation_chats
+            ):
+                chat_id_for_history = result.views.simulation_chats[0].id
+
+            if (
+                chat_id_for_history
+                and result.views
+                and result.views.simulation_messages
+            ):
+                for msg in result.views.simulation_messages:
+                    if msg.chat_id == chat_id_for_history and msg.completed:
+                        role = "user" if msg.type == "query" else "assistant"
+                        content = ""
+                        if msg.contents:
+                            content = msg.contents[0].content or ""
+                        messages.append({"role": role, "content": content})
+
             # Insert user instructions
             if data.user_instructions:
                 for instruction in data.user_instructions:
@@ -439,7 +499,7 @@ async def _attempt_generate_impl(
                         False,
                     )
 
-            # Step 9: Initialize generation tracker
+            # Initialize generation tracker
             await init_generation(str(run_id), 1)
             await init_resource_progress(str(run_id), len(entry_types))
 
@@ -455,32 +515,64 @@ async def _attempt_generate_impl(
                 room=sid,
             )
 
-            # Step 10: Dispatch to generate_artifact handler
-            await internal_sio.emit(
-                "generate_artifact",
-                {
-                    "sid": sid,
-                    "artifact_type": "attempt",
-                    "resource_type": entry_types[0] if entry_types else "attempt",
-                    "run_id": str(run_id),
-                    "group_id": str(group_id) if group_id else None,
-                    "message_id": None,
-                    "messages": messages,
-                    "llm_config": {
-                        "model": model_name,
-                        "api_key": api_key,
-                        "base_url": base_url,
-                        "temperature": temperature,
-                        "reasoning": reasoning,
-                        "provider": provider_name,
-                        "voice": voice,
-                        "quality": quality,
-                        "length_seconds": None,
-                        "tool_choice": "required",
-                    },
-                    "tools": convert_tools_to_dict(tools),
+            # Convert tools and attach _args_outputs for output schema resolution
+            tool_dicts = convert_tools_to_dict(tools)
+            if tool_dicts and result.resources:
+                resource_tools = result.resources.tools or []
+                tool_output_ids_by_name: dict[str, list] = {}
+                for rt in resource_tools:
+                    if rt.name and rt.args_output_ids:
+                        tool_output_ids_by_name[rt.name] = rt.args_output_ids
+
+                config_ao = result.resources.config_args_outputs or []
+                ao_by_id = {ao.id: ao for ao in config_ao if ao.id}
+
+                for td in tool_dicts:
+                    t_name = td.get("name")
+                    if t_name and t_name in tool_output_ids_by_name:
+                        ao_list = []
+                        for ao_id in tool_output_ids_by_name[t_name]:
+                            ao = ao_by_id.get(ao_id)
+                            if ao:
+                                ao_list.append(
+                                    {"name": ao.name, "template": ao.template}
+                                )
+                        if ao_list:
+                            td["_args_outputs"] = ao_list
+
+            # Dispatch to generate_artifact handler
+            artifact_payload: dict[str, Any] = {
+                "sid": sid,
+                "artifact_type": "attempt",
+                "resource_type": resource_type,
+                "modality": modality,
+                "run_id": str(run_id),
+                "group_id": str(group_id) if group_id else None,
+                "message_id": None,
+                "messages": messages,
+                "llm_config": {
+                    "model": model_name,
+                    "api_key": api_key,
+                    "base_url": base_url,
+                    "temperature": temperature,
+                    "reasoning": reasoning,
+                    "provider": provider_name,
+                    "voice": voice,
+                    "quality": quality,
+                    "length_seconds": None,
+                    "tool_choice": "required",
                 },
-            )
+                "tools": tool_dicts,
+            }
+
+            # Pass through domain-specific IDs for complete handler
+            if extra_grade_id:
+                artifact_payload["grade_id"] = str(extra_grade_id)
+            if extra_chat_id:
+                artifact_payload["chat_id"] = str(extra_chat_id)
+            artifact_payload["attempt_id"] = str(data.attempt_id)
+
+            await internal_sio.emit("generate_artifact", artifact_payload)
 
     except Exception as e:
         logger.exception(f"Failed to generate attempt resources: {str(e)}")
@@ -534,7 +626,12 @@ async def attempt_generate(sid: str, data: dict[str, Any]) -> None:
 
 @internal_sio.on("attempt_generate")  # type: ignore
 async def attempt_generate_internal(data: dict[str, Any]) -> None:
-    """Handle attempt_generate event from internal bus (server-to-server)."""
+    """Handle attempt_generate event from internal bus (server-to-server).
+
+    Handlers (message.py, grade.py, audio/start.py) pass pre-created
+    run_id/group_id/chat_id/grade_id as extra dict keys alongside the
+    standard GenerateAttemptPayload fields.
+    """
     try:
         sid = data.get("sid", "")
         if not sid:
@@ -557,7 +654,7 @@ async def attempt_generate_internal(data: dict[str, Any]) -> None:
 
         profile_id = uuid.UUID(profile_id_str)
         payload = GenerateAttemptPayload(**data)
-        await _attempt_generate_impl(sid, payload, profile_id)
+        await _attempt_generate_impl(sid, payload, profile_id, extra=data)
     except Exception as e:
         await emit_to_internal(
             "generate_call_error",

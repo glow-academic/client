@@ -1,10 +1,10 @@
-"""Attempt audio start handler.
+"""Attempt audio start handler — thin wrapper.
 
 Handles WebSocket event:
 - attempt_audio_start: Start a voice session (BFF pre-generation validation)
 
-After validation, emits generate_artifact with modality="audio" to
-centralize session creation in generate.py.
+Validates context, creates empty user + assistant placeholders via prepare SQL,
+then delegates to attempt_generate for the LLM pipeline.
 """
 
 import uuid
@@ -12,22 +12,26 @@ from typing import Any, cast
 
 from fastapi import APIRouter
 
-from app.api.v4.artifacts.attempt.get import get_attempt_websocket
 from app.infra.v4.activity.websocket_logger import log_websocket_activity
 from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
 from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.infra.v4.websocket.session_store import get_session_by_group_id
 from app.main import (
     get_internal_sio,
-    get_pool,
     sio,
 )
 from app.socket.v4.artifacts.attempt.types import (
+    ATTEMPT_MESSAGE_ENTRY_TYPES,
     AttemptAudioReadyEvent,
     AttemptAudioStartPayload,
     AttemptUnifiedErrorEvent,
 )
-from app.sql.types import GetAudioStartContextSqlParams, GetAudioStartContextSqlRow
+from app.sql.types import (
+    GetAudioStartContextSqlParams,
+    GetAudioStartContextSqlRow,
+    PrepareAttemptAudioSqlParams,
+    PrepareAttemptAudioSqlRow,
+)
 from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import execute_sql_typed
 
@@ -40,15 +44,18 @@ server_router = APIRouter()
 SQL_PATH_AUDIO_START_CONTEXT = (
     "app/sql/v4/queries/generate/attempt/get_audio_start_context_complete.sql"
 )
+SQL_PATH_PREPARE = (
+    "app/sql/v4/queries/generate/attempt/prepare_attempt_audio_complete.sql"
+)
 
 
 @sio.event  # type: ignore
 async def attempt_audio_start(sid: str, data: dict[str, Any]) -> None:
-    """Handle attempt_audio_start event - start a voice session.
+    """Handle attempt_audio_start event — thin wrapper.
 
-    BFF Translation: Client sends chat_id, server validates context and config,
-    then emits generate_artifact with modality="audio" to centralize session
-    creation in generate.py. Emits attempt_audio_ready with chat_id on success.
+    1. Context SQL — validate chat, rate limits
+    2. Prepare SQL — create empty user + assistant placeholders
+    3. Delegate to attempt_generate
     """
     try:
         payload = AttemptAudioStartPayload(**data)
@@ -70,10 +77,7 @@ async def attempt_audio_start(sid: str, data: dict[str, Any]) -> None:
 
         profile_id = uuid.UUID(profile_id_str)
 
-        # Generate unique group_id for this voice session (like SQL does for text)
-        group_id = str(uuid.uuid4())
-
-        # Step 1: Lightweight context SQL — resolve chat_id → attempt_id
+        # 1. Context SQL — validate chat, rate limits
         async with get_db_connection() as conn:
             context_row = cast(
                 GetAudioStartContextSqlRow,
@@ -91,7 +95,7 @@ async def attempt_audio_start(sid: str, data: dict[str, Any]) -> None:
             await sio.emit(
                 "attempt_error",
                 AttemptUnifiedErrorEvent(
-                    group_id=group_id,
+                    group_id=None,
                     type="audio",
                     message="Chat not found",
                 ).model_dump(mode="json"),
@@ -103,7 +107,7 @@ async def attempt_audio_start(sid: str, data: dict[str, Any]) -> None:
             await sio.emit(
                 "attempt_error",
                 AttemptUnifiedErrorEvent(
-                    group_id=group_id,
+                    group_id=None,
                     type="audio",
                     message="Chat is already completed",
                 ).model_dump(mode="json"),
@@ -111,7 +115,7 @@ async def attempt_audio_start(sid: str, data: dict[str, Any]) -> None:
             )
             return
 
-        # Rate limit validation (mirrors text flow in message.py)
+        # Rate limit validation
         requests_per_day = context_row.requests_per_day
         runs_today = context_row.runs_today or 0
         if requests_per_day is not None and runs_today >= requests_per_day:
@@ -125,7 +129,7 @@ async def attempt_audio_start(sid: str, data: dict[str, Any]) -> None:
             await sio.emit(
                 "attempt_error",
                 AttemptUnifiedErrorEvent(
-                    group_id=group_id,
+                    group_id=None,
                     type="audio",
                     message=error_msg,
                 ).model_dump(mode="json"),
@@ -138,7 +142,7 @@ async def attempt_audio_start(sid: str, data: dict[str, Any]) -> None:
             await sio.emit(
                 "attempt_error",
                 AttemptUnifiedErrorEvent(
-                    group_id=group_id,
+                    group_id=None,
                     type="audio",
                     message="Attempt not found for this chat",
                 ).model_dump(mode="json"),
@@ -146,91 +150,50 @@ async def attempt_audio_start(sid: str, data: dict[str, Any]) -> None:
             )
             return
 
-        # Step 2: get_attempt_websocket() → cached resources (providers, agents, models)
-        pool = get_pool()
-        if not pool:
-            raise RuntimeError("Database pool not initialized")
-
-        async with pool.acquire() as conn:
-            result = await get_attempt_websocket(
-                conn=conn,
-                profile_id=profile_id,
-                attempt_id=attempt_id,
+        # 2. Prepare SQL — create empty user + assistant placeholders
+        async with get_db_connection() as conn:
+            prepare_row = cast(
+                PrepareAttemptAudioSqlRow,
+                await execute_sql_typed(
+                    conn,
+                    SQL_PATH_PREPARE,
+                    params=PrepareAttemptAudioSqlParams(
+                        p_profile_id=profile_id,
+                        p_chat_id=payload.chat_id,
+                    ),
+                ),
             )
 
-        if not result.resources:
+        if not prepare_row or not prepare_row.run_id:
             await sio.emit(
                 "attempt_error",
                 AttemptUnifiedErrorEvent(
-                    group_id=group_id,
+                    group_id=None,
                     type="audio",
-                    message="Failed to fetch voice configuration",
+                    message="Failed to prepare audio session",
                 ).model_dump(mode="json"),
                 room=sid,
             )
             return
 
-        # Step 3: Extract config from pre-fetched resources
-        config_providers = result.resources.providers or []
-        config_agents = result.resources.agents or []
-        config_models = result.resources.models or []
-
-        provider_resource = config_providers[0] if config_providers else None
-        agent_resource = config_agents[0] if config_agents else None
-        model_resource = config_models[0] if config_models else None
-
-        # Get API key from provider resource
-        encrypted_api_key = provider_resource.key if provider_resource else None
-        if not encrypted_api_key:
-            await sio.emit(
-                "attempt_error",
-                AttemptUnifiedErrorEvent(
-                    group_id=group_id,
-                    type="audio",
-                    message="No API key configured for voice mode",
-                ).model_dump(mode="json"),
-                room=sid,
-            )
-            return
-
-        # Extract voice from agent resource (fallback to "alloy")
-        voice = "alloy"
-        if agent_resource and hasattr(agent_resource, "voice") and agent_resource.voice:
-            voice = agent_resource.voice
-
-        # Extract model name from model resource (fallback to hardcoded realtime model)
-        model_name = "gpt-4o-realtime-preview-2024-12-17"
-        if model_resource and model_resource.value:
-            model_name = model_resource.value
-
-        # Extract base_url from provider resource
-        base_url = (
-            provider_resource.endpoint if hasattr(provider_resource, "endpoint") else ""
-        )
-
-        # Step 4: Emit generate_artifact — session creation happens in generate.py
+        # 3. Delegate to attempt_generate
         await internal_sio.emit(
-            "generate_artifact",
+            "attempt_generate",
             {
                 "sid": sid,
-                "artifact_type": "attempt",
-                "modality": "audio",
-                "run_id": str(uuid.uuid4()),
-                "group_id": group_id,
+                "attempt_id": str(attempt_id),
+                "entry_types": ATTEMPT_MESSAGE_ENTRY_TYPES,
+                "run_id": str(prepare_row.run_id),
+                "group_id": str(prepare_row.group_id),
                 "chat_id": chat_id,
-                "messages": [],
-                "llm_config": {
-                    "model": model_name,
-                    "api_key": encrypted_api_key,
-                    "base_url": base_url,
-                    "voice": voice,
-                },
+                # TODO: modality from audio config section, keeping text for now
             },
         )
 
         logger.info(
-            f"Audio start emitted generate_artifact - "
-            f"chat_id={chat_id}, group_id={group_id}, model={model_name}"
+            f"Audio start delegated to attempt_generate - "
+            f"chat_id={chat_id}, run_id={prepare_row.run_id}, "
+            f"group_id={prepare_row.group_id}"
         )
 
         # Log activity
@@ -239,7 +202,10 @@ async def attempt_audio_start(sid: str, data: dict[str, Any]) -> None:
                 sid=sid,
                 event_key="attempt.audio.started",
                 template="{{ actor.name }} started voice session",
-                context={"chat_id": chat_id, "group_id": group_id},
+                context={
+                    "chat_id": chat_id,
+                    "group_id": str(prepare_row.group_id),
+                },
                 endpoint="/socket/v4/attempt/audio_start",
                 error=False,
             )

@@ -39,7 +39,11 @@ RETURNS TABLE (
 
     -- Attempt context
     attempt_exists boolean,
-    attempt_id uuid
+    attempt_id uuid,
+
+    -- Group + chat context (for thin wrapper delegation)
+    group_id uuid,
+    chat_id uuid
 )
 LANGUAGE sql
 STABLE
@@ -100,6 +104,18 @@ attempt_data AS (
     CROSS JOIN params p
     WHERE a.id = p.attempt_id
     LIMIT 1
+),
+-- Chat + group data (first active chat for this attempt)
+chat_data AS (
+    SELECT
+        sc.id as chat_id,
+        sc.group_id
+    FROM simulation_chats_entry sc
+    CROSS JOIN params p
+    WHERE sc.attempt_id = p.attempt_id
+      AND sc.active = TRUE
+    ORDER BY sc.created_at ASC
+    LIMIT 1
 )
 SELECT
     rld.requests_per_day,
@@ -110,11 +126,14 @@ SELECT
     sd.simulation_name,
     COALESCE(acd.has_access, FALSE),
     COALESCE(atd.attempt_exists, FALSE),
-    atd.attempt_id
+    atd.attempt_id,
+    chtd.group_id,
+    chtd.chat_id
 FROM params p
 LEFT JOIN rate_limit_data rld ON TRUE
 LEFT JOIN runs_today_data rtd ON TRUE
 LEFT JOIN simulation_data sd ON TRUE
 LEFT JOIN access_data acd ON TRUE
 LEFT JOIN attempt_data atd ON TRUE
+LEFT JOIN chat_data chtd ON TRUE
 $$;

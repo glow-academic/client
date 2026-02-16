@@ -517,8 +517,9 @@ class GenerateAttemptPayload(BaseModel):
     """Request payload for attempt_generate WebSocket event.
 
     Unified handler that accepts entry_types to filter which tools are fetched.
-    Callers (message.py, grade.py) handle domain-specific mutations outside,
-    then call attempt_generate with their entry_types and messages.
+    Callers (message.py, grade.py, audio/start.py) handle domain-specific
+    mutations outside, then call attempt_generate with their entry_types.
+    Everything else is discoverable from the attempt's websocket data.
     """
 
     attempt_id: UUID

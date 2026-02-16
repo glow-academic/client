@@ -5133,6 +5133,8 @@ class GetAttemptGradeContextSqlRow(BaseModel):
     profile_has_access: bool | None = None
     attempt_exists: bool | None = None
     attempt_id: UUID | None = None
+    group_id: UUID | None = None
+    chat_id: UUID | None = None
 
 
 class GetAttemptGradeContextApiRequest(BaseModel):
@@ -5151,6 +5153,8 @@ class GetAttemptGradeContextApiResponse(BaseModel):
     profile_has_access: bool | None = None
     attempt_exists: bool | None = None
     attempt_id: UUID | None = None
+    group_id: UUID | None = None
+    chat_id: UUID | None = None
 
 
 # Generated from: get_attempt_message_completion_context
@@ -5274,6 +5278,50 @@ class GetAudioStartContextApiResponse(BaseModel):
     attempt_is_active: bool | None = None
     requests_per_day: int | None = None
     runs_today: int | None = None
+
+
+# Generated from: prepare_attempt_audio
+
+
+class PrepareAttemptAudioSqlParams(BaseModel):
+    p_profile_id: UUID
+    p_chat_id: UUID
+    p_agents_resource_id: UUID | None = None
+    p_models_resource_id: UUID | None = None
+    p_providers_resource_id: UUID | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.p_profile_id,
+            self.p_chat_id,
+            self.p_agents_resource_id,
+            self.p_models_resource_id,
+            self.p_providers_resource_id,
+        )
+
+
+class PrepareAttemptAudioSqlRow(BaseModel):
+    user_message_id: UUID | None = None
+    assistant_message_id: UUID | None = None
+    run_id: UUID | None = None
+    group_id: UUID | None = None
+    created_at: datetime | None = None
+
+
+class PrepareAttemptAudioApiRequest(BaseModel):
+    p_profile_id: UUID
+    p_chat_id: UUID
+    p_agents_resource_id: UUID | None = None
+    p_models_resource_id: UUID | None = None
+    p_providers_resource_id: UUID | None = None
+
+
+class PrepareAttemptAudioApiResponse(BaseModel):
+    user_message_id: UUID | None = None
+    assistant_message_id: UUID | None = None
+    run_id: UUID | None = None
+    group_id: UUID | None = None
+    created_at: datetime | None = None
 
 
 # Generated from: prepare_attempt_grade
@@ -26514,6 +26562,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetAudioStartContextApiRequest",
         "GetAudioStartContextApiResponse",
     ),
+    "app/sql/v4/queries/generate/attempt/prepare_attempt_audio_complete.sql": (
+        "PrepareAttemptAudioSqlParams",
+        "PrepareAttemptAudioSqlRow",
+        "PrepareAttemptAudioApiRequest",
+        "PrepareAttemptAudioApiResponse",
+    ),
     "app/sql/v4/queries/generate/attempt/prepare_attempt_grade_complete.sql": (
         "PrepareAttemptGradeSqlParams",
         "PrepareAttemptGradeSqlRow",
@@ -30376,6 +30430,13 @@ if TYPE_CHECKING:
     def load_sql_query(
         file_path: Literal[
             "app/sql/v4/queries/generate/attempt/get_audio_start_context_complete.sql"
+        ],
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal[
+            "app/sql/v4/queries/generate/attempt/prepare_attempt_audio_complete.sql"
         ],
     ) -> SqlString: ...
 
