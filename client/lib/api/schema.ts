@@ -8807,6 +8807,28 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/socket/v4/client/test/generate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Test Generate Api
+         * @description Client-to-server event: test_generate.
+         *
+         *     Unified generation handler that accepts entry_types to filter tools.
+         */
+        post: operations["test_generate_api_socket_v4_client_test_generate_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/socket/v4/client/test/start": {
         parameters: {
             query?: never;
@@ -9687,6 +9709,28 @@ export interface paths {
          *     Contains percentage-based progress tracking.
          */
         post: operations["benchmark_bundle_generation_progress_api_socket_v4_server_benchmark_bundle_generation_progress_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v4/server/test/generation_started": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Test Generation Started Api
+         * @description Server-to-client event: Test generation started.
+         *
+         *     Emitted when test generation begins, listing entry types being generated.
+         */
+        post: operations["test_generation_started_api_socket_v4_server_test_generation_started_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -25388,6 +25432,23 @@ export interface components {
              * Format: uuid
              */
             attempt_id: string;
+            /** Entry Types */
+            entry_types: string[];
+            /** User Instructions */
+            user_instructions?: string[] | null;
+        };
+        /**
+         * GenerateTestPayload
+         * @description Request payload for test_generate WebSocket event.
+         *
+         *     Unified handler that accepts entry_types to filter which tools are fetched.
+         */
+        GenerateTestPayload: {
+            /**
+             * Test Id
+             * Format: uuid
+             */
+            test_id: string;
             /** Entry Types */
             entry_types: string[];
             /** User Instructions */
@@ -48050,6 +48111,26 @@ export interface components {
             error_type?: string | null;
         };
         /**
+         * TestGenerationStartedEvent
+         * @description Server-to-client event: test_generation_started.
+         *
+         *     Emitted when test generation begins, listing which entry types
+         *     will be generated.
+         */
+        TestGenerationStartedEvent: {
+            /**
+             * Artifact Type
+             * @default test
+             */
+            artifact_type: string;
+            /** Group Id */
+            group_id: string;
+            /** Run Id */
+            run_id: string;
+            /** Entry Types */
+            entry_types: string[];
+        };
+        /**
          * TestGradePayload
          * @description Request payload for test_grade WebSocket event.
          *
@@ -48415,6 +48496,7 @@ export interface components {
             benchmark_tests?: components["schemas"]["BenchmarkTestViewItem"][] | null;
             /** Benchmark Invocations */
             benchmark_invocations?: components["schemas"]["BenchmarkInvocationViewItem"][] | null;
+            runs?: components["schemas"]["GetRunListViewResponse"] | null;
         };
         /**
          * TextViewItem
@@ -66885,6 +66967,41 @@ export interface operations {
             };
         };
     };
+    test_generate_api_socket_v4_client_test_generate_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GenerateTestPayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     test_start_api_socket_v4_client_test_start_post: {
         parameters: {
             query?: never;
@@ -68365,6 +68482,41 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["BenchmarkBundleGenerationProgressEvent"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    test_generation_started_api_socket_v4_server_test_generation_started_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TestGenerationStartedEvent"];
             };
         };
         responses: {

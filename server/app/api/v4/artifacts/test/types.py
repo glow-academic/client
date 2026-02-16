@@ -15,9 +15,11 @@ from pydantic import BaseModel, Field
 
 from app.api.v4.views.benchmark.invocations.types import BenchmarkInvocationViewItem
 from app.api.v4.views.benchmark.tests.types import BenchmarkTestViewItem
+from app.api.v4.views.run.list.types import GetRunListViewResponse
 from app.sql.types import (
     QGetAgentsV4Item,
     QGetModelsV4Item,
+    QGetProfilesV4Item,
     QGetProvidersV4Item,
     QGetToolsV4Item,
 )
@@ -61,6 +63,7 @@ class TestViews(BaseModel):
 
     benchmark_tests: list[BenchmarkTestViewItem] | None = None
     benchmark_invocations: list[BenchmarkInvocationViewItem] | None = None
+    runs: GetRunListViewResponse | None = None
 
 
 class TestResources(BaseModel):
@@ -162,6 +165,8 @@ class TestWebsocketResources(BaseModel):
     models: list[QGetModelsV4Item] | None = None
     providers: list[QGetProvidersV4Item] | None = None
     tools: list[QGetToolsV4Item] | None = None
+    # Profile config (for rate limiting)
+    config_profile: list[QGetProfilesV4Item] | None = None
 
 
 class GetTestWebsocketResponse(BaseModel):

@@ -13,6 +13,7 @@ from fastapi import APIRouter
 from . import (
     complete,
     error,
+    generate,
     grade,
     invocation,
     join,
@@ -26,6 +27,7 @@ from . import (
 __all__ = [
     "complete",
     "error",
+    "generate",
     "grade",
     "invocation",
     "join",
@@ -39,6 +41,7 @@ __all__ = [
 client_router = APIRouter()
 server_router = APIRouter()
 
+client_router.include_router(generate.client_router)
 client_router.include_router(start.client_router)
 client_router.include_router(join.client_router)
 client_router.include_router(leave.client_router)
@@ -46,6 +49,7 @@ client_router.include_router(stop.client_router)
 client_router.include_router(run.client_router)
 client_router.include_router(grade.client_router)
 
+server_router.include_router(generate.server_router)
 server_router.include_router(start.server_router)
 server_router.include_router(join.server_router)
 server_router.include_router(stop.server_router)

@@ -23,6 +23,7 @@ from pydantic import BaseModel
 
 TEST_RUN_ENTRY_TYPES: list[str] = []
 TEST_GRADE_ENTRY_TYPES = ["grades", "feedbacks"]
+TEST_ENTRY_TYPES = ["grades", "feedbacks"]
 
 
 # =============================================================================
@@ -214,3 +215,32 @@ class TestErrorEvent(BaseModel):
     run_id: str | None = None
     message: str
     error_type: str | None = None
+
+
+# =============================================================================
+# Unified Generate Event Types (test_generate)
+# =============================================================================
+
+
+class GenerateTestPayload(BaseModel):
+    """Request payload for test_generate WebSocket event.
+
+    Unified handler that accepts entry_types to filter which tools are fetched.
+    """
+
+    test_id: UUID
+    entry_types: list[str]
+    user_instructions: list[str] | None = None
+
+
+class TestGenerationStartedEvent(BaseModel):
+    """Server-to-client event: test_generation_started.
+
+    Emitted when test generation begins, listing which entry types
+    will be generated.
+    """
+
+    artifact_type: str = "test"
+    group_id: str
+    run_id: str
+    entry_types: list[str]

@@ -450,12 +450,20 @@ async def get_test_websocket(
     conn: asyncpg.Connection,
     test_id: UUID,
     bypass_cache: bool = False,
+    profile_id: UUID | None = None,
 ) -> GetTestWebsocketResponse:
     """WebSocket response layer with config resources.
 
     Calls get_test_internal() and assembles GetTestWebsocketResponse
     with content resources + config resources (agents, models, providers, tools).
+    Also fetches config_profile (for rate limiting) and runs_today in parallel
+    when profile_id is provided.
     """
+    from datetime import UTC, datetime
+
+    from app.api.v4.resources.profiles.get import get_profiles_internal
+    from app.api.v4.views.run.list.get import get_run_list_view_internal
+
     data = await get_test_internal(
         conn=conn,
         test_id=test_id,
@@ -465,20 +473,48 @@ async def get_test_websocket(
     if not data.test:
         return GetTestWebsocketResponse()
 
-    # Hydrate tools from config agent's tool_ids
-    config_tools = None
-    if data.config_agent_resources:
+    pool = get_pool()
+
+    async def fetch_config_profile():
+        if not pool or not profile_id:
+            return None
+        async with pool.acquire() as c:
+            return await get_profiles_internal(c, [profile_id], bypass_cache)
+
+    async def fetch_runs_today():
+        if not pool or not profile_id:
+            return None
+        today_utc = datetime.now(UTC).replace(hour=0, minute=0, second=0, microsecond=0)
+        tomorrow_utc = today_utc.replace(hour=23, minute=59, second=59)
+        async with pool.acquire() as c:
+            return await get_run_list_view_internal(
+                conn=c,
+                profile_id_filter=profile_id,
+                date_from=today_utc,
+                date_to=tomorrow_utc,
+                page_limit=1,
+                bypass_cache=True,
+            )
+
+    async def fetch_tools():
+        if not data.config_agent_resources or not pool:
+            return None
         tool_ids: list[UUID] = []
         for agent in data.config_agent_resources:
             if agent.tool_ids:
                 tool_ids.extend(agent.tool_ids)
-        if tool_ids:
-            pool = get_pool()
-            if pool:
-                async with pool.acquire() as c:
-                    config_tools = await get_tools_internal(
-                        c, list(set(tool_ids)), bypass_cache=bypass_cache
-                    )
+        if not tool_ids:
+            return None
+        async with pool.acquire() as c:
+            return await get_tools_internal(
+                c, list(set(tool_ids)), bypass_cache=bypass_cache
+            )
+
+    config_profile_result, runs_result, config_tools = await asyncio.gather(
+        fetch_config_profile(),
+        fetch_runs_today(),
+        fetch_tools(),
+    )
 
     # Build websocket resources (content + config)
     ws_resources = TestWebsocketResources(
@@ -491,12 +527,15 @@ async def get_test_websocket(
         models=data.config_model_resources,
         providers=data.config_provider_resources,
         tools=config_tools,
+        # Profile config (for rate limiting)
+        config_profile=config_profile_result or None,
     )
 
     return GetTestWebsocketResponse(
         views=TestViews(
             benchmark_tests=[data.test],
             benchmark_invocations=data.invocations,
+            runs=runs_result,
         ),
         resources=ws_resources,
         resource_agent_ids=data.agent_ids if data.agent_ids else None,
