@@ -17307,6 +17307,86 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/socket/v4/server/responses_generation_complete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Responses Generation Complete Api
+         * @description Server-to-client event: Responses generation completed.
+         */
+        post: operations["responses_generation_complete_api_socket_v4_server_responses_generation_complete_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v4/server/responses_generation_error": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Responses Generation Error Api
+         * @description Server-to-client event: Responses generation error.
+         */
+        post: operations["responses_generation_error_api_socket_v4_server_responses_generation_error_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v4/server/simulation_messages_generation_complete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Simulation Messages Generation Complete Api
+         * @description Server-to-client event: SimulationMessages generation completed.
+         */
+        post: operations["simulation_messages_generation_complete_api_socket_v4_server_simulation_messages_generation_complete_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v4/server/simulation_messages_generation_error": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Simulation Messages Generation Error Api
+         * @description Server-to-client event: SimulationMessages generation error.
+         */
+        post: operations["simulation_messages_generation_error_api_socket_v4_server_simulation_messages_generation_error_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/socket/v4/server/strengths_generation_complete": {
         parameters: {
             query?: never;
@@ -40704,6 +40784,71 @@ export interface components {
             /** Created At */
             created_at?: string | null;
         };
+        /**
+         * ResponsesGenerationCompleteEvent
+         * @description Server-to-client event: responses_generation_complete.
+         */
+        ResponsesGenerationCompleteEvent: {
+            /** Artifact Type */
+            artifact_type: string;
+            /**
+             * Entry Type
+             * @default responses
+             */
+            entry_type: string;
+            /** Entry Id */
+            entry_id?: string | null;
+            /** Group Id */
+            group_id: string;
+            /** Run Id */
+            run_id?: string | null;
+            /** Tool Call Id */
+            tool_call_id?: string | null;
+            /** Tool Name */
+            tool_name?: string | null;
+            /**
+             * Success
+             * @default true
+             */
+            success: boolean;
+        };
+        /**
+         * ResponsesGenerationErrorEvent
+         * @description Server-to-client event: responses_generation_error.
+         */
+        ResponsesGenerationErrorEvent: {
+            /** Artifact Type */
+            artifact_type: string;
+            /**
+             * Entry Type
+             * @default responses
+             */
+            entry_type: string;
+            /** Group Id */
+            group_id?: string | null;
+            /** Run Id */
+            run_id?: string | null;
+            /**
+             * Success
+             * @default false
+             */
+            success: boolean;
+            /**
+             * Message
+             * @default
+             */
+            message: string;
+            /** Error Stage */
+            error_stage?: string | null;
+            /** Tool Name */
+            tool_name?: string | null;
+            /** Tool Call Id */
+            tool_call_id?: string | null;
+            /** Arguments */
+            arguments?: {
+                [key: string]: unknown;
+            } | null;
+        };
         /** RoleRoutesApiRequest */
         RoleRoutesApiRequest: {
             /**
@@ -47800,6 +47945,71 @@ export interface components {
             run_id: string;
             /** Resource Types */
             resource_types: string[];
+        };
+        /**
+         * SimulationMessagesGenerationCompleteEvent
+         * @description Server-to-client event: simulation_messages_generation_complete.
+         */
+        SimulationMessagesGenerationCompleteEvent: {
+            /** Artifact Type */
+            artifact_type: string;
+            /**
+             * Entry Type
+             * @default simulation_messages
+             */
+            entry_type: string;
+            /** Entry Id */
+            entry_id?: string | null;
+            /** Group Id */
+            group_id: string;
+            /** Run Id */
+            run_id?: string | null;
+            /** Tool Call Id */
+            tool_call_id?: string | null;
+            /** Tool Name */
+            tool_name?: string | null;
+            /**
+             * Success
+             * @default true
+             */
+            success: boolean;
+        };
+        /**
+         * SimulationMessagesGenerationErrorEvent
+         * @description Server-to-client event: simulation_messages_generation_error.
+         */
+        SimulationMessagesGenerationErrorEvent: {
+            /** Artifact Type */
+            artifact_type: string;
+            /**
+             * Entry Type
+             * @default simulation_messages
+             */
+            entry_type: string;
+            /** Group Id */
+            group_id?: string | null;
+            /** Run Id */
+            run_id?: string | null;
+            /**
+             * Success
+             * @default false
+             */
+            success: boolean;
+            /**
+             * Message
+             * @default
+             */
+            message: string;
+            /** Error Stage */
+            error_stage?: string | null;
+            /** Tool Name */
+            tool_name?: string | null;
+            /** Tool Call Id */
+            tool_call_id?: string | null;
+            /** Arguments */
+            arguments?: {
+                [key: string]: unknown;
+            } | null;
         };
         /** SimulationNameSection */
         SimulationNameSection: {
@@ -82686,6 +82896,146 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["ReplacementsGenerationErrorEvent"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    responses_generation_complete_api_socket_v4_server_responses_generation_complete_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ResponsesGenerationCompleteEvent"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    responses_generation_error_api_socket_v4_server_responses_generation_error_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ResponsesGenerationErrorEvent"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    simulation_messages_generation_complete_api_socket_v4_server_simulation_messages_generation_complete_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SimulationMessagesGenerationCompleteEvent"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    simulation_messages_generation_error_api_socket_v4_server_simulation_messages_generation_error_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SimulationMessagesGenerationErrorEvent"];
             };
         };
         responses: {
