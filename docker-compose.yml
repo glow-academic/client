@@ -130,7 +130,7 @@ services:
     volumes:
       - uploads:/app/uploads   # Docker volume for uploads
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -174,7 +174,7 @@ services:
       - NEXT_PUBLIC_APP_PREFIX=${APP_PREFIX}
       - ORIGIN=${ORIGIN}
     healthcheck:
-      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:3000/api/health"]
+      test: ["CMD", "node", "-e", "require('http').get('http://127.0.0.1:3000/api/health', r => process.exit(r.statusCode === 200 ? 0 : 1)).on('error', () => process.exit(1))"]
       interval: 10s
       timeout: 5s
       retries: 5

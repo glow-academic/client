@@ -58,7 +58,7 @@ ENV NODE_ENV=production \
 
 # minimal utilities + non-root user
 RUN addgroup -S nodejs && adduser -S nextjs -G nodejs && \
-    apk add --no-cache curl
+    rm -f /usr/bin/wget
 
 # copy the standalone server output
 COPY --from=builder /app/.next/standalone ./

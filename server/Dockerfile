@@ -26,7 +26,7 @@ WORKDIR /app
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,target=/var/lib/apt/lists,sharing=locked \
     apt-get update && \
-    apt-get install -y --no-install-recommends curl ca-certificates espeak-ng ghostscript icc-profiles-free && \
+    apt-get install -y --no-install-recommends ca-certificates espeak-ng ghostscript icc-profiles-free && \
     rm -rf /var/lib/apt/lists/*
 
 # bring in the wheels
@@ -45,6 +45,9 @@ ARG APP_GID=1001   # pick any unused id ≥ 1000
 RUN addgroup --system --gid $APP_GID appuser && \
     adduser  --system --uid $APP_UID --gid $APP_GID \
              --home /home/appuser appuser
+
+RUN chown -R appuser:appuser /app
+USER appuser
 
 ENV PYTHONUNBUFFERED=1 PYTHONPATH=/app
 EXPOSE 8000

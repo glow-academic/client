@@ -114,6 +114,16 @@ export const {
                 lastLogin: new Date().toISOString(),
               },
             });
+          } else {
+            // Profile not found - create new one (handles non-campus emails)
+            await api.post("/profile/staff/create", {
+              body: {
+                firstName,
+                lastName,
+                alias: alias || "",
+                role: "guest",
+              },
+            });
           }
         }
       } catch {
