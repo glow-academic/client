@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 import uuid
 from collections.abc import AsyncIterator
 from typing import Any, cast
@@ -86,6 +87,27 @@ class GenerateArtifactPayload(BaseModel):
     file_size: int | None = None
     upload_id: str | None = None
     chat_id: str | None = None  # For audio session store, never emitted externally
+
+
+def _extract_template_var(template: str) -> str | None:
+    """Extract variable name from a Jinja template like '{{ content }}'."""
+    match = re.search(r"\{\{\s*([a-zA-Z_][a-zA-Z0-9_]*)", template)
+    return match.group(1) if match else None
+
+
+def _resolve_output_fields(
+    parsed_args: dict[str, Any] | None,
+    tool_name: str | None,
+    tool_output_schemas: dict[str, dict[str, str]],
+) -> dict[str, Any] | None:
+    """Resolve output schema fields from parsed tool arguments."""
+    if not parsed_args or not tool_name or tool_name not in tool_output_schemas:
+        return None
+    schema = tool_output_schemas[tool_name]
+    resolved = {
+        col: parsed_args[arg] for col, arg in schema.items() if arg in parsed_args
+    }
+    return resolved or None
 
 
 def _parse_partial_json(partial: str) -> dict[str, Any] | None:
@@ -398,9 +420,29 @@ async def _generate_artifact_impl(
 
         openai_tools = None
         responses_tools = None
+        # Build output schema lookup: tool_name → {output_column: argument_name}
+        tool_output_schemas: dict[str, dict[str, str]] = {}
         if data.tools:
             openai_tools = convert_tools_to_openai_format(data.tools)
             responses_tools = convert_tools_to_responses_format(data.tools)
+            for tool_def in data.tools:
+                if not isinstance(tool_def, dict):
+                    continue
+                t_name = tool_def.get("name")
+                t_args_outputs = tool_def.get("_args_outputs")
+                if t_name and isinstance(t_args_outputs, list):
+                    resolved: dict[str, str] = {}
+                    for ao in t_args_outputs:
+                        if not isinstance(ao, dict):
+                            continue
+                        col = ao.get("name")
+                        template = ao.get("template")
+                        if col and template:
+                            arg_name = _extract_template_var(template)
+                            if arg_name:
+                                resolved[col] = arg_name
+                    if resolved:
+                        tool_output_schemas[t_name] = resolved
 
         tool_choice = model_config.tool_choice or "auto"
         await _emit_modality_event(
@@ -727,6 +769,9 @@ async def _generate_artifact_impl(
                         st["tool_name"] = tool_name
                     st["arguments"] += delta
                     parsed_args = _parse_partial_json(st["arguments"])
+                    resolved_fields = _resolve_output_fields(
+                        parsed_args, st.get("tool_name"), tool_output_schemas
+                    )
                     await _emit_modality_event(
                         "call",
                         "progress",
@@ -744,6 +789,7 @@ async def _generate_artifact_impl(
                             "tool_name": st.get("tool_name"),
                             "arguments_delta": delta,
                             "arguments": parsed_args,
+                            "resolved_fields": resolved_fields,
                         },
                     )
 
@@ -769,6 +815,9 @@ async def _generate_artifact_impl(
                     except json.JSONDecodeError:
                         arguments_dict = {}
 
+                    complete_resolved = _resolve_output_fields(
+                        arguments_dict, tool_name, tool_output_schemas
+                    )
                     await _emit_modality_event(
                         "call",
                         "complete",
@@ -786,6 +835,7 @@ async def _generate_artifact_impl(
                             "arguments": arguments_dict,
                             "arguments_delta": arguments_str,
                             "call_id": tool_call_id,
+                            "resolved_fields": complete_resolved,
                         },
                     )
 
@@ -843,6 +893,7 @@ async def _generate_artifact_impl(
                             "tool_call_id": tool_call_id,
                             "tool_name": tool_name,
                             "result": tool_result,
+                            "resolved_fields": complete_resolved,
                         },
                     )
 

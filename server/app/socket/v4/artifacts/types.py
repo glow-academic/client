@@ -32,6 +32,7 @@ class GenerationProgressEvent(BaseModel):
     tool_name: str | None = None
     arguments: dict[str, Any] | None = None
     arguments_delta: str | None = None
+    resolved_fields: dict[str, Any] | None = None
     trace_id: str | None = None
 
 

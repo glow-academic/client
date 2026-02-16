@@ -10,7 +10,8 @@ Follows the grade.py pattern:
 3. Python validates LLM config from pre-fetched resources
 4. Parallel fetch: tools, system prompt, developer instructions
 5. Slim prepare SQL → mutations only, takes resolved IDs
-6. Build tool_meta + chat history + Jinja context from pre-fetched data
+6. Build chat history + Jinja context from pre-fetched data
+7. Attach _args_outputs from cached resources for native output schema resolution
 
 Entry types: ['contents', 'hints'] - Message response tools
 """
@@ -25,14 +26,8 @@ from app.api.v4.artifacts.attempt.get import get_attempt_websocket
 from app.api.v4.artifacts.attempt.types import GetAttemptWebsocketResponse
 from app.api.v4.resources.instructions.get import get_instructions_internal
 from app.api.v4.resources.prompts.get import get_prompts_internal
-from app.infra.v4.artifacts.discovery import extract_template_variable_name
 from app.infra.v4.generation import convert_tools_to_dict, render_developer_instructions
-from app.infra.v4.tools.render_tool_template import GET_OUTPUT_SCHEMA_FIELDS_SQL_PATH
-from app.infra.v4.websocket.attempt.run_store import (
-    ENTRY_TYPE_DISPLAY_COLUMNS,
-    ToolStreamingMeta,
-    set_run_context,
-)
+from app.infra.v4.websocket.attempt.run_store import set_run_context
 from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
 from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.infra.v4.websocket.typed_emit import emit_to_internal
@@ -49,8 +44,6 @@ from app.sql.types import (
     GetAgentEntryToolsSqlRow,
     GetAttemptMessageContextSqlParams,
     GetAttemptMessageContextSqlRow,
-    GetResourceOutputSchemaFieldsSqlParams,
-    GetResourceOutputSchemaFieldsSqlRow,
     PrepareAttemptMessageSqlParams,
     PrepareAttemptMessageSqlRow,
 )
@@ -102,8 +95,9 @@ async def _attempt_message_impl(
     3. Extracts LLM config from pre-fetched resources (agent/model/provider)
     4. Parallel fetches tools, prompts, and instructions
     5. Calls slim prepare SQL (mutations only: run/config/messages)
-    6. Builds tool_meta, chat history, Jinja context from pre-fetched data
-    7. Emits to generate_artifact handler
+    6. Builds chat history, Jinja context from pre-fetched data
+    7. Attaches _args_outputs for output schema resolution
+    8. Emits to generate_artifact handler
     """
     try:
         message_str = data.message
@@ -517,61 +511,8 @@ async def _attempt_message_impl(
         run_id = str(prepare_row.run_id)
         group_id_str = str(group_id) if group_id else None
 
-        # Step 7: Build tool_meta from fetched tools + output schema queries
-        tool_meta: dict[str, ToolStreamingMeta] = {}
-        if tools:
-            async with pool.acquire() as conn:
-                for tool in tools:
-                    if tool is None:
-                        continue
-                    # Tools from get_agent_entry_tools are typed objects
-                    # tool_type maps to the entry type (e.g. 'contents', 'hints')
-                    tool_id = tool.id if hasattr(tool, "id") else None
-                    tool_name = tool.name if hasattr(tool, "name") else None
-                    entry_type = tool.tool_type if hasattr(tool, "tool_type") else None
-                    if (
-                        not tool_id
-                        or not tool_name
-                        or not entry_type
-                        or entry_type not in ENTRY_TYPE_DISPLAY_COLUMNS
-                    ):
-                        continue
-
-                    # Find which argument maps to the display column
-                    display_column = ENTRY_TYPE_DISPLAY_COLUMNS[entry_type]
-                    display_arg: str | None = None
-                    try:
-                        output_rows = cast(
-                            list[GetResourceOutputSchemaFieldsSqlRow],
-                            await execute_sql_typed(
-                                conn,
-                                GET_OUTPUT_SCHEMA_FIELDS_SQL_PATH,
-                                params=GetResourceOutputSchemaFieldsSqlParams(
-                                    tool_id=tool_id
-                                ),
-                                multi_row=True,
-                            ),
-                        )
-                        for row in output_rows or []:
-                            if row.name == display_column and row.template:
-                                display_arg = extract_template_variable_name(
-                                    row.template
-                                )
-                                break
-                    except Exception:
-                        logger.warning(
-                            f"Failed to resolve output schema for tool {tool_name}"
-                        )
-
-                    tool_meta[tool_name] = ToolStreamingMeta(
-                        entry_type=entry_type,
-                        display_arg=display_arg,
-                    )
-
-        # Step 8: Cache run context for streaming deltas (avoids DB query per delta)
-        set_run_context(
-            run_id, str(data.chat_id), assistant_message_id, tool_meta=tool_meta
-        )
+        # Step 7: Cache run context for streaming deltas (avoids DB query per delta)
+        set_run_context(run_id, str(data.chat_id), assistant_message_id)
 
         # Step 9: Build Jinja context from pre-fetched data
         jinja_context = _build_attempt_jinja_context(result)
@@ -697,7 +638,33 @@ async def _attempt_message_impl(
             room=sid,
         )
 
-        # Step 14: Emit to generate_artifact handler
+        # Step 14: Convert tools and attach _args_outputs for output schema resolution
+        tool_dicts = convert_tools_to_dict(tools)
+        if tool_dicts and result.resources:
+            # Build lookup: tool name → args_output_ids from resource layer
+            resource_tools = result.resources.tools or []
+            tool_output_ids_by_name: dict[str, list] = {}
+            for rt in resource_tools:
+                if rt.name and rt.args_output_ids:
+                    tool_output_ids_by_name[rt.name] = rt.args_output_ids
+
+            # Build lookup: args_output id → {name, template}
+            config_ao = result.resources.config_args_outputs or []
+            ao_by_id = {ao.id: ao for ao in config_ao if ao.id}
+
+            # Attach _args_outputs to each tool dict
+            for td in tool_dicts:
+                t_name = td.get("name")
+                if t_name and t_name in tool_output_ids_by_name:
+                    ao_list = []
+                    for ao_id in tool_output_ids_by_name[t_name]:
+                        ao = ao_by_id.get(ao_id)
+                        if ao:
+                            ao_list.append({"name": ao.name, "template": ao.template})
+                    if ao_list:
+                        td["_args_outputs"] = ao_list
+
+        # Emit to generate_artifact handler
         await internal_sio.emit(
             "generate_artifact",
             {
@@ -709,7 +676,7 @@ async def _attempt_message_impl(
                 "group_id": group_id_str,
                 "messages": messages,
                 "llm_config": model_config,
-                "tools": convert_tools_to_dict(tools),
+                "tools": tool_dicts,
             },
         )
 

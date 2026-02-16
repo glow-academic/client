@@ -19112,6 +19112,10 @@ export interface components {
             } | null;
             /** Arguments Delta */
             arguments_delta?: string | null;
+            /** Resolved Fields */
+            resolved_fields?: {
+                [key: string]: unknown;
+            } | null;
             /** Trace Id */
             trace_id?: string | null;
             /** Delta */
@@ -19598,6 +19602,10 @@ export interface components {
             } | null;
             /** Arguments Delta */
             arguments_delta?: string | null;
+            /** Resolved Fields */
+            resolved_fields?: {
+                [key: string]: unknown;
+            } | null;
             /** Trace Id */
             trace_id?: string | null;
         };
@@ -21101,6 +21109,10 @@ export interface components {
             } | null;
             /** Arguments Delta */
             arguments_delta?: string | null;
+            /** Resolved Fields */
+            resolved_fields?: {
+                [key: string]: unknown;
+            } | null;
             /** Trace Id */
             trace_id?: string | null;
         };
@@ -25096,6 +25108,10 @@ export interface components {
             } | null;
             /** Arguments Delta */
             arguments_delta?: string | null;
+            /** Resolved Fields */
+            resolved_fields?: {
+                [key: string]: unknown;
+            } | null;
             /** Trace Id */
             trace_id?: string | null;
         };
@@ -36441,6 +36457,10 @@ export interface components {
             } | null;
             /** Arguments Delta */
             arguments_delta?: string | null;
+            /** Resolved Fields */
+            resolved_fields?: {
+                [key: string]: unknown;
+            } | null;
             /** Trace Id */
             trace_id?: string | null;
         };
@@ -49066,6 +49086,10 @@ export interface components {
             } | null;
             /** Arguments Delta */
             arguments_delta?: string | null;
+            /** Resolved Fields */
+            resolved_fields?: {
+                [key: string]: unknown;
+            } | null;
             /** Trace Id */
             trace_id?: string | null;
         };

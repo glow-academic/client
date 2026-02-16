@@ -58,6 +58,7 @@ async def handle_attempt_progress(data: dict[str, Any]) -> None:
         tool_name=data.get("tool_name"),
         arguments=data.get("arguments"),
         arguments_delta=data.get("arguments_delta"),
+        resolved_fields=data.get("resolved_fields"),
         trace_id=data.get("trace_id"),
         # Attempt-specific fields
         delta=data.get("delta"),
@@ -71,38 +72,29 @@ async def handle_attempt_progress(data: dict[str, Any]) -> None:
     )
 
     # Also emit attempt_assistant_delta for client-side message streaming.
-    # Only stream tool_call_delta — the actual displayable content comes from
-    # tool calls whose entry_type is "contents" (e.g. create_content tool).
-    # The model's direct text output is intermediate reasoning, not displayable.
-    #
-    # Tool argument names are resolved deterministically via run_store.tool_meta
-    # (tool_name → entry_type + display_arg), populated at message prepare time
-    # from the output schema. No hardcoded argument names.
+    # resolved_fields is populated natively by generate.py from the tool's
+    # output schema (args_outputs_resource templates). The "content" field
+    # maps to the displayable assistant message content.
     event_type = data.get("event_type")
     if event_type == "tool_call_delta":
         run_id = data.get("run_id")
-        tool_name = data.get("tool_name")
-        if run_id and tool_name:
+        if run_id:
             ctx = get_run_context(run_id)
             if ctx:
-                meta = ctx.tool_meta.get(tool_name)
-                # Only stream content for "contents" entry type (assistant messages).
-                # "hints" entry type has its own streaming path.
-                if meta and meta.entry_type == "contents" and meta.display_arg:
-                    arguments = data.get("arguments")
-                    if isinstance(arguments, dict):
-                        content = arguments.get(meta.display_arg)
-                        if content:
-                            delta_event = AttemptAssistantDeltaEvent(
-                                chat_id=ctx.chat_id,
-                                message_id=ctx.message_id,
-                                content=content,
-                            )
-                            await sio.emit(
-                                "attempt_assistant_delta",
-                                delta_event.model_dump(mode="json"),
-                                room=sid,
-                            )
+                resolved = data.get("resolved_fields")
+                if isinstance(resolved, dict):
+                    content = resolved.get("content")
+                    if content:
+                        delta_event = AttemptAssistantDeltaEvent(
+                            chat_id=ctx.chat_id,
+                            message_id=ctx.message_id,
+                            content=content,
+                        )
+                        await sio.emit(
+                            "attempt_assistant_delta",
+                            delta_event.model_dump(mode="json"),
+                            room=sid,
+                        )
 
 
 # =============================================================================
