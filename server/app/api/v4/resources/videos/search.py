@@ -33,7 +33,6 @@ async def search_videos_internal(
     offset_count: int | None = 0,
     exclude_ids: list[UUID] | None = None,
     upload_ids: list[UUID] | None = None,
-    completed: bool | None = None,
     bypass_cache: bool = False,
     *,
     scenario: bool = False,
@@ -50,7 +49,6 @@ async def search_videos_internal(
             "offset_count": offset_count,
             "exclude_ids": [str(id) for id in (exclude_ids or [])],
             "upload_ids": sorted(str(i) for i in (upload_ids or [])),
-            "completed": completed,
             "scenario": scenario,
         },
     )
@@ -69,7 +67,6 @@ async def search_videos_internal(
         offset_count=offset_count,
         exclude_ids=exclude_ids or [],
         upload_ids=upload_ids or [],
-        completed=completed,
         scenario=scenario,
     )
     result = cast(

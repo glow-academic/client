@@ -55,6 +55,7 @@ CREATE TYPE types.q_get_upload_list_view_v4_item AS (
     file_path text,
     mime_type text,
     size int,
+    length_seconds int,
     created_at timestamptz
 );
 
@@ -100,6 +101,7 @@ AS $$
                     file_path,
                     mime_type,
                     size,
+                    length_seconds,
                     created_at
                 )::types.q_get_upload_list_view_v4_item
                 ORDER BY created_at DESC

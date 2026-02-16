@@ -165,8 +165,6 @@ class ScenarioVideo(BaseModel):
 
     video_id: UUID | None = None
     name: str | None = None
-    length_seconds: int | None = None
-    completed: bool | None = None
     file_path: str | None = None
     mime_type: str | None = None
     upload_id: UUID | None = None

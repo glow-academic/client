@@ -41,8 +41,6 @@ class VideosGenerationCompleteEvent(BaseModel):
     video_id: str | None = None
     name: str | None = None
     description: str | None = None
-    length_seconds: int | None = None
-    completed: bool | None = None
     upload_id: str | None = None
     generated: bool | None = None
 

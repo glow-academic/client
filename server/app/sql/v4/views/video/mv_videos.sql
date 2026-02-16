@@ -44,6 +44,7 @@ SELECT
     ue.file_path,
     ue.mime_type,
     ue.size,
+    ue.length_seconds,
     vr.created_at
 FROM videos_resource vr
 JOIN uploads_resource ur ON ur.id = vr.upload_id AND ur.active = true

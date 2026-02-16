@@ -1,7 +1,7 @@
 -- Create videos resource
 -- SIMPLIFIED: No agent_id required, optional tool_id for tracking
 -- Get or create operation (returns existing ID if name already exists)
--- Parameters: name (text), length_seconds (numeric), description (text), mcp (boolean), group_id (uuid, optional), tool_id (uuid, optional)
+-- Parameters: name (text), description (text), mcp (boolean), group_id (uuid, optional), tool_id (uuid, optional)
 -- Returns: video_id (uuid)
 
 -- Drop function if exists (handles signature variations)
@@ -21,7 +21,6 @@ END $$;
 
 CREATE OR REPLACE FUNCTION api_create_videos_v4(
     name text,
-    length_seconds numeric,
     description text,
     mcp boolean DEFAULT false,
     group_id uuid DEFAULT NULL,
@@ -51,8 +50,8 @@ BEGIN
     END IF;
 
     -- INSERT INTO videos_resource table
-    INSERT INTO videos_resource(name, length_seconds, description, active, mcp)
-    VALUES (name, length_seconds, description, true, mcp)
+    INSERT INTO videos_resource(name, description, active, mcp)
+    VALUES (name, description, true, mcp)
     RETURNING id INTO v_video_id;
     -- If tool_id and group_id provided, create run and call for tracking
     IF tool_id IS NOT NULL AND group_id IS NOT NULL THEN

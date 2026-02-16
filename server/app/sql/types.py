@@ -14052,7 +14052,6 @@ class SearchImagesSqlParams(BaseModel):
     offset_count: int | None = 0
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
     upload_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    completed: bool | None = None
     scenario: bool | None = False
 
     def to_tuple(self) -> tuple[Any, ...]:
@@ -14062,7 +14061,6 @@ class SearchImagesSqlParams(BaseModel):
             self.offset_count,
             self.exclude_ids,
             self.upload_ids,
-            self.completed,
             self.scenario,
         )
 
@@ -14077,7 +14075,6 @@ class SearchImagesApiRequest(BaseModel):
     offset_count: int | None = 0
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
     upload_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    completed: bool | None = None
     scenario: bool | None = False
 
 
@@ -18760,8 +18757,6 @@ class QGetVideoResourceV4Item(BaseModel):
     video_id: UUID | None
     name: str | None
     description: str | None
-    length_seconds: int | None
-    completed: bool | None
     upload_id: UUID | None
     generated: bool | None
 
@@ -18792,8 +18787,6 @@ class QGetVideosV4Item(BaseModel):
     video_id: UUID | None
     name: str | None
     description: str | None
-    length_seconds: int | None
-    completed: bool | None
     upload_id: UUID | None
     generated: bool | None
 
@@ -18819,7 +18812,6 @@ class SearchVideosSqlParams(BaseModel):
     offset_count: int | None = 0
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
     upload_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    completed: bool | None = None
     scenario: bool | None = False
 
     def to_tuple(self) -> tuple[Any, ...]:
@@ -18829,7 +18821,6 @@ class SearchVideosSqlParams(BaseModel):
             self.offset_count,
             self.exclude_ids,
             self.upload_ids,
-            self.completed,
             self.scenario,
         )
 
@@ -18844,7 +18835,6 @@ class SearchVideosApiRequest(BaseModel):
     offset_count: int | None = 0
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
     upload_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    completed: bool | None = None
     scenario: bool | None = False
 
 
@@ -18857,7 +18847,6 @@ class SearchVideosApiResponse(BaseModel):
 
 class VideosSqlParams(BaseModel):
     name: str
-    length_seconds: float
     description: str
     mcp: bool | None = False
     group_id: UUID | None = None
@@ -18866,7 +18855,6 @@ class VideosSqlParams(BaseModel):
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.name,
-            self.length_seconds,
             self.description,
             self.mcp,
             self.group_id,
@@ -18880,7 +18868,6 @@ class VideosSqlRow(BaseModel):
 
 class VideosApiRequest(BaseModel):
     name: str
-    length_seconds: float
     description: str
     mcp: bool | None = False
     group_id: UUID | None = None
@@ -23764,6 +23751,49 @@ class GetAttemptMessagesViewApiResponse(BaseModel):
     items: list[QGetAttemptMessagesViewV4Item] | None = None
 
 
+# Generated from: get_audio_list_view
+
+
+class GetAudioListViewSqlParams(BaseModel):
+    uploads_id_filter: UUID | None = None
+    page_limit_val: int | None = 10000
+    page_offset_val: int | None = 0
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.uploads_id_filter,
+            self.page_limit_val,
+            self.page_offset_val,
+        )
+
+
+class QGetAudioListViewV4Item(BaseModel):
+    audio_id: UUID | None
+    uploads_id: UUID | None
+    file_path: str | None
+    mime_type: str | None
+    size: int | None
+    length_seconds: int | None
+    voice_id: UUID | None
+    created_at: datetime | None
+
+
+class GetAudioListViewSqlRow(BaseModel):
+    items: list[QGetAudioListViewV4Item] | None = None
+    total_count: int | None = None
+
+
+class GetAudioListViewApiRequest(BaseModel):
+    uploads_id_filter: UUID | None = None
+    page_limit_val: int | None = 10000
+    page_offset_val: int | None = 0
+
+
+class GetAudioListViewApiResponse(BaseModel):
+    items: list[QGetAudioListViewV4Item] | None = None
+    total_count: int | None = None
+
+
 # Generated from: get_audit_list_view
 
 
@@ -25084,6 +25114,7 @@ class QGetImageListViewV4Item(BaseModel):
     file_path: str | None
     mime_type: str | None
     size: int | None
+    quality_id: UUID | None
     created_at: datetime | None
 
 
@@ -25617,6 +25648,7 @@ class QGetUploadListViewV4Item(BaseModel):
     file_path: str | None
     mime_type: str | None
     size: int | None
+    length_seconds: int | None
     created_at: datetime | None
 
 
@@ -25659,6 +25691,7 @@ class QGetVideoListViewV4Item(BaseModel):
     file_path: str | None
     mime_type: str | None
     size: int | None
+    length_seconds: int | None
     created_at: datetime | None
 
 
@@ -29192,6 +29225,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetAttemptMessagesViewSqlRow",
         "GetAttemptMessagesViewApiRequest",
         "GetAttemptMessagesViewApiResponse",
+    ),
+    "app/sql/v4/queries/views/audio/list/get_audio_list_view_complete.sql": (
+        "GetAudioListViewSqlParams",
+        "GetAudioListViewSqlRow",
+        "GetAudioListViewApiRequest",
+        "GetAudioListViewApiResponse",
     ),
     "app/sql/v4/queries/views/audit/list/get_audit_list_view_complete.sql": (
         "GetAuditListViewSqlParams",
@@ -33293,6 +33332,13 @@ if TYPE_CHECKING:
     def load_sql_query(
         file_path: Literal[
             "app/sql/v4/queries/views/attempt/messages/get_attempt_messages_view_complete.sql"
+        ],
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal[
+            "app/sql/v4/queries/views/audio/list/get_audio_list_view_complete.sql"
         ],
     ) -> SqlString: ...
 

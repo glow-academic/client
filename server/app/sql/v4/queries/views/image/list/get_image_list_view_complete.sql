@@ -56,6 +56,7 @@ CREATE TYPE types.q_get_image_list_view_v4_item AS (
     file_path text,
     mime_type text,
     size int,
+    quality_id uuid,
     created_at timestamptz
 );
 
@@ -102,6 +103,7 @@ AS $$
                     file_path,
                     mime_type,
                     size,
+                    quality_id,
                     created_at
                 )::types.q_get_image_list_view_v4_item
                 ORDER BY created_at DESC

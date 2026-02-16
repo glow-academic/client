@@ -9,6 +9,7 @@ from fastapi import APIRouter
 from app.api.v4.views.activity import router as activity_router
 from app.api.v4.views.analytics import router as analytics_router
 from app.api.v4.views.attempt import router as attempt_router
+from app.api.v4.views.audio import router as audio_router
 from app.api.v4.views.audit import router as audit_router
 from app.api.v4.views.benchmark import router as benchmark_router
 from app.api.v4.views.call import router as call_router
@@ -51,3 +52,4 @@ router.include_router(upload_router)
 router.include_router(image_router)
 router.include_router(video_router)
 router.include_router(grant_router)
+router.include_router(audio_router)

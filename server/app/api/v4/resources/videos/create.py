@@ -58,7 +58,7 @@ async def create_videos(
 
         async with conn.transaction():
             # Convert API request to SQL params (use double star pattern)
-            # Frontend sends snake_case (name, length_seconds, description) - auto-generated types match SQL function signature
+            # Frontend sends snake_case (name, description) - auto-generated types match SQL function signature
             # Get mcp flag from header (set by router-level dependency)
             mcp = getattr(http_request.state, "mcp", False) or False
 

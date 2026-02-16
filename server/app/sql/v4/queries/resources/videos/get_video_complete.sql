@@ -38,8 +38,6 @@ CREATE TYPE types.q_get_video_resource_v4_item AS (
     video_id uuid,
     name text,
     description text,
-    length_seconds bigint,
-    completed boolean,
     upload_id uuid,
     generated boolean
 );
@@ -60,8 +58,6 @@ SELECT COALESCE(
             v.id,
             v.name,
             COALESCE(v.description, ''),
-            v.length_seconds,
-            COALESCE(v.completed, false),
             v.upload_id,
             COALESCE(v.generated, false)
         )::types.q_get_video_resource_v4_item

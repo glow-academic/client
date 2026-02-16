@@ -12,8 +12,6 @@ class GetVideoV4Item(BaseModel):
     video_id: UUID | None = None
     name: str | None = None
     description: str | None = None
-    length_seconds: int | None = None
-    completed: bool | None = None
     upload_id: UUID | None = None
     generated: bool | None = None
 
@@ -51,7 +49,6 @@ class SearchVideosParams(BaseModel):
     offset_count: int | None = 0
     exclude_ids: list[UUID] = []
     upload_ids: list[UUID] = []
-    completed: bool | None = None
     # Artifact boolean filters
     scenario: bool = False
 
@@ -62,6 +59,5 @@ class SearchVideosParams(BaseModel):
             self.offset_count,
             self.exclude_ids,
             self.upload_ids,
-            self.completed,
             self.scenario,
         )

@@ -66,6 +66,7 @@ async def get_image_list_view_internal(
                     file_path=item.file_path,
                     mime_type=item.mime_type,
                     size=item.size,
+                    quality_id=item.quality_id,
                     created_at=item.created_at,
                 )
             )

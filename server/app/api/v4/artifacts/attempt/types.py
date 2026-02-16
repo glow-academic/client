@@ -59,7 +59,6 @@ class VideoData(BaseModel):
 
     id: UUID | None = None
     title: str | None = None
-    length_seconds: int | None = None
     upload_id: UUID | None = None
     questions: list[VideoQuestion] | None = None
     show_image: bool | None = None
@@ -86,7 +85,6 @@ class VideoEntry(BaseModel):
     upload_id: UUID | None = None
     name: str | None = None
     description: str | None = None
-    length_seconds: int | None = None
 
 
 class DocumentEntry(BaseModel):

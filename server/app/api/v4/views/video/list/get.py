@@ -66,6 +66,7 @@ async def get_video_list_view_internal(
                     file_path=item.file_path,
                     mime_type=item.mime_type,
                     size=item.size,
+                    length_seconds=item.length_seconds,
                     created_at=item.created_at,
                 )
             )

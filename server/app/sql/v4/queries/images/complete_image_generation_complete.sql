@@ -39,7 +39,7 @@ WITH upload_row AS (
 ),
 update_image AS (
     UPDATE images_resource
-    SET completed = TRUE, upload_id = upload_row.id
+    SET upload_id = upload_row.id
     FROM upload_row
     WHERE images_resource.id = image_id
     RETURNING images_resource.id

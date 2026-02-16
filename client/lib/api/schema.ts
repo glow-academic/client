@@ -8283,6 +8283,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/views/audio/list/get": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Audios
+         * @description Get audio data from the materialized view.
+         */
+        post: operations["get_audios_api_v4_views_audio_list_get_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v4/auth/login": {
         parameters: {
             query?: never;
@@ -8545,6 +8565,28 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/socket/v4/client/attempt/generate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Attempt Generate Api
+         * @description Client-to-server event: attempt_generate.
+         *
+         *     Unified generation handler that accepts entry_types to filter tools.
+         */
+        post: operations["attempt_generate_api_socket_v4_client_attempt_generate_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/socket/v4/client/attempt/message": {
         parameters: {
             query?: never;
@@ -8719,46 +8761,6 @@ export interface paths {
          * @description Client-to-server event: Stop a voice session.
          */
         post: operations["attempt_audio_stop_api_socket_v4_client_attempt_audio_stop_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/socket/v4/client/attempt/audio_frame": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Attempt Audio Frame Api
-         * @description Client-to-server event: Send audio frame data.
-         */
-        post: operations["attempt_audio_frame_api_socket_v4_client_attempt_audio_frame_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/socket/v4/client/attempt/mic_mute": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Attempt Mic Mute Api
-         * @description Client-to-server event: Toggle microphone mute.
-         */
-        post: operations["attempt_mic_mute_api_socket_v4_client_attempt_mic_mute_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -9114,6 +9116,28 @@ export interface paths {
          *     Contains percentage-based progress tracking.
          */
         post: operations["training_generation_progress_api_socket_v4_server_training_generation_progress_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v4/server/attempt/generation_started": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Attempt Generation Started Api
+         * @description Server-to-client event: Attempt generation started.
+         *
+         *     Emitted when attempt generation begins, listing entry types being generated.
+         */
+        post: operations["attempt_generation_started_api_socket_v4_server_attempt_generation_started_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -17248,10 +17272,10 @@ export interface components {
              */
             logins_count: number;
             /**
-             * Drafts Count
+             * Emulations Count
              * @default 0
              */
-            drafts_count: number;
+            emulations_count: number;
             /** Chart Data */
             chart_data?: components["schemas"]["ActivityChartPoint"][];
             /** Available Events */
@@ -17300,6 +17324,8 @@ export interface components {
             audits?: components["schemas"]["AuditViewItem"][];
             /** Problems */
             problems?: components["schemas"]["ProblemViewItem"][];
+            /** Grants */
+            grants?: components["schemas"]["GrantViewItem"][];
         };
         /** AgentDepartmentSection */
         AgentDepartmentSection: {
@@ -18504,19 +18530,6 @@ export interface components {
             message?: string | null;
         };
         /**
-         * AttemptAudioFramePayload
-         * @description Request payload for attempt_audio_frame WebSocket event.
-         *
-         *     Sends an audio frame to the server.
-         */
-        AttemptAudioFramePayload: {
-            /**
-             * Audio
-             * Format: binary
-             */
-            audio: string;
-        };
-        /**
          * AttemptAudioReadyEvent
          * @description Server-to-client event: attempt_audio_ready.
          *
@@ -18751,6 +18764,26 @@ export interface components {
             trace_id?: string | null;
         };
         /**
+         * AttemptGenerationStartedEvent
+         * @description Server-to-client event: attempt_generation_started.
+         *
+         *     Emitted when attempt generation begins, listing which entry types
+         *     will be generated.
+         */
+        AttemptGenerationStartedEvent: {
+            /**
+             * Artifact Type
+             * @default attempt
+             */
+            artifact_type: string;
+            /** Group Id */
+            group_id: string;
+            /** Run Id */
+            run_id: string;
+            /** Entry Types */
+            entry_types: string[];
+        };
+        /**
          * AttemptGradePayload
          * @description Request payload for attempt_grade WebSocket event.
          *
@@ -18978,16 +19011,6 @@ export interface components {
             upload_id?: string | null;
             /** Group Id */
             group_id?: string | null;
-        };
-        /**
-         * AttemptMicMutePayload
-         * @description Request payload for attempt_mic_mute WebSocket event.
-         *
-         *     Toggles microphone mute state.
-         */
-        AttemptMicMutePayload: {
-            /** Muted */
-            muted: boolean;
         };
         /**
          * AttemptProgressEvent
@@ -19286,6 +19309,35 @@ export interface components {
             simulation_chats?: components["schemas"]["ChatData"][] | null;
             /** Simulation Messages */
             simulation_messages?: components["schemas"]["MessageData"][] | null;
+            runs?: components["schemas"]["GetRunListViewResponse"] | null;
+        };
+        /**
+         * AudioViewItem
+         * @description Single audio from the audio list view.
+         */
+        AudioViewItem: {
+            /**
+             * Audio Id
+             * Format: uuid
+             */
+            audio_id: string;
+            /** Uploads Id */
+            uploads_id?: string | null;
+            /** File Path */
+            file_path?: string | null;
+            /** Mime Type */
+            mime_type?: string | null;
+            /** Size */
+            size?: number | null;
+            /**
+             * Length Seconds
+             * @default 0
+             */
+            length_seconds: number;
+            /** Voice Id */
+            voice_id?: string | null;
+            /** Created At */
+            created_at?: string | null;
         };
         /**
          * AuditViewItem
@@ -25323,6 +25375,25 @@ export interface components {
             completed_attempts?: number | null;
         };
         /**
+         * GenerateAttemptPayload
+         * @description Request payload for attempt_generate WebSocket event.
+         *
+         *     Unified handler that accepts entry_types to filter which tools are fetched.
+         *     Callers (message.py, grade.py) handle domain-specific mutations outside,
+         *     then call attempt_generate with their entry_types and messages.
+         */
+        GenerateAttemptPayload: {
+            /**
+             * Attempt Id
+             * Format: uuid
+             */
+            attempt_id: string;
+            /** Entry Types */
+            entry_types: string[];
+            /** User Instructions */
+            user_instructions?: string[] | null;
+        };
+        /**
          * GetActivityListViewResponse
          * @description Response containing activity list data.
          */
@@ -25670,6 +25741,23 @@ export interface components {
              * @description Available profile filter options
              */
             profile_options?: components["schemas"]["app__api__v4__views__attempt__list__types__FilterOption"][] | null;
+        };
+        /**
+         * GetAudioListViewResponse
+         * @description Response containing audio list data.
+         */
+        GetAudioListViewResponse: {
+            /**
+             * Items
+             * @description Audio data items
+             */
+            items?: components["schemas"]["AudioViewItem"][];
+            /**
+             * Total Count
+             * @description Total count before pagination
+             * @default 0
+             */
+            total_count: number;
         };
         /**
          * GetAuditListViewResponse
@@ -29337,10 +29425,6 @@ export interface components {
             name?: string | null;
             /** Description */
             description?: string | null;
-            /** Length Seconds */
-            length_seconds?: number | null;
-            /** Completed */
-            completed?: boolean | null;
             /** Upload Id */
             upload_id?: string | null;
             /** Generated */
@@ -30347,6 +30431,8 @@ export interface components {
             mime_type?: string | null;
             /** Size */
             size?: number | null;
+            /** Quality Id */
+            quality_id?: string | null;
             /** Created At */
             created_at?: string | null;
         };
@@ -38353,10 +38439,6 @@ export interface components {
             name: string | null;
             /** Description */
             description: string | null;
-            /** Length Seconds */
-            length_seconds: number | null;
-            /** Completed */
-            completed: boolean | null;
             /** Upload Id */
             upload_id: string | null;
             /** Generated */
@@ -43102,10 +43184,6 @@ export interface components {
             video_id?: string | null;
             /** Name */
             name?: string | null;
-            /** Length Seconds */
-            length_seconds?: number | null;
-            /** Completed */
-            completed?: boolean | null;
             /** File Path */
             file_path?: string | null;
             /** Mime Type */
@@ -44282,8 +44360,6 @@ export interface components {
             exclude_ids?: string[] | null;
             /** Upload Ids */
             upload_ids?: string[] | null;
-            /** Completed */
-            completed?: boolean | null;
             /**
              * Scenario
              * @default false
@@ -49617,6 +49693,11 @@ export interface components {
             mime_type?: string | null;
             /** Size */
             size?: number | null;
+            /**
+             * Length Seconds
+             * @default 0
+             */
+            length_seconds: number;
             /** Created At */
             created_at?: string | null;
         };
@@ -49932,8 +50013,6 @@ export interface components {
             name?: string | null;
             /** Description */
             description?: string | null;
-            /** Length Seconds */
-            length_seconds?: number | null;
         };
         /**
          * VideoViewItem
@@ -49955,6 +50034,11 @@ export interface components {
             mime_type?: string | null;
             /** Size */
             size?: number | null;
+            /**
+             * Length Seconds
+             * @default 0
+             */
+            length_seconds: number;
             /** Created At */
             created_at?: string | null;
         };
@@ -49962,8 +50046,6 @@ export interface components {
         VideosApiRequest: {
             /** Name */
             name: string;
-            /** Length Seconds */
-            length_seconds: number;
             /** Description */
             description: string;
             /**
@@ -50010,10 +50092,6 @@ export interface components {
             name?: string | null;
             /** Description */
             description?: string | null;
-            /** Length Seconds */
-            length_seconds?: number | null;
-            /** Completed */
-            completed?: boolean | null;
             /** Upload Id */
             upload_id?: string | null;
             /** Generated */
@@ -65911,6 +65989,39 @@ export interface operations {
             };
         };
     };
+    get_audios_api_v4_views_audio_list_get_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetAudioListViewResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_login_providers_api_v4_auth_login_post: {
         parameters: {
             query?: never;
@@ -66354,6 +66465,41 @@ export interface operations {
             };
         };
     };
+    attempt_generate_api_socket_v4_client_attempt_generate_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GenerateAttemptPayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     attempt_message_api_socket_v4_client_attempt_message_post: {
         parameters: {
             query?: never;
@@ -66644,76 +66790,6 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["AttemptAudioStopPayload"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: boolean;
-                    };
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    attempt_audio_frame_api_socket_v4_client_attempt_audio_frame_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["AttemptAudioFramePayload"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: boolean;
-                    };
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    attempt_mic_mute_api_socket_v4_client_attempt_mic_mute_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["AttemptMicMutePayload"];
             };
         };
         responses: {
@@ -67309,6 +67385,41 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["TrainingGenerationProgressEvent"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    attempt_generation_started_api_socket_v4_server_attempt_generation_started_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AttemptGenerationStartedEvent"];
             };
         };
         responses: {

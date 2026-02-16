@@ -53,7 +53,7 @@ final_upload_id AS (
 ),
 mark_video AS (
     UPDATE videos_resource
-    SET completed = TRUE, upload_id = fi.upload_id
+    SET upload_id = fi.upload_id
     FROM final_upload_id fi
     WHERE videos_resource.id = (SELECT video_id FROM params)
     RETURNING videos_resource.id

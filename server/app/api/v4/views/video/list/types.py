@@ -15,6 +15,7 @@ class VideoViewItem(BaseModel):
     file_path: str | None = None
     mime_type: str | None = None
     size: int | None = None
+    length_seconds: int = 0
     created_at: datetime | None = None
 
 

@@ -44,11 +44,13 @@ SELECT
     ue.file_path,
     ue.mime_type,
     ue.size,
+    uqc.quality_id,
     ir.created_at
 FROM images_resource ir
 JOIN uploads_resource ur ON ur.id = ir.upload_id AND ur.active = true
 JOIN uploads_uploads_connection uuc ON uuc.uploads_id = ur.id AND uuc.active = true
 JOIN uploads_entry ue ON ue.id = uuc.upload_id AND ue.active = true
+LEFT JOIN uploads_qualities_connection uqc ON uqc.upload_id = ue.id AND uqc.active = true
 WHERE ir.active = true
 WITH NO DATA;
 

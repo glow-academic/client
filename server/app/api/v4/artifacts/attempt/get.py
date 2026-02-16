@@ -263,7 +263,6 @@ async def get_attempt_internal(
                             result["videos"][item.video_id] = {
                                 "name": item.name,
                                 "description": item.description,
-                                "length_seconds": item.length_seconds,
                                 "upload_id": item.upload_id,
                             }
 
@@ -667,9 +666,6 @@ async def get_attempt_internal(
                     description=resource_meta["videos"]
                     .get(video_id, {})
                     .get("description"),
-                    length_seconds=resource_meta["videos"]
-                    .get(video_id, {})
-                    .get("length_seconds"),
                 )
                 for video_id in resource_meta["videos"].keys()
             }
