@@ -14,7 +14,6 @@ from app.api.v4.artifacts.simulation.types import (
     PatchSimulationDraftApiResponse,
     PatchSimulationDraftSqlParams,
 )
-from app.api.v4.auth.profile import get_auth_profile_internal
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
@@ -63,7 +62,9 @@ async def patch_simulation_draft(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        # Fetch user context for permissions and audit logging
+        # Fetch user context for permissions and audit logging (lazy import to avoid circular deps)
+        from app.api.v4.auth.profile import get_auth_profile_internal
+
         pool = get_pool()
         if pool:
             async with pool.acquire() as context_conn:

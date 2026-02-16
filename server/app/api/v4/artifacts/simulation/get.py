@@ -70,8 +70,6 @@ from app.api.v4.artifacts.simulation.types import (
     SimulationWebsocketResources,
     SimulationWebsocketViews,
 )
-from app.api.v4.auth.profile import get_auth_profile_internal
-from app.api.v4.auth.settings import get_auth_settings_internal
 from app.api.v4.permissions import has_tools_for_resource, resolve_agents_for_artifact
 from app.api.v4.resources.agents.get import get_agents_internal
 from app.api.v4.resources.departments.get import get_departments_internal
@@ -194,6 +192,10 @@ async def get_simulation_internal(
     Fetches all simulation data using two-pass architecture and returns
     a dataclass with all computed values.
     """
+    # Lazy imports to avoid circular deps (simulation/__init__.py → auth → resources → simulation)
+    from app.api.v4.auth.profile import get_auth_profile_internal
+    from app.api.v4.auth.settings import get_auth_settings_internal
+
     pool = get_pool()
     if not pool:
         raise RuntimeError("Database pool not initialized")

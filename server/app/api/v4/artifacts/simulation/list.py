@@ -23,7 +23,6 @@ from app.api.v4.artifacts.simulation.types import (
     ListSimulationSqlRow,
     QGetScenariosV4Item,
 )
-from app.api.v4.auth.profile import get_auth_profile_internal
 from app.api.v4.types import ListFilterSection
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
@@ -90,7 +89,9 @@ async def get_simulation_list(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        # Fetch user context for audit logging and permissions
+        # Fetch user context for audit logging and permissions (lazy import to avoid circular deps)
+        from app.api.v4.auth.profile import get_auth_profile_internal
+
         pool = get_pool()
         if pool:
             async with pool.acquire() as context_conn:

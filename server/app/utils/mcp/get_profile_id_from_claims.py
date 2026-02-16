@@ -32,7 +32,7 @@ async def get_profile_id_from_claims(
     query = """
         SELECT p.id::text as profile_id
         FROM profile_artifact p
-        JOIN profile_emails pe ON pe.profile_id = p.id AND pe.active = true
+        JOIN profile_emails_junction pe ON pe.profile_id = p.id
         JOIN emails_resource e ON pe.email_id = e.id
         WHERE e.email = $1
         LIMIT 1

@@ -8,12 +8,17 @@ active parent counting), see audits/PERMISSION_UNIFICATION_PLAN.md.
 Per-artifact permission logic lives in each artifact's permissions.py.
 """
 
+from __future__ import annotations
+
 from collections import defaultdict
 from datetime import datetime
+from typing import TYPE_CHECKING
 from uuid import UUID
 
-from app.api.v4.auth.types import SettingsAgentToolEntry
 from app.api.v4.types import CandidateAgent
+
+if TYPE_CHECKING:
+    from app.api.v4.auth.types import SettingsAgentToolEntry
 
 
 def resolve_agents_for_artifact(

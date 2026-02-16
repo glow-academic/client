@@ -174,7 +174,9 @@ async def ensure_department_client(
         origin = os.getenv("ORIGIN", f"http://localhost:{client_port}")
         base_url = origin.rstrip("/")
         redirect_uri = f"{base_url}{app_prefix}/api/auth/callback/keycloak"
+        emulate_redirect_uri = f"{base_url}{app_prefix}/api/auth/emulate-redirect*"
         redirect_uris = [redirect_uri, f"{base_url}{app_prefix}/*"]
+        post_logout_uris = f"{base_url}{app_prefix}/*"
 
         clients = kc_admin.get_clients()
         existing_client = next(
@@ -187,7 +189,7 @@ async def ensure_department_client(
             "name": f"Glow App - {department_name}",
             "rootUrl": base_url,
             "baseUrl": base_url,
-            "redirectUris": redirect_uris,
+            "redirectUris": redirect_uris + [emulate_redirect_uri],
             "webOrigins": ["+"],
             "enabled": True,
             "publicClient": False,
@@ -198,6 +200,9 @@ async def ensure_department_client(
             "clientAuthenticatorType": "client-secret",
             "secret": target_secret,
             "consentRequired": False,
+            "attributes": {
+                "post.logout.redirect.uris": post_logout_uris,
+            },
         }
 
         if existing_client:

@@ -323,6 +323,7 @@ class McpOAuthMiddleware(BaseHTTPMiddleware):
                     "issuer": KEYCLOAK_ISSUER,
                     "authorization_endpoint": f"{KEYCLOAK_ISSUER}/protocol/openid-connect/auth",
                     "token_endpoint": f"{KEYCLOAK_ISSUER}/protocol/openid-connect/token",
+                    "registration_endpoint": f"{KEYCLOAK_ISSUER}/clients-registrations/openid-connect",
                     "scopes_supported": [
                         "openid",
                         "profile",

@@ -13,16 +13,16 @@ from app.api.v4.auth.route_permissions import (
     PageMetadata,
     SidebarSection,
 )
-from app.api.v4.resources.agents.get import QGetAgentsV4Item
-from app.api.v4.resources.cohorts.types import QGetCohortsV4Item
-from app.api.v4.resources.departments.get import QGetDepartmentsV4Item
-from app.api.v4.resources.settings.types import QGetSettingsV4Item
-from app.api.v4.resources.tools.get import QGetToolsV4Item
 from app.sql.types import (
     GetProfileContextAccessSqlRow,
     GetSettingsThemeDataSqlRow,
+    QGetAgentsV4Item,
+    QGetCohortsV4Item,
+    QGetDepartmentsV4Item,
     QGetProfileContextV4RoleResource,
     QGetProfileContextV4ThemeTokens,
+    QGetSettingsV4Item,
+    QGetToolsV4Item,
 )
 
 

@@ -95,9 +95,9 @@ from app.api.v4.resources.standards.get import get_standards_internal
 from app.api.v4.resources.tools.get import get_tools_internal
 from app.api.v4.resources.videos.get import get_videos_internal
 from app.api.v4.views.attempt.chats.get import get_attempt_chats_internal
-from app.api.v4.views.upload.list.get import get_upload_list_view_internal
 from app.api.v4.views.attempt.list.get import get_attempt_list_internal
 from app.api.v4.views.attempt.messages.get import get_attempt_messages_internal
+from app.api.v4.views.upload.list.get import get_upload_list_view_internal
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
@@ -713,7 +713,9 @@ async def get_attempt_internal(
                     description=resource_meta["documents"]
                     .get(document_id, {})
                     .get("description"),
-                    template=resource_meta["documents"].get(document_id, {}).get("template"),
+                    template=resource_meta["documents"]
+                    .get(document_id, {})
+                    .get("template"),
                 )
                 for document_id in resource_meta["documents"].keys()
             }

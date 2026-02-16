@@ -1,411 +1,650 @@
-"""Unified endpoints for artifacts and resources."""
+"""Unified endpoints for artifacts, resources, and views.
 
-import importlib
+Uses explicit handler registries with lazy imports — no filesystem scanning,
+no dynamic discovery, no circular imports.
+"""
+
 import inspect
-from pathlib import Path
 from typing import Any, cast
 
 from fastapi import Response
 from mcp.server.fastmcp import FastMCP
 
 # ============================================================================
-# Dynamic Discovery Functions
+# Lazy Import Cache
+# ============================================================================
+
+_handler_cache: dict[str, Any] = {}
+
+
+def _get_handler(module_path: str, func_name: str) -> Any:
+    """Import and cache a handler function.
+
+    Safe because app is fully loaded when MCP tools run (at call time, not load time).
+    """
+    key = f"{module_path}.{func_name}"
+    if key not in _handler_cache:
+        import importlib
+
+        mod = importlib.import_module(module_path)
+        _handler_cache[key] = getattr(mod, func_name)
+    return _handler_cache[key]
+
+
+# ============================================================================
+# Artifact Registry — 29 artifacts
+# ============================================================================
+# Each artifact maps operation → (module_path, function_name).
+# Docs handlers are sync functions returning dicts (called without await).
+
+ARTIFACT_REGISTRY: dict[str, dict[str, tuple[str, str]]] = {
+    "activity": {
+        "get": ("app.api.v4.artifacts.activity.get", "get_activity"),
+        "docs": ("app.api.v4.artifacts.activity.docs", "get_activity_docs_static"),
+        "refresh": ("app.api.v4.artifacts.activity.refresh", "activity_refresh"),
+    },
+    "agent": {
+        "get": ("app.api.v4.artifacts.agent.get", "get_agent"),
+        "list": ("app.api.v4.artifacts.agent.list", "get_agent_list"),
+        "save": ("app.api.v4.artifacts.agent.save", "save_agent"),
+        "delete": ("app.api.v4.artifacts.agent.delete", "delete_agent"),
+        "duplicate": ("app.api.v4.artifacts.agent.duplicate", "duplicate_agent"),
+        "draft": ("app.api.v4.artifacts.agent.draft", "patch_agent_draft"),
+        "docs": ("app.api.v4.artifacts.agent.docs", "get_agents_docs"),
+    },
+    "attempt": {
+        "get": ("app.api.v4.artifacts.attempt.get", "attempt_get"),
+        "list": ("app.api.v4.artifacts.attempt.list", "list_attempts"),
+        "docs": ("app.api.v4.artifacts.attempt.docs", "get_attempts_docs"),
+    },
+    "auth": {
+        "get": ("app.api.v4.artifacts.auth.get", "get_auth"),
+        "list": ("app.api.v4.artifacts.auth.list", "get_auth_list"),
+        "save": ("app.api.v4.artifacts.auth.save", "save_auth"),
+        "delete": ("app.api.v4.artifacts.auth.delete", "delete_auth"),
+        "duplicate": ("app.api.v4.artifacts.auth.duplicate", "duplicate_auth"),
+        "draft": ("app.api.v4.artifacts.auth.draft", "patch_auth_draft"),
+        "docs": ("app.api.v4.artifacts.auth.docs", "get_auths_docs"),
+    },
+    "benchmark": {
+        "get": ("app.api.v4.artifacts.benchmark.get", "benchmark_bundle_get"),
+        "list": ("app.api.v4.artifacts.benchmark.list", "list_benchmark"),
+        "draft": ("app.api.v4.artifacts.benchmark.draft", "patch_benchmark_draft"),
+        "refresh": ("app.api.v4.artifacts.benchmark.refresh", "benchmark_refresh"),
+        "docs": ("app.api.v4.artifacts.benchmark.docs", "get_benchmarks_docs"),
+    },
+    "cohort": {
+        "get": ("app.api.v4.artifacts.cohort.get", "get_cohort"),
+        "list": ("app.api.v4.artifacts.cohort.list", "get_cohort_list"),
+        "save": ("app.api.v4.artifacts.cohort.save", "save_cohort"),
+        "delete": ("app.api.v4.artifacts.cohort.delete", "delete_cohort"),
+        "duplicate": ("app.api.v4.artifacts.cohort.duplicate", "duplicate_cohort"),
+        "draft": ("app.api.v4.artifacts.cohort.draft", "patch_cohort_draft"),
+        "docs": ("app.api.v4.artifacts.cohort.docs", "get_cohorts_docs"),
+    },
+    "dashboard": {
+        "header": ("app.api.v4.artifacts.dashboard.header", "get_dashboard_header"),
+        "footer": ("app.api.v4.artifacts.dashboard.footer", "get_dashboard_footer"),
+        "primary": ("app.api.v4.artifacts.dashboard.primary", "get_dashboard_primary"),
+        "secondary": (
+            "app.api.v4.artifacts.dashboard.secondary",
+            "get_dashboard_secondary",
+        ),
+        "refresh": ("app.api.v4.artifacts.dashboard.refresh", "dashboard_refresh"),
+        "docs": ("app.api.v4.artifacts.dashboard.docs", "get_dashboard_docs_static"),
+    },
+    "department": {
+        "get": ("app.api.v4.artifacts.department.get", "get_department"),
+        "list": ("app.api.v4.artifacts.department.list", "get_department_list"),
+        "save": ("app.api.v4.artifacts.department.save", "save_department"),
+        "delete": ("app.api.v4.artifacts.department.delete", "delete_department"),
+        "duplicate": (
+            "app.api.v4.artifacts.department.duplicate",
+            "duplicate_department",
+        ),
+        "draft": ("app.api.v4.artifacts.department.draft", "patch_department_draft"),
+        "docs": ("app.api.v4.artifacts.department.docs", "get_departments_docs"),
+    },
+    "document": {
+        "get": ("app.api.v4.artifacts.document.get", "get_document"),
+        "list": ("app.api.v4.artifacts.document.list", "get_document_list"),
+        "save": ("app.api.v4.artifacts.document.save", "save_document"),
+        "delete": ("app.api.v4.artifacts.document.delete", "delete_document"),
+        "duplicate": ("app.api.v4.artifacts.document.duplicate", "duplicate_document"),
+        "draft": ("app.api.v4.artifacts.document.draft", "patch_document_draft"),
+        "docs": ("app.api.v4.artifacts.document.docs", "get_documents_docs"),
+    },
+    "eval": {
+        "get": ("app.api.v4.artifacts.eval.get", "get_eval"),
+        "list": ("app.api.v4.artifacts.eval.list", "get_eval_list"),
+        "save": ("app.api.v4.artifacts.eval.save", "save_eval"),
+        "delete": ("app.api.v4.artifacts.eval.delete", "delete_eval"),
+        "duplicate": ("app.api.v4.artifacts.eval.duplicate", "duplicate_eval"),
+        "draft": ("app.api.v4.artifacts.eval.draft", "patch_eval_draft"),
+        "docs": ("app.api.v4.artifacts.eval.docs", "get_evals_docs"),
+    },
+    "field": {
+        "get": ("app.api.v4.artifacts.field.get", "get_field"),
+        "list": ("app.api.v4.artifacts.field.list", "get_field_list"),
+        "save": ("app.api.v4.artifacts.field.save", "save_field"),
+        "delete": ("app.api.v4.artifacts.field.delete", "delete_field"),
+        "duplicate": ("app.api.v4.artifacts.field.duplicate", "duplicate_field"),
+        "draft": ("app.api.v4.artifacts.field.draft", "patch_field_draft"),
+        "docs": ("app.api.v4.artifacts.field.docs", "get_fields_docs"),
+    },
+    "group": {
+        "get": ("app.api.v4.artifacts.group.get", "get_group"),
+        "list": ("app.api.v4.artifacts.group.list", "list_groups"),
+        "docs": ("app.api.v4.artifacts.group.docs", "get_groups_docs"),
+    },
+    "health": {
+        "get": ("app.api.v4.artifacts.health.get", "get_health"),
+        "refresh": ("app.api.v4.artifacts.health.refresh", "health_refresh"),
+        "docs": ("app.api.v4.artifacts.health.docs", "get_health_docs_static"),
+    },
+    "leaderboard": {
+        "get": ("app.api.v4.artifacts.leaderboard.get", "get_leaderboard"),
+        "refresh": (
+            "app.api.v4.artifacts.leaderboard.refresh",
+            "leaderboard_refresh",
+        ),
+        "docs": (
+            "app.api.v4.artifacts.leaderboard.docs",
+            "get_leaderboard_docs_static",
+        ),
+    },
+    "model": {
+        "get": ("app.api.v4.artifacts.model.get", "get_model"),
+        "list": ("app.api.v4.artifacts.model.list", "get_model_list"),
+        "save": ("app.api.v4.artifacts.model.save", "save_model"),
+        "delete": ("app.api.v4.artifacts.model.delete", "delete_model"),
+        "duplicate": ("app.api.v4.artifacts.model.duplicate", "duplicate_model"),
+        "draft": ("app.api.v4.artifacts.model.draft", "patch_model_draft"),
+        "docs": ("app.api.v4.artifacts.model.docs", "get_models_docs"),
+    },
+    "parameter": {
+        "get": ("app.api.v4.artifacts.parameter.get", "get_parameter"),
+        "list": ("app.api.v4.artifacts.parameter.list", "get_parameter_list"),
+        "save": ("app.api.v4.artifacts.parameter.save", "save_parameter"),
+        "delete": ("app.api.v4.artifacts.parameter.delete", "delete_parameter"),
+        "duplicate": (
+            "app.api.v4.artifacts.parameter.duplicate",
+            "duplicate_parameter",
+        ),
+        "draft": ("app.api.v4.artifacts.parameter.draft", "patch_parameter_draft"),
+        "docs": ("app.api.v4.artifacts.parameter.docs", "get_parameters_docs"),
+    },
+    "persona": {
+        "get": ("app.api.v4.artifacts.persona.get", "get_persona"),
+        "list": ("app.api.v4.artifacts.persona.list", "get_persona_list"),
+        "save": ("app.api.v4.artifacts.persona.save", "save_persona"),
+        "delete": ("app.api.v4.artifacts.persona.delete", "delete_persona"),
+        "duplicate": ("app.api.v4.artifacts.persona.duplicate", "duplicate_persona"),
+        "draft": ("app.api.v4.artifacts.persona.draft", "patch_persona_draft"),
+        "docs": ("app.api.v4.artifacts.persona.docs", "get_personas_docs"),
+    },
+    "pricing": {
+        "get": ("app.api.v4.artifacts.pricing.get", "get_pricing"),
+        "refresh": ("app.api.v4.artifacts.pricing.refresh", "pricing_refresh"),
+        "docs": ("app.api.v4.artifacts.pricing.docs", "get_pricing_docs_static"),
+    },
+    "profile": {
+        "get": ("app.api.v4.artifacts.profile.get", "get_profile"),
+        "list": ("app.api.v4.artifacts.profile.list", "get_profile_list"),
+        "save": ("app.api.v4.artifacts.profile.save", "save_profile"),
+        "delete": ("app.api.v4.artifacts.profile.delete", "delete_profile"),
+        "duplicate": ("app.api.v4.artifacts.profile.duplicate", "duplicate_profile"),
+        "draft": ("app.api.v4.artifacts.profile.draft", "patch_profile_draft"),
+        "docs": ("app.api.v4.artifacts.profile.docs", "get_profiles_docs"),
+    },
+    "provider": {
+        "get": ("app.api.v4.artifacts.provider.get", "get_provider"),
+        "list": ("app.api.v4.artifacts.provider.list", "get_provider_list"),
+        "save": ("app.api.v4.artifacts.provider.save", "save_provider"),
+        "delete": ("app.api.v4.artifacts.provider.delete", "delete_provider"),
+        "duplicate": ("app.api.v4.artifacts.provider.duplicate", "duplicate_provider"),
+        "draft": ("app.api.v4.artifacts.provider.draft", "patch_provider_draft"),
+        "docs": ("app.api.v4.artifacts.provider.docs", "get_providers_docs"),
+    },
+    "reports": {
+        "get": ("app.api.v4.artifacts.reports.get", "get_reports"),
+        "refresh": ("app.api.v4.artifacts.reports.refresh", "reports_refresh"),
+        "docs": ("app.api.v4.artifacts.reports.docs", "get_reports_docs_static"),
+    },
+    "rubric": {
+        "get": ("app.api.v4.artifacts.rubric.get", "get_rubric"),
+        "list": ("app.api.v4.artifacts.rubric.list", "get_rubric_list"),
+        "save": ("app.api.v4.artifacts.rubric.save", "save_rubric"),
+        "delete": ("app.api.v4.artifacts.rubric.delete", "delete_rubric"),
+        "duplicate": ("app.api.v4.artifacts.rubric.duplicate", "duplicate_rubric"),
+        "draft": ("app.api.v4.artifacts.rubric.draft", "patch_rubric_draft"),
+        "docs": ("app.api.v4.artifacts.rubric.docs", "get_rubrics_docs"),
+    },
+    "scenario": {
+        "get": ("app.api.v4.artifacts.scenario.get", "get_scenario"),
+        "list": ("app.api.v4.artifacts.scenario.list", "get_scenario_list"),
+        "save": ("app.api.v4.artifacts.scenario.save", "save_scenario"),
+        "delete": ("app.api.v4.artifacts.scenario.delete", "delete_scenario"),
+        "duplicate": ("app.api.v4.artifacts.scenario.duplicate", "duplicate_scenario"),
+        "draft": ("app.api.v4.artifacts.scenario.draft", "patch_scenario_draft"),
+        "docs": ("app.api.v4.artifacts.scenario.docs", "get_scenarios_docs"),
+    },
+    "session": {
+        "get": ("app.api.v4.artifacts.session.get", "get_session"),
+        "list": ("app.api.v4.artifacts.session.list", "list_sessions"),
+        "docs": ("app.api.v4.artifacts.session.docs", "get_sessions_docs"),
+    },
+    "setting": {
+        "get": ("app.api.v4.artifacts.setting.get", "get_setting"),
+        "list": ("app.api.v4.artifacts.setting.list", "get_setting_list"),
+        "save": ("app.api.v4.artifacts.setting.save", "save_setting"),
+        "delete": ("app.api.v4.artifacts.setting.delete", "delete_setting"),
+        "duplicate": ("app.api.v4.artifacts.setting.duplicate", "duplicate_setting"),
+        "draft": ("app.api.v4.artifacts.setting.draft", "patch_setting_draft"),
+        "docs": ("app.api.v4.artifacts.setting.docs", "get_settings_docs"),
+    },
+    "simulation": {
+        "get": ("app.api.v4.artifacts.simulation.get", "get_simulation"),
+        "list": ("app.api.v4.artifacts.simulation.list", "get_simulation_list"),
+        "save": ("app.api.v4.artifacts.simulation.save", "save_simulation"),
+        "delete": ("app.api.v4.artifacts.simulation.delete", "delete_simulation"),
+        "duplicate": (
+            "app.api.v4.artifacts.simulation.duplicate",
+            "duplicate_simulation",
+        ),
+        "draft": ("app.api.v4.artifacts.simulation.draft", "patch_simulation_draft"),
+        "docs": ("app.api.v4.artifacts.simulation.docs", "get_simulations_docs"),
+    },
+    "test": {
+        "get": ("app.api.v4.artifacts.test.get", "get_test_artifact"),
+        "list": ("app.api.v4.artifacts.test.list", "list_test_artifacts"),
+        "docs": ("app.api.v4.artifacts.test.docs", "get_tests_docs"),
+    },
+    "tool": {
+        "get": ("app.api.v4.artifacts.tool.get", "get_tool"),
+        "list": ("app.api.v4.artifacts.tool.list", "get_tool_list"),
+        "save": ("app.api.v4.artifacts.tool.save", "save_tool"),
+        "delete": ("app.api.v4.artifacts.tool.delete", "delete_tool"),
+        "duplicate": ("app.api.v4.artifacts.tool.duplicate", "duplicate_tool"),
+        "draft": ("app.api.v4.artifacts.tool.draft", "patch_tool_draft"),
+        "docs": ("app.api.v4.artifacts.tool.docs", "get_tools_docs"),
+    },
+    "training": {
+        "get": ("app.api.v4.artifacts.training.get", "training_bundle_get"),
+        "list": ("app.api.v4.artifacts.training.list", "training_get"),
+        "draft": ("app.api.v4.artifacts.training.draft", "patch_training_draft"),
+        "refresh": ("app.api.v4.artifacts.training.refresh", "training_refresh"),
+        "docs": ("app.api.v4.artifacts.training.docs", "get_training_docs_static"),
+    },
+}
+
+
+# ============================================================================
+# Resource Registry — 75 resources
+# ============================================================================
+# Resources follow a regular naming pattern: get_{name}, search_{name},
+# create_{name}, get_{name}_docs. Built from explicit name lists.
+
+_ALL_RESOURCES = [
+    "agents",
+    "arg_positions",
+    "args",
+    "args_outputs",
+    "auth_item_keys",
+    "auths",
+    "bindings",
+    "cohorts",
+    "colors",
+    "conditional_parameters",
+    "departments",
+    "descriptions",
+    "documents",
+    "domains",
+    "emails",
+    "endpoints",
+    "evals",
+    "examples",
+    "fields",
+    "flags",
+    "group_positions",
+    "group_rubrics",
+    "groups",
+    "icons",
+    "images",
+    "instructions",
+    "items",
+    "keys",
+    "modalities",
+    "models",
+    "names",
+    "objectives",
+    "options",
+    "parameter_fields",
+    "parameters",
+    "personas",
+    "points",
+    "pricing",
+    "problem_statements",
+    "profiles",
+    "prompts",
+    "protocols",
+    "provider_keys",
+    "providers",
+    "qualities",
+    "questions",
+    "reasoning_levels",
+    "request_limits",
+    "role_routes",
+    "roles",
+    "routes",
+    "rubrics",
+    "run_positions",
+    "run_rubrics",
+    "runs",
+    "scenario_flags",
+    "scenario_personas",
+    "scenario_positions",
+    "scenario_rubrics",
+    "scenario_time_limits",
+    "scenarios",
+    "settings",
+    "simulation_positions",
+    "simulations",
+    "slugs",
+    "standard_groups",
+    "standards",
+    "temperature_levels",
+    "texts",
+    "thresholds",
+    "tools",
+    "uploads",
+    "values",
+    "videos",
+    "voices",
+]
+
+_RESOURCES_WITH_CREATE = {
+    "arg_positions",
+    "args",
+    "args_outputs",
+    "auth_item_keys",
+    "colors",
+    "descriptions",
+    "emails",
+    "endpoints",
+    "examples",
+    "group_positions",
+    "group_rubrics",
+    "images",
+    "instructions",
+    "items",
+    "keys",
+    "names",
+    "objectives",
+    "options",
+    "parameter_fields",
+    "points",
+    "pricing",
+    "problem_statements",
+    "prompts",
+    "protocols",
+    "provider_keys",
+    "questions",
+    "request_limits",
+    "role_routes",
+    "run_positions",
+    "run_rubrics",
+    "scenario_personas",
+    "scenario_positions",
+    "scenario_rubrics",
+    "scenario_time_limits",
+    "simulation_positions",
+    "slugs",
+    "standard_groups",
+    "texts",
+    "uploads",
+    "values",
+    "videos",
+    "voices",
+}
+
+RESOURCE_REGISTRY: dict[str, dict[str, tuple[str, str]]] = {}
+for _name in _ALL_RESOURCES:
+    _entry: dict[str, tuple[str, str]] = {
+        "get": (f"app.api.v4.resources.{_name}.get", f"get_{_name}"),
+        "search": (f"app.api.v4.resources.{_name}.search", f"search_{_name}"),
+        "docs": (f"app.api.v4.resources.{_name}.docs", f"get_{_name}_docs"),
+    }
+    if _name in _RESOURCES_WITH_CREATE:
+        _entry["create"] = (
+            f"app.api.v4.resources.{_name}.create",
+            f"create_{_name}",
+        )
+    RESOURCE_REGISTRY[_name] = _entry
+
+
+# ============================================================================
+# View Registry — 32 views
+# ============================================================================
+# Views are organized by domain. Multi-sub views use underscore-flattened keys.
+
+VIEW_REGISTRY: dict[str, dict[str, tuple[str, str]]] = {
+    # Simple views (Pattern A: domain/list/get.py)
+    "activity": {
+        "get": ("app.api.v4.views.activity.list.get", "get_activity"),
+    },
+    "audio": {
+        "get": ("app.api.v4.views.audio.list.get", "get_audios"),
+    },
+    "audit": {
+        "get": ("app.api.v4.views.audit.list.get", "get_audits"),
+    },
+    "call": {
+        "get": ("app.api.v4.views.call.list.get", "get_calls"),
+    },
+    "grant": {
+        "get": ("app.api.v4.views.grant.list.get", "get_grants"),
+    },
+    "group": {
+        "get": ("app.api.v4.views.group.list.get", "get_groups"),
+    },
+    "health": {
+        "get": ("app.api.v4.views.health.list.get", "get_health"),
+    },
+    "image": {
+        "get": ("app.api.v4.views.image.list.get", "get_images"),
+    },
+    "login": {
+        "get": ("app.api.v4.views.login.list.get", "get_logins"),
+    },
+    "message": {
+        "get": ("app.api.v4.views.message.list.get", "get_messages"),
+    },
+    "metric": {
+        "get": ("app.api.v4.views.metric.list.get", "get_metrics"),
+    },
+    "problem": {
+        "get": ("app.api.v4.views.problem.list.get", "get_problems"),
+    },
+    "run": {
+        "get": ("app.api.v4.views.run.list.get", "get_runs"),
+    },
+    "session": {
+        "get": ("app.api.v4.views.session.list.get", "get_sessions"),
+    },
+    "text": {
+        "get": ("app.api.v4.views.text.list.get", "get_texts"),
+    },
+    "upload": {
+        "get": ("app.api.v4.views.upload.list.get", "get_uploads"),
+    },
+    "video": {
+        "get": ("app.api.v4.views.video.list.get", "get_videos"),
+    },
+    # Flat view (Pattern C: domain/get.py)
+    "config": {
+        "get": ("app.api.v4.views.config.get", "get_config"),
+        "refresh": ("app.api.v4.views.config.refresh", "refresh_config_view"),
+    },
+    # Multi-sub views (Pattern B) — flattened with underscore
+    "attempt_list": {
+        "get": ("app.api.v4.views.attempt.list.get", "get_attempts"),
+        "refresh": (
+            "app.api.v4.views.attempt.list.refresh",
+            "refresh_attempts_view",
+        ),
+    },
+    "attempt_chats": {
+        "get": ("app.api.v4.views.attempt.chats.get", "get_chats"),
+        "refresh": (
+            "app.api.v4.views.attempt.chats.refresh",
+            "refresh_chats_view",
+        ),
+    },
+    "attempt_messages": {
+        "get": ("app.api.v4.views.attempt.messages.get", "get_messages"),
+        "refresh": (
+            "app.api.v4.views.attempt.messages.refresh",
+            "refresh_messages_view",
+        ),
+    },
+    "analytics_profile_facts": {
+        "get": (
+            "app.api.v4.views.analytics.profile_facts.get",
+            "get_profile_facts",
+        ),
+    },
+    "analytics_rubric_facts": {
+        "get": ("app.api.v4.views.analytics.rubric_facts.get", "get_rubric_facts"),
+    },
+    "analytics_scenario_facts": {
+        "get": (
+            "app.api.v4.views.analytics.scenario_facts.get",
+            "get_scenario_facts",
+        ),
+    },
+    "analytics_simulation_facts": {
+        "get": (
+            "app.api.v4.views.analytics.simulation_facts.get",
+            "get_simulation_facts",
+        ),
+    },
+    "benchmark_bundle": {
+        "get": (
+            "app.api.v4.views.benchmark.bundle.get",
+            "get_benchmark_bundle_view",
+        ),
+    },
+    "benchmark_context": {
+        "get": (
+            "app.api.v4.views.benchmark.context.get",
+            "get_benchmark_context_view",
+        ),
+    },
+    "benchmark_invocations": {
+        "get": (
+            "app.api.v4.views.benchmark.invocations.get",
+            "get_benchmark_invocations",
+        ),
+        "refresh": (
+            "app.api.v4.views.benchmark.invocations.refresh",
+            "refresh_benchmark_invocations",
+        ),
+    },
+    "benchmark_tests": {
+        "get": ("app.api.v4.views.benchmark.tests.get", "get_benchmark_tests"),
+        "refresh": (
+            "app.api.v4.views.benchmark.tests.refresh",
+            "refresh_benchmark_tests",
+        ),
+    },
+    "training_bundle": {
+        "get": (
+            "app.api.v4.views.training.bundle.get",
+            "get_training_bundle_view",
+        ),
+    },
+    "training_context": {
+        "get": (
+            "app.api.v4.views.training.context.get",
+            "get_training_context_view",
+        ),
+    },
+}
+
+
+# ============================================================================
+# Special Registry — 16 special handlers
+# ============================================================================
+
+SPECIAL_REGISTRY: dict[str, tuple[str, str]] = {
+    "attempt_archive": (
+        "app.api.v4.artifacts.attempt.archive",
+        "archive_attempts",
+    ),
+    "test_archive": (
+        "app.api.v4.artifacts.test.archive",
+        "archive_test_artifacts",
+    ),
+    "export_report": ("app.api.v4.artifacts.reports.export", "export_report"),
+    "export_certificate": (
+        "app.api.v4.artifacts.attempt.certifficate",
+        "export_certificate",
+    ),
+    "decrypt": ("app.api.v4.resources.keys.decrypt", "decrypt_key"),
+    "upload_save": ("app.api.v4.resources.uploads.upload", "save_upload"),
+    "upload_download": ("app.api.v4.resources.uploads.download", "get_upload"),
+    "debug_problem": ("app.api.v4.artifacts.activity.problem", "create_problem"),
+    "debug_resolve": ("app.api.v4.artifacts.activity.resolve", "resolve_problem"),
+    "bulk_document_process": (
+        "app.api.v4.artifacts.document.bulk.process",
+        "process_document",
+    ),
+    "bulk_document_search": (
+        "app.api.v4.artifacts.document.bulk.search",
+        "search_document",
+    ),
+    "bulk_document_save": (
+        "app.api.v4.artifacts.document.bulk.save",
+        "save_document",
+    ),
+    "bulk_document_delete": (
+        "app.api.v4.artifacts.document.bulk.delete",
+        "delete_document",
+    ),
+    "bulk_profile_process": (
+        "app.api.v4.artifacts.profile.bulk.process",
+        "process_staff",
+    ),
+    "bulk_profile_search": (
+        "app.api.v4.artifacts.profile.bulk.search",
+        "search_staff",
+    ),
+    "bulk_profile_save": ("app.api.v4.artifacts.profile.bulk.save", "save_staff"),
+    "bulk_profile_delete": (
+        "app.api.v4.artifacts.profile.bulk.delete",
+        "delete_staff",
+    ),
+}
+
+
+# ============================================================================
+# Derived Lists
+# ============================================================================
+
+ARTIFACTS = sorted(ARTIFACT_REGISTRY.keys())
+RESOURCES = sorted(RESOURCE_REGISTRY.keys())
+VIEWS = sorted(VIEW_REGISTRY.keys())
+ALL_ITEMS = ARTIFACTS + RESOURCES
+
+
+# ============================================================================
+# Helper Functions
 # ============================================================================
 
 
-def discover_artifacts() -> list[str]:
-    """Discover all artifacts by scanning artifacts directory.
-
-    Returns:
-        List of artifact names (singular, alphabetical).
-    """
-    artifacts_dir = Path(__file__).parent.parent / "api" / "v4" / "artifacts"
-    artifacts = []
-
-    if artifacts_dir.exists():
-        for item in sorted(artifacts_dir.iterdir()):
-            if item.is_dir() and not item.name.startswith("_"):
-                # Check if it has handlers (has get.py or save.py)
-                if (item / "get.py").exists() or (item / "save.py").exists():
-                    artifacts.append(item.name)
-
-    return artifacts
-
-
-def discover_resources() -> list[str]:
-    """Discover all resources by scanning resources directory.
-
-    Returns:
-        List of resource names (plural, alphabetical).
-    """
-    resources_dir = Path(__file__).parent.parent / "api" / "v4" / "resources"
-    resources = []
-
-    if resources_dir.exists():
-        for item in sorted(resources_dir.iterdir()):
-            if item.is_dir() and not item.name.startswith("_"):
-                # Check if it has create.py
-                if (item / "create.py").exists():
-                    resources.append(item.name)
-
-    return resources
-
-
-def _get_analytics_handler_name(analytics_type: str, operation: str) -> str | None:
-    """Get the handler function name for an analytics operation.
-
-    Args:
-        analytics_type: Analytics type (e.g., "home", "dashboard")
-        operation: Operation name (e.g., "get", "list")
-
-    Returns:
-        Function name or None if operation not applicable.
-    """
-    if operation == "get":
-        # Pattern: get_{type}_overview, get_{type}, get_{type}_bundle, etc.
-        # Try common patterns
-        patterns = [
-            f"get_{analytics_type}_overview",
-            f"get_{analytics_type}",
-            f"get_{analytics_type}_bundle",
-        ]
-        return patterns[0]  # Return first pattern, will try to import
-    elif operation == "list":
-        # Pattern: get_{type}_history, get_{type}_list, etc.
-        patterns = [
-            f"get_{analytics_type}_history",
-            f"get_{analytics_type}_list",
-        ]
-        return patterns[0]
-    elif operation == "refresh" and analytics_type == "refresh":
-        return "refresh_analytics"
-
-    return None
-
-
-def discover_analytics_handlers() -> dict[tuple[str, str], Any]:
-    """Discover all analytics handlers by scanning analytics directory.
-
-    Returns:
-        Dictionary mapping (type, operation) tuples to handler functions.
-    """
-    analytics_dir = Path(__file__).parent.parent / "api" / "v4" / "analytics"
-    handlers: dict[tuple[str, str], Any] = {}
-
-    if not analytics_dir.exists():
-        return handlers
-
-    # Handle refresh.py separately (it's at the root level)
-    refresh_path = analytics_dir / "refresh.py"
-    if refresh_path.exists():
-        try:
-            module = importlib.import_module("app.api.v4.analytics.refresh")
-            func_name = _get_analytics_handler_name("refresh", "refresh")
-            if func_name and hasattr(module, func_name):
-                handlers[("refresh", "refresh")] = getattr(module, func_name)
-        except (ImportError, AttributeError):
-            pass
-
-    # Scan subdirectories for type/operation pairs
-    for item in sorted(analytics_dir.iterdir()):
-        if item.is_dir() and not item.name.startswith("_"):
-            analytics_type = item.name
-
-            # Check for get.py
-            get_path = item / "get.py"
-            if get_path.exists():
-                try:
-                    module = importlib.import_module(
-                        f"app.api.v4.analytics.{analytics_type}.get"
-                    )
-                    func_name = _get_analytics_handler_name(analytics_type, "get")
-                    if func_name:
-                        # Try the primary pattern first
-                        if hasattr(module, func_name):
-                            handlers[(analytics_type, "get")] = getattr(
-                                module, func_name
-                            )
-                        else:
-                            # Fallback: find any function starting with "get_"
-                            for attr_name in dir(module):
-                                if attr_name.startswith("get_") and callable(
-                                    getattr(module, attr_name)
-                                ):
-                                    handlers[(analytics_type, "get")] = getattr(
-                                        module, attr_name
-                                    )
-                                    break
-                except (ImportError, AttributeError):
-                    pass
-
-            # Check for list.py
-            list_path = item / "list.py"
-            if list_path.exists():
-                try:
-                    module = importlib.import_module(
-                        f"app.api.v4.analytics.{analytics_type}.list"
-                    )
-                    func_name = _get_analytics_handler_name(analytics_type, "list")
-                    if func_name:
-                        # Try the primary pattern first
-                        if hasattr(module, func_name):
-                            handlers[(analytics_type, "list")] = getattr(
-                                module, func_name
-                            )
-                        else:
-                            # Fallback: find any function starting with "get_" (list endpoints also use get_ prefix)
-                            for attr_name in dir(module):
-                                if attr_name.startswith("get_") and callable(
-                                    getattr(module, attr_name)
-                                ):
-                                    handlers[(analytics_type, "list")] = getattr(
-                                        module, attr_name
-                                    )
-                                    break
-                except (ImportError, AttributeError):
-                    pass
-
-    return handlers
-
-
-def _get_attempts_handler_name(attempt_type: str, operation: str) -> str | None:
-    """Get the handler function name for an attempts operation.
-
-    Args:
-        attempt_type: Attempt type (e.g., "simulation", "benchmark")
-        operation: Operation name (e.g., "get", "archive")
-
-    Returns:
-        Function name or None if operation not applicable.
-    """
-    if operation == "get":
-        return f"get_{attempt_type}_attempt"
-    elif operation == "archive":
-        return f"archive_{attempt_type}_attempts"
-
-    return None
-
-
-def discover_attempts_handlers() -> dict[tuple[str, str], Any]:
-    """Discover all attempts handlers by scanning attempts directory.
-
-    Returns:
-        Dictionary mapping (type, operation) tuples to handler functions.
-    """
-    attempts_dir = Path(__file__).parent.parent / "api" / "v4" / "attempts"
-    handlers: dict[tuple[str, str], Any] = {}
-
-    if not attempts_dir.exists():
-        return handlers
-
-    # Scan subdirectories for type/operation pairs
-    for item in sorted(attempts_dir.iterdir()):
-        if item.is_dir() and not item.name.startswith("_"):
-            attempt_type = item.name
-
-            # Check for get.py
-            get_path = item / "get.py"
-            if get_path.exists():
-                try:
-                    module = importlib.import_module(
-                        f"app.api.v4.attempts.{attempt_type}.get"
-                    )
-                    func_name = _get_attempts_handler_name(attempt_type, "get")
-                    if func_name and hasattr(module, func_name):
-                        handlers[(attempt_type, "get")] = getattr(module, func_name)
-                except (ImportError, AttributeError):
-                    pass
-
-            # Check for archive.py
-            archive_path = item / "archive.py"
-            if archive_path.exists():
-                try:
-                    module = importlib.import_module(
-                        f"app.api.v4.attempts.{attempt_type}.archive"
-                    )
-                    func_name = _get_attempts_handler_name(attempt_type, "archive")
-                    if func_name and hasattr(module, func_name):
-                        handlers[(attempt_type, "archive")] = getattr(module, func_name)
-                except (ImportError, AttributeError):
-                    pass
-
-    return handlers
-
-
-def _get_bulk_handler_name(bulk_type: str, operation: str) -> str | None:
-    """Get the handler function name for a bulk operation.
-
-    Args:
-        bulk_type: Bulk type (e.g., "document", "staff")
-        operation: Operation name (e.g., "process", "search", "save", "delete")
-
-    Returns:
-        Function name: {operation}_{type}
-    """
-    return f"{operation}_{bulk_type}"
-
-
-def discover_bulk_handlers() -> dict[tuple[str, str], Any]:
-    """Discover all bulk handlers by scanning artifact bulk directories.
-
-    Returns:
-        Dictionary mapping (type, operation) tuples to handler functions.
-    """
-    handlers: dict[tuple[str, str], Any] = {}
-
-    # Map bulk types to their new artifact locations
-    bulk_locations = {
-        "document": "app.api.v4.artifacts.document.bulk",
-        "staff": "app.api.v4.artifacts.profile.bulk",
-    }
-
-    for bulk_type, module_base in bulk_locations.items():
-        for operation in ["process", "search", "save", "delete"]:
-            try:
-                module = importlib.import_module(f"{module_base}.{operation}")
-                func_name = _get_bulk_handler_name(bulk_type, operation)
-                if func_name and hasattr(module, func_name):
-                    handlers[(bulk_type, operation)] = getattr(module, func_name)
-            except (ImportError, AttributeError):
-                pass
-
-    return handlers
-
-
-def _get_export_handler_name(export_type: str) -> str | None:
-    """Get the handler function name for an export operation.
-
-    Args:
-        export_type: Export type (e.g., "certificate", "report")
-
-    Returns:
-        Function name: export_{type}
-    """
-    return f"export_{export_type}"
-
-
-def discover_export_handlers() -> dict[str, Any]:
-    """Discover export handlers from their new locations.
-
-    Returns:
-        Dictionary mapping type to handler functions.
-    """
-    handlers: dict[str, Any] = {}
-
-    # Report export is now in artifacts/reports/export.py
-    try:
-        module = importlib.import_module("app.api.v4.artifacts.reports.export")
-        if hasattr(module, "export_report"):
-            handlers["report"] = module.export_report
-    except (ImportError, AttributeError):
-        pass
-
-    # Certificate export is in artifacts/attempt/certifficate.py
-    try:
-        module = importlib.import_module("app.api.v4.artifacts.attempt.certifficate")
-        if hasattr(module, "export_certificate"):
-            handlers["certificate"] = module.export_certificate
-    except (ImportError, AttributeError):
-        pass
-
-    return handlers
-
-
-def discover_decrypt_handlers() -> dict[str, Any]:
-    """Discover decrypt handler.
-
-    Returns:
-        Dictionary with "decrypt" key mapping to handler function.
-    """
-    handlers: dict[str, Any] = {}
-
-    try:
-        module = importlib.import_module("app.api.v4.resources.keys.decrypt")
-        if hasattr(module, "decrypt_key"):
-            handlers["decrypt"] = module.decrypt_key
-    except (ImportError, AttributeError):
-        pass
-
-    return handlers
-
-
-def _get_uploads_handler_name(operation: str) -> str | None:
-    """Get the handler function name for an uploads operation.
-
-    Args:
-        operation: Operation name (e.g., "get", "save")
-
-    Returns:
-        Function name: {operation}_upload
-    """
-    return f"{operation}_upload"
-
-
-def discover_uploads_handlers() -> dict[str, Any]:
-    """Discover uploads handlers from their new locations.
-
-    Returns:
-        Dictionary mapping operation to handler functions.
-    """
-    handlers: dict[str, Any] = {}
-
-    # Download (was get) - now in resources/uploads/download.py
-    try:
-        module = importlib.import_module("app.api.v4.resources.uploads.download")
-        if hasattr(module, "get_upload"):
-            handlers["get"] = module.get_upload
-    except (ImportError, AttributeError):
-        pass
-
-    # Upload/finalize (was save) - now in resources/uploads/upload.py
-    try:
-        module = importlib.import_module("app.api.v4.resources.uploads.upload")
-        if hasattr(module, "save_upload"):
-            handlers["save"] = module.save_upload
-    except (ImportError, AttributeError):
-        pass
-
-    return handlers
-
-
-def discover_debug_handlers() -> dict[str, Any]:
-    """Discover debug handler.
-
-    Returns:
-        Dictionary with "debug" key mapping to handler function.
-    """
-    handlers: dict[str, Any] = {}
-
-    try:
-        module = importlib.import_module("app.api.v4.artifacts.activity.problem")
-        if hasattr(module, "create_problem"):
-            handlers["debug"] = module.create_problem
-    except (ImportError, AttributeError):
-        pass
-
-    return handlers
-
-
-def discover_groups_handlers() -> dict[str, Any]:
-    """Discover groups handler from artifacts/group.py.
-
-    Returns:
-        Dictionary with "get" key mapping to handler function.
-    """
-    handlers: dict[str, Any] = {}
-
-    try:
-        module = importlib.import_module("app.api.v4.artifacts.group")
-        if hasattr(module, "get_group"):
-            handlers["get"] = module.get_group
-    except (ImportError, AttributeError):
-        pass
-
-    return handlers
-
-
 def pluralize_artifact(artifact_name: str) -> str:
-    """Pluralize artifact name for docs operations.
+    """Pluralize artifact name.
 
     Args:
         artifact_name: Singular artifact name (e.g., "agent", "persona")
@@ -413,8 +652,6 @@ def pluralize_artifact(artifact_name: str) -> str:
     Returns:
         Pluralized artifact name (e.g., "agents", "personas")
     """
-    # Simple rule: add 's' to end (handles most cases)
-    # Special cases: y → ies, s/x/z → add 'es', etc.
     if artifact_name.endswith("y"):
         return artifact_name[:-1] + "ies"
     elif artifact_name.endswith(("s", "x", "z", "ch", "sh")):
@@ -423,522 +660,8 @@ def pluralize_artifact(artifact_name: str) -> str:
         return artifact_name + "s"
 
 
-def _get_artifact_handler_name(artifact_name: str, operation: str) -> str | None:
-    """Get the handler function name for an artifact operation.
-
-    Derives function names directly from API path structure.
-    Artifacts use singular names matching directory names.
-
-    Args:
-        artifact_name: Singular artifact name (e.g., "agent", "persona")
-        operation: Operation name (e.g., "get", "save", "list")
-
-    Returns:
-        Function name or None if operation not applicable.
-    """
-    if operation == "get":
-        return f"get_{artifact_name}"
-    elif operation == "save":
-        return f"save_{artifact_name}"
-    elif operation == "list":
-        # Singular: get_{artifact}_list (matches directory name)
-        return f"get_{artifact_name}_list"
-    elif operation == "duplicate":
-        return f"duplicate_{artifact_name}"
-    elif operation == "delete":
-        return f"delete_{artifact_name}"
-    elif operation == "draft":
-        return f"patch_{artifact_name}_draft"
-    elif operation == "docs":
-        # Pluralize only for docs: get_{artifact}s_docs
-        plural_name = pluralize_artifact(artifact_name)
-        return f"get_{plural_name}_docs"
-
-    return None
-
-
-def discover_artifact_handlers(artifact_name: str) -> dict[str, Any]:
-    """Discover handlers for an artifact dynamically.
-
-    Args:
-        artifact_name: Singular artifact name (e.g., "agent", "persona")
-
-    Returns:
-        Dictionary mapping operation names to handler functions.
-    """
-    handlers: dict[str, Any] = {}
-    operations = ["get", "save", "list", "duplicate", "delete", "draft", "docs"]
-
-    for op in operations:
-        func_name = _get_artifact_handler_name(artifact_name, op)
-        if func_name is None:
-            continue
-
-        try:
-            module_path = f"app.api.v4.artifacts.{artifact_name}.{op}"
-            module = importlib.import_module(module_path)
-
-            if hasattr(module, func_name):
-                handlers[op] = getattr(module, func_name)
-        except (ImportError, AttributeError):
-            pass  # Operation not available for this artifact
-
-    return handlers
-
-
-def _get_resource_create_handler_name(resource_name: str) -> str | None:
-    """Get the create handler function name for a resource.
-
-    Derives function names directly from API path structure.
-    Resources use plural names matching directory names.
-
-    Args:
-        resource_name: Plural resource name (e.g., "agents", "args")
-
-    Returns:
-        Function name: create_{resource_name} (plural, matches directory)
-    """
-    # Direct derivation: create_{resource_name} - matches directory name exactly
-    return f"create_{resource_name}"
-
-
-def discover_resource_handlers(resource_name: str) -> dict[str, Any]:
-    """Discover handlers for a resource dynamically.
-
-    Args:
-        resource_name: Plural resource name (e.g., "agents", "args")
-
-    Returns:
-        Dictionary with "create" and optionally "docs" handlers.
-    """
-    handlers: dict[str, Any] = {}
-
-    # Create handler
-    try:
-        module = importlib.import_module(f"app.api.v4.resources.{resource_name}.create")
-        func_name = _get_resource_create_handler_name(resource_name)
-
-        if func_name and hasattr(module, func_name):
-            handlers["create"] = getattr(module, func_name)
-        else:
-            # Fallback: find any function starting with "create_"
-            for attr_name in dir(module):
-                if attr_name.startswith("create_") and callable(
-                    getattr(module, attr_name)
-                ):
-                    handlers["create"] = getattr(module, attr_name)
-                    break
-    except (ImportError, KeyError):
-        # KeyError can occur if parent package not in sys.modules yet
-        pass
-
-    # Docs handler
-    try:
-        module = importlib.import_module(f"app.api.v4.resources.{resource_name}.docs")
-        func_name = f"get_{resource_name}_docs"
-        if hasattr(module, func_name):
-            handlers["docs"] = getattr(module, func_name)
-    except (ImportError, KeyError):
-        # KeyError can occur if parent package not in sys.modules yet
-        pass
-
-    return handlers
-
-
-# ============================================================================
-# Discovered Data Structures
-# ============================================================================
-
-# Discover artifacts and resources dynamically
-ARTIFACTS = discover_artifacts()
-RESOURCES = discover_resources()
-
-# ============================================================================
-# Legacy Description Dictionaries (DEPRECATED - use get_artifact_description/get_resource_description instead)
-# ============================================================================
-
-# These dictionaries have been removed. Descriptions are now derived dynamically
-# from docs.py files or handler docstrings via get_artifact_description() and get_resource_description().
-
-# Combined list
-ALL_ITEMS = ARTIFACTS + RESOURCES
-
-
-# Helper function to route save operations to create or update based on ID presence
-# Only used for scenarios and profile which don't have unified save.py yet
-def create_save_handler(create_func: Any, update_func: Any, id_field_name: str) -> Any:
-    """Create a unified save handler that routes to create or update based on ID.
-
-    Args:
-        create_func: Function to call for create operations
-        update_func: Function to call for update operations
-        id_field_name: Name of the ID field to check (e.g., "scenario_id", "profile_id")
-    """
-
-    async def save_handler(
-        request: Any, http_request: Any, response: Any, conn: Any
-    ) -> Any:
-        # Check if ID field exists and is not None
-        request_dict = (
-            request.model_dump() if hasattr(request, "model_dump") else dict(request)
-        )
-        has_id = request_dict.get(id_field_name) is not None
-
-        if has_id:
-            return await update_func(request, http_request, response, conn)
-        else:
-            return await create_func(request, http_request, response, conn)
-
-    return save_handler
-
-
-# ============================================================================
-# Discover Artifact Handlers Dynamically
-# ============================================================================
-
-# Discover handlers for all artifacts
-HANDLERS: dict[str, dict[str, Any]] = {}
-for artifact in ARTIFACTS:
-    HANDLERS[artifact] = discover_artifact_handlers(artifact)
-
-
-# Analytics handlers - dynamically discovered
-ANALYTICS_HANDLERS: dict[tuple[str, str], Any] = discover_analytics_handlers()
-
-# Groups handlers - dynamically discovered
-GROUPS_HANDLERS: dict[str, Any] = discover_groups_handlers()
-
-# Attempts handlers - dynamically discovered
-ATTEMPTS_HANDLERS: dict[tuple[str, str], Any] = discover_attempts_handlers()
-
-# Bulk handlers - dynamically discovered
-BULK_HANDLERS: dict[tuple[str, str], Any] = discover_bulk_handlers()
-
-# Export handlers - dynamically discovered
-EXPORT_HANDLERS: dict[str, Any] = discover_export_handlers()
-
-# Decrypt handlers - dynamically discovered
-DECRYPT_HANDLERS: dict[str, Any] = discover_decrypt_handlers()
-
-# Uploads handlers - dynamically discovered
-UPLOADS_HANDLERS: dict[str, Any] = discover_uploads_handlers()
-
-# Debug handlers - dynamically discovered
-DEBUG_HANDLERS: dict[str, Any] = discover_debug_handlers()
-
-
-# ============================================================================
-# Discover Resource Handlers Dynamically
-# ============================================================================
-
-# Discover handlers for all resources
-RESOURCE_HANDLERS: dict[str, Any] = {}
-RESOURCE_DOCS_HANDLERS: dict[str, Any] = {}
-
-for resource in RESOURCES:
-    resource_handlers = discover_resource_handlers(resource)
-    if "create" in resource_handlers:
-        RESOURCE_HANDLERS[resource] = resource_handlers["create"]
-    if "docs" in resource_handlers:
-        RESOURCE_DOCS_HANDLERS[resource] = resource_handlers["docs"]
-
-
-# ============================================================================
-# Discover Artifact Docs (for backward compatibility)
-# ============================================================================
-
-# Extract docs handlers from HANDLERS dictionary
-ARTIFACT_DOCS: dict[str, Any] = {}
-for artifact in ARTIFACTS:
-    if "docs" in HANDLERS[artifact]:
-        ARTIFACT_DOCS[artifact] = HANDLERS[artifact]["docs"]
-
-# ============================================================================
-# Description Derivation Functions
-# ============================================================================
-
-
-def get_artifact_description(artifact_name: str) -> str:
-    """Get artifact description from handler docstring.
-
-    This is used for the artifacts() list endpoint which shows short descriptions.
-    For comprehensive documentation, use docs_artifact() which uses docs.py files.
-
-    Args:
-        artifact_name: Singular artifact name (e.g., "agent", "persona")
-
-    Returns:
-        Description string, or fallback if not available.
-    """
-    # Use handler docstring (get handler)
-    if artifact_name in HANDLERS and "get" in HANDLERS[artifact_name]:
-        handler = HANDLERS[artifact_name]["get"]
-        if handler:
-            doc = getattr(handler, "__doc__", None)
-            if doc and isinstance(doc, str):
-                # Extract first sentence
-                parts = doc.split(".")
-                if parts:
-                    first_sentence = parts[0].strip()
-                    return str(first_sentence)
-
-    # Generic fallback
-    return f"{artifact_name.title()} artifact"
-
-
-def get_resource_description(resource_name: str) -> str:
-    """Get resource description from handler docstring.
-
-    This is used for the resources() list endpoint which shows short descriptions.
-    For comprehensive documentation, use docs_resource() which uses docs.py files.
-
-    Args:
-        resource_name: Plural resource name (e.g., "agents", "args")
-
-    Returns:
-        Description string, or fallback if not available.
-    """
-    # Use handler docstring (create handler)
-    if resource_name in RESOURCE_HANDLERS:
-        handler = RESOURCE_HANDLERS[resource_name]
-        if handler:
-            doc = getattr(handler, "__doc__", None)
-            if doc and isinstance(doc, str):
-                # Extract first sentence
-                parts = doc.split(".")
-                if parts:
-                    first_sentence = parts[0].strip()
-                    return str(first_sentence)
-
-    # Generic fallback
-    return f"{resource_name.title()} resource"
-
-
-# Import root GLOW documentation
-try:
-    from app.api.v4.docs import get_glow_docs as _get_glow_docs
-
-    def get_glow_docs() -> dict[str, Any]:
-        """Wrapper for root GLOW docs."""
-        return _get_glow_docs()
-except ImportError:
-
-    def get_glow_docs() -> dict[str, Any]:
-        """Fallback when root docs not available."""
-        return {"error": "Root GLOW documentation not available."}
-
-
-# HANDLERS is already populated by dynamic discovery above
-# No need for manual mapping - it's already done in the discovery loop
-
-
-# ============================================================================
-# Documentation Helper Functions
-# ============================================================================
-
-
-def get_artifact_operation_description(operation: str) -> str:
-    """Generate enhanced description for artifact operations.
-
-    Args:
-        operation: Operation name (get, save, list, duplicate, delete, draft)
-
-    Returns:
-        Enhanced description string with examples and workflow guidance.
-    """
-    descriptions = {
-        "get": """Get an artifact or resource by name.
-
-Args:
-    name: Artifact name (e.g., "agent", "persona", "cohort", "document", "scenario").
-          Use singular form: "scenario" not "scenarios".
-    payload: Request payload. IMPORTANT: Call payload_artifact(name="{name}", operation="get") first to get exact schema.
-
-Payload Structure:
-    Common fields for "get" operations:
-    - {artifact}_id: UUID | null (optional, null for new item)
-    - draft_id: UUID | null (optional, for draft items)
-
-Example:
-    name: "agent"
-    payload: {{"agent_id": "123e4567-e89b-12d3-a456-426614174000"}}
-    or
-    payload: {{"agent_id": null}}  # for new item
-    
-    name: "scenario"  # singular, not "scenarios"
-    payload: {{"scenario_id": "123e4567-e89b-12d3-a456-426614174000"}}
-
-Returns:
-    Object containing:
-    - id: UUID
-    - name: string
-    - created_at: timestamp
-    - updated_at: timestamp
-    - ... artifact-specific fields and related resources
-
-Workflow:
-    1. Call payload_artifact(name="agent", operation="get") to get exact payload schema
-    2. Construct payload with required fields
-    3. Call get_artifact with name and payload""",
-        "save": """Save (create or update) an artifact or resource.
-
-Args:
-    name: Artifact name (e.g., "agent", "persona", "cohort").
-    payload: Request payload. IMPORTANT: Call payload_artifact(name="{name}") first to get exact schema.
-
-Payload Structure:
-    Use payload_artifact(name="{name}") to get the exact schema.
-    
-    For create: omit {artifact}_id or set to null
-    For update: include {artifact}_id with UUID
-
-Example:
-    name: "agent"
-    payload: {{"name": "My Agent", "description": "Agent description", ...}}
-
-Returns:
-    Object with saved artifact data including id, timestamps, and all fields.
-
-Workflow:
-    1. Call payload_artifact(name="agent") to get exact payload schema
-    2. Construct payload with artifact data
-    3. Call save_artifact with name and payload""",
-        "list": """List items for an artifact or resource.
-
-Args:
-    name: Artifact name (e.g., "agent", "persona", "cohort", "scenario"). Use singular form.
-    payload: Request payload with filter parameters. Call payload_artifact(name="{name}", operation="list") first to get exact schema.
-
-Payload Structure:
-    Common fields for "list" operations:
-    - Filters may include department_ids, cohort_ids, search terms, etc.
-    - Use payload_artifact(name="{name}", operation="list") to see available filters
-
-Example:
-    name: "agent"
-    payload: {{}}  # empty for all items
-    or
-    payload: {{"department_ids": ["123e4567-..."]}}  # filtered
-
-Returns:
-    List of artifact objects, each containing id, name, timestamps, and related data.
-
-Workflow:
-    1. Call payload_artifact(name="agent", operation="list") to get exact payload schema
-    2. Construct payload with filter parameters (or empty for all)
-    3. Call list_artifact with name and payload""",
-        "duplicate": """Duplicate an artifact or resource.
-
-Args:
-    name: Artifact name (e.g., "agent", "persona", "scenario"). Use singular form.
-    payload: Request payload. IMPORTANT: Call payload_artifact(name="{name}", operation="duplicate") first to get exact schema.
-
-Payload Structure:
-    Typically includes:
-    - {artifact}_id: UUID (required, ID of item to duplicate)
-    - name: string (optional, new name for duplicated item)
-
-Example:
-    name: "agent"
-    payload: {{"agent_id": "123e4567-e89b-12d3-a456-426614174000", "name": "Copy of Agent"}}
-
-Returns:
-    Object with duplicated artifact data including new id.
-
-Workflow:
-    1. Call payload_artifact(name="agent", operation="duplicate") to get exact payload schema
-    2. Construct payload with source artifact_id
-    3. Call duplicate_artifact with name and payload""",
-        "delete": """Delete an artifact or resource.
-
-Args:
-    name: Artifact name (e.g., "agent", "persona", "scenario"). Use singular form.
-    payload: Request payload. IMPORTANT: Call payload_artifact(name="{name}", operation="delete") first to get exact schema.
-
-Payload Structure:
-    Typically includes:
-    - {artifact}_id: UUID (required, ID of item to delete)
-
-Example:
-    name: "agent"
-    payload: {{"agent_id": "123e4567-e89b-12d3-a456-426614174000"}}
-
-Returns:
-    Success response or error message.
-
-Workflow:
-    1. Call payload_artifact(name="agent", operation="delete") to get exact payload schema
-    2. Construct payload with artifact_id to delete
-    3. Call delete_artifact with name and payload""",
-        "draft": """Create or patch a draft artifact (autosave).
-
-Args:
-    name: Artifact name (e.g., "agent", "persona", "scenario"). Use singular form.
-    payload: Request payload with draft data. Call payload_artifact(name="{name}", operation="draft") first to get exact schema.
-
-Payload Structure:
-    Use payload_artifact(name="{name}", operation="draft") to get the exact schema.
-    Draft payloads typically include partial artifact data for autosave.
-
-Example:
-    name: "agent"
-    payload: {{"name": "Draft Agent", "description": "..."}}
-
-Returns:
-    Draft data including draft_id and version information.
-
-Workflow:
-    1. Call payload_artifact(name="agent", operation="draft") to get exact payload schema
-    2. Construct payload with draft data
-    3. Call draft_artifact with name and payload""",
-    }
-
-    return descriptions.get(operation, "Standard artifact operation")
-
-
-def format_example_payload(artifact_name: str, operation: str) -> str:
-    """Format example payload for documentation.
-
-    Args:
-        artifact_name: Name of the artifact (e.g., "agent", "persona")
-        operation: Operation name (get, save, list, etc.)
-
-    Returns:
-        Formatted example payload string.
-    """
-    artifact_id_field = f"{artifact_name}_id"
-
-    examples = {
-        "get": f'{{"{artifact_id_field}": "123e4567-e89b-12d3-a456-426614174000"}}',
-        "save": f'{{"name": "My {artifact_name.title()}", "description": "...", ...}}',
-        "list": "{}",  # empty for all
-        "duplicate": f'{{"{artifact_id_field}": "123e4567-e89b-12d3-a456-426614174000", "name": "Copy"}}',
-        "delete": f'{{"{artifact_id_field}": "123e4567-e89b-12d3-a456-426614174000"}}',
-        "draft": f'{{"name": "Draft {artifact_name.title()}", ...}}',
-    }
-
-    return examples.get(operation, "{}")
-
-
-def is_artifact(name: str) -> bool:
-    """Check if name is an artifact."""
-    return name in ARTIFACTS
-
-
-def is_resource(name: str) -> bool:
-    """Check if name is a resource."""
-    return name in RESOURCES
-
-
-def get_available_operations(name: str) -> list[str]:
-    """Get list of available operations for an item."""
-    if name not in HANDLERS:
-        return []
-    return list(HANDLERS[name].keys())
-
-
 def _suggest_item_name(name: str) -> str | None:
-    """Suggest the correct artifact/resource name based on common pluralization mistakes."""
+    """Suggest the correct artifact/resource name based on common mistakes."""
     if name in ALL_ITEMS:
         return None
 
@@ -955,42 +678,121 @@ def _suggest_item_name(name: str) -> str | None:
     return None
 
 
-def get_payload_schema(name: str, operation: str = "get") -> dict[str, Any]:
-    """Get payload schema for artifact/resource operations.
+def is_artifact(name: str) -> bool:
+    """Check if name is an artifact."""
+    return name in ARTIFACT_REGISTRY
 
-    Args:
-        name: Artifact or resource name (e.g., "agent", "scenario", "names")
-        operation: Operation name (e.g., "get", "save", "list", "create"). Defaults to "get".
+
+def is_resource(name: str) -> bool:
+    """Check if name is a resource."""
+    return name in RESOURCE_REGISTRY
+
+
+def get_available_operations(name: str) -> list[str]:
+    """Get list of available operations for an item."""
+    if name in ARTIFACT_REGISTRY:
+        return list(ARTIFACT_REGISTRY[name].keys())
+    if name in RESOURCE_REGISTRY:
+        return list(RESOURCE_REGISTRY[name].keys())
+    if name in VIEW_REGISTRY:
+        return list(VIEW_REGISTRY[name].keys())
+    return []
+
+
+def get_artifact_description(artifact_name: str) -> str:
+    """Get artifact description from handler docstring."""
+    if artifact_name in ARTIFACT_REGISTRY and "get" in ARTIFACT_REGISTRY[artifact_name]:
+        try:
+            handler = _get_handler(*ARTIFACT_REGISTRY[artifact_name]["get"])
+            doc = getattr(handler, "__doc__", None)
+            if doc and isinstance(doc, str):
+                parts = doc.split(".")
+                if parts:
+                    return parts[0].strip()
+        except Exception:
+            pass
+    return f"{artifact_name.title()} artifact"
+
+
+def get_resource_description(resource_name: str) -> str:
+    """Get resource description from handler docstring."""
+    if resource_name in RESOURCE_REGISTRY:
+        # Try create handler first, then get handler
+        for op in ("create", "get"):
+            if op in RESOURCE_REGISTRY[resource_name]:
+                try:
+                    handler = _get_handler(*RESOURCE_REGISTRY[resource_name][op])
+                    doc = getattr(handler, "__doc__", None)
+                    if doc and isinstance(doc, str):
+                        parts = doc.split(".")
+                        if parts:
+                            return parts[0].strip()
+                except Exception:
+                    pass
+    return f"{resource_name.title()} resource"
+
+
+def get_view_description(view_name: str) -> str:
+    """Get view description from handler docstring."""
+    if view_name in VIEW_REGISTRY and "get" in VIEW_REGISTRY[view_name]:
+        try:
+            handler = _get_handler(*VIEW_REGISTRY[view_name]["get"])
+            doc = getattr(handler, "__doc__", None)
+            if doc and isinstance(doc, str):
+                parts = doc.split(".")
+                if parts:
+                    return parts[0].strip()
+        except Exception:
+            pass
+    return f"{view_name.replace('_', ' ').title()} view"
+
+
+def get_request_model_from_handler(handler: Any) -> Any | None:
+    """Extract request model from handler function annotations."""
+    try:
+        sig = inspect.signature(handler)
+        params = list(sig.parameters.values())
+        if params and len(params) > 0:
+            first_param = params[0]
+            if first_param.annotation != inspect.Parameter.empty:
+                return first_param.annotation
+    except Exception:
+        pass
+    return None
+
+
+def get_payload_schema(name: str, operation: str = "get") -> dict[str, Any]:
+    """Get payload schema for artifact/resource/view operations.
 
     Note: The 'mcp' field is automatically filtered out as it's auto-injected.
     """
-    if name not in ALL_ITEMS:
+    # Find handler in registries
+    handler: Any | None = None
+    if name in ARTIFACT_REGISTRY and operation in ARTIFACT_REGISTRY[name]:
+        handler = _get_handler(*ARTIFACT_REGISTRY[name][operation])
+    elif name in RESOURCE_REGISTRY and operation in RESOURCE_REGISTRY[name]:
+        handler = _get_handler(*RESOURCE_REGISTRY[name][operation])
+    elif name in VIEW_REGISTRY and operation in VIEW_REGISTRY[name]:
+        handler = _get_handler(*VIEW_REGISTRY[name][operation])
+    else:
         suggestion = _suggest_item_name(name)
         response: dict[str, Any] = {
-            "error": f"'{name}' is not a valid artifact or resource."
+            "error": f"'{name}' is not a valid item or operation '{operation}' not available."
         }
         if suggestion:
             response["suggestion"] = suggestion
         return response
-
-    # Try to get schema from handler if available
-    handler: Any | None = None
-    if name in RESOURCES and operation == "create":
-        handler = RESOURCE_HANDLERS.get(name)
-    elif name in HANDLERS and operation in HANDLERS[name]:
-        handler = HANDLERS[name][operation]
 
     if handler:
         try:
             request_type = get_request_model_from_handler(handler)
             if request_type and hasattr(request_type, "model_json_schema"):
                 schema: dict[str, Any] = request_type.model_json_schema()  # type: ignore[assignment]
-                # Filter out 'mcp' field from schema so agents don't see it
+                # Filter out 'mcp' field
                 if "properties" in schema and "mcp" in schema["properties"]:
                     schema = schema.copy()
                     schema["properties"] = schema["properties"].copy()
                     del schema["properties"]["mcp"]
-                    # Remove from required list if present
                     if "required" in schema and "mcp" in schema["required"]:
                         schema["required"] = [
                             r for r in schema["required"] if r != "mcp"
@@ -999,7 +801,6 @@ def get_payload_schema(name: str, operation: str = "get") -> dict[str, Any]:
         except Exception:
             pass
 
-    # Return generic schema
     return {
         "type": "object",
         "properties": {
@@ -1013,31 +814,49 @@ def get_payload_schema(name: str, operation: str = "get") -> dict[str, Any]:
     }
 
 
+def format_example_payload(artifact_name: str, operation: str) -> str:
+    """Format example payload for documentation."""
+    artifact_id_field = f"{artifact_name}_id"
+    examples = {
+        "get": f'{{"{artifact_id_field}": "123e4567-e89b-12d3-a456-426614174000"}}',
+        "save": f'{{"name": "My {artifact_name.title()}", "description": "...", ...}}',
+        "list": "{}",
+        "duplicate": f'{{"{artifact_id_field}": "123e4567-e89b-12d3-a456-426614174000", "name": "Copy"}}',
+        "delete": f'{{"{artifact_id_field}": "123e4567-e89b-12d3-a456-426614174000"}}',
+        "draft": f'{{"name": "Draft {artifact_name.title()}", ...}}',
+    }
+    return examples.get(operation, "{}")
+
+
+# ============================================================================
+# Handler Call Functions
+# ============================================================================
+
+
 async def call_handler(
     name: str, operation: str, payload: dict[str, Any]
 ) -> dict[str, Any]:
-    """Call a handler function with the given payload.
+    """Call an artifact handler function with the given payload.
 
     profile_id is automatically extracted from MCP request context.
     """
     from app.utils.mcp.get_mcp_profile_id import get_mcp_profile_id
 
-    # Extract profile_id from MCP context
     profile_id = get_mcp_profile_id()
 
-    if name not in HANDLERS:
-        available_artifacts = list(HANDLERS.keys())
+    if name not in ARTIFACT_REGISTRY:
         suggestion = _suggest_item_name(name)
         return {
             "error": f"'{name}' does not have handlers implemented yet.",
             "status": "not_implemented",
-            "available_artifacts": available_artifacts,
-            "note": f"Available artifacts: {', '.join(available_artifacts)}",
+            "available_artifacts": ARTIFACTS,
+            "note": f"Available artifacts: {', '.join(ARTIFACTS)}",
             **({"suggestion": suggestion} if suggestion else {}),
         }
 
-    if operation not in HANDLERS[name]:
-        available_operations = list(HANDLERS[name].keys())
+    ops = ARTIFACT_REGISTRY[name]
+    if operation not in ops:
+        available_operations = list(ops.keys())
         return {
             "error": f"Operation '{operation}' not available for '{name}'.",
             "status": "not_implemented",
@@ -1045,38 +864,8 @@ async def call_handler(
             "note": f"Available operations for '{name}': {', '.join(available_operations)}",
         }
 
-    handler = HANDLERS[name][operation]
-    if not handler:
-        return {
-            "error": f"Handler for {name}.{operation} is not implemented yet.",
-            "status": "not_implemented",
-        }
-
-    # Call the handler using call_endpoint_handler which properly sets up Request/Response/DB context
+    handler = _get_handler(*ops[operation])
     return await call_endpoint_handler(handler, payload, profile_id)
-
-
-def get_request_model_from_handler(handler: Any) -> Any | None:
-    """Extract request model from handler function annotations.
-
-    Args:
-        handler: The handler function
-
-    Returns:
-        Request model class or None if not found
-    """
-    try:
-        sig = inspect.signature(handler)
-        params = list(sig.parameters.values())
-        if params and len(params) > 0:
-            # First parameter is usually the request model
-            first_param = params[0]
-            if first_param.annotation != inspect.Parameter.empty:
-                return first_param.annotation
-    except Exception:
-        pass
-
-    return None
 
 
 async def call_endpoint_handler(
@@ -1084,22 +873,12 @@ async def call_endpoint_handler(
     payload: dict[str, Any],
     profile_id: str,
 ) -> dict[str, Any]:
-    """Call an endpoint handler with proper Request/Response/DB context.
-
-    Args:
-        handler: The handler function to call
-        payload: The payload dictionary (will be passed as request body)
-        profile_id: The profile ID to use
-
-    Returns:
-        Dictionary with response data or error information
-    """
+    """Call an endpoint handler with proper Request/Response/DB context."""
     from starlette.requests import Request as StarletteRequest
 
     from app.main import get_db
 
     try:
-        # Get request model from handler
         request_model = get_request_model_from_handler(handler)
         if not request_model:
             return {
@@ -1107,7 +886,6 @@ async def call_endpoint_handler(
                 "status": "error",
             }
 
-        # Create Request object with proper scope
         scope = {
             "type": "http",
             "method": "POST",
@@ -1117,36 +895,25 @@ async def call_endpoint_handler(
             "server": ("localhost", 8000),
         }
         http_request = StarletteRequest(scope)
-
-        # Set profile_id in request state
         http_request.state.profile_id = profile_id
         http_request.state.mcp = True
-
-        # Create Response object
         http_response = Response()
 
         # Auto-inject mcp: true if request model has mcp field
-        # This ensures agents never need to pass mcp parameter
         if (
             hasattr(request_model, "model_fields")
             and "mcp" in request_model.model_fields
         ):
             payload = {**payload, "mcp": True}
 
-        # Get database connection (get_db is an async generator)
         async for conn in get_db():
-            # Parse payload into request model
             api_request = request_model(**payload)
-
-            # Call handler
             result = await handler(
                 request=api_request,
                 http_request=http_request,
                 response=http_response,
                 conn=conn,
             )
-
-            # Convert result to dict
             if hasattr(result, "model_dump"):
                 result_dict = result.model_dump(mode="json")
                 return cast(dict[str, Any], result_dict)
@@ -1156,7 +923,6 @@ async def call_endpoint_handler(
             else:
                 return cast(dict[str, Any], {"data": result})
 
-        # This should never happen (get_db always yields), but satisfy type checker
         return {
             "error": "Database connection not available",
             "status": "error",
@@ -1170,8 +936,17 @@ async def call_endpoint_handler(
         }
 
 
+# ============================================================================
+# MCP Tool Registration
+# ============================================================================
+
+
 def register_endpoints(server: FastMCP) -> None:
     """Register all MCP endpoints."""
+
+    # ------------------------------------------------------------------
+    # Discovery tools
+    # ------------------------------------------------------------------
 
     @server.tool()
     def artifacts() -> list[dict[str, str]]:
@@ -1204,151 +979,102 @@ def register_endpoints(server: FastMCP) -> None:
         ]
 
     @server.tool()
+    def views() -> list[dict[str, str]]:
+        """List all available views with descriptions.
+
+        Returns:
+            List of dictionaries with 'name', 'description', and 'operations' keys.
+        """
+        return [
+            {
+                "name": view,
+                "description": get_view_description(view),
+                "operations": ", ".join(VIEW_REGISTRY[view].keys()),
+            }
+            for view in VIEWS
+        ]
+
+    # ------------------------------------------------------------------
+    # Documentation tools
+    # ------------------------------------------------------------------
+
+    @server.tool()
     def docs_artifact(name: str) -> dict[str, Any]:
         """Get comprehensive documentation for an artifact.
-
-        Use this tool to understand the complete structure, relationships, and usage patterns
-        for an artifact before working with it.
 
         Args:
             name: Artifact name (e.g., "agent", "persona", "cohort", "document").
 
         Returns:
-            Dictionary containing:
-            - database: Table schema, columns, indexes, foreign keys
-            - relationships: Resources, junction tables, related artifacts
-            - api_routing: All endpoints (get, save, list, duplicate, delete, draft)
-            - resources: Available resource types and their endpoints
-            - frontend: Components and pages that use this artifact
-            - glow_context: Description, use cases, related concepts
-
-        Example:
-            name: "agent"
-            Returns comprehensive documentation about agents including database structure,
-            API endpoints, available resources (names, descriptions, flags, etc.), and usage patterns.
-
-        Workflow:
-            1. Call docs_artifact(name="agent") to understand the artifact structure
-            2. Use payload_artifact(name="agent") to get exact payload schemas
-            3. Use artifact operations (get_artifact, save_artifact, etc.) to work with data
+            Dictionary containing database schema, relationships, API routing,
+            resources, frontend components, and GLOW context.
         """
-        if name not in ARTIFACTS:
+        if name not in ARTIFACT_REGISTRY:
             return {"error": f"'{name}' is not a valid artifact."}
 
-        # Use docs handler from HANDLERS if available
-        if name in HANDLERS and "docs" in HANDLERS[name] and HANDLERS[name]["docs"]:
-            docs_handler = HANDLERS[name]["docs"]
-            result = docs_handler()
-            return cast(dict[str, Any], result)
+        ops = ARTIFACT_REGISTRY[name]
+        if "docs" not in ops:
+            return {
+                "error": f"Documentation not available for '{name}'",
+                "note": "Check if docs.py exists for this artifact.",
+            }
 
-        return {
-            "error": f"Documentation not available for '{name}'",
-            "note": "Documentation may not be implemented yet. Check if docs.py exists for this artifact.",
-        }
+        handler = _get_handler(*ops["docs"])
+        return cast(dict[str, Any], handler())
 
     @server.tool()
     def docs_resource(name: str) -> dict[str, Any]:
         """Get comprehensive documentation for a resource.
 
-        Use this tool to understand the structure and usage patterns for a resource
-        before creating it.
-
         Args:
-            name: Resource name (e.g., "names", "descriptions", "flags", "departments").
+            name: Resource name (e.g., "names", "descriptions", "flags").
 
         Returns:
-            Dictionary containing:
-            - database: Table schema, columns, indexes, foreign keys
-            - relationships: How resources connect to artifacts
-            - api_routing: Create endpoint details
-            - glow_context: Description, use cases, related concepts
-
-        Example:
-            name: "names"
-            Returns documentation about name resources including database structure,
-            how they connect to artifacts, and usage patterns.
-
-        Workflow:
-            1. Call docs_resource(name="names") to understand the resource structure
-            2. Use payload_resource(name="names") to get exact payload schema
-            3. Use create_resource(name="names", payload=...) to create resources
+            Dictionary containing database schema, relationships, and usage patterns.
         """
-        if name not in RESOURCES:
+        if name not in RESOURCE_REGISTRY:
             return {"error": f"'{name}' is not a valid resource."}
 
-        if name not in RESOURCE_DOCS_HANDLERS:
+        ops = RESOURCE_REGISTRY[name]
+        if "docs" not in ops:
             return {
                 "error": f"Documentation not available for '{name}'",
-                "note": "Documentation may not be implemented yet. Check if docs.py exists for this resource.",
+                "note": "Check if docs.py exists for this resource.",
             }
 
-        docs_handler = RESOURCE_DOCS_HANDLERS[name]
-        result = docs_handler()
-        return cast(dict[str, Any], result)
+        handler = _get_handler(*ops["docs"])
+        return cast(dict[str, Any], handler())
 
     @server.tool()
     def docs() -> dict[str, Any]:
         """Get general GLOW documentation.
 
-        Use this tool to understand GLOW's overall architecture, concepts, and patterns.
-        This is helpful when starting to work with GLOW or understanding high-level concepts.
-
         Returns:
-            Dictionary containing general information about:
-            - GLOW architecture and design principles
-            - Core concepts (artifacts, resources, relationships)
-            - Common patterns and workflows
-            - Best practices
-
-        Example:
-            Returns overview of GLOW including:
-            - Artifact vs resource distinction
-            - Database design principles (BCNF, no nulls)
-            - API routing patterns
-            - Frontend architecture
-
-        Workflow:
-            1. Call docs() for high-level understanding
-            2. Call docs_artifact(name="...") for specific artifact details
-            3. Use payload_artifact/payload_resource for exact schemas
-            4. Use artifact/resource operations to work with data
+            Dictionary containing general information about GLOW architecture,
+            core concepts, common patterns, and best practices.
         """
-        if get_glow_docs is None:
+        try:
+            handler = _get_handler("app.api.v4.docs", "get_glow_docs")
+            return handler()
+        except Exception:
             return {"error": "Root GLOW documentation not available."}
-        return get_glow_docs()
+
+    # ------------------------------------------------------------------
+    # Payload schema tools
+    # ------------------------------------------------------------------
 
     @server.tool()
     def payload_artifact(name: str, operation: str = "get") -> dict[str, Any]:  # type: ignore[return]
         """Get payload schema for an artifact.
 
-        IMPORTANT: Call this tool FIRST before using artifact operations (get_artifact, save_artifact, etc.)
-        to understand the exact payload structure required.
+        IMPORTANT: Call this tool FIRST before using artifact operations.
 
         Args:
-            name: Artifact name (e.g., "agent", "persona", "cohort", "document", "scenario").
+            name: Artifact name (e.g., "agent", "persona", "cohort").
             operation: Operation name (e.g., "get", "save", "list", "duplicate", "delete", "draft").
-                      Defaults to "get". Use "save" to get schema for save operations.
 
         Returns:
-            JSON schema for the payload showing:
-            - Required and optional fields
-            - Field types (UUID, string, boolean, etc.)
-            - Field descriptions
-            - Default values
-
-            Note: The 'mcp' field is automatically filtered out as it's auto-injected.
-
-        Example:
-            name: "agent", operation: "get"
-            Returns schema with fields like agent_id, draft_id, etc.
-
-            name: "scenario", operation: "save"
-            Returns SaveScenarioApiRequest schema with all required fields for saving.
-
-        Workflow:
-            1. Call payload_artifact(name="agent", operation="get") to get read schema
-            2. Call payload_artifact(name="agent", operation="save") to get save schema
-            3. Use the schema to construct payload for get_artifact, save_artifact, etc.
+            JSON schema for the payload. The 'mcp' field is auto-filtered.
         """
         return get_payload_schema(name, operation)
 
@@ -1356,174 +1082,108 @@ def register_endpoints(server: FastMCP) -> None:
     def payload_resource(name: str, operation: str = "create") -> dict[str, Any]:  # type: ignore[return]
         """Get payload schema for a resource.
 
-        IMPORTANT: Call this tool FIRST before using create_resource to understand
-        the exact payload structure required.
+        IMPORTANT: Call this tool FIRST before using create_resource.
 
         Args:
-            name: Resource name (e.g., "names", "descriptions", "flags", "departments").
-            operation: Operation name. Defaults to "create" for resources.
-                      Most resources only support "create", but some may have other operations.
+            name: Resource name (e.g., "names", "descriptions", "flags").
+            operation: Operation name. Defaults to "create".
 
         Returns:
-            JSON schema for the payload showing:
-            - Required and optional fields
-            - Field types (UUID, string, boolean, etc.)
-            - Field descriptions
-            - Default values
-
-            Note: The 'mcp' field is automatically filtered out as it's auto-injected.
-
-        Example:
-            name: "names", operation: "create"
-            Returns schema with fields like agent_id, name, etc.
-
-        Workflow:
-            1. Call payload_resource(name="names", operation="create") to get schema
-            2. Use the schema to construct payload for create_resource
+            JSON schema for the payload. The 'mcp' field is auto-filtered.
         """
         return get_payload_schema(name, operation)
 
     @server.tool()
+    def payload_view(name: str, operation: str = "get") -> dict[str, Any]:  # type: ignore[return]
+        """Get payload schema for a view.
+
+        IMPORTANT: Call this tool FIRST before using view operations.
+
+        Args:
+            name: View name (e.g., "config", "attempt_list", "analytics_profile_facts").
+            operation: Operation name (e.g., "get", "refresh"). Defaults to "get".
+
+        Returns:
+            JSON schema for the payload. The 'mcp' field is auto-filtered.
+        """
+        if name not in VIEW_REGISTRY:
+            return {
+                "error": f"'{name}' is not a valid view. Available: {', '.join(VIEWS)}"
+            }
+        if operation not in VIEW_REGISTRY[name]:
+            return {
+                "error": f"Operation '{operation}' not available for view '{name}'.",
+                "available_operations": list(VIEW_REGISTRY[name].keys()),
+            }
+        return get_payload_schema(name, operation)
+
+    # ------------------------------------------------------------------
+    # Artifact CRUD tools
+    # ------------------------------------------------------------------
+
+    @server.tool()
     async def get_artifact(name: str, payload: dict[str, Any]) -> dict[str, Any]:
-        """Get an artifact or resource by name.
+        """Get an artifact by name.
 
         Args:
             name: Artifact name (e.g., "agent", "persona", "cohort", "document").
-            payload: Request payload. IMPORTANT: Call payload_artifact(name="{name}") first to get exact schema.
-
-        Payload Structure:
-            Common fields for "get" operations:
-            - {artifact}_id: UUID | null (optional, null for new item)
-            - draft_id: UUID | null (optional, for draft items)
-
-        Example:
-            name: "agent"
-            payload: {{"agent_id": "123e4567-e89b-12d3-a456-426614174000"}}
-            or
-            payload: {{"agent_id": null}}  # for new item
+                  Use singular form: "scenario" not "scenarios".
+            payload: Request payload. Call payload_artifact(name, "get") first.
 
         Returns:
-            Object containing:
-            - id: UUID
-            - name: string
-            - created_at: timestamp
-            - updated_at: timestamp
-            - ... artifact-specific fields and related resources
-
-        Workflow:
-            1. Call payload_artifact(name="agent") to get exact payload schema
-            2. Construct payload with required fields
-            3. Call get_artifact with name and payload
+            Object containing artifact data with id, name, timestamps, and related resources.
         """
         return await call_handler(name, "get", payload)
 
     @server.tool()
     async def save_artifact(name: str, payload: dict[str, Any]) -> dict[str, Any]:
-        """Save (create or update) an artifact or resource.
+        """Save (create or update) an artifact.
 
         Args:
             name: Artifact name (e.g., "agent", "persona", "cohort").
-            payload: Request payload. IMPORTANT: Call payload_artifact(name="{name}") first to get exact schema.
-
-        Payload Structure:
-            Use payload_artifact(name="{name}") to get the exact schema.
-
-            For create: omit {artifact}_id or set to null
-            For update: include {artifact}_id with UUID
-
-        Example:
-            name: "agent"
-            payload: {{"name": "My Agent", "description": "Agent description", ...}}
+            payload: Request payload. Call payload_artifact(name, "save") first.
 
         Returns:
-            Object with saved artifact data including id, timestamps, and all fields.
-
-        Workflow:
-            1. Call payload_artifact(name="agent") to get exact payload schema
-            2. Construct payload with artifact data
-            3. Call save_artifact with name and payload
+            Object with saved artifact data including id and timestamps.
         """
         return await call_handler(name, "save", payload)
 
     @server.tool()
     async def list_artifact(name: str, payload: dict[str, Any]) -> dict[str, Any]:
-        """List items for an artifact or resource.
+        """List items for an artifact.
 
         Args:
-            name: Artifact name (e.g., "agent", "persona", "cohort").
-            payload: Request payload with filter parameters. Call payload_artifact(name="{name}") first to get exact schema.
-
-        Payload Structure:
-            Common fields for "list" operations:
-            - Filters may include department_ids, cohort_ids, search terms, etc.
-            - Use payload_artifact(name="{name}") to see available filters
-
-        Example:
-            name: "agent"
-            payload: {{}}  # empty for all items
-            or
-            payload: {{"department_ids": ["123e4567-..."]}}  # filtered
+            name: Artifact name (e.g., "agent", "persona", "cohort"). Use singular form.
+            payload: Request payload with filter parameters. Call payload_artifact(name, "list") first.
 
         Returns:
-            List of artifact objects, each containing id, name, timestamps, and related data.
-
-        Workflow:
-            1. Call payload_artifact(name="agent") to get exact payload schema
-            2. Construct payload with filter parameters (or empty for all)
-            3. Call list_artifact with name and payload
+            List of artifact objects with id, name, timestamps, and related data.
         """
         return await call_handler(name, "list", payload)
 
     @server.tool()
     async def duplicate_artifact(name: str, payload: dict[str, Any]) -> dict[str, Any]:
-        """Duplicate an artifact or resource.
+        """Duplicate an artifact.
 
         Args:
-            name: Artifact name (e.g., "agent", "persona").
-            payload: Request payload. IMPORTANT: Call payload_artifact(name="{name}") first to get exact schema.
-
-        Payload Structure:
-            Typically includes:
-            - {artifact}_id: UUID (required, ID of item to duplicate)
-            - name: string (optional, new name for duplicated item)
-
-        Example:
-            name: "agent"
-            payload: {{"agent_id": "123e4567-e89b-12d3-a456-426614174000", "name": "Copy of Agent"}}
+            name: Artifact name (e.g., "agent", "persona"). Use singular form.
+            payload: Request payload. Call payload_artifact(name, "duplicate") first.
 
         Returns:
             Object with duplicated artifact data including new id.
-
-        Workflow:
-            1. Call payload_artifact(name="agent") to get exact payload schema
-            2. Construct payload with source artifact_id
-            3. Call duplicate_artifact with name and payload
         """
         return await call_handler(name, "duplicate", payload)
 
     @server.tool()
     async def delete_artifact(name: str, payload: dict[str, Any]) -> dict[str, Any]:
-        """Delete an artifact or resource.
+        """Delete an artifact.
 
         Args:
-            name: Artifact name (e.g., "agent", "persona").
-            payload: Request payload. IMPORTANT: Call payload_artifact(name="{name}") first to get exact schema.
-
-        Payload Structure:
-            Typically includes:
-            - {artifact}_id: UUID (required, ID of item to delete)
-
-        Example:
-            name: "agent"
-            payload: {{"agent_id": "123e4567-e89b-12d3-a456-426614174000"}}
+            name: Artifact name (e.g., "agent", "persona"). Use singular form.
+            payload: Request payload. Call payload_artifact(name, "delete") first.
 
         Returns:
             Success response or error message.
-
-        Workflow:
-            1. Call payload_artifact(name="agent") to get exact payload schema
-            2. Construct payload with artifact_id to delete
-            3. Call delete_artifact with name and payload
         """
         return await call_handler(name, "delete", payload)
 
@@ -1532,570 +1192,314 @@ def register_endpoints(server: FastMCP) -> None:
         """Create or patch a draft artifact (autosave).
 
         Args:
-            name: Artifact name (e.g., "agent", "persona").
-            payload: Request payload with draft data. Call payload_artifact(name="{name}") first to get exact schema.
-
-        Payload Structure:
-            Use payload_artifact(name="{name}") to get the exact schema.
-            Draft payloads typically include partial artifact data for autosave.
-
-        Example:
-            name: "agent"
-            payload: {{"name": "Draft Agent", "description": "..."}}
+            name: Artifact name (e.g., "agent", "persona"). Use singular form.
+            payload: Request payload. Call payload_artifact(name, "draft") first.
 
         Returns:
             Draft data including draft_id and version information.
-
-        Workflow:
-            1. Call payload_artifact(name="agent") to get exact payload schema
-            2. Construct payload with draft data
-            3. Call draft_artifact with name and payload
         """
         return await call_handler(name, "draft", payload)
 
-    # Resource-specific endpoints (create only)
+    @server.tool()
+    async def refresh_artifact(name: str, payload: dict[str, Any]) -> dict[str, Any]:
+        """Refresh an artifact's cached data.
+
+        Args:
+            name: Artifact name (e.g., "activity", "benchmark", "dashboard", "health").
+            payload: Request payload. Call payload_artifact(name, "refresh") first.
+
+        Returns:
+            Refresh result.
+        """
+        return await call_handler(name, "refresh", payload)
+
+    # ------------------------------------------------------------------
+    # Resource tools
+    # ------------------------------------------------------------------
+
+    @server.tool()
+    async def get_resource(name: str, payload: dict[str, Any]) -> dict[str, Any]:
+        """Get resource data by name.
+
+        Args:
+            name: Resource name (e.g., "agents", "names", "descriptions").
+            payload: Request payload. Call payload_resource(name, "get") first.
+
+        Returns:
+            Resource data.
+        """
+        from app.utils.mcp.get_mcp_profile_id import get_mcp_profile_id
+
+        profile_id = get_mcp_profile_id()
+
+        if name not in RESOURCE_REGISTRY:
+            return {"error": f"'{name}' is not a valid resource."}
+
+        if "get" not in RESOURCE_REGISTRY[name]:
+            return {"error": f"get operation not available for '{name}'."}
+
+        handler = _get_handler(*RESOURCE_REGISTRY[name]["get"])
+        return await call_endpoint_handler(handler, payload, profile_id)
+
+    @server.tool()
+    async def search_resource(name: str, payload: dict[str, Any]) -> dict[str, Any]:
+        """Search resources by name.
+
+        Args:
+            name: Resource name (e.g., "agents", "names", "descriptions").
+            payload: Request payload. Call payload_resource(name, "search") first.
+
+        Returns:
+            Search results.
+        """
+        from app.utils.mcp.get_mcp_profile_id import get_mcp_profile_id
+
+        profile_id = get_mcp_profile_id()
+
+        if name not in RESOURCE_REGISTRY:
+            return {"error": f"'{name}' is not a valid resource."}
+
+        if "search" not in RESOURCE_REGISTRY[name]:
+            return {"error": f"search operation not available for '{name}'."}
+
+        handler = _get_handler(*RESOURCE_REGISTRY[name]["search"])
+        return await call_endpoint_handler(handler, payload, profile_id)
+
     @server.tool()
     async def create_resource(name: str, payload: dict[str, Any]) -> dict[str, Any]:
         """Create a resource.
 
         Args:
             name: Resource name (e.g., "names", "descriptions", "flags").
-            payload: Request payload. IMPORTANT: Call payload_resource(name="{name}") first to get exact schema.
-
-        Payload Structure:
-            Use payload_resource(name="{name}") to get the exact schema.
-            Resources are create-only and typically include:
-            - {artifact}_id: UUID (required, ID of parent artifact)
-            - Resource-specific fields (name, description, value, etc.)
-
-        Example:
-            name: "names"
-            payload: {{"agent_id": "123e4567-...", "name": "My Agent Name"}}
+            payload: Request payload. Call payload_resource(name) first.
 
         Returns:
             Success response with created resource data including id.
-
-        Workflow:
-            1. Call payload_resource(name="names") to get exact payload schema
-            2. Construct payload with resource data
-            3. Call create_resource with name and payload
         """
         from app.utils.mcp.get_mcp_profile_id import get_mcp_profile_id
 
-        # Extract profile_id from MCP context
         profile_id = get_mcp_profile_id()
 
-        # Resources are create-only, not full CRUD
-        if name not in RESOURCES:
+        if name not in RESOURCE_REGISTRY:
             return {
                 "error": f"'{name}' is not a valid resource.",
                 "status": "invalid_resource",
             }
 
-        if name not in RESOURCE_HANDLERS:
+        if "create" not in RESOURCE_REGISTRY[name]:
             return {
-                "error": f"Resource '{name}' handler not implemented.",
+                "error": f"Resource '{name}' does not support create.",
                 "status": "not_implemented",
             }
 
-        handler = RESOURCE_HANDLERS[name]
+        handler = _get_handler(*RESOURCE_REGISTRY[name]["create"])
         return await call_endpoint_handler(handler, payload, profile_id)
 
-    # Analytics endpoints
-    @server.tool()
-    async def analytics(
-        type: str, operation: str, payload: dict[str, Any]
-    ) -> dict[str, Any]:
-        """Call analytics endpoint by type and operation.
+    # ------------------------------------------------------------------
+    # View tools
+    # ------------------------------------------------------------------
 
-        IMPORTANT: Call analytics_payload(type="{type}", operation="{operation}") first
-        to get the exact payload schema required.
+    @server.tool()
+    async def get_view(name: str, payload: dict[str, Any]) -> dict[str, Any]:
+        """Get view data by name.
 
         Args:
-            type: Analytics type:
-                - "home": Home dashboard analytics
-                - "dashboard": Main dashboard analytics
-                - "practice": Practice session analytics
-                - "leaderboard": Leaderboard data
-                - "reports": Report analytics
-                - "activity": Activity analytics
-                - "pricing": Pricing analytics
-                - "health": Health metrics
-                - "benchmark": Benchmark analytics
-                - "refresh": Refresh analytics cache
-            operation: Operation type:
-                - "get": Get analytics data
-                - "list": List analytics history
-                - "refresh": Refresh analytics (only for type="refresh")
-            payload: Request payload. Call analytics_payload first to get exact schema.
-
-        Payload Structure:
-            Common fields may include:
-            - start_date: ISO timestamp (optional)
-            - end_date: ISO timestamp (optional)
-            - cohort_ids: array of UUIDs (optional)
-            - department_ids: array of UUIDs (optional)
-            - Use analytics_payload to see exact schema
-
-        Example:
-            type: "dashboard"
-            operation: "get"
-            payload: {{"start_date": "2025-01-01T00:00:00Z", "end_date": "2025-01-31T23:59:59Z"}}
+            name: View name (e.g., "config", "attempt_list", "analytics_profile_facts").
+            payload: Request payload. Call payload_view(name) first.
 
         Returns:
-            Analytics data object with metrics, charts, and aggregated data.
-
-        Workflow:
-            1. Call analytics_payload(type="dashboard", operation="get") to get schema
-            2. Construct payload with filter parameters
-            3. Call analytics with type, operation, and payload
+            View data.
         """
         from app.utils.mcp.get_mcp_profile_id import get_mcp_profile_id
 
-        # Extract profile_id from MCP context
         profile_id = get_mcp_profile_id()
 
-        key = (type, operation)
-        if key not in ANALYTICS_HANDLERS:
-            valid_keys = list(ANALYTICS_HANDLERS.keys())
+        if name not in VIEW_REGISTRY:
             return {
-                "error": f"'{type}' with operation '{operation}' is not a valid analytics endpoint.",
-                "status": "invalid_type_operation",
-                "valid_combinations": [f"{t}/{op}" for t, op in valid_keys],
+                "error": f"'{name}' is not a valid view.",
+                "available_views": VIEWS,
             }
 
-        handler = ANALYTICS_HANDLERS[key]
-        if handler is None:
+        if "get" not in VIEW_REGISTRY[name]:
             return {
-                "error": f"Analytics endpoint '{type}/{operation}' is not implemented yet.",
-                "status": "not_implemented",
+                "error": f"get operation not available for view '{name}'.",
+                "available_operations": list(VIEW_REGISTRY[name].keys()),
             }
 
-        return await call_endpoint_handler(handler, payload, profile_id)  # type: ignore[arg-type]
+        handler = _get_handler(*VIEW_REGISTRY[name]["get"])
+        return await call_endpoint_handler(handler, payload, profile_id)
 
     @server.tool()
-    def analytics_payload(type: str, operation: str) -> dict[str, Any]:
-        """Get payload schema for analytics endpoint type and operation.
-
-        IMPORTANT: Call this tool FIRST before using analytics to understand
-        the exact payload structure required.
+    async def refresh_view(name: str, payload: dict[str, Any]) -> dict[str, Any]:
+        """Refresh a view's cached data.
 
         Args:
-            type: Analytics type (home, dashboard, practice, leaderboard, reports, activity, pricing, health, benchmark, refresh).
-            operation: Operation (get, list, refresh).
+            name: View name (e.g., "config", "attempt_list", "benchmark_invocations").
+            payload: Request payload. Call payload_view(name, "refresh") first.
 
         Returns:
-            JSON schema for the payload showing:
-            - Required and optional fields
-            - Field types and formats
-            - Field descriptions
-            - Default values
-
-            Note: The 'mcp' field is automatically filtered out as it's auto-injected.
-
-        Example:
-            type: "dashboard"
-            operation: "get"
-            Returns schema with fields like start_date, end_date, cohort_ids, etc.
-
-        Workflow:
-            1. Call analytics_payload(type="dashboard", operation="get") to get schema
-            2. Use the schema to construct payload for analytics call
-        """
-        key = (type, operation)
-        if key not in ANALYTICS_HANDLERS:
-            valid_keys = list(ANALYTICS_HANDLERS.keys())
-            return {
-                "error": f"'{type}' with operation '{operation}' is not a valid analytics endpoint.",
-                "status": "invalid_type_operation",
-                "valid_combinations": [f"{t}/{op}" for t, op in valid_keys],
-            }
-
-        handler = ANALYTICS_HANDLERS[key]
-        if handler is None:
-            return {
-                "error": f"Analytics endpoint '{type}/{operation}' is not implemented yet.",
-                "status": "not_implemented",
-            }
-
-        request_model = get_request_model_from_handler(handler)  # type: ignore[arg-type]
-        if request_model and hasattr(request_model, "model_json_schema"):
-            schema = request_model.model_json_schema()
-            # Filter out 'mcp' field from schema so agents don't see it
-            if (
-                isinstance(schema, dict)
-                and "properties" in schema
-                and "mcp" in schema["properties"]
-            ):
-                schema = schema.copy()
-                schema["properties"] = schema["properties"].copy()
-                del schema["properties"]["mcp"]
-                # Remove from required list if present
-                if "required" in schema and "mcp" in schema["required"]:
-                    schema["required"] = [r for r in schema["required"] if r != "mcp"]
-            return cast(dict[str, Any], schema)
-
-        return {
-            "type": "object",
-            "properties": {
-                "payload": {
-                    "type": "object",
-                    "description": f"Payload for {type}/{operation} analytics endpoint",
-                }
-            },
-        }
-
-    # Groups endpoints
-    @server.tool()
-    async def get_group(group_id: str, payload: dict[str, Any]) -> dict[str, Any]:
-        """Get pricing group detail.
-
-        Args:
-            group_id: UUID string of the pricing group.
-            payload: Request payload (typically empty or minimal).
-
-        Example:
-            group_id: "123e4567-e89b-12d3-a456-426614174000"
-            payload: {{}}
-
-        Returns:
-            Object containing pricing group details including:
-            - id: UUID
-            - name: string
-            - pricing information
-            - associated data
+            Refresh result.
         """
         from app.utils.mcp.get_mcp_profile_id import get_mcp_profile_id
 
-        # Extract profile_id from MCP context
         profile_id = get_mcp_profile_id()
 
-        if "get" not in GROUPS_HANDLERS:
+        if name not in VIEW_REGISTRY:
             return {
-                "error": "get_group handler not available.",
-                "status": "not_implemented",
+                "error": f"'{name}' is not a valid view.",
+                "available_views": VIEWS,
             }
 
-        # Add group_id to payload
-        payload_with_id = {**payload, "group_id": group_id}
-        return await call_endpoint_handler(
-            GROUPS_HANDLERS["get"], payload_with_id, profile_id
-        )
-
-    # Attempts endpoints
-    @server.tool()
-    async def get_attempt(
-        type: str, attempt_id: str, payload: dict[str, Any]
-    ) -> dict[str, Any]:
-        """Get attempt by type and ID.
-
-        Args:
-            type: Attempt type:
-                - "simulation": Simulation attempt
-                - "benchmark": Benchmark attempt
-            attempt_id: UUID string of the attempt.
-            payload: Request payload (typically empty or minimal).
-
-        Example:
-            type: "simulation"
-            attempt_id: "123e4567-e89b-12d3-a456-426614174000"
-            payload: {{}}
-
-        Returns:
-            Object containing attempt data including:
-            - id: UUID
-            - type: string
-            - status: string
-            - scores and metrics
-            - timestamps
-            - related data
-        """
-        from app.utils.mcp.get_mcp_profile_id import get_mcp_profile_id
-
-        # Extract profile_id from MCP context
-        profile_id = get_mcp_profile_id()
-
-        key = (type, "get")
-        if key not in ATTEMPTS_HANDLERS:
-            valid_keys = list(ATTEMPTS_HANDLERS.keys())
+        if "refresh" not in VIEW_REGISTRY[name]:
             return {
-                "error": f"'{type}' is not a valid attempt type for get.",
-                "status": "invalid_type",
-                "valid_types": [t for t, op in valid_keys if op == "get"],
+                "error": f"refresh operation not available for view '{name}'.",
+                "available_operations": list(VIEW_REGISTRY[name].keys()),
             }
 
-        handler = ATTEMPTS_HANDLERS[key]
-        if handler is None:
-            return {
-                "error": f"get_attempt for type '{type}' is not implemented yet.",
-                "status": "not_implemented",
-            }
+        handler = _get_handler(*VIEW_REGISTRY[name]["refresh"])
+        return await call_endpoint_handler(handler, payload, profile_id)
 
-        # Add attempt_id to payload
-        payload_with_id = {**payload, "attempt_id": attempt_id}
-        return await call_endpoint_handler(handler, payload_with_id, profile_id)
+    # ------------------------------------------------------------------
+    # Special tools
+    # ------------------------------------------------------------------
 
     @server.tool()
-    async def archive_attempt(
-        type: str, attempt_ids: list[str], payload: dict[str, Any]
-    ) -> dict[str, Any]:
+    async def archive_attempt(type: str, payload: dict[str, Any]) -> dict[str, Any]:
         """Archive or unarchive attempts.
 
         Args:
-            type: Attempt type:
-                - "simulation": Simulation attempts
-                - "benchmark": Benchmark attempts
-            attempt_ids: List of UUID strings for attempts to archive/unarchive.
-            payload: Request payload must include:
-                - archived: boolean (true to archive, false to unarchive)
+            type: Attempt type ("simulation" or "test").
+            payload: Request payload including attempt_ids and archived flag.
 
         Example:
             type: "simulation"
-            attempt_ids: ["123e4567-...", "234e5678-..."]
-            payload: {{"archived": true}}
+            payload: {{"attempt_ids": ["123e4567-..."], "archived": true}}
 
         Returns:
-            Archive result with success status and affected attempt IDs.
-
-        Workflow:
-            1. Get attempt IDs using list_artifact or other methods
-            2. Construct payload with archived boolean
-            3. Call archive_attempt with type, attempt_ids, and payload
+            Archive result with success status.
         """
         from app.utils.mcp.get_mcp_profile_id import get_mcp_profile_id
 
-        # Extract profile_id from MCP context
         profile_id = get_mcp_profile_id()
 
-        key = (type, "archive")
-        if key not in ATTEMPTS_HANDLERS:
-            valid_keys = list(ATTEMPTS_HANDLERS.keys())
+        key_map = {"simulation": "attempt_archive", "test": "test_archive"}
+        registry_key = key_map.get(type)
+        if not registry_key or registry_key not in SPECIAL_REGISTRY:
             return {
                 "error": f"'{type}' is not a valid attempt type for archive.",
-                "status": "invalid_type",
-                "valid_types": [t for t, op in valid_keys if op == "archive"],
+                "valid_types": list(key_map.keys()),
             }
 
-        handler = ATTEMPTS_HANDLERS[key]
-        if handler is None:
-            return {
-                "error": f"archive_attempt for type '{type}' is not implemented yet.",
-                "status": "not_implemented",
-            }
-
-        # Add attempt_ids to payload
-        payload_with_ids = {**payload, "attempt_ids": attempt_ids}
-        return await call_endpoint_handler(handler, payload_with_ids, profile_id)
-
-    # Decrypt endpoint
-    @server.tool()
-    async def decrypt(key_id: str, payload: dict[str, Any]) -> dict[str, Any]:
-        """Decrypt encrypted key value.
-
-        Args:
-            key_id: UUID string of the encrypted key to decrypt.
-            payload: Request payload (typically empty or minimal).
-
-        Example:
-            key_id: "123e4567-e89b-12d3-a456-426614174000"
-            payload: {{}}
-
-        Returns:
-            Object containing:
-            - decrypted_value: string (the decrypted key value)
-            - key_id: UUID
-            - metadata about the key
-
-        Note: This tool requires appropriate permissions to decrypt keys.
-        """
-        from app.utils.mcp.get_mcp_profile_id import get_mcp_profile_id
-
-        # Extract profile_id from MCP context
-        profile_id = get_mcp_profile_id()
-
-        if "decrypt" not in DECRYPT_HANDLERS:
-            return {
-                "error": "decrypt handler not available.",
-                "status": "not_implemented",
-            }
-
-        # Add key_id to payload
-        payload_with_id = {**payload, "key_id": key_id}
-        return await call_endpoint_handler(
-            DECRYPT_HANDLERS["decrypt"], payload_with_id, profile_id
-        )
-
-    # Export endpoints
-    @server.tool()
-    async def export_certificate(payload: dict[str, Any]) -> dict[str, Any]:
-        """Export certificate.
-
-        Args:
-            payload: Request payload typically including:
-                - certificate_id or similar identifier
-                - format preferences (optional)
-
-        Example:
-            payload: {{"certificate_id": "123e4567-e89b-12d3-a456-426614174000"}}
-
-        Returns:
-            Certificate content:
-            - For PDF: base64-encoded PDF content
-            - For text: plain text certificate content
-            - Includes content_type and encoding information
-        """
-        from app.utils.mcp.get_mcp_profile_id import get_mcp_profile_id
-
-        # Extract profile_id from MCP context
-        profile_id = get_mcp_profile_id()
-
-        if "certificate" not in EXPORT_HANDLERS:
-            return {
-                "error": "export_certificate handler not available.",
-                "status": "not_implemented",
-            }
-
-        return await call_endpoint_handler(
-            EXPORT_HANDLERS["certificate"], payload, profile_id
-        )
+        handler = _get_handler(*SPECIAL_REGISTRY[registry_key])
+        return await call_endpoint_handler(handler, payload, profile_id)
 
     @server.tool()
     async def export_report(payload: dict[str, Any]) -> dict[str, Any]:
         """Export report.
 
         Args:
-            payload: Request payload typically including:
-                - report_id or report parameters
-                - format: "csv" or "zip" (optional)
-                - date ranges, filters, etc.
-
-        Example:
-            payload: {{
-                "report_id": "123e4567-e89b-12d3-a456-426614174000",
-                "format": "csv"
-            }}
+            payload: Request payload with report parameters and format.
 
         Returns:
-            Report content:
-            - For CSV: CSV file content (base64-encoded or text)
-            - For ZIP: ZIP archive content (base64-encoded)
-            - Includes content_type and encoding information
+            Report content (CSV or ZIP, base64-encoded).
         """
         from app.utils.mcp.get_mcp_profile_id import get_mcp_profile_id
 
-        # Extract profile_id from MCP context
         profile_id = get_mcp_profile_id()
+        handler = _get_handler(*SPECIAL_REGISTRY["export_report"])
+        return await call_endpoint_handler(handler, payload, profile_id)
 
-        if "report" not in EXPORT_HANDLERS:
-            return {
-                "error": "export_report handler not available.",
-                "status": "not_implemented",
-            }
+    @server.tool()
+    async def export_certificate(payload: dict[str, Any]) -> dict[str, Any]:
+        """Export certificate.
 
-        return await call_endpoint_handler(
-            EXPORT_HANDLERS["report"], payload, profile_id
-        )
+        Args:
+            payload: Request payload with certificate parameters.
 
-    # Bulk endpoints
+        Returns:
+            Certificate content (PDF, base64-encoded).
+        """
+        from app.utils.mcp.get_mcp_profile_id import get_mcp_profile_id
+
+        profile_id = get_mcp_profile_id()
+        handler = _get_handler(*SPECIAL_REGISTRY["export_certificate"])
+        return await call_endpoint_handler(handler, payload, profile_id)
+
     @server.tool()
     async def bulk(
         type: str, operation: str, payload: dict[str, Any]
     ) -> dict[str, Any]:
-        """Call bulk operation endpoint by type and operation.
+        """Call bulk operation endpoint.
 
         Args:
-            type: Bulk type:
-                - "document": Document bulk operations
-                - "staff": Staff bulk operations
-            operation: Operation type:
-                - "process": Process bulk items
-                - "search": Search bulk items
-                - "save": Save bulk items
-                - "delete": Delete bulk items
+            type: Bulk type ("document" or "profile").
+            operation: Operation ("process", "search", "save", "delete").
             payload: Request payload with operation-specific data.
 
-        Payload Structure:
-            Varies by type and operation:
-            - For "process": May include file data, processing options
-            - For "search": Search criteria and filters
-            - For "save": Array of items to save
-            - For "delete": Array of IDs to delete
-
-        Example:
-            type: "document"
-            operation: "process"
-            payload: {{"file_data": "...", "options": {{...}}}}
-
         Returns:
-            Bulk operation result with:
-            - success: boolean
-            - processed_count: number
-            - errors: array (if any)
-            - results: array of processed items
+            Bulk operation result.
         """
         from app.utils.mcp.get_mcp_profile_id import get_mcp_profile_id
 
-        # Extract profile_id from MCP context
         profile_id = get_mcp_profile_id()
 
-        key = (type, operation)
-        if key not in BULK_HANDLERS:
-            valid_keys = list(BULK_HANDLERS.keys())
-            valid_types = list(set(t for t, op in valid_keys))
-            valid_operations = list(set(op for t, op in valid_keys if t == type))
-
-            if type not in valid_types:
-                return {
-                    "error": f"'{type}' is not a valid bulk type.",
-                    "status": "invalid_type",
-                    "valid_types": valid_types,
-                }
-            else:
-                return {
-                    "error": f"'{operation}' is not a valid operation for {type} bulk operations.",
-                    "status": "invalid_operation",
-                    "valid_operations": valid_operations,
-                }
-
-        handler = BULK_HANDLERS[key]
-        if handler is None:
+        # Map type to registry key prefix
+        type_map = {
+            "document": "bulk_document",
+            "staff": "bulk_profile",
+            "profile": "bulk_profile",
+        }
+        prefix = type_map.get(type)
+        if not prefix:
             return {
-                "error": f"bulk handler for type '{type}' operation '{operation}' is not implemented yet.",
-                "status": "not_implemented",
+                "error": f"'{type}' is not a valid bulk type.",
+                "valid_types": ["document", "staff"],
             }
 
+        registry_key = f"{prefix}_{operation}"
+        if registry_key not in SPECIAL_REGISTRY:
+            valid_ops = [
+                k.split("_", 2)[2] for k in SPECIAL_REGISTRY if k.startswith(prefix)
+            ]
+            return {
+                "error": f"'{operation}' is not a valid operation for {type} bulk.",
+                "valid_operations": valid_ops,
+            }
+
+        handler = _get_handler(*SPECIAL_REGISTRY[registry_key])
         return await call_endpoint_handler(handler, payload, profile_id)
 
-    # Upload endpoints
+    @server.tool()
+    async def decrypt(key_id: str, payload: dict[str, Any]) -> dict[str, Any]:
+        """Decrypt encrypted key value.
+
+        Args:
+            key_id: UUID string of the encrypted key to decrypt.
+            payload: Request payload (typically empty).
+
+        Returns:
+            Object containing decrypted_value and key metadata.
+        """
+        from app.utils.mcp.get_mcp_profile_id import get_mcp_profile_id
+
+        profile_id = get_mcp_profile_id()
+        payload_with_id = {**payload, "key_id": key_id}
+        handler = _get_handler(*SPECIAL_REGISTRY["decrypt"])
+        return await call_endpoint_handler(handler, payload_with_id, profile_id)
+
     @server.tool()
     async def upload(payload: dict[str, Any]) -> dict[str, Any]:
         """Upload a file (base64 content).
 
         Args:
             payload: Request payload containing:
-                - content: base64-encoded string (required) - the file content encoded in base64
-                - filename: string (required) - the original filename
-                - content_type: string (optional) - MIME type (e.g., "image/png", "application/pdf")
-                - subfolder: "audio" | "video" | None (optional) - subfolder for organization
-
-        Example:
-            payload: {{
-                "content": "iVBORw0KGgoAAAANSUhEUgAA...",  # base64-encoded file
-                "filename": "document.pdf",
-                "content_type": "application/pdf"
-            }}
+                - content: base64-encoded string (required)
+                - filename: string (required)
+                - content_type: string (optional, MIME type)
+                - subfolder: "audio" | "video" | None (optional)
 
         Returns:
-            Object containing:
-            - upload_id: UUID string (use this for download or other operations)
-            - filename: string
-            - status: string
-
-        Workflow:
-            1. Encode file content as base64
-            2. Construct payload with content, filename, and optional metadata
-            3. Call upload with payload
-            4. Use returned upload_id for subsequent operations (download, etc.)
+            Object containing upload_id, filename, and status.
         """
         import base64
         import json
@@ -2103,10 +1507,8 @@ def register_endpoints(server: FastMCP) -> None:
 
         from app.utils.mcp.get_mcp_profile_id import get_mcp_profile_id
 
-        # Extract profile_id from MCP context
         profile_id = get_mcp_profile_id()
 
-        # Validate payload
         if "content" not in payload or "filename" not in payload:
             return {
                 "error": "Payload must include 'content' (base64) and 'filename'",
@@ -2114,25 +1516,17 @@ def register_endpoints(server: FastMCP) -> None:
             }
 
         try:
-            # Decode base64 content
             content_bytes = base64.b64decode(payload["content"])
             filename = payload["filename"]
             content_type = payload.get("content_type")
             subfolder = payload.get("subfolder")
-
-            # Create upload_id
             upload_id = str(uuid.uuid4())
 
-            # Get upload directories
-            from app.main import (
-                TUS_UPLOADS_DIR,
-            )
+            from app.main import TUS_UPLOADS_DIR
 
-            # Create TUS upload directory
             upload_dir = TUS_UPLOADS_DIR / upload_id
             upload_dir.mkdir(parents=True, exist_ok=True)
 
-            # Save metadata
             metadata = {
                 "filename": filename,
                 "filetype": content_type,
@@ -2141,26 +1535,19 @@ def register_endpoints(server: FastMCP) -> None:
             with open(upload_dir / "metadata.json", "w") as f:
                 json.dump(metadata, f)
 
-            # Save file content
             with open(upload_dir / "file", "wb") as f:
                 f.write(content_bytes)
 
-            # Save info
             with open(upload_dir / "info", "w") as f:
                 f.write(f"length:{len(content_bytes)}\noffset:{len(content_bytes)}")
 
-            # Finalize upload (move to final location and create DB record)
-            if "save" not in UPLOADS_HANDLERS:
-                return {
-                    "error": "save_upload handler not available.",
-                    "status": "not_implemented",
-                }
+            # Finalize upload
+            save_handler = _get_handler(*SPECIAL_REGISTRY["upload_save"])
 
             from starlette.requests import Request as StarletteRequest
 
             from app.main import get_db
 
-            # Create request/response objects for finalize
             scope = {
                 "type": "http",
                 "method": "POST",
@@ -2174,9 +1561,8 @@ def register_endpoints(server: FastMCP) -> None:
             http_request.state.mcp = True
             http_response = Response()
 
-            # Call finalize
             async for conn in get_db():
-                result = await UPLOADS_HANDLERS["save"](
+                result = await save_handler(
                     upload_id, http_request, http_response, conn
                 )
                 if hasattr(result, "model_dump"):
@@ -2200,46 +1586,25 @@ def register_endpoints(server: FastMCP) -> None:
         """Download an upload file.
 
         Args:
-            upload_id: UUID string of the upload (obtained from upload tool).
-            payload: Request payload (optional):
-                - preview: boolean (optional, default false) - if true, returns PDF preview for PDF files
-
-        Example:
-            upload_id: "123e4567-e89b-12d3-a456-426614174000"
-            payload: {{}}  # download full file
-            or
-            payload: {{"preview": true}}  # get PDF preview
+            upload_id: UUID string of the upload.
+            payload: Optional: {{"preview": true}} for PDF preview.
 
         Returns:
-            Object containing:
-            - content: string (base64-encoded for binary files, plain text for text files)
-            - content_type: string (MIME type)
-            - encoding: "base64" (for binary files) or omitted (for text files)
-
-        Workflow:
-            1. Get upload_id from upload tool or other source
-            2. Call download with upload_id and optional preview flag
-            3. Decode base64 content if encoding is "base64"
+            Object with content (base64), content_type, and encoding.
         """
         import base64
 
         from app.utils.mcp.get_mcp_profile_id import get_mcp_profile_id
 
-        # Extract profile_id from MCP context
         profile_id = get_mcp_profile_id()
 
-        if "get" not in UPLOADS_HANDLERS:
-            return {
-                "error": "get_upload handler not available.",
-                "status": "not_implemented",
-            }
-
         try:
+            download_handler = _get_handler(*SPECIAL_REGISTRY["upload_download"])
+
             from starlette.requests import Request as StarletteRequest
 
             from app.main import get_db
 
-            # Create request object
             scope = {
                 "type": "http",
                 "method": "GET",
@@ -2252,21 +1617,16 @@ def register_endpoints(server: FastMCP) -> None:
             http_request.state.profile_id = profile_id
             http_request.state.mcp = True
 
-            # Get preview parameter
             preview = payload.get("preview", False)
 
-            # Call download handler
             async for conn in get_db():
-                result = await UPLOADS_HANDLERS["get"](
+                result = await download_handler(
                     upload_id, http_request, conn, preview=preview
                 )
 
-                # Handle FileResponse or Response
                 if hasattr(result, "body"):
-                    # Response object
                     content = result.body
                     if isinstance(content, bytes):
-                        # Binary content - encode as base64
                         return {
                             "content": base64.b64encode(content).decode("utf-8"),
                             "content_type": result.headers.get(
@@ -2300,39 +1660,20 @@ def register_endpoints(server: FastMCP) -> None:
                 "type": type(e).__name__,
             }
 
-    # Debug/Report Problem endpoint
     @server.tool()
     async def debug(message: str) -> dict[str, Any]:
-        """Report a problem or provide feedback (debug tool).
-
-        Use this tool to report bugs, provide feedback, or ask questions about the system.
-        All feedback is logged and reviewed.
+        """Report a problem or provide feedback.
 
         Args:
-            message: Problem description or feedback message (max 1000 characters).
-                Include:
-                - What you were trying to do
-                - What happened (or what you expected)
-                - Any error messages
-                - Steps to reproduce (if applicable)
-
-        Example:
-            message: "When calling get_artifact with agent_id=null, I expected to get a new agent template but got an error instead."
+            message: Problem description or feedback (max 1000 characters).
 
         Returns:
-            Object containing:
-            - success: boolean
-            - feedback_id: UUID (if created)
-            - message: confirmation message
-
-        Note: This tool automatically sets type="bug" - use it for reporting issues or providing feedback.
+            Object with success status and feedback_id.
         """
         from app.utils.mcp.get_mcp_profile_id import get_mcp_profile_id
 
-        # Extract profile_id from MCP context
         profile_id = get_mcp_profile_id()
 
-        # Validate message
         if not message or not message.strip():
             return {
                 "error": "Message is required",
@@ -2345,16 +1686,9 @@ def register_endpoints(server: FastMCP) -> None:
                 "status": "validation_error",
             }
 
-        if "debug" not in DEBUG_HANDLERS:
-            return {
-                "error": "debug handler not available.",
-                "status": "not_implemented",
-            }
-
-        # Create payload for debug endpoint - always use type="bug"
+        handler = _get_handler(*SPECIAL_REGISTRY["debug_problem"])
         payload = {
             "type": "bug",
             "message": message.strip(),
         }
-
-        return await call_endpoint_handler(DEBUG_HANDLERS["debug"], payload, profile_id)
+        return await call_endpoint_handler(handler, payload, profile_id)
