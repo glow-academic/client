@@ -5,7 +5,7 @@ from typing import Any
 from fastapi import APIRouter
 
 from app.main import get_internal_sio, sio
-from app.socket.v4.resources.examples.types import ExamplesGenerationStartedEvent
+from app.socket.v4.resources.examples.types import ExamplesGenerationEvent
 from app.socket.v4.resources.utils import resolve_resource_type
 
 internal_sio = get_internal_sio()
@@ -19,7 +19,7 @@ async def handle_start(data: dict[str, Any]) -> None:
     if not sid:
         return
 
-    event = ExamplesGenerationStartedEvent(
+    event = ExamplesGenerationEvent(
         artifact_type=data.get("artifact_type", ""),
         group_id=data.get("group_id", ""),
         run_id=data.get("run_id"),
@@ -56,7 +56,7 @@ async def examples_call_start_listener(data: dict[str, Any]) -> None:
 
 @server_router.post("/examples_generation_started")
 async def examples_generation_started_api(
-    request: ExamplesGenerationStartedEvent,
+    request: ExamplesGenerationEvent,
 ) -> dict[str, bool]:
     """Server-to-client event: Examples generation started."""
     return {"success": True}

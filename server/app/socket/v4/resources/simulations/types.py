@@ -1,61 +1,24 @@
-"""Typed event models for simulations resource socket events."""
+"""Unified event model for simulations resource socket events."""
 
-from typing import Any
-
-from pydantic import BaseModel
+from app.api.v4.resources.simulations.types import SimulationsResourceData
 
 
-class SimulationsGenerationStartedEvent(BaseModel):
-    """Server-to-client event: simulations_generation_started."""
+class SimulationsGenerationEvent(SimulationsResourceData):
+    """Unified socket event for simulations generation. Same type for all 4 events."""
 
-    artifact_type: str
-    resource_type: str = "simulations"
-    group_id: str
-    run_id: str | None = None
-    tool_call_id: str | None = None
-    tool_name: str | None = None
-
-
-class SimulationsGenerationProgressEvent(BaseModel):
-    """Server-to-client event: simulations_generation_progress."""
-
-    artifact_type: str
-    resource_type: str = "simulations"
-    group_id: str | None = None
-    run_id: str | None = None
-    tool_call_id: str | None = None
-    tool_name: str | None = None
-    arguments_delta: str | None = None
-    arguments: dict[str, Any] | None = None
-
-
-class SimulationsGenerationCompleteEvent(BaseModel):
-    """Server-to-client event: simulations_generation_complete."""
-
-    artifact_type: str
+    # Metadata
+    artifact_type: str = ""
     resource_type: str = "simulations"
     resource_id: str | None = None
-    group_id: str
-    run_id: str | None = None
-    success: bool = True
-    simulation_id: str | None = None
-    name: str | None = None
-    description: str | None = None
-    department_ids: list[str] | None = None
-    active: bool | None = None
-    generated: bool | None = None
-
-
-class SimulationsGenerationErrorEvent(BaseModel):
-    """Server-to-client event: simulations_generation_error."""
-
-    artifact_type: str
-    resource_type: str = "simulations"
     group_id: str | None = None
     run_id: str | None = None
-    success: bool = False
-    message: str = ""
+    # Completion
+    success: bool | None = None
+    # Error
+    message: str | None = None
     error_stage: str | None = None
-    tool_name: str | None = None
+    # Tool call tracking
     tool_call_id: str | None = None
-    arguments: dict[str, Any] | None = None
+    tool_name: str | None = None
+    # Streaming
+    arguments_delta: str | None = None

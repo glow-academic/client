@@ -1,58 +1,26 @@
-"""Typed event models for conditional_parameters resource socket events."""
+"""Unified event model for conditional_parameters resource socket events."""
 
-from typing import Any
-
-from pydantic import BaseModel
-
-
-class ConditionalParametersGenerationStartedEvent(BaseModel):
-    """Server-to-client event: conditional_parameters_generation_started."""
-
-    artifact_type: str
-    resource_type: str = "conditional_parameters"
-    group_id: str
-    run_id: str | None = None
-    tool_call_id: str | None = None
-    tool_name: str | None = None
+from app.api.v4.resources.conditional_parameters.types import (
+    ConditionalParametersResourceData,
+)
 
 
-class ConditionalParametersGenerationProgressEvent(BaseModel):
-    """Server-to-client event: conditional_parameters_generation_progress."""
+class ConditionalParametersGenerationEvent(ConditionalParametersResourceData):
+    """Unified socket event for conditional_parameters generation. Same type for all 4 events."""
 
-    artifact_type: str
-    resource_type: str = "conditional_parameters"
-    group_id: str | None = None
-    run_id: str | None = None
-    tool_call_id: str | None = None
-    tool_name: str | None = None
-    arguments_delta: str | None = None
-    arguments: dict[str, Any] | None = None
-
-
-class ConditionalParametersGenerationCompleteEvent(BaseModel):
-    """Server-to-client event: conditional_parameters_generation_complete."""
-
-    artifact_type: str
+    # Metadata
+    artifact_type: str = ""
     resource_type: str = "conditional_parameters"
     resource_id: str | None = None
-    group_id: str
-    run_id: str | None = None
-    success: bool = True
-    id: str | None = None
-    parameter_id: str | None = None
-    generated: bool | None = None
-
-
-class ConditionalParametersGenerationErrorEvent(BaseModel):
-    """Server-to-client event: conditional_parameters_generation_error."""
-
-    artifact_type: str
-    resource_type: str = "conditional_parameters"
     group_id: str | None = None
     run_id: str | None = None
-    success: bool = False
-    message: str = ""
+    # Completion
+    success: bool | None = None
+    # Error
+    message: str | None = None
     error_stage: str | None = None
-    tool_name: str | None = None
+    # Tool call tracking
     tool_call_id: str | None = None
-    arguments: dict[str, Any] | None = None
+    tool_name: str | None = None
+    # Streaming
+    arguments_delta: str | None = None

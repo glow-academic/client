@@ -78,21 +78,9 @@ export function AuthItemKeys({
   const selectedIds = useMemo(() => auth_item_key_ids ?? [], [auth_item_key_ids]);
 
   // Socket-based AI suggestion handling via shared hook
-  const { isGenerating: aiIsGenerating } = useResourceAi<{
-    id: string | null;
-    auth_id: string | null;
-    key_id: string | null;
-  }>({
+  const { isGenerating: aiIsGenerating } = useResourceAi({
     resourceType: "auth_item_keys",
     groupId: undefined,
-    extractSuggestion: (data) => {
-      if (!data.success && data.success !== undefined) return null;
-      return {
-        id: (data.id as string) ?? null,
-        auth_id: (data.auth_id as string) ?? null,
-        key_id: (data.key_id as string) ?? null,
-      };
-    },
     accumulate: true,
   });
 

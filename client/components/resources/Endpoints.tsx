@@ -100,18 +100,9 @@ export function Endpoints({
   const allEndpoints = useMemo(() => endpoints ?? [], [endpoints]);
 
   // Socket-based AI suggestion handling via shared hook
-  const { isGenerating: aiIsGenerating, aiSuggestions, accept: acceptAi, reject: rejectAi } = useResourceAi<{
-    id: string | null;
-    base_url: string | null;
-  }>({
+  const { isGenerating: aiIsGenerating, aiSuggestions, accept: acceptAi, reject: rejectAi } = useResourceAi({
     resourceType: "endpoints",
     groupId: group_id,
-    extractSuggestion: (data) => {
-      const id = data["id"] as string | null | undefined;
-      const base_url = data["base_url"] as string | null | undefined;
-      if (!id) return null;
-      return { id, base_url: base_url ?? null };
-    },
     accumulate: true,
   });
   const suggestionsList = useMemo(

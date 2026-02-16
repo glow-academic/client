@@ -100,18 +100,9 @@ export function Points({
   registerFlush,
 }: PointsProps) {
   // AI suggestion handling via shared hook
-  const { isGenerating: aiIsGenerating, aiSuggestion, accept: acceptAi, reject: rejectAi } = useResourceAi<
-    Pick<PointsResourceItem, "id" | "value">
-  >({
+  const { isGenerating: aiIsGenerating, aiSuggestion, accept: acceptAi, reject: rejectAi } = useResourceAi({
     resourceType: "points",
     groupId: group_id,
-    extractSuggestion: (data) => {
-      if (!data.id) return null;
-      return {
-        id: (data.id as string) ?? null,
-        value: (data.value as number) ?? null,
-      };
-    },
   });
 
   // Use standardized props with fallback to legacy props

@@ -6,7 +6,7 @@ from fastapi import APIRouter
 
 from app.main import get_internal_sio, sio
 from app.socket.v4.resources.reasoning_levels.types import (
-    ReasoningLevelsGenerationErrorEvent,
+    ReasoningLevelsGenerationEvent,
 )
 from app.socket.v4.resources.utils import resolve_resource_type
 
@@ -21,7 +21,9 @@ async def handle_error(data: dict[str, Any]) -> None:
     if not sid:
         return
 
-    event = ReasoningLevelsGenerationErrorEvent(
+    resolved_fields = data.get("resolved_fields") or {}
+
+    event = ReasoningLevelsGenerationEvent(
         artifact_type=data.get("artifact_type", ""),
         group_id=data.get("group_id"),
         run_id=data.get("run_id"),
@@ -29,7 +31,7 @@ async def handle_error(data: dict[str, Any]) -> None:
         error_stage=data.get("error_stage"),
         tool_name=data.get("tool_name"),
         tool_call_id=data.get("tool_call_id"),
-        arguments=data.get("arguments"),
+        **resolved_fields,
     )
 
     await sio.emit(
@@ -59,7 +61,7 @@ async def reasoning_levels_call_error_listener(data: dict[str, Any]) -> None:
 
 @server_router.post("/reasoning_levels_generation_error")
 async def reasoning_levels_generation_error_api(
-    request: ReasoningLevelsGenerationErrorEvent,
+    request: ReasoningLevelsGenerationEvent,
 ) -> dict[str, bool]:
     """Server-to-client event: ReasoningLevels generation error."""
     return {"success": True}

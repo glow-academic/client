@@ -225,21 +225,9 @@ export function Prompts({
   }, [prompts]);
 
   // Socket-based AI suggestion handling via shared hook
-  const { isGenerating: aiIsGenerating, aiSuggestion, accept: acceptAi, reject: rejectAi } = useResourceAi<{
-    prompt_id: string | null;
-    system_prompt: string | null;
-    name: string | null;
-  }>({
+  const { isGenerating: aiIsGenerating, aiSuggestion, accept: acceptAi, reject: rejectAi } = useResourceAi({
     resourceType: "prompts",
     groupId: group_id,
-    extractSuggestion: (data) => {
-      if (!data.success && data.success !== undefined) return null;
-      return {
-        prompt_id: (data.prompt_id as string) ?? null,
-        system_prompt: (data.system_prompt as string) ?? null,
-        name: (data.name as string) ?? null,
-      };
-    },
   });
 
   // AI diff view state

@@ -5,7 +5,7 @@ from typing import Any
 from fastapi import APIRouter
 
 from app.main import get_internal_sio, sio
-from app.socket.v4.resources.providers.types import ProvidersGenerationStartedEvent
+from app.socket.v4.resources.providers.types import ProvidersGenerationEvent
 from app.socket.v4.resources.utils import resolve_resource_type
 
 internal_sio = get_internal_sio()
@@ -19,7 +19,7 @@ async def handle_start(data: dict[str, Any]) -> None:
     if not sid:
         return
 
-    event = ProvidersGenerationStartedEvent(
+    event = ProvidersGenerationEvent(
         artifact_type=data.get("artifact_type", ""),
         group_id=data.get("group_id", ""),
         run_id=data.get("run_id"),
@@ -56,7 +56,7 @@ async def providers_call_start_listener(data: dict[str, Any]) -> None:
 
 @server_router.post("/providers_generation_started")
 async def providers_generation_started_api(
-    request: ProvidersGenerationStartedEvent,
+    request: ProvidersGenerationEvent,
 ) -> dict[str, bool]:
     """Server-to-client event: Providers generation started."""
     return {"success": True}

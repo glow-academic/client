@@ -96,16 +96,10 @@ export function Pricing({
   registerFlush,
 }: PricingProps) {
   // AI suggestion handling via shared hook (accumulate mode: each event = one pricing)
-  const { isGenerating: aiIsGenerating, aiSuggestions, accept: acceptAi, reject: rejectAi } = useResourceAi<
-    Pick<PricingResourceItem, "id">
-  >({
+  const { isGenerating: aiIsGenerating, aiSuggestions, accept: acceptAi, reject: rejectAi } = useResourceAi({
     resourceType: "pricing",
     groupId: group_id,
     accumulate: true,
-    extractSuggestion: (data) => {
-      if (!data.id) return null;
-      return { id: (data.id as string) ?? null };
-    },
   });
 
   const ids = useMemo(() => pricing_ids ?? [], [pricing_ids]);

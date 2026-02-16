@@ -71,19 +71,10 @@ export function GroupRubrics({
   isGenerating: _isGenerating = false,
 }: GroupRubricsProps) {
   // AI suggestion handling via shared hook (accumulate mode: each event = one rubric)
-  const { aiSuggestions, accept: acceptAi, reject: rejectAi } = useResourceAi<
-    Pick<GroupRubricResourceItem, "id" | "rubric_id">
-  >({
+  const { aiSuggestions, accept: acceptAi, reject: rejectAi } = useResourceAi({
     resourceType: "group_rubrics",
     groupId: group_id,
     accumulate: true,
-    extractSuggestion: (data) => {
-      if (!data.id) return null;
-      return {
-        id: (data.id as string) ?? null,
-        rubric_id: (data.rubric_id as string) ?? null,
-      };
-    },
   });
 
   const selectedIds = useMemo(() => selected_rubric_ids ?? [], [

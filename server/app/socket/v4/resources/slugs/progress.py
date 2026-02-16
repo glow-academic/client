@@ -5,7 +5,7 @@ from typing import Any
 from fastapi import APIRouter
 
 from app.main import get_internal_sio, sio
-from app.socket.v4.resources.slugs.types import SlugsGenerationProgressEvent
+from app.socket.v4.resources.slugs.types import SlugsGenerationEvent
 from app.socket.v4.resources.utils import resolve_resource_type
 
 internal_sio = get_internal_sio()
@@ -19,14 +19,16 @@ async def handle_progress(data: dict[str, Any]) -> None:
     if not sid:
         return
 
-    event = SlugsGenerationProgressEvent(
+    resolved_fields = data.get("resolved_fields") or {}
+
+    event = SlugsGenerationEvent(
         artifact_type=data.get("artifact_type", ""),
         group_id=data.get("group_id"),
         run_id=data.get("run_id"),
         tool_call_id=data.get("tool_call_id"),
         tool_name=data.get("tool_name"),
         arguments_delta=data.get("arguments_delta"),
-        arguments=data.get("arguments"),
+        **resolved_fields,
     )
 
     await sio.emit(
@@ -58,7 +60,7 @@ async def slugs_call_progress_listener(data: dict[str, Any]) -> None:
 
 @server_router.post("/slugs_generation_progress")
 async def slugs_generation_progress_api(
-    request: SlugsGenerationProgressEvent,
+    request: SlugsGenerationEvent,
 ) -> dict[str, bool]:
     """Server-to-client event: Slugs generation progress."""
     return {"success": True}

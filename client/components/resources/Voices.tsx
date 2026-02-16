@@ -95,16 +95,9 @@ export function Voices({
   );
 
   // Socket-based AI suggestion handling via shared hook
-  const { isGenerating: _aiIsGenerating, aiSuggestions, accept: acceptAi, reject: rejectAi } = useResourceAi<{
-    id: string | null;
-    voice: string | null;
-  }>({
+  const { isGenerating: _aiIsGenerating, aiSuggestions, accept: acceptAi, reject: rejectAi } = useResourceAi({
     resourceType: "voices",
     groupId: group_id,
-    extractSuggestion: (data) => {
-      if (!data.success && data.success !== undefined) return null;
-      return { id: (data.id as string) ?? null, voice: (data.voice as string) ?? null };
-    },
     accumulate: true,
   });
   const filteredVoices = useMemo(() => {

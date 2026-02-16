@@ -5,7 +5,7 @@ from typing import Any
 from fastapi import APIRouter
 
 from app.main import get_internal_sio, sio
-from app.socket.v4.resources.texts.types import TextsGenerationStartedEvent
+from app.socket.v4.resources.texts.types import TextsGenerationEvent
 from app.socket.v4.resources.utils import resolve_resource_type
 
 internal_sio = get_internal_sio()
@@ -19,7 +19,7 @@ async def handle_start(data: dict[str, Any]) -> None:
     if not sid:
         return
 
-    event = TextsGenerationStartedEvent(
+    event = TextsGenerationEvent(
         artifact_type=data.get("artifact_type", ""),
         group_id=data.get("group_id", ""),
         run_id=data.get("run_id"),
@@ -56,7 +56,7 @@ async def texts_call_start_listener(data: dict[str, Any]) -> None:
 
 @server_router.post("/texts_generation_started")
 async def texts_generation_started_api(
-    request: TextsGenerationStartedEvent,
+    request: TextsGenerationEvent,
 ) -> dict[str, bool]:
     """Server-to-client event: Texts generation started."""
     return {"success": True}

@@ -5,7 +5,7 @@ from typing import Any
 from fastapi import APIRouter
 
 from app.main import get_internal_sio, sio
-from app.socket.v4.resources.run_positions.types import RunPositionsGenerationErrorEvent
+from app.socket.v4.resources.run_positions.types import RunPositionsGenerationEvent
 from app.socket.v4.resources.utils import resolve_resource_type
 
 internal_sio = get_internal_sio()
@@ -19,7 +19,9 @@ async def handle_error(data: dict[str, Any]) -> None:
     if not sid:
         return
 
-    event = RunPositionsGenerationErrorEvent(
+    resolved_fields = data.get("resolved_fields") or {}
+
+    event = RunPositionsGenerationEvent(
         artifact_type=data.get("artifact_type", ""),
         group_id=data.get("group_id"),
         run_id=data.get("run_id"),
@@ -27,7 +29,7 @@ async def handle_error(data: dict[str, Any]) -> None:
         error_stage=data.get("error_stage"),
         tool_name=data.get("tool_name"),
         tool_call_id=data.get("tool_call_id"),
-        arguments=data.get("arguments"),
+        **resolved_fields,
     )
 
     await sio.emit(
@@ -57,7 +59,7 @@ async def run_positions_call_error_listener(data: dict[str, Any]) -> None:
 
 @server_router.post("/run_positions_generation_error")
 async def run_positions_generation_error_api(
-    request: RunPositionsGenerationErrorEvent,
+    request: RunPositionsGenerationEvent,
 ) -> dict[str, bool]:
     """Server-to-client event: RunPositions generation error."""
     return {"success": True}

@@ -79,16 +79,9 @@ export function ConditionalParameters({
   );
 
   // Socket-based AI suggestion handling via shared hook
-  const { isGenerating: aiIsGenerating, aiSuggestions, accept: acceptAi, reject: rejectAi } = useResourceAi<{
-    id: string | null;
-    parameter_id: string | null;
-  }>({
+  const { isGenerating: aiIsGenerating, aiSuggestions, accept: acceptAi, reject: rejectAi } = useResourceAi({
     resourceType: "conditional_parameters",
     groupId: group_id,
-    extractSuggestion: (data) => {
-      if (!data.success && data.success !== undefined) return null;
-      return { id: (data.id as string) ?? null, parameter_id: (data.parameter_id as string) ?? null };
-    },
     accumulate: true,
   });
 

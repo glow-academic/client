@@ -5,7 +5,7 @@ from typing import Any
 from fastapi import APIRouter
 
 from app.main import get_internal_sio, sio
-from app.socket.v4.resources.agents.types import AgentsGenerationStartedEvent
+from app.socket.v4.resources.agents.types import AgentsGenerationEvent
 from app.socket.v4.resources.utils import resolve_resource_type
 
 internal_sio = get_internal_sio()
@@ -19,7 +19,7 @@ async def handle_start(data: dict[str, Any]) -> None:
     if not sid:
         return
 
-    event = AgentsGenerationStartedEvent(
+    event = AgentsGenerationEvent(
         artifact_type=data.get("artifact_type", ""),
         group_id=data.get("group_id", ""),
         run_id=data.get("run_id"),
@@ -56,7 +56,7 @@ async def agents_call_start_listener(data: dict[str, Any]) -> None:
 
 @server_router.post("/agents_generation_started")
 async def agents_generation_started_api(
-    request: AgentsGenerationStartedEvent,
+    request: AgentsGenerationEvent,
 ) -> dict[str, bool]:
     """Server-to-client event: Agents generation started."""
     return {"success": True}

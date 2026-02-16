@@ -1,58 +1,24 @@
-"""Typed event models for texts resource socket events."""
+"""Unified event model for texts resource socket events."""
 
-from typing import Any
-
-from pydantic import BaseModel
+from app.api.v4.resources.texts.types import TextsResourceData
 
 
-class TextsGenerationStartedEvent(BaseModel):
-    """Server-to-client event: texts_generation_started."""
+class TextsGenerationEvent(TextsResourceData):
+    """Unified socket event for texts generation. Same type for all 4 events."""
 
-    artifact_type: str
-    resource_type: str = "texts"
-    group_id: str
-    run_id: str | None = None
-    tool_call_id: str | None = None
-    tool_name: str | None = None
-
-
-class TextsGenerationProgressEvent(BaseModel):
-    """Server-to-client event: texts_generation_progress."""
-
-    artifact_type: str
-    resource_type: str = "texts"
-    group_id: str | None = None
-    run_id: str | None = None
-    tool_call_id: str | None = None
-    tool_name: str | None = None
-    arguments_delta: str | None = None
-    arguments: dict[str, Any] | None = None
-
-
-class TextsGenerationCompleteEvent(BaseModel):
-    """Server-to-client event: texts_generation_complete."""
-
-    artifact_type: str
+    # Metadata
+    artifact_type: str = ""
     resource_type: str = "texts"
     resource_id: str | None = None
-    group_id: str
-    run_id: str | None = None
-    success: bool = True
-    texts_id: str | None = None
-    text_id: str | None = None
-    generated: bool | None = None
-
-
-class TextsGenerationErrorEvent(BaseModel):
-    """Server-to-client event: texts_generation_error."""
-
-    artifact_type: str
-    resource_type: str = "texts"
     group_id: str | None = None
     run_id: str | None = None
-    success: bool = False
-    message: str = ""
+    # Completion
+    success: bool | None = None
+    # Error
+    message: str | None = None
     error_stage: str | None = None
-    tool_name: str | None = None
+    # Tool call tracking
     tool_call_id: str | None = None
-    arguments: dict[str, Any] | None = None
+    tool_name: str | None = None
+    # Streaming
+    arguments_delta: str | None = None

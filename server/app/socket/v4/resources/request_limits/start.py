@@ -6,7 +6,7 @@ from fastapi import APIRouter
 
 from app.main import get_internal_sio, sio
 from app.socket.v4.resources.request_limits.types import (
-    RequestLimitsGenerationStartedEvent,
+    RequestLimitsGenerationEvent,
 )
 from app.socket.v4.resources.utils import resolve_resource_type
 
@@ -21,7 +21,7 @@ async def handle_start(data: dict[str, Any]) -> None:
     if not sid:
         return
 
-    event = RequestLimitsGenerationStartedEvent(
+    event = RequestLimitsGenerationEvent(
         artifact_type=data.get("artifact_type", ""),
         group_id=data.get("group_id", ""),
         run_id=data.get("run_id"),
@@ -58,7 +58,7 @@ async def request_limits_call_start_listener(data: dict[str, Any]) -> None:
 
 @server_router.post("/request_limits_generation_started")
 async def request_limits_generation_started_api(
-    request: RequestLimitsGenerationStartedEvent,
+    request: RequestLimitsGenerationEvent,
 ) -> dict[str, bool]:
     """Server-to-client event: RequestLimits generation started."""
     return {"success": True}

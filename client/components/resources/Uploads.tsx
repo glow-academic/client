@@ -106,18 +106,9 @@ export function Uploads({
   const allUploads = useMemo(() => uploads ?? [], [uploads]);
 
   // Socket-based AI suggestion handling via shared hook
-  const { isGenerating: aiIsGenerating, aiSuggestions, accept: acceptAi, reject: rejectAi } = useResourceAi<{
-    id: string | null;
-    file_path: string | null;
-  }>({
+  const { isGenerating: aiIsGenerating, aiSuggestions, accept: acceptAi, reject: rejectAi } = useResourceAi({
     resourceType: "uploads",
     groupId: group_id,
-    extractSuggestion: (data) => {
-      const id = data["id"] as string | null | undefined;
-      const file_path = data["file_path"] as string | null | undefined;
-      if (!id) return null;
-      return { id, file_path: file_path ?? null };
-    },
     accumulate: true,
   });
   const suggestionsList = useMemo(

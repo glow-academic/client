@@ -71,19 +71,10 @@ export function RunRubrics({
   onReject: _onReject,
 }: RunRubricsProps) {
   // AI suggestion handling via shared hook (accumulate mode: each event = one rubric)
-  const { aiSuggestions, accept: acceptAi, reject: rejectAi } = useResourceAi<
-    Pick<RunRubricsResourceItem, "id" | "rubric_id">
-  >({
+  const { aiSuggestions, accept: acceptAi, reject: rejectAi } = useResourceAi({
     resourceType: "run_rubrics",
     groupId: run_id,
     accumulate: true,
-    extractSuggestion: (data) => {
-      if (!data.id) return null;
-      return {
-        id: (data.id as string) ?? null,
-        rubric_id: (data.rubric_id as string) ?? null,
-      };
-    },
   });
 
   const selectedIds = useMemo(() => selected_rubric_ids ?? [], [

@@ -90,18 +90,9 @@ export function Texts({
   registerFlush,
 }: TextsProps) {
   // AI suggestion handling via shared hook
-  const { isGenerating: aiIsGenerating } = useResourceAi<
-    Pick<TextResourceItem, "id" | "content">
-  >({
+  const { isGenerating: aiIsGenerating } = useResourceAi({
     resourceType: "texts",
     groupId: group_id,
-    extractSuggestion: (data) => {
-      if (!data.id) return null;
-      return {
-        id: (data.id as string) ?? null,
-        content: (data.content as string) ?? null,
-      };
-    },
   });
 
   const [isCreating, setIsCreating] = useState(false);

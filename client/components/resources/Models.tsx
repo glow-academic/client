@@ -87,17 +87,9 @@ export function Models({
   );
 
   // AI suggestion via shared hook
-  const { aiSuggestion, accept: acceptAi, reject: rejectAi } = useResourceAi<
-    Pick<ModelResourceItem, "id" | "name">
-  >({
+  const { aiSuggestion, accept: acceptAi, reject: rejectAi } = useResourceAi({
     resourceType: "models",
     groupId: group_id,
-    extractSuggestion: (data) => {
-      const id = data.id as string | null | undefined;
-      const name = data.name as string | null | undefined;
-      if (!id) return null;
-      return { id, name: name ?? null };
-    },
   });
 
   // AI suggestion state

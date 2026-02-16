@@ -1,60 +1,24 @@
-"""Typed event models for prompts resource socket events."""
+"""Unified event model for prompts resource socket events."""
 
-from typing import Any
-
-from pydantic import BaseModel
+from app.api.v4.resources.prompts.types import PromptsResourceData
 
 
-class PromptsGenerationStartedEvent(BaseModel):
-    """Server-to-client event: prompts_generation_started."""
+class PromptsGenerationEvent(PromptsResourceData):
+    """Unified socket event for prompts generation. Same type for all 4 events."""
 
-    artifact_type: str
-    resource_type: str = "prompts"
-    group_id: str
-    run_id: str | None = None
-    tool_call_id: str | None = None
-    tool_name: str | None = None
-
-
-class PromptsGenerationProgressEvent(BaseModel):
-    """Server-to-client event: prompts_generation_progress."""
-
-    artifact_type: str
-    resource_type: str = "prompts"
-    group_id: str | None = None
-    run_id: str | None = None
-    tool_call_id: str | None = None
-    tool_name: str | None = None
-    arguments_delta: str | None = None
-    arguments: dict[str, Any] | None = None
-
-
-class PromptsGenerationCompleteEvent(BaseModel):
-    """Server-to-client event: prompts_generation_complete."""
-
-    artifact_type: str
+    # Metadata
+    artifact_type: str = ""
     resource_type: str = "prompts"
     resource_id: str | None = None
-    group_id: str
-    run_id: str | None = None
-    success: bool = True
-    id: str | None = None
-    name: str | None = None
-    description: str | None = None
-    system_prompt: str | None = None
-    generated: bool | None = None
-
-
-class PromptsGenerationErrorEvent(BaseModel):
-    """Server-to-client event: prompts_generation_error."""
-
-    artifact_type: str
-    resource_type: str = "prompts"
     group_id: str | None = None
     run_id: str | None = None
-    success: bool = False
-    message: str = ""
+    # Completion
+    success: bool | None = None
+    # Error
+    message: str | None = None
     error_stage: str | None = None
-    tool_name: str | None = None
+    # Tool call tracking
     tool_call_id: str | None = None
-    arguments: dict[str, Any] | None = None
+    tool_name: str | None = None
+    # Streaming
+    arguments_delta: str | None = None

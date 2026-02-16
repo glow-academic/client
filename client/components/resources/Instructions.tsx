@@ -392,16 +392,9 @@ export function Instructions({
   }, []);
 
   // AI suggestion handling via shared hook
-  const { isGenerating: aiIsGenerating, aiSuggestion, accept: acceptAi, reject: rejectAi } = useResourceAi<{
-    id: string | null;
-    template: string | null;
-  }>({
+  const { isGenerating: aiIsGenerating, aiSuggestion, accept: acceptAi, reject: rejectAi } = useResourceAi({
     resourceType: "instructions",
     groupId: group_id,
-    extractSuggestion: (data) => {
-      if (!data.success && data.success !== undefined) return null;
-      return { id: (data.id as string) ?? null, template: (data.template as string) ?? null };
-    },
   });
 
   // AI diff view state

@@ -415,19 +415,9 @@ export function Options({
     aiSuggestions,
     accept: acceptAi,
     reject: rejectAi,
-  } = useResourceAi<{
-    option_id: string | null;
-    option_text: string | null;
-  }>({
+  } = useResourceAi({
     resourceType: "options",
     groupId: group_id,
-    extractSuggestion: (data) => {
-      if (!data.success && data.success !== undefined) return null;
-      return {
-        option_id: (data.option_id as string) ?? null,
-        option_text: (data.option_text as string) ?? null,
-      };
-    },
     accumulate: true,
   });
 

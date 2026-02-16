@@ -6,7 +6,7 @@ from fastapi import APIRouter
 
 from app.main import get_internal_sio, sio
 from app.socket.v4.resources.utils import resolve_resource_type
-from app.socket.v4.resources.values.types import ValuesGenerationStartedEvent
+from app.socket.v4.resources.values.types import ValuesGenerationEvent
 
 internal_sio = get_internal_sio()
 
@@ -19,7 +19,7 @@ async def handle_start(data: dict[str, Any]) -> None:
     if not sid:
         return
 
-    event = ValuesGenerationStartedEvent(
+    event = ValuesGenerationEvent(
         artifact_type=data.get("artifact_type", ""),
         group_id=data.get("group_id", ""),
         run_id=data.get("run_id"),
@@ -56,7 +56,7 @@ async def values_call_start_listener(data: dict[str, Any]) -> None:
 
 @server_router.post("/values_generation_started")
 async def values_generation_started_api(
-    request: ValuesGenerationStartedEvent,
+    request: ValuesGenerationEvent,
 ) -> dict[str, bool]:
     """Server-to-client event: Values generation started."""
     return {"success": True}

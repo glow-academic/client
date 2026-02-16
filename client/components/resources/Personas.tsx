@@ -154,18 +154,9 @@ export function Personas({
     aiSuggestion,
     accept: acceptAi,
     reject: rejectAi,
-  } = useResourceAi<Pick<PersonaResourceItem, "persona_id" | "name">[]>({
+  } = useResourceAi({
     resourceType: "personas",
     groupId: group_id,
-    extractSuggestion: (data) => {
-      const personaId = data.persona_id as string | null | undefined;
-      const name = data.name as string | null | undefined;
-      if (personaId) {
-        onGenerationComplete?.();
-        return [{ persona_id: personaId, name: name ?? null }];
-      }
-      return null;
-    },
   });
 
   // Effective AI resources: hook (socket) takes priority, then prop fallback

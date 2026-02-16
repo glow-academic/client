@@ -1,58 +1,24 @@
-"""Typed event models for protocols resource socket events."""
+"""Unified event model for protocols resource socket events."""
 
-from typing import Any
-
-from pydantic import BaseModel
+from app.api.v4.resources.protocols.types import ProtocolsResourceData
 
 
-class ProtocolsGenerationStartedEvent(BaseModel):
-    """Server-to-client event: protocols_generation_started."""
+class ProtocolsGenerationEvent(ProtocolsResourceData):
+    """Unified socket event for protocols generation. Same type for all 4 events."""
 
-    artifact_type: str
-    resource_type: str = "protocols"
-    group_id: str
-    run_id: str | None = None
-    tool_call_id: str | None = None
-    tool_name: str | None = None
-
-
-class ProtocolsGenerationProgressEvent(BaseModel):
-    """Server-to-client event: protocols_generation_progress."""
-
-    artifact_type: str
-    resource_type: str = "protocols"
-    group_id: str | None = None
-    run_id: str | None = None
-    tool_call_id: str | None = None
-    tool_name: str | None = None
-    arguments_delta: str | None = None
-    arguments: dict[str, Any] | None = None
-
-
-class ProtocolsGenerationCompleteEvent(BaseModel):
-    """Server-to-client event: protocols_generation_complete."""
-
-    artifact_type: str
+    # Metadata
+    artifact_type: str = ""
     resource_type: str = "protocols"
     resource_id: str | None = None
-    group_id: str
-    run_id: str | None = None
-    success: bool = True
-    id: str | None = None
-    value: str | None = None
-    generated: bool | None = None
-
-
-class ProtocolsGenerationErrorEvent(BaseModel):
-    """Server-to-client event: protocols_generation_error."""
-
-    artifact_type: str
-    resource_type: str = "protocols"
     group_id: str | None = None
     run_id: str | None = None
-    success: bool = False
-    message: str = ""
+    # Completion
+    success: bool | None = None
+    # Error
+    message: str | None = None
     error_stage: str | None = None
-    tool_name: str | None = None
+    # Tool call tracking
     tool_call_id: str | None = None
-    arguments: dict[str, Any] | None = None
+    tool_name: str | None = None
+    # Streaming
+    arguments_delta: str | None = None

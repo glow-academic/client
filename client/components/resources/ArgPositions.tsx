@@ -77,16 +77,9 @@ export function ArgPositions({
   onReject: _onReject,
 }: ArgPositionsProps) {
   // Socket-based AI suggestion handling via shared hook
-  const { isGenerating: _aiIsGenerating } = useResourceAi<{
-    args_id: string | null;
-    value: number | null;
-  }>({
+  const { isGenerating: _aiIsGenerating } = useResourceAi({
     resourceType: "arg_positions",
     groupId: group_id,
-    extractSuggestion: (data) => {
-      if (!data.success && data.success !== undefined) return null;
-      return { args_id: (data.args_id as string) ?? null, value: (data.value as number) ?? null };
-    },
     accumulate: true,
   });
 

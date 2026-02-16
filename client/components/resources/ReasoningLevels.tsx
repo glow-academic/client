@@ -90,19 +90,9 @@ export function ReasoningLevels({
   const resourceId = reasoning_level_id ?? null;
   const show = show_reasoning_levels ?? true;
   // Socket-based AI suggestion handling via shared hook
-  const { isGenerating: aiIsGenerating, aiSuggestion, accept: acceptAi, reject: rejectAi } = useResourceAi<{
-    reasoning_level_id: string | null;
-    reasoning_level: string | null;
-  }>({
+  const { isGenerating: aiIsGenerating, aiSuggestion, accept: acceptAi, reject: rejectAi } = useResourceAi({
     resourceType: "reasoning_levels",
     groupId: group_id,
-    extractSuggestion: (data) => {
-      if (!data.success && data.success !== undefined) return null;
-      return {
-        reasoning_level_id: (data.reasoning_level_id as string) ?? null,
-        reasoning_level: (data.reasoning_level as string) ?? null,
-      };
-    },
   });
 
   // AI suggestion state

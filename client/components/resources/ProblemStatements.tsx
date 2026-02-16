@@ -236,22 +236,9 @@ export function ProblemStatements({
     aiSuggestion,
     accept: acceptAi,
     reject: rejectAi,
-  } = useResourceAi<ProblemStatementResourceItem>({
+  } = useResourceAi({
     resourceType: "problem_statements",
     groupId: group_id,
-    extractSuggestion: (data) => {
-      const d = data as {
-        problem_statement_id?: string | null;
-        problem_statement?: string | null;
-      };
-      if (d.problem_statement_id) {
-        return {
-          problem_statement_id: d.problem_statement_id,
-          problem_statement: d.problem_statement ?? null,
-        } as ProblemStatementResourceItem;
-      }
-      return null;
-    },
   });
 
   // Handle nullable resource properties

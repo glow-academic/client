@@ -6,7 +6,7 @@ from fastapi import APIRouter
 
 from app.main import get_internal_sio, sio
 from app.socket.v4.resources.conditional_parameters.types import (
-    ConditionalParametersGenerationStartedEvent,
+    ConditionalParametersGenerationEvent,
 )
 from app.socket.v4.resources.utils import resolve_resource_type
 
@@ -21,7 +21,7 @@ async def handle_start(data: dict[str, Any]) -> None:
     if not sid:
         return
 
-    event = ConditionalParametersGenerationStartedEvent(
+    event = ConditionalParametersGenerationEvent(
         artifact_type=data.get("artifact_type", ""),
         group_id=data.get("group_id", ""),
         run_id=data.get("run_id"),
@@ -58,7 +58,7 @@ async def conditional_parameters_call_start_listener(data: dict[str, Any]) -> No
 
 @server_router.post("/conditional_parameters_generation_started")
 async def conditional_parameters_generation_started_api(
-    request: ConditionalParametersGenerationStartedEvent,
+    request: ConditionalParametersGenerationEvent,
 ) -> dict[str, bool]:
     """Server-to-client event: ConditionalParameters generation started."""
     return {"success": True}

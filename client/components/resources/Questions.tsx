@@ -148,19 +148,9 @@ export function Questions({
     aiSuggestion,
     accept: acceptAi,
     reject: rejectAi,
-  } = useResourceAi<AiQuestionSuggestion>({
+  } = useResourceAi({
     resourceType: "questions",
     groupId: group_id,
-    extractSuggestion: (data) => {
-      // eslint-disable-next-line @typescript-eslint/dot-notation
-      const questionId = data["question_id"] as string | null | undefined;
-      // eslint-disable-next-line @typescript-eslint/dot-notation
-      const questionText = data["question_text"] as string | null | undefined;
-      if (questionId) {
-        return [{ question_id: questionId, question_text: questionText ?? null }];
-      }
-      return null;
-    },
   });
 
   // Internal state for questions (matching ContentSection pattern)

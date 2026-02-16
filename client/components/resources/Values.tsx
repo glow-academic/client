@@ -101,16 +101,9 @@ export function Values({
   );
 
   // Socket-based AI suggestion handling via shared hook
-  const { isGenerating: aiIsGenerating, aiSuggestions, accept: acceptAi, reject: rejectAi } = useResourceAi<{
-    value_id: string | null;
-    value: string | null;
-  }>({
+  const { isGenerating: aiIsGenerating, aiSuggestions, accept: acceptAi, reject: rejectAi } = useResourceAi({
     resourceType: "values",
     groupId: group_id,
-    extractSuggestion: (data) => {
-      if (!data.success && data.success !== undefined) return null;
-      return { value_id: (data.value_id as string) ?? null, value: (data.value as string) ?? null };
-    },
     accumulate: true,
   });
 

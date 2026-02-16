@@ -150,19 +150,9 @@ export function ScenarioRubrics({
     aiSuggestions,
     accept: acceptAi,
     reject: rejectAi,
-  } = useResourceAi<AiSuggestionItem>({
+  } = useResourceAi({
     resourceType: "scenario_rubrics",
     groupId: group_id,
-    extractSuggestion: (data) => {
-      const id = data.id as string | null | undefined;
-      if (!id) return null;
-      onGenerationComplete?.();
-      return {
-        id: id,
-        scenario_id: (data.scenario_id as string | null) ?? null,
-        rubric_id: (data.rubric_id as string | null) ?? null,
-      };
-    },
     accumulate: true,
   });
 

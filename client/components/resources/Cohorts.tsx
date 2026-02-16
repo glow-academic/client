@@ -91,16 +91,9 @@ export function Cohorts({
   );
 
   // Socket-based AI suggestion handling via shared hook
-  const { isGenerating: aiIsGenerating, aiSuggestions, accept: acceptAi, reject: rejectAi } = useResourceAi<{
-    cohort_id: string | null;
-    title: string | null;
-  }>({
+  const { isGenerating: aiIsGenerating, aiSuggestions, accept: acceptAi, reject: rejectAi } = useResourceAi({
     resourceType: "cohorts",
     groupId: group_id,
-    extractSuggestion: (data) => {
-      if (!data.success && data.success !== undefined) return null;
-      return { cohort_id: (data.cohort_id as string) ?? null, title: (data.title as string) ?? null };
-    },
     accumulate: true,
   });
 

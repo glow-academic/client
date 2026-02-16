@@ -85,16 +85,9 @@ export function Qualities({
   );
 
   // Socket-based AI suggestion handling via shared hook
-  const { isGenerating: aiIsGenerating, aiSuggestions, accept: acceptAi, reject: rejectAi } = useResourceAi<{
-    quality_id: string | null;
-    quality: string | null;
-  }>({
+  const { isGenerating: aiIsGenerating, aiSuggestions, accept: acceptAi, reject: rejectAi } = useResourceAi({
     resourceType: "qualities",
     groupId: group_id,
-    extractSuggestion: (data) => {
-      if (!data.success && data.success !== undefined) return null;
-      return { quality_id: (data.quality_id as string) ?? null, quality: (data.quality as string) ?? null };
-    },
     accumulate: true,
   });
 

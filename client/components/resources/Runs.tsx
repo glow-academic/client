@@ -77,16 +77,10 @@ export function Runs({
   onReject: _onReject,
 }: RunsProps) {
   // AI suggestion handling via shared hook (accumulate mode: each event = one run)
-  const { isGenerating: aiIsGenerating, aiSuggestions, accept: acceptAi, reject: rejectAi } = useResourceAi<
-    Pick<RunsResourceItem, "id">
-  >({
+  const { isGenerating: aiIsGenerating, aiSuggestions, accept: acceptAi, reject: rejectAi } = useResourceAi({
     resourceType: "runs",
     groupId: group_id,
     accumulate: true,
-    extractSuggestion: (data) => {
-      if (!data.id) return null;
-      return { id: (data.id as string) ?? null };
-    },
   });
 
   const ids = useMemo(() => run_ids ?? [], [run_ids]);

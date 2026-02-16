@@ -1,18 +1,12 @@
-"""Thresholds resource completion handler."""
+"""Thresholdshresholds resource completion handler."""
 
-import uuid
 from typing import Any
 
 from fastapi import APIRouter
 
-from app.api.v4.resources.thresholds.get import get_thresholds_internal
-from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.main import get_internal_sio, sio
-from app.socket.v4.resources.thresholds.types import ThresholdsGenerationCompleteEvent
+from app.socket.v4.resources.thresholds.types import ThresholdsGenerationEvent
 from app.socket.v4.resources.utils import resolve_resource_type
-from app.utils.logging.db_logger import get_logger
-
-logger = get_logger(__name__)
 
 internal_sio = get_internal_sio()
 
@@ -20,36 +14,23 @@ server_router = APIRouter()
 
 
 async def handle_complete(data: dict[str, Any]) -> None:
-    """Handle thresholds generation complete - hydrate and emit typed event."""
+    """Handle thresholds generation complete - emit typed event from tool result."""
     sid = data.get("sid", "")
     group_id_str = data.get("group_id", "")
     run_id = data.get("run_id")
     tool_result = data.get("result") or {}
     resource_id_str = tool_result.get("resource_id")
+    resource_data = tool_result.get("resource_data") or {}
 
     if not sid or not resource_id_str:
         return
 
-    resource_id = uuid.UUID(resource_id_str)
-
-    try:
-        async with get_db_connection() as conn:
-            items = await get_thresholds_internal(conn, [resource_id])
-            if not items:
-                return
-            item = items[0]
-            resource_data = (
-                item.model_dump(mode="json") if hasattr(item, "model_dump") else {}
-            )
-    except Exception as e:
-        logger.exception(f"Failed to fetch thresholds/{resource_id}: {e}")
-        return
-
-    event = ThresholdsGenerationCompleteEvent(
+    event = ThresholdsGenerationEvent(
         artifact_type=data.get("artifact_type", ""),
         resource_id=resource_id_str,
         group_id=group_id_str,
         run_id=run_id,
+        success=True,
         **resource_data,
     )
 
@@ -82,7 +63,7 @@ async def thresholds_call_complete_listener(data: dict[str, Any]) -> None:
 
 @server_router.post("/thresholds_generation_complete")
 async def thresholds_generation_complete_api(
-    request: ThresholdsGenerationCompleteEvent,
+    request: ThresholdsGenerationEvent,
 ) -> dict[str, bool]:
     """Server-to-client event: Thresholds generation completed."""
     return {"success": True}

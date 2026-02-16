@@ -107,17 +107,9 @@ export function Emails({
   const allEmails = useMemo(() => emails ?? [], [emails]);
 
   // Socket-based AI suggestion handling via shared hook
-  const { isGenerating: aiIsGenerating, aiSuggestions, accept: acceptAi, reject: rejectAi } = useResourceAi<
-    Pick<EmailResourceItem, "id" | "email">
-  >({
+  const { isGenerating: aiIsGenerating, aiSuggestions, accept: acceptAi, reject: rejectAi } = useResourceAi({
     resourceType: "emails",
     groupId: group_id,
-    extractSuggestion: (data) => {
-      const id = data["id"] as string | null | undefined;
-      const email = data["email"] as string | null | undefined;
-      if (!id) return null;
-      return { id, email: email ?? null };
-    },
     accumulate: true,
   });
   const suggestionsList = useMemo(

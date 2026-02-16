@@ -93,16 +93,9 @@ export function TemperatureLevels({
   const show = show_temperature_levels ?? true;
 
   // Socket-based AI suggestion handling via shared hook
-  const { isGenerating: aiIsGenerating, aiSuggestion, accept: acceptAi, reject: rejectAi } = useResourceAi<{
-    temperature_level_id: string | null;
-    name: string | null;
-  }>({
+  const { isGenerating: aiIsGenerating, aiSuggestion, accept: acceptAi, reject: rejectAi } = useResourceAi({
     resourceType: "temperature_levels",
     groupId: group_id,
-    extractSuggestion: (data) => {
-      if (!data.success && data.success !== undefined) return null;
-      return { temperature_level_id: (data.temperature_level_id as string) ?? null, name: (data.name as string) ?? null };
-    },
   });
 
   // AI suggestion state

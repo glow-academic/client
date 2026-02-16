@@ -124,18 +124,9 @@ export function Videos({
     aiSuggestion,
     accept: acceptAi,
     reject: rejectAi,
-  } = useResourceAi<Pick<VideoResourceItem, "video_id" | "name">[]>({
+  } = useResourceAi({
     resourceType: "videos",
     groupId: group_id,
-    extractSuggestion: (data) => {
-      const videoId = data.video_id as string | null | undefined;
-      const name = data.name as string | null | undefined;
-      if (videoId) {
-        onGenerationComplete?.();
-        return [{ video_id: videoId, name: name ?? null }];
-      }
-      return null;
-    },
   });
 
   // Internal state for selected video (single select for videos)

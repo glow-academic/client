@@ -1,60 +1,24 @@
-"""Typed event models for pricing resource socket events."""
+"""Unified event model for pricing resource socket events."""
 
-from typing import Any
-
-from pydantic import BaseModel
+from app.api.v4.resources.pricing.types import PricingResourceData
 
 
-class PricingGenerationStartedEvent(BaseModel):
-    """Server-to-client event: pricing_generation_started."""
+class PricingGenerationEvent(PricingResourceData):
+    """Unified socket event for pricing generation. Same type for all 4 events."""
 
-    artifact_type: str
-    resource_type: str = "pricing"
-    group_id: str
-    run_id: str | None = None
-    tool_call_id: str | None = None
-    tool_name: str | None = None
-
-
-class PricingGenerationProgressEvent(BaseModel):
-    """Server-to-client event: pricing_generation_progress."""
-
-    artifact_type: str
-    resource_type: str = "pricing"
-    group_id: str | None = None
-    run_id: str | None = None
-    tool_call_id: str | None = None
-    tool_name: str | None = None
-    arguments_delta: str | None = None
-    arguments: dict[str, Any] | None = None
-
-
-class PricingGenerationCompleteEvent(BaseModel):
-    """Server-to-client event: pricing_generation_complete."""
-
-    artifact_type: str
+    # Metadata
+    artifact_type: str = ""
     resource_type: str = "pricing"
     resource_id: str | None = None
-    group_id: str
-    run_id: str | None = None
-    success: bool = True
-    id: str | None = None
-    pricing_type: str | None = None
-    price: float | None = None
-    unit_id: str | None = None
-    generated: bool | None = None
-
-
-class PricingGenerationErrorEvent(BaseModel):
-    """Server-to-client event: pricing_generation_error."""
-
-    artifact_type: str
-    resource_type: str = "pricing"
     group_id: str | None = None
     run_id: str | None = None
-    success: bool = False
-    message: str = ""
+    # Completion
+    success: bool | None = None
+    # Error
+    message: str | None = None
     error_stage: str | None = None
-    tool_name: str | None = None
+    # Tool call tracking
     tool_call_id: str | None = None
-    arguments: dict[str, Any] | None = None
+    tool_name: str | None = None
+    # Streaming
+    arguments_delta: str | None = None

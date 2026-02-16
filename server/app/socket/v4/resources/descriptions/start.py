@@ -6,7 +6,7 @@ from fastapi import APIRouter
 
 from app.main import get_internal_sio, sio
 from app.socket.v4.resources.descriptions.types import (
-    DescriptionsGenerationStartedEvent,
+    DescriptionsGenerationEvent,
 )
 from app.socket.v4.resources.utils import resolve_resource_type
 
@@ -21,7 +21,7 @@ async def handle_start(data: dict[str, Any]) -> None:
     if not sid:
         return
 
-    event = DescriptionsGenerationStartedEvent(
+    event = DescriptionsGenerationEvent(
         artifact_type=data.get("artifact_type", ""),
         group_id=data.get("group_id", ""),
         run_id=data.get("run_id"),
@@ -58,7 +58,7 @@ async def descriptions_call_start_listener(data: dict[str, Any]) -> None:
 
 @server_router.post("/descriptions_generation_started")
 async def descriptions_generation_started_api(
-    request: DescriptionsGenerationStartedEvent,
+    request: DescriptionsGenerationEvent,
 ) -> dict[str, bool]:
     """Server-to-client event: Descriptions generation started."""
     return {"success": True}

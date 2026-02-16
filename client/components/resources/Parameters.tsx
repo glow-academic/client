@@ -147,19 +147,9 @@ export function Parameters({
   );
 
   // AI suggestion handling via shared hook
-  const { isGenerating: aiIsGenerating, aiSuggestion, accept: acceptAi, reject: rejectAi } = useResourceAi<
-    Pick<ParameterResourceItem, "parameter_id" | "name">[]
-  >({
+  const { isGenerating: aiIsGenerating, aiSuggestion, accept: acceptAi, reject: rejectAi } = useResourceAi({
     resourceType: "parameters",
     groupId: group_id,
-    extractSuggestion: (data) => {
-      if (!data["parameter_id"] || !data["name"]) return null;
-      onGenerationComplete?.();
-      return [
-        {
-          parameter_id: data["parameter_id"] as string,
-          name: data["name"] as string,
-        },
       ];
     },
   });

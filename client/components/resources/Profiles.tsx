@@ -90,16 +90,9 @@ export function Profiles({
   const allProfiles = useMemo(() => profiles ?? [], [profiles]);
 
   // Socket-based AI suggestion handling via shared hook
-  const { isGenerating: aiIsGenerating, aiSuggestions, accept: acceptAi, reject: rejectAi } = useResourceAi<{
-    profile_id: string | null;
-    name: string | null;
-  }>({
+  const { isGenerating: aiIsGenerating, aiSuggestions, accept: acceptAi, reject: rejectAi } = useResourceAi({
     resourceType: "profiles",
     groupId: group_id,
-    extractSuggestion: (data) => {
-      if (!data.success && data.success !== undefined) return null;
-      return { profile_id: (data.profile_id as string) ?? null, name: (data.name as string) ?? null };
-    },
     accumulate: true,
   });
 

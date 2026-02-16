@@ -78,21 +78,9 @@ export function ProviderKeys({
   const selectedIds = useMemo(() => provider_key_ids ?? [], [provider_key_ids]);
 
   // Socket-based AI suggestion handling via shared hook
-  const { isGenerating: aiIsGenerating } = useResourceAi<{
-    id: string | null;
-    provider_id: string | null;
-    key_id: string | null;
-  }>({
+  const { isGenerating: aiIsGenerating } = useResourceAi({
     resourceType: "provider_keys",
     groupId: undefined,
-    extractSuggestion: (data) => {
-      if (!data.success && data.success !== undefined) return null;
-      return {
-        id: (data.id as string) ?? null,
-        provider_id: (data.provider_id as string) ?? null,
-        key_id: (data.key_id as string) ?? null,
-      };
-    },
     accumulate: true,
   });
 

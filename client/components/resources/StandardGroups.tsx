@@ -125,16 +125,9 @@ export function StandardGroups({
   );
 
   // Socket-based AI suggestion handling via shared hook
-  const { isGenerating: aiIsGenerating, aiSuggestions, accept: acceptAi, reject: rejectAi } = useResourceAi<{
-    standard_group_id: string | null;
-    name: string | null;
-  }>({
+  const { isGenerating: aiIsGenerating, aiSuggestions, accept: acceptAi, reject: rejectAi } = useResourceAi({
     resourceType: "standard_groups",
     groupId: group_id,
-    extractSuggestion: (data) => {
-      if (!data.success && data.success !== undefined) return null;
-      return { standard_group_id: (data.standard_group_id as string) ?? null, name: (data.name as string) ?? null };
-    },
     accumulate: true,
   });
 

@@ -5,7 +5,7 @@ from typing import Any
 from fastapi import APIRouter
 
 from app.main import get_internal_sio, sio
-from app.socket.v4.resources.qualities.types import QualitiesGenerationProgressEvent
+from app.socket.v4.resources.qualities.types import QualitiesGenerationEvent
 from app.socket.v4.resources.utils import resolve_resource_type
 
 internal_sio = get_internal_sio()
@@ -19,14 +19,16 @@ async def handle_progress(data: dict[str, Any]) -> None:
     if not sid:
         return
 
-    event = QualitiesGenerationProgressEvent(
+    resolved_fields = data.get("resolved_fields") or {}
+
+    event = QualitiesGenerationEvent(
         artifact_type=data.get("artifact_type", ""),
         group_id=data.get("group_id"),
         run_id=data.get("run_id"),
         tool_call_id=data.get("tool_call_id"),
         tool_name=data.get("tool_name"),
         arguments_delta=data.get("arguments_delta"),
-        arguments=data.get("arguments"),
+        **resolved_fields,
     )
 
     await sio.emit(
@@ -58,7 +60,7 @@ async def qualities_call_progress_listener(data: dict[str, Any]) -> None:
 
 @server_router.post("/qualities_generation_progress")
 async def qualities_generation_progress_api(
-    request: QualitiesGenerationProgressEvent,
+    request: QualitiesGenerationEvent,
 ) -> dict[str, bool]:
     """Server-to-client event: Qualities generation progress."""
     return {"success": True}

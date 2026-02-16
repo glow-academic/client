@@ -108,21 +108,9 @@ export function Icons({
   const allIconsArray = useMemo(() => icons ?? [], [icons]);
 
   // Socket-based AI suggestion handling via shared hook
-  const { isGenerating: aiIsGenerating, aiSuggestion, accept: acceptAi, reject: rejectAi } = useResourceAi<{
-    id: string | null;
-    name: string | null;
-    value: string;
-  }>({
+  const { isGenerating: aiIsGenerating, aiSuggestion, accept: acceptAi, reject: rejectAi } = useResourceAi({
     resourceType: "icons",
     groupId: group_id,
-    extractSuggestion: (data) => {
-      if (!data.success && data.success !== undefined) return null;
-      return {
-        id: (data.id as string) ?? null,
-        name: (data.name as string) ?? null,
-        value: (data.value as string) ?? "",
-      };
-    },
   });
 
   // AI suggestion state

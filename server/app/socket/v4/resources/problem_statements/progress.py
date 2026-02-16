@@ -6,7 +6,7 @@ from fastapi import APIRouter
 
 from app.main import get_internal_sio, sio
 from app.socket.v4.resources.problem_statements.types import (
-    ProblemStatementsGenerationProgressEvent,
+    ProblemStatementsGenerationEvent,
 )
 from app.socket.v4.resources.utils import resolve_resource_type
 
@@ -21,14 +21,16 @@ async def handle_progress(data: dict[str, Any]) -> None:
     if not sid:
         return
 
-    event = ProblemStatementsGenerationProgressEvent(
+    resolved_fields = data.get("resolved_fields") or {}
+
+    event = ProblemStatementsGenerationEvent(
         artifact_type=data.get("artifact_type", ""),
         group_id=data.get("group_id"),
         run_id=data.get("run_id"),
         tool_call_id=data.get("tool_call_id"),
         tool_name=data.get("tool_name"),
         arguments_delta=data.get("arguments_delta"),
-        arguments=data.get("arguments"),
+        **resolved_fields,
     )
 
     await sio.emit(
@@ -60,7 +62,7 @@ async def problem_statements_call_progress_listener(data: dict[str, Any]) -> Non
 
 @server_router.post("/problem_statements_generation_progress")
 async def problem_statements_generation_progress_api(
-    request: ProblemStatementsGenerationProgressEvent,
+    request: ProblemStatementsGenerationEvent,
 ) -> dict[str, bool]:
     """Server-to-client event: ProblemStatements generation progress."""
     return {"success": True}

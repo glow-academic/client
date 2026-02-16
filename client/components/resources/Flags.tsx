@@ -107,16 +107,10 @@ export function Flags(props: FlagsProps) {
   );
 
   // AI suggestion handling via shared hook (accumulate mode: each event = one flag)
-  const { isGenerating: aiIsGenerating, aiSuggestions, accept: acceptAi, reject: rejectAi } = useResourceAi<
-    Pick<FlagResourceItem, "id" | "name">
-  >({
+  const { isGenerating: aiIsGenerating, aiSuggestions, accept: acceptAi, reject: rejectAi } = useResourceAi({
     resourceType: "flags",
     groupId: group_id,
     accumulate: true,
-    extractSuggestion: (data) => {
-      if (!data.id) return null;
-      return { id: data.id as string, name: data.name as string };
-    },
   });
 
   // AI suggestion state

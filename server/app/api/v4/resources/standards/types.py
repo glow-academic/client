@@ -1,40 +1,13 @@
-"""Types for this resource endpoint."""
-
-from typing import Any
-from uuid import UUID
+"""Canonical standards resource type — single source of truth for resource fields."""
 
 from pydantic import BaseModel
 
-from app.sql.types import QGetStandardsV4Item
 
+class StandardsResourceData(BaseModel):
+    """Canonical standards resource fields. All optional for streaming support."""
 
-class GetStandardsApiRequest(BaseModel):
-    """Request for getting standards by IDs."""
-
-    ids: list[UUID]
-
-
-class GetStandardsApiResponse(BaseModel):
-    """Response for getting standards."""
-
-    items: list[QGetStandardsV4Item] = []
-
-
-class SearchStandardsParams(BaseModel):
-    search: str | None = None
-    limit_count: int | None = 20
-    offset_count: int | None = 0
-    exclude_ids: list[UUID] = []
-    standard_group_ids: list[UUID] = []
-    # Artifact boolean filters
-    rubric: bool = False
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.search,
-            self.limit_count,
-            self.offset_count,
-            self.exclude_ids,
-            self.standard_group_ids,
-            self.rubric,
-        )
+    standard_id: str | None = None
+    standard_group_id: str | None = None
+    name: str | None = None
+    description: str | None = None
+    points: float | None = None

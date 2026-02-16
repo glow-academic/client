@@ -90,18 +90,9 @@ export function Settings({
   const allSettings = useMemo(() => settings ?? [], [settings]);
 
   // Socket-based AI suggestion handling via shared hook
-  const { isGenerating: aiIsGenerating, aiSuggestions, accept: acceptAi, reject: rejectAi } = useResourceAi<{
-    settings_id: string | null;
-    name: string | null;
-  }>({
+  const { isGenerating: aiIsGenerating, aiSuggestions, accept: acceptAi, reject: rejectAi } = useResourceAi({
     resourceType: "settings",
     groupId: group_id,
-    extractSuggestion: (data) => {
-      const settings_id = data["settings_id"] as string | null | undefined;
-      const name = data["name"] as string | null | undefined;
-      if (!settings_id) return null;
-      return { settings_id, name: name ?? null };
-    },
     accumulate: true,
   });
 

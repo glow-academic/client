@@ -5,7 +5,7 @@ from typing import Any
 from fastapi import APIRouter
 
 from app.main import get_internal_sio, sio
-from app.socket.v4.resources.colors.types import ColorsGenerationProgressEvent
+from app.socket.v4.resources.colors.types import ColorsGenerationEvent
 from app.socket.v4.resources.utils import resolve_resource_type
 
 internal_sio = get_internal_sio()
@@ -19,14 +19,16 @@ async def handle_progress(data: dict[str, Any]) -> None:
     if not sid:
         return
 
-    event = ColorsGenerationProgressEvent(
+    resolved_fields = data.get("resolved_fields") or {}
+
+    event = ColorsGenerationEvent(
         artifact_type=data.get("artifact_type", ""),
         group_id=data.get("group_id"),
         run_id=data.get("run_id"),
         tool_call_id=data.get("tool_call_id"),
         tool_name=data.get("tool_name"),
         arguments_delta=data.get("arguments_delta"),
-        arguments=data.get("arguments"),
+        **resolved_fields,
     )
 
     await sio.emit(
@@ -58,7 +60,7 @@ async def colors_call_progress_listener(data: dict[str, Any]) -> None:
 
 @server_router.post("/colors_generation_progress")
 async def colors_generation_progress_api(
-    request: ColorsGenerationProgressEvent,
+    request: ColorsGenerationEvent,
 ) -> dict[str, bool]:
     """Server-to-client event: Colors generation progress."""
     return {"success": True}

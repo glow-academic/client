@@ -135,28 +135,9 @@ export function ScenarioTimeLimits({
     aiSuggestion,
     accept: acceptAi,
     reject: rejectAi,
-  } = useResourceAi<AiTimeLimitSuggestion[]>({
+  } = useResourceAi({
     resourceType: "scenario_time_limits",
     groupId: group_id,
-    extractSuggestion: (data) => {
-      const d = data as {
-        id?: string | null;
-        scenario_id?: string | null;
-        time_limit_seconds?: number | null;
-      };
-      if (d.id) {
-        onGenerationComplete?.();
-        return [
-          {
-            id: d.id,
-            scenario_id: d.scenario_id ?? null,
-            time_limit_seconds: d.time_limit_seconds ?? null,
-          },
-        ];
-      }
-      onGenerationComplete?.();
-      return null;
-    },
   });
 
   // Effective AI resources: hook suggestion takes priority, then prop fallback

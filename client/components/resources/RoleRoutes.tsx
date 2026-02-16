@@ -86,20 +86,10 @@ export function RoleRoutes({
   onReject: _onReject,
 }: RoleRoutesProps) {
   // AI suggestion handling via shared hook (accumulate mode: each event = one role route)
-  const { aiSuggestions, accept: acceptAi, reject: rejectAi } = useResourceAi<
-    Pick<RoleRoutesResourceItem, "id" | "role_id" | "route_id">
-  >({
+  const { aiSuggestions, accept: acceptAi, reject: rejectAi } = useResourceAi({
     resourceType: "role_routes",
     groupId: group_id,
     accumulate: true,
-    extractSuggestion: (data) => {
-      if (!data.id) return null;
-      return {
-        id: (data.id as string) ?? null,
-        role_id: (data.role_id as string) ?? null,
-        route_id: (data.route_id as string) ?? null,
-      };
-    },
   });
 
   const show = show_role_routes ?? false;

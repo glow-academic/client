@@ -6,7 +6,7 @@ from fastapi import APIRouter
 
 from app.main import get_internal_sio, sio
 from app.socket.v4.resources.parameter_fields.types import (
-    ParameterFieldsGenerationProgressEvent,
+    ParameterFieldsGenerationEvent,
 )
 from app.socket.v4.resources.utils import resolve_resource_type
 
@@ -21,14 +21,16 @@ async def handle_progress(data: dict[str, Any]) -> None:
     if not sid:
         return
 
-    event = ParameterFieldsGenerationProgressEvent(
+    resolved_fields = data.get("resolved_fields") or {}
+
+    event = ParameterFieldsGenerationEvent(
         artifact_type=data.get("artifact_type", ""),
         group_id=data.get("group_id"),
         run_id=data.get("run_id"),
         tool_call_id=data.get("tool_call_id"),
         tool_name=data.get("tool_name"),
         arguments_delta=data.get("arguments_delta"),
-        arguments=data.get("arguments"),
+        **resolved_fields,
     )
 
     await sio.emit(
@@ -60,7 +62,7 @@ async def parameter_fields_call_progress_listener(data: dict[str, Any]) -> None:
 
 @server_router.post("/parameter_fields_generation_progress")
 async def parameter_fields_generation_progress_api(
-    request: ParameterFieldsGenerationProgressEvent,
+    request: ParameterFieldsGenerationEvent,
 ) -> dict[str, bool]:
     """Server-to-client event: ParameterFields generation progress."""
     return {"success": True}

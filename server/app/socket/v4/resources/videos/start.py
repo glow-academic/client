@@ -6,7 +6,7 @@ from fastapi import APIRouter
 
 from app.main import get_internal_sio, sio
 from app.socket.v4.resources.utils import resolve_resource_type
-from app.socket.v4.resources.videos.types import VideosGenerationStartedEvent
+from app.socket.v4.resources.videos.types import VideosGenerationEvent
 
 internal_sio = get_internal_sio()
 
@@ -19,7 +19,7 @@ async def handle_start(data: dict[str, Any]) -> None:
     if not sid:
         return
 
-    event = VideosGenerationStartedEvent(
+    event = VideosGenerationEvent(
         artifact_type=data.get("artifact_type", ""),
         group_id=data.get("group_id", ""),
         run_id=data.get("run_id"),
@@ -56,7 +56,7 @@ async def videos_call_start_listener(data: dict[str, Any]) -> None:
 
 @server_router.post("/videos_generation_started")
 async def videos_generation_started_api(
-    request: VideosGenerationStartedEvent,
+    request: VideosGenerationEvent,
 ) -> dict[str, bool]:
     """Server-to-client event: Videos generation started."""
     return {"success": True}

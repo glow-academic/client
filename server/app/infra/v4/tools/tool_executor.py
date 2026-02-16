@@ -353,10 +353,10 @@ async def _execute_resource_tool(
                     }
                 )
 
-            # Validate the resource exists
+            # Validate the resource exists and fetch all columns
             table_name = f"{resource_type}_resource"
             try:
-                check_sql = f"SELECT id FROM {table_name} WHERE id = $1"
+                check_sql = f"SELECT * FROM {table_name} WHERE id = $1"
                 existing_row = await conn.fetchrow(check_sql, uuid.UUID(existing_id))
             except ValueError:
                 return json.dumps(
@@ -378,12 +378,18 @@ async def _execute_resource_tool(
 
         # Success!
         action = "created" if is_creatable else "used"
-        resource_data: dict[str, Any] = {
-            "id": resource_id,
-            **mapped_values,
-        }
         if is_creatable:
-            resource_data["generated"] = True
+            resource_data: dict[str, Any] = {
+                "id": resource_id,
+                **mapped_values,
+                "generated": True,
+            }
+        else:
+            # Use tool: hydrate from the fetched row
+            resource_data = {
+                k: str(v) if isinstance(v, uuid.UUID) else v
+                for k, v in dict(existing_row).items()
+            }
         return json.dumps(
             {
                 "success": True,

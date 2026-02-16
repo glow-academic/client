@@ -1,58 +1,24 @@
-"""Typed event models for request_limits resource socket events."""
+"""Unified event model for request_limits resource socket events."""
 
-from typing import Any
-
-from pydantic import BaseModel
+from app.api.v4.resources.request_limits.types import RequestLimitsResourceData
 
 
-class RequestLimitsGenerationStartedEvent(BaseModel):
-    """Server-to-client event: request_limits_generation_started."""
+class RequestLimitsGenerationEvent(RequestLimitsResourceData):
+    """Unified socket event for request_limits generation. Same type for all 4 events."""
 
-    artifact_type: str
-    resource_type: str = "request_limits"
-    group_id: str
-    run_id: str | None = None
-    tool_call_id: str | None = None
-    tool_name: str | None = None
-
-
-class RequestLimitsGenerationProgressEvent(BaseModel):
-    """Server-to-client event: request_limits_generation_progress."""
-
-    artifact_type: str
-    resource_type: str = "request_limits"
-    group_id: str | None = None
-    run_id: str | None = None
-    tool_call_id: str | None = None
-    tool_name: str | None = None
-    arguments_delta: str | None = None
-    arguments: dict[str, Any] | None = None
-
-
-class RequestLimitsGenerationCompleteEvent(BaseModel):
-    """Server-to-client event: request_limits_generation_complete."""
-
-    artifact_type: str
+    # Metadata
+    artifact_type: str = ""
     resource_type: str = "request_limits"
     resource_id: str | None = None
-    group_id: str
-    run_id: str | None = None
-    success: bool = True
-    id: str | None = None
-    requests_per_day: int | None = None
-    generated: bool | None = None
-
-
-class RequestLimitsGenerationErrorEvent(BaseModel):
-    """Server-to-client event: request_limits_generation_error."""
-
-    artifact_type: str
-    resource_type: str = "request_limits"
     group_id: str | None = None
     run_id: str | None = None
-    success: bool = False
-    message: str = ""
+    # Completion
+    success: bool | None = None
+    # Error
+    message: str | None = None
     error_stage: str | None = None
-    tool_name: str | None = None
+    # Tool call tracking
     tool_call_id: str | None = None
-    arguments: dict[str, Any] | None = None
+    tool_name: str | None = None
+    # Streaming
+    arguments_delta: str | None = None

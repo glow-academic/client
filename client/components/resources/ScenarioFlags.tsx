@@ -203,17 +203,9 @@ export function ScenarioFlags({
     aiSuggestion: aiSuggestionFromSocket,
     accept: acceptAi,
     reject: rejectAi,
-  } = useResourceAi<Pick<ScenarioFlagsResourceItem, "id">[]>({
+  } = useResourceAi({
     resourceType: "scenario_flags",
     groupId: group_id,
-    extractSuggestion: (data) => {
-      const id = data.id as string | null | undefined;
-      if (id) {
-        onGenerationComplete?.();
-        return [{ id }];
-      }
-      return null;
-    },
   });
 
   // Effective AI resources: hook (socket) takes priority, then prop fallback

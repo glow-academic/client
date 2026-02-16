@@ -6,7 +6,7 @@ from fastapi import APIRouter
 
 from app.main import get_internal_sio, sio
 from app.socket.v4.resources.utils import resolve_resource_type
-from app.socket.v4.resources.videos.types import VideosGenerationProgressEvent
+from app.socket.v4.resources.videos.types import VideosGenerationEvent
 
 internal_sio = get_internal_sio()
 
@@ -19,14 +19,16 @@ async def handle_progress(data: dict[str, Any]) -> None:
     if not sid:
         return
 
-    event = VideosGenerationProgressEvent(
+    resolved_fields = data.get("resolved_fields") or {}
+
+    event = VideosGenerationEvent(
         artifact_type=data.get("artifact_type", ""),
         group_id=data.get("group_id"),
         run_id=data.get("run_id"),
         tool_call_id=data.get("tool_call_id"),
         tool_name=data.get("tool_name"),
         arguments_delta=data.get("arguments_delta"),
-        arguments=data.get("arguments"),
+        **resolved_fields,
     )
 
     await sio.emit(
@@ -58,7 +60,7 @@ async def videos_call_progress_listener(data: dict[str, Any]) -> None:
 
 @server_router.post("/videos_generation_progress")
 async def videos_generation_progress_api(
-    request: VideosGenerationProgressEvent,
+    request: VideosGenerationEvent,
 ) -> dict[str, bool]:
     """Server-to-client event: Videos generation progress."""
     return {"success": True}

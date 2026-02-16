@@ -151,21 +151,9 @@ export function ScenarioPersonas({
   );
 
   // Socket-based AI suggestion handling via shared hook
-  const { aiSuggestion, accept: acceptAi, reject: rejectAi } = useResourceAi<
-    Pick<ScenarioPersonasResourceItem, "id" | "scenario_id" | "persona_id"> & { persona_name?: string | null }
-  >({
+  const { aiSuggestion, accept: acceptAi, reject: rejectAi } = useResourceAi({
     resourceType: "scenario_personas",
     groupId: group_id,
-    extractSuggestion: (data) => {
-      if (!data["id"]) return null;
-      onGenerationComplete?.();
-      return {
-        id: (data["id"] as string) ?? null,
-        scenario_id: (data["scenario_id"] as string) ?? null,
-        persona_id: (data["persona_id"] as string) ?? null,
-        persona_name: (data["persona_name"] as string) ?? null,
-      };
-    },
   });
 
   // AI suggestions: hook suggestion takes priority, then prop fallback

@@ -5,7 +5,7 @@ from typing import Any
 from fastapi import APIRouter
 
 from app.main import get_internal_sio, sio
-from app.socket.v4.resources.flags.types import FlagsGenerationErrorEvent
+from app.socket.v4.resources.flags.types import FlagsGenerationEvent
 from app.socket.v4.resources.utils import resolve_resource_type
 
 internal_sio = get_internal_sio()
@@ -19,7 +19,9 @@ async def handle_error(data: dict[str, Any]) -> None:
     if not sid:
         return
 
-    event = FlagsGenerationErrorEvent(
+    resolved_fields = data.get("resolved_fields") or {}
+
+    event = FlagsGenerationEvent(
         artifact_type=data.get("artifact_type", ""),
         group_id=data.get("group_id"),
         run_id=data.get("run_id"),
@@ -27,7 +29,7 @@ async def handle_error(data: dict[str, Any]) -> None:
         error_stage=data.get("error_stage"),
         tool_name=data.get("tool_name"),
         tool_call_id=data.get("tool_call_id"),
-        arguments=data.get("arguments"),
+        **resolved_fields,
     )
 
     await sio.emit(
@@ -57,7 +59,7 @@ async def flags_call_error_listener(data: dict[str, Any]) -> None:
 
 @server_router.post("/flags_generation_error")
 async def flags_generation_error_api(
-    request: FlagsGenerationErrorEvent,
+    request: FlagsGenerationEvent,
 ) -> dict[str, bool]:
     """Server-to-client event: Flags generation error."""
     return {"success": True}

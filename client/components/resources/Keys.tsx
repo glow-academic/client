@@ -102,17 +102,9 @@ export function Keys({
   const show = show_key ?? false;
 
   // Socket-based AI suggestion handling via shared hook
-  const { isGenerating: aiIsGenerating, aiSuggestions, accept: acceptAi, reject: rejectAi } = useResourceAi<
-    Pick<KeyResourceItem, "id" | "name">
-  >({
+  const { isGenerating: aiIsGenerating, aiSuggestions, accept: acceptAi, reject: rejectAi } = useResourceAi({
     resourceType: "keys",
     groupId: group_id,
-    extractSuggestion: (data) => {
-      const id = data["id"] as string | null | undefined;
-      const name = data["name"] as string | null | undefined;
-      if (!id) return null;
-      return { id, name: name ?? null };
-    },
     accumulate: true,
   });
   const suggestionsList = useMemo(

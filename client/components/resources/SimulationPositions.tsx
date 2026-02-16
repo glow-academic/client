@@ -140,28 +140,9 @@ export function SimulationPositions({
     aiSuggestion,
     accept: acceptAi,
     reject: rejectAi,
-  } = useResourceAi<AiPositionSuggestion[]>({
+  } = useResourceAi({
     resourceType: "simulation_positions",
     groupId: group_id,
-    extractSuggestion: (data) => {
-      const d = data as {
-        id?: string | null;
-        simulation_id?: string | null;
-        value?: number | null;
-      };
-      if (d.id) {
-        onGenerationComplete?.();
-        return [
-          {
-            id: d.id,
-            simulation_id: d.simulation_id ?? null,
-            value: d.value ?? null,
-          },
-        ];
-      }
-      onGenerationComplete?.();
-      return null;
-    },
   });
 
   // Effective AI resources: hook suggestion takes priority, then prop fallback

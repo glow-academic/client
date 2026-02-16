@@ -489,17 +489,9 @@ export function ParameterFields({
   );
 
   // AI suggestion handling via shared hook
-  const { isGenerating: aiIsGenerating, aiSuggestion, accept: acceptAi, reject: rejectAi } = useResourceAi<Pick<ParameterFieldResourceItem, "id" | "field_id" | "parameter_id">[]>({
+  const { isGenerating: aiIsGenerating, aiSuggestion, accept: acceptAi, reject: rejectAi } = useResourceAi({
     resourceType: "parameter_fields",
     groupId: group_id,
-    extractSuggestion: (data) => {
-      if (!data.id && !data.field_id && !data.parameter_id) return null;
-      return [
-        {
-          id: data.id as string,
-          field_id: data.field_id as string,
-          parameter_id: data.parameter_id as string,
-        },
       ];
     },
   });

@@ -6,7 +6,7 @@ from fastapi import APIRouter
 
 from app.main import get_internal_sio, sio
 from app.socket.v4.resources.instructions.types import (
-    InstructionsGenerationStartedEvent,
+    InstructionsGenerationEvent,
 )
 from app.socket.v4.resources.utils import resolve_resource_type
 
@@ -21,7 +21,7 @@ async def handle_start(data: dict[str, Any]) -> None:
     if not sid:
         return
 
-    event = InstructionsGenerationStartedEvent(
+    event = InstructionsGenerationEvent(
         artifact_type=data.get("artifact_type", ""),
         group_id=data.get("group_id", ""),
         run_id=data.get("run_id"),
@@ -58,7 +58,7 @@ async def instructions_call_start_listener(data: dict[str, Any]) -> None:
 
 @server_router.post("/instructions_generation_started")
 async def instructions_generation_started_api(
-    request: InstructionsGenerationStartedEvent,
+    request: InstructionsGenerationEvent,
 ) -> dict[str, bool]:
     """Server-to-client event: Instructions generation started."""
     return {"success": True}

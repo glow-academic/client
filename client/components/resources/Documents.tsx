@@ -141,18 +141,9 @@ export function Documents({
     aiSuggestion,
     accept: acceptAi,
     reject: rejectAi,
-  } = useResourceAi<Pick<DocumentResourceItem, "document_id" | "name">[]>({
+  } = useResourceAi({
     resourceType: "documents",
     groupId: group_id,
-    extractSuggestion: (data) => {
-      const documentId = data.document_id as string | null | undefined;
-      const name = data.name as string | null | undefined;
-      if (documentId) {
-        onGenerationComplete?.();
-        return [{ document_id: documentId, name: name ?? null }];
-      }
-      return null;
-    },
   });
 
   // Track which document IDs have already had resources created

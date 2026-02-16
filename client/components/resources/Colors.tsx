@@ -138,17 +138,9 @@ export function Colors({
   const ids = useMemo(() => color_ids ?? [], [color_ids]);
 
   // AI suggestion via shared hook
-  const { isGenerating: aiIsGenerating, aiSuggestion, accept: acceptAi, reject: rejectAi } = useResourceAi<{
-    id: string | null;
-    name: string | null;
-    hex_code: string | null;
-  }>({
+  const { isGenerating: aiIsGenerating, aiSuggestion, accept: acceptAi, reject: rejectAi } = useResourceAi({
     resourceType: "colors",
     groupId: group_id,
-    extractSuggestion: (data) => {
-      if (!data.success && data.success !== undefined) return null;
-      return { id: (data.id as string) ?? null, name: (data.name as string) ?? null, hex_code: (data.hex_code as string) ?? null };
-    },
   });
 
   // AI suggestion state

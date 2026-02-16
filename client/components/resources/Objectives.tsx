@@ -251,18 +251,9 @@ export function Objectives({
     aiSuggestion,
     accept: acceptAi,
     reject: rejectAi,
-  } = useResourceAi<Pick<ObjectiveResourceItem, "objective_id" | "objective">[]>({
+  } = useResourceAi({
     resourceType: "objectives",
     groupId: group_id,
-    extractSuggestion: (data) => {
-      const objectiveId = data.objective_id as string | null | undefined;
-      const objective = data.objective as string | null | undefined;
-      if (objectiveId) {
-        onGenerationComplete?.();
-        return [{ objective_id: objectiveId, objective: objective ?? null }];
-      }
-      return null;
-    },
   });
 
   // Internal state for display texts (synced with objective_ids via objectiveMapping)

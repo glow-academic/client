@@ -6,7 +6,7 @@ from fastapi import APIRouter
 
 from app.main import get_internal_sio, sio
 from app.socket.v4.resources.parameter_fields.types import (
-    ParameterFieldsGenerationStartedEvent,
+    ParameterFieldsGenerationEvent,
 )
 from app.socket.v4.resources.utils import resolve_resource_type
 
@@ -21,7 +21,7 @@ async def handle_start(data: dict[str, Any]) -> None:
     if not sid:
         return
 
-    event = ParameterFieldsGenerationStartedEvent(
+    event = ParameterFieldsGenerationEvent(
         artifact_type=data.get("artifact_type", ""),
         group_id=data.get("group_id", ""),
         run_id=data.get("run_id"),
@@ -58,7 +58,7 @@ async def parameter_fields_call_start_listener(data: dict[str, Any]) -> None:
 
 @server_router.post("/parameter_fields_generation_started")
 async def parameter_fields_generation_started_api(
-    request: ParameterFieldsGenerationStartedEvent,
+    request: ParameterFieldsGenerationEvent,
 ) -> dict[str, bool]:
     """Server-to-client event: ParameterFields generation started."""
     return {"success": True}

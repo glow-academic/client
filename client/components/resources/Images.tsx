@@ -124,16 +124,9 @@ export function Images({
   const show = show_images ?? false;
   const allImages = useMemo(() => images ?? [], [images]);
   // Socket-based AI suggestion handling via shared hook
-  const { isGenerating: aiIsGenerating, aiSuggestion, accept: acceptAi, reject: rejectAi } = useResourceAi<
-    Pick<ImageResourceItem, "image_id" | "name">[]
-  >({
+  const { isGenerating: aiIsGenerating, aiSuggestion, accept: acceptAi, reject: rejectAi } = useResourceAi({
     resourceType: "images",
     groupId: group_id,
-    extractSuggestion: (data) => {
-      const imageId = data.image_id as string | undefined;
-      if (!imageId) return null;
-      return [{ image_id: imageId, name: (data.name as string) ?? null }];
-    },
   });
 
   // Internal state for selected images (for display)
