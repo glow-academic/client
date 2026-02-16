@@ -328,6 +328,10 @@ async def _execute_resource_tool(
                             "success": True,
                             "message": f"Resource already exists, using existing {resource_type} entry",
                             "resource_id": resource_id,
+                            "resource_data": {
+                                "id": resource_id,
+                                **mapped_values,
+                            },
                         }
                     )
             else:
@@ -374,6 +378,12 @@ async def _execute_resource_tool(
 
         # Success!
         action = "created" if is_creatable else "used"
+        resource_data: dict[str, Any] = {
+            "id": resource_id,
+            **mapped_values,
+        }
+        if is_creatable:
+            resource_data["generated"] = True
         return json.dumps(
             {
                 "success": True,
@@ -381,6 +391,7 @@ async def _execute_resource_tool(
                 "resource_id": resource_id,
                 "resource_type": resource_type,
                 "call_id": str(call_id) if call_id else None,
+                "resource_data": resource_data,
             }
         )
 

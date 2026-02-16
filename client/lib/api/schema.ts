@@ -33923,11 +33923,20 @@ export interface components {
             name_id?: string | null;
         };
         /**
-         * NamesGenerationCompleteEvent
-         * @description Server-to-client event: names_generation_complete.
+         * NamesGenerationEvent
+         * @description Unified socket event for names generation. Same type for all 4 events.
          */
-        NamesGenerationCompleteEvent: {
-            /** Artifact Type */
+        NamesGenerationEvent: {
+            /** Id */
+            id?: string | null;
+            /** Name */
+            name?: string | null;
+            /** Generated */
+            generated?: boolean | null;
+            /**
+             * Artifact Type
+             * @default
+             */
             artifact_type: string;
             /**
              * Resource Type
@@ -33937,105 +33946,21 @@ export interface components {
             /** Resource Id */
             resource_id?: string | null;
             /** Group Id */
-            group_id: string;
-            /** Run Id */
-            run_id?: string | null;
-            /**
-             * Success
-             * @default true
-             */
-            success: boolean;
-            /** Id */
-            id?: string | null;
-            /** Name */
-            name?: string | null;
-            /** Generated */
-            generated?: boolean | null;
-        };
-        /**
-         * NamesGenerationErrorEvent
-         * @description Server-to-client event: names_generation_error.
-         */
-        NamesGenerationErrorEvent: {
-            /** Artifact Type */
-            artifact_type: string;
-            /**
-             * Resource Type
-             * @default names
-             */
-            resource_type: string;
-            /** Group Id */
             group_id?: string | null;
             /** Run Id */
             run_id?: string | null;
-            /**
-             * Success
-             * @default false
-             */
-            success: boolean;
-            /**
-             * Message
-             * @default
-             */
-            message: string;
+            /** Success */
+            success?: boolean | null;
+            /** Message */
+            message?: string | null;
             /** Error Stage */
             error_stage?: string | null;
-            /** Tool Name */
-            tool_name?: string | null;
-            /** Tool Call Id */
-            tool_call_id?: string | null;
-            /** Arguments */
-            arguments?: {
-                [key: string]: unknown;
-            } | null;
-        };
-        /**
-         * NamesGenerationProgressEvent
-         * @description Server-to-client event: names_generation_progress.
-         */
-        NamesGenerationProgressEvent: {
-            /** Artifact Type */
-            artifact_type: string;
-            /**
-             * Resource Type
-             * @default names
-             */
-            resource_type: string;
-            /** Group Id */
-            group_id?: string | null;
-            /** Run Id */
-            run_id?: string | null;
             /** Tool Call Id */
             tool_call_id?: string | null;
             /** Tool Name */
             tool_name?: string | null;
             /** Arguments Delta */
             arguments_delta?: string | null;
-            /** Arguments */
-            arguments?: {
-                [key: string]: unknown;
-            } | null;
-        };
-        /**
-         * NamesGenerationStartedEvent
-         * @description Server-to-client event: names_generation_started.
-         */
-        NamesGenerationStartedEvent: {
-            /** Artifact Type */
-            artifact_type: string;
-            /**
-             * Resource Type
-             * @default names
-             */
-            resource_type: string;
-            /** Group Id */
-            group_id: string;
-            /** Run Id */
-            run_id?: string | null;
-            /** Tool Call Id */
-            tool_call_id?: string | null;
-            /** Tool Name */
-            tool_name?: string | null;
         };
         /**
          * ObjectiveEntry
@@ -76280,7 +76205,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["NamesGenerationStartedEvent"];
+                "application/json": components["schemas"]["NamesGenerationEvent"];
             };
         };
         responses: {
@@ -76315,7 +76240,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["NamesGenerationProgressEvent"];
+                "application/json": components["schemas"]["NamesGenerationEvent"];
             };
         };
         responses: {
@@ -76350,7 +76275,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["NamesGenerationCompleteEvent"];
+                "application/json": components["schemas"]["NamesGenerationEvent"];
             };
         };
         responses: {
@@ -76385,7 +76310,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["NamesGenerationErrorEvent"];
+                "application/json": components["schemas"]["NamesGenerationEvent"];
             };
         };
         responses: {
