@@ -878,6 +878,10 @@ async def _generate_artifact_impl(
                         tool_result.get("resource_type") or resource_type
                     )
 
+                    # Use entry_type/entry_id from tool result if available
+                    result_entry_type = tool_result.get("entry_type")
+                    result_entry_id = tool_result.get("entry_id")
+
                     await _emit_modality_event(
                         "call",
                         "complete",
@@ -886,6 +890,8 @@ async def _generate_artifact_impl(
                             "sid": sid,
                             "artifact_type": data.artifact_type,
                             "resource_type": result_resource_type,
+                            "entry_type": result_entry_type,
+                            "entry_id": result_entry_id,
                             "run_id": data.run_id,
                             "group_id": data.group_id,
                             "type": "complete",

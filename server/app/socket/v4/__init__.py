@@ -17,6 +17,7 @@ from . import (
     artifacts,
     connect,
     disconnect,
+    entries,
     resources,
 )
 from .artifacts import (
@@ -102,6 +103,9 @@ server_router.include_router(setting.server_router)
 
 # Include per-resource socket event routers
 server_router.include_router(resources.server_router)
+
+# Include per-entry socket event routers
+server_router.include_router(entries.server_router)
 
 # Include both routers in main router
 router.include_router(client_router)
