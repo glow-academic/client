@@ -494,14 +494,18 @@ export function UnifiedSidebar({
 
   const handleLoginOrLogout = async () => {
     const appPrefix = process.env["NEXT_PUBLIC_APP_PREFIX"] || "";
-    if (activeProfile?.role === "guest") {
-      // Navigate to login page for guests or when no user
+    if (!activeProfile || activeProfile.defaultProfile) {
+      // Default guest (unauthenticated) — navigate to login page
       router.push("/login");
       return;
     }
 
-    // Handle logout for logged-in users
+    // Handle logout for logged-in users (including authenticated guests)
     setIsLoggingOut(true);
+
+    // Clear guest mode state so post-logout is clean
+    localStorage.removeItem("guestMode");
+    localStorage.removeItem("simulatedProfileId");
 
     toast.promise(
       async () => {
@@ -572,7 +576,7 @@ export function UnifiedSidebar({
                   className="w-[--radix-dropdown-menu-trigger-width] min-w-56 rounded-lg"
                   align="start"
                 >
-                  {/* Profile - Hidden from guests */}
+                  {/* Profile - Hidden from guest role users */}
                   {activeProfile && activeProfile.role !== "guest" && (
                     <>
                       <DropdownMenuItem
@@ -618,7 +622,7 @@ export function UnifiedSidebar({
                     <LogOut className="h-4 w-4 mr-2" />
                     {isLoggingOut
                       ? "Logging out..."
-                      : activeProfile?.role === "guest" || !activeProfile
+                      : !activeProfile || activeProfile.defaultProfile
                         ? "Log in"
                         : "Logout"}
                   </DropdownMenuItem>
