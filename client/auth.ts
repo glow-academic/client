@@ -140,21 +140,38 @@ export const {
         const alias = aliasParts[0];
         if (alias && alias.length > 0) {
           // V3 API - fetch profile by alias
+          let profile = null;
           try {
             const profileResponse = await api.post("/profile/by-alias", {
               body: { alias },
             });
-            const profile = profileResponse.profile;
-
-            if (profile) {
-              token["profileId"] = profile.id;
-              token["role"] = profile.role;
-              // initialize effectiveProfileId to self
-              token["effectiveProfileId"] =
-                token["effectiveProfileId"] ?? profile.id;
-            }
+            profile = profileResponse.profile;
           } catch {
-            // Profile not found - will be created in createUser event
+            // Profile not found - create it now so the token gets populated
+          }
+
+          if (!profile) {
+            try {
+              const nameParts = user.name?.split(" ") || [];
+              const firstName = nameParts[0] || "Unknown";
+              const lastName = nameParts[nameParts.length - 1] || "User";
+              const createResponse = await api.post("/profile/staff/create", {
+                body: { firstName, lastName, alias, role: "guest" },
+              });
+              if (createResponse.profileId) {
+                profile = { id: createResponse.profileId, role: "guest" };
+              }
+            } catch {
+              // Creation may fail if another callback already created it
+            }
+          }
+
+          if (profile) {
+            token["profileId"] = profile.id;
+            token["role"] = profile.role;
+            // initialize effectiveProfileId to self
+            token["effectiveProfileId"] =
+              token["effectiveProfileId"] ?? profile.id;
           }
         }
       }

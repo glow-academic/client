@@ -2,7 +2,7 @@
 -- Assumes profile_id ($3) is always non-null (required)
 -- Parameters (in order):
 -- $1, $2: start_date (datetime), end_date (datetime)
--- $3: profile_id (uuid, required, non-null)
+-- $3: profile_id (text, required, non-null — may be "guest-profile-id")
 -- $4: cohort_ids (uuid[])
 -- $5: department_ids (uuid[])
 -- $6: roles (profile_role[], kept for compatibility but not used for filtering)
@@ -18,7 +18,17 @@
 -- $15: pageSize (int, LIMIT)
 -- $16: offset (int, OFFSET)
 
-WITH 
+WITH
+-- Resolve guest-profile-id to actual profile ID
+resolve_profile_id AS (
+    SELECT
+        CASE
+            WHEN $3::text = 'guest-profile-id' THEN
+                (SELECT id::uuid FROM profiles WHERE role = 'guest' AND default_profile = true ORDER BY created_at DESC LIMIT 1)
+            WHEN $3::text IS NULL OR $3::text = '' THEN NULL::uuid
+            ELSE $3::uuid
+        END as resolved_profile_id
+),
 -- Cast roles parameter to help PostgreSQL determine type
 roles_param AS (
     SELECT $6::profile_role[] as roles_array
@@ -32,7 +42,7 @@ expanded_history_cohort_ids AS (
         UNION
         SELECT cp.cohort_id
         FROM cohort_profiles cp
-        WHERE cp.profile_id = $3::uuid
+        WHERE cp.profile_id = (SELECT resolved_profile_id FROM resolve_profile_id)
     ) combined
 ),
 -- Filter attempts by date, profile, cohorts, departments
@@ -62,7 +72,7 @@ history_attempts AS (
     WHERE sa.created_at >= $1
       AND sa.created_at <= $2
       -- Profile_id is always non-null for home history - always filter by it
-      AND ap.profile_id = $3::uuid
+      AND ap.profile_id = (SELECT resolved_profile_id FROM resolve_profile_id)
       -- Simulation type filtering: general (practice_simulation = FALSE), practice (practice_simulation = TRUE), archived (archived = TRUE)
       -- If no filters provided (NULL or empty), default to general only (matching old behavior: sim.practice_simulation = FALSE)
       AND (

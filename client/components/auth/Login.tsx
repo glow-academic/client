@@ -204,8 +204,9 @@ export default function Login() {
 
       const appPrefix = process.env["NEXT_PUBLIC_APP_PREFIX"] || "";
 
-      // Redirect to home for authenticated users (TA level and above)
-      const redirectTo = `${appPrefix}/home`;
+      // Redirect to /callback which resolves the user's role via SSR
+      // and redirects to the appropriate page (/home for TA+, /practice for guests)
+      const redirectTo = `${appPrefix}/callback`;
 
       await signIn("microsoft-entra-id", { redirectTo: redirectTo });
 
