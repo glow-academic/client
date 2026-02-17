@@ -56,7 +56,7 @@ SELECT
     sm.chat_id,
     c.attempt_id,
     CASE WHEN m.role = 'user'::message_type THEN 'query' ELSE 'response' END AS type,
-    m.completed,
+    (mc.message_id IS NOT NULL) AS completed,
     rra.runs_id,
     m.text_id,
     aa.audio_id,
@@ -66,13 +66,21 @@ FROM simulation_messages_entry sm
 JOIN messages_entry m ON m.id = sm.id
 JOIN simulation_chats_entry c ON c.id = sm.chat_id
 JOIN simulation_attempts_entry a ON a.id = c.attempt_id
+LEFT JOIN LATERAL (
+    SELECT archived FROM simulation_archives_entry
+    WHERE attempt_id = a.id AND active = TRUE ORDER BY created_at DESC LIMIT 1
+) sa_archive ON true
+LEFT JOIN LATERAL (
+    SELECT message_id FROM messages_completions_entry
+    WHERE message_id = m.id AND active = TRUE ORDER BY created_at DESC LIMIT 1
+) mc ON true
 LEFT JOIN runs_resource_agg rra ON rra.run_id = m.run_id
 LEFT JOIN texts_entry te ON te.id = m.text_id
 LEFT JOIN audio_agg aa ON aa.message_id = sm.id
 WHERE m.active = TRUE
   AND c.active = TRUE
   AND a.active = TRUE
-  AND COALESCE(a.archived, FALSE) = FALSE
+  AND COALESCE(sa_archive.archived, FALSE) = FALSE
   AND m.role IN ('user'::message_type, 'assistant'::message_type)
 WITH NO DATA;
 

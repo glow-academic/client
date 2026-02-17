@@ -13,7 +13,6 @@ class ResponseViewItem(BaseModel):
     chat_id: UUID | None = None
     question_id: UUID | None = None
     option_id: UUID | None = None
-    completed: bool | None = None
     created_at: datetime | None = None
 
 
@@ -27,4 +26,3 @@ class GetResponsesResponse(BaseModel):
     """Response for getting responses."""
 
     items: list[ResponseViewItem]
-

@@ -29,17 +29,15 @@ LANGUAGE plpgsql
 VOLATILE
 AS $$
 BEGIN
-    -- Mark message as completed
-    UPDATE messages_entry
-    SET completed = true, updated_at = NOW()
-    WHERE id = p_message_id;
+    -- Mark message as completed (append-only)
+    INSERT INTO messages_completions_entry (message_id)
+    VALUES (p_message_id);
 
-    -- Update token usage on the run
-    UPDATE runs_entry
-    SET input_tokens = COALESCE(p_input_tokens, input_tokens),
-        output_tokens = COALESCE(p_output_tokens, output_tokens),
-        updated_at = NOW()
-    WHERE id = p_run_id;
+    -- Insert token usage (append-only)
+    IF p_input_tokens IS NOT NULL OR p_output_tokens IS NOT NULL THEN
+        INSERT INTO tokens_entry (run_id, input_tokens, output_tokens)
+        VALUES (p_run_id, COALESCE(p_input_tokens, 0), COALESCE(p_output_tokens, 0));
+    END IF;
 
     -- Return persona_id from the content entry (inserted by create_content tool)
     RETURN QUERY

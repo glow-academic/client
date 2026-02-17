@@ -35,15 +35,13 @@ latest_message AS (
     ORDER BY me.created_at DESC
     LIMIT 1
 ),
-update_message AS (
-    UPDATE messages_entry
-    SET completed = TRUE,
-        updated_at = NOW()
-    WHERE id = (SELECT id FROM latest_message)
-    RETURNING id
+mark_completed AS (
+    INSERT INTO messages_completions_entry (message_id)
+    SELECT id FROM latest_message
+    RETURNING message_id AS id
 )
 SELECT
-    (SELECT id FROM update_message) IS NOT NULL as success,
-    (SELECT id FROM update_message) as cancelled_message_id,
+    (SELECT id FROM mark_completed) IS NOT NULL as success,
+    (SELECT id FROM mark_completed) as cancelled_message_id,
     (SELECT content FROM latest_message) as final_content
 $$;

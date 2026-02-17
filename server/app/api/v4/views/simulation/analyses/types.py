@@ -25,4 +25,3 @@ class GetAnalysesResponse(BaseModel):
     """Response for getting analyses."""
 
     items: list[AnalysisViewItem]
-

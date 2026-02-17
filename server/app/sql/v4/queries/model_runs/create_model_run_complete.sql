@@ -44,9 +44,7 @@ WITH params AS (
 ),
 create_run AS (
     -- 1. Create run record with key_id
-    INSERT INTO runs_entry (input_tokens, output_tokens)
-    SELECT 0, 0
-    FROM params p
+    INSERT INTO runs_entry DEFAULT VALUES
     RETURNING id
 ),
 -- agent_runs_junction removed; runs now link to agents via config_agents_connection

@@ -1,5 +1,5 @@
 -- Complete assistant message and update run tokens (general)
--- After migration 364: messages_entry has run_id/completed, contents_entry has content
+-- Append-only: inserts into messages_completions_entry and tokens_entry
 DROP FUNCTION IF EXISTS socket_general_complete_assistant_message_v4(uuid, text, integer, integer);
 
 CREATE OR REPLACE FUNCTION socket_general_complete_assistant_message_v4(
@@ -14,26 +14,26 @@ RETURNS TABLE (
 LANGUAGE sql
 VOLATILE
 AS $$
-WITH updated_message AS (
-    UPDATE messages_entry
-    SET completed = true,
-        updated_at = NOW()
-    WHERE id = message_id
-    RETURNING id, run_id
+WITH message_run AS (
+    SELECT id, run_id FROM messages_entry WHERE id = message_id
+),
+new_completion AS (
+    INSERT INTO messages_completions_entry (message_id)
+    SELECT message_id
+    FROM message_run
+    RETURNING id
 ),
 new_content AS (
     INSERT INTO simulation_contents_entry (message_id, content)
     SELECT message_id, assistant_content
-    FROM updated_message
+    FROM message_run
     RETURNING id AS content_id
 ),
-updated_run AS (
-    UPDATE runs_entry
-    SET input_tokens = input_tokens,
-        output_tokens = output_tokens,
-        updated_at = NOW()
-    WHERE id = (SELECT run_id FROM updated_message)
+new_tokens AS (
+    INSERT INTO tokens_entry (run_id, input_tokens, output_tokens)
+    SELECT run_id, socket_general_complete_assistant_message_v4.input_tokens, socket_general_complete_assistant_message_v4.output_tokens
+    FROM message_run
     RETURNING id
 )
-SELECT EXISTS(SELECT 1 FROM updated_run) as success;
+SELECT EXISTS(SELECT 1 FROM new_tokens) as success;
 $$;

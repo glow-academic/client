@@ -74,7 +74,7 @@ SELECT
 
     -- Flags
     t.infinite_mode,
-    COALESCE(t.archived, false) AS archived,
+    COALESCE(ba_archive.archived, false) AS archived,
 
     -- Timestamp
     t.created_at AS test_created_at
@@ -83,6 +83,11 @@ FROM benchmark_tests_entry t
 LEFT JOIN eval_links el ON el.test_id = t.id
 LEFT JOIN profile_links pl ON pl.test_id = t.id
 LEFT JOIN department_links dl ON dl.test_id = t.id
+-- Latest archive state (append-only)
+LEFT JOIN LATERAL (
+    SELECT archived FROM benchmark_archives_entry
+    WHERE test_id = t.id AND active = TRUE ORDER BY created_at DESC LIMIT 1
+) ba_archive ON true
 WHERE t.active = true
 WITH NO DATA;
 

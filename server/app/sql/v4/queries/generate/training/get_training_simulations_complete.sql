@@ -188,8 +188,12 @@ latest_attempt_grades AS (
     FROM simulation_attempts_entry a
     LEFT JOIN simulation_chats_entry c ON c.attempt_id = a.id AND c.active = true
     LEFT JOIN simulation_grades_entry g ON g.chat_id = c.id AND g.active = true
+    LEFT JOIN LATERAL (
+        SELECT archived FROM simulation_archives_entry
+        WHERE attempt_id = a.id AND active = TRUE ORDER BY created_at DESC LIMIT 1
+    ) sa_archive ON true
     WHERE a.active = true
-      AND COALESCE(a.archived, false) = false
+      AND COALESCE(sa_archive.archived, false) = false
     GROUP BY a.id
 ),
 simulation_stats AS (
@@ -205,12 +209,16 @@ simulation_stats AS (
     JOIN simulation_attempts_entry a
       ON a.id = apc.attempt_id
      AND a.active = true
-     AND COALESCE(a.archived, false) = false
+    LEFT JOIN LATERAL (
+        SELECT archived FROM simulation_archives_entry
+        WHERE attempt_id = a.id AND active = TRUE ORDER BY created_at DESC LIMIT 1
+    ) sa_archive2 ON true
     JOIN training_entry t
       ON t.id = a.training_id
      AND t.active = true
      AND t.practice = (SELECT practice FROM params)
     LEFT JOIN latest_attempt_grades lag ON lag.attempt_id = a.id
+    WHERE COALESCE(sa_archive2.archived, false) = false
     GROUP BY t.simulations_id
 ),
 simulation_data_with_stats AS (

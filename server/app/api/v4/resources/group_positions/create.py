@@ -35,7 +35,9 @@ async def create_group_positions_internal(
     Can be called directly from other routes (e.g. duplicate endpoints)
     without HTTP overhead. Uses the same SQL as the HTTP endpoint.
     """
-    params = GroupPositionsSqlParams(groups_id=groups_id, eval_id=eval_id, value=value, mcp=mcp)
+    params = GroupPositionsSqlParams(
+        groups_id=groups_id, eval_id=eval_id, value=value, mcp=mcp
+    )
     result = cast(
         GroupPositionsSqlRow,
         await execute_sql_typed(conn, SQL_PATH, params=params),

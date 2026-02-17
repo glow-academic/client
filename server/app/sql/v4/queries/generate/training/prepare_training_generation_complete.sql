@@ -197,8 +197,8 @@ group_data AS (
 ),
 -- Create run with group_id
 create_run AS (
-    INSERT INTO runs_entry (input_tokens, output_tokens, group_id)
-    SELECT 0, 0, gd.group_id
+    INSERT INTO runs_entry (group_id)
+    SELECT gd.group_id
     FROM selected_agent sa
     CROSS JOIN params p
     CROSS JOIN group_data gd

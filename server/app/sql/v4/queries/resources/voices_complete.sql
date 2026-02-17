@@ -51,7 +51,7 @@ BEGIN
     IF tool_id IS NOT NULL AND group_id IS NOT NULL THEN
         -- Create run record
         v_run_id := uuidv7();
-        INSERT INTO runs_entry (id, input_tokens, output_tokens, cached_input_tokens, group_id, created_at, updated_at)
+        INSERT INTO runs_entry (id, group_id, created_at, updated_at)
         VALUES (v_run_id, 0, 0, 0, api_create_voices_v4.group_id, NOW(), NOW());
 
         -- Create call record

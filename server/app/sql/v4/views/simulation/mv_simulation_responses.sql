@@ -42,7 +42,6 @@ SELECT DISTINCT ON (r.id)
     r.chat_id,
     rqc.question_id,
     roc.option_id,
-    r.completed,
     r.created_at
 FROM responses_entry r
 LEFT JOIN responses_questions_connection rqc ON rqc.responses_id = r.id AND rqc.active = TRUE

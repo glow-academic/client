@@ -76,7 +76,7 @@ SELECT
     COALESCE(a.infinite_mode, FALSE) AS infinite_mode,
 
     -- Archived flag (for filtering archived attempts)
-    COALESCE(a.archived, FALSE) AS is_archived,
+    COALESCE(sa_archive.archived, FALSE) AS is_archived,
 
     -- Scenario IDs (for filtering and display)
     COALESCE(ascn.scenario_ids, ARRAY[]::uuid[]) AS scenario_ids
@@ -90,6 +90,11 @@ LEFT JOIN simulation_attempts_departments_connection adc ON adc.attempt_id = a.i
 LEFT JOIN simulation_attempts_cohorts_connection acc ON acc.attempt_id = a.id
 -- Scenario IDs (optional)
 LEFT JOIN attempt_scenarios ascn ON ascn.attempt_id = a.id
+-- Latest archive state (append-only)
+LEFT JOIN LATERAL (
+    SELECT archived FROM simulation_archives_entry
+    WHERE attempt_id = a.id AND active = TRUE ORDER BY created_at DESC LIMIT 1
+) sa_archive ON true
 WHERE a.active = TRUE
 WITH NO DATA;
 

@@ -27,8 +27,8 @@ existing_assistant_message AS (
 ),
 -- Create new message in base table
 new_message_base AS (
-    INSERT INTO messages_entry (run_id, role, completed, created_at, updated_at)
-    SELECT p.run_id, 'assistant'::message_type, false, NOW(), NOW()
+    INSERT INTO messages_entry (run_id, role, created_at, updated_at)
+    SELECT p.run_id, 'assistant'::message_type, NOW(), NOW()
     FROM params p
     WHERE NOT EXISTS (SELECT 1 FROM existing_assistant_message)
       AND p.chat_id IS NOT NULL

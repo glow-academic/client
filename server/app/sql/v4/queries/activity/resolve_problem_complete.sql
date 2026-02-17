@@ -1,5 +1,5 @@
 -- Resolve Problem
--- Updates problems_entry resolved status
+-- Inserts into resolves_entry (append-only)
 -- Permission check via profiles_problems_connection
 
 DROP FUNCTION IF EXISTS api_resolve_problem_v4(uuid, boolean, uuid);
@@ -24,23 +24,21 @@ WITH actor_profile AS (
     WHERE pnj.profile_id = p_profile_id AND pnj.active = true
     LIMIT 1
 ),
-updated AS (
-    UPDATE problems_entry pe
-    SET resolved = p_resolved,
-        updated_at = now()
-    WHERE pe.id = p_problem_id
-      AND EXISTS (
-          SELECT 1 FROM profiles_problems_connection ppj
-          WHERE ppj.problem_id = p_problem_id
-            AND ppj.profiles_id = p_profile_id
-      )
-    RETURNING pe.id, pe.resolved, pe.updated_at
+inserted AS (
+    INSERT INTO resolves_entry (problem_id, resolved)
+    SELECT p_problem_id, p_resolved
+    WHERE EXISTS (
+        SELECT 1 FROM profiles_problems_connection ppj
+        WHERE ppj.problem_id = p_problem_id
+          AND ppj.profiles_id = p_profile_id
+    )
+    RETURNING resolves_entry.problem_id, resolves_entry.resolved, resolves_entry.created_at
 )
 SELECT
-    u.id AS problem_id,
-    u.resolved,
-    u.updated_at,
+    i.problem_id,
+    i.resolved,
+    i.created_at AS updated_at,
     ap.name AS actor_name
-FROM updated u
+FROM inserted i
 LEFT JOIN actor_profile ap ON true;
 $$;

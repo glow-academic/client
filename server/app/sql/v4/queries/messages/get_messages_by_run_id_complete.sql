@@ -46,13 +46,17 @@ messages_data AS (
         m.role::text,
         fc.content,
         m.created_at,
-        m.completed,
+        (mc.message_id IS NOT NULL) AS completed,
         ar.upload_id
     FROM params p
     JOIN messages_entry m ON m.run_id = p.run_id
     LEFT JOIN first_content fc ON fc.message_id = m.id
     LEFT JOIN calls_entry c_audio ON c_audio.run_id = m.run_id
     LEFT JOIN audios_entry ar ON ar.call_id = c_audio.id AND ar.active = true
+    LEFT JOIN LATERAL (
+        SELECT message_id FROM messages_completions_entry
+        WHERE message_id = m.id AND active = TRUE ORDER BY created_at DESC LIMIT 1
+    ) mc ON true
     WHERE p.run_id IS NOT NULL
     ORDER BY m.created_at ASC  -- Order by creation time
 )

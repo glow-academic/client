@@ -54,7 +54,6 @@ async def get_simulation_responses_internal(
                     chat_id=item.chat_id,
                     question_id=item.question_id,
                     option_id=item.option_id,
-                    completed=item.completed,
                     created_at=item.created_at,
                 )
             )

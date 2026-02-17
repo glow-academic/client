@@ -85,7 +85,7 @@ SELECT
 
     -- Filters
     CASE WHEN COALESCE(a.practice, FALSE) THEN 'practice' ELSE 'general' END AS attempt_type,
-    COALESCE(a.archived, FALSE) AS is_archived
+    COALESCE(sa_archive.archived, FALSE) AS is_archived
 
 FROM latest_grade lg
 JOIN grade_rubric gr ON gr.grade_id = lg.grade_id
@@ -95,6 +95,11 @@ JOIN simulation_attempts_simulations_connection asc_conn ON asc_conn.attempt_id 
 JOIN simulation_attempts_profiles_connection apc ON apc.attempt_id = a.id
 LEFT JOIN simulation_attempts_cohorts_connection acc ON acc.attempt_id = a.id
 LEFT JOIN simulation_attempts_departments_connection adc ON adc.attempt_id = a.id
+-- Latest archive state (append-only)
+LEFT JOIN LATERAL (
+    SELECT archived FROM simulation_archives_entry
+    WHERE attempt_id = a.id AND active = TRUE ORDER BY created_at DESC LIMIT 1
+) sa_archive ON true
 JOIN simulation_feedbacks_entry fe ON fe.grade_id = lg.grade_id AND fe.active = TRUE
 JOIN feedbacks_standards_connection fsc ON fsc.feedbacks_id = fe.id
 JOIN standards_resource s ON s.id = fsc.standard_id
@@ -120,7 +125,7 @@ GROUP BY
     adc.departments_id,
     a.created_at,
     a.practice,
-    a.archived
+    sa_archive.archived
 WITH NO DATA;
 
 -- ============================================================================

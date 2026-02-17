@@ -27,4 +27,3 @@ class GetFeedbacksResponse(BaseModel):
     """Response for getting feedbacks."""
 
     items: list[FeedbackViewItem]
-

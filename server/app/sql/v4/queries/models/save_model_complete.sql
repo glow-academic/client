@@ -236,8 +236,8 @@ BEGIN
 
     -- Tool-call tracking: one run per save
     v_run_id := uuidv7();
-    INSERT INTO runs_entry (id, input_tokens, output_tokens, cached_input_tokens, group_id, created_at, updated_at)
-    VALUES (v_run_id, 0, 0, 0, group_id, NOW(), NOW());
+    INSERT INTO runs_entry (id, group_id, created_at, updated_at)
+    VALUES (v_run_id, group_id, NOW(), NOW());
 
     -- names
     IF v_name_id IS NOT NULL THEN

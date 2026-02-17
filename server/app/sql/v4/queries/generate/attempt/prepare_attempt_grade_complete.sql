@@ -38,7 +38,7 @@ DECLARE
     v_config_id uuid;
 BEGIN
     -- Create run
-    INSERT INTO runs_entry (input_tokens, output_tokens, group_id)
+    INSERT INTO runs_entry (group_id)
     VALUES (0, 0, p_group_id)
     RETURNING id INTO v_run_id;
 

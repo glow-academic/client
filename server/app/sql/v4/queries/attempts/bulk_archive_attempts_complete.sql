@@ -63,16 +63,14 @@ BEGIN
     v_use_attempt_ids_mode := cardinality(attempt_ids) > 0;
 
     IF v_use_attempt_ids_mode THEN
-        -- attempt_ids mode: Archive specific attempts
-        WITH update_attempts AS (
-            UPDATE simulation_attempts_entry
-            SET archived = api_bulk_archive_attempts_v4.archived
-            WHERE id = ANY(attempt_ids)
-              AND archived != api_bulk_archive_attempts_v4.archived
+        -- attempt_ids mode: Archive specific attempts (append-only)
+        WITH insert_archives AS (
+            INSERT INTO simulation_archives_entry (attempt_id, archived)
+            SELECT unnest(attempt_ids), api_bulk_archive_attempts_v4.archived
             RETURNING id
         )
         SELECT COUNT(*)::bigint INTO v_updated_count
-        FROM update_attempts;
+        FROM insert_archives;
 
         -- Get profile IDs to invalidate from attempt_ids
         SELECT COALESCE(
@@ -117,7 +115,7 @@ BEGIN
                 sa.id AS attempt_id,
                 mal.simulation_id,
                 sa.created_at AS attempt_date,
-                sa.archived AS is_archived,
+                mal.is_archived,
                 sa.infinite_mode,
                 mal.profile_id,
                 (SELECT n.name FROM simulation_names_junction simn JOIN names_resource n ON simn.name_id = n.id WHERE simn.simulation_id = mal.simulation_id LIMIT 1) AS simulation_name,
@@ -143,11 +141,11 @@ BEGIN
                 (cardinality(simulation_filters) > 0 AND (
                   ('general' = ANY(simulation_filters) AND mal.practice = FALSE) OR
                   ('practice' = ANY(simulation_filters) AND mal.practice = TRUE) OR
-                  ('archived' = ANY(simulation_filters) AND sa.archived = TRUE)
+                  ('archived' = ANY(simulation_filters) AND mal.is_archived = TRUE)
                 ))
               )
               AND (
-                cardinality(simulation_filters) = 0 OR 'archived' = ANY(simulation_filters) OR sa.archived = FALSE
+                cardinality(simulation_filters) = 0 OR 'archived' = ANY(simulation_filters) OR mal.is_archived = FALSE
               )
               AND ((profile_id::text IS NULL OR profile_id::text = '') OR mal.profile_id = profile_id)
               AND (cardinality(department_ids) = 0 OR sdd.department_ids IS NULL OR sdd.department_ids && department_ids::text[])
@@ -230,15 +228,14 @@ BEGIN
                      WHERE LOWER(per.name) LIKE '%' || LOWER(search) || '%'
                  ))
         ),
-        filter_update AS (
-            UPDATE simulation_attempts_entry
-            SET archived = api_bulk_archive_attempts_v4.archived
-            WHERE id IN (SELECT attempt_id FROM final_filtered_attempts)
-              AND archived != api_bulk_archive_attempts_v4.archived
+        filter_insert AS (
+            INSERT INTO simulation_archives_entry (attempt_id, archived)
+            SELECT attempt_id, api_bulk_archive_attempts_v4.archived
+            FROM final_filtered_attempts
             RETURNING id
         )
         SELECT COUNT(*)::bigint INTO v_updated_count
-        FROM filter_update;
+        FROM filter_insert;
 
         -- Get profile IDs to invalidate (use current user's profile ID)
         IF profile_id IS NOT NULL THEN

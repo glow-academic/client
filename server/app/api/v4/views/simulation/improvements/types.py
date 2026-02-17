@@ -26,4 +26,3 @@ class GetImprovementsResponse(BaseModel):
     """Response for getting improvements."""
 
     items: list[ImprovementViewItem]
-

@@ -119,8 +119,8 @@ group_data AS (
 ),
 -- Create run with group_id directly
 create_run AS (
-    INSERT INTO runs_entry (input_tokens, output_tokens, group_id)
-    SELECT 0, 0, gd.group_id
+    INSERT INTO runs_entry (group_id)
+    SELECT gd.group_id
     FROM selected_agent sa
     CROSS JOIN params p
     CROSS JOIN group_data gd
@@ -187,8 +187,8 @@ new_developer_messages_data AS (
     WHERE NOT EXISTS (SELECT 1 FROM existing_developer_messages e WHERE e.hash = dmh.hash)
 ),
 new_developer_messages AS (
-    INSERT INTO messages_entry (role, completed, run_id, created_at, updated_at)
-    SELECT 'developer'::message_type, false, nd.run_id, NOW(), NOW()
+    INSERT INTO messages_entry (role, run_id, created_at, updated_at)
+    SELECT 'developer'::message_type, nd.run_id, NOW(), NOW()
     FROM new_developer_messages_data nd
     RETURNING id, run_id, created_at, updated_at
 ),
@@ -291,8 +291,8 @@ new_user_messages_data AS (
     WHERE NOT EXISTS (SELECT 1 FROM existing_user_messages e WHERE e.hash = umh.hash)
 ),
 new_user_messages AS (
-    INSERT INTO messages_entry (role, completed, run_id, created_at, updated_at)
-    SELECT 'user'::message_type, false, nd.run_id, NOW(), NOW()
+    INSERT INTO messages_entry (role, run_id, created_at, updated_at)
+    SELECT 'user'::message_type, nd.run_id, NOW(), NOW()
     FROM new_user_messages_data nd
     RETURNING id, run_id, created_at, updated_at
 ),

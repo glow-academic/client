@@ -1,5 +1,5 @@
 -- Save attempt message content - updates assistant message with generated content
--- After migration 381: completed lives on messages_entry, content goes to simulation_contents_entry
+-- Append-only: inserts into messages_completions_entry and tokens_entry
 
 -- 1) Drop function first
 DO $$
@@ -30,26 +30,26 @@ RETURNS TABLE (
 LANGUAGE sql
 VOLATILE
 AS $$
-WITH updated_message AS (
-    UPDATE messages_entry
-    SET completed = true,
-        updated_at = NOW()
-    WHERE id = p_message_id
-    RETURNING id, run_id
+WITH message_run AS (
+    SELECT id, run_id FROM messages_entry WHERE id = p_message_id
+),
+new_completion AS (
+    INSERT INTO messages_completions_entry (message_id)
+    SELECT p_message_id
+    FROM message_run
+    RETURNING id
 ),
 new_content AS (
     INSERT INTO simulation_contents_entry (message_id, content)
     SELECT p_message_id, p_content
-    FROM updated_message
+    FROM message_run
     RETURNING id AS content_id
 ),
-updated_run AS (
-    UPDATE runs_entry
-    SET input_tokens = COALESCE(p_input_tokens, input_tokens),
-        output_tokens = COALESCE(p_output_tokens, output_tokens),
-        updated_at = NOW()
-    WHERE id = (SELECT run_id FROM updated_message)
-      AND p_run_id IS NOT NULL
+new_tokens AS (
+    INSERT INTO tokens_entry (run_id, input_tokens, output_tokens)
+    SELECT run_id, COALESCE(p_input_tokens, 0), COALESCE(p_output_tokens, 0)
+    FROM message_run
+    WHERE p_run_id IS NOT NULL
     RETURNING id
 )
 SELECT TRUE as success;

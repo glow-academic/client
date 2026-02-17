@@ -29,12 +29,11 @@ LANGUAGE plpgsql
 VOLATILE
 AS $$
 BEGIN
-    -- Update token usage on the run
-    UPDATE runs_entry
-    SET input_tokens = COALESCE(p_input_tokens, input_tokens),
-        output_tokens = COALESCE(p_output_tokens, output_tokens),
-        updated_at = NOW()
-    WHERE id = p_run_id;
+    -- Insert token usage (append-only)
+    IF p_input_tokens IS NOT NULL OR p_output_tokens IS NOT NULL THEN
+        INSERT INTO tokens_entry (run_id, input_tokens, output_tokens)
+        VALUES (p_run_id, COALESCE(p_input_tokens, 0), COALESCE(p_output_tokens, 0));
+    END IF;
 
     -- Update grade score and passed (only if values provided)
     IF p_score IS NOT NULL OR p_passed IS NOT NULL THEN

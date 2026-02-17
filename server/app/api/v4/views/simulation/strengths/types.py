@@ -26,4 +26,3 @@ class GetStrengthsResponse(BaseModel):
     """Response for getting strengths."""
 
     items: list[StrengthViewItem]
-

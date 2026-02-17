@@ -49,7 +49,6 @@ CREATE TYPE types.q_get_simulation_responses_view_v4_item AS (
     chat_id uuid,
     question_id uuid,
     option_id uuid,
-    completed boolean,
     created_at timestamptz
 );
 
@@ -80,7 +79,6 @@ AS $$
                     mv.chat_id,
                     mv.question_id,
                     mv.option_id,
-                    mv.completed,
                     mv.created_at
                 )::types.q_get_simulation_responses_view_v4_item
                 ORDER BY mv.chat_id, mv.created_at

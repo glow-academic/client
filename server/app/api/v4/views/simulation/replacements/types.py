@@ -27,4 +27,3 @@ class GetReplacementsResponse(BaseModel):
     """Response for getting replacements."""
 
     items: list[ReplacementViewItem]
-

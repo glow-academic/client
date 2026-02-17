@@ -44,11 +44,15 @@ JOIN simulation_messages_entry sm ON sm.id = i.message_id
 JOIN messages_entry m ON m.id = sm.id
 JOIN simulation_chats_entry c ON c.id = sm.chat_id
 JOIN simulation_attempts_entry a ON a.id = c.attempt_id
+LEFT JOIN LATERAL (
+    SELECT archived FROM simulation_archives_entry
+    WHERE attempt_id = a.id AND active = TRUE ORDER BY created_at DESC LIMIT 1
+) sa_archive ON true
 WHERE i.active = TRUE
   AND m.active = TRUE
   AND c.active = TRUE
   AND a.active = TRUE
-  AND COALESCE(a.archived, FALSE) = FALSE
+  AND COALESCE(sa_archive.archived, FALSE) = FALSE
 WITH NO DATA;
 
 -- ============================================================================

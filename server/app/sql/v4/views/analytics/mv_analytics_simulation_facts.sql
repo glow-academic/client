@@ -100,7 +100,7 @@ SELECT
 
     -- Filters
     CASE WHEN COALESCE(a.practice, FALSE) THEN 'practice' ELSE 'general' END AS attempt_type,
-    COALESCE(a.archived, FALSE) AS is_archived
+    COALESCE(sa_archive.archived, FALSE) AS is_archived
 
 FROM simulation_chats_entry c
 JOIN simulation_attempts_entry a ON a.id = c.attempt_id
@@ -108,6 +108,11 @@ JOIN simulation_attempts_simulations_connection asc_conn ON asc_conn.attempt_id 
 JOIN simulation_attempts_profiles_connection apc ON apc.attempt_id = a.id
 LEFT JOIN simulation_attempts_cohorts_connection acc ON acc.attempt_id = a.id
 LEFT JOIN simulation_attempts_departments_connection adc ON adc.attempt_id = a.id
+-- Latest archive state (append-only)
+LEFT JOIN LATERAL (
+    SELECT archived FROM simulation_archives_entry
+    WHERE attempt_id = a.id AND active = TRUE ORDER BY created_at DESC LIMIT 1
+) sa_archive ON true
 LEFT JOIN latest_grade lg ON lg.chat_id = c.id
 LEFT JOIN chat_persona cp ON cp.chat_id = c.id
 WHERE c.active = TRUE

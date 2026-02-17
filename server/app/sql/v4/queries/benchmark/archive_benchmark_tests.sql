@@ -1,11 +1,7 @@
-WITH updated AS (
-    UPDATE benchmark_tests_entry
-    SET archived = $2,
-        updated_at = now()
-    WHERE id = ANY($1::uuid[])
-      AND active = true
-      AND archived IS DISTINCT FROM $2
+WITH inserted AS (
+    INSERT INTO benchmark_archives_entry (test_id, archived)
+    SELECT unnest($1::uuid[]), $2
     RETURNING id
 )
 SELECT COUNT(*)::int AS updated_count
-FROM updated;
+FROM inserted;

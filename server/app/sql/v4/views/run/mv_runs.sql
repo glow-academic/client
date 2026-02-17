@@ -94,10 +94,10 @@ SELECT
     -- Group ID
     r.group_id,
 
-    -- Token counts
-    COALESCE(r.input_tokens, 0) AS input_tokens,
-    COALESCE(r.output_tokens, 0) AS output_tokens,
-    COALESCE(r.cached_input_tokens, 0) AS cached_input_tokens,
+    -- Token counts (from latest tokens_entry)
+    COALESCE(te.input_tokens, 0) AS input_tokens,
+    COALESCE(te.output_tokens, 0) AS output_tokens,
+    COALESCE(te.cached_input_tokens, 0) AS cached_input_tokens,
 
     -- Timestamps
     r.created_at AS run_created_at,
@@ -122,6 +122,11 @@ SELECT
     COALESCE(da.debug_info, ARRAY[]::text[]) AS debug_info
 
 FROM runs_entry r
+-- Latest token counts (append-only)
+LEFT JOIN LATERAL (
+    SELECT input_tokens, output_tokens, cached_input_tokens FROM tokens_entry
+    WHERE run_id = r.id AND active = TRUE ORDER BY created_at DESC LIMIT 1
+) te ON true
 LEFT JOIN configs_agg ca ON ca.run_id = r.id
 LEFT JOIN pricing_input pi ON pi.run_id = r.id
 LEFT JOIN pricing_output po ON po.run_id = r.id

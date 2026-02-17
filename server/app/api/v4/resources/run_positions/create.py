@@ -35,7 +35,9 @@ async def create_run_positions_internal(
     Can be called directly from other routes (e.g. duplicate endpoints)
     without HTTP overhead. Uses the same SQL as the HTTP endpoint.
     """
-    params = RunPositionsSqlParams(runs_id=runs_id, eval_id=eval_id, value=value, mcp=mcp)
+    params = RunPositionsSqlParams(
+        runs_id=runs_id, eval_id=eval_id, value=value, mcp=mcp
+    )
     result = cast(
         RunPositionsSqlRow,
         await execute_sql_typed(conn, SQL_PATH, params=params),

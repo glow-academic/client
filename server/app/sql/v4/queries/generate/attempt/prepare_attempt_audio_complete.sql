@@ -54,8 +54,8 @@ BEGIN
     END IF;
 
     -- Create run
-    INSERT INTO runs_entry (input_tokens, output_tokens, group_id)
-    VALUES (0, 0, v_group_id)
+    INSERT INTO runs_entry (group_id)
+    VALUES (v_group_id)
     RETURNING id INTO v_run_id;
 
     -- Create config snapshot with run_id
@@ -89,8 +89,8 @@ BEGIN
     v_created_at := NOW();
 
     -- Create empty user message placeholder (audio content filled later)
-    INSERT INTO messages_entry (run_id, role, completed, audio, created_at, updated_at)
-    VALUES (v_run_id, 'user'::message_type, false, true, v_created_at, v_created_at)
+    INSERT INTO messages_entry (run_id, role, audio, created_at, updated_at)
+    VALUES (v_run_id, 'user'::message_type, true, v_created_at, v_created_at)
     RETURNING messages_entry.id INTO v_user_message_id;
 
     -- Link user message to simulation chat
@@ -98,8 +98,8 @@ BEGIN
     VALUES (v_user_message_id, p_chat_id);
 
     -- Create assistant message placeholder
-    INSERT INTO messages_entry (run_id, role, completed, audio, created_at, updated_at)
-    VALUES (v_run_id, 'assistant'::message_type, false, true, v_created_at + interval '1 millisecond', v_created_at + interval '1 millisecond')
+    INSERT INTO messages_entry (run_id, role, audio, created_at, updated_at)
+    VALUES (v_run_id, 'assistant'::message_type, true, v_created_at + interval '1 millisecond', v_created_at + interval '1 millisecond')
     RETURNING messages_entry.id INTO v_assistant_message_id;
 
     -- Link assistant message to simulation chat

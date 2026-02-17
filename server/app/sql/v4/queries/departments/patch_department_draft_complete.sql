@@ -171,7 +171,7 @@ BEGIN
 
     -- Tool-call lineage
     IF v_group_id IS NOT NULL THEN
-        INSERT INTO runs_entry (id, input_tokens, output_tokens, cached_input_tokens, group_id, created_at, updated_at)
+        INSERT INTO runs_entry (id, group_id, created_at, updated_at)
         VALUES (uuidv7(), 0, 0, 0, v_group_id, NOW(), NOW())
         RETURNING id INTO v_run_id;
     END IF;

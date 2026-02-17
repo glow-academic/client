@@ -329,9 +329,9 @@ BEGIN
     IF v_group_id IS NOT NULL THEN
         v_run_id := uuidv7();
         INSERT INTO runs_entry (
-            id, input_tokens, output_tokens, cached_input_tokens, group_id, created_at, updated_at
+            id, group_id, created_at, updated_at
         ) VALUES (
-            v_run_id, 0, 0, 0, v_group_id, NOW(), NOW()
+            v_run_id, v_group_id, NOW(), NOW()
         );
 
         -- departments

@@ -115,7 +115,7 @@ SELECT
 
     -- Filters
     CASE WHEN COALESCE(a.practice, FALSE) THEN 'practice' ELSE 'general' END AS attempt_type,
-    COALESCE(a.archived, FALSE) AS is_archived,
+    COALESCE(sa_archive.archived, FALSE) AS is_archived,
     COALESCE(a.infinite_mode, FALSE) AS infinite_mode
 
 FROM simulation_chats_entry c
@@ -127,6 +127,10 @@ LEFT JOIN simulation_attempts_departments_connection adc ON adc.attempt_id = a.i
 LEFT JOIN chat_scope cs ON cs.chat_id = c.id
 LEFT JOIN latest_grade lg ON lg.chat_id = c.id
 LEFT JOIN message_stats ms ON ms.chat_id = c.id
+LEFT JOIN LATERAL (
+    SELECT archived FROM simulation_archives_entry
+    WHERE attempt_id = a.id AND active = TRUE ORDER BY created_at DESC LIMIT 1
+) sa_archive ON true
 WHERE c.active = TRUE
   AND a.active = TRUE
 WITH NO DATA;

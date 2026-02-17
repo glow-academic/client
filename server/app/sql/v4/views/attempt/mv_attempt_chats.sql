@@ -125,12 +125,16 @@ base_chats AS (
         lg.grade_id
     FROM simulation_chats_entry c
     JOIN simulation_attempts_entry a ON a.id = c.attempt_id
+    LEFT JOIN LATERAL (
+        SELECT archived FROM simulation_archives_entry
+        WHERE attempt_id = a.id AND active = TRUE ORDER BY created_at DESC LIMIT 1
+    ) sa_archive ON true
     LEFT JOIN subbundle_snapshot sb ON sb.training_bundle_department_id = c.training_bundle_department_id
     LEFT JOIN latest_grade lg ON lg.chat_id = c.id
     LEFT JOIN legacy_rubric lr ON lr.chat_id = c.id
     WHERE c.active = TRUE
       AND a.active = TRUE
-      AND COALESCE(a.archived, FALSE) = FALSE
+      AND COALESCE(sa_archive.archived, FALSE) = FALSE
 )
 SELECT
     bc.chat_id,

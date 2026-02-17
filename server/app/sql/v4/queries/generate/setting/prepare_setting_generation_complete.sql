@@ -56,8 +56,8 @@ BEGIN
         v_trace_id := gen_random_uuid()::text;
     END IF;
 
-    INSERT INTO runs_entry (input_tokens, output_tokens, group_id)
-    VALUES (0, 0, v_group_id)
+    INSERT INTO runs_entry (group_id)
+    VALUES (v_group_id)
     RETURNING id INTO v_run_id;
 
     INSERT INTO config_entry (created_at, updated_at, generated, mcp, active, run_id)

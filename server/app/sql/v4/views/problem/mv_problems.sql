@@ -41,7 +41,7 @@ SELECT
     pe.id AS problem_id,
     pe.type::text AS type,
     pe.message,
-    pe.resolved,
+    COALESCE(re.resolved, FALSE) AS resolved,
     pe.session_id,
     pe.created_at AS problem_created_at,
     pe.updated_at AS problem_updated_at,
@@ -49,6 +49,11 @@ SELECT
 FROM problems_entry pe
 LEFT JOIN profiles_problems_connection ppc
     ON ppc.problem_id = pe.id
+-- Latest resolved state (append-only)
+LEFT JOIN LATERAL (
+    SELECT resolved FROM resolves_entry
+    WHERE problem_id = pe.id AND active = TRUE ORDER BY created_at DESC LIMIT 1
+) re ON true
 WITH NO DATA;
 
 -- ============================================================================

@@ -258,8 +258,8 @@ BEGIN
                 (standards).create_tool_id IS NOT NULL OR (standards).link_tool_id IS NOT NULL
             ) THEN
                 v_run_id := uuidv7();
-                INSERT INTO runs_entry (id, input_tokens, output_tokens, cached_input_tokens, group_id, created_at, updated_at)
-                VALUES (v_run_id, 0, 0, 0, v_group_id, NOW(), NOW());
+                INSERT INTO runs_entry (id, group_id, created_at, updated_at)
+                VALUES (v_run_id, v_group_id, NOW(), NOW());
 
                 -- Helper pattern repeated for all resources
                 IF v_name_id IS NOT NULL AND (names).create_tool_id IS NOT NULL THEN
@@ -482,8 +482,8 @@ BEGIN
         (standards).create_tool_id IS NOT NULL OR (standards).link_tool_id IS NOT NULL
     ) THEN
         v_run_id := uuidv7();
-        INSERT INTO runs_entry (id, input_tokens, output_tokens, cached_input_tokens, group_id, created_at, updated_at)
-        VALUES (v_run_id, 0, 0, 0, v_group_id, NOW(), NOW());
+        INSERT INTO runs_entry (id, group_id, created_at, updated_at)
+        VALUES (v_run_id, v_group_id, NOW(), NOW());
 
         IF v_name_id IS NOT NULL AND (names).create_tool_id IS NOT NULL THEN
             v_call_id := uuidv7();
