@@ -6,6 +6,7 @@
 "use client";
 
 import TableRubric from "@/components/artifacts/rubric/TableRubric";
+import { useEntryAi } from "@/hooks/use-entry-ai";
 import type { components } from "@/lib/api/schema";
 
 // ---- OpenAPI types (single source of truth) ----
@@ -18,6 +19,7 @@ export interface RubricViewProps {
   rubric_structure: RubricStructureData;
   grading_state?: GradingStateData;
   analyses?: AnalysisEntry[] | null;
+  group_id?: string | null;
   disabled?: boolean;
 }
 
@@ -25,7 +27,12 @@ export function RubricView({
   rubric_structure,
   grading_state,
   analyses,
+  group_id,
 }: RubricViewProps) {
+  // ---- Entry-level AI subscriptions ----
+  const { events: feedbacksEvents } = useEntryAi({ entryType: "feedbacks", groupId: group_id });
+  const { events: analysesEvents } = useEntryAi({ entryType: "analyses", groupId: group_id });
+
   const standardGroups = rubric_structure?.standard_groups || {};
   const standardGroupsMapping = rubric_structure?.standard_groups_mapping || {};
   const standardsMapping = rubric_structure?.standards_mapping || {};

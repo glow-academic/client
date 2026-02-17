@@ -35,6 +35,7 @@ import {
   User,
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useEntryAi } from "@/hooks/use-entry-ai";
 import { MessageContentAdapter } from "../generic/utils/MessageContentAdapter";
 
 // ---- OpenAPI types (single source of truth) ----
@@ -48,7 +49,7 @@ export interface MessagesViewProps {
   streaming_content?: Map<string, string>;
   optimistic_messages?: Map<string, MessageData>;
   current_chat?: { id: string; completed?: boolean | null } | null;
-  new_hint_message_ids?: Array<string>;
+  group_id?: string | null;
   send_message: (message: string) => void;
   retry_message?: (message_id: string) => void;
   is_sending_message: boolean;
@@ -114,7 +115,7 @@ export function MessagesView({
   streaming_content = new Map(),
   optimistic_messages = new Map(),
   current_chat,
-  new_hint_message_ids,
+  group_id,
   send_message,
   retry_message,
   is_sending_message,
@@ -129,13 +130,30 @@ export function MessagesView({
   const prevChatIdRef = useRef<string | null>(null);
   const targetChatId = chat_id || current_chat?.id;
 
+  // ---- Entry-level AI subscriptions ----
+  const { events: contentsEvents } = useEntryAi({ entryType: "contents", groupId: group_id });
+  const { events: hintsEvents } = useEntryAi({ entryType: "hints", groupId: group_id });
+  const { events: feedbacksEvents } = useEntryAi({ entryType: "feedbacks", groupId: group_id });
+  const { events: strengthsEvents } = useEntryAi({ entryType: "strengths", groupId: group_id });
+  const { events: improvementsEvents } = useEntryAi({ entryType: "improvements", groupId: group_id });
+  const { events: highlightsEvents } = useEntryAi({ entryType: "highlights", groupId: group_id });
+  const { events: replacementsEvents } = useEntryAi({ entryType: "replacements", groupId: group_id });
+  const { events: simulationMessagesEvents } = useEntryAi({ entryType: "simulation_messages", groupId: group_id });
+
+  // Track which messages have new hints from entry events
+  const messagesWithNewHints = useMemo(() => {
+    const ids = new Set<string>();
+    hintsEvents.forEach((evt) => {
+      const entryId = (evt as Record<string, unknown>).entry_id;
+      if (typeof entryId === "string") ids.add(entryId);
+    });
+    return ids;
+  }, [hintsEvents]);
+
   // State for hints modal
   const [selectedHintMessageId, setSelectedHintMessageId] = useState<
     string | null
   >(null);
-  const [messagesWithNewHints, setMessagesWithNewHints] = useState<Set<string>>(
-    new Set()
-  );
 
   // State for feedback hover - shows annotations in message when hovering feedback card
   const [hoveredFeedbackId, setHoveredFeedbackId] = useState<string | null>(null);
@@ -159,11 +177,6 @@ export function MessagesView({
       setHoveredFeedbackId(null);
     }, 100); // Slightly longer delay when leaving
   };
-
-  useEffect(() => {
-    if (!new_hint_message_ids) return;
-    setMessagesWithNewHints(new Set(new_hint_message_ids));
-  }, [new_hint_message_ids]);
 
   // Cleanup hover timeout on unmount
   useEffect(() => {

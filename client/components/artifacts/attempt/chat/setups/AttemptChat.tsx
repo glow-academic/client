@@ -100,9 +100,6 @@ type AttemptChatEndedEvent = Parameters<ServerToClientEvents["attempt_chat_ended
 type AttemptEndedEvent = Parameters<ServerToClientEvents["attempt_ended"]>[0];
 type AttemptAudioReadyEvent = Parameters<ServerToClientEvents["attempt_audio_ready"]>[0];
 type AttemptAudioEndedEvent = Parameters<ServerToClientEvents["attempt_audio_ended"]>[0];
-type AttemptGradingProgressEvent = Parameters<ServerToClientEvents["attempt_grading_progress"]>[0];
-type AttemptGradedEvent = Parameters<ServerToClientEvents["attempt_graded"]>[0];
-type AttemptHintProgressEvent = Parameters<ServerToClientEvents["attempt_hint_progress"]>[0];
 type AttemptResponseResultEvent = Parameters<ServerToClientEvents["attempt_response_result"]>[0];
 
 /** Props for the AttemptChat component */
@@ -113,21 +110,6 @@ export interface AttemptChatProps {
   infinite_mode?: boolean;
   user_instructions?: string | null;
 }
-
-/** Grading state in Record format (matches server response) */
-type OptimisticGradingState = {
-  achieved_standards?: Record<string, boolean> | null;
-  passed_standards?: Record<string, boolean> | null;
-  feedback_by_standard_id?: Record<string, string> | null;
-};
-
-type HintsByMessage = {
-  message_id: string;
-  hints: Array<{
-    hint: string;
-    idx: number;
-  }>;
-};
 
 // ============================================================================
 // COMPONENT
@@ -161,25 +143,7 @@ export function AttemptChat({
   const [questionIndex, setQuestionIndex] = useState(0);
   const [selectedDocumentId, setSelectedDocumentId] = useState<string | null>(null);
   const [inputPanelHeight, setInputPanelHeight] = useState<number>(70);
-  const [messagesWithNewHints, setMessagesWithNewHints] = useState<Set<string>>(
-    new Set()
-  );
   const [localElapsedOffset, setLocalElapsedOffset] = useState(0);
-
-  const [optimisticHints, setOptimisticHints] = useState<
-    Record<string, HintsByMessage[]>
-  >({});
-  const [optimisticGradingStates, setOptimisticGradingStates] = useState<
-    Record<string, OptimisticGradingState>
-  >({});
-
-  const [gradingProgress, setGradingProgress] = useState<{
-    completed: number;
-    total: number;
-    displayedProgress: number;
-    phase: "tools" | "summary" | null;
-  } | null>(null);
-  const [isGrading, setIsGrading] = useState(false);
 
   const groupMessagesByChat = useCallback(
     (messages?: MessageData[] | null) => {
@@ -212,13 +176,6 @@ export function AttemptChat({
   const itemIdToOptimisticIdRef = useRef<Map<string, string>>(new Map());
   const voiceInputRef = useRef<HybridInputHandle | null>(null);
   const dataFetchedAtRef = useRef<number>(Date.now());
-  const gradingProgressRef = useRef<{
-    completed: number;
-    total: number;
-    displayedProgress: number;
-    phase: "tools" | "summary" | null;
-  } | null>(null);
-  const isGradingRef = useRef(false);
 
   // Attempt message streaming hook
   const handleUserCompleteVoiceCleanup = useCallback(
@@ -335,63 +292,6 @@ export function AttemptChat({
       }
     }
 
-    if (initialAttemptData.views?.simulation_chats) {
-      setOptimisticGradingStates((prev) => {
-        const updated: Record<string, OptimisticGradingState> = {};
-        Object.entries(prev).forEach(([chatId, optimisticState]) => {
-          const chatData = initialAttemptData.views?.simulation_chats?.find(
-            (c) => c.id === chatId
-          );
-          if (!chatData?.grading_state) {
-            updated[chatId] = optimisticState;
-          }
-        });
-        return updated;
-      });
-
-      setOptimisticHints((prev) => {
-        const updated: Record<string, HintsByMessage[]> = {};
-        const initialMessagesByChat = groupMessagesByChat(
-          initialAttemptData.views?.simulation_messages
-        );
-        Object.entries(prev).forEach(([chatId, optimisticChatHints]) => {
-          const messages = initialMessagesByChat[chatId] || [];
-
-          // Build map of message_id -> hints from message-level hints
-          const serverHintsMap = new Map<string, HintsByMessage>();
-          messages.forEach((msg) => {
-            if (msg.id && msg.hints && msg.hints.length > 0) {
-              serverHintsMap.set(msg.id, {
-                message_id: msg.id,
-                hints: msg.hints.map((hint) => ({
-                  hint: hint.hint || "",
-                  idx: hint.idx ?? 0,
-                })),
-              });
-            }
-          });
-
-          const missingOrIncompleteHints = optimisticChatHints.filter(
-            (optimisticHint) => {
-              const serverHint = serverHintsMap.get(optimisticHint.message_id);
-              if (!serverHint) return true;
-              const serverHintCount = (serverHint.hints || []).length;
-              const optimisticHintCount = (optimisticHint.hints || []).length;
-              if (serverHintCount !== optimisticHintCount) return true;
-              const hasContent = (serverHint.hints || []).some(
-                (h) => h.hint && h.hint.trim().length > 0
-              );
-              return !hasContent;
-            }
-          );
-
-          if (missingOrIncompleteHints.length > 0) {
-            updated[chatId] = missingOrIncompleteHints;
-          }
-        });
-        return updated;
-      });
-    }
   }, [attemptData, currentChatIndex, initialAttemptData, groupMessagesByChat]);
 
   useEffect(() => {
@@ -524,7 +424,6 @@ export function AttemptChat({
       ) || [],
     [attemptData]
   );
-  const rubricStructure = attemptData?.rubric_structure || null;
   const isActive = attemptData?.is_active ?? true;
   const isAttemptOwner = true;
   const showResults = attemptData?.show_results ?? false;
@@ -643,7 +542,6 @@ export function AttemptChat({
     const chatId = currentChat?.id ?? null;
     if (prevChatIdRef.current !== null && prevChatIdRef.current !== chatId) {
       clearStreamingState();
-      setMessagesWithNewHints(new Set());
       transcriptDeltasRef.current.clear();
       itemIdToOptimisticIdRef.current = new Map();
     }
@@ -780,39 +678,6 @@ export function AttemptChat({
   // ---------------------------------------------------------------------------
   // MERGED STATES
   // ---------------------------------------------------------------------------
-
-  const mergedGradingStates = useMemo(() => {
-    const map: Record<string, OptimisticGradingState> = {};
-    attemptData?.views?.simulation_chats?.forEach((chatData) => {
-      const chatId = chatData.id;
-      if (chatId && chatData.grading_state) {
-        map[chatId] = chatData.grading_state;
-      }
-    });
-
-    Object.entries(optimisticGradingStates).forEach(([chatId, optimisticState]) => {
-      const existingState = map[chatId];
-      if (existingState) {
-        map[chatId] = {
-          achieved_standards:
-            optimisticState.achieved_standards ?? existingState.achieved_standards,
-          passed_standards:
-            optimisticState.passed_standards ?? existingState.passed_standards,
-          feedback_by_standard_id:
-            optimisticState.feedback_by_standard_id ?? existingState.feedback_by_standard_id,
-        };
-      } else {
-        map[chatId] = optimisticState;
-      }
-    });
-
-    return map;
-  }, [attemptData, optimisticGradingStates]);
-
-  const newHintMessageIds = useMemo(
-    () => Array.from(messagesWithNewHints),
-    [messagesWithNewHints]
-  );
 
   // ---------------------------------------------------------------------------
   // PUBLIC HANDLERS
@@ -1050,209 +915,6 @@ export function AttemptChat({
       }
     };
 
-    // Grading progress
-    const handleGrading = (data: AttemptGradingProgressEvent) => {
-      const isCurrentChat = data.chat_id === currentChatIdRef.current;
-
-      if (isCurrentChat) {
-        if (data.type === "start") {
-          isGradingRef.current = true;
-          setIsGrading(true);
-          const initialTotal = data.total_count ?? (data.standards_graded as number | undefined);
-          if (initialTotal !== undefined) {
-            const initialProgress = {
-              completed: 0,
-              total: initialTotal,
-              displayedProgress: 0,
-              phase: "tools" as const,
-            };
-            gradingProgressRef.current = initialProgress;
-            setGradingProgress(initialProgress);
-          }
-        } else if (
-          data.type === "standard_graded" &&
-          data.completed_count !== undefined &&
-          data.total_count !== undefined
-        ) {
-          isGradingRef.current = true;
-          setIsGrading(true);
-          const completedCount = data.completed_count;
-          const totalCount = data.total_count;
-          setGradingProgress((prev) => {
-            const allToolsComplete = completedCount === totalCount;
-            const newPhase = allToolsComplete ? "summary" : prev?.phase || "tools";
-
-            let displayedProgress: number;
-            if (newPhase === "tools") {
-              displayedProgress = Math.min((completedCount / totalCount) * 90, 90);
-            } else {
-              displayedProgress = 95;
-            }
-
-            if (!prev) {
-              const newProgress = {
-                completed: completedCount,
-                total: totalCount,
-                displayedProgress,
-                phase: newPhase,
-              };
-              gradingProgressRef.current = newProgress;
-              return newProgress;
-            }
-
-            const updatedProgress = {
-              ...prev,
-              completed: completedCount,
-              total: totalCount,
-              phase: newPhase,
-              displayedProgress,
-            };
-            gradingProgressRef.current = updatedProgress;
-            return updatedProgress;
-          });
-        } else if (data.type === "summary_recorded") {
-          setGradingProgress((prev) => {
-            if (!prev) return null;
-            const updatedProgress = {
-              ...prev,
-              phase: "summary" as const,
-              displayedProgress: 95,
-            };
-            gradingProgressRef.current = updatedProgress;
-            return updatedProgress;
-          });
-        } else if (data.type === "complete") {
-          setGradingProgress((prev) => {
-            if (!prev) return null;
-            return { ...prev, displayedProgress: 100 };
-          });
-          setTimeout(() => {
-            isGradingRef.current = false;
-            setIsGrading(false);
-            setGradingProgress(null);
-            gradingProgressRef.current = null;
-          }, 300);
-        }
-      } else if (isGrading && gradingProgress) {
-        isGradingRef.current = false;
-        setIsGrading(false);
-        setGradingProgress(null);
-        gradingProgressRef.current = null;
-      }
-
-      if (
-        data.type === "standard_graded" &&
-        data.standard_group_name &&
-        data.score !== undefined &&
-        rubricStructure
-      ) {
-        const standardGroupsMapping = rubricStructure.standard_groups_mapping || {};
-        const standardGroups = rubricStructure.standard_groups || {};
-        const standardsMapping = rubricStructure.standards_mapping || {};
-
-        const groupEntry = Object.entries(standardGroupsMapping).find(
-          ([, meta]) => meta.name === data.standard_group_name
-        );
-
-        if (groupEntry) {
-          const [groupId, groupMeta] = groupEntry;
-          const standardIds = standardGroups[groupId] || [];
-
-          const matchingStandard = standardIds.find((stdId: string) => {
-            const standard = standardsMapping[stdId];
-            return standard && standard.points === data.score;
-          });
-
-          if (matchingStandard) {
-            const passPoints = groupMeta.pass_points || 0;
-            const isPassed = (data.score || 0) >= passPoints;
-
-            setOptimisticGradingStates((prev) => {
-              const currentState = prev[data.chat_id] || {
-                achieved_standards: null,
-                passed_standards: null,
-                feedback_by_standard_id: null,
-              };
-
-              const newAchieved = {
-                ...(currentState.achieved_standards || {}),
-                [matchingStandard]: true,
-              };
-              const newPassed = {
-                ...(currentState.passed_standards || {}),
-                [matchingStandard]: isPassed,
-              };
-              const newFeedback = {
-                ...(currentState.feedback_by_standard_id || {}),
-                ...(data.feedback_preview ? { [matchingStandard]: data.feedback_preview } : {}),
-              };
-
-              return {
-                ...prev,
-                [data.chat_id]: {
-                  achieved_standards: newAchieved,
-                  passed_standards: newPassed,
-                  feedback_by_standard_id: Object.keys(newFeedback).length > 0 ? newFeedback : null,
-                },
-              };
-            });
-          }
-        }
-      }
-    };
-
-    // Grading complete
-    const handleGraded = (data: AttemptGradedEvent) => {
-      if (data.chat_id === currentChatIdRef.current) {
-        isGradingRef.current = false;
-        setIsGrading(false);
-        setGradingProgress(null);
-        gradingProgressRef.current = null;
-        router.refresh();
-      }
-    };
-
-    // Hint generation
-    const handleHint = (data: AttemptHintProgressEvent) => {
-      if (data.type === "complete" && data.message_id && data.hints_count) {
-        let hints: HintsByMessage["hints"] = [];
-
-        if (data.hints && data.hints.length > 0) {
-          hints = data.hints.map((h, index) => ({
-            hint: typeof h["hint"] === "string" ? h["hint"] : "",
-            idx: typeof h["idx"] === "number" ? h["idx"] : index,
-          }));
-        }
-
-        setOptimisticHints((prev) => {
-          const chatHints = prev[data.chat_id] || [];
-          const existingIndex = chatHints.findIndex((h) => h.message_id === data.message_id);
-
-          const newHintGroup: HintsByMessage = {
-            message_id: data.message_id,
-            hints,
-          };
-
-          if (existingIndex >= 0) {
-            const updated = [...chatHints];
-            updated[existingIndex] = newHintGroup;
-            return { ...prev, [data.chat_id]: updated };
-          }
-          return { ...prev, [data.chat_id]: [...chatHints, newHintGroup] };
-        });
-
-        setMessagesWithNewHints((prev) => {
-          const newSet = new Set(prev);
-          newSet.add(data.message_id);
-          return newSet;
-        });
-
-        setTimeout(() => {
-          router.refresh();
-        }, 500);
-      }
-    };
-
     // Quiz result
     const handleQuizResult = (data: AttemptResponseResultEvent) => {
       if (data.success) {
@@ -1268,9 +930,6 @@ export function AttemptChat({
     socket.on("attempt_user_delta", handleUserDelta);
     socket.on("attempt_chat_ended", handleChatEnded);
     socket.on("attempt_ended", handleAttemptEnded);
-    socket.on("attempt_grading_progress", handleGrading);
-    socket.on("attempt_graded", handleGraded);
-    socket.on("attempt_hint_progress", handleHint);
     socket.on("attempt_response_result", handleQuizResult);
 
     return () => {
@@ -1279,9 +938,6 @@ export function AttemptChat({
       socket.off("attempt_user_delta", handleUserDelta);
       socket.off("attempt_chat_ended", handleChatEnded);
       socket.off("attempt_ended", handleAttemptEnded);
-      socket.off("attempt_grading_progress", handleGrading);
-      socket.off("attempt_graded", handleGraded);
-      socket.off("attempt_hint_progress", handleHint);
       socket.off("attempt_response_result", handleQuizResult);
     };
   }, [
@@ -1290,9 +946,6 @@ export function AttemptChat({
     router,
     attempt_id,
     chats,
-    rubricStructure,
-    isGrading,
-    gradingProgress,
   ]);
 
   // ---------------------------------------------------------------------------
@@ -1374,7 +1027,7 @@ export function AttemptChat({
         current_chat: currentChat
           ? { id: currentChat.id, completed: currentChat.completed ?? null }
           : null,
-        new_hint_message_ids: newHintMessageIds,
+        group_id: attemptData?.group_id,
         send_message: handleSendMessage,
         is_sending_message: isSendingMessage,
         is_active: isActive,
@@ -1390,6 +1043,7 @@ export function AttemptChat({
         current_chat: currentChat
           ? { id: currentChat.id, completed: currentChat.completed ?? null }
           : null,
+        group_id: attemptData?.group_id,
         send_message: handleSendMessage,
         is_sending_message: isSendingMessage,
         is_active: isActive,
@@ -1420,15 +1074,12 @@ export function AttemptChat({
       return props;
     } else {
       // Rubric view
-      const serverGradingState =
-        (currentChat?.id && mergedGradingStates[currentChat.id]) ||
-        currentChatData?.grading_state;
-
       const props: RubricViewProps = {
         // Pass rubric structure directly - it already matches RubricStructureData type
         rubric_structure: attemptData?.rubric_structure || {},
-        grading_state: serverGradingState,
+        grading_state: currentChatData?.grading_state,
         analyses: currentChatData?.analyses,
+        group_id: attemptData?.group_id,
       };
       return props;
     }
@@ -1442,8 +1093,6 @@ export function AttemptChat({
     streamingContent,
     optimisticMessages,
     messagesByChat,
-    mergedGradingStates,
-    newHintMessageIds,
     handleSendMessage,
     handleQuizResponse,
     isSendingMessage,
