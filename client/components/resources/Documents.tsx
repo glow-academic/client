@@ -26,14 +26,11 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import type { InputOf, OutputOf } from "@/lib/api/types";
+import type { OutputOf } from "@/lib/api/types";
 import { useResourceAi } from "@/hooks/use-resource-ai";
 import { cn } from "@/lib/utils";
 import { Check, Eye, Loader2, Sparkles, X } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-
-type CreateDraftDocumentsIn = InputOf<"/api/v4/resources/documents", "post">;
-type CreateDraftDocumentsOut = OutputOf<"/api/v4/resources/documents", "post">;
+import { useCallback, useMemo, useState } from "react";
 
 // Derive resource item type from the GET endpoint response
 type DocumentGetResponse = OutputOf<"/api/v4/resources/documents/get", "post">;
@@ -60,17 +57,9 @@ export interface DocumentsProps {
   placeholder?: string;
   description?: string;
   group_id?: string | null; // Group ID for linking resources
-  create_tool_id?: string | null; // Tool ID for AI generation/creation
-  createDocumentsAction?:
-    | ((input: CreateDraftDocumentsIn) => Promise<CreateDraftDocumentsOut>)
-    | undefined;
   onGenerate?: () => void | Promise<void>;
   showAiGenerate?: boolean; // Whether to show AI generate button (computed server-side)
   videoEnabled?: boolean; // Whether video mode is enabled (for filtering)
-  /** When false, skip automatic resource creation (manual save mode) */
-  isAutosaveEnabled?: boolean;
-  /** Register a flush callback with parent for manual save - returns created IDs */
-  registerFlush?: (flush: () => Promise<{ document_ids: string[] } | void>) => void;
   aiDocumentResources?: Pick<DocumentResourceItem, "document_id" | "name">[] | null;
 }
 
@@ -88,13 +77,9 @@ export function Documents({
   placeholder: _placeholder = "Select documents...",
   description,
   group_id,
-  create_tool_id,
-  createDocumentsAction,
   onGenerate,
   showAiGenerate = false,
   videoEnabled = false,
-  isAutosaveEnabled = true,
-  registerFlush,
   aiDocumentResources: _aiDocumentResources,
 }: DocumentsProps) {
   const ids = useMemo(() => document_ids ?? [], [document_ids]);
@@ -135,14 +120,6 @@ export function Documents({
     groupId: group_id,
   });
 
-  // Track which document IDs have already had resources created
-  const createdDocumentIdsRef = useRef<Set<string>>(new Set());
-
-  // Initialize createdDocumentIdsRef with current IDs
-  useEffect(() => {
-    ids.forEach((id) => createdDocumentIdsRef.current.add(id));
-  }, [ids]);
-
   // Convert documents array to DocumentItem format for GenericPicker
   const documentItems = useMemo(() => {
     return filteredDocuments
@@ -154,9 +131,6 @@ export function Documents({
       }));
   }, [filteredDocuments]);
 
-  // Ref for flush function
-  const flushRef = useRef<(() => Promise<{ document_ids: string[] } | void>) | undefined>(undefined);
-
   // State for preview dialog
   const [previewDocumentId, setPreviewDocumentId] = useState<string | null>(null);
 
@@ -167,81 +141,16 @@ export function Documents({
   );
 
   const handleSelect = useCallback(
-    async (documentId: string) => {
+    (documentId: string) => {
       // Toggle selection
       const isCurrentlySelected = ids.includes(documentId);
       const newIds = isCurrentlySelected
         ? ids.filter((id) => id !== documentId)
         : [...ids, documentId];
-
-      // Create resource if newly selected (only if autosave is enabled)
-      if (
-        isAutosaveEnabled &&
-        !isCurrentlySelected &&
-        !createdDocumentIdsRef.current.has(documentId) &&
-        createDocumentsAction &&
-        group_id
-      ) {
-        try {
-          await createDocumentsAction({
-            body: {
-              group_id: group_id,
-              document_id: documentId,
-              mcp: false,
-              tool_id: create_tool_id ?? undefined,
-            },
-          });
-          createdDocumentIdsRef.current.add(documentId);
-        } catch (error) {
-          // eslint-disable-next-line no-console
-          console.error(
-            `Failed to create document resource for ${documentId}:`,
-            error
-          );
-        }
-      }
-
-      // Update parent state
       onChange(newIds);
     },
-    [ids, onChange, createDocumentsAction, group_id, isAutosaveEnabled]
+    [ids, onChange]
   );
-
-  // Flush function for manual save mode - creates pending resources and returns all IDs
-  flushRef.current = async (): Promise<{ document_ids: string[] } | void> => {
-    if (!createDocumentsAction || !group_id) {
-      return { document_ids: ids };
-    }
-
-    // Create resources for any selected documents that haven't been created yet
-    for (const documentId of ids) {
-      if (!createdDocumentIdsRef.current.has(documentId)) {
-        try {
-          await createDocumentsAction({
-            body: {
-              group_id: group_id,
-              document_id: documentId,
-              mcp: false,
-              tool_id: create_tool_id ?? undefined,
-            },
-          });
-          createdDocumentIdsRef.current.add(documentId);
-        } catch (error) {
-          // eslint-disable-next-line no-console
-          console.error(`Failed to create document resource for ${documentId}:`, error);
-        }
-      }
-    }
-
-    return { document_ids: ids };
-  };
-
-  // Register flush callback with parent
-  useEffect(() => {
-    if (registerFlush) {
-      registerFlush(() => flushRef.current?.() ?? Promise.resolve());
-    }
-  }, [registerFlush]);
 
   // Check if any document resource is generated (must be before early return)
   const hasGenerated = useMemo(() => {
@@ -295,7 +204,7 @@ export function Documents({
               </span>
             )}
           </Label>
-          {onGenerate && showAiGenerate && create_tool_id && (
+          {onGenerate && showAiGenerate && (
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>

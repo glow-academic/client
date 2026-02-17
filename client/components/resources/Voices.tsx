@@ -1,15 +1,15 @@
 /**
  * Voices.tsx
  * Resource component for voice selection
- * Multi-select resource component following Departments.tsx pattern
+ * Multi-select resource component with custom voice creation
  */
 
 "use client";
 
 import { GenericPicker } from "@/components/common/forms/GenericPicker";
-import { Label } from "@/components/ui/label";
-import type { InputOf, OutputOf } from "@/lib/api/types";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Tooltip,
   TooltipContent,
@@ -17,9 +17,10 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useResourceAi } from "@/hooks/use-resource-ai";
+import type { InputOf, OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
-import { Check, X } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef } from "react";
+import { Check, Loader2, Plus, Sparkles, X } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 type FlushResult = { voice_ids: string[] } | void;
 
@@ -65,6 +66,7 @@ export interface VoicesProps {
 
 export function Voices({
   voice_ids,
+  voice_resources,
   show_voices = false,
   voice_suggestions,
   voices,
@@ -77,10 +79,12 @@ export function Voices({
   searchTerm,
   onSearchChange,
   group_id,
-  isAutosaveEnabled: _isAutosaveEnabled = true,
+  create_tool_id,
+  createVoicesAction,
+  isAutosaveEnabled = true,
   registerFlush,
-  showAiGenerate: _showAiGenerate = false,
-  onGenerate: _onGenerate,
+  showAiGenerate = false,
+  onGenerate,
 }: VoicesProps) {
   const ids = useMemo(() => voice_ids ?? [], [voice_ids]);
   const show = show_voices ?? false;
@@ -91,11 +95,12 @@ export function Voices({
   );
 
   // Socket-based AI suggestion handling via shared hook
-  const { isGenerating: _aiIsGenerating, aiSuggestions, clear: clearAi } = useResourceAi({
+  const { isGenerating: aiIsGenerating, aiSuggestions, clear: clearAi } = useResourceAi({
     resourceType: "voices",
     groupId: group_id,
     accumulate: true,
   });
+
   const filteredVoices = useMemo(() => {
     if (!searchTerm?.trim()) {
       return allVoices;
@@ -107,16 +112,61 @@ export function Voices({
     });
   }, [allVoices, searchTerm]);
 
+  // Track which voice IDs have already had resources created
+  const createdVoiceIdsRef = useRef<Set<string>>(new Set());
+
+  // Custom voice creation state
+  const [isAddingVoice, setIsAddingVoice] = useState(false);
+  const [newVoiceValue, setNewVoiceValue] = useState("");
+
   // Ref for flush function (stable reference for registerFlush)
   const flushRef = useRef<(() => Promise<FlushResult>) | undefined>(undefined);
 
+  // Initialize createdVoiceIdsRef with current IDs
+  useEffect(() => {
+    ids.forEach((id) => createdVoiceIdsRef.current.add(id));
+  }, [ids]);
+
+  // Helper to create a single voice resource
+  const createVoiceResource = useCallback(
+    async (voiceText: string): Promise<string | null> => {
+      if (!createVoicesAction || !create_tool_id || !group_id) {
+        return null;
+      }
+      const trimmed = voiceText.trim();
+      if (!trimmed) return null;
+
+      try {
+        const result = await createVoicesAction({
+          body: {
+            group_id: group_id,
+            voice: trimmed,
+            mcp: false,
+            tool_id: create_tool_id ?? undefined,
+          },
+        });
+        return result?.voices_id ?? null;
+      } catch {
+        return null;
+      }
+    },
+    [createVoicesAction, create_tool_id, group_id]
+  );
+
   // Update flush function when dependencies change
   flushRef.current = async (): Promise<FlushResult> => {
-    // For Voices, the flush returns the current selection
-    // Resources are selected from existing voices, so just return current IDs
     if (!group_id) {
       return;
     }
+
+    // If there's a pending new voice being added, create it
+    if (isAddingVoice && newVoiceValue.trim() && createVoicesAction) {
+      const newId = await createVoiceResource(newVoiceValue.trim());
+      if (newId) {
+        return { voice_ids: [...ids, newId] };
+      }
+    }
+
     return { voice_ids: ids };
   };
 
@@ -142,6 +192,70 @@ export function Voices({
     (voiceId: string) => suggestionsList.includes(voiceId),
     [suggestionsList]
   );
+
+  const handleSelect = useCallback(
+    async (selectedIds: string[]) => {
+      // Find newly selected IDs
+      const newlySelected = selectedIds.filter(
+        (id) => !ids.includes(id) && !createdVoiceIdsRef.current.has(id)
+      );
+
+      // Create resources for newly selected voices (only if autosave is enabled)
+      if (
+        isAutosaveEnabled &&
+        newlySelected.length > 0 &&
+        createVoicesAction &&
+        create_tool_id &&
+        group_id
+      ) {
+        for (const voiceId of newlySelected) {
+          try {
+            const voiceObj = allVoices.find((v) => v.id === voiceId);
+            if (voiceObj?.voice) {
+              await createVoicesAction({
+                body: {
+                  group_id: group_id,
+                  voice: voiceObj.voice,
+                  mcp: false,
+                  tool_id: create_tool_id ?? undefined,
+                },
+              });
+              createdVoiceIdsRef.current.add(voiceId);
+            }
+          } catch {
+            // Don't block UI - still update selection
+          }
+        }
+      }
+
+      // Update parent state
+      onVoiceIdsChange(selectedIds);
+    },
+    [ids, onVoiceIdsChange, createVoicesAction, create_tool_id, group_id, allVoices, isAutosaveEnabled]
+  );
+
+  // Handle adding a custom voice
+  const handleAddVoice = useCallback(async () => {
+    const trimmed = newVoiceValue.trim();
+    if (!trimmed) {
+      setIsAddingVoice(false);
+      setNewVoiceValue("");
+      return;
+    }
+    const newId = await createVoiceResource(trimmed);
+    if (!newId) return;
+
+    const nextIds = [...ids, newId];
+    createdVoiceIdsRef.current.add(newId);
+    onVoiceIdsChange(nextIds);
+    setIsAddingVoice(false);
+    setNewVoiceValue("");
+  }, [newVoiceValue, createVoiceResource, ids, onVoiceIdsChange]);
+
+  // Check if any voice resource is generated (must be before early return)
+  const hasGenerated = useMemo(() => {
+    return voice_resources?.some((v) => v.generated) ?? false;
+  }, [voice_resources]);
 
   // AI suggestion state
   const showDiff = aiSuggestions.length > 0;
@@ -175,6 +289,31 @@ export function Voices({
           {label}
           {required && <span className="text-destructive">*</span>}
         </Label>
+        {onGenerate && showAiGenerate && create_tool_id && (
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="h-6 w-6"
+                  onClick={onGenerate}
+                  disabled={disabled || aiIsGenerating || showDiff}
+                >
+                  {aiIsGenerating ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <Sparkles className="h-3.5 w-3.5" />
+                  )}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                {hasGenerated ? "Regenerate" : "Generate"}
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        )}
         {showDiff && (
           <>
             <TooltipProvider>
@@ -211,6 +350,25 @@ export function Voices({
             </TooltipProvider>
           </>
         )}
+        {!disabled && createVoicesAction && (
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="h-6 w-6"
+                  onClick={() => setIsAddingVoice(true)}
+                  disabled={isAddingVoice}
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Add custom voice</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        )}
       </div>
       {/* AI-suggested voices preview */}
       {showDiff && aiSuggestions.length > 0 && (
@@ -231,6 +389,48 @@ export function Voices({
           </div>
         </div>
       )}
+      {/* Add custom voice input */}
+      {isAddingVoice && (
+        <div className="flex items-center gap-2">
+          <Input
+            value={newVoiceValue}
+            onChange={(e) => setNewVoiceValue(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                void handleAddVoice();
+              } else if (e.key === "Escape") {
+                setIsAddingVoice(false);
+                setNewVoiceValue("");
+              }
+            }}
+            placeholder="Enter voice name..."
+            className="flex-1"
+            autoFocus
+          />
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 text-success hover:text-success"
+            onClick={() => void handleAddVoice()}
+          >
+            <Check className="h-4 w-4" />
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8"
+            onClick={() => {
+              setIsAddingVoice(false);
+              setNewVoiceValue("");
+            }}
+          >
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
+      )}
 
       <GenericPicker<VoiceItem>
         items={voiceItems}
@@ -238,7 +438,7 @@ export function Voices({
           .map((v) => v.id)
           .filter((id): id is string => id !== null)} // All voice IDs from array, filter nulls
         selectedIds={ids}
-        onSelect={onVoiceIdsChange}
+        onSelect={handleSelect}
         multiSelect={true}
         getId={(item) => item.id}
         getLabel={(item) => item.voice}

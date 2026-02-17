@@ -1,14 +1,14 @@
 /**
  * Endpoints.tsx
- * Resource component for endpoint selection
- * Uses GenericPicker to select existing endpoint resources
- * Manages endpoint_ids array and reports to parent
+ * Resource component for endpoint input
+ * Text input with ghost autocomplete for suggestions
+ * Creates resources independently and reports resource IDs to parent
  */
 
 "use client";
 
-import { GenericPicker } from "@/components/common/forms/GenericPicker";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   Tooltip,
@@ -20,7 +20,7 @@ import { useResourceAi } from "@/hooks/use-resource-ai";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 import { Check, Loader2, Sparkles, X } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 type CreateDraftEndpointsIn = InputOf<"/api/v4/resources/endpoints", "post">;
 type CreateDraftEndpointsOut = OutputOf<"/api/v4/resources/endpoints", "post">;
@@ -29,20 +29,14 @@ type CreateDraftEndpointsOut = OutputOf<"/api/v4/resources/endpoints", "post">;
 type EndpointGetResponse = OutputOf<"/api/v4/resources/endpoints/get", "post">;
 export type EndpointResourceItem = NonNullable<EndpointGetResponse["items"]>[number];
 
-export interface EndpointItem {
-  id: string;
-  name: string;
-  description?: string;
-}
-
 export interface EndpointsProps {
-  endpoint_ids?: string[]; // Current endpoint resource IDs (standardized prop name)
-  endpoint_resources?: EndpointResourceItem[]; // Selected endpoint resources (each includes generated field)
-  show_endpoints?: boolean; // Whether to show this resource picker
+  endpoint_ids?: string[]; // Current endpoint resource IDs (wrapped singular for compat)
+  endpoint_resources?: EndpointResourceItem[]; // Selected endpoint resources
+  show_endpoints?: boolean;
   endpoint_suggestions?: string[]; // Array of suggested resource IDs (UUIDs)
-  endpoints?: EndpointResourceItem[]; // All available endpoints from API (each includes generated field)
-  disabled?: boolean; // Based on can_edit flag
-  onChange: (ids: string[]) => void; // Update endpoint_ids in form state
+  endpoints?: EndpointResourceItem[]; // All available endpoints (for autocomplete)
+  disabled?: boolean;
+  onChange: (ids: string[]) => void;
   label?: string;
   id?: string;
   required?: boolean;
@@ -50,16 +44,16 @@ export interface EndpointsProps {
   description?: string;
   searchTerm?: string;
   onSearchChange?: (term: string) => void;
-  group_id?: string | null; // Group ID for linking resources
-  create_tool_id?: string | null; // Tool ID for AI generation/creation
+  group_id?: string | null;
+  create_tool_id?: string | null;
   createEndpointsAction?:
     | ((input: CreateDraftEndpointsIn) => Promise<CreateDraftEndpointsOut>)
     | undefined;
   onGenerate?: () => void | Promise<void>;
-  showAiGenerate?: boolean; // Whether to show AI generate button (computed server-side)
+  showAiGenerate?: boolean;
   /** When false, skip automatic resource creation (manual save mode) */
   isAutosaveEnabled?: boolean;
-  /** Register a flush callback with parent for manual save - returns created ID */
+  /** Register a flush callback with parent for manual save */
   registerFlush?: (flush: () => Promise<{ endpoints_id: string | null } | void>) => void;
   aiEndpointResources?: Pick<EndpointResourceItem, "id" | "base_url">[] | null;
 }
@@ -72,93 +66,86 @@ export function Endpoints({
   endpoints,
   disabled = false,
   onChange,
-  label = "Endpoints",
-  id = "endpoints",
+  label = "Endpoint",
+  id = "endpoint",
   required = false,
-  placeholder = "Select endpoints...",
+  placeholder = "Enter endpoint URL",
   description,
-  searchTerm,
-  onSearchChange,
   group_id,
   create_tool_id,
   createEndpointsAction,
   onGenerate,
   showAiGenerate = false,
+  isAutosaveEnabled = true,
   registerFlush,
-  aiEndpointResources: _aiEndpointResources,
 }: EndpointsProps) {
-  const ids = useMemo(() => endpoint_ids ?? [], [endpoint_ids]);
+  // Treat as single-value (callers wrap singular id into array)
+  const resourceId = endpoint_ids?.[0] ?? null;
+  const resource = endpoint_resources?.[0] ?? null;
   const show = show_endpoints ?? false;
-  const allEndpoints = useMemo(() => endpoints ?? [], [endpoints]);
-
-  // Socket-based AI suggestion handling via shared hook
-  const { isGenerating: aiIsGenerating, aiSuggestions, clear: clearAi } = useResourceAi({
-    resourceType: "endpoints",
-    groupId: group_id,
-    accumulate: true,
-  });
   const suggestionsList = useMemo(
     () => endpoint_suggestions ?? [],
     [endpoint_suggestions]
   );
-  const filteredEndpoints = useMemo(() => {
-    if (!searchTerm?.trim()) {
-      return allEndpoints;
-    }
-    const term = searchTerm.toLowerCase();
-    return allEndpoints.filter((endpoint) => {
-      const baseUrl = endpoint.base_url?.toLowerCase() ?? "";
-      return baseUrl.includes(term);
-    });
-  }, [allEndpoints, searchTerm]);
+  const endpointsArray = useMemo(() => endpoints ?? [], [endpoints]);
 
-  // Track which endpoint IDs have already had resources created
-  const createdEndpointIdsRef = useRef<Set<string>>(new Set());
+  // Socket-based AI suggestion handling via shared hook
+  const { isGenerating: aiIsGenerating, aiSuggestion, clear: clearAi } = useResourceAi({
+    resourceType: "endpoints",
+    groupId: group_id,
+  });
+
+  // AI suggestion state
+  const showDiff = !!aiSuggestion?.base_url;
+
+  // Handle nullable resource properties
+  const resourceBaseUrl = resource?.base_url ?? null;
+  const initialValue = resourceBaseUrl || "";
+  const [internalValue, setInternalValue] = useState(initialValue);
+
+  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const lastSavedValueRef = useRef<string>(initialValue);
+  const isInitialMountRef = useRef(true);
 
   // Ref for flush function (stable reference for registerFlush)
   const flushRef = useRef<(() => Promise<{ endpoints_id: string | null } | void>) | undefined>(undefined);
 
-  // Initialize createdEndpointIdsRef with current IDs
-  useEffect(() => {
-    ids.forEach((id) => createdEndpointIdsRef.current.add(id));
-  }, [ids]);
-
-  // Convert endpoints array to EndpointItem format for GenericPicker
-  const endpointItems = useMemo(() => {
-    return filteredEndpoints
-      .filter((e) => e.id && e.base_url) // Filter out nulls
-      .map((e) => ({
-        id: e.id!,
-        name: e.base_url!,
-      }));
-  }, [filteredEndpoints]);
-
-  // Check if an endpoint is suggested
-  const isSuggested = useCallback(
-    (endpointId: string) => suggestionsList.includes(endpointId),
-    [suggestionsList]
-  );
-
-  const handleSelect = useCallback(
-    async (selectedIds: string[]) => {
-      // Create resources for newly selected endpoints (endpoints are generated, not selected)
-      // So we don't create resources here - they're created via generation
-      // Update parent state
-      onChange(selectedIds);
-    },
-    [ids, onChange]
-  );
-
   // Update flush function when dependencies change
   flushRef.current = async (): Promise<{ endpoints_id: string | null } | void> => {
-    // Skip if no action available
     if (!createEndpointsAction || !group_id) {
       return;
     }
 
-    // Endpoints are typically generated, not manually created
-    // Return null as there's nothing to flush
-    return { endpoints_id: null };
+    // Skip if no change AND we already have a resource
+    if (internalValue === lastSavedValueRef.current && resourceId) {
+      return { endpoints_id: resourceId };
+    }
+
+    try {
+      if (internalValue.trim()) {
+        const result = await createEndpointsAction({
+          body: {
+            group_id: group_id,
+            base_url: internalValue,
+            mcp: false,
+            tool_id: create_tool_id ?? undefined,
+          },
+        });
+        if (result.endpoints_id) {
+          onChange([result.endpoints_id]);
+          lastSavedValueRef.current = internalValue;
+          return { endpoints_id: result.endpoints_id };
+        }
+      } else {
+        onChange([]);
+        lastSavedValueRef.current = internalValue;
+        return { endpoints_id: null };
+      }
+    } catch (error) {
+      // eslint-disable-next-line no-console
+      console.error("Failed to create endpoint resource:", error);
+      throw error;
+    }
   };
 
   // Register flush callback with parent
@@ -168,27 +155,118 @@ export function Endpoints({
     }
   }, [registerFlush]);
 
-  // Check if any endpoint resource is generated (must be before early return)
-  const hasGenerated = useMemo(() => {
-    return endpoint_resources?.some((e) => e.generated) ?? false;
-  }, [endpoint_resources]);
-
-  // AI suggestion state
-  const showDiff = aiSuggestions.length > 0;
-
-  // Accept AI suggestion - add AI-suggested endpoints to selection
-  const handleAccept = useCallback(() => {
-    if (aiSuggestions.length === 0) return;
-    const newIds = aiSuggestions
-      .map((e) => e.id)
-      .filter((id): id is string => !!id && !ids.includes(id));
-    if (newIds.length > 0) {
-      onChange([...ids, ...newIds]);
+  // Convert endpoint_suggestions UUIDs to base_url strings for autocomplete
+  const suggestionBaseUrls = useMemo(() => {
+    if (endpointsArray.length > 0) {
+      return suggestionsList
+        .map((id) => {
+          const obj = endpointsArray.find((e) => e.id === id);
+          return obj?.base_url ?? null;
+        })
+        .filter((url): url is string => url !== null && url.trim() !== "");
     }
-    clearAi();
-  }, [aiSuggestions, ids, onChange, clearAi]);
+    if (resource?.base_url && suggestionsList.includes(resource.id ?? "")) {
+      return [resource.base_url];
+    }
+    return [];
+  }, [suggestionsList, endpointsArray, resource]);
 
-  // Reject AI suggestion - just clear the pending state
+  // Ghost autocomplete: find first prefix match and compute the untyped suffix
+  const ghostMatch = useMemo(() => {
+    const trimmed = internalValue.trim();
+    if (!trimmed) return null;
+    const valueLower = trimmed.toLowerCase();
+    return suggestionBaseUrls.find((s) => {
+      const sLower = s.toLowerCase();
+      return sLower.startsWith(valueLower) && sLower !== valueLower;
+    }) ?? null;
+  }, [suggestionBaseUrls, internalValue]);
+
+  const ghostSuffix = ghostMatch ? ghostMatch.slice(internalValue.length) : "";
+
+  // Update internal value when resource changes
+  useEffect(() => {
+    if (resourceBaseUrl) {
+      if (internalValue !== resourceBaseUrl) {
+        setInternalValue(resourceBaseUrl);
+      }
+      lastSavedValueRef.current = resourceBaseUrl;
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [resourceBaseUrl]);
+
+  // Track pending changes (for manual save mode only)
+  useEffect(() => {
+    if (isAutosaveEnabled) return;
+    if (isInitialMountRef.current) return;
+
+    const hasPendingChanges = internalValue !== lastSavedValueRef.current;
+    if (hasPendingChanges) {
+      window.dispatchEvent(
+        new CustomEvent("unsaved-changes", { detail: { hasChanges: true } })
+      );
+    }
+  }, [internalValue, isAutosaveEnabled]);
+
+  // Debounced resource creation - only when autosave is enabled
+  useEffect(() => {
+    if (!isAutosaveEnabled) return;
+
+    if (isInitialMountRef.current) {
+      isInitialMountRef.current = false;
+      lastSavedValueRef.current = internalValue;
+      return;
+    }
+
+    if (internalValue === lastSavedValueRef.current) return;
+    if (!createEndpointsAction) return;
+
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
+
+    debounceTimerRef.current = setTimeout(() => {
+      flushRef.current?.();
+    }, 1000);
+
+    return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+    };
+  }, [internalValue, createEndpointsAction, isAutosaveEnabled]);
+
+  const handleChange = useCallback((newValue: string) => {
+    setInternalValue(newValue);
+  }, []);
+
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLInputElement>) => {
+      if (e.key === "Tab" && ghostSuffix) {
+        e.preventDefault();
+        setInternalValue(ghostMatch!);
+      }
+    },
+    [ghostSuffix, ghostMatch]
+  );
+
+  // Check if any endpoint resource is generated
+  const hasGenerated = useMemo(() => {
+    return resource?.generated ?? false;
+  }, [resource]);
+
+  // Accept AI suggestion
+  const handleAccept = useCallback(() => {
+    if (!aiSuggestion?.id) return;
+    if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+    const text = aiSuggestion.base_url || "";
+    setInternalValue(text);
+    lastSavedValueRef.current = text;
+    onChange([aiSuggestion.id]);
+    clearAi();
+  }, [aiSuggestion, onChange, clearAi]);
+
+  // Reject AI suggestion
   const handleReject = useCallback(() => {
     clearAi();
   }, [clearAi]);
@@ -197,6 +275,9 @@ export function Endpoints({
   if (!show) {
     return null;
   }
+
+  // AI suggestion text
+  const aiBaseUrl = aiSuggestion?.base_url || "";
 
   return (
     <div className="space-y-2">
@@ -274,68 +355,36 @@ export function Endpoints({
           )}
         </div>
       )}
-      {/* AI-suggested endpoints preview */}
-      {showDiff && aiSuggestions.length > 0 && (
-        <div className="mb-4 space-y-2">
-          <p className="text-sm font-medium text-success">AI Suggested Endpoints</p>
-          <div className="space-y-2">
-            {aiSuggestions.map((item, idx) => (
-              <div
-                key={item.id || idx}
-                className={cn(
-                  "p-3 rounded-lg border-2 border-success bg-success/10",
-                  "text-sm"
-                )}
-              >
-                {item.base_url || ""}
-              </div>
-            ))}
-          </div>
+      {showDiff ? (
+        <div className="flex items-center gap-2 px-3 py-2 rounded-md border">
+          <span className="text-sm text-destructive line-through opacity-70">
+            {internalValue || "Empty"}
+          </span>
+          <span className="text-sm text-success">
+            {aiBaseUrl}
+          </span>
+        </div>
+      ) : (
+        <div className="relative">
+          <Input
+            id={id}
+            type="text"
+            value={internalValue}
+            onChange={(e) => handleChange(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder={placeholder}
+            required={required}
+            disabled={disabled}
+            className={cn(ghostSuffix && "pr-0")}
+          />
+          {ghostSuffix && !disabled && (
+            <div className="absolute inset-0 pointer-events-none flex items-center px-3">
+              <span className="invisible text-sm">{internalValue}</span>
+              <span className="text-sm text-muted-foreground/40">{ghostSuffix}</span>
+            </div>
+          )}
         </div>
       )}
-      <GenericPicker<EndpointItem>
-        items={endpointItems}
-        itemIds={filteredEndpoints
-          .map((e) => e.id)
-          .filter((id): id is string => id !== null)} // All endpoint IDs from array, filter nulls
-        selectedIds={ids}
-        onSelect={handleSelect}
-        multiSelect={true}
-        getId={(item) => item.id}
-        getLabel={(item) => item.name}
-        renderItem={(item, isSelected) => (
-          <div className="flex items-center justify-between w-full">
-            <div className="flex items-center gap-2 flex-1 min-w-0">
-              {isSuggested(item.id) && !isSelected && (
-                <span className="px-1.5 py-0.5 bg-primary/10 text-primary text-xs rounded shrink-0">
-                  Suggested
-                </span>
-              )}
-              <div className="flex-1 min-w-0">
-                <div className="truncate">{item.name}</div>
-                {item.description && (
-                  <div className="text-xs text-muted-foreground truncate">
-                    {item.description}
-                  </div>
-                )}
-              </div>
-            </div>
-            <Check
-              className={cn(
-                "ml-auto flex-shrink-0 h-4 w-4",
-                isSelected ? "opacity-100" : "opacity-0"
-              )}
-            />
-          </div>
-        )}
-        {...(searchTerm !== undefined ? { initialSearchTerm: searchTerm } : {})}
-        {...(onSearchChange ? { onSearchChange } : {})}
-        placeholder={placeholder}
-        disabled={disabled}
-        showLabel={false}
-        hideSelectedChips={false}
-        showClearAll={true}
-      />
     </div>
   );
 }

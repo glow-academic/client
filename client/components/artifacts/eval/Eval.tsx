@@ -69,14 +69,6 @@ type CreateDraftDescriptionsOut = OutputOf<
 >;
 type CreateDraftFlagsIn = InputOf<"/api/v4/resources/flags", "post">;
 type CreateDraftFlagsOut = OutputOf<"/api/v4/resources/flags", "post">;
-type CreateDraftDepartmentsIn = InputOf<
-  "/api/v4/resources/departments",
-  "post"
->;
-type CreateDraftDepartmentsOut = OutputOf<
-  "/api/v4/resources/departments",
-  "post"
->;
 type CreateDraftAgentsIn = InputOf<"/api/v4/resources/agents", "post">;
 type CreateDraftAgentsOut = OutputOf<"/api/v4/resources/agents", "post">;
 type CreateDraftRunsIn = InputOf<"/api/v4/resources/runs", "post">;
@@ -105,9 +97,6 @@ export interface EvalProps {
   createFlagsAction?: (
     input: CreateDraftFlagsIn
   ) => Promise<CreateDraftFlagsOut>;
-  createDepartmentsAction?: (
-    input: CreateDraftDepartmentsIn
-  ) => Promise<CreateDraftDepartmentsOut>;
   createAgentsAction?: (
     input: CreateDraftAgentsIn
   ) => Promise<CreateDraftAgentsOut>;
@@ -195,7 +184,6 @@ function EvalComponent({
   createNamesAction,
   createDescriptionsAction,
   createFlagsAction,
-  createDepartmentsAction,
   createAgentsAction,
   createRunsAction,
   createGroupsAction,
@@ -1292,7 +1280,7 @@ function EvalComponent({
                   required={s?.departments?.required ?? false}
                   group_id={s?.group_id ?? null}
                   agent_id={null}
-                  createDepartmentsAction={createDepartmentsAction}
+
                 />
               </div>
             </StepCard>
@@ -1615,7 +1603,7 @@ function EvalComponent({
       createNamesAction,
       createDescriptionsAction,
       createFlagsAction,
-      createDepartmentsAction,
+
       createAgentsAction,
       createRunsAction,
       createGroupsAction,

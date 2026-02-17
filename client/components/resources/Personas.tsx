@@ -16,12 +16,12 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import type { InputOf, OutputOf } from "@/lib/api/types";
+import type { OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 import { getIconComponent } from "@/utils/icons";
 import { useResourceAi } from "@/hooks/use-resource-ai";
 import { Brain, Check, Loader2, Sparkles, X } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef } from "react";
+import { useCallback, useMemo } from "react";
 
 // Utility function to generate gradient from hex color
 const generateGradientFromHex = (hexColor: string): string => {
@@ -43,9 +43,6 @@ const generateGradientFromHex = (hexColor: string): string => {
 
   return `linear-gradient(135deg, ${lighterHex} 0%, ${hexColor} 100%)`;
 };
-
-type CreateDraftPersonasIn = InputOf<"/api/v4/resources/personas", "post">;
-type CreateDraftPersonasOut = OutputOf<"/api/v4/resources/personas", "post">;
 
 // Derive resource item type from the GET endpoint response
 type PersonaGetResponse = OutputOf<"/api/v4/resources/personas/get", "post">;
@@ -73,17 +70,9 @@ export interface PersonasProps {
   placeholder?: string;
   description?: string;
   group_id?: string | null; // Group ID for linking resources
-  create_tool_id?: string | null; // Tool ID for AI generation/creation
-  createPersonasAction?:
-    | ((input: CreateDraftPersonasIn) => Promise<CreateDraftPersonasOut>)
-    | undefined;
   onGenerate?: () => void | Promise<void>;
   showAiGenerate?: boolean; // Whether to show AI generate button (computed server-side)
   videoEnabled?: boolean; // Whether video mode is enabled (for filtering)
-  /** When false, skip automatic resource creation (manual save mode) */
-  isAutosaveEnabled?: boolean;
-  /** Register a flush callback with parent for manual save - returns created IDs */
-  registerFlush?: (flush: () => Promise<{ persona_ids: string[] } | void>) => void;
   aiPersonaResources?: Pick<PersonaResourceItem, "persona_id" | "name">[] | null;
 }
 
@@ -101,13 +90,9 @@ export function Personas({
   placeholder: _placeholder = "Select personas...",
   description,
   group_id,
-  create_tool_id,
-  createPersonasAction,
   onGenerate,
   showAiGenerate = false,
   videoEnabled = false,
-  isAutosaveEnabled = true,
-  registerFlush,
   aiPersonaResources,
 }: PersonasProps) {
   const ids = useMemo(() => persona_ids ?? [], [persona_ids]);
@@ -152,14 +137,6 @@ export function Personas({
   const effectiveAiPersonaResources =
     aiSuggestion ?? aiPersonaResources ?? null;
 
-  // Track which persona IDs have already had resources created
-  const createdPersonaIdsRef = useRef<Set<string>>(new Set());
-
-  // Initialize createdPersonaIdsRef with current IDs
-  useEffect(() => {
-    ids.forEach((id) => createdPersonaIdsRef.current.add(id));
-  }, [ids]);
-
   // Convert personas array to PersonaItem format for GenericPicker
   const personaItems = useMemo(() => {
     return filteredPersonas
@@ -173,9 +150,6 @@ export function Personas({
       }));
   }, [filteredPersonas]);
 
-  // Ref for flush function
-  const flushRef = useRef<(() => Promise<{ persona_ids: string[] } | void>) | undefined>(undefined);
-
   // Check if a persona is suggested
   const isSuggested = useCallback(
     (personaId: string) => suggestionsList.includes(personaId),
@@ -183,81 +157,16 @@ export function Personas({
   );
 
   const handleSelect = useCallback(
-    async (personaId: string) => {
+    (personaId: string) => {
       // Toggle selection
       const isCurrentlySelected = ids.includes(personaId);
       const newIds = isCurrentlySelected
         ? ids.filter((id) => id !== personaId)
         : [...ids, personaId];
-
-      // Create resource if newly selected (only if autosave is enabled)
-      if (
-        isAutosaveEnabled &&
-        !isCurrentlySelected &&
-        !createdPersonaIdsRef.current.has(personaId) &&
-        createPersonasAction &&
-        group_id
-      ) {
-        try {
-          await createPersonasAction({
-            body: {
-              group_id: group_id,
-              persona_id: personaId,
-              mcp: false,
-              tool_id: create_tool_id ?? undefined,
-            },
-          });
-          createdPersonaIdsRef.current.add(personaId);
-        } catch (error) {
-          // eslint-disable-next-line no-console
-          console.error(
-            `Failed to create persona resource for ${personaId}:`,
-            error
-          );
-        }
-      }
-
-      // Update parent state
       onChange(newIds);
     },
-    [ids, onChange, createPersonasAction, group_id, isAutosaveEnabled]
+    [ids, onChange]
   );
-
-  // Flush function for manual save mode - creates pending resources and returns all IDs
-  flushRef.current = async (): Promise<{ persona_ids: string[] } | void> => {
-    if (!createPersonasAction || !group_id) {
-      return { persona_ids: ids };
-    }
-
-    // Create resources for any selected personas that haven't been created yet
-    for (const personaId of ids) {
-      if (!createdPersonaIdsRef.current.has(personaId)) {
-        try {
-          await createPersonasAction({
-            body: {
-              group_id: group_id,
-              persona_id: personaId,
-              mcp: false,
-              tool_id: create_tool_id ?? undefined,
-            },
-          });
-          createdPersonaIdsRef.current.add(personaId);
-        } catch (error) {
-          // eslint-disable-next-line no-console
-          console.error(`Failed to create persona resource for ${personaId}:`, error);
-        }
-      }
-    }
-
-    return { persona_ids: ids };
-  };
-
-  // Register flush callback with parent
-  useEffect(() => {
-    if (registerFlush) {
-      registerFlush(() => flushRef.current?.() ?? Promise.resolve());
-    }
-  }, [registerFlush]);
 
   // Check if any persona resource is generated (must be before early return)
   const hasGenerated = useMemo(() => {
@@ -311,7 +220,7 @@ export function Personas({
               </span>
             )}
           </Label>
-          {onGenerate && showAiGenerate && create_tool_id && (
+          {onGenerate && showAiGenerate && (
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>

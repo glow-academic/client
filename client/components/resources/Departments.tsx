@@ -20,22 +20,11 @@ import { useResourceAi } from "@/hooks/use-resource-ai";
 import { cn } from "@/lib/utils";
 import type { OutputOf } from "@/lib/api/types";
 import { Check, Loader2, Sparkles, X } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef } from "react";
+import { useCallback, useMemo } from "react";
 
 // Derive resource item type from the GET endpoint response
 type DepartmentsGetResponse = OutputOf<"/api/v4/resources/departments/get", "post">;
 export type DepartmentResourceItem = NonNullable<DepartmentsGetResponse["items"]>[number];
-
-type CreateDraftDepartmentsIn = {
-  body: {
-    group_id: string;
-    department_id: string;
-    mcp?: boolean;
-  };
-};
-type CreateDraftDepartmentsOut = {
-  id?: string | null;
-};
 
 export interface DepartmentItem {
   id: string;
@@ -58,14 +47,7 @@ export interface DepartmentsProps {
   description?: string;
   group_id?: string | null; // Group ID for linking resources
   showAiGenerate?: boolean; // Whether to show AI generate button (computed server-side)
-  createDepartmentsAction?:
-    | ((input: CreateDraftDepartmentsIn) => Promise<CreateDraftDepartmentsOut>)
-    | undefined;
   onGenerate?: () => void | Promise<void>;
-  /** When false, skip automatic resource creation (manual save mode) */
-  isAutosaveEnabled?: boolean;
-  /** Register a flush callback with parent for manual save - returns created IDs */
-  registerFlush?: (flush: () => Promise<{ department_ids: string[] } | void>) => void;
   aiDepartmentResources?: Array<{
     department_id?: string | null;
     name?: string | null;
@@ -89,10 +71,7 @@ export function Departments({
   description,
   group_id,
   showAiGenerate = false,
-  createDepartmentsAction,
   onGenerate,
-  isAutosaveEnabled = true,
-  registerFlush,
   aiDepartmentResources: _aiDepartmentResources,
   // Legacy props for backward compatibility
   departmentIds,
@@ -128,51 +107,6 @@ export function Departments({
     [aiSuggestions]
   );
 
-  // Track which department IDs have already had resources created
-  const createdDepartmentIdsRef = useRef<Set<string>>(new Set());
-
-  // Initialize createdDepartmentIdsRef with current IDs
-  useEffect(() => {
-    ids.forEach((id) => createdDepartmentIdsRef.current.add(id));
-  }, [ids]);
-
-  // Ref for flush function (stable reference for registerFlush)
-  const flushRef = useRef<(() => Promise<{ department_ids: string[] } | void>) | undefined>(undefined);
-
-  // Update flush function when dependencies change
-  flushRef.current = async (): Promise<{ department_ids: string[] } | void> => {
-    if (!createDepartmentsAction || !group_id) {
-      return { department_ids: ids };
-    }
-
-    // Create resources for any uncreated department IDs
-    const uncreatedIds = ids.filter((id) => !createdDepartmentIdsRef.current.has(id));
-    for (const departmentId of uncreatedIds) {
-      try {
-        await createDepartmentsAction({
-          body: {
-            group_id: group_id,
-            department_id: departmentId,
-            mcp: false,
-          },
-        });
-        createdDepartmentIdsRef.current.add(departmentId);
-      } catch (error) {
-        // eslint-disable-next-line no-console
-        console.error(`Failed to create department resource for ${departmentId}:`, error);
-      }
-    }
-
-    return { department_ids: ids };
-  };
-
-  // Register flush callback with parent
-  useEffect(() => {
-    if (registerFlush) {
-      registerFlush(() => flushRef.current?.() ?? Promise.resolve());
-    }
-  }, [registerFlush]);
-
   // Convert departments array to DepartmentItem format for SelectableGrid
   const departmentItems = useMemo(() => {
     return allDepartments
@@ -191,44 +125,10 @@ export function Departments({
   );
 
   const handleSelect = useCallback(
-    async (selectedIds: string[]) => {
-      // Find newly selected IDs
-      const newlySelected = selectedIds.filter(
-        (id) => !ids.includes(id) && !createdDepartmentIdsRef.current.has(id)
-      );
-
-      // Create resources for newly selected departments (only if autosave enabled)
-      if (
-        isAutosaveEnabled &&
-        newlySelected.length > 0 &&
-        createDepartmentsAction &&
-        group_id
-      ) {
-        for (const departmentId of newlySelected) {
-          try {
-            await createDepartmentsAction({
-              body: {
-                group_id: group_id,
-                department_id: departmentId,
-                mcp: false,
-              },
-            });
-            createdDepartmentIdsRef.current.add(departmentId);
-          } catch (error) {
-            // eslint-disable-next-line no-console
-            console.error(
-              `Failed to create department resource for ${departmentId}:`,
-              error
-            );
-            // Don't block UI - still update selection
-          }
-        }
-      }
-
-      // Update parent state
+    (selectedIds: string[]) => {
       onChange(selectedIds);
     },
-    [ids, onChange, createDepartmentsAction, group_id, isAutosaveEnabled]
+    [onChange]
   );
 
   // Accept AI suggestion - add AI-suggested departments to selection

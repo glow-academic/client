@@ -56,8 +56,6 @@ export interface GroupPositionsProps {
   isAutosaveEnabled?: boolean;
   /** Register a flush callback with parent for manual save */
   registerFlush?: (flush: () => Promise<FlushResult>) => void;
-  // AI diff props (deprecated - now handled by useResourceAi hook)
-  aiGroupPositionResources?: Pick<GroupPositionResourceItem, "id" | "value">[] | null;
   showAiGenerate?: boolean;
   onGenerate?: () => void | Promise<void>;
 }
@@ -73,8 +71,8 @@ export function GroupPositions({
   label = "Group Positions",
   group_id,
   create_tool_id,
-  createGroupPositionsAction: _createGroupPositionsAction,
-  isAutosaveEnabled: _isAutosaveEnabled = true,
+  createGroupPositionsAction,
+  isAutosaveEnabled = true,
   registerFlush,
   showAiGenerate = false,
   onGenerate,
@@ -92,6 +90,31 @@ export function GroupPositions({
     () => group_position_suggestions ?? [],
     [group_position_suggestions]
   );
+
+  // Ref for flush function (stable reference for registerFlush)
+  const flushRef = useRef<(() => Promise<FlushResult>) | undefined>(undefined);
+
+  // Track which position IDs have already had resources created
+  const createdPositionIdsRef = useRef<Set<string>>(new Set());
+
+  // Initialize createdPositionIdsRef with current IDs
+  useEffect(() => {
+    ids.forEach((id) => createdPositionIdsRef.current.add(id));
+  }, [ids]);
+
+  // Update flush function when dependencies change
+  flushRef.current = async (): Promise<FlushResult> => {
+    if (!group_id) return;
+    const lastId = ids.length > 0 ? ids[ids.length - 1] : null;
+    return { group_positions_id: lastId };
+  };
+
+  // Register flush callback with parent
+  useEffect(() => {
+    if (registerFlush) {
+      registerFlush(() => flushRef.current?.() ?? Promise.resolve());
+    }
+  }, [registerFlush]);
 
   // Socket-based AI suggestion handling via shared hook
   const { isGenerating: aiIsGenerating, aiSuggestions, clear: clearAi } = useResourceAi({
@@ -112,23 +135,6 @@ export function GroupPositions({
     [aiSuggestions]
   );
 
-  // Ref for flush function (stable reference for registerFlush)
-  const flushRef = useRef<(() => Promise<FlushResult>) | undefined>(undefined);
-
-  // Update flush function when dependencies change
-  flushRef.current = async (): Promise<FlushResult> => {
-    if (!group_id) return;
-    const lastId = ids.length > 0 ? ids[ids.length - 1] : null;
-    return { group_positions_id: lastId };
-  };
-
-  // Register flush callback with parent
-  useEffect(() => {
-    if (registerFlush) {
-      registerFlush(() => flushRef.current?.() ?? Promise.resolve());
-    }
-  }, [registerFlush]);
-
   // Convert to items format for SelectableGrid
   const items = useMemo(() => {
     return allItems
@@ -148,9 +154,46 @@ export function GroupPositions({
 
   const handleSelect = useCallback(
     (selectedIds: string[]) => {
+      // Find newly selected IDs
+      const newlySelected = selectedIds.filter(
+        (id) => !ids.includes(id) && !createdPositionIdsRef.current.has(id)
+      );
+
+      // Create resources for newly selected positions (only if autosave is enabled)
+      if (
+        isAutosaveEnabled &&
+        newlySelected.length > 0 &&
+        createGroupPositionsAction &&
+        create_tool_id &&
+        group_id
+      ) {
+        for (const positionId of newlySelected) {
+          const positionItem = allItems.find((g) => g.id === positionId);
+          if (positionItem?.groups_id && positionItem?.eval_id) {
+            void (async () => {
+              try {
+                await createGroupPositionsAction({
+                  body: {
+                    group_id: group_id,
+                    groups_id: positionItem.groups_id,
+                    eval_id: positionItem.eval_id,
+                    value: positionItem.value ?? undefined,
+                    mcp: false,
+                    tool_id: create_tool_id ?? undefined,
+                  },
+                });
+                createdPositionIdsRef.current.add(positionId);
+              } catch {
+                // Don't block UI
+              }
+            })();
+          }
+        }
+      }
+
       onChange(selectedIds);
     },
-    [onChange]
+    [ids, onChange, createGroupPositionsAction, create_tool_id, group_id, allItems, isAutosaveEnabled]
   );
 
   // Check if any resource is generated (must be before early return)

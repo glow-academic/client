@@ -1,14 +1,14 @@
 /**
  * Values.tsx
- * Resource component for values selection
- * Uses GenericPicker to select existing values resources
- * Manages value_ids array and reports to parent
+ * Resource component for value input
+ * Text input with ghost autocomplete for suggestions
+ * Creates resources independently and reports resource IDs to parent
  */
 
 "use client";
 
-import { GenericPicker } from "@/components/common/forms/GenericPicker";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   Tooltip,
@@ -20,9 +20,7 @@ import type { InputOf, OutputOf } from "@/lib/api/types";
 import { useResourceAi } from "@/hooks/use-resource-ai";
 import { cn } from "@/lib/utils";
 import { Check, Loader2, Sparkles, X } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef } from "react";
-
-type FlushResult = { value_ids: string[] } | void;
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 type CreateDraftValuesIn = InputOf<"/api/v4/resources/values", "post">;
 type CreateDraftValuesOut = OutputOf<"/api/v4/resources/values", "post">;
@@ -31,20 +29,14 @@ type CreateDraftValuesOut = OutputOf<"/api/v4/resources/values", "post">;
 type ValueGetResponse = OutputOf<"/api/v4/resources/values/get", "post">;
 export type ValueResourceItem = NonNullable<ValueGetResponse["items"]>[number];
 
-export interface ValuesItem {
-  id: string;
-  name: string;
-  description?: string;
-}
-
 export interface ValuesProps {
-  value_ids?: string[]; // Current values resource IDs (standardized prop name)
-  value_resources?: ValueResourceItem[]; // Selected values resources
-  show_values?: boolean; // Whether to show this resource picker
+  value_ids?: string[]; // Current value resource IDs (wrapped singular for compat)
+  value_resources?: ValueResourceItem[]; // Selected value resources
+  show_values?: boolean;
   value_suggestions?: string[]; // Array of suggested resource IDs (UUIDs)
-  values?: ValueResourceItem[]; // All available values from API
-  disabled?: boolean; // Based on can_edit flag
-  onChange: (ids: string[]) => void; // Update value_ids in form state
+  values?: ValueResourceItem[]; // All available values (for autocomplete)
+  disabled?: boolean;
+  onChange: (ids: string[]) => void;
   label?: string;
   id?: string;
   required?: boolean;
@@ -52,17 +44,17 @@ export interface ValuesProps {
   description?: string;
   searchTerm?: string;
   onSearchChange?: (term: string) => void;
-  group_id?: string | null; // Group ID for linking resources
-  create_tool_id?: string | null; // Tool ID for AI generation/creation
+  group_id?: string | null;
+  create_tool_id?: string | null;
   createValuesAction?:
     | ((input: CreateDraftValuesIn) => Promise<CreateDraftValuesOut>)
     | undefined;
   onGenerate?: () => void | Promise<void>;
-  showAiGenerate?: boolean; // Whether to show AI generate button (computed server-side)
+  showAiGenerate?: boolean;
   /** When false, skip automatic resource creation (manual save mode) */
   isAutosaveEnabled?: boolean;
-  /** Register a flush callback with parent for manual save - returns created IDs */
-  registerFlush?: (flush: () => Promise<FlushResult>) => void;
+  /** Register a flush callback with parent for manual save */
+  registerFlush?: (flush: () => Promise<{ values_id: string | null } | void>) => void;
   aiValueResources?: Pick<ValueResourceItem, "id" | "value">[] | null;
 }
 
@@ -74,60 +66,86 @@ export function Values({
   values,
   disabled = false,
   onChange,
-  label = "Values",
-  id = "values",
+  label = "Value",
+  id = "value",
   required = false,
-  placeholder = "Select values...",
+  placeholder = "Enter value",
   description,
-  searchTerm,
-  onSearchChange,
   group_id,
   create_tool_id,
+  createValuesAction,
   onGenerate,
   showAiGenerate = false,
-  isAutosaveEnabled: _isAutosaveEnabled = true,
+  isAutosaveEnabled = true,
   registerFlush,
 }: ValuesProps) {
-  const ids = useMemo(() => value_ids ?? [], [value_ids]);
+  // Treat as single-value (callers wrap singular id into array)
+  const resourceId = value_ids?.[0] ?? null;
+  const resource = value_resources?.[0] ?? null;
   const show = show_values ?? false;
-  const allValues = useMemo(() => values ?? [], [values]);
   const suggestionsList = useMemo(
     () => value_suggestions ?? [],
     [value_suggestions]
   );
+  const valuesArray = useMemo(() => values ?? [], [values]);
 
   // Socket-based AI suggestion handling via shared hook
-  const { isGenerating: aiIsGenerating, aiSuggestions, clear: clearAi } = useResourceAi({
+  const { isGenerating: aiIsGenerating, aiSuggestion, clear: clearAi } = useResourceAi({
     resourceType: "values",
     groupId: group_id,
-    accumulate: true,
   });
 
-  const filteredValues = useMemo(() => {
-    if (!searchTerm?.trim()) {
-      return allValues;
-    }
-    const term = searchTerm.toLowerCase();
-    return allValues.filter((value) => {
-      const val = value.value?.toLowerCase() ?? "";
-      return val.includes(term);
-    });
-  }, [allValues, searchTerm]);
+  // AI suggestion state
+  const showDiff = !!aiSuggestion?.value;
 
-  // Track which values IDs have already had resources created
-  const createdValuesIdsRef = useRef<Set<string>>(new Set());
+  // Handle nullable resource properties
+  const resourceValue = resource?.value ?? null;
+  const initialValue = resourceValue || "";
+  const [internalValue, setInternalValue] = useState(initialValue);
+
+  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const lastSavedValueRef = useRef<string>(initialValue);
+  const isInitialMountRef = useRef(true);
 
   // Ref for flush function (stable reference for registerFlush)
-  const flushRef = useRef<(() => Promise<FlushResult>) | undefined>(undefined);
+  const flushRef = useRef<(() => Promise<{ values_id: string | null } | void>) | undefined>(undefined);
 
   // Update flush function when dependencies change
-  flushRef.current = async (): Promise<FlushResult> => {
-    // For Values, the flush returns the current selection
-    // Resources are selected from existing values, so just return current IDs
-    if (!group_id) {
+  flushRef.current = async (): Promise<{ values_id: string | null } | void> => {
+    if (!createValuesAction || !group_id) {
       return;
     }
-    return { value_ids: ids };
+
+    // Skip if no change AND we already have a resource
+    if (internalValue === lastSavedValueRef.current && resourceId) {
+      return { values_id: resourceId };
+    }
+
+    try {
+      if (internalValue.trim()) {
+        const result = await createValuesAction({
+          body: {
+            group_id: group_id,
+            value: internalValue,
+            mcp: false,
+            tool_id: create_tool_id ?? undefined,
+          },
+        });
+        if (result.values_id) {
+          onChange([result.values_id]);
+          lastSavedValueRef.current = internalValue;
+          return { values_id: result.values_id };
+        }
+      } else {
+        onChange([]);
+        lastSavedValueRef.current = internalValue;
+        return { values_id: null };
+      }
+    } catch (error) {
+      // eslint-disable-next-line no-console
+      console.error("Failed to create value resource:", error);
+      throw error;
+    }
   };
 
   // Register flush callback with parent
@@ -137,57 +155,118 @@ export function Values({
     }
   }, [registerFlush]);
 
-  // Initialize createdValuesIdsRef with current IDs
+  // Convert value_suggestions UUIDs to value strings for autocomplete
+  const suggestionValues = useMemo(() => {
+    if (valuesArray.length > 0) {
+      return suggestionsList
+        .map((id) => {
+          const obj = valuesArray.find((v) => v.id === id);
+          return obj?.value ?? null;
+        })
+        .filter((val): val is string => val !== null && val.trim() !== "");
+    }
+    if (resource?.value && suggestionsList.includes(resource.id ?? "")) {
+      return [resource.value];
+    }
+    return [];
+  }, [suggestionsList, valuesArray, resource]);
+
+  // Ghost autocomplete: find first prefix match and compute the untyped suffix
+  const ghostMatch = useMemo(() => {
+    const trimmed = internalValue.trim();
+    if (!trimmed) return null;
+    const valueLower = trimmed.toLowerCase();
+    return suggestionValues.find((s) => {
+      const sLower = s.toLowerCase();
+      return sLower.startsWith(valueLower) && sLower !== valueLower;
+    }) ?? null;
+  }, [suggestionValues, internalValue]);
+
+  const ghostSuffix = ghostMatch ? ghostMatch.slice(internalValue.length) : "";
+
+  // Update internal value when resource changes
   useEffect(() => {
-    ids.forEach((id) => createdValuesIdsRef.current.add(id));
-  }, [ids]);
+    if (resourceValue) {
+      if (internalValue !== resourceValue) {
+        setInternalValue(resourceValue);
+      }
+      lastSavedValueRef.current = resourceValue;
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [resourceValue]);
 
-  // Convert values array to ValuesItem format for GenericPicker
-  const valuesItems = useMemo(() => {
-    return filteredValues
-      .filter((m) => m.id && m.value) // Filter out nulls
-      .map((m) => ({
-        id: m.id!,
-        name: m.value!,
-      }));
-  }, [filteredValues]);
+  // Track pending changes (for manual save mode only)
+  useEffect(() => {
+    if (isAutosaveEnabled) return;
+    if (isInitialMountRef.current) return;
 
-  // Check if a values is suggested
-  const isSuggested = useCallback(
-    (valuesId: string) => suggestionsList.includes(valuesId),
-    [suggestionsList]
-  );
+    const hasPendingChanges = internalValue !== lastSavedValueRef.current;
+    if (hasPendingChanges) {
+      window.dispatchEvent(
+        new CustomEvent("unsaved-changes", { detail: { hasChanges: true } })
+      );
+    }
+  }, [internalValue, isAutosaveEnabled]);
 
-  const handleSelect = useCallback(
-    async (selectedIds: string[]) => {
-      // Values are generated, not selected from existing artifacts
-      // Update parent state
-      onChange(selectedIds);
+  // Debounced resource creation - only when autosave is enabled
+  useEffect(() => {
+    if (!isAutosaveEnabled) return;
+
+    if (isInitialMountRef.current) {
+      isInitialMountRef.current = false;
+      lastSavedValueRef.current = internalValue;
+      return;
+    }
+
+    if (internalValue === lastSavedValueRef.current) return;
+    if (!createValuesAction) return;
+
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
+
+    debounceTimerRef.current = setTimeout(() => {
+      flushRef.current?.();
+    }, 1000);
+
+    return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+    };
+  }, [internalValue, createValuesAction, isAutosaveEnabled]);
+
+  const handleChange = useCallback((newValue: string) => {
+    setInternalValue(newValue);
+  }, []);
+
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLInputElement>) => {
+      if (e.key === "Tab" && ghostSuffix) {
+        e.preventDefault();
+        setInternalValue(ghostMatch!);
+      }
     },
-    [onChange]
+    [ghostSuffix, ghostMatch]
   );
 
-  // Check if any values resource is generated (must be before early return)
+  // Check if any value resource is generated
   const hasGenerated = useMemo(() => {
-    return value_resources?.some((m) => m.generated) ?? false;
-  }, [value_resources]);
+    return resource?.generated ?? false;
+  }, [resource]);
 
-  // AI suggestion state
-  const showDiff = aiSuggestions.length > 0;
-
-  // Accept AI suggestion - add AI-suggested values to selection
+  // Accept AI suggestion
   const handleAccept = useCallback(() => {
-    if (aiSuggestions.length === 0) return;
-    const aiIds = aiSuggestions
-      .map((r) => r.value_id)
-      .filter((id): id is string => !!id);
-    // Add AI-suggested IDs to existing selection
-    const newIds = [...ids, ...aiIds.filter((id) => !ids.includes(id))];
-    onChange(newIds);
+    if (!aiSuggestion?.id) return;
+    if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+    const text = aiSuggestion.value || "";
+    setInternalValue(text);
+    lastSavedValueRef.current = text;
+    onChange([aiSuggestion.id]);
     clearAi();
-  }, [aiSuggestions, ids, onChange, clearAi]);
+  }, [aiSuggestion, onChange, clearAi]);
 
-  // Reject AI suggestion - just clear the pending state
+  // Reject AI suggestion
   const handleReject = useCallback(() => {
     clearAi();
   }, [clearAi]);
@@ -196,6 +275,9 @@ export function Values({
   if (!show) {
     return null;
   }
+
+  // AI suggestion text
+  const aiValue = aiSuggestion?.value || "";
 
   return (
     <div className="space-y-2">
@@ -273,68 +355,36 @@ export function Values({
           )}
         </div>
       )}
-      {/* AI-suggested values preview */}
-      {showDiff && aiSuggestions.length > 0 && (
-        <div className="mb-4 space-y-2">
-          <p className="text-sm font-medium text-success">AI Suggested Values</p>
-          <div className="space-y-2">
-            {aiSuggestions.map((item, idx) => (
-              <div
-                key={item.value_id || idx}
-                className={cn(
-                  "p-3 rounded-lg border-2 border-success bg-success/10",
-                  "text-sm"
-                )}
-              >
-                {item.value || ""}
-              </div>
-            ))}
-          </div>
+      {showDiff ? (
+        <div className="flex items-center gap-2 px-3 py-2 rounded-md border">
+          <span className="text-sm text-destructive line-through opacity-70">
+            {internalValue || "Empty"}
+          </span>
+          <span className="text-sm text-success">
+            {aiValue}
+          </span>
+        </div>
+      ) : (
+        <div className="relative">
+          <Input
+            id={id}
+            type="text"
+            value={internalValue}
+            onChange={(e) => handleChange(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder={placeholder}
+            required={required}
+            disabled={disabled}
+            className={cn(ghostSuffix && "pr-0")}
+          />
+          {ghostSuffix && !disabled && (
+            <div className="absolute inset-0 pointer-events-none flex items-center px-3">
+              <span className="invisible text-sm">{internalValue}</span>
+              <span className="text-sm text-muted-foreground/40">{ghostSuffix}</span>
+            </div>
+          )}
         </div>
       )}
-      <GenericPicker<ValuesItem>
-        items={valuesItems}
-        itemIds={filteredValues
-          .map((m) => m.id)
-          .filter((id): id is string => id !== null)} // All values IDs from array, filter nulls
-        selectedIds={ids}
-        onSelect={handleSelect}
-        multiSelect={true}
-        getId={(item) => item.id}
-        getLabel={(item) => item.name}
-        renderItem={(item, isSelected) => (
-          <div className="flex items-center justify-between w-full">
-            <div className="flex items-center gap-2 flex-1 min-w-0">
-              {isSuggested(item.id) && !isSelected && (
-                <span className="px-1.5 py-0.5 bg-primary/10 text-primary text-xs rounded shrink-0">
-                  Suggested
-                </span>
-              )}
-              <div className="flex-1 min-w-0">
-                <div className="truncate">{item.name}</div>
-                {item.description && (
-                  <div className="text-xs text-muted-foreground truncate">
-                    {item.description}
-                  </div>
-                )}
-              </div>
-            </div>
-            <Check
-              className={cn(
-                "ml-auto flex-shrink-0 h-4 w-4",
-                isSelected ? "opacity-100" : "opacity-0"
-              )}
-            />
-          </div>
-        )}
-        {...(searchTerm !== undefined ? { initialSearchTerm: searchTerm } : {})}
-        {...(onSearchChange ? { onSearchChange } : {})}
-        placeholder={placeholder}
-        disabled={disabled}
-        showLabel={false}
-        hideSelectedChips={false}
-        showClearAll={true}
-      />
     </div>
   );
 }

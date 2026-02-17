@@ -56,8 +56,6 @@ export interface RunPositionsProps {
   isAutosaveEnabled?: boolean;
   /** Register a flush callback with parent for manual save */
   registerFlush?: (flush: () => Promise<FlushResult>) => void;
-  // AI diff props (deprecated - now handled by useResourceAi hook)
-  aiRunPositionResources?: Pick<RunPositionsResourceItem, "id" | "value">[] | null;
   showAiGenerate?: boolean;
   onGenerate?: () => void | Promise<void>;
 }
@@ -73,8 +71,8 @@ export function RunPositions({
   label = "Run Positions",
   group_id,
   create_tool_id,
-  createRunPositionsAction: _createRunPositionsAction,
-  isAutosaveEnabled: _isAutosaveEnabled = true,
+  createRunPositionsAction,
+  isAutosaveEnabled = true,
   registerFlush,
   showAiGenerate = false,
   onGenerate,
@@ -95,6 +93,14 @@ export function RunPositions({
 
   // Ref for flush function (stable reference for registerFlush)
   const flushRef = useRef<(() => Promise<FlushResult>) | undefined>(undefined);
+
+  // Track which position IDs have already had resources created
+  const createdPositionIdsRef = useRef<Set<string>>(new Set());
+
+  // Initialize createdPositionIdsRef with current IDs
+  useEffect(() => {
+    ids.forEach((id) => createdPositionIdsRef.current.add(id));
+  }, [ids]);
 
   // Update flush function when dependencies change
   flushRef.current = async (): Promise<FlushResult> => {
@@ -148,9 +154,46 @@ export function RunPositions({
 
   const handleSelect = useCallback(
     (selectedIds: string[]) => {
+      // Find newly selected IDs
+      const newlySelected = selectedIds.filter(
+        (id) => !ids.includes(id) && !createdPositionIdsRef.current.has(id)
+      );
+
+      // Create resources for newly selected positions (only if autosave is enabled)
+      if (
+        isAutosaveEnabled &&
+        newlySelected.length > 0 &&
+        createRunPositionsAction &&
+        create_tool_id &&
+        group_id
+      ) {
+        for (const positionId of newlySelected) {
+          const positionItem = allItems.find((r) => r.id === positionId);
+          if (positionItem?.runs_id && positionItem?.eval_id) {
+            void (async () => {
+              try {
+                await createRunPositionsAction({
+                  body: {
+                    group_id: group_id,
+                    runs_id: positionItem.runs_id,
+                    eval_id: positionItem.eval_id,
+                    value: positionItem.value ?? undefined,
+                    mcp: false,
+                    tool_id: create_tool_id ?? undefined,
+                  },
+                });
+                createdPositionIdsRef.current.add(positionId);
+              } catch {
+                // Don't block UI
+              }
+            })();
+          }
+        }
+      }
+
       onChange(selectedIds);
     },
-    [onChange]
+    [ids, onChange, createRunPositionsAction, create_tool_id, group_id, allItems, isAutosaveEnabled]
   );
 
   // Check if any resource is generated (must be before early return)

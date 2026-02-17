@@ -17,16 +17,10 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import type { InputOf, OutputOf } from "@/lib/api/types";
+import type { OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 import { Check, Loader2, Sparkles, X } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef } from "react";
-
-type CreateDraftParametersIn = InputOf<"/api/v4/resources/parameters", "post">;
-type CreateDraftParametersOut = OutputOf<
-  "/api/v4/resources/parameters",
-  "post"
->;
+import { useCallback, useEffect, useMemo } from "react";
 
 // Derive resource item type from the GET endpoint response
 type ParameterGetResponse = OutputOf<
@@ -58,9 +52,6 @@ export interface ParametersProps {
   description?: string;
   group_id?: string | null; // Group ID for linking resources
   showAiGenerate?: boolean; // Whether to show AI generate button (computed server-side)
-  createParametersAction?:
-    | ((input: CreateDraftParametersIn) => Promise<CreateDraftParametersOut>)
-    | undefined;
   onGenerate?: () => void | Promise<void>;
   searchTerm?: string; // Search term for filtering parameters
   onSearchChange?: (term: string) => void; // Callback when search term changes
@@ -70,12 +61,6 @@ export interface ParametersProps {
   aiParameterResources?:
     | Pick<ParameterResourceItem, "parameter_id" | "name">[]
     | null;
-  /** When false, skip automatic resource creation (manual save mode) */
-  isAutosaveEnabled?: boolean;
-  /** Register a flush callback with parent for manual save - returns created ID */
-  registerFlush?: (
-    flush: () => Promise<{ parameter_id: string | null } | void>,
-  ) => void;
 }
 
 export function Parameters({
@@ -93,7 +78,6 @@ export function Parameters({
   description,
   group_id,
   showAiGenerate = false,
-  createParametersAction,
   onGenerate,
   searchTerm = "",
   onSearchChange,
@@ -101,8 +85,6 @@ export function Parameters({
   onShowSelectedChange,
   videoEnabled = false,
   aiParameterResources,
-  isAutosaveEnabled = true,
-  registerFlush,
 }: ParametersProps) {
   const ids = useMemo(() => parameter_ids ?? [], [parameter_ids]);
   const show = show_parameters ?? false;
@@ -190,61 +172,6 @@ export function Parameters({
     }
   }, [showSelectedFilter, onShowSelectedChange]);
 
-  // Track which parameters IDs have already had resources created
-  const createdParametersIdsRef = useRef<Set<string>>(new Set());
-
-  // Ref for flush function (stable reference for registerFlush)
-  const flushRef = useRef<
-    (() => Promise<{ parameter_id: string | null } | void>) | undefined
-  >(undefined);
-
-  // Update flush function when dependencies change
-  flushRef.current = async (): Promise<{
-    parameter_id: string | null;
-  } | void> => {
-    // Parameters component uses multi-select - flush creates resources for any uncreated selections
-    if (!createParametersAction || !group_id) {
-      return;
-    }
-
-    const uncreatedIds = ids.filter(
-      (id) => !createdParametersIdsRef.current.has(id),
-    );
-    for (const parameterId of uncreatedIds) {
-      try {
-        await createParametersAction({
-          body: {
-            group_id: group_id,
-            parameter_id: parameterId,
-            mcp: false,
-          },
-        });
-        createdParametersIdsRef.current.add(parameterId);
-      } catch (error) {
-        // eslint-disable-next-line no-console
-        console.error(
-          `Failed to create parameters resource for ${parameterId}:`,
-          error,
-        );
-      }
-    }
-
-    // Return the first parameter_id or null
-    return { parameter_id: ids.length > 0 ? ids[0] : null };
-  };
-
-  // Register flush callback with parent
-  useEffect(() => {
-    if (registerFlush) {
-      registerFlush(() => flushRef.current?.() ?? Promise.resolve());
-    }
-  }, [registerFlush]);
-
-  // Initialize createdParametersIdsRef with current IDs
-  useEffect(() => {
-    ids.forEach((id) => createdParametersIdsRef.current.add(id));
-  }, [ids]);
-
   // Convert parameters array to ParametersItem format for GenericPicker
   // Filter out conditional parameters - they are auto-selected via field selection
   const parametersItems = useMemo(() => {
@@ -284,45 +211,14 @@ export function Parameters({
   );
 
   const handleSelect = useCallback(
-    async (parametersId: string) => {
+    (parametersId: string) => {
       const isSelected = ids.includes(parametersId);
-      let newIds: string[];
-
-      if (isSelected) {
-        newIds = ids.filter((id) => id !== parametersId);
-      } else {
-        newIds = [...ids, parametersId];
-
-        // Only auto-create resources when autosave is enabled
-        if (
-          isAutosaveEnabled &&
-          !createdParametersIdsRef.current.has(parametersId) &&
-          createParametersAction &&
-          group_id
-        ) {
-          try {
-            await createParametersAction({
-              body: {
-                group_id: group_id,
-                parameter_id: parametersId,
-                mcp: false,
-              },
-            });
-            createdParametersIdsRef.current.add(parametersId);
-          } catch (error) {
-            // eslint-disable-next-line no-console
-            console.error(
-              `Failed to create parameters resource for ${parametersId}:`,
-              error,
-            );
-            // Don't block UI - still update selection
-          }
-        }
-      }
-
+      const newIds = isSelected
+        ? ids.filter((id) => id !== parametersId)
+        : [...ids, parametersId];
       onChange(newIds);
     },
-    [ids, onChange, createParametersAction, group_id, isAutosaveEnabled],
+    [ids, onChange],
   );
 
   // Check if any parameters resource is generated (must be before early return)
