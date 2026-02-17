@@ -6,7 +6,7 @@ from fastapi import APIRouter
 
 from app.main import get_internal_sio, sio
 from app.socket.v4.artifacts.benchmark.types import (
-    BenchmarkBundleGenerationErrorEvent,
+    SuiteGenerationErrorEvent,
 )
 from app.utils.logging.db_logger import get_logger
 
@@ -23,9 +23,9 @@ server_router = APIRouter()
 # =============================================================================
 
 
-@server_router.post("/benchmark_bundle_generation_error")
-async def benchmark_bundle_generation_error_api(
-    request: BenchmarkBundleGenerationErrorEvent,
+@server_router.post("/suite_generation_error")
+async def suite_generation_error_api(
+    request: SuiteGenerationErrorEvent,
 ) -> dict[str, bool]:
     """Server-to-client event: Benchmark bundle generation error.
 
@@ -36,10 +36,10 @@ async def benchmark_bundle_generation_error_api(
 
 @internal_sio.on("generate_call_error")  # type: ignore
 @internal_sio.on("generate_text_error")  # type: ignore
-async def handle_benchmark_bundle_error(data: dict[str, Any]) -> None:
-    """Handle generate_*_error event - filter by benchmark_bundle artifact_type and emit benchmark-bundle-specific event."""
+async def handle_suite_error(data: dict[str, Any]) -> None:
+    """Handle generate_*_error event - filter by suite artifact_type and emit benchmark-bundle-specific event."""
     artifact_type = data.get("artifact_type")
-    if artifact_type != "benchmark_bundle":
+    if artifact_type != "suite":
         return
 
     sid = data.get("sid", "")
@@ -53,8 +53,8 @@ async def handle_benchmark_bundle_error(data: dict[str, Any]) -> None:
         "message", "An error occurred during benchmark bundle generation"
     )
 
-    event = BenchmarkBundleGenerationErrorEvent(
-        artifact_type="benchmark_bundle",
+    event = SuiteGenerationErrorEvent(
+        artifact_type="suite",
         group_id=data.get("group_id"),
         resource_type=resource_type,
         resource_types=resource_types if resource_types else None,
@@ -64,7 +64,7 @@ async def handle_benchmark_bundle_error(data: dict[str, Any]) -> None:
         trace_id=data.get("trace_id"),
     )
     await sio.emit(
-        "benchmark_bundle_generation_error",
+        "suite_generation_error",
         event.model_dump(mode="json"),
         room=sid,
     )

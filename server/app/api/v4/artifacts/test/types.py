@@ -43,7 +43,7 @@ class TestRunItem(BaseModel):
     invocation_id: str
     run_id: str | None = None
     group_id: str | None = None
-    benchmark_bundle_entry_id: str | None = None
+    suite_entry_id: str | None = None
     model_name: str | None = None
     agent_name: str | None = None
     status: str = "not_started"
@@ -61,8 +61,8 @@ class TestStatusSummary(BaseModel):
 class TestViews(BaseModel):
     """View payloads grouped by view type."""
 
-    benchmark_tests: list[BenchmarkTestViewItem] | None = None
-    benchmark_invocations: list[BenchmarkInvocationViewItem] | None = None
+    test: list[BenchmarkTestViewItem] | None = None
+    test_invocation: list[BenchmarkInvocationViewItem] | None = None
     runs: GetRunListViewResponse | None = None
 
 

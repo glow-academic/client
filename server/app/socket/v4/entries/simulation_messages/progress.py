@@ -5,7 +5,7 @@ from typing import Any
 from fastapi import APIRouter
 
 from app.main import get_internal_sio, sio
-from app.socket.v4.entries.simulation_messages.types import (
+from app.socket.v4.entries.attempt_message.types import (
     SimulationMessagesGenerationEvent,
 )
 from app.socket.v4.entries.utils import resolve_entry_type
@@ -34,7 +34,7 @@ async def handle_progress(data: dict[str, Any]) -> None:
     )
 
     await sio.emit(
-        "simulation_messages_generation_progress",
+        "attempt_message_generation_progress",
         event.model_dump(mode="json"),
         room=sid,
     )
@@ -46,11 +46,11 @@ async def handle_progress(data: dict[str, Any]) -> None:
 
 
 @internal_sio.on("generate_call_progress")  # type: ignore
-async def simulation_messages_call_progress_listener(data: dict[str, Any]) -> None:
-    """Listen for tool_call_delta events targeting simulation_messages."""
+async def attempt_message_call_progress_listener(data: dict[str, Any]) -> None:
+    """Listen for tool_call_delta events targeting attempt_message."""
     if data.get("event_type") != "tool_call_delta":
         return
-    if resolve_entry_type(data) != "simulation_messages":
+    if resolve_entry_type(data) != "attempt_message":
         return
     await handle_progress(data)
 
@@ -60,8 +60,8 @@ async def simulation_messages_call_progress_listener(data: dict[str, Any]) -> No
 # =============================================================================
 
 
-@server_router.post("/simulation_messages_generation_progress")
-async def simulation_messages_generation_progress_api(
+@server_router.post("/attempt_message_generation_progress")
+async def attempt_message_generation_progress_api(
     request: SimulationMessagesGenerationEvent,
 ) -> dict[str, bool]:
     """Server-to-client event: SimulationMessages generation progress."""

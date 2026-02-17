@@ -35,7 +35,7 @@ END $$;
 CREATE TYPE types.q_get_benchmark_context_view_v4_item AS (
     benchmark_id uuid,
     eval_ids uuid[],
-    benchmark_bundle_entry_ids uuid[],
+    suite_entry_ids uuid[],
     department_ids uuid[],
     profile_ids uuid[],
     run_rubric_ids uuid[],
@@ -80,7 +80,7 @@ SELECT
                 (
                     ab.benchmark_id,
                     ab.eval_ids,
-                    ab.benchmark_bundle_entry_ids,
+                    ab.suite_entry_ids,
                     ab.department_ids,
                     ab.profile_ids,
                     ab.run_rubric_ids,

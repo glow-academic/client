@@ -70,7 +70,7 @@ def _build_test_jinja_context(
 
     Resources are the current selections (from get_test_internal's config chain).
     Templates access resources directly: {{ rubrics }}, {{ agents[0].temperature }}
-    Views (e.g. benchmark_invocations) are injected separately.
+    Views (e.g. test_invocation) are injected separately.
     """
     if response.resources:
         return response.resources.model_dump(mode="json")
@@ -392,14 +392,14 @@ async def _test_generate_impl(
             # Inject views into Jinja context for template access
             if result.views:
                 views_dict: dict[str, Any] = {}
-                if result.views.benchmark_invocations:
-                    views_dict["benchmark_invocations"] = [
+                if result.views.test_invocation:
+                    views_dict["test_invocation"] = [
                         inv.model_dump(mode="json")
-                        for inv in result.views.benchmark_invocations
+                        for inv in result.views.test_invocation
                     ]
-                if result.views.benchmark_tests:
-                    views_dict["benchmark_tests"] = [
-                        t.model_dump(mode="json") for t in result.views.benchmark_tests
+                if result.views.test:
+                    views_dict["test"] = [
+                        t.model_dump(mode="json") for t in result.views.test
                     ]
                 jinja_context["views"] = views_dict
 

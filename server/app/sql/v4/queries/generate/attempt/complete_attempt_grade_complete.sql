@@ -37,7 +37,7 @@ BEGIN
 
     -- Update grade score and passed (only if values provided)
     IF p_score IS NOT NULL OR p_passed IS NOT NULL THEN
-        UPDATE simulation_grades_entry
+        UPDATE attempt_grade_entry
         SET score = COALESCE(p_score, score),
             passed = COALESCE(p_passed, passed),
             updated_at = NOW()

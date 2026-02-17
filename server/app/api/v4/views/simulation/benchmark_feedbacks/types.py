@@ -1,4 +1,4 @@
-"""Types for simulation benchmark_feedbacks view."""
+"""Types for simulation test_feedback view."""
 
 from datetime import datetime
 from uuid import UUID

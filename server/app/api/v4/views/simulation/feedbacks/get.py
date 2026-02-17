@@ -19,12 +19,12 @@ from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
 from app.utils.sql_helper import execute_sql_typed
 
-SQL_PATH = "app/sql/v4/queries/views/simulation/feedbacks/get_simulation_feedbacks_view_complete.sql"
+SQL_PATH = "app/sql/v4/queries/views/simulation/feedbacks/get_attempt_feedback_view_complete.sql"
 
 router = APIRouter()
 
 
-async def get_simulation_feedbacks_internal(
+async def get_attempt_feedback_internal(
     conn: asyncpg.Connection,
     grade_ids: list[UUID],
     bypass_cache: bool = False,
@@ -89,7 +89,7 @@ async def get_feedbacks(
     sql_query: str | None = None
     sql_params: tuple[Any, ...] | None = None
     try:
-        items = await get_simulation_feedbacks_internal(
+        items = await get_attempt_feedback_internal(
             conn=conn,
             grade_ids=request.grade_ids,
             bypass_cache=bypass_cache,
@@ -104,7 +104,7 @@ async def get_feedbacks(
         handle_route_error(
             error=e,
             route_path=http_request.url.path,
-            operation="views_simulation_feedbacks_get",
+            operation="views_attempt_feedback_get",
             sql_query=sql_query,
             sql_params=sql_params,
             request=http_request,

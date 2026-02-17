@@ -1,6 +1,6 @@
 -- ============================================================================
--- Query: get_simulation_grades_view
--- Purpose: Fetch grade-level data from mv_simulation_grades with declarative filters
+-- Query: get_attempt_grade_view
+-- Purpose: Fetch grade-level data from mv_attempt_grades with declarative filters
 -- Section: VIEWS/SIMULATION/GRADES
 -- ============================================================================
 
@@ -15,10 +15,10 @@ BEGIN
     FOR r IN
         SELECT oidvectortypes(proargtypes) as sig
         FROM pg_proc
-        WHERE proname = 'api_get_simulation_grades_view_v4'
+        WHERE proname = 'api_get_attempt_grade_view_v4'
           AND pronamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'public')
     LOOP
-        EXECUTE format('DROP FUNCTION IF EXISTS api_get_simulation_grades_view_v4(%s)', r.sig);
+        EXECUTE format('DROP FUNCTION IF EXISTS api_get_attempt_grade_view_v4(%s)', r.sig);
     END LOOP;
 END $$;
 
@@ -33,7 +33,7 @@ BEGIN
     FOR r IN
         SELECT typname
         FROM pg_type
-        WHERE typname LIKE 'q_get_simulation_grades_view_v4_%'
+        WHERE typname LIKE 'q_get_attempt_grade_view_v4_%'
           AND typnamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'types')
     LOOP
         EXECUTE format('DROP TYPE IF EXISTS types.%I CASCADE', r.typname);
@@ -44,7 +44,7 @@ END $$;
 -- Step 3: Create composite types
 -- ============================================================================
 
-CREATE TYPE types.q_get_simulation_grades_view_v4_item AS (
+CREATE TYPE types.q_get_attempt_grade_view_v4_item AS (
     grade_id uuid,
     chat_id uuid,
     score float,
@@ -60,11 +60,11 @@ CREATE TYPE types.q_get_simulation_grades_view_v4_item AS (
 -- Step 4: Create function
 -- ============================================================================
 
-CREATE OR REPLACE FUNCTION api_get_simulation_grades_view_v4(
+CREATE OR REPLACE FUNCTION api_get_attempt_grade_view_v4(
     chat_ids_filter uuid[]
 )
 RETURNS TABLE (
-    items types.q_get_simulation_grades_view_v4_item[]
+    items types.q_get_attempt_grade_view_v4_item[]
 )
 LANGUAGE sql
 STABLE
@@ -72,7 +72,7 @@ AS $$
     WITH
     mv_data AS (
         SELECT mv.*
-        FROM mv_simulation_grades mv
+        FROM mv_attempt_grades mv
         WHERE mv.chat_id = ANY(chat_ids_filter)
     ),
     items_agg AS (
@@ -88,10 +88,10 @@ AS $$
                     mv.pass_points,
                     mv.rubric_id,
                     mv.created_at
-                )::types.q_get_simulation_grades_view_v4_item
+                )::types.q_get_attempt_grade_view_v4_item
                 ORDER BY mv.chat_id
             ),
-            ARRAY[]::types.q_get_simulation_grades_view_v4_item[]
+            ARRAY[]::types.q_get_attempt_grade_view_v4_item[]
         ) AS items
         FROM mv_data mv
     )

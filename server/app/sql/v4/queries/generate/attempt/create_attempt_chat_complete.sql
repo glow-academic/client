@@ -19,7 +19,7 @@ END $$;
 CREATE OR REPLACE FUNCTION socket_create_attempt_chat_v4(
     p_profile_id uuid,
     p_attempt_id uuid,
-    p_training_bundle_department_id uuid
+    p_training_department_id uuid
 )
 RETURNS TABLE (chat_id uuid)
 LANGUAGE plpgsql
@@ -34,8 +34,8 @@ DECLARE
     v_entry RECORD;
 BEGIN
     -- Create chat entry.
-    INSERT INTO simulation_chats_entry (attempt_id, created_at, updated_at, title, training_bundle_department_id)
-    VALUES (p_attempt_id, NOW(), NOW(), 'Chat', p_training_bundle_department_id)
+    INSERT INTO attempt_chat_entry (attempt_id, created_at, updated_at, title, training_department_id)
+    VALUES (p_attempt_id, NOW(), NOW(), 'Chat', p_training_department_id)
     RETURNING id INTO v_chat_id;
 
     -- Create per-entry config snapshots by resolving agents server-side.
@@ -61,7 +61,7 @@ BEGIN
         VALUES (NOW(), NOW(), v_session_id)
         RETURNING id, trace_id INTO v_group_id, v_trace_id;
 
-        UPDATE simulation_chats_entry
+        UPDATE attempt_chat_entry
         SET group_id = v_group_id
         WHERE id = v_chat_id;
 

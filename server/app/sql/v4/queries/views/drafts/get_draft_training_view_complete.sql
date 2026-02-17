@@ -1,6 +1,6 @@
 -- ==========================================================================
 -- Query: get_draft_training_view
--- Purpose: Fetch draft-level denormalized data from mv_draft_training_bundle
+-- Purpose: Fetch draft-level denormalized data from mv_draft_training
 -- Section: VIEWS/DRAFTS
 -- ==========================================================================
 
@@ -32,7 +32,7 @@ BEGIN
     END LOOP;
 END $$;
 
--- Drop old "training_bundle" names if they exist from prior compile
+-- Drop old "training" names if they exist from prior compile
 DO $$
 DECLARE
     r RECORD;
@@ -40,10 +40,10 @@ BEGIN
     FOR r IN
         SELECT oidvectortypes(proargtypes) as sig
         FROM pg_proc
-        WHERE proname = 'api_get_draft_training_bundle_view_v4'
+        WHERE proname = 'api_get_draft_training_view_v4'
           AND pronamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'public')
     LOOP
-        EXECUTE format('DROP FUNCTION IF EXISTS api_get_draft_training_bundle_view_v4(%s)', r.sig);
+        EXECUTE format('DROP FUNCTION IF EXISTS api_get_draft_training_view_v4(%s)', r.sig);
     END LOOP;
 END $$;
 
@@ -54,7 +54,7 @@ BEGIN
     FOR r IN
         SELECT typname
         FROM pg_type
-        WHERE typname LIKE 'q_get_draft_training_bundle_view_v4_%'
+        WHERE typname LIKE 'q_get_draft_training_view_v4_%'
           AND typnamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'types')
     LOOP
         EXECUTE format('DROP TYPE IF EXISTS types.%I CASCADE', r.typname);
@@ -95,7 +95,7 @@ STABLE
 AS $$
     WITH mv_data AS (
         SELECT mv.*
-        FROM mv_draft_training_bundle mv
+        FROM mv_draft_training mv
         WHERE
             draft_ids IS NULL
             OR cardinality(draft_ids) = 0

@@ -1,14 +1,14 @@
-"""Unified event model for simulation_messages entry socket events."""
+"""Unified event model for attempt_message entry socket events."""
 
 from pydantic import BaseModel
 
 
 class SimulationMessagesGenerationEvent(BaseModel):
-    """Unified socket event for simulation_messages generation. Same type for all 4 events."""
+    """Unified socket event for attempt_message generation. Same type for all 4 events."""
 
     # Metadata
     artifact_type: str = ""
-    entry_type: str = "simulation_messages"
+    entry_type: str = "attempt_message"
     entry_id: str | None = None
     group_id: str | None = None
     run_id: str | None = None

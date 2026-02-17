@@ -49,17 +49,17 @@ BEGIN
         RAISE EXCEPTION 'Profile resource not found for profile_id %', p_profile_id;
     END IF;
 
-    -- Create benchmark_tests_entry (test)
-    INSERT INTO benchmark_tests_entry (infinite_mode, generated, mcp, created_at, updated_at)
+    -- Create test_entry (test)
+    INSERT INTO test_entry (infinite_mode, generated, mcp, created_at, updated_at)
     VALUES (p_infinite_mode, false, false, NOW(), NOW())
     RETURNING id INTO v_attempt_id;
 
     -- Link attempt to profile (using resource ID)
-    INSERT INTO benchmark_tests_profiles_connection (attempt_id, profiles_id, active)
+    INSERT INTO test_profiles_connection (attempt_id, profiles_id, active)
     VALUES (v_attempt_id, v_profiles_resource_id, true);
 
     -- Link attempt to eval
-    INSERT INTO benchmark_tests_evals_connection (attempt_id, eval_id, active)
+    INSERT INTO test_evals_connection (attempt_id, eval_id, active)
     VALUES (v_attempt_id, p_eval_id, true);
 
     RETURN QUERY SELECT v_attempt_id, p_eval_id;

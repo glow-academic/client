@@ -1,7 +1,7 @@
 """Benchmark bundle progress handler - emits percentage-based progress as resources complete.
 
-Listens on generate_call_complete, filters for benchmark_bundle artifact with tool_result events
-that have a resource_id (successful resource creation), and emits benchmark_bundle_generation_progress
+Listens on generate_call_complete, filters for suite artifact with tool_result events
+that have a resource_id (successful resource creation), and emits suite_generation_progress
 with percentage tracking.
 """
 
@@ -12,7 +12,7 @@ from fastapi import APIRouter
 from app.infra.v4.websocket.generation_tracker import record_resource_complete
 from app.main import get_internal_sio, sio
 from app.socket.v4.artifacts.benchmark.types import (
-    BenchmarkBundleGenerationProgressEvent,
+    SuiteGenerationProgressEvent,
 )
 from app.utils.logging.db_logger import get_logger
 
@@ -24,10 +24,10 @@ server_router = APIRouter()
 
 
 @internal_sio.on("generate_call_complete")  # type: ignore
-async def handle_benchmark_bundle_resource_progress(data: dict[str, Any]) -> None:
+async def handle_suite_resource_progress(data: dict[str, Any]) -> None:
     """Track resource completions and emit benchmark bundle progress percentage."""
     artifact_type = data.get("artifact_type")
-    if artifact_type != "benchmark_bundle":
+    if artifact_type != "suite":
         return
 
     event_type = data.get("event_type")
@@ -56,7 +56,7 @@ async def handle_benchmark_bundle_resource_progress(data: dict[str, Any]) -> Non
 
     percentage = round((completed / total) * 100) if total > 0 else 0
 
-    event = BenchmarkBundleGenerationProgressEvent(
+    event = SuiteGenerationProgressEvent(
         group_id=group_id_str,
         run_id=run_id,
         completed_resources=completed,
@@ -66,7 +66,7 @@ async def handle_benchmark_bundle_resource_progress(data: dict[str, Any]) -> Non
     )
 
     await sio.emit(
-        "benchmark_bundle_generation_progress",
+        "suite_generation_progress",
         event.model_dump(mode="json"),
         room=sid,
     )
@@ -77,9 +77,9 @@ async def handle_benchmark_bundle_resource_progress(data: dict[str, Any]) -> Non
 # =============================================================================
 
 
-@server_router.post("/benchmark_bundle_generation_progress")
-async def benchmark_bundle_generation_progress_api(
-    request: BenchmarkBundleGenerationProgressEvent,
+@server_router.post("/suite_generation_progress")
+async def suite_generation_progress_api(
+    request: SuiteGenerationProgressEvent,
 ) -> dict[str, bool]:
     """Server-to-client event: Benchmark bundle generation progress.
 

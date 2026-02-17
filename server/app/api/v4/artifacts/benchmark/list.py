@@ -17,7 +17,7 @@ from app.api.v4.artifacts.benchmark.types import (
 from app.api.v4.artifacts.types import FilterOption
 from app.api.v4.resources.departments.get import get_departments_internal
 from app.api.v4.resources.evals.get import get_evals_internal
-from app.api.v4.views.benchmark.tests.get import get_benchmark_tests_internal
+from app.api.v4.views.benchmark.tests.get import get_test_internal
 from app.api.v4.views.benchmark.tests.types import BenchmarkTestViewItem
 from app.infra.v4.activity.audit import audit_activity
 from app.infra.v4.error.handle_route_error import handle_route_error
@@ -66,7 +66,7 @@ async def list_benchmark(
         # Step 1: Fetch tests from MV + date range in parallel
         async def fetch_tests():
             async with pool.acquire() as c:
-                return await get_benchmark_tests_internal(
+                return await get_test_internal(
                     conn=c,
                     department_ids=department_uuids,
                     date_from=date_from,
@@ -96,7 +96,7 @@ async def list_benchmark(
                 row = await c.fetchrow(
                     f"""
                     SELECT MIN(created_at) as earliest, MAX(created_at) as latest
-                    FROM mv_benchmark_tests
+                    FROM mv_test
                     WHERE {where}
                     """,
                     *params,

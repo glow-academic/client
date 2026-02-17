@@ -12,7 +12,7 @@ from app.main import get_db
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.sql_helper import load_sql
 
-SQL_PATH = "app/sql/v4/queries/benchmark/archive_benchmark_tests.sql"
+SQL_PATH = "app/sql/v4/queries/benchmark/archive_test.sql"
 
 router = APIRouter()
 

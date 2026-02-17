@@ -6,8 +6,8 @@ Three-layer BFF pattern:
 - get_test_websocket(): WebSocket response layer with config resources
 
 Uses view internal handlers with parallel query execution:
-1. Query 1 (Tests): Test-level data via benchmark_tests view
-2. Query 2 (Invocations): Invocation-level data via benchmark_invocations view
+1. Query 1 (Tests): Test-level data via test view
+2. Query 2 (Invocations): Invocation-level data via test_invocation view
 
 Each query runs on its own connection from the pool for true parallelism.
 """
@@ -39,9 +39,9 @@ from app.api.v4.resources.providers.get import get_providers_internal
 from app.api.v4.resources.rubrics.get import get_rubrics_batch_internal
 from app.api.v4.resources.tools.get import get_tools_internal
 from app.api.v4.views.benchmark.invocations.get import (
-    get_benchmark_invocations_internal,
+    get_test_invocation_internal,
 )
-from app.api.v4.views.benchmark.tests.get import get_benchmark_tests_internal
+from app.api.v4.views.benchmark.tests.get import get_test_internal
 from app.infra.v4.activity.audit import audit_activity
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
@@ -75,7 +75,7 @@ async def get_test_internal(
         # === PARALLEL FETCH: Tests + Invocations ===
         async def fetch_tests() -> list:
             async with pool.acquire() as c:
-                result = await get_benchmark_tests_internal(
+                result = await get_test_internal(
                     conn=c,
                     test_ids=[test_id],
                     bypass_cache=bypass_cache,
@@ -86,7 +86,7 @@ async def get_test_internal(
 
         async def fetch_invocations() -> list:
             async with pool.acquire() as c:
-                return await get_benchmark_invocations_internal(
+                return await get_test_invocation_internal(
                     conn=c,
                     test_id=test_id,
                     bypass_cache=bypass_cache,
@@ -211,18 +211,18 @@ async def get_test_internal(
                     if agent_nid:
                         eval_name_ids.add(agent_nid)
 
-                # Resolve run_ids -> benchmark_bundle_entry_id
+                # Resolve run_ids -> suite_entry_id
                 bundle_rows = await c.fetch(
                     """
-                    SELECT bbrc.runs_id, bbrc.benchmark_bundle_id
-                    FROM benchmark_bundle_runs_connection bbrc
+                    SELECT bbrc.runs_id, bbrc.suite_id
+                    FROM suite_runs_connection bbrc
                     WHERE bbrc.runs_id = ANY($1::uuid[])
                       AND bbrc.active = true
                     """,
                     all_run_ids,
                 )
                 for brow in bundle_rows:
-                    run_bundle_map[brow["runs_id"]] = brow["benchmark_bundle_id"]
+                    run_bundle_map[brow["runs_id"]] = brow["suite_id"]
 
         # === BATCH RESOLVE: evals, names, rubrics ===
         eval_name: str | None = None
@@ -302,7 +302,7 @@ async def get_test_internal(
                     invocation_id=str(invocation.invocation_id),
                     run_id=str(first_run_id) if first_run_id else None,
                     group_id=str(first_group_id) if first_group_id else None,
-                    benchmark_bundle_entry_id=(
+                    suite_entry_id=(
                         str(bundle_entry_id) if bundle_entry_id else None
                     ),
                     model_name=model_name,
@@ -425,8 +425,8 @@ async def get_test_client(
         runs=data.runs,
         status_summary=data.status_summary,
         views=TestViews(
-            benchmark_tests=[data.test],
-            benchmark_invocations=data.invocations,
+            test=[data.test],
+            test_invocation=data.invocations,
         ),
         resources=data.resources_payload,
     )
@@ -533,8 +533,8 @@ async def get_test_websocket(
 
     return GetTestWebsocketResponse(
         views=TestViews(
-            benchmark_tests=[data.test],
-            benchmark_invocations=data.invocations,
+            test=[data.test],
+            test_invocation=data.invocations,
             runs=runs_result,
         ),
         resources=ws_resources,

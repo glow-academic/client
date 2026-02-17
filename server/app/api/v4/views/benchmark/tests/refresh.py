@@ -1,4 +1,4 @@
-"""Refresh mv_benchmark_tests materialized view."""
+"""Refresh mv_test materialized view."""
 
 from typing import Annotated
 
@@ -22,14 +22,14 @@ router = APIRouter()
         )
     ],
 )
-async def refresh_benchmark_tests(
+async def refresh_test(
     http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> dict[str, bool]:
-    """Refresh mv_benchmark_tests concurrently."""
+    """Refresh mv_test concurrently."""
     try:
-        await conn.execute("REFRESH MATERIALIZED VIEW CONCURRENTLY mv_benchmark_tests")
+        await conn.execute("REFRESH MATERIALIZED VIEW CONCURRENTLY mv_test")
         return {"success": True}
     except HTTPException:
         raise
@@ -37,7 +37,7 @@ async def refresh_benchmark_tests(
         handle_route_error(
             error=e,
             route_path=http_request.url.path,
-            operation="views_benchmark_tests_refresh",
+            operation="views_test_refresh",
             request=http_request,
         )
         return {"success": False}

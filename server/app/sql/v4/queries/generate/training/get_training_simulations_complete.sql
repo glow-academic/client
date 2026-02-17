@@ -71,13 +71,35 @@ user_cohorts AS (
       AND pcj.active = true
 ),
 accessible_training AS (
-    SELECT mt.*
-    FROM mv_training mt
-    JOIN user_cohorts uc
-      ON mt.cohort_ids && COALESCE(uc.cohort_ids, ARRAY[]::uuid[])
-    WHERE mt.practice = (SELECT practice FROM params)
+    SELECT
+        mh.home_id AS parent_id,
+        mh.simulation_ids,
+        mh.cohort_ids,
+        mh.training_ids AS training_entry_ids,
+        mh.scenario_ids,
+        mh.persona_ids,
+        mh.rubric_ids,
+        mh.time_limit_ids
+    FROM mv_home mh
+    JOIN user_cohorts uc ON mh.cohort_ids && COALESCE(uc.cohort_ids, ARRAY[]::uuid[])
+    WHERE (SELECT practice FROM params) = false
+
+    UNION ALL
+
+    SELECT
+        mp.practice_id AS parent_id,
+        mp.simulation_ids,
+        mp.cohort_ids,
+        mp.training_ids AS training_entry_ids,
+        mp.scenario_ids,
+        mp.persona_ids,
+        mp.rubric_ids,
+        mp.time_limit_ids
+    FROM mv_practice mp
+    JOIN user_cohorts uc ON mp.cohort_ids && COALESCE(uc.cohort_ids, ARRAY[]::uuid[])
+    WHERE (SELECT practice FROM params) = true
 ),
--- Unnest simulation_ids from mv_training, check simulation_active flag
+-- Unnest simulation_ids from mv_home/mv_practice, check simulation_active flag
 active_simulations AS (
     SELECT DISTINCT sid.simulation_id
     FROM accessible_training at2
@@ -185,11 +207,11 @@ latest_attempt_grades AS (
         a.id AS attempt_id,
         MAX(g.score) AS score_percent,
         BOOL_OR(g.passed) AS has_passed
-    FROM simulation_attempts_entry a
-    LEFT JOIN simulation_chats_entry c ON c.attempt_id = a.id AND c.active = true
-    LEFT JOIN simulation_grades_entry g ON g.chat_id = c.id AND g.active = true
+    FROM attempt_entry a
+    LEFT JOIN attempt_chat_entry c ON c.attempt_id = a.id AND c.active = true
+    LEFT JOIN attempt_grade_entry g ON g.chat_id = c.id AND g.active = true
     LEFT JOIN LATERAL (
-        SELECT archived FROM simulation_archives_entry
+        SELECT archived FROM attempt_archive_entry
         WHERE attempt_id = a.id AND active = TRUE ORDER BY created_at DESC LIMIT 1
     ) sa_archive ON true
     WHERE a.active = true
@@ -198,28 +220,27 @@ latest_attempt_grades AS (
 ),
 simulation_stats AS (
     SELECT
-        t.simulations_id AS simulation_id,
+        COALESCE(hsc.simulations_id, psc.simulations_id) AS simulation_id,
         COUNT(DISTINCT a.id)::int AS attempt_count,
         MAX(lag.score_percent) AS highest_score_percent,
         BOOL_OR(COALESCE(lag.has_passed, false)) AS has_passed
     FROM profile_resource pr
-    JOIN simulation_attempts_profiles_connection apc
+    JOIN attempt_profiles_connection apc
       ON apc.profiles_id = pr.profiles_id
      AND apc.active = true
-    JOIN simulation_attempts_entry a
+    JOIN attempt_entry a
       ON a.id = apc.attempt_id
      AND a.active = true
+     AND a.practice = (SELECT practice FROM params)
     LEFT JOIN LATERAL (
-        SELECT archived FROM simulation_archives_entry
+        SELECT archived FROM attempt_archive_entry
         WHERE attempt_id = a.id AND active = TRUE ORDER BY created_at DESC LIMIT 1
     ) sa_archive2 ON true
-    JOIN training_entry t
-      ON t.id = a.training_id
-     AND t.active = true
-     AND t.practice = (SELECT practice FROM params)
+    LEFT JOIN home_simulations_connection hsc ON hsc.home_id = a.home_id AND hsc.active = true
+    LEFT JOIN practice_simulations_connection psc ON psc.practice_id = a.practice_id AND psc.active = true
     LEFT JOIN latest_attempt_grades lag ON lag.attempt_id = a.id
     WHERE COALESCE(sa_archive2.archived, false) = false
-    GROUP BY t.simulations_id
+    GROUP BY COALESCE(hsc.simulations_id, psc.simulations_id)
 ),
 simulation_data_with_stats AS (
     SELECT

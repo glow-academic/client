@@ -57,10 +57,10 @@ chat_data AS (
         c.id as chat_id,
         c.attempt_id,
         EXISTS (
-            SELECT 1 FROM simulation_completions_entry comp
+            SELECT 1 FROM attempt_completion_entry comp
             WHERE comp.chat_id = c.id AND comp.active = TRUE
         ) as chat_is_completed
-    FROM simulation_chats_entry c
+    FROM attempt_chat_entry c
     WHERE c.id = p_chat_id AND c.active = TRUE
     LIMIT 1
 ),
@@ -68,7 +68,7 @@ attempt_data AS (
     SELECT
         a.id as attempt_id,
         a.active as attempt_is_active
-    FROM simulation_attempts_entry a
+    FROM attempt_entry a
     JOIN chat_data cd ON cd.attempt_id = a.id
     LIMIT 1
 )

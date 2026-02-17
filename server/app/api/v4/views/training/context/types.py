@@ -9,7 +9,7 @@ class TrainingContextViewItem(BaseModel):
     """IDs-first training simulation item — raw IDs only, no computed fields."""
 
     simulation_id: UUID
-    training_bundle_entry_ids: list[UUID] | None = None
+    training_entry_ids: list[UUID] | None = None
     scenario_ids: list[UUID] | None = None
     cohort_ids: list[UUID] | None = None
     persona_ids: list[UUID] | None = None

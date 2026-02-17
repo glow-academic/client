@@ -1,6 +1,6 @@
 -- ==========================================================================
 -- Query: get_draft_benchmark_view
--- Purpose: Fetch draft-level denormalized data from mv_draft_benchmark_bundle
+-- Purpose: Fetch draft-level denormalized data from mv_draft_suite
 -- Section: VIEWS/DRAFTS
 -- ==========================================================================
 
@@ -66,7 +66,7 @@ STABLE
 AS $$
     WITH mv_data AS (
         SELECT mv.*
-        FROM mv_draft_benchmark_bundle mv
+        FROM mv_draft_suite mv
         WHERE
             draft_ids IS NULL
             OR cardinality(draft_ids) = 0

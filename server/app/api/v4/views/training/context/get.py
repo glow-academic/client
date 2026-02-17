@@ -58,9 +58,9 @@ async def get_training_context_view_internal(
             items.append(
                 TrainingContextViewItem(
                     simulation_id=item.simulation_id,
-                    training_bundle_entry_ids=(
-                        list(item.training_bundle_entry_ids)
-                        if item.training_bundle_entry_ids
+                    training_entry_ids=(
+                        list(item.training_entry_ids)
+                        if item.training_entry_ids
                         else None
                     ),
                     scenario_ids=list(item.scenario_ids) if item.scenario_ids else None,

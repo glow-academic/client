@@ -367,7 +367,7 @@ class AttemptStartPayload(BaseModel):
     - Next mode (has attempt_id): checks remaining scenarios and proceeds
     """
 
-    training_bundle_entry_id: UUID | None = None
+    training_entry_id: UUID | None = None
     attempt_id: UUID | None = None
     draft_id: UUID | None = None
     infinite_mode: bool = False
@@ -383,7 +383,7 @@ class AttemptStartedEvent(BaseModel):
     """
 
     attempt_id: str
-    training_bundle_entry_id: str
+    training_entry_id: str
 
 
 class AttemptChatStartedEvent(BaseModel):

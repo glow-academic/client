@@ -1,5 +1,5 @@
 -- Create or reuse assistant message for a run
--- After migration 364: Insert into messages_entry first, then simulation_messages_entry
+-- After migration 364: Insert into messages_entry first, then attempt_message_entry
 -- Uses safe drop/recreate pattern: drop function first, then recreate
 DROP FUNCTION IF EXISTS socket_create_assistant_message_for_run_v4(uuid, uuid);
 
@@ -36,7 +36,7 @@ new_message_base AS (
 ),
 -- Link to simulation chat
 new_message_sim AS (
-    INSERT INTO simulation_messages_entry (id, chat_id)
+    INSERT INTO attempt_message_entry (id, chat_id)
     SELECT nmb.assistant_message_id, p.chat_id
     FROM new_message_base nmb
     CROSS JOIN params p

@@ -105,13 +105,13 @@ simulation_scenarios_data AS (
     JOIN scenarios_resource sr ON sr.id = scen_id
     GROUP BY ssj.simulation_id
 ),
--- Attempt counts via simulation_attempts_simulations_connection
+-- Attempt counts via attempt_simulations_connection
 attempt_counts AS (
     SELECT
         ssj.simulation_id,
         COUNT(DISTINCT sac.attempt_id) as attempt_count
     FROM simulation_simulations_junction ssj
-    JOIN simulation_attempts_simulations_connection sac ON sac.simulations_id = ssj.simulations_id
+    JOIN attempt_simulations_connection sac ON sac.simulations_id = ssj.simulations_id
     GROUP BY ssj.simulation_id
 ),
 -- Cohort data via cohorts_resource.simulation_ids (reverse lookup, replaces view_simulation_edit_state + cohort_simulations_junction)

@@ -40,7 +40,7 @@ CREATE MATERIALIZED VIEW mv_attempt_list AS
 -- Simple attempt-level data only
 -- All aggregates (total_chats, scores, etc.) derived in service layer from chats
 WITH
--- Collect scenario_ids per attempt from chats → training_bundle_departments
+-- Collect scenario_ids per attempt from chats → training_departments
 attempt_scenarios AS (
     SELECT
         c.attempt_id,
@@ -49,12 +49,12 @@ attempt_scenarios AS (
             FILTER (WHERE tsc.scenarios_id IS NOT NULL),
             ARRAY[]::uuid[]
         ) AS scenario_ids
-    FROM simulation_chats_entry c
-    JOIN simulation_attempts_entry a2 ON a2.id = c.attempt_id AND a2.active = TRUE
-    LEFT JOIN training_bundle_departments_entry tbd
-        ON tbd.id = c.training_bundle_department_id AND tbd.active = TRUE
-    LEFT JOIN training_bundle_departments_scenarios_connection tsc
-        ON tsc.training_bundle_department_id = tbd.id AND tsc.active = TRUE
+    FROM attempt_chat_entry c
+    JOIN attempt_entry a2 ON a2.id = c.attempt_id AND a2.active = TRUE
+    LEFT JOIN training_department_entry tbd
+        ON tbd.id = c.training_department_id AND tbd.active = TRUE
+    LEFT JOIN training_department_scenarios_connection tsc
+        ON tsc.training_department_id = tbd.id AND tsc.active = TRUE
     WHERE c.active = TRUE
     GROUP BY c.attempt_id
 )
@@ -81,18 +81,18 @@ SELECT
     -- Scenario IDs (for filtering and display)
     COALESCE(ascn.scenario_ids, ARRAY[]::uuid[]) AS scenario_ids
 
-FROM simulation_attempts_entry a
+FROM attempt_entry a
 -- Attempt connections (required)
-JOIN simulation_attempts_simulations_connection asc_conn ON asc_conn.attempt_id = a.id
-JOIN simulation_attempts_profiles_connection apc ON apc.attempt_id = a.id
+JOIN attempt_simulations_connection asc_conn ON asc_conn.attempt_id = a.id
+JOIN attempt_profiles_connection apc ON apc.attempt_id = a.id
 -- Attempt connections (optional)
-LEFT JOIN simulation_attempts_departments_connection adc ON adc.attempt_id = a.id
-LEFT JOIN simulation_attempts_cohorts_connection acc ON acc.attempt_id = a.id
+LEFT JOIN attempt_departments_connection adc ON adc.attempt_id = a.id
+LEFT JOIN attempt_cohorts_connection acc ON acc.attempt_id = a.id
 -- Scenario IDs (optional)
 LEFT JOIN attempt_scenarios ascn ON ascn.attempt_id = a.id
 -- Latest archive state (append-only)
 LEFT JOIN LATERAL (
-    SELECT archived FROM simulation_archives_entry
+    SELECT archived FROM attempt_archive_entry
     WHERE attempt_id = a.id AND active = TRUE ORDER BY created_at DESC LIMIT 1
 ) sa_archive ON true
 WHERE a.active = TRUE

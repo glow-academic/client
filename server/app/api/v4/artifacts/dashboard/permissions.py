@@ -2807,7 +2807,7 @@ def compute_secondary_metrics_v2(
     cohort_name_map: dict[str, str] | None = None,
     thresholds: dict[str, int] | None = None,
 ) -> DashboardSecondaryMetrics:
-    """Compute secondary section metrics from mv_simulation_facts.
+    """Compute secondary section metrics from mv_attempt_facts.
 
     Secondary section is now simulation-focused:
     - Persona Performance: Group by persona_id → avg grade_percent, trend by date

@@ -41,8 +41,8 @@ WITH chat_info AS (
         c.id as chat_id,
         c.attempt_id,
         sas.simulations_id as simulation_id
-    FROM simulation_chats_entry c
-    JOIN simulation_attempts_simulations_connection sas ON sas.attempt_id = c.attempt_id AND sas.active = true
+    FROM attempt_chat_entry c
+    JOIN attempt_simulations_connection sas ON sas.attempt_id = c.attempt_id AND sas.active = true
     WHERE c.id = p_chat_id
     LIMIT 1
 ),

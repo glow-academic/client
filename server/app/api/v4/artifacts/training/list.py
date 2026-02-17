@@ -534,9 +534,9 @@ async def get_training_internal(
                 [str(sg_id) for sg_id in item_sg_ids] if item_sg_ids else None
             )
 
-            training_bundle_entry_id = (
-                item.training_bundle_entry_ids[0]
-                if item.training_bundle_entry_ids
+            training_entry_id = (
+                item.training_entry_ids[0]
+                if item.training_entry_ids
                 else None
             )
 
@@ -564,7 +564,7 @@ async def get_training_internal(
                         simulation.description if simulation else None
                     ),
                     time_limit=time_limit_minutes,
-                    training_bundle_entry_id=training_bundle_entry_id,
+                    training_entry_id=training_entry_id,
                     scenario_ids=item.scenario_ids,
                     cohort_ids=item.cohort_ids,
                     color=color,
@@ -649,14 +649,14 @@ async def get_training_internal(
 async def get_training_websocket(
     conn: asyncpg.Connection,
     profile_id: UUID,
-    training_bundle_entry_id: UUID,
+    training_entry_id: UUID,
     department_id: UUID,
     draft_id: UUID | None = None,
 ) -> GetTrainingWebsocketResponse:
     """Thin websocket fetch for training start flow."""
     params = GetTrainingStartContextSqlParams(
         p_profile_id=profile_id,
-        p_training_bundle_entry_id=training_bundle_entry_id,
+        p_training_entry_id=training_entry_id,
         p_department_id=department_id,
         p_draft_id=draft_id,
     )
@@ -670,7 +670,7 @@ async def get_training_websocket(
 
     return GetTrainingWebsocketResponse(
         views=TrainingWebsocketViews(
-            training_bundle_entry_id=training_bundle_entry_id,
+            training_entry_id=training_entry_id,
             department_id=department_id,
         ),
         resources=TrainingWebsocketResources(

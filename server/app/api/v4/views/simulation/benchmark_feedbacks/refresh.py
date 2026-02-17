@@ -1,4 +1,4 @@
-"""Refresh endpoint for simulation benchmark_feedbacks view."""
+"""Refresh endpoint for simulation test_feedback view."""
 
 import time
 from typing import Annotated
@@ -19,32 +19,32 @@ router = APIRouter()
     response_model=RefreshResponse,
     dependencies=[
         audit_activity(
-            "views.simulation.benchmark_feedbacks.refresh",
-            "{{ actor.name }} refreshed simulation benchmark_feedbacks view",
+            "views.simulation.test_feedback.refresh",
+            "{{ actor.name }} refreshed simulation test_feedback view",
         )
     ],
 )
-async def refresh_benchmark_feedbacks_view(
+async def refresh_test_feedback_view(
     http_request: Request,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> RefreshResponse:
-    """Refresh the mv_benchmark_feedbacks materialized view concurrently."""
-    tags = ["views", "simulation", "benchmark_feedbacks"]
+    """Refresh the mv_test_feedback materialized view concurrently."""
+    tags = ["views", "simulation", "test_feedback"]
     try:
         start_time = time.time()
         await conn.execute(
-            "REFRESH MATERIALIZED VIEW CONCURRENTLY mv_benchmark_feedbacks"
+            "REFRESH MATERIALIZED VIEW CONCURRENTLY mv_test_feedback"
         )
         duration_ms = int((time.time() - start_time) * 1000)
         await invalidate_tags(tags)
         return RefreshResponse(
             success=True,
             method="concurrent",
-            message=f"Refreshed mv_benchmark_feedbacks in {duration_ms}ms",
+            message=f"Refreshed mv_test_feedback in {duration_ms}ms",
             duration_ms=duration_ms,
         )
     except Exception as e:
         raise HTTPException(
             status_code=500,
-            detail=f"Failed to refresh mv_benchmark_feedbacks: {str(e)}",
+            detail=f"Failed to refresh mv_test_feedback: {str(e)}",
         ) from e

@@ -4,10 +4,10 @@
 -- Grain: One row per message (with run_id)
 -- Filter: active = TRUE AND run_id IS NOT NULL
 --
--- Purpose: Pre-aggregates contents and call_ids from simulation_contents_entry
+-- Purpose: Pre-aggregates contents and call_ids from attempt_content_entry
 -- Section: MESSAGE (lean MV - used by group detail artifact)
 --
--- Dependencies: messages_entry, simulation_contents_entry
+-- Dependencies: messages_entry, attempt_content_entry
 -- ============================================================================
 -- Step 1: Drop all indexes on mv_messages materialized view (if it exists)
 -- ============================================================================
@@ -49,7 +49,7 @@ contents_agg AS (
             ARRAY_AGG(DISTINCT sce.call_id) FILTER (WHERE sce.call_id IS NOT NULL),
             ARRAY[]::uuid[]
         ) AS call_ids
-    FROM simulation_contents_entry sce
+    FROM attempt_content_entry sce
     WHERE sce.active = TRUE
     GROUP BY sce.message_id
 )

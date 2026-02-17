@@ -16,8 +16,8 @@ from typing import Any, cast
 
 from fastapi import APIRouter
 
-from app.api.v4.artifacts.training.get import get_training_bundle_websocket
-from app.api.v4.artifacts.training.types import GetTrainingBundleWebsocketResponse
+from app.api.v4.artifacts.training.get import get_training_websocket
+from app.api.v4.artifacts.training.types import GetTrainingWebsocketResponse
 from app.api.v4.resources.instructions.get import get_instructions_internal
 from app.api.v4.resources.prompts.get import get_prompts_internal
 from app.api.v4.views.config.get import get_config_internal
@@ -41,8 +41,8 @@ from app.socket.v4.artifacts.types import (
 from app.sql.types import (
     GetAgentToolsSqlParams,
     GetAgentToolsSqlRow,
-    PrepareTrainingBundleGenerationSqlParams,
-    PrepareTrainingBundleGenerationSqlRow,
+    PrepareTrainingGenerationSqlParams,
+    PrepareTrainingGenerationSqlRow,
 )
 from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import execute_sql_typed, load_sql
@@ -55,7 +55,7 @@ client_router = APIRouter()
 server_router = APIRouter()
 
 # SQL paths
-SQL_PATH_PREPARE = "app/sql/v4/queries/generate/training_bundle/prepare_training_bundle_generation_complete.sql"
+SQL_PATH_PREPARE = "app/sql/v4/queries/generate/training/prepare_training_generation_complete.sql"
 SQL_PATH_AGENT_TOOLS = (
     "app/sql/v4/queries/generate/persona/get_agent_tools_complete.sql"
 )
@@ -65,11 +65,11 @@ SQL_PATH_CREATE_MESSAGE_WITH_TEXT = (
 
 
 def _build_training_jinja_context(
-    response: GetTrainingBundleWebsocketResponse, resource_types: list[str]
+    response: GetTrainingWebsocketResponse, resource_types: list[str]
 ) -> dict[str, Any]:
     """Build Jinja context with resources as top-level variables.
 
-    Resources are the current selections (from get_training_bundle_internal's ID resolution).
+    Resources are the current selections (from get_training_internal's ID resolution).
     Templates access resources directly: {{ personas[0].name }}, {{ scenarios[0].name }}
     Views (e.g. config) are injected separately after prepare.
     """
@@ -84,7 +84,7 @@ async def _training_generate_impl(
     profile_id: uuid.UUID,
     *,
     attempt_id: str | None = None,
-    training_bundle_department_id: str | None = None,
+    training_department_id: str | None = None,
 ) -> None:
     """Handle training generation with all business logic.
 
@@ -139,10 +139,10 @@ async def _training_generate_impl(
         if not pool:
             raise RuntimeError("Database pool not initialized")
 
-        result = await get_training_bundle_websocket(
+        result = await get_training_websocket(
             pool=pool,
             profile_id=profile_id,
-            training_bundle_entry_id=data.training_bundle_entry_id,
+            training_entry_id=data.training_entry_id,
             draft_id=data.draft_id,
         )
 
@@ -361,7 +361,7 @@ async def _training_generate_impl(
             )
 
             # Step 6: Prepare generation (mutations only: group/run/config creation)
-            prepare_params = PrepareTrainingBundleGenerationSqlParams(
+            prepare_params = PrepareTrainingGenerationSqlParams(
                 p_profile_id=profile_id,
                 p_group_id=existing_group_id,
                 p_agents_resource_id=agent_resource.id,
@@ -369,7 +369,7 @@ async def _training_generate_impl(
                 p_providers_resource_id=provider_resource.id,
             )
             prepare_row = cast(
-                PrepareTrainingBundleGenerationSqlRow,
+                PrepareTrainingGenerationSqlRow,
                 await execute_sql_typed(conn, SQL_PATH_PREPARE, params=prepare_params),
             )
 
@@ -413,14 +413,14 @@ async def _training_generate_impl(
                 )
             else:
                 config_view = {}
-            draft_training_bundle_view = (
-                result.views.draft_training_bundle.model_dump(mode="json")
-                if result.views and result.views.draft_training_bundle
+            draft_training_view = (
+                result.views.draft_training.model_dump(mode="json")
+                if result.views and result.views.draft_training
                 else {}
             )
             jinja_context["views"] = {
                 "config": config_view,
-                "draft_training_bundle": draft_training_bundle_view,
+                "draft_training": draft_training_view,
             }
 
             # Step 7: Render developer instructions with Jinja
@@ -516,7 +516,7 @@ async def _training_generate_impl(
                         "tools": convert_tools_to_dict(tools),
                         "save": data.save,
                         "attempt_id": attempt_id,
-                        "training_bundle_department_id": training_bundle_department_id,
+                        "training_department_id": training_department_id,
                     },
                 )
 
@@ -600,7 +600,7 @@ async def training_generate_internal(data: dict[str, Any]) -> None:
             payload,
             profile_id,
             attempt_id=data.get("attempt_id"),
-            training_bundle_department_id=data.get("training_bundle_department_id"),
+            training_department_id=data.get("training_department_id"),
         )
     except Exception as e:
         await emit_to_internal(

@@ -37,10 +37,10 @@ BEGIN
     -- Mark all existing incomplete chats as completed
     FOR v_chat_record IN
         SELECT c.id
-        FROM simulation_chats_entry c
+        FROM attempt_chat_entry c
         WHERE c.attempt_id = p_attempt_id AND c.active = TRUE
     LOOP
-        INSERT INTO simulation_completions_entry (chat_id)
+        INSERT INTO attempt_completion_entry (chat_id)
         VALUES (v_chat_record.id)
         ON CONFLICT (chat_id) DO NOTHING;
         v_chats_completed := v_chats_completed + 1;
@@ -48,8 +48,8 @@ BEGIN
 
     -- Get existing chat scenario IDs (from base tables, not MV)
     SELECT ARRAY_AGG(DISTINCT csc.scenarios_id) INTO v_existing_scenario_ids
-    FROM simulation_chats_entry c
-    JOIN simulation_chats_scenarios_connection csc ON csc.chat_id = c.id AND csc.active = true
+    FROM attempt_chat_entry c
+    JOIN attempt_chat_scenarios_connection csc ON csc.chat_id = c.id AND csc.active = true
     WHERE c.attempt_id = p_attempt_id AND c.active = TRUE;
 
     -- Default to empty array if null
@@ -63,7 +63,7 @@ BEGIN
             AND ssj.active = true
         JOIN training_entry t ON t.simulations_id = ssj.simulations_id
             AND t.active = true
-        JOIN simulation_attempts_entry a ON a.training_id = t.id
+        JOIN attempt_entry a ON a.training_id = t.id
         WHERE a.id = p_attempt_id AND ss.active = true
     LOOP
         -- Skip if scenario already has a chat
@@ -72,7 +72,7 @@ BEGIN
         END IF;
 
         -- Create stub chat
-        INSERT INTO simulation_chats_entry (attempt_id, active)
+        INSERT INTO attempt_chat_entry (attempt_id, active)
         VALUES (p_attempt_id, true)
         RETURNING id INTO v_stub_chat_id;
 
@@ -81,13 +81,13 @@ BEGIN
         END IF;
 
         -- Link scenario to stub chat
-        INSERT INTO simulation_chats_scenarios_connection
+        INSERT INTO attempt_chat_scenarios_connection
             (chat_id, scenarios_id, active)
         VALUES (v_stub_chat_id, v_scenario_record.scenario_id, true)
         ON CONFLICT DO NOTHING;
 
         -- Mark as completed
-        INSERT INTO simulation_completions_entry (chat_id)
+        INSERT INTO attempt_completion_entry (chat_id)
         VALUES (v_stub_chat_id)
         ON CONFLICT (chat_id) DO NOTHING;
 

@@ -34,8 +34,8 @@ SELECT
     c.attempt_id,
     m.created_at
 FROM messages_entry m
-JOIN simulation_messages_entry sm ON sm.id = m.id
-JOIN simulation_chats_entry c ON c.id = sm.chat_id
+JOIN attempt_message_entry sm ON sm.id = m.id
+JOIN attempt_chat_entry c ON c.id = sm.chat_id
 WHERE m.run_id = p_run_id
   AND m.role = 'assistant'::message_type
 ORDER BY m.created_at DESC

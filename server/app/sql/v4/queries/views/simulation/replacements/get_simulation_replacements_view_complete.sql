@@ -1,6 +1,6 @@
 -- ============================================================================
 -- Query: get_simulation_replacements_view
--- Purpose: Fetch replacement-level data from mv_simulation_replacements with declarative filters
+-- Purpose: Fetch replacement-level data from mv_attempt_replacements with declarative filters
 -- Section: VIEWS/SIMULATION/REPLACEMENTS
 -- ============================================================================
 
@@ -69,7 +69,7 @@ AS $$
     WITH
     mv_data AS (
         SELECT mv.*
-        FROM mv_simulation_replacements mv
+        FROM mv_attempt_replacements mv
         WHERE mv.improvement_id = ANY(improvement_ids_filter)
     ),
     items_agg AS (

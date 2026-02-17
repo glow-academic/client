@@ -41,7 +41,7 @@ TRAINING_GENERATE_RESOURCE_TYPES = [
 class GenerateTrainingPayload(BaseModel):
     """Request payload for training_generate WebSocket event."""
 
-    training_bundle_entry_id: UUID
+    training_entry_id: UUID
     draft_id: UUID | None = None
     resource_types: list[str]
     user_instructions: list[str] | None = None

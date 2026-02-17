@@ -167,7 +167,7 @@ existing_developer_messages AS (
     FROM messages_entry m
     JOIN LATERAL (
         SELECT content
-        FROM simulation_contents_entry ce
+        FROM attempt_content_entry ce
         WHERE ce.message_id = m.id
           AND ce.active = true
         ORDER BY ce.created_at
@@ -222,7 +222,7 @@ new_developer_messages_matched AS (
     JOIN new_developer_messages_data_numbered nd ON n.rn = nd.rn
 ),
 insert_developer_contents AS (
-    INSERT INTO simulation_contents_entry (message_id, content, created_at, updated_at)
+    INSERT INTO attempt_content_entry (message_id, content, created_at, updated_at)
     SELECT
         nd.message_id,
         nd.content,
@@ -271,7 +271,7 @@ existing_user_messages AS (
     FROM messages_entry m
     JOIN LATERAL (
         SELECT content
-        FROM simulation_contents_entry ce
+        FROM attempt_content_entry ce
         WHERE ce.message_id = m.id
           AND ce.active = true
         ORDER BY ce.created_at
@@ -326,7 +326,7 @@ new_user_messages_matched AS (
     JOIN new_user_messages_data_numbered nd ON n.rn = nd.rn
 ),
 insert_user_contents AS (
-    INSERT INTO simulation_contents_entry (message_id, content, created_at, updated_at)
+    INSERT INTO attempt_content_entry (message_id, content, created_at, updated_at)
     SELECT
         nd.message_id,
         nd.content,

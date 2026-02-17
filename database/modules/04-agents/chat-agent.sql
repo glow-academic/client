@@ -19,7 +19,7 @@ INSERT INTO public.prompts_resource (created_at, system_prompt, name, descriptio
 INSERT INTO public.agents_resource (created_at, active, generated, mcp, id, name, description, department_ids, temperature, reasoning, tool_ids, quality, voice, model_id, prompt_id, instruction_ids) VALUES ('2026-02-03T19:33:56.322550+00:00', true, false, false, '019c24ff-49e2-7dee-b670-1478eab95447', 'Chat Agent', 'Agent responsible for augmenting messages with content blocks and hints during simulations', '{}', NULL, NULL, '{019bebc4-d436-7ba3-9c29-c24f308f6e56,019bebc4-d436-7b60-9f57-f7c03f636fac}', NULL, NULL, '019bb25e-e5ff-76f6-90d4-830670bb5d82', '019c16d8-a12c-70db-82d7-454f71f50c08', '{019c16d8-a12c-788f-8361-7201fed4f3e6}') ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.descriptions_resource (id, description, created_at, active, generated, mcp) VALUES ('019c16d8-a12b-7bdf-84dc-6255f22e87a5', 'Agent responsible for augmenting messages with content blocks and hints during simulations', '2026-02-01T01:37:01.720364+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.instructions_resource (id, template, active, created_at, generated, mcp) VALUES ('019c16d8-a12c-788f-8361-7201fed4f3e6', '## Scenario Context
-{% set current_chat = (views.simulation_chats | sort(attribute=''created_at'') | last) if views and views.simulation_chats else None %}
+{% set current_chat = (views.attempt_chat | sort(attribute=''created_at'') | last) if views and views.attempt_chat else None %}
 {% if current_chat and resources and resources.scenarios and current_chat.scenario_id %}
 ### Scenario
 - Name: {{ resources.scenarios[current_chat.scenario_id|string].name }}{% if resources.scenarios[current_chat.scenario_id|string].description %} — {{ resources.scenarios[current_chat.scenario_id|string].description }}{% endif %}
@@ -91,7 +91,7 @@ INSERT INTO public.instructions_resource (id, template, active, created_at, gene
 Chat ID: {{ current_chat.id }}{% if current_chat.title %} | Title: {{ current_chat.title }}{% endif %}
 {% endif %}
 
-{% set chat_messages = (views.simulation_messages | selectattr(''chat_id'', ''equalto'', current_chat.id) | list) if views and current_chat and views.simulation_messages else [] %}
+{% set chat_messages = (views.attempt_message | selectattr(''chat_id'', ''equalto'', current_chat.id) | list) if views and current_chat and views.attempt_message else [] %}
 {% set assistant_messages = (chat_messages | selectattr(''type'', ''equalto'', ''response'') | list) %}
 {% set current_message = (assistant_messages | sort(attribute=''created_at'') | last) if assistant_messages and assistant_messages|length > 0 else (chat_messages | sort(attribute=''created_at'') | last) %}
 {% if current_message %}

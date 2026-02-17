@@ -16,8 +16,8 @@ from typing import Any, cast
 
 from fastapi import APIRouter
 
-from app.api.v4.artifacts.benchmark.get import get_benchmark_bundle_websocket
-from app.api.v4.artifacts.benchmark.types import GetBenchmarkBundleWebsocketResponse
+from app.api.v4.artifacts.benchmark.get import get_suite_websocket
+from app.api.v4.artifacts.benchmark.types import GetSuiteWebsocketResponse
 from app.api.v4.resources.instructions.get import get_instructions_internal
 from app.api.v4.resources.prompts.get import get_prompts_internal
 from app.api.v4.views.config.get import get_config_internal
@@ -32,17 +32,17 @@ from app.infra.v4.websocket.typed_emit import emit_to_internal
 from app.main import get_internal_sio, get_pool, sio
 from app.socket.v4.artifacts.benchmark.types import (
     BENCHMARK_BUNDLE_GENERATE_RESOURCE_TYPES,
-    GenerateBenchmarkBundlePayload,
+    GenerateSuitePayload,
 )
 from app.socket.v4.artifacts.types import (
-    BenchmarkBundleGenerationStartedEvent,
+    SuiteGenerationStartedEvent,
     GenerateErrorApiRequest,
 )
 from app.sql.types import (
     GetAgentToolsSqlParams,
     GetAgentToolsSqlRow,
-    PrepareBenchmarkBundleGenerationSqlParams,
-    PrepareBenchmarkBundleGenerationSqlRow,
+    PrepareSuiteGenerationSqlParams,
+    PrepareSuiteGenerationSqlRow,
 )
 from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import execute_sql_typed, load_sql
@@ -55,7 +55,7 @@ client_router = APIRouter()
 server_router = APIRouter()
 
 # SQL paths
-SQL_PATH_PREPARE = "app/sql/v4/queries/generate/benchmark_bundle/prepare_benchmark_bundle_generation_complete.sql"
+SQL_PATH_PREPARE = "app/sql/v4/queries/generate/suite/prepare_suite_generation_complete.sql"
 SQL_PATH_AGENT_TOOLS = (
     "app/sql/v4/queries/generate/persona/get_agent_tools_complete.sql"
 )
@@ -64,12 +64,12 @@ SQL_PATH_CREATE_MESSAGE_WITH_TEXT = (
 )
 
 
-def _build_benchmark_bundle_jinja_context(
-    response: GetBenchmarkBundleWebsocketResponse, resource_types: list[str]
+def _build_suite_jinja_context(
+    response: GetSuiteWebsocketResponse, resource_types: list[str]
 ) -> dict[str, Any]:
     """Build Jinja context with resources as top-level variables.
 
-    Resources are the current selections (from get_benchmark_bundle_internal's ID resolution).
+    Resources are the current selections (from get_suite_internal's ID resolution).
     Templates access resources directly: {{ departments[0].name }}, {{ models[0].name }}
     Views (e.g. config) are injected separately after prepare.
     """
@@ -78,8 +78,8 @@ def _build_benchmark_bundle_jinja_context(
     return {}
 
 
-async def _benchmark_bundle_generate_impl(
-    sid: str, data: GenerateBenchmarkBundlePayload, profile_id: uuid.UUID
+async def _suite_generate_impl(
+    sid: str, data: GenerateSuitePayload, profile_id: uuid.UUID
 ) -> None:
     """Handle benchmark bundle generation with all business logic.
 
@@ -102,9 +102,9 @@ async def _benchmark_bundle_generate_impl(
                 GenerateErrorApiRequest(
                     sid=sid,
                     error_message="resource_types must be provided",
-                    artifact_type="benchmark_bundle",
+                    artifact_type="suite",
                     group_id=None,
-                    resource_type="benchmark_bundle",
+                    resource_type="suite",
                 ),
                 sid=sid,
             )
@@ -123,9 +123,9 @@ async def _benchmark_bundle_generate_impl(
                 GenerateErrorApiRequest(
                     sid=sid,
                     error_message=f"Invalid resource types: {', '.join(invalid_types)}",
-                    artifact_type="benchmark_bundle",
+                    artifact_type="suite",
                     group_id=None,
-                    resource_type="benchmark_bundle",
+                    resource_type="suite",
                 ),
                 sid=sid,
             )
@@ -136,10 +136,10 @@ async def _benchmark_bundle_generate_impl(
         if not pool:
             raise RuntimeError("Database pool not initialized")
 
-        result = await get_benchmark_bundle_websocket(
+        result = await get_suite_websocket(
             pool=pool,
             profile_id=profile_id,
-            benchmark_bundle_entry_id=data.benchmark_bundle_entry_id,
+            suite_entry_id=data.suite_entry_id,
             draft_id=data.draft_id,
         )
 
@@ -169,9 +169,9 @@ async def _benchmark_bundle_generate_impl(
                 GenerateErrorApiRequest(
                     sid=sid,
                     error_message="No agent found for the requested resource types",
-                    artifact_type="benchmark_bundle",
+                    artifact_type="suite",
                     group_id=None,
-                    resource_type="benchmark_bundle",
+                    resource_type="suite",
                 ),
                 sid=sid,
             )
@@ -193,9 +193,9 @@ async def _benchmark_bundle_generate_impl(
                 GenerateErrorApiRequest(
                     sid=sid,
                     error_message="No agent configuration found. Check department settings.",
-                    artifact_type="benchmark_bundle",
+                    artifact_type="suite",
                     group_id=None,
-                    resource_type="benchmark_bundle",
+                    resource_type="suite",
                 ),
                 sid=sid,
             )
@@ -208,9 +208,9 @@ async def _benchmark_bundle_generate_impl(
                 GenerateErrorApiRequest(
                     sid=sid,
                     error_message=f"Agent '{agent_resource.name}' has no model configured",
-                    artifact_type="benchmark_bundle",
+                    artifact_type="suite",
                     group_id=None,
-                    resource_type="benchmark_bundle",
+                    resource_type="suite",
                 ),
                 sid=sid,
             )
@@ -223,9 +223,9 @@ async def _benchmark_bundle_generate_impl(
                 GenerateErrorApiRequest(
                     sid=sid,
                     error_message=f"Model '{model_resource.name}' has no provider configured",
-                    artifact_type="benchmark_bundle",
+                    artifact_type="suite",
                     group_id=None,
-                    resource_type="benchmark_bundle",
+                    resource_type="suite",
                 ),
                 sid=sid,
             )
@@ -260,15 +260,15 @@ async def _benchmark_bundle_generate_impl(
                 GenerateErrorApiRequest(
                     sid=sid,
                     error_message=f"No API key configured for provider '{provider_name}'",
-                    artifact_type="benchmark_bundle",
+                    artifact_type="suite",
                     group_id=None,
-                    resource_type="benchmark_bundle",
+                    resource_type="suite",
                 ),
                 sid=sid,
             )
             return
 
-        benchmark_bundle_jinja_context = _build_benchmark_bundle_jinja_context(
+        suite_jinja_context = _build_suite_jinja_context(
             result, resource_types
         )
 
@@ -297,9 +297,9 @@ async def _benchmark_bundle_generate_impl(
                 GenerateErrorApiRequest(
                     sid=sid,
                     error_message=f"Failed to prepare benchmark bundle generation: {error_msg}",
-                    artifact_type="benchmark_bundle",
+                    artifact_type="suite",
                     group_id=str(result.group_id) if result.group_id else None,
-                    resource_type="benchmark_bundle",
+                    resource_type="suite",
                 ),
                 sid=sid,
             )
@@ -360,7 +360,7 @@ async def _benchmark_bundle_generate_impl(
             )
 
             # Step 6: Prepare generation (mutations only: group/run/config creation)
-            prepare_params = PrepareBenchmarkBundleGenerationSqlParams(
+            prepare_params = PrepareSuiteGenerationSqlParams(
                 p_profile_id=profile_id,
                 p_group_id=existing_group_id,
                 p_agents_resource_id=agent_resource.id,
@@ -368,7 +368,7 @@ async def _benchmark_bundle_generate_impl(
                 p_providers_resource_id=provider_resource.id,
             )
             prepare_row = cast(
-                PrepareBenchmarkBundleGenerationSqlRow,
+                PrepareSuiteGenerationSqlRow,
                 await execute_sql_typed(conn, SQL_PATH_PREPARE, params=prepare_params),
             )
 
@@ -382,9 +382,9 @@ async def _benchmark_bundle_generate_impl(
                     GenerateErrorApiRequest(
                         sid=sid,
                         error_message="Failed to prepare benchmark bundle generation: Unknown error",
-                        artifact_type="benchmark_bundle",
+                        artifact_type="suite",
                         group_id=str(existing_group_id) if existing_group_id else None,
-                        resource_type="benchmark_bundle",
+                        resource_type="suite",
                     ),
                     sid=sid,
                 )
@@ -395,7 +395,7 @@ async def _benchmark_bundle_generate_impl(
             _trace_id = prepare_row.trace_id
             config_id = prepare_row.config_id
 
-            jinja_context = benchmark_bundle_jinja_context
+            jinja_context = suite_jinja_context
 
             # Inject config view into Jinja context for template access
             if config_id:
@@ -412,14 +412,14 @@ async def _benchmark_bundle_generate_impl(
                 )
             else:
                 config_view = {}
-            draft_benchmark_bundle_view = (
-                result.views.draft_benchmark_bundle.model_dump(mode="json")
-                if result.views and result.views.draft_benchmark_bundle
+            draft_suite_view = (
+                result.views.draft_suite.model_dump(mode="json")
+                if result.views and result.views.draft_suite
                 else {}
             )
             jinja_context["views"] = {
                 "config": config_view,
-                "draft_benchmark_bundle": draft_benchmark_bundle_view,
+                "draft_suite": draft_suite_view,
             }
 
             # Step 7: Render developer instructions with Jinja
@@ -474,11 +474,11 @@ async def _benchmark_bundle_generate_impl(
             await init_generation(str(run_id), num_agents)
             await init_resource_progress(str(run_id), len(resource_types))
 
-            # Emit benchmark_bundle_generation_started to client
+            # Emit suite_generation_started to client
             await sio.emit(
-                "benchmark_bundle_generation_started",
+                "suite_generation_started",
                 {
-                    "artifact_type": "benchmark_bundle",
+                    "artifact_type": "suite",
                     "group_id": str(group_id) if group_id else "",
                     "run_id": str(run_id),
                     "resource_types": resource_types,
@@ -492,10 +492,10 @@ async def _benchmark_bundle_generate_impl(
                     "generate_artifact",
                     {
                         "sid": sid,
-                        "artifact_type": "benchmark_bundle",
+                        "artifact_type": "suite",
                         "resource_type": agent_resource_types[0]
                         if agent_resource_types
-                        else "benchmark_bundle",
+                        else "suite",
                         "run_id": str(run_id),
                         "group_id": str(group_id) if group_id else None,
                         "message_id": None,
@@ -524,19 +524,19 @@ async def _benchmark_bundle_generate_impl(
             GenerateErrorApiRequest(
                 sid=sid,
                 error_message=f"Failed to generate benchmark bundle resources: {str(e)}",
-                artifact_type="benchmark_bundle",
+                artifact_type="suite",
                 group_id=None,
-                resource_type="benchmark_bundle",
+                resource_type="suite",
             ),
             sid=sid,
         )
 
 
 @sio.event  # type: ignore
-async def benchmark_bundle_generate(sid: str, data: dict[str, Any]) -> None:
-    """Handle benchmark_bundle_generate event (client-to-server)."""
+async def suite_generate(sid: str, data: dict[str, Any]) -> None:
+    """Handle suite_generate event (client-to-server)."""
     try:
-        payload = GenerateBenchmarkBundlePayload(**data)
+        payload = GenerateSuitePayload(**data)
         profile_id_str = await find_profile_by_socket(sid)
         if not profile_id_str:
             await emit_to_internal(
@@ -544,32 +544,32 @@ async def benchmark_bundle_generate(sid: str, data: dict[str, Any]) -> None:
                 GenerateErrorApiRequest(
                     sid=sid,
                     error_message="Profile not found. Please reconnect.",
-                    artifact_type="benchmark_bundle",
+                    artifact_type="suite",
                     group_id=None,
-                    resource_type="benchmark_bundle",
+                    resource_type="suite",
                 ),
                 sid=sid,
             )
             return
         profile_id = uuid.UUID(profile_id_str)
-        await _benchmark_bundle_generate_impl(sid, payload, profile_id)
+        await _suite_generate_impl(sid, payload, profile_id)
     except Exception as e:
         await emit_to_internal(
             "generate_call_error",
             GenerateErrorApiRequest(
                 sid=sid,
                 error_message=f"Invalid request: {str(e)}",
-                artifact_type="benchmark_bundle",
+                artifact_type="suite",
                 group_id=None,
-                resource_type="benchmark_bundle",
+                resource_type="suite",
             ),
             sid=sid,
         )
 
 
-@internal_sio.on("benchmark_bundle_generate")  # type: ignore
-async def benchmark_bundle_generate_internal(data: dict[str, Any]) -> None:
-    """Handle benchmark_bundle_generate event from internal bus (server-to-server)."""
+@internal_sio.on("suite_generate")  # type: ignore
+async def suite_generate_internal(data: dict[str, Any]) -> None:
+    """Handle suite_generate event from internal bus (server-to-server)."""
     try:
         sid = data.get("sid", "")
         if not sid:
@@ -582,26 +582,26 @@ async def benchmark_bundle_generate_internal(data: dict[str, Any]) -> None:
                 GenerateErrorApiRequest(
                     sid=sid,
                     error_message="Profile not found. Please reconnect.",
-                    artifact_type="benchmark_bundle",
+                    artifact_type="suite",
                     group_id=None,
-                    resource_type="benchmark_bundle",
+                    resource_type="suite",
                 ),
                 sid=sid,
             )
             return
 
         profile_id = uuid.UUID(profile_id_str)
-        payload = GenerateBenchmarkBundlePayload(**data)
-        await _benchmark_bundle_generate_impl(sid, payload, profile_id)
+        payload = GenerateSuitePayload(**data)
+        await _suite_generate_impl(sid, payload, profile_id)
     except Exception as e:
         await emit_to_internal(
             "generate_call_error",
             GenerateErrorApiRequest(
                 sid=sid,
                 error_message=f"Invalid request: {str(e)}",
-                artifact_type="benchmark_bundle",
+                artifact_type="suite",
                 group_id=None,
-                resource_type="benchmark_bundle",
+                resource_type="suite",
             ),
             sid=sid,
         )
@@ -612,9 +612,9 @@ async def benchmark_bundle_generate_internal(data: dict[str, Any]) -> None:
 # =============================================================================
 
 
-@server_router.post("/benchmark_bundle_generation_started")
-async def benchmark_bundle_generation_started_api(
-    request: BenchmarkBundleGenerationStartedEvent,
+@server_router.post("/suite_generation_started")
+async def suite_generation_started_api(
+    request: SuiteGenerationStartedEvent,
 ) -> dict[str, bool]:
     """Server-to-client event: Benchmark bundle generation started.
 

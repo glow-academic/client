@@ -18,7 +18,7 @@ from app.infra.v4.websocket.generation_tracker import (
 from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.main import get_internal_sio, sio
 from app.socket.v4.artifacts.benchmark.types import (
-    BenchmarkBundleGenerationCompleteEvent,
+    SuiteGenerationCompleteEvent,
 )
 from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import load_sql
@@ -36,11 +36,11 @@ server_router = APIRouter()
 
 @internal_sio.on("generate_call_complete")  # type: ignore
 @internal_sio.on("generate_text_complete")  # type: ignore
-async def handle_benchmark_bundle_artifact_complete(data: dict[str, Any]) -> None:
-    """Handle generate_call_complete and generate_text_complete events - filter by benchmark_bundle artifact_type."""
+async def handle_suite_artifact_complete(data: dict[str, Any]) -> None:
+    """Handle generate_call_complete and generate_text_complete events - filter by suite artifact_type."""
 
     artifact_type = data.get("artifact_type")
-    if artifact_type != "benchmark_bundle":
+    if artifact_type != "suite":
         return
 
     sid = data.get("sid", "")
@@ -51,19 +51,19 @@ async def handle_benchmark_bundle_artifact_complete(data: dict[str, Any]) -> Non
 
     # Handle text completion - save assistant message
     if event_type == "text_complete":
-        await _handle_benchmark_bundle_text_complete(sid, data)
+        await _handle_suite_text_complete(sid, data)
         return
 
     # Handle run complete - coordinate multi-agent, emit completion
     if event_type == "run_complete":
-        await _handle_benchmark_bundle_run_complete(sid, data)
+        await _handle_suite_run_complete(sid, data)
         return
 
     # tool_call_complete and tool_result events are now handled by
     # resource_complete.py (shared handler) - nothing to do here
 
 
-async def _handle_benchmark_bundle_text_complete(
+async def _handle_suite_text_complete(
     sid: str, data: dict[str, Any]
 ) -> None:
     """Handle benchmark bundle text generation completion - save assistant message."""
@@ -88,12 +88,12 @@ async def _handle_benchmark_bundle_text_complete(
         logger.exception(f"Failed to save benchmark bundle text message: {str(e)}")
 
 
-async def _handle_benchmark_bundle_run_complete(sid: str, data: dict[str, Any]) -> None:
+async def _handle_suite_run_complete(sid: str, data: dict[str, Any]) -> None:
     """Handle benchmark bundle generation run completion.
 
     Coordinates multi-agent completion via generation_tracker:
     1. Records this agent's completion
-    2. If all agents done: emits benchmark_bundle_generation_complete
+    2. If all agents done: emits suite_generation_complete
     3. Cleans up generation tracking
     """
     run_id = data.get("run_id")
@@ -149,18 +149,18 @@ async def _handle_benchmark_bundle_run_complete(sid: str, data: dict[str, Any]) 
     is_complete, all_tool_results = await record_agent_complete(run_id, tool_results)
 
     if is_complete:
-        # Emit benchmark_bundle_generation_complete
-        event = BenchmarkBundleGenerationCompleteEvent(
-            artifact_type="benchmark_bundle",
+        # Emit suite_generation_complete
+        event = SuiteGenerationCompleteEvent(
+            artifact_type="suite",
             group_id=group_id_str or "",
-            resource_type="benchmark_bundle",
+            resource_type="suite",
             run_id=run_id,
             success=True,
             message="Benchmark bundle generation completed",
         )
 
         await sio.emit(
-            "benchmark_bundle_generation_complete",
+            "suite_generation_complete",
             event.model_dump(mode="json"),
             room=sid,
         )
@@ -173,9 +173,9 @@ async def _handle_benchmark_bundle_run_complete(sid: str, data: dict[str, Any]) 
 # =============================================================================
 
 
-@server_router.post("/benchmark_bundle_generation_complete")
-async def benchmark_bundle_generation_complete_api(
-    request: BenchmarkBundleGenerationCompleteEvent,
+@server_router.post("/suite_generation_complete")
+async def suite_generation_complete_api(
+    request: SuiteGenerationCompleteEvent,
 ) -> dict[str, bool]:
     """Server-to-client event: Benchmark bundle generation completed.
 

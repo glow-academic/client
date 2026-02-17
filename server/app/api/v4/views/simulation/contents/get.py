@@ -19,12 +19,12 @@ from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
 from app.utils.sql_helper import execute_sql_typed
 
-SQL_PATH = "app/sql/v4/queries/views/simulation/contents/get_simulation_contents_view_complete.sql"
+SQL_PATH = "app/sql/v4/queries/views/simulation/contents/get_attempt_content_view_complete.sql"
 
 router = APIRouter()
 
 
-async def get_simulation_contents_internal(
+async def get_attempt_content_internal(
     conn: asyncpg.Connection,
     message_ids: list[UUID],
     bypass_cache: bool = False,
@@ -89,7 +89,7 @@ async def get_contents(
     sql_query: str | None = None
     sql_params: tuple[Any, ...] | None = None
     try:
-        items = await get_simulation_contents_internal(
+        items = await get_attempt_content_internal(
             conn=conn,
             message_ids=request.message_ids,
             bypass_cache=bypass_cache,
@@ -104,7 +104,7 @@ async def get_contents(
         handle_route_error(
             error=e,
             route_path=http_request.url.path,
-            operation="views_simulation_contents_get",
+            operation="views_attempt_content_get",
             sql_query=sql_query,
             sql_params=sql_params,
             request=http_request,

@@ -19,12 +19,12 @@ from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
 from app.utils.sql_helper import execute_sql_typed
 
-SQL_PATH = "app/sql/v4/queries/views/benchmark/invocations/get_benchmark_invocations_view_complete.sql"
+SQL_PATH = "app/sql/v4/queries/views/benchmark/invocations/get_test_invocation_view_complete.sql"
 
 router = APIRouter()
 
 
-async def get_benchmark_invocations_internal(
+async def get_test_invocation_internal(
     conn: asyncpg.Connection,
     test_id: UUID | None = None,
     invocation_ids: list[UUID] | None = None,
@@ -33,7 +33,7 @@ async def get_benchmark_invocations_internal(
     """Internal function for reading lean benchmark invocation rows.
 
     Lean: entry attrs + resource IDs + grade scalars only. Feedbacks
-    fetched via simulation/benchmark_feedbacks view.
+    fetched via simulation/test_feedback view.
     """
     from app.sql.types import GetBenchmarkInvocationsViewSqlParams
 
@@ -69,7 +69,7 @@ async def get_benchmark_invocations_internal(
                     invocation_id=item.invocation_id,
                     test_id=item.test_id,
                     group_id=item.group_id,
-                    benchmark_bundle_department_id=item.benchmark_bundle_department_id,
+                    suite_department_id=item.suite_department_id,
                     created_at=item.created_at,
                     title=item.title,
                     invocation_completed=item.invocation_completed or False,
@@ -119,19 +119,19 @@ async def get_benchmark_invocations_internal(
         )
     ],
 )
-async def get_benchmark_invocations(
+async def get_test_invocation(
     request: GetBenchmarkInvocationsRequest,
     http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> GetBenchmarkInvocationsResponse:
-    """Get benchmark invocation rows from mv_benchmark_invocations."""
+    """Get benchmark invocation rows from mv_test_invocation."""
     tags = ["views", "benchmark", "invocations"]
     bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
 
     try:
         requested_ids = request.invocation_ids or request.chat_ids
-        items = await get_benchmark_invocations_internal(
+        items = await get_test_invocation_internal(
             conn=conn,
             test_id=request.test_id,
             invocation_ids=requested_ids,
@@ -148,6 +148,6 @@ async def get_benchmark_invocations(
         handle_route_error(
             error=e,
             route_path=http_request.url.path,
-            operation="views_benchmark_invocations_get",
+            operation="views_test_invocation_get",
             request=http_request,
         )

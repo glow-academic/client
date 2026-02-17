@@ -145,7 +145,7 @@ async def fetch_simulation_facts_data(
     filters: ParsedFilters,
     bypass_cache: bool = False,
 ) -> "GetSimulationFactsResponse":
-    """Fetch simulation facts from mv_simulation_facts for secondary section."""
+    """Fetch simulation facts from mv_attempt_facts for secondary section."""
     from app.api.v4.views.analytics.simulation_facts.get import (
         get_simulation_facts_internal,
     )

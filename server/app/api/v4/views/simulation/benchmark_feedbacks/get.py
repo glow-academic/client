@@ -1,4 +1,4 @@
-"""Get endpoint for simulation benchmark_feedbacks view."""
+"""Get endpoint for simulation test_feedback view."""
 
 from typing import Annotated, Any
 from uuid import UUID
@@ -6,7 +6,7 @@ from uuid import UUID
 import asyncpg
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
-from app.api.v4.views.simulation.benchmark_feedbacks.types import (
+from app.api.v4.views.simulation.test_feedback.types import (
     BenchmarkFeedbackViewItem,
     GetBenchmarkFeedbacksRequest,
     GetBenchmarkFeedbacksResponse,
@@ -19,12 +19,12 @@ from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
 from app.utils.sql_helper import execute_sql_typed
 
-SQL_PATH = "app/sql/v4/queries/views/simulation/benchmark_feedbacks/get_simulation_benchmark_feedbacks_view_complete.sql"
+SQL_PATH = "app/sql/v4/queries/views/simulation/test_feedback/get_simulation_test_feedback_view_complete.sql"
 
 router = APIRouter()
 
 
-async def get_benchmark_feedbacks_internal(
+async def get_test_feedback_internal(
     conn: asyncpg.Connection,
     grade_ids: list[UUID],
     bypass_cache: bool = False,
@@ -33,7 +33,7 @@ async def get_benchmark_feedbacks_internal(
     from app.sql.types import GetBenchmarkFeedbacksViewSqlParams
 
     cache_key_val = cache_key(
-        "views/simulation/benchmark_feedbacks/get",
+        "views/simulation/test_feedback/get",
         {"grade_ids": [str(g) for g in grade_ids]},
     )
 
@@ -67,7 +67,7 @@ async def get_benchmark_feedbacks_internal(
         cache_key_val,
         {"items": [item.model_dump(mode="json") for item in items]},
         ttl=60,
-        tags=["views", "simulation", "benchmark_feedbacks"],
+        tags=["views", "simulation", "test_feedback"],
     )
     return items
 
@@ -77,23 +77,23 @@ async def get_benchmark_feedbacks_internal(
     response_model=GetBenchmarkFeedbacksResponse,
     dependencies=[
         audit_activity(
-            "views.simulation.benchmark_feedbacks.get",
-            "{{ actor.name }} fetched simulation benchmark_feedbacks data",
+            "views.simulation.test_feedback.get",
+            "{{ actor.name }} fetched simulation test_feedback data",
         )
     ],
 )
-async def get_benchmark_feedbacks(
+async def get_test_feedback(
     request: GetBenchmarkFeedbacksRequest,
     http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> GetBenchmarkFeedbacksResponse:
-    tags = ["views", "simulation", "benchmark_feedbacks"]
+    tags = ["views", "simulation", "test_feedback"]
     bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
     sql_query: str | None = None
     sql_params: tuple[Any, ...] | None = None
     try:
-        items = await get_benchmark_feedbacks_internal(
+        items = await get_test_feedback_internal(
             conn=conn,
             grade_ids=request.grade_ids,
             bypass_cache=bypass_cache,
@@ -108,7 +108,7 @@ async def get_benchmark_feedbacks(
         handle_route_error(
             error=e,
             route_path=http_request.url.path,
-            operation="views_simulation_benchmark_feedbacks_get",
+            operation="views_simulation_test_feedback_get",
             sql_query=sql_query,
             sql_params=sql_params,
             request=http_request,

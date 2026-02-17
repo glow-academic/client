@@ -73,7 +73,7 @@ BEGIN
     VALUES (p_profile_id, v_grade_run_id);
 
     -- Create benchmark grade entry
-    INSERT INTO benchmark_grades_entry (
+    INSERT INTO test_grade_entry (
         invocation_id, run_id, rubric_grade_agent_id,
         created_at, updated_at, score, passed
     )
@@ -85,7 +85,7 @@ BEGIN
 
     -- Link grade to rubric if provided
     IF p_rubric_id IS NOT NULL THEN
-        INSERT INTO benchmark_grades_rubrics_connection (grade_id, rubrics_id)
+        INSERT INTO test_grade_rubrics_connection (grade_id, rubrics_id)
         VALUES (v_grade_id, p_rubric_id);
     END IF;
 

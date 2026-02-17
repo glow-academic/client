@@ -42,7 +42,7 @@ END $$;
 -- 3) Create the function
 CREATE OR REPLACE FUNCTION socket_prepare_training_generation_v4(
     p_profile_id uuid,
-    p_training_bundle_entry_id uuid,
+    p_training_entry_id uuid,
     p_department_id uuid,
     p_draft_id uuid DEFAULT NULL,
     p_resource_types text[] DEFAULT ARRAY['problem_statements', 'objectives', 'personas']
@@ -74,13 +74,13 @@ VOLATILE
 AS $$
 WITH scope AS (
     SELECT
-        tb.id AS training_bundle_entry_id,
+        tb.id AS training_entry_id,
         scj_conn.scenarios_id AS scenarios_resource_id,
-        t.simulations_id,
+        COALESCE(hsc.simulations_id, psc.simulations_id) AS simulations_id,
         (
             SELECT ssj.simulation_id
             FROM simulation_simulations_junction ssj
-            WHERE ssj.simulations_id = t.simulations_id
+            WHERE ssj.simulations_id = COALESCE(hsc.simulations_id, psc.simulations_id)
               AND ssj.active = true
             LIMIT 1
         ) AS simulation_artifact_id,
@@ -91,14 +91,17 @@ WITH scope AS (
               AND scj.active = true
             LIMIT 1
         ) AS scenario_artifact_id
-    FROM training_bundle_entry tb
-    JOIN training_entry t
-      ON t.id = tb.training_id
-     AND t.active = true
-    LEFT JOIN training_bundle_scenarios_connection scj_conn
-      ON scj_conn.training_bundle_id = tb.id
+    FROM training_entry tb
+    LEFT JOIN home_training_entry hte ON hte.training_id = tb.id
+    LEFT JOIN home_entry he ON he.id = hte.home_id
+    LEFT JOIN practice_training_entry pte ON pte.training_id = tb.id
+    LEFT JOIN practice_entry pe ON pe.id = pte.practice_id
+    LEFT JOIN home_simulations_connection hsc ON hsc.home_id = he.id AND hsc.active = true
+    LEFT JOIN practice_simulations_connection psc ON psc.practice_id = pe.id AND psc.active = true
+    LEFT JOIN training_scenarios_connection scj_conn
+      ON scj_conn.training_id = tb.id
      AND scj_conn.active = true
-    WHERE tb.id = p_training_bundle_entry_id
+    WHERE tb.id = p_training_entry_id
       AND tb.active = true
     LIMIT 1
 ),

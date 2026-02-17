@@ -154,14 +154,14 @@ async def _handle_training_run_complete(sid: str, data: dict[str, Any]) -> None:
 
         should_save = data.get("save", True)
         attempt_id_data = data.get("attempt_id")
-        training_bundle_department_id_data = data.get("training_bundle_department_id")
+        training_department_id_data = data.get("training_department_id")
         profile_id_str = await find_profile_by_socket(sid)
 
         if (
             should_save
             and profile_id_str
             and attempt_id_data
-            and training_bundle_department_id_data
+            and training_department_id_data
         ):
             attempt_id_str = attempt_id_data
 
@@ -171,7 +171,7 @@ async def _handle_training_run_complete(sid: str, data: dict[str, Any]) -> None:
                 {
                     "sid": sid,
                     "attempt_id": attempt_id_data,
-                    "training_bundle_department_id": training_bundle_department_id_data,
+                    "training_department_id": training_department_id_data,
                     "profile_id": profile_id_str,
                 },
             )

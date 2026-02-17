@@ -1,7 +1,7 @@
--- Materialized View: mv_benchmark_tests
+-- Materialized View: mv_test
 -- Test-level data for benchmark detail views.
 --
--- Grain: One row per benchmark test (benchmark_tests_entry.id)
+-- Grain: One row per benchmark test (test_entry.id)
 -- Filter: active = TRUE only
 --
 -- Purpose: Provides test-level resource IDs for parallel fetching.
@@ -11,7 +11,7 @@
 --
 -- Dependencies: Only uses _entry and _connection tables
 -- ============================================================================
--- Step 1: Drop all indexes on mv_benchmark_tests materialized view (if it exists)
+-- Step 1: Drop all indexes on mv_test materialized view (if it exists)
 -- ============================================================================
 
 DO $$
@@ -22,28 +22,28 @@ BEGIN
         SELECT indexname
         FROM pg_indexes
         WHERE schemaname = 'public'
-          AND tablename = 'mv_benchmark_tests'
+          AND tablename = 'mv_test'
     LOOP
         EXECUTE format('DROP INDEX IF EXISTS %I', r.indexname);
     END LOOP;
 END $$;
 
 -- ============================================================================
--- Step 2: Drop mv_benchmark_tests materialized view if it exists
+-- Step 2: Drop mv_test materialized view if it exists
 -- ============================================================================
 
-DROP MATERIALIZED VIEW IF EXISTS mv_benchmark_tests CASCADE;
+DROP MATERIALIZED VIEW IF EXISTS mv_test CASCADE;
 
 -- ============================================================================
--- Step 3: Create mv_benchmark_tests Materialized View
+-- Step 3: Create mv_test Materialized View
 -- ============================================================================
 
-CREATE MATERIALIZED VIEW mv_benchmark_tests AS
+CREATE MATERIALIZED VIEW mv_test AS
 WITH eval_links AS (
     SELECT
         c.attempt_id AS test_id,
         (ARRAY_AGG(c.evals_id ORDER BY c.created_at))[1] AS eval_id
-    FROM benchmark_tests_evals_connection c
+    FROM test_evals_connection c
     WHERE c.active = true
     GROUP BY c.attempt_id
 ),
@@ -51,7 +51,7 @@ profile_links AS (
     SELECT
         c.attempt_id AS test_id,
         (ARRAY_AGG(c.profiles_id ORDER BY c.created_at))[1] AS profile_id
-    FROM benchmark_tests_profiles_connection c
+    FROM test_profiles_connection c
     WHERE c.active = true
     GROUP BY c.attempt_id
 ),
@@ -59,7 +59,7 @@ department_links AS (
     SELECT
         c.attempt_id AS test_id,
         ARRAY_AGG(DISTINCT c.departments_id) FILTER (WHERE c.departments_id IS NOT NULL) AS department_ids
-    FROM benchmark_tests_departments_connection c
+    FROM test_departments_connection c
     WHERE c.active = true
     GROUP BY c.attempt_id
 )
@@ -79,13 +79,13 @@ SELECT
     -- Timestamp
     t.created_at AS test_created_at
 
-FROM benchmark_tests_entry t
+FROM test_entry t
 LEFT JOIN eval_links el ON el.test_id = t.id
 LEFT JOIN profile_links pl ON pl.test_id = t.id
 LEFT JOIN department_links dl ON dl.test_id = t.id
 -- Latest archive state (append-only)
 LEFT JOIN LATERAL (
-    SELECT archived FROM benchmark_archives_entry
+    SELECT archived FROM test_archive_entry
     WHERE test_id = t.id AND active = TRUE ORDER BY created_at DESC LIMIT 1
 ) ba_archive ON true
 WHERE t.active = true
@@ -95,35 +95,35 @@ WITH NO DATA;
 -- Step 4: Create Unique Index (Required for CONCURRENT refresh)
 -- ============================================================================
 
-CREATE UNIQUE INDEX mv_benchmark_tests_pk
-    ON mv_benchmark_tests (test_id);
+CREATE UNIQUE INDEX mv_test_pk
+    ON mv_test (test_id);
 
 -- ============================================================================
 -- Step 5: Create Filter/Slicing Indexes
 -- ============================================================================
 
 -- Eval ID for filtering
-CREATE INDEX mv_benchmark_tests_eval_id_idx
-    ON mv_benchmark_tests (eval_id);
+CREATE INDEX mv_test_eval_id_idx
+    ON mv_test (eval_id);
 
 -- Profile ID for permission checks and filtering
-CREATE INDEX mv_benchmark_tests_profile_id_idx
-    ON mv_benchmark_tests (profile_id);
+CREATE INDEX mv_test_profile_id_idx
+    ON mv_test (profile_id);
 
 -- Archived flag for filtering
-CREATE INDEX mv_benchmark_tests_archived_idx
-    ON mv_benchmark_tests (archived);
+CREATE INDEX mv_test_archived_idx
+    ON mv_test (archived);
 
 -- Timestamp for sorting
-CREATE INDEX mv_benchmark_tests_created_at_idx
-    ON mv_benchmark_tests (test_created_at DESC);
+CREATE INDEX mv_test_created_at_idx
+    ON mv_test (test_created_at DESC);
 
 -- Department IDs for filtering
-CREATE INDEX mv_benchmark_tests_department_ids_gin
-    ON mv_benchmark_tests USING GIN (department_ids);
+CREATE INDEX mv_test_department_ids_gin
+    ON mv_test USING GIN (department_ids);
 
 -- ============================================================================
 -- Step 6: Refresh Materialized View with Data
 -- ============================================================================
 
-REFRESH MATERIALIZED VIEW mv_benchmark_tests;
+REFRESH MATERIALIZED VIEW mv_test;

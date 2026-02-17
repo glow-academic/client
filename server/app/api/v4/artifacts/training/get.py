@@ -1,9 +1,9 @@
 """Training bundle artifact endpoint.
 
 Section-first three-layer implementation (mirrors scenario/get.py):
-1) get_training_bundle_internal() - MV view → draft override → hydrate all 14 → config chain
-2) get_training_bundle_websocket() - thin wrapper for socket consumers
-3) get_training_bundle_client() - HTTP section-first payload formatter
+1) get_training_internal() - MV view → draft override → hydrate all 14 → config chain
+2) get_training_websocket() - thin wrapper for socket consumers
+3) get_training_client() - HTTP section-first payload formatter
 """
 
 import asyncio
@@ -21,25 +21,25 @@ from app.api.v4.artifacts.training.permissions import (
     compute_bundle_section_show,
 )
 from app.api.v4.artifacts.training.types import (
-    BaseTrainingBundleSection,
-    GetTrainingBundleRequest,
-    GetTrainingBundleResponse,
-    GetTrainingBundleWebsocketResponse,
-    TrainingBundleDepartmentSection,
-    TrainingBundleDocumentSection,
-    TrainingBundleImageSection,
-    TrainingBundleObjectiveSection,
-    TrainingBundleOptionSection,
-    TrainingBundleParameterFieldSection,
-    TrainingBundleParameterSection,
-    TrainingBundlePersonaSection,
-    TrainingBundleProblemStatementSection,
-    TrainingBundleQuestionSection,
-    TrainingBundleScenarioFlags,
-    TrainingBundleScenarioSection,
-    TrainingBundleVideoSection,
-    TrainingBundleWebsocketResources,
-    TrainingBundleWebsocketViews,
+    BaseTrainingSection,
+    GetTrainingRequest,
+    GetTrainingResponse,
+    GetTrainingWebsocketResponse,
+    TrainingDepartmentSection,
+    TrainingDocumentSection,
+    TrainingImageSection,
+    TrainingObjectiveSection,
+    TrainingOptionSection,
+    TrainingParameterFieldSection,
+    TrainingParameterSection,
+    TrainingPersonaSection,
+    TrainingProblemStatementSection,
+    TrainingQuestionSection,
+    TrainingScenarioFlags,
+    TrainingScenarioSection,
+    TrainingVideoSection,
+    TrainingWebsocketResources,
+    TrainingWebsocketViews,
 )
 from app.api.v4.auth.settings import get_auth_settings_internal
 from app.api.v4.permissions import resolve_agents_for_artifact
@@ -62,7 +62,7 @@ from app.api.v4.resources.videos.get import get_videos_internal
 from app.api.v4.views.drafts.get import get_draft_training_internal
 from app.api.v4.views.drafts.types import DraftTrainingViewItem
 from app.api.v4.views.run.list.get import get_run_list_view_internal
-from app.api.v4.views.training.bundle.get import get_training_bundle_view_internal
+from app.api.v4.views.training.bundle.get import get_training_view_internal
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_pool
 
@@ -75,9 +75,9 @@ router = APIRouter()
 
 
 @dataclass
-class TrainingBundleInternalData:
-    training_bundle_entry_id: UUID
-    training_id: UUID | None
+class TrainingInternalData:
+    training_entry_id: UUID
+    parent_id: UUID | None
     simulation_id: UUID | None
     simulation_name: str | None
     scenario_id: UUID | None
@@ -192,23 +192,23 @@ RESOURCE_CONFIG: list[tuple[str, str, str, Any, str]] = [
 # =============================================================================
 
 
-async def get_training_bundle_internal(
+async def get_training_internal(
     pool: asyncpg.Pool,
     profile_id: UUID,
-    training_bundle_entry_id: UUID,
+    training_entry_id: UUID,
     draft_id: UUID | None = None,
     bypass_cache: bool = False,
-) -> TrainingBundleInternalData:
+) -> TrainingInternalData:
     """Shared IDs-first + hydration internal fetch for training bundle artifact."""
     # 1. Fetch MV view data (all 14 ID arrays + 6 flags)
     async with pool.acquire() as conn:
-        view_data = await get_training_bundle_view_internal(
+        view_data = await get_training_view_internal(
             conn=conn,
             profile_id=profile_id,
-            training_bundle_entry_id=training_bundle_entry_id,
+            training_entry_id=training_entry_id,
         )
 
-    if not view_data.training_bundle_entry_id:
+    if not view_data.training_entry_id:
         raise HTTPException(status_code=404, detail="Training bundle not found")
 
     if not view_data.profile_has_access:
@@ -336,7 +336,7 @@ async def get_training_bundle_internal(
             start_ctx = await get_training_websocket(
                 conn=conn,
                 profile_id=profile_id,
-                training_bundle_entry_id=training_bundle_entry_id,
+                training_entry_id=training_entry_id,
                 department_id=selected_department_id,
                 draft_id=draft_id,
             )
@@ -360,9 +360,9 @@ async def get_training_bundle_internal(
     # 11. Resource agent IDs (from settings-based resolution)
     resource_agent_ids = agent_ids
 
-    return TrainingBundleInternalData(
-        training_bundle_entry_id=view_data.training_bundle_entry_id,
-        training_id=view_data.training_id,
+    return TrainingInternalData(
+        training_entry_id=view_data.training_entry_id,
+        parent_id=view_data.parent_id,
         simulation_id=simulation_id,
         simulation_name=simulation_name,
         scenario_id=scenario_id,
@@ -387,20 +387,20 @@ async def get_training_bundle_internal(
 # =============================================================================
 
 
-async def get_training_bundle_websocket(
+async def get_training_websocket(
     pool: asyncpg.Pool,
     profile_id: UUID,
-    training_bundle_entry_id: UUID,
+    training_entry_id: UUID,
     draft_id: UUID | None = None,
     bypass_cache: bool = False,
-) -> GetTrainingBundleWebsocketResponse:
+) -> GetTrainingWebsocketResponse:
     """Thin wrapper for websocket consumers — selected resources only."""
 
     async def fetch_bundle():
-        return await get_training_bundle_internal(
+        return await get_training_internal(
             pool=pool,
             profile_id=profile_id,
-            training_bundle_entry_id=training_bundle_entry_id,
+            training_entry_id=training_entry_id,
             draft_id=draft_id,
             bypass_cache=bypass_cache,
         )
@@ -430,12 +430,12 @@ async def get_training_bundle_websocket(
         fetch_runs_today(),
     )
 
-    return GetTrainingBundleWebsocketResponse(
-        views=TrainingBundleWebsocketViews(
-            draft_training_bundle=data.draft_item,
+    return GetTrainingWebsocketResponse(
+        views=TrainingWebsocketViews(
+            draft_training=data.draft_item,
             runs=runs_result,
         ),
-        resources=TrainingBundleWebsocketResources(
+        resources=TrainingWebsocketResources(
             departments=data.current_resources.get("departments") or None,
             personas=data.current_resources.get("personas") or None,
             documents=data.current_resources.get("documents") or None,
@@ -466,38 +466,38 @@ async def get_training_bundle_websocket(
 
 # Section class mapping for building typed sections
 _SECTION_CLASSES: dict[str, type] = {
-    "departments": TrainingBundleDepartmentSection,
-    "personas": TrainingBundlePersonaSection,
-    "documents": TrainingBundleDocumentSection,
-    "parameter_fields": TrainingBundleParameterFieldSection,
-    "scenarios": TrainingBundleScenarioSection,
-    "parameters": TrainingBundleParameterSection,
-    "questions": TrainingBundleQuestionSection,
-    "options": TrainingBundleOptionSection,
-    "videos": TrainingBundleVideoSection,
-    "images": TrainingBundleImageSection,
-    "problem_statements": TrainingBundleProblemStatementSection,
-    "objectives": TrainingBundleObjectiveSection,
+    "departments": TrainingDepartmentSection,
+    "personas": TrainingPersonaSection,
+    "documents": TrainingDocumentSection,
+    "parameter_fields": TrainingParameterFieldSection,
+    "scenarios": TrainingScenarioSection,
+    "parameters": TrainingParameterSection,
+    "questions": TrainingQuestionSection,
+    "options": TrainingOptionSection,
+    "videos": TrainingVideoSection,
+    "images": TrainingImageSection,
+    "problem_statements": TrainingProblemStatementSection,
+    "objectives": TrainingObjectiveSection,
 }
 
 
-async def get_training_bundle_client(
+async def get_training_client(
     pool: asyncpg.Pool,
     profile_id: UUID,
-    training_bundle_entry_id: UUID,
+    training_entry_id: UUID,
     draft_id: UUID | None = None,
     bypass_cache: bool = False,
-) -> GetTrainingBundleResponse:
+) -> GetTrainingResponse:
     """HTTP-facing bundle response formatter — section-first pattern."""
-    data = await get_training_bundle_internal(
+    data = await get_training_internal(
         pool=pool,
         profile_id=profile_id,
-        training_bundle_entry_id=training_bundle_entry_id,
+        training_entry_id=training_entry_id,
         draft_id=draft_id,
         bypass_cache=bypass_cache,
     )
 
-    def _section(resource_key: str) -> BaseTrainingBundleSection:
+    def _section(resource_key: str) -> BaseTrainingSection:
         cls = _SECTION_CLASSES[resource_key]
         return cls(
             show=data.show_flags_map.get(resource_key, True),
@@ -507,16 +507,16 @@ async def get_training_bundle_client(
             resources=data.all_resources.get(resource_key) or None,
         )
 
-    return GetTrainingBundleResponse(
-        training_bundle_entry_id=data.training_bundle_entry_id,
-        training_id=data.training_id,
+    return GetTrainingResponse(
+        training_entry_id=data.training_entry_id,
+        parent_id=data.parent_id,
         simulation_id=data.simulation_id,
         simulation_name=data.simulation_name,
         scenario_id=data.scenario_id,
         profile_has_access=data.profile_has_access,
         group_id=data.group_id,
         draft_version=data.draft_version,
-        scenario_flags=TrainingBundleScenarioFlags(**data.scenario_flags),
+        scenario_flags=TrainingScenarioFlags(**data.scenario_flags),
         departments=_section("departments"),
         personas=_section("personas"),
         documents=_section("documents"),
@@ -541,11 +541,11 @@ async def get_training_bundle_client(
 # =============================================================================
 
 
-@router.post("/get", response_model=GetTrainingBundleResponse)
-async def training_bundle_get(
-    request: GetTrainingBundleRequest,
+@router.post("/get", response_model=GetTrainingResponse)
+async def training_get(
+    request: GetTrainingRequest,
     http_request: Request,
-) -> GetTrainingBundleResponse:
+) -> GetTrainingResponse:
     """Get hydrated resources for training bundle customization."""
     try:
         profile_id = http_request.state.profile_id
@@ -561,10 +561,10 @@ async def training_bundle_get(
 
         bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
 
-        return await get_training_bundle_client(
+        return await get_training_client(
             pool=pool,
             profile_id=cast(UUID, profile_id),
-            training_bundle_entry_id=request.training_bundle_entry_id,
+            training_entry_id=request.training_entry_id,
             draft_id=request.draft_id,
             bypass_cache=bypass_cache,
         )
@@ -574,7 +574,7 @@ async def training_bundle_get(
         handle_route_error(
             error=e,
             route_path=http_request.url.path,
-            operation="training_bundle_get",
+            operation="training_get",
             sql_query=None,
             sql_params=None,
             request=http_request,

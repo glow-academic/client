@@ -29,14 +29,14 @@ BENCHMARK_BUNDLE_GENERATE_RESOURCE_TYPES = [
 
 
 # =============================================================================
-# Client-to-Server Events (benchmark_bundle_generate)
+# Client-to-Server Events (suite_generate)
 # =============================================================================
 
 
-class GenerateBenchmarkBundlePayload(BaseModel):
-    """Request payload for benchmark_bundle_generate WebSocket event."""
+class GenerateSuitePayload(BaseModel):
+    """Request payload for suite_generate WebSocket event."""
 
-    benchmark_bundle_entry_id: UUID
+    suite_entry_id: UUID
     draft_id: UUID | None = None
     resource_types: list[str]
     user_instructions: list[str] | None = None
@@ -48,24 +48,24 @@ class GenerateBenchmarkBundlePayload(BaseModel):
 # =============================================================================
 
 
-class BenchmarkBundleGenerationCompleteEvent(GenerationCompleteEvent):
-    """Server-to-client event: benchmark_bundle_generation_complete.
+class SuiteGenerationCompleteEvent(GenerationCompleteEvent):
+    """Server-to-client event: suite_generation_complete.
 
     Emitted when all agents have finished generating benchmark bundle resources.
     """
 
-    artifact_type: str = "benchmark_bundle"
+    artifact_type: str = "suite"
     attempt_id: str | None = None
     chat_id: str | None = None
 
 
-class BenchmarkBundleGenerationProgressEvent(BaseModel):
-    """Server-to-client event: benchmark_bundle_generation_progress.
+class SuiteGenerationProgressEvent(BaseModel):
+    """Server-to-client event: suite_generation_progress.
 
     Emitted as individual resources complete, providing percentage progress.
     """
 
-    artifact_type: str = "benchmark_bundle"
+    artifact_type: str = "suite"
     group_id: str
     run_id: str | None = None
     completed_resources: int
@@ -74,10 +74,10 @@ class BenchmarkBundleGenerationProgressEvent(BaseModel):
     last_completed_resource: str | None = None
 
 
-class BenchmarkBundleGenerationErrorEvent(GenerationErrorEvent):
-    """Server-to-client event: benchmark_bundle_generation_error.
+class SuiteGenerationErrorEvent(GenerationErrorEvent):
+    """Server-to-client event: suite_generation_error.
 
     Emitted when benchmark bundle resource generation fails.
     """
 
-    artifact_type: str = "benchmark_bundle"
+    artifact_type: str = "suite"

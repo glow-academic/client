@@ -46,7 +46,7 @@ DECLARE
 BEGIN
     -- Get group_id from the chat
     SELECT sc.group_id INTO v_group_id
-    FROM simulation_chats_entry sc
+    FROM attempt_chat_entry sc
     WHERE sc.id = p_chat_id;
 
     IF v_group_id IS NULL THEN
@@ -94,7 +94,7 @@ BEGIN
     RETURNING messages_entry.id INTO v_user_message_id;
 
     -- Link user message to simulation chat
-    INSERT INTO simulation_messages_entry (id, chat_id)
+    INSERT INTO attempt_message_entry (id, chat_id)
     VALUES (v_user_message_id, p_chat_id);
 
     -- Create assistant message placeholder
@@ -103,7 +103,7 @@ BEGIN
     RETURNING messages_entry.id INTO v_assistant_message_id;
 
     -- Link assistant message to simulation chat
-    INSERT INTO simulation_messages_entry (id, chat_id)
+    INSERT INTO attempt_message_entry (id, chat_id)
     VALUES (v_assistant_message_id, p_chat_id);
 
     RETURN QUERY SELECT v_user_message_id, v_assistant_message_id, v_run_id, v_group_id, v_created_at;

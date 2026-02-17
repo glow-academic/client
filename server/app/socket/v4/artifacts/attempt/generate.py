@@ -5,7 +5,7 @@ This module handles all business logic for attempt generation:
 - Group/run creation — skipped when handler already created via prepare SQL
 - Agent/model context from pre-fetched resources (denormalized chain)
 - Jinja template rendering for developer instructions
-- Chat history from views (simulation_messages)
+- Chat history from views (attempt_message)
 - Message insertion with deduplication
 
 Callers (message.py, grade.py, audio/start.py) handle domain-specific mutations,
@@ -73,7 +73,7 @@ def _build_attempt_jinja_context(
 
     Resources are the current selections (from get_attempt_internal's ID resolution).
     Templates access resources directly: {{ rubrics }}, {{ agents[0].temperature }}
-    Views (e.g. simulation_messages) are injected separately.
+    Views (e.g. attempt_message) are injected separately.
     """
     if response.resources:
         return response.resources.model_dump(mode="json")
@@ -409,19 +409,19 @@ async def _attempt_generate_impl(
             # Inject views into Jinja context for template access
             if result.views:
                 views_dict: dict[str, Any] = {}
-                if result.views.simulation_attempts:
-                    views_dict["simulation_attempts"] = [
+                if result.views.attempt:
+                    views_dict["attempt"] = [
                         a.model_dump(mode="json")
-                        for a in result.views.simulation_attempts
+                        for a in result.views.attempt
                     ]
-                if result.views.simulation_chats:
-                    views_dict["simulation_chats"] = [
-                        c.model_dump(mode="json") for c in result.views.simulation_chats
+                if result.views.attempt_chat:
+                    views_dict["attempt_chat"] = [
+                        c.model_dump(mode="json") for c in result.views.attempt_chat
                     ]
-                if result.views.simulation_messages:
-                    views_dict["simulation_messages"] = [
+                if result.views.attempt_message:
+                    views_dict["attempt_message"] = [
                         m.model_dump(mode="json")
-                        for m in result.views.simulation_messages
+                        for m in result.views.attempt_message
                     ]
                 jinja_context["views"] = views_dict
 
@@ -469,16 +469,16 @@ async def _attempt_generate_impl(
             if (
                 not chat_id_for_history
                 and result.views
-                and result.views.simulation_chats
+                and result.views.attempt_chat
             ):
-                chat_id_for_history = result.views.simulation_chats[0].id
+                chat_id_for_history = result.views.attempt_chat[0].id
 
             if (
                 chat_id_for_history
                 and result.views
-                and result.views.simulation_messages
+                and result.views.attempt_message
             ):
-                for msg in result.views.simulation_messages:
+                for msg in result.views.attempt_message:
                     if msg.chat_id == chat_id_for_history and msg.completed:
                         role = "user" if msg.type == "query" else "assistant"
                         content = ""

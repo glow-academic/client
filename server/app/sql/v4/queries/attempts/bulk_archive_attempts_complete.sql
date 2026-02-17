@@ -65,7 +65,7 @@ BEGIN
     IF v_use_attempt_ids_mode THEN
         -- attempt_ids mode: Archive specific attempts (append-only)
         WITH insert_archives AS (
-            INSERT INTO simulation_archives_entry (attempt_id, archived)
+            INSERT INTO attempt_archive_entry (attempt_id, archived)
             SELECT unnest(attempt_ids), api_bulk_archive_attempts_v4.archived
             RETURNING id
         )
@@ -121,7 +121,7 @@ BEGIN
                 (SELECT n.name FROM simulation_names_junction simn JOIN names_resource n ON simn.name_id = n.id WHERE simn.simulation_id = mal.simulation_id LIMIT 1) AS simulation_name,
                 mal.practice,
                 COALESCE(sdd.department_ids, NULL) as department_ids
-            FROM simulation_attempts_entry sa
+            FROM attempt_entry sa
             JOIN mv_attempt_list mal ON mal.attempt_id = sa.id
             JOIN profile_artifact p_attempt ON p_attempt.id = mal.profile_id
             CROSS JOIN history_viewer_role hvr
@@ -229,7 +229,7 @@ BEGIN
                  ))
         ),
         filter_insert AS (
-            INSERT INTO simulation_archives_entry (attempt_id, archived)
+            INSERT INTO attempt_archive_entry (attempt_id, archived)
             SELECT attempt_id, api_bulk_archive_attempts_v4.archived
             FROM final_filtered_attempts
             RETURNING id

@@ -13,14 +13,14 @@ Provides access to granular simulation MVs:
 - analyses: Analysis entries per grade
 - responses: Response entries per chat
 - grades: Latest grade per chat
-- benchmark_feedbacks: Benchmark feedback entries per grade
+- test_feedback: Benchmark feedback entries per grade
 """
 
 from fastapi import APIRouter
 
 from app.api.v4.views.simulation.analyses import router as analyses_router
-from app.api.v4.views.simulation.benchmark_feedbacks import (
-    router as benchmark_feedbacks_router,
+from app.api.v4.views.simulation.test_feedback import (
+    router as test_feedback_router,
 )
 from app.api.v4.views.simulation.contents import router as contents_router
 from app.api.v4.views.simulation.feedbacks import router as feedbacks_router
@@ -48,4 +48,4 @@ router.include_router(feedbacks_router)
 router.include_router(analyses_router)
 router.include_router(responses_router)
 router.include_router(grades_router)
-router.include_router(benchmark_feedbacks_router)
+router.include_router(test_feedback_router)

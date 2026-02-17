@@ -1,4 +1,4 @@
-"""Types for analytics simulation facts view (mv_simulation_facts)."""
+"""Types for analytics simulation facts view (mv_attempt_facts)."""
 
 from datetime import date
 from uuid import UUID
@@ -7,7 +7,7 @@ from pydantic import BaseModel, Field
 
 
 class SimulationFactsItem(BaseModel):
-    """Single chat row from mv_simulation_facts.
+    """Single chat row from mv_attempt_facts.
 
     Contains all simulation/secondary-section data with resource IDs only.
     Resource metadata (names, colors, etc.) fetched via internal handlers.

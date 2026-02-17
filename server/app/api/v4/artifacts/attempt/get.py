@@ -6,9 +6,9 @@ Three-layer BFF pattern:
 - get_attempt_websocket(): WebSocket response layer with config resources
 
 Uses view internal handlers with parallel query execution:
-1. Query 1 (Attempt): Attempt-level data via simulation_attempts view
-2. Query 2 (Chats): Chat-level data via simulation_chats view
-3. Query 3 (Messages): Message-level data via simulation_messages view
+1. Query 1 (Attempt): Attempt-level data via attempt view
+2. Query 2 (Chats): Chat-level data via attempt_chat view
+3. Query 3 (Messages): Message-level data via attempt_message view
 
 All three queries run in parallel using pool.acquire() for each,
 then results are assembled in Python.
@@ -97,25 +97,25 @@ from app.api.v4.resources.videos.get import get_videos_internal
 from app.api.v4.views.attempt.chats.get import get_attempt_chats_internal
 from app.api.v4.views.attempt.list.get import get_attempt_list_internal
 from app.api.v4.views.attempt.messages.get import get_attempt_messages_internal
-from app.api.v4.views.simulation.analyses.get import get_simulation_analyses_internal
-from app.api.v4.views.simulation.contents.get import get_simulation_contents_internal
-from app.api.v4.views.simulation.feedbacks.get import get_simulation_feedbacks_internal
-from app.api.v4.views.simulation.grades.get import get_simulation_grades_internal
+from app.api.v4.views.simulation.analyses.get import get_attempt_analysis_internal
+from app.api.v4.views.simulation.contents.get import get_attempt_content_internal
+from app.api.v4.views.simulation.feedbacks.get import get_attempt_feedback_internal
+from app.api.v4.views.simulation.grades.get import get_attempt_grade_internal
 from app.api.v4.views.simulation.highlights.get import (
-    get_simulation_highlights_internal,
+    get_attempt_highlight_internal,
 )
-from app.api.v4.views.simulation.hints.get import get_simulation_hints_internal
+from app.api.v4.views.simulation.hints.get import get_attempt_hint_internal
 from app.api.v4.views.simulation.improvements.get import (
-    get_simulation_improvements_internal,
+    get_attempt_improvement_internal,
 )
 from app.api.v4.views.simulation.replacements.get import (
-    get_simulation_replacements_internal,
+    get_attempt_replacement_internal,
 )
 from app.api.v4.views.simulation.responses.get import (
     get_simulation_responses_internal,
 )
 from app.api.v4.views.simulation.strengths.get import (
-    get_simulation_strengths_internal,
+    get_attempt_strength_internal,
 )
 from app.api.v4.views.upload.list.get import get_upload_list_view_internal
 from app.infra.v4.activity.audit import audit_activity, audit_set
@@ -479,7 +479,7 @@ async def get_attempt_internal(
                 if not message_ids:
                     return []
                 async with pool.acquire() as c:
-                    return await get_simulation_contents_internal(
+                    return await get_attempt_content_internal(
                         c, message_ids=message_ids, bypass_cache=bypass_cache
                     )
 
@@ -487,7 +487,7 @@ async def get_attempt_internal(
                 if not message_ids:
                     return []
                 async with pool.acquire() as c:
-                    return await get_simulation_strengths_internal(
+                    return await get_attempt_strength_internal(
                         c, message_ids=message_ids, bypass_cache=bypass_cache
                     )
 
@@ -495,7 +495,7 @@ async def get_attempt_internal(
                 if not message_ids:
                     return []
                 async with pool.acquire() as c:
-                    return await get_simulation_improvements_internal(
+                    return await get_attempt_improvement_internal(
                         c, message_ids=message_ids, bypass_cache=bypass_cache
                     )
 
@@ -503,7 +503,7 @@ async def get_attempt_internal(
                 if not message_ids:
                     return []
                 async with pool.acquire() as c:
-                    return await get_simulation_hints_internal(
+                    return await get_attempt_hint_internal(
                         c, message_ids=message_ids, bypass_cache=bypass_cache
                     )
 
@@ -511,7 +511,7 @@ async def get_attempt_internal(
                 if not chat_ids:
                     return []
                 async with pool.acquire() as c:
-                    return await get_simulation_grades_internal(
+                    return await get_attempt_grade_internal(
                         c, chat_ids=chat_ids, bypass_cache=bypass_cache
                     )
 
@@ -557,7 +557,7 @@ async def get_attempt_internal(
                 if not strength_ids:
                     return []
                 async with pool.acquire() as c:
-                    return await get_simulation_highlights_internal(
+                    return await get_attempt_highlight_internal(
                         c, strength_ids=strength_ids, bypass_cache=bypass_cache
                     )
 
@@ -565,7 +565,7 @@ async def get_attempt_internal(
                 if not improvement_ids:
                     return []
                 async with pool.acquire() as c:
-                    return await get_simulation_replacements_internal(
+                    return await get_attempt_replacement_internal(
                         c, improvement_ids=improvement_ids, bypass_cache=bypass_cache
                     )
 
@@ -573,7 +573,7 @@ async def get_attempt_internal(
                 if not grade_ids:
                     return []
                 async with pool.acquire() as c:
-                    return await get_simulation_feedbacks_internal(
+                    return await get_attempt_feedback_internal(
                         c, grade_ids=grade_ids, bypass_cache=bypass_cache
                     )
 
@@ -581,7 +581,7 @@ async def get_attempt_internal(
                 if not grade_ids:
                     return []
                 async with pool.acquire() as c:
-                    return await get_simulation_analyses_internal(
+                    return await get_attempt_analysis_internal(
                         c, grade_ids=grade_ids, bypass_cache=bypass_cache
                     )
 
@@ -666,7 +666,7 @@ async def get_attempt_internal(
                 profile_name=None,
                 simulation_name=None,
                 training_id=None,
-                training_bundle_entry_id=None,
+                training_entry_id=None,
                 group_id=None,
             )
 
@@ -683,7 +683,7 @@ async def get_attempt_internal(
                 profile_name=None,
                 simulation_name=None,
                 training_id=None,
-                training_bundle_entry_id=None,
+                training_entry_id=None,
                 group_id=None,
             )
 
@@ -744,7 +744,7 @@ async def get_attempt_internal(
                 profile_name=profile_name,
                 simulation_name=simulation_name,
                 training_id=None,
-                training_bundle_entry_id=None,
+                training_entry_id=None,
                 group_id=None,
             )
 
@@ -756,21 +756,21 @@ async def get_attempt_internal(
 
         # === RESOLVE TRAINING CONTEXT (for lobby flow) ===
         training_id: UUID | None = None
-        training_bundle_entry_id: UUID | None = None
+        training_entry_id: UUID | None = None
         training_row = await conn.fetchrow(
             """
             SELECT a.training_id,
-                   (SELECT tb.id FROM training_bundle_entry tb
+                   (SELECT tb.id FROM training_entry tb
                     WHERE tb.training_id = a.training_id AND tb.active = true
-                    LIMIT 1) AS training_bundle_entry_id
-            FROM simulation_attempts_entry a
+                    LIMIT 1) AS training_entry_id
+            FROM attempt_entry a
             WHERE a.id = $1
             """,
             attempt_id,
         )
         if training_row:
             training_id = training_row["training_id"]
-            training_bundle_entry_id = training_row["training_bundle_entry_id"]
+            training_entry_id = training_row["training_entry_id"]
 
         # === RESOLVE CONFIG CHAIN (group_id -> agent/model/provider) ===
         first_chat_item = chats_result[0] if chats_result else None
@@ -1454,7 +1454,7 @@ async def get_attempt_internal(
             all_chats_completed
             and bool(has_remaining)
             and is_active
-            and bool(training_bundle_entry_id)
+            and bool(training_entry_id)
         )
 
         # Fetch continuation options only when in lobby (non-practice only)
@@ -1502,7 +1502,7 @@ async def get_attempt_internal(
             profile_name=profile_name,
             simulation_name=simulation_name,
             training_id=training_id,
-            training_bundle_entry_id=training_bundle_entry_id,
+            training_entry_id=training_entry_id,
             group_id=group_id,
             agent_ids=agent_ids,
             attempt_item=attempt_item,
@@ -1610,12 +1610,12 @@ async def get_attempt_client(
         available_continuation_options=data.continuation_options,
         rubric_structure=data.rubric_structure,
         training_id=data.training_id,
-        training_bundle_entry_id=data.training_bundle_entry_id,
+        training_entry_id=data.training_entry_id,
         resources=data.resources_payload,
         views=AttemptViews(
-            simulation_attempts=[data.attempt_item] if data.attempt_item else None,
-            simulation_chats=data.chats,
-            simulation_messages=data.messages,
+            attempt=[data.attempt_item] if data.attempt_item else None,
+            attempt_chat=data.chats,
+            attempt_message=data.messages,
         ),
     )
 
@@ -1766,9 +1766,9 @@ async def get_attempt_websocket(
 
     return GetAttemptWebsocketResponse(
         views=AttemptViews(
-            simulation_attempts=[data.attempt_item] if data.attempt_item else None,
-            simulation_chats=data.chats,
-            simulation_messages=data.messages,
+            attempt=[data.attempt_item] if data.attempt_item else None,
+            attempt_chat=data.chats,
+            attempt_message=data.messages,
             runs=runs_result,
         ),
         resources=ws_resources,
@@ -1798,9 +1798,9 @@ async def attempt_get(
     """Get attempt detail with parallel MV fetching.
 
     Uses view internal handlers with pool-based parallel fetch:
-    - View 1: simulation_attempts (attempt-level aggregates)
-    - View 2: simulation_chats (chat-level data with grades/feedbacks)
-    - View 3: simulation_messages (message-level data with strengths/improvements/hints)
+    - View 1: attempt (attempt-level aggregates)
+    - View 2: attempt_chat (chat-level data with grades/feedbacks)
+    - View 3: attempt_message (message-level data with strengths/improvements/hints)
 
     Each query runs on its own connection from the pool for true parallelism.
     The practice flag is determined from the attempt data itself.

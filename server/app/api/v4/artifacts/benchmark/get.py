@@ -1,8 +1,8 @@
 """Benchmark bundle artifact endpoint.
 
 Section-first three-layer implementation (mirrors training/bundle.py):
-1) get_benchmark_bundle_internal() - MV view → hydrate all 9 → filter current
-2) get_benchmark_bundle_client() - HTTP section-first payload formatter
+1) get_suite_internal() - MV view → hydrate all 9 → filter current
+2) get_suite_client() - HTTP section-first payload formatter
 """
 
 import asyncio
@@ -15,21 +15,21 @@ import asyncpg
 from fastapi import APIRouter, HTTPException, Request
 
 from app.api.v4.artifacts.benchmark.types import (
-    BaseBenchmarkBundleSection,
-    BenchmarkBundleDepartmentSection,
-    BenchmarkBundleInstructionSection,
-    BenchmarkBundleKeySection,
-    BenchmarkBundleModelSection,
-    BenchmarkBundlePromptSection,
-    BenchmarkBundleReasoningLevelSection,
-    BenchmarkBundleTemperatureLevelSection,
-    BenchmarkBundleToolSection,
-    BenchmarkBundleVoiceSection,
-    BenchmarkBundleWebsocketResources,
-    BenchmarkBundleWebsocketViews,
-    GetBenchmarkBundleRequest,
-    GetBenchmarkBundleResponse,
-    GetBenchmarkBundleWebsocketResponse,
+    BaseSuiteSection,
+    SuiteDepartmentSection,
+    SuiteInstructionSection,
+    SuiteKeySection,
+    SuiteModelSection,
+    SuitePromptSection,
+    SuiteReasoningLevelSection,
+    SuiteTemperatureLevelSection,
+    SuiteToolSection,
+    SuiteVoiceSection,
+    SuiteWebsocketResources,
+    SuiteWebsocketViews,
+    GetSuiteRequest,
+    GetSuiteResponse,
+    GetSuiteWebsocketResponse,
 )
 from app.api.v4.auth.settings import get_auth_settings_internal
 from app.api.v4.permissions import resolve_agents_for_artifact
@@ -44,7 +44,7 @@ from app.api.v4.resources.reasoning_levels.get import get_reasoning_levels_inter
 from app.api.v4.resources.temperature_levels.get import get_temperature_levels_internal
 from app.api.v4.resources.tools.get import get_tools_internal
 from app.api.v4.resources.voices.get import get_voices_internal
-from app.api.v4.views.benchmark.bundle.get import get_benchmark_bundle_view_internal
+from app.api.v4.views.benchmark.bundle.get import get_suite_view_internal
 from app.api.v4.views.run.list.get import get_run_list_view_internal
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_pool
@@ -75,8 +75,8 @@ BENCHMARK_BUNDLE_RESOURCES: set[str] = {
 
 
 @dataclass
-class BenchmarkBundleInternalData:
-    benchmark_bundle_entry_id: UUID
+class SuiteInternalData:
+    suite_entry_id: UUID
     benchmark_id: UUID | None
     profile_has_access: bool
     group_id: UUID | None = None
@@ -141,26 +141,26 @@ RESOURCE_CONFIG: list[tuple[str, str, Any, str]] = [
 # =============================================================================
 
 
-async def get_benchmark_bundle_internal(
+async def get_suite_internal(
     pool: asyncpg.Pool,
     profile_id: UUID,
-    benchmark_bundle_entry_id: UUID,
+    suite_entry_id: UUID,
     draft_id: UUID | None = None,
     bypass_cache: bool = False,
-) -> BenchmarkBundleInternalData:
+) -> SuiteInternalData:
     """Shared IDs-first + hydration internal fetch for benchmark bundle artifact."""
     from app.api.v4.views.drafts.get import get_draft_benchmark_internal
     from app.api.v4.views.drafts.types import DraftBenchmarkViewItem
 
     # 1. Fetch MV view data (all 9 ID arrays)
     async with pool.acquire() as conn:
-        view_data = await get_benchmark_bundle_view_internal(
+        view_data = await get_suite_view_internal(
             conn=conn,
             profile_id=profile_id,
-            benchmark_bundle_entry_id=benchmark_bundle_entry_id,
+            suite_entry_id=suite_entry_id,
         )
 
-    if not view_data.benchmark_bundle_entry_id:
+    if not view_data.suite_entry_id:
         raise HTTPException(status_code=404, detail="Benchmark bundle not found")
 
     if not view_data.profile_has_access:
@@ -252,8 +252,8 @@ async def get_benchmark_bundle_internal(
                 conn, config_provider_ids, bypass_cache
             )
 
-    return BenchmarkBundleInternalData(
-        benchmark_bundle_entry_id=view_data.benchmark_bundle_entry_id,
+    return SuiteInternalData(
+        suite_entry_id=view_data.suite_entry_id,
         benchmark_id=view_data.benchmark_id,
         profile_has_access=view_data.profile_has_access,
         group_id=draft_item.group_id if draft_item else None,
@@ -276,35 +276,35 @@ async def get_benchmark_bundle_internal(
 
 # Section class mapping for building typed sections
 _SECTION_CLASSES: dict[str, type] = {
-    "departments": BenchmarkBundleDepartmentSection,
-    "models": BenchmarkBundleModelSection,
-    "prompts": BenchmarkBundlePromptSection,
-    "instructions": BenchmarkBundleInstructionSection,
-    "voices": BenchmarkBundleVoiceSection,
-    "temperature_levels": BenchmarkBundleTemperatureLevelSection,
-    "reasoning_levels": BenchmarkBundleReasoningLevelSection,
-    "tools": BenchmarkBundleToolSection,
-    "keys": BenchmarkBundleKeySection,
+    "departments": SuiteDepartmentSection,
+    "models": SuiteModelSection,
+    "prompts": SuitePromptSection,
+    "instructions": SuiteInstructionSection,
+    "voices": SuiteVoiceSection,
+    "temperature_levels": SuiteTemperatureLevelSection,
+    "reasoning_levels": SuiteReasoningLevelSection,
+    "tools": SuiteToolSection,
+    "keys": SuiteKeySection,
 }
 
 
-async def get_benchmark_bundle_client(
+async def get_suite_client(
     pool: asyncpg.Pool,
     profile_id: UUID,
-    benchmark_bundle_entry_id: UUID,
+    suite_entry_id: UUID,
     draft_id: UUID | None = None,
     bypass_cache: bool = False,
-) -> GetBenchmarkBundleResponse:
+) -> GetSuiteResponse:
     """HTTP-facing bundle response formatter — section-first pattern."""
-    data = await get_benchmark_bundle_internal(
+    data = await get_suite_internal(
         pool=pool,
         profile_id=profile_id,
-        benchmark_bundle_entry_id=benchmark_bundle_entry_id,
+        suite_entry_id=suite_entry_id,
         draft_id=draft_id,
         bypass_cache=bypass_cache,
     )
 
-    def _section(resource_key: str) -> BaseBenchmarkBundleSection:
+    def _section(resource_key: str) -> BaseSuiteSection:
         cls = _SECTION_CLASSES[resource_key]
         return cls(
             show=True,
@@ -314,8 +314,8 @@ async def get_benchmark_bundle_client(
             resources=data.all_resources.get(resource_key) or None,
         )
 
-    return GetBenchmarkBundleResponse(
-        benchmark_bundle_entry_id=data.benchmark_bundle_entry_id,
+    return GetSuiteResponse(
+        suite_entry_id=data.suite_entry_id,
         benchmark_id=data.benchmark_id,
         profile_has_access=data.profile_has_access,
         draft_version=data.draft_version,
@@ -340,20 +340,20 @@ async def get_benchmark_bundle_client(
 # =============================================================================
 
 
-async def get_benchmark_bundle_websocket(
+async def get_suite_websocket(
     pool: asyncpg.Pool,
     profile_id: UUID,
-    benchmark_bundle_entry_id: UUID,
+    suite_entry_id: UUID,
     draft_id: UUID | None = None,
     bypass_cache: bool = False,
-) -> GetBenchmarkBundleWebsocketResponse:
+) -> GetSuiteWebsocketResponse:
     """Thin wrapper for websocket consumers — selected resources only."""
 
     async def fetch_bundle():
-        return await get_benchmark_bundle_internal(
+        return await get_suite_internal(
             pool=pool,
             profile_id=profile_id,
-            benchmark_bundle_entry_id=benchmark_bundle_entry_id,
+            suite_entry_id=suite_entry_id,
             draft_id=draft_id,
             bypass_cache=bypass_cache,
         )
@@ -383,12 +383,12 @@ async def get_benchmark_bundle_websocket(
         fetch_runs_today(),
     )
 
-    return GetBenchmarkBundleWebsocketResponse(
-        views=BenchmarkBundleWebsocketViews(
-            draft_benchmark_bundle=data.draft_item,
+    return GetSuiteWebsocketResponse(
+        views=SuiteWebsocketViews(
+            draft_suite=data.draft_item,
             runs=runs_result,
         ),
-        resources=BenchmarkBundleWebsocketResources(
+        resources=SuiteWebsocketResources(
             departments=data.current_resources.get("departments") or None,
             models=data.current_resources.get("models") or None,
             prompts=data.current_resources.get("prompts") or None,
@@ -414,11 +414,11 @@ async def get_benchmark_bundle_websocket(
 # =============================================================================
 
 
-@router.post("/get", response_model=GetBenchmarkBundleResponse)
-async def benchmark_bundle_get(
-    request: GetBenchmarkBundleRequest,
+@router.post("/get", response_model=GetSuiteResponse)
+async def suite_get(
+    request: GetSuiteRequest,
     http_request: Request,
-) -> GetBenchmarkBundleResponse:
+) -> GetSuiteResponse:
     """Get hydrated resources for benchmark bundle customization."""
     try:
         profile_id = http_request.state.profile_id
@@ -434,10 +434,10 @@ async def benchmark_bundle_get(
         if not pool:
             raise RuntimeError("Database pool not initialized")
 
-        return await get_benchmark_bundle_client(
+        return await get_suite_client(
             pool=pool,
             profile_id=cast(UUID, profile_id),
-            benchmark_bundle_entry_id=request.benchmark_bundle_entry_id,
+            suite_entry_id=request.suite_entry_id,
             draft_id=request.draft_id,
             bypass_cache=bypass_cache,
         )
@@ -447,7 +447,7 @@ async def benchmark_bundle_get(
         handle_route_error(
             error=e,
             route_path=http_request.url.path,
-            operation="benchmark_bundle_get",
+            operation="suite_get",
             sql_query=None,
             sql_params=None,
             request=http_request,

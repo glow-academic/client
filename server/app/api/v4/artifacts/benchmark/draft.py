@@ -6,10 +6,10 @@ import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 from app.api.v4.artifacts.benchmark.types import (
-    PatchBenchmarkBundleDraftApiRequest,
-    PatchBenchmarkBundleDraftApiResponse,
-    PatchBenchmarkBundleDraftSqlParams,
-    PatchBenchmarkBundleDraftSqlRow,
+    PatchSuiteDraftApiRequest,
+    PatchSuiteDraftApiResponse,
+    PatchSuiteDraftSqlParams,
+    PatchSuiteDraftSqlRow,
 )
 from app.infra.v4.activity.audit import audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
@@ -18,21 +18,21 @@ from app.sql.types import load_sql_query
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.sql_helper import execute_sql_typed
 
-SQL_PATH = "app/sql/v4/queries/benchmark/patch_benchmark_bundle_draft_complete.sql"
+SQL_PATH = "app/sql/v4/queries/benchmark/patch_suite_draft_complete.sql"
 
 router = APIRouter()
 
 
 @router.patch(
     "/draft",
-    response_model=PatchBenchmarkBundleDraftApiResponse,
+    response_model=PatchSuiteDraftApiResponse,
 )
 async def patch_benchmark_draft(
-    request: PatchBenchmarkBundleDraftApiRequest,
+    request: PatchSuiteDraftApiRequest,
     http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
-) -> PatchBenchmarkBundleDraftApiResponse:
+) -> PatchSuiteDraftApiResponse:
     """Patch benchmark bundle draft for bundle configuration and create/update draft."""
     tags = ["benchmark", "drafts"]
 
@@ -48,13 +48,13 @@ async def patch_benchmark_draft(
             )
 
         async with conn.transaction():
-            params = PatchBenchmarkBundleDraftSqlParams.from_request(
+            params = PatchSuiteDraftSqlParams.from_request(
                 request, profile_id=profile_id
             )
             sql_params = params.to_tuple()
 
             result = cast(
-                PatchBenchmarkBundleDraftSqlRow,
+                PatchSuiteDraftSqlRow,
                 await execute_sql_typed(conn, SQL_PATH, params=params),
             )
 
@@ -67,7 +67,7 @@ async def patch_benchmark_draft(
                 draft={"id": str(result.draft_id)},
             )
 
-        api_response = PatchBenchmarkBundleDraftApiResponse.model_validate(
+        api_response = PatchSuiteDraftApiResponse.model_validate(
             result.model_dump()
         )
 

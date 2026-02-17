@@ -20,13 +20,13 @@ from app.utils.cache.set_cached import set_cached
 from app.utils.sql_helper import execute_sql_typed
 
 SQL_PATH = (
-    "app/sql/v4/queries/views/simulation/hints/get_simulation_hints_view_complete.sql"
+    "app/sql/v4/queries/views/simulation/hints/get_attempt_hint_view_complete.sql"
 )
 
 router = APIRouter()
 
 
-async def get_simulation_hints_internal(
+async def get_attempt_hint_internal(
     conn: asyncpg.Connection,
     message_ids: list[UUID],
     bypass_cache: bool = False,
@@ -90,7 +90,7 @@ async def get_hints(
     sql_query: str | None = None
     sql_params: tuple[Any, ...] | None = None
     try:
-        items = await get_simulation_hints_internal(
+        items = await get_attempt_hint_internal(
             conn=conn,
             message_ids=request.message_ids,
             bypass_cache=bypass_cache,
@@ -105,7 +105,7 @@ async def get_hints(
         handle_route_error(
             error=e,
             route_path=http_request.url.path,
-            operation="views_simulation_hints_get",
+            operation="views_attempt_hint_get",
             sql_query=sql_query,
             sql_params=sql_params,
             request=http_request,

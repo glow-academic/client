@@ -28,20 +28,20 @@ async def refresh_hints_view(
     http_request: Request,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> RefreshResponse:
-    """Refresh the mv_simulation_hints materialized view concurrently."""
+    """Refresh the mv_attempt_hint materialized view concurrently."""
     tags = ["views", "simulation", "hints"]
     try:
         start_time = time.time()
-        await conn.execute("REFRESH MATERIALIZED VIEW CONCURRENTLY mv_simulation_hints")
+        await conn.execute("REFRESH MATERIALIZED VIEW CONCURRENTLY mv_attempt_hint")
         duration_ms = int((time.time() - start_time) * 1000)
         await invalidate_tags(tags)
         return RefreshResponse(
             success=True,
             method="concurrent",
-            message=f"Refreshed mv_simulation_hints in {duration_ms}ms",
+            message=f"Refreshed mv_attempt_hint in {duration_ms}ms",
             duration_ms=duration_ms,
         )
     except Exception as e:
         raise HTTPException(
-            status_code=500, detail=f"Failed to refresh mv_simulation_hints: {str(e)}"
+            status_code=500, detail=f"Failed to refresh mv_attempt_hint: {str(e)}"
         ) from e

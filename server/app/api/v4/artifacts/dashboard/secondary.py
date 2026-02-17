@@ -46,7 +46,7 @@ async def get_dashboard_secondary(
     - Cohort Performance (pass rate, avg score per cohort x simulation)
     - Attempt Improvement (score progression by attempt number)
 
-    All sourced from mv_simulation_facts (renamed from mv_cohort_facts).
+    All sourced from mv_attempt_facts (renamed from mv_cohort_facts).
     """
     tags = ["artifacts", "dashboard", "views", "analytics", "secondary"]
     bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"

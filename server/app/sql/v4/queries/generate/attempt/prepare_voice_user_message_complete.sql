@@ -39,7 +39,7 @@ DECLARE
 BEGIN
     -- Get group_id from the chat
     SELECT sc.group_id INTO v_group_id
-    FROM simulation_chats_entry sc
+    FROM attempt_chat_entry sc
     WHERE sc.id = p_chat_id;
 
     IF v_group_id IS NULL THEN
@@ -67,11 +67,11 @@ BEGIN
     VALUES (v_user_message_id);
 
     -- Link to simulation chat
-    INSERT INTO simulation_messages_entry (id, chat_id)
+    INSERT INTO attempt_message_entry (id, chat_id)
     VALUES (v_user_message_id, p_chat_id);
 
     -- Insert content (with Student persona)
-    INSERT INTO simulation_contents_entry (message_id, content, persona_id)
+    INSERT INTO attempt_content_entry (message_id, content, persona_id)
     VALUES (v_user_message_id, p_message, '019bb25e-e60c-7352-9b81-f411f56092a9'::uuid);
 
     RETURN QUERY SELECT v_user_message_id, v_created_at;

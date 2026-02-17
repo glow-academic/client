@@ -33,9 +33,9 @@ SELECT
     g.chat_id,
     c.attempt_id,
     sas.simulations_id AS simulation_id
-FROM simulation_grades_entry g
-JOIN simulation_chats_entry c ON c.id = g.chat_id
-LEFT JOIN simulation_attempts_simulations_connection sas
+FROM attempt_grade_entry g
+JOIN attempt_chat_entry c ON c.id = g.chat_id
+LEFT JOIN attempt_simulations_connection sas
     ON sas.attempt_id = c.attempt_id
    AND sas.active = true
 WHERE g.run_id = p_run_id

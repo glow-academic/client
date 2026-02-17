@@ -1,14 +1,14 @@
--- Materialized View: mv_simulation_messages
+-- Materialized View: mv_attempt_messages
 -- Grain: One row per simulation message
 -- Flat entry data only - no nested composites
 --
 -- Purpose: Provides flat message-level data for simulation views
 -- Section: SIMULATION (lean MV)
 --
--- Dependencies: simulation_messages_entry, messages_entry, simulation_chats_entry,
---               simulation_attempts_entry, runs_runs_connection, texts_entry, audios_entry
+-- Dependencies: attempt_message_entry, messages_entry, attempt_chat_entry,
+--               attempt_entry, runs_runs_connection, texts_entry, audios_entry
 -- ============================================================================
--- Step 1: Drop all indexes on mv_simulation_messages materialized view (if it exists)
+-- Step 1: Drop all indexes on mv_attempt_messages materialized view (if it exists)
 -- ============================================================================
 
 DO $$
@@ -19,23 +19,23 @@ BEGIN
         SELECT indexname
         FROM pg_indexes
         WHERE schemaname = 'public'
-          AND tablename = 'mv_simulation_messages'
+          AND tablename = 'mv_attempt_messages'
     LOOP
         EXECUTE format('DROP INDEX IF EXISTS %I', r.indexname);
     END LOOP;
 END $$;
 
 -- ============================================================================
--- Step 2: Drop mv_simulation_messages materialized view if it exists
+-- Step 2: Drop mv_attempt_messages materialized view if it exists
 -- ============================================================================
 
-DROP MATERIALIZED VIEW IF EXISTS mv_simulation_messages CASCADE;
+DROP MATERIALIZED VIEW IF EXISTS mv_attempt_messages CASCADE;
 
 -- ============================================================================
--- Step 3: Create mv_simulation_messages Materialized View
+-- Step 3: Create mv_attempt_messages Materialized View
 -- ============================================================================
 
-CREATE MATERIALIZED VIEW mv_simulation_messages AS
+CREATE MATERIALIZED VIEW mv_attempt_messages AS
 WITH
 -- Get runs_id (resource) for each run_id (entry)
 runs_resource_agg AS (
@@ -62,12 +62,12 @@ SELECT
     aa.audio_id,
     te.content AS history_content,
     m.created_at
-FROM simulation_messages_entry sm
+FROM attempt_message_entry sm
 JOIN messages_entry m ON m.id = sm.id
-JOIN simulation_chats_entry c ON c.id = sm.chat_id
-JOIN simulation_attempts_entry a ON a.id = c.attempt_id
+JOIN attempt_chat_entry c ON c.id = sm.chat_id
+JOIN attempt_entry a ON a.id = c.attempt_id
 LEFT JOIN LATERAL (
-    SELECT archived FROM simulation_archives_entry
+    SELECT archived FROM attempt_archive_entry
     WHERE attempt_id = a.id AND active = TRUE ORDER BY created_at DESC LIMIT 1
 ) sa_archive ON true
 LEFT JOIN LATERAL (
@@ -88,40 +88,40 @@ WITH NO DATA;
 -- Step 4: Create Unique Index (Required for CONCURRENT refresh)
 -- ============================================================================
 
-CREATE UNIQUE INDEX mv_simulation_messages_pk
-    ON mv_simulation_messages (message_id);
+CREATE UNIQUE INDEX mv_attempt_messages_pk
+    ON mv_attempt_messages (message_id);
 
 -- ============================================================================
 -- Step 5: Create Filter/Slicing Indexes
 -- ============================================================================
 
 -- Chat ID for grouping
-CREATE INDEX mv_simulation_messages_chat_id_idx
-    ON mv_simulation_messages (chat_id);
+CREATE INDEX mv_attempt_messages_chat_id_idx
+    ON mv_attempt_messages (chat_id);
 
 -- Attempt ID for parallel lookup
-CREATE INDEX mv_simulation_messages_attempt_id_idx
-    ON mv_simulation_messages (attempt_id);
+CREATE INDEX mv_attempt_messages_attempt_id_idx
+    ON mv_attempt_messages (attempt_id);
 
 -- Composite: attempt + chat for ordering
-CREATE INDEX mv_simulation_messages_attempt_chat_idx
-    ON mv_simulation_messages (attempt_id, chat_id);
+CREATE INDEX mv_attempt_messages_attempt_chat_idx
+    ON mv_attempt_messages (attempt_id, chat_id);
 
 -- Message type for filtering
-CREATE INDEX mv_simulation_messages_type_idx
-    ON mv_simulation_messages (type);
+CREATE INDEX mv_attempt_messages_type_idx
+    ON mv_attempt_messages (type);
 
 -- Created at for ordering
-CREATE INDEX mv_simulation_messages_created_at_idx
-    ON mv_simulation_messages (created_at);
+CREATE INDEX mv_attempt_messages_created_at_idx
+    ON mv_attempt_messages (created_at);
 
 -- Runs ID for filtering by run
-CREATE INDEX mv_simulation_messages_runs_id_idx
-    ON mv_simulation_messages (runs_id)
+CREATE INDEX mv_attempt_messages_runs_id_idx
+    ON mv_attempt_messages (runs_id)
     WHERE runs_id IS NOT NULL;
 
 -- ============================================================================
 -- Step 6: Refresh Materialized View with Data
 -- ============================================================================
 
-REFRESH MATERIALIZED VIEW mv_simulation_messages;
+REFRESH MATERIALIZED VIEW mv_attempt_messages;

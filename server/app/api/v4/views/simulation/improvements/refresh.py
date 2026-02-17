@@ -28,23 +28,23 @@ async def refresh_improvements_view(
     http_request: Request,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> RefreshResponse:
-    """Refresh the mv_simulation_improvements materialized view concurrently."""
+    """Refresh the mv_attempt_improvement materialized view concurrently."""
     tags = ["views", "simulation", "improvements"]
     try:
         start_time = time.time()
         await conn.execute(
-            "REFRESH MATERIALIZED VIEW CONCURRENTLY mv_simulation_improvements"
+            "REFRESH MATERIALIZED VIEW CONCURRENTLY mv_attempt_improvement"
         )
         duration_ms = int((time.time() - start_time) * 1000)
         await invalidate_tags(tags)
         return RefreshResponse(
             success=True,
             method="concurrent",
-            message=f"Refreshed mv_simulation_improvements in {duration_ms}ms",
+            message=f"Refreshed mv_attempt_improvement in {duration_ms}ms",
             duration_ms=duration_ms,
         )
     except Exception as e:
         raise HTTPException(
             status_code=500,
-            detail=f"Failed to refresh mv_simulation_improvements: {str(e)}",
+            detail=f"Failed to refresh mv_attempt_improvement: {str(e)}",
         ) from e

@@ -10,7 +10,7 @@ class BenchmarkContextViewItem(BaseModel):
 
     benchmark_id: UUID
     eval_ids: list[UUID] | None = None
-    benchmark_bundle_entry_ids: list[UUID] | None = None
+    suite_entry_ids: list[UUID] | None = None
     department_ids: list[UUID] | None = None
     profile_ids: list[UUID] | None = None
     run_rubric_ids: list[UUID] | None = None

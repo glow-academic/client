@@ -48,7 +48,7 @@ latest_grade AS (
     SELECT DISTINCT ON (g.chat_id)
         g.id AS grade_id,
         g.chat_id
-    FROM simulation_grades_entry g
+    FROM attempt_grade_entry g
     WHERE g.active = TRUE
     ORDER BY g.chat_id, g.created_at DESC
 ),
@@ -56,7 +56,7 @@ grade_rubric AS (
     SELECT DISTINCT ON (grc.grade_id)
         grc.grade_id,
         grc.rubrics_id AS rubric_id
-    FROM simulation_grades_rubrics_connection grc
+    FROM attempt_grade_rubrics_connection grc
     WHERE grc.active = TRUE
     ORDER BY grc.grade_id, grc.created_at DESC
 )
@@ -89,18 +89,18 @@ SELECT
 
 FROM latest_grade lg
 JOIN grade_rubric gr ON gr.grade_id = lg.grade_id
-JOIN simulation_chats_entry c ON c.id = lg.chat_id
-JOIN simulation_attempts_entry a ON a.id = c.attempt_id
-JOIN simulation_attempts_simulations_connection asc_conn ON asc_conn.attempt_id = a.id
-JOIN simulation_attempts_profiles_connection apc ON apc.attempt_id = a.id
-LEFT JOIN simulation_attempts_cohorts_connection acc ON acc.attempt_id = a.id
-LEFT JOIN simulation_attempts_departments_connection adc ON adc.attempt_id = a.id
+JOIN attempt_chat_entry c ON c.id = lg.chat_id
+JOIN attempt_entry a ON a.id = c.attempt_id
+JOIN attempt_simulations_connection asc_conn ON asc_conn.attempt_id = a.id
+JOIN attempt_profiles_connection apc ON apc.attempt_id = a.id
+LEFT JOIN attempt_cohorts_connection acc ON acc.attempt_id = a.id
+LEFT JOIN attempt_departments_connection adc ON adc.attempt_id = a.id
 -- Latest archive state (append-only)
 LEFT JOIN LATERAL (
-    SELECT archived FROM simulation_archives_entry
+    SELECT archived FROM attempt_archive_entry
     WHERE attempt_id = a.id AND active = TRUE ORDER BY created_at DESC LIMIT 1
 ) sa_archive ON true
-JOIN simulation_feedbacks_entry fe ON fe.grade_id = lg.grade_id AND fe.active = TRUE
+JOIN attempt_feedback_entry fe ON fe.grade_id = lg.grade_id AND fe.active = TRUE
 JOIN feedbacks_standards_connection fsc ON fsc.feedbacks_id = fe.id
 JOIN standards_resource s ON s.id = fsc.standard_id
 JOIN rubric_rubrics_junction rrj

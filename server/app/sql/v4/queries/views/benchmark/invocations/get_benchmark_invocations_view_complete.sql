@@ -1,6 +1,6 @@
 -- ============================================================================
--- Query: get_benchmark_invocations_view
--- Purpose: Fetch invocation-level data from mv_benchmark_invocations with declarative filters
+-- Query: get_test_invocation_view
+-- Purpose: Fetch invocation-level data from mv_test_invocations with declarative filters
 -- Section: VIEWS/BENCHMARK/INVOCATIONS
 -- ============================================================================
 
@@ -15,10 +15,10 @@ BEGIN
     FOR r IN
         SELECT oidvectortypes(proargtypes) as sig
         FROM pg_proc
-        WHERE proname = 'api_get_benchmark_invocations_view_v4'
+        WHERE proname = 'api_get_test_invocation_view_v4'
           AND pronamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'public')
     LOOP
-        EXECUTE format('DROP FUNCTION IF EXISTS api_get_benchmark_invocations_view_v4(%s)', r.sig);
+        EXECUTE format('DROP FUNCTION IF EXISTS api_get_test_invocation_view_v4(%s)', r.sig);
     END LOOP;
 END $$;
 
@@ -33,7 +33,7 @@ BEGIN
     FOR r IN
         SELECT typname
         FROM pg_type
-        WHERE typname LIKE 'q_get_benchmark_invocations_view_v4_%'
+        WHERE typname LIKE 'q_get_test_invocation_view_v4_%'
           AND typnamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'types')
     LOOP
         EXECUTE format('DROP TYPE IF EXISTS types.%I CASCADE', r.typname);
@@ -45,14 +45,14 @@ END $$;
 -- ============================================================================
 
 -- Main invocation item type (IDs from MV - metadata fetched separately via internal handlers)
-CREATE TYPE types.q_get_benchmark_invocations_view_v4_item AS (
+CREATE TYPE types.q_get_test_invocation_view_v4_item AS (
     -- Primary key
     invocation_id uuid,
 
     -- Foreign keys
     test_id uuid,
     group_id uuid,
-    benchmark_bundle_department_id uuid,
+    suite_department_id uuid,
 
     -- Invocation data
     created_at timestamptz,
@@ -91,12 +91,12 @@ CREATE TYPE types.q_get_benchmark_invocations_view_v4_item AS (
 -- Step 4: Create function
 -- ============================================================================
 
-CREATE OR REPLACE FUNCTION api_get_benchmark_invocations_view_v4(
+CREATE OR REPLACE FUNCTION api_get_test_invocation_view_v4(
     test_id_filter uuid DEFAULT NULL,
     invocation_ids_filter uuid[] DEFAULT NULL
 )
 RETURNS TABLE (
-    items types.q_get_benchmark_invocations_view_v4_item[]
+    items types.q_get_test_invocation_view_v4_item[]
 )
 LANGUAGE sql
 STABLE
@@ -105,7 +105,7 @@ AS $$
     -- Fetch from MV with declarative filters
     mv_data AS (
         SELECT mv.*
-        FROM mv_benchmark_invocations mv
+        FROM mv_test_invocations mv
         WHERE (test_id_filter IS NULL OR mv.test_id = test_id_filter)
           AND (invocation_ids_filter IS NULL OR mv.invocation_id = ANY(invocation_ids_filter))
     ),
@@ -115,7 +115,7 @@ AS $$
             mv.invocation_id,
             mv.test_id,
             mv.group_id,
-            mv.benchmark_bundle_department_id,
+            mv.suite_department_id,
             mv.invocation_created_at AS created_at,
             mv.invocation_title AS title,
             mv.invocation_completed,
@@ -149,7 +149,7 @@ AS $$
                     invocation_id,
                     test_id,
                     group_id,
-                    benchmark_bundle_department_id,
+                    suite_department_id,
                     created_at,
                     title,
                     invocation_completed,
@@ -170,10 +170,10 @@ AS $$
                     reasoning_level_id,
                     key_id,
                     historical_run_ids
-                )::types.q_get_benchmark_invocations_view_v4_item
+                )::types.q_get_test_invocation_view_v4_item
                 ORDER BY created_at ASC
             ),
-            ARRAY[]::types.q_get_benchmark_invocations_view_v4_item[]
+            ARRAY[]::types.q_get_test_invocation_view_v4_item[]
         ) AS items
         FROM with_resources
     )

@@ -20,13 +20,13 @@ from app.utils.cache.set_cached import set_cached
 from app.utils.sql_helper import execute_sql_typed
 
 SQL_PATH = (
-    "app/sql/v4/queries/views/simulation/grades/get_simulation_grades_view_complete.sql"
+    "app/sql/v4/queries/views/simulation/grades/get_attempt_grade_view_complete.sql"
 )
 
 router = APIRouter()
 
 
-async def get_simulation_grades_internal(
+async def get_attempt_grade_internal(
     conn: asyncpg.Connection,
     chat_ids: list[UUID],
     bypass_cache: bool = False,
@@ -94,7 +94,7 @@ async def get_grades(
     sql_query: str | None = None
     sql_params: tuple[Any, ...] | None = None
     try:
-        items = await get_simulation_grades_internal(
+        items = await get_attempt_grade_internal(
             conn=conn,
             chat_ids=request.chat_ids,
             bypass_cache=bypass_cache,
@@ -109,7 +109,7 @@ async def get_grades(
         handle_route_error(
             error=e,
             route_path=http_request.url.path,
-            operation="views_simulation_grades_get",
+            operation="views_attempt_grade_get",
             sql_query=sql_query,
             sql_params=sql_params,
             request=http_request,

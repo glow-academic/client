@@ -101,7 +101,7 @@ async def handle_test_grade_complete(data: dict[str, Any]) -> None:
     """Handle grade generation completion for test artifact.
 
     Fires when the grading LLM generation finishes. Extracts score/passed/feedback
-    from tool results, updates the benchmark_grades_entry, and emits test_graded.
+    from tool results, updates the test_grade_entry, and emits test_graded.
 
     After grading, emits test_invocation for auto-proceed chain.
     """

@@ -247,7 +247,7 @@ class TrainingSimulationOperational(BaseModel):
     simulation_name: str | None = None
     simulation_description: str | None = None
     time_limit: int | None = None
-    training_bundle_entry_id: UUID | None = None
+    training_entry_id: UUID | None = None
     scenario_ids: list[UUID] | None = None  # Ordered list of scenario IDs
     cohort_ids: list[UUID] | None = None  # Cohorts this simulation belongs to
     # Display metadata
@@ -293,17 +293,17 @@ class GetTrainingGetResponse(BaseModel):
 # =============================================================================
 
 
-class GetTrainingBundleRequest(BaseModel):
+class GetTrainingRequest(BaseModel):
     """Client API request for one training bundle customization payload."""
 
-    training_bundle_entry_id: UUID
+    training_entry_id: UUID
     draft_id: UUID | None = None
 
 
 # --- Section types (one per resource) ---
 
 
-class BaseTrainingBundleSection(BaseModel):
+class BaseTrainingSection(BaseModel):
     """Common metadata fields for all training bundle resource sections."""
 
     show: bool = False
@@ -314,62 +314,62 @@ class BaseTrainingBundleSection(BaseModel):
     link_tool_id: UUID | None = None
 
 
-class TrainingBundleDepartmentSection(BaseTrainingBundleSection):
+class TrainingDepartmentSection(BaseTrainingSection):
     current: list[QGetDepartmentsV4Item] | None = None
     resources: list[QGetDepartmentsV4Item] | None = None
 
 
-class TrainingBundlePersonaSection(BaseTrainingBundleSection):
+class TrainingPersonaSection(BaseTrainingSection):
     current: list[QGetPersonasV4Item] | None = None
     resources: list[QGetPersonasV4Item] | None = None
 
 
-class TrainingBundleDocumentSection(BaseTrainingBundleSection):
+class TrainingDocumentSection(BaseTrainingSection):
     current: list[QGetDocumentsV4Item] | None = None
     resources: list[QGetDocumentsV4Item] | None = None
 
 
-class TrainingBundleParameterFieldSection(BaseTrainingBundleSection):
+class TrainingParameterFieldSection(BaseTrainingSection):
     current: list[QGetParameterFieldsV4Item] | None = None
     resources: list[QGetParameterFieldsV4Item] | None = None
 
 
-class TrainingBundleScenarioSection(BaseTrainingBundleSection):
+class TrainingScenarioSection(BaseTrainingSection):
     current: list[QGetScenariosV4Item] | None = None
     resources: list[QGetScenariosV4Item] | None = None
 
 
-class TrainingBundleParameterSection(BaseTrainingBundleSection):
+class TrainingParameterSection(BaseTrainingSection):
     current: list[QGetParametersV4Item] | None = None
     resources: list[QGetParametersV4Item] | None = None
 
 
-class TrainingBundleQuestionSection(BaseTrainingBundleSection):
+class TrainingQuestionSection(BaseTrainingSection):
     current: list[QGetQuestionsV4Item] | None = None
     resources: list[QGetQuestionsV4Item] | None = None
 
 
-class TrainingBundleOptionSection(BaseTrainingBundleSection):
+class TrainingOptionSection(BaseTrainingSection):
     current: list[QGetOptionsV4Item] | None = None
     resources: list[QGetOptionsV4Item] | None = None
 
 
-class TrainingBundleVideoSection(BaseTrainingBundleSection):
+class TrainingVideoSection(BaseTrainingSection):
     current: list[QGetVideosV4Item] | None = None
     resources: list[QGetVideosV4Item] | None = None
 
 
-class TrainingBundleImageSection(BaseTrainingBundleSection):
+class TrainingImageSection(BaseTrainingSection):
     current: list[QGetImagesV4Item] | None = None
     resources: list[QGetImagesV4Item] | None = None
 
 
-class TrainingBundleProblemStatementSection(BaseTrainingBundleSection):
+class TrainingProblemStatementSection(BaseTrainingSection):
     current: list[QGetProblemStatementsV4Item] | None = None
     resources: list[QGetProblemStatementsV4Item] | None = None
 
 
-class TrainingBundleObjectiveSection(BaseTrainingBundleSection):
+class TrainingObjectiveSection(BaseTrainingSection):
     current: list[QGetObjectivesV4Item] | None = None
     resources: list[QGetObjectivesV4Item] | None = None
 
@@ -377,7 +377,7 @@ class TrainingBundleObjectiveSection(BaseTrainingBundleSection):
 # --- Scenario flags type ---
 
 
-class TrainingBundleScenarioFlags(BaseModel):
+class TrainingScenarioFlags(BaseModel):
     """Scenario-level flags that control section visibility."""
 
     video_enabled: bool = False
@@ -390,32 +390,32 @@ class TrainingBundleScenarioFlags(BaseModel):
 # --- GET response (section-first) ---
 
 
-class GetTrainingBundleResponse(BaseModel):
+class GetTrainingResponse(BaseModel):
     """Client-facing bundle response — section-first pattern."""
 
-    training_bundle_entry_id: UUID
-    training_id: UUID | None = None
+    training_entry_id: UUID
+    parent_id: UUID | None = None
     simulation_id: UUID | None = None
     simulation_name: str | None = None
     scenario_id: UUID | None = None
     profile_has_access: bool = False
     group_id: UUID | None = None
     draft_version: int | None = None
-    scenario_flags: TrainingBundleScenarioFlags | None = None
+    scenario_flags: TrainingScenarioFlags | None = None
 
     # 14 section-first resources
-    departments: TrainingBundleDepartmentSection | None = None
-    personas: TrainingBundlePersonaSection | None = None
-    documents: TrainingBundleDocumentSection | None = None
-    parameter_fields: TrainingBundleParameterFieldSection | None = None
-    scenarios: TrainingBundleScenarioSection | None = None
-    parameters: TrainingBundleParameterSection | None = None
-    questions: TrainingBundleQuestionSection | None = None
-    options: TrainingBundleOptionSection | None = None
-    videos: TrainingBundleVideoSection | None = None
-    images: TrainingBundleImageSection | None = None
-    problem_statements: TrainingBundleProblemStatementSection | None = None
-    objectives: TrainingBundleObjectiveSection | None = None
+    departments: TrainingDepartmentSection | None = None
+    personas: TrainingPersonaSection | None = None
+    documents: TrainingDocumentSection | None = None
+    parameter_fields: TrainingParameterFieldSection | None = None
+    scenarios: TrainingScenarioSection | None = None
+    parameters: TrainingParameterSection | None = None
+    questions: TrainingQuestionSection | None = None
+    options: TrainingOptionSection | None = None
+    videos: TrainingVideoSection | None = None
+    images: TrainingImageSection | None = None
+    problem_statements: TrainingProblemStatementSection | None = None
+    objectives: TrainingObjectiveSection | None = None
 
     # Config chain (hydrated for websocket/generation)
     config_agents: list[QGetAgentsV4Item] | None = None
@@ -429,14 +429,14 @@ class GetTrainingBundleResponse(BaseModel):
 # =============================================================================
 
 
-class TrainingBundleWebsocketViews(BaseModel):
+class TrainingWebsocketViews(BaseModel):
     """Draft view for bundle websocket consumers."""
 
-    draft_training_bundle: DraftTrainingViewItem | None = None
+    draft_training: DraftTrainingViewItem | None = None
     runs: GetRunListViewResponse | None = None
 
 
-class TrainingBundleWebsocketResources(BaseModel):
+class TrainingWebsocketResources(BaseModel):
     """Hydrated resources for bundle websocket — selected only."""
 
     departments: list[QGetDepartmentsV4Item] | None = None
@@ -459,11 +459,11 @@ class TrainingBundleWebsocketResources(BaseModel):
     config_profile: list[QGetProfilesV4Item] | None = None
 
 
-class GetTrainingBundleWebsocketResponse(BaseModel):
+class GetTrainingWebsocketResponse(BaseModel):
     """Websocket-facing bundle response with hydrated resources."""
 
-    views: TrainingBundleWebsocketViews | None = None
-    resources: TrainingBundleWebsocketResources
+    views: TrainingWebsocketViews | None = None
+    resources: TrainingWebsocketResources
     resource_agent_ids: dict[str, UUID | None] | None = None
     group_id: UUID | None = None
 
@@ -473,7 +473,7 @@ class GetTrainingBundleWebsocketResponse(BaseModel):
 # =============================================================================
 
 
-class TrainingBundleMultiResourceAction(BaseModel):
+class TrainingMultiResourceAction(BaseModel):
     """Multi-resource action for training bundle draft patch."""
 
     resource_ids: list[UUID] | None = None
@@ -481,7 +481,7 @@ class TrainingBundleMultiResourceAction(BaseModel):
     link_tool_id: UUID | None = None
 
 
-class PatchTrainingBundleDraftApiRequest(BaseModel):
+class PatchTrainingDraftApiRequest(BaseModel):
     """Request for patching a training bundle draft - flat resource IDs."""
 
     input_draft_id: UUID | None = None
@@ -502,7 +502,7 @@ class PatchTrainingBundleDraftApiRequest(BaseModel):
     objective_ids: list[UUID] | None = None
 
 
-class PatchTrainingBundleDraftApiResponse(BaseModel):
+class PatchTrainingDraftApiResponse(BaseModel):
     """Response for patching a training bundle draft."""
 
     draft_id: UUID | None = None
@@ -510,34 +510,34 @@ class PatchTrainingBundleDraftApiResponse(BaseModel):
     draft_exists: bool | None = None
 
 
-class PatchTrainingBundleDraftSqlParams(BaseModel):
+class PatchTrainingDraftSqlParams(BaseModel):
     """SQL parameters for patch training bundle draft."""
 
     profile_id: UUID
     input_draft_id: UUID | None = None
     group_id: UUID | None = None
-    departments: TrainingBundleMultiResourceAction
-    personas: TrainingBundleMultiResourceAction
-    documents: TrainingBundleMultiResourceAction
-    parameter_fields: TrainingBundleMultiResourceAction
-    parameters: TrainingBundleMultiResourceAction
-    fields: TrainingBundleMultiResourceAction
-    questions: TrainingBundleMultiResourceAction
-    options: TrainingBundleMultiResourceAction
-    videos: TrainingBundleMultiResourceAction
-    images: TrainingBundleMultiResourceAction
-    problem_statements: TrainingBundleMultiResourceAction
-    objectives: TrainingBundleMultiResourceAction
+    departments: TrainingMultiResourceAction
+    personas: TrainingMultiResourceAction
+    documents: TrainingMultiResourceAction
+    parameter_fields: TrainingMultiResourceAction
+    parameters: TrainingMultiResourceAction
+    fields: TrainingMultiResourceAction
+    questions: TrainingMultiResourceAction
+    options: TrainingMultiResourceAction
+    videos: TrainingMultiResourceAction
+    images: TrainingMultiResourceAction
+    problem_statements: TrainingMultiResourceAction
+    objectives: TrainingMultiResourceAction
     expected_version: int = 0
 
     @classmethod
     def from_request(
         cls,
-        request: PatchTrainingBundleDraftApiRequest,
+        request: PatchTrainingDraftApiRequest,
         profile_id: UUID,
-    ) -> "PatchTrainingBundleDraftSqlParams":
-        def wrap(ids: list[UUID] | None) -> TrainingBundleMultiResourceAction:
-            return TrainingBundleMultiResourceAction(resource_ids=ids)
+    ) -> "PatchTrainingDraftSqlParams":
+        def wrap(ids: list[UUID] | None) -> TrainingMultiResourceAction:
+            return TrainingMultiResourceAction(resource_ids=ids)
 
         return cls(
             profile_id=profile_id,
@@ -559,7 +559,7 @@ class PatchTrainingBundleDraftSqlParams(BaseModel):
         )
 
     def to_tuple(self) -> tuple[Any, ...]:
-        def multi(a: TrainingBundleMultiResourceAction) -> tuple[Any, Any, Any]:
+        def multi(a: TrainingMultiResourceAction) -> tuple[Any, Any, Any]:
             return (a.resource_ids, a.create_tool_id, a.link_tool_id)
 
         return (
@@ -582,7 +582,7 @@ class PatchTrainingBundleDraftSqlParams(BaseModel):
         )
 
 
-class PatchTrainingBundleDraftSqlRow(BaseModel):
+class PatchTrainingDraftSqlRow(BaseModel):
     """SQL row for patch training bundle draft."""
 
     draft_id: UUID | None = None
@@ -598,7 +598,7 @@ class PatchTrainingBundleDraftSqlRow(BaseModel):
 class TrainingWebsocketViews(BaseModel):
     """Thin websocket views payload for training start."""
 
-    training_bundle_entry_id: UUID
+    training_entry_id: UUID
     department_id: UUID
 
 

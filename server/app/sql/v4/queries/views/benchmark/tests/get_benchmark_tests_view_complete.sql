@@ -1,6 +1,6 @@
 -- ============================================================================
--- Query: get_benchmark_tests_view
--- Purpose: Fetch test-level data from mv_benchmark_tests with declarative filters
+-- Query: get_test_view
+-- Purpose: Fetch test-level data from mv_test with declarative filters
 -- Section: VIEWS/BENCHMARK/TESTS
 -- ============================================================================
 
@@ -15,10 +15,10 @@ BEGIN
     FOR r IN
         SELECT oidvectortypes(proargtypes) as sig
         FROM pg_proc
-        WHERE proname = 'api_get_benchmark_tests_view_v4'
+        WHERE proname = 'api_get_test_view_v4'
           AND pronamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'public')
     LOOP
-        EXECUTE format('DROP FUNCTION IF EXISTS api_get_benchmark_tests_view_v4(%s)', r.sig);
+        EXECUTE format('DROP FUNCTION IF EXISTS api_get_test_view_v4(%s)', r.sig);
     END LOOP;
 END $$;
 
@@ -33,7 +33,7 @@ BEGIN
     FOR r IN
         SELECT typname
         FROM pg_type
-        WHERE typname LIKE 'q_get_benchmark_tests_view_v4_%'
+        WHERE typname LIKE 'q_get_test_view_v4_%'
           AND typnamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'types')
     LOOP
         EXECUTE format('DROP TYPE IF EXISTS types.%I CASCADE', r.typname);
@@ -44,7 +44,7 @@ END $$;
 -- Step 3: Create composite types
 -- ============================================================================
 
-CREATE TYPE types.q_get_benchmark_tests_view_v4_item AS (
+CREATE TYPE types.q_get_test_view_v4_item AS (
     -- Primary key
     test_id uuid,
 
@@ -65,7 +65,7 @@ CREATE TYPE types.q_get_benchmark_tests_view_v4_item AS (
 -- Step 4: Create function
 -- ============================================================================
 
-CREATE OR REPLACE FUNCTION api_get_benchmark_tests_view_v4(
+CREATE OR REPLACE FUNCTION api_get_test_view_v4(
     test_ids uuid[] DEFAULT NULL,
     eval_id_filter uuid DEFAULT NULL,
     eval_ids_filter uuid[] DEFAULT NULL,
@@ -80,7 +80,7 @@ CREATE OR REPLACE FUNCTION api_get_benchmark_tests_view_v4(
     page_offset_val int DEFAULT 0
 )
 RETURNS TABLE (
-    items types.q_get_benchmark_tests_view_v4_item[],
+    items types.q_get_test_view_v4_item[],
     total_count bigint
 )
 LANGUAGE sql
@@ -90,7 +90,7 @@ AS $$
     -- Fetch from MV with declarative filters
     mv_data AS (
         SELECT mv.*
-        FROM mv_benchmark_tests mv
+        FROM mv_test mv
         WHERE (test_ids IS NULL OR mv.test_id = ANY(test_ids))
           AND (eval_id_filter IS NULL OR mv.eval_id = eval_id_filter)
           AND (eval_ids_filter IS NULL OR mv.eval_id = ANY(eval_ids_filter))
@@ -133,9 +133,9 @@ AS $$
                     infinite_mode,
                     archived,
                     created_at
-                )::types.q_get_benchmark_tests_view_v4_item
+                )::types.q_get_test_view_v4_item
             ),
-            ARRAY[]::types.q_get_benchmark_tests_view_v4_item[]
+            ARRAY[]::types.q_get_test_view_v4_item[]
         ) AS items
         FROM with_resources
     )

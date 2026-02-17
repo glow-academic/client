@@ -68,10 +68,10 @@ base_messages AS (
         te.content AS history_content,
         -- Audio resource ID
         aa.audio_id
-    FROM simulation_messages_entry sm
+    FROM attempt_message_entry sm
     JOIN messages_entry m ON m.id = sm.id
-    JOIN simulation_chats_entry c ON c.id = sm.chat_id
-    JOIN simulation_attempts_entry a ON a.id = c.attempt_id
+    JOIN attempt_chat_entry c ON c.id = sm.chat_id
+    JOIN attempt_entry a ON a.id = c.attempt_id
     LEFT JOIN runs_resource_agg rra ON rra.run_id = m.run_id
     LEFT JOIN texts_entry te ON te.id = m.text_id
     LEFT JOIN audio_agg aa ON aa.message_id = sm.id
@@ -82,7 +82,7 @@ base_messages AS (
     ) mc ON true
     -- Latest archive state (append-only)
     LEFT JOIN LATERAL (
-        SELECT archived FROM simulation_archives_entry
+        SELECT archived FROM attempt_archive_entry
         WHERE attempt_id = a.id AND active = TRUE ORDER BY created_at DESC LIMIT 1
     ) sa_archive ON true
     WHERE m.active = TRUE

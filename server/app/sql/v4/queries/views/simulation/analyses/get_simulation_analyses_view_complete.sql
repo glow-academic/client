@@ -1,6 +1,6 @@
 -- ============================================================================
 -- Query: get_simulation_analyses_view
--- Purpose: Fetch analysis-level data from mv_simulation_analyses with declarative filters
+-- Purpose: Fetch analysis-level data from mv_attempt_analyses with declarative filters
 -- Section: VIEWS/SIMULATION/ANALYSES
 -- ============================================================================
 
@@ -67,7 +67,7 @@ AS $$
     WITH
     mv_data AS (
         SELECT mv.*
-        FROM mv_simulation_analyses mv
+        FROM mv_attempt_analyses mv
         WHERE mv.grade_id = ANY(grade_ids_filter)
     ),
     items_agg AS (

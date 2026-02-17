@@ -1,4 +1,4 @@
-"""Get endpoint for analytics simulation facts view (mv_simulation_facts)."""
+"""Get endpoint for analytics simulation facts view (mv_attempt_facts)."""
 
 from datetime import date
 from typing import Annotated, Any
@@ -227,7 +227,7 @@ async def get_simulation_facts(
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> GetSimulationFactsResponse:
-    """Get simulation facts data from mv_simulation_facts.
+    """Get simulation facts data from mv_attempt_facts.
 
     This endpoint fetches paginated chat-level data for the simulation/secondary
     dashboard section with:

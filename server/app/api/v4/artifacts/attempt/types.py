@@ -497,9 +497,9 @@ class AttemptResources(BaseModel):
 class AttemptViews(BaseModel):
     """View payloads grouped by view type."""
 
-    simulation_attempts: list[AttemptViewItem] | None = None
-    simulation_chats: list[ChatData] | None = None
-    simulation_messages: list[MessageData] | None = None
+    attempt: list[AttemptViewItem] | None = None
+    attempt_chat: list[ChatData] | None = None
+    attempt_message: list[MessageData] | None = None
     runs: GetRunListViewResponse | None = None
 
 
@@ -610,7 +610,7 @@ class GetAttemptDetailResponse(BaseModel):
     rubric_structure: RubricStructureData | None = None
     # Training context (for lobby flow)
     training_id: UUID | None = None
-    training_bundle_entry_id: UUID | None = None
+    training_entry_id: UUID | None = None
     # New normalized maps
     resources: AttemptResources | None = None
     views: AttemptViews | None = None
@@ -642,7 +642,7 @@ class AttemptInternalData:
     profile_name: str | None
     simulation_name: str | None
     training_id: UUID | None
-    training_bundle_entry_id: UUID | None
+    training_entry_id: UUID | None
 
     # Config chain
     group_id: UUID | None

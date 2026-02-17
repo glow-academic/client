@@ -19,12 +19,12 @@ from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
 from app.utils.sql_helper import execute_sql_typed
 
-SQL_PATH = "app/sql/v4/queries/views/simulation/message_tree/get_simulation_message_tree_view_complete.sql"
+SQL_PATH = "app/sql/v4/queries/views/simulation/message_tree/get_attempt_message_tree_view_complete.sql"
 
 router = APIRouter()
 
 
-async def get_simulation_message_tree_internal(
+async def get_attempt_message_tree_internal(
     conn: asyncpg.Connection,
     message_ids: list[UUID],
     bypass_cache: bool = False,
@@ -88,7 +88,7 @@ async def get_message_tree(
     sql_query: str | None = None
     sql_params: tuple[Any, ...] | None = None
     try:
-        items = await get_simulation_message_tree_internal(
+        items = await get_attempt_message_tree_internal(
             conn=conn,
             message_ids=request.message_ids,
             bypass_cache=bypass_cache,
@@ -103,7 +103,7 @@ async def get_message_tree(
         handle_route_error(
             error=e,
             route_path=http_request.url.path,
-            operation="views_simulation_message_tree_get",
+            operation="views_attempt_message_tree_get",
             sql_query=sql_query,
             sql_params=sql_params,
             request=http_request,

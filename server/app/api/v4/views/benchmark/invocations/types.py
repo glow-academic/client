@@ -7,10 +7,10 @@ from pydantic import BaseModel, Field
 
 
 class BenchmarkInvocationViewItem(BaseModel):
-    """Single benchmark invocation row from mv_benchmark_invocations.
+    """Single benchmark invocation row from mv_test_invocation.
 
     Lean: entry attrs + resource IDs + grade scalars only. Feedbacks
-    fetched via simulation/benchmark_feedbacks view.
+    fetched via simulation/test_feedback view.
     """
 
     # Primary key
@@ -19,7 +19,7 @@ class BenchmarkInvocationViewItem(BaseModel):
     # Foreign keys
     test_id: UUID
     group_id: UUID | None = None
-    benchmark_bundle_department_id: UUID | None = None
+    suite_department_id: UUID | None = None
 
     # Invocation data
     created_at: datetime | None = None

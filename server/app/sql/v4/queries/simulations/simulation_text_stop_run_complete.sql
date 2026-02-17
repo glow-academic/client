@@ -16,12 +16,12 @@ latest_message AS (
     SELECT
         me.id,
         COALESCE(ce.content, '') as content
-    FROM simulation_chats_entry c
-    JOIN simulation_messages_entry sm ON sm.chat_id = c.id
+    FROM attempt_chat_entry c
+    JOIN attempt_message_entry sm ON sm.chat_id = c.id
     JOIN messages_entry me ON me.id = sm.message_id
     LEFT JOIN LATERAL (
         SELECT content
-        FROM simulation_contents_entry ce
+        FROM attempt_content_entry ce
         WHERE ce.message_id = me.id
           AND ce.active = true
         ORDER BY ce.created_at
@@ -29,7 +29,7 @@ latest_message AS (
     ) ce ON TRUE
     WHERE c.id = (SELECT chat_id FROM params)
       AND NOT EXISTS (
-          SELECT 1 FROM simulation_message_tree_entry mt
+          SELECT 1 FROM attempt_message_tree_entry mt
           WHERE mt.parent_id = me.id AND mt.active = true
       )
     ORDER BY me.created_at DESC

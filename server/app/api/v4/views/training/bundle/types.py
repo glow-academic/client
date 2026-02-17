@@ -5,12 +5,12 @@ from uuid import UUID
 from pydantic import BaseModel, Field
 
 
-class GetTrainingBundleViewResponse(BaseModel):
+class GetTrainingViewResponse(BaseModel):
     """Thin MV-backed view response for a single training bundle."""
 
     profile_has_access: bool = False
-    training_bundle_entry_id: UUID | None = None
-    training_id: UUID | None = None
+    training_entry_id: UUID | None = None
+    parent_id: UUID | None = None
     # Single scenario (from connection)
     scenario_id: UUID | None = None
     # Bundle-level resource ID arrays

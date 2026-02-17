@@ -40,7 +40,7 @@ new_completion AS (
     RETURNING id
 ),
 new_content AS (
-    INSERT INTO simulation_contents_entry (message_id, content)
+    INSERT INTO attempt_content_entry (message_id, content)
     SELECT p_message_id, p_content
     FROM message_run
     RETURNING id AS content_id

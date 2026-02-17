@@ -48,13 +48,13 @@ DECLARE
     v_created_at timestamptz;
 BEGIN
 
-    -- Get group_id directly from simulation_chats_entry
+    -- Get group_id directly from attempt_chat_entry
     -- If p_group_id is provided (regeneration), use that directly
     IF p_group_id IS NOT NULL THEN
         v_group_id := p_group_id;
     ELSE
         SELECT sc.group_id INTO v_group_id
-        FROM simulation_chats_entry sc
+        FROM attempt_chat_entry sc
         WHERE sc.id = p_chat_id;
     END IF;
 
@@ -107,11 +107,11 @@ BEGIN
     VALUES (v_user_message_id);
 
     -- Link user message to simulation chat
-    INSERT INTO simulation_messages_entry (id, chat_id)
+    INSERT INTO attempt_message_entry (id, chat_id)
     VALUES (v_user_message_id, p_chat_id);
 
     -- Insert user content (with Student persona)
-    INSERT INTO simulation_contents_entry (message_id, content, persona_id)
+    INSERT INTO attempt_content_entry (message_id, content, persona_id)
     VALUES (v_user_message_id, p_message, '019bb25e-e60c-7352-9b81-f411f56092a9'::uuid);
 
     -- Create assistant message placeholder in base table
@@ -121,7 +121,7 @@ BEGIN
     RETURNING messages_entry.id INTO v_assistant_message_id;
 
     -- Link assistant message to simulation chat
-    INSERT INTO simulation_messages_entry (id, chat_id)
+    INSERT INTO attempt_message_entry (id, chat_id)
     VALUES (v_assistant_message_id, p_chat_id);
 
     RETURN QUERY SELECT v_user_message_id, v_assistant_message_id, v_run_id, v_created_at;

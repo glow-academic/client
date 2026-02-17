@@ -1,4 +1,4 @@
-"""Get endpoint for benchmark tests view (mv_benchmark_tests)."""
+"""Get endpoint for benchmark tests view (mv_test)."""
 
 from datetime import datetime
 from typing import Annotated
@@ -21,13 +21,13 @@ from app.utils.cache.set_cached import set_cached
 from app.utils.sql_helper import execute_sql_typed
 
 SQL_PATH = (
-    "app/sql/v4/queries/views/benchmark/tests/get_benchmark_tests_view_complete.sql"
+    "app/sql/v4/queries/views/benchmark/tests/get_test_view_complete.sql"
 )
 
 router = APIRouter()
 
 
-async def get_benchmark_tests_internal(
+async def get_test_internal(
     conn: asyncpg.Connection,
     test_ids: list[UUID] | None = None,
     eval_id: UUID | None = None,
@@ -130,18 +130,18 @@ async def get_benchmark_tests_internal(
         )
     ],
 )
-async def get_benchmark_tests(
+async def get_test(
     request: GetBenchmarkTestsRequest,
     http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> GetBenchmarkTestsResponse:
-    """Get benchmark tests view rows from mv_benchmark_tests."""
+    """Get benchmark tests view rows from mv_test."""
     tags = ["views", "benchmark", "tests"]
     bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
 
     try:
-        result = await get_benchmark_tests_internal(
+        result = await get_test_internal(
             conn=conn,
             test_ids=request.test_ids,
             eval_id=request.eval_id,
@@ -168,6 +168,6 @@ async def get_benchmark_tests(
         handle_route_error(
             error=e,
             route_path=http_request.url.path,
-            operation="views_benchmark_tests_get",
+            operation="views_test_get",
             request=http_request,
         )

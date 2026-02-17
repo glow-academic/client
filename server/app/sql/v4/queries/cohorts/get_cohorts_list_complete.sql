@@ -125,7 +125,7 @@ cohort_usage AS (
         crb.cohort_id,
         COUNT(DISTINCT sac.attempt_id)::bigint as usage_count
     FROM cohort_resource_bridge crb
-    JOIN simulation_attempts_cohorts_connection sac ON sac.cohorts_id = crb.resource_id AND sac.active = true
+    JOIN attempt_cohorts_connection sac ON sac.cohorts_id = crb.resource_id AND sac.active = true
     GROUP BY crb.cohort_id
 ),
 -- Profiles per cohort via denormalized profiles_resource.cohort_ids

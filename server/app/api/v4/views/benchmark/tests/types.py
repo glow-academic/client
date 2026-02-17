@@ -1,4 +1,4 @@
-"""Types for benchmark tests view (mv_benchmark_tests)."""
+"""Types for benchmark tests view (mv_test)."""
 
 from datetime import datetime
 from uuid import UUID
@@ -7,7 +7,7 @@ from pydantic import BaseModel, Field
 
 
 class BenchmarkTestViewItem(BaseModel):
-    """Single benchmark test row from mv_benchmark_tests."""
+    """Single benchmark test row from mv_test."""
 
     # Primary key
     test_id: UUID

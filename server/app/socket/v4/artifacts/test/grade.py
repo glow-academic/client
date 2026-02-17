@@ -66,7 +66,7 @@ def _build_test_jinja_context(
 
     Resources are the current selections (from get_test_websocket's config chain).
     Templates access resources directly: {{ rubrics }}, {{ agents[0].temperature }}
-    Views (e.g. benchmark_invocations) are injected separately after prepare.
+    Views (e.g. test_invocation) are injected separately after prepare.
     """
     if result.resources:
         return result.resources.model_dump(mode="json")
@@ -224,7 +224,7 @@ async def _test_grade_impl(
             return
 
         # Step 3: Find invocation by invocation_id
-        if not result.views or not result.views.benchmark_invocations:
+        if not result.views or not result.views.test_invocation:
             await emit_to_internal(
                 "generate_call_error",
                 GenerateErrorApiRequest(
@@ -242,7 +242,7 @@ async def _test_grade_impl(
         invocation = next(
             (
                 inv
-                for inv in result.views.benchmark_invocations
+                for inv in result.views.test_invocation
                 if str(inv.invocation_id) == invocation_id_str
             ),
             None,
@@ -373,14 +373,14 @@ async def _test_grade_impl(
             # Inject views into jinja context for template access
             views_data: dict[str, Any] = {}
             if result.views:
-                if result.views.benchmark_invocations:
-                    views_data["benchmark_invocations"] = [
+                if result.views.test_invocation:
+                    views_data["test_invocation"] = [
                         inv.model_dump(mode="json")
-                        for inv in result.views.benchmark_invocations
+                        for inv in result.views.test_invocation
                     ]
-                if result.views.benchmark_tests:
-                    views_data["benchmark_tests"] = [
-                        t.model_dump(mode="json") for t in result.views.benchmark_tests
+                if result.views.test:
+                    views_data["test"] = [
+                        t.model_dump(mode="json") for t in result.views.test
                     ]
             jinja_context["views"] = views_data
 

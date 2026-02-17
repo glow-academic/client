@@ -74,21 +74,24 @@ BEGIN
     REFRESH MATERIALIZED VIEW CONCURRENTLY mv_benchmark;
     refreshed := array_append(refreshed, 'mv_benchmark');
 
-    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_benchmark_bundle;
-    refreshed := array_append(refreshed, 'mv_benchmark_bundle');
+    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_suite;
+    refreshed := array_append(refreshed, 'mv_suite');
 
-    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_benchmark_invocations;
-    refreshed := array_append(refreshed, 'mv_benchmark_invocations');
+    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_test_invocations;
+    refreshed := array_append(refreshed, 'mv_test_invocations');
 
-    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_benchmark_tests;
-    refreshed := array_append(refreshed, 'mv_benchmark_tests');
+    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_test;
+    refreshed := array_append(refreshed, 'mv_test');
 
-    -- Training MVs
+    -- Training MVs (home, practice, and training bundle-level)
+    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_home;
+    refreshed := array_append(refreshed, 'mv_home');
+
+    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_practice;
+    refreshed := array_append(refreshed, 'mv_practice');
+
     REFRESH MATERIALIZED VIEW CONCURRENTLY mv_training;
     refreshed := array_append(refreshed, 'mv_training');
-
-    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_training_bundle;
-    refreshed := array_append(refreshed, 'mv_training_bundle');
 
     -- Lean Activity MVs
     REFRESH MATERIALIZED VIEW CONCURRENTLY mv_problems;

@@ -9,7 +9,7 @@ from app.api.v4.artifacts.types import FilterOption
 from app.api.v4.views.benchmark.tests.types import BenchmarkTestViewItem
 from app.api.v4.views.run.list.types import GetRunListViewResponse
 from app.sql.types import (
-    BenchmarkBundleMultiResourceAction,
+    SuiteMultiResourceAction,
     QGetAgentsV4Item,
     QGetDepartmentsV4Item,
     QGetInstructionsV4Item,
@@ -114,17 +114,17 @@ class BenchmarkResponse(BaseModel):
 # =============================================================================
 
 
-class GetBenchmarkBundleRequest(BaseModel):
+class GetSuiteRequest(BaseModel):
     """Client API request for one benchmark bundle customization payload."""
 
-    benchmark_bundle_entry_id: UUID
+    suite_entry_id: UUID
     draft_id: UUID | None = None
 
 
 # --- Section types (one per resource) ---
 
 
-class BaseBenchmarkBundleSection(BaseModel):
+class BaseSuiteSection(BaseModel):
     """Common metadata fields for all benchmark bundle resource sections."""
 
     show: bool = False
@@ -132,47 +132,47 @@ class BaseBenchmarkBundleSection(BaseModel):
     show_ai_generate: bool = False
 
 
-class BenchmarkBundleDepartmentSection(BaseBenchmarkBundleSection):
+class SuiteDepartmentSection(BaseSuiteSection):
     current: list[QGetDepartmentsV4Item] | None = None
     resources: list[QGetDepartmentsV4Item] | None = None
 
 
-class BenchmarkBundleModelSection(BaseBenchmarkBundleSection):
+class SuiteModelSection(BaseSuiteSection):
     current: list[QGetModelsV4Item] | None = None
     resources: list[QGetModelsV4Item] | None = None
 
 
-class BenchmarkBundlePromptSection(BaseBenchmarkBundleSection):
+class SuitePromptSection(BaseSuiteSection):
     current: list[QGetPromptsV4Item] | None = None
     resources: list[QGetPromptsV4Item] | None = None
 
 
-class BenchmarkBundleInstructionSection(BaseBenchmarkBundleSection):
+class SuiteInstructionSection(BaseSuiteSection):
     current: list[QGetInstructionsV4Item] | None = None
     resources: list[QGetInstructionsV4Item] | None = None
 
 
-class BenchmarkBundleVoiceSection(BaseBenchmarkBundleSection):
+class SuiteVoiceSection(BaseSuiteSection):
     current: list[QGetVoicesV4Item] | None = None
     resources: list[QGetVoicesV4Item] | None = None
 
 
-class BenchmarkBundleTemperatureLevelSection(BaseBenchmarkBundleSection):
+class SuiteTemperatureLevelSection(BaseSuiteSection):
     current: list[QGetTemperatureLevelsV4Item] | None = None
     resources: list[QGetTemperatureLevelsV4Item] | None = None
 
 
-class BenchmarkBundleReasoningLevelSection(BaseBenchmarkBundleSection):
+class SuiteReasoningLevelSection(BaseSuiteSection):
     current: list[QGetReasoningLevelsV4Item] | None = None
     resources: list[QGetReasoningLevelsV4Item] | None = None
 
 
-class BenchmarkBundleToolSection(BaseBenchmarkBundleSection):
+class SuiteToolSection(BaseSuiteSection):
     current: list[QGetToolsV4Item] | None = None
     resources: list[QGetToolsV4Item] | None = None
 
 
-class BenchmarkBundleKeySection(BaseBenchmarkBundleSection):
+class SuiteKeySection(BaseSuiteSection):
     current: list[QGetKeysV4Item] | None = None
     resources: list[QGetKeysV4Item] | None = None
 
@@ -180,24 +180,24 @@ class BenchmarkBundleKeySection(BaseBenchmarkBundleSection):
 # --- GET response (section-first) ---
 
 
-class GetBenchmarkBundleResponse(BaseModel):
+class GetSuiteResponse(BaseModel):
     """Client-facing bundle response — section-first pattern."""
 
-    benchmark_bundle_entry_id: UUID
+    suite_entry_id: UUID
     benchmark_id: UUID | None = None
     profile_has_access: bool = False
     draft_version: int | None = None
 
     # 9 section-first resources
-    departments: BenchmarkBundleDepartmentSection | None = None
-    models: BenchmarkBundleModelSection | None = None
-    prompts: BenchmarkBundlePromptSection | None = None
-    instructions: BenchmarkBundleInstructionSection | None = None
-    voices: BenchmarkBundleVoiceSection | None = None
-    temperature_levels: BenchmarkBundleTemperatureLevelSection | None = None
-    reasoning_levels: BenchmarkBundleReasoningLevelSection | None = None
-    tools: BenchmarkBundleToolSection | None = None
-    keys: BenchmarkBundleKeySection | None = None
+    departments: SuiteDepartmentSection | None = None
+    models: SuiteModelSection | None = None
+    prompts: SuitePromptSection | None = None
+    instructions: SuiteInstructionSection | None = None
+    voices: SuiteVoiceSection | None = None
+    temperature_levels: SuiteTemperatureLevelSection | None = None
+    reasoning_levels: SuiteReasoningLevelSection | None = None
+    tools: SuiteToolSection | None = None
+    keys: SuiteKeySection | None = None
 
     # Config chain (settings-derived, distinct from section resources above)
     config_agents: list[QGetAgentsV4Item] | None = None
@@ -209,7 +209,7 @@ class GetBenchmarkBundleResponse(BaseModel):
 # --- Websocket types (mirrors training bundle websocket pattern) ---
 
 
-class BenchmarkBundleWebsocketResources(BaseModel):
+class SuiteWebsocketResources(BaseModel):
     """Hydrated resources for bundle websocket — selected only."""
 
     departments: list[QGetDepartmentsV4Item] | None = None
@@ -229,18 +229,18 @@ class BenchmarkBundleWebsocketResources(BaseModel):
     config_profile: list[QGetProfilesV4Item] | None = None
 
 
-class BenchmarkBundleWebsocketViews(BaseModel):
+class SuiteWebsocketViews(BaseModel):
     """Draft view for bundle websocket consumers."""
 
-    draft_benchmark_bundle: Any | None = None
+    draft_suite: Any | None = None
     runs: GetRunListViewResponse | None = None
 
 
-class GetBenchmarkBundleWebsocketResponse(BaseModel):
+class GetSuiteWebsocketResponse(BaseModel):
     """Websocket-facing bundle response with hydrated resources."""
 
-    views: BenchmarkBundleWebsocketViews | None = None
-    resources: BenchmarkBundleWebsocketResources
+    views: SuiteWebsocketViews | None = None
+    resources: SuiteWebsocketResources
     resource_agent_ids: dict[str, UUID | None] | None = None
     group_id: UUID | None = None
 
@@ -250,7 +250,7 @@ class GetBenchmarkBundleWebsocketResponse(BaseModel):
 # =============================================================================
 
 
-class PatchBenchmarkBundleDraftApiRequest(BaseModel):
+class PatchSuiteDraftApiRequest(BaseModel):
     """Request for patching a benchmark bundle draft - flat resource IDs."""
 
     input_draft_id: UUID | None = None
@@ -267,7 +267,7 @@ class PatchBenchmarkBundleDraftApiRequest(BaseModel):
     key_ids: list[UUID] | None = None
 
 
-class PatchBenchmarkBundleDraftApiResponse(BaseModel):
+class PatchSuiteDraftApiResponse(BaseModel):
     """Response for patching a benchmark bundle draft."""
 
     draft_id: UUID | None = None
@@ -275,31 +275,31 @@ class PatchBenchmarkBundleDraftApiResponse(BaseModel):
     draft_exists: bool | None = None
 
 
-class PatchBenchmarkBundleDraftSqlParams(BaseModel):
+class PatchSuiteDraftSqlParams(BaseModel):
     """SQL parameters for patch benchmark bundle draft."""
 
     profile_id: UUID
     input_draft_id: UUID | None = None
     group_id: UUID | None = None
-    departments: BenchmarkBundleMultiResourceAction
-    models: BenchmarkBundleMultiResourceAction
-    prompts: BenchmarkBundleMultiResourceAction
-    instructions: BenchmarkBundleMultiResourceAction
-    voices: BenchmarkBundleMultiResourceAction
-    temperature_levels: BenchmarkBundleMultiResourceAction
-    reasoning_levels: BenchmarkBundleMultiResourceAction
-    tools: BenchmarkBundleMultiResourceAction
-    keys: BenchmarkBundleMultiResourceAction
+    departments: SuiteMultiResourceAction
+    models: SuiteMultiResourceAction
+    prompts: SuiteMultiResourceAction
+    instructions: SuiteMultiResourceAction
+    voices: SuiteMultiResourceAction
+    temperature_levels: SuiteMultiResourceAction
+    reasoning_levels: SuiteMultiResourceAction
+    tools: SuiteMultiResourceAction
+    keys: SuiteMultiResourceAction
     expected_version: int = 0
 
     @classmethod
     def from_request(
         cls,
-        request: PatchBenchmarkBundleDraftApiRequest,
+        request: PatchSuiteDraftApiRequest,
         profile_id: UUID,
-    ) -> "PatchBenchmarkBundleDraftSqlParams":
-        def wrap(ids: list[UUID] | None) -> BenchmarkBundleMultiResourceAction:
-            return BenchmarkBundleMultiResourceAction(
+    ) -> "PatchSuiteDraftSqlParams":
+        def wrap(ids: list[UUID] | None) -> SuiteMultiResourceAction:
+            return SuiteMultiResourceAction(
                 resource_ids=ids, create_tool_id=None, link_tool_id=None
             )
 
@@ -320,7 +320,7 @@ class PatchBenchmarkBundleDraftSqlParams(BaseModel):
         )
 
     def to_tuple(self) -> tuple[Any, ...]:
-        def multi(a: BenchmarkBundleMultiResourceAction) -> tuple[Any, Any, Any]:
+        def multi(a: SuiteMultiResourceAction) -> tuple[Any, Any, Any]:
             return (a.resource_ids, a.create_tool_id, a.link_tool_id)
 
         return (
@@ -340,7 +340,7 @@ class PatchBenchmarkBundleDraftSqlParams(BaseModel):
         )
 
 
-class PatchBenchmarkBundleDraftSqlRow(BaseModel):
+class PatchSuiteDraftSqlRow(BaseModel):
     """SQL row for patch benchmark bundle draft."""
 
     draft_id: UUID | None = None

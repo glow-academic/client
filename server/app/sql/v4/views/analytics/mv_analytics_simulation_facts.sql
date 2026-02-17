@@ -51,7 +51,7 @@ latest_grade AS (
         g.time_taken,
         g.total_points AS rubric_total_points,
         g.pass_points AS rubric_pass_points
-    FROM simulation_grades_entry g
+    FROM attempt_grade_entry g
     WHERE g.active = TRUE
     ORDER BY g.chat_id, g.created_at DESC
 ),
@@ -59,11 +59,11 @@ chat_persona AS (
     SELECT
         c.id AS chat_id,
         (ARRAY_AGG(tpc.personas_id ORDER BY tpc.created_at) FILTER (WHERE tpc.personas_id IS NOT NULL))[1] AS persona_id
-    FROM simulation_chats_entry c
-    LEFT JOIN training_bundle_departments_entry tbd
-        ON tbd.id = c.training_bundle_department_id AND tbd.active = TRUE
-    LEFT JOIN training_bundle_departments_personas_connection tpc
-        ON tpc.training_bundle_department_id = tbd.id AND tpc.active = TRUE
+    FROM attempt_chat_entry c
+    LEFT JOIN training_department_entry tbd
+        ON tbd.id = c.training_department_id AND tbd.active = TRUE
+    LEFT JOIN training_department_personas_connection tpc
+        ON tpc.training_department_id = tbd.id AND tpc.active = TRUE
     WHERE c.active = TRUE
     GROUP BY c.id
 )
@@ -95,22 +95,22 @@ SELECT
         ELSE NULL
     END AS grade_percent,
     lg.passed,
-    (EXISTS (SELECT 1 FROM simulation_completions_entry comp WHERE comp.chat_id = c.id AND comp.active = TRUE)) AS completed,
+    (EXISTS (SELECT 1 FROM attempt_completion_entry comp WHERE comp.chat_id = c.id AND comp.active = TRUE)) AS completed,
     lg.time_taken AS time_taken_seconds,
 
     -- Filters
     CASE WHEN COALESCE(a.practice, FALSE) THEN 'practice' ELSE 'general' END AS attempt_type,
     COALESCE(sa_archive.archived, FALSE) AS is_archived
 
-FROM simulation_chats_entry c
-JOIN simulation_attempts_entry a ON a.id = c.attempt_id
-JOIN simulation_attempts_simulations_connection asc_conn ON asc_conn.attempt_id = a.id
-JOIN simulation_attempts_profiles_connection apc ON apc.attempt_id = a.id
-LEFT JOIN simulation_attempts_cohorts_connection acc ON acc.attempt_id = a.id
-LEFT JOIN simulation_attempts_departments_connection adc ON adc.attempt_id = a.id
+FROM attempt_chat_entry c
+JOIN attempt_entry a ON a.id = c.attempt_id
+JOIN attempt_simulations_connection asc_conn ON asc_conn.attempt_id = a.id
+JOIN attempt_profiles_connection apc ON apc.attempt_id = a.id
+LEFT JOIN attempt_cohorts_connection acc ON acc.attempt_id = a.id
+LEFT JOIN attempt_departments_connection adc ON adc.attempt_id = a.id
 -- Latest archive state (append-only)
 LEFT JOIN LATERAL (
-    SELECT archived FROM simulation_archives_entry
+    SELECT archived FROM attempt_archive_entry
     WHERE attempt_id = a.id AND active = TRUE ORDER BY created_at DESC LIMIT 1
 ) sa_archive ON true
 LEFT JOIN latest_grade lg ON lg.chat_id = c.id

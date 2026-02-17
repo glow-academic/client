@@ -100,7 +100,7 @@ attempt_data AS (
     SELECT
         a.id as attempt_id,
         TRUE as attempt_exists
-    FROM simulation_attempts_entry a
+    FROM attempt_entry a
     CROSS JOIN params p
     WHERE a.id = p.attempt_id
     LIMIT 1
@@ -110,7 +110,7 @@ chat_data AS (
     SELECT
         sc.id as chat_id,
         sc.group_id
-    FROM simulation_chats_entry sc
+    FROM attempt_chat_entry sc
     CROSS JOIN params p
     WHERE sc.attempt_id = p.attempt_id
       AND sc.active = TRUE

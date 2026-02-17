@@ -71,7 +71,7 @@ BEGIN
     VALUES (p_profile_id, v_run_id);
 
     -- Create grade entry
-    INSERT INTO simulation_grades_entry (chat_id, run_id, created_at, updated_at, score, passed)
+    INSERT INTO attempt_grade_entry (chat_id, run_id, created_at, updated_at, score, passed)
     VALUES (p_chat_id, v_run_id, NOW(), NOW(), 0, false)
     RETURNING id INTO v_grade_id;
 

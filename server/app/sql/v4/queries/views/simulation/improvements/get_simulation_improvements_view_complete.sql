@@ -1,6 +1,6 @@
 -- ============================================================================
 -- Query: get_simulation_improvements_view
--- Purpose: Fetch improvement data from mv_simulation_improvements
+-- Purpose: Fetch improvement data from mv_attempt_improvements
 -- Section: VIEWS/SIMULATION/IMPROVEMENTS
 -- Note: Flat MV - no nested arrays
 -- ============================================================================
@@ -69,7 +69,7 @@ AS $$
     WITH
     mv_data AS (
         SELECT mv.*
-        FROM mv_simulation_improvements mv
+        FROM mv_attempt_improvements mv
         WHERE mv.message_id = ANY(message_ids_filter)
     ),
     items_agg AS (

@@ -28,20 +28,20 @@ latest_grade AS (
         g.time_taken AS grade_time_taken,
         g.total_points AS grade_total_points,
         g.pass_points AS grade_pass_points
-    FROM simulation_grades_entry g
+    FROM attempt_grade_entry g
     WHERE g.active = TRUE
     ORDER BY g.chat_id, g.created_at DESC
 ),
 subbundle_snapshot AS (
     SELECT
-        tbd.id AS training_bundle_department_id,
-        te.copy_paste_allowed,
-        te.text_enabled,
-        te.audio_enabled,
-        te.hints_enabled,
-        te.show_images,
-        te.show_objectives,
-        te.show_problem_statement,
+        tbd.id AS training_department_id,
+        COALESCE(he.copy_paste_allowed, pe.copy_paste_allowed, true) AS copy_paste_allowed,
+        COALESCE(he.text_enabled, pe.text_enabled, true) AS text_enabled,
+        COALESCE(he.audio_enabled, pe.audio_enabled, true) AS audio_enabled,
+        COALESCE(he.hints_enabled, pe.hints_enabled, true) AS hints_enabled,
+        COALESCE(he.show_images, pe.show_images, true) AS show_images,
+        COALESCE(he.show_objectives, pe.show_objectives, true) AS show_objectives,
+        COALESCE(he.show_problem_statement, pe.show_problem_statement, true) AS show_problem_statement,
         COALESCE(MAX(stlr.time_limit_seconds), 0)::int AS time_limit_seconds,
         COALESCE(BOOL_OR(stlr.negative), false) AS negative,
         -- singular picks (first by created_at)
@@ -58,40 +58,43 @@ subbundle_snapshot AS (
         COALESCE(ARRAY_AGG(DISTINCT tdc.documents_id ORDER BY tdc.documents_id) FILTER (WHERE tdc.documents_id IS NOT NULL), ARRAY[]::uuid[]) AS document_ids,
         COALESCE(ARRAY_AGG(DISTINCT tsgc.standard_groups_id ORDER BY tsgc.standard_groups_id) FILTER (WHERE tsgc.standard_groups_id IS NOT NULL), ARRAY[]::uuid[]) AS standard_group_ids,
         COALESCE(ARRAY_AGG(DISTINCT tsc2.standards_id ORDER BY tsc2.standards_id) FILTER (WHERE tsc2.standards_id IS NOT NULL), ARRAY[]::uuid[]) AS standard_ids
-    FROM training_bundle_departments_entry tbd
-    JOIN training_bundle_entry tb ON tb.id = tbd.training_bundle_id
-    JOIN training_entry te ON te.id = tb.training_id
-    LEFT JOIN training_bundle_departments_time_limits_connection tdtl ON tdtl.training_bundle_department_id = tbd.id AND tdtl.active = true
+    FROM training_department_entry tbd
+    JOIN training_entry tb ON tb.id = tbd.training_id
+    LEFT JOIN home_training_entry hte ON hte.training_id = tb.id
+    LEFT JOIN home_entry he ON he.id = hte.home_id
+    LEFT JOIN practice_training_entry pte ON pte.training_id = tb.id
+    LEFT JOIN practice_entry pe ON pe.id = pte.practice_id
+    LEFT JOIN training_department_time_limits_connection tdtl ON tdtl.training_department_id = tbd.id AND tdtl.active = true
     LEFT JOIN scenario_time_limits_resource stlr ON stlr.id = tdtl.scenario_time_limits_id AND stlr.active = true
-    LEFT JOIN training_bundle_departments_scenarios_connection tsc ON tsc.training_bundle_department_id = tbd.id AND tsc.active = true
-    LEFT JOIN training_bundle_departments_rubrics_connection trc ON trc.training_bundle_department_id = tbd.id AND trc.active = true
-    LEFT JOIN training_bundle_departments_problem_statements_connection tpsc ON tpsc.training_bundle_department_id = tbd.id AND tpsc.active = true
-    LEFT JOIN training_bundle_departments_personas_connection tpc ON tpc.training_bundle_department_id = tbd.id AND tpc.active = true
-    LEFT JOIN training_bundle_departments_objectives_connection toc ON toc.training_bundle_department_id = tbd.id AND toc.active = true
-    LEFT JOIN training_bundle_departments_questions_connection tqc ON tqc.training_bundle_department_id = tbd.id AND tqc.active = true
-    LEFT JOIN training_bundle_departments_options_connection topt ON topt.training_bundle_department_id = tbd.id AND topt.active = true
-    LEFT JOIN training_bundle_departments_images_connection tic ON tic.training_bundle_department_id = tbd.id AND tic.active = true
-    LEFT JOIN training_bundle_departments_videos_connection tvc ON tvc.training_bundle_department_id = tbd.id AND tvc.active = true
-    LEFT JOIN training_bundle_departments_documents_connection tdc ON tdc.training_bundle_department_id = tbd.id AND tdc.active = true
-    LEFT JOIN training_bundle_departments_standard_groups_connection tsgc ON tsgc.training_bundle_department_id = tbd.id AND tsgc.active = true
-    LEFT JOIN training_bundle_departments_standards_connection tsc2 ON tsc2.training_bundle_department_id = tbd.id AND tsc2.active = true
+    LEFT JOIN training_department_scenarios_connection tsc ON tsc.training_department_id = tbd.id AND tsc.active = true
+    LEFT JOIN training_department_rubrics_connection trc ON trc.training_department_id = tbd.id AND trc.active = true
+    LEFT JOIN training_department_problem_statements_connection tpsc ON tpsc.training_department_id = tbd.id AND tpsc.active = true
+    LEFT JOIN training_department_personas_connection tpc ON tpc.training_department_id = tbd.id AND tpc.active = true
+    LEFT JOIN training_department_objectives_connection toc ON toc.training_department_id = tbd.id AND toc.active = true
+    LEFT JOIN training_department_questions_connection tqc ON tqc.training_department_id = tbd.id AND tqc.active = true
+    LEFT JOIN training_department_options_connection topt ON topt.training_department_id = tbd.id AND topt.active = true
+    LEFT JOIN training_department_images_connection tic ON tic.training_department_id = tbd.id AND tic.active = true
+    LEFT JOIN training_department_videos_connection tvc ON tvc.training_department_id = tbd.id AND tvc.active = true
+    LEFT JOIN training_department_documents_connection tdc ON tdc.training_department_id = tbd.id AND tdc.active = true
+    LEFT JOIN training_department_standard_groups_connection tsgc ON tsgc.training_department_id = tbd.id AND tsgc.active = true
+    LEFT JOIN training_department_standards_connection tsc2 ON tsc2.training_department_id = tbd.id AND tsc2.active = true
     WHERE tbd.active = true
     GROUP BY
         tbd.id,
-        te.copy_paste_allowed,
-        te.text_enabled,
-        te.audio_enabled,
-        te.hints_enabled,
-        te.show_images,
-        te.show_objectives,
-        te.show_problem_statement
+        he.copy_paste_allowed, pe.copy_paste_allowed,
+        he.text_enabled, pe.text_enabled,
+        he.audio_enabled, pe.audio_enabled,
+        he.hints_enabled, pe.hints_enabled,
+        he.show_images, pe.show_images,
+        he.show_objectives, pe.show_objectives,
+        he.show_problem_statement, pe.show_problem_statement
 ),
 legacy_rubric AS (
     SELECT DISTINCT ON (grc.grade_id)
         lg.chat_id,
         grc.rubrics_id AS rubric_id
     FROM latest_grade lg
-    JOIN simulation_grades_rubrics_connection grc ON grc.grade_id = lg.grade_id
+    JOIN attempt_grade_rubrics_connection grc ON grc.grade_id = lg.grade_id
     ORDER BY grc.grade_id
 ),
 base_chats AS (
@@ -100,7 +103,7 @@ base_chats AS (
         c.attempt_id,
         c.group_id,
         c.created_at AS chat_created_at,
-        (EXISTS (SELECT 1 FROM simulation_completions_entry comp WHERE comp.chat_id = c.id AND comp.active = TRUE)) AS chat_completed,
+        (EXISTS (SELECT 1 FROM attempt_completion_entry comp WHERE comp.chat_id = c.id AND comp.active = TRUE)) AS chat_completed,
         sb.scenario_id AS scenario_id,
         COALESCE(sb.rubric_id, lr.rubric_id) AS rubric_id,
         COALESCE(sb.copy_paste_allowed, true) AS copy_paste_allowed,
@@ -123,13 +126,13 @@ base_chats AS (
         COALESCE(sb.standard_group_ids, ARRAY[]::uuid[]) AS standard_group_ids,
         COALESCE(sb.standard_ids, ARRAY[]::uuid[]) AS standard_ids,
         lg.grade_id
-    FROM simulation_chats_entry c
-    JOIN simulation_attempts_entry a ON a.id = c.attempt_id
+    FROM attempt_chat_entry c
+    JOIN attempt_entry a ON a.id = c.attempt_id
     LEFT JOIN LATERAL (
-        SELECT archived FROM simulation_archives_entry
+        SELECT archived FROM attempt_archive_entry
         WHERE attempt_id = a.id AND active = TRUE ORDER BY created_at DESC LIMIT 1
     ) sa_archive ON true
-    LEFT JOIN subbundle_snapshot sb ON sb.training_bundle_department_id = c.training_bundle_department_id
+    LEFT JOIN subbundle_snapshot sb ON sb.training_department_id = c.training_department_id
     LEFT JOIN latest_grade lg ON lg.chat_id = c.id
     LEFT JOIN legacy_rubric lr ON lr.chat_id = c.id
     WHERE c.active = TRUE

@@ -40,15 +40,15 @@ SQL_PATH_CREATE_ATTEMPT = (
     "app/sql/v4/queries/artifacts/attempt/create_attempt_complete.sql"
 )
 
-# SQL to look up training_bundle_entry_id and training_bundle_department_id from an attempt
+# SQL to look up training_entry_id and training_department_id from an attempt
 SQL_ATTEMPT_CONTEXT = """
     SELECT
-        tbe.id AS training_bundle_entry_id,
-        tbd.id AS training_bundle_department_id
-    FROM simulation_attempts_entry a
+        tbe.id AS training_entry_id,
+        tbd.id AS training_department_id
+    FROM attempt_entry a
     JOIN training_entry t ON t.id = a.training_id AND t.active = true
-    JOIN training_bundle_entry tbe ON tbe.training_id = t.id AND tbe.active = true
-    JOIN training_bundle_departments_entry tbd ON tbd.training_bundle_id = tbe.id AND tbd.active = true
+    JOIN training_entry tbe ON tbe.training_id = t.id AND tbe.active = true
+    JOIN training_department_entry tbd ON tbd.training_id = tbe.id AND tbd.active = true
     WHERE a.id = $1
     LIMIT 1
 """
@@ -62,13 +62,13 @@ SQL_REMAINING_SCENARIOS = """
             AND ssj.active = true
         JOIN training_entry t ON t.simulations_id = ssj.simulations_id
             AND t.active = true
-        JOIN simulation_attempts_entry a ON a.training_id = t.id
+        JOIN attempt_entry a ON a.training_id = t.id
         WHERE a.id = $1 AND ss.active = true
     ),
     existing_scenarios AS (
         SELECT DISTINCT csc.scenarios_id
-        FROM simulation_chats_entry c
-        JOIN simulation_chats_scenarios_connection csc ON csc.chat_id = c.id AND csc.active = true
+        FROM attempt_chat_entry c
+        JOIN attempt_chat_scenarios_connection csc ON csc.chat_id = c.id AND csc.active = true
         WHERE c.attempt_id = $1 AND c.active = true
     )
     SELECT
@@ -86,12 +86,12 @@ async def _attempt_start_impl(
     try:
         if payload.attempt_id is None:
             # === CREATE MODE ===
-            if not payload.training_bundle_entry_id:
+            if not payload.training_entry_id:
                 await sio.emit(
                     "attempt_error",
                     AttemptUnifiedErrorEvent(
                         type="start",
-                        message="training_bundle_entry_id is required to create an attempt",
+                        message="training_entry_id is required to create an attempt",
                     ).model_dump(mode="json"),
                     room=sid,
                 )
@@ -105,7 +105,7 @@ async def _attempt_start_impl(
                         SQL_PATH_CREATE_ATTEMPT,
                         params=CreateAttemptSqlParams(
                             p_profile_id=profile_id,
-                            p_training_bundle_entry_id=payload.training_bundle_entry_id,
+                            p_training_entry_id=payload.training_entry_id,
                             p_infinite_mode=payload.infinite_mode,
                         ),
                     ),
@@ -128,7 +128,7 @@ async def _attempt_start_impl(
             # Emit attempt_started to client
             event = AttemptStartedEvent(
                 attempt_id=str(attempt_id),
-                training_bundle_entry_id=str(payload.training_bundle_entry_id),
+                training_entry_id=str(payload.training_entry_id),
             )
             await sio.emit(
                 "attempt_started",
@@ -150,8 +150,8 @@ async def _attempt_start_impl(
             await _emit_training_generate(
                 sid=sid,
                 attempt_id=attempt_id,
-                training_bundle_entry_id=payload.training_bundle_entry_id,
-                training_bundle_department_id=ctx["training_bundle_department_id"],
+                training_entry_id=payload.training_entry_id,
+                training_department_id=ctx["training_department_id"],
                 payload=payload,
             )
 
@@ -176,8 +176,8 @@ async def _attempt_start_impl(
                     )
                     return
 
-                training_bundle_entry_id = ctx["training_bundle_entry_id"]
-                training_bundle_department_id = ctx["training_bundle_department_id"]
+                training_entry_id = ctx["training_entry_id"]
+                training_department_id = ctx["training_department_id"]
 
                 # Check remaining scenarios
                 remaining = await conn.fetchrow(SQL_REMAINING_SCENARIOS, attempt_id)
@@ -189,8 +189,8 @@ async def _attempt_start_impl(
                 await _emit_training_generate(
                     sid=sid,
                     attempt_id=attempt_id,
-                    training_bundle_entry_id=training_bundle_entry_id,
-                    training_bundle_department_id=training_bundle_department_id,
+                    training_entry_id=training_entry_id,
+                    training_department_id=training_department_id,
                     payload=payload,
                 )
             else:
@@ -222,8 +222,8 @@ async def _attempt_start_impl(
 async def _emit_training_generate(
     sid: str,
     attempt_id: uuid.UUID,
-    training_bundle_entry_id: uuid.UUID,
-    training_bundle_department_id: uuid.UUID,
+    training_entry_id: uuid.UUID,
+    training_department_id: uuid.UUID,
     payload: AttemptStartPayload,
 ) -> None:
     """Emit training_generate internally with attempt context."""
@@ -236,11 +236,11 @@ async def _emit_training_generate(
 
     emit_data: dict[str, Any] = {
         "sid": sid,
-        "training_bundle_entry_id": str(training_bundle_entry_id),
+        "training_entry_id": str(training_entry_id),
         "resource_types": resource_types,
         "save": payload.save,
         "attempt_id": str(attempt_id),
-        "training_bundle_department_id": str(training_bundle_department_id),
+        "training_department_id": str(training_department_id),
     }
 
     if payload.draft_id:

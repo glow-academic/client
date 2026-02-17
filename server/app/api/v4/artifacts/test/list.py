@@ -18,7 +18,7 @@ from app.api.v4.artifacts.test.types import (
 from app.api.v4.resources.descriptions.get import get_descriptions_internal
 from app.api.v4.resources.names.get import get_names_internal
 from app.api.v4.resources.rubrics.get import get_rubrics_batch_internal
-from app.api.v4.views.benchmark.tests.get import get_benchmark_tests_internal
+from app.api.v4.views.benchmark.tests.get import get_test_internal
 from app.infra.v4.activity.audit import audit_activity
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
@@ -69,7 +69,7 @@ async def list_test_artifacts(
             date_to = datetime.fromisoformat(request.end_date)
 
         # Fetch tests from MV
-        result = await get_benchmark_tests_internal(
+        result = await get_test_internal(
             conn=conn,
             eval_ids=eval_uuids,
             department_ids=department_uuids,

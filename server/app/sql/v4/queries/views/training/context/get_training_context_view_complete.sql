@@ -34,7 +34,7 @@ END $$;
 
 CREATE TYPE types.q_get_training_context_view_v4_item AS (
     simulation_id uuid,
-    training_bundle_entry_ids uuid[],
+    training_entry_ids uuid[],
     scenario_ids uuid[],
     cohort_ids uuid[],
     persona_ids uuid[],
@@ -70,13 +70,35 @@ user_cohorts AS (
     WHERE pcj.profile_id = (SELECT profile_id FROM params)
       AND pcj.active = true
 ),
--- Filter mv_training: practice flag + cohort overlap
+-- Filter mv_home/mv_practice by cohort overlap
 accessible_training AS (
-    SELECT mt.*
-    FROM mv_training mt
-    JOIN user_cohorts uc
-      ON mt.cohort_ids && COALESCE(uc.cohort_ids, ARRAY[]::uuid[])
-    WHERE mt.practice = (SELECT practice FROM params)
+    SELECT
+        mh.home_id AS parent_id,
+        mh.simulation_ids,
+        mh.cohort_ids,
+        mh.training_ids AS training_entry_ids,
+        mh.scenario_ids,
+        mh.persona_ids,
+        mh.rubric_ids,
+        mh.time_limit_ids
+    FROM mv_home mh
+    JOIN user_cohorts uc ON mh.cohort_ids && COALESCE(uc.cohort_ids, ARRAY[]::uuid[])
+    WHERE (SELECT practice FROM params) = false
+
+    UNION ALL
+
+    SELECT
+        mp.practice_id AS parent_id,
+        mp.simulation_ids,
+        mp.cohort_ids,
+        mp.training_ids AS training_entry_ids,
+        mp.scenario_ids,
+        mp.persona_ids,
+        mp.rubric_ids,
+        mp.time_limit_ids
+    FROM mv_practice mp
+    JOIN user_cohorts uc ON mp.cohort_ids && COALESCE(uc.cohort_ids, ARRAY[]::uuid[])
+    WHERE (SELECT practice FROM params) = true
 ),
 -- Check simulation_active flag for each simulation
 active_simulations AS (
@@ -100,8 +122,8 @@ active_simulations AS (
 simulation_scope AS (
     SELECT
         asim.simulation_id,
-        ARRAY_AGG(DISTINCT tbeid.training_bundle_entry_id ORDER BY tbeid.training_bundle_entry_id)
-            FILTER (WHERE tbeid.training_bundle_entry_id IS NOT NULL) AS training_bundle_entry_ids,
+        ARRAY_AGG(DISTINCT tbeid.training_entry_id ORDER BY tbeid.training_entry_id)
+            FILTER (WHERE tbeid.training_entry_id IS NOT NULL) AS training_entry_ids,
         ARRAY_AGG(DISTINCT scid.scenario_id ORDER BY scid.scenario_id)
             FILTER (WHERE scid.scenario_id IS NOT NULL) AS scenario_ids,
         ARRAY_AGG(DISTINCT coid.cohort_id ORDER BY coid.cohort_id)
@@ -115,7 +137,7 @@ simulation_scope AS (
     FROM active_simulations asim
     JOIN accessible_training at2
       ON asim.simulation_id = ANY(at2.simulation_ids)
-    LEFT JOIN LATERAL unnest(at2.training_bundle_entry_ids) tbeid(training_bundle_entry_id) ON TRUE
+    LEFT JOIN LATERAL unnest(at2.training_entry_ids) tbeid(training_entry_id) ON TRUE
     LEFT JOIN LATERAL unnest(at2.scenario_ids) scid(scenario_id) ON TRUE
     LEFT JOIN LATERAL unnest(at2.cohort_ids) coid(cohort_id) ON TRUE
     LEFT JOIN LATERAL unnest(at2.persona_ids) pid(persona_id) ON TRUE
@@ -129,7 +151,7 @@ SELECT
             SELECT ARRAY_AGG(
                 (
                     ss.simulation_id,
-                    ss.training_bundle_entry_ids,
+                    ss.training_entry_ids,
                     ss.scenario_ids,
                     ss.cohort_ids,
                     ss.persona_ids,

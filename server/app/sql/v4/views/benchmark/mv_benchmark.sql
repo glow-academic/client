@@ -53,7 +53,7 @@ run_rubric_agg AS (
     SELECT
         brrc.benchmark_id,
         ARRAY_AGG(DISTINCT brrc.run_rubrics_id ORDER BY brrc.run_rubrics_id) AS run_rubric_ids
-    FROM benchmark_run_rubrics_connection brrc
+    FROM test_run_rubrics_connection brrc
     WHERE brrc.active = true
     GROUP BY brrc.benchmark_id
 ),
@@ -61,7 +61,7 @@ group_rubric_agg AS (
     SELECT
         bgrc.benchmark_id,
         ARRAY_AGG(DISTINCT bgrc.group_rubrics_id ORDER BY bgrc.group_rubrics_id) AS group_rubric_ids
-    FROM benchmark_group_rubrics_connection bgrc
+    FROM test_group_rubrics_connection bgrc
     WHERE bgrc.active = true
     GROUP BY bgrc.benchmark_id
 ),
@@ -69,7 +69,7 @@ run_position_agg AS (
     SELECT
         brpc.benchmark_id,
         ARRAY_AGG(DISTINCT brpc.run_positions_id ORDER BY brpc.run_positions_id) AS run_position_ids
-    FROM benchmark_run_positions_connection brpc
+    FROM test_run_positions_connection brpc
     WHERE brpc.active = true
     GROUP BY brpc.benchmark_id
 ),
@@ -77,7 +77,7 @@ group_position_agg AS (
     SELECT
         bgpc.benchmark_id,
         ARRAY_AGG(DISTINCT bgpc.group_positions_id ORDER BY bgpc.group_positions_id) AS group_position_ids
-    FROM benchmark_group_positions_connection bgpc
+    FROM test_group_positions_connection bgpc
     WHERE bgpc.active = true
     GROUP BY bgpc.benchmark_id
 ),
@@ -85,8 +85,8 @@ group_position_agg AS (
 bundle_agg AS (
     SELECT
         bbe.benchmark_id,
-        ARRAY_AGG(DISTINCT bbe.id ORDER BY bbe.id) AS benchmark_bundle_entry_ids
-    FROM benchmark_bundle_entry bbe
+        ARRAY_AGG(DISTINCT bbe.id ORDER BY bbe.id) AS suite_entry_ids
+    FROM suite_entry bbe
     WHERE bbe.active = true
     GROUP BY bbe.benchmark_id
 )
@@ -107,7 +107,7 @@ SELECT
     COALESCE(gp.group_position_ids, ARRAY[]::uuid[]) AS group_position_ids,
 
     -- Aggregated UP from benchmark_bundle level
-    COALESCE(bun.benchmark_bundle_entry_ids, ARRAY[]::uuid[]) AS benchmark_bundle_entry_ids,
+    COALESCE(bun.suite_entry_ids, ARRAY[]::uuid[]) AS suite_entry_ids,
 
     be.created_at,
     be.updated_at,

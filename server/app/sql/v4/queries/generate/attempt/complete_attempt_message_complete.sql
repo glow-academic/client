@@ -42,7 +42,7 @@ BEGIN
     -- Return persona_id from the content entry (inserted by create_content tool)
     RETURN QUERY
     SELECT ce.persona_id::text
-    FROM simulation_contents_entry ce
+    FROM attempt_content_entry ce
     WHERE ce.message_id = p_message_id AND ce.active = true AND ce.persona_id IS NOT NULL
     ORDER BY ce.created_at DESC
     LIMIT 1;

@@ -1,5 +1,5 @@
 -- Prepare training start - resolves scope and ensures department-scoped bundle.
--- Derives simulation/scenario/training scope from training_bundle_entry.
+-- Derives simulation/scenario/training scope from training_entry.
 -- Ensures department-scoped bundle exists at runtime (create-if-missing).
 -- Chat creation is handled separately by socket_create_attempt_chat_v4.
 
@@ -19,12 +19,12 @@ END $$;
 
 CREATE OR REPLACE FUNCTION socket_prepare_training_start_v4(
     p_profile_id uuid,
-    p_training_bundle_entry_id uuid,
+    p_training_entry_id uuid,
     p_department_id uuid,
     p_draft_id uuid DEFAULT NULL
 )
 RETURNS TABLE (
-    training_bundle_department_id uuid,
+    training_department_id uuid,
     scenario_id uuid
 )
 LANGUAGE plpgsql
@@ -48,7 +48,7 @@ DECLARE
     v_problem_statements_resource_id uuid;
     v_selected_department_id uuid;
 
-    v_training_bundle_department_id uuid;
+    v_training_department_id uuid;
     v_config_signature text := 'runtime-v1';
     v_draft_persona_ids uuid[] := ARRAY[]::uuid[];
     v_draft_document_ids uuid[] := ARRAY[]::uuid[];
@@ -100,24 +100,24 @@ BEGIN
         v_is_practice,
         v_simulation_artifact_id,
         v_scenario_artifact_id
-    FROM training_bundle_entry tb
+    FROM training_entry tb
     JOIN training_entry t
       ON t.id = tb.training_id
      AND t.active = true
-    WHERE tb.id = p_training_bundle_entry_id
+    WHERE tb.id = p_training_entry_id
       AND tb.active = true
     LIMIT 1;
 
     IF v_training_id IS NULL THEN
-        RAISE EXCEPTION 'Training bundle not found or inactive: %', p_training_bundle_entry_id;
+        RAISE EXCEPTION 'Training bundle not found or inactive: %', p_training_entry_id;
     END IF;
 
     IF v_simulations_resource_id IS NULL OR v_simulation_artifact_id IS NULL THEN
-        RAISE EXCEPTION 'Simulation scope not found for training bundle %', p_training_bundle_entry_id;
+        RAISE EXCEPTION 'Simulation scope not found for training bundle %', p_training_entry_id;
     END IF;
 
     IF v_scenarios_resource_id IS NULL OR v_scenario_artifact_id IS NULL THEN
-        RAISE EXCEPTION 'Scenario scope not found for training bundle %', p_training_bundle_entry_id;
+        RAISE EXCEPTION 'Scenario scope not found for training bundle %', p_training_entry_id;
     END IF;
 
     -- Resolve rubric/persona/problem statement from scenario scope.
@@ -171,17 +171,17 @@ BEGIN
     v_selected_department_id := COALESCE(v_selected_department_id, p_department_id);
 
     -- Ensure department-scoped bundle exists at runtime.
-    SELECT tbd.id INTO v_training_bundle_department_id
-    FROM training_bundle_departments_entry tbd
-    WHERE tbd.training_bundle_id = p_training_bundle_entry_id
+    SELECT tbd.id INTO v_training_department_id
+    FROM training_department_entry tbd
+    WHERE tbd.training_id = p_training_entry_id
       AND tbd.departments_id = v_selected_department_id
       AND tbd.active = true
     ORDER BY tbd.created_at
     LIMIT 1;
 
-    IF v_training_bundle_department_id IS NULL THEN
-        INSERT INTO training_bundle_departments_entry (
-            training_bundle_id,
+    IF v_training_department_id IS NULL THEN
+        INSERT INTO training_department_entry (
+            training_id,
             departments_id,
             config_signature,
             created_at,
@@ -191,7 +191,7 @@ BEGIN
             mcp
         )
         VALUES (
-            p_training_bundle_entry_id,
+            p_training_entry_id,
             v_selected_department_id,
             v_config_signature,
             NOW(),
@@ -200,23 +200,23 @@ BEGIN
             false,
             false
         )
-        ON CONFLICT (training_bundle_id, departments_id, config_signature)
+        ON CONFLICT (training_id, departments_id, config_signature)
         DO UPDATE SET updated_at = NOW(), active = true
-        RETURNING id INTO v_training_bundle_department_id;
+        RETURNING id INTO v_training_department_id;
     END IF;
 
     -- Ensure canonical scope links exist on sub-bundle.
-    INSERT INTO training_bundle_departments_scenarios_connection (
-        training_bundle_department_id, scenarios_id, created_at, active, generated, mcp
+    INSERT INTO training_department_scenarios_connection (
+        training_department_id, scenarios_id, created_at, active, generated, mcp
     )
-    VALUES (v_training_bundle_department_id, v_scenarios_resource_id, NOW(), true, false, false)
-    ON CONFLICT (training_bundle_department_id, scenarios_id) DO NOTHING;
+    VALUES (v_training_department_id, v_scenarios_resource_id, NOW(), true, false, false)
+    ON CONFLICT (training_department_id, scenarios_id) DO NOTHING;
 
-    INSERT INTO training_bundle_departments_time_limits_connection (
-        training_bundle_department_id, scenario_time_limits_id, created_at, active, generated, mcp
+    INSERT INTO training_department_time_limits_connection (
+        training_department_id, scenario_time_limits_id, created_at, active, generated, mcp
     )
     SELECT
-        v_training_bundle_department_id,
+        v_training_department_id,
         stlr.id,
         NOW(),
         true,
@@ -229,14 +229,14 @@ BEGIN
     WHERE sstl.simulation_id = v_simulation_artifact_id
       AND sstl.active = true
       AND stlr.scenario_id = v_scenarios_resource_id
-    ON CONFLICT (training_bundle_department_id, scenario_time_limits_id) DO NOTHING;
+    ON CONFLICT (training_department_id, scenario_time_limits_id) DO NOTHING;
 
     IF COALESCE(array_length(v_draft_persona_ids, 1), 0) > 0 OR v_personas_resource_id IS NOT NULL THEN
-        INSERT INTO training_bundle_departments_personas_connection (
-            training_bundle_department_id, personas_id, created_at, active, generated, mcp
+        INSERT INTO training_department_personas_connection (
+            training_department_id, personas_id, created_at, active, generated, mcp
         )
         SELECT
-            v_training_bundle_department_id,
+            v_training_department_id,
             pid,
             NOW(),
             true,
@@ -248,28 +248,28 @@ BEGIN
                 ELSE ARRAY[v_personas_resource_id]::uuid[]
             END
         ) AS pid
-        ON CONFLICT (training_bundle_department_id, personas_id) DO NOTHING;
+        ON CONFLICT (training_department_id, personas_id) DO NOTHING;
     END IF;
 
     IF v_rubrics_resource_id IS NOT NULL THEN
-        INSERT INTO training_bundle_departments_rubrics_connection (
-            training_bundle_department_id, rubrics_id, created_at, active, generated, mcp
+        INSERT INTO training_department_rubrics_connection (
+            training_department_id, rubrics_id, created_at, active, generated, mcp
         )
-        VALUES (v_training_bundle_department_id, v_rubrics_resource_id, NOW(), true, false, false)
-        ON CONFLICT (training_bundle_department_id, rubrics_id) DO NOTHING;
+        VALUES (v_training_department_id, v_rubrics_resource_id, NOW(), true, false, false)
+        ON CONFLICT (training_department_id, rubrics_id) DO NOTHING;
     END IF;
 
     IF v_problem_statements_resource_id IS NOT NULL THEN
-        INSERT INTO training_bundle_departments_problem_statements_connection (
-            training_bundle_department_id, problem_statements_id, created_at, active, generated, mcp
+        INSERT INTO training_department_problem_statements_connection (
+            training_department_id, problem_statements_id, created_at, active, generated, mcp
         )
-        VALUES (v_training_bundle_department_id, v_problem_statements_resource_id, NOW(), true, false, false)
-        ON CONFLICT (training_bundle_department_id, problem_statements_id) DO NOTHING;
+        VALUES (v_training_department_id, v_problem_statements_resource_id, NOW(), true, false, false)
+        ON CONFLICT (training_department_id, problem_statements_id) DO NOTHING;
     END IF;
 
-    INSERT INTO training_bundle_departments_documents_connection (training_bundle_department_id, documents_id, created_at, active, generated, mcp)
+    INSERT INTO training_department_documents_connection (training_department_id, documents_id, created_at, active, generated, mcp)
     SELECT DISTINCT
-        v_training_bundle_department_id,
+        v_training_department_id,
         doc_id,
         NOW(),
         true,
@@ -285,11 +285,11 @@ BEGIN
         SELECT unnest(v_draft_document_ids)
         WHERE COALESCE(array_length(v_draft_document_ids, 1), 0) > 0
     ) selected_docs
-    ON CONFLICT (training_bundle_department_id, documents_id) DO NOTHING;
+    ON CONFLICT (training_department_id, documents_id) DO NOTHING;
 
-    INSERT INTO training_bundle_departments_parameter_fields_connection (training_bundle_department_id, parameter_fields_id, created_at, active, generated, mcp)
+    INSERT INTO training_department_parameter_fields_connection (training_department_id, parameter_fields_id, created_at, active, generated, mcp)
     SELECT DISTINCT
-        v_training_bundle_department_id,
+        v_training_department_id,
         field_id,
         NOW(),
         true,
@@ -305,59 +305,59 @@ BEGIN
         SELECT unnest(v_draft_parameter_field_ids)
         WHERE COALESCE(array_length(v_draft_parameter_field_ids, 1), 0) > 0
     ) selected_fields
-    ON CONFLICT (training_bundle_department_id, parameter_fields_id) DO NOTHING;
+    ON CONFLICT (training_department_id, parameter_fields_id) DO NOTHING;
 
-    INSERT INTO training_bundle_departments_objectives_connection (training_bundle_department_id, objectives_id, created_at, active, generated, mcp)
-    SELECT DISTINCT v_training_bundle_department_id, soj.objective_id, NOW(), true, false, false
+    INSERT INTO training_department_objectives_connection (training_department_id, objectives_id, created_at, active, generated, mcp)
+    SELECT DISTINCT v_training_department_id, soj.objective_id, NOW(), true, false, false
     FROM scenario_objectives_junction soj
     WHERE soj.scenario_id = v_scenario_artifact_id
       AND soj.active = true
-    ON CONFLICT (training_bundle_department_id, objectives_id) DO NOTHING;
+    ON CONFLICT (training_department_id, objectives_id) DO NOTHING;
 
-    INSERT INTO training_bundle_departments_questions_connection (training_bundle_department_id, questions_id, created_at, active, generated, mcp)
-    SELECT DISTINCT v_training_bundle_department_id, sqj.question_id, NOW(), true, false, false
+    INSERT INTO training_department_questions_connection (training_department_id, questions_id, created_at, active, generated, mcp)
+    SELECT DISTINCT v_training_department_id, sqj.question_id, NOW(), true, false, false
     FROM scenario_questions_junction sqj
     WHERE sqj.scenario_id = v_scenario_artifact_id
       AND sqj.active = true
-    ON CONFLICT (training_bundle_department_id, questions_id) DO NOTHING;
+    ON CONFLICT (training_department_id, questions_id) DO NOTHING;
 
-    INSERT INTO training_bundle_departments_options_connection (training_bundle_department_id, options_id, created_at, active, generated, mcp)
-    SELECT DISTINCT v_training_bundle_department_id, soj.option_id, NOW(), true, false, false
+    INSERT INTO training_department_options_connection (training_department_id, options_id, created_at, active, generated, mcp)
+    SELECT DISTINCT v_training_department_id, soj.option_id, NOW(), true, false, false
     FROM scenario_options_junction soj
     WHERE soj.scenario_id = v_scenario_artifact_id
       AND soj.active = true
-    ON CONFLICT (training_bundle_department_id, options_id) DO NOTHING;
+    ON CONFLICT (training_department_id, options_id) DO NOTHING;
 
-    INSERT INTO training_bundle_departments_videos_connection (training_bundle_department_id, videos_id, created_at, active, generated, mcp)
-    SELECT DISTINCT v_training_bundle_department_id, svj.video_id, NOW(), true, false, false
+    INSERT INTO training_department_videos_connection (training_department_id, videos_id, created_at, active, generated, mcp)
+    SELECT DISTINCT v_training_department_id, svj.video_id, NOW(), true, false, false
     FROM scenario_videos_junction svj
     WHERE svj.scenario_id = v_scenario_artifact_id
       AND svj.active = true
-    ON CONFLICT (training_bundle_department_id, videos_id) DO NOTHING;
+    ON CONFLICT (training_department_id, videos_id) DO NOTHING;
 
-    INSERT INTO training_bundle_departments_images_connection (training_bundle_department_id, images_id, created_at, active, generated, mcp)
-    SELECT DISTINCT v_training_bundle_department_id, sij.image_id, NOW(), true, false, false
+    INSERT INTO training_department_images_connection (training_department_id, images_id, created_at, active, generated, mcp)
+    SELECT DISTINCT v_training_department_id, sij.image_id, NOW(), true, false, false
     FROM scenario_images_junction sij
     WHERE sij.scenario_id = v_scenario_artifact_id
       AND sij.active = true
-    ON CONFLICT (training_bundle_department_id, images_id) DO NOTHING;
+    ON CONFLICT (training_department_id, images_id) DO NOTHING;
 
     IF v_rubric_artifact_id IS NOT NULL THEN
-        INSERT INTO training_bundle_departments_standards_connection (training_bundle_department_id, standards_id, created_at, active, generated, mcp)
-        SELECT DISTINCT v_training_bundle_department_id, rsj.standard_id, NOW(), true, false, false
+        INSERT INTO training_department_standards_connection (training_department_id, standards_id, created_at, active, generated, mcp)
+        SELECT DISTINCT v_training_department_id, rsj.standard_id, NOW(), true, false, false
         FROM rubric_standards_junction rsj
         WHERE rsj.rubric_id = v_rubric_artifact_id
           AND rsj.active = true
-        ON CONFLICT (training_bundle_department_id, standards_id) DO NOTHING;
+        ON CONFLICT (training_department_id, standards_id) DO NOTHING;
 
-        INSERT INTO training_bundle_departments_standard_groups_connection (training_bundle_department_id, standard_groups_id, created_at, active, generated, mcp)
-        SELECT DISTINCT v_training_bundle_department_id, rsgj.standard_group_id, NOW(), true, false, false
+        INSERT INTO training_department_standard_groups_connection (training_department_id, standard_groups_id, created_at, active, generated, mcp)
+        SELECT DISTINCT v_training_department_id, rsgj.standard_group_id, NOW(), true, false, false
         FROM rubric_standard_groups_junction rsgj
         WHERE rsgj.rubric_id = v_rubric_artifact_id
           AND rsgj.active = true
-        ON CONFLICT (training_bundle_department_id, standard_groups_id) DO NOTHING;
+        ON CONFLICT (training_department_id, standard_groups_id) DO NOTHING;
     END IF;
 
-    RETURN QUERY SELECT v_training_bundle_department_id, v_scenario_artifact_id;
+    RETURN QUERY SELECT v_training_department_id, v_scenario_artifact_id;
 END;
 $$;

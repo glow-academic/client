@@ -57,9 +57,9 @@ async def get_benchmark_context_view_internal(
                 BenchmarkContextViewItem(
                     benchmark_id=item.benchmark_id,
                     eval_ids=list(item.eval_ids) if item.eval_ids else None,
-                    benchmark_bundle_entry_ids=(
-                        list(item.benchmark_bundle_entry_ids)
-                        if item.benchmark_bundle_entry_ids
+                    suite_entry_ids=(
+                        list(item.suite_entry_ids)
+                        if item.suite_entry_ids
                         else None
                     ),
                     department_ids=(

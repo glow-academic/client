@@ -5,11 +5,11 @@ from uuid import UUID
 from pydantic import BaseModel, Field
 
 
-class GetBenchmarkBundleViewResponse(BaseModel):
+class GetSuiteViewResponse(BaseModel):
     """Thin MV-backed view response for a single benchmark bundle."""
 
     profile_has_access: bool = False
-    benchmark_bundle_entry_id: UUID | None = None
+    suite_entry_id: UUID | None = None
     benchmark_id: UUID | None = None
     # 12 bundle-level resource ID arrays
     department_ids: list[UUID] = Field(default_factory=list)

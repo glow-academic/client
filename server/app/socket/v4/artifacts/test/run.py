@@ -168,7 +168,7 @@ async def _test_run_impl(sid: str, data: TestRunPayload, profile_id: uuid.UUID) 
                 bypass_cache=True,
             )
 
-        if not result.views or not result.views.benchmark_invocations:
+        if not result.views or not result.views.test_invocation:
             await sio.emit(
                 "test_error",
                 TestErrorEvent(
@@ -184,7 +184,7 @@ async def _test_run_impl(sid: str, data: TestRunPayload, profile_id: uuid.UUID) 
         invocation = next(
             (
                 inv
-                for inv in result.views.benchmark_invocations
+                for inv in result.views.test_invocation
                 if str(inv.invocation_id) == invocation_id_str
             ),
             None,

@@ -19,12 +19,12 @@ from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
 from app.utils.sql_helper import execute_sql_typed
 
-SQL_PATH = "app/sql/v4/queries/views/simulation/messages/get_simulation_messages_view_complete.sql"
+SQL_PATH = "app/sql/v4/queries/views/simulation/messages/get_attempt_message_view_complete.sql"
 
 router = APIRouter()
 
 
-async def get_simulation_messages_internal(
+async def get_attempt_message_internal(
     conn: asyncpg.Connection,
     attempt_id: UUID,
     bypass_cache: bool = False,
@@ -93,7 +93,7 @@ async def get_messages(
     sql_query: str | None = None
     sql_params: tuple[Any, ...] | None = None
     try:
-        items = await get_simulation_messages_internal(
+        items = await get_attempt_message_internal(
             conn=conn,
             attempt_id=request.attempt_id,
             bypass_cache=bypass_cache,
@@ -108,7 +108,7 @@ async def get_messages(
         handle_route_error(
             error=e,
             route_path=http_request.url.path,
-            operation="views_simulation_messages_get",
+            operation="views_attempt_message_get",
             sql_query=sql_query,
             sql_params=sql_params,
             request=http_request,

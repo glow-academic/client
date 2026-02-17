@@ -1,4 +1,4 @@
--- Complete a test grade: update tokens and score/passed on benchmark_grades_entry
+-- Complete a test grade: update tokens and score/passed on test_grade_entry
 
 -- 1) Drop function first
 DO $$
@@ -37,7 +37,7 @@ BEGIN
 
     -- Update grade score and passed (only if values provided)
     IF p_grade_id IS NOT NULL AND (p_score IS NOT NULL OR p_passed IS NOT NULL) THEN
-        UPDATE benchmark_grades_entry
+        UPDATE test_grade_entry
         SET score = COALESCE(p_score, score),
             passed = COALESCE(p_passed, passed),
             updated_at = NOW()

@@ -120,7 +120,7 @@ async def _test_start_impl(
                     return
 
                 # Step 3: Refresh MVs
-                await conn.execute("REFRESH MATERIALIZED VIEW mv_benchmark_invocations")
+                await conn.execute("REFRESH MATERIALIZED VIEW mv_test_invocation")
 
             # Step 4: Invalidate caches
             await invalidate_tags(["test", "tests", "benchmark", "invocations"])
@@ -173,7 +173,7 @@ async def _find_and_emit_next_run(sid: str, test_id: uuid.UUID) -> None:
             bypass_cache=True,
         )
 
-    if not result.views or not result.views.benchmark_invocations:
+    if not result.views or not result.views.test_invocation:
         logger.warning(f"No invocations found for test {test_id}")
         await sio.emit(
             "test_all_complete",
@@ -187,7 +187,7 @@ async def _find_and_emit_next_run(sid: str, test_id: uuid.UUID) -> None:
         return
 
     # Find first invocation with pending runs
-    for invocation in result.views.benchmark_invocations:
+    for invocation in result.views.test_invocation:
         next_run_resource_id, current_run, total_runs = _determine_next_run(
             invocation_run_ids=invocation.invocation_run_ids,
             run_ids=invocation.run_ids,
@@ -206,7 +206,7 @@ async def _find_and_emit_next_run(sid: str, test_id: uuid.UUID) -> None:
             return
 
     # All invocations complete — emit test_all_complete
-    last_invocation = result.views.benchmark_invocations[-1]
+    last_invocation = result.views.test_invocation[-1]
     total = len(last_invocation.run_ids) if last_invocation else 0
     await sio.emit(
         "test_all_complete",

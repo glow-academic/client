@@ -79,9 +79,9 @@ BEGIN
         v_table_name := entry_type || '_entry';
     END IF;
 
-    -- Special handling for contents: insert into simulation_contents_entry
+    -- Special handling for contents: insert into attempt_content_entry
     IF entry_type = 'contents' THEN
-        v_table_name := 'simulation_contents_entry';
+        v_table_name := 'attempt_content_entry';
 
         v_columns := ARRAY[]::text[];
         v_values := ARRAY[]::text[];
