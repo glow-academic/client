@@ -489,7 +489,7 @@ export function ParameterFields({
   );
 
   // AI suggestion handling via shared hook
-  const { isGenerating: aiIsGenerating, aiSuggestion, accept: acceptAi, reject: rejectAi } = useResourceAi({
+  const { isGenerating: aiIsGenerating, aiSuggestion, clear: clearAi } = useResourceAi({
     resourceType: "parameter_fields",
     groupId: group_id,
       ];
@@ -551,13 +551,13 @@ export function ParameterFields({
         return next;
       });
     }
-    acceptAi();
-  }, [effectiveAiParameterFieldResources, resourceIds, acceptAi]);
+    clearAi();
+  }, [effectiveAiParameterFieldResources, resourceIds, clearAi]);
 
   // Reject AI suggestion - just clear the pending state
   const handleRejectAi = useCallback(() => {
-    rejectAi();
-  }, [rejectAi]);
+    clearAi();
+  }, [clearAi]);
 
   // Don't render if show is false or no parameters selected
   if (!show || parameter_ids.length === 0) {

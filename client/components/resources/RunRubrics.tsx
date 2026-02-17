@@ -71,7 +71,7 @@ export function RunRubrics({
   onReject: _onReject,
 }: RunRubricsProps) {
   // AI suggestion handling via shared hook (accumulate mode: each event = one rubric)
-  const { aiSuggestions, accept: acceptAi, reject: rejectAi } = useResourceAi({
+  const { aiSuggestions, clear: clearAi } = useResourceAi({
     resourceType: "run_rubrics",
     groupId: run_id,
     accumulate: true,
@@ -119,13 +119,13 @@ export function RunRubrics({
       .filter((id): id is string => !!id);
     const merged = [...new Set([...selectedIds, ...newIds])];
     onChange(run_id, merged);
-    acceptAi();
-  }, [aiSuggestions, selectedIds, onChange, run_id, acceptAi]);
+    clearAi();
+  }, [aiSuggestions, selectedIds, onChange, run_id, clearAi]);
 
   // Reject AI suggestion - just clear the pending state
   const handleReject = useCallback(() => {
-    rejectAi();
-  }, [rejectAi]);
+    clearAi();
+  }, [clearAi]);
 
   if (!show_rubrics) {
     return null;

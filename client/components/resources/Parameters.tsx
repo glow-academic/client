@@ -147,7 +147,7 @@ export function Parameters({
   );
 
   // AI suggestion handling via shared hook
-  const { isGenerating: aiIsGenerating, aiSuggestion, accept: acceptAi, reject: rejectAi } = useResourceAi({
+  const { isGenerating: aiIsGenerating, aiSuggestion, clear: clearAi } = useResourceAi({
     resourceType: "parameters",
     groupId: group_id,
       ];
@@ -178,13 +178,13 @@ export function Parameters({
     if (newIds.length > 0) {
       onChange([...ids, ...newIds]);
     }
-    acceptAi();
-  }, [effectiveAiParameterResources, ids, onChange, acceptAi]);
+    clearAi();
+  }, [effectiveAiParameterResources, ids, onChange, clearAi]);
 
   // Reject AI suggestion - just clear the pending state
   const handleReject = useCallback(() => {
-    rejectAi();
-  }, [rejectAi]);
+    clearAi();
+  }, [clearAi]);
 
   // Handle search term changes
   useEffect(() => {

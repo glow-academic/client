@@ -138,7 +138,7 @@ export function Colors({
   const ids = useMemo(() => color_ids ?? [], [color_ids]);
 
   // AI suggestion via shared hook
-  const { isGenerating: aiIsGenerating, aiSuggestion, accept: acceptAi, reject: rejectAi } = useResourceAi({
+  const { isGenerating: aiIsGenerating, aiSuggestion, clear: clearAi } = useResourceAi({
     resourceType: "colors",
     groupId: group_id,
   });
@@ -157,13 +157,13 @@ export function Colors({
       setInternalValue(aiSuggestion.hex_code);
       lastSavedValueRef.current = aiSuggestion.hex_code;
     }
-    acceptAi();
-  }, [aiSuggestion, onColorIdChange, acceptAi]);
+    clearAi();
+  }, [aiSuggestion, onColorIdChange, clearAi]);
 
   // Reject AI suggestion - just clear the pending state
   const handleRejectAi = useCallback(() => {
-    rejectAi();
-  }, [rejectAi]);
+    clearAi();
+  }, [clearAi]);
   
   // Track which color IDs have already had resources created (multi-select)
   const createdColorIdsRef = useRef<Set<string>>(new Set());

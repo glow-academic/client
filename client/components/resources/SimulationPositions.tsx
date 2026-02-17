@@ -138,8 +138,7 @@ export function SimulationPositions({
   const {
     isGenerating: aiIsGenerating,
     aiSuggestion,
-    accept: acceptAi,
-    reject: rejectAi,
+    clear: clearAi,
   } = useResourceAi({
     resourceType: "simulation_positions",
     groupId: group_id,
@@ -424,15 +423,15 @@ export function SimulationPositions({
       emitPositions(merged);
       return merged;
     });
-    acceptAi();
+    clearAi();
     onAccept?.();
-  }, [effectiveAiSimulationPositionResources, emitPositions, acceptAi, onAccept]);
+  }, [effectiveAiSimulationPositionResources, emitPositions, clearAi, onAccept]);
 
   // Reject AI suggestion - just clear the pending state
   const handleReject = useCallback(() => {
-    rejectAi();
+    clearAi();
     onReject?.();
-  }, [rejectAi, onReject]);
+  }, [clearAi, onReject]);
 
   if (!show) {
     return null;

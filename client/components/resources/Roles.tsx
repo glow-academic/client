@@ -246,7 +246,7 @@ export function Roles({
   group_id,
 }: RolesProps) {
   // Socket-based AI suggestion handling via shared hook
-  const { isGenerating: aiIsGenerating, aiSuggestions, accept: acceptAi, reject: rejectAi } = useResourceAi({
+  const { isGenerating: aiIsGenerating, aiSuggestions, clear: clearAi } = useResourceAi({
     resourceType: "roles",
     groupId: group_id,
     accumulate: true,
@@ -411,13 +411,13 @@ export function Roles({
     if (newIds.length > 0) {
       onRolesChange([...currentIds, ...newIds]);
     }
-    acceptAi();
-  }, [aiSuggestions, role_ids, onRolesChange, acceptAi, multiSelect]);
+    clearAi();
+  }, [aiSuggestions, role_ids, onRolesChange, clearAi, multiSelect]);
 
   // Reject AI suggestion - just clear the pending state
   const handleReject = useCallback(() => {
-    rejectAi();
-  }, [rejectAi]);
+    clearAi();
+  }, [clearAi]);
 
   const hasGenerated = useMemo(() => {
     return roles?.some((r) => r.generated) ?? false;

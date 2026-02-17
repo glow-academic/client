@@ -392,7 +392,7 @@ export function Instructions({
   }, []);
 
   // AI suggestion handling via shared hook
-  const { isGenerating: aiIsGenerating, aiSuggestion, accept: acceptAi, reject: rejectAi } = useResourceAi({
+  const { isGenerating: aiIsGenerating, aiSuggestion, clear: clearAi } = useResourceAi({
     resourceType: "instructions",
     groupId: group_id,
   });
@@ -413,13 +413,13 @@ export function Instructions({
     lastServerTextRef.current = text;
     isDirtyRef.current = false;
     onInstructionsIdChange(aiSuggestion.id);
-    acceptAi();
-  }, [aiSuggestion, onInstructionsIdChange, acceptAi]);
+    clearAi();
+  }, [aiSuggestion, onInstructionsIdChange, clearAi]);
 
   // Reject AI suggestion - just clear the pending state
   const handleReject = useCallback(() => {
-    rejectAi();
-  }, [rejectAi]);
+    clearAi();
+  }, [clearAi]);
 
   // Use instructions array if available, otherwise create placeholder mapping
   const suggestionsMapping = useMemo(() => {

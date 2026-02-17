@@ -334,7 +334,7 @@ export function RequestLimits({
   }, [resource]);
 
   // Socket-based AI suggestion handling via shared hook
-  const { isGenerating: aiIsGenerating, aiSuggestion, accept: acceptAi, reject: rejectAi } = useResourceAi({
+  const { isGenerating: aiIsGenerating, aiSuggestion, clear: clearAi } = useResourceAi({
     resourceType: "request_limits",
     groupId: group_id,
   });
@@ -350,13 +350,13 @@ export function RequestLimits({
   const handleAccept = useCallback(() => {
     if (!aiSuggestion?.id) return;
     onRequestLimitIdChange(aiSuggestion.id);
-    acceptAi();
-  }, [aiSuggestion, onRequestLimitIdChange, acceptAi]);
+    clearAi();
+  }, [aiSuggestion, onRequestLimitIdChange, clearAi]);
 
   // Reject AI suggestion - just clear the pending state
   const handleReject = useCallback(() => {
-    rejectAi();
-  }, [rejectAi]);
+    clearAi();
+  }, [clearAi]);
 
   // Don't render if show_request_limit is false (AFTER all hooks)
   if (!show) {

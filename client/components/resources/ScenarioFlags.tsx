@@ -201,8 +201,7 @@ export function ScenarioFlags({
   const {
     isGenerating: aiIsGenerating,
     aiSuggestion: aiSuggestionFromSocket,
-    accept: acceptAi,
-    reject: rejectAi,
+    clear: clearAi,
   } = useResourceAi({
     resourceType: "scenario_flags",
     groupId: group_id,
@@ -465,15 +464,15 @@ export function ScenarioFlags({
         }
       }
     }
-    acceptAi();
+    clearAi();
     onAccept?.();
-  }, [effectiveAiFlagResources, filteredFlagOptionsByScenario, handleToggle, acceptAi, onAccept]);
+  }, [effectiveAiFlagResources, filteredFlagOptionsByScenario, handleToggle, clearAi, onAccept]);
 
   // Reject AI suggestion - just clear the pending state
   const handleReject = useCallback(() => {
-    rejectAi();
+    clearAi();
     onReject?.();
-  }, [rejectAi, onReject]);
+  }, [clearAi, onReject]);
 
   if (!show || scenario_ids.length === 0) {
     return null;

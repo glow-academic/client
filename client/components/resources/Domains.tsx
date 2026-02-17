@@ -74,7 +74,7 @@ export function Domains({
   );
 
   // Socket-based AI suggestion handling via shared hook
-  const { isGenerating: aiIsGenerating, aiSuggestions, accept: acceptAi, reject: rejectAi } = useResourceAi({
+  const { isGenerating: aiIsGenerating, aiSuggestions, clear: clearAi } = useResourceAi({
     resourceType: "domains",
     groupId: group_id,
     accumulate: true,
@@ -124,12 +124,12 @@ export function Domains({
     if (newIds.length > 0) {
       onChange([...ids, ...newIds]);
     }
-    acceptAi();
-  }, [aiSuggestions, ids, onChange, acceptAi]);
+    clearAi();
+  }, [aiSuggestions, ids, onChange, clearAi]);
 
   const handleReject = useCallback(() => {
-    rejectAi();
-  }, [rejectAi]);
+    clearAi();
+  }, [clearAi]);
 
   // Check if any domain resource is generated (must be before early return)
   const hasGenerated = useMemo(() => {

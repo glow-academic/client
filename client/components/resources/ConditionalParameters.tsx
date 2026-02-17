@@ -79,7 +79,7 @@ export function ConditionalParameters({
   );
 
   // Socket-based AI suggestion handling via shared hook
-  const { isGenerating: aiIsGenerating, aiSuggestions, accept: acceptAi, reject: rejectAi } = useResourceAi({
+  const { isGenerating: aiIsGenerating, aiSuggestions, clear: clearAi } = useResourceAi({
     resourceType: "conditional_parameters",
     groupId: group_id,
     accumulate: true,
@@ -128,12 +128,12 @@ export function ConditionalParameters({
     if (newIds.length > 0) {
       onChange([...ids, ...newIds]);
     }
-    acceptAi();
-  }, [aiSuggestions, ids, onChange, acceptAi]);
+    clearAi();
+  }, [aiSuggestions, ids, onChange, clearAi]);
 
   const handleReject = useCallback(() => {
-    rejectAi();
-  }, [rejectAi]);
+    clearAi();
+  }, [clearAi]);
 
   // Check if any conditional parameter resource is generated (must be before early return)
   const hasGenerated = useMemo(() => {

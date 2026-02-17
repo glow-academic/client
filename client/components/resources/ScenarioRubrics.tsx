@@ -148,8 +148,7 @@ export function ScenarioRubrics({
   const {
     isGenerating: aiIsGenerating,
     aiSuggestions,
-    accept: acceptAi,
-    reject: rejectAi,
+    clear: clearAi,
   } = useResourceAi({
     resourceType: "scenario_rubrics",
     groupId: group_id,
@@ -418,15 +417,15 @@ export function ScenarioRubrics({
         handleSelect(r.scenario_id, r.rubric_id);
       }
     });
-    acceptAi();
+    clearAi();
     onAccept?.();
-  }, [effectiveAiScenarioRubricResources, handleSelect, acceptAi, onAccept]);
+  }, [effectiveAiScenarioRubricResources, handleSelect, clearAi, onAccept]);
 
   // Reject AI suggestion - just clear the pending state
   const handleReject = useCallback(() => {
-    rejectAi();
+    clearAi();
     onReject?.();
-  }, [rejectAi, onReject]);
+  }, [clearAi, onReject]);
 
   if (!show || scenario_ids.length === 0) {
     return null;

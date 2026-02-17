@@ -71,7 +71,7 @@ export function GroupRubrics({
   isGenerating: _isGenerating = false,
 }: GroupRubricsProps) {
   // AI suggestion handling via shared hook (accumulate mode: each event = one rubric)
-  const { aiSuggestions, accept: acceptAi, reject: rejectAi } = useResourceAi({
+  const { aiSuggestions, clear: clearAi } = useResourceAi({
     resourceType: "group_rubrics",
     groupId: group_id,
     accumulate: true,
@@ -119,13 +119,13 @@ export function GroupRubrics({
       .filter((id): id is string => !!id);
     const merged = [...new Set([...selectedIds, ...newIds])];
     onChange(group_id, merged);
-    acceptAi();
-  }, [aiSuggestions, selectedIds, onChange, group_id, acceptAi]);
+    clearAi();
+  }, [aiSuggestions, selectedIds, onChange, group_id, clearAi]);
 
   // Reject AI suggestion - just clear the pending state
   const handleReject = useCallback(() => {
-    rejectAi();
-  }, [rejectAi]);
+    clearAi();
+  }, [clearAi]);
 
   if (!show_rubrics) {
     return null;

@@ -146,8 +146,7 @@ export function Questions({
   const {
     isGenerating: aiIsGenerating,
     aiSuggestion,
-    accept: acceptAi,
-    reject: rejectAi,
+    clear: clearAi,
   } = useResourceAi({
     resourceType: "questions",
     groupId: group_id,
@@ -449,13 +448,13 @@ export function Questions({
         }
       });
     }
-    acceptAi();
-  }, [aiSuggestion, acceptAi]);
+    clearAi();
+  }, [aiSuggestion, clearAi]);
 
   // Reject AI suggestion - just clear the pending state
   const handleReject = useCallback(() => {
-    rejectAi();
-  }, [rejectAi]);
+    clearAi();
+  }, [clearAi]);
 
   // Don't render if show_questions is false (AFTER all hooks)
   if (!show) {

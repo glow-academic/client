@@ -234,8 +234,7 @@ export function ProblemStatements({
   const {
     isGenerating: aiIsGenerating,
     aiSuggestion,
-    accept: acceptAi,
-    reject: rejectAi,
+    clear: clearAi,
   } = useResourceAi({
     resourceType: "problem_statements",
     groupId: group_id,
@@ -481,13 +480,13 @@ export function ProblemStatements({
     lastServerTextRef.current = text;
     isDirtyRef.current = false;
     onProblemStatementIdChange(aiSuggestion.problem_statement_id);
-    acceptAi();
-  }, [aiSuggestion, onProblemStatementIdChange, acceptAi]);
+    clearAi();
+  }, [aiSuggestion, onProblemStatementIdChange, clearAi]);
 
   // Reject AI suggestion - just clear the pending state
   const handleReject = useCallback(() => {
-    rejectAi();
-  }, [rejectAi]);
+    clearAi();
+  }, [clearAi]);
 
   // Don't render if show_problem_statement is false (AFTER all hooks)
   if (!show) {

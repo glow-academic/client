@@ -30,7 +30,7 @@ export type ResourceEventPayload<R extends string> =
  * Typed hook for resource-level AI suggestion state management.
  *
  * Listens to `{resourceType}_generation_started/complete/error` socket events,
- * manages isGenerating + suggestion state, and provides accept/reject.
+ * manages isGenerating + suggestion state, and provides clear to reset.
  *
  * The suggestion payload is automatically typed from `ServerToClientEvents` —
  * no manual `extractSuggestion` callback or generic type parameter needed.
@@ -56,8 +56,7 @@ export function useResourceAi<R extends string>(config: {
   isGenerating: boolean;
   aiSuggestion: ResourceEventPayload<R> | null;
   aiSuggestions: ResourceEventPayload<R>[];
-  accept: () => void;
-  reject: () => void;
+  clear: () => void;
 } {
   type Payload = ResourceEventPayload<R>;
 
@@ -117,12 +116,7 @@ export function useResourceAi<R extends string>(config: {
     };
   }, [socket, isConnected, resourceType, groupId, accumulate]);
 
-  const accept = useCallback(() => {
-    setAiSuggestion(null);
-    setAiSuggestions([]);
-  }, []);
-
-  const reject = useCallback(() => {
+  const clear = useCallback(() => {
     setAiSuggestion(null);
     setAiSuggestions([]);
   }, []);
@@ -131,7 +125,6 @@ export function useResourceAi<R extends string>(config: {
     isGenerating,
     aiSuggestion,
     aiSuggestions,
-    accept,
-    reject,
+    clear,
   };
 }

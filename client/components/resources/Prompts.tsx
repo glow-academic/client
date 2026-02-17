@@ -225,7 +225,7 @@ export function Prompts({
   }, [prompts]);
 
   // Socket-based AI suggestion handling via shared hook
-  const { isGenerating: aiIsGenerating, aiSuggestion, accept: acceptAi, reject: rejectAi } = useResourceAi({
+  const { isGenerating: aiIsGenerating, aiSuggestion, clear: clearAi } = useResourceAi({
     resourceType: "prompts",
     groupId: group_id,
   });
@@ -242,13 +242,13 @@ export function Prompts({
     setPromptContent(text);
     lastSavedContentRef.current = text;
     onPromptIdChange(aiSuggestion.prompt_id);
-    acceptAi();
-  }, [aiSuggestion, onPromptIdChange, acceptAi]);
+    clearAi();
+  }, [aiSuggestion, onPromptIdChange, clearAi]);
 
   // Reject AI suggestion - just clear the pending state
   const handleReject = useCallback(() => {
-    rejectAi();
-  }, [rejectAi]);
+    clearAi();
+  }, [clearAi]);
 
   // Track prompt content in local state
   const [promptContent, setPromptContent] = useState<string>(

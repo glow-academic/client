@@ -151,7 +151,7 @@ export function ScenarioPersonas({
   );
 
   // Socket-based AI suggestion handling via shared hook
-  const { aiSuggestion, accept: acceptAi, reject: rejectAi } = useResourceAi({
+  const { aiSuggestion, clear: clearAi } = useResourceAi({
     resourceType: "scenario_personas",
     groupId: group_id,
   });
@@ -409,13 +409,13 @@ export function ScenarioPersonas({
         handlePersonaChange(r.scenario_id, r.persona_id);
       }
     });
-    acceptAi();
-  }, [aiSuggestions, handlePersonaChange, acceptAi]);
+    clearAi();
+  }, [aiSuggestions, handlePersonaChange, clearAi]);
 
   // Reject AI suggestion - just clear the pending state
   const handleReject = useCallback(() => {
-    rejectAi();
-  }, [rejectAi]);
+    clearAi();
+  }, [clearAi]);
 
   // Don't render if show_scenario_personas is false or no scenarios
   if (!show || scenario_ids.length === 0) {

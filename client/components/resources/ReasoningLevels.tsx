@@ -90,7 +90,7 @@ export function ReasoningLevels({
   const resourceId = reasoning_level_id ?? null;
   const show = show_reasoning_levels ?? true;
   // Socket-based AI suggestion handling via shared hook
-  const { isGenerating: aiIsGenerating, aiSuggestion, accept: acceptAi, reject: rejectAi } = useResourceAi({
+  const { isGenerating: aiIsGenerating, aiSuggestion, clear: clearAi } = useResourceAi({
     resourceType: "reasoning_levels",
     groupId: group_id,
   });
@@ -138,13 +138,13 @@ export function ReasoningLevels({
     if (suggestedId && suggestedId !== resourceId) {
       onReasoningLevelIdChange(suggestedId);
     }
-    acceptAi();
-  }, [aiSuggestion, resourceId, onReasoningLevelIdChange, acceptAi]);
+    clearAi();
+  }, [aiSuggestion, resourceId, onReasoningLevelIdChange, clearAi]);
 
   // Reject AI suggestion - just clear the pending state
   const handleReject = useCallback(() => {
-    rejectAi();
-  }, [rejectAi]);
+    clearAi();
+  }, [clearAi]);
 
   // Don't render if show_reasoning_levels is false (AFTER all hooks)
   if (!show) {

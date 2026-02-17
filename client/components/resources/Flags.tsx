@@ -107,7 +107,7 @@ export function Flags(props: FlagsProps) {
   );
 
   // AI suggestion handling via shared hook (accumulate mode: each event = one flag)
-  const { isGenerating: aiIsGenerating, aiSuggestions, accept: acceptAi, reject: rejectAi } = useResourceAi({
+  const { isGenerating: aiIsGenerating, aiSuggestions, clear: clearAi } = useResourceAi({
     resourceType: "flags",
     groupId: group_id,
     accumulate: true,
@@ -174,13 +174,13 @@ export function Flags(props: FlagsProps) {
         }
       }
     }
-    acceptAi();
-  }, [aiSuggestions, visibleFlags, isMultiMode, onChange, acceptAi]);
+    clearAi();
+  }, [aiSuggestions, visibleFlags, isMultiMode, onChange, clearAi]);
 
   // Reject AI suggestion - just clear the pending state
   const handleReject = useCallback(() => {
-    rejectAi();
-  }, [rejectAi]);
+    clearAi();
+  }, [clearAi]);
 
   // Don't render if show_flags is false or no visible flags
   if (!show_flags || visibleFlags.length === 0) {

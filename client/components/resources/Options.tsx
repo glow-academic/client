@@ -413,8 +413,7 @@ export function Options({
   const {
     isGenerating: aiIsGenerating,
     aiSuggestions,
-    accept: acceptAi,
-    reject: rejectAi,
+    clear: clearAi,
   } = useResourceAi({
     resourceType: "options",
     groupId: group_id,
@@ -435,12 +434,12 @@ export function Options({
     if (newIds.length > 0) {
       onChange([...ids, ...newIds]);
     }
-    acceptAi();
-  }, [aiSuggestions, ids, onChange, acceptAi]);
+    clearAi();
+  }, [aiSuggestions, ids, onChange, clearAi]);
 
   const handleReject = useCallback(() => {
-    rejectAi();
-  }, [rejectAi]);
+    clearAi();
+  }, [clearAi]);
 
   // Don't render if no questions or not shown
   if (!show || questionIds.length === 0) {

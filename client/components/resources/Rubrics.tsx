@@ -74,7 +74,7 @@ export function Rubrics({
   );
 
   // Socket-based AI suggestion handling via shared hook
-  const { isGenerating: aiIsGenerating, aiSuggestions, accept: acceptAi, reject: rejectAi } = useResourceAi({
+  const { isGenerating: aiIsGenerating, aiSuggestions, clear: clearAi } = useResourceAi({
     resourceType: "rubrics",
     groupId: group_id,
     accumulate: true,
@@ -124,12 +124,12 @@ export function Rubrics({
     if (newIds.length > 0) {
       onChange([...ids, ...newIds]);
     }
-    acceptAi();
-  }, [aiSuggestions, ids, onChange, acceptAi]);
+    clearAi();
+  }, [aiSuggestions, ids, onChange, clearAi]);
 
   const handleReject = useCallback(() => {
-    rejectAi();
-  }, [rejectAi]);
+    clearAi();
+  }, [clearAi]);
 
   // Check if any rubric resource is generated (must be before early return)
   const hasGenerated = useMemo(() => {

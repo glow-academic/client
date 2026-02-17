@@ -2,7 +2,7 @@
 
 import { useSocket } from "@/contexts/socket-context";
 import type { ServerToClientEvents } from "@/lib/ws/types";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 // ---------------------------------------------------------------------------
 // Type-level helpers: derive payload from ServerToClientEvents by entry name
@@ -30,19 +30,19 @@ export type EntryEventPayload<E extends string> =
  * Typed hook for entry-level AI generation state.
  *
  * Listens to `{entryType}_generation_started/complete/error` socket events,
- * tracks isGenerating state and provides the typed payload on complete.
+ * tracks isGenerating state and accumulates typed payloads until clear().
  *
  * The event payload is automatically typed from `ServerToClientEvents` —
  * no manual type parameter needed.
  *
  * @example
  * ```ts
- * const { lastEvent } = useEntryAi({
+ * const { events } = useEntryAi({
  *   entryType: "contents",
  *   groupId: group_id,
  * });
- * // lastEvent is typed as ContentsGenerationEvent (from OpenAPI)
- * // lastEvent?.content, lastEvent?.entry_id — fully typed
+ * // events is typed as ContentsGenerationEvent[]
+ * // events[0]?.content, events[0]?.entry_id — fully typed
  * ```
  */
 export function useEntryAi<E extends string>(config: {
@@ -50,28 +50,16 @@ export function useEntryAi<E extends string>(config: {
   entryType: E;
   /** Group ID for filtering socket events */
   groupId: string | null | undefined;
-  /** Optional callback when generation completes */
-  onComplete?: (entryId: string | null, data: EntryEventPayload<E>) => void;
-  /** Optional callback when generation errors */
-  onError?: (data: EntryEventPayload<E>) => void;
 }): {
   isGenerating: boolean;
-  lastEntryId: string | null;
-  lastEvent: EntryEventPayload<E> | null;
+  events: EntryEventPayload<E>[];
   clear: () => void;
 } {
   type Payload = EntryEventPayload<E>;
 
   const { socket, isConnected } = useSocket();
   const [isGenerating, setIsGenerating] = useState(false);
-  const [lastEntryId, setLastEntryId] = useState<string | null>(null);
-  const [lastEvent, setLastEvent] = useState<Payload | null>(null);
-
-  // Keep callbacks stable via refs
-  const onCompleteRef = useRef(config.onComplete);
-  onCompleteRef.current = config.onComplete;
-  const onErrorRef = useRef(config.onError);
-  onErrorRef.current = config.onError;
+  const [events, setEvents] = useState<Payload[]>([]);
 
   const entryType = config.entryType;
   const groupId = config.groupId;
@@ -91,17 +79,13 @@ export function useEntryAi<E extends string>(config: {
     const handleComplete = (data: Record<string, unknown>) => {
       if (groupId && data.group_id !== groupId) return;
       setIsGenerating(false);
-      const payload = data as Payload;
-      const entryId = (data.entry_id as string) ?? null;
-      setLastEntryId(entryId);
-      setLastEvent(payload);
-      onCompleteRef.current?.(entryId, payload);
+      if (data.success === false) return;
+      setEvents((prev) => [...prev, data as Payload]);
     };
 
     const handleError = (data: Record<string, unknown>) => {
       if (groupId && data.group_id !== groupId) return;
       setIsGenerating(false);
-      onErrorRef.current?.(data as Payload);
     };
 
     // Event names are constructed at runtime so we cast to the generic listener API.
@@ -122,15 +106,13 @@ export function useEntryAi<E extends string>(config: {
   }, [socket, isConnected, entryType, groupId]);
 
   const clear = useCallback(() => {
-    setLastEntryId(null);
-    setLastEvent(null);
+    setEvents([]);
     setIsGenerating(false);
   }, []);
 
   return {
     isGenerating,
-    lastEntryId,
-    lastEvent,
+    events,
     clear,
   };
 }

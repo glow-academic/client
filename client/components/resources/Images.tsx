@@ -124,7 +124,7 @@ export function Images({
   const show = show_images ?? false;
   const allImages = useMemo(() => images ?? [], [images]);
   // Socket-based AI suggestion handling via shared hook
-  const { isGenerating: aiIsGenerating, aiSuggestion, accept: acceptAi, reject: rejectAi } = useResourceAi({
+  const { isGenerating: aiIsGenerating, aiSuggestion, clear: clearAi } = useResourceAi({
     resourceType: "images",
     groupId: group_id,
   });
@@ -550,13 +550,13 @@ export function Images({
     if (newIds.length > 0) {
       onChange([...ids, ...newIds]);
     }
-    acceptAi();
-  }, [aiSuggestion, ids, onChange, acceptAi]);
+    clearAi();
+  }, [aiSuggestion, ids, onChange, clearAi]);
 
   // Reject AI suggestion - just clear the pending state
   const handleReject = useCallback(() => {
-    rejectAi();
-  }, [rejectAi]);
+    clearAi();
+  }, [clearAi]);
 
   // Don't render if show_images is false (AFTER all hooks)
   if (!show) {

@@ -107,7 +107,7 @@ export function Emails({
   const allEmails = useMemo(() => emails ?? [], [emails]);
 
   // Socket-based AI suggestion handling via shared hook
-  const { isGenerating: aiIsGenerating, aiSuggestions, accept: acceptAi, reject: rejectAi } = useResourceAi({
+  const { isGenerating: aiIsGenerating, aiSuggestions, clear: clearAi } = useResourceAi({
     resourceType: "emails",
     groupId: group_id,
     accumulate: true,
@@ -412,13 +412,13 @@ export function Emails({
       const nextPrimaryIndex = ids.length === 0 ? 0 : primaryIndex;
       onChange(nextIds, nextPrimaryIndex);
     }
-    acceptAi();
-  }, [aiSuggestions, ids, onChange, primaryIndex, acceptAi]);
+    clearAi();
+  }, [aiSuggestions, ids, onChange, primaryIndex, clearAi]);
 
   // Reject AI suggestion - just clear the pending state
   const handleRejectAi = useCallback(() => {
-    rejectAi();
-  }, [rejectAi]);
+    clearAi();
+  }, [clearAi]);
 
   // Don't render if show_emails is false (AFTER all hooks)
   if (!show) {

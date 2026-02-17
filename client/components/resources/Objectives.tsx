@@ -249,8 +249,7 @@ export function Objectives({
   const {
     isGenerating: aiIsGenerating,
     aiSuggestion,
-    accept: acceptAi,
-    reject: rejectAi,
+    clear: clearAi,
   } = useResourceAi({
     resourceType: "objectives",
     groupId: group_id,
@@ -486,13 +485,13 @@ export function Objectives({
         }
       });
     }
-    acceptAi();
-  }, [aiSuggestion, acceptAi]);
+    clearAi();
+  }, [aiSuggestion, clearAi]);
 
   // Reject AI suggestion - just clear the pending state
   const handleReject = useCallback(() => {
-    rejectAi();
-  }, [rejectAi]);
+    clearAi();
+  }, [clearAi]);
 
   // Don't render if show_objectives is false (AFTER all hooks)
   if (!show) {

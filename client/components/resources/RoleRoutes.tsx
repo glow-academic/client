@@ -86,7 +86,7 @@ export function RoleRoutes({
   onReject: _onReject,
 }: RoleRoutesProps) {
   // AI suggestion handling via shared hook (accumulate mode: each event = one role route)
-  const { aiSuggestions, accept: acceptAi, reject: rejectAi } = useResourceAi({
+  const { aiSuggestions, clear: clearAi } = useResourceAi({
     resourceType: "role_routes",
     groupId: group_id,
     accumulate: true,
@@ -234,13 +234,13 @@ export function RoleRoutes({
       });
       return next;
     });
-    acceptAi();
-  }, [aiSuggestions, acceptAi]);
+    clearAi();
+  }, [aiSuggestions, clearAi]);
 
   // Reject AI suggestion - just clear the pending state
   const handleReject = useCallback(() => {
-    rejectAi();
-  }, [rejectAi]);
+    clearAi();
+  }, [clearAi]);
 
   if (!show) {
     return null;

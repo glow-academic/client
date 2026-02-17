@@ -110,7 +110,7 @@ export function Names({
   const namesArray = useMemo(() => names ?? [], [names]);
 
   // Socket-based AI suggestion handling via shared hook
-  const { isGenerating: aiIsGenerating, aiSuggestion, accept: acceptAi, reject: rejectAi } = useResourceAi({
+  const { isGenerating: aiIsGenerating, aiSuggestion, clear: clearAi } = useResourceAi({
     resourceType: "names",
     groupId: group_id,
   });
@@ -334,13 +334,13 @@ export function Names({
     setInternalValue(text);
     lastSavedValueRef.current = text;
     onNameIdChange(aiSuggestion.id);
-    acceptAi();
-  }, [aiSuggestion, onNameIdChange, acceptAi]);
+    clearAi();
+  }, [aiSuggestion, onNameIdChange, clearAi]);
 
   // Reject AI suggestion - just clear the pending state
   const handleReject = useCallback(() => {
-    rejectAi();
-  }, [rejectAi]);
+    clearAi();
+  }, [clearAi]);
 
   // Don't render if show_name is false (AFTER all hooks)
   if (!show) {

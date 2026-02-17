@@ -108,7 +108,7 @@ export function Icons({
   const allIconsArray = useMemo(() => icons ?? [], [icons]);
 
   // Socket-based AI suggestion handling via shared hook
-  const { isGenerating: aiIsGenerating, aiSuggestion, accept: acceptAi, reject: rejectAi } = useResourceAi({
+  const { isGenerating: aiIsGenerating, aiSuggestion, clear: clearAi } = useResourceAi({
     resourceType: "icons",
     groupId: group_id,
   });
@@ -121,13 +121,13 @@ export function Icons({
   const handleAccept = useCallback(() => {
     if (!aiSuggestion?.id) return;
     onIconIdChange(aiSuggestion.id);
-    acceptAi();
-  }, [aiSuggestion, onIconIdChange, acceptAi]);
+    clearAi();
+  }, [aiSuggestion, onIconIdChange, clearAi]);
 
   // Reject AI suggestion - just clear the pending state
   const handleReject = useCallback(() => {
-    rejectAi();
-  }, [rejectAi]);
+    clearAi();
+  }, [clearAi]);
 
   // Convert icons array to IconItem format for SelectableGrid
   const iconItems = useMemo(() => {

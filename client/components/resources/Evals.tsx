@@ -74,7 +74,7 @@ export function Evals({
   );
 
   // Socket-based AI suggestion handling via shared hook
-  const { isGenerating: aiIsGenerating, aiSuggestions, accept: acceptAi, reject: rejectAi } = useResourceAi({
+  const { isGenerating: aiIsGenerating, aiSuggestions, clear: clearAi } = useResourceAi({
     resourceType: "evals",
     groupId: group_id,
     accumulate: true,
@@ -124,12 +124,12 @@ export function Evals({
     if (newIds.length > 0) {
       onChange([...ids, ...newIds]);
     }
-    acceptAi();
-  }, [aiSuggestions, ids, onChange, acceptAi]);
+    clearAi();
+  }, [aiSuggestions, ids, onChange, clearAi]);
 
   const handleReject = useCallback(() => {
-    rejectAi();
-  }, [rejectAi]);
+    clearAi();
+  }, [clearAi]);
 
   // Check if any eval resource is generated (must be before early return)
   const hasGenerated = useMemo(() => {

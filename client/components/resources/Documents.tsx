@@ -139,8 +139,7 @@ export function Documents({
   const {
     isGenerating: aiIsGenerating,
     aiSuggestion,
-    accept: acceptAi,
-    reject: rejectAi,
+    clear: clearAi,
   } = useResourceAi({
     resourceType: "documents",
     groupId: group_id,
@@ -278,13 +277,13 @@ export function Documents({
     if (newIds.length > 0) {
       onChange([...ids, ...newIds]);
     }
-    acceptAi();
-  }, [aiSuggestion, ids, onChange, acceptAi]);
+    clearAi();
+  }, [aiSuggestion, ids, onChange, clearAi]);
 
   // Reject AI suggestion - clear internal state
   const handleReject = useCallback(() => {
-    rejectAi();
-  }, [rejectAi]);
+    clearAi();
+  }, [clearAi]);
 
   // Don't render if show_documents is false (AFTER all hooks)
   if (!show) {

@@ -122,8 +122,7 @@ export function Videos({
   const {
     isGenerating: aiIsGenerating,
     aiSuggestion,
-    accept: acceptAi,
-    reject: rejectAi,
+    clear: clearAi,
   } = useResourceAi({
     resourceType: "videos",
     groupId: group_id,
@@ -516,13 +515,13 @@ export function Videos({
     if (firstSuggested?.video_id) {
       onChange([firstSuggested.video_id]);
     }
-    acceptAi();
-  }, [aiSuggestion, onChange, acceptAi]);
+    clearAi();
+  }, [aiSuggestion, onChange, clearAi]);
 
   // Reject AI suggestion - just clear the pending state
   const handleReject = useCallback(() => {
-    rejectAi();
-  }, [rejectAi]);
+    clearAi();
+  }, [clearAi]);
 
   // Don't render if show_videos is false (AFTER all hooks)
   if (!show) {

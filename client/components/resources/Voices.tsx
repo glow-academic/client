@@ -95,7 +95,7 @@ export function Voices({
   );
 
   // Socket-based AI suggestion handling via shared hook
-  const { isGenerating: _aiIsGenerating, aiSuggestions, accept: acceptAi, reject: rejectAi } = useResourceAi({
+  const { isGenerating: _aiIsGenerating, aiSuggestions, clear: clearAi } = useResourceAi({
     resourceType: "voices",
     groupId: group_id,
     accumulate: true,
@@ -159,13 +159,13 @@ export function Voices({
     if (newIds.length > 0) {
       onVoiceIdsChange([...ids, ...newIds]);
     }
-    acceptAi();
-  }, [aiSuggestions, ids, onVoiceIdsChange, acceptAi]);
+    clearAi();
+  }, [aiSuggestions, ids, onVoiceIdsChange, clearAi]);
 
   // Reject AI suggestion - just clear the pending state
   const handleReject = useCallback(() => {
-    rejectAi();
-  }, [rejectAi]);
+    clearAi();
+  }, [clearAi]);
 
   // Don't render if show_voices is false (AFTER all hooks)
   if (!show) {

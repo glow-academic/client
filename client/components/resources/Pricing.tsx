@@ -96,7 +96,7 @@ export function Pricing({
   registerFlush,
 }: PricingProps) {
   // AI suggestion handling via shared hook (accumulate mode: each event = one pricing)
-  const { isGenerating: aiIsGenerating, aiSuggestions, accept: acceptAi, reject: rejectAi } = useResourceAi({
+  const { isGenerating: aiIsGenerating, aiSuggestions, clear: clearAi } = useResourceAi({
     resourceType: "pricing",
     groupId: group_id,
     accumulate: true,
@@ -216,13 +216,13 @@ export function Pricing({
       const mergedIds = [...new Set([...ids, ...newIds])];
       onChange(mergedIds);
     }
-    acceptAi();
-  }, [aiSuggestions, ids, onChange, acceptAi]);
+    clearAi();
+  }, [aiSuggestions, ids, onChange, clearAi]);
 
   // Reject AI suggestion - just clear the pending state
   const handleReject = useCallback(() => {
-    rejectAi();
-  }, [rejectAi]);
+    clearAi();
+  }, [clearAi]);
 
   // Don't render if show_pricing is false (AFTER all hooks)
   if (!show) {

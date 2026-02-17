@@ -100,7 +100,7 @@ export function Points({
   registerFlush,
 }: PointsProps) {
   // AI suggestion handling via shared hook
-  const { isGenerating: aiIsGenerating, aiSuggestion, accept: acceptAi, reject: rejectAi } = useResourceAi({
+  const { isGenerating: aiIsGenerating, aiSuggestion, clear: clearAi } = useResourceAi({
     resourceType: "points",
     groupId: group_id,
   });
@@ -368,13 +368,13 @@ export function Points({
         lastSavedValueRef.current = String(aiSuggestion.value);
       }
     }
-    acceptAi();
-  }, [aiSuggestion, onPointsIdChange, acceptAi]);
+    clearAi();
+  }, [aiSuggestion, onPointsIdChange, clearAi]);
 
   // Reject AI suggestion - just clear the pending state
   const handleReject = useCallback(() => {
-    rejectAi();
-  }, [rejectAi]);
+    clearAi();
+  }, [clearAi]);
 
   // Don't render if show_points is false (AFTER all hooks)
   if (!show) {

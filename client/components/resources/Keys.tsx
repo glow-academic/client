@@ -102,7 +102,7 @@ export function Keys({
   const show = show_key ?? false;
 
   // Socket-based AI suggestion handling via shared hook
-  const { isGenerating: aiIsGenerating, aiSuggestions, accept: acceptAi, reject: rejectAi } = useResourceAi({
+  const { isGenerating: aiIsGenerating, aiSuggestions, clear: clearAi } = useResourceAi({
     resourceType: "keys",
     groupId: group_id,
     accumulate: true,
@@ -260,13 +260,13 @@ export function Keys({
       // Single-select: use first AI-suggested key
       onKeyIdChange(aiIds[0]);
     }
-    acceptAi();
-  }, [aiSuggestions, multiSelect, onChange, onKeyIdChange, ids, acceptAi]);
+    clearAi();
+  }, [aiSuggestions, multiSelect, onChange, onKeyIdChange, ids, clearAi]);
 
   // Reject AI suggestion - just clear the pending state
   const handleReject = useCallback(() => {
-    rejectAi();
-  }, [rejectAi]);
+    clearAi();
+  }, [clearAi]);
 
   // Don't render if show_key is false (AFTER all hooks)
   if (!show) {

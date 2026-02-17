@@ -329,7 +329,7 @@ export function Examples({
   }, []);
 
   // AI suggestion handling via shared hook
-  const { isGenerating: aiIsGenerating, aiSuggestions, accept: acceptAi, reject: rejectAi } = useResourceAi({
+  const { isGenerating: aiIsGenerating, aiSuggestions, clear: clearAi } = useResourceAi({
     resourceType: "examples",
     groupId: group_id,
     accumulate: true,
@@ -359,13 +359,13 @@ export function Examples({
         }
       });
     }
-    acceptAi();
-  }, [aiSuggestions, acceptAi]);
+    clearAi();
+  }, [aiSuggestions, clearAi]);
 
   // Reject AI suggestion - just clear the pending state
   const handleReject = useCallback(() => {
-    rejectAi();
-  }, [rejectAi]);
+    clearAi();
+  }, [clearAi]);
 
   // Don't render if show_examples is false (AFTER all hooks)
   if (!show) {

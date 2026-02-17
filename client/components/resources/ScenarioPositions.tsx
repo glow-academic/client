@@ -171,8 +171,7 @@ export function ScenarioPositions({
   const {
     isGenerating: aiIsGenerating,
     aiSuggestion,
-    accept: acceptAi,
-    reject: rejectAi,
+    clear: clearAi,
   } = useResourceAi({
     resourceType: "scenario_positions",
     groupId: group_id,
@@ -458,22 +457,22 @@ export function ScenarioPositions({
       generated: false,
     }));
     onChange(positionsArray);
-    acceptAi();
+    clearAi();
     onAccept?.();
   }, [
     effectiveAiScenarioPositionResources,
     localPositions,
     simulation_id,
     onChange,
-    acceptAi,
+    clearAi,
     onAccept,
   ]);
 
   // Reject AI suggestion - just clear the pending state
   const handleReject = useCallback(() => {
-    rejectAi();
+    clearAi();
     onReject?.();
-  }, [rejectAi, onReject]);
+  }, [clearAi, onReject]);
 
   // Don't render if show_scenario_positions is false or no scenarios (AFTER all hooks)
   if (!show || scenario_ids.length === 0) {

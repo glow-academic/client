@@ -394,7 +394,7 @@ export function ArgsOutputs({
   }, []);
 
   // Socket-based AI suggestion handling via shared hook
-  const { isGenerating: _aiIsGenerating, aiSuggestions, accept: acceptAi, reject: rejectAi } = useResourceAi({
+  const { isGenerating: _aiIsGenerating, aiSuggestions, clear: clearAi } = useResourceAi({
     resourceType: "args_outputs",
     groupId: group_id,
     accumulate: true,
@@ -414,13 +414,13 @@ export function ArgsOutputs({
       }
     });
     setOutputNames(newOutputNames);
-    acceptAi();
-  }, [aiSuggestions, outputNames, acceptAi]);
+    clearAi();
+  }, [aiSuggestions, outputNames, clearAi]);
 
   // Reject AI suggestion - just clear the pending state
   const handleReject = useCallback(() => {
-    rejectAi();
-  }, [rejectAi]);
+    clearAi();
+  }, [clearAi]);
 
   // Don't render if no args_outputs selected
   if (args_outputs_ids.length === 0) {

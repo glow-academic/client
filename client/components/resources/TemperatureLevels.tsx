@@ -93,7 +93,7 @@ export function TemperatureLevels({
   const show = show_temperature_levels ?? true;
 
   // Socket-based AI suggestion handling via shared hook
-  const { isGenerating: aiIsGenerating, aiSuggestion, accept: acceptAi, reject: rejectAi } = useResourceAi({
+  const { isGenerating: aiIsGenerating, aiSuggestion, clear: clearAi } = useResourceAi({
     resourceType: "temperature_levels",
     groupId: group_id,
   });
@@ -105,13 +105,13 @@ export function TemperatureLevels({
   const handleAccept = useCallback(() => {
     if (!aiSuggestion?.temperature_level_id) return;
     onTemperatureLevelIdChange(aiSuggestion.temperature_level_id);
-    acceptAi();
-  }, [aiSuggestion, onTemperatureLevelIdChange, acceptAi]);
+    clearAi();
+  }, [aiSuggestion, onTemperatureLevelIdChange, clearAi]);
 
   // Reject AI suggestion - just clear the pending state
   const handleReject = useCallback(() => {
-    rejectAi();
-  }, [rejectAi]);
+    clearAi();
+  }, [clearAi]);
 
   const filteredTemperatureLevels = useMemo(() => {
     if (!searchTerm?.trim()) {

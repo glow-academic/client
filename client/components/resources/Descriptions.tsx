@@ -406,7 +406,7 @@ export function Descriptions({
   }, []);
 
   // AI suggestion handling via shared hook
-  const { isGenerating: aiIsGenerating, aiSuggestion, accept: acceptAi, reject: rejectAi } = useResourceAi({
+  const { isGenerating: aiIsGenerating, aiSuggestion, clear: clearAi } = useResourceAi({
     resourceType: "descriptions",
     groupId: group_id,
   });
@@ -427,13 +427,13 @@ export function Descriptions({
     lastServerTextRef.current = text;
     isDirtyRef.current = false;
     onDescriptionIdChange(aiSuggestion.id);
-    acceptAi();
-  }, [aiSuggestion, onDescriptionIdChange, acceptAi]);
+    clearAi();
+  }, [aiSuggestion, onDescriptionIdChange, clearAi]);
 
   // Reject AI suggestion - just clear the pending state
   const handleReject = useCallback(() => {
-    rejectAi();
-  }, [rejectAi]);
+    clearAi();
+  }, [clearAi]);
 
   // Use descriptions array if available, otherwise create placeholder mapping
   const suggestionsMapping = useMemo(() => {
@@ -575,7 +575,7 @@ export function Descriptions({
             onDescriptionIdChange(selectedId);
             // Clear any pending AI suggestion when picker selection changes
             if (showDiff) {
-              rejectAi();
+              clearAi();
             }
           }}
           getId={(item) => {

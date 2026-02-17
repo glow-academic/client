@@ -152,8 +152,7 @@ export function Personas({
   const {
     isGenerating: aiIsGenerating,
     aiSuggestion,
-    accept: acceptAi,
-    reject: rejectAi,
+    clear: clearAi,
   } = useResourceAi({
     resourceType: "personas",
     groupId: group_id,
@@ -294,13 +293,13 @@ export function Personas({
     if (newIds.length > 0) {
       onChange([...ids, ...newIds]);
     }
-    acceptAi();
-  }, [effectiveAiPersonaResources, ids, onChange, acceptAi]);
+    clearAi();
+  }, [effectiveAiPersonaResources, ids, onChange, clearAi]);
 
   // Reject AI suggestion - clear internal state
   const handleReject = useCallback(() => {
-    rejectAi();
-  }, [rejectAi]);
+    clearAi();
+  }, [clearAi]);
 
   // Don't render if show_personas is false (AFTER all hooks)
   if (!show) {

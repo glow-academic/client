@@ -133,8 +133,7 @@ export function ScenarioTimeLimits({
   const {
     isGenerating: aiIsGenerating,
     aiSuggestion,
-    accept: acceptAi,
-    reject: rejectAi,
+    clear: clearAi,
   } = useResourceAi({
     resourceType: "scenario_time_limits",
     groupId: group_id,
@@ -369,15 +368,15 @@ export function ScenarioTimeLimits({
         handleChange(r.scenario_id, String(r.time_limit_seconds));
       }
     });
-    acceptAi();
+    clearAi();
     onAccept?.();
-  }, [effectiveAiScenarioTimeLimitResources, handleChange, acceptAi, onAccept]);
+  }, [effectiveAiScenarioTimeLimitResources, handleChange, clearAi, onAccept]);
 
   // Reject AI suggestion - just clear the pending state
   const handleReject = useCallback(() => {
-    rejectAi();
+    clearAi();
     onReject?.();
-  }, [rejectAi, onReject]);
+  }, [clearAi, onReject]);
 
   if (!show || scenario_ids.length === 0) {
     return null;

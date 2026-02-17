@@ -87,7 +87,7 @@ export function Models({
   );
 
   // AI suggestion via shared hook
-  const { aiSuggestion, accept: acceptAi, reject: rejectAi } = useResourceAi({
+  const { aiSuggestion, clear: clearAi } = useResourceAi({
     resourceType: "models",
     groupId: group_id,
   });
@@ -175,13 +175,13 @@ export function Models({
     if (aiSuggestion.id !== resourceId) {
       onModelIdChange(aiSuggestion.id);
     }
-    acceptAi();
-  }, [aiSuggestion, resourceId, onModelIdChange, acceptAi]);
+    clearAi();
+  }, [aiSuggestion, resourceId, onModelIdChange, clearAi]);
 
   // Reject AI suggestion - clear state
   const handleReject = useCallback(() => {
-    rejectAi();
-  }, [rejectAi]);
+    clearAi();
+  }, [clearAi]);
 
   // Don't render if show_models is false (AFTER all hooks)
   if (!show) {
