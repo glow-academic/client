@@ -1,7 +1,7 @@
 -- Create run_positions resource
 -- SIMPLIFIED: No agent_id required, optional tool_id for tracking
 -- Always INSERT operation
--- Parameters: mcp (boolean), group_id (uuid, optional), tool_id (uuid, optional)
+-- Parameters: runs_id (uuid), eval_id (uuid), value (integer), mcp (boolean), group_id (uuid, optional), tool_id (uuid, optional)
 -- Returns: run_positions_id (uuid)
 
 -- Drop function if exists (handles signature variations)
@@ -20,6 +20,9 @@ BEGIN
 END $$;
 
 CREATE OR REPLACE FUNCTION api_create_run_positions_v4(
+    runs_id uuid DEFAULT NULL,
+    eval_id uuid DEFAULT NULL,
+    value integer DEFAULT NULL,
     mcp boolean DEFAULT false,
     group_id uuid DEFAULT NULL,
     tool_id uuid DEFAULT NULL
@@ -37,9 +40,17 @@ DECLARE
     v_call_id uuid;
 BEGIN
     -- INSERT INTO run_positions_resource table
-    INSERT INTO run_positions_resource(active, mcp)
-    VALUES (true, mcp)
+    INSERT INTO run_positions_resource(runs_id, eval_id, value, active, mcp, generated)
+    VALUES (
+        api_create_run_positions_v4.runs_id,
+        api_create_run_positions_v4.eval_id,
+        api_create_run_positions_v4.value,
+        true,
+        api_create_run_positions_v4.mcp,
+        api_create_run_positions_v4.mcp
+    )
     RETURNING id INTO v_run_positions_id;
+
     -- If tool_id and group_id provided, create run and call for tracking
     IF tool_id IS NOT NULL AND group_id IS NOT NULL THEN
         -- Create run record

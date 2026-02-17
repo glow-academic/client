@@ -13953,12 +13953,14 @@ class SearchEndpointsApiResponse(BaseModel):
 
 class EndpointsSqlParams(BaseModel):
 
+    base_url: str | None = None
     mcp: bool | None = False
     group_id: UUID | None = None
     tool_id: UUID | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
+            self.base_url,
             self.mcp,
             self.group_id,
             self.tool_id,
@@ -13970,6 +13972,7 @@ class EndpointsSqlRow(BaseModel):
 
 class EndpointsApiRequest(BaseModel):
 
+    base_url: str | None = None
     mcp: bool | None = False
     group_id: UUID | None = None
     tool_id: UUID | None = None
@@ -14455,12 +14458,18 @@ class SearchGroupPositionsApiResponse(BaseModel):
 
 class GroupPositionsSqlParams(BaseModel):
 
+    groups_id: UUID | None = None
+    eval_id: UUID | None = None
+    value: int | None = None
     mcp: bool | None = False
     group_id: UUID | None = None
     tool_id: UUID | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
+            self.groups_id,
+            self.eval_id,
+            self.value,
             self.mcp,
             self.group_id,
             self.tool_id,
@@ -14472,6 +14481,9 @@ class GroupPositionsSqlRow(BaseModel):
 
 class GroupPositionsApiRequest(BaseModel):
 
+    groups_id: UUID | None = None
+    eval_id: UUID | None = None
+    value: int | None = None
     mcp: bool | None = False
     group_id: UUID | None = None
     tool_id: UUID | None = None
@@ -17813,12 +17825,18 @@ class SearchRunPositionsApiResponse(BaseModel):
 
 class RunPositionsSqlParams(BaseModel):
 
+    runs_id: UUID | None = None
+    eval_id: UUID | None = None
+    value: int | None = None
     mcp: bool | None = False
     group_id: UUID | None = None
     tool_id: UUID | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
+            self.runs_id,
+            self.eval_id,
+            self.value,
             self.mcp,
             self.group_id,
             self.tool_id,
@@ -17830,6 +17848,9 @@ class RunPositionsSqlRow(BaseModel):
 
 class RunPositionsApiRequest(BaseModel):
 
+    runs_id: UUID | None = None
+    eval_id: UUID | None = None
+    value: int | None = None
     mcp: bool | None = False
     group_id: UUID | None = None
     tool_id: UUID | None = None
@@ -19713,12 +19734,14 @@ class SearchValuesApiResponse(BaseModel):
 
 class ValuesSqlParams(BaseModel):
 
+    value: str | None = None
     mcp: bool | None = False
     group_id: UUID | None = None
     tool_id: UUID | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
+            self.value,
             self.mcp,
             self.group_id,
             self.tool_id,
@@ -19730,6 +19753,7 @@ class ValuesSqlRow(BaseModel):
 
 class ValuesApiRequest(BaseModel):
 
+    value: str | None = None
     mcp: bool | None = False
     group_id: UUID | None = None
     tool_id: UUID | None = None
@@ -19958,12 +19982,14 @@ class SearchVoicesApiResponse(BaseModel):
 
 class VoicesSqlParams(BaseModel):
 
+    voice: str | None = None
     mcp: bool | None = False
     group_id: UUID | None = None
     tool_id: UUID | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
+            self.voice,
             self.mcp,
             self.group_id,
             self.tool_id,
@@ -19975,6 +20001,7 @@ class VoicesSqlRow(BaseModel):
 
 class VoicesApiRequest(BaseModel):
 
+    voice: str | None = None
     mcp: bool | None = False
     group_id: UUID | None = None
     tool_id: UUID | None = None

@@ -1,6 +1,7 @@
 """group_positions endpoint - v4 API following DHH principles."""
 
 from typing import Annotated, Any, cast
+from uuid import UUID
 
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
@@ -20,6 +21,30 @@ from app.utils.sql_helper import execute_sql_typed
 
 # Load SQL with types at module level - makes it clear what SQL file is used
 SQL_PATH = "app/sql/v4/queries/resources/group_positions_complete.sql"
+
+
+async def create_group_positions_internal(
+    conn: asyncpg.Connection,
+    groups_id: UUID,
+    eval_id: UUID,
+    value: int | None = None,
+    mcp: bool = False,
+) -> UUID:
+    """Create a group_position resource and return its ID.
+
+    Can be called directly from other routes (e.g. duplicate endpoints)
+    without HTTP overhead. Uses the same SQL as the HTTP endpoint.
+    """
+    params = GroupPositionsSqlParams(groups_id=groups_id, eval_id=eval_id, value=value, mcp=mcp)
+    result = cast(
+        GroupPositionsSqlRow,
+        await execute_sql_typed(conn, SQL_PATH, params=params),
+    )
+    if not result or not result.group_positions_id:
+        raise ValueError("Failed to create group_position")
+
+    await invalidate_tags(["resources", "group_positions"])
+    return result.group_positions_id
 
 
 router = APIRouter()

@@ -1,7 +1,7 @@
 -- Create endpoints resource
 -- SIMPLIFIED: No agent_id required, optional tool_id for tracking
--- Always INSERT operation
--- Parameters: mcp (boolean), group_id (uuid, optional), tool_id (uuid, optional)
+-- Get or create operation (returns existing ID if base_url already exists)
+-- Parameters: base_url (text), mcp (boolean), group_id (uuid, optional), tool_id (uuid, optional)
 -- Returns: endpoints_id (uuid)
 
 -- Drop function if exists (handles signature variations)
@@ -20,6 +20,7 @@ BEGIN
 END $$;
 
 CREATE OR REPLACE FUNCTION api_create_endpoints_v4(
+    base_url text DEFAULT NULL,
     mcp boolean DEFAULT false,
     group_id uuid DEFAULT NULL,
     tool_id uuid DEFAULT NULL
@@ -36,10 +37,30 @@ DECLARE
     v_run_id uuid;
     v_call_id uuid;
 BEGIN
+    -- Check if base_url already exists
+    IF base_url IS NOT NULL THEN
+        SELECT er.id INTO v_endpoints_id
+        FROM endpoints_resource er
+        WHERE er.base_url = api_create_endpoints_v4.base_url
+          AND er.active = true
+        LIMIT 1;
+
+        IF v_endpoints_id IS NOT NULL THEN
+            RETURN QUERY SELECT v_endpoints_id;
+            RETURN;
+        END IF;
+    END IF;
+
     -- INSERT INTO endpoints_resource table
-    INSERT INTO endpoints_resource(active, mcp)
-    VALUES (true, mcp)
+    INSERT INTO endpoints_resource(base_url, active, mcp, generated)
+    VALUES (
+        api_create_endpoints_v4.base_url,
+        true,
+        api_create_endpoints_v4.mcp,
+        api_create_endpoints_v4.mcp
+    )
     RETURNING id INTO v_endpoints_id;
+
     -- If tool_id and group_id provided, create run and call for tracking
     IF tool_id IS NOT NULL AND group_id IS NOT NULL THEN
         -- Create run record

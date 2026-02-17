@@ -1,6 +1,7 @@
 """voices endpoint - v4 API following DHH principles."""
 
 from typing import Annotated, Any, cast
+from uuid import UUID
 
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
@@ -20,6 +21,28 @@ from app.utils.sql_helper import execute_sql_typed
 
 # Load SQL with types at module level - makes it clear what SQL file is used
 SQL_PATH = "app/sql/v4/queries/resources/voices_complete.sql"
+
+
+async def create_voices_internal(
+    conn: asyncpg.Connection,
+    voice: str,
+    mcp: bool = False,
+) -> UUID:
+    """Create a voice resource and return its ID.
+
+    Can be called directly from other routes (e.g. duplicate endpoints)
+    without HTTP overhead. Uses the same SQL as the HTTP endpoint.
+    """
+    params = VoicesSqlParams(voice=voice, mcp=mcp)
+    result = cast(
+        VoicesSqlRow,
+        await execute_sql_typed(conn, SQL_PATH, params=params),
+    )
+    if not result or not result.voices_id:
+        raise ValueError(f"Failed to create voice: {voice}")
+
+    await invalidate_tags(["resources", "voices"])
+    return result.voices_id
 
 
 router = APIRouter()
