@@ -134,6 +134,7 @@ export function Pricing({
             group_id: group_id,
             pricing_id: pricingId,
             mcp: false,
+            tool_id: create_tool_id ?? undefined,
           },
         });
         createdPricingIdsRef.current.add(pricingId);

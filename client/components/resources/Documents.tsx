@@ -188,6 +188,7 @@ export function Documents({
               group_id: group_id,
               document_id: documentId,
               mcp: false,
+              tool_id: create_tool_id ?? undefined,
             },
           });
           createdDocumentIdsRef.current.add(documentId);
@@ -221,6 +222,7 @@ export function Documents({
               group_id: group_id,
               document_id: documentId,
               mcp: false,
+              tool_id: create_tool_id ?? undefined,
             },
           });
           createdDocumentIdsRef.current.add(documentId);

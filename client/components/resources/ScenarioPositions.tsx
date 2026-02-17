@@ -342,6 +342,7 @@ export function ScenarioPositions({
               scenario_id: artifactScenarioId,
               value: newValue,
               mcp: false,
+              tool_id: create_tool_id ?? undefined,
             },
           });
 

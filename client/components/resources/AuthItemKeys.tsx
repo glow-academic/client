@@ -52,6 +52,7 @@ export interface AuthItemKeysProps {
         key_id: string;
       }) => Promise<{ auth_item_keys_id?: string | null }>)
     | undefined;
+  create_tool_id?: string | null;
   showAiGenerate?: boolean;
   onGenerate?: () => void | Promise<void>;
 }
@@ -69,6 +70,7 @@ export function AuthItemKeys({
   show_auth_item_keys = true,
   getAuthItemKeysAction,
   createAuthItemKeysAction,
+  create_tool_id,
   showAiGenerate = false,
   onGenerate,
 }: AuthItemKeysProps) {
@@ -173,7 +175,7 @@ export function AuthItemKeys({
       if (!createAuthItemKeysAction || creatingRef.current.has(pairKey)) return;
       creatingRef.current.add(pairKey);
       try {
-        const result = await createAuthItemKeysAction({ auth_id: authId, key_id: keyId });
+        const result = await createAuthItemKeysAction({ auth_id: authId, key_id: keyId, tool_id: create_tool_id ?? undefined });
         const createdId = result.auth_item_keys_id ?? null;
         if (!createdId) return;
         setResourcesById((prev) => {

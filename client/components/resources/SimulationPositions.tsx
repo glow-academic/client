@@ -250,6 +250,7 @@ export function SimulationPositions({
             simulation_id: pos.simulation_id,
             value: pos.value,
             mcp: false,
+            tool_id: create_tool_id ?? undefined,
           },
         });
         createdIds.push(pos.simulation_id);
@@ -294,6 +295,7 @@ export function SimulationPositions({
               simulation_id: pos.simulation_id,
               value: pos.value,
               mcp: false,
+              tool_id: create_tool_id ?? undefined,
             },
           }).catch((error) => {
             // eslint-disable-next-line no-console

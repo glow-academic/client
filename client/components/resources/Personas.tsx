@@ -204,6 +204,7 @@ export function Personas({
               group_id: group_id,
               persona_id: personaId,
               mcp: false,
+              tool_id: create_tool_id ?? undefined,
             },
           });
           createdPersonaIdsRef.current.add(personaId);
@@ -237,6 +238,7 @@ export function Personas({
               group_id: group_id,
               persona_id: personaId,
               mcp: false,
+              tool_id: create_tool_id ?? undefined,
             },
           });
           createdPersonaIdsRef.current.add(personaId);

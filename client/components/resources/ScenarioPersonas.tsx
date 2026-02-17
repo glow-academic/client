@@ -347,6 +347,7 @@ export function ScenarioPersonas({
               scenario_id: artifactScenarioId,
               persona_id: personaId,
               mcp: false,
+              tool_id: create_tool_id ?? undefined,
             },
           });
 

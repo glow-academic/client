@@ -263,6 +263,7 @@ export function ProblemStatements({
             name: "",
             problem_statement: internalValue,
             mcp: false,
+            tool_id: create_tool_id ?? undefined,
           },
         });
         if (result.problem_statement_id) {
@@ -331,6 +332,7 @@ export function ProblemStatements({
               name: "",
               problem_statement: internalValue,
               mcp: false,
+              tool_id: create_tool_id ?? undefined,
             },
           });
           if (seq !== saveSeqRef.current) return;

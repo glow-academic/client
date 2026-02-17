@@ -153,6 +153,7 @@ export function ArgPositions({
           args_id: argsId,
           value: index,
           mcp: false,
+          tool_id: create_tool_id ?? undefined,
         },
       });
 

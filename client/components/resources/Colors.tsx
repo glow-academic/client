@@ -104,7 +104,7 @@ export function Colors({
   showSelectedFilter = false,
   onShowSelectedChange: _onShowSelectedChange,
   group_id,
-  create_tool_id: _create_tool_id,
+  create_tool_id,
   showAiGenerate = false,
   createColorsAction,
   isAutosaveEnabled = true,
@@ -234,6 +234,7 @@ export function Colors({
           description: `Color: ${hexCode}`,
           hex_code: hexCode,
           mcp: false,
+          tool_id: create_tool_id ?? undefined,
         },
       });
       if (result.color_id) {
@@ -472,6 +473,7 @@ export function Colors({
                   description: color.description || `Color: ${color.hex_code}`,
                   hex_code: color.hex_code,
                   mcp: false,
+                  tool_id: create_tool_id ?? undefined,
                 },
               });
               createdColorIdsRef.current.add(colorId);

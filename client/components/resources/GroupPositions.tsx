@@ -72,7 +72,7 @@ export function GroupPositions({
   onChange,
   label = "Group Positions",
   group_id,
-  create_tool_id: _create_tool_id,
+  create_tool_id,
   createGroupPositionsAction: _createGroupPositionsAction,
   isAutosaveEnabled: _isAutosaveEnabled = true,
   registerFlush,

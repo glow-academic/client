@@ -79,7 +79,7 @@ export function Examples({
   addButtonLabel = "Add example",
   itemPlaceholder = "Message",
   group_id,
-  create_tool_id: _create_tool_id,
+  create_tool_id,
   showAiGenerate = false,
   createExamplesAction,
   onGenerate,
@@ -172,6 +172,7 @@ export function Examples({
             group_id: group_id,
             example: text,
             mcp: false,
+            tool_id: create_tool_id ?? undefined,
           },
         });
         if (result.example_id) {

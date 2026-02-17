@@ -132,6 +132,7 @@ export function Keys({
             group_id: group_id,
             key_id: keyId,
             mcp: false,
+            tool_id: create_tool_id ?? undefined,
           },
         });
         createdKeyIdsRef.current.add(keyId);
@@ -216,6 +217,7 @@ export function Keys({
                 group_id: group_id,
                 key_id: keyId,
                 mcp: false,
+                tool_id: create_tool_id ?? undefined,
               },
             });
             createdKeyIdsRef.current.add(keyId);

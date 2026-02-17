@@ -372,6 +372,7 @@ export function Objectives({
             group_id: group_id,
             objective: text,
             mcp: false,
+            tool_id: create_tool_id ?? undefined,
           },
         });
         if (result.objective_id) {

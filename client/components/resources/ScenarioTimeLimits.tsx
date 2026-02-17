@@ -286,6 +286,7 @@ export function ScenarioTimeLimits({
             scenario_id: artifactScenarioId,
             time_limit_seconds: value,
             mcp: false,
+            tool_id: create_tool_id ?? undefined,
           },
         });
 

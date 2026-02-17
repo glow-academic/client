@@ -130,6 +130,7 @@ export function Protocols({
             group_id: group_id,
             protocol_id: protocolId,
             mcp: false,
+            tool_id: create_tool_id ?? undefined,
           },
         });
         createdProtocolIdsRef.current.add(protocolId);
@@ -187,6 +188,7 @@ export function Protocols({
                 group_id: group_id,
                 protocol_id: protocolId,
                 mcp: false,
+                tool_id: create_tool_id ?? undefined,
               },
             });
             createdProtocolIdsRef.current.add(protocolId);

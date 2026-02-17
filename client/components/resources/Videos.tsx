@@ -221,6 +221,7 @@ export function Videos({
                   length_seconds: selectedVideoItem.length_seconds ?? 0,
                   description: selectedVideoItem.description ?? "",
                   mcp: false,
+                  tool_id: create_tool_id ?? undefined,
                 },
               });
               createdVideoIdsRef.current.add(videoId);
@@ -265,6 +266,7 @@ export function Videos({
               length_seconds: videoItem?.length_seconds ?? 0,
               description: videoItem?.description ?? "",
               mcp: false,
+              tool_id: create_tool_id ?? undefined,
             },
           });
           createdVideoIdsRef.current.add(videoId);
@@ -391,6 +393,7 @@ export function Videos({
                   description: "",
                   upload_id: databaseUploadId,
                   mcp: false,
+                  tool_id: create_tool_id ?? undefined,
                 },
               });
 

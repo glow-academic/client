@@ -159,6 +159,7 @@ export function RequestLimits({
             group_id: group_id,
             requests_per_day: requestLimitObj.requests_per_day,
             mcp: false,
+            tool_id: create_tool_id ?? undefined,
           },
         });
         createdRequestLimitIdRef.current = resourceId;
@@ -255,6 +256,7 @@ export function RequestLimits({
                 group_id: group_id,
                 requests_per_day: requestLimitObj.requests_per_day!,
                 mcp: false,
+                tool_id: create_tool_id ?? undefined,
               },
             });
             createdRequestLimitIdRef.current = selectedId;
@@ -293,6 +295,7 @@ export function RequestLimits({
             group_id: group_id,
             requests_per_day: value,
             mcp: false,
+            tool_id: create_tool_id ?? undefined,
           },
         });
         return result.request_limits_id ?? null;

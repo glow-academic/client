@@ -240,6 +240,7 @@ export function Options({
             question_id: option.question_id || undefined,
             group_id: group_id,
             mcp: false,
+            tool_id: create_tool_id ?? undefined,
           },
         });
         if (result.option_id) {

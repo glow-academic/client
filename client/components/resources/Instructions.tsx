@@ -197,7 +197,7 @@ export function Instructions({
   "data-testid": dataTestId,
   helpText,
   group_id,
-  create_tool_id: _create_tool_id,
+  create_tool_id,
   showAiGenerate = false,
   createInstructionsAction,
   searchTerm,
@@ -250,6 +250,7 @@ export function Instructions({
             group_id: group_id,
             template: internalValue,
             mcp: false,
+            tool_id: create_tool_id ?? undefined,
           },
         });
         if (seq !== saveSeqRef.current) return;

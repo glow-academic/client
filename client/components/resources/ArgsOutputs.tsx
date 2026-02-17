@@ -222,6 +222,7 @@ export function ArgsOutputs({
             name: name,
             template: outputTemplates[outputId] ?? output.template,
             mcp: false,
+            tool_id: create_tool_id ?? undefined,
           },
         });
         lastSavedNamesRef.current[outputId] = name;
@@ -260,6 +261,7 @@ export function ArgsOutputs({
             name: outputNames[outputId] ?? output.name,
             template: template,
             mcp: false,
+            tool_id: create_tool_id ?? undefined,
           },
         });
         lastSavedTemplatesRef.current[outputId] = template;

@@ -72,7 +72,7 @@ export function RunPositions({
   onChange,
   label = "Run Positions",
   group_id,
-  create_tool_id: _create_tool_id,
+  create_tool_id,
   createRunPositionsAction: _createRunPositionsAction,
   isAutosaveEnabled: _isAutosaveEnabled = true,
   registerFlush,

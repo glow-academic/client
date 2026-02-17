@@ -286,6 +286,7 @@ export function Questions({
             allow_multiple: question.allow_multiple,
             time_value: question.times?.[0] ?? 0,
             mcp: false,
+            tool_id: create_tool_id ?? undefined,
           },
         });
         if (result.question_id) {

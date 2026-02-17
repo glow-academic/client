@@ -129,6 +129,7 @@ export function Slugs({
             group_id: group_id,
             slug_id: slugId,
             mcp: false,
+            tool_id: create_tool_id ?? undefined,
           },
         });
         createdSlugIdsRef.current.add(slugId);
@@ -186,6 +187,7 @@ export function Slugs({
                 group_id: group_id,
                 slug_id: slugId,
                 mcp: false,
+                tool_id: create_tool_id ?? undefined,
               },
             });
             createdSlugIdsRef.current.add(slugId);

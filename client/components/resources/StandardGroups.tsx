@@ -216,6 +216,7 @@ export function StandardGroups({
                   group_id: group_id,
                   standard_group_id: standardGroupId,
                   mcp: false,
+                  tool_id: create_tool_id ?? undefined,
                 },
               });
               createdStandardGroupIdsRef.current.add(standardGroupId);

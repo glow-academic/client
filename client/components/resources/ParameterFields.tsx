@@ -231,6 +231,7 @@ export function ParameterFields({
                   parameter_id: parameterId,
                   field_id: fieldId,
                   mcp: false,
+                  tool_id: create_tool_id ?? undefined,
                 },
               });
               if (result?.parameter_fields_id) {
@@ -378,6 +379,7 @@ export function ParameterFields({
             parameter_id: parameterId,
             field_id: fieldId,
             mcp: false,
+            tool_id: create_tool_id ?? undefined,
           },
         });
 

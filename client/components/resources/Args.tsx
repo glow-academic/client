@@ -171,6 +171,7 @@ export function Args({
             required: updates.required ?? field.required,
             default_value: updates.default_value ?? field.default_value,
             mcp: false,
+            tool_id: create_tool_id ?? undefined,
           },
         });
         // Update last saved value

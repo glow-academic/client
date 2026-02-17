@@ -52,6 +52,7 @@ export interface ProviderKeysProps {
         key_id: string;
       }) => Promise<{ provider_keys_id?: string | null }>)
     | undefined;
+  create_tool_id?: string | null;
   showAiGenerate?: boolean;
   onGenerate?: () => void | Promise<void>;
 }
@@ -69,6 +70,7 @@ export function ProviderKeys({
   show_provider_keys = true,
   getProviderKeysAction,
   createProviderKeysAction,
+  create_tool_id,
   showAiGenerate = false,
   onGenerate,
 }: ProviderKeysProps) {
@@ -179,6 +181,7 @@ export function ProviderKeys({
         const result = await createProviderKeysAction({
           provider_id: providerId,
           key_id: keyId,
+          tool_id: create_tool_id ?? undefined,
         });
         const createdId = result.provider_keys_id ?? null;
         if (!createdId) return;

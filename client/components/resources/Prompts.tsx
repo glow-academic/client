@@ -278,6 +278,7 @@ export function Prompts({
             name: resource?.name || "Untitled Prompt",
             description: resource?.description || "",
             mcp: false,
+            tool_id: create_tool_id ?? undefined,
             ...(resourceId ? { prompt_id: resourceId } : {}),
           },
         });

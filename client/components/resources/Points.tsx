@@ -189,6 +189,7 @@ export function Points({
           group_id: group_id,
           value: numericValue,
           mcp: false,
+          tool_id: create_tool_id ?? undefined,
         },
       });
       if (result.points_id) {
@@ -299,6 +300,7 @@ export function Points({
             group_id: group_id,
             value: numericValue,
             mcp: false,
+            tool_id: create_tool_id ?? undefined,
           },
         });
         if (result.points_id) {

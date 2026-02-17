@@ -248,6 +248,7 @@ export function Images({
                 name: imageItem?.name ?? "",
                 description: imageItem?.description ?? "",
                 mcp: false,
+                tool_id: create_tool_id ?? undefined,
               },
             });
             createdImageIdsRef.current.add(imageId);
@@ -287,6 +288,7 @@ export function Images({
               name: imageItem?.name ?? "",
               description: imageItem?.description ?? "",
               mcp: false,
+              tool_id: create_tool_id ?? undefined,
             },
           });
           createdImageIdsRef.current.add(imageId);
@@ -412,6 +414,7 @@ export function Images({
                   description: "",
                   upload_id: databaseUploadId,
                   mcp: false,
+                  tool_id: create_tool_id ?? undefined,
                 },
               });
 

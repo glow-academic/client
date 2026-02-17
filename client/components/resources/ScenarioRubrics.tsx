@@ -296,6 +296,7 @@ export function ScenarioRubrics({
             scenario_id: artifactScenarioId,
             rubric_id: rubricId,
             mcp: false,
+            tool_id: create_tool_id ?? undefined,
           },
         });
 

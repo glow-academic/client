@@ -286,6 +286,7 @@ export function Uploads({
                   group_id: group_id,
                   upload_id: databaseUploadId,
                   mcp: false,
+                  tool_id: create_tool_id ?? undefined,
                 },
               });
 
