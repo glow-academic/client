@@ -40,7 +40,6 @@ export interface PointsProps {
   onPointsIdChange: (pointsId: string | null) => void; // Update points_id in parent form state
   onGenerate?: () => Promise<void>;
   showAiGenerate?: boolean; // Whether to show AI generate button (computed server-side)
-  isGenerating?: boolean;
   label?: string;
   id?: string;
   required?: boolean;
@@ -57,10 +56,7 @@ export interface PointsProps {
   pointsResource?: PointsResourceItem | null;
   pointsId?: string | null;
   suggestions?: string[];
-  // AI diff view props
   aiPointsResources?: Pick<PointsResourceItem, "id" | "value">[] | null;
-  onAccept?: () => void;
-  onReject?: () => void;
   /** When false, skip automatic resource creation (manual save mode) */
   isAutosaveEnabled?: boolean;
   /** Register a flush callback with parent for manual save - returns created ID */
@@ -77,7 +73,6 @@ export function Points({
   onPointsIdChange,
   onGenerate,
   showAiGenerate = false,
-  isGenerating: _isGenerating = false,
   label = "Points",
   id = "points",
   required = false,
@@ -92,10 +87,7 @@ export function Points({
   pointsResource,
   pointsId: _pointsId,
   suggestions,
-  // AI diff view props (deprecated - now from useResourceAi hook)
   aiPointsResources: _aiPointsResources,
-  onAccept: _onAccept,
-  onReject: _onReject,
   isAutosaveEnabled = true,
   registerFlush,
 }: PointsProps) {

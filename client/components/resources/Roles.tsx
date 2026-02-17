@@ -66,12 +66,8 @@ export interface RolesProps {
   ) => void;
   showAiGenerate?: boolean;
   onGenerate?: () => void | Promise<void>;
-  isGenerating?: boolean;
   group_id?: string | null;
-  // AI diff view props
   aiRoleResources?: Pick<RolesResourceItem, "id" | "name">[] | null;
-  onAccept?: () => void;
-  onReject?: () => void;
 }
 
 type RoleItem = {

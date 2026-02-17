@@ -1166,7 +1166,6 @@ function SimulationComponent({
                     setFormState((prev) => ({ ...prev, name_id: id }))
                   }
                   onGenerate={handleGenerateName}
-                  isGenerating={isGenerating("names")}
                   createNamesAction={createNamesAction}
                   group_id={s.group_id ?? null}
                   required={s.names?.required ?? false}
@@ -1175,7 +1174,6 @@ function SimulationComponent({
                   hideDescription={true}
                   isAutosaveEnabled={isAutosaveEnabled}
                   registerFlush={registerFlushCallbacks["names"]}
-                  onGenerationComplete={makeOnGenerationComplete("names")}
                 />
               }
               resetFields={["name", "description", "department_ids", "active"]}
@@ -1212,15 +1210,11 @@ function SimulationComponent({
                     setStepFormData({ descriptionSearch: term || null })
                   }
                   onGenerate={handleGenerateDescription}
-                  isGenerating={isGenerating("descriptions")}
                   createDescriptionsAction={createDescriptionsAction}
                   group_id={s.group_id ?? null}
                   required={s.descriptions?.required ?? false}
                   isAutosaveEnabled={isAutosaveEnabled}
                   registerFlush={registerFlushCallbacks["descriptions"]}
-                  onGenerationComplete={makeOnGenerationComplete(
-                    "descriptions",
-                  )}
                 />
                 <Departments
                   department_ids={formState.department_ids ?? []}
@@ -1233,10 +1227,8 @@ function SimulationComponent({
                     setFormState((prev) => ({ ...prev, department_ids: ids }))
                   }
                   onGenerate={handleGenerateDepartments}
-                  isGenerating={isGenerating("departments")}
                   group_id={s.group_id ?? null}
                   required={s.departments?.required ?? false}
-                  onGenerationComplete={makeOnGenerationComplete("departments")}
                 />
                 <Flags
                   mode="multi"
@@ -1296,8 +1288,6 @@ function SimulationComponent({
                     });
                   }}
                   onGenerate={handleGenerateFlags}
-                  isGenerating={isGenerating("flags")}
-                  onGenerationComplete={makeOnGenerationComplete("flags")}
                 />
               </div>
             </StepCard>
@@ -1383,12 +1373,10 @@ function SimulationComponent({
                     setFormState((prev) => ({ ...prev, scenario_ids: ids }))
                   }
                   onGenerate={handleGenerateScenarios}
-                  isGenerating={isGenerating("scenarios")}
                   group_id={s.group_id ?? null}
                   required={s.scenarios?.required ?? false}
                   searchTerm={scenarioSearch ?? ""}
                   showSelectedOnly={scenarioShowSelected}
-                  onGenerationComplete={makeOnGenerationComplete("scenarios")}
                 />
                 <ScenarioFlags
                   scenario_flag_ids={formState.scenario_flag_ids ?? []}
@@ -1407,14 +1395,10 @@ function SimulationComponent({
                   }
                   createScenarioFlagsAction={createScenarioFlagsAction}
                   onGenerate={handleGenerateScenarioFlags}
-                  isGenerating={isGenerating("scenario_flags")}
                   group_id={s.group_id ?? null}
                   required={s.scenario_flags?.required ?? false}
                   isAutosaveEnabled={isAutosaveEnabled}
                   registerFlush={registerFlushCallbacks["scenario_flags"]}
-                  onGenerationComplete={makeOnGenerationComplete(
-                    "scenario_flags",
-                  )}
                 />
                 <ScenarioPersonas
                   scenario_persona_ids={formState.scenario_persona_ids ?? []}
@@ -1440,14 +1424,10 @@ function SimulationComponent({
                   scenario_ids={formState.scenario_ids}
                   createScenarioPersonasAction={createScenarioPersonasAction}
                   onGenerate={handleGenerateScenarioPersonas}
-                  isGenerating={isGenerating("scenario_personas")}
                   group_id={s.group_id ?? null}
                   required={s.scenario_personas?.required ?? false}
                   isAutosaveEnabled={isAutosaveEnabled}
                   registerFlush={registerFlushCallbacks["scenario_personas"]}
-                  onGenerationComplete={makeOnGenerationComplete(
-                    "scenario_personas",
-                  )}
                 />
                 <ScenarioPositions
                   scenario_position_ids={formState.scenario_position_ids ?? []}
@@ -1473,14 +1453,10 @@ function SimulationComponent({
                   scenario_ids={formState.scenario_ids}
                   createScenarioPositionsAction={createScenarioPositionsAction}
                   onGenerate={handleGenerateScenarioPositions}
-                  isGenerating={isGenerating("scenario_positions")}
                   group_id={s.group_id ?? null}
                   required={s.scenario_positions?.required ?? false}
                   isAutosaveEnabled={isAutosaveEnabled}
                   registerFlush={registerFlushCallbacks["scenario_positions"]}
-                  onGenerationComplete={makeOnGenerationComplete(
-                    "scenario_positions",
-                  )}
                 />
                 <ScenarioRubrics
                   scenario_rubric_ids={formState.scenario_rubric_ids ?? []}
@@ -1503,14 +1479,10 @@ function SimulationComponent({
                   }
                   createScenarioRubricsAction={createScenarioRubricsAction}
                   onGenerate={handleGenerateScenarioRubrics}
-                  isGenerating={isGenerating("scenario_rubrics")}
                   group_id={s.group_id ?? null}
                   required={s.scenario_rubrics?.required ?? false}
                   isAutosaveEnabled={isAutosaveEnabled}
                   registerFlush={registerFlushCallbacks["scenario_rubrics"]}
-                  onGenerationComplete={makeOnGenerationComplete(
-                    "scenario_rubrics",
-                  )}
                 />
                 <ScenarioTimeLimits
                   scenario_time_limit_ids={
@@ -1535,13 +1507,9 @@ function SimulationComponent({
                     createScenarioTimeLimitsAction
                   }
                   onGenerate={handleGenerateScenarioTimeLimits}
-                  isGenerating={isGenerating("scenario_time_limits")}
                   required={s.scenario_time_limits?.required ?? false}
                   isAutosaveEnabled={isAutosaveEnabled}
                   registerFlush={registerFlushCallbacks["scenario_time_limits"]}
-                  onGenerationComplete={makeOnGenerationComplete(
-                    "scenario_time_limits",
-                  )}
                 />
               </div>
             </StepCard>

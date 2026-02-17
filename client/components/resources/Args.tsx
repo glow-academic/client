@@ -64,13 +64,9 @@ export interface ArgsProps {
   isAutosaveEnabled?: boolean;
   /** Register a flush callback with parent for manual save - returns created ID */
   registerFlush?: (flush: () => Promise<{ args_id: string | null } | void>) => void;
-  // AI diff view props
   aiArgsResources?: Pick<ArgsResourceItem, "id" | "name">[] | null;
-  onAccept?: () => void;
-  onReject?: () => void;
   showAiGenerate?: boolean;
   onGenerate?: () => void | Promise<void>;
-  isGenerating?: boolean;
 }
 
 export function Args({
@@ -82,7 +78,6 @@ export function Args({
   create_tool_id,
   isAutosaveEnabled = true,
   registerFlush,
-  // AI diff view props (deprecated - now handled by useResourceAi hook)
 }: ArgsProps) {
   const sortedFields = useMemo(() => {
     return [...input_args_fields].sort((a, b) => a.name.localeCompare(b.name));

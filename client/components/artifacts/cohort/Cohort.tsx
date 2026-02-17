@@ -895,7 +895,6 @@ function CohortComponent({
                     setFormState((prev) => ({ ...prev, name_id: nameId }))
                   }
                   onGenerate={handleGenerateName}
-                  isGenerating={isGenerating("names")}
                   placeholder="e.g., Spring 2024 Cohort"
                   defaultName="New Cohort"
                   required={s?.names?.required ?? false}
@@ -911,7 +910,6 @@ function CohortComponent({
                   }
                   isAutosaveEnabled={isAutosaveEnabled}
                   registerFlush={registerFlushCallbacks["names"]}
-                  onGenerationComplete={makeOnGenerationComplete("names")}
                 />
               }
               resetFields={["name", "description", "department_ids", "active"]}
@@ -957,7 +955,6 @@ function CohortComponent({
                     setStepFormData({ descriptionSearch: term || null })
                   }
                   onGenerate={handleGenerateDescription}
-                  isGenerating={isGenerating("descriptions")}
                   label="Description"
                   placeholder="Detailed description of the cohort"
                   required={s?.descriptions?.required ?? false}
@@ -968,9 +965,6 @@ function CohortComponent({
                   createDescriptionsAction={createDescriptionsAction}
                   isAutosaveEnabled={isAutosaveEnabled}
                   registerFlush={registerFlushCallbacks["descriptions"]}
-                  onGenerationComplete={makeOnGenerationComplete(
-                    "descriptions",
-                  )}
                 />
 
                 {/* Department Selection */}
@@ -985,11 +979,9 @@ function CohortComponent({
                     setFormState((prev) => ({ ...prev, department_ids: ids }))
                   }
                   onGenerate={handleGenerateDepartments}
-                  isGenerating={isGenerating("departments")}
                   required={s?.departments?.required ?? false}
                   group_id={s?.group_id ?? null}
                   showAiGenerate={s?.departments?.show_ai_generate ?? false}
-                  onGenerationComplete={makeOnGenerationComplete("departments")}
                 />
 
                 {/* Active Switch - using Flags resource component */}
@@ -1007,10 +999,8 @@ function CohortComponent({
                     }))
                   }
                   onGenerate={handleGenerateFlags}
-                  isGenerating={isGenerating("flags")}
                   group_id={s?.group_id ?? null}
                   showAiGenerate={s?.flags?.show_ai_generate ?? false}
-                  onGenerationComplete={makeOnGenerationComplete("flags")}
                 />
               </div>
             </StepCard>
@@ -1107,14 +1097,12 @@ function CohortComponent({
                   }))
                 }
                 onGenerate={handleGenerateSimulations}
-                isGenerating={isGenerating("simulations")}
                 label="Simulations"
                 required={s?.simulations?.required ?? false}
                 group_id={s?.group_id ?? null}
                 showAiGenerate={s?.simulations?.show_ai_generate ?? false}
                 searchTerm={simulationSearchTerm}
                 showSelectedFilter={simulationShowSelected}
-                onGenerationComplete={makeOnGenerationComplete("simulations")}
               />
               <SimulationPositions
                 simulation_ids={formState.simulation_ids ?? []}
@@ -1147,11 +1135,7 @@ function CohortComponent({
                 onGenerate={
                   isEditMode ? handleGenerateSimulationPositions : undefined
                 }
-                isGenerating={isGenerating("simulation_positions")}
                 createSimulationPositionsAction={simulationPositionsAction}
-                onGenerationComplete={makeOnGenerationComplete(
-                  "simulation_positions",
-                )}
               />
             </StepCard>
           );

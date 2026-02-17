@@ -51,7 +51,6 @@ export interface ColorsProps {
   onChange?: (ids: string[]) => void; // Update color_ids in parent form state (multi-select)
   multiSelect?: boolean; // Whether to use multi-select mode
   onGenerate?: () => void | Promise<void>;
-  isGenerating?: boolean;
   label?: string;
   id?: string;
   required?: boolean;
@@ -81,11 +80,6 @@ export interface ColorsProps {
   colorId?: string | null;
   presetColors?: ColorItem[];
   colorSuggestions?: string[];
-  // AI diff view props
-  aiResource?: { id?: string | null; name?: string | null; hex_code?: string | null } | null | undefined;
-  onAccept?: () => void;
-  onReject?: () => void;
-  onGenerationComplete?: () => void;
 }
 
 export function Colors({
@@ -101,7 +95,6 @@ export function Colors({
   onChange,
   multiSelect = false,
   onGenerate,
-  isGenerating: _isGenerating = false,
   label = "Color",
   id = "color",
   required = false,
@@ -121,11 +114,6 @@ export function Colors({
   colorId: _colorId,
   presetColors,
   colorSuggestions,
-  // AI diff view props (deprecated - kept for backward compatibility)
-  aiResource: _aiResource,
-  onAccept: _onAccept,
-  onReject: _onReject,
-  onGenerationComplete: _onGenerationComplete,
 }: ColorsProps) {
   // Use standardized props with fallback to legacy props
   const resource = color_resource ?? colorResource ?? null;

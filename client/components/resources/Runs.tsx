@@ -47,12 +47,8 @@ export interface RunsProps {
   description?: string;
   group_id?: string | null; // Group ID for linking resources
   onGenerate?: () => void | Promise<void>;
-  isGenerating?: boolean;
   showAiGenerate?: boolean; // Whether to show AI generate button (computed server-side)
-  // AI diff view props
   aiRunResources?: Pick<RunsResourceItem, "id">[] | null;
-  onAccept?: () => void;
-  onReject?: () => void;
 }
 
 export function Runs({
@@ -69,12 +65,8 @@ export function Runs({
   description,
   group_id,
   onGenerate,
-  isGenerating: _isGenerating = false,
   showAiGenerate = false,
-  // AI diff view props (deprecated - now from useResourceAi hook)
   aiRunResources: _aiRunResources,
-  onAccept: _onAccept,
-  onReject: _onReject,
 }: RunsProps) {
   // AI suggestion handling via shared hook (accumulate mode: each event = one run)
   const { isGenerating: aiIsGenerating, aiSuggestions, clear: clearAi } = useResourceAi({

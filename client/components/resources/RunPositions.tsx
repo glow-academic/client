@@ -58,11 +58,8 @@ export interface RunPositionsProps {
   registerFlush?: (flush: () => Promise<FlushResult>) => void;
   // AI diff props (deprecated - now handled by useResourceAi hook)
   aiRunPositionResources?: Pick<RunPositionsResourceItem, "id" | "value">[] | null;
-  onAccept?: () => void;
-  onReject?: () => void;
   showAiGenerate?: boolean;
   onGenerate?: () => void | Promise<void>;
-  isGenerating?: boolean;
 }
 
 export function RunPositions({

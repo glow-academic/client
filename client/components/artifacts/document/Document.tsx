@@ -846,7 +846,6 @@ function DocumentComponent({
                     setFormState((prev) => ({ ...prev, name_id: nameId }))
                   }
                   onGenerate={handleGenerateName}
-                  isGenerating={isGenerating("names")}
                   placeholder="e.g., Course Syllabus"
                   defaultName="New Document"
                   required={documentDetail?.names?.required ?? false}
@@ -911,7 +910,6 @@ function DocumentComponent({
                     setStepFormData({ descriptionSearch: term || null })
                   }
                   onGenerate={handleGenerateDescription}
-                  isGenerating={isGenerating("descriptions")}
                   label="Description"
                   placeholder="Document description and purpose"
                   required={documentDetail?.descriptions?.required ?? false}
@@ -947,7 +945,6 @@ function DocumentComponent({
                     setFormState((prev) => ({ ...prev, department_ids: ids }))
                   }
                   onGenerate={handleGenerateDepartments}
-                  isGenerating={isGenerating("departments")}
                   required={documentDetail?.departments?.required ?? false}
                   group_id={documentDetail?.group_id ?? null}
                   showAiGenerate={
@@ -970,7 +967,6 @@ function DocumentComponent({
                     }))
                   }
                   onGenerate={handleGenerateFlags}
-                  isGenerating={isGenerating("flags")}
                   group_id={documentDetail?.group_id ?? null}
                   showAiGenerate={
                     documentDetail?.flags?.show_ai_generate ?? false

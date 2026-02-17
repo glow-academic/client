@@ -158,7 +158,6 @@ export interface ProblemStatementsProps {
   onProblemStatementIdChange: (problemStatementId: string | null) => void; // Update problem_statement_id in parent form state
   onGenerate?: () => Promise<void>;
   showAiGenerate?: boolean; // Whether to show AI generate button (computed server-side)
-  isGenerating?: boolean;
   label?: string;
   placeholder?: string;
   required?: boolean;
@@ -176,11 +175,6 @@ export interface ProblemStatementsProps {
     | undefined;
   searchTerm?: string;
   onSearchChange?: (term: string) => void;
-  // AI diff view props
-  aiResource?: ProblemStatementResourceItem | null;
-  onAccept?: () => void;
-  onReject?: () => void;
-  onGenerationComplete?: () => void;
   /** When false, skip automatic resource creation (manual save mode) */
   isAutosaveEnabled?: boolean;
   /** Register a flush callback with parent for manual save - returns created ID */
@@ -197,7 +191,6 @@ export function ProblemStatements({
   onProblemStatementIdChange,
   onGenerate,
   showAiGenerate = false,
-  isGenerating: _isGenerating = false,
   label = "Problem Statement",
   placeholder = "Enter problem statement",
   required = false,
@@ -210,11 +203,6 @@ export function ProblemStatements({
   createProblemStatementsAction,
   searchTerm,
   onSearchChange,
-  // AI diff view props (deprecated - handled by useResourceAi hook)
-  aiResource: _aiResource,
-  onAccept: _onAccept,
-  onReject: _onReject,
-  onGenerationComplete: _onGenerationComplete,
   isAutosaveEnabled = true,
   registerFlush,
 }: ProblemStatementsProps) {

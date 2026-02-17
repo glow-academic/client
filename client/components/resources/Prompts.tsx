@@ -169,15 +169,10 @@ export interface PromptsProps {
   suggestions?: string[];
   showAiGenerate?: boolean;
   onGenerate?: () => void | Promise<void>;
-  isGenerating?: boolean;
-  // AI diff view props
-  aiResource?: {
     prompt_id?: string | null;
     system_prompt?: string | null;
     name?: string | null;
   } | null;
-  onAccept?: () => void;
-  onReject?: () => void;
   /** When false, skip automatic resource creation (manual save mode) */
   isAutosaveEnabled?: boolean;
   /** Register a flush callback with parent for manual save - returns created ID */
@@ -208,7 +203,6 @@ export function Prompts({
   suggestions: _suggestions,
   showAiGenerate = false,
   onGenerate,
-  // AI diff view props (deprecated - now handled by useResourceAi hook)
   isAutosaveEnabled = true,
   registerFlush,
 }: PromptsProps) {

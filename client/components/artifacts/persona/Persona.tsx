@@ -1063,7 +1063,6 @@ function PersonaComponent({
                     setFormState((prev) => ({ ...prev, name_id: nameId }))
                   }
                   onGenerate={generateHandlers["names"]}
-                  isGenerating={isGenerating("names")}
                   placeholder="e.g., Enthusiastic Student"
                   defaultName="New Persona"
                   required={s?.names?.required ?? false}
@@ -1079,7 +1078,6 @@ function PersonaComponent({
                   }
                   isAutosaveEnabled={isAutosaveEnabled}
                   registerFlush={registerFlushCallbacks["names"]}
-                  onGenerationComplete={makeOnGenerationComplete("names")}
                   create_tool_id={s?.names?.tool_id ?? null}
                 />
               }
@@ -1124,7 +1122,6 @@ function PersonaComponent({
                     setStepFormData({ descriptionSearch: term || null })
                   }
                   onGenerate={generateHandlers["descriptions"]}
-                  isGenerating={isGenerating("descriptions")}
                   label="Description"
                   placeholder="Detailed behavior description and personality traits"
                   required={s?.descriptions?.required ?? false}
@@ -1135,7 +1132,6 @@ function PersonaComponent({
                   createDescriptionsAction={createDescriptionsAction}
                   isAutosaveEnabled={isAutosaveEnabled}
                   registerFlush={registerFlushCallbacks["descriptions"]}
-                  onGenerationComplete={makeOnGenerationComplete("descriptions")}
                   create_tool_id={s?.descriptions?.tool_id ?? null}
                 />
                 <Departments
@@ -1149,11 +1145,9 @@ function PersonaComponent({
                     setFormState((prev) => ({ ...prev, department_ids: ids }))
                   }
                   onGenerate={generateHandlers["departments"]}
-                  isGenerating={isGenerating("departments")}
                   required={s?.departments?.required ?? false}
                   group_id={s?.group_id ?? null}
                   showAiGenerate={s?.departments?.show_ai_generate ?? false}
-                  onGenerationComplete={makeOnGenerationComplete("departments")}
                 />
                 <Flags
                   flags={s?.flags?.resources ?? []}
@@ -1171,8 +1165,6 @@ function PersonaComponent({
                     }))
                   }
                   onGenerate={generateHandlers["flags"]}
-                  isGenerating={isGenerating("flags")}
-                  onGenerationComplete={makeOnGenerationComplete("flags")}
                 />
               </div>
             </StepCard>
@@ -1244,14 +1236,12 @@ function PersonaComponent({
                     setFormState((prev) => ({ ...prev, parameter_ids: ids }))
                   }
                   onGenerate={generateHandlers["parameters"]}
-                  isGenerating={isGenerating("parameters")}
                   label="Parameters"
                   required={s?.parameters?.required ?? false}
                   group_id={s?.group_id ?? null}
                   showAiGenerate={s?.parameters?.show_ai_generate ?? false}
                   searchTerm={parameterSearchTerm}
                   showSelectedFilter={parameterShowSelected}
-                  onGenerationComplete={makeOnGenerationComplete("parameters")}
                 />
                 <ParameterFields
                   parameter_field_ids={formState.parameter_field_ids}
@@ -1278,10 +1268,8 @@ function PersonaComponent({
                   required={s?.parameter_fields?.required ?? false}
                   createParameterFieldsAction={createParameterFieldsAction}
                   onGenerate={generateHandlers["parameter_fields"]}
-                  isGenerating={isGenerating("parameter_fields")}
                   isAutosaveEnabled={isAutosaveEnabled}
                   registerFlush={registerFlushCallbacks["parameter_fields"]}
-                  onGenerationComplete={makeOnGenerationComplete("parameter_fields")}
                   create_tool_id={s?.parameter_fields?.tool_id ?? null}
                 />
               </div>
@@ -1345,7 +1333,6 @@ function PersonaComponent({
                   setFormState((prev) => ({ ...prev, color_id: colorId }))
                 }
                 onGenerate={generateHandlers["colors"]}
-                isGenerating={isGenerating("colors")}
                 searchTerm={
                   (stepFormData["colorSearch"] as string | null | undefined) ||
                   ""
@@ -1363,7 +1350,6 @@ function PersonaComponent({
                 required={s?.colors?.required ?? false}
                 isAutosaveEnabled={isAutosaveEnabled}
                 registerFlush={registerFlushCallbacks["colors"]}
-                onGenerationComplete={makeOnGenerationComplete("colors")}
                 create_tool_id={s?.colors?.tool_id ?? null}
               />
             </StepCard>
@@ -1426,7 +1412,6 @@ function PersonaComponent({
                   setFormState((prev) => ({ ...prev, icon_id: iconId }))
                 }
                 onGenerate={generateHandlers["icons"]}
-                isGenerating={isGenerating("icons")}
                 searchTerm={
                   (stepFormData["iconSearch"] as string | null | undefined) ||
                   ""
@@ -1441,7 +1426,6 @@ function PersonaComponent({
                 group_id={s?.group_id ?? null}
                 showAiGenerate={s?.icons?.show_ai_generate ?? false}
                 required={s?.icons?.required ?? false}
-                onGenerationComplete={makeOnGenerationComplete("icons")}
               />
             </StepCard>
           );
@@ -1500,7 +1484,6 @@ function PersonaComponent({
                   setStepFormData({ instructionsSearch: term || null })
                 }
                 onGenerate={generateHandlers["instructions"]}
-                isGenerating={isGenerating("instructions")}
                 label="Instructions"
                 placeholder="Instructions that define how the persona should behave and respond."
                 required={s?.instructions?.required ?? false}
@@ -1512,7 +1495,6 @@ function PersonaComponent({
                 createInstructionsAction={createInstructionsAction}
                 isAutosaveEnabled={isAutosaveEnabled}
                 registerFlush={registerFlushCallbacks["instructions"]}
-                onGenerationComplete={makeOnGenerationComplete("instructions")}
                 create_tool_id={s?.instructions?.tool_id ?? null}
               />
               <Examples
@@ -1526,7 +1508,6 @@ function PersonaComponent({
                   setFormState((prev) => ({ ...prev, example_ids: ids }))
                 }
                 onGenerate={generateHandlers["examples"]}
-                isGenerating={isGenerating("examples")}
                 maxItems={10}
                 addButtonLabel="Add example"
                 itemPlaceholder="Message"
@@ -1562,7 +1543,6 @@ function PersonaComponent({
                 }
                 isAutosaveEnabled={isAutosaveEnabled}
                 registerFlush={registerFlushCallbacks["examples"]}
-                onGenerationComplete={makeOnGenerationComplete("examples")}
                 create_tool_id={s?.examples?.tool_id ?? null}
               />
             </StepCard>

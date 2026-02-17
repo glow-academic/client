@@ -58,11 +58,8 @@ export interface GroupPositionsProps {
   registerFlush?: (flush: () => Promise<FlushResult>) => void;
   // AI diff props (deprecated - now handled by useResourceAi hook)
   aiGroupPositionResources?: Pick<GroupPositionResourceItem, "id" | "value">[] | null;
-  onAccept?: () => void;
-  onReject?: () => void;
   showAiGenerate?: boolean;
   onGenerate?: () => void | Promise<void>;
-  isGenerating?: boolean;
 }
 
 export function GroupPositions({

@@ -1026,7 +1026,6 @@ function ProfileComponent({
                       }))
                     }
                     onGenerate={handleGenerateName}
-                    isGenerating={isGenerating("names")}
                     placeholder="e.g., Jane Doe"
                     defaultName="Name"
                     required={currentStaffData?.name_required ?? false}
@@ -1072,7 +1071,6 @@ function ProfileComponent({
                     }))
                   }
                   onGenerate={handleGenerateDepartments}
-                  isGenerating={isGenerating("departments")}
                   required={currentStaffData?.departments_required ?? false}
                   group_id={currentStaffData?.group_id ?? null}
                 />
@@ -1090,7 +1088,6 @@ function ProfileComponent({
                     }))
                   }
                   onGenerate={handleGenerateFlags}
-                  isGenerating={isGenerating("flags")}
                   group_id={currentStaffData?.group_id ?? null}
                 />
               </div>
@@ -1141,7 +1138,6 @@ function ProfileComponent({
                   }
                   primary_email_index={formState.primary_email_index ?? 0}
                   onGenerate={handleGenerateEmails}
-                  isGenerating={isGenerating("emails")}
                   required={currentStaffData?.emails_required ?? false}
                   group_id={currentStaffData?.group_id ?? null}
                   createEmailsAction={createEmailsAction}
@@ -1168,7 +1164,6 @@ function ProfileComponent({
                     }))
                   }
                   onGenerate={handleGenerateRequestLimits}
-                  isGenerating={isGenerating("request_limits")}
                   required={currentStaffData?.request_limit_required ?? false}
                   group_id={currentStaffData?.group_id ?? null}
                   createRequestLimitsAction={createRequestLimitsAction}
@@ -1441,7 +1436,6 @@ function ProfileComponent({
                   setFormState((prev) => ({ ...prev, cohort_ids: ids }))
                 }
                 onGenerate={handleGenerateCohorts}
-                isGenerating={isGenerating("cohorts")}
                 group_id={currentStaffData?.group_id ?? null}
                 searchTerm={cohortSearch}
                 showSelectedFilter={cohortShowSelected}

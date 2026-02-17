@@ -54,9 +54,6 @@ export interface AuthItemKeysProps {
     | undefined;
   showAiGenerate?: boolean;
   onGenerate?: () => void | Promise<void>;
-  isGenerating?: boolean;
-  onAccept?: () => void;
-  onReject?: () => void;
 }
 
 export function AuthItemKeys({

@@ -54,9 +54,6 @@ export interface ProviderKeysProps {
     | undefined;
   showAiGenerate?: boolean;
   onGenerate?: () => void | Promise<void>;
-  isGenerating?: boolean;
-  onAccept?: () => void;
-  onReject?: () => void;
 }
 
 export function ProviderKeys({

@@ -50,12 +50,6 @@ interface CommonFlagsProps {
   group_id?: string | null;
   showAiGenerate?: boolean; // Whether to show AI generate button (computed server-side)
   onGenerate?: () => void | Promise<void>;
-  isGenerating?: boolean;
-  // AI diff view props
-  aiFlagResources?: Pick<FlagResourceItem, "id" | "name">[] | null;
-  onAccept?: () => void;
-  onReject?: () => void;
-  onGenerationComplete?: () => void;
 }
 
 // Single-flag mode props - uses flag_id (optional) without flag_ids

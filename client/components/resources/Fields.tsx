@@ -48,16 +48,12 @@ export interface FieldsProps {
   description?: string;
   group_id?: string | null; // Group ID for linking resources
   onGenerate?: () => void | Promise<void>;
-  isGenerating?: boolean;
   showAiGenerate?: boolean; // Whether to show AI generate button (computed server-side)
   searchTerm?: string; // Search term for filtering fields
   showSelectedFilter?: boolean; // Whether to show only selected fields
   // Legacy props for backward compatibility
   fieldIds?: string[];
-  // AI diff view props
   aiFieldResources?: Array<Pick<FieldResourceItem, "field_id" | "name">> | null;
-  onAccept?: () => void;
-  onReject?: () => void;
 }
 
 export function Fields({

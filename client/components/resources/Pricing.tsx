@@ -57,11 +57,7 @@ export interface PricingProps {
     | undefined;
   onGenerate?: () => void | Promise<void>;
   showAiGenerate?: boolean; // Whether to show AI generate button (computed server-side)
-  isGenerating?: boolean;
-  // AI diff view props
   aiPricingResources?: Pick<PricingResourceItem, "id">[] | null;
-  onAccept?: () => void;
-  onReject?: () => void;
   /** When false, skip automatic resource creation (manual save mode) */
   isAutosaveEnabled?: boolean;
   /** Register a flush callback with parent for manual save - returns created ID */
@@ -88,11 +84,7 @@ export function Pricing({
   createPricingAction,
   onGenerate,
   showAiGenerate = false,
-  isGenerating: _isGenerating = false,
-  // AI diff view props (deprecated - now from useResourceAi hook)
   aiPricingResources: _aiPricingResources,
-  onAccept: _onAccept,
-  onReject: _onReject,
   registerFlush,
 }: PricingProps) {
   // AI suggestion handling via shared hook (accumulate mode: each event = one pricing)

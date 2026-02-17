@@ -49,12 +49,8 @@ export interface QualitiesProps {
   onSearchChange?: (term: string) => void;
   group_id?: string | null; // Group ID for linking resources
   onGenerate?: () => void | Promise<void>;
-  isGenerating?: boolean;
   showAiGenerate?: boolean; // Whether to show AI generate button (computed server-side)
-  // AI diff view props
   aiQualityResources?: Pick<QualitiesResourceItem, "id" | "quality">[] | null;
-  onAccept?: () => void;
-  onReject?: () => void;
 }
 
 export function Qualities({

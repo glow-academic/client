@@ -1143,7 +1143,6 @@ export default function Agent({
                             }));
                           }}
                           onGenerate={handleGenerateName}
-                          isGenerating={isGenerating("names")}
                           placeholder="e.g., Customer Support Agent"
                           defaultName="New Agent"
                           required={namesSection?.required ?? false}
@@ -1203,7 +1202,6 @@ export default function Agent({
                             setStepFormData({ descriptionSearch: term || null })
                           }
                           onGenerate={handleGenerateDescription}
-                          isGenerating={isGenerating("descriptions")}
                           label="Description"
                           placeholder="Detailed behavior description and personality traits"
                           required={descriptionsSection?.required ?? false}
@@ -1237,7 +1235,6 @@ export default function Agent({
                             }));
                           }}
                           onGenerate={handleGenerateDepartments}
-                          isGenerating={isGenerating("departments")}
                           required={departmentsSection?.required ?? false}
                           group_id={sectionData?.group_id ?? null}
                           showAiGenerate={
@@ -1259,7 +1256,6 @@ export default function Agent({
                             }));
                           }}
                           onGenerate={handleGenerateFlags}
-                          isGenerating={isGenerating("flags")}
                           group_id={sectionData?.group_id ?? null}
                           showAiGenerate={!!sectionData?.flags?.show_ai_generate}
                         />
@@ -1482,7 +1478,6 @@ export default function Agent({
                           }))
                         }
                         onGenerate={handleGenerateTemperatureLevels}
-                        isGenerating={isGenerating("temperature_levels")}
                         showSlider={true}
                         group_id={sectionData?.group_id ?? null}
                         showAiGenerate={
@@ -1540,7 +1535,6 @@ export default function Agent({
                           }))
                         }
                         onGenerate={handleGenerateReasoningLevels}
-                        isGenerating={isGenerating("reasoning_levels")}
                         group_id={sectionData?.group_id ?? null}
                         showAiGenerate={
                           !!sectionData?.reasoning_levels?.show_ai_generate

@@ -80,7 +80,6 @@ export interface ScenarioRubricsProps {
       ) => Promise<CreateDraftScenarioRubricsOut>)
     | undefined;
   onGenerate?: () => void | Promise<void>;
-  isGenerating?: boolean;
   showAiGenerate?: boolean; // Whether to show AI generate button (computed server-side)
   /** When false, skip automatic resource creation (manual save mode) */
   isAutosaveEnabled?: boolean;
@@ -88,13 +87,9 @@ export interface ScenarioRubricsProps {
   registerFlush?: (
     flush: () => Promise<{ scenario_rubric_ids: string[] } | void>,
   ) => void;
-  // AI diff view props
   aiScenarioRubricResources?:
     | Pick<ScenarioRubricResourceItem, "id" | "scenario_id" | "rubric_id">[]
     | null;
-  onAccept?: () => void;
-  onReject?: () => void;
-  onGenerationComplete?: () => void;
 }
 
 const NONE_OPTION = "__none__";
@@ -126,15 +121,10 @@ export function ScenarioRubrics({
   create_tool_id,
   createScenarioRubricsAction,
   onGenerate,
-  isGenerating = false,
   showAiGenerate = false,
   isAutosaveEnabled = true,
   registerFlush,
-  // AI diff view props
   aiScenarioRubricResources,
-  onAccept,
-  onReject,
-  onGenerationComplete,
 }: ScenarioRubricsProps) {
   const show = show_scenario_rubrics ?? false;
   const currentResources = useMemo(
@@ -418,14 +408,12 @@ export function ScenarioRubrics({
       }
     });
     clearAi();
-    onAccept?.();
-  }, [effectiveAiScenarioRubricResources, handleSelect, clearAi, onAccept]);
+  }, [effectiveAiScenarioRubricResources, handleSelect, clearAi]);
 
   // Reject AI suggestion - just clear the pending state
   const handleReject = useCallback(() => {
     clearAi();
-    onReject?.();
-  }, [clearAi, onReject]);
+  }, [clearAi]);
 
   if (!show || scenario_ids.length === 0) {
     return null;

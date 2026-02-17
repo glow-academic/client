@@ -52,9 +52,6 @@ interface ArgPositionsProps {
   registerFlush?: (flush: () => Promise<{ arg_position_ids: string[] } | void>) => void;
   showAiGenerate?: boolean;
   onGenerate?: () => void | Promise<void>;
-  isGenerating?: boolean;
-  onAccept?: () => void;
-  onReject?: () => void;
 }
 
 export function ArgPositions({
@@ -72,9 +69,6 @@ export function ArgPositions({
   registerFlush,
   showAiGenerate: _showAiGenerate = false,
   onGenerate: _onGenerate,
-  isGenerating: _isGenerating = false,
-  onAccept: _onAccept,
-  onReject: _onReject,
 }: ArgPositionsProps) {
   // Socket-based AI suggestion handling via shared hook
   const { isGenerating: _aiIsGenerating } = useResourceAi({

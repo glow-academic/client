@@ -438,7 +438,6 @@ function DepartmentComponent({
               setFormState((prev) => ({ ...prev, name_id: nameId }))
             }
             onGenerate={() => handleGenerateResources(["names"])}
-            isGenerating={isGenerating("names")}
             required={s?.names?.required ?? false}
             hideDescription={true}
             group_id={s?.group_id ?? null}
@@ -476,7 +475,6 @@ function DepartmentComponent({
               setFormState((prev) => ({ ...prev, description_id: descriptionId }))
             }
             onGenerate={() => handleGenerateResources(["descriptions"])}
-            isGenerating={isGenerating("descriptions")}
             required={s?.descriptions?.required ?? false}
             group_id={s?.group_id ?? null}
             showAiGenerate={s?.descriptions?.show_ai_generate ?? false}
@@ -496,7 +494,6 @@ function DepartmentComponent({
               setFormState((prev) => ({ ...prev, active_flag_id: flagId }))
             }
             onGenerate={() => handleGenerateResources(["flags"])}
-            isGenerating={isGenerating("flags")}
             group_id={s?.group_id ?? null}
             showAiGenerate={s?.flags?.show_ai_generate ?? false}
           />
@@ -512,7 +509,6 @@ function DepartmentComponent({
               setFormState((prev) => ({ ...prev, settings_ids: ids }))
             }
             onGenerate={() => handleGenerateResources(["settings"])}
-            isGenerating={isGenerating("settings")}
             required={s?.settings?.required ?? false}
             group_id={s?.group_id ?? null}
             showAiGenerate={s?.settings?.show_ai_generate ?? false}

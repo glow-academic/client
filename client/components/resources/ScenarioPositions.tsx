@@ -91,7 +91,6 @@ export interface ScenarioPositionsProps {
     | undefined;
   onPositionIdsChange?: (ids: string[]) => void;
   onGenerate?: () => void | Promise<void>;
-  isGenerating?: boolean;
   showAiGenerate?: boolean; // Whether to show AI generate button (computed server-side)
   /** When false, skip automatic resource creation (manual save mode) */
   isAutosaveEnabled?: boolean;
@@ -99,13 +98,9 @@ export interface ScenarioPositionsProps {
   registerFlush?: (
     flush: () => Promise<{ scenario_position_ids: string[] } | void>,
   ) => void;
-  // AI diff view props
   aiScenarioPositionResources?:
     | Pick<ScenarioPositionResourceItem, "id" | "scenario_id" | "value">[]
     | null;
-  onAccept?: () => void;
-  onReject?: () => void;
-  onGenerationComplete?: () => void;
 }
 
 export function ScenarioPositions({
@@ -129,11 +124,7 @@ export function ScenarioPositions({
   showAiGenerate = false,
   isAutosaveEnabled = true,
   registerFlush,
-  // AI diff view props
   aiScenarioPositionResources,
-  onAccept,
-  onReject,
-  onGenerationComplete,
 }: ScenarioPositionsProps) {
   const show = show_scenario_positions ?? false;
   const currentPositions = useMemo(
@@ -458,21 +449,18 @@ export function ScenarioPositions({
     }));
     onChange(positionsArray);
     clearAi();
-    onAccept?.();
   }, [
     effectiveAiScenarioPositionResources,
     localPositions,
     simulation_id,
     onChange,
     clearAi,
-    onAccept,
   ]);
 
   // Reject AI suggestion - just clear the pending state
   const handleReject = useCallback(() => {
     clearAi();
-    onReject?.();
-  }, [clearAi, onReject]);
+  }, [clearAi]);
 
   // Don't render if show_scenario_positions is false or no scenarios (AFTER all hooks)
   if (!show || scenario_ids.length === 0) {

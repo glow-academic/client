@@ -70,7 +70,6 @@ export interface OptionsProps {
   registerFlush?: (flush: () => Promise<FlushResult>) => void;
   showAiGenerate?: boolean;
   onGenerate?: () => void | Promise<void>;
-  isGenerating?: boolean;
 }
 
 export function Options({

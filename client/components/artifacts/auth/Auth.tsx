@@ -583,7 +583,6 @@ function AuthComponent({
                     setFormState((prev) => ({ ...prev, name_id: nameId }))
                   }
                   onGenerate={() => handleGenerateResources(["names"])}
-                  isGenerating={isGenerating("names")}
                   required={s?.names?.required ?? false}
                   hideDescription={true}
                   group_id={s?.group_id ?? null}
@@ -621,7 +620,6 @@ function AuthComponent({
                     setFormState((prev) => ({ ...prev, description_id: descriptionId }))
                   }
                   onGenerate={() => handleGenerateResources(["descriptions"])}
-                  isGenerating={isGenerating("descriptions")}
                   searchTerm={
                     (stepFormData["descriptionSearch"] as
                       | string
@@ -650,7 +648,6 @@ function AuthComponent({
                     setFormState((prev) => ({ ...prev, active_flag_id: flagId }))
                   }
                   onGenerate={() => handleGenerateResources(["flags"])}
-                  isGenerating={isGenerating("flags")}
                   group_id={s?.group_id ?? null}
                   showAiGenerate={s?.flags?.show_ai_generate ?? false}
                 />
@@ -693,7 +690,6 @@ function AuthComponent({
                   setFormState((prev) => ({ ...prev, protocol_ids: ids }))
                 }
                 onGenerate={() => handleGenerateResources(["protocols"])}
-                isGenerating={isGenerating("protocols")}
                 required={s?.protocols?.required ?? false}
                 group_id={s?.group_id ?? null}
                 showAiGenerate={s?.protocols?.show_ai_generate ?? false}
@@ -738,7 +734,6 @@ function AuthComponent({
                   setFormState((prev) => ({ ...prev, slug_ids: ids }))
                 }
                 onGenerate={() => handleGenerateResources(["slugs"])}
-                isGenerating={isGenerating("slugs")}
                 required={s?.slugs?.required ?? false}
                 group_id={s?.group_id ?? null}
                 showAiGenerate={s?.slugs?.show_ai_generate ?? false}

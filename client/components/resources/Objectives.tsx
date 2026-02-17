@@ -162,18 +162,13 @@ export interface ObjectivesProps {
     | undefined;
   onGenerate?: () => void | Promise<void>;
   showAiGenerate?: boolean; // Whether to show AI generate button (computed server-side)
-  isGenerating?: boolean;
   // Optional: mapping of objective_id -> objective text (for initial display)
   objectiveMapping?: Record<string, string>;
   /** When false, skip automatic resource creation (manual save mode) */
   isAutosaveEnabled?: boolean;
   /** Register a flush callback with parent for manual save - returns created IDs */
   registerFlush?: (flush: () => Promise<{ objective_ids: string[] } | void>) => void;
-  // AI diff view props
   aiObjectiveResources?: Pick<ObjectiveResourceItem, "objective_id" | "objective">[] | null;
-  onAccept?: () => void;
-  onReject?: () => void;
-  onGenerationComplete?: () => void;
 }
 
 export function Objectives({
@@ -196,15 +191,10 @@ export function Objectives({
   createObjectivesAction,
   onGenerate,
   showAiGenerate = false,
-  isGenerating: _isGenerating = false,
   objectiveMapping = {},
   isAutosaveEnabled = true,
   registerFlush,
-  // AI diff view props (deprecated — now handled by useResourceAi hook)
   aiObjectiveResources: _aiObjectiveResources,
-  onAccept: _onAccept,
-  onReject: _onReject,
-  onGenerationComplete,
 }: ObjectivesProps) {
   // Use standardized props
   const ids = useMemo(() => objective_ids ?? [], [objective_ids]);

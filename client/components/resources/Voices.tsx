@@ -60,11 +60,7 @@ export interface VoicesProps {
   registerFlush?: (flush: () => Promise<FlushResult>) => void;
   showAiGenerate?: boolean;
   onGenerate?: () => void | Promise<void>;
-  isGenerating?: boolean;
-  // AI diff view props
   aiVoiceResources?: Array<{ id?: string | null; voice?: string | null }> | null;
-  onAccept?: () => void;
-  onReject?: () => void;
 }
 
 export function Voices({

@@ -65,18 +65,13 @@ export interface DocumentsProps {
     | ((input: CreateDraftDocumentsIn) => Promise<CreateDraftDocumentsOut>)
     | undefined;
   onGenerate?: () => void | Promise<void>;
-  isGenerating?: boolean;
   showAiGenerate?: boolean; // Whether to show AI generate button (computed server-side)
   videoEnabled?: boolean; // Whether video mode is enabled (for filtering)
   /** When false, skip automatic resource creation (manual save mode) */
   isAutosaveEnabled?: boolean;
   /** Register a flush callback with parent for manual save - returns created IDs */
   registerFlush?: (flush: () => Promise<{ document_ids: string[] } | void>) => void;
-  // AI diff view props
   aiDocumentResources?: Pick<DocumentResourceItem, "document_id" | "name">[] | null;
-  onAccept?: () => void;
-  onReject?: () => void;
-  onGenerationComplete?: () => void;
 }
 
 export function Documents({
@@ -96,16 +91,11 @@ export function Documents({
   create_tool_id,
   createDocumentsAction,
   onGenerate,
-  isGenerating: _isGenerating = false,
   showAiGenerate = false,
   videoEnabled = false,
   isAutosaveEnabled = true,
   registerFlush,
-  // AI diff view props (deprecated - kept for interface compatibility)
   aiDocumentResources: _aiDocumentResources,
-  onAccept: _onAccept,
-  onReject: _onReject,
-  onGenerationComplete,
 }: DocumentsProps) {
   const ids = useMemo(() => document_ids ?? [], [document_ids]);
   const show = show_documents ?? false;

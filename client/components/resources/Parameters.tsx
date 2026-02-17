@@ -62,19 +62,14 @@ export interface ParametersProps {
     | ((input: CreateDraftParametersIn) => Promise<CreateDraftParametersOut>)
     | undefined;
   onGenerate?: () => void | Promise<void>;
-  isGenerating?: boolean;
   searchTerm?: string; // Search term for filtering parameters
   onSearchChange?: (term: string) => void; // Callback when search term changes
   showSelectedFilter?: boolean; // Whether to show only selected parameters
   onShowSelectedChange?: (value: boolean) => void; // Callback when show selected filter changes
   videoEnabled?: boolean; // Whether video mode is enabled (for filtering)
-  // AI diff view props
   aiParameterResources?:
     | Pick<ParameterResourceItem, "parameter_id" | "name">[]
     | null;
-  onAccept?: () => void;
-  onReject?: () => void;
-  onGenerationComplete?: () => void;
   /** When false, skip automatic resource creation (manual save mode) */
   isAutosaveEnabled?: boolean;
   /** Register a flush callback with parent for manual save - returns created ID */
@@ -100,17 +95,12 @@ export function Parameters({
   showAiGenerate = false,
   createParametersAction,
   onGenerate,
-  isGenerating: _isGenerating = false,
   searchTerm = "",
   onSearchChange,
   showSelectedFilter = false,
   onShowSelectedChange,
   videoEnabled = false,
-  // AI diff view props
   aiParameterResources,
-  onAccept: _onAccept,
-  onReject: _onReject,
-  onGenerationComplete,
   isAutosaveEnabled = true,
   registerFlush,
 }: ParametersProps) {

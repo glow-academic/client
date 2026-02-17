@@ -68,7 +68,6 @@ export interface SimulationPositionsProps {
   group_id?: string | null;
   create_tool_id?: string | null; // Tool ID for AI generation/creation
   onGenerate?: (() => void | Promise<void>) | undefined;
-  isGenerating?: boolean;
   showAiGenerate?: boolean; // Whether to show AI generate button (computed server-side)
   createSimulationPositionsAction?:
     | ((input: {
@@ -80,13 +79,9 @@ export interface SimulationPositionsProps {
         };
       }) => Promise<unknown>)
     | undefined;
-  // AI diff view props
   aiSimulationPositionResources?:
     | Pick<SimulationPositionResourceItem, "id" | "simulation_id" | "value">[]
     | null;
-  onAccept?: () => void;
-  onReject?: () => void;
-  onGenerationComplete?: () => void;
   /** When false, skip automatic resource creation (manual save mode) */
   isAutosaveEnabled?: boolean;
   /** Register a flush callback with parent for manual save - returns created positions */
@@ -112,11 +107,7 @@ export function SimulationPositions({
   onGenerate,
   showAiGenerate = false,
   createSimulationPositionsAction,
-  // AI diff view props
   aiSimulationPositionResources,
-  onAccept,
-  onReject,
-  onGenerationComplete,
   isAutosaveEnabled = true,
   registerFlush,
 }: SimulationPositionsProps) {
@@ -424,14 +415,12 @@ export function SimulationPositions({
       return merged;
     });
     clearAi();
-    onAccept?.();
-  }, [effectiveAiSimulationPositionResources, emitPositions, clearAi, onAccept]);
+  }, [effectiveAiSimulationPositionResources, emitPositions, clearAi]);
 
   // Reject AI suggestion - just clear the pending state
   const handleReject = useCallback(() => {
     clearAi();
-    onReject?.();
-  }, [clearAi, onReject]);
+  }, [clearAi]);
 
   if (!show) {
     return null;

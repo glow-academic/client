@@ -585,7 +585,6 @@ function RubricComponent({
                   setFormState((prev) => ({ ...prev, name_id: nameId }))
                 }
                 onGenerate={() => handleGenerateResources(["names"])}
-                isGenerating={isGenerating("names")}
                 required={s?.names?.required ?? false}
                 hideDescription={true}
                 group_id={s?.group_id ?? null}
@@ -632,7 +631,6 @@ function RubricComponent({
                   setFormState((prev) => ({ ...prev, description_id: descriptionId }))
                 }
                 onGenerate={() => handleGenerateResources(["descriptions"])}
-                isGenerating={isGenerating("descriptions")}
                 required={s?.descriptions?.required ?? false}
                 group_id={s?.group_id ?? null}
                 showAiGenerate={s?.descriptions?.show_ai_generate ?? false}
@@ -653,7 +651,6 @@ function RubricComponent({
                   setFormState((prev) => ({ ...prev, department_ids: ids }))
                 }
                 onGenerate={() => handleGenerateResources(["departments"])}
-                isGenerating={isGenerating("departments")}
                 required={s?.departments?.required ?? false}
                 group_id={s?.group_id ?? null}
                 showAiGenerate={s?.departments?.show_ai_generate ?? false}
@@ -671,7 +668,6 @@ function RubricComponent({
                   setFormState((prev) => ({ ...prev, active_flag_id: flagId }))
                 }
                 onGenerate={() => handleGenerateResources(["flags"])}
-                isGenerating={isGenerating("flags")}
                 group_id={s?.group_id ?? null}
                 showAiGenerate={s?.flags?.show_ai_generate ?? false}
               />
@@ -732,7 +728,6 @@ function RubricComponent({
                   setFormState((prev) => ({ ...prev, total_points_id: pointsId }))
                 }
                 onGenerate={() => handleGenerateResources(["points"])}
-                isGenerating={isGenerating("points")}
                 label="Total Points"
                 required={s?.points?.required ?? false}
                 group_id={s?.group_id ?? null}
@@ -765,7 +760,6 @@ function RubricComponent({
                   setFormState((prev) => ({ ...prev, pass_points_id: pointsId }))
                 }
                 onGenerate={() => handleGenerateResources(["pass_points"])}
-                isGenerating={isGenerating("pass_points")}
                 label="Pass Points"
                 required={s?.pass_points?.required ?? false}
                 group_id={s?.group_id ?? null}
@@ -818,7 +812,6 @@ function RubricComponent({
                 setFormState((prev) => ({ ...prev, standard_group_ids: ids }))
               }
               onGenerate={() => handleGenerateResources(["standard_groups"])}
-              isGenerating={isGenerating("standard_groups")}
               required={s?.standard_groups?.required ?? false}
               group_id={s?.group_id ?? null}
               showAiGenerate={s?.standard_groups?.show_ai_generate ?? false}
@@ -869,7 +862,6 @@ function RubricComponent({
               setFormState((prev) => ({ ...prev, standard_ids: ids }))
             }
             onGenerate={() => handleGenerateResources(["standards"])}
-            isGenerating={isGenerating("standards")}
             required={s?.standards?.required ?? false}
             group_id={s?.group_id ?? null}
             showAiGenerate={s?.standards?.show_ai_generate ?? false}

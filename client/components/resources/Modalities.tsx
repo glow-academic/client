@@ -50,11 +50,7 @@ export interface ModalitiesProps {
   group_id?: string | null; // Group ID for linking resources
   onGenerate?: () => void | Promise<void>;
   showAiGenerate?: boolean; // Whether to show AI generate button (computed server-side)
-  isGenerating?: boolean;
-  // AI diff view props
   aiModalityResources?: Pick<ModalityResourceItem, "id" | "modality">[] | null;
-  onAccept?: () => void;
-  onReject?: () => void;
 }
 
 export function Modalities({

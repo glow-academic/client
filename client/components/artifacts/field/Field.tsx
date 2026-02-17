@@ -596,7 +596,6 @@ function FieldComponent({
                 showAiGenerate={stableFieldData?.names?.show_ai_generate ?? false}
                 create_tool_id={stableFieldData?.names?.create_tool_id ?? null}
                 onGenerate={() => handleGenerateResources(["names"])}
-                isGenerating={isGenerating("names")}
                 createNamesAction={createNamesAction}
                 isAutosaveEnabled={isAutosaveEnabled}
                 registerFlush={registerFlushCallbacks.names}
@@ -638,7 +637,6 @@ function FieldComponent({
                   stableFieldData?.descriptions?.create_tool_id ?? null
                 }
                 onGenerate={() => handleGenerateResources(["descriptions"])}
-                isGenerating={isGenerating("descriptions")}
                 createDescriptionsAction={createDescriptionsAction}
                 isAutosaveEnabled={isAutosaveEnabled}
                 registerFlush={registerFlushCallbacks.descriptions}
@@ -666,7 +664,6 @@ function FieldComponent({
                   stableFieldData?.departments?.show_ai_generate ?? false
                 }
                 onGenerate={() => handleGenerateResources(["departments"])}
-                isGenerating={isGenerating("departments")}
               />
 
               <Flags
@@ -680,7 +677,6 @@ function FieldComponent({
                 }
                 showAiGenerate={stableFieldData?.flags?.show_ai_generate ?? false}
                 onGenerate={() => handleGenerateResources(["flags"])}
-                isGenerating={isGenerating("flags")}
               />
             </div>
           </StepCard>
@@ -749,7 +745,6 @@ function FieldComponent({
               stableFieldData?.conditional_parameters?.show_ai_generate ?? false
             }
             onGenerate={() => handleGenerateResources(["conditional_parameters"])}
-            isGenerating={isGenerating("conditional_parameters")}
             searchTerm={conditionalParameterSearch}
             showSelectedFilter={conditionalParameterShowSelected}
           />

@@ -51,13 +51,9 @@ export interface ScenariosProps {
   searchTerm?: string;
   group_id?: string | null; // Group ID for linking resources
   onGenerate?: () => void | Promise<void>;
-  isGenerating?: boolean;
   showAiGenerate?: boolean; // Whether to show AI generate button (computed server-side)
   showSelectedOnly?: boolean;
-  // AI diff view props
   aiScenarioResources?: Array<Pick<ScenarioResourceItem, "scenario_id" | "name">> | null;
-  onAccept?: () => void;
-  onReject?: () => void;
 }
 
 export function Scenarios({

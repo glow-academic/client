@@ -70,16 +70,11 @@ export interface ParameterFieldsProps {
       ) => Promise<CreateDraftParameterFieldsOut>)
     | undefined;
   onGenerate?: () => void | Promise<void>;
-  onGenerationComplete?: () => void;
-  isGenerating?: boolean;
   /** When false, skip automatic resource creation (manual save mode) */
   isAutosaveEnabled?: boolean;
   /** Register a flush callback with parent for manual save - returns created IDs */
   registerFlush?: (flush: () => Promise<{ parameter_field_ids: string[] } | void>) => void;
-  // AI diff view props
   aiParameterFieldResources?: Pick<ParameterFieldResourceItem, "id" | "field_id" | "parameter_id">[] | null;
-  onAccept?: () => void;
-  onReject?: () => void;
 }
 
 // Represents an available field option from parameter_fields_junction
@@ -110,14 +105,9 @@ export function ParameterFields({
   showAiGenerate = false,
   createParameterFieldsAction,
   onGenerate,
-  onGenerationComplete: _onGenerationComplete,
-  isGenerating: _isGenerating = false,
   isAutosaveEnabled = true,
   registerFlush,
-  // AI diff view props
   aiParameterFieldResources,
-  onAccept: _onAccept,
-  onReject: _onReject,
 }: ParameterFieldsProps) {
   const show = show_parameter_fields ?? false;
   // Available fields from parameter_fields_junction (what user CAN select)

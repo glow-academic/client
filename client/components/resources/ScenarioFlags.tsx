@@ -81,17 +81,12 @@ export interface ScenarioFlagsProps {
       ) => Promise<CreateDraftSimulationScenarioFlagsOut>)
     | undefined;
   onGenerate?: () => void | Promise<void>;
-  isGenerating?: boolean;
   showAiGenerate?: boolean; // Whether to show AI generate button (computed server-side)
   /** When false, skip automatic resource creation (manual save mode) */
   isAutosaveEnabled?: boolean;
   /** Register a flush callback with parent for manual save - returns created IDs */
   registerFlush?: (flush: () => Promise<{ scenario_flag_ids: string[] } | void>) => void;
-  // AI diff view props
   aiFlagResources?: Pick<ScenarioFlagsResourceItem, "id">[] | null;
-  onAccept?: () => void;
-  onReject?: () => void;
-  onGenerationComplete?: () => void;
 }
 
 type ScenarioFlagOption = {
@@ -119,14 +114,10 @@ export function ScenarioFlags({
   create_tool_id,
   createScenarioFlagsAction,
   onGenerate,
-  isGenerating: _isGenerating = false,
   showAiGenerate = false,
   isAutosaveEnabled = true,
   registerFlush,
   aiFlagResources,
-  onAccept,
-  onReject,
-  onGenerationComplete,
 }: ScenarioFlagsProps) {
   const show = show_scenario_flags ?? false;
   const allFlags = useMemo(() => scenario_flags ?? [], [scenario_flags]);
@@ -465,14 +456,12 @@ export function ScenarioFlags({
       }
     }
     clearAi();
-    onAccept?.();
-  }, [effectiveAiFlagResources, filteredFlagOptionsByScenario, handleToggle, clearAi, onAccept]);
+  }, [effectiveAiFlagResources, filteredFlagOptionsByScenario, handleToggle, clearAi]);
 
   // Reject AI suggestion - just clear the pending state
   const handleReject = useCallback(() => {
     clearAi();
-    onReject?.();
-  }, [clearAi, onReject]);
+  }, [clearAi]);
 
   if (!show || scenario_ids.length === 0) {
     return null;

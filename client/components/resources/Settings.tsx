@@ -47,14 +47,10 @@ export interface SettingsProps {
   description?: string;
   group_id?: string | null; // Group ID for linking resources
   onGenerate?: () => void | Promise<void>;
-  isGenerating?: boolean;
   showAiGenerate?: boolean; // Whether to show AI generate button (computed server-side)
   // Legacy props for backward compatibility
   settingsIds?: string[];
-  // AI diff view props
   aiSettingsResources?: Pick<SettingResourceItem, "settings_id" | "name">[] | null;
-  onAccept?: () => void;
-  onReject?: () => void;
 }
 
 export function Settings({
@@ -72,14 +68,10 @@ export function Settings({
   description,
   group_id,
   onGenerate,
-  isGenerating: _isGenerating = false,
   showAiGenerate = false,
   // Legacy props for backward compatibility
   settingsIds,
-  // AI diff view props (deprecated — kept for interface compat)
   aiSettingsResources: _aiSettingsResources,
-  onAccept: _onAccept,
-  onReject: _onReject,
 }: SettingsProps) {
   // Use standardized props with fallback to legacy props
   const ids = useMemo(

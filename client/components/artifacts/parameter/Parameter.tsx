@@ -748,7 +748,6 @@ function ParameterComponent({
                     setFormState((prev) => ({ ...prev, name_id: nameId }))
                   }
                   onGenerate={() => handleGenerateResources(["names"])}
-                  isGenerating={isGenerating("names")}
                   placeholder="e.g., Student Age"
                   defaultName="New Parameter"
                   required={s?.names?.required ?? false}
@@ -789,7 +788,6 @@ function ParameterComponent({
                     setFormState((prev) => ({ ...prev, description_id: descriptionId }))
                   }
                   onGenerate={() => handleGenerateResources(["descriptions"])}
-                  isGenerating={isGenerating("descriptions")}
                   label="Description"
                   placeholder="Enter a brief description (optional)"
                   required={s?.descriptions?.required ?? false}
@@ -813,7 +811,6 @@ function ParameterComponent({
                     setFormState((prev) => ({ ...prev, department_ids: ids }))
                   }
                   onGenerate={() => handleGenerateResources(["departments"])}
-                  isGenerating={isGenerating("departments")}
                   required={s?.departments?.required ?? false}
                   group_id={s?.group_id ?? null}
                   showAiGenerate={s?.departments?.show_ai_generate ?? false}
@@ -840,7 +837,6 @@ function ParameterComponent({
                     })
                   }
                   onGenerate={() => handleGenerateResources(["flags"])}
-                  isGenerating={isGenerating("flags")}
                   group_id={s?.group_id ?? null}
                   showAiGenerate={s?.flags?.show_ai_generate ?? false}
                 />
@@ -1002,7 +998,6 @@ function ParameterComponent({
                 group_id={s?.group_id ?? null}
                 showAiGenerate={s?.fields?.show_ai_generate ?? false}
                 onGenerate={() => handleGenerateResources(["fields"])}
-                isGenerating={isGenerating("fields")}
                 searchTerm={fieldSearchTerm}
                 showSelectedFilter={fieldShowSelected}
               />

@@ -63,7 +63,6 @@ export interface ImagesProps {
     | undefined;
   onGenerate?: () => void | Promise<void>;
   showAiGenerate?: boolean; // Whether to show AI generate button (computed server-side)
-  isGenerating?: boolean;
   multiSelect?: boolean; // Whether to allow multiple image selection
   maxImages?: number; // Maximum number of images allowed
   onImageUpload?: (e: React.ChangeEvent<HTMLInputElement>) => void; // Upload handler
@@ -79,11 +78,7 @@ export interface ImagesProps {
     upload_id?: string;
     message?: string;
   }>;
-  // AI diff view props
   aiImageResources?: Pick<ImageResourceItem, "image_id" | "name">[] | null;
-  onAccept?: () => void;
-  onReject?: () => void;
-  onGenerationComplete?: () => void;
 }
 
 export function Images({
@@ -105,7 +100,6 @@ export function Images({
   createImagesAction,
   onGenerate,
   showAiGenerate = false,
-  isGenerating: _isGenerating = false,
   multiSelect = false,
   maxImages = 1,
   onImageUpload,
@@ -114,11 +108,7 @@ export function Images({
   isAutosaveEnabled = true,
   registerFlush,
   finalizeUploadAction,
-  // AI diff view props (deprecated -- now handled by useResourceAi hook)
   aiImageResources: _aiImageResources,
-  onAccept: _onAccept,
-  onReject: _onReject,
-  onGenerationComplete: _onGenerationComplete,
 }: ImagesProps) {
   const ids = useMemo(() => image_ids ?? [], [image_ids]);
   const show = show_images ?? false;

@@ -63,16 +63,12 @@ export interface EmailsProps {
     | ((input: CreateDraftEmailsIn) => Promise<CreateDraftEmailsOut>)
     | undefined;
   onGenerate?: () => void | Promise<void>;
-  isGenerating?: boolean;
   showAiGenerate?: boolean; // Whether to show AI generate button (computed server-side)
   /** When false, skip automatic resource creation (manual save mode) */
   isAutosaveEnabled?: boolean;
   /** Register a flush callback with parent for manual save - returns created ID */
   registerFlush?: (flush: () => Promise<{ emails_id: string | null } | void>) => void;
-  // AI diff view props
   aiEmailResources?: Pick<EmailResourceItem, "id" | "email">[] | null;
-  onAccept?: () => void;
-  onReject?: () => void;
 }
 
 export function Emails({
@@ -93,14 +89,10 @@ export function Emails({
   create_tool_id,
   createEmailsAction,
   onGenerate,
-  isGenerating: _isGenerating = false,
   showAiGenerate = false,
   isAutosaveEnabled = true,
   registerFlush,
-  // AI diff view props (deprecated — kept for interface compat)
   aiEmailResources: _aiEmailResources,
-  onAccept: _onAccept,
-  onReject: _onReject,
 }: EmailsProps) {
   const ids = useMemo(() => email_ids ?? [], [email_ids]);
   const show = show_emails ?? true;

@@ -51,15 +51,11 @@ export interface ToolsProps {
   group_id?: string | null; // Group ID for linking resources
   onGenerate?: () => void | Promise<void>;
   showAiGenerate?: boolean; // Whether to show AI generate button (computed server-side)
-  isGenerating?: boolean;
   searchTerm?: string; // Search term for filtering tools
   onSearchChange?: (term: string) => void; // Callback when search term changes
   showSelectedFilter?: boolean; // Whether to show only selected tools
   onShowSelectedChange?: (value: boolean) => void; // Callback when show selected filter changes
-  // AI diff view props
   aiToolResources?: Pick<ToolResourceItem, "id" | "name">[] | null;
-  onAccept?: () => void;
-  onReject?: () => void;
 }
 
 export function Tools({
@@ -76,15 +72,11 @@ export function Tools({
   group_id,
   onGenerate,
   showAiGenerate = false,
-  isGenerating: _isGenerating = false,
   searchTerm = "",
   onSearchChange,
   showSelectedFilter = false,
   onShowSelectedChange,
-  // AI diff view props (deprecated — kept for interface compat)
   aiToolResources: _aiToolResources,
-  onAccept: _onAccept,
-  onReject: _onReject,
 }: ToolsProps) {
   const ids = useMemo(() => tool_ids ?? [], [tool_ids]);
   const show = show_tools ?? false;

@@ -94,19 +94,14 @@ export interface ScenarioPersonasProps {
     | undefined;
   onPersonaIdsChange?: (ids: string[]) => void;
   onGenerate?: () => void | Promise<void>;
-  isGenerating?: boolean;
   showAiGenerate?: boolean; // Whether to show AI generate button (computed server-side)
   isAutosaveEnabled?: boolean;
   registerFlush?: (
     flush: () => Promise<{ scenario_persona_ids: string[] } | void>,
   ) => void;
-  // AI diff view props
   aiScenarioPersonaResources?:
     | Pick<ScenarioPersonasResourceItem, "id" | "scenario_id" | "persona_id">[]
     | null;
-  onAccept?: () => void;
-  onReject?: () => void;
-  onGenerationComplete?: () => void;
 }
 
 export function ScenarioPersonas({
@@ -130,15 +125,10 @@ export function ScenarioPersonas({
   createScenarioPersonasAction,
   onPersonaIdsChange,
   onGenerate,
-  isGenerating = false,
   showAiGenerate = false,
   isAutosaveEnabled = true,
   registerFlush,
-  // AI diff view props (deprecated - handled by useResourceAi hook)
   aiScenarioPersonaResources,
-  onAccept: _onAccept,
-  onReject: _onReject,
-  onGenerationComplete,
 }: ScenarioPersonasProps) {
   const show = show_scenario_personas ?? false;
   const allPersonas = useMemo(

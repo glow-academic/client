@@ -43,11 +43,8 @@ export interface ConditionalParametersProps {
   group_id?: string | null;
   // AI diff props (deprecated - now handled by useResourceAi hook)
   aiConditionalParameterResources?: Pick<ConditionalParametersResourceItem, "id" | "parameter_id">[] | null;
-  onAccept?: () => void;
-  onReject?: () => void;
   showAiGenerate?: boolean;
   onGenerate?: () => void | Promise<void>;
-  isGenerating?: boolean;
 }
 
 export function ConditionalParameters({

@@ -44,11 +44,8 @@ export interface DomainsProps {
   group_id?: string | null;
   // AI diff props (deprecated - now handled by useResourceAi hook)
   aiDomainResources?: Pick<DomainResourceItem, "id" | "resource">[] | null;
-  onAccept?: () => void;
-  onReject?: () => void;
   showAiGenerate?: boolean;
   onGenerate?: () => void | Promise<void>;
-  isGenerating?: boolean;
 }
 
 export function Domains({

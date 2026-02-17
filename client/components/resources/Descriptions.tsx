@@ -157,7 +157,6 @@ export interface DescriptionsProps {
   disabled?: boolean; // Based on can_edit flag
   onDescriptionIdChange: (descriptionId: string | null) => void; // Update description_id in parent form state
   onGenerate?: () => Promise<void>;
-  isGenerating?: boolean;
   label?: string;
   placeholder?: string;
   required?: boolean;
@@ -179,19 +178,6 @@ export interface DescriptionsProps {
   isAutosaveEnabled?: boolean;
   /** Register a flush callback with parent for manual save - returns created ID */
   registerFlush?: (flush: () => Promise<{ description_id: string | null } | void>) => void;
-  // Legacy props for backward compatibility
-  descriptionResource?: {
-    id: string;
-    description: string;
-    generated?: boolean | null;
-  } | null;
-  descriptionId?: string | null;
-  suggestions?: string[];
-  // AI diff view props
-  aiResource?: { id?: string | null; description?: string | null } | null | undefined;
-  onAccept?: () => void;
-  onReject?: () => void;
-  onGenerationComplete?: () => void;
 }
 
 export function Descriptions({
@@ -203,7 +189,6 @@ export function Descriptions({
   disabled = false,
   onDescriptionIdChange,
   onGenerate,
-  isGenerating: _isGenerating = false,
   label = "Description",
   placeholder = "Enter description",
   required = false,
@@ -212,30 +197,20 @@ export function Descriptions({
   "data-testid": dataTestId,
   helpText,
   group_id,
-  create_tool_id: _create_tool_id,
+  create_tool_id,
   showAiGenerate = false,
   createDescriptionsAction,
   searchTerm,
   onSearchChange,
   isAutosaveEnabled = true,
   registerFlush,
-  // Legacy props for backward compatibility
-  descriptionResource,
-  descriptionId,
-  suggestions,
-  // AI diff view props
-  aiResource: _aiResource,
-  onAccept: _onAccept,
-  onReject: _onReject,
-  onGenerationComplete: _onGenerationComplete,
 }: DescriptionsProps) {
-  // Use standardized props with fallback to legacy props
-  const resource = description_resource ?? descriptionResource ?? null;
-  const resourceId = description_id ?? descriptionId ?? null;
+  const resource = description_resource ?? null;
+  const resourceId = description_id ?? null;
   const show = show_description ?? true;
   const suggestionsList = useMemo(
-    () => description_suggestions ?? suggestions ?? [],
-    [description_suggestions, suggestions]
+    () => description_suggestions ?? [],
+    [description_suggestions]
   );
 
   // Handle nullable resource properties - normalize to string
@@ -274,6 +249,7 @@ export function Descriptions({
             group_id: group_id,
             description: internalValue,
             mcp: false,
+            tool_id: create_tool_id ?? undefined,
           },
         });
         if (seq !== saveSeqRef.current) return;

@@ -62,7 +62,6 @@ export interface VideosProps {
     | undefined;
   onGenerate?: () => void | Promise<void>;
   showAiGenerate?: boolean; // Whether to show AI generate button (computed server-side)
-  isGenerating?: boolean;
   onVideoUpload?: (e: React.ChangeEvent<HTMLInputElement>) => void; // Upload handler
   videoInputRef?: React.RefObject<HTMLInputElement>; // Ref for file input
   isUploadingVideo?: boolean; // Whether video is currently uploading
@@ -76,11 +75,7 @@ export interface VideosProps {
     upload_id?: string;
     message?: string;
   }>;
-  // AI diff view props
   aiVideoResources?: Pick<VideoResourceItem, "video_id" | "name">[] | null;
-  onAccept?: () => void;
-  onReject?: () => void;
-  onGenerationComplete?: () => void;
 }
 
 export function Videos({
@@ -102,18 +97,13 @@ export function Videos({
   createVideosAction,
   onGenerate,
   showAiGenerate = false,
-  isGenerating: _isGenerating = false,
   onVideoUpload,
   videoInputRef,
   isUploadingVideo = false,
   isAutosaveEnabled = true,
   registerFlush,
   finalizeUploadAction,
-  // AI diff view props (deprecated — now handled by useResourceAi hook)
   aiVideoResources: _aiVideoResources,
-  onAccept: _onAccept,
-  onReject: _onReject,
-  onGenerationComplete,
 }: VideosProps) {
   const ids = useMemo(() => video_ids ?? [], [video_ids]);
   const show = show_videos ?? false;

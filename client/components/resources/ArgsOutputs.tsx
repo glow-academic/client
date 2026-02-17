@@ -68,13 +68,9 @@ export interface ArgsOutputsProps {
   isAutosaveEnabled?: boolean;
   /** Register a flush callback with parent for manual save - returns created ID */
   registerFlush?: (flush: () => Promise<{ args_outputs_id: string | null } | void>) => void;
-  // AI diff view props
   aiArgsOutputsResources?: Pick<ArgsOutputsResourceItem, "id" | "name">[] | null;
-  onAccept?: () => void;
-  onReject?: () => void;
   showAiGenerate?: boolean;
   onGenerate?: () => void | Promise<void>;
-  isGenerating?: boolean;
 }
 
 export function ArgsOutputs({
@@ -87,13 +83,9 @@ export function ArgsOutputs({
   create_tool_id,
   isAutosaveEnabled = true,
   registerFlush,
-  // AI diff view props (deprecated - now handled by useResourceAi hook)
   aiArgsOutputsResources: _aiArgsOutputsResources,
-  onAccept: _onAccept,
-  onReject: _onReject,
   showAiGenerate: _showAiGenerate = false,
   onGenerate: _onGenerate,
-  isGenerating: _isGenerating = false,
 }: ArgsOutputsProps) {
   // Get available Jinja variables from input args fields
   const availableVariables = useMemo(() => {

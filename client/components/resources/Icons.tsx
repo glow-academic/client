@@ -52,18 +52,12 @@ export interface IconsProps {
   group_id?: string | null; // Group ID for linking resources
   showAiGenerate?: boolean; // Whether to show AI generate button (computed server-side)
   onGenerate?: () => void | Promise<void>;
-  isGenerating?: boolean;
   // Legacy props for backward compatibility
   iconResource?: IconResourceItem | null;
   iconId?: string | null;
   allIcons?: string[];
   suggestedIcons?: string[];
   iconSuggestions?: string[];
-  // AI diff view props
-  aiResource?: Pick<IconResourceItem, "id" | "name" | "value"> | null | undefined;
-  onAccept?: () => void;
-  onReject?: () => void;
-  onGenerationComplete?: () => void;
 }
 
 export function Icons({
@@ -84,18 +78,12 @@ export function Icons({
   group_id,
   showAiGenerate = false,
   onGenerate,
-  isGenerating: _isGenerating = false,
   // Legacy props for backward compatibility
   iconResource,
   iconId: _iconId,
   allIcons,
   suggestedIcons = [],
   iconSuggestions,
-  // AI diff view props
-  aiResource: _aiResource,
-  onAccept: _onAccept,
-  onReject: _onReject,
-  onGenerationComplete: _onGenerationComplete,
 }: IconsProps) {
   // Use standardized props with fallback to legacy props
   const resource = icon_resource ?? iconResource ?? null;

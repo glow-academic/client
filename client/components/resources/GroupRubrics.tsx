@@ -43,13 +43,9 @@ export interface GroupRubricsProps {
   required?: boolean;
   selected_rubric_ids?: string[];
   onChange: (groupId: string, rubricIds: string[]) => void;
-  // AI diff view props
   aiRubricResources?: Pick<GroupRubricResourceItem, "id" | "rubric_id">[] | null;
-  onAccept?: () => void;
-  onReject?: () => void;
   showAiGenerate?: boolean;
   onGenerate?: () => void | Promise<void>;
-  isGenerating?: boolean;
 }
 
 export function GroupRubrics({
@@ -62,13 +58,9 @@ export function GroupRubrics({
   required = false,
   selected_rubric_ids,
   onChange,
-  // AI diff view props (deprecated - now from useResourceAi hook)
   aiRubricResources: _aiRubricResources,
-  onAccept: _onAccept,
-  onReject: _onReject,
   showAiGenerate: _showAiGenerate = false,
   onGenerate: _onGenerate,
-  isGenerating: _isGenerating = false,
 }: GroupRubricsProps) {
   // AI suggestion handling via shared hook (accumulate mode: each event = one rubric)
   const { aiSuggestions, clear: clearAi } = useResourceAi({

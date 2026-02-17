@@ -46,11 +46,8 @@ export interface ProvidersProps {
   group_id?: string | null;
   // AI diff props
   aiProviderResources?: Pick<ProviderResourceItem, "id" | "name">[] | null;
-  onAccept?: () => void;
-  onReject?: () => void;
   showAiGenerate?: boolean;
   onGenerate?: () => void | Promise<void>;
-  isGenerating?: boolean;
 }
 
 export function Providers({

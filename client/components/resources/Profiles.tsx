@@ -58,14 +58,10 @@ export interface ProfilesProps {
   group_id?: string | null; // Group ID for linking resources
   onGenerate?: () => void | Promise<void>;
   showAiGenerate?: boolean; // Whether to show AI generate button (computed server-side)
-  isGenerating?: boolean;
-  // AI diff view props
   aiProfileResources?: Array<{
     profile_id?: string | null;
     name?: string | null;
   }> | null;
-  onAccept?: () => void;
-  onReject?: () => void;
 }
 
 export function Profiles({

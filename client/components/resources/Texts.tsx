@@ -55,10 +55,7 @@ export interface TextsProps {
     | ((input: CreateDraftTextsIn) => Promise<CreateDraftTextsOut>)
     | undefined;
   onGenerate?: () => void | Promise<void>;
-  isGenerating?: boolean;
   showAiGenerate?: boolean;
-  onAccept?: () => void;
-  onReject?: () => void;
   searchTerm?: string;
   /** When false, skip automatic resource creation (manual save mode) */
   isAutosaveEnabled?: boolean;
@@ -80,11 +77,7 @@ export function Texts({
   group_id,
   createTextsAction,
   onGenerate,
-  isGenerating: _isGenerating = false,
   showAiGenerate = false,
-  // AI diff view props (deprecated - now from useResourceAi hook)
-  onAccept: _onAccept,
-  onReject: _onReject,
   searchTerm,
   isAutosaveEnabled = true,
   registerFlush,

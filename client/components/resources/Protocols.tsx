@@ -53,12 +53,8 @@ export interface ProtocolsProps {
     | ((input: CreateDraftProtocolsIn) => Promise<CreateDraftProtocolsOut>)
     | undefined;
   onGenerate?: () => void | Promise<void>;
-  isGenerating?: boolean;
   showAiGenerate?: boolean; // Whether to show AI generate button (computed server-side)
-  // AI diff view props
   aiProtocolResources?: Array<{ id?: string | null; value?: string | null }> | null;
-  onAccept?: () => void;
-  onReject?: () => void;
   /** When false, skip automatic resource creation (manual save mode) */
   isAutosaveEnabled?: boolean;
   /** Register a flush callback with parent for manual save - returns created ID */
@@ -82,12 +78,8 @@ export function Protocols({
   create_tool_id,
   createProtocolsAction,
   onGenerate,
-  isGenerating: _isGenerating = false,
   showAiGenerate = false,
-  // AI diff view props (deprecated - now handled by useResourceAi hook)
   aiProtocolResources: _aiProtocolResources,
-  onAccept: _onAccept,
-  onReject: _onReject,
   isAutosaveEnabled = true,
   registerFlush,
 }: ProtocolsProps) {

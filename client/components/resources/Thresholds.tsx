@@ -43,11 +43,8 @@ export interface ThresholdsProps {
   group_id?: string | null;
   // AI diff props (deprecated - now handled by useResourceAi hook)
   aiThresholdResources?: Pick<ThresholdResourceItem, "id" | "value">[] | null;
-  onAccept?: () => void;
-  onReject?: () => void;
   showAiGenerate?: boolean;
   onGenerate?: () => void | Promise<void>;
-  isGenerating?: boolean;
 }
 
 export function Thresholds({

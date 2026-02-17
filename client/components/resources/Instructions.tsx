@@ -157,7 +157,6 @@ export interface InstructionsProps {
   disabled?: boolean; // Based on can_edit flag
   onInstructionsIdChange: (instructionsId: string | null) => void; // Update instructions_id in parent form state
   onGenerate?: () => Promise<void>;
-  isGenerating?: boolean;
   label?: string;
   placeholder?: string;
   required?: boolean;
@@ -179,11 +178,6 @@ export interface InstructionsProps {
   instructionsResource?: { id: string; template: string; generated?: boolean | null } | null;
   instructionsId?: string | null;
   suggestions?: string[];
-  // AI diff view props
-  aiResource?: { id?: string | null; template?: string | null } | null | undefined;
-  onAccept?: () => void;
-  onReject?: () => void;
-  onGenerationComplete?: () => void;
 }
 
 export function Instructions({
@@ -195,7 +189,6 @@ export function Instructions({
   disabled = false,
   onInstructionsIdChange,
   onGenerate,
-  isGenerating: _isGenerating = false,
   label = "Instructions",
   placeholder = "Enter instructions",
   required = false,
@@ -215,11 +208,6 @@ export function Instructions({
   instructionsResource,
   instructionsId,
   suggestions,
-  // AI diff view props
-  aiResource: _aiResource,
-  onAccept: _onAccept,
-  onReject: _onReject,
-  onGenerationComplete: _onGenerationComplete,
 }: InstructionsProps) {
   // Use standardized props with fallback to legacy props
   const resource = instructions_resource ?? instructionsResource ?? null;

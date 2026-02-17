@@ -62,19 +62,14 @@ export interface DepartmentsProps {
     | ((input: CreateDraftDepartmentsIn) => Promise<CreateDraftDepartmentsOut>)
     | undefined;
   onGenerate?: () => void | Promise<void>;
-  isGenerating?: boolean;
   /** When false, skip automatic resource creation (manual save mode) */
   isAutosaveEnabled?: boolean;
   /** Register a flush callback with parent for manual save - returns created IDs */
   registerFlush?: (flush: () => Promise<{ department_ids: string[] } | void>) => void;
-  // AI diff view props
   aiDepartmentResources?: Array<{
     department_id?: string | null;
     name?: string | null;
   }> | null;
-  onAccept?: () => void;
-  onReject?: () => void;
-  onGenerationComplete?: () => void;
   // Legacy props for backward compatibility
   departmentIds?: string[];
 }
@@ -96,14 +91,9 @@ export function Departments({
   showAiGenerate = false,
   createDepartmentsAction,
   onGenerate,
-  isGenerating: _isGenerating = false,
   isAutosaveEnabled = true,
   registerFlush,
-  // AI diff view props
   aiDepartmentResources: _aiDepartmentResources,
-  onAccept: _onAccept,
-  onReject: _onReject,
-  onGenerationComplete: _onGenerationComplete,
   // Legacy props for backward compatibility
   departmentIds,
 }: DepartmentsProps) {

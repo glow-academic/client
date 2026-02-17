@@ -1195,7 +1195,6 @@ function EvalComponent({
                     setFormState((prev) => ({ ...prev, name_id: nameId }))
                   }
                   onGenerate={handleGenerateNames}
-                  isGenerating={isGenerating("names")}
                   group_id={s?.group_id ?? null}
                   agent_id={null}
                   createNamesAction={createNamesAction}
@@ -1220,7 +1219,6 @@ function EvalComponent({
                     }))
                   }
                   onGenerate={handleGenerateDescriptions}
-                  isGenerating={isGenerating("descriptions")}
                   required={s?.descriptions?.required ?? false}
                   group_id={s?.group_id ?? null}
                   agent_id={null}
@@ -1241,7 +1239,6 @@ function EvalComponent({
                     }))
                   }
                   onGenerate={handleGenerateFlags}
-                  isGenerating={isGenerating("flags")}
                   group_id={s?.group_id ?? null}
                 />
 
@@ -1259,7 +1256,6 @@ function EvalComponent({
                     }))
                   }
                   onGenerate={handleGenerateFlags}
-                  isGenerating={isGenerating("flags")}
                   group_id={s?.group_id ?? null}
                 />
 
@@ -1277,7 +1273,6 @@ function EvalComponent({
                     }))
                   }
                   onGenerate={handleGenerateFlags}
-                  isGenerating={isGenerating("flags")}
                   group_id={s?.group_id ?? null}
                 />
 
@@ -1294,7 +1289,6 @@ function EvalComponent({
                     setFormState((prev) => ({ ...prev, department_ids: ids }))
                   }
                   onGenerate={handleGenerateDepartments}
-                  isGenerating={isGenerating("departments")}
                   required={s?.departments?.required ?? false}
                   group_id={s?.group_id ?? null}
                   agent_id={null}
@@ -1381,7 +1375,6 @@ function EvalComponent({
                   setFormState((prev) => ({ ...prev, agent_ids: ids }))
                 }
                 onGenerate={handleGenerateAgents}
-                isGenerating={isGenerating("agents")}
                 required={s?.agents?.required ?? false}
                 group_id={s?.group_id ?? null}
                 agent_id={null}

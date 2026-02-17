@@ -64,7 +64,6 @@ export interface QuestionsProps {
     | ((input: CreateDraftQuestionsIn) => Promise<CreateDraftQuestionsOut>)
     | undefined;
   onGenerate?: () => void | Promise<void>;
-  isGenerating?: boolean;
   showAiGenerate?: boolean; // Whether to show AI generate button (computed server-side)
   // Optional: mapping of question_id -> question text (for initial display)
   questionMapping?: Record<string, string>;
@@ -74,11 +73,7 @@ export interface QuestionsProps {
   isAutosaveEnabled?: boolean;
   /** Register a flush callback with parent for manual save - returns created IDs */
   registerFlush?: (flush: () => Promise<{ question_ids: string[] } | void>) => void;
-  // AI diff view props
   aiQuestionResources?: Pick<QuestionsResourceItem, "question_id" | "question_text">[] | null;
-  onAccept?: () => void;
-  onReject?: () => void;
-  onGenerationComplete?: () => void;
 }
 
 // Internal question type (matching ContentSection pattern)
@@ -108,17 +103,12 @@ export function Questions({
   group_id,
   createQuestionsAction,
   onGenerate,
-  isGenerating: _isGenerating = false,
   showAiGenerate = false,
   questionMapping = {},
   videoLength = null,
   isAutosaveEnabled = true,
   registerFlush,
-  // AI diff view props (deprecated - handled by useResourceAi hook)
   aiQuestionResources: _aiQuestionResources,
-  onAccept: _onAccept,
-  onReject: _onReject,
-  onGenerationComplete: _onGenerationComplete,
 }: QuestionsProps) {
   // Use standardized props
   const ids = useMemo(() => question_ids ?? [], [question_ids]);

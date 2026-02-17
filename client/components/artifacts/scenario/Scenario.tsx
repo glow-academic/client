@@ -1662,7 +1662,6 @@ function ScenarioComponent({
                     setFormState((prev) => ({ ...prev, name_id: nameId }))
                   }
                   onGenerate={generateHandlers["names"]}
-                  isGenerating={isGenerating("names")}
                   placeholder="e.g., Customer Support Escalation"
                   defaultName="New Scenario"
                   required={s?.names?.required ?? false}
@@ -1675,7 +1674,6 @@ function ScenarioComponent({
                         ) => Promise<CreateDraftNamesOut>)
                       | undefined
                   }
-                  onGenerationComplete={makeOnGenerationComplete("names")}
                 />
               }
               resetFields={["name", "description", "departments"]}
@@ -1713,7 +1711,6 @@ function ScenarioComponent({
                     }))
                   }
                   onGenerate={generateHandlers["descriptions"]}
-                  isGenerating={isGenerating("descriptions")}
                   label="Description"
                   placeholder="Describe the scenario"
                   required={s?.descriptions?.required ?? false}
@@ -1725,9 +1722,6 @@ function ScenarioComponent({
                         ) => Promise<CreateDraftDescriptionsOut>)
                       | undefined
                   }
-                  onGenerationComplete={makeOnGenerationComplete(
-                    "descriptions",
-                  )}
                 />
 
                 <Departments
@@ -1744,8 +1738,6 @@ function ScenarioComponent({
                   required={s?.departments?.required ?? false}
                   group_id={s?.group_id ?? null}
                   onGenerate={generateHandlers["departments"]}
-                  isGenerating={isGenerating("departments")}
-                  onGenerationComplete={makeOnGenerationComplete("departments")}
                 />
 
                 {/* Server-driven Flags - single component for all flags */}
@@ -1786,10 +1778,6 @@ function ScenarioComponent({
                     }
                   }}
                   onGenerate={generateHandlers["scenario_flags"]}
-                  isGenerating={isGenerating("scenario_flags")}
-                  onGenerationComplete={makeOnGenerationComplete(
-                    "scenario_flags",
-                  )}
                 />
               </div>
             </StepCard>
@@ -1837,7 +1825,6 @@ function ScenarioComponent({
                   }))
                 }
                 onGenerate={generateHandlers["problem_statements"]}
-                isGenerating={isGenerating("problem_statements")}
                 label="Problem Statement"
                 placeholder="Define the core problem"
                 required={s?.problem_statements?.required ?? false}
@@ -1853,9 +1840,6 @@ function ScenarioComponent({
                       ) => Promise<CreateDraftProblemStatementsOut>)
                     | undefined
                 }
-                onGenerationComplete={makeOnGenerationComplete(
-                  "problem_statements",
-                )}
               />
             </StepCard>
           );
@@ -1904,10 +1888,8 @@ function ScenarioComponent({
                     | undefined
                 }
                 onGenerate={generateHandlers["objectives"]}
-                isGenerating={isGenerating("objectives")}
                 isAutosaveEnabled={isAutosaveEnabled}
                 registerFlush={registerFlushCallbacks["objectives"]}
-                onGenerationComplete={makeOnGenerationComplete("objectives")}
               />
             </StepCard>
           );
@@ -1965,9 +1947,7 @@ function ScenarioComponent({
                   group_id={s?.group_id ?? null}
                   required={s?.personas?.required ?? false}
                   onGenerate={generateHandlers["personas"]}
-                  isGenerating={isGenerating("personas")}
                   videoEnabled={videoEnabled}
-                  onGenerationComplete={makeOnGenerationComplete("personas")}
                 />
               </div>
             </StepCard>
@@ -2026,9 +2006,7 @@ function ScenarioComponent({
                   group_id={s?.group_id ?? null}
                   required={s?.documents?.required ?? false}
                   onGenerate={generateHandlers["documents"]}
-                  isGenerating={isGenerating("documents")}
                   videoEnabled={videoEnabled}
-                  onGenerationComplete={makeOnGenerationComplete("documents")}
                 />
               </div>
             </StepCard>
@@ -2091,9 +2069,7 @@ function ScenarioComponent({
                   group_id={s?.group_id ?? null}
                   required={s?.parameters?.required ?? false}
                   onGenerate={generateHandlers["parameters"]}
-                  isGenerating={isGenerating("parameters")}
                   videoEnabled={videoEnabled}
-                  onGenerationComplete={makeOnGenerationComplete("parameters")}
                 />
                 <ParameterFields
                   parameter_field_ids={formState.parameter_field_ids}
@@ -2118,9 +2094,6 @@ function ScenarioComponent({
                   createParameterFieldsAction={createParameterFieldsAction}
                   isAutosaveEnabled={isAutosaveEnabled}
                   registerFlush={registerFlushCallbacks["parameter_fields"]}
-                  onGenerationComplete={makeOnGenerationComplete(
-                    "parameter_fields",
-                  )}
                 />
               </div>
             </StepCard>
@@ -2170,12 +2143,10 @@ function ScenarioComponent({
                     | undefined
                 }
                 onGenerate={generateHandlers["images"]}
-                isGenerating={isGenerating("images")}
                 multiSelect={true}
                 maxImages={3}
                 isAutosaveEnabled={isAutosaveEnabled}
                 registerFlush={registerFlushCallbacks["images"]}
-                onGenerationComplete={makeOnGenerationComplete("images")}
               />
             </StepCard>
           );
@@ -2224,10 +2195,8 @@ function ScenarioComponent({
                     | undefined
                 }
                 onGenerate={generateHandlers["videos"]}
-                isGenerating={isGenerating("videos")}
                 isAutosaveEnabled={isAutosaveEnabled}
                 registerFlush={registerFlushCallbacks["videos"]}
-                onGenerationComplete={makeOnGenerationComplete("videos")}
               />
             </StepCard>
           );
@@ -2276,10 +2245,8 @@ function ScenarioComponent({
                     | undefined
                 }
                 onGenerate={generateHandlers["questions"]}
-                isGenerating={isGenerating("questions")}
                 isAutosaveEnabled={isAutosaveEnabled}
                 registerFlush={registerFlushCallbacks["questions"]}
-                onGenerationComplete={makeOnGenerationComplete("questions")}
               />
               <Options
                 option_ids={formState.option_ids}

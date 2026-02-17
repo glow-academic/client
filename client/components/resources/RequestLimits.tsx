@@ -57,7 +57,6 @@ export interface RequestLimitsProps {
   disabled?: boolean; // Based on can_edit flag
   onRequestLimitIdChange: (requestLimitId: string | null) => void; // Update request_limit_id in parent form state
   onGenerate?: () => Promise<void>;
-  isGenerating?: boolean;
   showAiGenerate?: boolean; // Whether to show AI generate button (computed server-side)
   label?: string;
   id?: string;
@@ -79,10 +78,7 @@ export interface RequestLimitsProps {
   requestLimitResource?: RequestLimitsResourceItem | null;
   requestLimitId?: string | null;
   suggestions?: string[];
-  // AI diff view props
   aiRequestLimitResources?: Pick<RequestLimitsResourceItem, "id" | "requests_per_day">[] | null;
-  onAccept?: () => void;
-  onReject?: () => void;
   /** When false, skip automatic resource creation (manual save mode) */
   isAutosaveEnabled?: boolean;
   /** Register a flush callback with parent for manual save - returns created ID */

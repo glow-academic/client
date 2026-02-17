@@ -47,12 +47,8 @@ export interface GroupsProps {
   description?: string;
   group_id?: string | null; // Group ID for linking resources
   onGenerate?: () => void | Promise<void>;
-  isGenerating?: boolean;
   showAiGenerate?: boolean; // Whether to show AI generate button (computed server-side)
-  // AI diff view props
   aiGroupResources?: Pick<GroupResourceItem, "id">[] | null;
-  onAccept?: () => void;
-  onReject?: () => void;
 }
 
 export function Groups({

@@ -42,7 +42,6 @@ export interface ReasoningLevelsProps {
     reasoningLevelId: string | null
   ) => void; // Update reasoning_level_id in parent form state
   onGenerate?: () => Promise<void>;
-  isGenerating?: boolean;
   showAiGenerate?: boolean; // Whether to show AI generate button (computed server-side)
   label?: string;
   placeholder?: string;
@@ -53,13 +52,10 @@ export interface ReasoningLevelsProps {
   searchTerm?: string;
   onSearchChange?: (term: string) => void;
   group_id?: string | null; // Group ID for linking resources
-  // AI diff view props
   aiReasoningLevelResources?: Array<{
     reasoning_level_id?: string | null;
     reasoning_level?: string | null;
   }> | null;
-  onAccept?: () => void;
-  onReject?: () => void;
 }
 
 export function ReasoningLevels({
@@ -70,7 +66,6 @@ export function ReasoningLevels({
   disabled = false,
   onReasoningLevelIdChange,
   onGenerate,
-  isGenerating: _isGenerating = false,
   showAiGenerate = false,
   label = "Reasoning Level",
   placeholder = "Select a reasoning level",
@@ -81,10 +76,7 @@ export function ReasoningLevels({
   searchTerm,
   onSearchChange,
   group_id,
-  // AI diff view props (deprecated - now handled by useResourceAi hook)
   aiReasoningLevelResources: _aiReasoningLevelResources,
-  onAccept: _onAccept,
-  onReject: _onReject,
 }: ReasoningLevelsProps) {
   const resource = reasoning_level_resource ?? null;
   const resourceId = reasoning_level_id ?? null;

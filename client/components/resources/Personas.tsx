@@ -79,17 +79,12 @@ export interface PersonasProps {
     | undefined;
   onGenerate?: () => void | Promise<void>;
   showAiGenerate?: boolean; // Whether to show AI generate button (computed server-side)
-  isGenerating?: boolean;
   videoEnabled?: boolean; // Whether video mode is enabled (for filtering)
   /** When false, skip automatic resource creation (manual save mode) */
   isAutosaveEnabled?: boolean;
   /** Register a flush callback with parent for manual save - returns created IDs */
   registerFlush?: (flush: () => Promise<{ persona_ids: string[] } | void>) => void;
-  // AI diff view props
   aiPersonaResources?: Pick<PersonaResourceItem, "persona_id" | "name">[] | null;
-  onAccept?: () => void;
-  onReject?: () => void;
-  onGenerationComplete?: () => void;
 }
 
 export function Personas({
@@ -110,15 +105,10 @@ export function Personas({
   createPersonasAction,
   onGenerate,
   showAiGenerate = false,
-  isGenerating: _isGenerating = false,
   videoEnabled = false,
   isAutosaveEnabled = true,
   registerFlush,
-  // AI diff view props
   aiPersonaResources,
-  onAccept: _onAccept,
-  onReject: _onReject,
-  onGenerationComplete,
 }: PersonasProps) {
   const ids = useMemo(() => persona_ids ?? [], [persona_ids]);
   const show = show_personas ?? false;

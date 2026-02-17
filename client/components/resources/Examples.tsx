@@ -52,7 +52,6 @@ export interface ExamplesProps {
       }) => Promise<{ example_id?: string | null }>)
     | undefined;
   onGenerate?: () => void | Promise<void>;
-  isGenerating?: boolean;
   // Optional: mapping of example_id -> example text (for initial display)
   exampleMapping?: Record<string, string>;
   /** When false, skip automatic resource creation (manual save mode) */
@@ -62,11 +61,7 @@ export interface ExamplesProps {
   // Legacy props for backward compatibility
   exampleIds?: string[];
   suggestions?: string[]; // History suggestions for autocomplete (legacy)
-  // AI diff view props
   aiExampleResources?: Pick<ExampleResourceItem, "id" | "example">[] | null;
-  onAccept?: () => void;
-  onReject?: () => void;
-  onGenerationComplete?: () => void;
 }
 
 export function Examples({
@@ -88,18 +83,13 @@ export function Examples({
   showAiGenerate = false,
   createExamplesAction,
   onGenerate,
-  isGenerating: _isGenerating = false,
   exampleMapping = {},
   isAutosaveEnabled = true,
   registerFlush,
   // Legacy props for backward compatibility
   exampleIds,
   suggestions = [],
-  // AI diff view props (deprecated — handled by useResourceAi hook)
   aiExampleResources: _aiExampleResources,
-  onAccept: _onAccept,
-  onReject: _onReject,
-  onGenerationComplete: _onGenerationComplete,
 }: ExamplesProps) {
   // Use standardized props with fallback to legacy props
   const ids = useMemo(

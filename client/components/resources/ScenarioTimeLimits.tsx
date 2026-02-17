@@ -74,7 +74,6 @@ export interface ScenarioTimeLimitsProps {
     | undefined;
   onTimeLimitIdsChange?: (ids: string[]) => void;
   onGenerate?: () => void | Promise<void>;
-  isGenerating?: boolean;
   showAiGenerate?: boolean; // Whether to show AI generate button (computed server-side)
   /** When false, skip automatic resource creation (manual save mode) */
   isAutosaveEnabled?: boolean;
@@ -82,16 +81,12 @@ export interface ScenarioTimeLimitsProps {
   registerFlush?: (
     flush: () => Promise<{ scenario_time_limit_ids: string[] } | void>,
   ) => void;
-  // AI diff view props
   aiScenarioTimeLimitResources?:
     | Pick<
         ScenarioTimeLimitResourceItem,
         "id" | "scenario_id" | "time_limit_seconds"
       >[]
     | null;
-  onAccept?: () => void;
-  onReject?: () => void;
-  onGenerationComplete?: () => void;
 }
 
 export function ScenarioTimeLimits({
@@ -113,11 +108,7 @@ export function ScenarioTimeLimits({
   showAiGenerate = false,
   isAutosaveEnabled = true,
   registerFlush,
-  // AI diff view props
   aiScenarioTimeLimitResources,
-  onAccept,
-  onReject,
-  onGenerationComplete,
 }: ScenarioTimeLimitsProps) {
   const show = show_scenario_time_limits ?? false;
   const timeLimitResources = useMemo(
@@ -369,14 +360,12 @@ export function ScenarioTimeLimits({
       }
     });
     clearAi();
-    onAccept?.();
-  }, [effectiveAiScenarioTimeLimitResources, handleChange, clearAi, onAccept]);
+  }, [effectiveAiScenarioTimeLimitResources, handleChange, clearAi]);
 
   // Reject AI suggestion - just clear the pending state
   const handleReject = useCallback(() => {
     clearAi();
-    onReject?.();
-  }, [clearAi, onReject]);
+  }, [clearAi]);
 
   if (!show || scenario_ids.length === 0) {
     return null;

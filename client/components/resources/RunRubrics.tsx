@@ -45,11 +45,7 @@ export interface RunRubricsProps {
   onChange: (runId: string, rubricIds: string[]) => void;
   showAiGenerate?: boolean;
   onGenerate?: () => void | Promise<void>;
-  isGenerating?: boolean;
-  // AI diff view props
   aiRubricResources?: Pick<RunRubricsResourceItem, "id" | "rubric_id">[] | null;
-  onAccept?: () => void;
-  onReject?: () => void;
 }
 
 export function RunRubrics({
@@ -64,11 +60,7 @@ export function RunRubrics({
   onChange,
   showAiGenerate: _showAiGenerate = false,
   onGenerate: _onGenerate,
-  isGenerating: _isGenerating = false,
-  // AI diff view props (deprecated - now from useResourceAi hook)
   aiRubricResources: _aiRubricResources,
-  onAccept: _onAccept,
-  onReject: _onReject,
 }: RunRubricsProps) {
   // AI suggestion handling via shared hook (accumulate mode: each event = one rubric)
   const { aiSuggestions, clear: clearAi } = useResourceAi({

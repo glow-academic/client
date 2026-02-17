@@ -56,16 +56,12 @@ export interface EndpointsProps {
     | ((input: CreateDraftEndpointsIn) => Promise<CreateDraftEndpointsOut>)
     | undefined;
   onGenerate?: () => void | Promise<void>;
-  isGenerating?: boolean;
   showAiGenerate?: boolean; // Whether to show AI generate button (computed server-side)
   /** When false, skip automatic resource creation (manual save mode) */
   isAutosaveEnabled?: boolean;
   /** Register a flush callback with parent for manual save - returns created ID */
   registerFlush?: (flush: () => Promise<{ endpoints_id: string | null } | void>) => void;
-  // AI diff view props
   aiEndpointResources?: Pick<EndpointResourceItem, "id" | "base_url">[] | null;
-  onAccept?: () => void;
-  onReject?: () => void;
 }
 
 export function Endpoints({
@@ -87,13 +83,9 @@ export function Endpoints({
   create_tool_id,
   createEndpointsAction,
   onGenerate,
-  isGenerating: _isGenerating = false,
   showAiGenerate = false,
   registerFlush,
-  // AI diff view props (deprecated — kept for interface compat)
   aiEndpointResources: _aiEndpointResources,
-  onAccept: _onAccept,
-  onReject: _onReject,
 }: EndpointsProps) {
   const ids = useMemo(() => endpoint_ids ?? [], [endpoint_ids]);
   const show = show_endpoints ?? false;

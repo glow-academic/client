@@ -50,7 +50,6 @@ export interface KeysProps {
   multiSelect?: boolean; // Whether to use multi-select mode
   onGenerate?: () => void | Promise<void>;
   showAiGenerate?: boolean; // Whether to show AI generate button (computed server-side)
-  isGenerating?: boolean;
   label?: string;
   id?: string;
   required?: boolean;
@@ -60,10 +59,7 @@ export interface KeysProps {
   createKeysAction?:
     | ((input: CreateDraftKeysIn) => Promise<CreateDraftKeysOut>)
     | undefined;
-  // AI diff view props
   aiKeyResources?: Pick<KeyResourceItem, "id" | "name">[] | null;
-  onAccept?: () => void;
-  onReject?: () => void;
   /** When false, skip automatic resource creation (manual save mode) */
   isAutosaveEnabled?: boolean;
   /** Register a flush callback with parent for manual save - returns created ID */
@@ -83,7 +79,6 @@ export function Keys({
   multiSelect = false,
   onGenerate,
   showAiGenerate = false,
-  isGenerating: _isGenerating = false,
   label = "Key",
   id = "key",
   required = false,
@@ -91,10 +86,7 @@ export function Keys({
   group_id,
   create_tool_id,
   createKeysAction,
-  // AI diff view props (deprecated — kept for interface compat)
   aiKeyResources: _aiKeyResources,
-  onAccept: _onAccept,
-  onReject: _onReject,
   isAutosaveEnabled = true,
   registerFlush,
 }: KeysProps) {

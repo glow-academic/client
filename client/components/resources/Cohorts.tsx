@@ -50,13 +50,9 @@ export interface CohortsProps {
   emptyMessage?: string;
   group_id?: string | null;
   onGenerate?: () => void | Promise<void>;
-  isGenerating?: boolean;
   showAiGenerate?: boolean; // Whether to show AI generate button (computed server-side)
   cohortIds?: string[];
-  // AI diff view props
   aiCohortResources?: Pick<CohortsResourceItem, "cohort_id" | "title">[] | null;
-  onAccept?: () => void;
-  onReject?: () => void;
 }
 
 export function Cohorts({

@@ -1157,7 +1157,6 @@ function ModelComponent({
                     setFormState((prev) => ({ ...prev, name_id: id }))
                   }
                   onGenerate={handleGenerateName}
-                  isGenerating={isGenerating("names")}
                   placeholder="e.g., GPT-4"
                   defaultName="New Model"
                   required={s?.names?.required ?? true}
@@ -1216,7 +1215,6 @@ function ModelComponent({
                     setFormState((prev) => ({ ...prev, description_id: id }))
                   }
                   onGenerate={handleGenerateDescription}
-                  isGenerating={isGenerating("descriptions")}
                   placeholder="Enter a brief description"
                   required={s?.descriptions?.required ?? false}
                   group_id={s?.group_id ?? null}

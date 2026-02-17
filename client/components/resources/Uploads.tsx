@@ -55,7 +55,6 @@ export interface UploadsProps {
     | ((input: CreateDraftUploadsIn) => Promise<CreateDraftUploadsOut>)
     | undefined;
   onGenerate?: () => void | Promise<void>;
-  isGenerating?: boolean;
   showAiGenerate?: boolean; // Whether to show AI generate button (computed server-side)
   finalizeUploadAction?: (uploadId: string) => Promise<{
     success: boolean;
@@ -67,10 +66,7 @@ export interface UploadsProps {
   isAutosaveEnabled?: boolean;
   /** Register a flush callback with parent for manual save - returns created ID */
   registerFlush?: (flush: () => Promise<FlushResult>) => void;
-  // AI diff view props
   aiUploadResources?: Array<{ id?: string | null; file_path?: string | null }> | null;
-  onAccept?: () => void;
-  onReject?: () => void;
 }
 
 export function Uploads({
@@ -90,16 +86,12 @@ export function Uploads({
   create_tool_id,
   createUploadsAction,
   onGenerate,
-  isGenerating: _isGenerating = false,
   showAiGenerate = false,
   finalizeUploadAction,
   searchTerm = "",
   isAutosaveEnabled: _isAutosaveEnabled = true,
   registerFlush,
-  // AI diff view props (deprecated — kept for interface compat)
   aiUploadResources: _aiUploadResources,
-  onAccept: _onAccept,
-  onReject: _onReject,
 }: UploadsProps) {
   const ids = useMemo(() => upload_ids ?? [], [upload_ids]);
   const show = show_uploads ?? true;

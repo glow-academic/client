@@ -71,7 +71,6 @@ export interface StandardGroupsProps {
       ) => Promise<CreateDraftStandardGroupsOut>)
     | undefined;
   onGenerate?: () => void | Promise<void>;
-  isGenerating?: boolean;
   showAiGenerate?: boolean; // Whether to show AI generate button (computed server-side)
   /** When false, skip automatic resource creation (manual save mode) */
   isAutosaveEnabled?: boolean;
@@ -79,10 +78,7 @@ export interface StandardGroupsProps {
   registerFlush?: (flush: () => Promise<FlushResult>) => void;
   // Legacy props for backward compatibility
   standardGroupIds?: string[];
-  // AI diff view props
   aiStandardGroupResources?: Pick<StandardGroupResourceItem, "standard_group_id" | "name">[] | null;
-  onAccept?: () => void;
-  onReject?: () => void;
 }
 
 export function StandardGroups({

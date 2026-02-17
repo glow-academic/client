@@ -43,11 +43,8 @@ export interface RoutesProps {
   group_id?: string | null;
   // AI diff props (deprecated - now handled by useResourceAi hook)
   aiRouteResources?: Pick<RouteResourceItem, "id" | "route">[] | null;
-  onAccept?: () => void;
-  onReject?: () => void;
   showAiGenerate?: boolean;
   onGenerate?: () => void | Promise<void>;
-  isGenerating?: boolean;
 }
 
 export function Routes({

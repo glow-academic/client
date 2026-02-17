@@ -53,12 +53,8 @@ export interface SlugsProps {
     | ((input: CreateDraftSlugsIn) => Promise<CreateDraftSlugsOut>)
     | undefined;
   onGenerate?: () => void | Promise<void>;
-  isGenerating?: boolean;
   showAiGenerate?: boolean; // Whether to show AI generate button (computed server-side)
-  // AI diff view props
   aiSlugResources?: Array<{ id?: string | null; value?: string | null }> | null;
-  onAccept?: () => void;
-  onReject?: () => void;
   /** When false, skip automatic resource creation (manual save mode) */
   isAutosaveEnabled?: boolean;
   /** Register a flush callback with parent for manual save - returns created IDs */

@@ -50,12 +50,8 @@ export interface StandardsProps {
   description?: string;
   group_id?: string | null; // Group ID for linking resources
   onGenerate?: () => void | Promise<void>;
-  isGenerating?: boolean;
   showAiGenerate?: boolean; // Whether to show AI generate button (computed server-side)
-  // AI diff view props
   aiStandardResources?: Pick<StandardResourceItem, "standard_id" | "name">[] | null;
-  onAccept?: () => void;
-  onReject?: () => void;
 }
 
 export function Standards({

@@ -44,11 +44,8 @@ export interface RubricsProps {
   group_id?: string | null;
   // AI diff props (deprecated - now handled by useResourceAi hook)
   aiRubricResources?: Pick<RubricsResourceItem, "id" | "name">[] | null;
-  onAccept?: () => void;
-  onReject?: () => void;
   showAiGenerate?: boolean;
   onGenerate?: () => void | Promise<void>;
-  isGenerating?: boolean;
 }
 
 export function Rubrics({

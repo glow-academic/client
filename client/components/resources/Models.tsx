@@ -43,14 +43,9 @@ export interface ModelsProps {
   showSelectedFilter?: boolean;
   onShowSelectedChange?: (value: boolean) => void;
   group_id?: string | null;
-  // AI diff view props
   aiModelResources?: Array<Pick<ModelResourceItem, "id" | "name">> | null;
-  onAccept?: () => void;
-  onReject?: () => void;
-  onGenerationComplete?: () => void;
   showAiGenerate?: boolean;
   onGenerate?: () => void | Promise<void>;
-  isGenerating?: boolean;
 }
 
 export function Models({
@@ -70,14 +65,9 @@ export function Models({
   showSelectedFilter = false,
   onShowSelectedChange,
   group_id,
-  // AI diff view props (deprecated — kept for interface compat)
   aiModelResources: _aiModelResources,
-  onAccept: _onAccept,
-  onReject: _onReject,
-  onGenerationComplete: _onGenerationComplete,
   showAiGenerate: _showAiGenerate = false,
   onGenerate: _onGenerate,
-  isGenerating: _isGenerating = false,
 }: ModelsProps) {
   const resourceId = model_id ?? null;
   const show = show_models ?? true;

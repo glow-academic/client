@@ -48,16 +48,12 @@ export interface SimulationsProps {
   description?: string;
   group_id?: string | null; // Group ID for linking resources
   onGenerate?: () => void | Promise<void>;
-  isGenerating?: boolean;
   showAiGenerate?: boolean; // Whether to show AI generate button (computed server-side)
   searchTerm?: string; // Search term for filtering simulations
   showSelectedFilter?: boolean; // Whether to show only selected simulations
   // Legacy props for backward compatibility
   simulationIds?: string[];
-  // AI diff view props
   aiSimulationResources?: Pick<SimulationResourceItem, "simulation_id" | "name">[] | null;
-  onAccept?: () => void;
-  onReject?: () => void;
 }
 
 export function Simulations({

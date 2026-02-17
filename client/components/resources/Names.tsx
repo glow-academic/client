@@ -35,7 +35,6 @@ export interface NamesProps {
   disabled?: boolean; // Based on can_edit flag
   onNameIdChange: (nameId: string | null) => void; // Update name_id in parent form state
   onGenerate?: () => Promise<void>;
-  isGenerating?: boolean;
   placeholder?: string;
   required?: boolean;
   id?: string;
@@ -52,19 +51,6 @@ export interface NamesProps {
   isAutosaveEnabled?: boolean;
   /** Register a flush callback with parent for manual save - returns created ID */
   registerFlush?: (flush: () => Promise<{ name_id: string | null } | void>) => void;
-  // Legacy props for backward compatibility
-  nameResource?: {
-    id: string;
-    name: string;
-    generated?: boolean | null;
-  } | null;
-  nameId?: string | null;
-  suggestions?: string[];
-  // AI diff view props
-  aiResource?: { id?: string | null; name?: string | null } | null | undefined;
-  onAccept?: () => void;
-  onReject?: () => void;
-  onGenerationComplete?: () => void;
 }
 
 export function Names({
@@ -76,7 +62,6 @@ export function Names({
   disabled = false,
   onNameIdChange,
   onGenerate,
-  isGenerating: _isGenerating = false,
   placeholder = "Enter name",
   required = false,
   id = "name",
@@ -84,28 +69,18 @@ export function Names({
   defaultName,
   hideDescription = false,
   group_id,
-  create_tool_id: _create_tool_id,
+  create_tool_id,
   showAiGenerate = false,
   createNamesAction,
   isAutosaveEnabled = true,
   registerFlush,
-  // Legacy props for backward compatibility
-  nameResource,
-  nameId: _nameId,
-  suggestions,
-  // AI diff view props
-  aiResource: _aiResource,
-  onAccept: _onAccept,
-  onReject: _onReject,
-  onGenerationComplete: _onGenerationComplete,
 }: NamesProps) {
-  // Use standardized props with fallback to legacy props
-  const resource = name_resource ?? nameResource ?? null;
-  const resourceId = name_id ?? _nameId ?? null;
+  const resource = name_resource ?? null;
+  const resourceId = name_id ?? null;
   const show = show_name ?? true;
   const suggestionsList = useMemo(
-    () => name_suggestions ?? suggestions ?? [],
-    [name_suggestions, suggestions]
+    () => name_suggestions ?? [],
+    [name_suggestions]
   );
   const namesArray = useMemo(() => names ?? [], [names]);
 
@@ -150,6 +125,7 @@ export function Names({
             group_id: group_id,
             name: internalValue,
             mcp: false,
+            tool_id: create_tool_id ?? undefined,
           },
         });
         if (result.name_id) {

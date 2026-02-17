@@ -59,15 +59,11 @@ export interface ValuesProps {
     | undefined;
   onGenerate?: () => void | Promise<void>;
   showAiGenerate?: boolean; // Whether to show AI generate button (computed server-side)
-  isGenerating?: boolean;
   /** When false, skip automatic resource creation (manual save mode) */
   isAutosaveEnabled?: boolean;
   /** Register a flush callback with parent for manual save - returns created IDs */
   registerFlush?: (flush: () => Promise<FlushResult>) => void;
-  // AI diff view props
   aiValueResources?: Pick<ValueResourceItem, "id" | "value">[] | null;
-  onAccept?: () => void;
-  onReject?: () => void;
 }
 
 export function Values({

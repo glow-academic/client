@@ -55,11 +55,7 @@ export interface RoleRoutesProps {
   group_id?: string | null;
   showAiGenerate?: boolean;
   onGenerate?: () => void | Promise<void>;
-  isGenerating?: boolean;
-  // AI diff view props
   aiRoleRouteResources?: Pick<RoleRoutesResourceItem, "id" | "role_id" | "route_id">[] | null;
-  onAccept?: () => void;
-  onReject?: () => void;
 }
 
 export function RoleRoutes({
@@ -79,11 +75,7 @@ export function RoleRoutes({
   group_id,
   showAiGenerate: _showAiGenerate = false,
   onGenerate: _onGenerate,
-  isGenerating: _isGenerating = false,
-  // AI diff view props (deprecated - now from useResourceAi hook)
   aiRoleRouteResources: _aiRoleRouteResources,
-  onAccept: _onAccept,
-  onReject: _onReject,
 }: RoleRoutesProps) {
   // AI suggestion handling via shared hook (accumulate mode: each event = one role route)
   const { aiSuggestions, clear: clearAi } = useResourceAi({

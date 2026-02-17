@@ -45,7 +45,6 @@ export interface TemperatureLevelsProps {
     temperatureLevelId: string | null
   ) => void; // Update temperature_level_id in parent form state
   onGenerate?: () => Promise<void>;
-  isGenerating?: boolean;
   showAiGenerate?: boolean; // Whether to show AI generate button (computed server-side)
   label?: string;
   placeholder?: string;
@@ -57,13 +56,10 @@ export interface TemperatureLevelsProps {
   onSearchChange?: (term: string) => void;
   showSlider?: boolean; // Whether to show slider for visual feedback
   group_id?: string | null; // Group ID for linking resources
-  // AI diff view props
   aiTemperatureLevelResources?: Array<{
     temperature_level_id?: string | null;
     name?: string | null;
   }> | null; // AI diff - fields don't map to resource item type
-  onAccept?: () => void;
-  onReject?: () => void;
 }
 
 export function TemperatureLevels({
