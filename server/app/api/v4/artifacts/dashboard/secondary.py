@@ -8,7 +8,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from app.api.v4.artifacts.dashboard.permissions import compute_secondary_metrics_v2
 from app.api.v4.artifacts.dashboard.shared import (
     build_simulation_meta,
-    fetch_simulation_facts_data,
+    fetch_chats_data,
     fetch_thresholds,
     parse_dashboard_filters,
 )
@@ -58,8 +58,8 @@ async def get_dashboard_secondary(
 
         filters = parse_dashboard_filters(request)
 
-        # Single MV call: fetch simulation facts
-        sim_facts_response = await fetch_simulation_facts_data(
+        # Single MV call: fetch chats data
+        sim_facts_response = await fetch_chats_data(
             pool=pool,
             request=request,
             filters=filters,
@@ -75,7 +75,11 @@ async def get_dashboard_secondary(
 
         # Collect unique IDs for hydration
         persona_ids = list(
-            {item.persona_id for item in sim_facts_response.items if item.persona_id}
+            {
+                item.user_persona_id
+                for item in sim_facts_response.items
+                if item.user_persona_id
+            }
         )
         simulation_ids = list(
             {

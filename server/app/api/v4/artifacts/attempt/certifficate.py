@@ -19,7 +19,7 @@ from app.api.v4.auth.profile import get_auth_profile_internal
 from app.api.v4.resources.cohorts.get import get_cohorts_internal
 from app.api.v4.resources.profiles.get import get_profiles_internal
 from app.api.v4.resources.simulations.get import get_simulations_internal
-from app.api.v4.views.analytics.profile_facts.get import get_profile_facts_internal
+from app.api.v4.views.chat.get import get_chats_internal
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.main import get_db, get_pool
 from app.utils.logging.db_logger import get_logger
@@ -59,7 +59,7 @@ async def _compute_certificate_scores(
     """
     # Pass 1 — MV fetch
     async with pool.acquire() as conn:
-        facts = await get_profile_facts_internal(
+        facts = await get_chats_internal(
             conn=conn,
             profile_id=profile_id,
             attempt_type="general",

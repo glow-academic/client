@@ -13,12 +13,8 @@ import asyncpg
 from app.api.v4.artifacts.dashboard.types import DashboardSectionRequest
 from app.api.v4.resources.rubrics.get import get_rubrics_batch_internal
 from app.api.v4.resources.standard_groups.get import get_standard_groups_internal
-from app.api.v4.views.analytics.profile_facts.types import GetProfileFactsResponse
-from app.api.v4.views.analytics.rubric_facts.types import GetRubricFactsResponse
-from app.api.v4.views.analytics.scenario_facts.types import GetScenarioFactsResponse
-from app.api.v4.views.analytics.simulation_facts.types import (
-    GetSimulationFactsResponse,
-)
+from app.api.v4.views.chat.rubric_scores import RubricScoresResponse
+from app.api.v4.views.chat.types import GetChatsResponse
 from app.sql.types import GetActiveSettingsSqlParams, GetActiveSettingsSqlRow
 from app.utils.sql_helper import execute_sql_typed
 
@@ -114,71 +110,17 @@ async def fetch_thresholds(
     return thresholds
 
 
-async def fetch_rubric_facts_data(
+async def fetch_chats_data(
     pool: asyncpg.Pool,
     request: DashboardSectionRequest,
     filters: ParsedFilters,
     bypass_cache: bool = False,
-) -> "GetRubricFactsResponse":
-    """Fetch rubric facts from mv_rubric_facts for primary section."""
-    from app.api.v4.views.analytics.rubric_facts.get import get_rubric_facts_internal
+) -> "GetChatsResponse":
+    """Fetch chat data from mv_chats — unified replacement for all 4 facts fetchers."""
+    from app.api.v4.views.chat.get import get_chats_internal
 
     async with pool.acquire() as c:
-        return await get_rubric_facts_internal(
-            conn=c,
-            profile_id=request.target_profile_id,
-            cohort_ids=filters.cohort_ids,
-            department_ids=request.department_ids,
-            attempt_type=filters.attempt_type,
-            is_archived=filters.is_archived,
-            date_from=filters.parsed_start_date.date()
-            if filters.parsed_start_date
-            else None,
-            date_to=filters.parsed_end_date.date() if filters.parsed_end_date else None,
-            bypass_cache=bypass_cache,
-        )
-
-
-async def fetch_simulation_facts_data(
-    pool: asyncpg.Pool,
-    request: DashboardSectionRequest,
-    filters: ParsedFilters,
-    bypass_cache: bool = False,
-) -> "GetSimulationFactsResponse":
-    """Fetch simulation facts from mv_attempt_facts for secondary section."""
-    from app.api.v4.views.analytics.simulation_facts.get import (
-        get_simulation_facts_internal,
-    )
-
-    async with pool.acquire() as c:
-        return await get_simulation_facts_internal(
-            conn=c,
-            profile_id=request.target_profile_id,
-            cohort_ids=filters.cohort_ids,
-            department_ids=request.department_ids,
-            attempt_type=filters.attempt_type,
-            is_archived=filters.is_archived,
-            date_from=filters.parsed_start_date.date()
-            if filters.parsed_start_date
-            else None,
-            date_to=filters.parsed_end_date.date() if filters.parsed_end_date else None,
-            bypass_cache=bypass_cache,
-        )
-
-
-async def fetch_profile_facts_data(
-    pool: asyncpg.Pool,
-    request: DashboardSectionRequest,
-    filters: ParsedFilters,
-    bypass_cache: bool = False,
-) -> "GetProfileFactsResponse":
-    """Fetch profile facts from mv_profile_facts for header/leaderboard/reports."""
-    from app.api.v4.views.analytics.profile_facts.get import (
-        get_profile_facts_internal,
-    )
-
-    async with pool.acquire() as c:
-        return await get_profile_facts_internal(
+        return await get_chats_internal(
             conn=c,
             profile_id=request.target_profile_id,
             cohort_ids=filters.cohort_ids,
@@ -194,19 +136,17 @@ async def fetch_profile_facts_data(
         )
 
 
-async def fetch_scenario_facts_data(
+async def fetch_rubric_scores_data(
     pool: asyncpg.Pool,
     request: DashboardSectionRequest,
     filters: ParsedFilters,
     bypass_cache: bool = False,
-) -> "GetScenarioFactsResponse":
-    """Fetch scenario facts from mv_scenario_facts for footer section."""
-    from app.api.v4.views.analytics.scenario_facts.get import (
-        get_scenario_facts_internal,
-    )
+) -> "RubricScoresResponse":
+    """Fetch rubric scores — replaces fetch_rubric_facts_data."""
+    from app.api.v4.views.chat.rubric_scores import get_rubric_scores_internal
 
     async with pool.acquire() as c:
-        return await get_scenario_facts_internal(
+        return await get_rubric_scores_internal(
             conn=c,
             profile_id=request.target_profile_id,
             cohort_ids=filters.cohort_ids,

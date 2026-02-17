@@ -13,10 +13,14 @@ from app.api.v4.artifacts.dashboard.types import (
     DashboardPrimaryMetrics,
     DashboardSecondaryMetrics,
 )
-from app.api.v4.views.analytics.profile_facts.types import ProfileFactsItem
-from app.api.v4.views.analytics.rubric_facts.types import RubricFactsItem
-from app.api.v4.views.analytics.scenario_facts.types import ScenarioFactsItem
-from app.api.v4.views.analytics.simulation_facts.types import SimulationFactsItem
+from app.api.v4.views.chat.rubric_scores import RubricScoreItem
+from app.api.v4.views.chat.types import ChatItem
+
+# Compat aliases for old type annotations — all now use ChatItem
+ProfileFactsItem = ChatItem
+ScenarioFactsItem = ChatItem
+SimulationFactsItem = ChatItem
+RubricFactsItem = RubricScoreItem
 
 # Type aliases for removed analytics types (used by deprecated v1 functions below)
 AttemptFactsItem = Any

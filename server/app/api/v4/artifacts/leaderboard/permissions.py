@@ -21,7 +21,7 @@ from app.api.v4.artifacts.leaderboard.types import (
     LeaderboardSections,
     LeaderboardSectionStatus,
 )
-from app.api.v4.views.analytics.profile_facts.types import ProfileFactsItem
+from app.api.v4.views.chat.types import ChatItem
 
 # Type aliases for deprecated v1 types (modules deleted in DELETE OLD VIEWS)
 AttemptFactsItem = Any
@@ -503,7 +503,7 @@ def build_leaderboard_sections(
 
 
 # ---------------------------------------------------------------------------
-# v2 functions — operate on ProfileFactsItem (chat-grain from mv_profile_facts)
+# v2 functions — operate on ChatItem (chat-grain from mv_chats)
 # ---------------------------------------------------------------------------
 
 
@@ -515,22 +515,24 @@ def _format_date(d: date | None) -> str | None:
 
 
 def build_leaderboard_rows_v2(
-    profile_facts_items: list[ProfileFactsItem],
+    chat_items: list[ChatItem],
     profile_name_by_id: dict[str, str | None] | None = None,
     sort_by: str = "highest_score",
     sort_order: str = "desc",
     rank_offset: int = 0,
+    message_stats_map: dict | None = None,
 ) -> list[LeaderboardDataRow]:
-    """Build leaderboard rows from chat-grain profile facts (mv_profile_facts).
+    """Build leaderboard rows from chat-grain items (mv_chats).
 
     Aggregates chat-level rows to profile-level metrics entirely in Python.
     """
     rows: list[LeaderboardDataRow] = []
     profile_name_by_id = profile_name_by_id or {}
+    message_stats_map = message_stats_map or {}
 
     # Group items by profile_id
-    items_by_profile: dict[str, list[ProfileFactsItem]] = defaultdict(list)
-    for item in profile_facts_items:
+    items_by_profile: dict[str, list[ChatItem]] = defaultdict(list)
+    for item in chat_items:
         items_by_profile[str(item.profile_id)].append(item)
 
     for profile_id, items in items_by_profile.items():
@@ -547,18 +549,23 @@ def build_leaderboard_rows_v2(
         highest_score = max(grade_values) if grade_values else None
         avg_score = mean(grade_values) if grade_values else None
 
-        msg_counts = [item.num_messages_total for item in items]
+        msg_counts = [
+            message_stats_map[item.chat_id].num_messages_total
+            for item in items
+            if item.chat_id in message_stats_map
+        ]
         avg_messages_per_session = mean(msg_counts) if msg_counts else None
 
         response_secs = [
-            item.avg_response_sec for item in items if item.avg_response_sec is not None
+            message_stats_map[item.chat_id].avg_response_sec
+            for item in items
+            if item.chat_id in message_stats_map
+            and message_stats_map[item.chat_id].avg_response_sec is not None
         ]
         avg_persona_response_sec = mean(response_secs) if response_secs else None
 
         time_values = [
-            item.time_taken_seconds
-            for item in items
-            if item.time_taken_seconds is not None
+            item.grade_time_taken for item in items if item.grade_time_taken is not None
         ]
         total_time_minutes = sum(time_values) / 60.0 if time_values else None
 
@@ -585,9 +592,9 @@ def build_leaderboard_rows_v2(
         )
 
         passed_with_time = [
-            item.time_taken_seconds / 60.0
+            item.grade_time_taken / 60.0
             for item in items
-            if item.passed and item.time_taken_seconds is not None
+            if item.grade_passed and item.grade_time_taken is not None
         ]
         quickest_pass_minutes = min(passed_with_time) if passed_with_time else None
 
@@ -620,11 +627,11 @@ def build_leaderboard_rows_v2(
         chat_message_points = [
             _json_point(
                 date=_format_date(item.attempt_date),
-                value=item.num_messages_total,
+                value=message_stats_map[item.chat_id].num_messages_total,
                 chat_id=str(item.chat_id),
             )
             for item in sorted_items
-            if item.num_messages_total is not None
+            if item.chat_id in message_stats_map
         ]
         chat_message_trend = list(chat_message_points[-12:])
 
@@ -632,8 +639,11 @@ def build_leaderboard_rows_v2(
         response_points = [
             _json_point(
                 date=_format_date(item.attempt_date),
-                value=int(round(item.avg_response_sec))
-                if item.avg_response_sec is not None
+                value=int(round(message_stats_map[item.chat_id].avg_response_sec))
+                if (
+                    item.chat_id in message_stats_map
+                    and message_stats_map[item.chat_id].avg_response_sec is not None
+                )
                 else 0,
                 chat_id=str(item.chat_id),
             )
@@ -645,8 +655,8 @@ def build_leaderboard_rows_v2(
             _json_point(
                 date=_format_date(item.attempt_date),
                 value=(
-                    int(round((item.time_taken_seconds or 0) / 60.0))
-                    if item.time_taken_seconds is not None
+                    int(round((item.grade_time_taken or 0) / 60.0))
+                    if item.grade_time_taken is not None
                     else 0
                 ),
                 chat_id=str(item.chat_id),
@@ -680,11 +690,11 @@ def build_leaderboard_rows_v2(
         quickest_points = [
             _json_point(
                 date=_format_date(item.attempt_date),
-                value=int(round((item.time_taken_seconds or 0) / 60.0)),
+                value=int(round((item.grade_time_taken or 0) / 60.0)),
                 chat_id=str(item.chat_id),
             )
             for item in sorted_items
-            if item.passed and item.time_taken_seconds is not None
+            if item.grade_passed and item.grade_time_taken is not None
         ]
         quickest_trend = list(quickest_points[-12:])
 
@@ -827,22 +837,22 @@ def build_leaderboard_rows_v2(
 
 
 def _compute_header_metrics_v2(
-    profile_facts_items: list[ProfileFactsItem],
+    chat_items: list[ChatItem],
 ) -> LeaderboardHeaderMetrics:
-    """Compute header metrics from chat-grain profile facts."""
-    total_profiles = len({item.profile_id for item in profile_facts_items})
-    total_attempts = len({item.attempt_id for item in profile_facts_items})
+    """Compute header metrics from chat-grain items."""
+    total_profiles = len({item.profile_id for item in chat_items})
+    total_attempts = len({item.attempt_id for item in chat_items})
 
     grade_values = [
         float(item.grade_percent)
-        for item in profile_facts_items
+        for item in chat_items
         if item.grade_percent is not None
     ]
     average_score = round(mean(grade_values), 2) if grade_values else None
 
     perfect_scores = sum(
         1
-        for item in profile_facts_items
+        for item in chat_items
         if item.grade_percent is not None and item.grade_percent >= 100
     )
 
@@ -855,17 +865,17 @@ def _compute_header_metrics_v2(
 
 
 def build_leaderboard_sections_v2(
-    profile_facts_items: list[ProfileFactsItem],
+    chat_items: list[ChatItem],
     rows: list[LeaderboardDataRow] | None = None,
 ) -> LeaderboardSections:
-    """Build leaderboard section skeleton from mv_profile_facts chat-grain rows."""
+    """Build leaderboard section skeleton from mv_chats chat-grain rows."""
     row_data = rows or []
-    has_data = bool(profile_facts_items)
+    has_data = bool(chat_items)
     return LeaderboardSections(
-        header_metrics=_compute_header_metrics_v2(profile_facts_items),
-        rankings=_section(has_data, "Derived from mv_profile_facts"),
-        accolades=_section(has_data, "Derived from mv_profile_facts rank metrics"),
-        trends=_section(has_data, "Derived from mv_profile_facts"),
-        filters=_section(has_data, "Filter IDs sourced from mv_profile_facts"),
+        header_metrics=_compute_header_metrics_v2(chat_items),
+        rankings=_section(has_data, "Derived from mv_chats"),
+        accolades=_section(has_data, "Derived from mv_chats rank metrics"),
+        trends=_section(has_data, "Derived from mv_chats"),
+        filters=_section(has_data, "Filter IDs sourced from mv_chats"),
         accolade_winners=compute_accolade_winners(row_data),
     )

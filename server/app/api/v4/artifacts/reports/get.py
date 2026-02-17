@@ -24,7 +24,7 @@ from app.api.v4.resources.cohorts.get import get_cohorts_internal
 from app.api.v4.resources.profiles.get import get_profiles_internal
 from app.api.v4.resources.scenarios.get import get_scenarios_internal
 from app.api.v4.resources.simulations.get import get_simulations_internal
-from app.api.v4.views.analytics.profile_facts.get import get_profile_facts_internal
+from app.api.v4.views.chat.get import get_chats_internal
 from app.infra.v4.activity.audit import audit_activity
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
@@ -88,9 +88,9 @@ async def get_reports(
         else:
             attempt_type = None
 
-        # Fetch profile facts — single MV call
+        # Fetch chat facts — single MV call
         async with pool.acquire() as c:
-            profile_facts_result = await get_profile_facts_internal(
+            profile_facts_result = await get_chats_internal(
                 conn=c,
                 profile_id=request.target_profile_id,
                 cohort_ids=request.cohort_ids,

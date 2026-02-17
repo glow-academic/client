@@ -3111,7 +3111,7 @@ export interface paths {
          * Get Leaderboard
          * @description Get leaderboard artifact data.
          *
-         *     Fetches chat-grain rows from mv_profile_facts via get_profile_facts_internal()
+         *     Fetches chat-grain rows from mv_chats via get_chats_internal()
          *     and aggregates to profile-level leaderboard rows in Python.
          */
         post: operations["get_leaderboard_api_v4_artifacts_leaderboard_get_post"];
@@ -7993,6 +7993,29 @@ export interface paths {
          * @description Get call data from the materialized view.
          */
         post: operations["get_calls_api_v4_views_call_get_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/views/chat/get": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Chats
+         * @description Get chat data from mv_chats.
+         *
+         *     Unified endpoint replacing profile_facts, simulation_facts,
+         *     scenario_facts, and attempt_chats view endpoints.
+         */
+        post: operations["get_chats_api_v4_views_chat_get_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -21476,6 +21499,94 @@ export interface components {
             standard_ids?: string[] | null;
         };
         /**
+         * ChatItem
+         * @description Single chat row from mv_chats.
+         *
+         *     Unified type replacing ProfileFactsItem, SimulationFactsItem,
+         *     ScenarioFactsItem, and ChatViewItem.
+         */
+        ChatItem: {
+            /**
+             * Chat Id
+             * Format: uuid
+             */
+            chat_id: string;
+            /**
+             * Attempt Id
+             * Format: uuid
+             */
+            attempt_id: string;
+            /** Group Id */
+            group_id?: string | null;
+            /** Training Department Id */
+            training_department_id?: string | null;
+            /**
+             * Profile Id
+             * Format: uuid
+             */
+            profile_id: string;
+            /** Cohort Id */
+            cohort_id?: string | null;
+            /** Department Id */
+            department_id?: string | null;
+            /**
+             * Simulation Id
+             * Format: uuid
+             */
+            simulation_id: string;
+            /** Scenario Id */
+            scenario_id?: string | null;
+            /** User Persona Id */
+            user_persona_id?: string | null;
+            /** Rubric Id */
+            rubric_id?: string | null;
+            /** Grade Score */
+            grade_score?: number | null;
+            /** Grade Total Points */
+            grade_total_points?: number | null;
+            /** Grade Pass Points */
+            grade_pass_points?: number | null;
+            /** Grade Passed */
+            grade_passed?: boolean | null;
+            /** Grade Time Taken */
+            grade_time_taken?: number | null;
+            /**
+             * Completed
+             * @default false
+             */
+            completed: boolean;
+            /**
+             * Attempt Number
+             * @default 0
+             */
+            attempt_number: number;
+            /** Chat Created At */
+            chat_created_at?: string | null;
+            /** Attempt Date */
+            attempt_date?: string | null;
+            /** Attempt Type */
+            attempt_type?: string | null;
+            /**
+             * Is Archived
+             * @default false
+             */
+            is_archived: boolean;
+            /**
+             * Infinite Mode
+             * @default false
+             */
+            infinite_mode: boolean;
+            /**
+             * Num Messages Total
+             * @default 0
+             */
+            num_messages_total: number;
+            /** Avg Response Sec */
+            avg_response_sec?: number | null;
+            /** Document Ids */
+            document_ids?: string[];
+        };
+        /**
          * ChatViewItem
          * @description Single chat from the attempt chats view.
          *
@@ -26014,29 +26125,6 @@ export interface components {
              * @default 0
              */
             total_count: number;
-        };
-        /**
-         * GetChatsRequest
-         * @description Request for getting chat data.
-         */
-        GetChatsRequest: {
-            /**
-             * Attempt Id
-             * Format: uuid
-             * @description Attempt ID to fetch chats for
-             */
-            attempt_id: string;
-        };
-        /**
-         * GetChatsResponse
-         * @description Response containing chat data.
-         */
-        GetChatsResponse: {
-            /**
-             * Items
-             * @description Chat data items
-             */
-            items?: components["schemas"]["ChatViewItem"][];
         };
         /**
          * GetCohortApiRequest
@@ -47362,6 +47450,29 @@ export interface components {
             count: number;
         };
         /**
+         * GetChatsRequest
+         * @description Request for getting chat data.
+         */
+        app__api__v4__views__attempt__chats__types__GetChatsRequest: {
+            /**
+             * Attempt Id
+             * Format: uuid
+             * @description Attempt ID to fetch chats for
+             */
+            attempt_id: string;
+        };
+        /**
+         * GetChatsResponse
+         * @description Response containing chat data.
+         */
+        app__api__v4__views__attempt__chats__types__GetChatsResponse: {
+            /**
+             * Items
+             * @description Chat data items
+             */
+            items?: components["schemas"]["ChatViewItem"][];
+        };
+        /**
          * FilterOption
          * @description Filter option for dropdowns.
          */
@@ -47433,6 +47544,149 @@ export interface components {
             history_content?: string | null;
             /** Audio Id */
             audio_id?: string | null;
+        };
+        /**
+         * FilterOption
+         * @description Filter option for dropdowns.
+         */
+        app__api__v4__views__chat__types__FilterOption: {
+            /** Value */
+            value: string;
+            /** Label */
+            label: string;
+            /**
+             * Count
+             * @default 0
+             */
+            count: number;
+        };
+        /**
+         * GetChatsRequest
+         * @description Request for getting chats with filters and pagination.
+         */
+        app__api__v4__views__chat__types__GetChatsRequest: {
+            /**
+             * Profile Id
+             * @description Filter by profile ID
+             */
+            profile_id?: string | null;
+            /**
+             * Cohort Ids
+             * @description Filter by cohort IDs
+             */
+            cohort_ids?: string[] | null;
+            /**
+             * Department Ids
+             * @description Filter by department IDs
+             */
+            department_ids?: string[] | null;
+            /**
+             * Simulation Ids
+             * @description Filter by simulation IDs
+             */
+            simulation_ids?: string[] | null;
+            /**
+             * Scenario Ids
+             * @description Filter by scenario IDs
+             */
+            scenario_ids?: string[] | null;
+            /**
+             * Rubric Ids
+             * @description Filter by rubric IDs
+             */
+            rubric_ids?: string[] | null;
+            /**
+             * Attempt Id
+             * @description Filter by attempt ID
+             */
+            attempt_id?: string | null;
+            /**
+             * Attempt Type
+             * @description Filter by attempt type: 'general' | 'practice'
+             */
+            attempt_type?: string | null;
+            /**
+             * Is Archived
+             * @description Include archived attempts
+             * @default false
+             */
+            is_archived: boolean;
+            /**
+             * Date From
+             * @description Filter by date range start (inclusive)
+             */
+            date_from?: string | null;
+            /**
+             * Date To
+             * @description Filter by date range end (inclusive)
+             */
+            date_to?: string | null;
+            /**
+             * Sort By
+             * @description Sort field: 'date' | 'created_at'
+             * @default date
+             */
+            sort_by: string;
+            /**
+             * Sort Order
+             * @description Sort order: 'asc' | 'desc'
+             * @default desc
+             */
+            sort_order: string;
+            /**
+             * Page Limit
+             * @description Items per page
+             * @default 10000
+             */
+            page_limit: number;
+            /**
+             * Page Offset
+             * @description Pagination offset
+             * @default 0
+             */
+            page_offset: number;
+        };
+        /**
+         * GetChatsResponse
+         * @description Response with chat items and pagination info.
+         */
+        app__api__v4__views__chat__types__GetChatsResponse: {
+            /**
+             * Items
+             * @description Chat items
+             */
+            items?: components["schemas"]["ChatItem"][];
+            /**
+             * Total Count
+             * @description Total count before pagination
+             * @default 0
+             */
+            total_count: number;
+            /**
+             * Simulation Options
+             * @description Available simulation filter options
+             */
+            simulation_options?: components["schemas"]["app__api__v4__views__chat__types__FilterOption"][] | null;
+            /**
+             * Cohort Options
+             * @description Available cohort filter options
+             */
+            cohort_options?: components["schemas"]["app__api__v4__views__chat__types__FilterOption"][] | null;
+            /**
+             * Department Options
+             * @description Available department filter options
+             */
+            department_options?: components["schemas"]["app__api__v4__views__chat__types__FilterOption"][] | null;
+            /**
+             * Scenario Options
+             * @description Available scenario filter options
+             */
+            scenario_options?: components["schemas"]["app__api__v4__views__chat__types__FilterOption"][] | null;
+            /**
+             * Persona Options
+             * @description Available persona filter options
+             */
+            persona_options?: components["schemas"]["app__api__v4__views__chat__types__FilterOption"][] | null;
         };
         /**
          * MessageViewItem
@@ -61623,7 +61877,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["GetChatsRequest"];
+                "application/json": components["schemas"]["app__api__v4__views__attempt__chats__types__GetChatsRequest"];
             };
         };
         responses: {
@@ -61633,7 +61887,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["GetChatsResponse"];
+                    "application/json": components["schemas"]["app__api__v4__views__attempt__chats__types__GetChatsResponse"];
                 };
             };
             /** @description Validation Error */
@@ -62417,6 +62671,43 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["GetCallListViewResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_chats_api_v4_views_chat_get_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["app__api__v4__views__chat__types__GetChatsRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["app__api__v4__views__chat__types__GetChatsResponse"];
                 };
             };
             /** @description Validation Error */

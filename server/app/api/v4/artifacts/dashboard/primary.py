@@ -8,7 +8,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from app.api.v4.artifacts.dashboard.permissions import compute_primary_metrics_v2
 from app.api.v4.artifacts.dashboard.shared import (
     build_rubric_meta,
-    fetch_rubric_facts_data,
+    fetch_rubric_scores_data,
     fetch_thresholds,
     hydrate_rubric_resources,
     parse_dashboard_filters,
@@ -59,8 +59,8 @@ async def get_dashboard_primary(
 
         filters = parse_dashboard_filters(request)
 
-        # Single MV call: fetch rubric facts
-        rubric_facts_response = await fetch_rubric_facts_data(
+        # Single MV call: fetch rubric scores
+        rubric_facts_response = await fetch_rubric_scores_data(
             pool=pool,
             request=request,
             filters=filters,

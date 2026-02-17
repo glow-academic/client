@@ -9,7 +9,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 from app.api.v4.artifacts.dashboard.permissions import compute_header_metrics_v2
 from app.api.v4.artifacts.dashboard.shared import (
-    fetch_profile_facts_data,
+    fetch_chats_data,
     fetch_thresholds,
     parse_dashboard_filters,
 )
@@ -20,6 +20,7 @@ from app.api.v4.artifacts.dashboard.types import (
 from app.api.v4.artifacts.types import FilterOption
 from app.api.v4.resources.profiles.get import get_profiles_internal
 from app.api.v4.resources.simulations.get import get_simulations_internal
+from app.api.v4.views.chat.message_stats import get_message_stats_internal
 from app.infra.v4.activity.audit import audit_activity
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
@@ -55,9 +56,9 @@ async def get_dashboard_header(
         # 1. Parse filters
         filters = parse_dashboard_filters(request)
 
-        # 2. Fetch profile facts + thresholds in parallel
-        profile_facts_result, thresholds = await asyncio.gather(
-            fetch_profile_facts_data(
+        # 2. Fetch chats + thresholds in parallel
+        chats_result, thresholds = await asyncio.gather(
+            fetch_chats_data(
                 pool=pool,
                 request=request,
                 filters=filters,
@@ -70,12 +71,27 @@ async def get_dashboard_header(
                 department_ids=request.department_ids,
             ),
         )
-        profile_facts_items = profile_facts_result.items
+        chat_items = chats_result.items
 
-        # 3. Collect simulation IDs from profile facts
-        simulation_ids_set = {item.simulation_id for item in profile_facts_items}
+        # 3. Enrich with message stats
+        chat_ids = [item.chat_id for item in chat_items]
+        if chat_ids:
+            async with pool.acquire() as c:
+                message_stats = await get_message_stats_internal(
+                    conn=c,
+                    chat_ids=chat_ids,
+                    bypass_cache=bypass_cache,
+                )
+            for item in chat_items:
+                stats = message_stats.get(item.chat_id)
+                if stats:
+                    item.num_messages_total = stats.num_messages_total
+                    item.avg_response_sec = stats.avg_response_sec
 
-        # 4. Hydrate simulations + compute scenario counts
+        # 4. Collect simulation IDs from chat items
+        simulation_ids_set = {item.simulation_id for item in chat_items}
+
+        # 5. Hydrate simulations + compute scenario counts
         async with pool.acquire() as c:
             simulations = await get_simulations_internal(
                 conn=c,
@@ -100,14 +116,14 @@ async def get_dashboard_header(
             str(r["simulation_id"]): r["scenario_count"] for r in scenario_count_rows
         }
 
-        # 5. Compute header metrics
+        # 6. Compute header metrics
         header_metrics = compute_header_metrics_v2(
-            profile_facts_items=profile_facts_items,
+            profile_facts_items=chat_items,
             simulation_scenario_counts=simulation_scenario_counts,
             thresholds=thresholds.as_dict(),
         )
 
-        # 6. Build simulation_options
+        # 7. Build simulation_options
         simulation_options = [
             FilterOption(
                 value=str(item.simulation_id) if item.simulation_id else "",
@@ -123,7 +139,7 @@ async def get_dashboard_header(
             simulation_options=simulation_options,
         )
 
-        # 7. Fetch target profile info if present
+        # 8. Fetch target profile info if present
         if request.target_profile_id:
             async with pool.acquire() as c:
                 target_profiles = await get_profiles_internal(

@@ -11,7 +11,7 @@ from app.api.v4.artifacts.dashboard.shared import (
     build_field_meta,
     build_parameter_meta,
     build_simulation_meta,
-    fetch_scenario_facts_data,
+    fetch_chats_data,
     fetch_thresholds,
     parse_dashboard_filters,
 )
@@ -26,6 +26,7 @@ from app.api.v4.resources.parameters.get import get_parameters_internal
 from app.api.v4.resources.personas.get import get_personas_internal
 from app.api.v4.resources.scenarios.get import get_scenarios_internal
 from app.api.v4.resources.simulations.get import get_simulations_internal
+from app.api.v4.views.chat.training_config import get_training_config_internal
 from app.infra.v4.activity.audit import audit_activity
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
@@ -61,9 +62,9 @@ async def get_dashboard_footer(
         # 1. Parse filters
         filters = parse_dashboard_filters(request)
 
-        # 2. Fetch scenario facts (single MV call) + thresholds in parallel
-        scenario_facts_result, thresholds = await asyncio.gather(
-            fetch_scenario_facts_data(
+        # 2. Fetch chats (replaces scenario facts) + thresholds in parallel
+        chats_result, thresholds = await asyncio.gather(
+            fetch_chats_data(
                 pool=pool,
                 request=request,
                 filters=filters,
@@ -77,14 +78,35 @@ async def get_dashboard_footer(
             ),
         )
 
-        scenario_facts_items = scenario_facts_result.items
+        chat_items = chats_result.items
 
-        # 3. Collect resource IDs from scenario_facts
+        # 3. Enrich with document_ids from training config
+        td_ids = list(
+            {
+                item.training_department_id
+                for item in chat_items
+                if item.training_department_id
+            }
+        )
+        if td_ids:
+            async with pool.acquire() as c:
+                config_map = await get_training_config_internal(
+                    conn=c,
+                    training_department_ids=td_ids,
+                    bypass_cache=bypass_cache,
+                )
+            for item in chat_items:
+                if item.training_department_id:
+                    config = config_map.get(item.training_department_id)
+                    if config and config.document_ids:
+                        item.document_ids = list(config.document_ids)
+
+        # 4. Collect resource IDs from chat items
         simulation_ids_set: set = set()
         scenario_ids_set: set = set()
         persona_ids_set: set = set()
         document_ids_set: set = set()
-        for row in scenario_facts_items:
+        for row in chat_items:
             simulation_ids_set.add(row.simulation_id)
             if row.scenario_id:
                 scenario_ids_set.add(row.scenario_id)
@@ -93,8 +115,7 @@ async def get_dashboard_footer(
             for doc_id in row.document_ids or []:
                 document_ids_set.add(doc_id)
 
-        # 4. Batch 1: Hydrate simulations, scenarios, personas, documents
-        # Each concurrent task needs its own connection (asyncpg doesn't support concurrent ops on one connection)
+        # 5. Batch 1: Hydrate simulations, scenarios, personas, documents
         async def _get_simulations():
             async with pool.acquire() as c:
                 return await get_simulations_internal(
@@ -126,7 +147,7 @@ async def get_dashboard_footer(
             _get_documents(),
         )
 
-        # 5. Collect all parameter_field_ids from hydrated resources
+        # 6. Collect all parameter_field_ids from hydrated resources
         all_pf_ids: set = set()
         for s in scenarios_list:
             for pfid in getattr(s, "parameter_field_ids", None) or []:
@@ -138,7 +159,7 @@ async def get_dashboard_footer(
             for pfid in getattr(d, "parameter_field_ids", None) or []:
                 all_pf_ids.add(pfid)
 
-        # 6. Batch 2: Hydrate parameter_fields
+        # 7. Batch 2: Hydrate parameter_fields
         async with pool.acquire() as c:
             parameter_fields = await get_parameter_fields_internal(
                 conn=c,
@@ -146,7 +167,7 @@ async def get_dashboard_footer(
                 bypass_cache=bypass_cache,
             )
 
-        # 7. Derive parameter_ids, field_ids from parameter_fields
+        # 8. Derive parameter_ids, field_ids from parameter_fields
         parameter_ids_set: set = set()
         field_ids_set: set = set()
         field_parameter_map: dict = {}
@@ -158,7 +179,7 @@ async def get_dashboard_footer(
                 if pf.parameter_id:
                     field_parameter_map[pf.field_id] = pf.parameter_id
 
-        # 8. Batch 3: Hydrate parameters and fields
+        # 9. Batch 3: Hydrate parameters and fields
         async def _get_parameters():
             async with pool.acquire() as c:
                 return await get_parameters_internal(
@@ -176,7 +197,7 @@ async def get_dashboard_footer(
             _get_fields(),
         )
 
-        # 9. Build name maps
+        # 10. Build name maps
         simulation_name_map = {
             str(s.simulation_id): s.name
             for s in simulations
@@ -188,9 +209,9 @@ async def get_dashboard_footer(
             if s.scenario_id and s.name
         }
 
-        # 10. Compute footer metrics
+        # 11. Compute footer metrics
         footer_metrics = compute_footer_metrics_v2(
-            scenario_facts_items=scenario_facts_items,
+            scenario_facts_items=chat_items,
             scenarios=scenarios_list,
             personas=personas,
             documents=documents,
@@ -202,7 +223,7 @@ async def get_dashboard_footer(
             thresholds=thresholds.as_dict(),
         )
 
-        # 11. Apply picker filters (valid_*_ids stay intact for picker options)
+        # 12. Apply picker filters (valid_*_ids stay intact for picker options)
         if request.scenario_perf_parameter_ids:
             filter_set = {str(pid) for pid in request.scenario_perf_parameter_ids}
             footer_metrics.scenario_performance.attribute_attempt_facts = [
@@ -235,7 +256,7 @@ async def get_dashboard_footer(
                 if f.simulation_id in filter_set
             ]
 
-        # 12. Build metadata
+        # 13. Build metadata
         simulations_meta = build_simulation_meta(simulations)
         parameters_meta = build_parameter_meta(parameters)
         fields_meta = build_field_meta(
@@ -244,7 +265,7 @@ async def get_dashboard_footer(
             parameters,
         )
 
-        # 13. Apply search filters to metadata lists
+        # 14. Apply search filters to metadata lists
         if request.sim_perf_simulation_search:
             q = request.sim_perf_simulation_search.lower()
             simulations_meta = [

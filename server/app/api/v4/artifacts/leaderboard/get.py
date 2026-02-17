@@ -25,7 +25,8 @@ from app.api.v4.artifacts.types import FilterOption
 from app.api.v4.resources.profiles.get import get_profiles_internal
 from app.api.v4.resources.scenarios.get import get_scenarios_internal
 from app.api.v4.resources.simulations.get import get_simulations_internal
-from app.api.v4.views.analytics.profile_facts.get import get_profile_facts_internal
+from app.api.v4.views.chat.get import get_chats_internal
+from app.api.v4.views.chat.message_stats import get_message_stats_internal
 from app.infra.v4.activity.audit import audit_activity
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
@@ -56,7 +57,7 @@ async def get_leaderboard(
 ) -> LeaderboardResponse:
     """Get leaderboard artifact data.
 
-    Fetches chat-grain rows from mv_profile_facts via get_profile_facts_internal()
+    Fetches chat-grain rows from mv_chats via get_chats_internal()
     and aggregates to profile-level leaderboard rows in Python.
     """
     tags = ["artifacts", "leaderboard", "views", "analytics"]
@@ -101,9 +102,9 @@ async def get_leaderboard(
         else:
             attempt_type = "general"
 
-        # --- Single MV fetch: mv_profile_facts ---
+        # --- Single MV fetch: mv_chats ---
         async with pool.acquire() as c:
-            profile_facts_result = await get_profile_facts_internal(
+            chats_result = await get_chats_internal(
                 conn=c,
                 profile_id=request.target_profile_id,
                 cohort_ids=cohort_ids_filter,
@@ -120,7 +121,19 @@ async def get_leaderboard(
                 bypass_cache=bypass_cache,
             )
 
-        profile_facts_items = profile_facts_result.items
+        chat_items = chats_result.items
+
+        # --- Fetch message stats (num_messages_total, avg_response_sec) ---
+        chat_ids = [item.chat_id for item in chat_items]
+        if chat_ids:
+            async with pool.acquire() as c:
+                message_stats_map = await get_message_stats_internal(
+                    conn=c,
+                    chat_ids=chat_ids,
+                    bypass_cache=bypass_cache,
+                )
+        else:
+            message_stats_map = {}
 
         # --- Fetch settings (same as before) ---
         primary_color = "#171717"
@@ -147,13 +160,11 @@ async def get_leaderboard(
                     primary_color = settings.primary_color or primary_color
                     accent_color = settings.accent or accent_color
 
-        # --- Collect resource IDs from profile_facts_items ---
-        profile_id_set = {item.profile_id for item in profile_facts_items}
-        simulation_id_set = {item.simulation_id for item in profile_facts_items}
+        # --- Collect resource IDs from chat_items ---
+        profile_id_set = {item.profile_id for item in chat_items}
+        simulation_id_set = {item.simulation_id for item in chat_items}
         scenario_id_set = {
-            item.scenario_id
-            for item in profile_facts_items
-            if item.scenario_id is not None
+            item.scenario_id for item in chat_items if item.scenario_id is not None
         }
 
         # --- Hydrate resources in parallel ---
@@ -193,13 +204,14 @@ async def get_leaderboard(
             if item.profile_id is not None
         }
 
-        # --- Build leaderboard rows and sections from profile_facts ---
+        # --- Build leaderboard rows and sections from chat items ---
         data = build_leaderboard_rows_v2(
-            profile_facts_items,
+            chat_items,
             profile_name_by_id=profile_name_by_id,
             sort_by=request.sort_by,
             sort_order=request.sort_order,
             rank_offset=request.page_offset,
+            message_stats_map=message_stats_map,
         )
 
         # Paginate the profile-level rows
@@ -209,7 +221,7 @@ async def get_leaderboard(
         data_page = data[page_start:page_end]
 
         sections: LeaderboardSections = build_leaderboard_sections_v2(
-            profile_facts_items=profile_facts_items,
+            chat_items=chat_items,
             rows=data_page,
         )
 

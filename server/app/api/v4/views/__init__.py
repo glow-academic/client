@@ -13,6 +13,7 @@ from app.api.v4.views.audio import router as audio_router
 from app.api.v4.views.audit import router as audit_router
 from app.api.v4.views.benchmark import router as benchmark_router
 from app.api.v4.views.call import router as call_router
+from app.api.v4.views.chat import router as chat_router
 from app.api.v4.views.config import router as config_router
 from app.api.v4.views.grant import router as grant_router
 from app.api.v4.views.group import router as group_router
@@ -46,6 +47,7 @@ router.include_router(audit_router)
 router.include_router(run_router)
 router.include_router(message_router)
 router.include_router(call_router)
+router.include_router(chat_router)
 router.include_router(problem_router)
 router.include_router(login_router)
 router.include_router(metric_router)

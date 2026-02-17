@@ -21,7 +21,7 @@ from app.api.v4.artifacts.reports.types import (
     ReportsTrendPoint,
     ReportsTrendsSection,
 )
-from app.api.v4.views.analytics.profile_facts.types import ProfileFactsItem
+from app.api.v4.views.chat.types import ChatItem
 
 # Type aliases for deprecated v1 types (modules deleted in DELETE OLD VIEWS)
 AttemptFactsItem = Any
@@ -646,16 +646,16 @@ def build_reports_sections(
 
 
 # ---------------------------------------------------------------------------
-# v2 functions: all computation from ProfileFactsItem (mv_profile_facts)
+# v2 functions: all computation from ChatItem (mv_profile_facts)
 # ---------------------------------------------------------------------------
 
 
 def _compute_stagnation_stats_v2(
-    profile_facts_items: list[ProfileFactsItem],
+    profile_facts_items: list[ChatItem],
 ) -> dict[str, tuple[float, int, int, list[ReportsDataPoint]]]:
     """Compute stagnation rate per profile from chronological grade stream.
 
-    Same logic as _compute_stagnation_stats but operates on ProfileFactsItem rows.
+    Same logic as _compute_stagnation_stats but operates on ChatItem rows.
     """
     profile_grades: dict[str, list[tuple[date, float]]] = defaultdict(list)
     for item in profile_facts_items:
@@ -699,11 +699,11 @@ def _compute_stagnation_stats_v2(
 
 
 def compute_reports_header_metrics_v2(
-    profile_facts_items: list[ProfileFactsItem],
+    profile_facts_items: list[ChatItem],
     total_count: int = 0,
     thresholds: dict[str, int] | None = None,
 ) -> ReportsHeaderMetrics:
-    """Compute top-level report summary metrics from ProfileFactsItem rows."""
+    """Compute top-level report summary metrics from ChatItem rows."""
     thresholds = thresholds or {"success": 85, "warning": 80, "danger": 70}
 
     # total_attempts: count distinct attempt_ids (or use total_count)
@@ -779,7 +779,7 @@ def compute_reports_header_metrics_v2(
         if not item.completed or item.attempt_date is None:
             continue
         pid = str(item.profile_id)
-        passed = bool(item.passed)
+        passed = bool(item.grade_passed)
         if (
             pid not in profile_first_completed
             or item.attempt_date < profile_first_completed[pid][0]
@@ -857,11 +857,11 @@ def compute_reports_header_metrics_v2(
 
 
 def compute_overview_section_v2(
-    profile_facts_items: list[ProfileFactsItem],
+    profile_facts_items: list[ChatItem],
 ) -> ReportsOverviewSection:
-    """Compute simulation-level overview aggregates from ProfileFactsItem rows."""
+    """Compute simulation-level overview aggregates from ChatItem rows."""
     # Group by simulation_id, then by attempt_id within each simulation
-    sim_attempts: dict[str, dict[str, list[ProfileFactsItem]]] = defaultdict(
+    sim_attempts: dict[str, dict[str, list[ChatItem]]] = defaultdict(
         lambda: defaultdict(list)
     )
     for item in profile_facts_items:
@@ -883,7 +883,9 @@ def compute_overview_section_v2(
             if all_completed:
                 completed_n += 1
             # Passed attempt: any chat passed
-            any_passed = any(c.passed for c in chats if c.passed is not None)
+            any_passed = any(
+                c.grade_passed for c in chats if c.grade_passed is not None
+            )
             if any_passed:
                 passed_n += 1
             # Average score_percent per attempt
@@ -926,11 +928,11 @@ def compute_overview_section_v2(
 
 def _build_profile_metrics_v2(
     profile_id: str,
-    items: list[ProfileFactsItem],
+    items: list[ChatItem],
     thresholds: dict[str, int],
     stagnation_stats: dict[str, tuple[float, int, int, list[ReportsDataPoint]]],
 ) -> ReportsProfileMetrics:
-    """Build ReportsProfileMetrics from ProfileFactsItem rows for a single profile."""
+    """Build ReportsProfileMetrics from ChatItem rows for a single profile."""
     # Distinct attempts
     attempt_ids = {item.attempt_id for item in items}
     total_attempts = len(attempt_ids)
@@ -958,21 +960,15 @@ def _build_profile_metrics_v2(
     first_attempt = None
     if completed_items:
         first_completed = min(completed_items, key=lambda i: i.attempt_date)  # type: ignore[arg-type]
-        first_attempt = 100.0 if first_completed.passed else 0.0
+        first_attempt = 100.0 if first_completed.grade_passed else 0.0
     first_attempt_val = _round2(first_attempt)
 
-    # avg_messages
-    msg_counts = [
-        item.num_messages_total for item in items if item.num_messages_total > 0
-    ]
+    # avg_messages — not available on ChatItem (needs service call)
+    msg_counts: list[int] = []
     avg_messages = _round2(sum(msg_counts) / len(msg_counts)) if msg_counts else None
 
-    # persona_response (avg_response_sec)
-    response_secs = [
-        float(item.avg_response_sec)
-        for item in items
-        if item.avg_response_sec is not None
-    ]
+    # persona_response (avg_response_sec) — not available on ChatItem (needs service call)
+    response_secs: list[float] = []
     persona_response = (
         _round2(sum(response_secs) / len(response_secs)) if response_secs else None
     )
@@ -987,9 +983,9 @@ def _build_profile_metrics_v2(
         profile_id, (0.0, 0, 0, [])
     )
 
-    # time_spent: total_time_minutes from sum of time_taken_seconds
+    # time_spent: total_time_minutes from sum of grade_time_taken
     total_seconds = sum(
-        item.time_taken_seconds for item in items if item.time_taken_seconds is not None
+        item.grade_time_taken for item in items if item.grade_time_taken is not None
     )
     total_minutes = _round2(total_seconds / 60.0) if total_seconds > 0 else None
 
@@ -1094,20 +1090,20 @@ def _build_profile_metrics_v2(
 
 
 def compute_leaderboard_section_v2(
-    profile_facts_items: list[ProfileFactsItem],
+    profile_facts_items: list[ChatItem],
     thresholds: dict[str, int] | None = None,
 ) -> ReportsLeaderboardSection:
-    """Compute leaderboard rows from ProfileFactsItem rows."""
+    """Compute leaderboard rows from ChatItem rows."""
     thresholds = thresholds or {"success": 85, "warning": 80, "danger": 70}
     stagnation_stats = _compute_stagnation_stats_v2(profile_facts_items)
 
     # Group items by profile_id
-    profile_items: dict[str, list[ProfileFactsItem]] = defaultdict(list)
+    profile_items: dict[str, list[ChatItem]] = defaultdict(list)
     for item in profile_facts_items:
         profile_items[str(item.profile_id)].append(item)
 
     # Build per-profile summary for sorting
-    profile_summaries: list[tuple[str, float, int, list[ProfileFactsItem]]] = []
+    profile_summaries: list[tuple[str, float, int, list[ChatItem]]] = []
     for pid, items in profile_items.items():
         scores = [float(i.grade_percent) for i in items if i.grade_percent is not None]
         avg = sum(scores) / len(scores) if scores else -1.0
@@ -1135,7 +1131,7 @@ def compute_leaderboard_section_v2(
         first_attempt_pass_rate_val = None
         if completed_items:
             first_completed = min(completed_items, key=lambda i: i.attempt_date)  # type: ignore[arg-type]
-            first_attempt_pass_rate_val = 100.0 if first_completed.passed else 0.0
+            first_attempt_pass_rate_val = 100.0 if first_completed.grade_passed else 0.0
 
         # Collect simulation_ids and scenario_ids for this profile
         sim_ids = list({str(i.simulation_id) for i in items})
@@ -1170,9 +1166,9 @@ def compute_leaderboard_section_v2(
 
 
 def compute_trends_section_v2(
-    profile_facts_items: list[ProfileFactsItem],
+    profile_facts_items: list[ChatItem],
 ) -> ReportsTrendsSection:
-    """Compute daily trend points from ProfileFactsItem rows."""
+    """Compute daily trend points from ChatItem rows."""
     grouped: dict[date, dict[str, float]] = defaultdict(
         lambda: {
             "total": 0.0,
@@ -1195,7 +1191,7 @@ def compute_trends_section_v2(
         bucket["total"] += 1
         if item.completed:
             bucket["completed"] += 1
-        if item.passed:
+        if item.grade_passed:
             bucket["passed"] += 1
         if item.grade_percent is not None:
             bucket["score_sum"] += float(item.grade_percent)
@@ -1232,11 +1228,11 @@ def compute_trends_section_v2(
 
 
 def compute_history_section_v2(
-    profile_facts_items: list[ProfileFactsItem],
+    profile_facts_items: list[ChatItem],
 ) -> ReportsHistorySection:
-    """Compute history rows from ProfileFactsItem rows, grouped by attempt_id."""
+    """Compute history rows from ChatItem rows, grouped by attempt_id."""
     # Group by attempt_id
-    attempt_chats: dict[str, list[ProfileFactsItem]] = defaultdict(list)
+    attempt_chats: dict[str, list[ChatItem]] = defaultdict(list)
     for item in profile_facts_items:
         attempt_chats[str(item.attempt_id)].append(item)
 
@@ -1260,7 +1256,7 @@ def compute_history_section_v2(
         )
 
         # has_passed: any chat passed
-        has_passed = any(c.passed for c in chats if c.passed is not None)
+        has_passed = any(c.grade_passed for c in chats if c.grade_passed is not None)
 
         # num_chats and num_chats_completed
         num_chats = len(chats)
@@ -1268,7 +1264,7 @@ def compute_history_section_v2(
 
         # total_time_seconds
         total_time_seconds = sum(
-            c.time_taken_seconds for c in chats if c.time_taken_seconds is not None
+            c.grade_time_taken for c in chats if c.grade_time_taken is not None
         )
 
         # scenario_ids: distinct scenario_ids from chats
@@ -1312,7 +1308,7 @@ def compute_history_section_v2(
 
 
 def build_reports_sections_v2(
-    profile_facts_items: list[ProfileFactsItem],
+    profile_facts_items: list[ChatItem],
     total_count: int = 0,
     thresholds: dict[str, int] | None = None,
 ) -> ReportsSections:

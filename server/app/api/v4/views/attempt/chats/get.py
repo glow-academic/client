@@ -18,9 +18,6 @@ from app.main import get_db
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
-from app.utils.sql_helper import execute_sql_typed
-
-SQL_PATH = "app/sql/v4/queries/views/attempt/chats/get_attempt_chats_view_complete.sql"
 
 router = APIRouter()
 
@@ -33,12 +30,12 @@ async def get_attempt_chats_internal(
 ) -> list[ChatViewItem]:
     """Internal function for fetching lean chat data.
 
-    Lean: entry attrs + resource IDs + grade scalars only. Composites
-    (feedbacks, analyses, responses) fetched via simulation/* views.
+    Uses mv_chats for base data + training config service for config flags
+    and resource ID arrays. Composites (feedbacks, analyses, responses)
+    fetched via simulation/* views.
     """
-    from app.sql.types import (
-        GetAttemptChatsViewSqlParams,
-    )
+    from app.api.v4.views.chat.get import get_chats_internal
+    from app.api.v4.views.chat.training_config import get_training_config_internal
 
     ids = attempt_ids or ([attempt_id] if attempt_id else [])
 
@@ -52,61 +49,91 @@ async def get_attempt_chats_internal(
         if cached:
             return [ChatViewItem.model_validate(item) for item in cached["items"]]
 
-    # Execute SQL query
-    params = GetAttemptChatsViewSqlParams(attempt_ids_filter=ids)
+    # Pass 1: Get base chat data from mv_chats (non-archived only for attempt detail)
+    all_items = []
+    for aid in ids:
+        chats_result = await get_chats_internal(
+            conn=conn,
+            attempt_id=aid,
+            is_archived=False,
+            sort_by="created_at",
+            sort_order="asc",
+            bypass_cache=bypass_cache,
+        )
+        all_items.extend(chats_result.items)
 
-    result = await execute_sql_typed(conn, SQL_PATH, params=params)
+    # Pass 2: Get training config for all unique training_department_ids
+    td_ids = list(
+        {
+            item.training_department_id
+            for item in all_items
+            if item.training_department_id
+        }
+    )
+    config_map = {}
+    if td_ids:
+        config_map = await get_training_config_internal(
+            conn=conn,
+            training_department_ids=td_ids,
+            bypass_cache=bypass_cache,
+        )
 
-    # Transform to response items (no composite transforms needed)
+    # Compose ChatViewItem from both sources
     items: list[ChatViewItem] = []
-    if result and result.items:
-        for item in result.items:
-            # Transform grade
-            grade = None
-            if item.grade:
-                grade = GradeItem(
-                    score=item.grade.score,
-                    passed=item.grade.passed,
-                    time_taken=item.grade.time_taken,
-                    total_points=item.grade.total_points,
-                    pass_points=item.grade.pass_points,
-                )
+    for chat in all_items:
+        config = (
+            config_map.get(chat.training_department_id)
+            if chat.training_department_id
+            else None
+        )
 
-            items.append(
-                ChatViewItem(
-                    chat_id=item.chat_id,
-                    attempt_id=item.attempt_id,
-                    group_id=item.group_id,
-                    scenario_id=item.scenario_id,
-                    rubric_id=item.rubric_id,
-                    problem_statement_id=item.problem_statement_id,
-                    copy_paste_allowed=item.copy_paste_allowed,
-                    text_enabled=item.text_enabled,
-                    audio_enabled=item.audio_enabled,
-                    hints_enabled=item.hints_enabled,
-                    show_images=item.show_images,
-                    show_objectives=item.show_objectives,
-                    show_problem_statement=item.show_problem_statement,
-                    time_limit_seconds=item.time_limit_seconds,
-                    negative=item.negative,
-                    created_at=item.created_at,
-                    completed=item.completed or False,
-                    grade=grade,
-                    persona_ids=list(item.persona_ids) if item.persona_ids else None,
-                    objective_ids=list(item.objective_ids)
-                    if item.objective_ids
-                    else None,
-                    question_ids=list(item.question_ids) if item.question_ids else None,
-                    option_ids=list(item.option_ids) if item.option_ids else None,
-                    image_ids=list(item.image_ids) if item.image_ids else None,
-                    video_ids=list(item.video_ids) if item.video_ids else None,
-                    document_ids=list(item.document_ids) if item.document_ids else None,
-                    standard_group_ids=list(item.standard_group_ids)
-                    if item.standard_group_ids
-                    else None,
-                    standard_ids=list(item.standard_ids) if item.standard_ids else None,
-                )
+        grade = None
+        if chat.grade_score is not None or chat.grade_passed is not None:
+            grade = GradeItem(
+                score=chat.grade_score,
+                passed=chat.grade_passed,
+                time_taken=chat.grade_time_taken,
+                total_points=chat.grade_total_points,
+                pass_points=chat.grade_pass_points,
             )
+
+        # Rubric ID: prefer from grade, fall back to training config
+        rubric_id = chat.rubric_id or (config.rubric_id if config else None)
+
+        items.append(
+            ChatViewItem(
+                chat_id=chat.chat_id,
+                attempt_id=chat.attempt_id,
+                group_id=chat.group_id,
+                scenario_id=chat.scenario_id
+                or (config.scenario_id if config else None),
+                rubric_id=rubric_id,
+                problem_statement_id=config.problem_statement_id if config else None,
+                copy_paste_allowed=config.copy_paste_allowed if config else True,
+                text_enabled=config.text_enabled if config else True,
+                audio_enabled=config.audio_enabled if config else True,
+                hints_enabled=config.hints_enabled if config else True,
+                show_images=config.show_images if config else True,
+                show_objectives=config.show_objectives if config else True,
+                show_problem_statement=config.show_problem_statement
+                if config
+                else True,
+                time_limit_seconds=config.time_limit_seconds if config else 0,
+                negative=config.negative if config else False,
+                created_at=chat.chat_created_at,
+                completed=chat.completed,
+                grade=grade,
+                persona_ids=config.persona_ids if config else None,
+                objective_ids=config.objective_ids if config else None,
+                question_ids=config.question_ids if config else None,
+                option_ids=config.option_ids if config else None,
+                image_ids=config.image_ids if config else None,
+                video_ids=config.video_ids if config else None,
+                document_ids=config.document_ids if config else None,
+                standard_group_ids=config.standard_group_ids if config else None,
+                standard_ids=config.standard_ids if config else None,
+            )
+        )
 
     # Cache the result
     await set_cached(

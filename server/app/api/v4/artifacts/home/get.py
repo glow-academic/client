@@ -38,11 +38,8 @@ from app.api.v4.resources.scenarios.get import get_scenarios_internal
 from app.api.v4.resources.simulations.get import get_simulations_internal
 from app.api.v4.resources.standard_groups.get import get_standard_groups_internal
 from app.api.v4.resources.standards.search import search_standards_internal
-from app.api.v4.views.analytics.profile_facts.get import get_profile_facts_internal
-from app.api.v4.views.analytics.profile_facts.types import (
-    GetProfileFactsResponse,
-    ProfileFactsItem,
-)
+from app.api.v4.views.chat.get import get_chats_internal
+from app.api.v4.views.chat.types import ChatItem, GetChatsResponse
 from app.api.v4.views.home.context.get import get_home_context_view_internal
 from app.api.v4.views.home.context.types import GetHomeContextViewResponse
 from app.infra.v4.activity.audit import audit_activity, audit_set
@@ -82,7 +79,7 @@ async def _fetch_cohort_member_profiles(
 
 
 def _aggregate_personal_stats(
-    items: list[ProfileFactsItem],
+    items: list[ChatItem],
 ) -> dict[UUID, dict[str, Any]]:
     """Aggregate personal profile facts by simulation_id."""
     stats: dict[UUID, dict[str, Any]] = {}
@@ -111,7 +108,7 @@ def _aggregate_personal_stats(
 
 
 def _aggregate_instructional_stats(
-    facts_items: list[ProfileFactsItem],
+    facts_items: list[ChatItem],
     cohort_member_profiles: dict[UUID, set[UUID]],
     simulation_cohort_map: dict[UUID, list[UUID]],
 ) -> dict[UUID, dict[str, Any]]:
@@ -195,9 +192,9 @@ async def get_home_internal(
                 bypass_cache=bypass_cache,
             )
 
-    async def fetch_personal_stats() -> GetProfileFactsResponse:
+    async def fetch_personal_stats() -> GetChatsResponse:
         async with pool.acquire() as c:
-            return await get_profile_facts_internal(
+            return await get_chats_internal(
                 conn=c,
                 profile_id=profiles_resource_id,
                 attempt_type=attempt_type,
@@ -289,7 +286,7 @@ async def get_home_internal(
 
     async def fetch_cohort_attempt_facts() -> list:
         async with pool.acquire() as c:
-            result = await get_profile_facts_internal(
+            result = await get_chats_internal(
                 conn=c,
                 profile_id=None,
                 attempt_type=attempt_type,
@@ -323,7 +320,7 @@ async def get_home_internal(
     rubric_list = results_2a[3]
     time_limit_list = results_2a[4]
 
-    cohort_facts_items: list[ProfileFactsItem] | None = None
+    cohort_facts_items: list[ChatItem] | None = None
     cohort_member_profiles: dict[UUID, set[UUID]] | None = None
     if is_instructional:
         cohort_facts_items = results_2a[5]
