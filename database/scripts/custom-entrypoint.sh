@@ -13,7 +13,7 @@ NC='\033[0m' # No Color
 # --- CONFIG ----------------------------------------------------------
 DB_USER=${POSTGRES_USER:-myuser}
 DB_PASSWORD=${POSTGRES_PASSWORD:-mypassword}
-DB_NAME=${POSTGRES_DB:-mydb}
+DB_NAME=${POSTGRES_DB:-glow-prod}
 HISTORY_DIR=${HISTORY_DIR:-/database/history}
 CLEAN_DB=${CLEAN_DB:-false}
 

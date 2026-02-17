@@ -99,7 +99,7 @@ The client no longer needs drizzle-kit or generation scripts. It simply uses:
 Required environment variables:
 - `DB_USER` - Database user (default: myuser)
 - `DB_PASSWORD` - Database password (default: mypassword)
-- `DB_NAME` - Database name (default: mydb)
+- `DB_NAME` - Database name (default: glow-prod)
 - `DB_HOST` - Database host (default: localhost)
 - `DB_PORT` - Database port (default: 5432)
 

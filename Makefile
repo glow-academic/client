@@ -10,7 +10,7 @@ VENV_PIP := $(VENV_BIN)/pip
 # Service ports
 SERVER_PORT := 8000
 CLIENT_PORT := 3000
-REDIS_PORT := 6380
+REDIS_PORT := 6379
 DATABASE_PORT := 5432
 
 # Check if Python 3.11 is available

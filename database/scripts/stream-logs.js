@@ -7,7 +7,7 @@ const cfg = {
   port: Number(process.env.DB_PORT || 5432),
   user: process.env.DB_USER || "myuser",
   password: process.env.DB_PASSWORD || "mypassword",
-  database: process.env.DB_NAME || "mydb",
+  database: process.env.DB_NAME || "glow-prod",
   application_name: "audit-listener",
 };
 const READS = (process.env.READS || "0") === "1";
