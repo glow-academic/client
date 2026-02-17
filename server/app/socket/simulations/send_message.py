@@ -987,9 +987,12 @@ async def _send_simulation_message_impl(
                             "practice_simulation": sim_metadata_row[
                                 "practice_simulation"
                             ],
+                            "hints_enabled": sim_metadata_row.get(
+                                "hints_enabled", False
+                            ),
                         }
 
-                    if sim_metadata["practice_simulation"]:
+                    if sim_metadata["practice_simulation"] and sim_metadata.get("hints_enabled", False):
                         logger.info(
                             f"Triggering hint generation for practice message {assistant_message['id']}"
                         )
