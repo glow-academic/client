@@ -510,12 +510,12 @@ export default function AttemptMessages({
                 </div>
               ) : (
                 groupedMessages.map((group) => (
-                  <div key={group.groupId} className="space-y-3">
+                  <div key={group.groupId} className="space-y-2 md:space-y-3">
                     {/* User message */}
-                    <div className="flex justify-end mb-3">
-                      <div className="max-w-[80%] flex items-stretch gap-2">
+                    <div className="flex justify-end mb-2 md:mb-3">
+                      <div className="max-w-[95%] md:max-w-[80%] flex items-stretch gap-1 md:gap-2">
                         <div
-                          className="bg-primary text-primary-foreground rounded-lg p-3 flex-1"
+                          className="bg-primary text-primary-foreground rounded-lg p-2 md:p-3 text-sm md:text-base flex-1"
                           data-testid={`message-${group.userMessage.id}`}
                           data-message-id={group.userMessage.id}
                           data-message-type="user"
@@ -523,7 +523,7 @@ export default function AttemptMessages({
                           <Markdown>{group.userMessage.content}</Markdown>
                         </div>
                         {/* Right-aligned stacked controls (You + Next) */}
-                        <div className="flex flex-col gap-1 w-9 h-[52px] min-h-[52px] max-h-[52px] overflow-hidden">
+                        <div className="flex flex-col gap-1 w-7 md:w-9 h-[44px] md:h-[52px] min-h-[44px] md:min-h-[52px] max-h-[44px] md:max-h-[52px] overflow-hidden">
                           <Tooltip>
                             <TooltipTrigger asChild>
                               <Button
@@ -566,8 +566,8 @@ export default function AttemptMessages({
 
                     {/* Assistant response(s) */}
                     {group.responses.length > 0 && (
-                      <div className="flex justify-start mb-3">
-                        <div className="max-w-[80%] flex items-stretch gap-2">
+                      <div className="flex justify-start mb-2 md:mb-3">
+                        <div className="max-w-[95%] md:max-w-[80%] flex items-stretch gap-1 md:gap-2">
                           {/* Left-aligned stacked controls (assistant + optional hints) */}
                           {(() => {
                             const currentResponse = getCurrentResponse(
@@ -583,8 +583,8 @@ export default function AttemptMessages({
                               simulation?.practiceSimulation &&
                               hintsForMessage.length > 0;
                             const containerHeightClass = shouldShowHintsButton
-                              ? "h-[52px] min-h-[52px] max-h-[52px]"
-                              : "h-[26px] min-h-[26px] max-h-[26px]";
+                              ? "h-[44px] md:h-[52px] min-h-[44px] md:min-h-[52px] max-h-[44px] md:max-h-[52px]"
+                              : "h-[22px] md:h-[26px] min-h-[22px] md:min-h-[26px] max-h-[22px] md:max-h-[26px]";
                             const hasNewHints = messagesWithNewHints.has(
                               currentResponse.id
                             );
@@ -613,7 +613,7 @@ export default function AttemptMessages({
 
                             return (
                               <div
-                                className={`flex flex-col gap-1 w-9 ${containerHeightClass} overflow-visible`}
+                                className={`flex flex-col gap-1 w-7 md:w-9 ${containerHeightClass} overflow-visible`}
                               >
                                 <Tooltip>
                                   <TooltipTrigger asChild>
@@ -707,7 +707,7 @@ export default function AttemptMessages({
                                   {!currentResponse.completed &&
                                   currentResponse.content === "" ? (
                                     <div
-                                      className="bg-muted rounded-lg p-3"
+                                      className="bg-muted rounded-lg p-2 md:p-3 text-sm md:text-base"
                                       data-testid={`message-${currentResponse.id}`}
                                       data-message-id={currentResponse.id}
                                       data-message-type="assistant"
@@ -720,7 +720,7 @@ export default function AttemptMessages({
                                     currentResponse.content === "" ? (
                                     // Show "No response" for completed messages with empty content
                                     <div
-                                      className="bg-muted rounded-lg p-3"
+                                      className="bg-muted rounded-lg p-2 md:p-3 text-sm md:text-base"
                                       data-testid={`message-${currentResponse.id}`}
                                       data-message-id={currentResponse.id}
                                       data-message-type="assistant"
@@ -735,7 +735,7 @@ export default function AttemptMessages({
                                     ) ? (
                                     // Show error messages in red with retry button (only if no successful responses exist)
                                     <div
-                                      className="bg-red-50 border border-red-200 rounded-lg p-3 relative"
+                                      className="bg-red-50 border border-red-200 rounded-lg p-2 md:p-3 text-sm md:text-base relative"
                                       data-testid={`message-${currentResponse.id}`}
                                       data-message-id={currentResponse.id}
                                       data-message-type="assistant"
@@ -824,7 +824,7 @@ export default function AttemptMessages({
                                     </div>
                                   ) : (
                                     <div
-                                      className="bg-muted rounded-lg p-3 relative"
+                                      className="bg-muted rounded-lg p-2 md:p-3 text-sm md:text-base relative"
                                       data-testid={`message-${currentResponse.id}`}
                                       data-message-id={currentResponse.id}
                                       data-message-type="assistant"
