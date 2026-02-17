@@ -32,9 +32,7 @@ async def refresh_messages_view(
     tags = ["views", "simulation", "messages"]
     try:
         start_time = time.time()
-        await conn.execute(
-            "REFRESH MATERIALIZED VIEW CONCURRENTLY mv_attempt_messages"
-        )
+        await conn.execute("REFRESH MATERIALIZED VIEW CONCURRENTLY mv_attempt_messages")
         duration_ms = int((time.time() - start_time) * 1000)
         await invalidate_tags(tags)
         return RefreshResponse(

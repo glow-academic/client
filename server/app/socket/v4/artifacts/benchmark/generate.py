@@ -35,8 +35,8 @@ from app.socket.v4.artifacts.benchmark.types import (
     GenerateSuitePayload,
 )
 from app.socket.v4.artifacts.types import (
-    SuiteGenerationStartedEvent,
     GenerateErrorApiRequest,
+    SuiteGenerationStartedEvent,
 )
 from app.sql.types import (
     GetAgentToolsSqlParams,
@@ -55,7 +55,9 @@ client_router = APIRouter()
 server_router = APIRouter()
 
 # SQL paths
-SQL_PATH_PREPARE = "app/sql/v4/queries/generate/suite/prepare_suite_generation_complete.sql"
+SQL_PATH_PREPARE = (
+    "app/sql/v4/queries/generate/suite/prepare_suite_generation_complete.sql"
+)
 SQL_PATH_AGENT_TOOLS = (
     "app/sql/v4/queries/generate/persona/get_agent_tools_complete.sql"
 )
@@ -268,9 +270,7 @@ async def _suite_generate_impl(
             )
             return
 
-        suite_jinja_context = _build_suite_jinja_context(
-            result, resource_types
-        )
+        suite_jinja_context = _build_suite_jinja_context(result, resource_types)
 
         # Step 3: Check rate limit using pre-fetched data
         config_profile = (

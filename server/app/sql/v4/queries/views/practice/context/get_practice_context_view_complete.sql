@@ -1,7 +1,7 @@
 -- ============================================================================
--- Query: get_training_context_view
--- Purpose: IDs-first training context for artifact hydration (thin MV filter layer)
--- Section: VIEWS/TRAINING/CONTEXT
+-- Query: get_practice_context_view
+-- Purpose: IDs-first practice context for artifact hydration (thin MV filter layer)
+-- Section: VIEWS/PRACTICE/CONTEXT
 -- ============================================================================
 
 DO $$
@@ -11,10 +11,10 @@ BEGIN
     FOR r IN
         SELECT oidvectortypes(proargtypes) as sig
         FROM pg_proc
-        WHERE proname = 'api_get_training_context_view_v4'
+        WHERE proname = 'api_get_practice_context_view_v4'
           AND pronamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'public')
     LOOP
-        EXECUTE format('DROP FUNCTION IF EXISTS api_get_training_context_view_v4(%s)', r.sig);
+        EXECUTE format('DROP FUNCTION IF EXISTS api_get_practice_context_view_v4(%s)', r.sig);
     END LOOP;
 END $$;
 
@@ -25,14 +25,14 @@ BEGIN
     FOR r IN
         SELECT typname
         FROM pg_type
-        WHERE typname LIKE 'q_get_training_context_view_v4_%'
+        WHERE typname LIKE 'q_get_practice_context_view_v4_%'
           AND typnamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'types')
     LOOP
         EXECUTE format('DROP TYPE IF EXISTS types.%I CASCADE', r.typname);
     END LOOP;
 END $$;
 
-CREATE TYPE types.q_get_training_context_view_v4_item AS (
+CREATE TYPE types.q_get_practice_context_view_v4_item AS (
     simulation_id uuid,
     training_entry_ids uuid[],
     scenario_ids uuid[],
@@ -42,12 +42,11 @@ CREATE TYPE types.q_get_training_context_view_v4_item AS (
     time_limit_ids uuid[]
 );
 
-CREATE OR REPLACE FUNCTION api_get_training_context_view_v4(
-    profile_id_filter uuid,
-    practice_filter boolean DEFAULT FALSE
+CREATE OR REPLACE FUNCTION api_get_practice_context_view_v4(
+    profile_id_filter uuid
 )
 RETURNS TABLE (
-    items types.q_get_training_context_view_v4_item[]
+    items types.q_get_practice_context_view_v4_item[]
 )
 LANGUAGE sql
 STABLE
@@ -55,8 +54,7 @@ AS $$
 -- User context (actor_name, user_role, department_ids) comes from get_profile_context_internal() in Python
 WITH params AS (
     SELECT
-        profile_id_filter AS profile_id,
-        practice_filter AS practice
+        profile_id_filter AS profile_id
 ),
 user_cohorts AS (
     SELECT ARRAY_AGG(DISTINCT ccj.cohorts_id) AS cohort_ids
@@ -70,23 +68,8 @@ user_cohorts AS (
     WHERE pcj.profile_id = (SELECT profile_id FROM params)
       AND pcj.active = true
 ),
--- Filter mv_home/mv_practice by cohort overlap
+-- Filter mv_practice by cohort overlap
 accessible_training AS (
-    SELECT
-        mh.home_id AS parent_id,
-        mh.simulation_ids,
-        mh.cohort_ids,
-        mh.training_ids AS training_entry_ids,
-        mh.scenario_ids,
-        mh.persona_ids,
-        mh.rubric_ids,
-        mh.time_limit_ids
-    FROM mv_home mh
-    JOIN user_cohorts uc ON mh.cohort_ids && COALESCE(uc.cohort_ids, ARRAY[]::uuid[])
-    WHERE (SELECT practice FROM params) = false
-
-    UNION ALL
-
     SELECT
         mp.practice_id AS parent_id,
         mp.simulation_ids,
@@ -98,7 +81,6 @@ accessible_training AS (
         mp.time_limit_ids
     FROM mv_practice mp
     JOIN user_cohorts uc ON mp.cohort_ids && COALESCE(uc.cohort_ids, ARRAY[]::uuid[])
-    WHERE (SELECT practice FROM params) = true
 ),
 -- Check simulation_active flag for each simulation
 active_simulations AS (
@@ -157,13 +139,13 @@ SELECT
                     ss.persona_ids,
                     ss.rubric_ids,
                     ss.time_limit_ids
-                )::types.q_get_training_context_view_v4_item
+                )::types.q_get_practice_context_view_v4_item
                 ORDER BY ss.simulation_id
             )
             FROM simulation_scope ss
             WHERE ss.scenario_ids IS NOT NULL
               AND ARRAY_LENGTH(ss.scenario_ids, 1) > 0
         ),
-        ARRAY[]::types.q_get_training_context_view_v4_item[]
+        ARRAY[]::types.q_get_practice_context_view_v4_item[]
     ) AS items;
 $$;

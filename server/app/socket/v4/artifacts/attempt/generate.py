@@ -411,8 +411,7 @@ async def _attempt_generate_impl(
                 views_dict: dict[str, Any] = {}
                 if result.views.attempt:
                     views_dict["attempt"] = [
-                        a.model_dump(mode="json")
-                        for a in result.views.attempt
+                        a.model_dump(mode="json") for a in result.views.attempt
                     ]
                 if result.views.attempt_chat:
                     views_dict["attempt_chat"] = [
@@ -420,8 +419,7 @@ async def _attempt_generate_impl(
                     ]
                 if result.views.attempt_message:
                     views_dict["attempt_message"] = [
-                        m.model_dump(mode="json")
-                        for m in result.views.attempt_message
+                        m.model_dump(mode="json") for m in result.views.attempt_message
                     ]
                 jinja_context["views"] = views_dict
 
@@ -466,18 +464,10 @@ async def _attempt_generate_impl(
             # Build chat history from views (for message handlers)
             # Resolve chat_id: from extra context, or first active chat in views
             chat_id_for_history = extra_chat_id
-            if (
-                not chat_id_for_history
-                and result.views
-                and result.views.attempt_chat
-            ):
+            if not chat_id_for_history and result.views and result.views.attempt_chat:
                 chat_id_for_history = result.views.attempt_chat[0].id
 
-            if (
-                chat_id_for_history
-                and result.views
-                and result.views.attempt_message
-            ):
+            if chat_id_for_history and result.views and result.views.attempt_message:
                 for msg in result.views.attempt_message:
                     if msg.chat_id == chat_id_for_history and msg.completed:
                         role = "user" if msg.type == "query" else "assistant"

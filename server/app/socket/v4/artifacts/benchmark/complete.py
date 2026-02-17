@@ -63,9 +63,7 @@ async def handle_suite_artifact_complete(data: dict[str, Any]) -> None:
     # resource_complete.py (shared handler) - nothing to do here
 
 
-async def _handle_suite_text_complete(
-    sid: str, data: dict[str, Any]
-) -> None:
+async def _handle_suite_text_complete(sid: str, data: dict[str, Any]) -> None:
     """Handle benchmark bundle text generation completion - save assistant message."""
     run_id = data.get("run_id")
     final_content = data.get("text") or ""

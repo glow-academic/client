@@ -32,9 +32,7 @@ async def refresh_grades_view(
     tags = ["views", "simulation", "grades"]
     try:
         start_time = time.time()
-        await conn.execute(
-            "REFRESH MATERIALIZED VIEW CONCURRENTLY mv_attempt_grade"
-        )
+        await conn.execute("REFRESH MATERIALIZED VIEW CONCURRENTLY mv_attempt_grade")
         duration_ms = int((time.time() - start_time) * 1000)
         await invalidate_tags(tags)
         return RefreshResponse(

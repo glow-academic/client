@@ -1,4 +1,4 @@
-"""Get endpoint for training context view."""
+"""Get endpoint for home context view."""
 
 from typing import Annotated
 from uuid import UUID
@@ -6,9 +6,9 @@ from uuid import UUID
 import asyncpg
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
-from app.api.v4.views.training.context.types import (
-    GetTrainingContextViewResponse,
-    TrainingContextViewItem,
+from app.api.v4.views.home.context.types import (
+    GetHomeContextViewResponse,
+    HomeContextViewItem,
 )
 from app.infra.v4.activity.audit import audit_activity
 from app.infra.v4.error.handle_route_error import handle_route_error
@@ -18,45 +18,41 @@ from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
 from app.utils.sql_helper import execute_sql_typed
 
-SQL_PATH = (
-    "app/sql/v4/queries/views/training/context/get_training_context_view_complete.sql"
-)
+SQL_PATH = "app/sql/v4/queries/views/home/context/get_home_context_view_complete.sql"
 
 router = APIRouter()
 
 
-async def get_training_context_view_internal(
+async def get_home_context_view_internal(
     conn: asyncpg.Connection,
     profile_id: UUID,
-    practice: bool,
     bypass_cache: bool = False,
-) -> GetTrainingContextViewResponse:
-    """Internal function for IDs-first training context data."""
-    from app.sql.types import GetTrainingContextViewSqlParams
+) -> GetHomeContextViewResponse:
+    """Internal function for IDs-first home context data."""
+    from app.sql.types import GetHomeContextViewSqlParams
 
     cache_key_val = cache_key(
-        "views/training/context/get",
-        {"profile_id": str(profile_id), "practice": practice},
+        "views/home/context/get",
+        {"profile_id": str(profile_id)},
     )
 
     if not bypass_cache:
         cached = await get_cached(cache_key_val)
         if cached:
-            return GetTrainingContextViewResponse.model_validate(cached)
+            return GetHomeContextViewResponse.model_validate(cached)
 
-    params = GetTrainingContextViewSqlParams(
+    params = GetHomeContextViewSqlParams(
         profile_id_filter=profile_id,
-        practice_filter=practice,
     )
     result = await execute_sql_typed(conn, SQL_PATH, params=params)
 
-    items: list[TrainingContextViewItem] = []
+    items: list[HomeContextViewItem] = []
     if result and result.items:
         for item in result.items:
             if not item.simulation_id:
                 continue
             items.append(
-                TrainingContextViewItem(
+                HomeContextViewItem(
                     simulation_id=item.simulation_id,
                     training_entry_ids=(
                         list(item.training_entry_ids)
@@ -73,9 +69,7 @@ async def get_training_context_view_internal(
                 )
             )
 
-    # actor_name and user_role come from get_profile_context_internal() in the
-    # artifact layer, not from this SQL query.
-    response = GetTrainingContextViewResponse(
+    response = GetHomeContextViewResponse(
         items=items,
     )
 
@@ -83,7 +77,7 @@ async def get_training_context_view_internal(
         cache_key_val,
         response.model_dump(mode="json"),
         ttl=60,
-        tags=["views", "training", "context"],
+        tags=["views", "home", "context"],
     )
 
     return response
@@ -91,22 +85,21 @@ async def get_training_context_view_internal(
 
 @router.post(
     "/get",
-    response_model=GetTrainingContextViewResponse,
+    response_model=GetHomeContextViewResponse,
     dependencies=[
         audit_activity(
-            "views.training.context.get",
-            "{{ actor.name }} fetched training context view",
+            "views.home.context.get",
+            "{{ actor.name }} fetched home context view",
         )
     ],
 )
-async def get_training_context_view(
+async def get_home_context_view(
     request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
-    practice: bool = False,
-) -> GetTrainingContextViewResponse:
-    """Get training context view for current profile and mode."""
-    tags = ["views", "training", "context", "practice" if practice else "home"]
+) -> GetHomeContextViewResponse:
+    """Get home context view for current profile."""
+    tags = ["views", "home", "context"]
     bypass_cache = request.headers.get("X-Bypass-Cache") == "1"
 
     sql_query: str | None = None
@@ -117,10 +110,9 @@ async def get_training_context_view(
         if not profile_id:
             raise HTTPException(status_code=401, detail="Profile ID is required")
 
-        result = await get_training_context_view_internal(
+        result = await get_home_context_view_internal(
             conn=conn,
             profile_id=profile_id,
-            practice=practice,
             bypass_cache=bypass_cache,
         )
 
@@ -132,7 +124,7 @@ async def get_training_context_view(
         handle_route_error(
             error=e,
             route_path=request.url.path,
-            operation="views_training_context_get",
+            operation="views_home_context_get",
             sql_query=sql_query,
             sql_params=sql_params,
             request=request,

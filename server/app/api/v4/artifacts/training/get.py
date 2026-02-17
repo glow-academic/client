@@ -15,7 +15,6 @@ from uuid import UUID
 import asyncpg
 from fastapi import APIRouter, HTTPException, Request
 
-from app.api.v4.artifacts.training.list import get_training_websocket
 from app.api.v4.artifacts.training.permissions import (
     TRAINING_BUNDLE_RESOURCES,
     compute_bundle_section_show,
@@ -65,8 +64,78 @@ from app.api.v4.views.run.list.get import get_run_list_view_internal
 from app.api.v4.views.training.bundle.get import get_training_view_internal
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_pool
+from app.sql.types import (
+    GetTrainingStartContextSqlParams,
+    GetTrainingStartContextSqlRow,
+)
+from app.utils.sql_helper import execute_sql_typed
 
 router = APIRouter()
+
+SQL_PATH_START_CONTEXT = (
+    "app/sql/v4/queries/generate/training/get_training_start_context_complete.sql"
+)
+
+
+# =============================================================================
+# Training Start Context (moved from list.py)
+# =============================================================================
+
+
+async def get_training_start_context(
+    conn: asyncpg.Connection,
+    profile_id: UUID,
+    training_entry_id: UUID,
+    department_id: UUID,
+    draft_id: UUID | None = None,
+) -> GetTrainingWebsocketResponse:
+    """Thin websocket fetch for training start flow."""
+    params = GetTrainingStartContextSqlParams(
+        p_profile_id=profile_id,
+        p_training_entry_id=training_entry_id,
+        p_department_id=department_id,
+        p_draft_id=draft_id,
+    )
+
+    row = cast(
+        GetTrainingStartContextSqlRow,
+        await execute_sql_typed(conn, SQL_PATH_START_CONTEXT, params=params),
+    )
+    if not row:
+        raise HTTPException(status_code=404, detail="Training start context not found")
+
+    return GetTrainingWebsocketResponse(
+        views=TrainingWebsocketViews(
+            training_entry_id=training_entry_id,
+            department_id=department_id,
+        ),
+        resources=TrainingWebsocketResources(
+            simulation_id=row.simulation_id,
+            scenario_id=row.scenario_id,
+            problem_statement=row.problem_statement,
+            objectives=row.objectives,
+            persona=row.persona,
+            video_ids=list(row.video_ids) if row.video_ids else None,
+            image_ids=list(row.image_ids) if row.image_ids else None,
+            has_problem_statement=row.has_problem_statement or False,
+            has_persona=row.has_persona or False,
+            agent_id=row.agent_id,
+            agent_exists=row.agent_exists or False,
+            agent_name=row.agent_name,
+            agent_is_active=row.agent_is_active or False,
+            model_id=row.model_id,
+            model_name=row.model_name,
+            provider_id=row.provider_id,
+            provider_name=row.provider_name,
+            has_api_key=row.has_api_key or False,
+            requests_per_day=row.requests_per_day,
+            runs_today=int(row.runs_today or 0),
+            simulation_exists=row.simulation_exists or False,
+            simulation_is_active=row.simulation_is_active or False,
+            profile_has_access=row.profile_has_access or False,
+            valid_entry_types=list(row.valid_entry_types or []),
+        ),
+    )
 
 
 # =============================================================================
@@ -333,7 +402,7 @@ async def get_training_internal(
 
     if selected_department_id is not None:
         async with pool.acquire() as conn:
-            start_ctx = await get_training_websocket(
+            start_ctx = await get_training_start_context(
                 conn=conn,
                 profile_id=profile_id,
                 training_entry_id=training_entry_id,

@@ -32,9 +32,7 @@ async def refresh_feedbacks_view(
     tags = ["views", "simulation", "feedbacks"]
     try:
         start_time = time.time()
-        await conn.execute(
-            "REFRESH MATERIALIZED VIEW CONCURRENTLY mv_attempt_feedback"
-        )
+        await conn.execute("REFRESH MATERIALIZED VIEW CONCURRENTLY mv_attempt_feedback")
         duration_ms = int((time.time() - start_time) * 1000)
         await invalidate_tags(tags)
         return RefreshResponse(

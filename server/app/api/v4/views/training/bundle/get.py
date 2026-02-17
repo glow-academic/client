@@ -11,9 +11,7 @@ from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
 from app.utils.sql_helper import execute_sql_typed
 
-SQL_PATH = (
-    "app/sql/v4/queries/views/training/bundle/get_training_view_complete.sql"
-)
+SQL_PATH = "app/sql/v4/queries/views/training/bundle/get_training_view_complete.sql"
 
 router = APIRouter()
 

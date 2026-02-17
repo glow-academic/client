@@ -14,7 +14,8 @@ from .hints import server_router as hints_server_router
 from .improvements import server_router as improvements_server_router
 from .replacements import server_router as replacements_server_router
 from .responses import server_router as responses_server_router
-from .attempt_message import server_router as attempt_message_server_router
+
+# from .attempt_message import server_router as attempt_message_server_router
 from .strengths import server_router as strengths_server_router
 
 server_router = APIRouter()
@@ -27,5 +28,5 @@ server_router.include_router(hints_server_router)
 server_router.include_router(improvements_server_router)
 server_router.include_router(replacements_server_router)
 server_router.include_router(responses_server_router)
-server_router.include_router(attempt_message_server_router)
+# server_router.include_router(attempt_message_server_router)
 server_router.include_router(strengths_server_router)

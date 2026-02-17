@@ -16,6 +16,9 @@ from fastapi import APIRouter, HTTPException, Request
 
 from app.api.v4.artifacts.benchmark.types import (
     BaseSuiteSection,
+    GetSuiteRequest,
+    GetSuiteResponse,
+    GetSuiteWebsocketResponse,
     SuiteDepartmentSection,
     SuiteInstructionSection,
     SuiteKeySection,
@@ -27,9 +30,6 @@ from app.api.v4.artifacts.benchmark.types import (
     SuiteVoiceSection,
     SuiteWebsocketResources,
     SuiteWebsocketViews,
-    GetSuiteRequest,
-    GetSuiteResponse,
-    GetSuiteWebsocketResponse,
 )
 from app.api.v4.auth.settings import get_auth_settings_internal
 from app.api.v4.permissions import resolve_agents_for_artifact

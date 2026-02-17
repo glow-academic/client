@@ -67,9 +67,7 @@ async def patch_training_draft(
                 draft={"id": str(result.draft_id)},
             )
 
-        api_response = PatchTrainingDraftApiResponse.model_validate(
-            result.model_dump()
-        )
+        api_response = PatchTrainingDraftApiResponse.model_validate(result.model_dump())
 
         await invalidate_tags(tags)
         response.headers["X-Invalidate-Tags"] = ",".join(tags)

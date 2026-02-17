@@ -17,10 +17,12 @@ from app.api.v4.views.config import router as config_router
 from app.api.v4.views.grant import router as grant_router
 from app.api.v4.views.group import router as group_router
 from app.api.v4.views.health import router as health_router
+from app.api.v4.views.home import router as home_router
 from app.api.v4.views.image import router as image_router
 from app.api.v4.views.login import router as login_router
 from app.api.v4.views.message import router as message_router
 from app.api.v4.views.metric import router as metric_router
+from app.api.v4.views.practice import router as practice_router
 from app.api.v4.views.problem import router as problem_router
 from app.api.v4.views.run import router as run_router
 from app.api.v4.views.session import router as session_router
@@ -55,3 +57,5 @@ router.include_router(video_router)
 router.include_router(grant_router)
 router.include_router(audio_router)
 router.include_router(simulation_router)
+router.include_router(home_router)
+router.include_router(practice_router)

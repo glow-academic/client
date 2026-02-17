@@ -19,9 +19,9 @@ import { Suspense } from "react";
 import { loadPracticeSearchParams } from "@/lib/search-params/practice";
 
 /** ---- Strong types from OpenAPI ---- */
-// Using /training/get for simulation cards (enhanced with stats)
-type PracticeCardsIn = InputOf<"/api/v4/artifacts/training/list", "post">;
-type PracticeCardsOut = OutputOf<"/api/v4/artifacts/training/list", "post">;
+// Using /practice/get for simulation cards (enhanced with stats)
+type PracticeCardsIn = InputOf<"/api/v4/artifacts/practice/get", "post">;
+type PracticeCardsOut = OutputOf<"/api/v4/artifacts/practice/get", "post">;
 // Using /attempt/list for history section
 type PracticeHistoryIn = InputOf<"/api/v4/artifacts/attempt/list", "post">;
 type PracticeHistoryOut = OutputOf<"/api/v4/artifacts/attempt/list", "post">;
@@ -35,7 +35,7 @@ const getPracticeCards = async (
 ): Promise<PracticeCardsOut> => {
   const bypassCache = await isHardRefresh();
 
-  return api.post("/artifacts/training/list", input, {
+  return api.post("/artifacts/practice/get", input, {
     cache: "no-store",
     ...(bypassCache && {
       headers: {
@@ -84,11 +84,7 @@ export default async function PracticePage({
   const defaultFilters = resolveAnalyticsFilters(q, defaults, profileContext);
 
   // Cards endpoint (now includes all stats needed for simulation cards)
-  const cardsFilters: PracticeCardsIn = {
-    body: {
-      practice: true,
-    },
-  };
+  const cardsFilters: PracticeCardsIn = {};
 
   // History params with defaults
   const historyPage = q.historyPage ?? 0;

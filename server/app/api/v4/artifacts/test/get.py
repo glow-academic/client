@@ -302,9 +302,7 @@ async def get_test_internal(
                     invocation_id=str(invocation.invocation_id),
                     run_id=str(first_run_id) if first_run_id else None,
                     group_id=str(first_group_id) if first_group_id else None,
-                    suite_entry_id=(
-                        str(bundle_entry_id) if bundle_entry_id else None
-                    ),
+                    suite_entry_id=(str(bundle_entry_id) if bundle_entry_id else None),
                     model_name=model_name,
                     agent_name=agent_name,
                     status=invocation_status,

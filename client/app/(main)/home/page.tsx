@@ -19,9 +19,9 @@ import { Suspense } from "react";
 import { loadHomeSearchParams } from "@/lib/search-params/home";
 
 /** ---- Strong types from OpenAPI ---- */
-// Using /training/get for simulation cards (enhanced with stats)
-type HomeCardsIn = InputOf<"/api/v4/artifacts/training/list", "post">;
-type HomeCardsOut = OutputOf<"/api/v4/artifacts/training/list", "post">;
+// Using /home/get for simulation cards (enhanced with stats)
+type HomeCardsIn = InputOf<"/api/v4/artifacts/home/get", "post">;
+type HomeCardsOut = OutputOf<"/api/v4/artifacts/home/get", "post">;
 // Using /attempt/list for history section
 type HomeHistoryIn = InputOf<"/api/v4/artifacts/attempt/list", "post">;
 type HomeHistoryOut = OutputOf<"/api/v4/artifacts/attempt/list", "post">;
@@ -35,7 +35,7 @@ const getHomeCards = async (
 ): Promise<HomeCardsOut> => {
   const bypassCache = await isHardRefresh();
 
-  return api.post("/artifacts/training/list", input, {
+  return api.post("/artifacts/home/get", input, {
     cache: "no-store",
     ...(bypassCache && {
       headers: {
@@ -82,11 +82,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
   const defaultFilters = resolveAnalyticsFilters(q, defaults, profileContext);
 
   // Cards endpoint (now includes all stats needed for simulation cards)
-  const cardsFilters: HomeCardsIn = {
-    body: {
-      practice: false,
-    },
-  };
+  const cardsFilters: HomeCardsIn = {};
 
   // History params with defaults
   const historyPage = q.historyPage ?? 0;

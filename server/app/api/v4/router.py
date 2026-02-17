@@ -35,10 +35,12 @@ from app.api.v4.artifacts.eval import router as evals_router
 from app.api.v4.artifacts.field import router as fields_router
 from app.api.v4.artifacts.group import router as group_router
 from app.api.v4.artifacts.health import router as health_artifact_router
+from app.api.v4.artifacts.home import router as home_artifact_router
 from app.api.v4.artifacts.leaderboard import router as leaderboard_artifact_router
 from app.api.v4.artifacts.model import router as models_router
 from app.api.v4.artifacts.parameter import router as parameters_router
 from app.api.v4.artifacts.persona import router as personas_router
+from app.api.v4.artifacts.practice import router as practice_artifact_router
 from app.api.v4.artifacts.pricing import router as pricing_artifact_router
 from app.api.v4.artifacts.profile import router as profile_router
 from app.api.v4.artifacts.provider import router as providers_router
@@ -116,6 +118,8 @@ artifacts_router.include_router(tools_router)
 artifacts_router.include_router(group_router)
 artifacts_router.include_router(session_router)
 artifacts_router.include_router(training_artifact_router)
+artifacts_router.include_router(home_artifact_router)
+artifacts_router.include_router(practice_artifact_router)
 artifacts_router.include_router(attempt_artifact_router)
 
 # View-based artifacts

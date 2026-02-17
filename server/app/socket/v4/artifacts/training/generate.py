@@ -55,7 +55,9 @@ client_router = APIRouter()
 server_router = APIRouter()
 
 # SQL paths
-SQL_PATH_PREPARE = "app/sql/v4/queries/generate/training/prepare_training_generation_complete.sql"
+SQL_PATH_PREPARE = (
+    "app/sql/v4/queries/generate/training/prepare_training_generation_complete.sql"
+)
 SQL_PATH_AGENT_TOOLS = (
     "app/sql/v4/queries/generate/persona/get_agent_tools_complete.sql"
 )

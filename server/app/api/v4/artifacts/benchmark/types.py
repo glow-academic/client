@@ -9,7 +9,6 @@ from app.api.v4.artifacts.types import FilterOption
 from app.api.v4.views.benchmark.tests.types import BenchmarkTestViewItem
 from app.api.v4.views.run.list.types import GetRunListViewResponse
 from app.sql.types import (
-    SuiteMultiResourceAction,
     QGetAgentsV4Item,
     QGetDepartmentsV4Item,
     QGetInstructionsV4Item,
@@ -23,6 +22,14 @@ from app.sql.types import (
     QGetToolsV4Item,
     QGetVoicesV4Item,
 )
+
+
+class SuiteMultiResourceAction(BaseModel):
+    """Multi-resource action for benchmark suite draft patch."""
+
+    resource_ids: list[UUID] | None = None
+    create_tool_id: UUID | None = None
+    link_tool_id: UUID | None = None
 
 
 class BenchmarkRequest(BaseModel):

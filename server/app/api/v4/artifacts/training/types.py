@@ -224,18 +224,6 @@ class GetTrainingListResponse(BaseModel):
 # =============================================================================
 
 
-class GetTrainingGetRequest(BaseModel):
-    """Client API request for training get (operational).
-
-    Returns simulations user can take with scenario_ids for starting.
-
-    Args:
-        practice: If True, returns practice simulations. If False, returns home simulations.
-    """
-
-    practice: bool = False
-
-
 class TrainingSimulationOperational(BaseModel):
     """Simulation data for starting a training session.
 
@@ -272,20 +260,6 @@ class TrainingSimulationOperational(BaseModel):
     passed_count: int | None = None
     in_progress_count: int | None = None
     not_started_count: int | None = None
-
-
-class GetTrainingGetResponse(BaseModel):
-    """Client-facing API response for training get (operational).
-
-    Returns simulations user can take, scoped by their cohorts.
-    """
-
-    actor_name: str | None = None
-    items: list[TrainingSimulationOperational] | None = None
-    # Rubric data for pre-start display
-    rubrics: list[RubricMapping] | None = None
-    standard_groups: list[StandardGroupMapping] | None = None
-    standards: list[StandardMapping] | None = None
 
 
 # =============================================================================

@@ -2660,26 +2660,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v4/artifacts/training/list": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Training Get
-         * @description Get simulations available for training (operational).
-         */
-        post: operations["training_get_api_v4_artifacts_training_list_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v4/artifacts/training/get": {
         parameters: {
             query?: never;
@@ -2690,10 +2670,10 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Training Bundle Get
+         * Training Get
          * @description Get hydrated resources for training bundle customization.
          */
-        post: operations["training_bundle_get_api_v4_artifacts_training_get_post"];
+        post: operations["training_get_api_v4_artifacts_training_get_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2763,6 +2743,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/artifacts/home/get": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Home Get
+         * @description Get simulations available for home (operational).
+         */
+        post: operations["home_get_api_v4_artifacts_home_get_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/artifacts/practice/get": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Practice Get
+         * @description Get simulations available for practice (operational).
+         */
+        post: operations["practice_get_api_v4_artifacts_practice_get_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v4/artifacts/attempt/get": {
         parameters: {
             query?: never;
@@ -2777,9 +2797,9 @@ export interface paths {
          * @description Get attempt detail with parallel MV fetching.
          *
          *     Uses view internal handlers with pool-based parallel fetch:
-         *     - View 1: simulation_attempts (attempt-level aggregates)
-         *     - View 2: simulation_chats (chat-level data with grades/feedbacks)
-         *     - View 3: simulation_messages (message-level data with strengths/improvements/hints)
+         *     - View 1: attempt (attempt-level aggregates)
+         *     - View 2: attempt_chat (chat-level data with grades/feedbacks)
+         *     - View 3: attempt_message (message-level data with strengths/improvements/hints)
          *
          *     Each query runs on its own connection from the pool for true parallelism.
          *     The practice flag is determined from the attempt data itself.
@@ -2933,7 +2953,7 @@ export interface paths {
          *     - Cohort Performance (pass rate, avg score per cohort x simulation)
          *     - Attempt Improvement (score progression by attempt number)
          *
-         *     All sourced from mv_simulation_facts (renamed from mv_cohort_facts).
+         *     All sourced from mv_attempt_facts (renamed from mv_cohort_facts).
          */
         post: operations["get_dashboard_secondary_api_v4_artifacts_dashboard_secondary_post"];
         delete?: never;
@@ -3416,10 +3436,10 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Benchmark Bundle Get
+         * Suite Get
          * @description Get hydrated resources for benchmark bundle customization.
          */
-        post: operations["benchmark_bundle_get_api_v4_artifacts_benchmark_get_post"];
+        post: operations["suite_get_api_v4_artifacts_benchmark_get_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7689,10 +7709,10 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Get Benchmark Tests
-         * @description Get benchmark tests view rows from mv_benchmark_tests.
+         * Get Test
+         * @description Get benchmark tests view rows from mv_test.
          */
-        post: operations["get_benchmark_tests_api_v4_views_benchmark_tests_get_post"];
+        post: operations["get_test_api_v4_views_benchmark_tests_get_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7709,10 +7729,10 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Refresh Benchmark Tests
-         * @description Refresh mv_benchmark_tests concurrently.
+         * Refresh Test
+         * @description Refresh mv_test concurrently.
          */
-        post: operations["refresh_benchmark_tests_api_v4_views_benchmark_tests_refresh_post"];
+        post: operations["refresh_test_api_v4_views_benchmark_tests_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7729,10 +7749,10 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Get Benchmark Invocations
-         * @description Get benchmark invocation rows from mv_benchmark_invocations.
+         * Get Test Invocation
+         * @description Get benchmark invocation rows from mv_test_invocation.
          */
-        post: operations["get_benchmark_invocations_api_v4_views_benchmark_invocations_get_post"];
+        post: operations["get_test_invocation_api_v4_views_benchmark_invocations_get_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7749,10 +7769,10 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Refresh Benchmark Invocations
-         * @description Refresh mv_benchmark_invocations concurrently.
+         * Refresh Test Invocation
+         * @description Refresh mv_test_invocation concurrently.
          */
-        post: operations["refresh_benchmark_invocations_api_v4_views_benchmark_invocations_refresh_post"];
+        post: operations["refresh_test_invocation_api_v4_views_benchmark_invocations_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7769,10 +7789,10 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Get Benchmark Bundle View
+         * Get Suite View
          * @description Get thin bundle scope for a single benchmark bundle entry.
          */
-        post: operations["get_benchmark_bundle_view_api_v4_views_benchmark_bundle_get_post"];
+        post: operations["get_suite_view_api_v4_views_benchmark_bundle_get_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7839,26 +7859,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v4/views/training/context/get": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Training Context View
-         * @description Get training context view for current profile and mode.
-         */
-        post: operations["get_training_context_view_api_v4_views_training_context_get_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v4/views/training/bundle/get": {
         parameters: {
             query?: never;
@@ -7869,10 +7869,10 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Get Training Bundle View
+         * Get Training View
          * @description Get thin bundle scope for a single training bundle entry.
          */
-        post: operations["get_training_bundle_view_api_v4_views_training_bundle_get_post"];
+        post: operations["get_training_view_api_v4_views_training_bundle_get_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -8130,7 +8130,7 @@ export interface paths {
         put?: never;
         /**
          * Get Simulation Facts
-         * @description Get simulation facts data from mv_simulation_facts.
+         * @description Get simulation facts data from mv_attempt_facts.
          *
          *     This endpoint fetches paginated chat-level data for the simulation/secondary
          *     dashboard section with:
@@ -8327,7 +8327,7 @@ export interface paths {
         put?: never;
         /**
          * Refresh Messages View
-         * @description Refresh the mv_simulation_messages materialized view concurrently.
+         * @description Refresh the mv_attempt_messages materialized view concurrently.
          */
         post: operations["refresh_messages_view_api_v4_views_simulation_messages_refresh_post"];
         delete?: never;
@@ -8347,7 +8347,7 @@ export interface paths {
         put?: never;
         /**
          * Recreate Messages View
-         * @description Recreate the mv_simulation_messages materialized view.
+         * @description Recreate the mv_attempt_messages materialized view.
          */
         post: operations["recreate_messages_view_api_v4_views_simulation_messages_recreate_post"];
         delete?: never;
@@ -8384,7 +8384,7 @@ export interface paths {
         put?: never;
         /**
          * Refresh Message Tree View
-         * @description Refresh the mv_simulation_message_tree materialized view concurrently.
+         * @description Refresh the mv_attempt_message_tree materialized view concurrently.
          */
         post: operations["refresh_message_tree_view_api_v4_views_simulation_message_tree_refresh_post"];
         delete?: never;
@@ -8404,7 +8404,7 @@ export interface paths {
         put?: never;
         /**
          * Recreate Message Tree View
-         * @description Recreate the mv_simulation_message_tree materialized view.
+         * @description Recreate the mv_attempt_message_tree materialized view.
          */
         post: operations["recreate_message_tree_view_api_v4_views_simulation_message_tree_recreate_post"];
         delete?: never;
@@ -8441,7 +8441,7 @@ export interface paths {
         put?: never;
         /**
          * Refresh Contents View
-         * @description Refresh the mv_simulation_contents materialized view concurrently.
+         * @description Refresh the mv_attempt_content materialized view concurrently.
          */
         post: operations["refresh_contents_view_api_v4_views_simulation_contents_refresh_post"];
         delete?: never;
@@ -8461,7 +8461,7 @@ export interface paths {
         put?: never;
         /**
          * Recreate Contents View
-         * @description Recreate the mv_simulation_contents materialized view.
+         * @description Recreate the mv_attempt_content materialized view.
          */
         post: operations["recreate_contents_view_api_v4_views_simulation_contents_recreate_post"];
         delete?: never;
@@ -8498,7 +8498,7 @@ export interface paths {
         put?: never;
         /**
          * Refresh Strengths View
-         * @description Refresh the mv_simulation_strengths materialized view concurrently.
+         * @description Refresh the mv_attempt_strength materialized view concurrently.
          */
         post: operations["refresh_strengths_view_api_v4_views_simulation_strengths_refresh_post"];
         delete?: never;
@@ -8518,7 +8518,7 @@ export interface paths {
         put?: never;
         /**
          * Recreate Strengths View
-         * @description Recreate the mv_simulation_strengths materialized view.
+         * @description Recreate the mv_attempt_strength materialized view.
          */
         post: operations["recreate_strengths_view_api_v4_views_simulation_strengths_recreate_post"];
         delete?: never;
@@ -8555,7 +8555,7 @@ export interface paths {
         put?: never;
         /**
          * Refresh Highlights View
-         * @description Refresh the mv_simulation_highlights materialized view concurrently.
+         * @description Refresh the mv_attempt_highlight materialized view concurrently.
          */
         post: operations["refresh_highlights_view_api_v4_views_simulation_highlights_refresh_post"];
         delete?: never;
@@ -8575,7 +8575,7 @@ export interface paths {
         put?: never;
         /**
          * Recreate Highlights View
-         * @description Recreate the mv_simulation_highlights materialized view.
+         * @description Recreate the mv_attempt_highlight materialized view.
          */
         post: operations["recreate_highlights_view_api_v4_views_simulation_highlights_recreate_post"];
         delete?: never;
@@ -8612,7 +8612,7 @@ export interface paths {
         put?: never;
         /**
          * Refresh Improvements View
-         * @description Refresh the mv_simulation_improvements materialized view concurrently.
+         * @description Refresh the mv_attempt_improvement materialized view concurrently.
          */
         post: operations["refresh_improvements_view_api_v4_views_simulation_improvements_refresh_post"];
         delete?: never;
@@ -8632,7 +8632,7 @@ export interface paths {
         put?: never;
         /**
          * Recreate Improvements View
-         * @description Recreate the mv_simulation_improvements materialized view.
+         * @description Recreate the mv_attempt_improvement materialized view.
          */
         post: operations["recreate_improvements_view_api_v4_views_simulation_improvements_recreate_post"];
         delete?: never;
@@ -8669,7 +8669,7 @@ export interface paths {
         put?: never;
         /**
          * Refresh Replacements View
-         * @description Refresh the mv_simulation_replacements materialized view concurrently.
+         * @description Refresh the mv_attempt_replacement materialized view concurrently.
          */
         post: operations["refresh_replacements_view_api_v4_views_simulation_replacements_refresh_post"];
         delete?: never;
@@ -8689,7 +8689,7 @@ export interface paths {
         put?: never;
         /**
          * Recreate Replacements View
-         * @description Recreate the mv_simulation_replacements materialized view.
+         * @description Recreate the mv_attempt_replacement materialized view.
          */
         post: operations["recreate_replacements_view_api_v4_views_simulation_replacements_recreate_post"];
         delete?: never;
@@ -8726,7 +8726,7 @@ export interface paths {
         put?: never;
         /**
          * Refresh Hints View
-         * @description Refresh the mv_simulation_hints materialized view concurrently.
+         * @description Refresh the mv_attempt_hint materialized view concurrently.
          */
         post: operations["refresh_hints_view_api_v4_views_simulation_hints_refresh_post"];
         delete?: never;
@@ -8746,7 +8746,7 @@ export interface paths {
         put?: never;
         /**
          * Recreate Hints View
-         * @description Recreate the mv_simulation_hints materialized view.
+         * @description Recreate the mv_attempt_hint materialized view.
          */
         post: operations["recreate_hints_view_api_v4_views_simulation_hints_recreate_post"];
         delete?: never;
@@ -8783,7 +8783,7 @@ export interface paths {
         put?: never;
         /**
          * Refresh Feedbacks View
-         * @description Refresh the mv_simulation_feedbacks materialized view concurrently.
+         * @description Refresh the mv_attempt_feedback materialized view concurrently.
          */
         post: operations["refresh_feedbacks_view_api_v4_views_simulation_feedbacks_refresh_post"];
         delete?: never;
@@ -8803,7 +8803,7 @@ export interface paths {
         put?: never;
         /**
          * Recreate Feedbacks View
-         * @description Recreate the mv_simulation_feedbacks materialized view.
+         * @description Recreate the mv_attempt_feedback materialized view.
          */
         post: operations["recreate_feedbacks_view_api_v4_views_simulation_feedbacks_recreate_post"];
         delete?: never;
@@ -8840,7 +8840,7 @@ export interface paths {
         put?: never;
         /**
          * Refresh Analyses View
-         * @description Refresh the mv_simulation_analyses materialized view concurrently.
+         * @description Refresh the mv_attempt_analysis materialized view concurrently.
          */
         post: operations["refresh_analyses_view_api_v4_views_simulation_analyses_refresh_post"];
         delete?: never;
@@ -8860,7 +8860,7 @@ export interface paths {
         put?: never;
         /**
          * Recreate Analyses View
-         * @description Recreate the mv_simulation_analyses materialized view.
+         * @description Recreate the mv_attempt_analysis materialized view.
          */
         post: operations["recreate_analyses_view_api_v4_views_simulation_analyses_recreate_post"];
         delete?: never;
@@ -8897,7 +8897,7 @@ export interface paths {
         put?: never;
         /**
          * Refresh Responses View
-         * @description Refresh the mv_simulation_responses materialized view concurrently.
+         * @description Refresh the mv_attempt_responses materialized view concurrently.
          */
         post: operations["refresh_responses_view_api_v4_views_simulation_responses_refresh_post"];
         delete?: never;
@@ -8917,7 +8917,7 @@ export interface paths {
         put?: never;
         /**
          * Recreate Responses View
-         * @description Recreate the mv_simulation_responses materialized view.
+         * @description Recreate the mv_attempt_responses materialized view.
          */
         post: operations["recreate_responses_view_api_v4_views_simulation_responses_recreate_post"];
         delete?: never;
@@ -8954,7 +8954,7 @@ export interface paths {
         put?: never;
         /**
          * Refresh Grades View
-         * @description Refresh the mv_simulation_grades materialized view concurrently.
+         * @description Refresh the mv_attempt_grade materialized view concurrently.
          */
         post: operations["refresh_grades_view_api_v4_views_simulation_grades_refresh_post"];
         delete?: never;
@@ -8974,7 +8974,7 @@ export interface paths {
         put?: never;
         /**
          * Recreate Grades View
-         * @description Recreate the mv_simulation_grades materialized view.
+         * @description Recreate the mv_attempt_grade materialized view.
          */
         post: operations["recreate_grades_view_api_v4_views_simulation_grades_recreate_post"];
         delete?: never;
@@ -8983,24 +8983,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v4/views/simulation/benchmark_feedbacks/get": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Get Benchmark Feedbacks */
-        post: operations["get_benchmark_feedbacks_api_v4_views_simulation_benchmark_feedbacks_get_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/views/simulation/benchmark_feedbacks/refresh": {
+    "/api/v4/views/home/context/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -9010,17 +8993,17 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Refresh Benchmark Feedbacks View
-         * @description Refresh the mv_benchmark_feedbacks materialized view concurrently.
+         * Get Home Context View
+         * @description Get home context view for current profile.
          */
-        post: operations["refresh_benchmark_feedbacks_view_api_v4_views_simulation_benchmark_feedbacks_refresh_post"];
+        post: operations["get_home_context_view_api_v4_views_home_context_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/views/simulation/benchmark_feedbacks/recreate": {
+    "/api/v4/views/practice/context/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -9030,10 +9013,10 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Recreate Benchmark Feedbacks View
-         * @description Recreate the mv_benchmark_feedbacks materialized view.
+         * Get Practice Context View
+         * @description Get practice context view for current profile.
          */
-        post: operations["recreate_benchmark_feedbacks_view_api_v4_views_simulation_benchmark_feedbacks_recreate_post"];
+        post: operations["get_practice_context_view_api_v4_views_practice_context_get_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -10383,7 +10366,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v4/server/benchmark_bundle_generation_started": {
+    "/socket/v4/server/suite_generation_started": {
         parameters: {
             query?: never;
             header?: never;
@@ -10393,19 +10376,19 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Benchmark Bundle Generation Started Api
+         * Suite Generation Started Api
          * @description Server-to-client event: Benchmark bundle generation started.
          *
          *     Emitted when benchmark bundle generation begins, listing resource types being generated.
          */
-        post: operations["benchmark_bundle_generation_started_api_socket_v4_server_benchmark_bundle_generation_started_post"];
+        post: operations["suite_generation_started_api_socket_v4_server_suite_generation_started_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/socket/v4/server/benchmark_bundle_generation_complete": {
+    "/socket/v4/server/suite_generation_complete": {
         parameters: {
             query?: never;
             header?: never;
@@ -10415,19 +10398,19 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Benchmark Bundle Generation Complete Api
+         * Suite Generation Complete Api
          * @description Server-to-client event: Benchmark bundle generation completed.
          *
          *     Emitted when all agents have finished generating benchmark bundle resources.
          */
-        post: operations["benchmark_bundle_generation_complete_api_socket_v4_server_benchmark_bundle_generation_complete_post"];
+        post: operations["suite_generation_complete_api_socket_v4_server_suite_generation_complete_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/socket/v4/server/benchmark_bundle_generation_error": {
+    "/socket/v4/server/suite_generation_error": {
         parameters: {
             query?: never;
             header?: never;
@@ -10437,19 +10420,19 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Benchmark Bundle Generation Error Api
+         * Suite Generation Error Api
          * @description Server-to-client event: Benchmark bundle generation error.
          *
          *     Emitted when benchmark bundle resource generation fails.
          */
-        post: operations["benchmark_bundle_generation_error_api_socket_v4_server_benchmark_bundle_generation_error_post"];
+        post: operations["suite_generation_error_api_socket_v4_server_suite_generation_error_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/socket/v4/server/benchmark_bundle_generation_progress": {
+    "/socket/v4/server/suite_generation_progress": {
         parameters: {
             query?: never;
             header?: never;
@@ -10459,13 +10442,13 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Benchmark Bundle Generation Progress Api
+         * Suite Generation Progress Api
          * @description Server-to-client event: Benchmark bundle generation progress.
          *
          *     Emitted as individual resources complete during benchmark bundle generation.
          *     Contains percentage-based progress tracking.
          */
-        post: operations["benchmark_bundle_generation_progress_api_socket_v4_server_benchmark_bundle_generation_progress_post"];
+        post: operations["suite_generation_progress_api_socket_v4_server_suite_generation_progress_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -18404,86 +18387,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v4/server/simulation_messages_generation_started": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Simulation Messages Generation Started Api
-         * @description Server-to-client event: SimulationMessages generation started.
-         */
-        post: operations["simulation_messages_generation_started_api_socket_v4_server_simulation_messages_generation_started_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/socket/v4/server/simulation_messages_generation_progress": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Simulation Messages Generation Progress Api
-         * @description Server-to-client event: SimulationMessages generation progress.
-         */
-        post: operations["simulation_messages_generation_progress_api_socket_v4_server_simulation_messages_generation_progress_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/socket/v4/server/simulation_messages_generation_complete": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Simulation Messages Generation Complete Api
-         * @description Server-to-client event: SimulationMessages generation completed.
-         */
-        post: operations["simulation_messages_generation_complete_api_socket_v4_server_simulation_messages_generation_complete_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/socket/v4/server/simulation_messages_generation_error": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Simulation Messages Generation Error Api
-         * @description Server-to-client event: SimulationMessages generation error.
-         */
-        post: operations["simulation_messages_generation_error_api_socket_v4_server_simulation_messages_generation_error_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/socket/v4/server/strengths_generation_started": {
         parameters: {
             query?: never;
@@ -20509,8 +20412,8 @@ export interface components {
          *     - Next mode (has attempt_id): checks remaining scenarios and proceeds
          */
         AttemptStartPayload: {
-            /** Training Bundle Entry Id */
-            training_bundle_entry_id?: string | null;
+            /** Training Entry Id */
+            training_entry_id?: string | null;
             /** Attempt Id */
             attempt_id?: string | null;
             /** Draft Id */
@@ -20539,8 +20442,8 @@ export interface components {
         AttemptStartedEvent: {
             /** Attempt Id */
             attempt_id: string;
-            /** Training Bundle Entry Id */
-            training_bundle_entry_id: string;
+            /** Training Entry Id */
+            training_entry_id: string;
         };
         /**
          * AttemptStopPayload
@@ -20658,12 +20561,12 @@ export interface components {
          * @description View payloads grouped by view type.
          */
         AttemptViews: {
-            /** Simulation Attempts */
-            simulation_attempts?: components["schemas"]["AttemptViewItem"][] | null;
-            /** Simulation Chats */
-            simulation_chats?: components["schemas"]["ChatData"][] | null;
-            /** Simulation Messages */
-            simulation_messages?: components["schemas"]["MessageData"][] | null;
+            /** Attempt */
+            attempt?: components["schemas"]["AttemptViewItem"][] | null;
+            /** Attempt Chat */
+            attempt_chat?: components["schemas"]["ChatData"][] | null;
+            /** Attempt Message */
+            attempt_message?: components["schemas"]["MessageData"][] | null;
             runs?: components["schemas"]["GetRunListViewResponse"] | null;
         };
         /**
@@ -21183,310 +21086,6 @@ export interface components {
             /** Options */
             options: components["schemas"]["ContinuationOption"][];
         };
-        /** BenchmarkBundleDepartmentSection */
-        BenchmarkBundleDepartmentSection: {
-            /**
-             * Show
-             * @default false
-             */
-            show: boolean;
-            /**
-             * Required
-             * @default false
-             */
-            required: boolean;
-            /**
-             * Show Ai Generate
-             * @default false
-             */
-            show_ai_generate: boolean;
-            /** Current */
-            current?: components["schemas"]["QGetDepartmentsV4Item"][] | null;
-            /** Resources */
-            resources?: components["schemas"]["QGetDepartmentsV4Item"][] | null;
-        };
-        /**
-         * BenchmarkBundleGenerationCompleteEvent
-         * @description Server-to-client event: benchmark_bundle_generation_complete.
-         *
-         *     Emitted when all agents have finished generating benchmark bundle resources.
-         */
-        BenchmarkBundleGenerationCompleteEvent: {
-            /**
-             * Artifact Type
-             * @default benchmark_bundle
-             */
-            artifact_type: string;
-            /** Group Id */
-            group_id: string;
-            /** Resource Type */
-            resource_type: string;
-            /** Run Id */
-            run_id?: string | null;
-            /** Success */
-            success: boolean;
-            /** Message */
-            message: string;
-            /** Type */
-            type?: string | null;
-            /** Attempt Id */
-            attempt_id?: string | null;
-            /** Chat Id */
-            chat_id?: string | null;
-        };
-        /**
-         * BenchmarkBundleGenerationErrorEvent
-         * @description Server-to-client event: benchmark_bundle_generation_error.
-         *
-         *     Emitted when benchmark bundle resource generation fails.
-         */
-        BenchmarkBundleGenerationErrorEvent: {
-            /**
-             * Artifact Type
-             * @default benchmark_bundle
-             */
-            artifact_type: string;
-            /** Group Id */
-            group_id?: string | null;
-            /** Resource Type */
-            resource_type?: string | null;
-            /** Resource Types */
-            resource_types?: string[] | null;
-            /** Resource Id */
-            resource_id?: string | null;
-            /** Run Id */
-            run_id?: string | null;
-            /**
-             * Success
-             * @default false
-             */
-            success: boolean;
-            /** Message */
-            message: string;
-            /** Trace Id */
-            trace_id?: string | null;
-        };
-        /**
-         * BenchmarkBundleGenerationProgressEvent
-         * @description Server-to-client event: benchmark_bundle_generation_progress.
-         *
-         *     Emitted as individual resources complete, providing percentage progress.
-         */
-        BenchmarkBundleGenerationProgressEvent: {
-            /**
-             * Artifact Type
-             * @default benchmark_bundle
-             */
-            artifact_type: string;
-            /** Group Id */
-            group_id: string;
-            /** Run Id */
-            run_id?: string | null;
-            /** Completed Resources */
-            completed_resources: number;
-            /** Total Resources */
-            total_resources: number;
-            /** Percentage */
-            percentage: number;
-            /** Last Completed Resource */
-            last_completed_resource?: string | null;
-        };
-        /**
-         * BenchmarkBundleGenerationStartedEvent
-         * @description Server-to-client event: benchmark_bundle_generation_started.
-         *
-         *     Emitted when benchmark bundle generation begins, listing which resource types
-         *     will be generated.
-         */
-        BenchmarkBundleGenerationStartedEvent: {
-            /**
-             * Artifact Type
-             * @default benchmark_bundle
-             */
-            artifact_type: string;
-            /** Group Id */
-            group_id: string;
-            /** Run Id */
-            run_id: string;
-            /** Resource Types */
-            resource_types: string[];
-        };
-        /** BenchmarkBundleInstructionSection */
-        BenchmarkBundleInstructionSection: {
-            /**
-             * Show
-             * @default false
-             */
-            show: boolean;
-            /**
-             * Required
-             * @default false
-             */
-            required: boolean;
-            /**
-             * Show Ai Generate
-             * @default false
-             */
-            show_ai_generate: boolean;
-            /** Current */
-            current?: components["schemas"]["QGetInstructionsV4Item"][] | null;
-            /** Resources */
-            resources?: components["schemas"]["QGetInstructionsV4Item"][] | null;
-        };
-        /** BenchmarkBundleKeySection */
-        BenchmarkBundleKeySection: {
-            /**
-             * Show
-             * @default false
-             */
-            show: boolean;
-            /**
-             * Required
-             * @default false
-             */
-            required: boolean;
-            /**
-             * Show Ai Generate
-             * @default false
-             */
-            show_ai_generate: boolean;
-            /** Current */
-            current?: components["schemas"]["QGetKeysV4Item"][] | null;
-            /** Resources */
-            resources?: components["schemas"]["QGetKeysV4Item"][] | null;
-        };
-        /** BenchmarkBundleModelSection */
-        BenchmarkBundleModelSection: {
-            /**
-             * Show
-             * @default false
-             */
-            show: boolean;
-            /**
-             * Required
-             * @default false
-             */
-            required: boolean;
-            /**
-             * Show Ai Generate
-             * @default false
-             */
-            show_ai_generate: boolean;
-            /** Current */
-            current?: components["schemas"]["QGetModelsV4Item"][] | null;
-            /** Resources */
-            resources?: components["schemas"]["QGetModelsV4Item"][] | null;
-        };
-        /** BenchmarkBundlePromptSection */
-        BenchmarkBundlePromptSection: {
-            /**
-             * Show
-             * @default false
-             */
-            show: boolean;
-            /**
-             * Required
-             * @default false
-             */
-            required: boolean;
-            /**
-             * Show Ai Generate
-             * @default false
-             */
-            show_ai_generate: boolean;
-            /** Current */
-            current?: components["schemas"]["QGetPromptsV4Item"][] | null;
-            /** Resources */
-            resources?: components["schemas"]["QGetPromptsV4Item"][] | null;
-        };
-        /** BenchmarkBundleReasoningLevelSection */
-        BenchmarkBundleReasoningLevelSection: {
-            /**
-             * Show
-             * @default false
-             */
-            show: boolean;
-            /**
-             * Required
-             * @default false
-             */
-            required: boolean;
-            /**
-             * Show Ai Generate
-             * @default false
-             */
-            show_ai_generate: boolean;
-            /** Current */
-            current?: components["schemas"]["QGetReasoningLevelsV4Item"][] | null;
-            /** Resources */
-            resources?: components["schemas"]["QGetReasoningLevelsV4Item"][] | null;
-        };
-        /** BenchmarkBundleTemperatureLevelSection */
-        BenchmarkBundleTemperatureLevelSection: {
-            /**
-             * Show
-             * @default false
-             */
-            show: boolean;
-            /**
-             * Required
-             * @default false
-             */
-            required: boolean;
-            /**
-             * Show Ai Generate
-             * @default false
-             */
-            show_ai_generate: boolean;
-            /** Current */
-            current?: components["schemas"]["QGetTemperatureLevelsV4Item"][] | null;
-            /** Resources */
-            resources?: components["schemas"]["QGetTemperatureLevelsV4Item"][] | null;
-        };
-        /** BenchmarkBundleToolSection */
-        BenchmarkBundleToolSection: {
-            /**
-             * Show
-             * @default false
-             */
-            show: boolean;
-            /**
-             * Required
-             * @default false
-             */
-            required: boolean;
-            /**
-             * Show Ai Generate
-             * @default false
-             */
-            show_ai_generate: boolean;
-            /** Current */
-            current?: components["schemas"]["QGetToolsV4Item"][] | null;
-            /** Resources */
-            resources?: components["schemas"]["QGetToolsV4Item"][] | null;
-        };
-        /** BenchmarkBundleVoiceSection */
-        BenchmarkBundleVoiceSection: {
-            /**
-             * Show
-             * @default false
-             */
-            show: boolean;
-            /**
-             * Required
-             * @default false
-             */
-            required: boolean;
-            /**
-             * Show Ai Generate
-             * @default false
-             */
-            show_ai_generate: boolean;
-            /** Current */
-            current?: components["schemas"]["QGetVoicesV4Item"][] | null;
-            /** Resources */
-            resources?: components["schemas"]["QGetVoicesV4Item"][] | null;
-        };
         /**
          * BenchmarkContextViewItem
          * @description IDs-first benchmark item -- raw IDs only, no computed fields.
@@ -21499,8 +21098,8 @@ export interface components {
             benchmark_id: string;
             /** Eval Ids */
             eval_ids?: string[] | null;
-            /** Benchmark Bundle Entry Ids */
-            benchmark_bundle_entry_ids?: string[] | null;
+            /** Suite Entry Ids */
+            suite_entry_ids?: string[] | null;
             /** Department Ids */
             department_ids?: string[] | null;
             /** Profile Ids */
@@ -21551,34 +21150,11 @@ export interface components {
             department_ids?: string[];
         };
         /**
-         * BenchmarkFeedbackViewItem
-         * @description A single benchmark feedback view item.
-         */
-        BenchmarkFeedbackViewItem: {
-            /**
-             * Feedback Id
-             * Format: uuid
-             */
-            feedback_id: string;
-            /** Grade Id */
-            grade_id?: string | null;
-            /** Total */
-            total?: number | null;
-            /** Feedback */
-            feedback?: string | null;
-            /** Total Points */
-            total_points?: number | null;
-            /** Pass Points */
-            pass_points?: number | null;
-            /** Created At */
-            created_at?: string | null;
-        };
-        /**
          * BenchmarkInvocationViewItem
-         * @description Single benchmark invocation row from mv_benchmark_invocations.
+         * @description Single benchmark invocation row from mv_test_invocation.
          *
          *     Lean: entry attrs + resource IDs + grade scalars only. Feedbacks
-         *     fetched via simulation/benchmark_feedbacks view.
+         *     fetched via simulation/test_feedback view.
          */
         BenchmarkInvocationViewItem: {
             /**
@@ -21593,8 +21169,8 @@ export interface components {
             test_id: string;
             /** Group Id */
             group_id?: string | null;
-            /** Benchmark Bundle Department Id */
-            benchmark_bundle_department_id?: string | null;
+            /** Suite Department Id */
+            suite_department_id?: string | null;
             /** Created At */
             created_at?: string | null;
             /** Title */
@@ -21676,7 +21252,7 @@ export interface components {
         };
         /**
          * BenchmarkTestViewItem
-         * @description Single benchmark test row from mv_benchmark_tests.
+         * @description Single benchmark test row from mv_test.
          */
         BenchmarkTestViewItem: {
             /**
@@ -25984,8 +25560,8 @@ export interface components {
             rubric_structure?: components["schemas"]["RubricStructureData"] | null;
             /** Training Id */
             training_id?: string | null;
-            /** Training Bundle Entry Id */
-            training_bundle_entry_id?: string | null;
+            /** Training Entry Id */
+            training_entry_id?: string | null;
             resources?: components["schemas"]["AttemptResources"] | null;
             views?: components["schemas"]["AttemptViews"] | null;
         };
@@ -26330,117 +25906,12 @@ export interface components {
             items?: components["schemas"]["QGetAuthsV4Item"][] | null;
         };
         /**
-         * GetBenchmarkBundleRequest
-         * @description Client API request for one benchmark bundle customization payload.
-         */
-        GetBenchmarkBundleRequest: {
-            /**
-             * Benchmark Bundle Entry Id
-             * Format: uuid
-             */
-            benchmark_bundle_entry_id: string;
-            /** Draft Id */
-            draft_id?: string | null;
-        };
-        /**
-         * GetBenchmarkBundleResponse
-         * @description Client-facing bundle response — section-first pattern.
-         */
-        GetBenchmarkBundleResponse: {
-            /**
-             * Benchmark Bundle Entry Id
-             * Format: uuid
-             */
-            benchmark_bundle_entry_id: string;
-            /** Benchmark Id */
-            benchmark_id?: string | null;
-            /**
-             * Profile Has Access
-             * @default false
-             */
-            profile_has_access: boolean;
-            /** Draft Version */
-            draft_version?: number | null;
-            departments?: components["schemas"]["BenchmarkBundleDepartmentSection"] | null;
-            models?: components["schemas"]["BenchmarkBundleModelSection"] | null;
-            prompts?: components["schemas"]["BenchmarkBundlePromptSection"] | null;
-            instructions?: components["schemas"]["BenchmarkBundleInstructionSection"] | null;
-            voices?: components["schemas"]["BenchmarkBundleVoiceSection"] | null;
-            temperature_levels?: components["schemas"]["BenchmarkBundleTemperatureLevelSection"] | null;
-            reasoning_levels?: components["schemas"]["BenchmarkBundleReasoningLevelSection"] | null;
-            tools?: components["schemas"]["BenchmarkBundleToolSection"] | null;
-            keys?: components["schemas"]["BenchmarkBundleKeySection"] | null;
-            /** Config Agents */
-            config_agents?: components["schemas"]["QGetAgentsV4Item"][] | null;
-            /** Config Models */
-            config_models?: components["schemas"]["QGetModelsV4Item"][] | null;
-            /** Config Providers */
-            config_providers?: components["schemas"]["QGetProvidersV4Item"][] | null;
-            /** Config Tools */
-            config_tools?: components["schemas"]["QGetToolsV4Item"][] | null;
-        };
-        /**
-         * GetBenchmarkBundleViewResponse
-         * @description Thin MV-backed view response for a single benchmark bundle.
-         */
-        GetBenchmarkBundleViewResponse: {
-            /**
-             * Profile Has Access
-             * @default false
-             */
-            profile_has_access: boolean;
-            /** Benchmark Bundle Entry Id */
-            benchmark_bundle_entry_id?: string | null;
-            /** Benchmark Id */
-            benchmark_id?: string | null;
-            /** Department Ids */
-            department_ids?: string[];
-            /** Model Ids */
-            model_ids?: string[];
-            /** Prompt Ids */
-            prompt_ids?: string[];
-            /** Instruction Ids */
-            instruction_ids?: string[];
-            /** Voice Ids */
-            voice_ids?: string[];
-            /** Temperature Level Ids */
-            temperature_level_ids?: string[];
-            /** Reasoning Level Ids */
-            reasoning_level_ids?: string[];
-            /** Tool Ids */
-            tool_ids?: string[];
-            /** Key Ids */
-            key_ids?: string[];
-            /** Flag Ids */
-            flag_ids?: string[];
-            /** Name Ids */
-            name_ids?: string[];
-            /** Description Ids */
-            description_ids?: string[];
-        };
-        /**
          * GetBenchmarkContextViewResponse
          * @description View-layer response for benchmark context.
          */
         GetBenchmarkContextViewResponse: {
             /** Items */
             items?: components["schemas"]["BenchmarkContextViewItem"][];
-        };
-        /**
-         * GetBenchmarkFeedbacksRequest
-         * @description Request for getting benchmark feedbacks.
-         */
-        GetBenchmarkFeedbacksRequest: {
-            /** Grade Ids */
-            grade_ids: string[];
-        };
-        /**
-         * GetBenchmarkFeedbacksResponse
-         * @description Response for getting benchmark feedbacks.
-         */
-        GetBenchmarkFeedbacksResponse: {
-            /** Items */
-            items: components["schemas"]["BenchmarkFeedbackViewItem"][];
         };
         /**
          * GetBenchmarkInvocationsRequest
@@ -27339,6 +26810,36 @@ export interface components {
             /** Items */
             items: components["schemas"]["HintViewItem"][];
         };
+        /**
+         * GetHomeContextViewResponse
+         * @description View-layer response for home context.
+         */
+        GetHomeContextViewResponse: {
+            /** Actor Name */
+            actor_name?: string | null;
+            /** User Role */
+            user_role?: string | null;
+            /** Items */
+            items?: components["schemas"]["HomeContextViewItem"][];
+        };
+        /**
+         * GetHomeResponse
+         * @description Client-facing API response for home get (operational).
+         *
+         *     Returns simulations user can take, scoped by their cohorts.
+         */
+        GetHomeResponse: {
+            /** Actor Name */
+            actor_name?: string | null;
+            /** Items */
+            items?: components["schemas"]["TrainingSimulationOperational"][] | null;
+            /** Rubrics */
+            rubrics?: components["schemas"]["RubricMapping"][] | null;
+            /** Standard Groups */
+            standard_groups?: components["schemas"]["StandardGroupMapping"][] | null;
+            /** Standards */
+            standards?: components["schemas"]["StandardMapping"][] | null;
+        };
         /** GetIconsApiRequest */
         GetIconsApiRequest: {
             /** Ids */
@@ -27896,6 +27397,36 @@ export interface components {
         GetPointsApiResponse: {
             /** Items */
             items?: components["schemas"]["QGetPointsV4Item"][] | null;
+        };
+        /**
+         * GetPracticeContextViewResponse
+         * @description View-layer response for practice context.
+         */
+        GetPracticeContextViewResponse: {
+            /** Actor Name */
+            actor_name?: string | null;
+            /** User Role */
+            user_role?: string | null;
+            /** Items */
+            items?: components["schemas"]["PracticeContextViewItem"][];
+        };
+        /**
+         * GetPracticeResponse
+         * @description Client-facing API response for practice get (operational).
+         *
+         *     Returns practice simulations user can take, scoped by their cohorts.
+         */
+        GetPracticeResponse: {
+            /** Actor Name */
+            actor_name?: string | null;
+            /** Items */
+            items?: components["schemas"]["TrainingSimulationOperational"][] | null;
+            /** Rubrics */
+            rubrics?: components["schemas"]["RubricMapping"][] | null;
+            /** Standard Groups */
+            standard_groups?: components["schemas"]["StandardGroupMapping"][] | null;
+            /** Standards */
+            standards?: components["schemas"]["StandardMapping"][] | null;
         };
         /** GetPricingApiRequest */
         GetPricingApiRequest: {
@@ -29482,6 +29013,95 @@ export interface components {
             /** Items */
             items: components["schemas"]["StrengthViewItem"][];
         };
+        /**
+         * GetSuiteRequest
+         * @description Client API request for one benchmark bundle customization payload.
+         */
+        GetSuiteRequest: {
+            /**
+             * Suite Entry Id
+             * Format: uuid
+             */
+            suite_entry_id: string;
+            /** Draft Id */
+            draft_id?: string | null;
+        };
+        /**
+         * GetSuiteResponse
+         * @description Client-facing bundle response — section-first pattern.
+         */
+        GetSuiteResponse: {
+            /**
+             * Suite Entry Id
+             * Format: uuid
+             */
+            suite_entry_id: string;
+            /** Benchmark Id */
+            benchmark_id?: string | null;
+            /**
+             * Profile Has Access
+             * @default false
+             */
+            profile_has_access: boolean;
+            /** Draft Version */
+            draft_version?: number | null;
+            departments?: components["schemas"]["SuiteDepartmentSection"] | null;
+            models?: components["schemas"]["SuiteModelSection"] | null;
+            prompts?: components["schemas"]["SuitePromptSection"] | null;
+            instructions?: components["schemas"]["SuiteInstructionSection"] | null;
+            voices?: components["schemas"]["SuiteVoiceSection"] | null;
+            temperature_levels?: components["schemas"]["SuiteTemperatureLevelSection"] | null;
+            reasoning_levels?: components["schemas"]["SuiteReasoningLevelSection"] | null;
+            tools?: components["schemas"]["SuiteToolSection"] | null;
+            keys?: components["schemas"]["SuiteKeySection"] | null;
+            /** Config Agents */
+            config_agents?: components["schemas"]["QGetAgentsV4Item"][] | null;
+            /** Config Models */
+            config_models?: components["schemas"]["QGetModelsV4Item"][] | null;
+            /** Config Providers */
+            config_providers?: components["schemas"]["QGetProvidersV4Item"][] | null;
+            /** Config Tools */
+            config_tools?: components["schemas"]["QGetToolsV4Item"][] | null;
+        };
+        /**
+         * GetSuiteViewResponse
+         * @description Thin MV-backed view response for a single benchmark bundle.
+         */
+        GetSuiteViewResponse: {
+            /**
+             * Profile Has Access
+             * @default false
+             */
+            profile_has_access: boolean;
+            /** Suite Entry Id */
+            suite_entry_id?: string | null;
+            /** Benchmark Id */
+            benchmark_id?: string | null;
+            /** Department Ids */
+            department_ids?: string[];
+            /** Model Ids */
+            model_ids?: string[];
+            /** Prompt Ids */
+            prompt_ids?: string[];
+            /** Instruction Ids */
+            instruction_ids?: string[];
+            /** Voice Ids */
+            voice_ids?: string[];
+            /** Temperature Level Ids */
+            temperature_level_ids?: string[];
+            /** Reasoning Level Ids */
+            reasoning_level_ids?: string[];
+            /** Tool Ids */
+            tool_ids?: string[];
+            /** Key Ids */
+            key_ids?: string[];
+            /** Flag Ids */
+            flag_ids?: string[];
+            /** Name Ids */
+            name_ids?: string[];
+            /** Description Ids */
+            description_ids?: string[];
+        };
         /** GetTemperatureLevelsApiRequest */
         GetTemperatureLevelsApiRequest: {
             /** Ids */
@@ -29707,30 +29327,30 @@ export interface components {
             page_offset: number | null;
         };
         /**
-         * GetTrainingBundleRequest
+         * GetTrainingRequest
          * @description Client API request for one training bundle customization payload.
          */
-        GetTrainingBundleRequest: {
+        GetTrainingRequest: {
             /**
-             * Training Bundle Entry Id
+             * Training Entry Id
              * Format: uuid
              */
-            training_bundle_entry_id: string;
+            training_entry_id: string;
             /** Draft Id */
             draft_id?: string | null;
         };
         /**
-         * GetTrainingBundleResponse
+         * GetTrainingResponse
          * @description Client-facing bundle response — section-first pattern.
          */
-        GetTrainingBundleResponse: {
+        GetTrainingResponse: {
             /**
-             * Training Bundle Entry Id
+             * Training Entry Id
              * Format: uuid
              */
-            training_bundle_entry_id: string;
-            /** Training Id */
-            training_id?: string | null;
+            training_entry_id: string;
+            /** Parent Id */
+            parent_id?: string | null;
             /** Simulation Id */
             simulation_id?: string | null;
             /** Simulation Name */
@@ -29746,19 +29366,19 @@ export interface components {
             group_id?: string | null;
             /** Draft Version */
             draft_version?: number | null;
-            scenario_flags?: components["schemas"]["TrainingBundleScenarioFlags"] | null;
-            departments?: components["schemas"]["TrainingBundleDepartmentSection"] | null;
-            personas?: components["schemas"]["TrainingBundlePersonaSection"] | null;
-            documents?: components["schemas"]["TrainingBundleDocumentSection"] | null;
-            parameter_fields?: components["schemas"]["TrainingBundleParameterFieldSection"] | null;
-            scenarios?: components["schemas"]["TrainingBundleScenarioSection"] | null;
-            parameters?: components["schemas"]["TrainingBundleParameterSection"] | null;
-            questions?: components["schemas"]["TrainingBundleQuestionSection"] | null;
-            options?: components["schemas"]["TrainingBundleOptionSection"] | null;
-            videos?: components["schemas"]["TrainingBundleVideoSection"] | null;
-            images?: components["schemas"]["TrainingBundleImageSection"] | null;
-            problem_statements?: components["schemas"]["TrainingBundleProblemStatementSection"] | null;
-            objectives?: components["schemas"]["TrainingBundleObjectiveSection"] | null;
+            scenario_flags?: components["schemas"]["TrainingScenarioFlags"] | null;
+            departments?: components["schemas"]["TrainingDepartmentSection"] | null;
+            personas?: components["schemas"]["TrainingPersonaSection"] | null;
+            documents?: components["schemas"]["TrainingDocumentSection"] | null;
+            parameter_fields?: components["schemas"]["TrainingParameterFieldSection"] | null;
+            scenarios?: components["schemas"]["TrainingScenarioSection"] | null;
+            parameters?: components["schemas"]["TrainingParameterSection"] | null;
+            questions?: components["schemas"]["TrainingQuestionSection"] | null;
+            options?: components["schemas"]["TrainingOptionSection"] | null;
+            videos?: components["schemas"]["TrainingVideoSection"] | null;
+            images?: components["schemas"]["TrainingImageSection"] | null;
+            problem_statements?: components["schemas"]["TrainingProblemStatementSection"] | null;
+            objectives?: components["schemas"]["TrainingObjectiveSection"] | null;
             /** Config Agents */
             config_agents?: components["schemas"]["QGetAgentsV4Item"][] | null;
             /** Config Models */
@@ -29769,19 +29389,19 @@ export interface components {
             config_tools?: components["schemas"]["QGetToolsV4Item"][] | null;
         };
         /**
-         * GetTrainingBundleViewResponse
+         * GetTrainingViewResponse
          * @description Thin MV-backed view response for a single training bundle.
          */
-        GetTrainingBundleViewResponse: {
+        GetTrainingViewResponse: {
             /**
              * Profile Has Access
              * @default false
              */
             profile_has_access: boolean;
-            /** Training Bundle Entry Id */
-            training_bundle_entry_id?: string | null;
-            /** Training Id */
-            training_id?: string | null;
+            /** Training Entry Id */
+            training_entry_id?: string | null;
+            /** Parent Id */
+            parent_id?: string | null;
             /** Scenario Id */
             scenario_id?: string | null;
             /** Department Ids */
@@ -29837,52 +29457,6 @@ export interface components {
              * @default false
              */
             questions_enabled: boolean;
-        };
-        /**
-         * GetTrainingContextViewResponse
-         * @description View-layer response for training context.
-         */
-        GetTrainingContextViewResponse: {
-            /** Actor Name */
-            actor_name?: string | null;
-            /** User Role */
-            user_role?: string | null;
-            /** Items */
-            items?: components["schemas"]["TrainingContextViewItem"][];
-        };
-        /**
-         * GetTrainingGetRequest
-         * @description Client API request for training get (operational).
-         *
-         *     Returns simulations user can take with scenario_ids for starting.
-         *
-         *     Args:
-         *         practice: If True, returns practice simulations. If False, returns home simulations.
-         */
-        GetTrainingGetRequest: {
-            /**
-             * Practice
-             * @default false
-             */
-            practice: boolean;
-        };
-        /**
-         * GetTrainingGetResponse
-         * @description Client-facing API response for training get (operational).
-         *
-         *     Returns simulations user can take, scoped by their cohorts.
-         */
-        GetTrainingGetResponse: {
-            /** Actor Name */
-            actor_name?: string | null;
-            /** Items */
-            items?: components["schemas"]["TrainingSimulationOperational"][] | null;
-            /** Rubrics */
-            rubrics?: components["schemas"]["RubricMapping"][] | null;
-            /** Standard Groups */
-            standard_groups?: components["schemas"]["StandardGroupMapping"][] | null;
-            /** Standards */
-            standards?: components["schemas"]["StandardMapping"][] | null;
         };
         /**
          * GetUploadListViewResponse
@@ -30702,6 +30276,29 @@ export interface components {
             idx?: number | null;
             /** Created At */
             created_at?: string | null;
+        };
+        /**
+         * HomeContextViewItem
+         * @description IDs-first home simulation item — raw IDs only, no computed fields.
+         */
+        HomeContextViewItem: {
+            /**
+             * Simulation Id
+             * Format: uuid
+             */
+            simulation_id: string;
+            /** Training Entry Ids */
+            training_entry_ids?: string[] | null;
+            /** Scenario Ids */
+            scenario_ids?: string[] | null;
+            /** Cohort Ids */
+            cohort_ids?: string[] | null;
+            /** Persona Ids */
+            persona_ids?: string[] | null;
+            /** Rubric Ids */
+            rubric_ids?: string[] | null;
+            /** Time Limit Ids */
+            time_limit_ids?: string[] | null;
         };
         /** IProcessCsvV4ColumnMapping */
         IProcessCsvV4ColumnMapping: {
@@ -33715,51 +33312,6 @@ export interface components {
             message: string;
         };
         /**
-         * PatchBenchmarkBundleDraftApiRequest
-         * @description Request for patching a benchmark bundle draft - flat resource IDs.
-         */
-        PatchBenchmarkBundleDraftApiRequest: {
-            /** Input Draft Id */
-            input_draft_id?: string | null;
-            /** Group Id */
-            group_id?: string | null;
-            /**
-             * Expected Version
-             * @default 0
-             */
-            expected_version: number;
-            /** Department Ids */
-            department_ids?: string[] | null;
-            /** Model Ids */
-            model_ids?: string[] | null;
-            /** Prompt Ids */
-            prompt_ids?: string[] | null;
-            /** Instruction Ids */
-            instruction_ids?: string[] | null;
-            /** Voice Ids */
-            voice_ids?: string[] | null;
-            /** Temperature Level Ids */
-            temperature_level_ids?: string[] | null;
-            /** Reasoning Level Ids */
-            reasoning_level_ids?: string[] | null;
-            /** Tool Ids */
-            tool_ids?: string[] | null;
-            /** Key Ids */
-            key_ids?: string[] | null;
-        };
-        /**
-         * PatchBenchmarkBundleDraftApiResponse
-         * @description Response for patching a benchmark bundle draft.
-         */
-        PatchBenchmarkBundleDraftApiResponse: {
-            /** Draft Id */
-            draft_id?: string | null;
-            /** New Version */
-            new_version?: number | null;
-            /** Draft Exists */
-            draft_exists?: boolean | null;
-        };
-        /**
          * PatchCohortDraftApiRequest
          * @description Request for patching a cohort draft - flat resource IDs.
          */
@@ -34411,6 +33963,51 @@ export interface components {
             draft_exists?: boolean | null;
         };
         /**
+         * PatchSuiteDraftApiRequest
+         * @description Request for patching a benchmark bundle draft - flat resource IDs.
+         */
+        PatchSuiteDraftApiRequest: {
+            /** Input Draft Id */
+            input_draft_id?: string | null;
+            /** Group Id */
+            group_id?: string | null;
+            /**
+             * Expected Version
+             * @default 0
+             */
+            expected_version: number;
+            /** Department Ids */
+            department_ids?: string[] | null;
+            /** Model Ids */
+            model_ids?: string[] | null;
+            /** Prompt Ids */
+            prompt_ids?: string[] | null;
+            /** Instruction Ids */
+            instruction_ids?: string[] | null;
+            /** Voice Ids */
+            voice_ids?: string[] | null;
+            /** Temperature Level Ids */
+            temperature_level_ids?: string[] | null;
+            /** Reasoning Level Ids */
+            reasoning_level_ids?: string[] | null;
+            /** Tool Ids */
+            tool_ids?: string[] | null;
+            /** Key Ids */
+            key_ids?: string[] | null;
+        };
+        /**
+         * PatchSuiteDraftApiResponse
+         * @description Response for patching a benchmark bundle draft.
+         */
+        PatchSuiteDraftApiResponse: {
+            /** Draft Id */
+            draft_id?: string | null;
+            /** New Version */
+            new_version?: number | null;
+            /** Draft Exists */
+            draft_exists?: boolean | null;
+        };
+        /**
          * PatchToolDraftApiRequest
          * @description Flat-ID patch draft request for tool endpoint.
          */
@@ -34452,10 +34049,10 @@ export interface components {
             message: string;
         };
         /**
-         * PatchTrainingBundleDraftApiRequest
+         * PatchTrainingDraftApiRequest
          * @description Request for patching a training bundle draft - flat resource IDs.
          */
-        PatchTrainingBundleDraftApiRequest: {
+        PatchTrainingDraftApiRequest: {
             /** Input Draft Id */
             input_draft_id?: string | null;
             /** Group Id */
@@ -34491,10 +34088,10 @@ export interface components {
             objective_ids?: string[] | null;
         };
         /**
-         * PatchTrainingBundleDraftApiResponse
+         * PatchTrainingDraftApiResponse
          * @description Response for patching a training bundle draft.
          */
-        PatchTrainingBundleDraftApiResponse: {
+        PatchTrainingDraftApiResponse: {
             /** Draft Id */
             draft_id?: string | null;
             /** New Version */
@@ -35060,6 +34657,29 @@ export interface components {
             tool_name?: string | null;
             /** Arguments Delta */
             arguments_delta?: string | null;
+        };
+        /**
+         * PracticeContextViewItem
+         * @description IDs-first practice simulation item — raw IDs only, no computed fields.
+         */
+        PracticeContextViewItem: {
+            /**
+             * Simulation Id
+             * Format: uuid
+             */
+            simulation_id: string;
+            /** Training Entry Ids */
+            training_entry_ids?: string[] | null;
+            /** Scenario Ids */
+            scenario_ids?: string[] | null;
+            /** Cohort Ids */
+            cohort_ids?: string[] | null;
+            /** Persona Ids */
+            persona_ids?: string[] | null;
+            /** Rubric Ids */
+            rubric_ids?: string[] | null;
+            /** Time Limit Ids */
+            time_limit_ids?: string[] | null;
         };
         /**
          * PreviousChatOption
@@ -38520,8 +38140,6 @@ export interface components {
             question_id?: string | null;
             /** Option Id */
             option_id?: string | null;
-            /** Completed */
-            completed?: boolean | null;
             /** Created At */
             created_at?: string | null;
         };
@@ -44548,7 +44166,7 @@ export interface components {
         };
         /**
          * SimulationFactsItem
-         * @description Single chat row from mv_simulation_facts.
+         * @description Single chat row from mv_attempt_facts.
          *
          *     Contains all simulation/secondary-section data with resource IDs only.
          *     Resource metadata (names, colors, etc.) fetched via internal handlers.
@@ -44699,60 +44317,6 @@ export interface components {
             run_id: string;
             /** Resource Types */
             resource_types: string[];
-        };
-        /**
-         * SimulationMessagesGenerationEvent
-         * @description Unified socket event for simulation_messages generation. Same type for all 4 events.
-         */
-        SimulationMessagesGenerationEvent: {
-            /**
-             * Artifact Type
-             * @default
-             */
-            artifact_type: string;
-            /**
-             * Entry Type
-             * @default simulation_messages
-             */
-            entry_type: string;
-            /** Entry Id */
-            entry_id?: string | null;
-            /** Group Id */
-            group_id?: string | null;
-            /** Run Id */
-            run_id?: string | null;
-            /** Success */
-            success?: boolean | null;
-            /** Message */
-            message?: string | null;
-            /** Error Stage */
-            error_stage?: string | null;
-            /** Tool Call Id */
-            tool_call_id?: string | null;
-            /** Tool Name */
-            tool_name?: string | null;
-            /** Arguments Delta */
-            arguments_delta?: string | null;
-            /** Message Id */
-            message_id?: string | null;
-            /** Chat Id */
-            chat_id?: string | null;
-            /** Attempt Id */
-            attempt_id?: string | null;
-            /** Type */
-            type?: string | null;
-            /** Created At */
-            created_at?: string | null;
-            /** Completed */
-            completed?: boolean | null;
-            /** Runs Id */
-            runs_id?: string | null;
-            /** Text Id */
-            text_id?: string | null;
-            /** Audio Id */
-            audio_id?: string | null;
-            /** History Content */
-            history_content?: string | null;
         };
         /** SimulationNameSection */
         SimulationNameSection: {
@@ -45432,6 +44996,310 @@ export interface components {
             /** Created At */
             created_at?: string | null;
         };
+        /** SuiteDepartmentSection */
+        SuiteDepartmentSection: {
+            /**
+             * Show
+             * @default false
+             */
+            show: boolean;
+            /**
+             * Required
+             * @default false
+             */
+            required: boolean;
+            /**
+             * Show Ai Generate
+             * @default false
+             */
+            show_ai_generate: boolean;
+            /** Current */
+            current?: components["schemas"]["QGetDepartmentsV4Item"][] | null;
+            /** Resources */
+            resources?: components["schemas"]["QGetDepartmentsV4Item"][] | null;
+        };
+        /**
+         * SuiteGenerationCompleteEvent
+         * @description Server-to-client event: suite_generation_complete.
+         *
+         *     Emitted when all agents have finished generating benchmark bundle resources.
+         */
+        SuiteGenerationCompleteEvent: {
+            /**
+             * Artifact Type
+             * @default suite
+             */
+            artifact_type: string;
+            /** Group Id */
+            group_id: string;
+            /** Resource Type */
+            resource_type: string;
+            /** Run Id */
+            run_id?: string | null;
+            /** Success */
+            success: boolean;
+            /** Message */
+            message: string;
+            /** Type */
+            type?: string | null;
+            /** Attempt Id */
+            attempt_id?: string | null;
+            /** Chat Id */
+            chat_id?: string | null;
+        };
+        /**
+         * SuiteGenerationErrorEvent
+         * @description Server-to-client event: suite_generation_error.
+         *
+         *     Emitted when benchmark bundle resource generation fails.
+         */
+        SuiteGenerationErrorEvent: {
+            /**
+             * Artifact Type
+             * @default suite
+             */
+            artifact_type: string;
+            /** Group Id */
+            group_id?: string | null;
+            /** Resource Type */
+            resource_type?: string | null;
+            /** Resource Types */
+            resource_types?: string[] | null;
+            /** Resource Id */
+            resource_id?: string | null;
+            /** Run Id */
+            run_id?: string | null;
+            /**
+             * Success
+             * @default false
+             */
+            success: boolean;
+            /** Message */
+            message: string;
+            /** Trace Id */
+            trace_id?: string | null;
+        };
+        /**
+         * SuiteGenerationProgressEvent
+         * @description Server-to-client event: suite_generation_progress.
+         *
+         *     Emitted as individual resources complete, providing percentage progress.
+         */
+        SuiteGenerationProgressEvent: {
+            /**
+             * Artifact Type
+             * @default suite
+             */
+            artifact_type: string;
+            /** Group Id */
+            group_id: string;
+            /** Run Id */
+            run_id?: string | null;
+            /** Completed Resources */
+            completed_resources: number;
+            /** Total Resources */
+            total_resources: number;
+            /** Percentage */
+            percentage: number;
+            /** Last Completed Resource */
+            last_completed_resource?: string | null;
+        };
+        /**
+         * SuiteGenerationStartedEvent
+         * @description Server-to-client event: suite_generation_started.
+         *
+         *     Emitted when benchmark bundle generation begins, listing which resource types
+         *     will be generated.
+         */
+        SuiteGenerationStartedEvent: {
+            /**
+             * Artifact Type
+             * @default suite
+             */
+            artifact_type: string;
+            /** Group Id */
+            group_id: string;
+            /** Run Id */
+            run_id: string;
+            /** Resource Types */
+            resource_types: string[];
+        };
+        /** SuiteInstructionSection */
+        SuiteInstructionSection: {
+            /**
+             * Show
+             * @default false
+             */
+            show: boolean;
+            /**
+             * Required
+             * @default false
+             */
+            required: boolean;
+            /**
+             * Show Ai Generate
+             * @default false
+             */
+            show_ai_generate: boolean;
+            /** Current */
+            current?: components["schemas"]["QGetInstructionsV4Item"][] | null;
+            /** Resources */
+            resources?: components["schemas"]["QGetInstructionsV4Item"][] | null;
+        };
+        /** SuiteKeySection */
+        SuiteKeySection: {
+            /**
+             * Show
+             * @default false
+             */
+            show: boolean;
+            /**
+             * Required
+             * @default false
+             */
+            required: boolean;
+            /**
+             * Show Ai Generate
+             * @default false
+             */
+            show_ai_generate: boolean;
+            /** Current */
+            current?: components["schemas"]["QGetKeysV4Item"][] | null;
+            /** Resources */
+            resources?: components["schemas"]["QGetKeysV4Item"][] | null;
+        };
+        /** SuiteModelSection */
+        SuiteModelSection: {
+            /**
+             * Show
+             * @default false
+             */
+            show: boolean;
+            /**
+             * Required
+             * @default false
+             */
+            required: boolean;
+            /**
+             * Show Ai Generate
+             * @default false
+             */
+            show_ai_generate: boolean;
+            /** Current */
+            current?: components["schemas"]["QGetModelsV4Item"][] | null;
+            /** Resources */
+            resources?: components["schemas"]["QGetModelsV4Item"][] | null;
+        };
+        /** SuitePromptSection */
+        SuitePromptSection: {
+            /**
+             * Show
+             * @default false
+             */
+            show: boolean;
+            /**
+             * Required
+             * @default false
+             */
+            required: boolean;
+            /**
+             * Show Ai Generate
+             * @default false
+             */
+            show_ai_generate: boolean;
+            /** Current */
+            current?: components["schemas"]["QGetPromptsV4Item"][] | null;
+            /** Resources */
+            resources?: components["schemas"]["QGetPromptsV4Item"][] | null;
+        };
+        /** SuiteReasoningLevelSection */
+        SuiteReasoningLevelSection: {
+            /**
+             * Show
+             * @default false
+             */
+            show: boolean;
+            /**
+             * Required
+             * @default false
+             */
+            required: boolean;
+            /**
+             * Show Ai Generate
+             * @default false
+             */
+            show_ai_generate: boolean;
+            /** Current */
+            current?: components["schemas"]["QGetReasoningLevelsV4Item"][] | null;
+            /** Resources */
+            resources?: components["schemas"]["QGetReasoningLevelsV4Item"][] | null;
+        };
+        /** SuiteTemperatureLevelSection */
+        SuiteTemperatureLevelSection: {
+            /**
+             * Show
+             * @default false
+             */
+            show: boolean;
+            /**
+             * Required
+             * @default false
+             */
+            required: boolean;
+            /**
+             * Show Ai Generate
+             * @default false
+             */
+            show_ai_generate: boolean;
+            /** Current */
+            current?: components["schemas"]["QGetTemperatureLevelsV4Item"][] | null;
+            /** Resources */
+            resources?: components["schemas"]["QGetTemperatureLevelsV4Item"][] | null;
+        };
+        /** SuiteToolSection */
+        SuiteToolSection: {
+            /**
+             * Show
+             * @default false
+             */
+            show: boolean;
+            /**
+             * Required
+             * @default false
+             */
+            required: boolean;
+            /**
+             * Show Ai Generate
+             * @default false
+             */
+            show_ai_generate: boolean;
+            /** Current */
+            current?: components["schemas"]["QGetToolsV4Item"][] | null;
+            /** Resources */
+            resources?: components["schemas"]["QGetToolsV4Item"][] | null;
+        };
+        /** SuiteVoiceSection */
+        SuiteVoiceSection: {
+            /**
+             * Show
+             * @default false
+             */
+            show: boolean;
+            /**
+             * Required
+             * @default false
+             */
+            required: boolean;
+            /**
+             * Show Ai Generate
+             * @default false
+             */
+            show_ai_generate: boolean;
+            /** Current */
+            current?: components["schemas"]["QGetVoicesV4Item"][] | null;
+            /** Resources */
+            resources?: components["schemas"]["QGetVoicesV4Item"][] | null;
+        };
         /**
          * TemperatureLevelsGenerationEvent
          * @description Unified socket event for temperature_levels generation. Same type for all 4 events.
@@ -45729,8 +45597,8 @@ export interface components {
             run_id?: string | null;
             /** Group Id */
             group_id?: string | null;
-            /** Benchmark Bundle Entry Id */
-            benchmark_bundle_entry_id?: string | null;
+            /** Suite Entry Id */
+            suite_entry_id?: string | null;
             /** Model Name */
             model_name?: string | null;
             /** Agent Name */
@@ -45870,10 +45738,10 @@ export interface components {
          * @description View payloads grouped by view type.
          */
         TestViews: {
-            /** Benchmark Tests */
-            benchmark_tests?: components["schemas"]["BenchmarkTestViewItem"][] | null;
-            /** Benchmark Invocations */
-            benchmark_invocations?: components["schemas"]["BenchmarkInvocationViewItem"][] | null;
+            /** Test */
+            test?: components["schemas"]["BenchmarkTestViewItem"][] | null;
+            /** Test Invocation */
+            test_invocation?: components["schemas"]["BenchmarkInvocationViewItem"][] | null;
             runs?: components["schemas"]["GetRunListViewResponse"] | null;
         };
         /**
@@ -46359,8 +46227,8 @@ export interface components {
             /** Arguments Delta */
             arguments_delta?: string | null;
         };
-        /** TrainingBundleDepartmentSection */
-        TrainingBundleDepartmentSection: {
+        /** TrainingDepartmentSection */
+        TrainingDepartmentSection: {
             /**
              * Show
              * @default false
@@ -46387,8 +46255,8 @@ export interface components {
             /** Resources */
             resources?: components["schemas"]["QGetDepartmentsV4Item"][] | null;
         };
-        /** TrainingBundleDocumentSection */
-        TrainingBundleDocumentSection: {
+        /** TrainingDocumentSection */
+        TrainingDocumentSection: {
             /**
              * Show
              * @default false
@@ -46414,340 +46282,6 @@ export interface components {
             current?: components["schemas"]["QGetDocumentsV4Item"][] | null;
             /** Resources */
             resources?: components["schemas"]["QGetDocumentsV4Item"][] | null;
-        };
-        /** TrainingBundleImageSection */
-        TrainingBundleImageSection: {
-            /**
-             * Show
-             * @default false
-             */
-            show: boolean;
-            /**
-             * Required
-             * @default false
-             */
-            required: boolean;
-            /** Suggestions */
-            suggestions?: string[] | null;
-            /**
-             * Show Ai Generate
-             * @default false
-             */
-            show_ai_generate: boolean;
-            /** Create Tool Id */
-            create_tool_id?: string | null;
-            /** Link Tool Id */
-            link_tool_id?: string | null;
-            /** Current */
-            current?: components["schemas"]["QGetImagesV4Item"][] | null;
-            /** Resources */
-            resources?: components["schemas"]["QGetImagesV4Item"][] | null;
-        };
-        /** TrainingBundleObjectiveSection */
-        TrainingBundleObjectiveSection: {
-            /**
-             * Show
-             * @default false
-             */
-            show: boolean;
-            /**
-             * Required
-             * @default false
-             */
-            required: boolean;
-            /** Suggestions */
-            suggestions?: string[] | null;
-            /**
-             * Show Ai Generate
-             * @default false
-             */
-            show_ai_generate: boolean;
-            /** Create Tool Id */
-            create_tool_id?: string | null;
-            /** Link Tool Id */
-            link_tool_id?: string | null;
-            /** Current */
-            current?: components["schemas"]["QGetObjectivesV4Item"][] | null;
-            /** Resources */
-            resources?: components["schemas"]["QGetObjectivesV4Item"][] | null;
-        };
-        /** TrainingBundleOptionSection */
-        TrainingBundleOptionSection: {
-            /**
-             * Show
-             * @default false
-             */
-            show: boolean;
-            /**
-             * Required
-             * @default false
-             */
-            required: boolean;
-            /** Suggestions */
-            suggestions?: string[] | null;
-            /**
-             * Show Ai Generate
-             * @default false
-             */
-            show_ai_generate: boolean;
-            /** Create Tool Id */
-            create_tool_id?: string | null;
-            /** Link Tool Id */
-            link_tool_id?: string | null;
-            /** Current */
-            current?: components["schemas"]["QGetOptionsV4Item"][] | null;
-            /** Resources */
-            resources?: components["schemas"]["QGetOptionsV4Item"][] | null;
-        };
-        /** TrainingBundleParameterFieldSection */
-        TrainingBundleParameterFieldSection: {
-            /**
-             * Show
-             * @default false
-             */
-            show: boolean;
-            /**
-             * Required
-             * @default false
-             */
-            required: boolean;
-            /** Suggestions */
-            suggestions?: string[] | null;
-            /**
-             * Show Ai Generate
-             * @default false
-             */
-            show_ai_generate: boolean;
-            /** Create Tool Id */
-            create_tool_id?: string | null;
-            /** Link Tool Id */
-            link_tool_id?: string | null;
-            /** Current */
-            current?: components["schemas"]["QGetParameterFieldsV4Item"][] | null;
-            /** Resources */
-            resources?: components["schemas"]["QGetParameterFieldsV4Item"][] | null;
-        };
-        /** TrainingBundleParameterSection */
-        TrainingBundleParameterSection: {
-            /**
-             * Show
-             * @default false
-             */
-            show: boolean;
-            /**
-             * Required
-             * @default false
-             */
-            required: boolean;
-            /** Suggestions */
-            suggestions?: string[] | null;
-            /**
-             * Show Ai Generate
-             * @default false
-             */
-            show_ai_generate: boolean;
-            /** Create Tool Id */
-            create_tool_id?: string | null;
-            /** Link Tool Id */
-            link_tool_id?: string | null;
-            /** Current */
-            current?: components["schemas"]["QGetParametersV4Item"][] | null;
-            /** Resources */
-            resources?: components["schemas"]["QGetParametersV4Item"][] | null;
-        };
-        /** TrainingBundlePersonaSection */
-        TrainingBundlePersonaSection: {
-            /**
-             * Show
-             * @default false
-             */
-            show: boolean;
-            /**
-             * Required
-             * @default false
-             */
-            required: boolean;
-            /** Suggestions */
-            suggestions?: string[] | null;
-            /**
-             * Show Ai Generate
-             * @default false
-             */
-            show_ai_generate: boolean;
-            /** Create Tool Id */
-            create_tool_id?: string | null;
-            /** Link Tool Id */
-            link_tool_id?: string | null;
-            /** Current */
-            current?: components["schemas"]["QGetPersonasV4Item"][] | null;
-            /** Resources */
-            resources?: components["schemas"]["QGetPersonasV4Item"][] | null;
-        };
-        /** TrainingBundleProblemStatementSection */
-        TrainingBundleProblemStatementSection: {
-            /**
-             * Show
-             * @default false
-             */
-            show: boolean;
-            /**
-             * Required
-             * @default false
-             */
-            required: boolean;
-            /** Suggestions */
-            suggestions?: string[] | null;
-            /**
-             * Show Ai Generate
-             * @default false
-             */
-            show_ai_generate: boolean;
-            /** Create Tool Id */
-            create_tool_id?: string | null;
-            /** Link Tool Id */
-            link_tool_id?: string | null;
-            /** Current */
-            current?: components["schemas"]["QGetProblemStatementsV4Item"][] | null;
-            /** Resources */
-            resources?: components["schemas"]["QGetProblemStatementsV4Item"][] | null;
-        };
-        /** TrainingBundleQuestionSection */
-        TrainingBundleQuestionSection: {
-            /**
-             * Show
-             * @default false
-             */
-            show: boolean;
-            /**
-             * Required
-             * @default false
-             */
-            required: boolean;
-            /** Suggestions */
-            suggestions?: string[] | null;
-            /**
-             * Show Ai Generate
-             * @default false
-             */
-            show_ai_generate: boolean;
-            /** Create Tool Id */
-            create_tool_id?: string | null;
-            /** Link Tool Id */
-            link_tool_id?: string | null;
-            /** Current */
-            current?: components["schemas"]["QGetQuestionsV4Item"][] | null;
-            /** Resources */
-            resources?: components["schemas"]["QGetQuestionsV4Item"][] | null;
-        };
-        /**
-         * TrainingBundleScenarioFlags
-         * @description Scenario-level flags that control section visibility.
-         */
-        TrainingBundleScenarioFlags: {
-            /**
-             * Video Enabled
-             * @default false
-             */
-            video_enabled: boolean;
-            /**
-             * Problem Statement Enabled
-             * @default false
-             */
-            problem_statement_enabled: boolean;
-            /**
-             * Objectives Enabled
-             * @default false
-             */
-            objectives_enabled: boolean;
-            /**
-             * Images Enabled
-             * @default false
-             */
-            images_enabled: boolean;
-            /**
-             * Questions Enabled
-             * @default false
-             */
-            questions_enabled: boolean;
-        };
-        /** TrainingBundleScenarioSection */
-        TrainingBundleScenarioSection: {
-            /**
-             * Show
-             * @default false
-             */
-            show: boolean;
-            /**
-             * Required
-             * @default false
-             */
-            required: boolean;
-            /** Suggestions */
-            suggestions?: string[] | null;
-            /**
-             * Show Ai Generate
-             * @default false
-             */
-            show_ai_generate: boolean;
-            /** Create Tool Id */
-            create_tool_id?: string | null;
-            /** Link Tool Id */
-            link_tool_id?: string | null;
-            /** Current */
-            current?: components["schemas"]["app__sql__types__QGetScenariosV4Item"][] | null;
-            /** Resources */
-            resources?: components["schemas"]["app__sql__types__QGetScenariosV4Item"][] | null;
-        };
-        /** TrainingBundleVideoSection */
-        TrainingBundleVideoSection: {
-            /**
-             * Show
-             * @default false
-             */
-            show: boolean;
-            /**
-             * Required
-             * @default false
-             */
-            required: boolean;
-            /** Suggestions */
-            suggestions?: string[] | null;
-            /**
-             * Show Ai Generate
-             * @default false
-             */
-            show_ai_generate: boolean;
-            /** Create Tool Id */
-            create_tool_id?: string | null;
-            /** Link Tool Id */
-            link_tool_id?: string | null;
-            /** Current */
-            current?: components["schemas"]["QGetVideosV4Item"][] | null;
-            /** Resources */
-            resources?: components["schemas"]["QGetVideosV4Item"][] | null;
-        };
-        /**
-         * TrainingContextViewItem
-         * @description IDs-first training simulation item — raw IDs only, no computed fields.
-         */
-        TrainingContextViewItem: {
-            /**
-             * Simulation Id
-             * Format: uuid
-             */
-            simulation_id: string;
-            /** Training Bundle Entry Ids */
-            training_bundle_entry_ids?: string[] | null;
-            /** Scenario Ids */
-            scenario_ids?: string[] | null;
-            /** Cohort Ids */
-            cohort_ids?: string[] | null;
-            /** Persona Ids */
-            persona_ids?: string[] | null;
-            /** Rubric Ids */
-            rubric_ids?: string[] | null;
-            /** Time Limit Ids */
-            time_limit_ids?: string[] | null;
         };
         /**
          * TrainingGenerationCompleteEvent
@@ -46855,6 +46389,289 @@ export interface components {
             /** Resource Types */
             resource_types: string[];
         };
+        /** TrainingImageSection */
+        TrainingImageSection: {
+            /**
+             * Show
+             * @default false
+             */
+            show: boolean;
+            /**
+             * Required
+             * @default false
+             */
+            required: boolean;
+            /** Suggestions */
+            suggestions?: string[] | null;
+            /**
+             * Show Ai Generate
+             * @default false
+             */
+            show_ai_generate: boolean;
+            /** Create Tool Id */
+            create_tool_id?: string | null;
+            /** Link Tool Id */
+            link_tool_id?: string | null;
+            /** Current */
+            current?: components["schemas"]["QGetImagesV4Item"][] | null;
+            /** Resources */
+            resources?: components["schemas"]["QGetImagesV4Item"][] | null;
+        };
+        /** TrainingObjectiveSection */
+        TrainingObjectiveSection: {
+            /**
+             * Show
+             * @default false
+             */
+            show: boolean;
+            /**
+             * Required
+             * @default false
+             */
+            required: boolean;
+            /** Suggestions */
+            suggestions?: string[] | null;
+            /**
+             * Show Ai Generate
+             * @default false
+             */
+            show_ai_generate: boolean;
+            /** Create Tool Id */
+            create_tool_id?: string | null;
+            /** Link Tool Id */
+            link_tool_id?: string | null;
+            /** Current */
+            current?: components["schemas"]["QGetObjectivesV4Item"][] | null;
+            /** Resources */
+            resources?: components["schemas"]["QGetObjectivesV4Item"][] | null;
+        };
+        /** TrainingOptionSection */
+        TrainingOptionSection: {
+            /**
+             * Show
+             * @default false
+             */
+            show: boolean;
+            /**
+             * Required
+             * @default false
+             */
+            required: boolean;
+            /** Suggestions */
+            suggestions?: string[] | null;
+            /**
+             * Show Ai Generate
+             * @default false
+             */
+            show_ai_generate: boolean;
+            /** Create Tool Id */
+            create_tool_id?: string | null;
+            /** Link Tool Id */
+            link_tool_id?: string | null;
+            /** Current */
+            current?: components["schemas"]["QGetOptionsV4Item"][] | null;
+            /** Resources */
+            resources?: components["schemas"]["QGetOptionsV4Item"][] | null;
+        };
+        /** TrainingParameterFieldSection */
+        TrainingParameterFieldSection: {
+            /**
+             * Show
+             * @default false
+             */
+            show: boolean;
+            /**
+             * Required
+             * @default false
+             */
+            required: boolean;
+            /** Suggestions */
+            suggestions?: string[] | null;
+            /**
+             * Show Ai Generate
+             * @default false
+             */
+            show_ai_generate: boolean;
+            /** Create Tool Id */
+            create_tool_id?: string | null;
+            /** Link Tool Id */
+            link_tool_id?: string | null;
+            /** Current */
+            current?: components["schemas"]["QGetParameterFieldsV4Item"][] | null;
+            /** Resources */
+            resources?: components["schemas"]["QGetParameterFieldsV4Item"][] | null;
+        };
+        /** TrainingParameterSection */
+        TrainingParameterSection: {
+            /**
+             * Show
+             * @default false
+             */
+            show: boolean;
+            /**
+             * Required
+             * @default false
+             */
+            required: boolean;
+            /** Suggestions */
+            suggestions?: string[] | null;
+            /**
+             * Show Ai Generate
+             * @default false
+             */
+            show_ai_generate: boolean;
+            /** Create Tool Id */
+            create_tool_id?: string | null;
+            /** Link Tool Id */
+            link_tool_id?: string | null;
+            /** Current */
+            current?: components["schemas"]["QGetParametersV4Item"][] | null;
+            /** Resources */
+            resources?: components["schemas"]["QGetParametersV4Item"][] | null;
+        };
+        /** TrainingPersonaSection */
+        TrainingPersonaSection: {
+            /**
+             * Show
+             * @default false
+             */
+            show: boolean;
+            /**
+             * Required
+             * @default false
+             */
+            required: boolean;
+            /** Suggestions */
+            suggestions?: string[] | null;
+            /**
+             * Show Ai Generate
+             * @default false
+             */
+            show_ai_generate: boolean;
+            /** Create Tool Id */
+            create_tool_id?: string | null;
+            /** Link Tool Id */
+            link_tool_id?: string | null;
+            /** Current */
+            current?: components["schemas"]["QGetPersonasV4Item"][] | null;
+            /** Resources */
+            resources?: components["schemas"]["QGetPersonasV4Item"][] | null;
+        };
+        /** TrainingProblemStatementSection */
+        TrainingProblemStatementSection: {
+            /**
+             * Show
+             * @default false
+             */
+            show: boolean;
+            /**
+             * Required
+             * @default false
+             */
+            required: boolean;
+            /** Suggestions */
+            suggestions?: string[] | null;
+            /**
+             * Show Ai Generate
+             * @default false
+             */
+            show_ai_generate: boolean;
+            /** Create Tool Id */
+            create_tool_id?: string | null;
+            /** Link Tool Id */
+            link_tool_id?: string | null;
+            /** Current */
+            current?: components["schemas"]["QGetProblemStatementsV4Item"][] | null;
+            /** Resources */
+            resources?: components["schemas"]["QGetProblemStatementsV4Item"][] | null;
+        };
+        /** TrainingQuestionSection */
+        TrainingQuestionSection: {
+            /**
+             * Show
+             * @default false
+             */
+            show: boolean;
+            /**
+             * Required
+             * @default false
+             */
+            required: boolean;
+            /** Suggestions */
+            suggestions?: string[] | null;
+            /**
+             * Show Ai Generate
+             * @default false
+             */
+            show_ai_generate: boolean;
+            /** Create Tool Id */
+            create_tool_id?: string | null;
+            /** Link Tool Id */
+            link_tool_id?: string | null;
+            /** Current */
+            current?: components["schemas"]["QGetQuestionsV4Item"][] | null;
+            /** Resources */
+            resources?: components["schemas"]["QGetQuestionsV4Item"][] | null;
+        };
+        /**
+         * TrainingScenarioFlags
+         * @description Scenario-level flags that control section visibility.
+         */
+        TrainingScenarioFlags: {
+            /**
+             * Video Enabled
+             * @default false
+             */
+            video_enabled: boolean;
+            /**
+             * Problem Statement Enabled
+             * @default false
+             */
+            problem_statement_enabled: boolean;
+            /**
+             * Objectives Enabled
+             * @default false
+             */
+            objectives_enabled: boolean;
+            /**
+             * Images Enabled
+             * @default false
+             */
+            images_enabled: boolean;
+            /**
+             * Questions Enabled
+             * @default false
+             */
+            questions_enabled: boolean;
+        };
+        /** TrainingScenarioSection */
+        TrainingScenarioSection: {
+            /**
+             * Show
+             * @default false
+             */
+            show: boolean;
+            /**
+             * Required
+             * @default false
+             */
+            required: boolean;
+            /** Suggestions */
+            suggestions?: string[] | null;
+            /**
+             * Show Ai Generate
+             * @default false
+             */
+            show_ai_generate: boolean;
+            /** Create Tool Id */
+            create_tool_id?: string | null;
+            /** Link Tool Id */
+            link_tool_id?: string | null;
+            /** Current */
+            current?: components["schemas"]["app__sql__types__QGetScenariosV4Item"][] | null;
+            /** Resources */
+            resources?: components["schemas"]["app__sql__types__QGetScenariosV4Item"][] | null;
+        };
         /**
          * TrainingSimulationOperational
          * @description Simulation data for starting a training session.
@@ -46874,8 +46691,8 @@ export interface components {
             simulation_description?: string | null;
             /** Time Limit */
             time_limit?: number | null;
-            /** Training Bundle Entry Id */
-            training_bundle_entry_id?: string | null;
+            /** Training Entry Id */
+            training_entry_id?: string | null;
             /** Scenario Ids */
             scenario_ids?: string[] | null;
             /** Cohort Ids */
@@ -46910,6 +46727,34 @@ export interface components {
             in_progress_count?: number | null;
             /** Not Started Count */
             not_started_count?: number | null;
+        };
+        /** TrainingVideoSection */
+        TrainingVideoSection: {
+            /**
+             * Show
+             * @default false
+             */
+            show: boolean;
+            /**
+             * Required
+             * @default false
+             */
+            required: boolean;
+            /** Suggestions */
+            suggestions?: string[] | null;
+            /**
+             * Show Ai Generate
+             * @default false
+             */
+            show_ai_generate: boolean;
+            /** Create Tool Id */
+            create_tool_id?: string | null;
+            /** Link Tool Id */
+            link_tool_id?: string | null;
+            /** Current */
+            current?: components["schemas"]["QGetVideosV4Item"][] | null;
+            /** Resources */
+            resources?: components["schemas"]["QGetVideosV4Item"][] | null;
         };
         /**
          * UploadViewItem
@@ -52776,7 +52621,7 @@ export interface operations {
             };
         };
     };
-    training_get_api_v4_artifacts_training_list_post: {
+    training_get_api_v4_artifacts_training_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -52789,7 +52634,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["GetTrainingGetRequest"];
+                "application/json": components["schemas"]["GetTrainingRequest"];
             };
         };
         responses: {
@@ -52799,44 +52644,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["GetTrainingGetResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    training_bundle_get_api_v4_artifacts_training_get_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["GetTrainingBundleRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GetTrainingBundleResponse"];
+                    "application/json": components["schemas"]["GetTrainingResponse"];
                 };
             };
             /** @description Validation Error */
@@ -52863,7 +52671,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["PatchTrainingBundleDraftApiRequest"];
+                "application/json": components["schemas"]["PatchTrainingDraftApiRequest"];
             };
         };
         responses: {
@@ -52873,7 +52681,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["PatchTrainingBundleDraftApiResponse"];
+                    "application/json": components["schemas"]["PatchTrainingDraftApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -52948,6 +52756,72 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["DocsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    home_get_api_v4_artifacts_home_get_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetHomeResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    practice_get_api_v4_artifacts_practice_get_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetPracticeResponse"];
                 };
             };
             /** @description Validation Error */
@@ -54139,7 +54013,7 @@ export interface operations {
             };
         };
     };
-    benchmark_bundle_get_api_v4_artifacts_benchmark_get_post: {
+    suite_get_api_v4_artifacts_benchmark_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -54152,7 +54026,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["GetBenchmarkBundleRequest"];
+                "application/json": components["schemas"]["GetSuiteRequest"];
             };
         };
         responses: {
@@ -54162,7 +54036,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["GetBenchmarkBundleResponse"];
+                    "application/json": components["schemas"]["GetSuiteResponse"];
                 };
             };
             /** @description Validation Error */
@@ -54189,7 +54063,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["PatchBenchmarkBundleDraftApiRequest"];
+                "application/json": components["schemas"]["PatchSuiteDraftApiRequest"];
             };
         };
         responses: {
@@ -54199,7 +54073,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["PatchBenchmarkBundleDraftApiResponse"];
+                    "application/json": components["schemas"]["PatchSuiteDraftApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -62041,7 +61915,7 @@ export interface operations {
             };
         };
     };
-    get_benchmark_tests_api_v4_views_benchmark_tests_get_post: {
+    get_test_api_v4_views_benchmark_tests_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -62078,7 +61952,7 @@ export interface operations {
             };
         };
     };
-    refresh_benchmark_tests_api_v4_views_benchmark_tests_refresh_post: {
+    refresh_test_api_v4_views_benchmark_tests_refresh_post: {
         parameters: {
             query?: never;
             header?: {
@@ -62113,7 +61987,7 @@ export interface operations {
             };
         };
     };
-    get_benchmark_invocations_api_v4_views_benchmark_invocations_get_post: {
+    get_test_invocation_api_v4_views_benchmark_invocations_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -62150,7 +62024,7 @@ export interface operations {
             };
         };
     };
-    refresh_benchmark_invocations_api_v4_views_benchmark_invocations_refresh_post: {
+    refresh_test_invocation_api_v4_views_benchmark_invocations_refresh_post: {
         parameters: {
             query?: never;
             header?: {
@@ -62185,10 +62059,10 @@ export interface operations {
             };
         };
     };
-    get_benchmark_bundle_view_api_v4_views_benchmark_bundle_get_post: {
+    get_suite_view_api_v4_views_benchmark_bundle_get_post: {
         parameters: {
             query: {
-                benchmark_bundle_entry_id: string;
+                suite_entry_id: string;
             };
             header?: {
                 "X-Profile-Id"?: string | null;
@@ -62206,7 +62080,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["GetBenchmarkBundleViewResponse"];
+                    "application/json": components["schemas"]["GetSuiteViewResponse"];
                 };
             };
             /** @description Validation Error */
@@ -62323,45 +62197,10 @@ export interface operations {
             };
         };
     };
-    get_training_context_view_api_v4_views_training_context_get_post: {
-        parameters: {
-            query?: {
-                practice?: boolean;
-            };
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GetTrainingContextViewResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_training_bundle_view_api_v4_views_training_bundle_get_post: {
+    get_training_view_api_v4_views_training_bundle_get_post: {
         parameters: {
             query: {
-                training_bundle_entry_id: string;
+                training_entry_id: string;
             };
             header?: {
                 "X-Profile-Id"?: string | null;
@@ -62379,7 +62218,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["GetTrainingBundleViewResponse"];
+                    "application/json": components["schemas"]["GetTrainingViewResponse"];
                 };
             };
             /** @description Validation Error */
@@ -64272,44 +64111,7 @@ export interface operations {
             };
         };
     };
-    get_benchmark_feedbacks_api_v4_views_simulation_benchmark_feedbacks_get_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["GetBenchmarkFeedbacksRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GetBenchmarkFeedbacksResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    refresh_benchmark_feedbacks_view_api_v4_views_simulation_benchmark_feedbacks_refresh_post: {
+    get_home_context_view_api_v4_views_home_context_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -64328,7 +64130,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["RefreshResponse"];
+                    "application/json": components["schemas"]["GetHomeContextViewResponse"];
                 };
             };
             /** @description Validation Error */
@@ -64342,7 +64144,7 @@ export interface operations {
             };
         };
     };
-    recreate_benchmark_feedbacks_view_api_v4_views_simulation_benchmark_feedbacks_recreate_post: {
+    get_practice_context_view_api_v4_views_practice_context_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -64361,7 +64163,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["RefreshResponse"];
+                    "application/json": components["schemas"]["GetPracticeContextViewResponse"];
                 };
             };
             /** @description Validation Error */
@@ -66675,7 +66477,7 @@ export interface operations {
             };
         };
     };
-    benchmark_bundle_generation_started_api_socket_v4_server_benchmark_bundle_generation_started_post: {
+    suite_generation_started_api_socket_v4_server_suite_generation_started_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -66684,7 +66486,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["BenchmarkBundleGenerationStartedEvent"];
+                "application/json": components["schemas"]["SuiteGenerationStartedEvent"];
             };
         };
         responses: {
@@ -66710,7 +66512,7 @@ export interface operations {
             };
         };
     };
-    benchmark_bundle_generation_complete_api_socket_v4_server_benchmark_bundle_generation_complete_post: {
+    suite_generation_complete_api_socket_v4_server_suite_generation_complete_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -66719,7 +66521,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["BenchmarkBundleGenerationCompleteEvent"];
+                "application/json": components["schemas"]["SuiteGenerationCompleteEvent"];
             };
         };
         responses: {
@@ -66745,7 +66547,7 @@ export interface operations {
             };
         };
     };
-    benchmark_bundle_generation_error_api_socket_v4_server_benchmark_bundle_generation_error_post: {
+    suite_generation_error_api_socket_v4_server_suite_generation_error_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -66754,7 +66556,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["BenchmarkBundleGenerationErrorEvent"];
+                "application/json": components["schemas"]["SuiteGenerationErrorEvent"];
             };
         };
         responses: {
@@ -66780,7 +66582,7 @@ export interface operations {
             };
         };
     };
-    benchmark_bundle_generation_progress_api_socket_v4_server_benchmark_bundle_generation_progress_post: {
+    suite_generation_progress_api_socket_v4_server_suite_generation_progress_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -66789,7 +66591,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["BenchmarkBundleGenerationProgressEvent"];
+                "application/json": components["schemas"]["SuiteGenerationProgressEvent"];
             };
         };
         responses: {
@@ -80694,146 +80496,6 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["ResponsesGenerationEvent"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: boolean;
-                    };
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    simulation_messages_generation_started_api_socket_v4_server_simulation_messages_generation_started_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["SimulationMessagesGenerationEvent"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: boolean;
-                    };
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    simulation_messages_generation_progress_api_socket_v4_server_simulation_messages_generation_progress_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["SimulationMessagesGenerationEvent"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: boolean;
-                    };
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    simulation_messages_generation_complete_api_socket_v4_server_simulation_messages_generation_complete_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["SimulationMessagesGenerationEvent"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: boolean;
-                    };
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    simulation_messages_generation_error_api_socket_v4_server_simulation_messages_generation_error_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["SimulationMessagesGenerationEvent"];
             };
         };
         responses: {

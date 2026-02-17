@@ -108,9 +108,7 @@ async def _attempt_chat_impl(sid: str, data: dict[str, Any]) -> None:
 
         else:
             # === CREATE MODE ===
-            training_department_id_str = data.get(
-                "training_department_id"
-            )
+            training_department_id_str = data.get("training_department_id")
             if not profile_id_str or not training_department_id_str:
                 logger.warning(
                     "attempt_chat create mode: missing profile_id or training_department_id"

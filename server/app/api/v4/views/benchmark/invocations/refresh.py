@@ -29,9 +29,7 @@ async def refresh_test_invocation(
 ) -> dict[str, bool]:
     """Refresh mv_test_invocation concurrently."""
     try:
-        await conn.execute(
-            "REFRESH MATERIALIZED VIEW CONCURRENTLY mv_test_invocation"
-        )
+        await conn.execute("REFRESH MATERIALIZED VIEW CONCURRENTLY mv_test_invocation")
         return {"success": True}
     except HTTPException:
         raise
