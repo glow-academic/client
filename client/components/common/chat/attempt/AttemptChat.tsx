@@ -2212,6 +2212,41 @@ export default function AttemptChat({
                                   >[0]["gradingState"]
                                 >,
                               })}
+                            {...(displayChat?.id &&
+                              gradingStatesByChatId[displayChat.id] &&
+                              rubricStructure && {
+                                onViewRubricPdf: async () => {
+                                  try {
+                                    const res = await fetch(
+                                      "/api/documents/rubric",
+                                      {
+                                        method: "POST",
+                                        headers: {
+                                          "Content-Type": "application/json",
+                                        },
+                                        body: JSON.stringify({
+                                          rubricStructure,
+                                          gradingState:
+                                            gradingStatesByChatId[
+                                              displayChat!.id
+                                            ],
+                                          simulationName:
+                                            simulation?.title || undefined,
+                                        }),
+                                      },
+                                    );
+                                    if (!res.ok) throw new Error("Failed to generate PDF");
+                                    const blob = await res.blob();
+                                    const url = URL.createObjectURL(blob);
+                                    window.open(url, "_blank");
+                                  } catch (err) {
+                                    console.error(
+                                      "Failed to generate rubric PDF:",
+                                      err,
+                                    );
+                                  }
+                                },
+                              })}
                           />
                         </div>
                       ) : displayChat ? (

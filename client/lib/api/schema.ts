@@ -2079,6 +2079,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v3/documents/rubric": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Generate Rubric Pdf
+         * @description Generate a rubric PDF from provided rubric data.
+         */
+        post: operations["generate_rubric_pdf_api_v3_documents_rubric_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v3/rubrics/list": {
         parameters: {
             query?: never;
@@ -3788,7 +3808,7 @@ export interface components {
             canPickMultipleAlternatives: boolean;
             /** Isactive */
             isActive: boolean;
-            rubricStructure?: components["schemas"]["RubricStructure"] | null;
+            rubricStructure?: components["schemas"]["RubricStructure-Output"] | null;
             /** Allsimulationscenarios */
             allSimulationScenarios: components["schemas"]["AllSimulationScenarioItem"][];
         };
@@ -6219,6 +6239,13 @@ export interface components {
             /** Profileid */
             profileId: string;
         };
+        /** GenerateRubricPdfRequest */
+        GenerateRubricPdfRequest: {
+            rubricStructure: components["schemas"]["RubricStructure-Input"];
+            gradingState?: components["schemas"]["GradingState"] | null;
+            /** Simulationname */
+            simulationName?: string | null;
+        };
         /**
          * GenerateScenarioAIRequest
          * @description Request to generate AI scenario content.
@@ -6512,7 +6539,7 @@ export interface components {
             };
             /** Standards Mapping */
             standards_mapping: {
-                [key: string]: components["schemas"]["StandardMappingItem"];
+                [key: string]: components["schemas"]["StandardMappingItem-Output"];
             };
             /** Simulation Mapping */
             simulation_mapping: {
@@ -7420,7 +7447,7 @@ export interface components {
             };
             /** Standards Mapping */
             standards_mapping: {
-                [key: string]: components["schemas"]["StandardMappingItem"];
+                [key: string]: components["schemas"]["StandardMappingItem-Output"];
             };
             /** Simulation Mapping */
             simulation_mapping: {
@@ -8333,7 +8360,7 @@ export interface components {
             };
             /** Standards Mapping */
             standards_mapping: {
-                [key: string]: components["schemas"]["StandardMappingItem"];
+                [key: string]: components["schemas"]["StandardMappingItem-Output"];
             };
             /** Department Mapping */
             department_mapping: {
@@ -8431,7 +8458,22 @@ export interface components {
             hasData: boolean;
         };
         /** RubricStructure */
-        RubricStructure: {
+        "RubricStructure-Input": {
+            /** Standardgroups */
+            standardGroups: {
+                [key: string]: string[];
+            };
+            /** Standardgroupsmapping */
+            standardGroupsMapping: {
+                [key: string]: components["schemas"]["StandardGroupMappingItem-Input"];
+            };
+            /** Standardsmapping */
+            standardsMapping: {
+                [key: string]: components["schemas"]["StandardMappingItem-Input"];
+            };
+        };
+        /** RubricStructure */
+        "RubricStructure-Output": {
             /** Standardgroups */
             standardGroups: {
                 [key: string]: string[];
@@ -8468,7 +8510,7 @@ export interface components {
             };
             /** Standards Mapping */
             standards_mapping: {
-                [key: string]: components["schemas"]["StandardMappingItem"];
+                [key: string]: components["schemas"]["StandardMappingItem-Output"];
             };
             /** Department Mapping */
             department_mapping: {
@@ -9301,11 +9343,31 @@ export interface components {
             /** Standard Ids */
             standard_ids: string[];
         };
+        /** StandardGroupMappingItem */
+        "StandardGroupMappingItem-Input": {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** Points */
+            points: number;
+            /** Passpoints */
+            passPoints: number;
+        };
+        /** StandardMappingItem */
+        "StandardMappingItem-Input": {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** Points */
+            points: number;
+        };
         /**
          * StandardMappingItem
          * @description Standard mapping item with points
          */
-        StandardMappingItem: {
+        "StandardMappingItem-Output": {
             /** Name */
             name: string;
             /** Description */
@@ -14741,6 +14803,39 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["GenerateCertificateRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    generate_rubric_pdf_api_v3_documents_rubric_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GenerateRubricPdfRequest"];
             };
         };
         responses: {

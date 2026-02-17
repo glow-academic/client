@@ -16,6 +16,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
+import { TableProperties } from "lucide-react";
 
 type StandardGroupMappingItem = {
   name: string;
@@ -49,6 +51,9 @@ export interface TableRubricProps {
   // Optional: show full standards table on mobile (with horizontal scroll)
   // When false (default), shows simplified 2-column view on mobile
   showFullStandardsOnMobile?: boolean;
+
+  // Optional: callback to generate and view rubric PDF in a new tab
+  onViewRubricPdf?: () => void;
 }
 
 export default function TableRubric({
@@ -57,10 +62,12 @@ export default function TableRubric({
   standardsMapping,
   gradingState,
   showFullStandardsOnMobile = false,
+  onViewRubricPdf,
 }: TableRubricProps) {
   const [flippedCells, setFlippedCells] = React.useState<Set<string>>(
     () => new Set<string>(),
   );
+  const [isGeneratingPdf, setIsGeneratingPdf] = React.useState(false);
 
   // Helper function to determine if a standard was achieved (from server-computed state)
   const isStandardAchieved = (standardId: string) => {
@@ -363,6 +370,35 @@ export default function TableRubric({
           </TableBody>
         </Table>
       </div>
+
+      {/* View Full Rubric PDF button - mobile only */}
+      {onViewRubricPdf && (
+        <Button
+          variant="default"
+          className="w-full md:hidden"
+          disabled={isGeneratingPdf}
+          onClick={async () => {
+            setIsGeneratingPdf(true);
+            try {
+              await onViewRubricPdf();
+            } finally {
+              setIsGeneratingPdf(false);
+            }
+          }}
+        >
+          {isGeneratingPdf ? (
+            <>
+              <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+              Generating...
+            </>
+          ) : (
+            <>
+              <TableProperties className="mr-2 h-4 w-4" />
+              Open Full Rubric
+            </>
+          )}
+        </Button>
+      )}
 
       {/* Rubric summary (description from grading state) */}
       {gradingState?.gradeDescription && (

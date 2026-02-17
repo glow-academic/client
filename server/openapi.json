@@ -4418,6 +4418,51 @@
         ]
       }
     },
+    "/api/v3/documents/rubric": {
+      "post": {
+        "tags": [
+          "v3",
+          "documents"
+        ],
+        "summary": "Generate Rubric Pdf",
+        "description": "Generate a rubric PDF from provided rubric data.",
+        "operationId": "generate_rubric_pdf_api_v3_documents_rubric_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GenerateRubricPdfRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v3",
+          "documents"
+        ]
+      }
+    },
     "/api/v3/rubrics/list": {
       "post": {
         "tags": [
@@ -8245,7 +8290,7 @@
           "rubricStructure": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/RubricStructure"
+                "$ref": "#/components/schemas/RubricStructure-Output"
               },
               {
                 "type": "null"
@@ -14450,6 +14495,39 @@
         "title": "GenerateCertificateRequest",
         "description": "Request to generate certificate."
       },
+      "GenerateRubricPdfRequest": {
+        "properties": {
+          "rubricStructure": {
+            "$ref": "#/components/schemas/RubricStructure-Input"
+          },
+          "gradingState": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/GradingState"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "simulationName": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulationname"
+          }
+        },
+        "type": "object",
+        "required": [
+          "rubricStructure"
+        ],
+        "title": "GenerateRubricPdfRequest"
+      },
       "GenerateScenarioAIRequest": {
         "properties": {
           "departmentId": {
@@ -15337,7 +15415,7 @@
           },
           "standards_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/StandardMappingItem"
+              "$ref": "#/components/schemas/StandardMappingItem-Output"
             },
             "type": "object",
             "title": "Standards Mapping"
@@ -17677,7 +17755,7 @@
           },
           "standards_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/StandardMappingItem"
+              "$ref": "#/components/schemas/StandardMappingItem-Output"
             },
             "type": "object",
             "title": "Standards Mapping"
@@ -20395,7 +20473,7 @@
           },
           "standards_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/StandardMappingItem"
+              "$ref": "#/components/schemas/StandardMappingItem-Output"
             },
             "type": "object",
             "title": "Standards Mapping"
@@ -20662,7 +20740,42 @@
         "title": "RubricMatrixPackage",
         "description": "Per-rubric matrix package."
       },
-      "RubricStructure": {
+      "RubricStructure-Input": {
+        "properties": {
+          "standardGroups": {
+            "additionalProperties": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "type": "object",
+            "title": "Standardgroups"
+          },
+          "standardGroupsMapping": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/StandardGroupMappingItem-Input"
+            },
+            "type": "object",
+            "title": "Standardgroupsmapping"
+          },
+          "standardsMapping": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/StandardMappingItem-Input"
+            },
+            "type": "object",
+            "title": "Standardsmapping"
+          }
+        },
+        "type": "object",
+        "required": [
+          "standardGroups",
+          "standardGroupsMapping",
+          "standardsMapping"
+        ],
+        "title": "RubricStructure"
+      },
+      "RubricStructure-Output": {
         "properties": {
           "standardGroups": {
             "additionalProperties": {
@@ -20730,7 +20843,7 @@
           },
           "standards_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/StandardMappingItem"
+              "$ref": "#/components/schemas/StandardMappingItem-Output"
             },
             "type": "object",
             "title": "Standards Mapping"
@@ -22728,7 +22841,58 @@
         "title": "StandardGroupDetail",
         "description": "Standard group detail for detail response."
       },
-      "StandardMappingItem": {
+      "StandardGroupMappingItem-Input": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "points": {
+            "type": "number",
+            "title": "Points"
+          },
+          "passPoints": {
+            "type": "number",
+            "title": "Passpoints"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "description",
+          "points",
+          "passPoints"
+        ],
+        "title": "StandardGroupMappingItem"
+      },
+      "StandardMappingItem-Input": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "points": {
+            "type": "number",
+            "title": "Points"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "description",
+          "points"
+        ],
+        "title": "StandardMappingItem"
+      },
+      "StandardMappingItem-Output": {
         "properties": {
           "name": {
             "type": "string",
