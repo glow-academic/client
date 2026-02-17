@@ -1587,6 +1587,7 @@ export default function Agent({
                         create_tool_id={voicesSection?.create_tool_id ?? null}
                         createVoicesAction={createVoicesAction}
                         registerFlush={registerFlushCallbacks["voices"]}
+                        isAutosaveEnabled={isAutosaveEnabled}
                       />
                     </StepCard>
                   );
@@ -1641,6 +1642,7 @@ export default function Agent({
                         create_tool_id={promptsSection?.create_tool_id ?? null}
                         createPromptsAction={createPromptsAction}
                         registerFlush={registerFlushCallbacks["prompts"]}
+                        isAutosaveEnabled={isAutosaveEnabled}
                       />
                     </StepCard>
                   );

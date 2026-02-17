@@ -55,6 +55,8 @@ type CreateDraftDescriptionsOut = OutputOf<
 >;
 type CreateDraftValuesIn = InputOf<"/api/v4/resources/values", "post">;
 type CreateDraftValuesOut = OutputOf<"/api/v4/resources/values", "post">;
+type CreateDraftEndpointsIn = InputOf<"/api/v4/resources/endpoints", "post">;
+type CreateDraftEndpointsOut = OutputOf<"/api/v4/resources/endpoints", "post">;
 type ProviderData = OutputOf<"/api/v4/artifacts/providers/get", "post">;
 
 type ProviderFormState = {
@@ -67,7 +69,7 @@ type ProviderFormState = {
   key_id: string | null;
 };
 
-const FLUSH_KEYS = ["names", "descriptions", "values"] as const;
+const FLUSH_KEYS = ["names", "descriptions", "values", "endpoints"] as const;
 const PROVIDER_RESOURCE_CONFIG: ResourceConfig[] = [
   { key: "names", formKey: "name_id", flushKey: "name_id", type: "single" },
   {
@@ -84,7 +86,7 @@ const PROVIDER_RESOURCE_CONFIG: ResourceConfig[] = [
     type: "multi",
   },
   { key: "values", formKey: "value_id", flushKey: null, type: "single" },
-  { key: "endpoints", formKey: "endpoint_id", flushKey: null, type: "single" },
+  { key: "endpoints", formKey: "endpoint_id", flushKey: "endpoint_id", type: "single" },
   { key: "keys", formKey: "key_id", flushKey: null, type: "single" },
 ];
 const PROVIDER_RESOURCES: ResourceType[] = [
@@ -112,6 +114,9 @@ export interface ProviderProps {
   createValuesAction?: (
     input: CreateDraftValuesIn
   ) => Promise<CreateDraftValuesOut>;
+  createEndpointsAction?: (
+    input: CreateDraftEndpointsIn
+  ) => Promise<CreateDraftEndpointsOut>;
 }
 
 export default function Provider({
@@ -122,6 +127,7 @@ export default function Provider({
   createNamesAction,
   createDescriptionsAction,
   createValuesAction,
+  createEndpointsAction,
 }: ProviderProps) {
   const isEditMode = !!providerId;
   const router = useRouter();
@@ -436,6 +442,7 @@ export default function Provider({
                   (flush: () => Promise<Record<string, unknown> | void>) => void
                 >
               )["names"]}
+              isAutosaveEnabled={isAutosaveEnabled}
               onNameIdChange={(id: string | null) =>
                 setFormState((prev) => ({ ...prev, name_id: id }))
               }
@@ -458,6 +465,7 @@ export default function Provider({
                   (flush: () => Promise<Record<string, unknown> | void>) => void
                 >
               )["descriptions"]}
+              isAutosaveEnabled={isAutosaveEnabled}
               onDescriptionIdChange={(id: string | null) =>
                 setFormState((prev) => ({ ...prev, description_id: id }))
               }
@@ -542,6 +550,7 @@ export default function Provider({
                 (flush: () => Promise<Record<string, unknown> | void>) => void
               >
             )["values"]}
+            isAutosaveEnabled={isAutosaveEnabled}
             onChange={(ids: string[]) =>
               setFormState((prev) => ({ ...prev, value_id: ids[0] ?? null }))
             }
@@ -573,6 +582,14 @@ export default function Provider({
             group_id={groupId}
             create_tool_id={s?.endpoints?.create_tool_id}
             showAiGenerate={s?.endpoints?.show_ai_generate}
+            createEndpointsAction={createEndpointsAction}
+            registerFlush={(
+              registerFlushCallbacks as Record<
+                string,
+                (flush: () => Promise<Record<string, unknown> | void>) => void
+              >
+            )["endpoints"]}
+            isAutosaveEnabled={isAutosaveEnabled}
             onChange={(ids: string[]) =>
               setFormState((prev) => ({ ...prev, endpoint_id: ids[0] ?? null }))
             }
@@ -623,7 +640,9 @@ export default function Provider({
       createNamesAction,
       createDescriptionsAction,
       createValuesAction,
+      createEndpointsAction,
       registerFlushCallbacks,
+      isAutosaveEnabled,
     ]
   );
 

@@ -28,6 +28,8 @@ type CreateDraftDescriptionsOut = OutputOf<
 >;
 type CreateDraftValuesIn = InputOf<"/api/v4/resources/values", "post">;
 type CreateDraftValuesOut = OutputOf<"/api/v4/resources/values", "post">;
+type CreateDraftEndpointsIn = InputOf<"/api/v4/resources/endpoints", "post">;
+type CreateDraftEndpointsOut = OutputOf<"/api/v4/resources/endpoints", "post">;
 
 /** ---- Direct fetch (no caching - source of truth) ----
  * Always bypass cache to ensure fresh data for detail/edit pages.
@@ -83,6 +85,13 @@ async function createValues(
 ): Promise<CreateDraftValuesOut> {
   "use server";
   return api.post("/resources/values", input);
+}
+
+async function createEndpoints(
+  input: CreateDraftEndpointsIn
+): Promise<CreateDraftEndpointsOut> {
+  "use server";
+  return api.post("/resources/endpoints", input);
 }
 
 /** ---- Docs types for page metadata ---- */
@@ -148,6 +157,7 @@ export default async function NewProviderPage({
         createNamesAction={createNames}
         createDescriptionsAction={createDescriptions}
         createValuesAction={createValues}
+        createEndpointsAction={createEndpoints}
       />
     </div>
   );
@@ -165,6 +175,8 @@ export type {
   CreateDraftDescriptionsOut,
   CreateDraftValuesIn,
   CreateDraftValuesOut,
+  CreateDraftEndpointsIn,
+  CreateDraftEndpointsOut,
   SaveProviderIn,
   SaveProviderOut,
 };

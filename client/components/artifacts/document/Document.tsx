@@ -1098,6 +1098,7 @@ function DocumentComponent({
                 createUploadsAction={createUploadsAction}
                 searchTerm={uploadSearchTerm}
                 registerFlush={registerFlushCallbacks["uploads"]}
+                isAutosaveEnabled={isAutosaveEnabled}
               />
             </StepCard>
           );
@@ -1150,6 +1151,7 @@ function DocumentComponent({
                 create_tool_id={documentDetail?.images?.create_tool_id ?? null}
                 createImagesAction={createImagesAction}
                 registerFlush={registerFlushCallbacks["images"]}
+                isAutosaveEnabled={isAutosaveEnabled}
               />
             </StepCard>
           );
@@ -1202,6 +1204,7 @@ function DocumentComponent({
                 create_tool_id={documentDetail?.texts?.create_tool_id ?? null}
                 createTextsAction={createTextsAction}
                 registerFlush={registerFlushCallbacks["texts"]}
+                isAutosaveEnabled={isAutosaveEnabled}
               />
             </StepCard>
           );
@@ -1236,6 +1239,8 @@ function DocumentComponent({
       canRegenerate,
       canRegenerateForStepCard,
       handleOpenStepCardModal,
+      isAutosaveEnabled,
+      registerFlushCallbacks,
     ],
   );
 

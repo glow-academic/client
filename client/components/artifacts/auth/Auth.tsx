@@ -80,6 +80,8 @@ type AuthFormState = {
 type FlushResult = {
   name_id?: string | null;
   description_id?: string | null;
+  protocol_ids?: string[];
+  slug_ids?: string[];
 };
 
 type AuthResourceType =
@@ -90,7 +92,7 @@ type AuthResourceType =
   | "slugs"
   | "items";
 
-const FLUSH_KEYS = ["names", "descriptions"] as const;
+const FLUSH_KEYS = ["names", "descriptions", "protocols", "slugs"] as const;
 
 const VALID_RESOURCE_TYPES: AuthResourceType[] = [
   "names",
@@ -113,10 +115,10 @@ const AUTH_RESOURCES: ResourceConfig[] = [
   {
     key: "protocols",
     formKey: "protocol_ids",
-    flushKey: null,
+    flushKey: "protocol_ids",
     type: "multi",
   },
-  { key: "slugs", formKey: "slug_ids", flushKey: null, type: "multi" },
+  { key: "slugs", formKey: "slug_ids", flushKey: "slug_ids", type: "multi" },
 ];
 
 export interface AuthProps {
@@ -695,6 +697,8 @@ function AuthComponent({
                 showAiGenerate={s?.protocols?.show_ai_generate ?? false}
                 create_tool_id={s?.protocols?.create_tool_id ?? null}
                 createProtocolsAction={createProtocolsAction}
+                registerFlush={registerFlushCallbacks["protocols"]}
+                isAutosaveEnabled={isAutosaveEnabled}
               />
             </StepCard>
           );
@@ -739,6 +743,8 @@ function AuthComponent({
                 showAiGenerate={s?.slugs?.show_ai_generate ?? false}
                 create_tool_id={s?.slugs?.create_tool_id ?? null}
                 createSlugsAction={createSlugsAction}
+                registerFlush={registerFlushCallbacks["slugs"]}
+                isAutosaveEnabled={isAutosaveEnabled}
               />
             </StepCard>
           );

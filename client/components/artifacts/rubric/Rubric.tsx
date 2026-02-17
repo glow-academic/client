@@ -90,6 +90,8 @@ const FLUSH_KEYS = [
   "names",
   "descriptions",
   "departments",
+  "points",
+  "pass_points",
   "standard_groups",
 ] as const;
 
@@ -122,13 +124,13 @@ const RUBRIC_RESOURCES: ResourceConfig[] = [
   {
     key: "points",
     formKey: "total_points_id",
-    flushKey: null,
+    flushKey: "total_points_id",
     type: "single",
   },
   {
     key: "pass_points",
     formKey: "pass_points_id",
-    flushKey: null,
+    flushKey: "pass_points_id",
     type: "single",
   },
   {
@@ -735,6 +737,7 @@ function RubricComponent({
                 create_tool_id={s?.points?.create_tool_id ?? null}
                 createPointsAction={createPointsAction}
                 isAutosaveEnabled={isAutosaveEnabled}
+                registerFlush={registerFlushCallbacks["points"]}
               />
 
               <Points
@@ -767,6 +770,7 @@ function RubricComponent({
                 create_tool_id={s?.pass_points?.create_tool_id ?? null}
                 createPointsAction={createPointsAction}
                 isAutosaveEnabled={isAutosaveEnabled}
+                registerFlush={registerFlushCallbacks["pass_points"]}
               />
             </div>
           </StepCard>

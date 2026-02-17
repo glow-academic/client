@@ -1667,6 +1667,7 @@ function ScenarioComponent({
                   required={s?.names?.required ?? false}
                   hideDescription={true}
                   group_id={s?.group_id ?? null}
+                  create_tool_id={s?.names?.create_tool_id ?? null}
                   createNamesAction={
                     createNamesAction as
                       | ((
@@ -1674,6 +1675,8 @@ function ScenarioComponent({
                         ) => Promise<CreateDraftNamesOut>)
                       | undefined
                   }
+                  registerFlush={registerFlushCallbacks["names"]}
+                  isAutosaveEnabled={isAutosaveEnabled}
                 />
               }
               resetFields={["name", "description", "departments"]}
@@ -1715,6 +1718,7 @@ function ScenarioComponent({
                   placeholder="Describe the scenario"
                   required={s?.descriptions?.required ?? false}
                   group_id={s?.group_id ?? null}
+                  create_tool_id={s?.descriptions?.create_tool_id ?? null}
                   createDescriptionsAction={
                     createDescriptionsAction as
                       | ((
@@ -1722,6 +1726,8 @@ function ScenarioComponent({
                         ) => Promise<CreateDraftDescriptionsOut>)
                       | undefined
                   }
+                  registerFlush={registerFlushCallbacks["descriptions"]}
+                  isAutosaveEnabled={isAutosaveEnabled}
                 />
 
                 <Departments
@@ -1833,6 +1839,7 @@ function ScenarioComponent({
                 onSearchChange={(term: string) =>
                   setFormData({ problemStatementSearch: term || null })
                 }
+                create_tool_id={s?.problem_statements?.create_tool_id ?? null}
                 createProblemStatementsAction={
                   createProblemStatementsAction as
                     | ((
@@ -1840,6 +1847,8 @@ function ScenarioComponent({
                       ) => Promise<CreateDraftProblemStatementsOut>)
                     | undefined
                 }
+                registerFlush={registerFlushCallbacks["problem_statements"]}
+                isAutosaveEnabled={isAutosaveEnabled}
               />
             </StepCard>
           );

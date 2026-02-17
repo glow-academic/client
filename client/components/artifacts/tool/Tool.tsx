@@ -31,6 +31,7 @@ import { useProfile } from "@/contexts/profile-context";
 import { useDrafts } from "@/contexts/draft-context";
 import { useSocket } from "@/contexts/socket-context";
 import { useArtifactGeneration } from "@/hooks/use-artifact-generation";
+import { useFlushRegistry } from "@/hooks/use-flush-registry";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 import { Check } from "lucide-react";
@@ -90,6 +91,8 @@ type ToolDataWithArgPositions = ToolData & {
 // Resource types for tools
 type ToolResourceType = "args" | "arg_positions" | "args_outputs";
 
+const TOOL_FLUSH_KEYS = ["args", "arg_positions", "args_outputs"] as const;
+
 export interface ToolProps {
   toolId?: string;
   // Server-provided data (for server-side rendering)
@@ -122,7 +125,9 @@ function ToolComponent({
   const isEditMode = !!toolId;
   const { profile } = useProfile();
   const { socket, isConnected } = useSocket();
-  const { selectedDraftId, setSelectedDraftId } = useDrafts();
+  const { selectedDraftId, setSelectedDraftId, isAutosaveEnabled } = useDrafts();
+  const { registerFlushCallbacks, flushAllResources } =
+    useFlushRegistry<Record<string, unknown>>(TOOL_FLUSH_KEYS);
   // Generation state for AI workflows
   const VALID_TOOL_RESOURCE_TYPES: ToolResourceType[] = ["args", "arg_positions", "args_outputs"];
   const { isGenerating, startGenerating, makeOnGenerationComplete } =
@@ -614,6 +619,11 @@ function ToolComponent({
   // Submit handler for GenericForm
   const handleSubmit = useCallback(
     async (_formData: Record<string, unknown>) => {
+      // Flush all pending resource creations before saving
+      if (!isAutosaveEnabled) {
+        await flushAllResources();
+      }
+
       // Validate required resource IDs
       if (toolData?.args?.required && formState.args_ids.length === 0) {
         toast.error("Args are required");
@@ -696,6 +706,8 @@ function ToolComponent({
       toolData?.names?.resource?.id,
       toolData?.descriptions?.resource?.id,
       toolData?.flags,
+      isAutosaveEnabled,
+      flushAllResources,
     ]
   );
 
@@ -1153,6 +1165,8 @@ function ToolComponent({
                   {...(createArgsAction ? { createArgsAction } : {})}
                   group_id={currentToolData?.group_id ?? null}
                   create_tool_id={currentToolData?.args_create_tool_id ?? null}
+                  registerFlush={registerFlushCallbacks["args"]}
+                  isAutosaveEnabled={isAutosaveEnabled}
                 />
               </div>
             </StepCard>
@@ -1286,6 +1300,8 @@ function ToolComponent({
                   {...(createArgPositionsAction
                     ? { createArgPositionsAction }
                     : {})}
+                  registerFlush={registerFlushCallbacks["arg_positions"]}
+                  isAutosaveEnabled={isAutosaveEnabled}
                 />
               </div>
             </StepCard>
@@ -1482,6 +1498,8 @@ function ToolComponent({
                     ? { createArgsOutputsAction }
                     : {})}
                   group_id={currentToolData?.group_id ?? null}
+                  registerFlush={registerFlushCallbacks["args_outputs"]}
+                  isAutosaveEnabled={isAutosaveEnabled}
                 />
               </div>
             </StepCard>
@@ -1510,6 +1528,8 @@ function ToolComponent({
       argsOutputsItems,
       argsNameById,
       argsOutputsById,
+      registerFlushCallbacks,
+      isAutosaveEnabled,
     ]
   );
 
