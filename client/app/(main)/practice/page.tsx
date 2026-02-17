@@ -193,9 +193,10 @@ export default async function PracticePage({
 
   // Check if user is a guest
   const effectiveProfileId = session?.effectiveProfileId || "guest-profile-id";
-  const isGuest =
-    effectiveProfileId === "guest-profile-id" ||
-    profileContext.effectiveProfile?.role === "guest";
+  // Default guest = unauthenticated user using the shared default guest profile
+  const isDefaultGuest = effectiveProfileId === "guest-profile-id";
+  // Any guest role (including authenticated guests) — used to gate features like infinite mode
+  const isGuest = isDefaultGuest || profileContext.effectiveProfile?.role === "guest";
 
   // Create historyKey for Suspense boundary to trigger re-fetch on URL param changes
   // Include analytics filter params so history re-fetches when filters change
@@ -235,8 +236,8 @@ export default async function PracticePage({
         isGuest={isGuest}
       />
 
-      {/* History section moved out of Practice, fully server-driven - only show for non-guests */}
-      {!isGuest && (
+      {/* History section - show for any authenticated user (hide only for default guest) */}
+      {!isDefaultGuest && (
         <div className="mt-12">
           <Suspense
             key={historyKey}
