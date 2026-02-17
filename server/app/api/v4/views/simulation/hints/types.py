@@ -26,3 +26,4 @@ class GetHintsResponse(BaseModel):
     """Response for getting hints."""
 
     items: list[HintViewItem]
+

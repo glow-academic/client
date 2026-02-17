@@ -5,7 +5,7 @@ from typing import Any
 from fastapi import APIRouter
 
 from app.main import get_internal_sio, sio
-from app.socket.v4.entries.improvements.types import ImprovementsGenerationErrorEvent
+from app.socket.v4.entries.improvements.types import ImprovementsGenerationEvent
 from app.socket.v4.entries.utils import resolve_entry_type
 
 internal_sio = get_internal_sio()
@@ -19,15 +19,18 @@ async def handle_error(data: dict[str, Any]) -> None:
     if not sid:
         return
 
-    event = ImprovementsGenerationErrorEvent(
+    resolved_fields = data.get("resolved_fields") or {}
+
+    event = ImprovementsGenerationEvent(
         artifact_type=data.get("artifact_type", ""),
         group_id=data.get("group_id"),
         run_id=data.get("run_id"),
+        success=False,
         message=data.get("message") or data.get("error_message") or "Unknown error",
         error_stage=data.get("error_stage"),
         tool_name=data.get("tool_name"),
         tool_call_id=data.get("tool_call_id"),
-        arguments=data.get("arguments"),
+        **resolved_fields,
     )
 
     await sio.emit(
@@ -57,7 +60,7 @@ async def improvements_call_error_listener(data: dict[str, Any]) -> None:
 
 @server_router.post("/improvements_generation_error")
 async def improvements_generation_error_api(
-    request: ImprovementsGenerationErrorEvent,
+    request: ImprovementsGenerationEvent,
 ) -> dict[str, bool]:
     """Server-to-client event: Improvements generation error."""
     return {"success": True}

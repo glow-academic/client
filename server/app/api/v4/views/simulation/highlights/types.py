@@ -26,3 +26,4 @@ class GetHighlightsResponse(BaseModel):
     """Response for getting highlights."""
 
     items: list[HighlightViewItem]
+

@@ -27,3 +27,4 @@ class GetResponsesResponse(BaseModel):
     """Response for getting responses."""
 
     items: list[ResponseViewItem]
+

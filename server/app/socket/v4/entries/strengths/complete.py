@@ -5,7 +5,7 @@ from typing import Any
 from fastapi import APIRouter
 
 from app.main import get_internal_sio, sio
-from app.socket.v4.entries.strengths.types import StrengthsGenerationCompleteEvent
+from app.socket.v4.entries.strengths.types import StrengthsGenerationEvent
 from app.socket.v4.entries.utils import resolve_entry_type
 
 internal_sio = get_internal_sio()
@@ -14,20 +14,24 @@ server_router = APIRouter()
 
 
 async def handle_complete(data: dict[str, Any]) -> None:
-    """Handle strengths generation complete - emit typed event."""
+    """Handle strengths generation complete - emit typed event from tool result."""
     sid = data.get("sid", "")
     if not sid:
         return
 
     tool_result = data.get("result") or {}
+    entry_id_str = tool_result.get("entry_id")
+    entry_data = tool_result.get("entry_data") or {}
 
-    event = StrengthsGenerationCompleteEvent(
+    event = StrengthsGenerationEvent(
         artifact_type=data.get("artifact_type", ""),
-        entry_id=tool_result.get("entry_id"),
+        entry_id=entry_id_str,
         group_id=data.get("group_id", ""),
         run_id=data.get("run_id"),
         tool_call_id=data.get("tool_call_id"),
         tool_name=data.get("tool_name"),
+        success=True,
+        **entry_data,
     )
 
     await sio.emit(
@@ -59,7 +63,7 @@ async def strengths_call_complete_listener(data: dict[str, Any]) -> None:
 
 @server_router.post("/strengths_generation_complete")
 async def strengths_generation_complete_api(
-    request: StrengthsGenerationCompleteEvent,
+    request: StrengthsGenerationEvent,
 ) -> dict[str, bool]:
     """Server-to-client event: Strengths generation completed."""
     return {"success": True}

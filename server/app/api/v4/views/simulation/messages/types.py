@@ -31,3 +31,4 @@ class GetMessagesResponse(BaseModel):
     """Response for getting messages."""
 
     items: list[MessageViewItem]
+

@@ -1,33 +1,29 @@
-"""Typed event models for analyses entry socket events."""
-
-from typing import Any
+"""Unified event model for analyses entry socket events."""
 
 from pydantic import BaseModel
 
 
-class AnalysesGenerationCompleteEvent(BaseModel):
-    """Server-to-client event: analyses_generation_complete."""
+class AnalysesGenerationEvent(BaseModel):
+    """Unified socket event for analyses generation. Same type for all 4 events."""
 
-    artifact_type: str
+    # Metadata
+    artifact_type: str = ""
     entry_type: str = "analyses"
     entry_id: str | None = None
-    group_id: str
-    run_id: str | None = None
-    tool_call_id: str | None = None
-    tool_name: str | None = None
-    success: bool = True
-
-
-class AnalysesGenerationErrorEvent(BaseModel):
-    """Server-to-client event: analyses_generation_error."""
-
-    artifact_type: str
-    entry_type: str = "analyses"
     group_id: str | None = None
     run_id: str | None = None
-    success: bool = False
-    message: str = ""
+    # Completion
+    success: bool | None = None
+    # Error
+    message: str | None = None
     error_stage: str | None = None
-    tool_name: str | None = None
+    # Tool call tracking
     tool_call_id: str | None = None
-    arguments: dict[str, Any] | None = None
+    tool_name: str | None = None
+    # Streaming
+    arguments_delta: str | None = None
+    # Entry fields (canonical shape from AnalyseViewItem)
+    analysis_id: str | None = None
+    grade_id: str | None = None
+    content: str | None = None
+    created_at: str | None = None

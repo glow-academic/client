@@ -188,6 +188,11 @@ async def _execute_entry_tool(
         if entry_row and entry_row.id:
             entry_id = str(entry_row.id)
             already_exists = bool(entry_row.already_exists)
+            entry_data: dict[str, Any] = {
+                "id": entry_id,
+                **mapped_values,
+                "generated": True,
+            }
             if already_exists:
                 return json.dumps(
                     {
@@ -196,6 +201,7 @@ async def _execute_entry_tool(
                         "entry_id": entry_id,
                         "entry_type": entry_type,
                         "call_id": str(call_id) if call_id else None,
+                        "entry_data": entry_data,
                     }
                 )
             return json.dumps(
@@ -205,6 +211,7 @@ async def _execute_entry_tool(
                     "entry_id": entry_id,
                     "entry_type": entry_type,
                     "call_id": str(call_id) if call_id else None,
+                    "entry_data": entry_data,
                 }
             )
         else:

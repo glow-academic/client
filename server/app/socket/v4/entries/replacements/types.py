@@ -1,33 +1,31 @@
-"""Typed event models for replacements entry socket events."""
-
-from typing import Any
+"""Unified event model for replacements entry socket events."""
 
 from pydantic import BaseModel
 
 
-class ReplacementsGenerationCompleteEvent(BaseModel):
-    """Server-to-client event: replacements_generation_complete."""
+class ReplacementsGenerationEvent(BaseModel):
+    """Unified socket event for replacements generation. Same type for all 4 events."""
 
-    artifact_type: str
+    # Metadata
+    artifact_type: str = ""
     entry_type: str = "replacements"
     entry_id: str | None = None
-    group_id: str
-    run_id: str | None = None
-    tool_call_id: str | None = None
-    tool_name: str | None = None
-    success: bool = True
-
-
-class ReplacementsGenerationErrorEvent(BaseModel):
-    """Server-to-client event: replacements_generation_error."""
-
-    artifact_type: str
-    entry_type: str = "replacements"
     group_id: str | None = None
     run_id: str | None = None
-    success: bool = False
-    message: str = ""
+    # Completion
+    success: bool | None = None
+    # Error
+    message: str | None = None
     error_stage: str | None = None
-    tool_name: str | None = None
+    # Tool call tracking
     tool_call_id: str | None = None
-    arguments: dict[str, Any] | None = None
+    tool_name: str | None = None
+    # Streaming
+    arguments_delta: str | None = None
+    # Entry fields (canonical shape from ReplacementViewItem)
+    replacement_id: str | None = None
+    improvement_id: str | None = None
+    section: str | None = None
+    replace_text: str | None = None
+    idx: int | None = None
+    created_at: str | None = None

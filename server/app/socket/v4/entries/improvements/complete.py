@@ -5,7 +5,7 @@ from typing import Any
 from fastapi import APIRouter
 
 from app.main import get_internal_sio, sio
-from app.socket.v4.entries.improvements.types import ImprovementsGenerationCompleteEvent
+from app.socket.v4.entries.improvements.types import ImprovementsGenerationEvent
 from app.socket.v4.entries.utils import resolve_entry_type
 
 internal_sio = get_internal_sio()
@@ -14,20 +14,24 @@ server_router = APIRouter()
 
 
 async def handle_complete(data: dict[str, Any]) -> None:
-    """Handle improvements generation complete - emit typed event."""
+    """Handle improvements generation complete - emit typed event from tool result."""
     sid = data.get("sid", "")
     if not sid:
         return
 
     tool_result = data.get("result") or {}
+    entry_id_str = tool_result.get("entry_id")
+    entry_data = tool_result.get("entry_data") or {}
 
-    event = ImprovementsGenerationCompleteEvent(
+    event = ImprovementsGenerationEvent(
         artifact_type=data.get("artifact_type", ""),
-        entry_id=tool_result.get("entry_id"),
+        entry_id=entry_id_str,
         group_id=data.get("group_id", ""),
         run_id=data.get("run_id"),
         tool_call_id=data.get("tool_call_id"),
         tool_name=data.get("tool_name"),
+        success=True,
+        **entry_data,
     )
 
     await sio.emit(
@@ -59,7 +63,7 @@ async def improvements_call_complete_listener(data: dict[str, Any]) -> None:
 
 @server_router.post("/improvements_generation_complete")
 async def improvements_generation_complete_api(
-    request: ImprovementsGenerationCompleteEvent,
+    request: ImprovementsGenerationEvent,
 ) -> dict[str, bool]:
     """Server-to-client event: Improvements generation completed."""
     return {"success": True}

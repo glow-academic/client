@@ -27,3 +27,4 @@ class GetContentsResponse(BaseModel):
     """Response for getting contents."""
 
     items: list[ContentViewItem]
+

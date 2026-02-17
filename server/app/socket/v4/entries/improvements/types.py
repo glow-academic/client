@@ -1,33 +1,30 @@
-"""Typed event models for improvements entry socket events."""
-
-from typing import Any
+"""Unified event model for improvements entry socket events."""
 
 from pydantic import BaseModel
 
 
-class ImprovementsGenerationCompleteEvent(BaseModel):
-    """Server-to-client event: improvements_generation_complete."""
+class ImprovementsGenerationEvent(BaseModel):
+    """Unified socket event for improvements generation. Same type for all 4 events."""
 
-    artifact_type: str
+    # Metadata
+    artifact_type: str = ""
     entry_type: str = "improvements"
     entry_id: str | None = None
-    group_id: str
-    run_id: str | None = None
-    tool_call_id: str | None = None
-    tool_name: str | None = None
-    success: bool = True
-
-
-class ImprovementsGenerationErrorEvent(BaseModel):
-    """Server-to-client event: improvements_generation_error."""
-
-    artifact_type: str
-    entry_type: str = "improvements"
     group_id: str | None = None
     run_id: str | None = None
-    success: bool = False
-    message: str = ""
+    # Completion
+    success: bool | None = None
+    # Error
+    message: str | None = None
     error_stage: str | None = None
-    tool_name: str | None = None
+    # Tool call tracking
     tool_call_id: str | None = None
-    arguments: dict[str, Any] | None = None
+    tool_name: str | None = None
+    # Streaming
+    arguments_delta: str | None = None
+    # Entry fields (canonical shape from ImprovementViewItem)
+    improvement_id: str | None = None
+    message_id: str | None = None
+    name: str | None = None
+    description: str | None = None
+    created_at: str | None = None

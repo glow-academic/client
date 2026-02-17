@@ -6,7 +6,7 @@ from fastapi import APIRouter
 
 from app.main import get_internal_sio, sio
 from app.socket.v4.entries.simulation_messages.types import (
-    SimulationMessagesGenerationErrorEvent,
+    SimulationMessagesGenerationEvent,
 )
 from app.socket.v4.entries.utils import resolve_entry_type
 
@@ -21,15 +21,18 @@ async def handle_error(data: dict[str, Any]) -> None:
     if not sid:
         return
 
-    event = SimulationMessagesGenerationErrorEvent(
+    resolved_fields = data.get("resolved_fields") or {}
+
+    event = SimulationMessagesGenerationEvent(
         artifact_type=data.get("artifact_type", ""),
         group_id=data.get("group_id"),
         run_id=data.get("run_id"),
+        success=False,
         message=data.get("message") or data.get("error_message") or "Unknown error",
         error_stage=data.get("error_stage"),
         tool_name=data.get("tool_name"),
         tool_call_id=data.get("tool_call_id"),
-        arguments=data.get("arguments"),
+        **resolved_fields,
     )
 
     await sio.emit(
@@ -39,7 +42,12 @@ async def handle_error(data: dict[str, Any]) -> None:
     )
 
 
-@internal_sio.on("generate_call_error")
+# =============================================================================
+# Internal SIO listener
+# =============================================================================
+
+
+@internal_sio.on("generate_call_error")  # type: ignore
 async def simulation_messages_call_error_listener(data: dict[str, Any]) -> None:
     """Listen for error events targeting simulation_messages."""
     if resolve_entry_type(data) != "simulation_messages":
@@ -47,9 +55,14 @@ async def simulation_messages_call_error_listener(data: dict[str, Any]) -> None:
     await handle_error(data)
 
 
+# =============================================================================
+# FastAPI endpoint for OpenAPI documentation
+# =============================================================================
+
+
 @server_router.post("/simulation_messages_generation_error")
 async def simulation_messages_generation_error_api(
-    request: SimulationMessagesGenerationErrorEvent,
+    request: SimulationMessagesGenerationEvent,
 ) -> dict[str, bool]:
     """Server-to-client event: SimulationMessages generation error."""
     return {"success": True}
