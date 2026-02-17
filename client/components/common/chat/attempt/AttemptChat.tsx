@@ -2465,36 +2465,15 @@ export default function AttemptChat({
                 <ResizablePanel defaultSize={88} minSize={70}>
                   <div className="h-full flex flex-col">
                     {/* Timer and Controls Header */}
-                    <Collapsible
-                      open={showObjectives}
-                      onOpenChange={setShowObjectives}
-                      className="border-b"
-                    >
-                      <div className="p-2 pt-0 flex flex-col gap-2">
-                        <div className="flex items-start justify-between">
-                          <div className="flex items-center gap-4">
-                            <div className="flex items-start gap-2">
-                              <span className="font-medium">
-                                {scenario?.problemStatement ||
-                                  scenario?.name ||
-                                  currentChat?.title}
-                              </span>
-                            </div>
-                          </div>
-                          <div className="flex items-start justify-end gap-2">
-                            <div className="flex items-center gap-4">
-                              {/* Hide completed badge logic in infinite mode */}
-                              {!attempt?.infiniteMode &&
-                                currentChat?.completed &&
-                                expectedChatCount ===
-                                  chats.filter((chat: Chat) => chat.completed)
-                                    .length && (
-                                  <Badge variant="default">Completed</Badge>
-                                )}
-                            </div>
-
-                            <div className="flex items-center gap-2">
-                              {/* Objectives Toggle - only show if simulation has objectives enabled and current chat scenario has objectives */}
+                    <div className="p-2 pt-0 border-b flex flex-col gap-2">
+                      {/* Mobile: Vertical layout matching graded view */}
+                      <div className="md:hidden max-h-[200px] overflow-y-auto">
+                        <div className="flex flex-col gap-3 py-2">
+                          {/* Row 1: Control buttons left, timer right */}
+                          <div className="flex items-center gap-2">
+                            {/* Left side: Control buttons */}
+                            <div className="flex items-center gap-2 flex-wrap">
+                              {/* Objectives Toggle */}
                               {simulation?.objectivesEnabled &&
                                 (() => {
                                   const currentScenario = displayChat?.id
@@ -2505,39 +2484,32 @@ export default function AttemptChat({
                                     currentScenario.objectives.length > 0;
                                   return hasObjectives;
                                 })() && (
-                                  <Tooltip>
-                                    <TooltipTrigger asChild>
-                                      <CollapsibleTrigger asChild>
+                                  <TooltipProvider>
+                                    <Tooltip>
+                                      <TooltipTrigger asChild>
                                         <Button
                                           variant={
-                                            showObjectives
+                                            showObjectivesModal
                                               ? "default"
                                               : "outline"
                                           }
                                           size="sm"
-                                          onClick={(e) => {
-                                            // Mobile: open modal, Desktop: use collapsible
-                                            if (window.innerWidth < 768) {
-                                              e.preventDefault();
-                                              setShowObjectivesModal(true);
-                                            }
-                                          }}
-                                          className={`p-2 ${showObjectives ? "bg-primary text-primary-foreground" : ""}`}
+                                          onClick={() =>
+                                            setShowObjectivesModal(true)
+                                          }
+                                          className={`p-2 ${showObjectivesModal ? "bg-primary text-primary-foreground" : ""}`}
                                         >
                                           <ListChecks className="h-4 w-4" />
                                         </Button>
-                                      </CollapsibleTrigger>
-                                    </TooltipTrigger>
-                                    <TooltipContent>
-                                      <p>
-                                        {showObjectives
-                                          ? "Hide Objectives"
-                                          : "Show Objectives"}
-                                      </p>
-                                    </TooltipContent>
-                                  </Tooltip>
+                                      </TooltipTrigger>
+                                      <TooltipContent>
+                                        <p>View Objectives</p>
+                                      </TooltipContent>
+                                    </Tooltip>
+                                  </TooltipProvider>
                                 )}
 
+                              {/* Documents Toggle */}
                               {(() => {
                                 const currentChatDocIds =
                                   displayChat?.documentIds || [];
@@ -2547,42 +2519,34 @@ export default function AttemptChat({
                                   );
                                 return hasDocumentsForCurrentChat;
                               })() && (
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <Button
-                                      variant={
-                                        showDocuments || showDocumentModal
-                                          ? "default"
-                                          : "outline"
-                                      }
-                                      size="sm"
-                                      onClick={() => {
-                                        // Mobile: open modal, Desktop: toggle panel
-                                        if (window.innerWidth < 768) {
-                                          setShowDocumentModal(true);
-                                        } else {
-                                          setShowDocuments(!showDocuments);
+                                <TooltipProvider>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <Button
+                                        variant={
+                                          showDocumentModal ? "default" : "outline"
                                         }
-                                      }}
-                                      className={`p-2 ${showDocuments || showDocumentModal ? "bg-primary text-primary-foreground" : ""}`}
-                                    >
-                                      <FileText className="h-4 w-4" />
-                                    </Button>
-                                  </TooltipTrigger>
-                                  <TooltipContent>
-                                    <p>
-                                      {showDocuments || showDocumentModal
-                                        ? "Hide Documents"
-                                        : "Show Documents"}
-                                    </p>
-                                  </TooltipContent>
-                                </Tooltip>
+                                        size="sm"
+                                        onClick={() => setShowDocumentModal(true)}
+                                        className={`p-2 ${showDocumentModal ? "bg-primary text-primary-foreground" : ""}`}
+                                      >
+                                        <FileText className="h-4 w-4" />
+                                      </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                      <p>View Documents</p>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </TooltipProvider>
                               )}
+                            </div>
 
+                            {/* Right side: Timer */}
+                            <div className="flex-1 flex justify-end">
                               <Tooltip>
                                 <TooltipTrigger asChild>
                                   <div
-                                    className={`flex items-center gap-2 px-3 py-1 rounded-full w-[85px] overflow-x-auto ${
+                                    className={`flex items-center gap-2 px-3 py-1 rounded-full ${
                                       !attempt?.infiniteMode &&
                                       currentChat?.completed &&
                                       currentDynamicRubric &&
@@ -2624,7 +2588,6 @@ export default function AttemptChat({
                                           ? formatTime(timer.remaining)
                                           : formatTime(timer.elapsed)}
                                     </span>
-                                    {/* In infinite mode, we don't show negative state; we auto-finish on expiry */}
                                   </div>
                                 </TooltipTrigger>
                                 {!attempt?.infiniteMode &&
@@ -2649,45 +2612,230 @@ export default function AttemptChat({
                               </Tooltip>
                             </div>
                           </div>
+
+                          {/* Row 2: Scenario description - full width */}
+                          <div className="text-left text-sm">
+                            <span className="font-medium">
+                              {scenario?.problemStatement ||
+                                scenario?.name ||
+                                currentChat?.title}
+                            </span>
+                          </div>
                         </div>
                       </div>
 
-                      {/* Objectives Collapsible Content - hide in grading mode */}
-                      {simulation?.objectivesEnabled &&
-                        (() => {
-                          const currentScenario = displayChat?.id
-                            ? scenariosByChatId[displayChat.id]
-                            : null;
-                          const objectives = currentScenario?.objectives || [];
-                          return objectives.length > 0;
-                        })() &&
-                        !showGrades && (
-                          <CollapsibleContent className="pt-2">
-                            <div className="px-4 pb-2">
-                              <ul className="space-y-2 list-none">
-                                {(() => {
-                                  const currentScenario = displayChat?.id
-                                    ? scenariosByChatId[displayChat.id]
-                                    : null;
-                                  const objectives =
-                                    currentScenario?.objectives || [];
-                                  return objectives.map((objective, index) => (
-                                    <li
-                                      key={index}
-                                      className="font-normal flex items-start gap-2"
-                                    >
-                                      <CheckCircle2 className="h-5 w-5 text-green-600 dark:text-green-400 flex-shrink-0" />
-                                      <span className="flex-1 -mt-0.5">
-                                        {objective}
-                                      </span>
-                                    </li>
-                                  ));
-                                })()}
-                              </ul>
+                      {/* Desktop: Original horizontal layout */}
+                      <Collapsible
+                        open={showObjectives}
+                        onOpenChange={setShowObjectives}
+                        className="hidden md:block"
+                      >
+                        <div className="hidden md:flex md:flex-col md:gap-2">
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="flex items-center gap-4">
+                              <div className="flex items-start gap-2">
+                                <span className="font-medium">
+                                  {scenario?.problemStatement ||
+                                    scenario?.name ||
+                                    currentChat?.title}
+                                </span>
+                              </div>
                             </div>
-                          </CollapsibleContent>
-                        )}
-                    </Collapsible>
+                            <div className="flex items-start justify-end gap-2">
+                              <div className="flex items-center gap-4">
+                                {/* Hide completed badge logic in infinite mode */}
+                                {!attempt?.infiniteMode &&
+                                  currentChat?.completed &&
+                                  expectedChatCount ===
+                                    chats.filter((chat: Chat) => chat.completed)
+                                      .length && (
+                                    <Badge variant="default">Completed</Badge>
+                                  )}
+                              </div>
+
+                              <div className="flex items-center gap-2">
+                                {/* Objectives Toggle */}
+                                {simulation?.objectivesEnabled &&
+                                  (() => {
+                                    const currentScenario = displayChat?.id
+                                      ? scenariosByChatId[displayChat.id]
+                                      : null;
+                                    const hasObjectives =
+                                      currentScenario?.objectives &&
+                                      currentScenario.objectives.length > 0;
+                                    return hasObjectives;
+                                  })() && (
+                                    <Tooltip>
+                                      <TooltipTrigger asChild>
+                                        <CollapsibleTrigger asChild>
+                                          <Button
+                                            variant={
+                                              showObjectives
+                                                ? "default"
+                                                : "outline"
+                                            }
+                                            size="sm"
+                                            className={`p-2 ${showObjectives ? "bg-primary text-primary-foreground" : ""}`}
+                                          >
+                                            <ListChecks className="h-4 w-4" />
+                                          </Button>
+                                        </CollapsibleTrigger>
+                                      </TooltipTrigger>
+                                      <TooltipContent>
+                                        <p>
+                                          {showObjectives
+                                            ? "Hide Objectives"
+                                            : "Show Objectives"}
+                                        </p>
+                                      </TooltipContent>
+                                    </Tooltip>
+                                  )}
+
+                                {(() => {
+                                  const currentChatDocIds =
+                                    displayChat?.documentIds || [];
+                                  const hasDocumentsForCurrentChat =
+                                    scenarioDocuments?.some((doc) =>
+                                      currentChatDocIds.includes(doc.document_id)
+                                    );
+                                  return hasDocumentsForCurrentChat;
+                                })() && (
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <Button
+                                        variant={
+                                          showDocuments || showDocumentModal
+                                            ? "default"
+                                            : "outline"
+                                        }
+                                        size="sm"
+                                        onClick={() => {
+                                          setShowDocuments(!showDocuments);
+                                        }}
+                                        className={`p-2 ${showDocuments || showDocumentModal ? "bg-primary text-primary-foreground" : ""}`}
+                                      >
+                                        <FileText className="h-4 w-4" />
+                                      </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                      <p>
+                                        {showDocuments || showDocumentModal
+                                          ? "Hide Documents"
+                                          : "Show Documents"}
+                                      </p>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                )}
+
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <div
+                                      className={`flex items-center gap-2 px-3 py-1 rounded-full ${
+                                        !attempt?.infiniteMode &&
+                                        currentChat?.completed &&
+                                        currentDynamicRubric &&
+                                        expectedChatCount ===
+                                          chats.filter(
+                                            (chat: Chat) => chat.completed
+                                          ).length
+                                          ? currentDynamicRubric?.passed
+                                            ? "bg-green-100 dark:bg-green-900/30"
+                                            : "bg-red-100 dark:bg-red-900/30"
+                                          : "bg-muted"
+                                      }`}
+                                    >
+                                      {attempt?.infiniteMode ? (
+                                        <InfinityIcon className="h-4 w-4 flex-shrink-0" />
+                                      ) : (
+                                        <Clock className="h-4 w-4 flex-shrink-0" />
+                                      )}
+                                      <span
+                                        className={`text-sm font-medium ${
+                                          attempt?.infiniteMode
+                                            ? ""
+                                            : simulation?.timeLimit &&
+                                                timer.remaining !== null &&
+                                                timer.remaining < 0
+                                              ? "text-red-500"
+                                              : ""
+                                        }`}
+                                        data-testid="timer"
+                                      >
+                                        {attempt?.infiniteMode
+                                          ? simulation?.timeLimit
+                                            ? formatTime(
+                                                Math.max(timer.remaining || 0, 0)
+                                              )
+                                            : formatTime(timer.elapsed)
+                                          : simulation?.timeLimit &&
+                                              timer.remaining !== null
+                                            ? formatTime(timer.remaining)
+                                            : formatTime(timer.elapsed)}
+                                      </span>
+                                    </div>
+                                  </TooltipTrigger>
+                                  {!attempt?.infiniteMode &&
+                                    currentChat?.completed &&
+                                    currentDynamicRubric &&
+                                    expectedChatCount ===
+                                      chats.filter((chat: Chat) => chat.completed)
+                                        .length && (
+                                      <TooltipContent>
+                                        <p>
+                                          {currentDynamicRubric.passed
+                                            ? "Passed"
+                                            : "Failed"}
+                                          ({currentDynamicRubric?.score}/
+                                          {
+                                            currentDynamicRubric?.totalPossiblePoints
+                                          }
+                                          )
+                                        </p>
+                                      </TooltipContent>
+                                    )}
+                                </Tooltip>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Objectives Collapsible Content - desktop only, hide in grading mode */}
+                        {simulation?.objectivesEnabled &&
+                          (() => {
+                            const currentScenario = displayChat?.id
+                              ? scenariosByChatId[displayChat.id]
+                              : null;
+                            const objectives = currentScenario?.objectives || [];
+                            return objectives.length > 0;
+                          })() &&
+                          !showGrades && (
+                            <CollapsibleContent className="pt-2">
+                              <div className="px-4 pb-2">
+                                <ul className="space-y-2 list-none">
+                                  {(() => {
+                                    const currentScenario = displayChat?.id
+                                      ? scenariosByChatId[displayChat.id]
+                                      : null;
+                                    const objectives =
+                                      currentScenario?.objectives || [];
+                                    return objectives.map((objective, index) => (
+                                      <li
+                                        key={index}
+                                        className="font-normal flex items-start gap-2"
+                                      >
+                                        <CheckCircle2 className="h-5 w-5 text-green-600 dark:text-green-400 flex-shrink-0" />
+                                        <span className="flex-1 -mt-0.5">
+                                          {objective}
+                                        </span>
+                                      </li>
+                                    ));
+                                  })()}
+                                </ul>
+                              </div>
+                            </CollapsibleContent>
+                          )}
+                      </Collapsible>
+                    </div>
 
                     {/* Messages Area */}
                     {/* Progress Bar at the very top */}
@@ -2930,12 +3078,10 @@ export default function AttemptChat({
                   {objectives.map((objective, index) => (
                     <li
                       key={index}
-                      className="font-medium flex items-start gap-2"
+                      className="font-normal flex items-start gap-2"
                     >
-                      <span className="text-primary mt-1.5 flex-shrink-0">
-                        •
-                      </span>
-                      <span className="flex-1">{objective}</span>
+                      <CheckCircle2 className="h-5 w-5 text-green-600 dark:text-green-400 flex-shrink-0" />
+                      <span className="flex-1 -mt-0.5">{objective}</span>
                     </li>
                   ))}
                 </ul>
