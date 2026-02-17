@@ -65,8 +65,8 @@ chat_scope AS (
         c.id AS chat_id,
         (ARRAY_AGG(tsc.scenarios_id ORDER BY tsc.created_at)
             FILTER (WHERE tsc.scenarios_id IS NOT NULL))[1] AS scenario_id,
-        (ARRAY_AGG(tpc.personas_id ORDER BY tpc.created_at)
-            FILTER (WHERE tpc.personas_id IS NOT NULL))[1] AS persona_id,
+        (ARRAY_AGG(tpc.scenario_personas_id ORDER BY tpc.created_at)
+            FILTER (WHERE tpc.scenario_personas_id IS NOT NULL))[1] AS persona_id,
         COALESCE(
             ARRAY_AGG(DISTINCT tdc.documents_id ORDER BY tdc.documents_id)
                 FILTER (WHERE tdc.documents_id IS NOT NULL),

@@ -60,7 +60,7 @@ profile_agg AS (
 rubric_agg AS (
     SELECT
         hrc.home_id,
-        ARRAY_AGG(DISTINCT hrc.rubrics_id ORDER BY hrc.rubrics_id) AS rubric_ids
+        ARRAY_AGG(DISTINCT hrc.scenario_rubrics_id ORDER BY hrc.scenario_rubrics_id) AS rubric_ids
     FROM home_rubrics_connection hrc
     WHERE hrc.active = true
     GROUP BY hrc.home_id

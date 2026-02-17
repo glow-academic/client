@@ -45,7 +45,7 @@ department_agg AS (
 persona_agg AS (
     SELECT
         tbpc.training_id,
-        ARRAY_AGG(DISTINCT tbpc.personas_id ORDER BY tbpc.personas_id) AS persona_ids
+        ARRAY_AGG(DISTINCT tbpc.scenario_personas_id ORDER BY tbpc.scenario_personas_id) AS persona_ids
     FROM training_personas_connection tbpc
     WHERE tbpc.active = true
     GROUP BY tbpc.training_id

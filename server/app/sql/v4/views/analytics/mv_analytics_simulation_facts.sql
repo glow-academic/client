@@ -58,7 +58,7 @@ latest_grade AS (
 chat_persona AS (
     SELECT
         c.id AS chat_id,
-        (ARRAY_AGG(tpc.personas_id ORDER BY tpc.created_at) FILTER (WHERE tpc.personas_id IS NOT NULL))[1] AS persona_id
+        (ARRAY_AGG(tpc.scenario_personas_id ORDER BY tpc.created_at) FILTER (WHERE tpc.scenario_personas_id IS NOT NULL))[1] AS persona_id
     FROM attempt_chat_entry c
     LEFT JOIN training_department_entry tbd
         ON tbd.id = c.training_department_id AND tbd.active = TRUE

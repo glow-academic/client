@@ -46,10 +46,10 @@ subbundle_snapshot AS (
         COALESCE(BOOL_OR(stlr.negative), false) AS negative,
         -- singular picks (first by created_at)
         (ARRAY_AGG(tsc.scenarios_id ORDER BY tsc.created_at) FILTER (WHERE tsc.scenarios_id IS NOT NULL))[1] AS scenario_id,
-        (ARRAY_AGG(trc.rubrics_id ORDER BY trc.created_at) FILTER (WHERE trc.rubrics_id IS NOT NULL))[1] AS rubric_id,
+        (ARRAY_AGG(trc.scenario_rubrics_id ORDER BY trc.created_at) FILTER (WHERE trc.scenario_rubrics_id IS NOT NULL))[1] AS rubric_id,
         (ARRAY_AGG(tpsc.problem_statements_id ORDER BY tpsc.created_at) FILTER (WHERE tpsc.problem_statements_id IS NOT NULL))[1] AS problem_statement_id,
         -- plural sets
-        COALESCE(ARRAY_AGG(DISTINCT tpc.personas_id ORDER BY tpc.personas_id) FILTER (WHERE tpc.personas_id IS NOT NULL), ARRAY[]::uuid[]) AS persona_ids,
+        COALESCE(ARRAY_AGG(DISTINCT tpc.scenario_personas_id ORDER BY tpc.scenario_personas_id) FILTER (WHERE tpc.scenario_personas_id IS NOT NULL), ARRAY[]::uuid[]) AS persona_ids,
         COALESCE(ARRAY_AGG(DISTINCT toc.objectives_id ORDER BY toc.objectives_id) FILTER (WHERE toc.objectives_id IS NOT NULL), ARRAY[]::uuid[]) AS objective_ids,
         COALESCE(ARRAY_AGG(DISTINCT tqc.questions_id ORDER BY tqc.questions_id) FILTER (WHERE tqc.questions_id IS NOT NULL), ARRAY[]::uuid[]) AS question_ids,
         COALESCE(ARRAY_AGG(DISTINCT topt.options_id ORDER BY topt.options_id) FILTER (WHERE topt.options_id IS NOT NULL), ARRAY[]::uuid[]) AS option_ids,
