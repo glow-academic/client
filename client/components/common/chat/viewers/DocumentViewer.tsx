@@ -148,7 +148,7 @@ export default function DocumentViewer({
 
     // PDF viewer - always fit to width
     if (type?.includes("application/pdf")) {
-      // iOS Safari: open natively (scroll works, no freeze)
+      // iOS Safari: button only (iframe has scroll/freeze issues)
       if (isMobileSafari) {
         return (
           <div className="p-2">
@@ -161,13 +161,20 @@ export default function DocumentViewer({
         );
       }
 
-      // Everyone else: keep iframe
+      // Other devices: iframe + "Open PDF" button on mobile
       return (
-        <div className="w-full h-full min-h-[400px]">
+        <div className="w-full h-full min-h-[400px] flex flex-col">
+          <div className="md:hidden p-2">
+            <Button asChild variant="default" className="w-full">
+              <a href={content ?? ""} target="_blank" rel="noopener noreferrer">
+                Open PDF
+              </a>
+            </Button>
+          </div>
           <iframe
             src={`${content}#view=FitH&toolbar=1&navpanes=0&scrollbar=1`}
             title={document.name ?? ""}
-            className="w-full h-full border-0 rounded-md"
+            className="w-full h-full border-0 rounded-md flex-1"
             style={{
               minHeight: "500px",
               width: "100%",
