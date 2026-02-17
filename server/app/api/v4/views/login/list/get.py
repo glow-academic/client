@@ -35,7 +35,7 @@ async def get_login_list_view_internal(
     page_offset: int = 0,
     bypass_cache: bool = False,
 ) -> GetLoginListViewResponse:
-    """Internal function for fetching login data from mv_logins."""
+    """Internal function for fetching login data from logins_mv."""
     from app.sql.types import GetLoginListViewSqlParams
 
     cache_key_val = cache_key(

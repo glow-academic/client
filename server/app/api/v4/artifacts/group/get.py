@@ -1,7 +1,7 @@
 """Group artifact endpoint - POST /artifacts/group/get
 
 Uses view internals only — no raw SQL in artifact layer.
-Fetches from mv_groups, mv_runs, mv_messages, mv_calls via view layer,
+Fetches from groups_mv, runs_mv, messages_mv, calls_mv via view layer,
 then assembles the full group detail in Python.
 """
 

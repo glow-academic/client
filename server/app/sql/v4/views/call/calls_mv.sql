@@ -1,0 +1,74 @@
+-- Materialized View: calls_mv
+-- Lean call-level data for group detail pages.
+--
+-- Grain: One row per call (with run_id)
+-- Filter: run_id IS NOT NULL
+--
+-- Purpose: Exposes tool_id (resource ID) — name resolved in hydration layer
+-- Section: CALL (lean MV - used by group detail artifact)
+--
+-- Dependencies: calls_entry, tools_calls_connection
+-- ============================================================================
+-- Step 1: Drop all indexes on calls_mv materialized view (if it exists)
+-- ============================================================================
+
+DO $$
+DECLARE
+    r RECORD;
+BEGIN
+    FOR r IN
+        SELECT indexname
+        FROM pg_indexes
+        WHERE schemaname = 'public'
+          AND tablename = 'calls_mv'
+    LOOP
+        EXECUTE format('DROP INDEX IF EXISTS %I', r.indexname);
+    END LOOP;
+END $$;
+
+-- ============================================================================
+-- Step 2: Drop calls_mv materialized view if it exists
+-- ============================================================================
+
+DROP MATERIALIZED VIEW IF EXISTS calls_mv CASCADE;
+
+-- ============================================================================
+-- Step 3: Create calls_mv Materialized View
+-- ============================================================================
+
+CREATE MATERIALIZED VIEW calls_mv AS
+SELECT
+    c.id AS call_id,
+    c.run_id,
+    c.created_at AS call_created_at,
+    c.arguments_raw,
+    tcc.tools_id AS tool_id
+FROM calls_entry c
+LEFT JOIN tools_calls_connection tcc ON tcc.call_id = c.id
+WHERE c.run_id IS NOT NULL
+WITH NO DATA;
+
+-- ============================================================================
+-- Step 4: Create Unique Index (Required for CONCURRENT refresh)
+-- ============================================================================
+
+CREATE UNIQUE INDEX calls_mv_pk
+    ON calls_mv (call_id);
+
+-- ============================================================================
+-- Step 5: Create Filter/Slicing Indexes
+-- ============================================================================
+
+-- Run ID for filtering
+CREATE INDEX calls_mv_run_id_idx
+    ON calls_mv (run_id);
+
+-- Composite: run + created_at (common query pattern)
+CREATE INDEX calls_mv_run_created_at_idx
+    ON calls_mv (run_id, call_created_at);
+
+-- ============================================================================
+-- Step 6: Refresh Materialized View with Data
+-- ============================================================================
+
+REFRESH MATERIALIZED VIEW calls_mv;

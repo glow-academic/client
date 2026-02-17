@@ -1,6 +1,6 @@
 -- ============================================================================
 -- Query: get_attempt_messages_view
--- Purpose: Fetch message-level data from mv_attempt_messages
+-- Purpose: Fetch message-level data from attempt_messages_mv
 -- Section: VIEWS/ATTEMPT/MESSAGES
 -- Note: Messages are fully denormalized - no resource JOINs needed
 -- ============================================================================
@@ -75,7 +75,7 @@ AS $$
     -- Fetch from MV filtered by attempt
     mv_data AS (
         SELECT mv.*
-        FROM mv_attempt_messages mv
+        FROM attempt_messages_mv mv
         WHERE mv.attempt_id = attempt_id_filter
     ),
     -- Aggregate into array

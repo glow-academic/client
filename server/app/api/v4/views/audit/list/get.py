@@ -36,7 +36,7 @@ async def get_audit_list_view_internal(
     page_offset: int = 0,
     bypass_cache: bool = False,
 ) -> GetAuditListViewResponse:
-    """Internal function for fetching audit data from mv_audits."""
+    """Internal function for fetching audit data from audits_mv."""
     from app.sql.types import GetAuditListViewSqlParams
 
     cache_key_val = cache_key(

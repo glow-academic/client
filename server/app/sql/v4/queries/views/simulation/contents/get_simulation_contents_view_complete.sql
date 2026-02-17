@@ -1,6 +1,6 @@
 -- ============================================================================
 -- Query: get_simulation_contents_view
--- Purpose: Fetch content data from mv_attempt_contents
+-- Purpose: Fetch content data from attempt_contents_mv
 -- Section: VIEWS/SIMULATION/CONTENTS
 -- Note: Flat MV - no nested arrays
 -- ============================================================================
@@ -70,7 +70,7 @@ AS $$
     WITH
     mv_data AS (
         SELECT mv.*
-        FROM mv_attempt_contents mv
+        FROM attempt_contents_mv mv
         WHERE mv.message_id = ANY(message_ids_filter)
     ),
     items_agg AS (

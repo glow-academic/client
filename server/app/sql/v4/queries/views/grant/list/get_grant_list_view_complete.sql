@@ -1,6 +1,6 @@
 -- ============================================================================
 -- Query: get_grant_list_view
--- Purpose: Fetch grant-level data from mv_grants with declarative filters
+-- Purpose: Fetch grant-level data from grants_mv with declarative filters
 -- Section: VIEWS/GRANT/LIST
 --
 -- Includes:
@@ -82,7 +82,7 @@ AS $$
     WITH
     filtered AS (
         SELECT mv.*
-        FROM mv_grants mv
+        FROM grants_mv mv
         WHERE
             (grantor_id_filter IS NULL OR mv.grantor_id = grantor_id_filter)
             AND (emulated_id_filter IS NULL OR mv.emulated_id = emulated_id_filter)

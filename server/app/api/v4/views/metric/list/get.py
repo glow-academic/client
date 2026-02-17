@@ -32,7 +32,7 @@ async def get_metric_list_view_internal(
     page_offset: int = 0,
     bypass_cache: bool = False,
 ) -> GetMetricListViewResponse:
-    """Internal function for fetching metric data from mv_metrics."""
+    """Internal function for fetching metric data from metrics_mv."""
     from app.sql.types import GetMetricListViewSqlParams
 
     cache_key_val = cache_key(

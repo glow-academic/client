@@ -1,6 +1,6 @@
 -- ============================================================================
 -- Query: get_login_list_view
--- Purpose: Fetch login-level data from mv_logins with declarative filters
+-- Purpose: Fetch login-level data from logins_mv with declarative filters
 -- Section: VIEWS/LOGIN/LIST
 --
 -- Includes:
@@ -86,7 +86,7 @@ AS $$
     WITH
     filtered AS (
         SELECT mv.*
-        FROM mv_logins mv
+        FROM logins_mv mv
         WHERE
             (profile_id_filter IS NULL OR mv.profile_id = profile_id_filter)
             AND (active_filter IS NULL OR mv.active = active_filter)

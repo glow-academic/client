@@ -1,7 +1,7 @@
 """Session detail endpoint - POST /artifacts/session/get.
 
 Uses view internals only — no raw SQL in artifact layer.
-Fetches from mv_sessions, mv_groups, mv_audits, mv_runs via view layer,
+Fetches from sessions_mv, groups_mv, audits_mv, runs_mv via view layer,
 then aggregates in Python.
 """
 

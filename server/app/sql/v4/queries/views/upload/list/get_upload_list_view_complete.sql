@@ -1,6 +1,6 @@
 -- ============================================================================
 -- Query: get_upload_list_view
--- Purpose: Fetch upload-level data from mv_uploads with declarative filters
+-- Purpose: Fetch upload-level data from uploads_mv with declarative filters
 -- Section: VIEWS/UPLOAD/LIST
 --
 -- Includes:
@@ -78,7 +78,7 @@ AS $$
     WITH
     filtered AS (
         SELECT mv.*
-        FROM mv_uploads mv
+        FROM uploads_mv mv
         WHERE
             (uploads_id_filter IS NULL OR mv.uploads_id = uploads_id_filter)
     ),

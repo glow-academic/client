@@ -80,7 +80,7 @@ accessible_training AS (
         mh.persona_ids,
         mh.rubric_ids,
         mh.time_limit_ids
-    FROM mv_home mh
+    FROM home_mv mh
     JOIN user_cohorts uc ON mh.cohort_ids && COALESCE(uc.cohort_ids, ARRAY[]::uuid[])
     WHERE (SELECT practice FROM params) = false
 
@@ -95,11 +95,11 @@ accessible_training AS (
         mp.persona_ids,
         mp.rubric_ids,
         mp.time_limit_ids
-    FROM mv_practice mp
+    FROM practice_mv mp
     JOIN user_cohorts uc ON mp.cohort_ids && COALESCE(uc.cohort_ids, ARRAY[]::uuid[])
     WHERE (SELECT practice FROM params) = true
 ),
--- Unnest simulation_ids from mv_home/mv_practice, check simulation_active flag
+-- Unnest simulation_ids from home_mv/practice_mv, check simulation_active flag
 active_simulations AS (
     SELECT DISTINCT sid.simulation_id
     FROM accessible_training at2

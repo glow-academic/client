@@ -14,7 +14,7 @@ from app.utils.cache.invalidate_tags import invalidate_tags
 
 MV_SQL_PATH = (
     Path(__file__).parent.parent.parent.parent.parent
-    / "sql/v4/views/attempt/mv_attempt_messages.sql"
+    / "sql/v4/views/attempt/attempt_messages_mv.sql"
 )
 
 router = APIRouter()
@@ -34,7 +34,7 @@ async def recreate_messages_view(
     http_request: Request,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> RefreshResponse:
-    """Recreate the mv_attempt_messages materialized view."""
+    """Recreate the attempt_messages_mv materialized view."""
     tags = ["views", "attempt", "messages"]
 
     try:
@@ -57,7 +57,7 @@ async def recreate_messages_view(
         return RefreshResponse(
             success=True,
             method="recreate",
-            message=f"Recreated mv_attempt_messages in {duration_ms}ms",
+            message=f"Recreated attempt_messages_mv in {duration_ms}ms",
             duration_ms=duration_ms,
         )
 
@@ -66,5 +66,5 @@ async def recreate_messages_view(
     except Exception as e:
         raise HTTPException(
             status_code=500,
-            detail=f"Failed to recreate mv_attempt_messages: {str(e)}",
+            detail=f"Failed to recreate attempt_messages_mv: {str(e)}",
         ) from e

@@ -1,6 +1,6 @@
 -- ============================================================================
 -- Query: get_simulation_strengths_view
--- Purpose: Fetch strength data from mv_attempt_strengths
+-- Purpose: Fetch strength data from attempt_strengths_mv
 -- Section: VIEWS/SIMULATION/STRENGTHS
 -- Note: Flat MV - no nested arrays
 -- ============================================================================
@@ -69,7 +69,7 @@ AS $$
     WITH
     mv_data AS (
         SELECT mv.*
-        FROM mv_attempt_strengths mv
+        FROM attempt_strengths_mv mv
         WHERE mv.message_id = ANY(message_ids_filter)
     ),
     items_agg AS (

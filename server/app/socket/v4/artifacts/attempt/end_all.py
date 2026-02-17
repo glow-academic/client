@@ -58,8 +58,8 @@ async def _attempt_end_all_impl(sid: str, data: AttemptEndAllPayload) -> None:
             )
 
             # Refresh MVs
-            await conn.execute("REFRESH MATERIALIZED VIEW mv_attempt_list")
-            await conn.execute("REFRESH MATERIALIZED VIEW mv_attempt_chats")
+            await conn.execute("REFRESH MATERIALIZED VIEW attempt_mv")
+            await conn.execute("REFRESH MATERIALIZED VIEW attempt_chats_mv")
 
             # Emit attempt_ended event
             event = AttemptEndedEvent(

@@ -1,6 +1,6 @@
 -- ============================================================================
 -- Query: get_group_list_view
--- Purpose: Fetch group-level data from mv_groups with declarative filters
+-- Purpose: Fetch group-level data from groups_mv with declarative filters
 -- Section: VIEWS/GROUP/LIST
 --
 -- Includes:
@@ -85,7 +85,7 @@ AS $$
     WITH
     filtered AS (
         SELECT mv.*
-        FROM mv_groups mv
+        FROM groups_mv mv
         WHERE
             (group_ids IS NULL OR mv.group_id = ANY(group_ids))
             AND (session_id_filter IS NULL OR mv.session_id = session_id_filter)

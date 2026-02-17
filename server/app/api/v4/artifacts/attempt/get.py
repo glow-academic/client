@@ -275,7 +275,7 @@ async def get_attempt_internal(
                     for item in items:
                         if item.image_id:
                             # Resolve upload_id from uploads_resource to uploads_entry
-                            # via mv_uploads view
+                            # via uploads_mv view
                             entry_upload_id = item.upload_id
                             if item.upload_id:
                                 upload_view = await get_upload_list_view_internal(
@@ -300,7 +300,7 @@ async def get_attempt_internal(
                     for item in items:
                         if item.video_id:
                             # Resolve upload_id from uploads_resource to uploads_entry
-                            # via mv_uploads view
+                            # via uploads_mv view
                             entry_upload_id = item.upload_id
                             if item.upload_id:
                                 upload_view = await get_upload_list_view_internal(
@@ -325,7 +325,7 @@ async def get_attempt_internal(
                     for item in items:
                         if item.document_id:
                             # Resolve upload_id from uploads_resource to uploads_entry
-                            # via mv_uploads view
+                            # via uploads_mv view
                             entry_upload_id = item.upload_id
                             if item.upload_id:
                                 upload_view = await get_upload_list_view_internal(

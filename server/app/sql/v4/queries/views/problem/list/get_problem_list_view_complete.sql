@@ -1,6 +1,6 @@
 -- ============================================================================
 -- Query: get_problem_list_view
--- Purpose: Fetch problem-level data from mv_problems with declarative filters
+-- Purpose: Fetch problem-level data from problems_mv with declarative filters
 -- Section: VIEWS/PROBLEM/LIST
 --
 -- Includes:
@@ -85,7 +85,7 @@ AS $$
     WITH
     filtered AS (
         SELECT mv.*
-        FROM mv_problems mv
+        FROM problems_mv mv
         WHERE
             (profile_id_filter IS NULL OR mv.profile_id = profile_id_filter)
             AND (resolved_filter IS NULL OR mv.resolved = resolved_filter)

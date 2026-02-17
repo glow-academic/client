@@ -31,7 +31,7 @@ async def get_message_list_view_internal(
     page_offset: int = 0,
     bypass_cache: bool = False,
 ) -> GetMessageListViewResponse:
-    """Internal function for fetching message data from mv_messages."""
+    """Internal function for fetching message data from messages_mv."""
     from app.sql.types import GetMessageListViewSqlParams
 
     cache_key_val = cache_key(

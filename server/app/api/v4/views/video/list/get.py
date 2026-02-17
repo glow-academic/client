@@ -30,7 +30,7 @@ async def get_video_list_view_internal(
     page_offset: int = 0,
     bypass_cache: bool = False,
 ) -> GetVideoListViewResponse:
-    """Internal function for fetching video data from mv_videos."""
+    """Internal function for fetching video data from videos_mv."""
     from app.sql.types import GetVideoListViewSqlParams
 
     cache_key_val = cache_key(

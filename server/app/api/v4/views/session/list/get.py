@@ -38,7 +38,7 @@ async def get_session_list_view_internal(
     page_offset: int = 0,
     bypass_cache: bool = False,
 ) -> GetSessionListViewResponse:
-    """Internal function for fetching session data from mv_sessions."""
+    """Internal function for fetching session data from sessions_mv."""
     from app.sql.types import GetSessionListViewSqlParams
 
     cache_key_val = cache_key(

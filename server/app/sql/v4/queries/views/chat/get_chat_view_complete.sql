@@ -1,6 +1,6 @@
 -- ============================================================================
 -- Query: get_chat_view
--- Purpose: Fetch filtered chat-grain rows from mv_chats
+-- Purpose: Fetch filtered chat-grain rows from attempt_chats_mv
 -- Section: VIEWS/CHAT
 --
 -- Unified query replacing 4 separate analytics fact view queries + attempt chats.
@@ -131,7 +131,7 @@ LANGUAGE sql
 STABLE
 AS $$
     WITH
-    -- Apply all filters to mv_chats
+    -- Apply all filters to attempt_chats_mv
     filtered AS (
         SELECT
             ch.chat_id,
@@ -157,7 +157,7 @@ AS $$
             ch.attempt_type,
             ch.is_archived,
             ch.infinite_mode
-        FROM mv_chats ch
+        FROM attempt_chats_mv ch
         WHERE
             (profile_id_filter IS NULL OR ch.profile_id = profile_id_filter)
             AND (cohort_ids IS NULL OR cardinality(cohort_ids) = 0 OR ch.cohort_id = ANY(cohort_ids))

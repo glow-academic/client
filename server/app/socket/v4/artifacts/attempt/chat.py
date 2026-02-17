@@ -81,8 +81,8 @@ async def _attempt_chat_impl(sid: str, data: dict[str, Any]) -> None:
                         )
 
                 # Refresh MVs
-                await conn.execute("REFRESH MATERIALIZED VIEW mv_attempt_list")
-                await conn.execute("REFRESH MATERIALIZED VIEW mv_attempt_chats")
+                await conn.execute("REFRESH MATERIALIZED VIEW attempt_mv")
+                await conn.execute("REFRESH MATERIALIZED VIEW attempt_chats_mv")
 
             # Emit attempt_chat_ended to client
             event = AttemptChatEndedEvent(
@@ -139,8 +139,8 @@ async def _attempt_chat_impl(sid: str, data: dict[str, Any]) -> None:
                 chat_id = chat_row.chat_id
 
                 # Refresh MVs
-                await conn.execute("REFRESH MATERIALIZED VIEW mv_attempt_list")
-                await conn.execute("REFRESH MATERIALIZED VIEW mv_attempt_chats")
+                await conn.execute("REFRESH MATERIALIZED VIEW attempt_mv")
+                await conn.execute("REFRESH MATERIALIZED VIEW attempt_chats_mv")
 
             await invalidate_tags(["attempt", "attempts"])
 

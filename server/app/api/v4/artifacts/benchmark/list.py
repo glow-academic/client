@@ -96,7 +96,7 @@ async def list_benchmark(
                 row = await c.fetchrow(
                     f"""
                     SELECT MIN(created_at) as earliest, MAX(created_at) as latest
-                    FROM mv_test
+                    FROM test_mv
                     WHERE {where}
                     """,
                     *params,

@@ -33,7 +33,7 @@ async def get_health_list_view_internal(
     page_offset: int = 0,
     bypass_cache: bool = False,
 ) -> GetHealthListViewResponse:
-    """Internal function for fetching health data from mv_health."""
+    """Internal function for fetching health data from health_mv."""
     from app.sql.types import GetHealthListViewSqlParams
 
     cache_key_val = cache_key(

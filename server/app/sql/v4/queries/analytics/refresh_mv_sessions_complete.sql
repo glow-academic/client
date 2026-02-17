@@ -40,23 +40,23 @@ DECLARE
     refreshed text[] := ARRAY[]::text[];
 BEGIN
     -- Refresh session MVs (all independent, no ordering required)
-    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_sessions;
-    refreshed := array_append(refreshed, 'mv_sessions');
+    REFRESH MATERIALIZED VIEW CONCURRENTLY sessions_mv;
+    refreshed := array_append(refreshed, 'sessions_mv');
 
-    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_groups;
-    refreshed := array_append(refreshed, 'mv_groups');
+    REFRESH MATERIALIZED VIEW CONCURRENTLY groups_mv;
+    refreshed := array_append(refreshed, 'groups_mv');
 
-    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_audits;
-    refreshed := array_append(refreshed, 'mv_audits');
+    REFRESH MATERIALIZED VIEW CONCURRENTLY audits_mv;
+    refreshed := array_append(refreshed, 'audits_mv');
 
-    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_runs;
-    refreshed := array_append(refreshed, 'mv_runs');
+    REFRESH MATERIALIZED VIEW CONCURRENTLY runs_mv;
+    refreshed := array_append(refreshed, 'runs_mv');
 
-    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_messages;
-    refreshed := array_append(refreshed, 'mv_messages');
+    REFRESH MATERIALIZED VIEW CONCURRENTLY messages_mv;
+    refreshed := array_append(refreshed, 'messages_mv');
 
-    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_calls;
-    refreshed := array_append(refreshed, 'mv_calls');
+    REFRESH MATERIALIZED VIEW CONCURRENTLY calls_mv;
+    refreshed := array_append(refreshed, 'calls_mv');
 
     -- Get actor_name from profile_artifact using profile_names_junction junction table
     SELECT COALESCE(

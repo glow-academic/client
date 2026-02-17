@@ -1,6 +1,6 @@
 -- ============================================================================
 -- Query: get_test_invocation_view
--- Purpose: Fetch invocation-level data from mv_test_invocations with declarative filters
+-- Purpose: Fetch invocation-level data from test_invocations_mv with declarative filters
 -- Section: VIEWS/BENCHMARK/INVOCATIONS
 -- ============================================================================
 
@@ -105,7 +105,7 @@ AS $$
     -- Fetch from MV with declarative filters
     mv_data AS (
         SELECT mv.*
-        FROM mv_test_invocations mv
+        FROM test_invocations_mv mv
         WHERE (test_id_filter IS NULL OR mv.test_id = test_id_filter)
           AND (invocation_ids_filter IS NULL OR mv.invocation_id = ANY(invocation_ids_filter))
     ),

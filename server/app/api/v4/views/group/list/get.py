@@ -37,7 +37,7 @@ async def get_group_list_view_internal(
     page_offset: int = 0,
     bypass_cache: bool = False,
 ) -> GetGroupListViewResponse:
-    """Internal function for fetching group data from mv_groups."""
+    """Internal function for fetching group data from groups_mv."""
     from app.sql.types import GetGroupListViewSqlParams
 
     cache_key_val = cache_key(

@@ -71,7 +71,7 @@ async def get_run_list_view_internal(
     bypass_cache: bool = False,
     profile_id_filter: UUID | None = None,
 ) -> GetRunListViewResponse:
-    """Internal function for fetching run data from mv_runs."""
+    """Internal function for fetching run data from runs_mv."""
     from app.sql.types import GetRunListViewSqlParams
 
     cache_key_val = cache_key(

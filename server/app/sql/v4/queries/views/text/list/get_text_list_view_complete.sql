@@ -1,6 +1,6 @@
 -- ============================================================================
 -- Query: get_text_list_view
--- Purpose: Fetch text-level data from mv_texts with declarative filters
+-- Purpose: Fetch text-level data from texts_mv with declarative filters
 -- Section: VIEWS/TEXT/LIST
 --
 -- Includes:
@@ -77,7 +77,7 @@ AS $$
     WITH
     filtered AS (
         SELECT mv.*
-        FROM mv_texts mv
+        FROM texts_mv mv
         WHERE
             (texts_id_filter IS NULL OR mv.texts_id = texts_id_filter)
             AND (content_hash_filter IS NULL OR mv.content_hash = content_hash_filter)

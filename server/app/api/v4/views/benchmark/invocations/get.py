@@ -125,7 +125,7 @@ async def get_test_invocation(
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> GetBenchmarkInvocationsResponse:
-    """Get benchmark invocation rows from mv_test_invocation."""
+    """Get benchmark invocation rows from test_invocations_mv."""
     tags = ["views", "benchmark", "invocations"]
     bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
 

@@ -1,6 +1,6 @@
 -- ============================================================================
 -- Query: get_simulation_highlights_view
--- Purpose: Fetch highlight data from mv_attempt_highlights
+-- Purpose: Fetch highlight data from attempt_highlights_mv
 -- Section: VIEWS/SIMULATION/HIGHLIGHTS
 -- Note: Flat MV - no nested arrays
 -- ============================================================================
@@ -69,7 +69,7 @@ AS $$
     WITH
     mv_data AS (
         SELECT mv.*
-        FROM mv_attempt_highlights mv
+        FROM attempt_highlights_mv mv
         WHERE mv.strength_id = ANY(strength_ids_filter)
     ),
     items_agg AS (

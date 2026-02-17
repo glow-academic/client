@@ -30,7 +30,7 @@ async def get_image_list_view_internal(
     page_offset: int = 0,
     bypass_cache: bool = False,
 ) -> GetImageListViewResponse:
-    """Internal function for fetching image data from mv_images."""
+    """Internal function for fetching image data from images_mv."""
     from app.sql.types import GetImageListViewSqlParams
 
     cache_key_val = cache_key(

@@ -49,7 +49,7 @@ async def get_pricing(
         effective_date_from = request.effective_date_from
         effective_date_to = request.effective_date_to
 
-        # Step 1: Fetch runs from mv_runs
+        # Step 1: Fetch runs from runs_mv
         async with pool.acquire() as c:
             runs_result = await get_run_list_view_internal(
                 conn=c,

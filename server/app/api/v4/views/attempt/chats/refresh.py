@@ -28,13 +28,13 @@ async def refresh_chats_view(
     http_request: Request,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> RefreshResponse:
-    """Refresh the mv_attempt_chats materialized view concurrently."""
+    """Refresh the attempt_chats_mv materialized view concurrently."""
     tags = ["views", "attempt", "chats"]
 
     try:
         start_time = time.time()
 
-        await conn.execute("REFRESH MATERIALIZED VIEW CONCURRENTLY mv_attempt_chats")
+        await conn.execute("REFRESH MATERIALIZED VIEW CONCURRENTLY attempt_chats_mv")
 
         duration_ms = int((time.time() - start_time) * 1000)
 
@@ -43,12 +43,12 @@ async def refresh_chats_view(
         return RefreshResponse(
             success=True,
             method="concurrent",
-            message=f"Refreshed mv_attempt_chats in {duration_ms}ms",
+            message=f"Refreshed attempt_chats_mv in {duration_ms}ms",
             duration_ms=duration_ms,
         )
 
     except Exception as e:
         raise HTTPException(
             status_code=500,
-            detail=f"Failed to refresh mv_attempt_chats: {str(e)}",
+            detail=f"Failed to refresh attempt_chats_mv: {str(e)}",
         ) from e

@@ -1,4 +1,4 @@
-"""Get endpoint for unified chat view (mv_chats)."""
+"""Get endpoint for unified chat view (attempt_chats_mv)."""
 
 from datetime import date
 from typing import Annotated, Any
@@ -190,7 +190,7 @@ async def get_chats(
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> GetChatsResponse:
-    """Get chat data from mv_chats.
+    """Get chat data from attempt_chats_mv.
 
     Unified endpoint replacing profile_facts, simulation_facts,
     scenario_facts, and attempt_chats view endpoints.

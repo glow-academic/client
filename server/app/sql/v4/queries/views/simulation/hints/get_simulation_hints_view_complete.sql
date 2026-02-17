@@ -1,6 +1,6 @@
 -- ============================================================================
 -- Query: get_simulation_hints_view
--- Purpose: Fetch hint data from mv_attempt_hints
+-- Purpose: Fetch hint data from attempt_hints_mv
 -- Section: VIEWS/SIMULATION/HINTS
 -- Note: Flat MV - no nested arrays
 -- ============================================================================
@@ -69,7 +69,7 @@ AS $$
     WITH
     mv_data AS (
         SELECT mv.*
-        FROM mv_attempt_hints mv
+        FROM attempt_hints_mv mv
         WHERE mv.message_id = ANY(message_ids_filter)
     ),
     items_agg AS (

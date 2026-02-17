@@ -1,6 +1,6 @@
 -- ============================================================================
 -- Query: get_activity_list_view
--- Purpose: Fetch activity-level data from mv_activity with declarative filters
+-- Purpose: Fetch activity-level data from activity_mv with declarative filters
 -- Section: VIEWS/ACTIVITY/LIST
 --
 -- Includes:
@@ -77,7 +77,7 @@ AS $$
     WITH
     filtered AS (
         SELECT mv.*
-        FROM mv_activity mv
+        FROM activity_mv mv
         WHERE
             (profile_id_filter IS NULL OR mv.profile_id = profile_id_filter)
             AND (session_id_filter IS NULL OR mv.session_id = session_id_filter)

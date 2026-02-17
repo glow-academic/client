@@ -1,7 +1,7 @@
 """Session list endpoint - POST /artifacts/session/list.
 
 Uses view internals only — no raw SQL in artifact layer.
-Fetches from mv_sessions, mv_groups, mv_audits, mv_runs via view layer,
+Fetches from sessions_mv, groups_mv, audits_mv, runs_mv via view layer,
 then aggregates in Python.
 """
 
@@ -57,7 +57,7 @@ async def get_session_list_internal(
         if cached:
             return GetSessionListResponse.model_validate(cached["data"])
 
-    # Pass 1: Get paginated sessions from mv_sessions
+    # Pass 1: Get paginated sessions from sessions_mv
     view_result = await get_session_list_view_internal(
         conn=conn,
         profile_id_filter=profile_id if not profile_ids else None,

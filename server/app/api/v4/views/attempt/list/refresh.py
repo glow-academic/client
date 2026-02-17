@@ -31,10 +31,10 @@ async def refresh_attempts_view(
     http_request: Request,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> RefreshResponse:
-    """Refresh the mv_attempt_list materialized view concurrently.
+    """Refresh the attempt_mv materialized view concurrently.
 
     This is a fast refresh that doesn't require any schema changes.
-    It requires a unique index on the MV (mv_attempt_list_pk).
+    It requires a unique index on the MV (attempt_mv_pk).
 
     Use this when:
     - You want to update the MV data without downtime
@@ -49,7 +49,7 @@ async def refresh_attempts_view(
         start_time = time.time()
 
         # Refresh concurrently (requires unique index)
-        await conn.execute("REFRESH MATERIALIZED VIEW CONCURRENTLY mv_attempt_list")
+        await conn.execute("REFRESH MATERIALIZED VIEW CONCURRENTLY attempt_mv")
 
         duration_ms = int((time.time() - start_time) * 1000)
 
@@ -59,12 +59,12 @@ async def refresh_attempts_view(
         return RefreshResponse(
             success=True,
             method="concurrent",
-            message=f"Refreshed mv_attempt_list in {duration_ms}ms",
+            message=f"Refreshed attempt_mv in {duration_ms}ms",
             duration_ms=duration_ms,
         )
 
     except Exception as e:
         raise HTTPException(
             status_code=500,
-            detail=f"Failed to refresh mv_attempt_list: {str(e)}",
+            detail=f"Failed to refresh attempt_mv: {str(e)}",
         ) from e

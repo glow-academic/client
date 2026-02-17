@@ -1,6 +1,6 @@
 -- ============================================================================
 -- Query: get_video_list_view
--- Purpose: Fetch video-level data from mv_videos with declarative filters
+-- Purpose: Fetch video-level data from videos_mv with declarative filters
 -- Section: VIEWS/VIDEO/LIST
 --
 -- Includes:
@@ -79,7 +79,7 @@ AS $$
     WITH
     filtered AS (
         SELECT mv.*
-        FROM mv_videos mv
+        FROM videos_mv mv
         WHERE
             (uploads_id_filter IS NULL OR mv.uploads_id = uploads_id_filter)
     ),

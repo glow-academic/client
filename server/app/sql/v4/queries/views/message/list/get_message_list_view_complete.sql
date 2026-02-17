@@ -1,6 +1,6 @@
 -- ============================================================================
 -- Query: get_message_list_view
--- Purpose: Fetch message-level data from mv_messages with declarative filters
+-- Purpose: Fetch message-level data from messages_mv with declarative filters
 -- Section: VIEWS/MESSAGE/LIST
 --
 -- Includes:
@@ -8,7 +8,7 @@
 -- - Ordering (by run_id, role precedence, then created_at)
 -- - Pagination
 --
--- Note: Returns pre-aggregated contents and call_ids from mv_messages.
+-- Note: Returns pre-aggregated contents and call_ids from messages_mv.
 -- ============================================================================
 
 -- ============================================================================
@@ -80,7 +80,7 @@ AS $$
     WITH
     filtered AS (
         SELECT mv.*
-        FROM mv_messages mv
+        FROM messages_mv mv
         WHERE
             (run_id_filter IS NULL OR mv.run_id = run_id_filter)
             AND (run_ids IS NULL OR mv.run_id = ANY(run_ids))

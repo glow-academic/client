@@ -57,7 +57,7 @@ async def get_leaderboard(
 ) -> LeaderboardResponse:
     """Get leaderboard artifact data.
 
-    Fetches chat-grain rows from mv_chats via get_chats_internal()
+    Fetches chat-grain rows from attempt_chats_mv via get_chats_internal()
     and aggregates to profile-level leaderboard rows in Python.
     """
     tags = ["artifacts", "leaderboard", "views", "analytics"]
@@ -102,7 +102,7 @@ async def get_leaderboard(
         else:
             attempt_type = "general"
 
-        # --- Single MV fetch: mv_chats ---
+        # --- Single MV fetch: attempt_chats_mv ---
         async with pool.acquire() as c:
             chats_result = await get_chats_internal(
                 conn=c,

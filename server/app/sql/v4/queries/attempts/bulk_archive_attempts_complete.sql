@@ -77,7 +77,7 @@ BEGIN
             ARRAY_AGG(DISTINCT mal.profile_id::text) FILTER (WHERE mal.profile_id IS NOT NULL),
             ARRAY[]::text[]
         ) INTO v_profile_ids
-        FROM mv_attempt_list mal
+        FROM attempt_mv mal
         WHERE mal.attempt_id = ANY(attempt_ids);
     ELSE
         -- filter mode: Use the existing filter-based logic
@@ -122,7 +122,7 @@ BEGIN
                 mal.practice,
                 COALESCE(sdd.department_ids, NULL) as department_ids
             FROM attempt_entry sa
-            JOIN mv_attempt_list mal ON mal.attempt_id = sa.id
+            JOIN attempt_mv mal ON mal.attempt_id = sa.id
             JOIN profile_artifact p_attempt ON p_attempt.id = mal.profile_id
             CROSS JOIN history_viewer_role hvr
             LEFT JOIN (
@@ -192,7 +192,7 @@ BEGIN
             SELECT DISTINCT
                 mc.attempt_id,
                 ARRAY_AGG(DISTINCT mc.scenario_id) FILTER (WHERE mc.scenario_id IS NOT NULL) AS scenario_ids
-            FROM mv_attempt_chats mc
+            FROM attempt_chats_mv mc
             WHERE mc.attempt_id IN (SELECT attempt_id FROM history_attempts_with_filters)
             GROUP BY mc.attempt_id
         ),
@@ -207,7 +207,7 @@ BEGIN
             SELECT
                 mc.attempt_id,
                 array_agg(DISTINCT sp.persona_id) FILTER (WHERE sp.persona_id IS NOT NULL) AS persona_ids
-            FROM mv_attempt_chats mc
+            FROM attempt_chats_mv mc
             LEFT JOIN scenario_personas_junction sp ON sp.scenario_id = mc.scenario_id AND sp.active = TRUE
             WHERE mc.attempt_id IN (SELECT attempt_id FROM history_attempts_final)
             GROUP BY mc.attempt_id

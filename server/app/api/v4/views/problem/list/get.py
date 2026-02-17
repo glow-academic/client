@@ -35,7 +35,7 @@ async def get_problem_list_view_internal(
     page_offset: int = 0,
     bypass_cache: bool = False,
 ) -> GetProblemListViewResponse:
-    """Internal function for fetching problem data from mv_problems."""
+    """Internal function for fetching problem data from problems_mv."""
     from app.sql.types import GetProblemListViewSqlParams
 
     cache_key_val = cache_key(

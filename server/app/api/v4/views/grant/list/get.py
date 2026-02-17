@@ -31,7 +31,7 @@ async def get_grant_list_view_internal(
     page_offset: int = 0,
     bypass_cache: bool = False,
 ) -> GetGrantListViewResponse:
-    """Internal function for fetching grant data from mv_grants."""
+    """Internal function for fetching grant data from grants_mv."""
     from app.sql.types import GetGrantListViewSqlParams
 
     cache_key_val = cache_key(

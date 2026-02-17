@@ -1,6 +1,6 @@
 -- ============================================================================
 -- Query: get_config_view
--- Purpose: Fetch config-level inference config data from mv_config
+-- Purpose: Fetch config-level inference config data from config_mv
 -- Section: VIEWS/CONFIG
 -- ============================================================================
 
@@ -80,6 +80,6 @@ AS $$
         ),
         ARRAY[]::types.q_get_config_view_v4_item[]
     ) AS items
-    FROM mv_config mc
+    FROM config_mv mc
     WHERE mc.config_id = config_id_filter;
 $$;

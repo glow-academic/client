@@ -1,6 +1,6 @@
 -- ============================================================================
 -- Query: get_call_list_view
--- Purpose: Fetch call-level data from mv_calls with declarative filters
+-- Purpose: Fetch call-level data from calls_mv with declarative filters
 -- Section: VIEWS/CALL/LIST
 --
 -- Includes:
@@ -79,7 +79,7 @@ AS $$
     WITH
     filtered AS (
         SELECT mv.*
-        FROM mv_calls mv
+        FROM calls_mv mv
         WHERE
             (run_id_filter IS NULL OR mv.run_id = run_id_filter)
             AND (run_ids IS NULL OR mv.run_id = ANY(run_ids))

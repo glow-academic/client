@@ -31,7 +31,7 @@ async def get_call_list_view_internal(
     page_offset: int = 0,
     bypass_cache: bool = False,
 ) -> GetCallListViewResponse:
-    """Internal function for fetching call data from mv_calls."""
+    """Internal function for fetching call data from calls_mv."""
     from app.sql.types import GetCallListViewSqlParams
 
     cache_key_val = cache_key(

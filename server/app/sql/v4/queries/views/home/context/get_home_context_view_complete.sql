@@ -68,7 +68,7 @@ user_cohorts AS (
     WHERE pcj.profile_id = (SELECT profile_id FROM params)
       AND pcj.active = true
 ),
--- Filter mv_home by cohort overlap
+-- Filter home_mv by cohort overlap
 accessible_training AS (
     SELECT
         mh.home_id AS parent_id,
@@ -79,7 +79,7 @@ accessible_training AS (
         mh.persona_ids,
         mh.rubric_ids,
         mh.time_limit_ids
-    FROM mv_home mh
+    FROM home_mv mh
     JOIN user_cohorts uc ON mh.cohort_ids && COALESCE(uc.cohort_ids, ARRAY[]::uuid[])
 ),
 -- Check simulation_active flag for each simulation

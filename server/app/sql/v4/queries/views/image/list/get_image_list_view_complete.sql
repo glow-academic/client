@@ -1,6 +1,6 @@
 -- ============================================================================
 -- Query: get_image_list_view
--- Purpose: Fetch image-level data from mv_images with declarative filters
+-- Purpose: Fetch image-level data from images_mv with declarative filters
 -- Section: VIEWS/IMAGE/LIST
 --
 -- Includes:
@@ -79,7 +79,7 @@ AS $$
     WITH
     filtered AS (
         SELECT mv.*
-        FROM mv_images mv
+        FROM images_mv mv
         WHERE
             (uploads_id_filter IS NULL OR mv.uploads_id = uploads_id_filter)
     ),

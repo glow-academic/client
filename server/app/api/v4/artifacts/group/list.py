@@ -1,7 +1,7 @@
 """Group list endpoint - POST /artifacts/group/list.
 
 Uses view internals only — no raw SQL in artifact layer.
-Fetches from mv_groups, mv_runs via view layer, then aggregates in Python.
+Fetches from groups_mv, runs_mv via view layer, then aggregates in Python.
 """
 
 from decimal import Decimal
@@ -47,7 +47,7 @@ async def get_group_list_internal(
         if cached:
             return GetGroupListResponse.model_validate(cached["data"])
 
-    # Pass 1: Get paginated groups from mv_groups
+    # Pass 1: Get paginated groups from groups_mv
     view_result = await get_group_list_view_internal(
         conn=conn,
         session_id_filter=request.session_id,

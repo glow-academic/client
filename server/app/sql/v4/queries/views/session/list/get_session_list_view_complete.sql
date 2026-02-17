@@ -1,6 +1,6 @@
 -- ============================================================================
 -- Query: get_session_list_view
--- Purpose: Fetch session-level data from mv_sessions with declarative filters
+-- Purpose: Fetch session-level data from sessions_mv with declarative filters
 -- Section: VIEWS/SESSION/LIST
 --
 -- Includes:
@@ -84,7 +84,7 @@ AS $$
     WITH
     filtered AS (
         SELECT mv.*
-        FROM mv_sessions mv
+        FROM sessions_mv mv
         WHERE
             (session_ids IS NULL OR mv.session_id = ANY(session_ids))
             AND (profile_id_filter IS NULL OR mv.profile_id = profile_id_filter)

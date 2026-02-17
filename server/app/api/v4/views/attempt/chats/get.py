@@ -30,7 +30,7 @@ async def get_attempt_chats_internal(
 ) -> list[ChatViewItem]:
     """Internal function for fetching lean chat data.
 
-    Uses mv_chats for base data + training config service for config flags
+    Uses attempt_chats_mv for base data + training config service for config flags
     and resource ID arrays. Composites (feedbacks, analyses, responses)
     fetched via simulation/* views.
     """
@@ -49,7 +49,7 @@ async def get_attempt_chats_internal(
         if cached:
             return [ChatViewItem.model_validate(item) for item in cached["items"]]
 
-    # Pass 1: Get base chat data from mv_chats (non-archived only for attempt detail)
+    # Pass 1: Get base chat data from attempt_chats_mv (non-archived only for attempt detail)
     all_items = []
     for aid in ids:
         chats_result = await get_chats_internal(

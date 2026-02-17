@@ -1,6 +1,6 @@
 -- ============================================================================
 -- Query: get_attempt_list_view
--- Purpose: Fetch attempt-level data from mv_attempt_list with resource JOINs
+-- Purpose: Fetch attempt-level data from attempt_mv with resource JOINs
 -- Section: VIEWS/ATTEMPT/LIST
 --
 -- Includes:
@@ -117,10 +117,10 @@ LANGUAGE sql
 STABLE
 AS $$
     WITH
-    -- Apply all filters to mv_attempt_list
+    -- Apply all filters to attempt_mv
     filtered AS (
         SELECT mv.*
-        FROM mv_attempt_list mv
+        FROM attempt_mv mv
         WHERE
             -- Attempt IDs filter (for single-attempt lookups)
             (attempt_ids IS NULL OR mv.attempt_id = ANY(attempt_ids))

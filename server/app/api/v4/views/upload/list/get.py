@@ -30,7 +30,7 @@ async def get_upload_list_view_internal(
     page_offset: int = 0,
     bypass_cache: bool = False,
 ) -> GetUploadListViewResponse:
-    """Internal function for fetching upload data from mv_uploads."""
+    """Internal function for fetching upload data from uploads_mv."""
     from app.sql.types import GetUploadListViewSqlParams
 
     cache_key_val = cache_key(

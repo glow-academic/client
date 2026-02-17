@@ -1,6 +1,6 @@
 -- ============================================================================
 -- Query: get_audit_list_view
--- Purpose: Fetch audit-level data from mv_audits with declarative filters
+-- Purpose: Fetch audit-level data from audits_mv with declarative filters
 -- Section: VIEWS/AUDIT/LIST
 --
 -- Includes:
@@ -84,7 +84,7 @@ AS $$
     WITH
     filtered AS (
         SELECT mv.*
-        FROM mv_audits mv
+        FROM audits_mv mv
         WHERE
             (session_id_filter IS NULL OR mv.session_id = session_id_filter)
             AND (session_ids IS NULL OR mv.session_id = ANY(session_ids))

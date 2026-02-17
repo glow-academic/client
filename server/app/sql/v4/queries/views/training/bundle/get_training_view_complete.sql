@@ -60,15 +60,15 @@ WITH params AS (
 ),
 bundle AS (
     SELECT mtb.*
-    FROM mv_training mtb
+    FROM training_mv mtb
     WHERE mtb.training_entry_id = (SELECT training_entry_id FROM params)
     LIMIT 1
 ),
 parent_cohorts AS (
     SELECT COALESCE(mh.cohort_ids, mp.cohort_ids, ARRAY[]::uuid[]) AS cohort_ids
     FROM bundle b
-    LEFT JOIN mv_home mh ON mh.home_id = b.parent_id
-    LEFT JOIN mv_practice mp ON mp.practice_id = b.parent_id
+    LEFT JOIN home_mv mh ON mh.home_id = b.parent_id
+    LEFT JOIN practice_mv mp ON mp.practice_id = b.parent_id
     LIMIT 1
 ),
 access_check AS (

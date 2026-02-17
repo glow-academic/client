@@ -69,7 +69,7 @@ usage_check AS (
           )
     ) + (
         -- Count chats using this scenario via scenario_scenarios_junction
-        SELECT COUNT(*) FROM mv_chats msc
+        SELECT COUNT(*) FROM attempt_chats_mv msc
         JOIN scenario_scenarios_junction ssj ON ssj.scenarios_id = msc.scenario_id
         WHERE ssj.scenario_id = x.scenario_id
     ) as usage_count

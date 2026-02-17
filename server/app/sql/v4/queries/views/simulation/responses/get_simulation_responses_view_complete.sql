@@ -1,6 +1,6 @@
 -- ============================================================================
 -- Query: get_simulation_responses_view
--- Purpose: Fetch response-level data from mv_simulation_responses with declarative filters
+-- Purpose: Fetch response-level data from responses_mv with declarative filters
 -- Section: VIEWS/SIMULATION/RESPONSES
 -- ============================================================================
 
@@ -68,7 +68,7 @@ AS $$
     WITH
     mv_data AS (
         SELECT mv.*
-        FROM mv_simulation_responses mv
+        FROM responses_mv mv
         WHERE mv.chat_id = ANY(chat_ids_filter)
     ),
     items_agg AS (

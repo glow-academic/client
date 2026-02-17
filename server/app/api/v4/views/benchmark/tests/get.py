@@ -1,4 +1,4 @@
-"""Get endpoint for benchmark tests view (mv_test)."""
+"""Get endpoint for benchmark tests view (test_mv)."""
 
 from datetime import datetime
 from typing import Annotated
@@ -134,7 +134,7 @@ async def get_test(
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> GetBenchmarkTestsResponse:
-    """Get benchmark tests view rows from mv_test."""
+    """Get benchmark tests view rows from test_mv."""
     tags = ["views", "benchmark", "tests"]
     bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
 

@@ -1,6 +1,6 @@
 -- ============================================================================
 -- Query: get_health_list_view
--- Purpose: Fetch service health data from mv_health with declarative filters
+-- Purpose: Fetch service health data from health_mv with declarative filters
 -- Section: VIEWS/HEALTH/LIST
 --
 -- Includes:
@@ -85,7 +85,7 @@ AS $$
     WITH
     filtered AS (
         SELECT mv.*
-        FROM mv_health mv
+        FROM health_mv mv
         WHERE
             (service_filter IS NULL OR mv.service = service_filter)
             AND mv.date_hour >= date_from

@@ -1,6 +1,6 @@
 -- ============================================================================
 -- Query: get_run_list_view
--- Purpose: Fetch run-level data from mv_runs with declarative filters
+-- Purpose: Fetch run-level data from runs_mv with declarative filters
 -- Section: VIEWS/RUN/LIST
 --
 -- Includes:
@@ -98,7 +98,7 @@ AS $$
     WITH
     filtered AS (
         SELECT mv.*
-        FROM mv_runs mv
+        FROM runs_mv mv
         WHERE
             (group_id_filter IS NULL OR mv.group_id = group_id_filter)
             AND (group_ids IS NULL OR mv.group_id = ANY(group_ids))

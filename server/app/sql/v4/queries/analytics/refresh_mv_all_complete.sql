@@ -42,77 +42,77 @@ BEGIN
     -- All MVs are independent — no ordering required
 
     -- Lean MVs (session/group pages)
-    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_sessions;
-    refreshed := array_append(refreshed, 'mv_sessions');
+    REFRESH MATERIALIZED VIEW CONCURRENTLY sessions_mv;
+    refreshed := array_append(refreshed, 'sessions_mv');
 
-    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_groups;
-    refreshed := array_append(refreshed, 'mv_groups');
+    REFRESH MATERIALIZED VIEW CONCURRENTLY groups_mv;
+    refreshed := array_append(refreshed, 'groups_mv');
 
-    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_audits;
-    refreshed := array_append(refreshed, 'mv_audits');
+    REFRESH MATERIALIZED VIEW CONCURRENTLY audits_mv;
+    refreshed := array_append(refreshed, 'audits_mv');
 
-    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_runs;
-    refreshed := array_append(refreshed, 'mv_runs');
+    REFRESH MATERIALIZED VIEW CONCURRENTLY runs_mv;
+    refreshed := array_append(refreshed, 'runs_mv');
 
-    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_messages;
-    refreshed := array_append(refreshed, 'mv_messages');
+    REFRESH MATERIALIZED VIEW CONCURRENTLY messages_mv;
+    refreshed := array_append(refreshed, 'messages_mv');
 
-    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_calls;
-    refreshed := array_append(refreshed, 'mv_calls');
+    REFRESH MATERIALIZED VIEW CONCURRENTLY calls_mv;
+    refreshed := array_append(refreshed, 'calls_mv');
 
     -- Attempt MVs
-    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_chats;
-    refreshed := array_append(refreshed, 'mv_chats');
+    REFRESH MATERIALIZED VIEW CONCURRENTLY attempt_chats_mv;
+    refreshed := array_append(refreshed, 'attempt_chats_mv');
 
-    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_attempt_list;
-    refreshed := array_append(refreshed, 'mv_attempt_list');
+    REFRESH MATERIALIZED VIEW CONCURRENTLY attempt_mv;
+    refreshed := array_append(refreshed, 'attempt_mv');
 
-    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_attempt_messages;
-    refreshed := array_append(refreshed, 'mv_attempt_messages');
+    REFRESH MATERIALIZED VIEW CONCURRENTLY attempt_messages_mv;
+    refreshed := array_append(refreshed, 'attempt_messages_mv');
 
     -- Benchmark MVs
-    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_benchmark;
-    refreshed := array_append(refreshed, 'mv_benchmark');
+    REFRESH MATERIALIZED VIEW CONCURRENTLY benchmark_mv;
+    refreshed := array_append(refreshed, 'benchmark_mv');
 
-    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_suite;
-    refreshed := array_append(refreshed, 'mv_suite');
+    REFRESH MATERIALIZED VIEW CONCURRENTLY suite_mv;
+    refreshed := array_append(refreshed, 'suite_mv');
 
-    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_test_invocations;
-    refreshed := array_append(refreshed, 'mv_test_invocations');
+    REFRESH MATERIALIZED VIEW CONCURRENTLY test_invocations_mv;
+    refreshed := array_append(refreshed, 'test_invocations_mv');
 
-    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_test;
-    refreshed := array_append(refreshed, 'mv_test');
+    REFRESH MATERIALIZED VIEW CONCURRENTLY test_mv;
+    refreshed := array_append(refreshed, 'test_mv');
 
     -- Training MVs (home, practice, and training bundle-level)
-    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_home;
-    refreshed := array_append(refreshed, 'mv_home');
+    REFRESH MATERIALIZED VIEW CONCURRENTLY home_mv;
+    refreshed := array_append(refreshed, 'home_mv');
 
-    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_practice;
-    refreshed := array_append(refreshed, 'mv_practice');
+    REFRESH MATERIALIZED VIEW CONCURRENTLY practice_mv;
+    refreshed := array_append(refreshed, 'practice_mv');
 
-    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_training;
-    refreshed := array_append(refreshed, 'mv_training');
+    REFRESH MATERIALIZED VIEW CONCURRENTLY training_mv;
+    refreshed := array_append(refreshed, 'training_mv');
 
     -- Lean Activity MVs
-    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_problems;
-    refreshed := array_append(refreshed, 'mv_problems');
+    REFRESH MATERIALIZED VIEW CONCURRENTLY problems_mv;
+    refreshed := array_append(refreshed, 'problems_mv');
 
-    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_logins;
-    refreshed := array_append(refreshed, 'mv_logins');
+    REFRESH MATERIALIZED VIEW CONCURRENTLY logins_mv;
+    refreshed := array_append(refreshed, 'logins_mv');
 
-    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_activity;
-    refreshed := array_append(refreshed, 'mv_activity');
+    REFRESH MATERIALIZED VIEW CONCURRENTLY activity_mv;
+    refreshed := array_append(refreshed, 'activity_mv');
 
     -- Lean Health MVs
-    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_health;
-    refreshed := array_append(refreshed, 'mv_health');
+    REFRESH MATERIALIZED VIEW CONCURRENTLY health_mv;
+    refreshed := array_append(refreshed, 'health_mv');
 
-    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_metrics;
-    refreshed := array_append(refreshed, 'mv_metrics');
+    REFRESH MATERIALIZED VIEW CONCURRENTLY metrics_mv;
+    refreshed := array_append(refreshed, 'metrics_mv');
 
     -- Config MV
-    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_config;
-    refreshed := array_append(refreshed, 'mv_config');
+    REFRESH MATERIALIZED VIEW CONCURRENTLY config_mv;
+    refreshed := array_append(refreshed, 'config_mv');
 
     -- Get actor_name from profile_artifact using profile_names_junction junction table
     SELECT COALESCE(

@@ -1,6 +1,6 @@
 -- ============================================================================
 -- Query: get_test_view
--- Purpose: Fetch test-level data from mv_test with declarative filters
+-- Purpose: Fetch test-level data from test_mv with declarative filters
 -- Section: VIEWS/BENCHMARK/TESTS
 -- ============================================================================
 
@@ -90,7 +90,7 @@ AS $$
     -- Fetch from MV with declarative filters
     mv_data AS (
         SELECT mv.*
-        FROM mv_test mv
+        FROM test_mv mv
         WHERE (test_ids IS NULL OR mv.test_id = ANY(test_ids))
           AND (eval_id_filter IS NULL OR mv.eval_id = eval_id_filter)
           AND (eval_ids_filter IS NULL OR mv.eval_id = ANY(eval_ids_filter))

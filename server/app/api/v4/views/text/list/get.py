@@ -31,7 +31,7 @@ async def get_text_list_view_internal(
     page_offset: int = 0,
     bypass_cache: bool = False,
 ) -> GetTextListViewResponse:
-    """Internal function for fetching text data from mv_texts."""
+    """Internal function for fetching text data from texts_mv."""
     from app.sql.types import GetTextListViewSqlParams
 
     cache_key_val = cache_key(

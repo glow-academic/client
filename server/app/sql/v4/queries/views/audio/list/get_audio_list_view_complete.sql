@@ -1,6 +1,6 @@
 -- ============================================================================
 -- Query: get_audio_list_view
--- Purpose: Fetch audio-level data from mv_audios with declarative filters
+-- Purpose: Fetch audio-level data from audios_mv with declarative filters
 -- Section: VIEWS/AUDIO/LIST
 --
 -- Includes:
@@ -79,7 +79,7 @@ AS $$
     WITH
     filtered AS (
         SELECT mv.*
-        FROM mv_audios mv
+        FROM audios_mv mv
         WHERE
             (uploads_id_filter IS NULL OR mv.uploads_id = uploads_id_filter)
     ),

@@ -31,7 +31,7 @@ async def get_activity_list_view_internal(
     page_offset: int = 0,
     bypass_cache: bool = False,
 ) -> GetActivityListViewResponse:
-    """Internal function for fetching activity data from mv_activity."""
+    """Internal function for fetching activity data from activity_mv."""
     from app.sql.types import GetActivityListViewSqlParams
 
     cache_key_val = cache_key(

@@ -116,7 +116,7 @@ async def fetch_chats_data(
     filters: ParsedFilters,
     bypass_cache: bool = False,
 ) -> "GetChatsResponse":
-    """Fetch chat data from mv_chats — unified replacement for all 4 facts fetchers."""
+    """Fetch chat data from attempt_chats_mv — unified replacement for all 4 facts fetchers."""
     from app.api.v4.views.chat.get import get_chats_internal
 
     async with pool.acquire() as c:

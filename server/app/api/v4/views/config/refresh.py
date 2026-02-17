@@ -28,13 +28,13 @@ async def refresh_config_view(
     http_request: Request,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> RefreshResponse:
-    """Refresh the mv_config materialized view concurrently."""
+    """Refresh the config_mv materialized view concurrently."""
     tags = ["views", "config"]
 
     try:
         start_time = time.time()
 
-        await conn.execute("REFRESH MATERIALIZED VIEW CONCURRENTLY mv_config")
+        await conn.execute("REFRESH MATERIALIZED VIEW CONCURRENTLY config_mv")
 
         duration_ms = int((time.time() - start_time) * 1000)
 
@@ -43,12 +43,12 @@ async def refresh_config_view(
         return RefreshResponse(
             success=True,
             method="concurrent",
-            message=f"Refreshed mv_config in {duration_ms}ms",
+            message=f"Refreshed config_mv in {duration_ms}ms",
             duration_ms=duration_ms,
         )
 
     except Exception as e:
         raise HTTPException(
             status_code=500,
-            detail=f"Failed to refresh mv_config: {str(e)}",
+            detail=f"Failed to refresh config_mv: {str(e)}",
         ) from e

@@ -66,10 +66,10 @@ user_departments AS (
     WHERE pdj.profile_id = (SELECT profile_id FROM params)
       AND pdj.active = true
 ),
--- Filter mv_benchmark: department overlap
+-- Filter benchmark_mv: department overlap
 accessible_benchmarks AS (
     SELECT mb.*
-    FROM mv_benchmark mb
+    FROM benchmark_mv mb
     JOIN user_departments ud
       ON mb.department_ids && COALESCE(ud.department_ids, ARRAY[]::uuid[])
 )

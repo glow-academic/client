@@ -50,7 +50,7 @@ WITH params AS (
 ),
 bundle AS (
     SELECT mbb.*
-    FROM mv_suite mbb
+    FROM suite_mv mbb
     WHERE mbb.suite_entry_id = (SELECT suite_entry_id FROM params)
     LIMIT 1
 ),

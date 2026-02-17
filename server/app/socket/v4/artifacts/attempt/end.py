@@ -124,8 +124,8 @@ async def _attempt_end_impl(
                         continue
 
                 # Refresh MVs so changes are immediately visible
-                await conn.execute("REFRESH MATERIALIZED VIEW mv_attempt_list")
-                await conn.execute("REFRESH MATERIALIZED VIEW mv_attempt_chats")
+                await conn.execute("REFRESH MATERIALIZED VIEW attempt_mv")
+                await conn.execute("REFRESH MATERIALIZED VIEW attempt_chats_mv")
 
                 # Emit attempt_chat_ended event
                 event = AttemptChatEndedEvent(

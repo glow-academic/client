@@ -1,6 +1,6 @@
 -- ============================================================================
 -- Query: get_benchmark_feedbacks_view
--- Purpose: Fetch benchmark feedback-level data from mv_test_feedbacks with declarative filters
+-- Purpose: Fetch benchmark feedback-level data from test_feedbacks_mv with declarative filters
 -- Section: VIEWS/SIMULATION/BENCHMARK_FEEDBACKS
 -- ============================================================================
 
@@ -70,7 +70,7 @@ AS $$
     WITH
     mv_data AS (
         SELECT mv.*
-        FROM mv_test_feedbacks mv
+        FROM test_feedbacks_mv mv
         WHERE mv.grade_id = ANY(grade_ids_filter)
     ),
     items_agg AS (

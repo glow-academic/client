@@ -1,6 +1,6 @@
 -- ============================================================================
 -- Query: get_simulation_message_tree_view
--- Purpose: Fetch message tree data from mv_attempt_message_tree
+-- Purpose: Fetch message tree data from attempt_message_tree_mv
 -- Section: VIEWS/SIMULATION/MESSAGE_TREE
 -- Note: Flat MV - no nested arrays
 -- ============================================================================
@@ -67,7 +67,7 @@ AS $$
     WITH
     mv_data AS (
         SELECT mv.*
-        FROM mv_attempt_message_tree mv
+        FROM attempt_message_tree_mv mv
         WHERE mv.message_id = ANY(message_ids_filter)
     ),
     items_agg AS (

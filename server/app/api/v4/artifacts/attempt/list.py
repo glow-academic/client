@@ -301,7 +301,7 @@ async def get_attempt_list_artifact_internal(
     page_offset = page * page_size
     practice = request.practice
 
-    # Step 1: Paginated attempts from mv_attempt_list (single query)
+    # Step 1: Paginated attempts from attempt_mv (single query)
     list_result = await get_attempt_list_internal(
         conn=conn,
         profile_id_filter=profile_resource_id,

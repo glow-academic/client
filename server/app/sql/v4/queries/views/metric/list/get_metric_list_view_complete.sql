@@ -1,6 +1,6 @@
 -- ============================================================================
 -- Query: get_metric_list_view
--- Purpose: Fetch system metrics data from mv_metrics with declarative filters
+-- Purpose: Fetch system metrics data from metrics_mv with declarative filters
 -- Section: VIEWS/METRIC/LIST
 --
 -- Includes:
@@ -86,7 +86,7 @@ AS $$
     WITH
     filtered AS (
         SELECT mv.*
-        FROM mv_metrics mv
+        FROM metrics_mv mv
         WHERE
             mv.date_hour >= date_from
             AND mv.date_hour <= date_to

@@ -30,7 +30,7 @@ async def get_audio_list_view_internal(
     page_offset: int = 0,
     bypass_cache: bool = False,
 ) -> GetAudioListViewResponse:
-    """Internal function for fetching audio data from mv_audios."""
+    """Internal function for fetching audio data from audios_mv."""
     from app.sql.types import GetAudioListViewSqlParams
 
     cache_key_val = cache_key(
