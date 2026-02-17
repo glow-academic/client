@@ -122,67 +122,67 @@ BEGIN
         VALUES (v_draft_id, v_profiles_resource_id, v_new_version);
     END IF;
 
-    DELETE FROM names_drafts_connection WHERE draft_id = v_draft_id;
-    DELETE FROM descriptions_drafts_connection WHERE draft_id = v_draft_id;
-    DELETE FROM flags_drafts_connection WHERE draft_id = v_draft_id;
-    DELETE FROM departments_drafts_connection WHERE draft_id = v_draft_id;
-    DELETE FROM agents_drafts_connection WHERE draft_id = v_draft_id;
-    DELETE FROM runs_drafts_connection WHERE draft_id = v_draft_id;
-    DELETE FROM groups_drafts_connection WHERE draft_id = v_draft_id;
-    DELETE FROM run_positions_drafts_connection WHERE draft_id = v_draft_id;
-    DELETE FROM group_positions_drafts_connection WHERE draft_id = v_draft_id;
+    DELETE FROM eval_drafts_names_connection WHERE draft_id = v_draft_id;
+    DELETE FROM eval_drafts_descriptions_connection WHERE draft_id = v_draft_id;
+    DELETE FROM eval_drafts_flags_connection WHERE draft_id = v_draft_id;
+    DELETE FROM eval_drafts_departments_connection WHERE draft_id = v_draft_id;
+    DELETE FROM eval_drafts_agents_connection WHERE draft_id = v_draft_id;
+    DELETE FROM eval_drafts_runs_connection WHERE draft_id = v_draft_id;
+    DELETE FROM eval_drafts_groups_connection WHERE draft_id = v_draft_id;
+    DELETE FROM eval_drafts_run_positions_connection WHERE draft_id = v_draft_id;
+    DELETE FROM eval_drafts_group_positions_connection WHERE draft_id = v_draft_id;
 
     IF name_id IS NOT NULL THEN
-        INSERT INTO names_drafts_connection (draft_id, names_id, version)
+        INSERT INTO eval_drafts_names_connection (draft_id, names_id, version)
         VALUES (v_draft_id, name_id, v_new_version)
         ON CONFLICT ON CONSTRAINT names_draft_pkey DO UPDATE
         SET version = v_new_version;
     END IF;
 
     IF description_id IS NOT NULL THEN
-        INSERT INTO descriptions_drafts_connection (draft_id, descriptions_id, version)
+        INSERT INTO eval_drafts_descriptions_connection (draft_id, descriptions_id, version)
         VALUES (v_draft_id, description_id, v_new_version)
         ON CONFLICT ON CONSTRAINT descriptions_draft_pkey DO UPDATE
         SET version = v_new_version;
     END IF;
 
-    INSERT INTO flags_drafts_connection (draft_id, flags_id, version)
+    INSERT INTO eval_drafts_flags_connection (draft_id, flags_id, version)
     SELECT v_draft_id, fid, v_new_version
     FROM UNNEST(COALESCE(flag_ids, ARRAY[]::uuid[])) AS fid
     ON CONFLICT ON CONSTRAINT flags_draft_pkey DO UPDATE
     SET version = v_new_version;
 
-    INSERT INTO departments_drafts_connection (draft_id, departments_id, version)
+    INSERT INTO eval_drafts_departments_connection (draft_id, departments_id, version)
     SELECT v_draft_id, did, v_new_version
     FROM UNNEST(COALESCE(department_ids, ARRAY[]::uuid[])) AS did
     ON CONFLICT ON CONSTRAINT departments_draft_pkey DO UPDATE
     SET version = v_new_version;
 
-    INSERT INTO agents_drafts_connection (draft_id, agents_id, version)
+    INSERT INTO eval_drafts_agents_connection (draft_id, agents_id, version)
     SELECT v_draft_id, aid, v_new_version
     FROM UNNEST(COALESCE(agent_ids, ARRAY[]::uuid[])) AS aid
     ON CONFLICT ON CONSTRAINT agents_draft_pkey DO UPDATE
     SET version = v_new_version;
 
-    INSERT INTO runs_drafts_connection (draft_id, runs_id, version)
+    INSERT INTO eval_drafts_runs_connection (draft_id, runs_id, version)
     SELECT v_draft_id, rid, v_new_version
     FROM UNNEST(COALESCE(model_run_ids, ARRAY[]::uuid[])) AS rid
     ON CONFLICT ON CONSTRAINT runs_draft_pkey DO UPDATE
     SET version = v_new_version;
 
-    INSERT INTO groups_drafts_connection (draft_id, groups_id, version)
+    INSERT INTO eval_drafts_groups_connection (draft_id, groups_id, version)
     SELECT v_draft_id, gid, v_new_version
     FROM UNNEST(COALESCE(group_ids, ARRAY[]::uuid[])) AS gid
     ON CONFLICT ON CONSTRAINT groups_draft_pkey DO UPDATE
     SET version = v_new_version;
 
-    INSERT INTO run_positions_drafts_connection (draft_id, run_positions_id, version)
+    INSERT INTO eval_drafts_run_positions_connection (draft_id, run_positions_id, version)
     SELECT v_draft_id, rpid, v_new_version
     FROM UNNEST(COALESCE(run_position_ids, ARRAY[]::uuid[])) AS rpid
     ON CONFLICT ON CONSTRAINT run_positions_draft_pkey DO UPDATE
     SET version = v_new_version;
 
-    INSERT INTO group_positions_drafts_connection (draft_id, group_positions_id, version)
+    INSERT INTO eval_drafts_group_positions_connection (draft_id, group_positions_id, version)
     SELECT v_draft_id, gpid, v_new_version
     FROM UNNEST(COALESCE(group_position_ids, ARRAY[]::uuid[])) AS gpid
     ON CONFLICT ON CONSTRAINT group_positions_draft_pkey DO UPDATE

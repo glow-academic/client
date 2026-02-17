@@ -19,11 +19,21 @@ DROP MATERIALIZED VIEW IF EXISTS mv_draft_setting CASCADE;
 
 CREATE MATERIALIZED VIEW mv_draft_setting AS
 WITH draft_links AS (
-    SELECT draft_id, 'names'::resource_type AS resource_type, names_id::uuid AS resource_id FROM names_drafts_connection WHERE active = true
-    UNION ALL SELECT draft_id, 'descriptions'::resource_type AS resource_type, descriptions_id::uuid AS resource_id FROM descriptions_drafts_connection WHERE active = true
-    UNION ALL SELECT draft_id, 'flags'::resource_type AS resource_type, flags_id::uuid AS resource_id FROM flags_drafts_connection WHERE active = true
-    UNION ALL SELECT draft_id, 'colors'::resource_type AS resource_type, colors_id::uuid AS resource_id FROM colors_drafts_connection WHERE active = true
-    UNION ALL SELECT draft_id, 'departments'::resource_type AS resource_type, departments_id::uuid AS resource_id FROM departments_drafts_connection WHERE active = true
+    SELECT draft_id, 'agents'::text AS resource_type, agents_id AS resource_id FROM setting_drafts_agents_connection WHERE active = true
+    UNION ALL SELECT draft_id, 'auth_item_keys'::text AS resource_type, auth_item_keys_id AS resource_id FROM setting_drafts_auth_item_keys_connection WHERE active = true
+    UNION ALL SELECT draft_id, 'auths'::text AS resource_type, auths_id AS resource_id FROM setting_drafts_auths_connection WHERE active = true
+    UNION ALL SELECT draft_id, 'colors'::text AS resource_type, colors_id AS resource_id FROM setting_drafts_colors_connection WHERE active = true
+    UNION ALL SELECT draft_id, 'departments'::text AS resource_type, departments_id AS resource_id FROM setting_drafts_departments_connection WHERE active = true
+    UNION ALL SELECT draft_id, 'descriptions'::text AS resource_type, descriptions_id AS resource_id FROM setting_drafts_descriptions_connection WHERE active = true
+    UNION ALL SELECT draft_id, 'flags'::text AS resource_type, flags_id AS resource_id FROM setting_drafts_flags_connection WHERE active = true
+    UNION ALL SELECT draft_id, 'items'::text AS resource_type, items_id AS resource_id FROM setting_drafts_items_connection WHERE active = true
+    UNION ALL SELECT draft_id, 'names'::text AS resource_type, names_id AS resource_id FROM setting_drafts_names_connection WHERE active = true
+    UNION ALL SELECT draft_id, 'profiles'::text AS resource_type, profiles_id AS resource_id FROM setting_drafts_profiles_connection WHERE active = true
+    UNION ALL SELECT draft_id, 'provider_keys'::text AS resource_type, provider_keys_id AS resource_id FROM setting_drafts_provider_keys_connection WHERE active = true
+    UNION ALL SELECT draft_id, 'role_routes'::text AS resource_type, role_routes_id AS resource_id FROM setting_drafts_role_routes_connection WHERE active = true
+    UNION ALL SELECT draft_id, 'roles'::text AS resource_type, roles_id AS resource_id FROM setting_drafts_roles_connection WHERE active = true
+    UNION ALL SELECT draft_id, 'settings'::text AS resource_type, settings_id AS resource_id FROM setting_drafts_settings_connection WHERE active = true
+    UNION ALL SELECT draft_id, 'thresholds'::text AS resource_type, thresholds_id AS resource_id FROM setting_drafts_thresholds_connection WHERE active = true
 )
 SELECT
     d.id AS draft_id,
@@ -34,16 +44,24 @@ SELECT
     d.mcp,
     d.active,
     (SELECT ggc.groups_id FROM groups_groups_connection ggc WHERE ggc.group_id = d.group_id AND ggc.active = true LIMIT 1) AS group_id,
-    COALESCE((SELECT ARRAY_AGG(re.instructions ORDER BY re.created_at ASC, re.id ASC) FROM regenerates_entry re WHERE re.draft_id = d.id AND re.active = true), ARRAY[]::text[]) AS regeneration_descriptions,
-    COALESCE(array_agg(DISTINCT l.resource_id) FILTER (WHERE l.resource_type = 'names'::resource_type), ARRAY[]::uuid[]) AS name_ids,
-    COALESCE(array_agg(DISTINCT l.resource_id) FILTER (WHERE l.resource_type = 'descriptions'::resource_type), ARRAY[]::uuid[]) AS description_ids,
-    COALESCE(array_agg(DISTINCT l.resource_id) FILTER (WHERE l.resource_type = 'flags'::resource_type), ARRAY[]::uuid[]) AS flag_ids,
-    COALESCE(array_agg(DISTINCT l.resource_id) FILTER (WHERE l.resource_type = 'colors'::resource_type), ARRAY[]::uuid[]) AS color_ids,
-    COALESCE(array_agg(DISTINCT l.resource_id) FILTER (WHERE l.resource_type = 'departments'::resource_type), ARRAY[]::uuid[]) AS department_ids
-FROM drafts_entry d
+    COALESCE(array_agg(DISTINCT l.resource_id) FILTER (WHERE l.resource_type = 'agents'), ARRAY[]::uuid[]) AS agent_ids,
+    COALESCE(array_agg(DISTINCT l.resource_id) FILTER (WHERE l.resource_type = 'auth_item_keys'), ARRAY[]::uuid[]) AS auth_item_key_ids,
+    COALESCE(array_agg(DISTINCT l.resource_id) FILTER (WHERE l.resource_type = 'auths'), ARRAY[]::uuid[]) AS auth_ids,
+    COALESCE(array_agg(DISTINCT l.resource_id) FILTER (WHERE l.resource_type = 'colors'), ARRAY[]::uuid[]) AS color_ids,
+    COALESCE(array_agg(DISTINCT l.resource_id) FILTER (WHERE l.resource_type = 'departments'), ARRAY[]::uuid[]) AS department_ids,
+    COALESCE(array_agg(DISTINCT l.resource_id) FILTER (WHERE l.resource_type = 'descriptions'), ARRAY[]::uuid[]) AS description_ids,
+    COALESCE(array_agg(DISTINCT l.resource_id) FILTER (WHERE l.resource_type = 'flags'), ARRAY[]::uuid[]) AS flag_ids,
+    COALESCE(array_agg(DISTINCT l.resource_id) FILTER (WHERE l.resource_type = 'items'), ARRAY[]::uuid[]) AS item_ids,
+    COALESCE(array_agg(DISTINCT l.resource_id) FILTER (WHERE l.resource_type = 'names'), ARRAY[]::uuid[]) AS name_ids,
+    COALESCE(array_agg(DISTINCT l.resource_id) FILTER (WHERE l.resource_type = 'profiles'), ARRAY[]::uuid[]) AS profile_ids,
+    COALESCE(array_agg(DISTINCT l.resource_id) FILTER (WHERE l.resource_type = 'provider_keys'), ARRAY[]::uuid[]) AS provider_key_ids,
+    COALESCE(array_agg(DISTINCT l.resource_id) FILTER (WHERE l.resource_type = 'role_routes'), ARRAY[]::uuid[]) AS role_route_ids,
+    COALESCE(array_agg(DISTINCT l.resource_id) FILTER (WHERE l.resource_type = 'roles'), ARRAY[]::uuid[]) AS role_ids,
+    COALESCE(array_agg(DISTINCT l.resource_id) FILTER (WHERE l.resource_type = 'settings'), ARRAY[]::uuid[]) AS settings_ids,
+    COALESCE(array_agg(DISTINCT l.resource_id) FILTER (WHERE l.resource_type = 'thresholds'), ARRAY[]::uuid[]) AS threshold_ids
+FROM setting_drafts_entry d
 LEFT JOIN draft_links l ON l.draft_id = d.id
-WHERE d.artifact = 'setting'::artifact_type
-GROUP BY d.id, d.created_at, d.updated_at, d.version, d.generated, d.mcp, d.active
+GROUP BY d.id, d.created_at, d.updated_at, d.version, d.generated, d.mcp, d.active, d.group_id
 WITH NO DATA;
 
 CREATE UNIQUE INDEX mv_draft_setting_pk ON mv_draft_setting (draft_id);

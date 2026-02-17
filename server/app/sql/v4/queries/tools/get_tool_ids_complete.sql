@@ -51,7 +51,7 @@ WITH params AS (
 name_resource_data AS (
     SELECT
         COALESCE(
-            (SELECT nd.names_id FROM names_drafts_connection nd WHERE nd.draft_id = (SELECT draft_id FROM params) LIMIT 1),
+            (SELECT nd.names_id FROM tool_drafts_names_connection nd WHERE nd.draft_id = (SELECT draft_id FROM params) LIMIT 1),
             (SELECT tn.name_id FROM tool_names_junction tn WHERE tn.tool_id = (SELECT tool_id FROM params) AND tn.active = true LIMIT 1)
         ) as name_id
     FROM params
@@ -59,7 +59,7 @@ name_resource_data AS (
 description_resource_data AS (
     SELECT
         COALESCE(
-            (SELECT dd.descriptions_id FROM descriptions_drafts_connection dd WHERE dd.draft_id = (SELECT draft_id FROM params) LIMIT 1),
+            (SELECT dd.descriptions_id FROM tool_drafts_descriptions_connection dd WHERE dd.draft_id = (SELECT draft_id FROM params) LIMIT 1),
             (SELECT td.description_id FROM tool_descriptions_junction td WHERE td.tool_id = (SELECT tool_id FROM params) AND td.active = true LIMIT 1)
         ) as description_id
     FROM params
@@ -67,7 +67,7 @@ description_resource_data AS (
 flag_resource_data AS (
     SELECT
         COALESCE(
-            (SELECT fd.flags_id FROM flags_drafts_connection fd WHERE fd.draft_id = (SELECT draft_id FROM params) LIMIT 1),
+            (SELECT fd.flags_id FROM tool_drafts_flags_connection fd WHERE fd.draft_id = (SELECT draft_id FROM params) LIMIT 1),
             (SELECT tf.flag_id
              FROM tool_flags_junction tf
              JOIN flags_resource f ON tf.flag_id = f.id
@@ -84,7 +84,7 @@ args_ids_data AS (
         CASE
             WHEN (SELECT draft_id FROM params) IS NOT NULL THEN COALESCE(
                 (SELECT ARRAY_AGG(ad.args_id ORDER BY ad.created_at)
-                 FROM args_drafts_connection ad
+                 FROM tool_drafts_args_connection ad
                  WHERE ad.draft_id = (SELECT draft_id FROM params)
                    AND ad.active = true),
                 ARRAY[]::uuid[]
@@ -105,7 +105,7 @@ arg_position_ids_data AS (
         CASE
             WHEN (SELECT draft_id FROM params) IS NOT NULL THEN COALESCE(
                 (SELECT ARRAY_AGG(apd.arg_positions_id ORDER BY apd.created_at)
-                 FROM arg_positions_drafts_connection apd
+                 FROM tool_drafts_arg_positions_connection apd
                  WHERE apd.draft_id = (SELECT draft_id FROM params)
                    AND apd.active = true),
                 ARRAY[]::uuid[]
@@ -127,7 +127,7 @@ args_outputs_ids_data AS (
         CASE
             WHEN (SELECT draft_id FROM params) IS NOT NULL THEN COALESCE(
                 (SELECT ARRAY_AGG(dao.args_outputs_id ORDER BY dao.created_at)
-                 FROM args_outputs_drafts_connection dao
+                 FROM tool_drafts_args_outputs_connection dao
                  WHERE dao.draft_id = (SELECT draft_id FROM params)
                    AND dao.active = true),
                 ARRAY[]::uuid[]

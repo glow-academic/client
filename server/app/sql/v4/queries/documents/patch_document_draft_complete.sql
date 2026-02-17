@@ -212,54 +212,54 @@ BEGIN
     END IF;
 
     -- Replace draft links
-    DELETE FROM names_drafts_connection WHERE draft_id = v_draft_id;
-    DELETE FROM descriptions_drafts_connection WHERE draft_id = v_draft_id;
-    DELETE FROM flags_drafts_connection WHERE draft_id = v_draft_id;
-    DELETE FROM departments_drafts_connection WHERE draft_id = v_draft_id;
-    DELETE FROM fields_drafts_connection WHERE draft_id = v_draft_id;
-    DELETE FROM uploads_drafts_connection WHERE draft_id = v_draft_id;
-    DELETE FROM images_drafts_connection WHERE draft_id = v_draft_id;
-    DELETE FROM texts_drafts_connection WHERE draft_id = v_draft_id;
+    DELETE FROM document_drafts_names_connection WHERE draft_id = v_draft_id;
+    DELETE FROM document_drafts_descriptions_connection WHERE draft_id = v_draft_id;
+    DELETE FROM document_drafts_flags_connection WHERE draft_id = v_draft_id;
+    DELETE FROM document_drafts_departments_connection WHERE draft_id = v_draft_id;
+    DELETE FROM document_drafts_fields_connection WHERE draft_id = v_draft_id;
+    DELETE FROM document_drafts_uploads_connection WHERE draft_id = v_draft_id;
+    DELETE FROM document_drafts_images_connection WHERE draft_id = v_draft_id;
+    DELETE FROM document_drafts_texts_connection WHERE draft_id = v_draft_id;
 
     IF v_name_id IS NOT NULL THEN
-        INSERT INTO names_drafts_connection (draft_id, names_id, version)
+        INSERT INTO document_drafts_names_connection (draft_id, names_id, version)
         VALUES (v_draft_id, v_name_id, v_new_version)
         ON CONFLICT ON CONSTRAINT names_draft_pkey DO UPDATE SET version = v_new_version;
     END IF;
 
     IF v_description_id IS NOT NULL THEN
-        INSERT INTO descriptions_drafts_connection (draft_id, descriptions_id, version)
+        INSERT INTO document_drafts_descriptions_connection (draft_id, descriptions_id, version)
         VALUES (v_draft_id, v_description_id, v_new_version)
         ON CONFLICT ON CONSTRAINT descriptions_draft_pkey DO UPDATE SET version = v_new_version;
     END IF;
 
     IF v_flag_id IS NOT NULL THEN
-        INSERT INTO flags_drafts_connection (draft_id, flags_id, version)
+        INSERT INTO document_drafts_flags_connection (draft_id, flags_id, version)
         VALUES (v_draft_id, v_flag_id, v_new_version)
         ON CONFLICT ON CONSTRAINT flags_draft_pkey DO UPDATE SET version = v_new_version;
     END IF;
 
-    INSERT INTO departments_drafts_connection (draft_id, departments_id, version)
+    INSERT INTO document_drafts_departments_connection (draft_id, departments_id, version)
     SELECT v_draft_id, did, v_new_version
     FROM UNNEST(v_department_ids) did
     ON CONFLICT ON CONSTRAINT departments_draft_pkey DO UPDATE SET version = v_new_version;
 
-    INSERT INTO fields_drafts_connection (draft_id, fields_id, version)
+    INSERT INTO document_drafts_fields_connection (draft_id, fields_id, version)
     SELECT v_draft_id, fid, v_new_version
     FROM UNNEST(v_field_ids) fid
     ON CONFLICT ON CONSTRAINT fields_draft_pkey DO UPDATE SET version = v_new_version;
 
-    INSERT INTO uploads_drafts_connection (draft_id, uploads_id, version)
+    INSERT INTO document_drafts_uploads_connection (draft_id, uploads_id, version)
     SELECT v_draft_id, uid, v_new_version
     FROM UNNEST(v_upload_ids) uid
     ON CONFLICT ON CONSTRAINT uploads_draft_pkey DO UPDATE SET version = v_new_version;
 
-    INSERT INTO images_drafts_connection (draft_id, images_id, version)
+    INSERT INTO document_drafts_images_connection (draft_id, images_id, version)
     SELECT v_draft_id, iid, v_new_version
     FROM UNNEST(v_image_ids) iid
     ON CONFLICT ON CONSTRAINT images_draft_pkey DO UPDATE SET version = v_new_version;
 
-    INSERT INTO texts_drafts_connection (draft_id, texts_id, version)
+    INSERT INTO document_drafts_texts_connection (draft_id, texts_id, version)
     SELECT v_draft_id, tid, v_new_version
     FROM UNNEST(v_text_ids) tid
     ON CONFLICT ON CONSTRAINT texts_draft_pkey DO UPDATE SET version = v_new_version;

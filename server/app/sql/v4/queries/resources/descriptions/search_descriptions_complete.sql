@@ -75,8 +75,26 @@ FROM (
               suggest_source = 'draft'
               AND draft_id IS NOT NULL
               AND EXISTS (
-                  SELECT 1
-                  FROM descriptions_drafts_connection dc
+                  SELECT 1 FROM (
+                      SELECT descriptions_id, draft_id FROM agent_drafts_descriptions_connection WHERE active = true
+                      UNION ALL SELECT descriptions_id, draft_id FROM auth_drafts_descriptions_connection WHERE active = true
+                      UNION ALL SELECT descriptions_id, draft_id FROM cohort_drafts_descriptions_connection WHERE active = true
+                      UNION ALL SELECT descriptions_id, draft_id FROM department_drafts_descriptions_connection WHERE active = true
+                      UNION ALL SELECT descriptions_id, draft_id FROM document_drafts_descriptions_connection WHERE active = true
+                      UNION ALL SELECT descriptions_id, draft_id FROM eval_drafts_descriptions_connection WHERE active = true
+                      UNION ALL SELECT descriptions_id, draft_id FROM field_drafts_descriptions_connection WHERE active = true
+                      UNION ALL SELECT descriptions_id, draft_id FROM model_drafts_descriptions_connection WHERE active = true
+                      UNION ALL SELECT descriptions_id, draft_id FROM parameter_drafts_descriptions_connection WHERE active = true
+                      UNION ALL SELECT descriptions_id, draft_id FROM persona_drafts_descriptions_connection WHERE active = true
+                      UNION ALL SELECT descriptions_id, draft_id FROM provider_drafts_descriptions_connection WHERE active = true
+                      UNION ALL SELECT descriptions_id, draft_id FROM rubric_drafts_descriptions_connection WHERE active = true
+                      UNION ALL SELECT descriptions_id, draft_id FROM scenario_drafts_descriptions_connection WHERE active = true
+                      UNION ALL SELECT descriptions_id, draft_id FROM setting_drafts_descriptions_connection WHERE active = true
+                      UNION ALL SELECT descriptions_id, draft_id FROM simulation_drafts_descriptions_connection WHERE active = true
+                      UNION ALL SELECT descriptions_id, draft_id FROM suite_drafts_descriptions_connection WHERE active = true
+                      UNION ALL SELECT descriptions_id, draft_id FROM tool_drafts_descriptions_connection WHERE active = true
+                      UNION ALL SELECT descriptions_id, draft_id FROM training_drafts_descriptions_connection WHERE active = true
+                  ) dc
                   WHERE dc.descriptions_id = d.id
                     AND dc.draft_id = api_search_descriptions_v4.draft_id
               )

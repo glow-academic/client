@@ -139,31 +139,31 @@ BEGIN
         VALUES (v_draft_id, v_profile_id, v_new_version);
     END IF;
 
-    DELETE FROM names_drafts_connection WHERE draft_id = v_draft_id;
-    DELETE FROM descriptions_drafts_connection WHERE draft_id = v_draft_id;
-    DELETE FROM flags_drafts_connection WHERE draft_id = v_draft_id;
-    DELETE FROM settings_drafts_connection WHERE draft_id = v_draft_id;
+    DELETE FROM department_drafts_names_connection WHERE draft_id = v_draft_id;
+    DELETE FROM department_drafts_descriptions_connection WHERE draft_id = v_draft_id;
+    DELETE FROM department_drafts_flags_connection WHERE draft_id = v_draft_id;
+    DELETE FROM department_drafts_settings_connection WHERE draft_id = v_draft_id;
 
     IF v_name_id IS NOT NULL THEN
-        INSERT INTO names_drafts_connection (draft_id, names_id, version)
+        INSERT INTO department_drafts_names_connection (draft_id, names_id, version)
         VALUES (v_draft_id, v_name_id, v_new_version)
         ON CONFLICT ON CONSTRAINT names_draft_pkey DO UPDATE SET version = v_new_version;
     END IF;
 
     IF v_description_id IS NOT NULL THEN
-        INSERT INTO descriptions_drafts_connection (draft_id, descriptions_id, version)
+        INSERT INTO department_drafts_descriptions_connection (draft_id, descriptions_id, version)
         VALUES (v_draft_id, v_description_id, v_new_version)
         ON CONFLICT ON CONSTRAINT descriptions_draft_pkey DO UPDATE SET version = v_new_version;
     END IF;
 
     IF v_active_flag_id IS NOT NULL THEN
-        INSERT INTO flags_drafts_connection (draft_id, flags_id, version)
+        INSERT INTO department_drafts_flags_connection (draft_id, flags_id, version)
         VALUES (v_draft_id, v_active_flag_id, v_new_version)
         ON CONFLICT ON CONSTRAINT flags_draft_pkey DO UPDATE SET version = v_new_version;
     END IF;
 
     IF COALESCE(array_length(v_settings_ids, 1), 0) > 0 THEN
-        INSERT INTO settings_drafts_connection (draft_id, settings_id, version)
+        INSERT INTO department_drafts_settings_connection (draft_id, settings_id, version)
         SELECT v_draft_id, setting_id, v_new_version
         FROM unnest(v_settings_ids) AS setting_id
         ON CONFLICT ON CONSTRAINT settings_draft_pkey DO UPDATE SET version = v_new_version;

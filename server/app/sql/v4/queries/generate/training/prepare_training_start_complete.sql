@@ -147,22 +147,22 @@ BEGIN
     IF p_draft_id IS NOT NULL THEN
         SELECT ARRAY_AGG(DISTINCT pdc.personas_id)
         INTO v_draft_persona_ids
-        FROM personas_drafts_connection pdc
+        FROM training_drafts_personas_connection pdc
         WHERE pdc.draft_id = p_draft_id;
 
         SELECT ARRAY_AGG(DISTINCT ddc.documents_id)
         INTO v_draft_document_ids
-        FROM documents_drafts_connection ddc
+        FROM training_drafts_documents_connection ddc
         WHERE ddc.draft_id = p_draft_id;
 
         SELECT ARRAY_AGG(DISTINCT pfdc.parameter_fields_id)
         INTO v_draft_parameter_field_ids
-        FROM parameter_fields_drafts_connection pfdc
+        FROM training_drafts_parameter_fields_connection pfdc
         WHERE pfdc.draft_id = p_draft_id;
 
         SELECT ddc.departments_id
         INTO v_selected_department_id
-        FROM departments_drafts_connection ddc
+        FROM training_drafts_departments_connection ddc
         WHERE ddc.draft_id = p_draft_id
         ORDER BY ddc.version DESC NULLS LAST
         LIMIT 1;

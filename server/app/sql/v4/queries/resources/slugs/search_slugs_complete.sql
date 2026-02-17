@@ -60,10 +60,11 @@ FROM (
               suggest_source = 'draft'
               AND draft_id IS NOT NULL
               AND EXISTS (
-                  SELECT 1
-                  FROM slugs_drafts_connection sc
-                  WHERE sc.slugs_id = s.id
-                    AND sc.draft_id = api_search_slugs_v4.draft_id
+                  SELECT 1 FROM (
+                      SELECT slugs_id, draft_id FROM auth_drafts_slugs_connection WHERE active = true
+                  ) dc
+                  WHERE dc.slugs_id = s.id
+                    AND dc.draft_id = api_search_slugs_v4.draft_id
               )
           )
       )

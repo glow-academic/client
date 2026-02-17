@@ -80,7 +80,7 @@ target_role_data AS (
         COALESCE(
             (
                 SELECT r.role::text
-                FROM roles_drafts_connection dr
+                FROM profile_drafts_roles_connection dr
                 JOIN roles_resource r ON dr.roles_id = r.id
                 WHERE dr.draft_id = (SELECT draft_id FROM params)
                   AND dr.active = true

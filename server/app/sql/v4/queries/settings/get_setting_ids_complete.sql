@@ -150,19 +150,19 @@ canonical_role_routes AS (
 -- ========== DRAFT IDs (override canonical when draft exists) ==========
 draft_name AS (
     SELECT ndc.names_id as name_id
-    FROM names_drafts_connection ndc
+    FROM setting_drafts_names_connection ndc
     WHERE ndc.draft_id = (SELECT draft_id FROM params)
     LIMIT 1
 ),
 draft_description AS (
     SELECT ddc.descriptions_id as description_id
-    FROM descriptions_drafts_connection ddc
+    FROM setting_drafts_descriptions_connection ddc
     WHERE ddc.draft_id = (SELECT draft_id FROM params)
     LIMIT 1
 ),
 draft_flag AS (
     SELECT fdc.flags_id as active_flag_id
-    FROM flags_drafts_connection fdc
+    FROM setting_drafts_flags_connection fdc
     WHERE fdc.draft_id = (SELECT draft_id FROM params)
     LIMIT 1
 ),
@@ -171,7 +171,7 @@ draft_colors AS (
         ARRAY_AGG(cdc.colors_id),
         ARRAY[]::uuid[]
     ) as color_ids
-    FROM colors_drafts_connection cdc
+    FROM setting_drafts_colors_connection cdc
     WHERE cdc.draft_id = (SELECT draft_id FROM params)
 ),
 draft_departments AS (
@@ -179,7 +179,7 @@ draft_departments AS (
         ARRAY_AGG(ddc.departments_id),
         ARRAY[]::uuid[]
     ) as department_ids
-    FROM departments_drafts_connection ddc
+    FROM setting_drafts_departments_connection ddc
     WHERE ddc.draft_id = (SELECT draft_id FROM params)
 ),
 draft_profiles AS (
@@ -187,24 +187,24 @@ draft_profiles AS (
         ARRAY_AGG(pdc.profiles_id),
         ARRAY[]::uuid[]
     ) as profile_ids
-    FROM profiles_drafts_connection pdc
+    FROM setting_drafts_profiles_connection pdc
     WHERE pdc.draft_id = (SELECT draft_id FROM params)
       AND pdc.profiles_id != (SELECT profile_id FROM params)  -- Exclude the owner profile
 ),
 draft_provider_keys AS (
     SELECT COALESCE(
-        ARRAY_AGG(pdc.providers_id),
+        ARRAY_AGG(pdc.provider_keys_id),
         ARRAY[]::uuid[]
     ) as provider_key_ids
-    FROM providers_drafts_connection pdc
+    FROM setting_drafts_provider_keys_connection pdc
     WHERE pdc.draft_id = (SELECT draft_id FROM params)
 ),
 draft_auth_item_keys AS (
     SELECT COALESCE(
-        ARRAY_AGG(kdc.keys_id),
+        ARRAY_AGG(kdc.auth_item_keys_id),
         ARRAY[]::uuid[]
     ) as auth_item_key_ids
-    FROM keys_drafts_connection kdc
+    FROM setting_drafts_auth_item_keys_connection kdc
     WHERE kdc.draft_id = (SELECT draft_id FROM params)
 ),
 draft_roles AS (
@@ -212,7 +212,7 @@ draft_roles AS (
         ARRAY_AGG(rdc.roles_id),
         ARRAY[]::uuid[]
     ) as role_ids
-    FROM roles_drafts_connection rdc
+    FROM setting_drafts_roles_connection rdc
     WHERE rdc.draft_id = (SELECT draft_id FROM params)
 ),
 draft_role_routes AS (
@@ -220,7 +220,7 @@ draft_role_routes AS (
         ARRAY_AGG(rrdc.role_routes_id),
         ARRAY[]::uuid[]
     ) as role_route_ids
-    FROM role_routes_drafts_connection rrdc
+    FROM setting_drafts_role_routes_connection rrdc
     WHERE rrdc.draft_id = (SELECT draft_id FROM params)
 ),
 -- ========== MERGED IDs (draft overrides canonical) ==========
@@ -231,15 +231,15 @@ merged_ids AS (
         COALESCE((SELECT description_id FROM draft_description), (SELECT description_id FROM canonical_description)) as description_id,
         COALESCE((SELECT active_flag_id FROM draft_flag), (SELECT active_flag_id FROM canonical_flag)) as active_flag_id,
         -- Multi-select: use draft if draft has entries, else canonical
-        CASE WHEN (SELECT draft_id FROM params) IS NOT NULL AND EXISTS (SELECT 1 FROM colors_drafts_connection WHERE draft_id = (SELECT draft_id FROM params))
+        CASE WHEN (SELECT draft_id FROM params) IS NOT NULL AND EXISTS (SELECT 1 FROM setting_drafts_colors_connection WHERE draft_id = (SELECT draft_id FROM params))
             THEN (SELECT color_ids FROM draft_colors)
             ELSE (SELECT color_ids FROM canonical_colors)
         END as color_ids,
-        CASE WHEN (SELECT draft_id FROM params) IS NOT NULL AND EXISTS (SELECT 1 FROM departments_drafts_connection WHERE draft_id = (SELECT draft_id FROM params))
+        CASE WHEN (SELECT draft_id FROM params) IS NOT NULL AND EXISTS (SELECT 1 FROM setting_drafts_departments_connection WHERE draft_id = (SELECT draft_id FROM params))
             THEN (SELECT department_ids FROM draft_departments)
             ELSE (SELECT department_ids FROM canonical_departments)
         END as department_ids,
-        CASE WHEN (SELECT draft_id FROM params) IS NOT NULL AND EXISTS (SELECT 1 FROM profiles_drafts_connection pdc WHERE pdc.draft_id = (SELECT draft_id FROM params) AND pdc.profiles_id != (SELECT profile_id FROM params))
+        CASE WHEN (SELECT draft_id FROM params) IS NOT NULL AND EXISTS (SELECT 1 FROM setting_drafts_profiles_connection pdc WHERE pdc.draft_id = (SELECT draft_id FROM params) AND pdc.profiles_id != (SELECT profile_id FROM params))
             THEN (SELECT profile_ids FROM draft_profiles)
             ELSE (SELECT profile_ids FROM canonical_profiles)
         END as profile_ids,
@@ -247,19 +247,19 @@ merged_ids AS (
             THEN (SELECT auth_ids FROM canonical_auths)
             ELSE (SELECT auth_ids FROM canonical_auths)
         END as auth_ids,
-        CASE WHEN (SELECT draft_id FROM params) IS NOT NULL AND EXISTS (SELECT 1 FROM providers_drafts_connection WHERE draft_id = (SELECT draft_id FROM params))
+        CASE WHEN (SELECT draft_id FROM params) IS NOT NULL AND EXISTS (SELECT 1 FROM setting_drafts_provider_keys_connection WHERE draft_id = (SELECT draft_id FROM params))
             THEN (SELECT provider_key_ids FROM draft_provider_keys)
             ELSE (SELECT provider_key_ids FROM canonical_provider_keys)
         END as provider_key_ids,
-        CASE WHEN (SELECT draft_id FROM params) IS NOT NULL AND EXISTS (SELECT 1 FROM keys_drafts_connection WHERE draft_id = (SELECT draft_id FROM params))
+        CASE WHEN (SELECT draft_id FROM params) IS NOT NULL AND EXISTS (SELECT 1 FROM setting_drafts_auth_item_keys_connection WHERE draft_id = (SELECT draft_id FROM params))
             THEN (SELECT auth_item_key_ids FROM draft_auth_item_keys)
             ELSE (SELECT auth_item_key_ids FROM canonical_auth_item_keys)
         END as auth_item_key_ids,
-        CASE WHEN (SELECT draft_id FROM params) IS NOT NULL AND EXISTS (SELECT 1 FROM roles_drafts_connection WHERE draft_id = (SELECT draft_id FROM params))
+        CASE WHEN (SELECT draft_id FROM params) IS NOT NULL AND EXISTS (SELECT 1 FROM setting_drafts_roles_connection WHERE draft_id = (SELECT draft_id FROM params))
             THEN (SELECT role_ids FROM draft_roles)
             ELSE (SELECT role_ids FROM canonical_roles)
         END as role_ids,
-        CASE WHEN (SELECT draft_id FROM params) IS NOT NULL AND EXISTS (SELECT 1 FROM role_routes_drafts_connection WHERE draft_id = (SELECT draft_id FROM params))
+        CASE WHEN (SELECT draft_id FROM params) IS NOT NULL AND EXISTS (SELECT 1 FROM setting_drafts_role_routes_connection WHERE draft_id = (SELECT draft_id FROM params))
             THEN (SELECT role_route_ids FROM draft_role_routes)
             ELSE (SELECT role_route_ids FROM canonical_role_routes)
         END as role_route_ids

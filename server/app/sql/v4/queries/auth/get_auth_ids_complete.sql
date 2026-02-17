@@ -66,33 +66,33 @@ auth_artifact_id_lookup AS (
 -- Draft resource IDs (if draft_id is provided)
 draft_name_data AS (
     SELECT ndc.names_id as name_id
-    FROM names_drafts_connection ndc
+    FROM auth_drafts_names_connection ndc
     WHERE ndc.draft_id = (SELECT draft_id FROM params)
     ORDER BY ndc.version DESC
     LIMIT 1
 ),
 draft_description_data AS (
     SELECT ddc.descriptions_id as description_id
-    FROM descriptions_drafts_connection ddc
+    FROM auth_drafts_descriptions_connection ddc
     WHERE ddc.draft_id = (SELECT draft_id FROM params)
     ORDER BY ddc.version DESC
     LIMIT 1
 ),
 draft_flag_data AS (
     SELECT fdc.flags_id as flag_id
-    FROM flags_drafts_connection fdc
+    FROM auth_drafts_flags_connection fdc
     WHERE fdc.draft_id = (SELECT draft_id FROM params)
     ORDER BY fdc.version DESC
     LIMIT 1
 ),
 draft_protocol_data AS (
     SELECT COALESCE(ARRAY_AGG(pdc.protocols_id), ARRAY[]::uuid[]) as protocol_ids
-    FROM protocols_drafts_connection pdc
+    FROM auth_drafts_protocols_connection pdc
     WHERE pdc.draft_id = (SELECT draft_id FROM params)
 ),
 draft_slug_data AS (
     SELECT COALESCE(ARRAY_AGG(sdc.slugs_id), ARRAY[]::uuid[]) as slug_ids
-    FROM slugs_drafts_connection sdc
+    FROM auth_drafts_slugs_connection sdc
     WHERE sdc.draft_id = (SELECT draft_id FROM params)
 ),
 -- Single-select resource IDs (draft overrides canonical)
@@ -165,13 +165,13 @@ auth_item_ids_data AS (
         CASE
             WHEN (SELECT draft_id FROM params) IS NOT NULL AND EXISTS (
                 SELECT 1
-                FROM items_drafts_connection idc
+                FROM auth_drafts_items_connection idc
                 WHERE idc.draft_id = (SELECT draft_id FROM params)
             )
                 THEN COALESCE(
                     (
                         SELECT ARRAY_AGG(idc.items_id ORDER BY i.position)
-                        FROM items_drafts_connection idc
+                        FROM auth_drafts_items_connection idc
                         JOIN items_resource i ON i.id = idc.items_id
                         WHERE idc.draft_id = (SELECT draft_id FROM params)
                     ),

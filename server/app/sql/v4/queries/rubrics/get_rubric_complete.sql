@@ -275,14 +275,14 @@ active_departments_data AS (
 name_resource_data AS (
     SELECT 
         COALESCE(
-            (SELECT dn.names_id FROM names_drafts_connection dn WHERE dn.draft_id = (SELECT draft_id FROM params) LIMIT 1),
+            (SELECT dn.names_id FROM rubric_drafts_names_connection dn WHERE dn.draft_id = (SELECT draft_id FROM params) LIMIT 1),
             (SELECT rn.name_id FROM rubric_names_junction rn WHERE rn.rubric_id = (SELECT rubric_id FROM params) LIMIT 1)
         ) as name_id,
         (
             SELECT ROW(n.id, n.name, COALESCE(n.generated, false))::types.q_get_rubric_v4_name_resource 
             FROM (
                 SELECT n.id, n.name, COALESCE(n.generated, false) as generated, 1 as priority
-                FROM names_drafts_connection dn 
+                FROM rubric_drafts_names_connection dn 
                 JOIN names_resource n ON dn.names_id = n.id 
                 WHERE dn.draft_id = (SELECT draft_id FROM params)
                 UNION ALL
@@ -299,14 +299,14 @@ name_resource_data AS (
 description_resource_data AS (
     SELECT 
         COALESCE(
-            (SELECT dd.descriptions_id FROM descriptions_drafts_connection dd WHERE dd.draft_id = (SELECT draft_id FROM params) LIMIT 1),
+            (SELECT dd.descriptions_id FROM rubric_drafts_descriptions_connection dd WHERE dd.draft_id = (SELECT draft_id FROM params) LIMIT 1),
             (SELECT rd.description_id FROM rubric_descriptions_junction rd WHERE rd.rubric_id = (SELECT rubric_id FROM params) LIMIT 1)
         ) as description_id,
         (
             SELECT ROW(d.id, d.description, COALESCE(d.generated, false))::types.q_get_rubric_v4_description_resource 
             FROM (
                 SELECT d.id, d.description, COALESCE(d.generated, false) as generated, 1 as priority
-                FROM descriptions_drafts_connection dd 
+                FROM rubric_drafts_descriptions_connection dd 
                 JOIN descriptions_resource d ON dd.descriptions_id = d.id 
                 WHERE dd.draft_id = (SELECT draft_id FROM params)
                 UNION ALL
@@ -330,14 +330,14 @@ description_resource_data AS (
 flag_resource_data AS (
     SELECT 
         COALESCE(
-            (SELECT df.flags_id FROM flags_drafts_connection df WHERE df.draft_id = (SELECT draft_id FROM params) LIMIT 1),
+            (SELECT df.flags_id FROM rubric_drafts_flags_connection df WHERE df.draft_id = (SELECT draft_id FROM params) LIMIT 1),
             (SELECT rf.flag_id FROM rubric_flags_junction rf JOIN flags_resource f ON rf.flag_id = f.id WHERE rf.rubric_id = (SELECT rubric_id FROM params) AND f.name = 'rubric_active' AND rf.value = TRUE LIMIT 1)
         ) as active_flag_id,
         (
             SELECT ROW(f.id, f.name, f.description, f.icon, COALESCE(f.generated, false))::types.q_get_rubric_v4_flag_resource 
             FROM (
                 SELECT f.id, f.name, f.description, f.icon, COALESCE(f.generated, false) as generated, 1 as priority
-                FROM flags_drafts_connection df 
+                FROM rubric_drafts_flags_connection df 
                 JOIN flags_resource f ON df.flags_id = f.id 
                 WHERE df.draft_id = (SELECT draft_id FROM params)
                 UNION ALL
@@ -364,14 +364,14 @@ flag_resource_data AS (
 total_points_resource_data AS (
     SELECT 
         COALESCE(
-            (SELECT dp.points_id FROM points_drafts_connection dp WHERE dp.draft_id = (SELECT draft_id FROM params) LIMIT 1),
+            (SELECT dp.points_id FROM rubric_drafts_points_connection dp WHERE dp.draft_id = (SELECT draft_id FROM params) LIMIT 1),
             (SELECT rp.point_id FROM rubric_points_junction rp WHERE rp.rubric_id = (SELECT rubric_id FROM params) AND rp.type = 'total'::point_type LIMIT 1)
         ) as total_points_id,
         (
             SELECT ROW(p.id, p.value, COALESCE(p.generated, false))::types.q_get_rubric_v4_points_resource 
             FROM (
                 SELECT p.id, p.value, COALESCE(p.generated, false) as generated, 1 as priority
-                FROM points_drafts_connection dp 
+                FROM rubric_drafts_points_connection dp 
                 JOIN points_resource p ON dp.points_id = p.id 
                 WHERE dp.draft_id = (SELECT draft_id FROM params)
                 UNION ALL
@@ -389,14 +389,14 @@ total_points_resource_data AS (
 pass_points_resource_data AS (
     SELECT 
         COALESCE(
-            (SELECT dp.points_id FROM points_drafts_connection dp WHERE dp.draft_id = (SELECT draft_id FROM params) LIMIT 1),
+            (SELECT dp.points_id FROM rubric_drafts_points_connection dp WHERE dp.draft_id = (SELECT draft_id FROM params) LIMIT 1),
             (SELECT rp.point_id FROM rubric_points_junction rp WHERE rp.rubric_id = (SELECT rubric_id FROM params) AND rp.type = 'pass'::point_type LIMIT 1)
         ) as pass_points_id,
         (
             SELECT ROW(p.id, p.value, COALESCE(p.generated, false))::types.q_get_rubric_v4_points_resource 
             FROM (
                 SELECT p.id, p.value, COALESCE(p.generated, false) as generated, 1 as priority
-                FROM points_drafts_connection dp 
+                FROM rubric_drafts_points_connection dp 
                 JOIN points_resource p ON dp.points_id = p.id 
                 WHERE dp.draft_id = (SELECT draft_id FROM params)
                 UNION ALL
@@ -418,7 +418,7 @@ standard_group_links_data AS (
         true as active,
         COALESCE(dsg.generated, false) as generated
     FROM params x
-    JOIN standard_groups_drafts_connection dsg ON dsg.draft_id = x.draft_id
+    JOIN rubric_drafts_standard_groups_connection dsg ON dsg.draft_id = x.draft_id
     WHERE x.draft_id IS NOT NULL
     UNION ALL
     SELECT 
@@ -430,7 +430,7 @@ standard_group_links_data AS (
     JOIN rubric_standard_groups_junction rsg ON rsg.rubric_id = x.rubric_id AND rsg.active = true
     WHERE x.rubric_id IS NOT NULL
       AND NOT EXISTS (
-          SELECT 1 FROM standard_groups_drafts_connection dsg
+          SELECT 1 FROM rubric_drafts_standard_groups_connection dsg
           WHERE dsg.draft_id = x.draft_id
       )
 ),
@@ -450,7 +450,7 @@ standard_ids_data AS (
     SELECT 
         COALESCE(
             (SELECT ARRAY_AGG(s.id ORDER BY s.created_at)
-             FROM standard_groups_drafts_connection dsg
+             FROM rubric_drafts_standard_groups_connection dsg
              JOIN standards_resource s ON s.standard_group_id = dsg.standard_groups_id
              WHERE dsg.draft_id = (SELECT draft_id FROM params)),
             (SELECT ARRAY_AGG(rs.standard_id ORDER BY rs.created_at)
@@ -1681,7 +1681,7 @@ standards_selected_data AS (
     JOIN standards_resource s ON s.id IN (
         SELECT unnest(standard_ids) FROM standard_ids_data
     )
-    LEFT JOIN standard_groups_drafts_connection dsg ON dsg.draft_id = x.draft_id AND dsg.standard_groups_id = s.standard_group_id
+    LEFT JOIN rubric_drafts_standard_groups_connection dsg ON dsg.draft_id = x.draft_id AND dsg.standard_groups_id = s.standard_group_id
     LEFT JOIN rubric_standards_junction rs ON rs.rubric_id = x.rubric_id AND rs.standard_id = s.id AND rs.active = true
 ),
 -- Standards data (all available standards for selected groups_entry)

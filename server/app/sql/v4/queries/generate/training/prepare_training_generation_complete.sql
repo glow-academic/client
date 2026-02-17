@@ -371,7 +371,7 @@ current_content AS (
             WHERE pa.id = COALESCE(
                 (
                     SELECT pdc.personas_id
-                    FROM personas_drafts_connection pdc
+                    FROM training_drafts_personas_connection pdc
                     WHERE p_draft_id IS NOT NULL
                       AND pdc.draft_id = p_draft_id
                     LIMIT 1

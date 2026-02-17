@@ -81,7 +81,7 @@ WITH params AS (
 name_id_data AS (
     SELECT
         COALESCE(
-            (SELECT dn.names_id FROM names_drafts_connection dn WHERE dn.draft_id = (SELECT draft_id FROM (SELECT api_get_eval_ids_v4.draft_id) x) LIMIT 1),
+            (SELECT dn.names_id FROM eval_drafts_names_connection dn WHERE dn.draft_id = (SELECT draft_id FROM (SELECT api_get_eval_ids_v4.draft_id) x) LIMIT 1),
             (SELECT en.name_id FROM eval_names_junction en WHERE en.eval_id = (SELECT eval_id FROM params) LIMIT 1)
         ) as name_id
     FROM params
@@ -91,7 +91,7 @@ name_id_data AS (
 description_id_data AS (
     SELECT
         COALESCE(
-            (SELECT dd.descriptions_id FROM descriptions_drafts_connection dd WHERE dd.draft_id = (SELECT draft_id FROM (SELECT api_get_eval_ids_v4.draft_id) x) LIMIT 1),
+            (SELECT dd.descriptions_id FROM eval_drafts_descriptions_connection dd WHERE dd.draft_id = (SELECT draft_id FROM (SELECT api_get_eval_ids_v4.draft_id) x) LIMIT 1),
             (SELECT ed.description_id FROM eval_descriptions_junction ed WHERE ed.eval_id = (SELECT eval_id FROM params) LIMIT 1)
         ) as description_id
     FROM params
@@ -101,7 +101,7 @@ description_id_data AS (
 active_flag_id_data AS (
     SELECT
         COALESCE(
-            (SELECT df.flags_id FROM flags_drafts_connection df JOIN flags_resource f ON df.flags_id = f.id WHERE df.draft_id = (SELECT draft_id FROM (SELECT api_get_eval_ids_v4.draft_id) x) AND f.name = 'active' LIMIT 1),
+            (SELECT df.flags_id FROM eval_drafts_flags_connection df JOIN flags_resource f ON df.flags_id = f.id WHERE df.draft_id = (SELECT draft_id FROM (SELECT api_get_eval_ids_v4.draft_id) x) AND f.name = 'active' LIMIT 1),
             (SELECT ef.flag_id FROM eval_flags_junction ef JOIN flags_resource f ON ef.flag_id = f.id WHERE ef.eval_id = (SELECT eval_id FROM params) AND f.name = 'eval_active' AND ef.value = TRUE LIMIT 1)
         ) as active_flag_id
     FROM params
@@ -111,7 +111,7 @@ active_flag_id_data AS (
 dynamic_flag_id_data AS (
     SELECT
         COALESCE(
-            (SELECT df.flags_id FROM flags_drafts_connection df JOIN flags_resource f ON df.flags_id = f.id WHERE df.draft_id = (SELECT draft_id FROM (SELECT api_get_eval_ids_v4.draft_id) x) AND f.name = 'dynamic' LIMIT 1),
+            (SELECT df.flags_id FROM eval_drafts_flags_connection df JOIN flags_resource f ON df.flags_id = f.id WHERE df.draft_id = (SELECT draft_id FROM (SELECT api_get_eval_ids_v4.draft_id) x) AND f.name = 'dynamic' LIMIT 1),
             (SELECT ef.flag_id FROM eval_flags_junction ef JOIN flags_resource f ON ef.flag_id = f.id WHERE ef.eval_id = (SELECT eval_id FROM params) AND f.name = 'dynamic' AND ef.value = TRUE LIMIT 1)
         ) as dynamic_flag_id
     FROM params
@@ -121,7 +121,7 @@ dynamic_flag_id_data AS (
 groups_flag_id_data AS (
     SELECT
         COALESCE(
-            (SELECT df.flags_id FROM flags_drafts_connection df JOIN flags_resource f ON df.flags_id = f.id WHERE df.draft_id = (SELECT draft_id FROM (SELECT api_get_eval_ids_v4.draft_id) x) AND f.name = '' LIMIT 1),
+            (SELECT df.flags_id FROM eval_drafts_flags_connection df JOIN flags_resource f ON df.flags_id = f.id WHERE df.draft_id = (SELECT draft_id FROM (SELECT api_get_eval_ids_v4.draft_id) x) AND f.name = '' LIMIT 1),
             (SELECT ef.flag_id FROM eval_flags_junction ef JOIN flags_resource f ON ef.flag_id = f.id WHERE ef.eval_id = (SELECT eval_id FROM params) AND f.name = '' AND ef.value = TRUE LIMIT 1)
         ) as groups_flag_id
     FROM params
@@ -174,7 +174,7 @@ eval_run_ids_data AS (
             WHEN (SELECT eval_id FROM params) IS NULL THEN
                 COALESCE(
                     (SELECT ARRAY_AGG(dr.runs_id ORDER BY dr.created_at)
-                     FROM runs_drafts_connection dr
+                     FROM eval_drafts_runs_connection dr
                      WHERE dr.draft_id = (SELECT draft_id FROM (SELECT api_get_eval_ids_v4.draft_id) x)),
                     ARRAY[]::uuid[]
                 )
@@ -195,7 +195,7 @@ eval_group_ids_data AS (
             WHEN (SELECT eval_id FROM params) IS NULL THEN
                 COALESCE(
                     (SELECT ARRAY_AGG(dg.groups_id ORDER BY dg.created_at)
-                     FROM groups_drafts_connection dg
+                     FROM eval_drafts_groups_connection dg
                      WHERE dg.draft_id = (SELECT draft_id FROM (SELECT api_get_eval_ids_v4.draft_id) x)),
                     ARRAY[]::uuid[]
                 )

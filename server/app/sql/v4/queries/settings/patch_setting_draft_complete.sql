@@ -352,48 +352,48 @@ BEGIN
                 END IF;
             END IF;
 
-            DELETE FROM names_drafts_connection WHERE names_drafts_connection.draft_id = v_draft_id;
-            DELETE FROM descriptions_drafts_connection WHERE descriptions_drafts_connection.draft_id = v_draft_id;
-            DELETE FROM colors_drafts_connection WHERE colors_drafts_connection.draft_id = v_draft_id;
-            DELETE FROM flags_drafts_connection WHERE flags_drafts_connection.draft_id = v_draft_id;
-            DELETE FROM departments_drafts_connection WHERE departments_drafts_connection.draft_id = v_draft_id;
+            DELETE FROM setting_drafts_names_connection WHERE setting_drafts_names_connection.draft_id = v_draft_id;
+            DELETE FROM setting_drafts_descriptions_connection WHERE setting_drafts_descriptions_connection.draft_id = v_draft_id;
+            DELETE FROM setting_drafts_colors_connection WHERE setting_drafts_colors_connection.draft_id = v_draft_id;
+            DELETE FROM setting_drafts_flags_connection WHERE setting_drafts_flags_connection.draft_id = v_draft_id;
+            DELETE FROM setting_drafts_departments_connection WHERE setting_drafts_departments_connection.draft_id = v_draft_id;
             DELETE FROM profiles_drafts_connection WHERE profiles_drafts_connection.draft_id = v_draft_id;
-            DELETE FROM providers_drafts_connection WHERE providers_drafts_connection.draft_id = v_draft_id;
-            DELETE FROM keys_drafts_connection WHERE keys_drafts_connection.draft_id = v_draft_id;
-            DELETE FROM roles_drafts_connection WHERE roles_drafts_connection.draft_id = v_draft_id;
-            DELETE FROM role_routes_drafts_connection WHERE role_routes_drafts_connection.draft_id = v_draft_id;
+            DELETE FROM setting_drafts_providers_connection WHERE setting_drafts_providers_connection.draft_id = v_draft_id;
+            DELETE FROM setting_drafts_keys_connection WHERE setting_drafts_keys_connection.draft_id = v_draft_id;
+            DELETE FROM setting_drafts_roles_connection WHERE setting_drafts_roles_connection.draft_id = v_draft_id;
+            DELETE FROM setting_drafts_role_routes_connection WHERE setting_drafts_role_routes_connection.draft_id = v_draft_id;
 
             INSERT INTO profiles_drafts_connection (draft_id, profiles_id, version)
             VALUES (v_draft_id, v_profiles_resource_id, v_new_version)
             ON CONFLICT ON CONSTRAINT profiles_draft_pkey DO UPDATE SET version = v_new_version;
 
             IF v_name_id IS NOT NULL THEN
-                INSERT INTO names_drafts_connection (draft_id, names_id, version)
+                INSERT INTO setting_drafts_names_connection (draft_id, names_id, version)
                 VALUES (v_draft_id, v_name_id, v_new_version)
                 ON CONFLICT ON CONSTRAINT names_draft_pkey DO UPDATE SET version = v_new_version;
             END IF;
 
             IF v_description_id IS NOT NULL THEN
-                INSERT INTO descriptions_drafts_connection (draft_id, descriptions_id, version)
+                INSERT INTO setting_drafts_descriptions_connection (draft_id, descriptions_id, version)
                 VALUES (v_draft_id, v_description_id, v_new_version)
                 ON CONFLICT ON CONSTRAINT descriptions_draft_pkey DO UPDATE SET version = v_new_version;
             END IF;
 
             IF v_active_flag_id IS NOT NULL THEN
-                INSERT INTO flags_drafts_connection (draft_id, flags_id, version)
+                INSERT INTO setting_drafts_flags_connection (draft_id, flags_id, version)
                 VALUES (v_draft_id, v_active_flag_id, v_new_version)
                 ON CONFLICT ON CONSTRAINT flags_draft_pkey DO UPDATE SET version = v_new_version;
             END IF;
 
             IF COALESCE(array_length(v_color_ids, 1), 0) > 0 THEN
-                INSERT INTO colors_drafts_connection (draft_id, colors_id, version)
+                INSERT INTO setting_drafts_colors_connection (draft_id, colors_id, version)
                 SELECT v_draft_id, color_id, v_new_version
                 FROM UNNEST(v_color_ids) as color_id
                 ON CONFLICT ON CONSTRAINT colors_draft_pkey DO UPDATE SET version = v_new_version;
             END IF;
 
             IF COALESCE(array_length(v_department_ids, 1), 0) > 0 THEN
-                INSERT INTO departments_drafts_connection (draft_id, departments_id, version)
+                INSERT INTO setting_drafts_departments_connection (draft_id, departments_id, version)
                 SELECT v_draft_id, dept_id, v_new_version
                 FROM UNNEST(v_department_ids) as dept_id
                 ON CONFLICT ON CONSTRAINT departments_draft_pkey DO UPDATE SET version = v_new_version;
@@ -407,28 +407,28 @@ BEGIN
             END IF;
 
             IF COALESCE(array_length(v_provider_key_ids, 1), 0) > 0 THEN
-                INSERT INTO providers_drafts_connection (draft_id, providers_id, version)
+                INSERT INTO setting_drafts_providers_connection (draft_id, providers_id, version)
                 SELECT v_draft_id, provider_id, v_new_version
                 FROM UNNEST(v_provider_key_ids) as provider_id
                 ON CONFLICT ON CONSTRAINT providers_draft_pkey DO UPDATE SET version = v_new_version;
             END IF;
 
             IF COALESCE(array_length(v_auth_item_key_ids, 1), 0) > 0 THEN
-                INSERT INTO keys_drafts_connection (draft_id, keys_id, version)
+                INSERT INTO setting_drafts_keys_connection (draft_id, keys_id, version)
                 SELECT v_draft_id, key_id, v_new_version
                 FROM UNNEST(v_auth_item_key_ids) as key_id
                 ON CONFLICT ON CONSTRAINT keys_draft_pkey DO UPDATE SET version = v_new_version;
             END IF;
 
             IF COALESCE(array_length(v_role_ids, 1), 0) > 0 THEN
-                INSERT INTO roles_drafts_connection (draft_id, roles_id, version)
+                INSERT INTO setting_drafts_roles_connection (draft_id, roles_id, version)
                 SELECT v_draft_id, role_id, v_new_version
                 FROM UNNEST(v_role_ids) as role_id
                 ON CONFLICT ON CONSTRAINT roles_draft_pkey DO UPDATE SET version = v_new_version;
             END IF;
 
             IF COALESCE(array_length(v_role_route_ids, 1), 0) > 0 THEN
-                INSERT INTO role_routes_drafts_connection (draft_id, role_routes_id, version)
+                INSERT INTO setting_drafts_role_routes_connection (draft_id, role_routes_id, version)
                 SELECT v_draft_id, rr_id, v_new_version
                 FROM UNNEST(v_role_route_ids) as rr_id
                 ON CONFLICT ON CONSTRAINT role_routes_draft_pkey DO UPDATE SET version = v_new_version;
@@ -669,32 +669,32 @@ BEGIN
     ON CONFLICT ON CONSTRAINT profiles_draft_pkey DO UPDATE SET version = v_new_version;
 
     IF v_name_id IS NOT NULL THEN
-        INSERT INTO names_drafts_connection (draft_id, names_id, version)
+        INSERT INTO setting_drafts_names_connection (draft_id, names_id, version)
         VALUES (v_draft_id, v_name_id, v_new_version)
         ON CONFLICT ON CONSTRAINT names_draft_pkey DO UPDATE SET version = v_new_version;
     END IF;
 
     IF v_description_id IS NOT NULL THEN
-        INSERT INTO descriptions_drafts_connection (draft_id, descriptions_id, version)
+        INSERT INTO setting_drafts_descriptions_connection (draft_id, descriptions_id, version)
         VALUES (v_draft_id, v_description_id, v_new_version)
         ON CONFLICT ON CONSTRAINT descriptions_draft_pkey DO UPDATE SET version = v_new_version;
     END IF;
 
     IF v_active_flag_id IS NOT NULL THEN
-        INSERT INTO flags_drafts_connection (draft_id, flags_id, version)
+        INSERT INTO setting_drafts_flags_connection (draft_id, flags_id, version)
         VALUES (v_draft_id, v_active_flag_id, v_new_version)
         ON CONFLICT ON CONSTRAINT flags_draft_pkey DO UPDATE SET version = v_new_version;
     END IF;
 
     IF COALESCE(array_length(v_color_ids, 1), 0) > 0 THEN
-        INSERT INTO colors_drafts_connection (draft_id, colors_id, version)
+        INSERT INTO setting_drafts_colors_connection (draft_id, colors_id, version)
         SELECT v_draft_id, color_id, v_new_version
         FROM UNNEST(v_color_ids) as color_id
         ON CONFLICT ON CONSTRAINT colors_draft_pkey DO UPDATE SET version = v_new_version;
     END IF;
 
     IF COALESCE(array_length(v_department_ids, 1), 0) > 0 THEN
-        INSERT INTO departments_drafts_connection (draft_id, departments_id, version)
+        INSERT INTO setting_drafts_departments_connection (draft_id, departments_id, version)
         SELECT v_draft_id, dept_id, v_new_version
         FROM UNNEST(v_department_ids) as dept_id
         ON CONFLICT ON CONSTRAINT departments_draft_pkey DO UPDATE SET version = v_new_version;
@@ -708,28 +708,28 @@ BEGIN
     END IF;
 
     IF COALESCE(array_length(v_provider_key_ids, 1), 0) > 0 THEN
-        INSERT INTO providers_drafts_connection (draft_id, providers_id, version)
+        INSERT INTO setting_drafts_providers_connection (draft_id, providers_id, version)
         SELECT v_draft_id, provider_id, v_new_version
         FROM UNNEST(v_provider_key_ids) as provider_id
         ON CONFLICT ON CONSTRAINT providers_draft_pkey DO UPDATE SET version = v_new_version;
     END IF;
 
     IF COALESCE(array_length(v_auth_item_key_ids, 1), 0) > 0 THEN
-        INSERT INTO keys_drafts_connection (draft_id, keys_id, version)
+        INSERT INTO setting_drafts_keys_connection (draft_id, keys_id, version)
         SELECT v_draft_id, key_id, v_new_version
         FROM UNNEST(v_auth_item_key_ids) as key_id
         ON CONFLICT ON CONSTRAINT keys_draft_pkey DO UPDATE SET version = v_new_version;
     END IF;
 
     IF COALESCE(array_length(v_role_ids, 1), 0) > 0 THEN
-        INSERT INTO roles_drafts_connection (draft_id, roles_id, version)
+        INSERT INTO setting_drafts_roles_connection (draft_id, roles_id, version)
         SELECT v_draft_id, role_id, v_new_version
         FROM UNNEST(v_role_ids) as role_id
         ON CONFLICT ON CONSTRAINT roles_draft_pkey DO UPDATE SET version = v_new_version;
     END IF;
 
     IF COALESCE(array_length(v_role_route_ids, 1), 0) > 0 THEN
-        INSERT INTO role_routes_drafts_connection (draft_id, role_routes_id, version)
+        INSERT INTO setting_drafts_role_routes_connection (draft_id, role_routes_id, version)
         SELECT v_draft_id, rr_id, v_new_version
         FROM UNNEST(v_role_route_ids) as rr_id
         ON CONFLICT ON CONSTRAINT role_routes_draft_pkey DO UPDATE SET version = v_new_version;

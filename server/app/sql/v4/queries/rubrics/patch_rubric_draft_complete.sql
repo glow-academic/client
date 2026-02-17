@@ -187,60 +187,60 @@ BEGIN
             v_draft_exists := true;
 
             -- Replace draft resource links
-            DELETE FROM names_drafts_connection WHERE draft_id = v_draft_id;
-            DELETE FROM descriptions_drafts_connection WHERE draft_id = v_draft_id;
-            DELETE FROM flags_drafts_connection WHERE draft_id = v_draft_id;
-            DELETE FROM departments_drafts_connection WHERE draft_id = v_draft_id;
-            DELETE FROM points_drafts_connection WHERE draft_id = v_draft_id;
-            DELETE FROM standard_groups_drafts_connection WHERE draft_id = v_draft_id;
-            DELETE FROM standards_drafts_connection WHERE draft_id = v_draft_id;
+            DELETE FROM rubric_drafts_names_connection WHERE draft_id = v_draft_id;
+            DELETE FROM rubric_drafts_descriptions_connection WHERE draft_id = v_draft_id;
+            DELETE FROM rubric_drafts_flags_connection WHERE draft_id = v_draft_id;
+            DELETE FROM rubric_drafts_departments_connection WHERE draft_id = v_draft_id;
+            DELETE FROM rubric_drafts_points_connection WHERE draft_id = v_draft_id;
+            DELETE FROM rubric_drafts_standard_groups_connection WHERE draft_id = v_draft_id;
+            DELETE FROM rubric_drafts_standards_connection WHERE draft_id = v_draft_id;
 
             IF v_name_id IS NOT NULL THEN
-                INSERT INTO names_drafts_connection (draft_id, names_id, version)
+                INSERT INTO rubric_drafts_names_connection (draft_id, names_id, version)
                 VALUES (v_draft_id, v_name_id, v_new_version)
                 ON CONFLICT ON CONSTRAINT names_draft_pkey DO UPDATE SET version = v_new_version;
             END IF;
 
             IF v_description_id IS NOT NULL THEN
-                INSERT INTO descriptions_drafts_connection (draft_id, descriptions_id, version)
+                INSERT INTO rubric_drafts_descriptions_connection (draft_id, descriptions_id, version)
                 VALUES (v_draft_id, v_description_id, v_new_version)
                 ON CONFLICT ON CONSTRAINT descriptions_draft_pkey DO UPDATE SET version = v_new_version;
             END IF;
 
             IF v_active_flag_id IS NOT NULL THEN
-                INSERT INTO flags_drafts_connection (draft_id, flags_id, version)
+                INSERT INTO rubric_drafts_flags_connection (draft_id, flags_id, version)
                 VALUES (v_draft_id, v_active_flag_id, v_new_version)
                 ON CONFLICT ON CONSTRAINT flags_draft_pkey DO UPDATE SET version = v_new_version;
             END IF;
 
             IF COALESCE(array_length(v_department_ids, 1), 0) > 0 THEN
-                INSERT INTO departments_drafts_connection (draft_id, departments_id, version)
+                INSERT INTO rubric_drafts_departments_connection (draft_id, departments_id, version)
                 SELECT v_draft_id, did, v_new_version
                 FROM UNNEST(v_department_ids) AS did
                 ON CONFLICT ON CONSTRAINT departments_draft_pkey DO UPDATE SET version = v_new_version;
             END IF;
 
             IF v_total_points_id IS NOT NULL THEN
-                INSERT INTO points_drafts_connection (draft_id, points_id, version)
+                INSERT INTO rubric_drafts_points_connection (draft_id, points_id, version)
                 VALUES (v_draft_id, v_total_points_id, v_new_version)
                 ON CONFLICT ON CONSTRAINT points_draft_pkey DO UPDATE SET version = v_new_version;
             END IF;
 
             IF v_pass_points_id IS NOT NULL THEN
-                INSERT INTO points_drafts_connection (draft_id, points_id, version)
+                INSERT INTO rubric_drafts_points_connection (draft_id, points_id, version)
                 VALUES (v_draft_id, v_pass_points_id, v_new_version)
                 ON CONFLICT ON CONSTRAINT points_draft_pkey DO UPDATE SET version = v_new_version;
             END IF;
 
             IF COALESCE(array_length(v_standard_group_ids, 1), 0) > 0 THEN
-                INSERT INTO standard_groups_drafts_connection (draft_id, standard_groups_id, version)
+                INSERT INTO rubric_drafts_standard_groups_connection (draft_id, standard_groups_id, version)
                 SELECT v_draft_id, sgid, v_new_version
                 FROM UNNEST(v_standard_group_ids) AS sgid
                 ON CONFLICT ON CONSTRAINT standard_groups_draft_pkey DO UPDATE SET version = v_new_version;
             END IF;
 
             IF COALESCE(array_length(v_standard_ids, 1), 0) > 0 THEN
-                INSERT INTO standards_drafts_connection (draft_id, standards_id, version)
+                INSERT INTO rubric_drafts_standards_connection (draft_id, standards_id, version)
                 SELECT v_draft_id, sid, v_new_version
                 FROM UNNEST(v_standard_ids) AS sid
                 ON CONFLICT ON CONSTRAINT standards_draft_pkey DO UPDATE SET version = v_new_version;
@@ -420,51 +420,51 @@ BEGIN
     VALUES (v_draft_id, v_profiles_resource_id, v_new_version);
 
     IF v_name_id IS NOT NULL THEN
-        INSERT INTO names_drafts_connection (draft_id, names_id, version)
+        INSERT INTO rubric_drafts_names_connection (draft_id, names_id, version)
         VALUES (v_draft_id, v_name_id, v_new_version)
         ON CONFLICT ON CONSTRAINT names_draft_pkey DO UPDATE SET version = v_new_version;
     END IF;
 
     IF v_description_id IS NOT NULL THEN
-        INSERT INTO descriptions_drafts_connection (draft_id, descriptions_id, version)
+        INSERT INTO rubric_drafts_descriptions_connection (draft_id, descriptions_id, version)
         VALUES (v_draft_id, v_description_id, v_new_version)
         ON CONFLICT ON CONSTRAINT descriptions_draft_pkey DO UPDATE SET version = v_new_version;
     END IF;
 
     IF v_active_flag_id IS NOT NULL THEN
-        INSERT INTO flags_drafts_connection (draft_id, flags_id, version)
+        INSERT INTO rubric_drafts_flags_connection (draft_id, flags_id, version)
         VALUES (v_draft_id, v_active_flag_id, v_new_version)
         ON CONFLICT ON CONSTRAINT flags_draft_pkey DO UPDATE SET version = v_new_version;
     END IF;
 
     IF COALESCE(array_length(v_department_ids, 1), 0) > 0 THEN
-        INSERT INTO departments_drafts_connection (draft_id, departments_id, version)
+        INSERT INTO rubric_drafts_departments_connection (draft_id, departments_id, version)
         SELECT v_draft_id, did, v_new_version
         FROM UNNEST(v_department_ids) AS did
         ON CONFLICT ON CONSTRAINT departments_draft_pkey DO UPDATE SET version = v_new_version;
     END IF;
 
     IF v_total_points_id IS NOT NULL THEN
-        INSERT INTO points_drafts_connection (draft_id, points_id, version)
+        INSERT INTO rubric_drafts_points_connection (draft_id, points_id, version)
         VALUES (v_draft_id, v_total_points_id, v_new_version)
         ON CONFLICT ON CONSTRAINT points_draft_pkey DO UPDATE SET version = v_new_version;
     END IF;
 
     IF v_pass_points_id IS NOT NULL THEN
-        INSERT INTO points_drafts_connection (draft_id, points_id, version)
+        INSERT INTO rubric_drafts_points_connection (draft_id, points_id, version)
         VALUES (v_draft_id, v_pass_points_id, v_new_version)
         ON CONFLICT ON CONSTRAINT points_draft_pkey DO UPDATE SET version = v_new_version;
     END IF;
 
     IF COALESCE(array_length(v_standard_group_ids, 1), 0) > 0 THEN
-        INSERT INTO standard_groups_drafts_connection (draft_id, standard_groups_id, version)
+        INSERT INTO rubric_drafts_standard_groups_connection (draft_id, standard_groups_id, version)
         SELECT v_draft_id, sgid, v_new_version
         FROM UNNEST(v_standard_group_ids) AS sgid
         ON CONFLICT ON CONSTRAINT standard_groups_draft_pkey DO UPDATE SET version = v_new_version;
     END IF;
 
     IF COALESCE(array_length(v_standard_ids, 1), 0) > 0 THEN
-        INSERT INTO standards_drafts_connection (draft_id, standards_id, version)
+        INSERT INTO rubric_drafts_standards_connection (draft_id, standards_id, version)
         SELECT v_draft_id, sid, v_new_version
         FROM UNNEST(v_standard_ids) AS sid
         ON CONFLICT ON CONSTRAINT standards_draft_pkey DO UPDATE SET version = v_new_version;

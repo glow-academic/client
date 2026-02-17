@@ -242,79 +242,79 @@ BEGIN
     END IF;
 
     -- Replace draft links
-    DELETE FROM names_drafts_connection WHERE draft_id = v_draft_id;
-    DELETE FROM descriptions_drafts_connection WHERE draft_id = v_draft_id;
-    DELETE FROM values_drafts_connection WHERE draft_id = v_draft_id;
-    DELETE FROM providers_drafts_connection WHERE draft_id = v_draft_id;
-    DELETE FROM flags_drafts_connection WHERE draft_id = v_draft_id;
-    DELETE FROM departments_drafts_connection WHERE draft_id = v_draft_id;
-    DELETE FROM modalities_drafts_connection WHERE draft_id = v_draft_id;
-    DELETE FROM temperature_levels_drafts_connection WHERE draft_id = v_draft_id;
-    DELETE FROM pricing_drafts_connection WHERE draft_id = v_draft_id;
-    DELETE FROM reasoning_levels_drafts_connection WHERE draft_id = v_draft_id;
-    DELETE FROM qualities_drafts_connection WHERE draft_id = v_draft_id;
-    DELETE FROM voices_drafts_connection WHERE draft_id = v_draft_id;
+    DELETE FROM model_drafts_names_connection WHERE draft_id = v_draft_id;
+    DELETE FROM model_drafts_descriptions_connection WHERE draft_id = v_draft_id;
+    DELETE FROM model_drafts_values_connection WHERE draft_id = v_draft_id;
+    DELETE FROM model_drafts_providers_connection WHERE draft_id = v_draft_id;
+    DELETE FROM model_drafts_flags_connection WHERE draft_id = v_draft_id;
+    DELETE FROM model_drafts_departments_connection WHERE draft_id = v_draft_id;
+    DELETE FROM model_drafts_modalities_connection WHERE draft_id = v_draft_id;
+    DELETE FROM model_drafts_temperature_levels_connection WHERE draft_id = v_draft_id;
+    DELETE FROM model_drafts_pricing_connection WHERE draft_id = v_draft_id;
+    DELETE FROM model_drafts_reasoning_levels_connection WHERE draft_id = v_draft_id;
+    DELETE FROM model_drafts_qualities_connection WHERE draft_id = v_draft_id;
+    DELETE FROM model_drafts_voices_connection WHERE draft_id = v_draft_id;
 
     IF v_name_id IS NOT NULL THEN
-        INSERT INTO names_drafts_connection (draft_id, names_id, version)
+        INSERT INTO model_drafts_names_connection (draft_id, names_id, version)
         VALUES (v_draft_id, v_name_id, v_new_version)
         ON CONFLICT ON CONSTRAINT names_draft_pkey DO UPDATE SET version = v_new_version;
     END IF;
 
     IF v_description_id IS NOT NULL THEN
-        INSERT INTO descriptions_drafts_connection (draft_id, descriptions_id, version)
+        INSERT INTO model_drafts_descriptions_connection (draft_id, descriptions_id, version)
         VALUES (v_draft_id, v_description_id, v_new_version)
         ON CONFLICT ON CONSTRAINT descriptions_draft_pkey DO UPDATE SET version = v_new_version;
     END IF;
 
     IF v_value_id IS NOT NULL THEN
-        INSERT INTO values_drafts_connection (draft_id, values_id, version)
+        INSERT INTO model_drafts_values_connection (draft_id, values_id, version)
         VALUES (v_draft_id, v_value_id, v_new_version)
         ON CONFLICT ON CONSTRAINT values_draft_pkey DO UPDATE SET version = v_new_version;
     END IF;
 
     IF v_provider_id IS NOT NULL THEN
-        INSERT INTO providers_drafts_connection (draft_id, providers_id, version)
+        INSERT INTO model_drafts_providers_connection (draft_id, providers_id, version)
         VALUES (v_draft_id, v_provider_id, v_new_version)
         ON CONFLICT ON CONSTRAINT providers_draft_pkey DO UPDATE SET version = v_new_version;
     END IF;
 
-    INSERT INTO flags_drafts_connection (draft_id, flags_id, version)
+    INSERT INTO model_drafts_flags_connection (draft_id, flags_id, version)
     SELECT v_draft_id, fid, v_new_version
     FROM UNNEST(v_flag_ids) fid
     ON CONFLICT ON CONSTRAINT flags_draft_pkey DO UPDATE SET version = v_new_version;
 
-    INSERT INTO departments_drafts_connection (draft_id, departments_id, version)
+    INSERT INTO model_drafts_departments_connection (draft_id, departments_id, version)
     SELECT v_draft_id, did, v_new_version
     FROM UNNEST(v_department_ids) did
     ON CONFLICT ON CONSTRAINT departments_draft_pkey DO UPDATE SET version = v_new_version;
 
-    INSERT INTO modalities_drafts_connection (draft_id, modalities_id, version)
+    INSERT INTO model_drafts_modalities_connection (draft_id, modalities_id, version)
     SELECT v_draft_id, mid, v_new_version
     FROM UNNEST(v_modality_ids) mid
     ON CONFLICT ON CONSTRAINT modalities_draft_pkey DO UPDATE SET version = v_new_version;
 
-    INSERT INTO temperature_levels_drafts_connection (draft_id, temperature_levels_id, version)
+    INSERT INTO model_drafts_temperature_levels_connection (draft_id, temperature_levels_id, version)
     SELECT v_draft_id, tid, v_new_version
     FROM UNNEST(v_temperature_level_ids) tid
     ON CONFLICT ON CONSTRAINT temperature_levels_draft_pkey DO UPDATE SET version = v_new_version;
 
-    INSERT INTO pricing_drafts_connection (draft_id, pricing_id, version)
+    INSERT INTO model_drafts_pricing_connection (draft_id, pricing_id, version)
     SELECT v_draft_id, pid, v_new_version
     FROM UNNEST(v_pricing_ids) pid
     ON CONFLICT ON CONSTRAINT pricing_draft_pkey DO UPDATE SET version = v_new_version;
 
-    INSERT INTO reasoning_levels_drafts_connection (draft_id, reasoning_levels_id, version)
+    INSERT INTO model_drafts_reasoning_levels_connection (draft_id, reasoning_levels_id, version)
     SELECT v_draft_id, rid, v_new_version
     FROM UNNEST(v_reasoning_level_ids) rid
     ON CONFLICT ON CONSTRAINT reasoning_levels_draft_pkey DO UPDATE SET version = v_new_version;
 
-    INSERT INTO qualities_drafts_connection (draft_id, qualities_id, version)
+    INSERT INTO model_drafts_qualities_connection (draft_id, qualities_id, version)
     SELECT v_draft_id, qid, v_new_version
     FROM UNNEST(v_quality_ids) qid
     ON CONFLICT ON CONSTRAINT qualities_draft_pkey DO UPDATE SET version = v_new_version;
 
-    INSERT INTO voices_drafts_connection (draft_id, voices_id, version)
+    INSERT INTO model_drafts_voices_connection (draft_id, voices_id, version)
     SELECT v_draft_id, vid, v_new_version
     FROM UNNEST(v_voice_ids) vid
     ON CONFLICT ON CONSTRAINT voices_draft_pkey DO UPDATE SET version = v_new_version;

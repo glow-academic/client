@@ -41,12 +41,12 @@ CREATE TYPE types.q_get_draft_field_view_v4_item AS (
     mcp boolean,
     active boolean,
     group_id uuid,
-    regeneration_descriptions text[],
-    name_ids uuid[],
-    description_ids uuid[],
-    flag_ids uuid[],
+    conditional_parameter_ids uuid[],
     department_ids uuid[],
-    parameter_ids uuid[]
+    description_ids uuid[],
+    field_ids uuid[],
+    flag_ids uuid[],
+    name_ids uuid[]
 );
 
 CREATE OR REPLACE FUNCTION api_get_draft_field_view_v4(
@@ -78,12 +78,12 @@ AS $$
                     mcp,
                     active,
                     group_id,
-                    regeneration_descriptions,
-                    name_ids,
-                    description_ids,
-                    flag_ids,
+                    conditional_parameter_ids,
                     department_ids,
-                    parameter_ids
+                    description_ids,
+                    field_ids,
+                    flag_ids,
+                    name_ids
                 )::types.q_get_draft_field_view_v4_item
                 ORDER BY updated_at DESC
             ),

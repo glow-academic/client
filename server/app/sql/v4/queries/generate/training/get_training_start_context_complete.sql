@@ -226,7 +226,7 @@ scenario_content AS (
         CASE
             WHEN p.draft_id IS NOT NULL THEN EXISTS (
                 SELECT 1
-                FROM personas_drafts_connection pdc
+                FROM training_drafts_personas_connection pdc
                 WHERE pdc.draft_id = p.draft_id
             )
             ELSE EXISTS (
@@ -257,7 +257,7 @@ scenario_content AS (
             WHERE pa.id = COALESCE(
                 (
                     SELECT pdc.personas_id
-                    FROM personas_drafts_connection pdc
+                    FROM training_drafts_personas_connection pdc
                     WHERE p.draft_id IS NOT NULL
                       AND pdc.draft_id = p.draft_id
                     LIMIT 1

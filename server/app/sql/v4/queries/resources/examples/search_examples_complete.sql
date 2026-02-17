@@ -77,8 +77,9 @@ FROM (
               suggest_source = 'draft'
               AND draft_id IS NOT NULL
               AND EXISTS (
-                  SELECT 1
-                  FROM examples_drafts_connection dc
+                  SELECT 1 FROM (
+                      SELECT examples_id, draft_id FROM persona_drafts_examples_connection WHERE active = true
+                  ) dc
                   WHERE dc.examples_id = e.id
                     AND dc.draft_id = api_search_examples_v4.draft_id
               )

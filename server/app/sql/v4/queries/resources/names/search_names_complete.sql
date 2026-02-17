@@ -1,5 +1,5 @@
 -- Search names resources with optional context
--- RULE 6 COMPLIANT: names_resource + names_drafts_connection + {artifact}_names_junction (boolean filters)
+-- RULE 6 COMPLIANT: names_resource + {artifact}_drafts_names_connection (UNION ALL) + {artifact}_names_junction (boolean filters)
 -- Parameters: search, limit/offset, draft_id, suggest_source, exclude_ids, artifact booleans
 -- Returns: items (array of name resources)
 
@@ -74,8 +74,27 @@ FROM (
           OR (
               draft_id IS NOT NULL
               AND EXISTS (
-                  SELECT 1
-                  FROM names_drafts_connection dc
+                  SELECT 1 FROM (
+                      SELECT names_id, draft_id FROM agent_drafts_names_connection WHERE active = true
+                      UNION ALL SELECT names_id, draft_id FROM auth_drafts_names_connection WHERE active = true
+                      UNION ALL SELECT names_id, draft_id FROM cohort_drafts_names_connection WHERE active = true
+                      UNION ALL SELECT names_id, draft_id FROM department_drafts_names_connection WHERE active = true
+                      UNION ALL SELECT names_id, draft_id FROM document_drafts_names_connection WHERE active = true
+                      UNION ALL SELECT names_id, draft_id FROM eval_drafts_names_connection WHERE active = true
+                      UNION ALL SELECT names_id, draft_id FROM field_drafts_names_connection WHERE active = true
+                      UNION ALL SELECT names_id, draft_id FROM model_drafts_names_connection WHERE active = true
+                      UNION ALL SELECT names_id, draft_id FROM parameter_drafts_names_connection WHERE active = true
+                      UNION ALL SELECT names_id, draft_id FROM persona_drafts_names_connection WHERE active = true
+                      UNION ALL SELECT names_id, draft_id FROM profile_drafts_names_connection WHERE active = true
+                      UNION ALL SELECT names_id, draft_id FROM provider_drafts_names_connection WHERE active = true
+                      UNION ALL SELECT names_id, draft_id FROM rubric_drafts_names_connection WHERE active = true
+                      UNION ALL SELECT names_id, draft_id FROM scenario_drafts_names_connection WHERE active = true
+                      UNION ALL SELECT names_id, draft_id FROM setting_drafts_names_connection WHERE active = true
+                      UNION ALL SELECT names_id, draft_id FROM simulation_drafts_names_connection WHERE active = true
+                      UNION ALL SELECT names_id, draft_id FROM suite_drafts_names_connection WHERE active = true
+                      UNION ALL SELECT names_id, draft_id FROM tool_drafts_names_connection WHERE active = true
+                      UNION ALL SELECT names_id, draft_id FROM training_drafts_names_connection WHERE active = true
+                  ) dc
                   WHERE dc.names_id = n.id
                     AND dc.draft_id = api_search_names_v4.draft_id
               )

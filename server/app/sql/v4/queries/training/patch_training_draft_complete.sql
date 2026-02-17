@@ -125,98 +125,98 @@ BEGIN
             v_draft_exists := true;
 
             -- Delete old resource links
-            DELETE FROM departments_drafts_connection WHERE departments_drafts_connection.draft_id = v_draft_id;
-            DELETE FROM personas_drafts_connection WHERE personas_drafts_connection.draft_id = v_draft_id;
-            DELETE FROM documents_drafts_connection WHERE documents_drafts_connection.draft_id = v_draft_id;
-            DELETE FROM fields_drafts_connection WHERE fields_drafts_connection.draft_id = v_draft_id;
-            DELETE FROM parameters_drafts_connection WHERE parameters_drafts_connection.draft_id = v_draft_id;
-            DELETE FROM questions_drafts_connection WHERE questions_drafts_connection.draft_id = v_draft_id;
-            DELETE FROM options_drafts_connection WHERE options_drafts_connection.draft_id = v_draft_id;
-            DELETE FROM videos_drafts_connection WHERE videos_drafts_connection.draft_id = v_draft_id;
-            DELETE FROM images_drafts_connection WHERE images_drafts_connection.draft_id = v_draft_id;
-            DELETE FROM problem_statements_drafts_connection WHERE problem_statements_drafts_connection.draft_id = v_draft_id;
-            DELETE FROM objectives_drafts_connection WHERE objectives_drafts_connection.draft_id = v_draft_id;
+            DELETE FROM training_drafts_departments_connection WHERE training_drafts_departments_connection.draft_id = v_draft_id;
+            DELETE FROM training_drafts_personas_connection WHERE training_drafts_personas_connection.draft_id = v_draft_id;
+            DELETE FROM training_drafts_documents_connection WHERE training_drafts_documents_connection.draft_id = v_draft_id;
+            DELETE FROM training_drafts_fields_connection WHERE training_drafts_fields_connection.draft_id = v_draft_id;
+            DELETE FROM training_drafts_parameters_connection WHERE training_drafts_parameters_connection.draft_id = v_draft_id;
+            DELETE FROM training_drafts_questions_connection WHERE training_drafts_questions_connection.draft_id = v_draft_id;
+            DELETE FROM training_drafts_options_connection WHERE training_drafts_options_connection.draft_id = v_draft_id;
+            DELETE FROM training_drafts_videos_connection WHERE training_drafts_videos_connection.draft_id = v_draft_id;
+            DELETE FROM training_drafts_images_connection WHERE training_drafts_images_connection.draft_id = v_draft_id;
+            DELETE FROM training_drafts_problem_statements_connection WHERE training_drafts_problem_statements_connection.draft_id = v_draft_id;
+            DELETE FROM training_drafts_objectives_connection WHERE training_drafts_objectives_connection.draft_id = v_draft_id;
 
             -- Insert new resource links
             IF department_ids IS NOT NULL THEN
-                INSERT INTO departments_drafts_connection (draft_id, departments_id, version)
+                INSERT INTO training_drafts_departments_connection (draft_id, departments_id, version)
                 SELECT v_draft_id, dept_id, v_new_version
                 FROM unnest(department_ids) as dept_id
                 ON CONFLICT ON CONSTRAINT departments_draft_pkey DO UPDATE SET version = v_new_version;
             END IF;
 
             IF persona_ids IS NOT NULL THEN
-                INSERT INTO personas_drafts_connection (draft_id, personas_id, version)
+                INSERT INTO training_drafts_personas_connection (draft_id, personas_id, version)
                 SELECT v_draft_id, persona_id, v_new_version
                 FROM unnest(persona_ids) as persona_id
                 ON CONFLICT ON CONSTRAINT personas_draft_pkey DO UPDATE SET version = v_new_version;
             END IF;
 
             IF document_ids IS NOT NULL THEN
-                INSERT INTO documents_drafts_connection (draft_id, documents_id, version)
+                INSERT INTO training_drafts_documents_connection (draft_id, documents_id, version)
                 SELECT v_draft_id, doc_id, v_new_version
                 FROM unnest(document_ids) as doc_id
                 ON CONFLICT ON CONSTRAINT documents_draft_pkey DO UPDATE SET version = v_new_version;
             END IF;
 
             IF parameter_field_ids IS NOT NULL THEN
-                INSERT INTO fields_drafts_connection (draft_id, fields_id, version)
+                INSERT INTO training_drafts_fields_connection (draft_id, fields_id, version)
                 SELECT v_draft_id, pf_id, v_new_version
                 FROM unnest(parameter_field_ids) as pf_id
                 ON CONFLICT ON CONSTRAINT fields_draft_pkey DO UPDATE SET version = v_new_version;
             END IF;
 
             IF parameter_ids IS NOT NULL THEN
-                INSERT INTO parameters_drafts_connection (draft_id, parameters_id, version)
+                INSERT INTO training_drafts_parameters_connection (draft_id, parameters_id, version)
                 SELECT v_draft_id, param_id, v_new_version
                 FROM unnest(parameter_ids) as param_id
                 ON CONFLICT ON CONSTRAINT parameters_draft_pkey DO UPDATE SET version = v_new_version;
             END IF;
 
             IF field_ids IS NOT NULL THEN
-                INSERT INTO fields_drafts_connection (draft_id, fields_id, version)
+                INSERT INTO training_drafts_fields_connection (draft_id, fields_id, version)
                 SELECT v_draft_id, f_id, v_new_version
                 FROM unnest(field_ids) as f_id
                 ON CONFLICT ON CONSTRAINT fields_draft_pkey DO UPDATE SET version = v_new_version;
             END IF;
 
             IF question_ids IS NOT NULL THEN
-                INSERT INTO questions_drafts_connection (draft_id, questions_id, version)
+                INSERT INTO training_drafts_questions_connection (draft_id, questions_id, version)
                 SELECT v_draft_id, question_id, v_new_version
                 FROM unnest(question_ids) as question_id
                 ON CONFLICT ON CONSTRAINT questions_draft_pkey DO UPDATE SET version = v_new_version;
             END IF;
 
             IF option_ids IS NOT NULL THEN
-                INSERT INTO options_drafts_connection (draft_id, options_id, version)
+                INSERT INTO training_drafts_options_connection (draft_id, options_id, version)
                 SELECT v_draft_id, option_id, v_new_version
                 FROM unnest(option_ids) as option_id
                 ON CONFLICT ON CONSTRAINT options_draft_pkey DO UPDATE SET version = v_new_version;
             END IF;
 
             IF video_ids IS NOT NULL THEN
-                INSERT INTO videos_drafts_connection (draft_id, videos_id, version)
+                INSERT INTO training_drafts_videos_connection (draft_id, videos_id, version)
                 SELECT v_draft_id, video_id, v_new_version
                 FROM unnest(video_ids) as video_id
                 ON CONFLICT ON CONSTRAINT videos_draft_pkey DO UPDATE SET version = v_new_version;
             END IF;
 
             IF image_ids IS NOT NULL THEN
-                INSERT INTO images_drafts_connection (draft_id, images_id, version)
+                INSERT INTO training_drafts_images_connection (draft_id, images_id, version)
                 SELECT v_draft_id, image_id, v_new_version
                 FROM unnest(image_ids) as image_id
                 ON CONFLICT ON CONSTRAINT images_draft_pkey DO UPDATE SET version = v_new_version;
             END IF;
 
             IF problem_statement_ids IS NOT NULL THEN
-                INSERT INTO problem_statements_drafts_connection (draft_id, problem_statements_id, version)
+                INSERT INTO training_drafts_problem_statements_connection (draft_id, problem_statements_id, version)
                 SELECT v_draft_id, ps_id, v_new_version
                 FROM unnest(problem_statement_ids) as ps_id
                 ON CONFLICT ON CONSTRAINT problem_statements_draft_pkey DO UPDATE SET version = v_new_version;
             END IF;
 
             IF objective_ids IS NOT NULL THEN
-                INSERT INTO objectives_drafts_connection (draft_id, objectives_id, version)
+                INSERT INTO training_drafts_objectives_connection (draft_id, objectives_id, version)
                 SELECT v_draft_id, objective_id, v_new_version
                 FROM unnest(objective_ids) as objective_id
                 ON CONFLICT ON CONSTRAINT objectives_draft_pkey DO UPDATE SET version = v_new_version;
@@ -241,84 +241,84 @@ BEGIN
 
         -- Insert resource links for new draft
         IF department_ids IS NOT NULL THEN
-            INSERT INTO departments_drafts_connection (draft_id, departments_id, version)
+            INSERT INTO training_drafts_departments_connection (draft_id, departments_id, version)
             SELECT v_draft_id, dept_id, v_new_version
             FROM unnest(department_ids) as dept_id
             ON CONFLICT ON CONSTRAINT departments_draft_pkey DO UPDATE SET version = v_new_version;
         END IF;
 
         IF persona_ids IS NOT NULL THEN
-            INSERT INTO personas_drafts_connection (draft_id, personas_id, version)
+            INSERT INTO training_drafts_personas_connection (draft_id, personas_id, version)
             SELECT v_draft_id, persona_id, v_new_version
             FROM unnest(persona_ids) as persona_id
             ON CONFLICT ON CONSTRAINT personas_draft_pkey DO UPDATE SET version = v_new_version;
         END IF;
 
         IF document_ids IS NOT NULL THEN
-            INSERT INTO documents_drafts_connection (draft_id, documents_id, version)
+            INSERT INTO training_drafts_documents_connection (draft_id, documents_id, version)
             SELECT v_draft_id, doc_id, v_new_version
             FROM unnest(document_ids) as doc_id
             ON CONFLICT ON CONSTRAINT documents_draft_pkey DO UPDATE SET version = v_new_version;
         END IF;
 
         IF parameter_field_ids IS NOT NULL THEN
-            INSERT INTO fields_drafts_connection (draft_id, fields_id, version)
+            INSERT INTO training_drafts_fields_connection (draft_id, fields_id, version)
             SELECT v_draft_id, pf_id, v_new_version
             FROM unnest(parameter_field_ids) as pf_id
             ON CONFLICT ON CONSTRAINT fields_draft_pkey DO UPDATE SET version = v_new_version;
         END IF;
 
         IF parameter_ids IS NOT NULL THEN
-            INSERT INTO parameters_drafts_connection (draft_id, parameters_id, version)
+            INSERT INTO training_drafts_parameters_connection (draft_id, parameters_id, version)
             SELECT v_draft_id, param_id, v_new_version
             FROM unnest(parameter_ids) as param_id
             ON CONFLICT ON CONSTRAINT parameters_draft_pkey DO UPDATE SET version = v_new_version;
         END IF;
 
         IF field_ids IS NOT NULL THEN
-            INSERT INTO fields_drafts_connection (draft_id, fields_id, version)
+            INSERT INTO training_drafts_fields_connection (draft_id, fields_id, version)
             SELECT v_draft_id, f_id, v_new_version
             FROM unnest(field_ids) as f_id
             ON CONFLICT ON CONSTRAINT fields_draft_pkey DO UPDATE SET version = v_new_version;
         END IF;
 
         IF question_ids IS NOT NULL THEN
-            INSERT INTO questions_drafts_connection (draft_id, questions_id, version)
+            INSERT INTO training_drafts_questions_connection (draft_id, questions_id, version)
             SELECT v_draft_id, question_id, v_new_version
             FROM unnest(question_ids) as question_id
             ON CONFLICT ON CONSTRAINT questions_draft_pkey DO UPDATE SET version = v_new_version;
         END IF;
 
         IF option_ids IS NOT NULL THEN
-            INSERT INTO options_drafts_connection (draft_id, options_id, version)
+            INSERT INTO training_drafts_options_connection (draft_id, options_id, version)
             SELECT v_draft_id, option_id, v_new_version
             FROM unnest(option_ids) as option_id
             ON CONFLICT ON CONSTRAINT options_draft_pkey DO UPDATE SET version = v_new_version;
         END IF;
 
         IF video_ids IS NOT NULL THEN
-            INSERT INTO videos_drafts_connection (draft_id, videos_id, version)
+            INSERT INTO training_drafts_videos_connection (draft_id, videos_id, version)
             SELECT v_draft_id, video_id, v_new_version
             FROM unnest(video_ids) as video_id
             ON CONFLICT ON CONSTRAINT videos_draft_pkey DO UPDATE SET version = v_new_version;
         END IF;
 
         IF image_ids IS NOT NULL THEN
-            INSERT INTO images_drafts_connection (draft_id, images_id, version)
+            INSERT INTO training_drafts_images_connection (draft_id, images_id, version)
             SELECT v_draft_id, image_id, v_new_version
             FROM unnest(image_ids) as image_id
             ON CONFLICT ON CONSTRAINT images_draft_pkey DO UPDATE SET version = v_new_version;
         END IF;
 
         IF problem_statement_ids IS NOT NULL THEN
-            INSERT INTO problem_statements_drafts_connection (draft_id, problem_statements_id, version)
+            INSERT INTO training_drafts_problem_statements_connection (draft_id, problem_statements_id, version)
             SELECT v_draft_id, ps_id, v_new_version
             FROM unnest(problem_statement_ids) as ps_id
             ON CONFLICT ON CONSTRAINT problem_statements_draft_pkey DO UPDATE SET version = v_new_version;
         END IF;
 
         IF objective_ids IS NOT NULL THEN
-            INSERT INTO objectives_drafts_connection (draft_id, objectives_id, version)
+            INSERT INTO training_drafts_objectives_connection (draft_id, objectives_id, version)
             SELECT v_draft_id, objective_id, v_new_version
             FROM unnest(objective_ids) as objective_id
             ON CONFLICT ON CONSTRAINT objectives_draft_pkey DO UPDATE SET version = v_new_version;

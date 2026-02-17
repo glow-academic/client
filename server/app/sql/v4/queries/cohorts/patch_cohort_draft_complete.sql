@@ -175,44 +175,44 @@ BEGIN
         VALUES (v_draft_id, v_profile_resource_id, v_new_version);
     END IF;
 
-    DELETE FROM names_drafts_connection WHERE names_drafts_connection.draft_id = v_draft_id;
-    DELETE FROM descriptions_drafts_connection WHERE descriptions_drafts_connection.draft_id = v_draft_id;
-    DELETE FROM flags_drafts_connection WHERE flags_drafts_connection.draft_id = v_draft_id;
-    DELETE FROM departments_drafts_connection WHERE departments_drafts_connection.draft_id = v_draft_id;
-    DELETE FROM simulations_drafts_connection WHERE simulations_drafts_connection.draft_id = v_draft_id;
-    DELETE FROM simulation_positions_drafts_connection WHERE simulation_positions_drafts_connection.draft_id = v_draft_id;
+    DELETE FROM cohort_drafts_names_connection WHERE cohort_drafts_names_connection.draft_id = v_draft_id;
+    DELETE FROM cohort_drafts_descriptions_connection WHERE cohort_drafts_descriptions_connection.draft_id = v_draft_id;
+    DELETE FROM cohort_drafts_flags_connection WHERE cohort_drafts_flags_connection.draft_id = v_draft_id;
+    DELETE FROM cohort_drafts_departments_connection WHERE cohort_drafts_departments_connection.draft_id = v_draft_id;
+    DELETE FROM cohort_drafts_simulations_connection WHERE cohort_drafts_simulations_connection.draft_id = v_draft_id;
+    DELETE FROM cohort_drafts_simulation_positions_connection WHERE cohort_drafts_simulation_positions_connection.draft_id = v_draft_id;
 
     IF v_name_id IS NOT NULL THEN
-        INSERT INTO names_drafts_connection (draft_id, names_id, version)
+        INSERT INTO cohort_drafts_names_connection (draft_id, names_id, version)
         VALUES (v_draft_id, v_name_id, v_new_version)
         ON CONFLICT ON CONSTRAINT names_draft_pkey DO UPDATE SET version = v_new_version;
     END IF;
 
     IF v_description_id IS NOT NULL THEN
-        INSERT INTO descriptions_drafts_connection (draft_id, descriptions_id, version)
+        INSERT INTO cohort_drafts_descriptions_connection (draft_id, descriptions_id, version)
         VALUES (v_draft_id, v_description_id, v_new_version)
         ON CONFLICT ON CONSTRAINT descriptions_draft_pkey DO UPDATE SET version = v_new_version;
     END IF;
 
     IF v_active_flag_id IS NOT NULL THEN
-        INSERT INTO flags_drafts_connection (draft_id, flags_id, version)
+        INSERT INTO cohort_drafts_flags_connection (draft_id, flags_id, version)
         VALUES (v_draft_id, v_active_flag_id, v_new_version)
         ON CONFLICT ON CONSTRAINT flags_draft_pkey DO UPDATE SET version = v_new_version;
     END IF;
 
-    INSERT INTO departments_drafts_connection (draft_id, departments_id, version)
+    INSERT INTO cohort_drafts_departments_connection (draft_id, departments_id, version)
     SELECT v_draft_id, dept_id, v_new_version
     FROM UNNEST(v_department_ids) AS dept_id
     ON CONFLICT ON CONSTRAINT departments_draft_pkey DO UPDATE
     SET version = v_new_version;
 
-    INSERT INTO simulations_drafts_connection (draft_id, simulations_id, version)
+    INSERT INTO cohort_drafts_simulations_connection (draft_id, simulations_id, version)
     SELECT v_draft_id, sim_id, v_new_version
     FROM UNNEST(v_simulation_ids) AS sim_id
     ON CONFLICT ON CONSTRAINT simulations_draft_pkey DO UPDATE
     SET version = v_new_version;
 
-    INSERT INTO simulation_positions_drafts_connection (
+    INSERT INTO cohort_drafts_simulation_positions_connection (
         draft_id,
         simulation_id,
         value,

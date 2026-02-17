@@ -215,7 +215,7 @@ target_profile_type_data AS (
         COALESCE(
             (
                 SELECT r.role::text
-                FROM roles_drafts_connection dr
+                FROM profile_drafts_roles_connection dr
                 JOIN roles_resource r ON dr.roles_id = r.id
                 WHERE dr.draft_id = (SELECT draft_id FROM params)
                   AND dr.active = true
@@ -292,7 +292,7 @@ group_id_data AS (
 name_resource_data AS (
     SELECT 
         COALESCE(
-            (SELECT dn.names_id FROM names_drafts_connection dn WHERE dn.draft_id = (SELECT draft_id FROM params) LIMIT 1),
+            (SELECT dn.names_id FROM profile_drafts_names_connection dn WHERE dn.draft_id = (SELECT draft_id FROM params) LIMIT 1),
             (SELECT pn.name_id FROM profile_names_junction pn WHERE pn.profile_id = (SELECT resolved_target_profile_id FROM resolve_target_profile_id) LIMIT 1),
             NULL::uuid
         ) as name_id,
@@ -300,7 +300,7 @@ name_resource_data AS (
             SELECT ROW(n.id, n.name, COALESCE(n.generated, false))::types.q_get_profile_v4_name_resource
             FROM (
                 SELECT n.id, n.name, COALESCE(n.generated, false) as generated, 1 as priority
-                FROM names_drafts_connection dn
+                FROM profile_drafts_names_connection dn
                 JOIN names_resource n ON n.id = dn.names_id
                 WHERE dn.draft_id = (SELECT draft_id FROM params)
                 UNION ALL
@@ -370,7 +370,7 @@ email_ids_data AS (
     SELECT 
         COALESCE(
             (SELECT ARRAY_AGG(de.emails_id ORDER BY de.created_at)
-             FROM emails_drafts_connection de
+             FROM profile_drafts_emails_connection de
              WHERE de.draft_id = (SELECT draft_id FROM params)
                AND de.active = true),
             (SELECT ARRAY_AGG(pe.email_id ORDER BY pe.is_primary DESC, pe.created_at)
@@ -460,7 +460,7 @@ request_limit_resource_data AS (
     SELECT 
         COALESCE(
             (SELECT drl.request_limits_id
-             FROM request_limits_drafts_connection drl
+             FROM profile_drafts_request_limits_connection drl
              WHERE drl.draft_id = (SELECT draft_id FROM params)
              LIMIT 1),
             (SELECT prl.request_limit_id
@@ -475,7 +475,7 @@ request_limit_resource_data AS (
             SELECT ROW(rl.id, rl.requests_per_day, COALESCE(rl.generated, false))::types.q_get_profile_v4_request_limit_resource
             FROM (
                 SELECT rl.id, rl.requests_per_day, COALESCE(rl.generated, false) as generated, 1 as priority
-                FROM request_limits_drafts_connection drl
+                FROM profile_drafts_request_limits_connection drl
                 JOIN request_limits_resource rl ON rl.id = drl.request_limits_id
                 WHERE drl.draft_id = (SELECT draft_id FROM params)
                 UNION ALL
@@ -536,7 +536,7 @@ flag_resource_data AS (
     SELECT 
         COALESCE(
             (SELECT df.flags_id
-             FROM flags_drafts_connection df
+             FROM profile_drafts_flags_connection df
              WHERE df.draft_id = (SELECT draft_id FROM params)
              LIMIT 1),
             (SELECT pf.flag_id
@@ -552,7 +552,7 @@ flag_resource_data AS (
             SELECT ROW(f.id, f.name, f.description, f.icon, COALESCE(f.generated, false))::types.q_get_profile_v4_flag_resource
             FROM (
                 SELECT f.id, f.name, f.description, f.icon, COALESCE(f.generated, false) as generated, 1 as priority
-                FROM flags_drafts_connection df
+                FROM profile_drafts_flags_connection df
                 JOIN flags_resource f ON df.flags_id = f.id
                 WHERE df.draft_id = (SELECT draft_id FROM params)
                 UNION ALL
@@ -593,7 +593,7 @@ department_ids_data AS (
     SELECT 
         COALESCE(
             (SELECT ARRAY_AGG(dd.departments_id ORDER BY dd.created_at)
-             FROM departments_drafts_connection dd
+             FROM profile_drafts_departments_connection dd
              WHERE dd.draft_id = (SELECT draft_id FROM params)
                AND dd.active = true),
             (SELECT ARRAY_AGG(pd.department_id ORDER BY pd.created_at)
@@ -665,7 +665,7 @@ cohort_ids_data AS (
     SELECT 
         COALESCE(
             (SELECT ARRAY_AGG(dc.cohorts_id ORDER BY dc.created_at)
-             FROM cohorts_drafts_connection dc
+             FROM profile_drafts_cohorts_connection dc
              WHERE dc.draft_id = (SELECT draft_id FROM params)
                AND dc.active = true),
             (SELECT ARRAY_AGG(pc.cohort_id ORDER BY pc.created_at)

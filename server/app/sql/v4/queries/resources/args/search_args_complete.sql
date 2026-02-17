@@ -61,8 +61,9 @@ FROM (
               suggest_source = 'draft'
               AND draft_id IS NOT NULL
               AND EXISTS (
-                  SELECT 1
-                  FROM args_drafts_connection dc
+                  SELECT 1 FROM (
+                      SELECT args_id, draft_id FROM tool_drafts_args_connection WHERE active = true
+                  ) dc
                   WHERE dc.args_id = a.id
                     AND dc.draft_id = api_search_args_v4.draft_id
               )

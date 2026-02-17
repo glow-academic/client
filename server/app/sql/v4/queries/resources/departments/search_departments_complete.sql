@@ -85,7 +85,25 @@ FROM (
               AND draft_id IS NOT NULL
               AND EXISTS (
                   SELECT 1
-                  FROM departments_drafts_connection dc
+                  FROM (SELECT departments_id, draft_id FROM agent_drafts_departments_connection WHERE active = true
+                   UNION ALL SELECT departments_id, draft_id FROM auth_drafts_departments_connection WHERE active = true
+                   UNION ALL SELECT departments_id, draft_id FROM cohort_drafts_departments_connection WHERE active = true
+                   UNION ALL SELECT departments_id, draft_id FROM department_drafts_departments_connection WHERE active = true
+                   UNION ALL SELECT departments_id, draft_id FROM document_drafts_departments_connection WHERE active = true
+                   UNION ALL SELECT departments_id, draft_id FROM eval_drafts_departments_connection WHERE active = true
+                   UNION ALL SELECT departments_id, draft_id FROM field_drafts_departments_connection WHERE active = true
+                   UNION ALL SELECT departments_id, draft_id FROM model_drafts_departments_connection WHERE active = true
+                   UNION ALL SELECT departments_id, draft_id FROM parameter_drafts_departments_connection WHERE active = true
+                   UNION ALL SELECT departments_id, draft_id FROM persona_drafts_departments_connection WHERE active = true
+                   UNION ALL SELECT departments_id, draft_id FROM profile_drafts_departments_connection WHERE active = true
+                   UNION ALL SELECT departments_id, draft_id FROM provider_drafts_departments_connection WHERE active = true
+                   UNION ALL SELECT departments_id, draft_id FROM rubric_drafts_departments_connection WHERE active = true
+                   UNION ALL SELECT departments_id, draft_id FROM scenario_drafts_departments_connection WHERE active = true
+                   UNION ALL SELECT departments_id, draft_id FROM setting_drafts_departments_connection WHERE active = true
+                   UNION ALL SELECT departments_id, draft_id FROM simulation_drafts_departments_connection WHERE active = true
+                   UNION ALL SELECT departments_id, draft_id FROM suite_drafts_departments_connection WHERE active = true
+                   UNION ALL SELECT departments_id, draft_id FROM tool_drafts_departments_connection WHERE active = true
+                   UNION ALL SELECT departments_id, draft_id FROM training_drafts_departments_connection WHERE active = true) dc
                   WHERE dc.departments_id = d.id
                     AND dc.draft_id = api_search_departments_v4.draft_id
               )

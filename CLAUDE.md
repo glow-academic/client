@@ -100,6 +100,8 @@ ls database/migrate/ | sort -n | tail -1   # Find latest number
 make migrate-db                             # Apply migration
 ```
 
+**IMPORTANT: MVs are JIT compiled.** Materialized view definitions live in `server/app/sql/v4/views/` and are compiled at runtime by `make sql-compile`. **Never** put MV CREATE/DROP/REFRESH statements in migration files. Migrations should only contain DDL for tables, indexes, constraints, and enum values. To change an MV, edit its source SQL file directly.
+
 ## Testing
 
 ```bash

@@ -196,40 +196,40 @@ BEGIN
         VALUES (v_draft_id, v_profiles_resource_id, v_new_version);
     END IF;
 
-    DELETE FROM names_drafts_connection WHERE names_drafts_connection.draft_id = v_draft_id;
-    DELETE FROM descriptions_drafts_connection WHERE descriptions_drafts_connection.draft_id = v_draft_id;
-    DELETE FROM flags_drafts_connection WHERE flags_drafts_connection.draft_id = v_draft_id;
-    DELETE FROM args_drafts_connection WHERE args_drafts_connection.draft_id = v_draft_id;
-    DELETE FROM arg_positions_drafts_connection WHERE arg_positions_drafts_connection.draft_id = v_draft_id;
-    DELETE FROM args_outputs_drafts_connection WHERE args_outputs_drafts_connection.draft_id = v_draft_id;
+    DELETE FROM tool_drafts_names_connection WHERE tool_drafts_names_connection.draft_id = v_draft_id;
+    DELETE FROM tool_drafts_descriptions_connection WHERE tool_drafts_descriptions_connection.draft_id = v_draft_id;
+    DELETE FROM tool_drafts_flags_connection WHERE tool_drafts_flags_connection.draft_id = v_draft_id;
+    DELETE FROM tool_drafts_args_connection WHERE tool_drafts_args_connection.draft_id = v_draft_id;
+    DELETE FROM tool_drafts_arg_positions_connection WHERE tool_drafts_arg_positions_connection.draft_id = v_draft_id;
+    DELETE FROM tool_drafts_args_outputs_connection WHERE tool_drafts_args_outputs_connection.draft_id = v_draft_id;
 
     IF v_name_id IS NOT NULL THEN
-        INSERT INTO names_drafts_connection (draft_id, names_id, version)
+        INSERT INTO tool_drafts_names_connection (draft_id, names_id, version)
         VALUES (v_draft_id, v_name_id, v_new_version)
         ON CONFLICT ON CONSTRAINT names_draft_pkey DO UPDATE SET version = v_new_version;
     END IF;
 
     IF v_description_id IS NOT NULL THEN
-        INSERT INTO descriptions_drafts_connection (draft_id, descriptions_id, version)
+        INSERT INTO tool_drafts_descriptions_connection (draft_id, descriptions_id, version)
         VALUES (v_draft_id, v_description_id, v_new_version)
         ON CONFLICT ON CONSTRAINT descriptions_draft_pkey DO UPDATE SET version = v_new_version;
     END IF;
 
     IF v_active_flag_id IS NOT NULL THEN
-        INSERT INTO flags_drafts_connection (draft_id, flags_id, version)
+        INSERT INTO tool_drafts_flags_connection (draft_id, flags_id, version)
         VALUES (v_draft_id, v_active_flag_id, v_new_version)
         ON CONFLICT ON CONSTRAINT flags_draft_pkey DO UPDATE SET version = v_new_version;
     END IF;
 
     IF COALESCE(array_length(v_args_ids, 1), 0) > 0 THEN
-        INSERT INTO args_drafts_connection (draft_id, args_id, version, generated, mcp)
+        INSERT INTO tool_drafts_args_connection (draft_id, args_id, version, generated, mcp)
         SELECT v_draft_id, args_id, v_new_version, false, false
         FROM UNNEST(v_args_ids) AS args_id
         ON CONFLICT ON CONSTRAINT args_draft_pkey DO UPDATE SET version = v_new_version;
     END IF;
 
     IF COALESCE(array_length(v_arg_position_ids, 1), 0) > 0 THEN
-        INSERT INTO arg_positions_drafts_connection (
+        INSERT INTO tool_drafts_arg_positions_connection (
             draft_id, arg_positions_id, version, generated, mcp, active
         )
         SELECT v_draft_id, arg_positions_id, v_new_version, false, false, true
@@ -240,7 +240,7 @@ BEGIN
     END IF;
 
     IF COALESCE(array_length(v_args_outputs_ids, 1), 0) > 0 THEN
-        INSERT INTO args_outputs_drafts_connection (draft_id, args_outputs_id, version, generated, mcp)
+        INSERT INTO tool_drafts_args_outputs_connection (draft_id, args_outputs_id, version, generated, mcp)
         SELECT v_draft_id, args_outputs_id, v_new_version, false, false
         FROM UNNEST(v_args_outputs_ids) AS args_outputs_id
         ON CONFLICT ON CONSTRAINT args_outputs_draft_pkey DO UPDATE SET version = v_new_version;

@@ -19,7 +19,6 @@ class DraftViewItemBase(BaseModel):
     mcp: bool = False
     active: bool = True
     group_id: UUID | None = None
-    regeneration_descriptions: list[str] = Field(default_factory=list)
 
 
 # === Per-artifact draft view item types ===

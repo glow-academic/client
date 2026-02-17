@@ -179,36 +179,36 @@ BEGIN
         VALUES (v_draft_id, v_profile_id, v_new_version);
     END IF;
 
-    DELETE FROM names_drafts_connection WHERE draft_id = v_draft_id;
-    DELETE FROM descriptions_drafts_connection WHERE draft_id = v_draft_id;
-    DELETE FROM flags_drafts_connection WHERE draft_id = v_draft_id;
-    DELETE FROM protocols_drafts_connection WHERE draft_id = v_draft_id;
-    DELETE FROM slugs_drafts_connection WHERE draft_id = v_draft_id;
-    DELETE FROM items_drafts_connection WHERE draft_id = v_draft_id;
+    DELETE FROM auth_drafts_names_connection WHERE draft_id = v_draft_id;
+    DELETE FROM auth_drafts_descriptions_connection WHERE draft_id = v_draft_id;
+    DELETE FROM auth_drafts_flags_connection WHERE draft_id = v_draft_id;
+    DELETE FROM auth_drafts_protocols_connection WHERE draft_id = v_draft_id;
+    DELETE FROM auth_drafts_slugs_connection WHERE draft_id = v_draft_id;
+    DELETE FROM auth_drafts_items_connection WHERE draft_id = v_draft_id;
 
     IF v_name_id IS NOT NULL THEN
-        INSERT INTO names_drafts_connection (draft_id, names_id, version)
+        INSERT INTO auth_drafts_names_connection (draft_id, names_id, version)
         VALUES (v_draft_id, v_name_id, v_new_version)
         ON CONFLICT ON CONSTRAINT names_draft_pkey DO UPDATE
         SET version = v_new_version;
     END IF;
 
     IF v_description_id IS NOT NULL THEN
-        INSERT INTO descriptions_drafts_connection (draft_id, descriptions_id, version)
+        INSERT INTO auth_drafts_descriptions_connection (draft_id, descriptions_id, version)
         VALUES (v_draft_id, v_description_id, v_new_version)
         ON CONFLICT ON CONSTRAINT descriptions_draft_pkey DO UPDATE
         SET version = v_new_version;
     END IF;
 
     IF v_active_flag_id IS NOT NULL THEN
-        INSERT INTO flags_drafts_connection (draft_id, flags_id, version)
+        INSERT INTO auth_drafts_flags_connection (draft_id, flags_id, version)
         VALUES (v_draft_id, v_active_flag_id, v_new_version)
         ON CONFLICT ON CONSTRAINT flags_draft_pkey DO UPDATE
         SET version = v_new_version;
     END IF;
 
     IF COALESCE(array_length(v_protocol_ids, 1), 0) > 0 THEN
-        INSERT INTO protocols_drafts_connection (draft_id, protocols_id, version)
+        INSERT INTO auth_drafts_protocols_connection (draft_id, protocols_id, version)
         SELECT v_draft_id, protocol_id, v_new_version
         FROM unnest(v_protocol_ids) AS protocol_id
         ON CONFLICT ON CONSTRAINT protocols_draft_pkey DO UPDATE
@@ -216,7 +216,7 @@ BEGIN
     END IF;
 
     IF COALESCE(array_length(v_slug_ids, 1), 0) > 0 THEN
-        INSERT INTO slugs_drafts_connection (draft_id, slugs_id, version)
+        INSERT INTO auth_drafts_slugs_connection (draft_id, slugs_id, version)
         SELECT v_draft_id, slug_id, v_new_version
         FROM unnest(v_slug_ids) AS slug_id
         ON CONFLICT ON CONSTRAINT slugs_draft_pkey DO UPDATE
@@ -257,7 +257,7 @@ BEGIN
             SELECT row_number() OVER (ORDER BY id) AS item_idx, id
             FROM created_items
         )
-        INSERT INTO items_drafts_connection (draft_id, items_id, version, created_at, active)
+        INSERT INTO auth_drafts_items_connection (draft_id, items_id, version, created_at, active)
         SELECT v_draft_id, ii.id, v_new_version, NOW(), true
         FROM indexed_items ii
         ON CONFLICT ON CONSTRAINT items_draft_pkey DO UPDATE
@@ -367,7 +367,7 @@ BEGIN
             INSERT INTO tools_calls_connection (tools_id, call_id) VALUES ((items).create_tool_id, v_call_id);
             INSERT INTO items_calls_connection (items_id, call_id)
             SELECT idc.items_id, v_call_id
-            FROM items_drafts_connection idc
+            FROM auth_drafts_items_connection idc
             WHERE idc.draft_id = v_draft_id;
         END IF;
         IF (items).link_tool_id IS NOT NULL THEN
@@ -377,7 +377,7 @@ BEGIN
             INSERT INTO tools_calls_connection (tools_id, call_id) VALUES ((items).link_tool_id, v_call_id);
             INSERT INTO items_calls_connection (items_id, call_id)
             SELECT idc.items_id, v_call_id
-            FROM items_drafts_connection idc
+            FROM auth_drafts_items_connection idc
             WHERE idc.draft_id = v_draft_id;
         END IF;
     END IF;

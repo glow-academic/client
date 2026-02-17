@@ -116,75 +116,75 @@ BEGIN
             v_draft_exists := true;
 
             -- Delete old resource links
-            DELETE FROM departments_drafts_connection WHERE departments_drafts_connection.draft_id = v_draft_id;
-            DELETE FROM models_drafts_connection WHERE models_drafts_connection.draft_id = v_draft_id;
-            DELETE FROM prompts_drafts_connection WHERE prompts_drafts_connection.draft_id = v_draft_id;
-            DELETE FROM instructions_drafts_connection WHERE instructions_drafts_connection.draft_id = v_draft_id;
-            DELETE FROM voices_drafts_connection WHERE voices_drafts_connection.draft_id = v_draft_id;
-            DELETE FROM temperature_levels_drafts_connection WHERE temperature_levels_drafts_connection.draft_id = v_draft_id;
-            DELETE FROM reasoning_levels_drafts_connection WHERE reasoning_levels_drafts_connection.draft_id = v_draft_id;
-            DELETE FROM tools_drafts_connection WHERE tools_drafts_connection.draft_id = v_draft_id;
-            DELETE FROM keys_drafts_connection WHERE keys_drafts_connection.draft_id = v_draft_id;
+            DELETE FROM suite_drafts_departments_connection WHERE suite_drafts_departments_connection.draft_id = v_draft_id;
+            DELETE FROM suite_drafts_models_connection WHERE suite_drafts_models_connection.draft_id = v_draft_id;
+            DELETE FROM suite_drafts_prompts_connection WHERE suite_drafts_prompts_connection.draft_id = v_draft_id;
+            DELETE FROM suite_drafts_instructions_connection WHERE suite_drafts_instructions_connection.draft_id = v_draft_id;
+            DELETE FROM suite_drafts_voices_connection WHERE suite_drafts_voices_connection.draft_id = v_draft_id;
+            DELETE FROM suite_drafts_temperature_levels_connection WHERE suite_drafts_temperature_levels_connection.draft_id = v_draft_id;
+            DELETE FROM suite_drafts_reasoning_levels_connection WHERE suite_drafts_reasoning_levels_connection.draft_id = v_draft_id;
+            DELETE FROM suite_drafts_tools_connection WHERE suite_drafts_tools_connection.draft_id = v_draft_id;
+            DELETE FROM suite_drafts_keys_connection WHERE suite_drafts_keys_connection.draft_id = v_draft_id;
 
             -- Insert new resource links
             IF department_ids IS NOT NULL THEN
-                INSERT INTO departments_drafts_connection (draft_id, departments_id, version)
+                INSERT INTO suite_drafts_departments_connection (draft_id, departments_id, version)
                 SELECT v_draft_id, dept_id, v_new_version
                 FROM unnest(department_ids) as dept_id
                 ON CONFLICT ON CONSTRAINT departments_draft_pkey DO UPDATE SET version = v_new_version;
             END IF;
 
             IF model_ids IS NOT NULL THEN
-                INSERT INTO models_drafts_connection (draft_id, models_id, version)
+                INSERT INTO suite_drafts_models_connection (draft_id, models_id, version)
                 SELECT v_draft_id, m_id, v_new_version
                 FROM unnest(model_ids) as m_id
                 ON CONFLICT ON CONSTRAINT models_draft_pkey DO UPDATE SET version = v_new_version;
             END IF;
 
             IF prompt_ids IS NOT NULL THEN
-                INSERT INTO prompts_drafts_connection (draft_id, prompts_id, version)
+                INSERT INTO suite_drafts_prompts_connection (draft_id, prompts_id, version)
                 SELECT v_draft_id, p_id, v_new_version
                 FROM unnest(prompt_ids) as p_id
                 ON CONFLICT ON CONSTRAINT prompts_draft_pkey DO UPDATE SET version = v_new_version;
             END IF;
 
             IF instruction_ids IS NOT NULL THEN
-                INSERT INTO instructions_drafts_connection (draft_id, instructions_id, version)
+                INSERT INTO suite_drafts_instructions_connection (draft_id, instructions_id, version)
                 SELECT v_draft_id, i_id, v_new_version
                 FROM unnest(instruction_ids) as i_id
                 ON CONFLICT ON CONSTRAINT instructions_draft_pkey DO UPDATE SET version = v_new_version;
             END IF;
 
             IF voice_ids IS NOT NULL THEN
-                INSERT INTO voices_drafts_connection (draft_id, voices_id, version)
+                INSERT INTO suite_drafts_voices_connection (draft_id, voices_id, version)
                 SELECT v_draft_id, v_id, v_new_version
                 FROM unnest(voice_ids) as v_id
                 ON CONFLICT ON CONSTRAINT voices_draft_pkey DO UPDATE SET version = v_new_version;
             END IF;
 
             IF temperature_level_ids IS NOT NULL THEN
-                INSERT INTO temperature_levels_drafts_connection (draft_id, temperature_levels_id, version)
+                INSERT INTO suite_drafts_temperature_levels_connection (draft_id, temperature_levels_id, version)
                 SELECT v_draft_id, tl_id, v_new_version
                 FROM unnest(temperature_level_ids) as tl_id
                 ON CONFLICT ON CONSTRAINT temperature_levels_draft_pkey DO UPDATE SET version = v_new_version;
             END IF;
 
             IF reasoning_level_ids IS NOT NULL THEN
-                INSERT INTO reasoning_levels_drafts_connection (draft_id, reasoning_levels_id, version)
+                INSERT INTO suite_drafts_reasoning_levels_connection (draft_id, reasoning_levels_id, version)
                 SELECT v_draft_id, rl_id, v_new_version
                 FROM unnest(reasoning_level_ids) as rl_id
                 ON CONFLICT ON CONSTRAINT reasoning_levels_draft_pkey DO UPDATE SET version = v_new_version;
             END IF;
 
             IF tool_ids IS NOT NULL THEN
-                INSERT INTO tools_drafts_connection (draft_id, tools_id, version)
+                INSERT INTO suite_drafts_tools_connection (draft_id, tools_id, version)
                 SELECT v_draft_id, t_id, v_new_version
                 FROM unnest(tool_ids) as t_id
                 ON CONFLICT ON CONSTRAINT tools_draft_pkey DO UPDATE SET version = v_new_version;
             END IF;
 
             IF key_ids IS NOT NULL THEN
-                INSERT INTO keys_drafts_connection (draft_id, keys_id, version)
+                INSERT INTO suite_drafts_keys_connection (draft_id, keys_id, version)
                 SELECT v_draft_id, k_id, v_new_version
                 FROM unnest(key_ids) as k_id
                 ON CONFLICT ON CONSTRAINT keys_draft_pkey DO UPDATE SET version = v_new_version;
@@ -209,63 +209,63 @@ BEGIN
 
         -- Insert resource links for new draft
         IF department_ids IS NOT NULL THEN
-            INSERT INTO departments_drafts_connection (draft_id, departments_id, version)
+            INSERT INTO suite_drafts_departments_connection (draft_id, departments_id, version)
             SELECT v_draft_id, dept_id, v_new_version
             FROM unnest(department_ids) as dept_id
             ON CONFLICT ON CONSTRAINT departments_draft_pkey DO UPDATE SET version = v_new_version;
         END IF;
 
         IF model_ids IS NOT NULL THEN
-            INSERT INTO models_drafts_connection (draft_id, models_id, version)
+            INSERT INTO suite_drafts_models_connection (draft_id, models_id, version)
             SELECT v_draft_id, m_id, v_new_version
             FROM unnest(model_ids) as m_id
             ON CONFLICT ON CONSTRAINT models_draft_pkey DO UPDATE SET version = v_new_version;
         END IF;
 
         IF prompt_ids IS NOT NULL THEN
-            INSERT INTO prompts_drafts_connection (draft_id, prompts_id, version)
+            INSERT INTO suite_drafts_prompts_connection (draft_id, prompts_id, version)
             SELECT v_draft_id, p_id, v_new_version
             FROM unnest(prompt_ids) as p_id
             ON CONFLICT ON CONSTRAINT prompts_draft_pkey DO UPDATE SET version = v_new_version;
         END IF;
 
         IF instruction_ids IS NOT NULL THEN
-            INSERT INTO instructions_drafts_connection (draft_id, instructions_id, version)
+            INSERT INTO suite_drafts_instructions_connection (draft_id, instructions_id, version)
             SELECT v_draft_id, i_id, v_new_version
             FROM unnest(instruction_ids) as i_id
             ON CONFLICT ON CONSTRAINT instructions_draft_pkey DO UPDATE SET version = v_new_version;
         END IF;
 
         IF voice_ids IS NOT NULL THEN
-            INSERT INTO voices_drafts_connection (draft_id, voices_id, version)
+            INSERT INTO suite_drafts_voices_connection (draft_id, voices_id, version)
             SELECT v_draft_id, v_id, v_new_version
             FROM unnest(voice_ids) as v_id
             ON CONFLICT ON CONSTRAINT voices_draft_pkey DO UPDATE SET version = v_new_version;
         END IF;
 
         IF temperature_level_ids IS NOT NULL THEN
-            INSERT INTO temperature_levels_drafts_connection (draft_id, temperature_levels_id, version)
+            INSERT INTO suite_drafts_temperature_levels_connection (draft_id, temperature_levels_id, version)
             SELECT v_draft_id, tl_id, v_new_version
             FROM unnest(temperature_level_ids) as tl_id
             ON CONFLICT ON CONSTRAINT temperature_levels_draft_pkey DO UPDATE SET version = v_new_version;
         END IF;
 
         IF reasoning_level_ids IS NOT NULL THEN
-            INSERT INTO reasoning_levels_drafts_connection (draft_id, reasoning_levels_id, version)
+            INSERT INTO suite_drafts_reasoning_levels_connection (draft_id, reasoning_levels_id, version)
             SELECT v_draft_id, rl_id, v_new_version
             FROM unnest(reasoning_level_ids) as rl_id
             ON CONFLICT ON CONSTRAINT reasoning_levels_draft_pkey DO UPDATE SET version = v_new_version;
         END IF;
 
         IF tool_ids IS NOT NULL THEN
-            INSERT INTO tools_drafts_connection (draft_id, tools_id, version)
+            INSERT INTO suite_drafts_tools_connection (draft_id, tools_id, version)
             SELECT v_draft_id, t_id, v_new_version
             FROM unnest(tool_ids) as t_id
             ON CONFLICT ON CONSTRAINT tools_draft_pkey DO UPDATE SET version = v_new_version;
         END IF;
 
         IF key_ids IS NOT NULL THEN
-            INSERT INTO keys_drafts_connection (draft_id, keys_id, version)
+            INSERT INTO suite_drafts_keys_connection (draft_id, keys_id, version)
             SELECT v_draft_id, k_id, v_new_version
             FROM unnest(key_ids) as k_id
             ON CONFLICT ON CONSTRAINT keys_draft_pkey DO UPDATE SET version = v_new_version;

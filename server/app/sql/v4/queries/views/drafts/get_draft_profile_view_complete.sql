@@ -41,7 +41,6 @@ CREATE TYPE types.q_get_draft_profile_view_v4_item AS (
     mcp boolean,
     active boolean,
     group_id uuid,
-    regeneration_descriptions text[],
     name_ids uuid[],
     flag_ids uuid[],
     department_ids uuid[]
@@ -76,7 +75,6 @@ AS $$
                     mcp,
                     active,
                     group_id,
-                    regeneration_descriptions,
                     name_ids,
                     flag_ids,
                     department_ids

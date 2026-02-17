@@ -21,6 +21,7 @@ This will show something like `397_backfill_group_connections.sql` — the next 
 
 4. Create and apply migration:
 - Add a new file in `database/migrate/` named `{next_number}_{desc}.sql` (incrementing from the number found in step 3).
+- **IMPORTANT: Never put MV (materialized view) definitions in migrations.** MVs are JIT compiled from `server/app/sql/v4/views/*.sql` by `make sql-compile`. Migrations should only contain DDL for tables, indexes, constraints, and enum values. To change an MV, edit its source SQL file directly.
 - Run:
 ```bash
 make migrate-db

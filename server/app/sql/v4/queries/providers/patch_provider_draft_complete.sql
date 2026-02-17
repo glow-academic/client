@@ -183,46 +183,46 @@ BEGIN
         VALUES (v_draft_id, v_profiles_resource_id, v_new_version);
     END IF;
 
-    DELETE FROM names_drafts_connection WHERE names_drafts_connection.draft_id = v_draft_id;
-    DELETE FROM descriptions_drafts_connection WHERE descriptions_drafts_connection.draft_id = v_draft_id;
-    DELETE FROM flags_drafts_connection WHERE flags_drafts_connection.draft_id = v_draft_id;
-    DELETE FROM values_drafts_connection WHERE values_drafts_connection.draft_id = v_draft_id;
-    DELETE FROM endpoints_drafts_connection WHERE endpoints_drafts_connection.draft_id = v_draft_id;
-    DELETE FROM keys_drafts_connection WHERE keys_drafts_connection.draft_id = v_draft_id;
-    DELETE FROM departments_drafts_connection WHERE departments_drafts_connection.draft_id = v_draft_id;
+    DELETE FROM provider_drafts_names_connection WHERE provider_drafts_names_connection.draft_id = v_draft_id;
+    DELETE FROM provider_drafts_descriptions_connection WHERE provider_drafts_descriptions_connection.draft_id = v_draft_id;
+    DELETE FROM provider_drafts_flags_connection WHERE provider_drafts_flags_connection.draft_id = v_draft_id;
+    DELETE FROM provider_drafts_values_connection WHERE provider_drafts_values_connection.draft_id = v_draft_id;
+    DELETE FROM provider_drafts_endpoints_connection WHERE provider_drafts_endpoints_connection.draft_id = v_draft_id;
+    DELETE FROM provider_drafts_keys_connection WHERE provider_drafts_keys_connection.draft_id = v_draft_id;
+    DELETE FROM provider_drafts_departments_connection WHERE provider_drafts_departments_connection.draft_id = v_draft_id;
 
     IF v_name_id IS NOT NULL THEN
-        INSERT INTO names_drafts_connection (draft_id, names_id, version)
+        INSERT INTO provider_drafts_names_connection (draft_id, names_id, version)
         VALUES (v_draft_id, v_name_id, v_new_version);
     END IF;
 
     IF v_description_id IS NOT NULL THEN
-        INSERT INTO descriptions_drafts_connection (draft_id, descriptions_id, version)
+        INSERT INTO provider_drafts_descriptions_connection (draft_id, descriptions_id, version)
         VALUES (v_draft_id, v_description_id, v_new_version);
     END IF;
 
     IF v_active_flag_id IS NOT NULL THEN
-        INSERT INTO flags_drafts_connection (draft_id, flags_id, version)
+        INSERT INTO provider_drafts_flags_connection (draft_id, flags_id, version)
         VALUES (v_draft_id, v_active_flag_id, v_new_version);
     END IF;
 
     IF v_value_id IS NOT NULL THEN
-        INSERT INTO values_drafts_connection (draft_id, values_id, version)
+        INSERT INTO provider_drafts_values_connection (draft_id, values_id, version)
         VALUES (v_draft_id, v_value_id, v_new_version);
     END IF;
 
     IF v_endpoint_id IS NOT NULL THEN
-        INSERT INTO endpoints_drafts_connection (draft_id, endpoints_id, version)
+        INSERT INTO provider_drafts_endpoints_connection (draft_id, endpoints_id, version)
         VALUES (v_draft_id, v_endpoint_id, v_new_version);
     END IF;
 
     IF v_key_id IS NOT NULL THEN
-        INSERT INTO keys_drafts_connection (draft_id, keys_id, version)
+        INSERT INTO provider_drafts_keys_connection (draft_id, keys_id, version)
         VALUES (v_draft_id, v_key_id, v_new_version);
     END IF;
 
     IF COALESCE(array_length(v_department_ids, 1), 0) > 0 THEN
-        INSERT INTO departments_drafts_connection (draft_id, departments_id, version)
+        INSERT INTO provider_drafts_departments_connection (draft_id, departments_id, version)
         SELECT v_draft_id, dept_id, v_new_version
         FROM UNNEST(v_department_ids) AS dept_id;
     END IF;

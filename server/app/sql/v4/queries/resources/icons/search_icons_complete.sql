@@ -63,8 +63,9 @@ FROM (
               suggest_source = 'draft'
               AND draft_id IS NOT NULL
               AND EXISTS (
-                  SELECT 1
-                  FROM icons_drafts_connection dc
+                  SELECT 1 FROM (
+                      SELECT icons_id, draft_id FROM persona_drafts_icons_connection WHERE active = true
+                  ) dc
                   WHERE dc.icons_id = i.id
                     AND dc.draft_id = api_search_icons_v4.draft_id
               )

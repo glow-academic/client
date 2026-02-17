@@ -60,10 +60,11 @@ FROM (
               suggest_source = 'draft'
               AND draft_id IS NOT NULL
               AND EXISTS (
-                  SELECT 1
-                  FROM protocols_drafts_connection pc
-                  WHERE pc.protocols_id = p.id
-                    AND pc.draft_id = api_search_protocols_v4.draft_id
+                  SELECT 1 FROM (
+                      SELECT protocols_id, draft_id FROM auth_drafts_protocols_connection WHERE active = true
+                  ) dc
+                  WHERE dc.protocols_id = p.id
+                    AND dc.draft_id = api_search_protocols_v4.draft_id
               )
           )
       )

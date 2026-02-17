@@ -55,21 +55,21 @@ WITH params AS (
 -- Get name_id (from draft first, then simulation)
 name_data AS (
     SELECT COALESCE(
-        (SELECT nd.names_id FROM names_drafts_connection nd WHERE nd.draft_id = (SELECT p_draft_id FROM params) LIMIT 1),
+        (SELECT nd.names_id FROM simulation_drafts_names_connection nd WHERE nd.draft_id = (SELECT p_draft_id FROM params) LIMIT 1),
         (SELECT sn.name_id FROM simulation_names_junction sn WHERE sn.simulation_id = (SELECT p_simulation_id FROM params) LIMIT 1)
     ) as name_id
 ),
 -- Get description_id (from draft first, then simulation)
 description_data AS (
     SELECT COALESCE(
-        (SELECT dd.descriptions_id FROM descriptions_drafts_connection dd WHERE dd.draft_id = (SELECT p_draft_id FROM params) LIMIT 1),
+        (SELECT dd.descriptions_id FROM simulation_drafts_descriptions_connection dd WHERE dd.draft_id = (SELECT p_draft_id FROM params) LIMIT 1),
         (SELECT sd.description_id FROM simulation_descriptions_junction sd WHERE sd.simulation_id = (SELECT p_simulation_id FROM params) LIMIT 1)
     ) as description_id
 ),
 -- Get flag_ids (from draft first, then simulation)
 flag_data AS (
     SELECT COALESCE(
-        (SELECT ARRAY_AGG(fd.flags_id) FROM flags_drafts_connection fd WHERE fd.draft_id = (SELECT p_draft_id FROM params)),
+        (SELECT ARRAY_AGG(fd.flags_id) FROM simulation_drafts_flags_connection fd WHERE fd.draft_id = (SELECT p_draft_id FROM params)),
         (SELECT ARRAY_AGG(sf.flag_id) FROM simulation_flags_junction sf
          WHERE sf.simulation_id = (SELECT p_simulation_id FROM params)
            AND sf.value = true),
@@ -79,7 +79,7 @@ flag_data AS (
 -- Get department_ids (from draft first, then simulation)
 department_data AS (
     SELECT COALESCE(
-        (SELECT ARRAY_AGG(dd.departments_id) FROM departments_drafts_connection dd WHERE dd.draft_id = (SELECT p_draft_id FROM params)),
+        (SELECT ARRAY_AGG(dd.departments_id) FROM simulation_drafts_departments_connection dd WHERE dd.draft_id = (SELECT p_draft_id FROM params)),
         (SELECT ARRAY_AGG(sd.department_id) FROM simulation_departments_junction sd WHERE sd.simulation_id = (SELECT p_simulation_id FROM params) AND sd.active = true),
         ARRAY[]::uuid[]
     ) as department_ids
@@ -87,7 +87,7 @@ department_data AS (
 -- Get scenario_ids (from draft first, then simulation)
 scenario_data AS (
     SELECT COALESCE(
-        (SELECT ARRAY_AGG(sd.scenarios_id) FROM scenarios_drafts_connection sd WHERE sd.draft_id = (SELECT p_draft_id FROM params)),
+        (SELECT ARRAY_AGG(sd.scenarios_id) FROM simulation_drafts_scenarios_connection sd WHERE sd.draft_id = (SELECT p_draft_id FROM params)),
         (SELECT ARRAY_AGG(ss.scenario_id) FROM simulation_scenarios_junction ss WHERE ss.simulation_id = (SELECT p_simulation_id FROM params) AND ss.active = true),
         ARRAY[]::uuid[]
     ) as scenario_ids
@@ -95,7 +95,7 @@ scenario_data AS (
 -- Get scenario_flag_ids
 scenario_flag_data AS (
     SELECT COALESCE(
-        (SELECT ARRAY_AGG(sfd.scenario_flags_id) FROM scenario_flags_drafts_connection sfd WHERE sfd.draft_id = (SELECT p_draft_id FROM params)),
+        (SELECT ARRAY_AGG(sfd.scenario_flags_id) FROM simulation_drafts_scenario_flags_connection sfd WHERE sfd.draft_id = (SELECT p_draft_id FROM params)),
         (SELECT ARRAY_AGG(ssf.scenario_flag_id) FROM simulation_scenario_flags_junction ssf WHERE ssf.simulation_id = (SELECT p_simulation_id FROM params) AND ssf.value = true),
         ARRAY[]::uuid[]
     ) as scenario_flag_ids
@@ -103,7 +103,7 @@ scenario_flag_data AS (
 -- Get scenario_position_ids
 scenario_position_data AS (
     SELECT COALESCE(
-        (SELECT ARRAY_AGG(spd.scenario_positions_id) FROM scenario_positions_drafts_connection spd WHERE spd.draft_id = (SELECT p_draft_id FROM params)),
+        (SELECT ARRAY_AGG(spd.scenario_positions_id) FROM simulation_drafts_scenario_positions_connection spd WHERE spd.draft_id = (SELECT p_draft_id FROM params)),
         (SELECT ARRAY_AGG(ssp.scenario_position_id) FROM simulation_scenario_positions_junction ssp WHERE ssp.simulation_id = (SELECT p_simulation_id FROM params) AND ssp.active = true),
         ARRAY[]::uuid[]
     ) as scenario_position_ids
@@ -111,7 +111,7 @@ scenario_position_data AS (
 -- Get scenario_rubric_ids
 scenario_rubric_data AS (
     SELECT COALESCE(
-        (SELECT ARRAY_AGG(srd.scenario_rubrics_id) FROM scenario_rubrics_drafts_connection srd WHERE srd.draft_id = (SELECT p_draft_id FROM params)),
+        (SELECT ARRAY_AGG(srd.scenario_rubrics_id) FROM simulation_drafts_scenario_rubrics_connection srd WHERE srd.draft_id = (SELECT p_draft_id FROM params)),
         (SELECT ARRAY_AGG(ssr.scenario_rubric_id) FROM simulation_scenario_rubrics_junction ssr WHERE ssr.simulation_id = (SELECT p_simulation_id FROM params) AND ssr.active = true),
         ARRAY[]::uuid[]
     ) as scenario_rubric_ids
@@ -119,7 +119,7 @@ scenario_rubric_data AS (
 -- Get scenario_time_limit_ids
 scenario_time_limit_data AS (
     SELECT COALESCE(
-        (SELECT ARRAY_AGG(stld.scenario_time_limits_id) FROM scenario_time_limits_drafts_connection stld WHERE stld.draft_id = (SELECT p_draft_id FROM params)),
+        (SELECT ARRAY_AGG(stld.scenario_time_limits_id) FROM simulation_drafts_scenario_time_limits_connection stld WHERE stld.draft_id = (SELECT p_draft_id FROM params)),
         (SELECT ARRAY_AGG(sstl.scenario_time_limit_id) FROM simulation_scenario_time_limits_junction sstl WHERE sstl.simulation_id = (SELECT p_simulation_id FROM params) AND sstl.active = true),
         ARRAY[]::uuid[]
     ) as scenario_time_limit_ids
@@ -127,7 +127,7 @@ scenario_time_limit_data AS (
 -- Get scenario_persona_ids
 scenario_persona_data AS (
     SELECT COALESCE(
-        (SELECT ARRAY_AGG(spd.scenario_personas_id) FROM scenario_personas_drafts_connection spd WHERE spd.draft_id = (SELECT p_draft_id FROM params)),
+        (SELECT ARRAY_AGG(spd.scenario_personas_id) FROM simulation_drafts_scenario_personas_connection spd WHERE spd.draft_id = (SELECT p_draft_id FROM params)),
         (SELECT ARRAY_AGG(ssp.scenario_persona_id) FROM simulation_scenario_personas_junction ssp WHERE ssp.simulation_id = (SELECT p_simulation_id FROM params) AND ssp.active = true),
         ARRAY[]::uuid[]
     ) as scenario_persona_ids

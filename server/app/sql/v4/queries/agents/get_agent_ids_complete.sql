@@ -58,7 +58,7 @@ WITH params AS (
 name_resource_data AS (
     SELECT
         COALESCE(
-            (SELECT dn.names_id FROM names_drafts_connection dn WHERE dn.draft_id = (SELECT draft_id FROM params) LIMIT 1),
+            (SELECT dn.names_id FROM agent_drafts_names_connection dn WHERE dn.draft_id = (SELECT draft_id FROM params) LIMIT 1),
             (SELECT an.name_id FROM agent_names_junction an WHERE an.agent_id = (SELECT agent_id FROM params) LIMIT 1),
             NULL::uuid
         ) as name_id
@@ -67,7 +67,7 @@ name_resource_data AS (
 description_resource_data AS (
     SELECT
         COALESCE(
-            (SELECT dd.descriptions_id FROM descriptions_drafts_connection dd WHERE dd.draft_id = (SELECT draft_id FROM params) LIMIT 1),
+            (SELECT dd.descriptions_id FROM agent_drafts_descriptions_connection dd WHERE dd.draft_id = (SELECT draft_id FROM params) LIMIT 1),
             (SELECT ad.description_id FROM agent_descriptions_junction ad WHERE ad.agent_id = (SELECT agent_id FROM params) LIMIT 1),
             NULL::uuid
         ) as description_id
@@ -101,7 +101,7 @@ flag_resource_data AS (
     SELECT
         COALESCE(
             (SELECT df.flags_id
-             FROM flags_drafts_connection df
+             FROM agent_drafts_flags_connection df
              WHERE df.draft_id = (SELECT draft_id FROM params)
              LIMIT 1),
             (SELECT af.flag_id
@@ -136,7 +136,7 @@ department_ids_data AS (
     SELECT
         COALESCE(
             (SELECT ARRAY_AGG(dd.departments_id ORDER BY dd.created_at)
-             FROM departments_drafts_connection dd
+             FROM agent_drafts_departments_connection dd
              WHERE dd.draft_id = (SELECT draft_id FROM params)
                AND dd.active = true),
             (SELECT ARRAY_AGG(ad.department_id ORDER BY ad.created_at)

@@ -398,7 +398,7 @@ args_ids_data AS (
         CASE 
             WHEN (SELECT draft_id FROM params) IS NOT NULL THEN COALESCE(
                 (SELECT ARRAY_AGG(da.args_id ORDER BY da.created_at)
-                 FROM args_drafts_connection da
+                 FROM tool_drafts_args_connection da
                  WHERE da.draft_id = (SELECT draft_id FROM params)),
                 ARRAY[]::uuid[]
             )
@@ -472,7 +472,7 @@ args_outputs_ids_data AS (
         CASE 
             WHEN (SELECT draft_id FROM params) IS NOT NULL THEN COALESCE(
                 (SELECT ARRAY_AGG(dao.args_outputs_id ORDER BY dao.created_at)
-                 FROM args_outputs_drafts_connection dao
+                 FROM tool_drafts_args_outputs_connection dao
                  WHERE dao.draft_id = (SELECT draft_id FROM params)),
                 ARRAY[]::uuid[]
             )

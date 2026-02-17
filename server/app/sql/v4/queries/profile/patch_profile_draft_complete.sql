@@ -213,34 +213,34 @@ BEGIN
         VALUES (v_draft_id, v_profile_id, v_new_version);
     END IF;
 
-    DELETE FROM names_drafts_connection WHERE draft_id = v_draft_id;
-    DELETE FROM flags_drafts_connection WHERE draft_id = v_draft_id;
-    DELETE FROM request_limits_drafts_connection WHERE draft_id = v_draft_id;
-    DELETE FROM departments_drafts_connection WHERE draft_id = v_draft_id;
-    DELETE FROM emails_drafts_connection WHERE draft_id = v_draft_id;
-    DELETE FROM cohorts_drafts_connection WHERE draft_id = v_draft_id;
-    DELETE FROM roles_drafts_connection WHERE draft_id = v_draft_id;
+    DELETE FROM profile_drafts_names_connection WHERE draft_id = v_draft_id;
+    DELETE FROM profile_drafts_flags_connection WHERE draft_id = v_draft_id;
+    DELETE FROM profile_drafts_request_limits_connection WHERE draft_id = v_draft_id;
+    DELETE FROM profile_drafts_departments_connection WHERE draft_id = v_draft_id;
+    DELETE FROM profile_drafts_emails_connection WHERE draft_id = v_draft_id;
+    DELETE FROM profile_drafts_cohorts_connection WHERE draft_id = v_draft_id;
+    DELETE FROM profile_drafts_roles_connection WHERE draft_id = v_draft_id;
 
     IF v_name_id IS NOT NULL THEN
-        INSERT INTO names_drafts_connection (draft_id, names_id, version)
+        INSERT INTO profile_drafts_names_connection (draft_id, names_id, version)
         VALUES (v_draft_id, v_name_id, v_new_version)
         ON CONFLICT ON CONSTRAINT names_draft_pkey DO UPDATE SET version = v_new_version;
     END IF;
 
     IF v_active_flag_id IS NOT NULL THEN
-        INSERT INTO flags_drafts_connection (draft_id, flags_id, version)
+        INSERT INTO profile_drafts_flags_connection (draft_id, flags_id, version)
         VALUES (v_draft_id, v_active_flag_id, v_new_version)
         ON CONFLICT ON CONSTRAINT flags_draft_pkey DO UPDATE SET version = v_new_version;
     END IF;
 
     IF v_request_limit_id IS NOT NULL THEN
-        INSERT INTO request_limits_drafts_connection (draft_id, request_limits_id, version)
+        INSERT INTO profile_drafts_request_limits_connection (draft_id, request_limits_id, version)
         VALUES (v_draft_id, v_request_limit_id, v_new_version)
         ON CONFLICT ON CONSTRAINT request_limits_draft_pkey DO UPDATE SET version = v_new_version;
     END IF;
 
     IF v_department_ids IS NOT NULL THEN
-        INSERT INTO departments_drafts_connection (draft_id, departments_id, version)
+        INSERT INTO profile_drafts_departments_connection (draft_id, departments_id, version)
         SELECT v_draft_id, department_id, v_new_version
         FROM UNNEST(v_department_ids) AS department_id
         ON CONFLICT ON CONSTRAINT departments_draft_pkey DO UPDATE
@@ -248,7 +248,7 @@ BEGIN
     END IF;
 
     IF v_email_ids IS NOT NULL THEN
-        INSERT INTO emails_drafts_connection (draft_id, emails_id, version)
+        INSERT INTO profile_drafts_emails_connection (draft_id, emails_id, version)
         SELECT v_draft_id, email_id, v_new_version
         FROM UNNEST(v_email_ids) AS email_id
         ON CONFLICT ON CONSTRAINT emails_draft_pkey DO UPDATE
@@ -256,7 +256,7 @@ BEGIN
     END IF;
 
     IF v_cohort_ids IS NOT NULL THEN
-        INSERT INTO cohorts_drafts_connection (draft_id, cohorts_id, version)
+        INSERT INTO profile_drafts_cohorts_connection (draft_id, cohorts_id, version)
         SELECT v_draft_id, cohort_id, v_new_version
         FROM UNNEST(v_cohort_ids) AS cohort_id
         ON CONFLICT ON CONSTRAINT cohorts_draft_pkey DO UPDATE
@@ -264,7 +264,7 @@ BEGIN
     END IF;
 
     IF v_role_id IS NOT NULL THEN
-        INSERT INTO roles_drafts_connection (draft_id, roles_id, version)
+        INSERT INTO profile_drafts_roles_connection (draft_id, roles_id, version)
         VALUES (v_draft_id, v_role_id, v_new_version)
         ON CONFLICT ON CONSTRAINT roles_draft_pkey DO UPDATE
         SET version = v_new_version;

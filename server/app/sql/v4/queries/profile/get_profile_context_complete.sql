@@ -646,8 +646,26 @@ drafts_data AS (
         d.version,
         d.updated_at
     FROM profile_profiles_junction ppj
-    JOIN profiles_drafts_connection pdc ON pdc.profiles_id = ppj.profiles_id
-    JOIN drafts_entry d ON d.id = pdc.draft_id
+    JOIN profile_drafts_profiles_connection pdc ON pdc.profiles_id = ppj.profiles_id
+    JOIN (SELECT id, 'agent'::text as artifact, version, updated_at FROM agent_drafts_entry
+     UNION ALL SELECT id, 'auth', version, updated_at FROM auth_drafts_entry
+     UNION ALL SELECT id, 'cohort', version, updated_at FROM cohort_drafts_entry
+     UNION ALL SELECT id, 'department', version, updated_at FROM department_drafts_entry
+     UNION ALL SELECT id, 'document', version, updated_at FROM document_drafts_entry
+     UNION ALL SELECT id, 'eval', version, updated_at FROM eval_drafts_entry
+     UNION ALL SELECT id, 'field', version, updated_at FROM field_drafts_entry
+     UNION ALL SELECT id, 'model', version, updated_at FROM model_drafts_entry
+     UNION ALL SELECT id, 'parameter', version, updated_at FROM parameter_drafts_entry
+     UNION ALL SELECT id, 'persona', version, updated_at FROM persona_drafts_entry
+     UNION ALL SELECT id, 'profile', version, updated_at FROM profile_drafts_entry
+     UNION ALL SELECT id, 'provider', version, updated_at FROM provider_drafts_entry
+     UNION ALL SELECT id, 'rubric', version, updated_at FROM rubric_drafts_entry
+     UNION ALL SELECT id, 'scenario', version, updated_at FROM scenario_drafts_entry
+     UNION ALL SELECT id, 'setting', version, updated_at FROM setting_drafts_entry
+     UNION ALL SELECT id, 'simulation', version, updated_at FROM simulation_drafts_entry
+     UNION ALL SELECT id, 'suite', version, updated_at FROM suite_drafts_entry
+     UNION ALL SELECT id, 'tool', version, updated_at FROM tool_drafts_entry
+     UNION ALL SELECT id, 'training', version, updated_at FROM training_drafts_entry) d ON d.id = pdc.draft_id
     WHERE ppj.profile_id = (SELECT profile_id FROM params)
 ),
 drafts_aggregated AS (

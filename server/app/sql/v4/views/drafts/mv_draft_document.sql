@@ -19,14 +19,16 @@ DROP MATERIALIZED VIEW IF EXISTS mv_draft_document CASCADE;
 
 CREATE MATERIALIZED VIEW mv_draft_document AS
 WITH draft_links AS (
-    SELECT draft_id, 'names'::resource_type AS resource_type, names_id::uuid AS resource_id FROM names_drafts_connection WHERE active = true
-    UNION ALL SELECT draft_id, 'descriptions'::resource_type AS resource_type, descriptions_id::uuid AS resource_id FROM descriptions_drafts_connection WHERE active = true
-    UNION ALL SELECT draft_id, 'flags'::resource_type AS resource_type, flags_id::uuid AS resource_id FROM flags_drafts_connection WHERE active = true
-    UNION ALL SELECT draft_id, 'departments'::resource_type AS resource_type, departments_id::uuid AS resource_id FROM departments_drafts_connection WHERE active = true
-    UNION ALL SELECT draft_id, 'parameter_fields'::resource_type AS resource_type, parameter_fields_id::uuid AS resource_id FROM parameter_fields_drafts_connection WHERE active = true
-    UNION ALL SELECT draft_id, 'uploads'::resource_type AS resource_type, uploads_id::uuid AS resource_id FROM uploads_drafts_connection WHERE active = true
-    UNION ALL SELECT draft_id, 'images'::resource_type AS resource_type, images_id::uuid AS resource_id FROM images_drafts_connection WHERE active = true
-    UNION ALL SELECT draft_id, 'texts'::resource_type AS resource_type, texts_id::uuid AS resource_id FROM texts_drafts_connection WHERE active = true
+    SELECT draft_id, 'departments'::text AS resource_type, departments_id AS resource_id FROM document_drafts_departments_connection WHERE active = true
+    UNION ALL SELECT draft_id, 'descriptions'::text AS resource_type, descriptions_id AS resource_id FROM document_drafts_descriptions_connection WHERE active = true
+    UNION ALL SELECT draft_id, 'documents'::text AS resource_type, documents_id AS resource_id FROM document_drafts_documents_connection WHERE active = true
+    UNION ALL SELECT draft_id, 'flags'::text AS resource_type, flags_id AS resource_id FROM document_drafts_flags_connection WHERE active = true
+    UNION ALL SELECT draft_id, 'images'::text AS resource_type, images_id AS resource_id FROM document_drafts_images_connection WHERE active = true
+    UNION ALL SELECT draft_id, 'names'::text AS resource_type, names_id AS resource_id FROM document_drafts_names_connection WHERE active = true
+    UNION ALL SELECT draft_id, 'parameter_fields'::text AS resource_type, parameter_fields_id AS resource_id FROM document_drafts_parameter_fields_connection WHERE active = true
+    UNION ALL SELECT draft_id, 'parameters'::text AS resource_type, parameters_id AS resource_id FROM document_drafts_parameters_connection WHERE active = true
+    UNION ALL SELECT draft_id, 'texts'::text AS resource_type, texts_id AS resource_id FROM document_drafts_texts_connection WHERE active = true
+    UNION ALL SELECT draft_id, 'uploads'::text AS resource_type, uploads_id AS resource_id FROM document_drafts_uploads_connection WHERE active = true
 )
 SELECT
     d.id AS draft_id,
@@ -37,19 +39,19 @@ SELECT
     d.mcp,
     d.active,
     (SELECT ggc.groups_id FROM groups_groups_connection ggc WHERE ggc.group_id = d.group_id AND ggc.active = true LIMIT 1) AS group_id,
-    COALESCE((SELECT ARRAY_AGG(re.instructions ORDER BY re.created_at ASC, re.id ASC) FROM regenerates_entry re WHERE re.draft_id = d.id AND re.active = true), ARRAY[]::text[]) AS regeneration_descriptions,
-    COALESCE(array_agg(DISTINCT l.resource_id) FILTER (WHERE l.resource_type = 'names'::resource_type), ARRAY[]::uuid[]) AS name_ids,
-    COALESCE(array_agg(DISTINCT l.resource_id) FILTER (WHERE l.resource_type = 'descriptions'::resource_type), ARRAY[]::uuid[]) AS description_ids,
-    COALESCE(array_agg(DISTINCT l.resource_id) FILTER (WHERE l.resource_type = 'flags'::resource_type), ARRAY[]::uuid[]) AS flag_ids,
-    COALESCE(array_agg(DISTINCT l.resource_id) FILTER (WHERE l.resource_type = 'departments'::resource_type), ARRAY[]::uuid[]) AS department_ids,
-    COALESCE(array_agg(DISTINCT l.resource_id) FILTER (WHERE l.resource_type = 'parameter_fields'::resource_type), ARRAY[]::uuid[]) AS parameter_field_ids,
-    COALESCE(array_agg(DISTINCT l.resource_id) FILTER (WHERE l.resource_type = 'uploads'::resource_type), ARRAY[]::uuid[]) AS upload_ids,
-    COALESCE(array_agg(DISTINCT l.resource_id) FILTER (WHERE l.resource_type = 'images'::resource_type), ARRAY[]::uuid[]) AS image_ids,
-    COALESCE(array_agg(DISTINCT l.resource_id) FILTER (WHERE l.resource_type = 'texts'::resource_type), ARRAY[]::uuid[]) AS text_ids
-FROM drafts_entry d
+    COALESCE(array_agg(DISTINCT l.resource_id) FILTER (WHERE l.resource_type = 'departments'), ARRAY[]::uuid[]) AS department_ids,
+    COALESCE(array_agg(DISTINCT l.resource_id) FILTER (WHERE l.resource_type = 'descriptions'), ARRAY[]::uuid[]) AS description_ids,
+    COALESCE(array_agg(DISTINCT l.resource_id) FILTER (WHERE l.resource_type = 'documents'), ARRAY[]::uuid[]) AS document_ids,
+    COALESCE(array_agg(DISTINCT l.resource_id) FILTER (WHERE l.resource_type = 'flags'), ARRAY[]::uuid[]) AS flag_ids,
+    COALESCE(array_agg(DISTINCT l.resource_id) FILTER (WHERE l.resource_type = 'images'), ARRAY[]::uuid[]) AS image_ids,
+    COALESCE(array_agg(DISTINCT l.resource_id) FILTER (WHERE l.resource_type = 'names'), ARRAY[]::uuid[]) AS name_ids,
+    COALESCE(array_agg(DISTINCT l.resource_id) FILTER (WHERE l.resource_type = 'parameter_fields'), ARRAY[]::uuid[]) AS parameter_field_ids,
+    COALESCE(array_agg(DISTINCT l.resource_id) FILTER (WHERE l.resource_type = 'parameters'), ARRAY[]::uuid[]) AS parameter_ids,
+    COALESCE(array_agg(DISTINCT l.resource_id) FILTER (WHERE l.resource_type = 'texts'), ARRAY[]::uuid[]) AS text_ids,
+    COALESCE(array_agg(DISTINCT l.resource_id) FILTER (WHERE l.resource_type = 'uploads'), ARRAY[]::uuid[]) AS upload_ids
+FROM document_drafts_entry d
 LEFT JOIN draft_links l ON l.draft_id = d.id
-WHERE d.artifact = 'document'::artifact_type
-GROUP BY d.id, d.created_at, d.updated_at, d.version, d.generated, d.mcp, d.active
+GROUP BY d.id, d.created_at, d.updated_at, d.version, d.generated, d.mcp, d.active, d.group_id
 WITH NO DATA;
 
 CREATE UNIQUE INDEX mv_draft_document_pk ON mv_draft_document (draft_id);
