@@ -26,6 +26,7 @@ class UpdateStaffRequest(BaseModel):
     primary_department_id: str
     active: bool
     default_profile: bool
+    department_ids: list[str] | None = None
     intro_completed: bool | None = None
     chat_completed: bool | None = None
 
@@ -63,6 +64,7 @@ async def update_profile(
             request.default_profile,
             request.intro_completed,
             request.chat_completed,
+            request.department_ids,
         )
 
         async with transaction(conn):

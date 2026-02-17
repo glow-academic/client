@@ -79,6 +79,7 @@ export default function StaffEditModal({
     defaultProfile: false,
     introCompleted: false,
     chatCompleted: false,
+    departmentIds: [] as string[],
     primaryDepartmentId: "",
   });
   const [requestsPerDayEnabled, setRequestsPerDayEnabled] = useState(false);
@@ -99,6 +100,7 @@ export default function StaffEditModal({
         defaultProfile: targetUser.defaultProfile ?? false,
         introCompleted: targetUser.introCompleted ?? false,
         chatCompleted: targetUser.chatCompleted ?? false,
+        departmentIds: staffItem?.department_ids ?? [],
         primaryDepartmentId: targetUser.departmentId || "",
       });
       setRequestsPerDayEnabled(targetUser.reqPerDay != null);
@@ -112,8 +114,20 @@ export default function StaffEditModal({
   }, [formData.introCompleted, formData.chatCompleted]);
 
   const handleInputChange = useCallback(
-    (field: string, value: string | number | boolean) => {
-      setFormData((prev) => ({ ...prev, [field]: value }));
+    (field: string, value: string | number | boolean | string[]) => {
+      setFormData((prev) => {
+        const next = { ...prev, [field]: value };
+        // Auto-clear primary department if it's no longer in the selected departments
+        if (
+          field === "departmentIds" &&
+          Array.isArray(value) &&
+          next.primaryDepartmentId &&
+          !value.includes(next.primaryDepartmentId)
+        ) {
+          next.primaryDepartmentId = "";
+        }
+        return next;
+      });
     },
     []
   );
@@ -156,6 +170,7 @@ export default function StaffEditModal({
         primary_department_id: string;
         active: boolean;
         default_profile: boolean;
+        department_ids?: string[];
         intro_completed?: boolean;
         chat_completed?: boolean;
       } = {
@@ -169,6 +184,11 @@ export default function StaffEditModal({
         active: targetUser?.active ?? true,
         default_profile: formData.defaultProfile,
       };
+
+      // Include department_ids if the user has selected departments
+      if (formData.departmentIds.length > 0) {
+        updateBody.department_ids = formData.departmentIds;
+      }
 
       // Only include intro_completed and chat_completed if tour_completed was touched
       if (tourCompletedTouched) {
@@ -382,37 +402,59 @@ export default function StaffEditModal({
                   </div>
                 </div>
 
-                {/* Primary Department Section (superadmin only) */}
-                {isSuperadmin &&
-                  validDepartmentIds.length > 1 && (
+                {/* Departments Section (superadmin only) */}
+                {isSuperadmin && (
+                  <>
                     <div className="space-y-2 pt-2">
-                      <Label htmlFor="primaryDepartment">
-                        Primary Department
-                      </Label>
+                      <Label htmlFor="departments">Departments</Label>
                       <DepartmentPicker
                         mapping={departmentMapping}
                         validIds={validDepartmentIds}
-                        selectedIds={
-                          formData.primaryDepartmentId
-                            ? [formData.primaryDepartmentId]
-                            : []
-                        }
+                        selectedIds={formData.departmentIds}
                         onSelect={(ids) => {
-                          const deptId = ids.length > 0 ? ids[0] : "";
-                          if (deptId !== undefined) {
-                            handleInputChange("primaryDepartmentId", deptId);
-                          }
+                          handleInputChange("departmentIds", ids);
                         }}
-                        multiSelect={false}
-                        placeholder="Select primary department"
+                        multiSelect={true}
+                        placeholder="Select departments"
                         disabled={isSubmitting}
                         buttonClassName="h-10"
                       />
                       <p className="text-xs text-muted-foreground">
-                        Set the primary department for this staff member
+                        Assign this staff member to one or more departments
                       </p>
                     </div>
-                  )}
+
+                    {formData.departmentIds.length > 1 && (
+                      <div className="space-y-2 pt-2">
+                        <Label htmlFor="primaryDepartment">
+                          Primary Department
+                        </Label>
+                        <DepartmentPicker
+                          mapping={departmentMapping}
+                          validIds={formData.departmentIds}
+                          selectedIds={
+                            formData.primaryDepartmentId
+                              ? [formData.primaryDepartmentId]
+                              : []
+                          }
+                          onSelect={(ids) => {
+                            const deptId = ids.length > 0 ? ids[0] : "";
+                            if (deptId !== undefined) {
+                              handleInputChange("primaryDepartmentId", deptId);
+                            }
+                          }}
+                          multiSelect={false}
+                          placeholder="Select primary department"
+                          disabled={isSubmitting}
+                          buttonClassName="h-10"
+                        />
+                        <p className="text-xs text-muted-foreground">
+                          Set the primary department for this staff member
+                        </p>
+                      </div>
+                    )}
+                  </>
+                )}
 
                 {/* Default Profile Section (superadmin only) */}
                 {isSuperadmin && (

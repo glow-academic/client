@@ -9860,6 +9860,8 @@ export interface components {
             active: boolean;
             /** Default Profile */
             default_profile: boolean;
+            /** Department Ids */
+            department_ids?: string[] | null;
             /** Intro Completed */
             intro_completed?: boolean | null;
             /** Chat Completed */

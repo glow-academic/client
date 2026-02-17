@@ -168,7 +168,7 @@ export function ProfileProviderClient({
    */
   const guestIdRef = useRef<string | null>(null);
   if (guestIdRef.current === null) {
-    if (typeof window !== "undefined") {
+    if (typeof window !== "undefined" && typeof sessionStorage?.getItem === "function") {
       const existing = sessionStorage.getItem("guest-id");
       guestIdRef.current = existing ?? uuidv4();
       if (!existing) sessionStorage.setItem("guest-id", guestIdRef.current);

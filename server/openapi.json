@@ -24121,6 +24121,20 @@
             "type": "boolean",
             "title": "Default Profile"
           },
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
+          },
           "intro_completed": {
             "anyOf": [
               {
