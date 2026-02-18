@@ -36,6 +36,7 @@ export default function Practice({
     effectiveProfile,
     activeProfile,
     isConnected,
+    isSimulating,
     emitStartSimulation,
     emitCreatePracticeScenario,
     startingSimulationId,
@@ -186,7 +187,7 @@ export default function Practice({
         setLoadingToastId(toastId);
 
         const profileIdForEmit =
-          effectiveProfile?.defaultProfile ? "" : String(effectiveProfile!.id); // "" → default guest only
+          effectiveProfile?.defaultProfile && !isSimulating ? "" : String(effectiveProfile!.id); // "" → default guest only, but always use ID when emulating
 
         emitStartSimulation({
           simulation_id: simulationId,
@@ -237,7 +238,7 @@ export default function Practice({
         setLoadingToastId(toastId);
 
         const profileIdForEmit =
-          effectiveProfile?.defaultProfile ? "" : String(effectiveProfile!.id); // "" → default guest only
+          effectiveProfile?.defaultProfile && !isSimulating ? "" : String(effectiveProfile!.id); // "" → default guest only, but always use ID when emulating
 
         emitStartSimulation({
           simulation_id: simulationId,
