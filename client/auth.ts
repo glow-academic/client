@@ -10,9 +10,17 @@ const clientId = process.env["AUTH_MICROSOFT_ENTRA_ID_ID"] || "";
 const clientSecret = process.env["AUTH_MICROSOFT_ENTRA_ID_SECRET"] || "";
 const secret = process.env["AUTH_SECRET"] || "";
 
-/** Derive a unique alias from an email (e.g. "ashok@learn-loop.org" → "ashok-learn-loop-org") */
+/** Derive a unique alias from an email.
+ *  Purdue emails (*.purdue.edu) → just the username prefix (e.g. "ashok")
+ *  Other emails → reversible encoding (e.g. "john.doe_at_gmail.com")
+ *  To recover email: alias.replace("_at_", "@") */
 function emailToAlias(email: string): string {
-  return email.toLowerCase().replace(/[^a-z0-9]/g, "-");
+  const lower = email.toLowerCase();
+  const [prefix, domain] = lower.split("@");
+  if (domain?.endsWith("purdue.edu")) {
+    return prefix;
+  }
+  return lower.replace("@", "_at_");
 }
 
 // NOTE: also export `unstable_update` as `update` for server-side session mutation

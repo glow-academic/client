@@ -1686,7 +1686,6 @@ export default function AttemptChat({
                                 </div>
                               </TooltipTrigger>
                               {displayChat &&
-                              showGrades &&
                               allDynamicRubrics.find(
                                 (rubric) => rubric.chatId === displayChat.id
                               ) ? (
@@ -2050,7 +2049,6 @@ export default function AttemptChat({
                                   </div>
                                 </TooltipTrigger>
                                 {displayChat &&
-                                showGrades &&
                                 allDynamicRubrics.find(
                                   (rubric) => rubric.chatId === displayChat.id
                                 ) ? (
