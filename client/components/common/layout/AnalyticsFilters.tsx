@@ -158,12 +158,15 @@ export function AnalyticsFilters({
     if (simulationFilters.includes("practice")) currentFilters.push("practice");
     if (simulationFilters.includes("archived")) currentFilters.push("archived");
 
+    // All three selected = "All attempts" = empty local selection (like roles)
+    const normalized = currentFilters.length === 3 ? [] : currentFilters;
+
     // Update local state if it doesn't match the context
     if (
-      currentFilters.length !== attemptSelected.length ||
-      !currentFilters.every((filter) => attemptSelected.includes(filter))
+      normalized.length !== attemptSelected.length ||
+      !normalized.every((filter) => attemptSelected.includes(filter))
     ) {
-      setAttemptSelected(currentFilters);
+      setAttemptSelected(normalized);
     }
   }, [simulationFilters, attemptSelected]);
 
