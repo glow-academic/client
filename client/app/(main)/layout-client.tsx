@@ -448,7 +448,7 @@ function MainLayoutContent({
           </header>
 
           <div
-            className={`flex flex-1 flex-col gap-4 p-1 md:p-4 pt-0 ${
+            className={`flex flex-1 flex-col gap-4 p-1 md:p-4 pt-0 md:pt-0 ${
               shouldShowChatComponents && canShowChatComponents ? "pb-18" : ""
             }`}
           >
