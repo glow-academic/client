@@ -305,22 +305,22 @@ export function StaffDataTable({
                 >
                   {getInitials(staff.first_name, staff.last_name)}
                 </div>
-                <div className="text-left">
+                <div className="text-left max-w-[180px]">
                   <div className="flex items-center gap-2">
-                    <p className="font-medium text-sm">
+                    <p className="font-medium text-sm truncate">
                       {staff.first_name} {staff.last_name}
                     </p>
                     {(staff as ProfileListItem & { isStaged?: boolean })
                       .isStaged && (
                       <Badge
                         variant="outline"
-                        className="text-xs bg-blue-50 text-blue-700 border-blue-200"
+                        className="text-xs bg-blue-50 text-blue-700 border-blue-200 flex-shrink-0"
                       >
                         New
                       </Badge>
                     )}
                   </div>
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-xs text-muted-foreground overflow-x-auto whitespace-nowrap [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
                     {staff.alias}@{process.env["NEXT_PUBLIC_CAMPUS_EMAIL"]}
                   </p>
                 </div>
