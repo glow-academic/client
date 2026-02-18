@@ -2314,6 +2314,8 @@ export default function AttemptChat({
                               gradingStatesByChatId[displayChat.id] &&
                               rubricStructure && {
                                 onViewRubricPdf: async () => {
+                                  // Open window synchronously to preserve user gesture (Safari mobile blocks async window.open)
+                                  const newWindow = window.open("", "_blank");
                                   try {
                                     const res = await fetch(
                                       "/api/documents/rubric",
@@ -2336,9 +2338,13 @@ export default function AttemptChat({
                                     if (!res.ok) throw new Error("Failed to generate PDF");
                                     const blob = await res.blob();
                                     const url = URL.createObjectURL(blob);
-                                    window.open(url, "_blank");
+                                    if (newWindow) {
+                                      newWindow.location.href = url;
+                                    } else {
+                                      window.location.href = url;
+                                    }
                                   } catch {
-                                    // PDF generation failed silently
+                                    newWindow?.close();
                                   }
                                 },
                               })}
