@@ -1,10 +1,9 @@
--- Complete image generation by creating upload and linking to image
+-- Complete image generation by creating upload, images_entry, and linking to images_resource
 -- Converted to PostgreSQL function pattern
--- Uses safe drop/recreate pattern: drop function first, then types (no CASCADE), then recreate
--- Now sets upload_id directly on images_resource (denormalized)
+-- Uses safe drop/recreate pattern: drop function first, then recreate
+-- Creates images_entry + images_images_connection (entry ↔ resource bridge)
 
--- 1) Drop function first (breaks dependency on types)
--- Drop all versions of the function using DO block to handle signature variations
+-- 1) Drop function first
 DO $$
 DECLARE
     r RECORD;
@@ -19,7 +18,7 @@ BEGIN
     END LOOP;
 END $$;
 
--- 2) Recreate function (sets upload_id directly on images_resource)
+-- 2) Recreate function (creates images_entry + images_images_connection)
 CREATE OR REPLACE FUNCTION socket_complete_image_generation_v4(
     image_id uuid,
     file_path text,
@@ -37,12 +36,17 @@ WITH upload_row AS (
     VALUES (file_path, mime_type, file_size, NOW(), NOW())
     RETURNING id
 ),
-update_image AS (
-    UPDATE images_resource
-    SET upload_id = upload_row.id
+insert_image_entry AS (
+    INSERT INTO images_entry (upload_id, active, generated, mcp)
+    SELECT upload_row.id, true, true, false
     FROM upload_row
-    WHERE images_resource.id = image_id
-    RETURNING images_resource.id
+    RETURNING id AS image_entry_id, upload_id AS entry_upload_id
+),
+link_image AS (
+    INSERT INTO images_images_connection (image_id, images_id)
+    SELECT iie.image_entry_id, socket_complete_image_generation_v4.image_id
+    FROM insert_image_entry iie
+    RETURNING image_id
 )
 SELECT upload_row.id AS upload_id
 FROM upload_row

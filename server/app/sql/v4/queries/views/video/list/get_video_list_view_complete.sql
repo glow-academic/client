@@ -52,7 +52,6 @@ END $$;
 CREATE TYPE types.q_get_video_list_view_v4_item AS (
     video_id uuid,
     uploads_id uuid,
-    upload_id uuid,
     file_path text,
     mime_type text,
     size int,
@@ -99,7 +98,6 @@ AS $$
                 (
                     video_id,
                     uploads_id,
-                    upload_id,
                     file_path,
                     mime_type,
                     size,

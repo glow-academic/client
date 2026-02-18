@@ -33,7 +33,7 @@ BEGIN
     END LOOP;
 END $$;
 
--- Create composite type for video item (upload_id is denormalized on resource table)
+-- Create composite type for video item (upload_id resolved through entry chain)
 CREATE TYPE types.q_get_video_resource_v4_item AS (
     video_id uuid,
     name text,
@@ -42,7 +42,7 @@ CREATE TYPE types.q_get_video_resource_v4_item AS (
     generated boolean
 );
 
--- Create function (uses denormalized upload_id directly from videos_resource)
+-- Create function (resolves upload_id through entry chain)
 CREATE OR REPLACE FUNCTION api_get_video_resource_v4(
     video_id uuid
 )
@@ -58,13 +58,15 @@ SELECT COALESCE(
             v.id,
             v.name,
             COALESCE(v.description, ''),
-            v.upload_id,
+            ve.upload_id,
             COALESCE(v.generated, false)
         )::types.q_get_video_resource_v4_item
     ),
     ARRAY[]::types.q_get_video_resource_v4_item[]
 ) as items
 FROM videos_resource v
-WHERE v.id = video_id
+LEFT JOIN videos_videos_connection vvc ON vvc.videos_id = v.id AND vvc.active = true
+LEFT JOIN videos_entry ve ON ve.id = vvc.video_id AND ve.active = true
+WHERE v.id = api_get_video_resource_v4.video_id
   AND v.active = true;
 $$;

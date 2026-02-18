@@ -33,7 +33,7 @@ BEGIN
     END LOOP;
 END $$;
 
--- Create composite type for image item (upload_id is denormalized on resource table)
+-- Create composite type for image item (upload_id resolved through entry chain)
 CREATE TYPE types.q_get_image_resource_v4_item AS (
     image_id uuid,
     name text,
@@ -42,7 +42,7 @@ CREATE TYPE types.q_get_image_resource_v4_item AS (
     generated boolean
 );
 
--- Create function (uses denormalized upload_id directly from images_resource)
+-- Create function (resolves upload_id through entry chain)
 CREATE OR REPLACE FUNCTION api_get_image_resource_v4(
     image_id uuid
 )
@@ -58,13 +58,15 @@ SELECT COALESCE(
             i.id,
             i.name,
             COALESCE(i.description, ''),
-            i.upload_id,
+            ie.upload_id,
             COALESCE(i.generated, false)
         )::types.q_get_image_resource_v4_item
     ),
     ARRAY[]::types.q_get_image_resource_v4_item[]
 ) as items
 FROM images_resource i
-WHERE i.id = image_id
+LEFT JOIN images_images_connection iic ON iic.images_id = i.id AND iic.active = true
+LEFT JOIN images_entry ie ON ie.id = iic.image_id AND ie.active = true
+WHERE i.id = api_get_image_resource_v4.image_id
   AND i.active = true;
 $$;

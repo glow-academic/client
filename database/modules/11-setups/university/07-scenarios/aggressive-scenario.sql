@@ -6,8 +6,7 @@
 
 -- Resource rows
 INSERT INTO public.descriptions_resource (id, description, created_at, active, generated, mcp) VALUES ('019b995c-8e88-7433-8cd6-691a7a195edb', 'Practice scenario featuring an aggressive or confrontational student persona.', '2025-08-12T12:52:09.879666+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
-INSERT INTO public.uploads_resource (id, created_at, active, generated, mcp, upload_id) VALUES ('019bcc94-efb5-7bbd-a53a-39fd3862bf0c', '2026-01-17T15:31:11.407183+00:00', true, false, false, '019b4159-2534-76c6-a1bd-292393d6966f') ON CONFLICT (id) DO NOTHING;
-INSERT INTO public.images_resource (created_at, name, active, id, description, generated, mcp, upload_id) VALUES ('2025-12-21T14:38:39.922985+00:00', 'Classroom', true, '019b4159-2535-7781-9419-6be634e4eadf', 'Classroom', false, false, '019bcc94-efb5-7bbd-a53a-39fd3862bf0c') ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.images_resource (created_at, name, active, id, description, generated, mcp) VALUES ('2025-12-21T14:38:39.922985+00:00', 'Classroom', true, '019b4159-2535-7781-9419-6be634e4eadf', 'Classroom', false, false) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.names_resource (id, name, created_at, active, generated, mcp) VALUES ('019b995c-8e80-77cd-b5f8-3605acf7b2a4', 'Aggressive Scenario', '2025-08-12T12:52:09.879666+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.scenarios_resource (created_at, active, generated, mcp, id, name, description, problem_statement_enabled, objectives_enabled, video_enabled, images_enabled, questions_enabled, department_ids, persona_ids, parameter_ids, parameter_field_ids) VALUES ('2025-08-12T12:52:09.879666+00:00', true, false, false, '019bb25e-e61d-7f26-9e97-cc57dff6f2fe', 'Aggressive Scenario', 'Practice scenario featuring an aggressive or confrontational student persona.', true, true, false, false, false, '{}', '{019bb25e-e60c-7365-a585-b86f5dc48dfe}', '{}', '{}') ON CONFLICT (id) DO NOTHING;
 

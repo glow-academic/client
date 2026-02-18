@@ -32,9 +32,7 @@ async def refresh_strengths_view(
     tags = ["views", "simulation", "strengths"]
     try:
         start_time = time.time()
-        await conn.execute(
-            "REFRESH MATERIALIZED VIEW CONCURRENTLY attempt_strength_mv"
-        )
+        await conn.execute("REFRESH MATERIALIZED VIEW CONCURRENTLY attempt_strength_mv")
         duration_ms = int((time.time() - start_time) * 1000)
         await invalidate_tags(tags)
         return RefreshResponse(

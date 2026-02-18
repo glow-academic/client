@@ -4,10 +4,10 @@
 -- Grain: One row per audio entry
 -- Filter: active = true only
 --
--- Purpose: Audio entry with upload entry metadata (file_path, mime_type, size, length_seconds, voice_id)
+-- Purpose: Audio entry with upload entry metadata (file_path, mime_type, size) + domain attrs (length_seconds, voice_id)
 -- Section: AUDIO (lean MV)
 --
--- Dependencies: audios_entry, uploads_entry, uploads_uploads_connection, uploads_resource, uploads_voices_connection
+-- Dependencies: audios_entry, uploads_entry, uploads_uploads_connection, uploads_resource, audios_voices_connection
 -- ============================================================================
 -- Step 1: Drop all indexes on audios_mv materialized view (if it exists)
 -- ============================================================================
@@ -43,14 +43,14 @@ SELECT
     ue.file_path,
     ue.mime_type,
     ue.size,
-    ue.length_seconds,
-    uvc.voice_id,
+    ae.length_seconds,
+    avc.voice_id,
     ae.created_at
 FROM audios_entry ae
 JOIN uploads_entry ue ON ue.id = ae.upload_id AND ue.active = true
 JOIN uploads_uploads_connection uuc ON uuc.upload_id = ue.id AND uuc.active = true
 JOIN uploads_resource ur ON ur.id = uuc.uploads_id AND ur.active = true
-LEFT JOIN uploads_voices_connection uvc ON uvc.upload_id = ue.id AND uvc.active = true
+LEFT JOIN audios_voices_connection avc ON avc.audio_id = ae.id AND avc.active = true
 WHERE ae.active = true
 WITH NO DATA;
 

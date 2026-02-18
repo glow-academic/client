@@ -1,6 +1,6 @@
 -- Create generation record, link to video and run
 -- Converted to PostgreSQL function
--- Now sets upload_id directly on videos_resource (denormalized)
+-- Creates a videos_entry row and links it to the videos_resource via videos_videos_connection
 
 -- Drop function if exists (handles signature variations)
 DO $$
@@ -17,7 +17,7 @@ BEGIN
     END LOOP;
 END $$;
 
--- Recreate function (sets upload_id directly on videos_resource)
+-- Recreate function (creates videos_entry + videos_videos_connection)
 CREATE OR REPLACE FUNCTION api_create_generation_and_link_v4(
     video_id uuid,
     file_path text,
@@ -51,12 +51,17 @@ insert_upload AS (
 final_upload_id AS (
     SELECT COALESCE((SELECT upload_id FROM params), (SELECT new_upload_id FROM insert_upload LIMIT 1)) as upload_id
 ),
-mark_video AS (
-    UPDATE videos_resource
-    SET upload_id = fi.upload_id
+insert_video_entry AS (
+    INSERT INTO videos_entry (upload_id, active, generated, mcp)
+    SELECT fi.upload_id, true, true, false
     FROM final_upload_id fi
-    WHERE videos_resource.id = (SELECT video_id FROM params)
-    RETURNING videos_resource.id
+    RETURNING id as video_entry_id, upload_id
+),
+link_video AS (
+    INSERT INTO videos_videos_connection (video_id, videos_id)
+    SELECT ive.video_entry_id, (SELECT video_id FROM params)
+    FROM insert_video_entry ive
+    RETURNING video_id
 )
 SELECT fi.upload_id as generation_id
 FROM final_upload_id fi

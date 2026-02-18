@@ -43,7 +43,6 @@ SELECT
     ue.file_path,
     ue.mime_type,
     ue.size,
-    ue.length_seconds,
     ue.created_at
 FROM uploads_resource ur
 JOIN uploads_uploads_connection uuc ON uuc.uploads_id = ur.id AND uuc.active = true

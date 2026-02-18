@@ -17,7 +17,7 @@ BEGIN
     END LOOP;
 END $$;
 
--- Create function (uses denormalized upload_id directly from images_resource)
+-- Create function (resolves upload_id through entry chain)
 CREATE OR REPLACE FUNCTION api_search_images_v4(
     search text DEFAULT NULL,
     limit_count int DEFAULT 20,
@@ -47,11 +47,15 @@ SELECT COALESCE(
     ARRAY[]::types.q_get_images_v4_item[]
 ) as items
 FROM (
-    SELECT i.id, i.name, COALESCE(i.description, '') AS description, i.upload_id, COALESCE(i.generated, false) AS generated
+    SELECT i.id, i.name, COALESCE(i.description, '') AS description,
+           ie.upload_id,
+           COALESCE(i.generated, false) AS generated
     FROM images_resource i
+    LEFT JOIN images_images_connection iic ON iic.images_id = i.id AND iic.active = true
+    LEFT JOIN images_entry ie ON ie.id = iic.image_id AND ie.active = true
     WHERE i.active = true
       AND (exclude_ids IS NULL OR NOT (i.id = ANY(exclude_ids)))
-      AND (COALESCE(array_length(upload_ids, 1), 0) = 0 OR i.upload_id = ANY(upload_ids))
+      AND (COALESCE(array_length(upload_ids, 1), 0) = 0 OR ie.upload_id = ANY(upload_ids))
       AND (search IS NULL OR search = '' OR LOWER(i.name) LIKE '%' || LOWER(search) || '%')
       -- Artifact boolean filters (each filters to resources linked to at least one of that artifact type)
       AND (NOT scenario OR EXISTS (SELECT 1 FROM scenario_images_junction j WHERE j.image_id = i.id AND j.active = true))

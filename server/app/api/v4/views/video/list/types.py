@@ -11,7 +11,6 @@ class VideoViewItem(BaseModel):
 
     video_id: UUID
     uploads_id: UUID | None = None
-    upload_id: UUID | None = None
     file_path: str | None = None
     mime_type: str | None = None
     size: int | None = None
