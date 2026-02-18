@@ -14,7 +14,7 @@ from app.utils.cache.invalidate_tags import invalidate_tags
 
 MV_SQL_PATH = (
     Path(__file__).parent.parent.parent.parent.parent
-    / "sql/v4/views/simulation/test_feedbacks_mv.sql"
+    / "sql/v4/views/simulation/test_feedback_mv.sql"
 )
 
 router = APIRouter()
@@ -34,7 +34,7 @@ async def recreate_test_feedback_view(
     http_request: Request,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> RefreshResponse:
-    """Recreate the test_feedbacks_mv materialized view."""
+    """Recreate the test_feedback_mv materialized view."""
     tags = ["views", "simulation", "test_feedback"]
     try:
         if not MV_SQL_PATH.exists():
@@ -49,7 +49,7 @@ async def recreate_test_feedback_view(
         return RefreshResponse(
             success=True,
             method="recreate",
-            message=f"Recreated test_feedbacks_mv in {duration_ms}ms",
+            message=f"Recreated test_feedback_mv in {duration_ms}ms",
             duration_ms=duration_ms,
         )
     except HTTPException:
@@ -57,5 +57,5 @@ async def recreate_test_feedback_view(
     except Exception as e:
         raise HTTPException(
             status_code=500,
-            detail=f"Failed to recreate test_feedbacks_mv: {str(e)}",
+            detail=f"Failed to recreate test_feedback_mv: {str(e)}",
         ) from e

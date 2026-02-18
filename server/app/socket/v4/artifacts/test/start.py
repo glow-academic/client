@@ -120,7 +120,7 @@ async def _test_start_impl(
                     return
 
                 # Step 3: Refresh MVs
-                await conn.execute("REFRESH MATERIALIZED VIEW test_invocations_mv")
+                await conn.execute("REFRESH MATERIALIZED VIEW test_invocation_mv")
 
             # Step 4: Invalidate caches
             await invalidate_tags(["test", "tests", "benchmark", "invocations"])

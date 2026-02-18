@@ -28,21 +28,21 @@ async def refresh_test_feedback_view(
     http_request: Request,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> RefreshResponse:
-    """Refresh the test_feedbacks_mv materialized view concurrently."""
+    """Refresh the test_feedback_mv materialized view concurrently."""
     tags = ["views", "simulation", "test_feedback"]
     try:
         start_time = time.time()
-        await conn.execute("REFRESH MATERIALIZED VIEW CONCURRENTLY test_feedbacks_mv")
+        await conn.execute("REFRESH MATERIALIZED VIEW CONCURRENTLY test_feedback_mv")
         duration_ms = int((time.time() - start_time) * 1000)
         await invalidate_tags(tags)
         return RefreshResponse(
             success=True,
             method="concurrent",
-            message=f"Refreshed test_feedbacks_mv in {duration_ms}ms",
+            message=f"Refreshed test_feedback_mv in {duration_ms}ms",
             duration_ms=duration_ms,
         )
     except Exception as e:
         raise HTTPException(
             status_code=500,
-            detail=f"Failed to refresh test_feedbacks_mv: {str(e)}",
+            detail=f"Failed to refresh test_feedback_mv: {str(e)}",
         ) from e

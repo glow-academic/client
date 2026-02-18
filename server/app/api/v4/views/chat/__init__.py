@@ -1,4 +1,4 @@
-"""Unified chat view router (attempt_chats_mv)."""
+"""Unified chat view router (attempt_chat_mv)."""
 
 from fastapi import APIRouter
 

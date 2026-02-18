@@ -1,4 +1,4 @@
-"""Types for unified chat view (attempt_chats_mv)."""
+"""Types for unified chat view (attempt_chat_mv)."""
 
 from datetime import date, datetime
 from uuid import UUID
@@ -7,7 +7,7 @@ from pydantic import BaseModel, Field
 
 
 class ChatItem(BaseModel):
-    """Single chat row from attempt_chats_mv.
+    """Single chat row from attempt_chat_mv.
 
     Unified type replacing ProfileFactsItem, SimulationFactsItem,
     ScenarioFactsItem, and ChatViewItem.

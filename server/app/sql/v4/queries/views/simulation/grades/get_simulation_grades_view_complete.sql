@@ -1,6 +1,6 @@
 -- ============================================================================
 -- Query: get_attempt_grade_view
--- Purpose: Fetch grade-level data from attempt_grades_mv with declarative filters
+-- Purpose: Fetch grade-level data from attempt_grade_mv with declarative filters
 -- Section: VIEWS/SIMULATION/GRADES
 -- ============================================================================
 
@@ -72,7 +72,7 @@ AS $$
     WITH
     mv_data AS (
         SELECT mv.*
-        FROM attempt_grades_mv mv
+        FROM attempt_grade_mv mv
         WHERE mv.chat_id = ANY(chat_ids_filter)
     ),
     items_agg AS (

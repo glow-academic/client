@@ -1,6 +1,6 @@
 -- ============================================================================
 -- Query: get_simulation_feedbacks_view
--- Purpose: Fetch feedback-level data from attempt_feedbacks_mv with declarative filters
+-- Purpose: Fetch feedback-level data from attempt_feedback_mv with declarative filters
 -- Section: VIEWS/SIMULATION/FEEDBACKS
 -- ============================================================================
 
@@ -69,7 +69,7 @@ AS $$
     WITH
     mv_data AS (
         SELECT mv.*
-        FROM attempt_feedbacks_mv mv
+        FROM attempt_feedback_mv mv
         WHERE mv.grade_id = ANY(grade_ids_filter)
     ),
     items_agg AS (

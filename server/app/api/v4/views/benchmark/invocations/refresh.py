@@ -1,4 +1,4 @@
-"""Refresh test_invocations_mv materialized view."""
+"""Refresh test_invocation_mv materialized view."""
 
 from typing import Annotated
 
@@ -27,9 +27,9 @@ async def refresh_test_invocation(
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> dict[str, bool]:
-    """Refresh test_invocations_mv concurrently."""
+    """Refresh test_invocation_mv concurrently."""
     try:
-        await conn.execute("REFRESH MATERIALIZED VIEW CONCURRENTLY test_invocations_mv")
+        await conn.execute("REFRESH MATERIALIZED VIEW CONCURRENTLY test_invocation_mv")
         return {"success": True}
     except HTTPException:
         raise

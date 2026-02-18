@@ -7,7 +7,7 @@ from pydantic import BaseModel, Field
 
 
 class BenchmarkInvocationViewItem(BaseModel):
-    """Single benchmark invocation row from test_invocations_mv.
+    """Single benchmark invocation row from test_invocation_mv.
 
     Lean: entry attrs + resource IDs + grade scalars only. Feedbacks
     fetched via simulation/test_feedback view.

@@ -3,7 +3,7 @@
 -- Purpose: Fetch training department config by training_department_ids
 -- Section: VIEWS/CHAT/TRAINING_CONFIG
 --
--- Replaces the subbundle_snapshot CTE from attempt_chats_mv.
+-- Replaces the subbundle_snapshot CTE from attempt_chat_mv.
 -- Returns config flags + resource ID arrays per training_department_id.
 -- ============================================================================
 

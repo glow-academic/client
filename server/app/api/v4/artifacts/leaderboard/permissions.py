@@ -503,7 +503,7 @@ def build_leaderboard_sections(
 
 
 # ---------------------------------------------------------------------------
-# v2 functions — operate on ChatItem (chat-grain from attempt_chats_mv)
+# v2 functions — operate on ChatItem (chat-grain from attempt_chat_mv)
 # ---------------------------------------------------------------------------
 
 
@@ -522,7 +522,7 @@ def build_leaderboard_rows_v2(
     rank_offset: int = 0,
     message_stats_map: dict | None = None,
 ) -> list[LeaderboardDataRow]:
-    """Build leaderboard rows from chat-grain items (attempt_chats_mv).
+    """Build leaderboard rows from chat-grain items (attempt_chat_mv).
 
     Aggregates chat-level rows to profile-level metrics entirely in Python.
     """
@@ -868,14 +868,14 @@ def build_leaderboard_sections_v2(
     chat_items: list[ChatItem],
     rows: list[LeaderboardDataRow] | None = None,
 ) -> LeaderboardSections:
-    """Build leaderboard section skeleton from attempt_chats_mv chat-grain rows."""
+    """Build leaderboard section skeleton from attempt_chat_mv chat-grain rows."""
     row_data = rows or []
     has_data = bool(chat_items)
     return LeaderboardSections(
         header_metrics=_compute_header_metrics_v2(chat_items),
-        rankings=_section(has_data, "Derived from attempt_chats_mv"),
-        accolades=_section(has_data, "Derived from attempt_chats_mv rank metrics"),
-        trends=_section(has_data, "Derived from attempt_chats_mv"),
-        filters=_section(has_data, "Filter IDs sourced from attempt_chats_mv"),
+        rankings=_section(has_data, "Derived from attempt_chat_mv"),
+        accolades=_section(has_data, "Derived from attempt_chat_mv rank metrics"),
+        trends=_section(has_data, "Derived from attempt_chat_mv"),
+        filters=_section(has_data, "Filter IDs sourced from attempt_chat_mv"),
         accolade_winners=compute_accolade_winners(row_data),
     )

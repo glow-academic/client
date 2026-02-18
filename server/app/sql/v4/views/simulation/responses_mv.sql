@@ -2,7 +2,7 @@
 -- Grain: One row per response entry per chat
 --
 -- Purpose: Flat denormalized response rows for simulation chats,
--- replacing the responses_agg composite array in attempt_chats_mv.
+-- replacing the responses_agg composite array in attempt_chat_mv.
 --
 -- Dependencies: responses_entry, responses_questions_connection,
 --               responses_options_connection

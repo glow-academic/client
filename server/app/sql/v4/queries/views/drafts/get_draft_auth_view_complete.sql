@@ -1,6 +1,6 @@
 -- ==========================================================================
 -- Query: get_draft_auth_view
--- Purpose: Fetch draft-level denormalized data from draft_auth_mv
+-- Purpose: Fetch draft-level denormalized data from auth_drafts_mv
 -- Section: VIEWS/DRAFTS
 -- ==========================================================================
 
@@ -59,7 +59,7 @@ STABLE
 AS $$
     WITH mv_data AS (
         SELECT mv.*
-        FROM draft_auth_mv mv
+        FROM auth_drafts_mv mv
         WHERE
             draft_ids IS NULL
             OR cardinality(draft_ids) = 0

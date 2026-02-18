@@ -96,7 +96,7 @@ AS $$
         WHERE grc.active = TRUE
         ORDER BY grc.grade_id, grc.created_at DESC
     ),
-    -- Join attempt_chats_mv with grade/rubric/feedback chain to compute scores per standard_group
+    -- Join attempt_chat_mv with grade/rubric/feedback chain to compute scores per standard_group
     scored AS (
         SELECT
             ch.chat_id,
@@ -113,7 +113,7 @@ AS $$
             ch.attempt_date,
             ch.attempt_type,
             ch.is_archived
-        FROM attempt_chats_mv ch
+        FROM attempt_chat_mv ch
         JOIN latest_grade lg ON lg.chat_id = ch.chat_id
         JOIN grade_rubric gr ON gr.grade_id = lg.grade_id
         JOIN attempt_feedback_entry fe ON fe.grade_id = lg.grade_id AND fe.active = TRUE

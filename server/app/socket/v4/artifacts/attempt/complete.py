@@ -191,7 +191,7 @@ async def _handle_message_complete(sid: str, data: dict[str, Any]) -> None:
         try:
             async with get_db_connection() as conn:
                 await conn.execute(
-                    "REFRESH MATERIALIZED VIEW CONCURRENTLY attempt_messages_mv"
+                    "REFRESH MATERIALIZED VIEW CONCURRENTLY attempt_message_mv"
                 )
         except Exception as mv_err:
             logger.warning(f"MV refresh failed (non-fatal): {mv_err}")

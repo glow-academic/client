@@ -61,14 +61,14 @@ BEGIN
     refreshed := array_append(refreshed, 'calls_mv');
 
     -- Attempt MVs
-    REFRESH MATERIALIZED VIEW CONCURRENTLY attempt_chats_mv;
-    refreshed := array_append(refreshed, 'attempt_chats_mv');
+    REFRESH MATERIALIZED VIEW CONCURRENTLY attempt_chat_mv;
+    refreshed := array_append(refreshed, 'attempt_chat_mv');
 
     REFRESH MATERIALIZED VIEW CONCURRENTLY attempt_mv;
     refreshed := array_append(refreshed, 'attempt_mv');
 
-    REFRESH MATERIALIZED VIEW CONCURRENTLY attempt_messages_mv;
-    refreshed := array_append(refreshed, 'attempt_messages_mv');
+    REFRESH MATERIALIZED VIEW CONCURRENTLY attempt_message_mv;
+    refreshed := array_append(refreshed, 'attempt_message_mv');
 
     -- Benchmark MVs
     REFRESH MATERIALIZED VIEW CONCURRENTLY benchmark_mv;
@@ -77,8 +77,8 @@ BEGIN
     REFRESH MATERIALIZED VIEW CONCURRENTLY suite_mv;
     refreshed := array_append(refreshed, 'suite_mv');
 
-    REFRESH MATERIALIZED VIEW CONCURRENTLY test_invocations_mv;
-    refreshed := array_append(refreshed, 'test_invocations_mv');
+    REFRESH MATERIALIZED VIEW CONCURRENTLY test_invocation_mv;
+    refreshed := array_append(refreshed, 'test_invocation_mv');
 
     REFRESH MATERIALIZED VIEW CONCURRENTLY test_mv;
     refreshed := array_append(refreshed, 'test_mv');

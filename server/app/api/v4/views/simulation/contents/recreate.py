@@ -14,7 +14,7 @@ from app.utils.cache.invalidate_tags import invalidate_tags
 
 MV_SQL_PATH = (
     Path(__file__).parent.parent.parent.parent.parent
-    / "sql/v4/views/simulation/attempt_contents_mv.sql"
+    / "sql/v4/views/simulation/attempt_content_mv.sql"
 )
 
 router = APIRouter()
@@ -34,7 +34,7 @@ async def recreate_contents_view(
     http_request: Request,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> RefreshResponse:
-    """Recreate the attempt_contents_mv materialized view."""
+    """Recreate the attempt_content_mv materialized view."""
     tags = ["views", "simulation", "contents"]
     try:
         if not MV_SQL_PATH.exists():
@@ -49,7 +49,7 @@ async def recreate_contents_view(
         return RefreshResponse(
             success=True,
             method="recreate",
-            message=f"Recreated attempt_contents_mv in {duration_ms}ms",
+            message=f"Recreated attempt_content_mv in {duration_ms}ms",
             duration_ms=duration_ms,
         )
     except HTTPException:
@@ -57,5 +57,5 @@ async def recreate_contents_view(
     except Exception as e:
         raise HTTPException(
             status_code=500,
-            detail=f"Failed to recreate attempt_contents_mv: {str(e)}",
+            detail=f"Failed to recreate attempt_content_mv: {str(e)}",
         ) from e

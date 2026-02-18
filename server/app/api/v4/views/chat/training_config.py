@@ -1,4 +1,4 @@
-"""Training config service — replaces subbundle_snapshot CTE from attempt_chats_mv."""
+"""Training config service — replaces subbundle_snapshot CTE from attempt_chat_mv."""
 
 from uuid import UUID
 

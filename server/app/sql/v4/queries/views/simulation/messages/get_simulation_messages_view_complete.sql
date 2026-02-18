@@ -1,6 +1,6 @@
 -- ============================================================================
 -- Query: get_simulation_messages_view
--- Purpose: Fetch message-level data from attempt_messages_mv
+-- Purpose: Fetch message-level data from attempt_message_mv
 -- Section: VIEWS/SIMULATION/MESSAGES
 -- Note: Messages are fully denormalized - no resource JOINs needed
 -- ============================================================================
@@ -74,7 +74,7 @@ AS $$
     WITH
     mv_data AS (
         SELECT mv.*
-        FROM attempt_messages_mv mv
+        FROM attempt_message_mv mv
         WHERE mv.attempt_id = attempt_id_filter
     ),
     items_agg AS (
