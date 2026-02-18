@@ -56,12 +56,13 @@ deactivate_default_prompts AS (
 ),
 handle_default_prompt AS (
     -- Handle default prompt if no department_id but prompt provided
+    -- Uses the partial unique index (one active per persona) to upsert
     INSERT INTO persona_prompts (persona_id, prompt_id, active, created_at, updated_at)
     SELECT $1::uuid, sp.prompt_id::uuid, true, NOW(), NOW()
     FROM selected_prompt_id sp
     WHERE $13::uuid IS NULL AND sp.prompt_id IS NOT NULL
-    ON CONFLICT (persona_id, prompt_id) DO UPDATE SET
-        active = true,
+    ON CONFLICT (persona_id) WHERE (active = true) DO UPDATE SET
+        prompt_id = EXCLUDED.prompt_id,
         updated_at = NOW()
 ),
 replace_departments AS (

@@ -494,7 +494,7 @@ export function UnifiedSidebar({
 
   const handleLoginOrLogout = async () => {
     const appPrefix = process.env["NEXT_PUBLIC_APP_PREFIX"] || "";
-    if (!activeProfile || activeProfile.defaultProfile) {
+    if (!activeProfile || (activeProfile.defaultProfile && !isFullEmulation)) {
       // Default guest (unauthenticated) — navigate to login page
       router.push("/login");
       return;
@@ -622,7 +622,7 @@ export function UnifiedSidebar({
                     <LogOut className="h-4 w-4 mr-2" />
                     {isLoggingOut
                       ? "Logging out..."
-                      : !activeProfile || activeProfile.defaultProfile
+                      : !activeProfile || (activeProfile.defaultProfile && !isFullEmulation)
                         ? "Log in"
                         : "Logout"}
                   </DropdownMenuItem>
