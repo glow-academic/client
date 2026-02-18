@@ -10,6 +10,11 @@ const clientId = process.env["AUTH_MICROSOFT_ENTRA_ID_ID"] || "";
 const clientSecret = process.env["AUTH_MICROSOFT_ENTRA_ID_SECRET"] || "";
 const secret = process.env["AUTH_SECRET"] || "";
 
+/** Derive a unique alias from an email (e.g. "ashok@learn-loop.org" → "ashok-learn-loop-org") */
+function emailToAlias(email: string): string {
+  return email.toLowerCase().replace(/[^a-z0-9]/g, "-");
+}
+
 // NOTE: also export `unstable_update` as `update` for server-side session mutation
 export const {
   handlers,
@@ -35,7 +40,7 @@ export const {
         if (!user.email) {
           return;
         }
-        const alias = user.email.split("@")[0];
+        const alias = emailToAlias(user.email);
 
         // V3 API - fetch profile by alias
         let existingProfile = null;
@@ -87,7 +92,7 @@ export const {
             profile?.name?.split(" ") || user.name?.split(" ") || [];
           const firstName = nameParts[0] || "Unknown";
           const lastName = nameParts[nameParts.length - 1] || "User";
-          const alias = user.email.split("@")[0] || "";
+          const alias = emailToAlias(user.email);
           if (!alias) {
             return;
           }
@@ -136,9 +141,8 @@ export const {
     async jwt({ token, user, trigger, session }) {
       // On initial sign in, attach canonical profileId/role from email → alias lookup
       if (user?.email) {
-        const aliasParts = user.email.split("@");
-        const alias = aliasParts[0];
-        if (alias && alias.length > 0) {
+        const alias = emailToAlias(user.email);
+        if (alias.length > 0) {
           // V3 API - fetch profile by alias
           let profile = null;
           try {

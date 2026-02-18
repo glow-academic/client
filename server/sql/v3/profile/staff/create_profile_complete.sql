@@ -37,6 +37,14 @@ department_insert AS (
     FROM profile_insert pi, resolved_department rd
     WHERE rd.department_id IS NOT NULL
     ON CONFLICT (profile_id, department_id) DO NOTHING
+),
+rate_limit_insert AS (
+    -- Set default rate limit for guest profiles (25 requests/day)
+    INSERT INTO profile_request_limits (profile_id, requests_per_day, active)
+    SELECT pi.id, 25, true
+    FROM profile_insert pi
+    WHERE $5 = 'guest'
+    ON CONFLICT (profile_id) DO NOTHING
 )
 -- Return profile info and alias check result (always returns a row)
 SELECT
