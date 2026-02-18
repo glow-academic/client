@@ -76,10 +76,6 @@ import { toast } from "sonner";
 import AttemptInput from "./AttemptInput";
 import AttemptMessages from "./AttemptMessages";
 
-type UpdateChatCreatedAtBody = UpdateChatCreatedAtIn extends { body: infer B }
-  ? B
-  : never;
-
 interface AttemptChatProps {
   attemptId: string;
   attemptData: AttemptFullOut;
@@ -92,7 +88,8 @@ interface AttemptChatProps {
 export default function AttemptChat({
   attemptId,
   attemptData: initialAttemptData,
-  updateChatCreatedAtAction,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  updateChatCreatedAtAction: _updateChatCreatedAtAction,
   revalidateAttemptAction,
 }: AttemptChatProps) {
   const router = useRouter();
@@ -105,24 +102,6 @@ export default function AttemptChat({
 
   const { setEntityMetadata, clearEntityMetadata } = useBreadcrumbContext();
 
-  // Server action handler
-  const handleUpdateChatCreatedAt = useCallback(
-    async (body: UpdateChatCreatedAtBody) => {
-      if (!updateChatCreatedAtAction) {
-        throw new Error("updateChatCreatedAtAction is required");
-      }
-      await updateChatCreatedAtAction({ body });
-    },
-    [updateChatCreatedAtAction]
-  );
-
-  // Wrapper function for compatibility (matching original async signature)
-  const updateChatCreatedAt = useCallback(
-    async (request: { chatId: string; createdAt: string }) => {
-      await handleUpdateChatCreatedAt(request);
-    },
-    [handleUpdateChatCreatedAt]
-  );
 
   // Initialize state from server snapshot
   const [attemptData, setAttemptData] = useState<AttemptFullResponse | null>(
@@ -478,35 +457,106 @@ export default function AttemptChat({
     };
   }, [attemptData?.timer]);
 
+  // Track when the client-side timer started (set synchronously during render)
+  const timerStartRef = useRef<number | null>(null);
+  // Track which serverTimer.elapsed value our localElapsedOffset was computed against
+  const serverElapsedForOffsetRef = useRef(0);
+
+  // Timer doesn't start until the first user message is sent
+  // This gives TAs time to read the scenario without the clock running
+  const timerPaused = useMemo(() => {
+    if (!currentChat || currentChat.completed) return false;
+    return !currentMessages.some((m) => m.type === "query");
+  }, [currentChat, currentMessages]);
+
+  const prevTimerPausedRef = useRef(timerPaused);
+
   // Update baseline when server data changes
   useEffect(() => {
     dataFetchedAtRef.current = Date.now();
     setLocalElapsedOffset(0);
-  }, [attemptData?.timer.elapsed]);
+    timerStartRef.current = null;
+    serverElapsedForOffsetRef.current = serverTimer.elapsed;
+  }, [attemptData?.timer.elapsed]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Detect timerPaused transition synchronously during render (NOT in useEffect)
+  // This avoids the 1-frame flash of stale serverTimer.elapsed
+  if (prevTimerPausedRef.current && !timerPaused) {
+    timerStartRef.current = Date.now();
+  }
+  if (timerPaused) {
+    timerStartRef.current = null;
+  }
+  prevTimerPausedRef.current = timerPaused;
+
+  // NOTE: serverElapsedForOffsetRef is updated only in the baseline useEffect and tick interval.
+  // The timer memo detects stale offsets by comparing serverTimer.elapsed to this ref,
+  // using effectiveOffset=0 when they differ (avoids flash of new_serverElapsed + old_offset).
 
   // Tick timer every second for active simulations
+  // Stop ticking when paused (no messages yet), grading, or completed
   useEffect(() => {
-    if (!currentChat || currentChat.completed || showResults) {
+    if (!currentChat || currentChat.completed || showResults || isGrading || timerPaused) {
       return;
     }
 
     const interval = setInterval(() => {
-      const now = Date.now();
-      const secondsSinceFetch = Math.floor(
-        (now - dataFetchedAtRef.current) / 1000
-      );
-      setLocalElapsedOffset(secondsSinceFetch);
+      if (timerStartRef.current) {
+        // Client-side timer: compute from when first message was sent
+        const elapsed = Math.floor((Date.now() - timerStartRef.current) / 1000);
+        setLocalElapsedOffset(elapsed);
+      } else {
+        // Server-side baseline: normal offset from fetch time
+        const secondsSinceFetch = Math.floor(
+          (Date.now() - dataFetchedAtRef.current) / 1000
+        );
+        setLocalElapsedOffset(secondsSinceFetch);
+      }
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [currentChat, showResults]);
+  }, [currentChat, showResults, isGrading, timerPaused]);
 
   // Compute display timer
   const timer = useMemo(() => {
-    const displayElapsed = serverTimer.elapsed + localElapsedOffset;
+    // Timer shows 0 until first message is sent
+    if (timerPaused) {
+      return {
+        elapsed: 0,
+        remaining: serverTimer.remaining !== null
+          ? serverTimer.remaining + serverTimer.elapsed
+          : null,
+        expired: false,
+      };
+    }
+
+    // If we have a client-side start time, use localElapsedOffset directly
+    // (it's computed from timerStartRef, independent of stale serverTimer)
+    if (timerStartRef.current) {
+      const displayRemaining =
+        serverTimer.remaining !== null
+          ? serverTimer.remaining + serverTimer.elapsed - localElapsedOffset
+          : null;
+      return {
+        elapsed: localElapsedOffset,
+        remaining: displayRemaining,
+        expired:
+          serverTimer.expired ||
+          (displayRemaining !== null && displayRemaining <= 0),
+      };
+    }
+
+    // If server elapsed changed but useEffect hasn't reset offset yet, use 0 offset
+    // This prevents a 1-frame flash of (new_serverElapsed + old_offset)
+    const effectiveOffset =
+      serverTimer.elapsed !== serverElapsedForOffsetRef.current
+        ? 0
+        : localElapsedOffset;
+
+    const displayElapsed = serverTimer.elapsed + effectiveOffset;
     const displayRemaining =
       serverTimer.remaining !== null
-        ? serverTimer.remaining - localElapsedOffset
+        ? serverTimer.remaining - effectiveOffset
         : null;
 
     return {
@@ -516,7 +566,7 @@ export default function AttemptChat({
         serverTimer.expired ||
         (displayRemaining !== null && displayRemaining <= 0),
     };
-  }, [serverTimer, localElapsedOffset]);
+  }, [serverTimer, localElapsedOffset, timerPaused]);
 
   // Update simulation ref when simulation changes
   useEffect(() => {
@@ -906,6 +956,21 @@ export default function AttemptChat({
       toast.error(data.message);
     };
 
+    // Freeze timer immediately when end session/end chat starts (before grading)
+    const handleEndAllStarted = (data: { chat_id: string; attempt_id: string }) => {
+      if (data.attempt_id === attemptId) {
+        isGradingRef.current = true;
+        setIsGrading(true);
+      }
+    };
+
+    const handleEndChatStarted = (data: { chat_id: string; attempt_id: string }) => {
+      if (data.chat_id === currentChat?.id) {
+        isGradingRef.current = true;
+        setIsGrading(true);
+      }
+    };
+
     const handleSimulationGradingProgress = (data: {
       type: string;
       chat_id: string;
@@ -1211,6 +1276,8 @@ export default function AttemptChat({
     socket.on("simulation_stopped", handleSimulationStopped);
     socket.on("simulation_continued", handleSimulationContinued);
     socket.on("end_all_completed", handleEndAllCompleted);
+    socket.on("end_all_started", handleEndAllStarted);
+    socket.on("end_chat_started", handleEndChatStarted);
     socket.on(
       "send_simulation_message_error",
       handleSendSimulationMessageError
@@ -1235,6 +1302,8 @@ export default function AttemptChat({
       socket.off("simulation_stopped", handleSimulationStopped);
       socket.off("simulation_continued", handleSimulationContinued);
       socket.off("end_all_completed", handleEndAllCompleted);
+      socket.off("end_all_started", handleEndAllStarted);
+      socket.off("end_chat_started", handleEndChatStarted);
       socket.off(
         "send_simulation_message_error",
         handleSendSimulationMessageError
@@ -1306,7 +1375,6 @@ export default function AttemptChat({
   const inputPanelGroupRef = useRef<ImperativePanelGroupHandle>(null);
 
   // Track which chats have had their timestamps reset to prevent infinite loops
-  const resetChatTimestampsRef = useRef<Set<string>>(new Set());
 
   // Check if current user is the owner of this attempt (activeProfile, effectiveProfile, and attempt.profileId must all match)
   const isAttemptOwner = useMemo(() => {
@@ -1404,14 +1472,22 @@ export default function AttemptChat({
 
   // Helper function to calculate time taken from chat timestamps
   const calculateChatTimeTaken = useCallback((chat: Chat | null): number => {
-    if (!chat?.completed || !chat.completedAt) return 0;
+    if (!chat?.completed) return 0;
 
+    // Prefer the grade's timeTaken (accurately computed server-side at end-session time)
+    // over completedAt - createdAt (which includes grading delay)
+    const chatData = attemptData?.chats.find((c) => c.chat.id === chat.id);
+    const gradeTimeTaken = chatData?.grade?.timeTaken;
+    if (gradeTimeTaken != null && gradeTimeTaken > 0) {
+      return gradeTimeTaken;
+    }
+
+    // Fallback: compute from timestamps if no grade yet
+    if (!chat.completedAt) return 0;
     const startTime = new Date(chat.createdAt).getTime();
     const endTime = new Date(chat.completedAt).getTime();
-    const timeTakenSeconds = Math.floor((endTime - startTime) / 1000);
-
-    return timeTakenSeconds;
-  }, []);
+    return Math.floor((endTime - startTime) / 1000);
+  }, [attemptData]);
 
   // Helper function to calculate adjusted time limit for multi-simulation attempts
   const calculateAdjustedTimeLimit = useCallback(
@@ -1447,44 +1523,6 @@ export default function AttemptChat({
     [calculateChatTimeTaken, calculateAdjustedTimeLimit]
   );
 
-  // Reset createdAt timestamp when chat is first loaded (if createdAt and updatedAt are the same)
-  useEffect(() => {
-    const resetChatTimestamp = async () => {
-      if (!currentChat || !isAttemptOwner) return;
-
-      const chat = currentChat;
-
-      // Don't reset timestamps for completed chats
-      if (chat.completed) return;
-
-      // Check if we've already reset timestamps for this chat to prevent infinite loops
-      if (resetChatTimestampsRef.current.has(chat.id)) return;
-
-      const createdAt = new Date(chat.createdAt);
-      const updatedAt = new Date(chat.updatedAt);
-
-      // Check if createdAt and updatedAt are the same (within 1 second tolerance)
-      const timeDiff = Math.abs(createdAt.getTime() - updatedAt.getTime());
-      if (timeDiff <= 1000) {
-        // Mark this chat as processed to prevent infinite loops
-        resetChatTimestampsRef.current.add(chat.id);
-
-        // Reset createdAt to current time ONLY - never update updatedAt
-        const now = new Date();
-
-        try {
-          await updateChatCreatedAt({
-            chatId: chat.id,
-            createdAt: now.toISOString(),
-          });
-        } catch {
-          // Error handling - timestamp reset failed silently
-        }
-      }
-    };
-
-    resetChatTimestamp();
-  }, [currentChat, isAttemptOwner, attemptId, updateChatCreatedAt]);
 
   // Auto-select first chat when results show and default to showing rubric if all chats completed
   useEffect(() => {

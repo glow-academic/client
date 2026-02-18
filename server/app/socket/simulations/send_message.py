@@ -520,6 +520,19 @@ async def _send_simulation_message_impl(
                         "created_at": user_message_row["created_at"],
                     }
 
+                    # Reset chat created_at on first user message (timer starts now)
+                    # Only updates if no prior query messages exist (the one we just inserted is the first)
+                    await conn.execute(
+                        """
+                        UPDATE simulation_chats
+                        SET created_at = NOW()
+                        WHERE id = $1::uuid
+                          AND (SELECT COUNT(*) FROM simulation_messages
+                               WHERE chat_id = $1::uuid AND type = 'query') = 1
+                        """,
+                        str(chat_id_uuid),
+                    )
+
                     # 2. Emit user message to connected clients
                     logger.info(
                         f"Emitting user message to room simulation_{chat_id_uuid}"

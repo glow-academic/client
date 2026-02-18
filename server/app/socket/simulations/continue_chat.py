@@ -22,6 +22,7 @@ from app.utils.chat.get_simulation_conversation_history import \
 from app.utils.debug_info import DebugContext
 from app.utils.debug_info import debug_info as debug_info_tool
 from app.utils.rubric import get_dynamic_rubric
+from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.sql_helper import load_sql
 from pydantic import BaseModel, ValidationError
 
@@ -203,6 +204,7 @@ async def _run_grade_agent_inline(
     simulation_chat_id: uuid.UUID,
     department_id: uuid.UUID,
     conn: asyncpg.Connection,
+    ended_at: datetime | None = None,
 ) -> str:
     """Inlined grading agent logic."""
     try:
@@ -400,10 +402,11 @@ async def _run_grade_agent_inline(
         else:
             chat_created_at = chat_created_at.replace(tzinfo=UTC)
 
-        # Calculate time taken - use current time since completed_at column was removed
-        current_time = datetime.now(UTC)
+        # Calculate time taken - use ended_at if provided (from End Session),
+        # otherwise fall back to current time
+        end_time = ended_at if ended_at else datetime.now(UTC)
         actual_time_taken = max(
-            1, int((current_time - chat_created_at).total_seconds())
+            1, int((end_time - chat_created_at).total_seconds())
         )
 
         def format_minutes(seconds: int) -> str:
@@ -692,6 +695,9 @@ async def _continue_simulation_impl(sid: str, data: ContinueSimulationPayload) -
         end_all = data.end_all
         previous_chat_id = data.previous_chat_id
         previous_chat_map = data.previous_chat_map
+        # Capture the end timestamp now (when user clicked End Session / End Chat)
+        # so grading uses the actual end time, not the time after grading finishes
+        ended_at = datetime.now(UTC)
         # department_id is now derived server-side from chat/scenario context
 
         if not chat_id or not attempt_id:
@@ -1198,7 +1204,7 @@ async def _continue_simulation_impl(sid: str, data: ContinueSimulationPayload) -
                 chat_message_count = message_count_map.get(chat_id, 0)
                 if chat_message_count >= 2:
                     simulation_grade_id = await _run_grade_agent_inline(
-                        uuid.UUID(chat_id), department_id, conn
+                        uuid.UUID(chat_id), department_id, conn, ended_at=ended_at
                     )
 
                     # After grading completes, add current chat's parent scenario to scenarios_with_grades_set
@@ -1263,6 +1269,7 @@ async def _continue_simulation_impl(sid: str, data: ContinueSimulationPayload) -
                                 uuid.UUID(str(existing_chat["id"])),
                                 department_id,
                                 conn,
+                                ended_at=ended_at,
                             )
                         sql = load_sql("sql/v3/simulations/update_chat_completed.sql")
                         await conn.execute(sql, str(existing_chat["id"]))
@@ -1303,6 +1310,29 @@ async def _continue_simulation_impl(sid: str, data: ContinueSimulationPayload) -
 
             # Include chats created from previous_chat_map handling
             total_created_chats = created_chats_count + created_chats_count_map
+
+            # Invalidate cache after grading so home/dashboard show updated grades
+            try:
+                invalidation_tags = [
+                    "dashboard",
+                    "attempts",
+                ]
+                if profile_id:
+                    invalidation_tags.extend([
+                        f"home:profile:{profile_id}",
+                        f"reports:profile:{profile_id}",
+                        f"practice:profile:{profile_id}",
+                        f"history:profile:{profile_id}",
+                    ])
+                await invalidate_tags(invalidation_tags)
+                logger.info(
+                    f"Invalidated cache for tags: {invalidation_tags} after grading attempt {attempt_id}"
+                )
+            except Exception as cache_error:
+                logger.warning(
+                    f"Failed to invalidate cache after grading: {cache_error}",
+                    exc_info=True,
+                )
 
             result = {
                 "completed_chat_id": chat_id,
