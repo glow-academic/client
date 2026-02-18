@@ -116,7 +116,7 @@ export function AnalyticsProvider({ children }: AnalyticsProviderProps) {
       endDate: defaultEndDate.toISOString(),
       cohortIds: [],
       roles: scopedRoles || [],
-      simulationFilters: ["general"],
+      simulationFilters: ["general", "practice", "archived"],
       departmentIds: [],
     };
   }, [earliestDate, scopedRoles]);
@@ -143,7 +143,7 @@ export function AnalyticsProvider({ children }: AnalyticsProviderProps) {
       selectedCohortIds: [],
       selectedDepartmentIds: [],
       selectedRoles: [] as ProfileRole[],
-      simulationFilters: ["general"] as SimulationFilter[],
+      simulationFilters: ["general", "practice", "archived"] as SimulationFilter[],
     };
   }, [searchParams, defaultFilters]);
 
@@ -255,7 +255,7 @@ export function AnalyticsProvider({ children }: AnalyticsProviderProps) {
 
     if (
       simulationFilters.length > 0 &&
-      !arraysEqual(simulationFilters, ["general"])
+      !arraysEqual(simulationFilters, ["general", "practice", "archived"])
     ) {
       currentFilters.simulationFilters = simulationFilters;
     }

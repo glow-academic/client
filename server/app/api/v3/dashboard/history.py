@@ -103,7 +103,7 @@ async def get_dashboard_history(
         from datetime import datetime
 
         roles = filters.roles if filters.roles else []
-        simulation_filters = filters.simulationFilters if filters.simulationFilters else ["general"]
+        simulation_filters = filters.simulationFilters if filters.simulationFilters else ["general", "practice", "archived"]
         params = [
             datetime.fromisoformat(filters.startDate.replace("Z", "+00:00")),  # $1
             datetime.fromisoformat(filters.endDate.replace("Z", "+00:00")),  # $2

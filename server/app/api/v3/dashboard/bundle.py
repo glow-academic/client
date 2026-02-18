@@ -1425,7 +1425,7 @@ async def get_dashboard(
                 for f in filters.simulationFilters
             ]
             if filters.simulationFilters
-            else ["general"]
+            else ["general", "practice", "archived"]
         )
         department_ids = filters.departmentIds or []
 

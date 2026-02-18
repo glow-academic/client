@@ -84,6 +84,8 @@ history_attempt_cohorts AS (
         (SELECT COUNT(*) FROM expanded_history_cohort_ids) = 0
         -- Otherwise, only include cohorts in the expanded list
         OR c.id IN (SELECT cohort_id FROM expanded_history_cohort_ids)
+        -- Always include practice simulation attempts (they have no cohort links)
+        OR ha.practice_simulation = TRUE
     )
     GROUP BY ha.attempt_id
 ),
@@ -97,6 +99,8 @@ history_attempts_filtered AS (
         (SELECT COUNT(*) FROM expanded_history_cohort_ids) = 0
         -- Otherwise, only include attempts with matching cohorts
         OR cardinality(hac.cohort_ids) > 0
+        -- Always include practice simulations regardless of cohort
+        OR ha.practice_simulation = TRUE
     )
 ),
 -- Get all unique profile options from filtered attempts (before history-specific filters)

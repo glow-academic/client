@@ -136,7 +136,7 @@ async function getDashboardFilters(searchParams?: URLSearchParams) {
     endDate: endDate.toISOString(),
     cohortIds: [] as string[],
     roles: [] as string[],
-    simulationFilters: ["general" as const],
+    simulationFilters: ["general" as const, "practice" as const, "archived" as const],
     departmentIds: [] as string[],
   };
 
