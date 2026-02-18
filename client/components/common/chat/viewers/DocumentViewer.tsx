@@ -181,6 +181,13 @@ export default function DocumentViewer({
               height: "100%",
             }}
           />
+          <div className="hidden md:block pt-2">
+            <Button asChild variant="default" size="sm" className="w-full">
+              <a href={content ?? ""} target="_blank" rel="noopener noreferrer">
+                Open PDF
+              </a>
+            </Button>
+          </div>
         </div>
       );
     }
