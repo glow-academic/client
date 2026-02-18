@@ -25,7 +25,8 @@ import {
 } from "@/components/ui/tooltip";
 
 import { useNoPasteTextarea } from "@/hooks/use-no-paste-textarea";
-import { useMemo } from "react";
+import { useMemo, useCallback } from "react";
+import { toast } from "sonner";
 
 export interface AttemptInputProps {
   isAttemptOwner?: boolean;
@@ -84,12 +85,23 @@ export default function AttemptInput({
     return scenario?.copyPasteAllowed ?? simulation?.copyPasteAllowed ?? false;
   }, [scenario?.copyPasteAllowed, simulation?.copyPasteAllowed]);
 
+  // Paste notification — dismiss previous before showing new one
+  const pasteToastIdRef = useRef<string | number | undefined>(undefined);
+  const onPasteAttempt = useCallback(() => {
+    if (pasteToastIdRef.current) {
+      toast.dismiss(pasteToastIdRef.current);
+    }
+    const isMobile = window.innerWidth < 768;
+    pasteToastIdRef.current = toast.error("Paste is not allowed in this simulation", {
+      duration: 1500,
+      position: isMobile ? "top-center" : "bottom-right",
+    });
+  }, []);
+
   // Initialize paste prevention hook
   const pastePrevention = useNoPasteTextarea(textareaRef, {
     enabled: !copyPasteAllowed, // Disable paste prevention if copyPasteAllowed is true
-    onPasteAttempt: () => {
-      // Paste attempt blocked - no logging needed
-    },
+    onPasteAttempt,
     enableBurstDetection: true,
     maxBurstSize: 1,
   });
