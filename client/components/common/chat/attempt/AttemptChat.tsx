@@ -207,6 +207,26 @@ export default function AttemptChat({
       });
       return updated;
     });
+    // Clear optimistic messages for chats where server now has the message
+    setOptimisticMessages((prev) => {
+      const updated: Record<string, ChatDataType["messages"]> = {};
+      Object.entries(prev).forEach(([chatId, optimisticMsgs]) => {
+        const chatData = initialAttemptData?.chats?.find(
+          (c) => c.chat.id === chatId
+        );
+        const serverMsgIds = new Set(
+          (chatData?.messages ?? []).map((m) => m.content)
+        );
+        // Keep optimistic messages not yet in server data
+        const remaining = optimisticMsgs.filter(
+          (m) => !serverMsgIds.has(m.content)
+        );
+        if (remaining.length > 0) {
+          updated[chatId] = remaining;
+        }
+      });
+      return updated;
+    });
   }, [initialAttemptData]);
   const [isSendingMessage, setIsSendingMessage] = useState(false);
   const [isStoppingMessage, setIsStoppingMessage] = useState(false);
@@ -293,6 +313,11 @@ export default function AttemptChat({
   // Rubric structure
   const rubricStructure = attemptData?.rubricStructure ?? null;
 
+  // Optimistic user messages - shown instantly before server confirms
+  const [optimisticMessages, setOptimisticMessages] = useState<
+    Record<string, ChatDataType["messages"]>
+  >({});
+
   // Optimistic grading states - updated in realtime from WebSocket events
   type OptimisticGradingState = NonNullable<ChatDataType["gradingState"]>;
   const [optimisticGradingStates, setOptimisticGradingStates] = useState<
@@ -360,8 +385,10 @@ export default function AttemptChat({
     const chatData = attemptData.chats.find(
       (c) => c.chat.id === currentChat.id
     );
-    return chatData?.messages ?? [];
-  }, [attemptData, currentChat]);
+    const serverMessages = chatData?.messages ?? [];
+    const pending = optimisticMessages[currentChat.id] ?? [];
+    return [...serverMessages, ...pending];
+  }, [attemptData, currentChat, optimisticMessages]);
 
   // Hints - get hints for current chat (merged from server + optimistic)
   const currentChatHints = useMemo(() => {
@@ -616,6 +643,26 @@ export default function AttemptChat({
 
       setIsSendingMessage(true);
 
+      // Optimistic: show user message instantly
+      if (!isRetry) {
+        const optimisticMsg = {
+          id: `optimistic-${Date.now()}`,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          chatId: currentChat.id,
+          content: message,
+          type: "query",
+          completed: true,
+        };
+        setOptimisticMessages((prev) => ({
+          ...prev,
+          [currentChat.id]: [
+            ...(prev[currentChat.id] ?? []),
+            optimisticMsg,
+          ],
+        }));
+      }
+
       try {
         socket.emit("send_simulation_message", {
           chat_id: currentChat.id,
@@ -625,6 +672,16 @@ export default function AttemptChat({
       } catch (err) {
         toast.error(`Failed to send message: ${err}`);
         setIsSendingMessage(false);
+        // Remove optimistic message on error
+        if (!isRetry) {
+          setOptimisticMessages((prev) => {
+            const chatMsgs = prev[currentChat.id] ?? [];
+            const filtered = chatMsgs.filter(
+              (m) => m.content !== message
+            );
+            return { ...prev, [currentChat.id]: filtered };
+          });
+        }
       }
     },
     [currentChat, isSendingMessage, socket]
@@ -710,7 +767,7 @@ export default function AttemptChat({
       }
     };
 
-    const handleSimulationMessageCancelled = (data: {
+    const handleSimulationMessageCancelled = async (data: {
       message_id: string;
       chat_id: string;
       final_content: string;
@@ -718,6 +775,11 @@ export default function AttemptChat({
       if (data.chat_id === currentChatIdRef.current) {
         setIsSendingMessage(false);
         setIsStoppingMessage(false);
+        // Revalidate to pick up the completed message from server
+        if (revalidateAttemptAction) {
+          await revalidateAttemptAction(attemptId);
+        }
+        router.refresh();
       }
     };
 
