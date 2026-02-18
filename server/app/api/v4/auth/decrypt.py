@@ -26,7 +26,7 @@ router = APIRouter()
 
 
 @router.post(
-    "/keys/decrypt",
+    "/decrypt",
     response_model=GetKeyForDecryptApiResponse,
     dependencies=[
         audit_activity(
@@ -54,13 +54,12 @@ async def decrypt_key(
             )
 
         # Convert API request to SQL params (add profile_id from header)
-        # Use double star pattern: **request.model_dump()
         params = GetKeyForDecryptSqlParams(
             **request.model_dump(), profile_id=profile_id
         )
         sql_params = params.to_tuple()
 
-        # Execute SQL with typed helper - automatically detects and calls function if present
+        # Execute SQL with typed helper
         result = cast(
             GetKeyForDecryptSqlRow,
             await execute_sql_typed(

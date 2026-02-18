@@ -1,0 +1,12 @@
+"""Attempt Message Tree entry endpoints."""
+
+from fastapi import APIRouter
+
+from app.api.v4.entries.attempt_message_tree.create import router as create_router
+from app.api.v4.entries.attempt_message_tree.get import router as get_router
+from app.api.v4.entries.attempt_message_tree.search import router as search_router
+
+router = APIRouter()
+router.include_router(get_router)
+router.include_router(create_router)
+router.include_router(search_router)

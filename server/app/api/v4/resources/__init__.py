@@ -246,11 +246,10 @@ from app.api.v4.resources.items.search import router as items_search_router
 
 router.include_router(items_search_router)
 from app.api.v4.resources.keys.create import router as keys_router
-from app.api.v4.resources.keys.decrypt import router as keys_decrypt_router
 from app.api.v4.resources.keys.get import router as keys_get_router
 
 router.include_router(keys_router)
-router.include_router(keys_decrypt_router)
+# NOTE: decrypt moved to auth/ (not available to MCP)
 router.include_router(keys_get_router)
 from app.api.v4.resources.keys.search import router as keys_search_router
 

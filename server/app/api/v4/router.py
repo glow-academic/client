@@ -65,6 +65,11 @@ from app.api.v4.auth import router as auth_router
 from app.api.v4.docs import router as docs_router
 
 # ============================================================================
+# Entries (CRUD layer on entry tables via MVs)
+# ============================================================================
+from app.api.v4.entries import router as entries_router
+
+# ============================================================================
 # Resources
 # ============================================================================
 from app.api.v4.resources import router as resources_router
@@ -139,6 +144,11 @@ router.include_router(artifacts_router)
 # ============================================================================
 router.include_router(resources_router)
 
+
+# ============================================================================
+# Entries (CRUD layer on entry tables via MVs)
+# ============================================================================
+router.include_router(entries_router)
 
 # ============================================================================
 # Views (READ layer on entry_type tables)
