@@ -29,7 +29,9 @@ LANGUAGE sql
 STABLE
 AS $$
 SELECT session_id
-FROM session_fact_mv
+FROM sessions_mv
 WHERE profile_id = p_profile_id
+  AND active = true
+ORDER BY session_created_at DESC
 LIMIT 1;
 $$;

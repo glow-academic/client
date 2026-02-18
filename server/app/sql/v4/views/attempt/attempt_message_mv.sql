@@ -64,6 +64,8 @@ base_messages AS (
         m.created_at,
         -- Run resource ID (one hop to hydrate)
         rra.runs_id,
+        -- Text entry ID (for resource hydration)
+        m.text_id,
         -- History content (for LLM context)
         te.content AS history_content,
         -- Audio resource ID
@@ -106,6 +108,9 @@ SELECT
 
     -- Run resource ID (one hop to hydrate)
     bm.runs_id,
+
+    -- Text entry ID (for resource hydration)
+    bm.text_id,
 
     -- History content (for LLM context)
     bm.history_content,
