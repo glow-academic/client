@@ -1,6 +1,6 @@
 """Test Archive entry CREATE endpoint."""
 
-from typing import Annotated, Any, cast
+from typing import Annotated, cast
 
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
@@ -25,6 +25,31 @@ SQL_PATH = (
 router = APIRouter()
 
 
+async def create_test_archive_entry_internal(
+    conn: asyncpg.Connection,
+    request_dict: dict,
+    mcp: bool = False,
+) -> CreateTestArchiveEntriesApiResponse:
+    """Internal function to create test_archive entry."""
+    tags = ["entries", "test_archive"]
+
+    async with conn.transaction():
+        request_dict["mcp"] = mcp
+        params = CreateTestArchiveEntriesSqlParams(**request_dict)
+
+        result = cast(
+            CreateTestArchiveEntriesSqlRow,
+            await execute_sql_typed(conn, SQL_PATH, params=params),
+        )
+
+        if not result or not result.id:
+            raise ValueError("Failed to create test_archive entry")
+
+    await invalidate_tags(tags)
+
+    return CreateTestArchiveEntriesApiResponse.model_validate(result.model_dump())
+
+
 @router.post(
     "/test_archive/create",
     response_model=CreateTestArchiveEntriesApiResponse,
@@ -44,7 +69,6 @@ async def create_test_archive_entry(
     """Create test_archive entry."""
     tags = ["entries", "test_archive"]
     sql_query = load_sql_query(SQL_PATH)
-    sql_params: tuple[Any, ...] | None = None
 
     try:
         profile_id = http_request.state.profile_id
@@ -54,32 +78,17 @@ async def create_test_archive_entry(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        async with conn.transaction():
-            mcp = getattr(http_request.state, "mcp", False) or False
-            request_dict = request.model_dump()
-            request_dict["mcp"] = mcp
-            params = CreateTestArchiveEntriesSqlParams(**request_dict)
-            sql_params = params.to_tuple()
+        mcp = getattr(http_request.state, "mcp", False) or False
+        request_dict = request.model_dump()
 
-            result = cast(
-                CreateTestArchiveEntriesSqlRow,
-                await execute_sql_typed(conn, SQL_PATH, params=params),
-            )
+        api_response = await create_test_archive_entry_internal(conn, request_dict, mcp)
 
-            if not result or not result.id:
-                raise ValueError("Failed to create test_archive entry")
-
-            audit_set(
-                http_request,
-                actor={"id": profile_id},
-                test_archive={"id": str(result.id)},
-            )
-
-        api_response = CreateTestArchiveEntriesApiResponse.model_validate(
-            result.model_dump()
+        audit_set(
+            http_request,
+            actor={"id": profile_id},
+            test_archive={"id": str(api_response.id)},
         )
 
-        await invalidate_tags(tags)
         response.headers["X-Invalidate-Tags"] = ",".join(tags)
 
         return api_response
@@ -93,6 +102,6 @@ async def create_test_archive_entry(
             route_path=http_request.url.path,
             operation="create_test_archive_entry",
             sql_query=sql_query,
-            sql_params=sql_params,
+            sql_params=None,
             request=http_request,
         )

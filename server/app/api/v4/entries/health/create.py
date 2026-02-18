@@ -1,6 +1,6 @@
 """Health entry CREATE endpoint."""
 
-from typing import Annotated, Any, cast
+from typing import Annotated, cast
 
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
@@ -23,6 +23,31 @@ SQL_PATH = "app/sql/v4/queries/entries/health/create_health_entries_complete.sql
 router = APIRouter()
 
 
+async def create_health_entry_internal(
+    conn: asyncpg.Connection,
+    request_dict: dict,
+    mcp: bool = False,
+) -> CreateHealthEntriesApiResponse:
+    """Internal function to create health entry."""
+    tags = ["entries", "health"]
+
+    async with conn.transaction():
+        request_dict["mcp"] = mcp
+        params = CreateHealthEntriesSqlParams(**request_dict)
+
+        result = cast(
+            CreateHealthEntriesSqlRow,
+            await execute_sql_typed(conn, SQL_PATH, params=params),
+        )
+
+        if not result or not result.id:
+            raise ValueError("Failed to create health entry")
+
+    await invalidate_tags(tags)
+
+    return CreateHealthEntriesApiResponse.model_validate(result.model_dump())
+
+
 @router.post(
     "/health/create",
     response_model=CreateHealthEntriesApiResponse,
@@ -42,7 +67,6 @@ async def create_health_entry(
     """Create health entry."""
     tags = ["entries", "health"]
     sql_query = load_sql_query(SQL_PATH)
-    sql_params: tuple[Any, ...] | None = None
 
     try:
         profile_id = http_request.state.profile_id
@@ -52,32 +76,17 @@ async def create_health_entry(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        async with conn.transaction():
-            mcp = getattr(http_request.state, "mcp", False) or False
-            request_dict = request.model_dump()
-            request_dict["mcp"] = mcp
-            params = CreateHealthEntriesSqlParams(**request_dict)
-            sql_params = params.to_tuple()
+        mcp = getattr(http_request.state, "mcp", False) or False
+        request_dict = request.model_dump()
 
-            result = cast(
-                CreateHealthEntriesSqlRow,
-                await execute_sql_typed(conn, SQL_PATH, params=params),
-            )
+        api_response = await create_health_entry_internal(conn, request_dict, mcp)
 
-            if not result or not result.id:
-                raise ValueError("Failed to create health entry")
-
-            audit_set(
-                http_request,
-                actor={"id": profile_id},
-                health={"id": str(result.id)},
-            )
-
-        api_response = CreateHealthEntriesApiResponse.model_validate(
-            result.model_dump()
+        audit_set(
+            http_request,
+            actor={"id": profile_id},
+            health={"id": str(api_response.id)},
         )
 
-        await invalidate_tags(tags)
         response.headers["X-Invalidate-Tags"] = ",".join(tags)
 
         return api_response
@@ -91,6 +100,6 @@ async def create_health_entry(
             route_path=http_request.url.path,
             operation="create_health_entry",
             sql_query=sql_query,
-            sql_params=sql_params,
+            sql_params=None,
             request=http_request,
         )

@@ -1,6 +1,6 @@
 """Debug Info entry CREATE endpoint."""
 
-from typing import Annotated, Any, cast
+from typing import Annotated, cast
 
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
@@ -25,6 +25,31 @@ SQL_PATH = (
 router = APIRouter()
 
 
+async def create_debug_info_entry_internal(
+    conn: asyncpg.Connection,
+    request_dict: dict,
+    mcp: bool = False,
+) -> CreateDebugInfoEntriesApiResponse:
+    """Internal function to create debug_info entry."""
+    tags = ["entries", "debug_info"]
+
+    async with conn.transaction():
+        request_dict["mcp"] = mcp
+        params = CreateDebugInfoEntriesSqlParams(**request_dict)
+
+        result = cast(
+            CreateDebugInfoEntriesSqlRow,
+            await execute_sql_typed(conn, SQL_PATH, params=params),
+        )
+
+        if not result or not result.id:
+            raise ValueError("Failed to create debug_info entry")
+
+    await invalidate_tags(tags)
+
+    return CreateDebugInfoEntriesApiResponse.model_validate(result.model_dump())
+
+
 @router.post(
     "/debug_info/create",
     response_model=CreateDebugInfoEntriesApiResponse,
@@ -44,7 +69,6 @@ async def create_debug_info_entry(
     """Create debug_info entry."""
     tags = ["entries", "debug_info"]
     sql_query = load_sql_query(SQL_PATH)
-    sql_params: tuple[Any, ...] | None = None
 
     try:
         profile_id = http_request.state.profile_id
@@ -54,32 +78,17 @@ async def create_debug_info_entry(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        async with conn.transaction():
-            mcp = getattr(http_request.state, "mcp", False) or False
-            request_dict = request.model_dump()
-            request_dict["mcp"] = mcp
-            params = CreateDebugInfoEntriesSqlParams(**request_dict)
-            sql_params = params.to_tuple()
+        mcp = getattr(http_request.state, "mcp", False) or False
+        request_dict = request.model_dump()
 
-            result = cast(
-                CreateDebugInfoEntriesSqlRow,
-                await execute_sql_typed(conn, SQL_PATH, params=params),
-            )
+        api_response = await create_debug_info_entry_internal(conn, request_dict, mcp)
 
-            if not result or not result.id:
-                raise ValueError("Failed to create debug_info entry")
-
-            audit_set(
-                http_request,
-                actor={"id": profile_id},
-                debug_info={"id": str(result.id)},
-            )
-
-        api_response = CreateDebugInfoEntriesApiResponse.model_validate(
-            result.model_dump()
+        audit_set(
+            http_request,
+            actor={"id": profile_id},
+            debug_info={"id": str(api_response.id)},
         )
 
-        await invalidate_tags(tags)
         response.headers["X-Invalidate-Tags"] = ",".join(tags)
 
         return api_response
@@ -93,6 +102,6 @@ async def create_debug_info_entry(
             route_path=http_request.url.path,
             operation="create_debug_info_entry",
             sql_query=sql_query,
-            sql_params=sql_params,
+            sql_params=None,
             request=http_request,
         )

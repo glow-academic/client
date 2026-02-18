@@ -1,6 +1,6 @@
 """Args Values entry CREATE endpoint."""
 
-from typing import Annotated, Any, cast
+from typing import Annotated, cast
 
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
@@ -25,6 +25,31 @@ SQL_PATH = (
 router = APIRouter()
 
 
+async def create_args_values_entry_internal(
+    conn: asyncpg.Connection,
+    request_dict: dict,
+    mcp: bool = False,
+) -> CreateArgsValuesEntriesApiResponse:
+    """Internal function to create args_values entry."""
+    tags = ["entries", "args_values"]
+
+    async with conn.transaction():
+        request_dict["mcp"] = mcp
+        params = CreateArgsValuesEntriesSqlParams(**request_dict)
+
+        result = cast(
+            CreateArgsValuesEntriesSqlRow,
+            await execute_sql_typed(conn, SQL_PATH, params=params),
+        )
+
+        if not result or not result.id:
+            raise ValueError("Failed to create args_values entry")
+
+    await invalidate_tags(tags)
+
+    return CreateArgsValuesEntriesApiResponse.model_validate(result.model_dump())
+
+
 @router.post(
     "/args_values/create",
     response_model=CreateArgsValuesEntriesApiResponse,
@@ -44,7 +69,6 @@ async def create_args_values_entry(
     """Create args_values entry."""
     tags = ["entries", "args_values"]
     sql_query = load_sql_query(SQL_PATH)
-    sql_params: tuple[Any, ...] | None = None
 
     try:
         profile_id = http_request.state.profile_id
@@ -54,32 +78,17 @@ async def create_args_values_entry(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        async with conn.transaction():
-            mcp = getattr(http_request.state, "mcp", False) or False
-            request_dict = request.model_dump()
-            request_dict["mcp"] = mcp
-            params = CreateArgsValuesEntriesSqlParams(**request_dict)
-            sql_params = params.to_tuple()
+        mcp = getattr(http_request.state, "mcp", False) or False
+        request_dict = request.model_dump()
 
-            result = cast(
-                CreateArgsValuesEntriesSqlRow,
-                await execute_sql_typed(conn, SQL_PATH, params=params),
-            )
+        api_response = await create_args_values_entry_internal(conn, request_dict, mcp)
 
-            if not result or not result.id:
-                raise ValueError("Failed to create args_values entry")
-
-            audit_set(
-                http_request,
-                actor={"id": profile_id},
-                args_values={"id": str(result.id)},
-            )
-
-        api_response = CreateArgsValuesEntriesApiResponse.model_validate(
-            result.model_dump()
+        audit_set(
+            http_request,
+            actor={"id": profile_id},
+            args_values={"id": str(api_response.id)},
         )
 
-        await invalidate_tags(tags)
         response.headers["X-Invalidate-Tags"] = ",".join(tags)
 
         return api_response
@@ -93,6 +102,6 @@ async def create_args_values_entry(
             route_path=http_request.url.path,
             operation="create_args_values_entry",
             sql_query=sql_query,
-            sql_params=sql_params,
+            sql_params=None,
             request=http_request,
         )

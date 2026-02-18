@@ -1,6 +1,6 @@
 """Logins entry CREATE endpoint."""
 
-from typing import Annotated, Any, cast
+from typing import Annotated, cast
 
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
@@ -23,6 +23,31 @@ SQL_PATH = "app/sql/v4/queries/entries/logins/create_logins_entries_complete.sql
 router = APIRouter()
 
 
+async def create_logins_entry_internal(
+    conn: asyncpg.Connection,
+    request_dict: dict,
+    mcp: bool = False,
+) -> CreateLoginsEntriesApiResponse:
+    """Internal function to create logins entry."""
+    tags = ["entries", "logins"]
+
+    async with conn.transaction():
+        request_dict["mcp"] = mcp
+        params = CreateLoginsEntriesSqlParams(**request_dict)
+
+        result = cast(
+            CreateLoginsEntriesSqlRow,
+            await execute_sql_typed(conn, SQL_PATH, params=params),
+        )
+
+        if not result or not result.id:
+            raise ValueError("Failed to create logins entry")
+
+    await invalidate_tags(tags)
+
+    return CreateLoginsEntriesApiResponse.model_validate(result.model_dump())
+
+
 @router.post(
     "/logins/create",
     response_model=CreateLoginsEntriesApiResponse,
@@ -42,7 +67,6 @@ async def create_logins_entry(
     """Create logins entry."""
     tags = ["entries", "logins"]
     sql_query = load_sql_query(SQL_PATH)
-    sql_params: tuple[Any, ...] | None = None
 
     try:
         profile_id = http_request.state.profile_id
@@ -52,32 +76,17 @@ async def create_logins_entry(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        async with conn.transaction():
-            mcp = getattr(http_request.state, "mcp", False) or False
-            request_dict = request.model_dump()
-            request_dict["mcp"] = mcp
-            params = CreateLoginsEntriesSqlParams(**request_dict)
-            sql_params = params.to_tuple()
+        mcp = getattr(http_request.state, "mcp", False) or False
+        request_dict = request.model_dump()
 
-            result = cast(
-                CreateLoginsEntriesSqlRow,
-                await execute_sql_typed(conn, SQL_PATH, params=params),
-            )
+        api_response = await create_logins_entry_internal(conn, request_dict, mcp)
 
-            if not result or not result.id:
-                raise ValueError("Failed to create logins entry")
-
-            audit_set(
-                http_request,
-                actor={"id": profile_id},
-                logins={"id": str(result.id)},
-            )
-
-        api_response = CreateLoginsEntriesApiResponse.model_validate(
-            result.model_dump()
+        audit_set(
+            http_request,
+            actor={"id": profile_id},
+            logins={"id": str(api_response.id)},
         )
 
-        await invalidate_tags(tags)
         response.headers["X-Invalidate-Tags"] = ",".join(tags)
 
         return api_response
@@ -91,6 +100,6 @@ async def create_logins_entry(
             route_path=http_request.url.path,
             operation="create_logins_entry",
             sql_query=sql_query,
-            sql_params=sql_params,
+            sql_params=None,
             request=http_request,
         )
