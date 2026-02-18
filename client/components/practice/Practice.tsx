@@ -210,9 +210,9 @@ export default function Practice({
     [
       effectiveProfile,
       isConnected,
+      isSimulating,
       emitStartSimulation,
       loadingToastId,
-      activeProfile,
     ]
   );
 
@@ -262,9 +262,9 @@ export default function Practice({
     [
       effectiveProfile,
       isConnected,
+      isSimulating,
       emitStartSimulation,
       loadingToastId,
-      activeProfile,
     ]
   );
 

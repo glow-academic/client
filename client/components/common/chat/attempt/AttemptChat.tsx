@@ -2299,11 +2299,8 @@ export default function AttemptChat({
                                     const blob = await res.blob();
                                     const url = URL.createObjectURL(blob);
                                     window.open(url, "_blank");
-                                  } catch (err) {
-                                    console.error(
-                                      "Failed to generate rubric PDF:",
-                                      err,
-                                    );
+                                  } catch {
+                                    // PDF generation failed silently
                                   }
                                 },
                               })}

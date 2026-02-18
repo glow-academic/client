@@ -16,7 +16,7 @@ const secret = process.env["AUTH_SECRET"] || "";
  *  To recover email: alias.replace("_at_", "@") */
 function emailToAlias(email: string): string {
   const lower = email.toLowerCase();
-  const [prefix, domain] = lower.split("@");
+  const [prefix = "", domain] = lower.split("@");
   if (domain?.endsWith("purdue.edu")) {
     return prefix;
   }

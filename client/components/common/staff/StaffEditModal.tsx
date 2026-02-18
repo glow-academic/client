@@ -106,7 +106,7 @@ export default function StaffEditModal({
       setRequestsPerDayEnabled(targetUser.reqPerDay != null);
       setTourCompletedTouched(false);
     }
-  }, [targetUser, open]);
+  }, [targetUser, open, staffItem?.department_ids]);
 
   // Compute tour_completed from intro_completed && chat_completed
   const tourCompleted = useMemo(() => {
