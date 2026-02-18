@@ -111,16 +111,6 @@ async def archive_attempts(
                 count=count,
             )
 
-        # Refresh analytics materialized view to update is_archived/is_general flags
-        # Use a separate function call - non-blocking, log errors but don't fail the request
-        try:
-            await conn.execute("REFRESH MATERIALIZED VIEW CONCURRENTLY analytics")
-        except Exception as refresh_error:
-            logger.warning(
-                f"Failed to refresh analytics view after bulk archive: {refresh_error}",
-                exc_info=True,
-            )
-
         # Invalidate cache after mutation
         invalidation_tags = tags + ["dashboard"]
 

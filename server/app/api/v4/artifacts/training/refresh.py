@@ -1,6 +1,6 @@
 """Training refresh endpoint - POST /training/refresh.
 
-Uses api_refresh_home_mvs_new_v4 SQL function to refresh all home MVs in dependency order.
+Uses api_refresh_mv_training_v4 SQL function to refresh all training MVs.
 """
 
 from typing import Annotated, Any, cast
@@ -13,47 +13,39 @@ from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
 from app.sql.types import (
-    RefreshHomeMvsNewApiRequest,
-    RefreshHomeMvsNewApiResponse,
-    RefreshHomeMvsNewSqlParams,
-    RefreshHomeMvsNewSqlRow,
+    RefreshMvTrainingApiRequest,
+    RefreshMvTrainingApiResponse,
+    RefreshMvTrainingSqlParams,
+    RefreshMvTrainingSqlRow,
 )
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.sql_helper import execute_sql_typed
 
-SQL_PATH = "app/sql/v4/queries/analytics/NEW/home/refresh_home_mvs_new_complete.sql"
+SQL_PATH = "app/sql/v4/queries/analytics/refresh_mv_training_complete.sql"
 
 router = APIRouter()
 
 
 @router.post(
     "/refresh",
-    response_model=RefreshHomeMvsNewApiResponse,
+    response_model=RefreshMvTrainingApiResponse,
     dependencies=[
         audit_activity("training.refresh", "{{ actor.name }} refreshed training MVs")
     ],
 )
 async def training_refresh(
-    request: RefreshHomeMvsNewApiRequest,
+    request: RefreshMvTrainingApiRequest,
     http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
-) -> RefreshHomeMvsNewApiResponse:
-    """Refresh all training section materialized views.
-
-    Uses SQL function that refreshes MVs in dependency order:
-    1. mv_home_chat_facts (base fact table)
-    2. mv_home_simulation_status (depends on chat_facts)
-    3. mv_home_attempt_history (depends on chat_facts)
-    4. mv_home_certificate_status (depends on chat_facts)
-    """
+) -> RefreshMvTrainingApiResponse:
+    """Refresh all training section materialized views."""
     tags = ["training", "home"]
 
     sql_query: str | None = None
     sql_params: tuple[Any, ...] | None = None
 
     try:
-        # Get profile_id from header
         profile_id = http_request.state.profile_id
         if not profile_id:
             raise HTTPException(
@@ -74,25 +66,20 @@ async def training_refresh(
         else:
             actor_name = None
 
-        # Convert API request to SQL params
         request_dict = request.model_dump(mode="json")
-        params = RefreshHomeMvsNewSqlParams(**request_dict, profile_id=profile_id)  # type: ignore[arg-type]
+        params = RefreshMvTrainingSqlParams(**request_dict, profile_id=profile_id)  # type: ignore[arg-type]
         sql_params = params.to_tuple()
 
-        # Execute SQL function
         result = cast(
-            RefreshHomeMvsNewSqlRow,
+            RefreshMvTrainingSqlRow,
             await execute_sql_typed(conn, SQL_PATH, params=params),
         )
 
-        # Set audit context
         if actor_name:
             audit_set(http_request, actor={"name": actor_name, "id": profile_id})
 
-        # Convert to API response
-        api_response = RefreshHomeMvsNewApiResponse.model_validate(result.model_dump())
+        api_response = RefreshMvTrainingApiResponse.model_validate(result.model_dump())
 
-        # Invalidate cache after refresh
         await invalidate_tags(tags)
         response.headers["X-Invalidate-Tags"] = ",".join(tags)
 

@@ -29,7 +29,7 @@ LANGUAGE sql
 STABLE
 AS $$
 SELECT session_id
-FROM mv_session_facts
+FROM session_fact_mv
 WHERE profile_id = p_profile_id
 LIMIT 1;
 $$;

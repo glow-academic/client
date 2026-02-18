@@ -664,6 +664,138 @@ class RefreshMvAllApiResponse(BaseModel):
 
 
 
+# Generated from: refresh_mv_benchmark
+
+class RefreshMvBenchmarkSqlParams(BaseModel):
+
+    profile_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+        )
+
+class RefreshMvBenchmarkSqlRow(BaseModel):
+
+    actor_name: str | None = None
+    success: bool | None = None
+    message: str | None = None
+    status: str | None = None
+    refreshed_views: list[str] | None = None
+
+class RefreshMvBenchmarkApiRequest(BaseModel):
+
+    pass
+
+class RefreshMvBenchmarkApiResponse(BaseModel):
+
+    actor_name: str | None = None
+    success: bool | None = None
+    message: str | None = None
+    status: str | None = None
+    refreshed_views: list[str] | None = None
+
+
+
+# Generated from: refresh_mv_dashboard
+
+class RefreshMvDashboardSqlParams(BaseModel):
+
+    profile_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+        )
+
+class RefreshMvDashboardSqlRow(BaseModel):
+
+    actor_name: str | None = None
+    success: bool | None = None
+    message: str | None = None
+    status: str | None = None
+    refreshed_views: list[str] | None = None
+
+class RefreshMvDashboardApiRequest(BaseModel):
+
+    pass
+
+class RefreshMvDashboardApiResponse(BaseModel):
+
+    actor_name: str | None = None
+    success: bool | None = None
+    message: str | None = None
+    status: str | None = None
+    refreshed_views: list[str] | None = None
+
+
+
+# Generated from: refresh_mv_health
+
+class RefreshMvHealthSqlParams(BaseModel):
+
+    profile_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+        )
+
+class RefreshMvHealthSqlRow(BaseModel):
+
+    actor_name: str | None = None
+    success: bool | None = None
+    message: str | None = None
+    status: str | None = None
+    refreshed_views: list[str] | None = None
+
+class RefreshMvHealthApiRequest(BaseModel):
+
+    pass
+
+class RefreshMvHealthApiResponse(BaseModel):
+
+    actor_name: str | None = None
+    success: bool | None = None
+    message: str | None = None
+    status: str | None = None
+    refreshed_views: list[str] | None = None
+
+
+
+# Generated from: refresh_mv_pricing
+
+class RefreshMvPricingSqlParams(BaseModel):
+
+    profile_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+        )
+
+class RefreshMvPricingSqlRow(BaseModel):
+
+    actor_name: str | None = None
+    success: bool | None = None
+    message: str | None = None
+    status: str | None = None
+    refreshed_views: list[str] | None = None
+
+class RefreshMvPricingApiRequest(BaseModel):
+
+    pass
+
+class RefreshMvPricingApiResponse(BaseModel):
+
+    actor_name: str | None = None
+    success: bool | None = None
+    message: str | None = None
+    status: str | None = None
+    refreshed_views: list[str] | None = None
+
+
+
 # Generated from: refresh_mv_sessions
 
 class RefreshMvSessionsSqlParams(BaseModel):
@@ -688,6 +820,39 @@ class RefreshMvSessionsApiRequest(BaseModel):
     pass
 
 class RefreshMvSessionsApiResponse(BaseModel):
+
+    actor_name: str | None = None
+    success: bool | None = None
+    message: str | None = None
+    status: str | None = None
+    refreshed_views: list[str] | None = None
+
+
+
+# Generated from: refresh_mv_training
+
+class RefreshMvTrainingSqlParams(BaseModel):
+
+    profile_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+        )
+
+class RefreshMvTrainingSqlRow(BaseModel):
+
+    actor_name: str | None = None
+    success: bool | None = None
+    message: str | None = None
+    status: str | None = None
+    refreshed_views: list[str] | None = None
+
+class RefreshMvTrainingApiRequest(BaseModel):
+
+    pass
+
+class RefreshMvTrainingApiResponse(BaseModel):
 
     actor_name: str | None = None
     success: bool | None = None
@@ -27330,11 +27495,41 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "RefreshMvAllApiRequest",
         "RefreshMvAllApiResponse",
     ),
+    "app/sql/v4/queries/analytics/refresh_mv_benchmark_complete.sql": (
+        "RefreshMvBenchmarkSqlParams",
+        "RefreshMvBenchmarkSqlRow",
+        "RefreshMvBenchmarkApiRequest",
+        "RefreshMvBenchmarkApiResponse",
+    ),
+    "app/sql/v4/queries/analytics/refresh_mv_dashboard_complete.sql": (
+        "RefreshMvDashboardSqlParams",
+        "RefreshMvDashboardSqlRow",
+        "RefreshMvDashboardApiRequest",
+        "RefreshMvDashboardApiResponse",
+    ),
+    "app/sql/v4/queries/analytics/refresh_mv_health_complete.sql": (
+        "RefreshMvHealthSqlParams",
+        "RefreshMvHealthSqlRow",
+        "RefreshMvHealthApiRequest",
+        "RefreshMvHealthApiResponse",
+    ),
+    "app/sql/v4/queries/analytics/refresh_mv_pricing_complete.sql": (
+        "RefreshMvPricingSqlParams",
+        "RefreshMvPricingSqlRow",
+        "RefreshMvPricingApiRequest",
+        "RefreshMvPricingApiResponse",
+    ),
     "app/sql/v4/queries/analytics/refresh_mv_sessions_complete.sql": (
         "RefreshMvSessionsSqlParams",
         "RefreshMvSessionsSqlRow",
         "RefreshMvSessionsApiRequest",
         "RefreshMvSessionsApiResponse",
+    ),
+    "app/sql/v4/queries/analytics/refresh_mv_training_complete.sql": (
+        "RefreshMvTrainingSqlParams",
+        "RefreshMvTrainingSqlRow",
+        "RefreshMvTrainingApiRequest",
+        "RefreshMvTrainingApiResponse",
     ),
     "app/sql/v4/queries/artifacts/attempt/create_attempt_complete.sql": (
         "CreateAttemptSqlParams",
@@ -31226,7 +31421,32 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/analytics/refresh_mv_benchmark_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/analytics/refresh_mv_dashboard_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/analytics/refresh_mv_health_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/analytics/refresh_mv_pricing_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v4/queries/analytics/refresh_mv_sessions_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/analytics/refresh_mv_training_complete.sql"]
     ) -> SqlString: ...
 
     @overload
