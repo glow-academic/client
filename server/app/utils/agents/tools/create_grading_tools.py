@@ -18,6 +18,8 @@ def create_grading_tools(
     standards: Sequence[Mapping[str, Any]],
     chat_id: uuid.UUID,
     emit_progress_func: Callable[[dict[str, Any]], Awaitable[None]],
+    grading_results: dict[str, Any],
+    grading_progress: dict[str, bool],
 ) -> list[Tool]:
     """Create all grading function tools for the standard groups."""
     tools = []
@@ -25,13 +27,14 @@ def create_grading_tools(
 
     for group in standard_groups:
         tool = create_grading_function(
-            group, standards, chat_id, total_standard_groups, emit_progress_func
+            group, standards, chat_id, total_standard_groups, emit_progress_func,
+            grading_results, grading_progress,
         )
         tools.append(tool)
         logger.info(f"Created grading tool for: {group['name']}")
 
     # Add summary tool
-    tools.append(create_summary_function(chat_id, emit_progress_func))
+    tools.append(create_summary_function(chat_id, emit_progress_func, grading_results, grading_progress))
     logger.info("Created summary tool")
 
     logger.info(f"Total grading tools created: {len(tools)}")

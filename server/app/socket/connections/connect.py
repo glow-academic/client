@@ -118,10 +118,10 @@ async def connect(
                 # Forcefully disconnect the old socket from the server-side
                 await sio.disconnect(old_sid)
 
-        # Store socket ownership (for default guest, this allows multiple entries)
-        # Note: For default guest, multiple sockets can coexist, so we don't overwrite
-        # the socket_owner entry. However, we still track it for room management.
-        await set_socket_owner(profile_id, sid)
+        # Store socket ownership — skip for default guest to avoid overwriting
+        # the shared key (which causes incorrect cleanup when any guest disconnects)
+        if not is_default_guest:
+            await set_socket_owner(profile_id, sid)
         await sio.enter_room(sid, profile_id)
 
         # Update database to mark profile as active

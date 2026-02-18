@@ -1,16 +1,19 @@
 """Create a function tool for providing a specific hint."""
 
 import logging
+from typing import Any
 
 from agents import Tool, function_tool
 from pydantic import Field
 
-from app.main import hint_progress, hint_results
-
 logger = logging.getLogger(__name__)
 
 
-def create_hint_function(hint_number: int) -> Tool:
+def create_hint_function(
+    hint_number: int,
+    hint_results: dict[str, Any],
+    hint_progress: dict[str, bool],
+) -> Tool:
     """Create a function tool for providing a specific hint."""
 
     async def provide_hint(

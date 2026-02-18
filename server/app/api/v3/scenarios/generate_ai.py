@@ -8,7 +8,7 @@ import asyncpg  # type: ignore
 from agents import (FunctionToolResult, RunContextWrapper, Runner,
                     ToolsToFinalOutputResult, gen_trace_id, trace)
 from agents.items import TResponseInputItem
-from app.main import get_db, scenario_progress, scenario_results
+from app.main import get_db
 from app.utils.agents.generic_agent import GenericAgent
 from app.utils.agents.tools.create_scenario_tools import create_scenario_tools
 from app.utils.debug_info import DebugContext
@@ -81,9 +81,9 @@ async def generate_scenario_ai(
             document_ids = None
 
         # Generate scenario content (inlined run_scenario_agent)
-        # Clear previous results
-        scenario_results.clear()
-        scenario_progress.clear()
+        # Per-invocation local dicts (not global) for concurrency safety
+        scenario_results: dict[str, Any] = {}
+        scenario_progress: dict[str, bool] = {}
 
         # Get all context data in a single optimized query using SQL file
         doc_ids_str = [str(d) for d in document_ids] if document_ids else []
@@ -171,7 +171,7 @@ async def generate_scenario_ai(
         group_id = None
         objectives_enabled = request.objectivesEnabled
         scenario_tools = create_scenario_tools(
-            group_id, objectives_enabled=objectives_enabled
+            group_id, scenario_results, scenario_progress, objectives_enabled=objectives_enabled
         )
         scenario_tools.append(debug_info_tool)
 

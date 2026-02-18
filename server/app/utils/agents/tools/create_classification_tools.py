@@ -10,7 +10,10 @@ from app.utils.agents.tools.create_classification_function import (
 logger = logging.getLogger(__name__)
 
 
-def create_classification_tools() -> list[Any]:
+def create_classification_tools(
+    classification_results: dict[str, list[str]],
+    classification_progress: dict[str, bool],
+) -> list[Any]:
     """Create all document classification function tools."""
     tools = []
 
@@ -26,7 +29,7 @@ def create_classification_tools() -> list[Any]:
     }
 
     for category, description in categories.items():
-        tool = create_classification_function(category, description)
+        tool = create_classification_function(category, description, classification_results, classification_progress)
         tools.append(tool)
         logger.info(f"Created classification tool for: {category}")
 

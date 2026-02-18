@@ -5,14 +5,13 @@ from typing import Any
 
 from agents import (FunctionToolResult, RunContextWrapper,
                     ToolsToFinalOutputResult)
-from app.main import guardrail_progress
 from app.utils.agents.generic_agent import GenericAgent
 
 logger = logging.getLogger(__name__)
 
 
 def build_guardrail_agent(
-    context: dict[str, Any], guardrail_tools: list[Any]
+    context: dict[str, Any], guardrail_tools: list[Any], guardrail_progress: dict[str, bool]
 ) -> GenericAgent:
     """Create the internal agent that powers the guardrail from context data.
 

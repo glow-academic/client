@@ -5,13 +5,12 @@ from typing import Any
 
 from agents import (FunctionToolResult, RunContextWrapper,
                     ToolsToFinalOutputResult)
-from app.main import hint_progress
 from app.utils.agents.generic_agent import GenericAgent
 
 logger = logging.getLogger(__name__)
 
 
-def build_hint_agent(context: dict[str, Any], hint_tools: list[Any]) -> GenericAgent:
+def build_hint_agent(context: dict[str, Any], hint_tools: list[Any], hint_progress: dict[str, bool]) -> GenericAgent:
     """Create the hint generation agent from context data.
 
     Args:

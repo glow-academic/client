@@ -8,7 +8,6 @@ from typing import Any
 from agents import Tool, function_tool
 from pydantic import Field
 
-from app.main import grading_progress, grading_results
 from app.utils.agents.tools.create_safe_field_name import create_safe_field_name
 
 logger = logging.getLogger(__name__)
@@ -20,6 +19,8 @@ def create_grading_function(
     chat_id: uuid.UUID,
     total_standard_groups: int,
     emit_progress_func: Callable[[dict[str, Any]], Awaitable[None]],
+    grading_results: dict[str, Any],
+    grading_progress: dict[str, bool],
 ) -> Tool:
     """Create a function tool for grading a specific standard group."""
     safe_name = create_safe_field_name(standard_group["short_name"])

@@ -8,7 +8,6 @@ import asyncpg  # type: ignore
 from agents import GuardrailFunctionOutput, Runner, trace
 from agents.items import TResponseInputItem
 
-from app.main import guardrail_progress, guardrail_results
 from app.utils.agents.build_guardrail_agent import build_guardrail_agent
 from app.utils.agents.tools.create_guardrail_tools import create_guardrail_tools
 from app.utils.debug_info import DebugContext
@@ -34,13 +33,13 @@ async def run_guardrail_evaluation(
     Returns:
         GuardrailFunctionOutput with evaluation results
     """
-    # Clear previous results
-    guardrail_results.clear()
-    guardrail_progress.clear()
+    # Per-invocation local dicts (not global) for concurrency safety
+    guardrail_results: dict[str, Any] = {}
+    guardrail_progress: dict[str, bool] = {}
 
     # Build guardrail agent from context
-    guardrail_tools = create_guardrail_tools()
-    guardrail_agent = build_guardrail_agent(context, guardrail_tools)
+    guardrail_tools = create_guardrail_tools(guardrail_results, guardrail_progress)
+    guardrail_agent = build_guardrail_agent(context, guardrail_tools, guardrail_progress)
 
     # Check rate limit (already included in context query)
     profile_id_uuid = (

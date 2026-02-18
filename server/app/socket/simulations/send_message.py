@@ -9,7 +9,7 @@ from typing import Any, cast
 from agents import Runner, trace
 from agents.exceptions import OutputGuardrailTripwireTriggered
 from agents.items import TResponseInputItem
-from app.main import get_pool, hint_progress, hint_results, sio
+from app.main import get_pool, sio
 from app.utils.agents.build_hint_agent import build_hint_agent
 from app.utils.agents.generic_agent import GenericAgent
 from app.utils.agents.get_output_guardrails import get_output_guardrails
@@ -164,9 +164,9 @@ async def _generate_hints_background_inline(
         try:
             logger.info(f"Background hint generation started for message {message_id}")
 
-            # Clear previous results
-            hint_results.clear()
-            hint_progress.clear()
+            # Per-invocation local dicts (not global) for concurrency safety
+            hint_results: dict[str, Any] = {}
+            hint_progress: dict[str, bool] = {}
 
             # Get all hint context data using SQL file
             sql = load_sql("sql/v3/agents/get_hint_run_context.sql")
@@ -319,8 +319,8 @@ async def _generate_hints_background_inline(
                 raise ValueError(error_message)
 
             # Build hint agent from context
-            hint_tools = create_hint_tools()
-            hint_agent = build_hint_agent(context, hint_tools)
+            hint_tools = create_hint_tools(hint_results, hint_progress)
+            hint_agent = build_hint_agent(context, hint_tools, hint_progress)
 
             # Create model run with all junction records using SQL file
             sql_create_run = load_sql("sql/v3/model_runs/create_model_run_complete.sql")

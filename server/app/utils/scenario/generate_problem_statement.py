@@ -8,7 +8,6 @@ from typing import Any
 from agents import (FunctionToolResult, RunContextWrapper, Runner,
                     ToolsToFinalOutputResult, gen_trace_id, trace)
 from agents.items import TResponseInputItem
-from app.main import scenario_progress, scenario_results
 from app.utils.agents.generic_agent import GenericAgent
 from app.utils.agents.tools.create_scenario_tools import create_scenario_tools
 from app.utils.debug_info import DebugContext
@@ -52,9 +51,9 @@ async def generate_scenario_problem_statement(
         f"document_ids={document_ids}, parameter_item_ids={parameter_item_ids}"
     )
 
-    # Clear previous results
-    scenario_results.clear()
-    scenario_progress.clear()
+    # Per-invocation local dicts (not global) for concurrency safety
+    scenario_results: dict[str, Any] = {}
+    scenario_progress: dict[str, bool] = {}
 
     # Get all context data in a single optimized query using SQL file
     sql = load_sql("sql/v3/agents/get_scenario_run_context.sql")
@@ -137,7 +136,7 @@ async def generate_scenario_problem_statement(
     if group_id is None:
         group_id = uuid.uuid4()
     scenario_tools = create_scenario_tools(
-        group_id, objectives_enabled=objectives_enabled
+        group_id, scenario_results, scenario_progress, objectives_enabled=objectives_enabled
     )
     scenario_tools.append(debug_info_tool)
     logger.info(

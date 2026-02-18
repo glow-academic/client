@@ -11,7 +11,7 @@ import asyncpg  # type: ignore
 from agents import (FunctionToolResult, RunContextWrapper, Runner,
                     ToolsToFinalOutputResult, trace)
 from agents.items import TResponseInputItem
-from app.main import get_pool, grading_progress, grading_results, sio
+from app.main import get_pool, sio
 from app.utils.agents.generic_agent import GenericAgent
 from app.utils.agents.tools.create_grading_tools import create_grading_tools
 from app.utils.agents.tools.create_safe_field_name import \
@@ -206,9 +206,9 @@ async def _run_grade_agent_inline(
 ) -> str:
     """Inlined grading agent logic."""
     try:
-        # Clear previous results
-        grading_results.clear()
-        grading_progress.clear()
+        # Per-invocation local dicts (not global) for concurrency safety
+        grading_results: dict[str, Any] = {}
+        grading_progress: dict[str, bool] = {}
 
         # Get all grading context data in one optimized query using SQL file
         sql = load_sql("sql/v3/agents/get_grading_run_context.sql")
@@ -441,6 +441,8 @@ async def _run_grade_agent_inline(
             list(standards),
             simulation_chat_id,
             emit_progress_wrapper,
+            grading_results,
+            grading_progress,
         )
         grading_tools.append(debug_info_tool)
         logger.info(

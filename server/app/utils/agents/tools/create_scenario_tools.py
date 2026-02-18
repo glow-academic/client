@@ -13,18 +13,21 @@ logger = logging.getLogger(__name__)
 
 
 def create_scenario_tools(
-    group_id: uuid.UUID | None, objectives_enabled: bool = True
+    group_id: uuid.UUID | None,
+    scenario_results: dict[str, Any],
+    scenario_progress: dict[str, bool],
+    objectives_enabled: bool = True,
 ) -> list[Any]:
     """Create all scenario generation function tools."""
     tools = []
 
     # Add title and description tool
-    tools.append(create_title_description_function(group_id))
+    tools.append(create_title_description_function(group_id, scenario_results, scenario_progress))
     logger.info("Created title and description tool")
 
     # Add objectives tool only if enabled
     if objectives_enabled:
-        tools.append(create_objectives_function(group_id))
+        tools.append(create_objectives_function(group_id, scenario_results, scenario_progress))
         logger.info("Created objectives tool")
     else:
         logger.info("Objectives tool skipped (objectives_enabled=False)")

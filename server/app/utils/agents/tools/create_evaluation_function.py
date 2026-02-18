@@ -1,16 +1,18 @@
 """Create a function tool for evaluating if a response is proper."""
 
 import logging
+from typing import Any
 
 from agents import Tool, function_tool
 from pydantic import Field
 
-from app.main import guardrail_progress, guardrail_results
-
 logger = logging.getLogger(__name__)
 
 
-def create_evaluation_function() -> Tool:
+def create_evaluation_function(
+    guardrail_results: dict[str, Any],
+    guardrail_progress: dict[str, bool],
+) -> Tool:
     """Create a function tool for evaluating if a response is proper."""
 
     async def evaluate_response(

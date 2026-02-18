@@ -2,7 +2,8 @@
 Tests for app.utils.agents.tools.create_evaluation_function
 """
 
-from app.main import guardrail_progress, guardrail_results
+from typing import Any
+
 from app.utils.agents.tools.create_evaluation_function import create_evaluation_function
 
 
@@ -11,9 +12,8 @@ class TestCreate_Evaluation_Function:
 
     def test_create_evaluation_function_creates_tool(self) -> None:
         """Test that evaluation function creates a tool."""
-        # Clear previous results
-        guardrail_results.clear()
-        guardrail_progress.clear()
+        guardrail_results: dict[str, Any] = {}
+        guardrail_progress: dict[str, bool] = {}
 
-        tool = create_evaluation_function()
+        tool = create_evaluation_function(guardrail_results, guardrail_progress)
         assert tool is not None

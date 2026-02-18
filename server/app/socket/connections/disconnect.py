@@ -19,8 +19,11 @@ async def disconnect(sid: str) -> None:
     """Handle WebSocket disconnection with immediate cleanup"""
     logger.info(f"Client disconnecting: {sid}")
 
-    # Find and clean up profile for this socket
     # Find and clean up profile for this socket using Redis
+    # Note: default guest profiles skip set_socket_owner on connect,
+    # so find_profile_by_socket will return None for them — preventing
+    # incorrect cleanup that would mark the shared profile inactive
+    # while other guests are still connected.
     profile_to_cleanup = await find_profile_by_socket(sid)
 
     if profile_to_cleanup:

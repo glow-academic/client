@@ -250,8 +250,8 @@ async def init_db_pool() -> None:
     print(f"🔌 Initializing asyncpg connection pool to {db_host}:{db_port}/{db_name}")
 
     pool_config = {
-        "min_size": 10,
-        "max_size": 100,  # High capacity for concurrent analytics + background refresh
+        "min_size": 5,
+        "max_size": 25,  # 4 instances × 25 = 100, matching PgBouncer MAX_DB_CONNECTIONS
         "command_timeout": 60,  # Allow time for complex analytics queries (cold cache)
         "max_queries": 50000,  # Limit queries per connection before recycling
         "max_inactive_connection_lifetime": 300,  # 5 minutes

@@ -8,13 +8,14 @@ from typing import Any
 from agents import Tool, function_tool
 from pydantic import Field
 
-from app.main import grading_progress, grading_results
-
 logger = logging.getLogger(__name__)
 
 
 def create_summary_function(
-    chat_id: uuid.UUID, emit_progress_func: Callable[[dict[str, Any]], Awaitable[None]]
+    chat_id: uuid.UUID,
+    emit_progress_func: Callable[[dict[str, Any]], Awaitable[None]],
+    grading_results: dict[str, Any],
+    grading_progress: dict[str, bool],
 ) -> Tool:
     """Create a function tool for recording the overall summary."""
 
