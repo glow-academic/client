@@ -68,7 +68,7 @@ user_cohorts AS (
     WHERE pcj.profile_id = (SELECT profile_id FROM params)
       AND pcj.active = true
 ),
--- Filter practice_mv by cohort overlap OR empty profile_ids (empty = available to all)
+-- Filter practice_mv by cohort overlap
 accessible_training AS (
     SELECT
         mp.practice_id AS parent_id,
@@ -80,9 +80,7 @@ accessible_training AS (
         mp.rubric_ids,
         mp.time_limit_ids
     FROM practice_mv mp
-    CROSS JOIN user_cohorts uc
-    WHERE mp.cohort_ids && COALESCE(uc.cohort_ids, ARRAY[]::uuid[])
-       OR COALESCE(ARRAY_LENGTH(mp.profile_ids, 1), 0) = 0
+    JOIN user_cohorts uc ON mp.cohort_ids && COALESCE(uc.cohort_ids, ARRAY[]::uuid[])
 ),
 -- Check simulation_active flag for each simulation
 active_simulations AS (
