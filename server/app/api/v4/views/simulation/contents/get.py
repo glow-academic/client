@@ -20,7 +20,7 @@ from app.utils.cache.set_cached import set_cached
 from app.utils.sql_helper import execute_sql_typed
 
 SQL_PATH = (
-    "app/sql/v4/queries/views/simulation/contents/get_attempt_content_view_complete.sql"
+    "app/sql/v4/queries/views/simulation/contents/get_simulation_contents_view_complete.sql"
 )
 
 router = APIRouter()
@@ -55,7 +55,7 @@ async def get_attempt_content_internal(
                     content_id=item.content_id,
                     message_id=item.message_id,
                     content=item.content,
-                    persona_id=item.persona_id,
+                    persona_id=item.persona_entry_id,
                     idx=item.idx,
                     created_at=item.created_at,
                 )

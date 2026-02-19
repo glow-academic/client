@@ -19,7 +19,7 @@ from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
 from app.utils.sql_helper import execute_sql_typed
 
-SQL_PATH = "app/sql/v4/queries/views/simulation/message_tree/get_attempt_message_tree_view_complete.sql"
+SQL_PATH = "app/sql/v4/queries/views/simulation/message_tree/get_simulation_message_tree_view_complete.sql"
 
 router = APIRouter()
 

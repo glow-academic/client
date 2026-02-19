@@ -12,7 +12,7 @@ from app.utils.cache.set_cached import set_cached
 from app.utils.sql_helper import execute_sql_typed
 
 SQL_PATH = (
-    "app/sql/v4/queries/views/simulation/messages/get_attempt_message_view_complete.sql"
+    "app/sql/v4/queries/views/simulation/messages/get_simulation_messages_view_complete.sql"
 )
 
 
