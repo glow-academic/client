@@ -1,7 +1,6 @@
 """View wrapper for health list entries."""
 
 from datetime import datetime
-from uuid import UUID
 
 import asyncpg
 from pydantic import BaseModel, Field

@@ -11,10 +11,10 @@ from uuid import UUID
 import asyncpg
 
 from app.api.v4.artifacts.dashboard.types import DashboardSectionRequest
-from app.api.v4.resources.rubrics.get import get_rubrics_batch_internal
-from app.api.v4.resources.standard_groups.get import get_standard_groups_internal
 from app.api.v4.entries.chat.rubric_scores import RubricScoresResponse
 from app.api.v4.entries.chat.types import GetChatsResponse
+from app.api.v4.resources.rubrics.get import get_rubrics_batch_internal
+from app.api.v4.resources.standard_groups.get import get_standard_groups_internal
 from app.sql.types import GetActiveSettingsSqlParams, GetActiveSettingsSqlRow
 from app.utils.sql_helper import execute_sql_typed
 

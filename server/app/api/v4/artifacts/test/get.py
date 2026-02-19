@@ -31,6 +31,10 @@ from app.api.v4.artifacts.test.types import (
     TestViews,
     TestWebsocketResources,
 )
+from app.api.v4.entries.test_invocation.view import (
+    get_test_invocation_internal,
+)
+from app.api.v4.entries.tests.view import get_test_internal
 from app.api.v4.resources.agents.get import get_agents_internal
 from app.api.v4.resources.evals.get import get_evals_internal
 from app.api.v4.resources.models.get import get_models_internal
@@ -38,10 +42,6 @@ from app.api.v4.resources.names.get import get_names_internal
 from app.api.v4.resources.providers.get import get_providers_internal
 from app.api.v4.resources.rubrics.get import get_rubrics_batch_internal
 from app.api.v4.resources.tools.get import get_tools_internal
-from app.api.v4.entries.test_invocation.view import (
-    get_test_invocation_internal,
-)
-from app.api.v4.entries.tests.view import get_test_internal
 from app.infra.v4.activity.audit import audit_activity
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
@@ -459,8 +459,8 @@ async def get_test_websocket(
     """
     from datetime import UTC, datetime
 
-    from app.api.v4.resources.profiles.get import get_profiles_internal
     from app.api.v4.entries.runs.list import get_run_list_entries_internal
+    from app.api.v4.resources.profiles.get import get_profiles_internal
 
     data = await get_test_internal(
         conn=conn,

@@ -32,8 +32,7 @@ async def get_attempt_messages_internal(
         cached = await get_cached(cache_key_val)
         if cached:
             return [
-                AttemptMessageViewItem.model_validate(item)
-                for item in cached["items"]
+                AttemptMessageViewItem.model_validate(item) for item in cached["items"]
             ]
 
     params = GetAttemptMessagesViewSqlParams(attempt_id_filter=attempt_id)

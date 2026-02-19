@@ -56,6 +56,7 @@ from app.api.v4.artifacts.document.types import (
 from app.api.v4.auth.profile import get_auth_profile_internal
 from app.api.v4.auth.settings import get_auth_settings_internal
 from app.api.v4.entries.document_drafts.get import get_document_drafts_entries_internal
+from app.api.v4.entries.runs.list import get_run_list_entries_internal
 from app.api.v4.permissions import has_tools_for_resource, resolve_agents_for_artifact
 from app.api.v4.resources.agents.get import get_agents_internal
 from app.api.v4.resources.departments.get import get_departments_internal
@@ -78,7 +79,6 @@ from app.api.v4.resources.texts.search import search_texts_internal
 from app.api.v4.resources.tools.get import get_tools_internal
 from app.api.v4.resources.uploads.get import get_uploads_internal
 from app.api.v4.resources.uploads.search import search_uploads_internal
-from app.api.v4.entries.runs.list import get_run_list_entries_internal
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool

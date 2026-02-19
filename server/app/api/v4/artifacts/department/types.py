@@ -7,8 +7,8 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
-from app.api.v4.types import BaseResourceSection
 from app.api.v4.entries.runs.types import GetRunListViewResponse
+from app.api.v4.types import BaseResourceSection
 from app.sql.types import (
     QGetAgentsV4Item,
     QGetDepartmentDraftsEntriesV4Item,

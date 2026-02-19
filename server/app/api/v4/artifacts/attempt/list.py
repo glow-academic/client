@@ -20,14 +20,13 @@ from app.api.v4.artifacts.training.permissions import (
     compute_show_continue,
     compute_show_view,
 )
+from app.api.v4.entries.attempt.chats import get_attempt_chats_internal
+from app.api.v4.entries.attempt.list import get_attempt_list_internal
+from app.api.v4.entries.attempt.types import AttemptViewItem, ChatViewItem
 from app.api.v4.resources.personas.get import get_personas_internal
 from app.api.v4.resources.profiles.get import get_profiles_internal
 from app.api.v4.resources.scenarios.get import get_scenarios_internal
 from app.api.v4.resources.simulations.get import get_simulations_internal
-from app.api.v4.entries.attempt.chats import get_attempt_chats_internal
-from app.api.v4.entries.attempt.types import ChatViewItem
-from app.api.v4.entries.attempt.list import get_attempt_list_internal
-from app.api.v4.entries.attempt.types import AttemptViewItem
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db

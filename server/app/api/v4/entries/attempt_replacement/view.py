@@ -36,16 +36,20 @@ async def get_attempt_replacement_internal(
     cache_key_val = cache_key(
         "entries/attempt_replacement/view",
         {
-        "improvement_ids": [str(x) for x in improvement_ids],
+            "improvement_ids": [str(x) for x in improvement_ids],
         },
     )
 
     if not bypass_cache:
         cached = await get_cached(cache_key_val)
         if cached:
-            return [ReplacementViewItem.model_validate(item) for item in cached["items"]]
+            return [
+                ReplacementViewItem.model_validate(item) for item in cached["items"]
+            ]
 
-    params = GetSimulationReplacementsViewSqlParams(improvement_ids_filter=improvement_ids)
+    params = GetSimulationReplacementsViewSqlParams(
+        improvement_ids_filter=improvement_ids
+    )
     result = await execute_sql_typed(conn, SQL_PATH, params=params)
 
     items: list[ReplacementViewItem] = []

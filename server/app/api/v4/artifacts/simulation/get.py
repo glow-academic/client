@@ -70,6 +70,7 @@ from app.api.v4.artifacts.simulation.types import (
     SimulationWebsocketResources,
     SimulationWebsocketViews,
 )
+from app.api.v4.entries.runs.list import get_run_list_entries_internal
 from app.api.v4.entries.simulation_drafts.get import (
     get_simulation_drafts_entries_internal,
 )
@@ -109,7 +110,6 @@ from app.api.v4.resources.scenario_time_limits.search import (
 )
 from app.api.v4.resources.scenarios.search import search_scenarios_internal
 from app.api.v4.resources.tools.get import get_tools_internal
-from app.api.v4.entries.runs.list import get_run_list_entries_internal
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool

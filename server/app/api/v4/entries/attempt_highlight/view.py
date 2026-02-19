@@ -35,7 +35,7 @@ async def get_attempt_highlight_internal(
     cache_key_val = cache_key(
         "entries/attempt_highlight/view",
         {
-        "strength_ids": [str(x) for x in strength_ids],
+            "strength_ids": [str(x) for x in strength_ids],
         },
     )
 

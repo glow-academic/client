@@ -72,6 +72,7 @@ from app.api.v4.artifacts.agent.types import (
 from app.api.v4.auth.profile import get_auth_profile_internal
 from app.api.v4.auth.settings import get_auth_settings_internal
 from app.api.v4.entries.agent_drafts.get import get_agent_drafts_entries_internal
+from app.api.v4.entries.runs.list import get_run_list_entries_internal
 from app.api.v4.permissions import has_tools_for_resource, resolve_agents_for_artifact
 from app.api.v4.resources.agents.get import get_agents_internal
 from app.api.v4.resources.departments.get import get_departments_internal
@@ -104,7 +105,6 @@ from app.api.v4.resources.tools.get import get_tools_internal
 from app.api.v4.resources.tools.search import search_tools_internal
 from app.api.v4.resources.voices.get import get_voices_internal
 from app.api.v4.resources.voices.search import search_voices_internal
-from app.api.v4.entries.runs.list import get_run_list_entries_internal
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool

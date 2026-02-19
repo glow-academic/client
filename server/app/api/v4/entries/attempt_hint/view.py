@@ -11,7 +11,9 @@ from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
 from app.utils.sql_helper import execute_sql_typed
 
-SQL_PATH = "app/sql/v4/queries/views/simulation/hints/get_attempt_hint_view_complete.sql"
+SQL_PATH = (
+    "app/sql/v4/queries/views/simulation/hints/get_attempt_hint_view_complete.sql"
+)
 
 
 class HintViewItem(BaseModel):
@@ -35,7 +37,7 @@ async def get_attempt_hint_internal(
     cache_key_val = cache_key(
         "entries/attempt_hint/view",
         {
-        "message_ids": [str(x) for x in message_ids],
+            "message_ids": [str(x) for x in message_ids],
         },
     )
 

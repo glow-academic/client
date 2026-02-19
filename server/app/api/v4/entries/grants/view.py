@@ -51,7 +51,9 @@ async def get_grant_list_view_internal(
         "views/grant/list/get",
         {
             "grantor_id_filter": str(grantor_id_filter) if grantor_id_filter else None,
-            "emulated_id_filter": str(emulated_id_filter) if emulated_id_filter else None,
+            "emulated_id_filter": str(emulated_id_filter)
+            if emulated_id_filter
+            else None,
             "page_limit": page_limit,
             "page_offset": page_offset,
         },

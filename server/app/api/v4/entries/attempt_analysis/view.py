@@ -34,7 +34,7 @@ async def get_attempt_analysis_internal(
     cache_key_val = cache_key(
         "entries/attempt_analysis/view",
         {
-        "grade_ids": [str(x) for x in grade_ids],
+            "grade_ids": [str(x) for x in grade_ids],
         },
     )
 

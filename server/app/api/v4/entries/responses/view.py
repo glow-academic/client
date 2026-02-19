@@ -35,7 +35,7 @@ async def get_simulation_responses_internal(
     cache_key_val = cache_key(
         "entries/responses/view",
         {
-        "chat_ids": [str(x) for x in chat_ids],
+            "chat_ids": [str(x) for x in chat_ids],
         },
     )
 

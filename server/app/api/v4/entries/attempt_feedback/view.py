@@ -36,7 +36,7 @@ async def get_attempt_feedback_internal(
     cache_key_val = cache_key(
         "entries/attempt_feedback/view",
         {
-        "grade_ids": [str(x) for x in grade_ids],
+            "grade_ids": [str(x) for x in grade_ids],
         },
     )
 

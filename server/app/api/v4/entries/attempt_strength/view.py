@@ -35,7 +35,7 @@ async def get_attempt_strength_internal(
     cache_key_val = cache_key(
         "entries/attempt_strength/view",
         {
-        "message_ids": [str(x) for x in message_ids],
+            "message_ids": [str(x) for x in message_ids],
         },
     )
 

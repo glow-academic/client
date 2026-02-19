@@ -44,9 +44,7 @@ async def get_attempt_list_internal(
         "entries/attempt/list/get",
         {
             "attempt_ids": [str(a) for a in attempt_ids] if attempt_ids else None,
-            "profile_id_filter": str(profile_id_filter)
-            if profile_id_filter
-            else None,
+            "profile_id_filter": str(profile_id_filter) if profile_id_filter else None,
             "simulation_id_filter": str(simulation_id_filter)
             if simulation_id_filter
             else None,
@@ -108,9 +106,7 @@ async def get_attempt_list_internal(
                     infinite_mode=item.infinite_mode or False,
                     created_at=item.created_at,
                     is_archived=item.is_archived or False,
-                    scenario_ids=list(item.scenario_ids)
-                    if item.scenario_ids
-                    else None,
+                    scenario_ids=list(item.scenario_ids) if item.scenario_ids else None,
                 )
             )
 

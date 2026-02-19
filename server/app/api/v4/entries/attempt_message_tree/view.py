@@ -32,14 +32,16 @@ async def get_attempt_message_tree_internal(
     cache_key_val = cache_key(
         "entries/attempt_message_tree/view",
         {
-        "message_ids": [str(x) for x in message_ids],
+            "message_ids": [str(x) for x in message_ids],
         },
     )
 
     if not bypass_cache:
         cached = await get_cached(cache_key_val)
         if cached:
-            return [MessageTreeViewItem.model_validate(item) for item in cached["items"]]
+            return [
+                MessageTreeViewItem.model_validate(item) for item in cached["items"]
+            ]
 
     params = GetSimulationMessageTreeViewSqlParams(message_ids_filter=message_ids)
     result = await execute_sql_typed(conn, SQL_PATH, params=params)

@@ -78,9 +78,7 @@ async def get_run_list_entries_internal(
             "sort_order": sort_order,
             "page_limit": page_limit,
             "page_offset": page_offset,
-            "profile_id_filter": str(profile_id_filter)
-            if profile_id_filter
-            else None,
+            "profile_id_filter": str(profile_id_filter) if profile_id_filter else None,
         },
     )
 
@@ -116,9 +114,7 @@ async def get_run_list_entries_internal(
                     run_created_at=item.run_created_at,
                     agent_ids=list(item.agent_ids) if item.agent_ids else None,
                     model_ids=list(item.model_ids) if item.model_ids else None,
-                    provider_ids=list(item.provider_ids)
-                    if item.provider_ids
-                    else None,
+                    provider_ids=list(item.provider_ids) if item.provider_ids else None,
                     pricing=_build_pricing_list(item),
                 )
             )

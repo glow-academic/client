@@ -16,10 +16,10 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import Response
 
 from app.api.v4.auth.profile import get_auth_profile_internal
+from app.api.v4.entries.chat.get import get_chats_internal
 from app.api.v4.resources.cohorts.get import get_cohorts_internal
 from app.api.v4.resources.profiles.get import get_profiles_internal
 from app.api.v4.resources.simulations.get import get_simulations_internal
-from app.api.v4.entries.chat.get import get_chats_internal
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.main import get_db, get_pool
 from app.utils.logging.db_logger import get_logger

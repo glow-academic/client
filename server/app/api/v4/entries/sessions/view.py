@@ -52,7 +52,9 @@ async def get_session_list_view_internal(
         {
             "session_ids": [str(s) for s in session_ids] if session_ids else None,
             "profile_id_filter": str(profile_id_filter) if profile_id_filter else None,
-            "profile_ids_filter": [str(p) for p in profile_ids_filter] if profile_ids_filter else None,
+            "profile_ids_filter": [str(p) for p in profile_ids_filter]
+            if profile_ids_filter
+            else None,
             "active_filter": active_filter,
             "date_from": date_from.isoformat() if date_from else None,
             "date_to": date_to.isoformat() if date_to else None,

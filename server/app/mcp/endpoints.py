@@ -1,4 +1,4 @@
-"""Unified endpoints for artifacts, resources, and views.
+"""Unified endpoints for artifacts, resources, and entries.
 
 Uses explicit handler registries with lazy imports — no filesystem scanning,
 no dynamic discovery, no circular imports.
@@ -421,153 +421,134 @@ for _name in _ALL_RESOURCES:
 
 
 # ============================================================================
-# View Registry — 32 views
+# Entry Registry — 101 entries
 # ============================================================================
-# Views are organized by domain. Multi-sub views use underscore-flattened keys.
+# Entries follow a regular naming pattern: get_{name}_entries, search_{name}_entries,
+# create_{name}_entry. Built from explicit name list (excludes 'chat' which has
+# no router endpoints).
 
-VIEW_REGISTRY: dict[str, dict[str, tuple[str, str]]] = {
-    # Simple views (Pattern A: domain/list/get.py)
-    "activity": {
-        "get": ("app.api.v4.views.activity.list.get", "get_activity"),
-    },
-    "audio": {
-        "get": ("app.api.v4.views.audio.list.get", "get_audios"),
-    },
-    "audit": {
-        "get": ("app.api.v4.views.audit.list.get", "get_audits"),
-    },
-    "call": {
-        "get": ("app.api.v4.views.call.list.get", "get_calls"),
-    },
-    "grant": {
-        "get": ("app.api.v4.views.grant.list.get", "get_grants"),
-    },
-    "group": {
-        "get": ("app.api.v4.views.group.list.get", "get_groups"),
-    },
-    "health": {
-        "get": ("app.api.v4.views.health.list.get", "get_health"),
-    },
-    "image": {
-        "get": ("app.api.v4.views.image.list.get", "get_images"),
-    },
-    "login": {
-        "get": ("app.api.v4.views.login.list.get", "get_logins"),
-    },
-    "message": {
-        "get": ("app.api.v4.views.message.list.get", "get_messages"),
-    },
-    "metric": {
-        "get": ("app.api.v4.views.metric.list.get", "get_metrics"),
-    },
-    "problem": {
-        "get": ("app.api.v4.views.problem.list.get", "get_problems"),
-    },
-    "run": {
-        "get": ("app.api.v4.views.run.list.get", "get_runs"),
-    },
-    "session": {
-        "get": ("app.api.v4.views.session.list.get", "get_sessions"),
-    },
-    "text": {
-        "get": ("app.api.v4.views.text.list.get", "get_texts"),
-    },
-    "upload": {
-        "get": ("app.api.v4.views.upload.list.get", "get_uploads"),
-    },
-    "video": {
-        "get": ("app.api.v4.views.video.list.get", "get_videos"),
-    },
-    # Flat view (Pattern C: domain/get.py)
-    "config": {
-        "get": ("app.api.v4.views.config.get", "get_config"),
-        "refresh": ("app.api.v4.views.config.refresh", "refresh_config_view"),
-    },
-    # Multi-sub views (Pattern B) — flattened with underscore
-    "attempt_list": {
-        "get": ("app.api.v4.views.attempt.list.get", "get_attempts"),
-        "refresh": (
-            "app.api.v4.views.attempt.list.refresh",
-            "refresh_attempts_view",
-        ),
-    },
-    "attempt_chats": {
-        "get": ("app.api.v4.views.attempt.chats.get", "get_chats"),
-        "refresh": (
-            "app.api.v4.views.attempt.chats.refresh",
-            "refresh_chats_view",
-        ),
-    },
-    "attempt_messages": {
-        "get": ("app.api.v4.views.attempt.messages.get", "get_messages"),
-        "refresh": (
-            "app.api.v4.views.attempt.messages.refresh",
-            "refresh_messages_view",
-        ),
-    },
-    "analytics_profile_facts": {
-        "get": (
-            "app.api.v4.views.analytics.profile_facts.get",
-            "get_profile_facts",
-        ),
-    },
-    "analytics_rubric_facts": {
-        "get": ("app.api.v4.views.analytics.rubric_facts.get", "get_rubric_facts"),
-    },
-    "analytics_scenario_facts": {
-        "get": (
-            "app.api.v4.views.analytics.scenario_facts.get",
-            "get_scenario_facts",
-        ),
-    },
-    "analytics_simulation_facts": {
-        "get": (
-            "app.api.v4.views.analytics.simulation_facts.get",
-            "get_simulation_facts",
-        ),
-    },
-    "benchmark_bundle": {
-        "get": (
-            "app.api.v4.views.benchmark.bundle.get",
-            "get_benchmark_bundle_view",
-        ),
-    },
-    "benchmark_context": {
-        "get": (
-            "app.api.v4.views.benchmark.context.get",
-            "get_benchmark_context_view",
-        ),
-    },
-    "benchmark_invocations": {
-        "get": (
-            "app.api.v4.views.benchmark.invocations.get",
-            "get_benchmark_invocations",
-        ),
-        "refresh": (
-            "app.api.v4.views.benchmark.invocations.refresh",
-            "refresh_benchmark_invocations",
-        ),
-    },
-    "benchmark_tests": {
-        "get": ("app.api.v4.views.benchmark.tests.get", "get_benchmark_tests"),
-        "refresh": (
-            "app.api.v4.views.benchmark.tests.refresh",
-            "refresh_benchmark_tests",
-        ),
-    },
-    "training_bundle": {
-        "get": (
-            "app.api.v4.views.training.bundle.get",
-            "get_training_bundle_view",
-        ),
-    },
-    "training_context": {
-        "get": (
-            "app.api.v4.views.training.context.get",
-            "get_training_context_view",
-        ),
-    },
-}
+_ALL_ENTRIES = [
+    "activity",
+    "activity_insights",
+    "agent_drafts",
+    "args_outputs_values",
+    "args_values",
+    "attempt",
+    "attempt_analysis",
+    "attempt_archive",
+    "attempt_chat",
+    "attempt_completion",
+    "attempt_content",
+    "attempt_feedback",
+    "attempt_grade",
+    "attempt_highlight",
+    "attempt_hint",
+    "attempt_improvement",
+    "attempt_insights",
+    "attempt_message",
+    "attempt_message_tree",
+    "attempt_replacement",
+    "attempt_strength",
+    "audios",
+    "audits",
+    "auth_drafts",
+    "benchmark",
+    "benchmark_insights",
+    "bindings",
+    "calls",
+    "certificates",
+    "cohort_drafts",
+    "config",
+    "conversations",
+    "conversations_completions",
+    "dashboard_insights",
+    "debug_info",
+    "department_drafts",
+    "document_drafts",
+    "domains",
+    "emulations",
+    "eval_drafts",
+    "field_drafts",
+    "grants",
+    "groups",
+    "health",
+    "health_insights",
+    "highlights",
+    "home",
+    "home_insights",
+    "home_training",
+    "images",
+    "leaderboard_insights",
+    "logins",
+    "messages",
+    "messages_completions",
+    "metrics",
+    "model_drafts",
+    "mutes",
+    "parameter_drafts",
+    "persona",
+    "persona_drafts",
+    "practice",
+    "practice_insights",
+    "practice_training",
+    "pricing_insights",
+    "problems",
+    "profile_drafts",
+    "provider_drafts",
+    "record_insights",
+    "replacements",
+    "reports",
+    "reports_insights",
+    "resolves",
+    "responses",
+    "rubric_drafts",
+    "run_pricing",
+    "runs",
+    "scenario_drafts",
+    "sessions",
+    "setting_drafts",
+    "simulation_drafts",
+    "suite",
+    "suite_department",
+    "suite_drafts",
+    "test",
+    "test_archive",
+    "test_completion",
+    "test_feedback",
+    "test_grade",
+    "test_insights",
+    "test_invocation",
+    "test_stop",
+    "tests",
+    "texts",
+    "tokens",
+    "tool_drafts",
+    "training",
+    "training_department",
+    "training_drafts",
+    "uploads",
+    "uploads_completions",
+    "videos",
+]
+
+ENTRY_REGISTRY: dict[str, dict[str, tuple[str, str]]] = {}
+for _name in _ALL_ENTRIES:
+    _entry: dict[str, tuple[str, str]] = {
+        "get": (f"app.api.v4.entries.{_name}.get", f"get_{_name}_entries"),
+        "search": (f"app.api.v4.entries.{_name}.search", f"search_{_name}_entries"),
+    }
+    # Special case: uploads uses create_uploads_entry_mcp
+    if _name == "uploads":
+        _entry["create"] = (
+            f"app.api.v4.entries.{_name}.create",
+            "create_uploads_entry_mcp",
+        )
+    else:
+        _entry["create"] = (
+            f"app.api.v4.entries.{_name}.create",
+            f"create_{_name}_entry",
+        )
+    ENTRY_REGISTRY[_name] = _entry
 
 
 # ============================================================================
@@ -631,8 +612,8 @@ SPECIAL_REGISTRY: dict[str, tuple[str, str]] = {
 
 ARTIFACTS = sorted(ARTIFACT_REGISTRY.keys())
 RESOURCES = sorted(RESOURCE_REGISTRY.keys())
-VIEWS = sorted(VIEW_REGISTRY.keys())
-ALL_ITEMS = ARTIFACTS + RESOURCES
+ENTRIES = sorted(ENTRY_REGISTRY.keys())
+ALL_ITEMS = ARTIFACTS + RESOURCES + ENTRIES
 
 
 # ============================================================================
@@ -658,7 +639,7 @@ def pluralize_artifact(artifact_name: str) -> str:
 
 
 def _suggest_item_name(name: str) -> str | None:
-    """Suggest the correct artifact/resource name based on common mistakes."""
+    """Suggest the correct artifact/resource/entry name based on common mistakes."""
     if name in ALL_ITEMS:
         return None
 
@@ -671,6 +652,10 @@ def _suggest_item_name(name: str) -> str | None:
 
     if f"{name}s" in RESOURCES:
         return f"{name}s"
+
+    # Check entries (try with/without _entries suffix, singular/plural)
+    if name in ENTRY_REGISTRY:
+        return name
 
     return None
 
@@ -685,14 +670,19 @@ def is_resource(name: str) -> bool:
     return name in RESOURCE_REGISTRY
 
 
+def is_entry(name: str) -> bool:
+    """Check if name is an entry."""
+    return name in ENTRY_REGISTRY
+
+
 def get_available_operations(name: str) -> list[str]:
     """Get list of available operations for an item."""
     if name in ARTIFACT_REGISTRY:
         return list(ARTIFACT_REGISTRY[name].keys())
     if name in RESOURCE_REGISTRY:
         return list(RESOURCE_REGISTRY[name].keys())
-    if name in VIEW_REGISTRY:
-        return list(VIEW_REGISTRY[name].keys())
+    if name in ENTRY_REGISTRY:
+        return list(ENTRY_REGISTRY[name].keys())
     return []
 
 
@@ -729,19 +719,22 @@ def get_resource_description(resource_name: str) -> str:
     return f"{resource_name.title()} resource"
 
 
-def get_view_description(view_name: str) -> str:
-    """Get view description from handler docstring."""
-    if view_name in VIEW_REGISTRY and "get" in VIEW_REGISTRY[view_name]:
-        try:
-            handler = _get_handler(*VIEW_REGISTRY[view_name]["get"])
-            doc = getattr(handler, "__doc__", None)
-            if doc and isinstance(doc, str):
-                parts = doc.split(".")
-                if parts:
-                    return parts[0].strip()
-        except Exception:
-            pass
-    return f"{view_name.replace('_', ' ').title()} view"
+def get_entry_description(entry_name: str) -> str:
+    """Get entry description from handler docstring."""
+    if entry_name in ENTRY_REGISTRY:
+        # Try create handler first, then get handler
+        for op in ("create", "get"):
+            if op in ENTRY_REGISTRY[entry_name]:
+                try:
+                    handler = _get_handler(*ENTRY_REGISTRY[entry_name][op])
+                    doc = getattr(handler, "__doc__", None)
+                    if doc and isinstance(doc, str):
+                        parts = doc.split(".")
+                        if parts:
+                            return parts[0].strip()
+                except Exception:
+                    pass
+    return f"{entry_name.replace('_', ' ').title()} entry"
 
 
 def get_request_model_from_handler(handler: Any) -> Any | None:
@@ -759,7 +752,7 @@ def get_request_model_from_handler(handler: Any) -> Any | None:
 
 
 def get_payload_schema(name: str, operation: str = "get") -> dict[str, Any]:
-    """Get payload schema for artifact/resource/view operations.
+    """Get payload schema for artifact/resource/entry operations.
 
     Note: The 'mcp' field is automatically filtered out as it's auto-injected.
     """
@@ -769,8 +762,8 @@ def get_payload_schema(name: str, operation: str = "get") -> dict[str, Any]:
         handler = _get_handler(*ARTIFACT_REGISTRY[name][operation])
     elif name in RESOURCE_REGISTRY and operation in RESOURCE_REGISTRY[name]:
         handler = _get_handler(*RESOURCE_REGISTRY[name][operation])
-    elif name in VIEW_REGISTRY and operation in VIEW_REGISTRY[name]:
-        handler = _get_handler(*VIEW_REGISTRY[name][operation])
+    elif name in ENTRY_REGISTRY and operation in ENTRY_REGISTRY[name]:
+        handler = _get_handler(*ENTRY_REGISTRY[name][operation])
     else:
         suggestion = _suggest_item_name(name)
         response: dict[str, Any] = {
@@ -976,19 +969,18 @@ def register_endpoints(server: FastMCP) -> None:
         ]
 
     @server.tool()
-    def views() -> list[dict[str, str]]:
-        """List all available views with descriptions.
+    def entries() -> list[dict[str, str]]:
+        """List all available entries with descriptions.
 
         Returns:
-            List of dictionaries with 'name', 'description', and 'operations' keys.
+            List of dictionaries with 'name' and 'description' keys.
         """
         return [
             {
-                "name": view,
-                "description": get_view_description(view),
-                "operations": ", ".join(VIEW_REGISTRY[view].keys()),
+                "name": entry,
+                "description": get_entry_description(entry),
             }
-            for view in VIEWS
+            for entry in ENTRIES
         ]
 
     # ------------------------------------------------------------------
@@ -1043,6 +1035,29 @@ def register_endpoints(server: FastMCP) -> None:
         return cast(dict[str, Any], handler())
 
     @server.tool()
+    def docs_entry(name: str) -> dict[str, Any]:
+        """Get comprehensive documentation for an entry.
+
+        Args:
+            name: Entry name (e.g., "activity", "attempt", "training").
+
+        Returns:
+            Dictionary containing entry documentation and usage patterns.
+        """
+        if name not in ENTRY_REGISTRY:
+            return {"error": f"'{name}' is not a valid entry."}
+
+        ops = ENTRY_REGISTRY[name]
+        if "docs" not in ops:
+            return {
+                "error": f"Documentation not available for '{name}'",
+                "note": "Entry docs are not yet implemented.",
+            }
+
+        handler = _get_handler(*ops["docs"])
+        return cast(dict[str, Any], handler())
+
+    @server.tool()
     def docs() -> dict[str, Any]:
         """Get general GLOW documentation.
 
@@ -1091,26 +1106,26 @@ def register_endpoints(server: FastMCP) -> None:
         return get_payload_schema(name, operation)
 
     @server.tool()
-    def payload_view(name: str, operation: str = "get") -> dict[str, Any]:  # type: ignore[return]
-        """Get payload schema for a view.
+    def payload_entry(name: str, operation: str = "get") -> dict[str, Any]:  # type: ignore[return]
+        """Get payload schema for an entry.
 
-        IMPORTANT: Call this tool FIRST before using view operations.
+        IMPORTANT: Call this tool FIRST before using entry operations.
 
         Args:
-            name: View name (e.g., "config", "attempt_list", "analytics_profile_facts").
-            operation: Operation name (e.g., "get", "refresh"). Defaults to "get".
+            name: Entry name (e.g., "activity", "attempt", "training").
+            operation: Operation name (e.g., "get", "search", "create"). Defaults to "get".
 
         Returns:
             JSON schema for the payload. The 'mcp' field is auto-filtered.
         """
-        if name not in VIEW_REGISTRY:
+        if name not in ENTRY_REGISTRY:
             return {
-                "error": f"'{name}' is not a valid view. Available: {', '.join(VIEWS)}"
+                "error": f"'{name}' is not a valid entry. Available: {', '.join(ENTRIES)}"
             }
-        if operation not in VIEW_REGISTRY[name]:
+        if operation not in ENTRY_REGISTRY[name]:
             return {
-                "error": f"Operation '{operation}' not available for view '{name}'.",
-                "available_operations": list(VIEW_REGISTRY[name].keys()),
+                "error": f"Operation '{operation}' not available for entry '{name}'.",
+                "available_operations": list(ENTRY_REGISTRY[name].keys()),
             }
         return get_payload_schema(name, operation)
 
@@ -1293,67 +1308,97 @@ def register_endpoints(server: FastMCP) -> None:
         return await call_endpoint_handler(handler, payload, profile_id)
 
     # ------------------------------------------------------------------
-    # View tools
+    # Entry tools
     # ------------------------------------------------------------------
 
     @server.tool()
-    async def get_view(name: str, payload: dict[str, Any]) -> dict[str, Any]:
-        """Get view data by name.
+    async def get_entry(name: str, payload: dict[str, Any]) -> dict[str, Any]:
+        """Get entry data by name.
 
         Args:
-            name: View name (e.g., "config", "attempt_list", "analytics_profile_facts").
-            payload: Request payload. Call payload_view(name) first.
+            name: Entry name (e.g., "activity", "attempt", "training").
+            payload: Request payload. Call payload_entry(name, "get") first.
 
         Returns:
-            View data.
+            Entry data.
         """
         from app.utils.mcp.get_mcp_profile_id import get_mcp_profile_id
 
         profile_id = get_mcp_profile_id()
 
-        if name not in VIEW_REGISTRY:
+        if name not in ENTRY_REGISTRY:
             return {
-                "error": f"'{name}' is not a valid view.",
-                "available_views": VIEWS,
+                "error": f"'{name}' is not a valid entry.",
+                "available_entries": ENTRIES,
             }
 
-        if "get" not in VIEW_REGISTRY[name]:
+        if "get" not in ENTRY_REGISTRY[name]:
             return {
-                "error": f"get operation not available for view '{name}'.",
-                "available_operations": list(VIEW_REGISTRY[name].keys()),
+                "error": f"get operation not available for entry '{name}'.",
+                "available_operations": list(ENTRY_REGISTRY[name].keys()),
             }
 
-        handler = _get_handler(*VIEW_REGISTRY[name]["get"])
+        handler = _get_handler(*ENTRY_REGISTRY[name]["get"])
         return await call_endpoint_handler(handler, payload, profile_id)
 
     @server.tool()
-    async def refresh_view(name: str, payload: dict[str, Any]) -> dict[str, Any]:
-        """Refresh a view's cached data.
+    async def search_entry(name: str, payload: dict[str, Any]) -> dict[str, Any]:
+        """Search entries by name.
 
         Args:
-            name: View name (e.g., "config", "attempt_list", "benchmark_invocations").
-            payload: Request payload. Call payload_view(name, "refresh") first.
+            name: Entry name (e.g., "activity", "attempt", "training").
+            payload: Request payload. Call payload_entry(name, "search") first.
 
         Returns:
-            Refresh result.
+            Search results.
         """
         from app.utils.mcp.get_mcp_profile_id import get_mcp_profile_id
 
         profile_id = get_mcp_profile_id()
 
-        if name not in VIEW_REGISTRY:
+        if name not in ENTRY_REGISTRY:
             return {
-                "error": f"'{name}' is not a valid view.",
-                "available_views": VIEWS,
+                "error": f"'{name}' is not a valid entry.",
+                "available_entries": ENTRIES,
             }
 
-        if "refresh" not in VIEW_REGISTRY[name]:
+        if "search" not in ENTRY_REGISTRY[name]:
             return {
-                "error": f"refresh operation not available for view '{name}'.",
-                "available_operations": list(VIEW_REGISTRY[name].keys()),
+                "error": f"search operation not available for entry '{name}'.",
+                "available_operations": list(ENTRY_REGISTRY[name].keys()),
             }
 
-        handler = _get_handler(*VIEW_REGISTRY[name]["refresh"])
+        handler = _get_handler(*ENTRY_REGISTRY[name]["search"])
+        return await call_endpoint_handler(handler, payload, profile_id)
+
+    @server.tool()
+    async def create_entry(name: str, payload: dict[str, Any]) -> dict[str, Any]:
+        """Create an entry.
+
+        Args:
+            name: Entry name (e.g., "activity", "attempt", "training").
+            payload: Request payload. Call payload_entry(name, "create") first.
+
+        Returns:
+            Success response with created entry data.
+        """
+        from app.utils.mcp.get_mcp_profile_id import get_mcp_profile_id
+
+        profile_id = get_mcp_profile_id()
+
+        if name not in ENTRY_REGISTRY:
+            return {
+                "error": f"'{name}' is not a valid entry.",
+                "available_entries": ENTRIES,
+            }
+
+        if "create" not in ENTRY_REGISTRY[name]:
+            return {
+                "error": f"create operation not available for entry '{name}'.",
+                "available_operations": list(ENTRY_REGISTRY[name].keys()),
+            }
+
+        handler = _get_handler(*ENTRY_REGISTRY[name]["create"])
         return await call_endpoint_handler(handler, payload, profile_id)
 
     # ------------------------------------------------------------------

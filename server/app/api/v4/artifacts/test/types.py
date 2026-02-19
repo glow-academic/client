@@ -13,9 +13,9 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
+from app.api.v4.entries.runs.types import GetRunListViewResponse
 from app.api.v4.entries.test_invocation.view import BenchmarkInvocationViewItem
 from app.api.v4.entries.tests.view import BenchmarkTestViewItem
-from app.api.v4.entries.runs.types import GetRunListViewResponse
 from app.sql.types import (
     QGetAgentsV4Item,
     QGetModelsV4Item,

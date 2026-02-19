@@ -16,18 +16,30 @@ from app.api.v4.artifacts.activity.types import (
     ActivityResponse,
     ActivityViews,
 )
-from app.api.v4.entries.activity.view import get_activity_list_view_internal
-from app.api.v4.entries.activity.view import GetActivityListViewResponse
-from app.api.v4.entries.audits.view import get_audit_list_view_internal
-from app.api.v4.entries.audits.view import GetAuditListViewResponse
-from app.api.v4.entries.grants.view import get_grant_list_view_internal
-from app.api.v4.entries.grants.view import GetGrantListViewResponse
-from app.api.v4.entries.logins.view import get_login_list_view_internal
-from app.api.v4.entries.logins.view import GetLoginListViewResponse
-from app.api.v4.entries.problems.view import get_problem_list_view_internal
-from app.api.v4.entries.problems.view import GetProblemListViewResponse
-from app.api.v4.entries.sessions.view import get_session_list_view_internal
-from app.api.v4.entries.sessions.view import GetSessionListViewResponse
+from app.api.v4.entries.activity.view import (
+    GetActivityListViewResponse,
+    get_activity_list_view_internal,
+)
+from app.api.v4.entries.audits.view import (
+    GetAuditListViewResponse,
+    get_audit_list_view_internal,
+)
+from app.api.v4.entries.grants.view import (
+    GetGrantListViewResponse,
+    get_grant_list_view_internal,
+)
+from app.api.v4.entries.logins.view import (
+    GetLoginListViewResponse,
+    get_login_list_view_internal,
+)
+from app.api.v4.entries.problems.view import (
+    GetProblemListViewResponse,
+    get_problem_list_view_internal,
+)
+from app.api.v4.entries.sessions.view import (
+    GetSessionListViewResponse,
+    get_session_list_view_internal,
+)
 from app.infra.v4.activity.audit import audit_activity
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool

@@ -32,6 +32,8 @@ from app.api.v4.artifacts.benchmark.types import (
     SuiteWebsocketViews,
 )
 from app.api.v4.auth.settings import get_auth_settings_internal
+from app.api.v4.entries.runs.list import get_run_list_entries_internal
+from app.api.v4.entries.suite.view import get_suite_view_internal
 from app.api.v4.permissions import resolve_agents_for_artifact
 from app.api.v4.resources.departments.get import get_departments_internal
 from app.api.v4.resources.instructions.get import get_instructions_internal
@@ -44,8 +46,6 @@ from app.api.v4.resources.reasoning_levels.get import get_reasoning_levels_inter
 from app.api.v4.resources.temperature_levels.get import get_temperature_levels_internal
 from app.api.v4.resources.tools.get import get_tools_internal
 from app.api.v4.resources.voices.get import get_voices_internal
-from app.api.v4.entries.suite.view import get_suite_view_internal
-from app.api.v4.entries.runs.list import get_run_list_entries_internal
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_pool
 

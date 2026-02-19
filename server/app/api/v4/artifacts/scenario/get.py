@@ -77,6 +77,7 @@ from app.api.v4.artifacts.scenario.types import (
 )
 from app.api.v4.auth.profile import get_auth_profile_internal
 from app.api.v4.auth.settings import get_auth_settings_internal
+from app.api.v4.entries.runs.list import get_run_list_entries_internal
 from app.api.v4.entries.scenario_drafts.get import get_scenario_drafts_entries_internal
 from app.api.v4.permissions import resolve_agents_for_artifact
 from app.api.v4.resources.agents.get import get_agents_internal
@@ -118,7 +119,6 @@ from app.api.v4.resources.questions.search import search_questions_internal
 from app.api.v4.resources.tools.get import get_tools_internal
 from app.api.v4.resources.videos.get import get_videos_internal
 from app.api.v4.resources.videos.search import search_videos_internal
-from app.api.v4.entries.runs.list import get_run_list_entries_internal
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool

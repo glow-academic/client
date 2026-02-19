@@ -22,11 +22,11 @@ from app.api.v4.artifacts.leaderboard.types import (
     LeaderboardViews,
 )
 from app.api.v4.artifacts.types import FilterOption
+from app.api.v4.entries.chat.get import get_chats_internal
+from app.api.v4.entries.chat.message_stats import get_message_stats_internal
 from app.api.v4.resources.profiles.get import get_profiles_internal
 from app.api.v4.resources.scenarios.get import get_scenarios_internal
 from app.api.v4.resources.simulations.get import get_simulations_internal
-from app.api.v4.entries.chat.get import get_chats_internal
-from app.api.v4.entries.chat.message_stats import get_message_stats_internal
 from app.infra.v4.activity.audit import audit_activity
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
