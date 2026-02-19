@@ -19,7 +19,7 @@ from app.api.v4.artifacts.dashboard.types import (
     DashboardFooterRequest,
     DashboardFooterResponse,
 )
-from app.api.v4.entries.chat.get import get_training_config_internal
+from app.api.v4.entries.training_department.get import get_training_config_internal
 from app.api.v4.resources.documents.get import get_documents_internal
 from app.api.v4.resources.fields.get import get_fields_internal
 from app.api.v4.resources.parameter_fields.get import get_parameter_fields_internal

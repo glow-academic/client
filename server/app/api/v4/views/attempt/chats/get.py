@@ -35,7 +35,7 @@ async def get_attempt_chats_internal(
     fetched via simulation/* views.
     """
     from app.api.v4.entries.chat.get import get_chats_internal
-    from app.api.v4.entries.chat.get import get_training_config_internal
+    from app.api.v4.entries.training_department.get import get_training_config_internal
 
     ids = attempt_ids or ([attempt_id] if attempt_id else [])
 
