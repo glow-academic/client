@@ -54,6 +54,7 @@ from app.api.v4.resources.options.get import get_options_internal
 from app.api.v4.resources.parameter_fields.get import get_parameter_fields_internal
 from app.api.v4.resources.parameters.get import get_parameters_internal
 from app.api.v4.resources.personas.get import get_personas_internal
+from app.api.v4.resources.providers.get import get_providers_internal
 from app.api.v4.resources.problem_statements.get import (
     get_problem_statements_internal,
 )
