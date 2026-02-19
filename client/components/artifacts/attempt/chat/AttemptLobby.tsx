@@ -116,7 +116,7 @@ export function AttemptLobby({
     setIsStarting(true);
 
     const payload: Record<string, unknown> = {
-      training_bundle_entry_id: trainingBundleEntryId,
+      training_entry_id: trainingBundleEntryId,
       attempt_id: attemptId,
     };
 

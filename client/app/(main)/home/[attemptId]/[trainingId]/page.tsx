@@ -25,7 +25,7 @@ const getTrainingBundle = async (
     "/artifacts/training/get",
     {
       body: {
-        training_bundle_entry_id: bundleId,
+        training_entry_id: bundleId,
         draft_id: draftId,
       },
     },

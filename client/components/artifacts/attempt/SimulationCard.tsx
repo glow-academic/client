@@ -202,7 +202,7 @@ export default function SimulationCard({
       );
 
       socket.emit("attempt_start", {
-        training_bundle_entry_id: trainingBundleEntryId,
+        training_entry_id: trainingBundleEntryId,
         infinite_mode: infiniteMode,
       });
     },
