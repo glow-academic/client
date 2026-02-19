@@ -34,13 +34,6 @@ export interface DocumentViewerProps {
   compact?: boolean;
 }
 
-// Detect iOS Safari (native PDF viewer has scroll issues in iframes)
-const isMobileSafari =
-  typeof navigator !== "undefined" &&
-  /iP(ad|hone|od)/.test(navigator.userAgent) &&
-  /Safari/.test(navigator.userAgent) &&
-  !/CriOS|FxiOS/.test(navigator.userAgent);
-
 // Simplified document type info
 const getDocumentTypeInfo = (type: string) => {
   const typeMap: Record<string, { icon: string; color: string }> = {
@@ -147,23 +140,11 @@ export default function DocumentViewer({
     }
 
     // PDF viewer - always fit to width
+    // Mobile: "Open PDF" button only (iframes can't reliably render blob: PDFs on mobile browsers)
+    // Desktop: iframe preview + "Open PDF" button
     if (type?.includes("application/pdf")) {
-      // iOS Safari: button only (iframe has scroll/freeze issues)
-      if (isMobileSafari) {
-        return (
-          <div className="p-2">
-            <Button asChild variant="default" className="w-full">
-              <a href={content ?? ""} target="_blank" rel="noopener noreferrer">
-                Open PDF
-              </a>
-            </Button>
-          </div>
-        );
-      }
-
-      // Other devices: iframe + "Open PDF" button on mobile
       return (
-        <div className="w-full h-full min-h-[400px] flex flex-col">
+        <div className="w-full h-full md:min-h-[400px] flex flex-col">
           <div className="md:hidden p-2">
             <Button asChild variant="default" className="w-full">
               <a href={content ?? ""} target="_blank" rel="noopener noreferrer">
@@ -174,7 +155,7 @@ export default function DocumentViewer({
           <iframe
             src={`${content}#view=FitH&toolbar=1&navpanes=0&scrollbar=1`}
             title={document.name ?? ""}
-            className="w-full h-full border-0 rounded-md flex-1"
+            className="hidden md:block w-full h-full border-0 rounded-md flex-1"
             style={{
               minHeight: "500px",
               width: "100%",
