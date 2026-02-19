@@ -340,3 +340,120 @@ class SuiteGenerationStartedEvent(BaseModel):
     group_id: str
     run_id: str
     resource_types: list[str]
+
+
+class ActivityGenerationStartedEvent(BaseModel):
+    """Server-to-client event: activity_generation_started.
+
+    Emitted when activity generation begins, listing which resource types
+    will be generated.
+    """
+
+    artifact_type: str = "activity"
+    group_id: str
+    run_id: str
+    resource_types: list[str]
+
+
+class RecordGenerationStartedEvent(BaseModel):
+    """Server-to-client event: record_generation_started.
+
+    Emitted when record generation begins, listing which resource types
+    will be generated.
+    """
+
+    artifact_type: str = "record"
+    group_id: str
+    run_id: str
+    resource_types: list[str]
+
+
+class DashboardGenerationStartedEvent(BaseModel):
+    """Server-to-client event: dashboard_generation_started.
+
+    Emitted when dashboard generation begins, listing which resource types
+    will be generated.
+    """
+
+    artifact_type: str = "dashboard"
+    group_id: str
+    run_id: str
+    resource_types: list[str]
+
+
+class LeaderboardGenerationStartedEvent(BaseModel):
+    """Server-to-client event: leaderboard_generation_started.
+
+    Emitted when leaderboard generation begins, listing which resource types
+    will be generated.
+    """
+
+    artifact_type: str = "leaderboard"
+    group_id: str
+    run_id: str
+    resource_types: list[str]
+
+
+class ReportsGenerationStartedEvent(BaseModel):
+    """Server-to-client event: reports_generation_started.
+
+    Emitted when reports generation begins, listing which resource types
+    will be generated.
+    """
+
+    artifact_type: str = "reports"
+    group_id: str
+    run_id: str
+    resource_types: list[str]
+
+
+class PricingGenerationStartedEvent(BaseModel):
+    """Server-to-client event: pricing_generation_started.
+
+    Emitted when pricing generation begins, listing which resource types
+    will be generated.
+    """
+
+    artifact_type: str = "pricing"
+    group_id: str
+    run_id: str
+    resource_types: list[str]
+
+
+class SessionGenerationStartedEvent(BaseModel):
+    """Server-to-client event: session_generation_started.
+
+    Emitted when session generation begins, listing which resource types
+    will be generated.
+    """
+
+    artifact_type: str = "session"
+    group_id: str
+    run_id: str
+    resource_types: list[str]
+
+
+class GroupGenerationStartedEvent(BaseModel):
+    """Server-to-client event: group_generation_started.
+
+    Emitted when group generation begins, listing which resource types
+    will be generated.
+    """
+
+    artifact_type: str = "group"
+    group_id: str
+    run_id: str
+    resource_types: list[str]
+
+
+class HealthGenerationStartedEvent(BaseModel):
+    """Server-to-client event: health_generation_started.
+
+    Emitted when health generation begins, listing which resource types
+    will be generated.
+    """
+
+    artifact_type: str = "health"
+    group_id: str
+    run_id: str
+    resource_types: list[str]

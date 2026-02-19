@@ -3,31 +3,51 @@
 from fastapi import APIRouter
 
 from . import (
+    activity,
     attempt,
     audio_events,
     audio_session,
     auth,
     benchmark,
     call_events,
+    dashboard,
     generate,
+    group,
+    health,
     home,
+    leaderboard,
     practice,
+    pricing,
+    record,
+    reports,
+    session,
     simulation,
+    suite,
     test,
     training,
 )
 
 __all__ = [
+    "activity",
     "attempt",
     "audio_events",
     "audio_session",
     "auth",
     "benchmark",
     "call_events",
+    "dashboard",
     "generate",
+    "group",
+    "health",
     "home",
+    "leaderboard",
     "practice",
+    "pricing",
+    "record",
+    "reports",
+    "session",
     "simulation",
+    "suite",
     "test",
     "training",
 ]
@@ -44,6 +64,16 @@ client_router.include_router(benchmark.client_router)
 client_router.include_router(test.client_router)
 client_router.include_router(home.client_router)
 client_router.include_router(practice.client_router)
+client_router.include_router(activity.client_router)
+client_router.include_router(record.client_router)
+client_router.include_router(suite.client_router)
+client_router.include_router(dashboard.client_router)
+client_router.include_router(leaderboard.client_router)
+client_router.include_router(reports.client_router)
+client_router.include_router(pricing.client_router)
+client_router.include_router(session.client_router)
+client_router.include_router(group.client_router)
+client_router.include_router(health.client_router)
 
 # Register server-to-server events (internal event listeners)
 server_router.include_router(auth.server_router)
@@ -55,3 +85,13 @@ server_router.include_router(simulation.server_router)
 server_router.include_router(home.server_router)
 server_router.include_router(practice.server_router)
 server_router.include_router(call_events.server_router)
+server_router.include_router(activity.server_router)
+server_router.include_router(record.server_router)
+server_router.include_router(suite.server_router)
+server_router.include_router(dashboard.server_router)
+server_router.include_router(leaderboard.server_router)
+server_router.include_router(reports.server_router)
+server_router.include_router(pricing.server_router)
+server_router.include_router(session.server_router)
+server_router.include_router(group.server_router)
+server_router.include_router(health.server_router)
