@@ -569,14 +569,14 @@ class PatchTrainingDraftSqlRow(BaseModel):
 # =============================================================================
 
 
-class TrainingWebsocketViews(BaseModel):
+class TrainingStartWebsocketViews(BaseModel):
     """Thin websocket views payload for training start."""
 
     training_entry_id: UUID
     department_id: UUID
 
 
-class TrainingWebsocketResources(BaseModel):
+class TrainingStartWebsocketResources(BaseModel):
     """Training resources for start websocket handlers."""
 
     simulation_id: UUID | None = None
@@ -605,11 +605,11 @@ class TrainingWebsocketResources(BaseModel):
     valid_entry_types: list[str] = Field(default_factory=list)
 
 
-class GetTrainingWebsocketResponse(BaseModel):
+class GetTrainingStartWebsocketResponse(BaseModel):
     """Websocket-facing training start response."""
 
-    views: TrainingWebsocketViews
-    resources: TrainingWebsocketResources
+    views: TrainingStartWebsocketViews
+    resources: TrainingStartWebsocketResources
 
 
 # =============================================================================

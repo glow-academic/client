@@ -61,6 +61,7 @@ async def get_test_internal(
     conn: asyncpg.Connection,
     test_id: UUID,
     bypass_cache: bool = False,
+    profile_id: UUID | None = None,
 ) -> TestInternalData:
     """Core test artifact detail fetcher.
 
@@ -112,6 +113,41 @@ async def get_test_internal(
         config_model_resources = None
         config_provider_resources = None
 
+        async def _fetch_config_chain(
+            p_agent_id: UUID | None,
+            p_model_id: UUID | None,
+            p_provider_id: UUID | None,
+        ) -> tuple[Any, Any, Any]:
+            """Parallel fetch agent/model/provider resources from resolved IDs."""
+
+            async def fetch_agents() -> Any:
+                if not p_agent_id:
+                    return None
+                async with pool.acquire() as c:
+                    return await get_agents_internal(
+                        c, [p_agent_id], bypass_cache=bypass_cache
+                    )
+
+            async def fetch_models() -> Any:
+                if not p_model_id:
+                    return None
+                async with pool.acquire() as c:
+                    return await get_models_internal(
+                        c, [p_model_id], bypass_cache=bypass_cache
+                    )
+
+            async def fetch_providers() -> Any:
+                if not p_provider_id:
+                    return None
+                async with pool.acquire() as c:
+                    return await get_providers_internal(
+                        c, [p_provider_id], bypass_cache=bypass_cache
+                    )
+
+            return await asyncio.gather(
+                fetch_agents(), fetch_models(), fetch_providers()
+            )
+
         if group_id:
             config_row = await conn.fetchrow(
                 """
@@ -129,45 +165,52 @@ async def get_test_internal(
                 group_id,
             )
             if config_row:
-                agent_id = config_row["agent_id"]
-                model_id = config_row["model_id"]
-                provider_id = config_row["provider_id"]
-                agent_ids["primary"] = agent_id
-
-                # Fetch config resources in parallel
-                async def fetch_config_agents() -> Any:
-                    if not agent_id:
-                        return None
-                    async with pool.acquire() as c:
-                        return await get_agents_internal(
-                            c, [agent_id], bypass_cache=bypass_cache
-                        )
-
-                async def fetch_config_models() -> Any:
-                    if not model_id:
-                        return None
-                    async with pool.acquire() as c:
-                        return await get_models_internal(
-                            c, [model_id], bypass_cache=bypass_cache
-                        )
-
-                async def fetch_config_providers() -> Any:
-                    if not provider_id:
-                        return None
-                    async with pool.acquire() as c:
-                        return await get_providers_internal(
-                            c, [provider_id], bypass_cache=bypass_cache
-                        )
-
+                agent_ids["primary"] = config_row["agent_id"]
                 (
                     config_agent_resources,
                     config_model_resources,
                     config_provider_resources,
-                ) = await asyncio.gather(
-                    fetch_config_agents(),
-                    fetch_config_models(),
-                    fetch_config_providers(),
+                ) = await _fetch_config_chain(
+                    config_row["agent_id"],
+                    config_row["model_id"],
+                    config_row["provider_id"],
                 )
+
+        # Dynamic agent fallback: resolve via entry-type bindings (like attempts)
+        if not agent_ids.get("primary") and profile_id:
+            from app.socket.v4.artifacts.test.types import TEST_GRADE_ENTRY_TYPES
+
+            resolve_rows = await conn.fetch(
+                "SELECT entry_type, agent_id FROM socket_resolve_attempt_entries_v4($1, $2)",
+                profile_id,
+                TEST_GRADE_ENTRY_TYPES,
+            )
+            if resolve_rows:
+                resolved_agent_id = resolve_rows[0]["agent_id"]
+                agent_ids["primary"] = resolved_agent_id
+
+                # Resolve agent -> model -> provider chain
+                chain_row = await conn.fetchrow(
+                    """
+                    SELECT aaj.agent_id, ar.model_id, mr.provider_id
+                    FROM agent_agents_junction aaj
+                    JOIN agents_resource ar ON ar.id = aaj.agents_id
+                    LEFT JOIN models_resource mr ON mr.id = ar.model_id
+                    WHERE aaj.agent_id = $1 AND aaj.active = true
+                    LIMIT 1
+                    """,
+                    resolved_agent_id,
+                )
+                if chain_row:
+                    (
+                        config_agent_resources,
+                        config_model_resources,
+                        config_provider_resources,
+                    ) = await _fetch_config_chain(
+                        resolved_agent_id,
+                        chain_row["model_id"],
+                        chain_row["provider_id"],
+                    )
 
         # === HYDRATION: collect IDs ===
         eval_name_ids: set[UUID] = set()
@@ -466,6 +509,7 @@ async def get_test_websocket(
         conn=conn,
         test_id=test_id,
         bypass_cache=bypass_cache,
+        profile_id=profile_id,
     )
 
     if not data.test:

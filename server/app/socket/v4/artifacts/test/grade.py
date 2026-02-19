@@ -100,6 +100,7 @@ async def _test_grade_impl(
                 conn=conn,
                 test_id=data.test_id,
                 bypass_cache=True,
+                profile_id=profile_id,
             )
 
         if not result.resources:

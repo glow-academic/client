@@ -23,6 +23,7 @@ from app.api.v4.artifacts.training.types import (
     BaseTrainingSection,
     GetTrainingRequest,
     GetTrainingResponse,
+    GetTrainingStartWebsocketResponse,
     GetTrainingWebsocketResponse,
     TrainingDepartmentSection,
     TrainingDocumentSection,
@@ -37,6 +38,8 @@ from app.api.v4.artifacts.training.types import (
     TrainingScenarioFlags,
     TrainingScenarioSection,
     TrainingVideoSection,
+    TrainingStartWebsocketResources,
+    TrainingStartWebsocketViews,
     TrainingWebsocketResources,
     TrainingWebsocketViews,
 )
@@ -89,7 +92,7 @@ async def get_training_start_context(
     training_entry_id: UUID,
     department_id: UUID,
     draft_id: UUID | None = None,
-) -> GetTrainingWebsocketResponse:
+) -> GetTrainingStartWebsocketResponse:
     """Thin websocket fetch for training start flow."""
     params = GetTrainingStartContextSqlParams(
         p_profile_id=profile_id,
@@ -105,12 +108,12 @@ async def get_training_start_context(
     if not row:
         raise HTTPException(status_code=404, detail="Training start context not found")
 
-    return GetTrainingWebsocketResponse(
-        views=TrainingWebsocketViews(
+    return GetTrainingStartWebsocketResponse(
+        views=TrainingStartWebsocketViews(
             training_entry_id=training_entry_id,
             department_id=department_id,
         ),
-        resources=TrainingWebsocketResources(
+        resources=TrainingStartWebsocketResources(
             simulation_id=row.simulation_id,
             scenario_id=row.scenario_id,
             problem_statement=row.problem_statement,

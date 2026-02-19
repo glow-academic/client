@@ -6,3 +6,10 @@
 -- Table: bindings_resource
 INSERT INTO public.bindings_resource (id, entry, active, generated, mcp, created_at) VALUES ('019c164d-313e-7b7a-a8f5-ecda6c0eb2ea', 'highlights', true, false, false, '2026-01-31T23:04:43.581941+00:00') ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.bindings_resource (id, entry, active, generated, mcp, created_at) VALUES ('019c164d-313e-7be3-a5b9-4d6f68c68dd6', 'replacements', true, false, false, '2026-01-31T23:04:43.581941+00:00') ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.bindings_resource (id, entry, active, generated, mcp, created_at) VALUES ('d13d22c6-10af-40c1-8bad-82ad27625f0b', 'contents', true, false, false, '2026-02-19T14:14:23.727612+00:00') ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.bindings_resource (id, entry, active, generated, mcp, created_at) VALUES ('10215b8d-6e4b-48da-9041-a94e439f3f9a', 'hints', true, false, false, '2026-02-19T14:14:23.727612+00:00') ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.bindings_resource (id, entry, active, generated, mcp, created_at) VALUES ('a0647fd3-bedd-4e72-8d96-4c7e76e9e602', 'feedbacks', true, false, false, '2026-02-19T14:14:23.727612+00:00') ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.bindings_resource (id, entry, active, generated, mcp, created_at) VALUES ('047ec235-767f-4c72-94dc-c4c7d6edd88e', 'strengths', true, false, false, '2026-02-19T14:14:23.727612+00:00') ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.bindings_resource (id, entry, active, generated, mcp, created_at) VALUES ('d42abbc8-2ac6-47d0-bd2a-cecfa829c19c', 'improvements', true, false, false, '2026-02-19T14:14:23.727612+00:00') ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.bindings_resource (id, entry, active, generated, mcp, created_at) VALUES ('e70170b4-4d36-4061-9de6-8d622725236f', 'analyses', true, false, false, '2026-02-19T14:14:23.727612+00:00') ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.bindings_resource (id, entry, active, generated, mcp, created_at) VALUES ('39d629ae-3bb7-471f-abc1-d1cc915ecd47', 'grades', true, false, false, '2026-02-19T14:28:24.035654+00:00') ON CONFLICT (id) DO NOTHING;
