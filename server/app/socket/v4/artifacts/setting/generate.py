@@ -74,7 +74,6 @@ SETTING_RESOURCE_TYPES = [
     "provider_keys",
     "auth_item_keys",
     "roles",
-    "role_routes",
 ]
 
 

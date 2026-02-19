@@ -82,7 +82,6 @@ DECLARE
     v_role_id uuid;
     v_active boolean;
     v_requests_per_day integer;
-    v_route_ids uuid[];
     -- Call tracking variables
     v_run_id uuid;
     v_call_id uuid;
@@ -218,20 +217,6 @@ BEGIN
         FROM request_limits_resource rlr
         WHERE rlr.id = v_request_limit_id
         LIMIT 1;
-    END IF;
-
-    -- Resolve route IDs from role
-    IF v_role_id IS NOT NULL THEN
-        SELECT COALESCE(
-            ARRAY_AGG(rr.route_id ORDER BY rt.route),
-            ARRAY[]::uuid[]
-        )
-        INTO v_route_ids
-        FROM role_routes_resource rr
-        JOIN routes_resource rt ON rt.id = rr.route_id
-        WHERE rr.role_id = v_role_id AND rr.active = true;
-    ELSE
-        v_route_ids := ARRAY[]::uuid[];
     END IF;
 
     -- Validate emails required
@@ -426,7 +411,6 @@ BEGIN
             COALESCE(v_active, true) AS active,
             COALESCE(v_cohort_ids, ARRAY[]::uuid[]) AS cohort_ids,
             COALESCE(v_department_ids, ARRAY[]::uuid[]) AS department_ids,
-            v_route_ids AS route_ids,
             v_primary_email_index AS primary_email_index,
             v_primary_department_index AS primary_department_index,
             is_create AS is_create,
@@ -599,27 +583,6 @@ BEGIN
         WHERE array_length(x.department_ids, 1) > 0
         ON CONFLICT (profile_id, department_id) DO UPDATE SET
             is_primary = EXCLUDED.is_primary,
-            active = true
-    ),
-    route_delete AS (
-        DELETE FROM profile_routes_junction
-        WHERE profile_id = (SELECT target_profile_id FROM params)
-          AND EXISTS (SELECT 1 FROM params WHERE NOT is_create AND route_ids IS NOT NULL)
-    ),
-    route_insert AS (
-        INSERT INTO profile_routes_junction (profile_id, route_id, active, created_at, generated, mcp)
-        SELECT
-            x.target_profile_id,
-            route_id,
-            true,
-            NOW(),
-            false,
-            false
-        FROM params x
-        CROSS JOIN UNNEST(x.route_ids) as route_id
-        WHERE (x.is_create OR x.route_ids IS NOT NULL)
-          AND COALESCE(array_length(x.route_ids, 1), 0) > 0
-        ON CONFLICT (profile_id, route_id) DO UPDATE SET
             active = true
     ),
     -- Handle requests_per_day if provided

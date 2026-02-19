@@ -420,13 +420,7 @@ router.include_router(roles_get_router)
 from app.api.v4.resources.roles.search import router as roles_search_router
 
 router.include_router(roles_search_router)
-# NOTE: routes removed - non-creatable (migration 328)
-# GET/Search endpoints available for two-pass architecture
-from app.api.v4.resources.routes.get import router as routes_get_router
-from app.api.v4.resources.routes.search import router as routes_search_router
-
-router.include_router(routes_get_router)
-router.include_router(routes_search_router)
+# NOTE: routes removed - dropped (migration 328+)
 # NOTE: rubrics removed - non-creatable, sync via artifact save (migration 328)
 # GET endpoint available for simulations two-pass architecture
 from app.api.v4.resources.rubrics.get import router as rubrics_get_router
@@ -471,17 +465,6 @@ from app.api.v4.resources.scenario_flags.search import (
 
 router.include_router(scenario_flags_get_router)
 router.include_router(scenario_flags_search_router)
-from app.api.v4.resources.role_routes.create import (
-    router as role_routes_router,
-)
-from app.api.v4.resources.role_routes.get import router as role_routes_get_router
-from app.api.v4.resources.role_routes.search import (
-    router as role_routes_search_router,
-)
-
-router.include_router(role_routes_router)
-router.include_router(role_routes_get_router)
-router.include_router(role_routes_search_router)
 from app.api.v4.resources.scenario_personas.create import (
     router as scenario_personas_router,
 )
@@ -560,6 +543,19 @@ from app.api.v4.resources.simulation_positions.search import (
 router.include_router(simulation_positions_router)
 router.include_router(simulation_positions_get_router)
 router.include_router(simulation_positions_search_router)
+from app.api.v4.resources.simulation_availability.create import (
+    router as simulation_availability_router,
+)
+from app.api.v4.resources.simulation_availability.get import (
+    router as simulation_availability_get_router,
+)
+from app.api.v4.resources.simulation_availability.search import (
+    router as simulation_availability_search_router,
+)
+
+router.include_router(simulation_availability_router)
+router.include_router(simulation_availability_get_router)
+router.include_router(simulation_availability_search_router)
 # NOTE: simulations removed - non-creatable, sync via artifact save (migration 328)
 # GET/Search endpoints available for cohorts two-pass architecture
 from app.api.v4.resources.simulations.get import router as simulations_get_router

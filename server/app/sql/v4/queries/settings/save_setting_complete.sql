@@ -49,8 +49,7 @@ CREATE OR REPLACE FUNCTION api_save_setting_v4(
     auths types.setting_multi_resource_action DEFAULT NULL,
     provider_keys types.setting_multi_resource_action DEFAULT NULL,
     auth_item_keys types.setting_multi_resource_action DEFAULT NULL,
-    roles types.setting_multi_resource_action DEFAULT NULL,
-    role_routes types.setting_multi_resource_action DEFAULT NULL
+    roles types.setting_multi_resource_action DEFAULT NULL
 )
 RETURNS TABLE (
     setting_id uuid
@@ -71,7 +70,6 @@ DECLARE
     v_provider_key_ids uuid[];
     v_auth_item_key_ids uuid[];
     v_role_ids uuid[];
-    v_role_route_ids uuid[];
     v_run_id uuid;
     v_call_id uuid;
 BEGIN
@@ -85,7 +83,6 @@ BEGIN
     v_provider_key_ids := COALESCE((provider_keys).resource_ids, ARRAY[]::uuid[]);
     v_auth_item_key_ids := COALESCE((auth_item_keys).resource_ids, ARRAY[]::uuid[]);
     v_role_ids := COALESCE((roles).resource_ids, ARRAY[]::uuid[]);
-    v_role_route_ids := COALESCE((role_routes).resource_ids, ARRAY[]::uuid[]);
     is_create := (input_setting_id IS NULL);
 
     IF v_name_id IS NULL THEN
@@ -127,7 +124,6 @@ BEGIN
         UPDATE setting_provider_keys_junction SET active = false WHERE setting_provider_keys_junction.setting_id = v_setting_id AND active = true;
         UPDATE setting_auth_item_keys_junction SET active = false WHERE setting_auth_item_keys_junction.setting_id = v_setting_id AND active = true;
         UPDATE setting_roles_junction SET active = false WHERE setting_roles_junction.setting_id = v_setting_id AND active = true;
-        UPDATE setting_role_routes_junction SET active = false WHERE setting_role_routes_junction.setting_id = v_setting_id AND active = true;
 
         UPDATE setting_flags_junction
         SET flag_id = COALESCE(v_active_flag_id, setting_flags_junction.flag_id),
@@ -338,26 +334,6 @@ BEGIN
         END IF;
     END IF;
 
-    -- role_routes (multi-select)
-    IF v_run_id IS NOT NULL AND COALESCE(array_length(v_role_route_ids, 1), 0) > 0 THEN
-        IF (role_routes).create_tool_id IS NOT NULL THEN
-            v_call_id := uuidv7();
-            INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
-            VALUES (v_call_id, 'setting_create_role_routes_' || v_call_id::text, v_run_id, true, NOW(), NOW());
-            INSERT INTO tools_calls_connection (tools_id, call_id) VALUES ((role_routes).create_tool_id, v_call_id);
-            INSERT INTO role_routes_calls_connection (role_routes_id, call_id)
-            SELECT rr_id, v_call_id FROM UNNEST(v_role_route_ids) AS rr_id;
-        END IF;
-        IF (role_routes).link_tool_id IS NOT NULL THEN
-            v_call_id := uuidv7();
-            INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
-            VALUES (v_call_id, 'setting_link_role_routes_' || v_call_id::text, v_run_id, true, NOW(), NOW());
-            INSERT INTO tools_calls_connection (tools_id, call_id) VALUES ((role_routes).link_tool_id, v_call_id);
-            INSERT INTO role_routes_calls_connection (role_routes_id, call_id)
-            SELECT rr_id, v_call_id FROM UNNEST(v_role_route_ids) AS rr_id;
-        END IF;
-    END IF;
-
     RETURN QUERY
     WITH params AS (
         SELECT
@@ -372,8 +348,7 @@ BEGIN
             v_auth_ids AS auth_ids,
             v_provider_key_ids AS provider_key_ids,
             v_auth_item_key_ids AS auth_item_key_ids,
-            v_role_ids AS role_ids,
-            v_role_route_ids AS role_route_ids
+            v_role_ids AS role_ids
     ),
     -- NOTE: Department permission validation is handled in Python (save.py)
     -- via compute_can_edit() before this SQL function is called.
@@ -477,16 +452,6 @@ BEGIN
         WHERE COALESCE(array_length(x.role_ids, 1), 0) > 0
         ON CONFLICT ON CONSTRAINT setting_roles_junction_pkey DO UPDATE SET
             active = true
-    ),
-    link_role_routes AS (
-        INSERT INTO setting_role_routes_junction (setting_id, role_routes_id, active, created_at, updated_at)
-        SELECT x.setting_id, role_routes_id, true, NOW(), NOW()
-        FROM params x
-        CROSS JOIN UNNEST(x.role_route_ids) as role_routes_id
-        WHERE COALESCE(array_length(x.role_route_ids, 1), 0) > 0
-        ON CONFLICT ON CONSTRAINT setting_role_routes_junction_pkey DO UPDATE SET
-            active = true,
-            updated_at = NOW()
     ),
     sync_artifact_resources AS (
         UPDATE settings_resource r

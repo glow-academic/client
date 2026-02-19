@@ -66,7 +66,6 @@ RETURNS TABLE (
     -- Computed
     scoped_roles text[],
     available_sections text[],
-    available_routes text[],
     actor_name text,
     -- Artifact agent IDs
     artifact_agent_ids types.q_get_profile_context_access_v4_artifact_agent[]
@@ -246,28 +245,6 @@ settings_agent_ids_data AS (
     WHERE sj.setting_id = (SELECT settings_id FROM settings_resolution)
       AND sj.active = true
 ),
-available_routes_data AS (
-    SELECT COALESCE(
-        ARRAY_AGG(rr.route::text ORDER BY rr.route),
-        ARRAY[]::text[]
-    ) as available_routes
-    FROM profile_routes_junction pr
-    JOIN routes_resource rr ON rr.id = pr.route_id
-    WHERE pr.profile_id = (SELECT profile_id FROM params)
-      AND pr.active = true
-),
-available_sections_computed AS (
-    SELECT COALESCE(
-        ARRAY_AGG(DISTINCT split_part(route_path, '/', 2) ORDER BY split_part(route_path, '/', 2)),
-        ARRAY[]::text[]
-    ) as available_sections
-    FROM (
-        SELECT route_path
-        FROM UNNEST((SELECT available_routes FROM available_routes_data)) as route_path
-        WHERE split_part(route_path, '/', 2) IS NOT NULL
-          AND split_part(route_path, '/', 2) <> ''
-    ) routes
-),
 artifact_agent_ids_data AS (
     -- Check which artifacts have at least one qualifying agent via two paths:
     -- 1. Direct: artifact -> artifact_resources_relation -> tool resources
@@ -367,8 +344,7 @@ SELECT
     (SELECT draft_ids FROM draft_ids_data) as draft_ids,
     -- Computed
     (SELECT scoped_roles FROM scoped_roles_computed) as scoped_roles,
-    (SELECT available_sections FROM available_sections_computed) as available_sections,
-    (SELECT available_routes FROM available_routes_data) as available_routes,
+    ARRAY[]::text[] as available_sections,
     (SELECT actor_name FROM actor_name_computed) as actor_name,
     -- Artifact agent IDs
     (SELECT artifact_agent_ids FROM artifact_agent_ids_data) as artifact_agent_ids

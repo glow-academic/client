@@ -51,8 +51,7 @@ DECLARE
         'request_limits',
         'departments',
         'emails',
-        'cohorts',
-        'routes'
+        'cohorts'
     ];
 BEGIN
     -- Validate artifact_type (all validation in SQL)

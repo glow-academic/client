@@ -30,8 +30,6 @@ WITH draft_links AS (
     UNION ALL SELECT draft_id, 'names'::text AS resource_type, names_id AS resource_id FROM setting_drafts_names_connection WHERE active = true
     UNION ALL SELECT draft_id, 'profiles'::text AS resource_type, profiles_id AS resource_id FROM setting_drafts_profiles_connection WHERE active = true
     UNION ALL SELECT draft_id, 'provider_keys'::text AS resource_type, provider_keys_id AS resource_id FROM setting_drafts_provider_keys_connection WHERE active = true
-    UNION ALL SELECT draft_id, 'role_routes'::text AS resource_type, role_routes_id AS resource_id FROM setting_drafts_role_routes_connection WHERE active = true
-    UNION ALL SELECT draft_id, 'roles'::text AS resource_type, roles_id AS resource_id FROM setting_drafts_roles_connection WHERE active = true
     UNION ALL SELECT draft_id, 'settings'::text AS resource_type, settings_id AS resource_id FROM setting_drafts_settings_connection WHERE active = true
     UNION ALL SELECT draft_id, 'thresholds'::text AS resource_type, thresholds_id AS resource_id FROM setting_drafts_thresholds_connection WHERE active = true
 )
@@ -55,8 +53,6 @@ SELECT
     COALESCE(array_agg(DISTINCT l.resource_id) FILTER (WHERE l.resource_type = 'names'), ARRAY[]::uuid[]) AS name_ids,
     COALESCE(array_agg(DISTINCT l.resource_id) FILTER (WHERE l.resource_type = 'profiles'), ARRAY[]::uuid[]) AS profile_ids,
     COALESCE(array_agg(DISTINCT l.resource_id) FILTER (WHERE l.resource_type = 'provider_keys'), ARRAY[]::uuid[]) AS provider_key_ids,
-    COALESCE(array_agg(DISTINCT l.resource_id) FILTER (WHERE l.resource_type = 'role_routes'), ARRAY[]::uuid[]) AS role_route_ids,
-    COALESCE(array_agg(DISTINCT l.resource_id) FILTER (WHERE l.resource_type = 'roles'), ARRAY[]::uuid[]) AS role_ids,
     COALESCE(array_agg(DISTINCT l.resource_id) FILTER (WHERE l.resource_type = 'settings'), ARRAY[]::uuid[]) AS settings_ids,
     COALESCE(array_agg(DISTINCT l.resource_id) FILTER (WHERE l.resource_type = 'thresholds'), ARRAY[]::uuid[]) AS threshold_ids
 FROM setting_drafts_entry d

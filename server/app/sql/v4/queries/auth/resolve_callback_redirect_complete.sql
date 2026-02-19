@@ -1,7 +1,7 @@
 -- Resolve redirect path for post-login callback
--- Lightweight query: only fetches role + first available route
+-- Lightweight query: only fetches role
 -- Parameters: p_profile_id (uuid)
--- Returns: role, redirect_path (first non-parameterized available route)
+-- Returns: role, redirect_path (always /home now that routes are removed)
 
 -- Drop function if exists (handle signature changes)
 DO $$
@@ -27,19 +27,9 @@ AS $$
         JOIN roles_resource r ON pr.role_id = r.id
         WHERE pr.profile_id = p_profile_id
         LIMIT 1
-    ),
-    first_route AS (
-        SELECT rr.route::text as route
-        FROM profile_routes_junction pr
-        JOIN routes_resource rr ON rr.id = pr.route_id
-        WHERE pr.profile_id = p_profile_id
-          AND pr.active = true
-          AND rr.route::text NOT LIKE '%[%'
-        ORDER BY rr.route
-        LIMIT 1
     )
     SELECT
         (SELECT role FROM profile_role) as role,
-        COALESCE((SELECT route FROM first_route), '/home'::text) as redirect_path
+        '/home'::text as redirect_path
     WHERE p_profile_id IS NOT NULL
 $$;

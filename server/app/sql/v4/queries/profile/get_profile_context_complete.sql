@@ -197,8 +197,6 @@ RETURNS TABLE (
     settings_auths types.q_get_profile_context_v4_auth[],
     settings_provider_key_ids uuid[],
     -- Computed fields
-    available_sections text[],
-    available_routes text[],
     redirect_path text,
     department_ids text[],
     cohort_ids text[],
@@ -556,33 +554,6 @@ actor_name_computed AS (
          FROM profile_artifact p
          WHERE p.id = (SELECT profile_id FROM params) LIMIT 1) as actor_name
 ),
-available_routes_data AS (
-    -- Resolve available routes from profile_routes_junction for effective profile
-    SELECT 
-        COALESCE(
-            ARRAY_AGG(rr.route::text ORDER BY rr.route),
-            ARRAY[]::text[]
-        ) as available_routes
-    FROM profile_routes_junction pr
-    JOIN routes_resource rr ON rr.id = pr.route_id
-    WHERE pr.profile_id = (SELECT profile_id FROM params)
-      AND pr.active = true
-),
-available_sections_computed AS (
-    -- Compute available sections based on allowed routes
-    -- Uses first path segment (e.g. /analytics/... -> analytics)
-    SELECT 
-        COALESCE(
-            ARRAY_AGG(DISTINCT split_part(route_path, '/', 2) ORDER BY split_part(route_path, '/', 2)),
-            ARRAY[]::text[]
-        ) as available_sections
-    FROM (
-        SELECT route_path
-        FROM UNNEST((SELECT available_routes FROM available_routes_data)) as route_path
-        WHERE split_part(route_path, '/', 2) IS NOT NULL
-          AND split_part(route_path, '/', 2) <> ''
-    ) routes
-),
 redirect_path_computed AS (
     -- Compute redirect path based on profile's role
     -- Replicates get_redirect_path_for_role logic
@@ -595,16 +566,7 @@ redirect_path_computed AS (
             WHEN pt.role = 'instructional'::profile_type THEN '/analytics/dashboard'::text
             WHEN pt.role = 'admin'::profile_type THEN '/analytics/dashboard'::text
             WHEN pt.role = 'superadmin'::profile_type THEN '/analytics/dashboard'::text
-            ELSE COALESCE(
-                (SELECT route_path FROM UNNEST((SELECT available_routes FROM available_routes_data)) as route_path
-                 WHERE route_path NOT LIKE '%[%'
-                 ORDER BY route_path
-                 LIMIT 1),
-                (SELECT route_path FROM UNNEST((SELECT available_routes FROM available_routes_data)) as route_path
-                 ORDER BY route_path
-                 LIMIT 1),
-                '/home'::text
-            )
+            ELSE '/home'::text
         END as redirect_path
     FROM profile_type pt
 ),
@@ -739,8 +701,6 @@ SELECT
     sr.settings_auths as settings_auths,
     sr.settings_provider_key_ids as settings_provider_key_ids,
     -- Computed fields
-    (SELECT available_sections FROM available_sections_computed) as available_sections,
-    (SELECT available_routes FROM available_routes_data) as available_routes,
     (SELECT redirect_path FROM redirect_path_computed) as redirect_path,
     (SELECT department_ids FROM department_ids_computed) as department_ids,
     (SELECT cohort_ids FROM cohort_ids_computed) as cohort_ids,
@@ -759,7 +719,6 @@ CROSS JOIN departments_aggregated da
 CROSS JOIN cohorts_aggregated ca
 CROSS JOIN simulations_aggregated sa
 CROSS JOIN actor_name_computed anc
-CROSS JOIN available_sections_computed asc_computed
 CROSS JOIN redirect_path_computed rpc
 CROSS JOIN department_ids_computed dic
 CROSS JOIN cohort_ids_computed cic

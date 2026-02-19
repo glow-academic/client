@@ -40,8 +40,6 @@ RETURNS TABLE (
     auth_ids uuid[],
     provider_key_ids uuid[],
     auth_item_key_ids uuid[],
-    role_ids uuid[],
-    role_route_ids uuid[],
 
     -- Config chain resource IDs (for pre-fetched generation config)
     config_agent_resource_ids uuid[],
@@ -131,22 +129,6 @@ canonical_auth_item_keys AS (
     FROM setting_auth_item_keys_junction saik
     WHERE saik.setting_id = (SELECT setting_id FROM params) AND saik.active = true
 ),
-canonical_roles AS (
-    SELECT COALESCE(
-        ARRAY_AGG(sr.role_id ORDER BY sr.created_at),
-        ARRAY[]::uuid[]
-    ) as role_ids
-    FROM setting_roles_junction sr
-    WHERE sr.setting_id = (SELECT setting_id FROM params) AND sr.active = true
-),
-canonical_role_routes AS (
-    SELECT COALESCE(
-        ARRAY_AGG(srr.role_routes_id ORDER BY srr.created_at),
-        ARRAY[]::uuid[]
-    ) as role_route_ids
-    FROM setting_role_routes_junction srr
-    WHERE srr.setting_id = (SELECT setting_id FROM params) AND srr.active = true
-),
 -- ========== DRAFT IDs (override canonical when draft exists) ==========
 draft_name AS (
     SELECT ndc.names_id as name_id
@@ -207,22 +189,6 @@ draft_auth_item_keys AS (
     FROM setting_drafts_auth_item_keys_connection kdc
     WHERE kdc.draft_id = (SELECT draft_id FROM params)
 ),
-draft_roles AS (
-    SELECT COALESCE(
-        ARRAY_AGG(rdc.roles_id),
-        ARRAY[]::uuid[]
-    ) as role_ids
-    FROM setting_drafts_roles_connection rdc
-    WHERE rdc.draft_id = (SELECT draft_id FROM params)
-),
-draft_role_routes AS (
-    SELECT COALESCE(
-        ARRAY_AGG(rrdc.role_routes_id),
-        ARRAY[]::uuid[]
-    ) as role_route_ids
-    FROM setting_drafts_role_routes_connection rrdc
-    WHERE rrdc.draft_id = (SELECT draft_id FROM params)
-),
 -- ========== MERGED IDs (draft overrides canonical) ==========
 merged_ids AS (
     SELECT
@@ -254,15 +220,7 @@ merged_ids AS (
         CASE WHEN (SELECT draft_id FROM params) IS NOT NULL AND EXISTS (SELECT 1 FROM setting_drafts_auth_item_keys_connection WHERE draft_id = (SELECT draft_id FROM params))
             THEN (SELECT auth_item_key_ids FROM draft_auth_item_keys)
             ELSE (SELECT auth_item_key_ids FROM canonical_auth_item_keys)
-        END as auth_item_key_ids,
-        CASE WHEN (SELECT draft_id FROM params) IS NOT NULL AND EXISTS (SELECT 1 FROM setting_drafts_roles_connection WHERE draft_id = (SELECT draft_id FROM params))
-            THEN (SELECT role_ids FROM draft_roles)
-            ELSE (SELECT role_ids FROM canonical_roles)
-        END as role_ids,
-        CASE WHEN (SELECT draft_id FROM params) IS NOT NULL AND EXISTS (SELECT 1 FROM setting_drafts_role_routes_connection WHERE draft_id = (SELECT draft_id FROM params))
-            THEN (SELECT role_route_ids FROM draft_role_routes)
-            ELSE (SELECT role_route_ids FROM canonical_role_routes)
-        END as role_route_ids
+        END as auth_item_key_ids
 ),
 -- ========== CONFIG CHAIN (departments -> settings -> agents -> models -> providers) ==========
 config_settings AS (
@@ -323,8 +281,6 @@ SELECT
     m.auth_ids,
     m.provider_key_ids,
     m.auth_item_key_ids,
-    m.role_ids,
-    m.role_route_ids,
 
     -- Config chain resource IDs
     (SELECT ids FROM config_agent_resource_ids_data) as config_agent_resource_ids,

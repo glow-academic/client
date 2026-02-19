@@ -55,9 +55,7 @@ from .qualities import server_router as qualities_server_router
 from .questions import server_router as questions_server_router
 from .reasoning_levels import server_router as reasoning_levels_server_router
 from .request_limits import server_router as request_limits_server_router
-from .role_routes import server_router as role_routes_server_router
 from .roles import server_router as roles_server_router
-from .routes import server_router as routes_server_router
 from .rubrics import server_router as rubrics_server_router
 from .run_positions import server_router as run_positions_server_router
 from .run_rubrics import server_router as run_rubrics_server_router
@@ -68,6 +66,9 @@ from .scenario_rubrics import server_router as scenario_rubrics_server_router
 from .scenario_time_limits import server_router as scenario_time_limits_server_router
 from .scenarios import server_router as scenarios_server_router
 from .settings import server_router as settings_server_router
+from .simulation_availability import (
+    server_router as simulation_availability_server_router,
+)
 from .simulation_positions import server_router as simulation_positions_server_router
 from .simulations import server_router as simulations_server_router
 from .slugs import server_router as slugs_server_router
@@ -131,9 +132,7 @@ server_router.include_router(qualities_server_router)
 server_router.include_router(questions_server_router)
 server_router.include_router(reasoning_levels_server_router)
 server_router.include_router(request_limits_server_router)
-server_router.include_router(role_routes_server_router)
 server_router.include_router(roles_server_router)
-server_router.include_router(routes_server_router)
 server_router.include_router(rubrics_server_router)
 server_router.include_router(run_positions_server_router)
 server_router.include_router(run_rubrics_server_router)
@@ -144,6 +143,7 @@ server_router.include_router(scenario_rubrics_server_router)
 server_router.include_router(scenario_time_limits_server_router)
 server_router.include_router(scenarios_server_router)
 server_router.include_router(settings_server_router)
+server_router.include_router(simulation_availability_server_router)
 server_router.include_router(simulation_positions_server_router)
 server_router.include_router(simulations_server_router)
 server_router.include_router(slugs_server_router)

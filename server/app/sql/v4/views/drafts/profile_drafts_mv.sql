@@ -27,7 +27,6 @@ WITH draft_links AS (
     UNION ALL SELECT draft_id, 'profiles'::text AS resource_type, profiles_id AS resource_id FROM profile_drafts_profiles_connection WHERE active = true
     UNION ALL SELECT draft_id, 'request_limits'::text AS resource_type, request_limits_id AS resource_id FROM profile_drafts_request_limits_connection WHERE active = true
     UNION ALL SELECT draft_id, 'roles'::text AS resource_type, roles_id AS resource_id FROM profile_drafts_roles_connection WHERE active = true
-    UNION ALL SELECT draft_id, 'routes'::text AS resource_type, routes_id AS resource_id FROM profile_drafts_routes_connection WHERE active = true
 )
 SELECT
     d.id AS draft_id,
@@ -45,8 +44,7 @@ SELECT
     COALESCE(array_agg(DISTINCT l.resource_id) FILTER (WHERE l.resource_type = 'names'), ARRAY[]::uuid[]) AS name_ids,
     COALESCE(array_agg(DISTINCT l.resource_id) FILTER (WHERE l.resource_type = 'profiles'), ARRAY[]::uuid[]) AS profile_ids,
     COALESCE(array_agg(DISTINCT l.resource_id) FILTER (WHERE l.resource_type = 'request_limits'), ARRAY[]::uuid[]) AS request_limit_ids,
-    COALESCE(array_agg(DISTINCT l.resource_id) FILTER (WHERE l.resource_type = 'roles'), ARRAY[]::uuid[]) AS role_ids,
-    COALESCE(array_agg(DISTINCT l.resource_id) FILTER (WHERE l.resource_type = 'routes'), ARRAY[]::uuid[]) AS route_ids
+    COALESCE(array_agg(DISTINCT l.resource_id) FILTER (WHERE l.resource_type = 'roles'), ARRAY[]::uuid[]) AS role_ids
 FROM profile_drafts_entry d
 LEFT JOIN draft_links l ON l.draft_id = d.id
 GROUP BY d.id, d.created_at, d.updated_at, d.version, d.generated, d.mcp, d.active, d.group_id

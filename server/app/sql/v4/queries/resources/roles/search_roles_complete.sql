@@ -62,7 +62,7 @@ FROM (
       AND (COALESCE(array_length(color_ids, 1), 0) = 0 OR r.color_id = ANY(color_ids))
       -- Artifact boolean filters (each filters to resources linked to at least one of that artifact type)
       AND (NOT profile OR EXISTS (SELECT 1 FROM profile_roles_junction j WHERE j.role_id = r.id AND j.active = true))
-      AND (NOT setting OR EXISTS (SELECT 1 FROM setting_roles_junction j WHERE j.role_id = r.id AND j.active = true))
+      AND (NOT setting OR false)
     ORDER BY r.name
     LIMIT limit_count
     OFFSET offset_count

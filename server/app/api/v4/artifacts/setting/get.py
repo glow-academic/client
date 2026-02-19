@@ -29,7 +29,6 @@ from app.api.v4.artifacts.setting.permissions import (
     compute_name_required,
     compute_profiles_required,
     compute_provider_keys_required,
-    compute_role_routes_required,
     compute_roles_required,
     compute_show_ai_generate,
     compute_show_auth_item_keys,
@@ -41,7 +40,6 @@ from app.api.v4.artifacts.setting.permissions import (
     compute_show_name,
     compute_show_profiles,
     compute_show_provider_keys,
-    compute_show_role_routes,
     compute_show_roles,
     derive_flag_key_and_label,
     has_access,
@@ -63,7 +61,6 @@ from app.api.v4.artifacts.setting.types import (
     SettingProviderKeySection,
     SettingResourceBucket,
     SettingResources,
-    SettingRoleRouteSection,
     SettingRoleSection,
     SettingWebsocketResources,
     SettingWebsocketViews,
@@ -92,8 +89,6 @@ from app.api.v4.resources.profiles.search import search_profiles_internal
 from app.api.v4.resources.provider_keys.get import get_provider_keys_internal
 from app.api.v4.resources.provider_keys.search import search_provider_keys_internal
 from app.api.v4.resources.providers.get import get_providers_internal
-from app.api.v4.resources.role_routes.get import get_role_routes_internal
-from app.api.v4.resources.role_routes.search import search_role_routes_internal
 from app.api.v4.resources.roles.get import get_roles_internal
 from app.api.v4.resources.roles.search import search_roles_internal
 from app.api.v4.resources.tools.get import get_tools_internal
@@ -222,7 +217,6 @@ async def get_setting_internal(
     selected_auth_ids = ids_result.auth_ids or []
     selected_provider_key_ids = ids_result.provider_key_ids or []
     selected_auth_item_key_ids = ids_result.auth_item_key_ids or []
-    selected_role_route_ids = ids_result.role_route_ids or []
 
     # Config chain resource IDs from settings agents
     config_agent_resource_ids = [a.id for a in settings_data.settings_agents if a.id]
@@ -420,22 +414,6 @@ async def get_setting_internal(
             )
             return (all_roles, suggestions)
 
-    async def fetch_role_routes():
-        async with pool.acquire() as c:
-            selected = await get_role_routes_internal(
-                c, selected_role_route_ids, bypass_cache
-            )
-            suggestions = await search_role_routes_internal(
-                c,
-                None,
-                50,
-                0,
-                selected_role_route_ids,
-                bypass_cache=bypass_cache,
-                setting=True,
-            )
-            return (selected, suggestions)
-
     async def fetch_config_agents():
         async with pool.acquire() as c:
             return await get_agents_internal(c, config_agent_resource_ids, bypass_cache)
@@ -456,7 +434,6 @@ async def get_setting_internal(
         (provider_keys_selected, provider_keys_suggestions),
         (auth_item_keys_selected, auth_item_keys_suggestions),
         (roles_all, roles_suggestions),
-        (role_routes_selected, role_routes_suggestions),
         config_agents_result,
         config_models_result,
     ) = await asyncio.gather(
@@ -470,7 +447,6 @@ async def get_setting_internal(
         fetch_provider_keys(),
         fetch_auth_item_keys(),
         fetch_roles(),
-        fetch_role_routes(),
         fetch_config_agents(),
         fetch_config_models(),
     )
@@ -506,7 +482,6 @@ async def get_setting_internal(
     )
     # Roles: get_roles_internal returns all, so just use suggestions for consistency
     roles = _dedupe_by_id(roles_suggestions, "role") if roles_suggestions else roles_all
-    role_routes = _dedupe_by_id(role_routes_selected + role_routes_suggestions, "id")
 
     # Find selected resources (single-select)
     name_resource = next((n for n in names if n.id == selected_name_id), None)
@@ -524,7 +499,6 @@ async def get_setting_internal(
     auth_id_set = set(selected_auth_ids)
     pk_id_set = set(selected_provider_key_ids)
     aik_id_set = set(selected_auth_item_key_ids)
-    rr_id_set = set(selected_role_route_ids)
 
     color_resources = [c for c in colors if c.id in color_id_set]
     department_resources = [
@@ -536,7 +510,6 @@ async def get_setting_internal(
     auth_item_key_resources = [aik for aik in auth_item_keys if aik.id in aik_id_set]
     # Roles: no id field on QGetRolesV4Item, return all as current
     role_resources = roles_all
-    role_route_resources = [rr for rr in role_routes if rr.id in rr_id_set]
 
     # Build suggestion ID lists
     name_suggestions_ids = [n.id for n in names_suggestions]
@@ -548,7 +521,6 @@ async def get_setting_internal(
     pk_suggestions_ids = [pk.id for pk in provider_keys_suggestions]
     aik_suggestions_ids = [aik.id for aik in auth_item_keys_suggestions]
     role_suggestions_ids: list[UUID] = []  # Roles don't use UUID suggestions
-    rr_suggestions_ids = [rr.id for rr in role_routes_suggestions]
 
     # Compute show flags
     show_name = compute_show_name()
@@ -575,7 +547,6 @@ async def get_setting_internal(
     show_provider_keys = compute_show_provider_keys()
     show_auth_item_keys = compute_show_auth_item_keys()
     show_roles = compute_show_roles()
-    show_role_routes = compute_show_role_routes()
 
     show_map = {
         "names": show_name,
@@ -588,7 +559,6 @@ async def get_setting_internal(
         "provider_keys": show_provider_keys,
         "auth_item_keys": show_auth_item_keys,
         "roles": show_roles,
-        "role_routes": show_role_routes,
     }
 
     required_map = {
@@ -602,7 +572,6 @@ async def get_setting_internal(
         "provider_keys": compute_provider_keys_required(),
         "auth_item_keys": compute_auth_item_keys_required(),
         "roles": compute_roles_required(),
-        "role_routes": compute_role_routes_required(),
     }
 
     suggestions_map: dict[str, list[UUID]] = {
@@ -615,7 +584,6 @@ async def get_setting_internal(
         "provider_keys": [x for x in pk_suggestions_ids if x],
         "auth_item_keys": [x for x in aik_suggestions_ids if x],
         "roles": role_suggestions_ids,
-        "role_routes": [x for x in rr_suggestions_ids if x],
     }
 
     # Transform flags to enriched format for client
@@ -654,7 +622,6 @@ async def get_setting_internal(
             provider_keys=provider_keys,
             auth_item_keys=auth_item_keys,
             roles=roles,
-            role_routes=role_routes,
         ),
         current=SettingResourceBucket(
             names=[name_resource] if name_resource else [],
@@ -667,7 +634,6 @@ async def get_setting_internal(
             provider_keys=provider_key_resources or [],
             auth_item_keys=auth_item_key_resources or [],
             roles=role_resources or [],
-            role_routes=role_route_resources or [],
         ),
     )
 
@@ -810,7 +776,6 @@ async def get_setting_websocket(
             provider_keys=current.provider_keys if current else None,
             auth_item_keys=current.auth_item_keys if current else None,
             roles=current.roles if current else None,
-            role_routes=current.role_routes if current else None,
             agents=data.config_agent_resources,
             models=data.config_model_resources,
             providers=data.config_provider_resources,
@@ -915,11 +880,6 @@ async def get_setting_client(
             **_section_common("roles"),
             current=current.roles if current else [],
             resources=all_resources.roles if all_resources else [],
-        ),
-        role_routes=SettingRoleRouteSection(
-            **_section_common("role_routes"),
-            current=current.role_routes if current else [],
-            resources=all_resources.role_routes if all_resources else [],
         ),
     )
 

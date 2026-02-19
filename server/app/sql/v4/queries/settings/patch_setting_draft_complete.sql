@@ -50,7 +50,6 @@ CREATE OR REPLACE FUNCTION api_patch_setting_draft_v4(
     provider_keys types.setting_multi_resource_action DEFAULT NULL,
     auth_item_keys types.setting_multi_resource_action DEFAULT NULL,
     roles types.setting_multi_resource_action DEFAULT NULL,
-    role_routes types.setting_multi_resource_action DEFAULT NULL,
     expected_version int DEFAULT 0
 )
 RETURNS TABLE (
@@ -78,7 +77,6 @@ DECLARE
     v_provider_key_ids uuid[] := COALESCE((provider_keys).resource_ids, ARRAY[]::uuid[]);
     v_auth_item_key_ids uuid[] := COALESCE((auth_item_keys).resource_ids, ARRAY[]::uuid[]);
     v_role_ids uuid[] := COALESCE((roles).resource_ids, ARRAY[]::uuid[]);
-    v_role_route_ids uuid[] := COALESCE((role_routes).resource_ids, ARRAY[]::uuid[]);
     v_run_id uuid;
     v_call_id uuid;
 BEGIN
@@ -333,25 +331,6 @@ BEGIN
                 END IF;
             END IF;
 
-            IF v_run_id IS NOT NULL AND COALESCE(array_length(v_role_route_ids, 1), 0) > 0 THEN
-                IF (role_routes).create_tool_id IS NOT NULL THEN
-                    v_call_id := uuidv7();
-                    INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
-                    VALUES (v_call_id, 'setting_draft_create_role_routes_' || v_call_id::text, v_run_id, true, NOW(), NOW());
-                    INSERT INTO tools_calls_connection (tools_id, call_id) VALUES ((role_routes).create_tool_id, v_call_id);
-                    INSERT INTO role_routes_calls_connection (role_routes_id, call_id)
-                    SELECT rr_id, v_call_id FROM UNNEST(v_role_route_ids) AS rr_id;
-                END IF;
-                IF (role_routes).link_tool_id IS NOT NULL THEN
-                    v_call_id := uuidv7();
-                    INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
-                    VALUES (v_call_id, 'setting_draft_link_role_routes_' || v_call_id::text, v_run_id, true, NOW(), NOW());
-                    INSERT INTO tools_calls_connection (tools_id, call_id) VALUES ((role_routes).link_tool_id, v_call_id);
-                    INSERT INTO role_routes_calls_connection (role_routes_id, call_id)
-                    SELECT rr_id, v_call_id FROM UNNEST(v_role_route_ids) AS rr_id;
-                END IF;
-            END IF;
-
             DELETE FROM setting_drafts_names_connection WHERE setting_drafts_names_connection.draft_id = v_draft_id;
             DELETE FROM setting_drafts_descriptions_connection WHERE setting_drafts_descriptions_connection.draft_id = v_draft_id;
             DELETE FROM setting_drafts_colors_connection WHERE setting_drafts_colors_connection.draft_id = v_draft_id;
@@ -361,7 +340,6 @@ BEGIN
             DELETE FROM setting_drafts_providers_connection WHERE setting_drafts_providers_connection.draft_id = v_draft_id;
             DELETE FROM setting_drafts_keys_connection WHERE setting_drafts_keys_connection.draft_id = v_draft_id;
             DELETE FROM setting_drafts_roles_connection WHERE setting_drafts_roles_connection.draft_id = v_draft_id;
-            DELETE FROM setting_drafts_role_routes_connection WHERE setting_drafts_role_routes_connection.draft_id = v_draft_id;
 
             INSERT INTO profiles_drafts_connection (draft_id, profiles_id, version)
             VALUES (v_draft_id, v_profiles_resource_id, v_new_version)
@@ -425,13 +403,6 @@ BEGIN
                 SELECT v_draft_id, role_id, v_new_version
                 FROM UNNEST(v_role_ids) as role_id
                 ON CONFLICT ON CONSTRAINT roles_draft_pkey DO UPDATE SET version = v_new_version;
-            END IF;
-
-            IF COALESCE(array_length(v_role_route_ids, 1), 0) > 0 THEN
-                INSERT INTO setting_drafts_role_routes_connection (draft_id, role_routes_id, version)
-                SELECT v_draft_id, rr_id, v_new_version
-                FROM UNNEST(v_role_route_ids) as rr_id
-                ON CONFLICT ON CONSTRAINT role_routes_draft_pkey DO UPDATE SET version = v_new_version;
             END IF;
 
             RETURN QUERY SELECT v_draft_id, v_new_version, v_draft_exists;
@@ -645,25 +616,6 @@ BEGIN
         END IF;
     END IF;
 
-    IF v_run_id IS NOT NULL AND COALESCE(array_length(v_role_route_ids, 1), 0) > 0 THEN
-        IF (role_routes).create_tool_id IS NOT NULL THEN
-            v_call_id := uuidv7();
-            INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
-            VALUES (v_call_id, 'setting_draft_create_role_routes_' || v_call_id::text, v_run_id, true, NOW(), NOW());
-            INSERT INTO tools_calls_connection (tools_id, call_id) VALUES ((role_routes).create_tool_id, v_call_id);
-            INSERT INTO role_routes_calls_connection (role_routes_id, call_id)
-            SELECT rr_id, v_call_id FROM UNNEST(v_role_route_ids) AS rr_id;
-        END IF;
-        IF (role_routes).link_tool_id IS NOT NULL THEN
-            v_call_id := uuidv7();
-            INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
-            VALUES (v_call_id, 'setting_draft_link_role_routes_' || v_call_id::text, v_run_id, true, NOW(), NOW());
-            INSERT INTO tools_calls_connection (tools_id, call_id) VALUES ((role_routes).link_tool_id, v_call_id);
-            INSERT INTO role_routes_calls_connection (role_routes_id, call_id)
-            SELECT rr_id, v_call_id FROM UNNEST(v_role_route_ids) AS rr_id;
-        END IF;
-    END IF;
-
     INSERT INTO profiles_drafts_connection (draft_id, profiles_id, version)
     VALUES (v_draft_id, v_profiles_resource_id, v_new_version)
     ON CONFLICT ON CONSTRAINT profiles_draft_pkey DO UPDATE SET version = v_new_version;
@@ -726,13 +678,6 @@ BEGIN
         SELECT v_draft_id, role_id, v_new_version
         FROM UNNEST(v_role_ids) as role_id
         ON CONFLICT ON CONSTRAINT roles_draft_pkey DO UPDATE SET version = v_new_version;
-    END IF;
-
-    IF COALESCE(array_length(v_role_route_ids, 1), 0) > 0 THEN
-        INSERT INTO setting_drafts_role_routes_connection (draft_id, role_routes_id, version)
-        SELECT v_draft_id, rr_id, v_new_version
-        FROM UNNEST(v_role_route_ids) as rr_id
-        ON CONFLICT ON CONSTRAINT role_routes_draft_pkey DO UPDATE SET version = v_new_version;
     END IF;
 
     RETURN QUERY SELECT v_draft_id, v_new_version, false;

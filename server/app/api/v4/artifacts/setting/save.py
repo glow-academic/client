@@ -89,7 +89,6 @@ async def save_setting_internal(
             provider_keys=_multi("provider_keys"),
             auth_item_keys=_multi("auth_item_keys"),
             roles=_multi("roles"),
-            role_routes=_multi("role_routes"),
         )
 
         async with conn.transaction():

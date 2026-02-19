@@ -18,7 +18,6 @@ SETTING_RESOURCES = {
     "provider_keys",
     "auth_item_keys",
     "roles",
-    "role_routes",
 }
 
 SETTING_GENERATION_RESOURCES = {
@@ -138,10 +137,6 @@ def compute_show_roles() -> bool:
     return True
 
 
-def compute_show_role_routes() -> bool:
-    return True
-
-
 def compute_name_required() -> bool:
     return True
 
@@ -179,10 +174,6 @@ def compute_auth_item_keys_required() -> bool:
 
 
 def compute_roles_required() -> bool:
-    return False
-
-
-def compute_role_routes_required() -> bool:
     return False
 
 

@@ -23,7 +23,6 @@ from app.sql.types import (
     QGetProfilesV4Item,
     QGetProviderKeysV4Item,
     QGetProvidersV4Item,
-    QGetRoleRoutesV4Item,
     QGetRolesV4Item,
     QGetToolsV4Item,
 )
@@ -100,11 +99,6 @@ class SettingRoleSection(BaseResourceSection):
     resources: list[QGetRolesV4Item] | None = None
 
 
-class SettingRoleRouteSection(BaseResourceSection):
-    current: list[QGetRoleRoutesV4Item] | None = None
-    resources: list[QGetRoleRoutesV4Item] | None = None
-
-
 # ========== GET Endpoint Types ==========
 
 
@@ -131,7 +125,7 @@ class GetSettingApiResponse(BaseModel):
     group_id: UUID | None = None
     resource_agent_ids: dict[str, UUID | None] | None = None
 
-    # Per-resource sections (11 total)
+    # Per-resource sections (10 total)
     names: SettingNameSection | None = None
     descriptions: SettingDescriptionSection | None = None
     colors: SettingColorSection | None = None
@@ -142,7 +136,6 @@ class GetSettingApiResponse(BaseModel):
     provider_keys: SettingProviderKeySection | None = None
     auth_item_keys: SettingAuthItemKeySection | None = None
     roles: SettingRoleSection | None = None
-    role_routes: SettingRoleRouteSection | None = None
 
 
 # ========== Websocket Types ==========
@@ -158,7 +151,7 @@ class SettingWebsocketViews(BaseModel):
 class SettingWebsocketResources(BaseModel):
     """Hydrated resources for websocket — selected only, no suggestions."""
 
-    # 11 setting resources
+    # 10 setting resources
     names: list[QGetNamesV4Item] | None = None
     descriptions: list[QGetDescriptionsV4Item] | None = None
     colors: list[QGetColorsV4Item] | None = None
@@ -169,7 +162,6 @@ class SettingWebsocketResources(BaseModel):
     provider_keys: list[QGetProviderKeysV4Item] | None = None
     auth_item_keys: list[QGetAuthItemKeysV4Item] | None = None
     roles: list[QGetRolesV4Item] | None = None
-    role_routes: list[QGetRoleRoutesV4Item] | None = None
     # Config resources
     agents: list[QGetAgentsV4Item] | None = None
     models: list[QGetModelsV4Item] | None = None
@@ -214,7 +206,6 @@ class SettingGenerationCompleteEvent(BaseModel):
     provider_key_resources: list[QGetProviderKeysV4Item] | None = None
     auth_item_key_resources: list[QGetAuthItemKeysV4Item] | None = None
     role_resources: list[QGetRolesV4Item] | None = None
-    role_route_resources: list[QGetRoleRoutesV4Item] | None = None
 
 
 # ========== Internal Data Types ==========
@@ -233,7 +224,6 @@ class SettingResourceBucket(BaseModel):
     provider_keys: list[QGetProviderKeysV4Item] | None = None
     auth_item_keys: list[QGetAuthItemKeysV4Item] | None = None
     roles: list[QGetRolesV4Item] | None = None
-    role_routes: list[QGetRoleRoutesV4Item] | None = None
 
 
 class SettingResources(BaseModel):
@@ -322,7 +312,6 @@ class SaveSettingApiRequest(BaseModel):
     provider_key_ids: list[UUID] | None = None
     auth_item_key_ids: list[UUID] | None = None
     role_ids: list[UUID] | None = None
-    role_route_ids: list[UUID] | None = None
 
 
 class SaveSettingApiResponse(BaseModel):
@@ -350,7 +339,6 @@ class SaveSettingSqlParams(BaseModel):
     provider_keys: SettingMultiResourceAction
     auth_item_keys: SettingMultiResourceAction
     roles: SettingMultiResourceAction
-    role_routes: SettingMultiResourceAction
 
     @classmethod
     def from_request(
@@ -377,7 +365,6 @@ class SaveSettingSqlParams(BaseModel):
                 resource_ids=request.auth_item_key_ids
             ),
             roles=SettingMultiResourceAction(resource_ids=request.role_ids),
-            role_routes=SettingMultiResourceAction(resource_ids=request.role_route_ids),
         )
 
     def to_tuple(self) -> tuple:
@@ -403,7 +390,6 @@ class SaveSettingSqlParams(BaseModel):
             multi(self.provider_keys),
             multi(self.auth_item_keys),
             multi(self.roles),
-            multi(self.role_routes),
         )
 
 
@@ -431,7 +417,6 @@ class PatchSettingDraftApiRequest(BaseModel):
     provider_key_ids: list[UUID] | None = None
     auth_item_key_ids: list[UUID] | None = None
     role_ids: list[UUID] | None = None
-    role_route_ids: list[UUID] | None = None
     expected_version: int = 0
 
 
@@ -460,7 +445,6 @@ class PatchSettingDraftSqlParams(BaseModel):
     provider_keys: SettingMultiResourceAction
     auth_item_keys: SettingMultiResourceAction
     roles: SettingMultiResourceAction
-    role_routes: SettingMultiResourceAction
     expected_version: int = 0
 
     @classmethod
@@ -487,7 +471,6 @@ class PatchSettingDraftSqlParams(BaseModel):
                 resource_ids=request.auth_item_key_ids
             ),
             roles=SettingMultiResourceAction(resource_ids=request.role_ids),
-            role_routes=SettingMultiResourceAction(resource_ids=request.role_route_ids),
             expected_version=request.expected_version,
         )
 
@@ -514,7 +497,6 @@ class PatchSettingDraftSqlParams(BaseModel):
             multi(self.provider_keys),
             multi(self.auth_item_keys),
             multi(self.roles),
-            multi(self.role_routes),
             self.expected_version,
         )
 

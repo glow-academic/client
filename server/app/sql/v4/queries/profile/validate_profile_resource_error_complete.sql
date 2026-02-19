@@ -52,8 +52,7 @@ DECLARE
         'request_limits',
         'departments',
         'emails',
-        'cohorts',
-        'routes'
+        'cohorts'
     ];
     is_profile_resource boolean := FALSE;
 BEGIN
