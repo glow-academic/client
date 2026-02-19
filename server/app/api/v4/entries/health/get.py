@@ -6,7 +6,6 @@ from uuid import UUID
 
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel, Field
 
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
@@ -15,6 +14,7 @@ from app.sql.types import (
     GetHealthEntriesApiResponse,
     GetHealthEntriesSqlParams,
     GetHealthEntriesSqlRow,
+    GetHealthListViewSqlRow,
     load_sql_query,
 )
 from app.utils.cache.cache_key import cache_key
@@ -26,29 +26,6 @@ SQL_PATH = "app/sql/v4/queries/entries/health/get_health_entries_complete.sql"
 VIEW_SQL_PATH = "app/sql/v4/queries/views/health/list/get_health_list_view_complete.sql"
 
 router = APIRouter()
-
-
-class HealthViewItem(BaseModel):
-    """Single item from the health list view."""
-
-    date_hour: datetime
-    service: str | None = None
-    check_count: int = 0
-    ok_count: int = 0
-    fail_count: int = 0
-    uptime_percent: float | None = None
-    avg_latency_ms: float | None = None
-    min_latency_ms: float | None = None
-    max_latency_ms: float | None = None
-    latest_ok: bool | None = None
-    latest_error: str | None = None
-
-
-class GetHealthListViewResponse(BaseModel):
-    """Response containing health list data."""
-
-    items: list[HealthViewItem] = Field(default_factory=list)
-    total_count: int = Field(default=0)
 
 
 async def get_health_entries_internal(
@@ -98,7 +75,7 @@ async def get_health_list_view_internal(
     page_limit: int = 1000,
     page_offset: int = 0,
     bypass_cache: bool = False,
-) -> GetHealthListViewResponse:
+) -> GetHealthListViewSqlRow:
     """Internal function for fetching health data from MV."""
     from app.sql.types import GetHealthListViewSqlParams
 
@@ -117,7 +94,7 @@ async def get_health_list_view_internal(
     if not bypass_cache:
         cached = await get_cached(cache_key_val)
         if cached:
-            return GetHealthListViewResponse.model_validate(cached)
+            return GetHealthListViewSqlRow.model_validate(cached)
 
     params = GetHealthListViewSqlParams(
         service_filter=service_filter,
@@ -130,27 +107,8 @@ async def get_health_list_view_internal(
 
     result = await execute_sql_typed(conn, VIEW_SQL_PATH, params=params)
 
-    items: list[HealthViewItem] = []
-    if result and result.items:
-        for item in result.items:
-            items.append(
-                HealthViewItem(
-                    date_hour=item.date_hour,
-                    service=item.service,
-                    check_count=item.check_count or 0,
-                    ok_count=item.ok_count or 0,
-                    fail_count=item.fail_count or 0,
-                    uptime_percent=item.uptime_percent,
-                    avg_latency_ms=item.avg_latency_ms,
-                    min_latency_ms=item.min_latency_ms,
-                    max_latency_ms=item.max_latency_ms,
-                    latest_ok=item.latest_ok,
-                    latest_error=item.latest_error,
-                )
-            )
-
-    response = GetHealthListViewResponse(
-        items=items,
+    response = GetHealthListViewSqlRow(
+        items=list(result.items) if result and result.items else [],
         total_count=result.total_count or 0 if result else 0,
     )
 

@@ -14,7 +14,6 @@ from pydantic import BaseModel, Field
 
 from app.api.v4.entries.attempt.get import AttemptMessageViewItem as MessageViewItem
 from app.api.v4.entries.attempt.get import ChatViewItem
-from app.api.v4.entries.attempt.search import AttemptViewItem
 from app.api.v4.entries.runs.search import GetRunListViewResponse
 from app.sql.types import (
     QGetAgentsV4Item,
@@ -24,6 +23,9 @@ from app.sql.types import (
     QGetProfilesV4Item,
     QGetProvidersV4Item,
     QGetToolsV4Item,
+)
+from app.sql.types import (
+    QGetAttemptListViewV4Item as AttemptViewItem,
 )
 
 # =============================================================================

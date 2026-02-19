@@ -1470,7 +1470,7 @@ async def get_attempt_internal(
                 )
                 other_ids = [
                     a.attempt_id
-                    for a in prev_result.items
+                    for a in (prev_result.items or [])
                     if a.attempt_id != attempt_id
                 ]
                 if other_ids:

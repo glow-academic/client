@@ -1,16 +1,15 @@
 """Calls entry GET endpoint."""
 
-from datetime import datetime
 from typing import Annotated, cast
 from uuid import UUID
 
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel, Field
 
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
 from app.sql.types import (
+    GetCallListViewSqlRow,
     GetCallsEntriesApiRequest,
     GetCallsEntriesApiResponse,
     GetCallsEntriesSqlParams,
@@ -26,23 +25,6 @@ SQL_PATH = "app/sql/v4/queries/entries/calls/get_calls_entries_complete.sql"
 VIEW_SQL_PATH = "app/sql/v4/queries/views/call/list/get_call_list_view_complete.sql"
 
 router = APIRouter()
-
-
-class CallViewItem(BaseModel):
-    """Single item from the calls list view."""
-
-    call_id: UUID
-    run_id: UUID | None = None
-    call_created_at: datetime | None = None
-    arguments_raw: str | None = None
-    tool_id: UUID | None = None
-
-
-class GetCallListViewResponse(BaseModel):
-    """Response containing calls list data."""
-
-    items: list[CallViewItem] = Field(default_factory=list)
-    total_count: int = Field(default=0)
 
 
 async def get_calls_entries_internal(
@@ -90,7 +72,7 @@ async def get_call_list_view_internal(
     page_limit: int = 10000,
     page_offset: int = 0,
     bypass_cache: bool = False,
-) -> GetCallListViewResponse:
+) -> GetCallListViewSqlRow:
     """Internal function for fetching calls data from MV."""
     from app.sql.types import GetCallListViewSqlParams
 
@@ -107,7 +89,7 @@ async def get_call_list_view_internal(
     if not bypass_cache:
         cached = await get_cached(cache_key_val)
         if cached:
-            return GetCallListViewResponse.model_validate(cached)
+            return GetCallListViewSqlRow.model_validate(cached)
 
     params = GetCallListViewSqlParams(
         run_id_filter=run_id_filter,
@@ -118,21 +100,8 @@ async def get_call_list_view_internal(
 
     result = await execute_sql_typed(conn, VIEW_SQL_PATH, params=params)
 
-    items: list[CallViewItem] = []
-    if result and result.items:
-        for item in result.items:
-            items.append(
-                CallViewItem(
-                    call_id=item.call_id,
-                    run_id=item.run_id,
-                    call_created_at=item.call_created_at,
-                    arguments_raw=item.arguments_raw,
-                    tool_id=item.tool_id,
-                )
-            )
-
-    response = GetCallListViewResponse(
-        items=items,
+    response = GetCallListViewSqlRow(
+        items=list(result.items) if result and result.items else [],
         total_count=result.total_count or 0 if result else 0,
     )
 

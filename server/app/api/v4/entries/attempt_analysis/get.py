@@ -1,12 +1,10 @@
 """Attempt Analysis entry GET endpoint."""
 
-from datetime import datetime
 from typing import Annotated, cast
 from uuid import UUID
 
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
 
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
@@ -15,6 +13,7 @@ from app.sql.types import (
     GetAttemptAnalysisEntriesApiResponse,
     GetAttemptAnalysisEntriesSqlParams,
     GetAttemptAnalysisEntriesSqlRow,
+    QGetSimulationAnalysesViewV4Item,
     load_sql_query,
 )
 from app.utils.cache.cache_key import cache_key
@@ -26,15 +25,6 @@ SQL_PATH = "app/sql/v4/queries/entries/attempt_analysis/get_attempt_analysis_ent
 VIEW_SQL_PATH = "app/sql/v4/queries/views/simulation/analyses/get_simulation_analyses_view_complete.sql"
 
 router = APIRouter()
-
-
-class AnalysisViewItem(BaseModel):
-    """A single analyses view item."""
-
-    analysis_id: UUID
-    grade_id: UUID | None = None
-    content: str | None = None
-    created_at: datetime | None = None
 
 
 async def get_attempt_analysis_entries_internal(
@@ -79,7 +69,7 @@ async def get_attempt_analysis_internal(
     conn: asyncpg.Connection,
     grade_ids: list[UUID],
     bypass_cache: bool = False,
-) -> list[AnalysisViewItem]:
+) -> list[QGetSimulationAnalysesViewV4Item]:
     """Internal function for fetching analyses data."""
     from app.sql.types import GetSimulationAnalysesViewSqlParams
 
@@ -93,22 +83,12 @@ async def get_attempt_analysis_internal(
     if not bypass_cache:
         cached = await get_cached(cache_key_val)
         if cached:
-            return [AnalysisViewItem.model_validate(item) for item in cached["items"]]
+            return [QGetSimulationAnalysesViewV4Item.model_validate(item) for item in cached["items"]]
 
     params = GetSimulationAnalysesViewSqlParams(grade_ids_filter=grade_ids)
     result = await execute_sql_typed(conn, VIEW_SQL_PATH, params=params)
 
-    items: list[AnalysisViewItem] = []
-    if result and result.items:
-        for item in result.items:
-            items.append(
-                AnalysisViewItem(
-                    analysis_id=item.analysis_id,
-                    grade_id=item.grade_id,
-                    content=item.content,
-                    created_at=item.created_at,
-                )
-            )
+    items: list[QGetSimulationAnalysesViewV4Item] = list(result.items) if result and result.items else []
 
     await set_cached(
         cache_key_val,

@@ -5,7 +5,6 @@ from uuid import UUID
 
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel, Field
 
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
@@ -14,6 +13,7 @@ from app.sql.types import (
     GetSuiteEntriesApiResponse,
     GetSuiteEntriesSqlParams,
     GetSuiteEntriesSqlRow,
+    GetSuiteViewSqlRow,
     load_sql_query,
 )
 from app.utils.cache.cache_key import cache_key
@@ -25,26 +25,6 @@ SQL_PATH = "app/sql/v4/queries/entries/suite/get_suite_entries_complete.sql"
 VIEW_SQL_PATH = "app/sql/v4/queries/views/benchmark/bundle/get_suite_view_complete.sql"
 
 router = APIRouter()
-
-
-class GetSuiteViewResponse(BaseModel):
-    """Thin MV-backed view response for a single benchmark bundle."""
-
-    profile_has_access: bool = False
-    suite_entry_id: UUID | None = None
-    benchmark_id: UUID | None = None
-    department_ids: list[UUID] = Field(default_factory=list)
-    model_ids: list[UUID] = Field(default_factory=list)
-    prompt_ids: list[UUID] = Field(default_factory=list)
-    instruction_ids: list[UUID] = Field(default_factory=list)
-    voice_ids: list[UUID] = Field(default_factory=list)
-    temperature_level_ids: list[UUID] = Field(default_factory=list)
-    reasoning_level_ids: list[UUID] = Field(default_factory=list)
-    tool_ids: list[UUID] = Field(default_factory=list)
-    key_ids: list[UUID] = Field(default_factory=list)
-    flag_ids: list[UUID] = Field(default_factory=list)
-    name_ids: list[UUID] = Field(default_factory=list)
-    description_ids: list[UUID] = Field(default_factory=list)
 
 
 async def get_suite_entries_internal(
@@ -89,7 +69,7 @@ async def get_suite_view_internal(
     conn: asyncpg.Connection,
     profile_id: UUID,
     suite_entry_id: UUID,
-) -> GetSuiteViewResponse:
+) -> GetSuiteViewSqlRow:
     """Thin MV-backed bundle scope lookup used by benchmark artifacts."""
     from app.sql.types import GetSuiteViewSqlParams
 
@@ -100,9 +80,9 @@ async def get_suite_view_internal(
     row = await execute_sql_typed(conn, VIEW_SQL_PATH, params=params)
 
     if not row:
-        return GetSuiteViewResponse()
+        return GetSuiteViewSqlRow()
 
-    return GetSuiteViewResponse(
+    return GetSuiteViewSqlRow(
         profile_has_access=row.profile_has_access or False,
         suite_entry_id=row.suite_entry_id,
         benchmark_id=row.benchmark_id,

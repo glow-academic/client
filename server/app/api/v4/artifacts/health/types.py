@@ -4,8 +4,7 @@ from datetime import datetime
 
 from pydantic import BaseModel, Field
 
-from app.api.v4.entries.health.get import HealthViewItem
-from app.api.v4.entries.metrics.get import MetricViewItem
+from app.sql.types import QGetHealthListViewV4Item, QGetMetricListViewV4Item
 
 
 class HealthRequest(BaseModel):
@@ -21,8 +20,8 @@ class HealthRequest(BaseModel):
 class HealthViews(BaseModel):
     """Health view data."""
 
-    service_hourly: list[HealthViewItem] = Field(default_factory=list)
-    metrics_hourly: list[MetricViewItem] = Field(default_factory=list)
+    service_hourly: list[QGetHealthListViewV4Item] = Field(default_factory=list)
+    metrics_hourly: list[QGetMetricListViewV4Item] = Field(default_factory=list)
 
 
 class HealthResponse(BaseModel):

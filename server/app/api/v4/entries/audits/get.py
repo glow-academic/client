@@ -6,11 +6,11 @@ from uuid import UUID
 
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel, Field
 
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
 from app.sql.types import (
+    GetAuditListViewSqlRow,
     GetAuditsEntriesApiRequest,
     GetAuditsEntriesApiResponse,
     GetAuditsEntriesSqlParams,
@@ -26,24 +26,6 @@ SQL_PATH = "app/sql/v4/queries/entries/audits/get_audits_entries_complete.sql"
 VIEW_SQL_PATH = "app/sql/v4/queries/views/audit/list/get_audit_list_view_complete.sql"
 
 router = APIRouter()
-
-
-class AuditViewItem(BaseModel):
-    """Single item from the audits list view."""
-
-    audit_id: UUID
-    session_id: UUID | None = None
-    audit_created_at: datetime | None = None
-    message: str | None = None
-    endpoint: str | None = None
-    error: bool = False
-
-
-class GetAuditListViewResponse(BaseModel):
-    """Response containing audits list data."""
-
-    items: list[AuditViewItem] = Field(default_factory=list)
-    total_count: int = Field(default=0)
 
 
 async def get_audits_entries_internal(
@@ -95,7 +77,7 @@ async def get_audit_list_view_internal(
     page_limit: int = 50,
     page_offset: int = 0,
     bypass_cache: bool = False,
-) -> GetAuditListViewResponse:
+) -> GetAuditListViewSqlRow:
     """Internal function for fetching audits data from MV."""
     from app.sql.types import GetAuditListViewSqlParams
 
@@ -116,7 +98,7 @@ async def get_audit_list_view_internal(
     if not bypass_cache:
         cached = await get_cached(cache_key_val)
         if cached:
-            return GetAuditListViewResponse.model_validate(cached)
+            return GetAuditListViewSqlRow.model_validate(cached)
 
     params = GetAuditListViewSqlParams(
         session_id_filter=session_id_filter,
@@ -131,22 +113,8 @@ async def get_audit_list_view_internal(
 
     result = await execute_sql_typed(conn, VIEW_SQL_PATH, params=params)
 
-    items: list[AuditViewItem] = []
-    if result and result.items:
-        for item in result.items:
-            items.append(
-                AuditViewItem(
-                    audit_id=item.audit_id,
-                    session_id=item.session_id,
-                    audit_created_at=item.audit_created_at,
-                    message=item.message,
-                    endpoint=item.endpoint,
-                    error=item.error or False,
-                )
-            )
-
-    response = GetAuditListViewResponse(
-        items=items,
+    response = GetAuditListViewSqlRow(
+        items=list(result.items) if result and result.items else [],
         total_count=result.total_count or 0 if result else 0,
     )
 

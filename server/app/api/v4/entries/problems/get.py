@@ -6,11 +6,11 @@ from uuid import UUID
 
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel, Field
 
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
 from app.sql.types import (
+    GetProblemListViewSqlRow,
     GetProblemsEntriesApiRequest,
     GetProblemsEntriesApiResponse,
     GetProblemsEntriesSqlParams,
@@ -28,26 +28,6 @@ VIEW_SQL_PATH = "app/sql/v4/queries/views/problem/list/get_problem_list_view_com
 router = APIRouter()
 
 
-class ProblemViewItem(BaseModel):
-    """Single item from the problems list view."""
-
-    problem_id: UUID
-    type: str | None = None
-    message: str | None = None
-    resolved: bool | None = None
-    session_id: UUID | None = None
-    problem_created_at: datetime | None = None
-    problem_updated_at: datetime | None = None
-    profile_id: UUID | None = None
-
-
-class GetProblemListViewResponse(BaseModel):
-    """Response containing problems list data."""
-
-    items: list[ProblemViewItem] = Field(default_factory=list)
-    total_count: int = Field(default=0)
-
-
 async def get_problem_list_view_internal(
     conn: asyncpg.Connection,
     profile_id_filter: UUID | None = None,
@@ -58,7 +38,7 @@ async def get_problem_list_view_internal(
     page_limit: int = 50,
     page_offset: int = 0,
     bypass_cache: bool = False,
-) -> GetProblemListViewResponse:
+) -> GetProblemListViewSqlRow:
     """Internal function for fetching problems data from MV."""
     from app.sql.types import GetProblemListViewSqlParams
 
@@ -78,7 +58,7 @@ async def get_problem_list_view_internal(
     if not bypass_cache:
         cached = await get_cached(cache_key_val)
         if cached:
-            return GetProblemListViewResponse.model_validate(cached)
+            return GetProblemListViewSqlRow.model_validate(cached)
 
     params = GetProblemListViewSqlParams(
         profile_id_filter=profile_id_filter,
@@ -92,24 +72,8 @@ async def get_problem_list_view_internal(
 
     result = await execute_sql_typed(conn, VIEW_SQL_PATH, params=params)
 
-    items: list[ProblemViewItem] = []
-    if result and result.items:
-        for item in result.items:
-            items.append(
-                ProblemViewItem(
-                    problem_id=item.problem_id,
-                    type=item.type,
-                    message=item.message,
-                    resolved=item.resolved,
-                    session_id=item.session_id,
-                    problem_created_at=item.problem_created_at,
-                    problem_updated_at=item.problem_updated_at,
-                    profile_id=item.profile_id,
-                )
-            )
-
-    response = GetProblemListViewResponse(
-        items=items,
+    response = GetProblemListViewSqlRow(
+        items=list(result.items) if result and result.items else [],
         total_count=result.total_count or 0 if result else 0,
     )
 

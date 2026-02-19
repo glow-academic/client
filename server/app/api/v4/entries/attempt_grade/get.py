@@ -1,12 +1,10 @@
 """Attempt Grade entry GET endpoint."""
 
-from datetime import datetime
 from typing import Annotated, cast
 from uuid import UUID
 
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
 
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
@@ -15,6 +13,7 @@ from app.sql.types import (
     GetAttemptGradeEntriesApiResponse,
     GetAttemptGradeEntriesSqlParams,
     GetAttemptGradeEntriesSqlRow,
+    QGetAttemptGradeViewV4Item,
     load_sql_query,
 )
 from app.utils.cache.cache_key import cache_key
@@ -30,20 +29,6 @@ VIEW_SQL_PATH = (
 )
 
 router = APIRouter()
-
-
-class GradeViewItem(BaseModel):
-    """A single grades view item."""
-
-    grade_id: UUID
-    chat_id: UUID | None = None
-    score: float | None = None
-    passed: bool | None = None
-    time_taken: int | None = None
-    total_points: int | None = None
-    pass_points: int | None = None
-    rubric_id: UUID | None = None
-    created_at: datetime | None = None
 
 
 async def get_attempt_grade_entries_internal(
@@ -88,7 +73,7 @@ async def get_attempt_grade_internal(
     conn: asyncpg.Connection,
     chat_ids: list[UUID],
     bypass_cache: bool = False,
-) -> list[GradeViewItem]:
+) -> list[QGetAttemptGradeViewV4Item]:
     """Internal function for fetching grades data."""
     from app.sql.types import GetSimulationGradesViewSqlParams
 
@@ -102,27 +87,12 @@ async def get_attempt_grade_internal(
     if not bypass_cache:
         cached = await get_cached(cache_key_val)
         if cached:
-            return [GradeViewItem.model_validate(item) for item in cached["items"]]
+            return [QGetAttemptGradeViewV4Item.model_validate(item) for item in cached["items"]]
 
     params = GetSimulationGradesViewSqlParams(chat_ids_filter=chat_ids)
     result = await execute_sql_typed(conn, VIEW_SQL_PATH, params=params)
 
-    items: list[GradeViewItem] = []
-    if result and result.items:
-        for item in result.items:
-            items.append(
-                GradeViewItem(
-                    grade_id=item.grade_id,
-                    chat_id=item.chat_id,
-                    score=float(item.score) if item.score is not None else None,
-                    passed=item.passed,
-                    time_taken=item.time_taken,
-                    total_points=item.total_points,
-                    pass_points=item.pass_points,
-                    rubric_id=item.rubric_id,
-                    created_at=item.created_at,
-                )
-            )
+    items: list[QGetAttemptGradeViewV4Item] = list(result.items) if result and result.items else []
 
     await set_cached(
         cache_key_val,

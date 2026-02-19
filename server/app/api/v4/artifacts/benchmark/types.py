@@ -7,8 +7,8 @@ from pydantic import BaseModel, Field
 
 from app.api.v4.artifacts.types import FilterOption
 from app.api.v4.entries.runs.search import GetRunListViewResponse
-from app.api.v4.entries.tests.get import BenchmarkTestViewItem
 from app.sql.types import (
+    QGetTestViewV4Item,
     QGetAgentsV4Item,
     QGetDepartmentsV4Item,
     QGetInstructionsV4Item,
@@ -106,7 +106,7 @@ class BenchmarkRubricStandardGroupItem(BaseModel):
 class BenchmarkResponse(BaseModel):
     """Response with benchmark data."""
 
-    tests: list[BenchmarkTestViewItem] = Field(default_factory=list)
+    tests: list[QGetTestViewV4Item] = Field(default_factory=list)
     total_count: int = 0
     evals: list[BenchmarkEvalItem] = Field(default_factory=list)
     departments: list[BenchmarkDepartmentItem] = Field(default_factory=list)

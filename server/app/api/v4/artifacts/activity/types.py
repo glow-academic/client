@@ -5,12 +5,14 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-from app.api.v4.entries.activity.get import ActivityViewItem
-from app.api.v4.entries.audits.get import AuditViewItem
-from app.api.v4.entries.grants.get import GrantViewItem
-from app.api.v4.entries.logins.get import LoginViewItem
-from app.api.v4.entries.problems.get import ProblemViewItem
-from app.api.v4.entries.sessions.get import SessionViewItem
+from app.sql.types import (
+    QGetActivityListViewV4Item,
+    QGetAuditListViewV4Item,
+    QGetGrantListViewV4Item,
+    QGetLoginListViewV4Item,
+    QGetProblemListViewV4Item,
+    QGetSessionListViewV4Item,
+)
 
 
 class ActivityRequest(BaseModel):
@@ -28,12 +30,12 @@ class ActivityRequest(BaseModel):
 class ActivityViews(BaseModel):
     """Activity view data."""
 
-    sessions: list[SessionViewItem] = Field(default_factory=list)
-    activity: list[ActivityViewItem] = Field(default_factory=list)
-    logins: list[LoginViewItem] = Field(default_factory=list)
-    audits: list[AuditViewItem] = Field(default_factory=list)
-    problems: list[ProblemViewItem] = Field(default_factory=list)
-    grants: list[GrantViewItem] = Field(default_factory=list)
+    sessions: list[QGetSessionListViewV4Item] = Field(default_factory=list)
+    activity: list[QGetActivityListViewV4Item] = Field(default_factory=list)
+    logins: list[QGetLoginListViewV4Item] = Field(default_factory=list)
+    audits: list[QGetAuditListViewV4Item] = Field(default_factory=list)
+    problems: list[QGetProblemListViewV4Item] = Field(default_factory=list)
+    grants: list[QGetGrantListViewV4Item] = Field(default_factory=list)
 
 
 class ActivityResources(BaseModel):
@@ -70,7 +72,7 @@ class ActivityResponse(BaseModel):
     chart_data: list[ActivityChartPoint] = Field(default_factory=list)
     available_events: list[ActivityAvailableEvent] = Field(default_factory=list)
     # Problems
-    problems: list[ProblemViewItem] = Field(default_factory=list)
+    problems: list[QGetProblemListViewV4Item] = Field(default_factory=list)
     # Keep views/resources for any other consumers
     views: ActivityViews = Field(default_factory=ActivityViews)
     resources: ActivityResources = Field(default_factory=ActivityResources)

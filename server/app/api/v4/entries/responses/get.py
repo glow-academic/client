@@ -1,12 +1,10 @@
 """Responses entry GET endpoint."""
 
-from datetime import datetime
 from typing import Annotated, cast
 from uuid import UUID
 
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
 
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
@@ -15,6 +13,7 @@ from app.sql.types import (
     GetResponsesEntriesApiResponse,
     GetResponsesEntriesSqlParams,
     GetResponsesEntriesSqlRow,
+    QGetSimulationResponsesViewV4Item,
     load_sql_query,
 )
 from app.utils.cache.cache_key import cache_key
@@ -28,21 +27,11 @@ VIEW_SQL_PATH = "app/sql/v4/queries/views/simulation/responses/get_simulation_re
 router = APIRouter()
 
 
-class ResponseViewItem(BaseModel):
-    """A single responses view item."""
-
-    response_id: UUID
-    chat_id: UUID | None = None
-    question_id: UUID | None = None
-    option_id: UUID | None = None
-    created_at: datetime | None = None
-
-
 async def get_simulation_responses_internal(
     conn: asyncpg.Connection,
     chat_ids: list[UUID],
     bypass_cache: bool = False,
-) -> list[ResponseViewItem]:
+) -> list[QGetSimulationResponsesViewV4Item]:
     """Internal function for fetching responses data."""
     from app.sql.types import GetSimulationResponsesViewSqlParams
 
@@ -56,23 +45,12 @@ async def get_simulation_responses_internal(
     if not bypass_cache:
         cached = await get_cached(cache_key_val)
         if cached:
-            return [ResponseViewItem.model_validate(item) for item in cached["items"]]
+            return [QGetSimulationResponsesViewV4Item.model_validate(item) for item in cached["items"]]
 
     params = GetSimulationResponsesViewSqlParams(chat_ids_filter=chat_ids)
     result = await execute_sql_typed(conn, VIEW_SQL_PATH, params=params)
 
-    items: list[ResponseViewItem] = []
-    if result and result.items:
-        for item in result.items:
-            items.append(
-                ResponseViewItem(
-                    response_id=item.response_id,
-                    chat_id=item.chat_id,
-                    question_id=item.question_id,
-                    option_id=item.option_id,
-                    created_at=item.created_at,
-                )
-            )
+    items: list[QGetSimulationResponsesViewV4Item] = list(result.items) if result and result.items else []
 
     await set_cached(
         cache_key_val,

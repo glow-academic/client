@@ -6,15 +6,16 @@ from uuid import UUID
 
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel, Field
 
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
 from app.sql.types import (
+    GetBenchmarkTestsViewSqlRow,
     GetTestsEntriesApiRequest,
     GetTestsEntriesApiResponse,
     GetTestsEntriesSqlParams,
     GetTestsEntriesSqlRow,
+    QGetTestViewV4Item,
     load_sql_query,
 )
 from app.utils.cache.cache_key import cache_key
@@ -26,25 +27,6 @@ SQL_PATH = "app/sql/v4/queries/entries/tests/get_tests_entries_complete.sql"
 VIEW_SQL_PATH = "app/sql/v4/queries/views/benchmark/tests/get_test_view_complete.sql"
 
 router = APIRouter()
-
-
-class BenchmarkTestViewItem(BaseModel):
-    """Single benchmark test row from test_mv."""
-
-    test_id: UUID
-    eval_id: UUID | None = None
-    profile_id: UUID | None = None
-    department_ids: list[UUID] = Field(default_factory=list)
-    infinite_mode: bool = False
-    archived: bool = False
-    created_at: datetime | None = None
-
-
-class GetBenchmarkTestsResponse(BaseModel):
-    """Response for benchmark tests view."""
-
-    items: list[BenchmarkTestViewItem] = Field(default_factory=list)
-    total_count: int = 0
 
 
 async def get_tests_entries_internal(
@@ -100,7 +82,7 @@ async def get_test_internal(
     page_limit: int = 50,
     page_offset: int = 0,
     bypass_cache: bool = False,
-) -> GetBenchmarkTestsResponse:
+) -> GetBenchmarkTestsViewSqlRow:
     """Internal function for reading benchmark tests rows."""
     from app.sql.types import GetBenchmarkTestsViewSqlParams
 
@@ -128,7 +110,7 @@ async def get_test_internal(
     if not bypass_cache:
         cached = await get_cached(cache_key_val)
         if cached:
-            return GetBenchmarkTestsResponse.model_validate(cached)
+            return GetBenchmarkTestsViewSqlRow.model_validate(cached)
 
     params = GetBenchmarkTestsViewSqlParams(
         test_ids=normalized_test_ids or None,
@@ -147,26 +129,10 @@ async def get_test_internal(
 
     result = await execute_sql_typed(conn, VIEW_SQL_PATH, params=params)
 
-    items: list[BenchmarkTestViewItem] = []
-    if result and result.items:
-        for item in result.items:
-            items.append(
-                BenchmarkTestViewItem(
-                    test_id=item.test_id,
-                    eval_id=item.eval_id,
-                    profile_id=item.profile_id,
-                    department_ids=list(item.department_ids)
-                    if item.department_ids
-                    else [],
-                    infinite_mode=item.infinite_mode or False,
-                    archived=item.archived or False,
-                    created_at=item.created_at,
-                )
-            )
-
+    items: list[QGetTestViewV4Item] = list(result.items) if result and result.items else []
     total_count = result.total_count if result else 0
 
-    response = GetBenchmarkTestsResponse(items=items, total_count=total_count or 0)
+    response = GetBenchmarkTestsViewSqlRow(items=items, total_count=total_count or 0)
 
     await set_cached(
         cache_key_val,

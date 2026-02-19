@@ -5,11 +5,11 @@ from uuid import UUID
 
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel, Field
 
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
 from app.sql.types import (
+    GetMessageListViewSqlRow,
     SearchMessagesEntriesApiRequest,
     SearchMessagesEntriesApiResponse,
     SearchMessagesEntriesSqlParams,
@@ -25,31 +25,6 @@ SEARCH_SQL_PATH = "app/sql/v4/queries/entries/messages/search_messages_entries_c
 LIST_SQL_PATH = "app/sql/v4/queries/views/message/list/get_message_list_view_complete.sql"
 
 router = APIRouter()
-
-
-# ---------------------------------------------------------------------------
-# Types (merged from list.py)
-# ---------------------------------------------------------------------------
-
-
-class MessageListViewItem(BaseModel):
-    """Single message from the message list."""
-
-    message_id: UUID
-    run_id: UUID | None = None
-    role: str | None = None
-    message_created_at: str | None = None
-    contents: list[str] = Field(default_factory=list)
-    call_ids: list[UUID] = Field(default_factory=list)
-
-
-class GetMessageListViewResponse(BaseModel):
-    """Response containing message list data."""
-
-    items: list[MessageListViewItem] = Field(
-        default_factory=list, description="Message data items"
-    )
-    total_count: int = Field(default=0, description="Total count before pagination")
 
 
 # ---------------------------------------------------------------------------
@@ -159,7 +134,7 @@ async def get_message_list_entries_internal(
     page_limit: int = 10000,
     page_offset: int = 0,
     bypass_cache: bool = False,
-) -> GetMessageListViewResponse:
+) -> GetMessageListViewSqlRow:
     """Internal function for fetching message data from messages_mv."""
     from app.sql.types import GetMessageListViewSqlParams
 
@@ -176,7 +151,7 @@ async def get_message_list_entries_internal(
     if not bypass_cache:
         cached = await get_cached(cache_key_val)
         if cached:
-            return GetMessageListViewResponse.model_validate(cached)
+            return GetMessageListViewSqlRow.model_validate(cached)
 
     params = GetMessageListViewSqlParams(
         run_id_filter=run_id_filter,
@@ -187,22 +162,8 @@ async def get_message_list_entries_internal(
 
     result = await execute_sql_typed(conn, LIST_SQL_PATH, params=params)
 
-    items: list[MessageListViewItem] = []
-    if result and result.items:
-        for item in result.items:
-            items.append(
-                MessageListViewItem(
-                    message_id=item.message_id,
-                    run_id=item.run_id,
-                    role=item.role,
-                    message_created_at=item.message_created_at,
-                    contents=list(item.contents) if item.contents else [],
-                    call_ids=list(item.call_ids) if item.call_ids else [],
-                )
-            )
-
-    response = GetMessageListViewResponse(
-        items=items,
+    response = GetMessageListViewSqlRow(
+        items=result.items if result else None,
         total_count=result.total_count or 0 if result else 0,
     )
 

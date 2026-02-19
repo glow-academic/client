@@ -1,12 +1,10 @@
 """Attempt Content entry GET endpoint."""
 
-from datetime import datetime
 from typing import Annotated, cast
 from uuid import UUID
 
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
 
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
@@ -15,6 +13,7 @@ from app.sql.types import (
     GetAttemptContentEntriesApiResponse,
     GetAttemptContentEntriesSqlParams,
     GetAttemptContentEntriesSqlRow,
+    QGetSimulationContentsViewV4Item,
     load_sql_query,
 )
 from app.utils.cache.cache_key import cache_key
@@ -28,17 +27,6 @@ VIEW_SQL_PATH = (
 )
 
 router = APIRouter()
-
-
-class ContentViewItem(BaseModel):
-    """A single contents view item."""
-
-    content_id: UUID
-    message_id: UUID | None = None
-    content: str | None = None
-    persona_id: UUID | None = None
-    idx: int | None = None
-    created_at: datetime | None = None
 
 
 async def get_attempt_content_entries_internal(
@@ -83,7 +71,7 @@ async def get_attempt_content_internal(
     conn: asyncpg.Connection,
     message_ids: list[UUID],
     bypass_cache: bool = False,
-) -> list[ContentViewItem]:
+) -> list[QGetSimulationContentsViewV4Item]:
     """Internal function for fetching contents data."""
     from app.sql.types import GetSimulationContentsViewSqlParams
 
@@ -97,24 +85,12 @@ async def get_attempt_content_internal(
     if not bypass_cache:
         cached = await get_cached(cache_key_val)
         if cached:
-            return [ContentViewItem.model_validate(item) for item in cached["items"]]
+            return [QGetSimulationContentsViewV4Item.model_validate(item) for item in cached["items"]]
 
     params = GetSimulationContentsViewSqlParams(message_ids_filter=message_ids)
     result = await execute_sql_typed(conn, VIEW_SQL_PATH, params=params)
 
-    items: list[ContentViewItem] = []
-    if result and result.items:
-        for item in result.items:
-            items.append(
-                ContentViewItem(
-                    content_id=item.content_id,
-                    message_id=item.message_id,
-                    content=item.content,
-                    persona_id=item.persona_entry_id,
-                    idx=item.idx,
-                    created_at=item.created_at,
-                )
-            )
+    items: list[QGetSimulationContentsViewV4Item] = list(result.items) if result and result.items else []
 
     await set_cached(
         cache_key_val,

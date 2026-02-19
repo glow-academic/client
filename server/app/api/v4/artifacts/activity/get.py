@@ -16,29 +16,19 @@ from app.api.v4.artifacts.activity.types import (
     ActivityResponse,
     ActivityViews,
 )
-from app.api.v4.entries.activity.get import (
-    GetActivityListViewResponse,
-    get_activity_list_view_internal,
-)
-from app.api.v4.entries.audits.get import (
-    GetAuditListViewResponse,
-    get_audit_list_view_internal,
-)
-from app.api.v4.entries.grants.get import (
-    GetGrantListViewResponse,
-    get_grant_list_view_internal,
-)
-from app.api.v4.entries.logins.get import (
-    GetLoginListViewResponse,
-    get_login_list_view_internal,
-)
-from app.api.v4.entries.problems.get import (
-    GetProblemListViewResponse,
-    get_problem_list_view_internal,
-)
-from app.api.v4.entries.sessions.get import (
-    GetSessionListViewResponse,
-    get_session_list_view_internal,
+from app.api.v4.entries.activity.get import get_activity_list_view_internal
+from app.api.v4.entries.audits.get import get_audit_list_view_internal
+from app.api.v4.entries.grants.get import get_grant_list_view_internal
+from app.api.v4.entries.logins.get import get_login_list_view_internal
+from app.api.v4.entries.problems.get import get_problem_list_view_internal
+from app.api.v4.entries.sessions.get import get_session_list_view_internal
+from app.sql.types import (
+    GetActivityListViewSqlRow,
+    GetAuditListViewSqlRow,
+    GetGrantListViewSqlRow,
+    GetLoginListViewSqlRow,
+    GetProblemListViewSqlRow,
+    GetSessionListViewSqlRow,
 )
 from app.infra.v4.activity.audit import audit_activity
 from app.infra.v4.error.handle_route_error import handle_route_error
@@ -110,7 +100,7 @@ async def get_activity(
                     roles=request.roles or None,
                 )
 
-        async def fetch_activity() -> GetActivityListViewResponse:
+        async def fetch_activity() -> GetActivityListViewSqlRow:
             async with pool.acquire() as c:
                 return await get_activity_list_view_internal(
                     conn=c,
@@ -120,7 +110,7 @@ async def get_activity(
                     bypass_cache=bypass_cache,
                 )
 
-        async def fetch_sessions() -> GetSessionListViewResponse:
+        async def fetch_sessions() -> GetSessionListViewSqlRow:
             async with pool.acquire() as c:
                 return await get_session_list_view_internal(
                     conn=c,
@@ -133,7 +123,7 @@ async def get_activity(
                     bypass_cache=bypass_cache,
                 )
 
-        async def fetch_logins() -> GetLoginListViewResponse:
+        async def fetch_logins() -> GetLoginListViewSqlRow:
             async with pool.acquire() as c:
                 return await get_login_list_view_internal(
                     conn=c,
@@ -143,7 +133,7 @@ async def get_activity(
                     bypass_cache=bypass_cache,
                 )
 
-        async def fetch_audits() -> GetAuditListViewResponse:
+        async def fetch_audits() -> GetAuditListViewSqlRow:
             async with pool.acquire() as c:
                 return await get_audit_list_view_internal(
                     conn=c,
@@ -152,7 +142,7 @@ async def get_activity(
                     bypass_cache=bypass_cache,
                 )
 
-        async def fetch_problems() -> GetProblemListViewResponse:
+        async def fetch_problems() -> GetProblemListViewSqlRow:
             async with pool.acquire() as c:
                 return await get_problem_list_view_internal(
                     conn=c,
@@ -162,7 +152,7 @@ async def get_activity(
                     bypass_cache=bypass_cache,
                 )
 
-        async def fetch_grants() -> GetGrantListViewResponse:
+        async def fetch_grants() -> GetGrantListViewSqlRow:
             async with pool.acquire() as c:
                 return await get_grant_list_view_internal(
                     conn=c, bypass_cache=bypass_cache

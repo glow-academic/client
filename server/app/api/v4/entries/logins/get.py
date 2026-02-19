@@ -6,11 +6,11 @@ from uuid import UUID
 
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel, Field
 
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
 from app.sql.types import (
+    GetLoginListViewSqlRow,
     GetLoginsEntriesApiRequest,
     GetLoginsEntriesApiResponse,
     GetLoginsEntriesSqlParams,
@@ -28,27 +28,6 @@ VIEW_SQL_PATH = "app/sql/v4/queries/views/login/list/get_login_list_view_complet
 router = APIRouter()
 
 
-class LoginViewItem(BaseModel):
-    """Single item from the logins list view."""
-
-    login_id: UUID
-    profile_id: UUID | None = None
-    session_id: UUID | None = None
-    last_login: datetime | None = None
-    login_created_at: datetime | None = None
-    active: bool | None = None
-    generated: bool | None = None
-    mcp: bool | None = None
-    call_id: UUID | None = None
-
-
-class GetLoginListViewResponse(BaseModel):
-    """Response containing logins list data."""
-
-    items: list[LoginViewItem] = Field(default_factory=list)
-    total_count: int = Field(default=0)
-
-
 async def get_login_list_view_internal(
     conn: asyncpg.Connection,
     profile_id_filter: UUID | None = None,
@@ -59,7 +38,7 @@ async def get_login_list_view_internal(
     page_limit: int = 50,
     page_offset: int = 0,
     bypass_cache: bool = False,
-) -> GetLoginListViewResponse:
+) -> GetLoginListViewSqlRow:
     """Internal function for fetching logins data from MV."""
     from app.sql.types import GetLoginListViewSqlParams
 
@@ -79,7 +58,7 @@ async def get_login_list_view_internal(
     if not bypass_cache:
         cached = await get_cached(cache_key_val)
         if cached:
-            return GetLoginListViewResponse.model_validate(cached)
+            return GetLoginListViewSqlRow.model_validate(cached)
 
     params = GetLoginListViewSqlParams(
         profile_id_filter=profile_id_filter,
@@ -93,25 +72,8 @@ async def get_login_list_view_internal(
 
     result = await execute_sql_typed(conn, VIEW_SQL_PATH, params=params)
 
-    items: list[LoginViewItem] = []
-    if result and result.items:
-        for item in result.items:
-            items.append(
-                LoginViewItem(
-                    login_id=item.login_id,
-                    profile_id=item.profile_id,
-                    session_id=item.session_id,
-                    last_login=item.last_login,
-                    login_created_at=item.login_created_at,
-                    active=item.active,
-                    generated=item.generated,
-                    mcp=item.mcp,
-                    call_id=item.call_id,
-                )
-            )
-
-    response = GetLoginListViewResponse(
-        items=items,
+    response = GetLoginListViewSqlRow(
+        items=list(result.items) if result and result.items else [],
         total_count=result.total_count or 0 if result else 0,
     )
 

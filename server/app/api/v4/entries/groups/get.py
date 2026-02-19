@@ -6,11 +6,11 @@ from uuid import UUID
 
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel, Field
 
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
 from app.sql.types import (
+    GetGroupListViewSqlRow,
     GetGroupsEntriesApiRequest,
     GetGroupsEntriesApiResponse,
     GetGroupsEntriesSqlParams,
@@ -26,24 +26,6 @@ SQL_PATH = "app/sql/v4/queries/entries/groups/get_groups_entries_complete.sql"
 VIEW_SQL_PATH = "app/sql/v4/queries/views/group/list/get_group_list_view_complete.sql"
 
 router = APIRouter()
-
-
-class GroupViewItem(BaseModel):
-    """Single item from the groups list view."""
-
-    group_id: UUID
-    session_id: UUID | None = None
-    group_created_at: datetime | None = None
-    trace_id: str | None = None
-    group_name: str | None = None
-    active: bool = False
-
-
-class GetGroupListViewResponse(BaseModel):
-    """Response containing groups list data."""
-
-    items: list[GroupViewItem] = Field(default_factory=list)
-    total_count: int = Field(default=0)
 
 
 async def get_groups_entries_internal(
@@ -96,7 +78,7 @@ async def get_group_list_view_internal(
     page_limit: int = 50,
     page_offset: int = 0,
     bypass_cache: bool = False,
-) -> GetGroupListViewResponse:
+) -> GetGroupListViewSqlRow:
     """Internal function for fetching groups data from MV."""
     from app.sql.types import GetGroupListViewSqlParams
 
@@ -118,7 +100,7 @@ async def get_group_list_view_internal(
     if not bypass_cache:
         cached = await get_cached(cache_key_val)
         if cached:
-            return GetGroupListViewResponse.model_validate(cached)
+            return GetGroupListViewSqlRow.model_validate(cached)
 
     params = GetGroupListViewSqlParams(
         group_ids=group_ids,
@@ -134,22 +116,8 @@ async def get_group_list_view_internal(
 
     result = await execute_sql_typed(conn, VIEW_SQL_PATH, params=params)
 
-    items: list[GroupViewItem] = []
-    if result and result.items:
-        for item in result.items:
-            items.append(
-                GroupViewItem(
-                    group_id=item.group_id,
-                    session_id=item.session_id,
-                    group_created_at=item.group_created_at,
-                    trace_id=item.trace_id,
-                    group_name=item.group_name,
-                    active=item.active or False,
-                )
-            )
-
-    response = GetGroupListViewResponse(
-        items=items,
+    response = GetGroupListViewSqlRow(
+        items=list(result.items) if result and result.items else [],
         total_count=result.total_count or 0 if result else 0,
     )
 

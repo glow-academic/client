@@ -26,10 +26,8 @@ from app.api.v4.artifacts.training.types import (
 )
 from app.api.v4.auth.profile import get_auth_profile_internal
 from app.api.v4.entries.chat.get import ChatItem, GetChatsResponse, get_chats_internal
-from app.api.v4.entries.practice.get import (
-    GetPracticeContextViewResponse,
-    get_practice_context_view_internal,
-)
+from app.api.v4.entries.practice.get import get_practice_context_view_internal
+from app.sql.types import GetPracticeContextViewSqlRow
 from app.api.v4.resources.cohorts.get import get_cohorts_internal
 from app.api.v4.resources.personas.get import get_personas_internal
 from app.api.v4.resources.rubrics.get import get_rubrics_internal
@@ -109,7 +107,7 @@ async def get_practice_internal(
         )
 
     # --- Phase 1: Three parallel fetches ---
-    async def fetch_context() -> GetPracticeContextViewResponse:
+    async def fetch_context() -> GetPracticeContextViewSqlRow:
         async with pool.acquire() as c:
             return await get_practice_context_view_internal(
                 conn=c,

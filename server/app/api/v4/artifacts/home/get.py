@@ -29,10 +29,8 @@ from app.api.v4.artifacts.training.types import (
 )
 from app.api.v4.auth.profile import get_auth_profile_internal
 from app.api.v4.entries.chat.get import ChatItem, GetChatsResponse, get_chats_internal
-from app.api.v4.entries.home.get import (
-    GetHomeContextViewResponse,
-    get_home_context_view_internal,
-)
+from app.api.v4.entries.home.get import get_home_context_view_internal
+from app.sql.types import GetHomeContextViewSqlRow
 from app.api.v4.resources.cohorts.get import get_cohorts_internal
 from app.api.v4.resources.personas.get import get_personas_internal
 from app.api.v4.resources.rubrics.get import get_rubrics_internal
@@ -185,7 +183,7 @@ async def get_home_internal(
         )
 
     # --- Phase 1: Three parallel fetches ---
-    async def fetch_context() -> GetHomeContextViewResponse:
+    async def fetch_context() -> GetHomeContextViewSqlRow:
         async with pool.acquire() as c:
             return await get_home_context_view_internal(
                 conn=c,

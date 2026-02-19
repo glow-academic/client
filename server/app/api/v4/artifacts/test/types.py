@@ -14,9 +14,9 @@ from uuid import UUID
 from pydantic import BaseModel, Field
 
 from app.api.v4.entries.runs.search import GetRunListViewResponse
-from app.api.v4.entries.test_invocation.get import BenchmarkInvocationViewItem
-from app.api.v4.entries.tests.get import BenchmarkTestViewItem
 from app.sql.types import (
+    QGetTestInvocationViewV4Item,
+    QGetTestViewV4Item,
     QGetAgentsV4Item,
     QGetModelsV4Item,
     QGetProfilesV4Item,
@@ -61,8 +61,8 @@ class TestStatusSummary(BaseModel):
 class TestViews(BaseModel):
     """View payloads grouped by view type."""
 
-    test: list[BenchmarkTestViewItem] | None = None
-    test_invocation: list[BenchmarkInvocationViewItem] | None = None
+    test: list[QGetTestViewV4Item] | None = None
+    test_invocation: list[QGetTestInvocationViewV4Item] | None = None
     runs: GetRunListViewResponse | None = None
 
 
@@ -77,8 +77,8 @@ class TestResources(BaseModel):
 class GetTestArtifactResponse(BaseModel):
     """Response for benchmark test artifact detail."""
 
-    test: BenchmarkTestViewItem | None = None
-    invocations: list[BenchmarkInvocationViewItem] = Field(default_factory=list)
+    test: QGetTestViewV4Item | None = None
+    invocations: list[QGetTestInvocationViewV4Item] = Field(default_factory=list)
     status: str = "pending"
 
     # Hydrated eval info
@@ -113,8 +113,8 @@ class TestInternalData:
     """
 
     # Raw MV results
-    test: BenchmarkTestViewItem | None = None
-    invocations: list[BenchmarkInvocationViewItem] = field(default_factory=list)
+    test: QGetTestViewV4Item | None = None
+    invocations: list[QGetTestInvocationViewV4Item] = field(default_factory=list)
 
     # Config chain
     group_id: UUID | None = None

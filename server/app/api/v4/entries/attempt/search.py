@@ -6,11 +6,12 @@ from uuid import UUID
 
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel, Field
 
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
 from app.sql.types import (
+    GetAttemptListViewSqlRow,
+    QGetAttemptListViewV4Option,
     SearchAttemptEntriesApiRequest,
     SearchAttemptEntriesApiResponse,
     SearchAttemptEntriesSqlParams,
@@ -25,52 +26,6 @@ from app.utils.sql_helper import execute_sql_typed
 SQL_PATH = "app/sql/v4/queries/entries/attempt/search_attempt_entries_complete.sql"
 
 router = APIRouter()
-
-
-# ---------------------------------------------------------------------------
-# Types (inlined from types.py)
-# ---------------------------------------------------------------------------
-
-
-class AttemptFilterOption(BaseModel):
-    """Filter option for dropdowns."""
-
-    value: str
-    label: str
-    count: int = 0
-
-
-class AttemptViewItem(BaseModel):
-    """Single attempt from the attempt list."""
-
-    attempt_id: UUID
-    simulation_id: UUID | None = None
-    profile_id: UUID | None = None
-    cohort_id: UUID | None = None
-    department_id: UUID | None = None
-    practice: bool = False
-    infinite_mode: bool = False
-    created_at: datetime | None = None
-    is_archived: bool = False
-    scenario_ids: list[UUID] | None = None
-
-
-class GetAttemptsResponse(BaseModel):
-    """Response containing attempt data."""
-
-    items: list[AttemptViewItem] = Field(
-        default_factory=list, description="Attempt data items"
-    )
-    total_count: int = Field(default=0, description="Total count before pagination")
-    simulation_options: list[AttemptFilterOption] | None = Field(
-        default=None, description="Available simulation filter options"
-    )
-    scenario_options: list[AttemptFilterOption] | None = Field(
-        default=None, description="Available scenario filter options"
-    )
-    profile_options: list[AttemptFilterOption] | None = Field(
-        default=None, description="Available profile filter options"
-    )
 
 
 # ---------------------------------------------------------------------------
@@ -165,7 +120,7 @@ async def get_attempt_list_internal(
     page_limit: int = 50,
     page_offset: int = 0,
     bypass_cache: bool = False,
-) -> GetAttemptsResponse:
+) -> GetAttemptListViewSqlRow:
     """Internal function for fetching attempt data."""
     from app.sql.types import GetAttemptListViewSqlParams
 
@@ -199,7 +154,7 @@ async def get_attempt_list_internal(
     if not bypass_cache:
         cached = await get_cached(cache_key_val)
         if cached:
-            return GetAttemptsResponse.model_validate(cached)
+            return GetAttemptListViewSqlRow.model_validate(cached)
 
     params = GetAttemptListViewSqlParams(
         attempt_ids=attempt_ids,
@@ -221,62 +176,21 @@ async def get_attempt_list_internal(
 
     result = await execute_sql_typed(conn, LIST_SQL_PATH, params=params)
 
-    items: list[AttemptViewItem] = []
-    if result and result.items:
-        for item in result.items:
-            items.append(
-                AttemptViewItem(
-                    attempt_id=item.attempt_id,
-                    simulation_id=item.simulation_id,
-                    profile_id=item.profile_id,
-                    cohort_id=item.cohort_id,
-                    department_id=item.department_id,
-                    practice=item.practice or False,
-                    infinite_mode=item.infinite_mode or False,
-                    created_at=item.created_at,
-                    is_archived=item.is_archived or False,
-                    scenario_ids=list(item.scenario_ids) if item.scenario_ids else None,
-                )
-            )
-
-    simulation_options: list[AttemptFilterOption] | None = None
+    # Filter out options with empty values
+    simulation_options: list[QGetAttemptListViewV4Option] | None = None
     if result and result.simulation_options:
-        simulation_options = [
-            AttemptFilterOption(
-                value=opt.value or "",
-                label=opt.label or "",
-                count=opt.count or 0,
-            )
-            for opt in result.simulation_options
-            if opt.value
-        ]
+        simulation_options = [opt for opt in result.simulation_options if opt.value]
 
-    scenario_options: list[AttemptFilterOption] | None = None
+    scenario_options: list[QGetAttemptListViewV4Option] | None = None
     if result and result.scenario_options:
-        scenario_options = [
-            AttemptFilterOption(
-                value=opt.value or "",
-                label=opt.label or "",
-                count=opt.count or 0,
-            )
-            for opt in result.scenario_options
-            if opt.value
-        ]
+        scenario_options = [opt for opt in result.scenario_options if opt.value]
 
-    profile_options: list[AttemptFilterOption] | None = None
+    profile_options: list[QGetAttemptListViewV4Option] | None = None
     if result and result.profile_options:
-        profile_options = [
-            AttemptFilterOption(
-                value=opt.value or "",
-                label=opt.label or "",
-                count=opt.count or 0,
-            )
-            for opt in result.profile_options
-            if opt.value
-        ]
+        profile_options = [opt for opt in result.profile_options if opt.value]
 
-    response = GetAttemptsResponse(
-        items=items,
+    response = GetAttemptListViewSqlRow(
+        items=result.items if result else None,
         total_count=result.total_count or 0 if result else 0,
         simulation_options=simulation_options,
         scenario_options=scenario_options,

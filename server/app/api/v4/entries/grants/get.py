@@ -1,16 +1,15 @@
 """Grants entry GET endpoint."""
 
-from datetime import datetime
 from typing import Annotated, cast
 from uuid import UUID
 
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel, Field
 
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
 from app.sql.types import (
+    GetGrantListViewSqlRow,
     GetGrantsEntriesApiRequest,
     GetGrantsEntriesApiResponse,
     GetGrantsEntriesSqlParams,
@@ -26,28 +25,6 @@ SQL_PATH = "app/sql/v4/queries/entries/grants/get_grants_entries_complete.sql"
 VIEW_SQL_PATH = "app/sql/v4/queries/views/grant/list/get_grant_list_view_complete.sql"
 
 router = APIRouter()
-
-
-class GrantViewItem(BaseModel):
-    """Single item from the grants list view."""
-
-    grant_id: UUID
-    grantor_id: UUID | None = None
-    emulation_id: UUID | None = None
-    emulated_id: UUID | None = None
-    grant_session_id: UUID | None = None
-    emulation_session_id: UUID | None = None
-    expires_at: datetime | None = None
-    used_at: datetime | None = None
-    revoked_at: datetime | None = None
-    created_at: datetime | None = None
-
-
-class GetGrantListViewResponse(BaseModel):
-    """Response containing grants list data."""
-
-    items: list[GrantViewItem] = Field(default_factory=list)
-    total_count: int = Field(default=0)
 
 
 async def get_grants_entries_internal(
@@ -95,7 +72,7 @@ async def get_grant_list_view_internal(
     page_limit: int = 10000,
     page_offset: int = 0,
     bypass_cache: bool = False,
-) -> GetGrantListViewResponse:
+) -> GetGrantListViewSqlRow:
     """Internal function for fetching grants data from MV."""
     from app.sql.types import GetGrantListViewSqlParams
 
@@ -114,7 +91,7 @@ async def get_grant_list_view_internal(
     if not bypass_cache:
         cached = await get_cached(cache_key_val)
         if cached:
-            return GetGrantListViewResponse.model_validate(cached)
+            return GetGrantListViewSqlRow.model_validate(cached)
 
     params = GetGrantListViewSqlParams(
         grantor_id_filter=grantor_id_filter,
@@ -125,26 +102,8 @@ async def get_grant_list_view_internal(
 
     result = await execute_sql_typed(conn, VIEW_SQL_PATH, params=params)
 
-    items: list[GrantViewItem] = []
-    if result and result.items:
-        for item in result.items:
-            items.append(
-                GrantViewItem(
-                    grant_id=item.grant_id,
-                    grantor_id=item.grantor_id,
-                    emulation_id=item.emulation_id,
-                    emulated_id=item.emulated_id,
-                    grant_session_id=item.grant_session_id,
-                    emulation_session_id=item.emulation_session_id,
-                    expires_at=item.expires_at,
-                    used_at=item.used_at,
-                    revoked_at=item.revoked_at,
-                    created_at=item.created_at,
-                )
-            )
-
-    response = GetGrantListViewResponse(
-        items=items,
+    response = GetGrantListViewSqlRow(
+        items=list(result.items) if result and result.items else [],
         total_count=result.total_count or 0 if result else 0,
     )
 

@@ -1,12 +1,10 @@
 """Attempt Feedback entry GET endpoint."""
 
-from datetime import datetime
 from typing import Annotated, cast
 from uuid import UUID
 
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
 
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
@@ -15,6 +13,7 @@ from app.sql.types import (
     GetAttemptFeedbackEntriesApiResponse,
     GetAttemptFeedbackEntriesSqlParams,
     GetAttemptFeedbackEntriesSqlRow,
+    QGetSimulationFeedbacksViewV4Item,
     load_sql_query,
 )
 from app.utils.cache.cache_key import cache_key
@@ -26,17 +25,6 @@ SQL_PATH = "app/sql/v4/queries/entries/attempt_feedback/get_attempt_feedback_ent
 VIEW_SQL_PATH = "app/sql/v4/queries/views/simulation/feedbacks/get_simulation_feedbacks_view_complete.sql"
 
 router = APIRouter()
-
-
-class FeedbackViewItem(BaseModel):
-    """A single feedbacks view item."""
-
-    feedback_id: UUID
-    grade_id: UUID | None = None
-    standard_id: UUID | None = None
-    total: float | None = None
-    feedback: str | None = None
-    created_at: datetime | None = None
 
 
 async def get_attempt_feedback_entries_internal(
@@ -81,7 +69,7 @@ async def get_attempt_feedback_internal(
     conn: asyncpg.Connection,
     grade_ids: list[UUID],
     bypass_cache: bool = False,
-) -> list[FeedbackViewItem]:
+) -> list[QGetSimulationFeedbacksViewV4Item]:
     """Internal function for fetching feedbacks data."""
     from app.sql.types import GetSimulationFeedbacksViewSqlParams
 
@@ -95,24 +83,12 @@ async def get_attempt_feedback_internal(
     if not bypass_cache:
         cached = await get_cached(cache_key_val)
         if cached:
-            return [FeedbackViewItem.model_validate(item) for item in cached["items"]]
+            return [QGetSimulationFeedbacksViewV4Item.model_validate(item) for item in cached["items"]]
 
     params = GetSimulationFeedbacksViewSqlParams(grade_ids_filter=grade_ids)
     result = await execute_sql_typed(conn, VIEW_SQL_PATH, params=params)
 
-    items: list[FeedbackViewItem] = []
-    if result and result.items:
-        for item in result.items:
-            items.append(
-                FeedbackViewItem(
-                    feedback_id=item.feedback_id,
-                    grade_id=item.grade_id,
-                    standard_id=item.standard_id,
-                    total=float(item.total) if item.total is not None else None,
-                    feedback=item.feedback,
-                    created_at=item.created_at,
-                )
-            )
+    items: list[QGetSimulationFeedbacksViewV4Item] = list(result.items) if result and result.items else []
 
     await set_cached(
         cache_key_val,

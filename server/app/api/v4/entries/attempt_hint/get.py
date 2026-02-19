@@ -1,12 +1,10 @@
 """Attempt Hint entry GET endpoint."""
 
-from datetime import datetime
 from typing import Annotated, cast
 from uuid import UUID
 
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
 
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
@@ -15,6 +13,7 @@ from app.sql.types import (
     GetAttemptHintEntriesApiResponse,
     GetAttemptHintEntriesSqlParams,
     GetAttemptHintEntriesSqlRow,
+    QGetSimulationHintsViewV4Item,
     load_sql_query,
 )
 from app.utils.cache.cache_key import cache_key
@@ -30,16 +29,6 @@ VIEW_SQL_PATH = (
 )
 
 router = APIRouter()
-
-
-class HintViewItem(BaseModel):
-    """A single hints view item."""
-
-    hint_id: UUID
-    message_id: UUID | None = None
-    hint: str | None = None
-    idx: int | None = None
-    created_at: datetime | None = None
 
 
 async def get_attempt_hint_entries_internal(
@@ -84,7 +73,7 @@ async def get_attempt_hint_internal(
     conn: asyncpg.Connection,
     message_ids: list[UUID],
     bypass_cache: bool = False,
-) -> list[HintViewItem]:
+) -> list[QGetSimulationHintsViewV4Item]:
     """Internal function for fetching hints data."""
     from app.sql.types import GetSimulationHintsViewSqlParams
 
@@ -98,23 +87,12 @@ async def get_attempt_hint_internal(
     if not bypass_cache:
         cached = await get_cached(cache_key_val)
         if cached:
-            return [HintViewItem.model_validate(item) for item in cached["items"]]
+            return [QGetSimulationHintsViewV4Item.model_validate(item) for item in cached["items"]]
 
     params = GetSimulationHintsViewSqlParams(message_ids_filter=message_ids)
     result = await execute_sql_typed(conn, VIEW_SQL_PATH, params=params)
 
-    items: list[HintViewItem] = []
-    if result and result.items:
-        for item in result.items:
-            items.append(
-                HintViewItem(
-                    hint_id=item.hint_id,
-                    message_id=item.message_id,
-                    hint=item.hint,
-                    idx=item.idx,
-                    created_at=item.created_at,
-                )
-            )
+    items: list[QGetSimulationHintsViewV4Item] = list(result.items) if result and result.items else []
 
     await set_cached(
         cache_key_val,

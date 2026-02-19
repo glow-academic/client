@@ -15,7 +15,8 @@ from app.api.v4.artifacts.benchmark.types import (
     BenchmarkResponse,
 )
 from app.api.v4.artifacts.types import FilterOption
-from app.api.v4.entries.tests.get import BenchmarkTestViewItem, get_test_internal
+from app.api.v4.entries.tests.get import get_test_internal
+from app.sql.types import QGetTestViewV4Item
 from app.api.v4.resources.departments.get import get_departments_internal
 from app.api.v4.resources.evals.get import get_evals_internal
 from app.infra.v4.activity.audit import audit_activity
@@ -173,7 +174,7 @@ async def list_benchmark(
         ]
 
         # Build test items for response
-        tests: list[BenchmarkTestViewItem] = tests_result.items
+        tests: list[QGetTestViewV4Item] = tests_result.items
 
         response.headers["X-Cache-Tags"] = ",".join(tags)
         return BenchmarkResponse(

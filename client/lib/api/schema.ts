@@ -24740,7 +24740,7 @@ export interface components {
             /** Available Events */
             available_events?: components["schemas"]["ActivityAvailableEvent"][];
             /** Problems */
-            problems?: components["schemas"]["app__api__v4__entries__problems__get__ProblemViewItem"][];
+            problems?: components["schemas"]["QGetProblemListViewV4Item"][];
             views?: components["schemas"]["ActivityViews"];
             resources?: components["schemas"]["ActivityResources"];
             /**
@@ -24750,22 +24750,41 @@ export interface components {
             total_count: number;
         };
         /**
+         * ActivityViewItem
+         * @description Single activity from the activity list view.
+         */
+        ActivityViewItem: {
+            /**
+             * Activity Id
+             * Format: uuid
+             */
+            activity_id: string;
+            /** Profile Id */
+            profile_id?: string | null;
+            /** Session Id */
+            session_id?: string | null;
+            /** Last Active */
+            last_active?: string | null;
+            /** Created At */
+            created_at?: string | null;
+        };
+        /**
          * ActivityViews
          * @description Activity view data.
          */
         ActivityViews: {
             /** Sessions */
-            sessions?: components["schemas"]["app__api__v4__entries__sessions__get__SessionViewItem"][];
+            sessions?: components["schemas"]["QGetSessionListViewV4Item"][];
             /** Activity */
-            activity?: components["schemas"]["app__api__v4__entries__activity__get__ActivityViewItem"][];
+            activity?: components["schemas"]["QGetActivityListViewV4Item"][];
             /** Logins */
-            logins?: components["schemas"]["app__api__v4__entries__logins__get__LoginViewItem"][];
+            logins?: components["schemas"]["QGetLoginListViewV4Item"][];
             /** Audits */
-            audits?: components["schemas"]["app__api__v4__entries__audits__get__AuditViewItem"][];
+            audits?: components["schemas"]["QGetAuditListViewV4Item"][];
             /** Problems */
-            problems?: components["schemas"]["app__api__v4__entries__problems__get__ProblemViewItem"][];
+            problems?: components["schemas"]["QGetProblemListViewV4Item"][];
             /** Grants */
-            grants?: components["schemas"]["app__api__v4__entries__grants__get__GrantViewItem"][];
+            grants?: components["schemas"]["QGetGrantListViewV4Item"][];
         };
         /** AgentDepartmentSection */
         AgentDepartmentSection: {
@@ -26455,12 +26474,50 @@ export interface components {
             item_id: string;
         };
         /**
+         * AttemptViewItem
+         * @description Single attempt from the attempt list view.
+         */
+        AttemptViewItem: {
+            /**
+             * Attempt Id
+             * Format: uuid
+             */
+            attempt_id: string;
+            /** Simulation Id */
+            simulation_id?: string | null;
+            /** Profile Id */
+            profile_id?: string | null;
+            /** Cohort Id */
+            cohort_id?: string | null;
+            /** Department Id */
+            department_id?: string | null;
+            /**
+             * Practice
+             * @default false
+             */
+            practice: boolean;
+            /**
+             * Infinite Mode
+             * @default false
+             */
+            infinite_mode: boolean;
+            /** Created At */
+            created_at?: string | null;
+            /**
+             * Is Archived
+             * @default false
+             */
+            is_archived: boolean;
+            /** Scenario Ids */
+            scenario_ids?: string[] | null;
+        };
+        /**
          * AttemptViews
          * @description View payloads grouped by view type.
          */
         AttemptViews: {
             /** Attempt */
-            attempt?: components["schemas"]["app__api__v4__entries__attempt__search__AttemptViewItem"][] | null;
+            attempt?: components["schemas"]["QGetAttemptListViewV4Item"][] | null;
             /** Attempt Chat */
             attempt_chat?: components["schemas"]["ChatData"][] | null;
             /** Attempt Message */
@@ -26494,6 +26551,30 @@ export interface components {
             voice_id?: string | null;
             /** Created At */
             created_at?: string | null;
+        };
+        /**
+         * AuditViewItem
+         * @description Single audit from the audit list view.
+         */
+        AuditViewItem: {
+            /**
+             * Audit Id
+             * Format: uuid
+             */
+            audit_id: string;
+            /** Session Id */
+            session_id?: string | null;
+            /** Audit Created At */
+            audit_created_at?: string | null;
+            /** Message */
+            message?: string | null;
+            /** Endpoint */
+            endpoint?: string | null;
+            /**
+             * Error
+             * @default false
+             */
+            error: boolean;
         };
         /** AuthDescriptionSection */
         AuthDescriptionSection: {
@@ -27024,6 +27105,72 @@ export interface components {
             department_ids?: string[];
         };
         /**
+         * BenchmarkInvocationViewItem
+         * @description Single benchmark invocation row from test_invocation_mv.
+         *
+         *     Lean: entry attrs + resource IDs + grade scalars only. Feedbacks
+         *     fetched via simulation/test_feedback view.
+         */
+        BenchmarkInvocationViewItem: {
+            /**
+             * Invocation Id
+             * Format: uuid
+             */
+            invocation_id: string;
+            /**
+             * Test Id
+             * Format: uuid
+             */
+            test_id: string;
+            /** Group Id */
+            group_id?: string | null;
+            /** Suite Department Id */
+            suite_department_id?: string | null;
+            /** Created At */
+            created_at?: string | null;
+            /** Title */
+            title?: string | null;
+            /**
+             * Invocation Completed
+             * @default false
+             */
+            invocation_completed: boolean;
+            /** Grade Score */
+            grade_score?: number | null;
+            /** Grade Passed */
+            grade_passed?: boolean | null;
+            /** Grade Time Taken */
+            grade_time_taken?: number | null;
+            /** Rubric Id */
+            rubric_id?: string | null;
+            /** Grade Id */
+            grade_id?: string | null;
+            /** Invocation Run Ids */
+            invocation_run_ids?: string[];
+            /** Run Ids */
+            run_ids?: string[];
+            /** Group Ids */
+            group_ids?: string[];
+            /** Instruction Ids */
+            instruction_ids?: string[];
+            /** Tool Ids */
+            tool_ids?: string[];
+            /** Model Id */
+            model_id?: string | null;
+            /** Prompt Id */
+            prompt_id?: string | null;
+            /** Voice Id */
+            voice_id?: string | null;
+            /** Temperature Level Id */
+            temperature_level_id?: string | null;
+            /** Reasoning Level Id */
+            reasoning_level_id?: string | null;
+            /** Key Id */
+            key_id?: string | null;
+            /** Historical Run Ids */
+            historical_run_ids?: string[];
+        };
+        /**
          * BenchmarkRequest
          * @description Request for getting benchmark data.
          */
@@ -27041,7 +27188,7 @@ export interface components {
          */
         BenchmarkResponse: {
             /** Tests */
-            tests?: components["schemas"]["BenchmarkTestViewItem"][];
+            tests?: components["schemas"]["QGetTestViewV4Item"][];
             /**
              * Total Count
              * @default 0
@@ -33183,7 +33330,7 @@ export interface components {
              * Items
              * @description Activity data items
              */
-            items?: components["schemas"]["app__api__v4__views__activity__list__types__ActivityViewItem"][];
+            items?: components["schemas"]["ActivityViewItem"][];
             /**
              * Total Count
              * @description Total count before pagination
@@ -33706,7 +33853,7 @@ export interface components {
              * Items
              * @description Attempt data items
              */
-            items?: components["schemas"]["app__api__v4__views__attempt__list__types__AttemptViewItem"][];
+            items?: components["schemas"]["AttemptViewItem"][];
             /**
              * Total Count
              * @description Total count before pagination
@@ -33765,7 +33912,7 @@ export interface components {
              * Items
              * @description Audit data items
              */
-            items?: components["schemas"]["app__api__v4__views__audit__list__types__AuditViewItem"][];
+            items?: components["schemas"]["AuditViewItem"][];
             /**
              * Total Count
              * @description Total count before pagination
@@ -34006,7 +34153,7 @@ export interface components {
          */
         GetBenchmarkInvocationsResponse: {
             /** Items */
-            items?: components["schemas"]["app__api__v4__views__benchmark__invocations__types__BenchmarkInvocationViewItem"][];
+            items?: components["schemas"]["BenchmarkInvocationViewItem"][];
         };
         /**
          * GetBenchmarkTestsRequest
@@ -34824,7 +34971,7 @@ export interface components {
              * Items
              * @description Grant data items
              */
-            items?: components["schemas"]["app__api__v4__views__grant__list__types__GrantViewItem"][];
+            items?: components["schemas"]["GrantViewItem"][];
             /**
              * Total Count
              * @description Total count before pagination
@@ -35012,7 +35159,7 @@ export interface components {
              * Items
              * @description Health data items
              */
-            items?: components["schemas"]["app__api__v4__views__health__list__types__HealthViewItem"][];
+            items?: components["schemas"]["HealthViewItem"][];
             /**
              * Total Count
              * @description Total count before pagination
@@ -35295,7 +35442,7 @@ export interface components {
              * Items
              * @description Login data items
              */
-            items?: components["schemas"]["app__api__v4__views__login__list__types__LoginViewItem"][];
+            items?: components["schemas"]["LoginViewItem"][];
             /**
              * Total Count
              * @description Total count before pagination
@@ -35375,7 +35522,7 @@ export interface components {
              * Items
              * @description Metric data items
              */
-            items?: components["schemas"]["app__api__v4__views__metric__list__types__MetricViewItem"][];
+            items?: components["schemas"]["MetricViewItem"][];
             /**
              * Total Count
              * @description Total count before pagination
@@ -35879,7 +36026,7 @@ export interface components {
              * Items
              * @description Problem data items
              */
-            items?: components["schemas"]["app__api__v4__views__problem__list__types__ProblemViewItem"][];
+            items?: components["schemas"]["ProblemViewItem"][];
             /**
              * Total Count
              * @description Total count before pagination
@@ -36771,7 +36918,7 @@ export interface components {
              * Items
              * @description Session data items
              */
-            items?: components["schemas"]["app__api__v4__views__session__list__types__SessionViewItem"][];
+            items?: components["schemas"]["SessionViewItem"][];
             /**
              * Total Count
              * @description Total count before pagination
@@ -37306,9 +37453,9 @@ export interface components {
          * @description Response for benchmark test artifact detail.
          */
         GetTestArtifactResponse: {
-            test?: components["schemas"]["BenchmarkTestViewItem"] | null;
+            test?: components["schemas"]["QGetTestViewV4Item"] | null;
             /** Invocations */
-            invocations?: components["schemas"]["app__api__v4__entries__test_invocation__get__BenchmarkInvocationViewItem"][];
+            invocations?: components["schemas"]["QGetTestInvocationViewV4Item"][];
             /**
              * Status
              * @default pending
@@ -37987,6 +38134,35 @@ export interface components {
             } | null;
         };
         /**
+         * GrantViewItem
+         * @description Single grant from the grant list view.
+         */
+        GrantViewItem: {
+            /**
+             * Grant Id
+             * Format: uuid
+             */
+            grant_id: string;
+            /** Grantor Id */
+            grantor_id?: string | null;
+            /** Emulation Id */
+            emulation_id?: string | null;
+            /** Emulated Id */
+            emulated_id?: string | null;
+            /** Grant Session Id */
+            grant_session_id?: string | null;
+            /** Emulation Session Id */
+            emulation_session_id?: string | null;
+            /** Expires At */
+            expires_at?: string | null;
+            /** Used At */
+            used_at?: string | null;
+            /** Revoked At */
+            revoked_at?: string | null;
+            /** Created At */
+            created_at?: string | null;
+        };
+        /**
          * GroupDetailCallItem
          * @description A tool/function call made during the run.
          */
@@ -38401,14 +38577,54 @@ export interface components {
             total_count: number;
         };
         /**
+         * HealthViewItem
+         * @description Single health row from the health list view.
+         */
+        HealthViewItem: {
+            /**
+             * Date Hour
+             * Format: date-time
+             */
+            date_hour: string;
+            /** Service */
+            service?: string | null;
+            /**
+             * Check Count
+             * @default 0
+             */
+            check_count: number;
+            /**
+             * Ok Count
+             * @default 0
+             */
+            ok_count: number;
+            /**
+             * Fail Count
+             * @default 0
+             */
+            fail_count: number;
+            /** Uptime Percent */
+            uptime_percent?: number | null;
+            /** Avg Latency Ms */
+            avg_latency_ms?: number | null;
+            /** Min Latency Ms */
+            min_latency_ms?: number | null;
+            /** Max Latency Ms */
+            max_latency_ms?: number | null;
+            /** Latest Ok */
+            latest_ok?: boolean | null;
+            /** Latest Error */
+            latest_error?: string | null;
+        };
+        /**
          * HealthViews
          * @description Health view data.
          */
         HealthViews: {
             /** Service Hourly */
-            service_hourly?: components["schemas"]["app__api__v4__entries__health__get__HealthViewItem"][];
+            service_hourly?: components["schemas"]["QGetHealthListViewV4Item"][];
             /** Metrics Hourly */
-            metrics_hourly?: components["schemas"]["app__api__v4__entries__metrics__get__MetricViewItem"][];
+            metrics_hourly?: components["schemas"]["QGetMetricListViewV4Item"][];
         };
         /**
          * HighlightEntry
@@ -40268,6 +40484,33 @@ export interface components {
             can_delete?: boolean | null;
         };
         /**
+         * LoginViewItem
+         * @description Single login from the login list view.
+         */
+        LoginViewItem: {
+            /**
+             * Login Id
+             * Format: uuid
+             */
+            login_id: string;
+            /** Profile Id */
+            profile_id?: string | null;
+            /** Session Id */
+            session_id?: string | null;
+            /** Last Login */
+            last_login?: string | null;
+            /** Login Created At */
+            login_created_at?: string | null;
+            /** Active */
+            active?: boolean | null;
+            /** Generated */
+            generated?: boolean | null;
+            /** Mcp */
+            mcp?: boolean | null;
+            /** Call Id */
+            call_id?: string | null;
+        };
+        /**
          * MessageData
          * @description Message with contents, feedbacks, and hints.
          *
@@ -40332,6 +40575,44 @@ export interface components {
             branch_path?: string[] | null;
             /** Depth */
             depth?: number | null;
+        };
+        /**
+         * MetricViewItem
+         * @description Single metric row from the metric list view.
+         */
+        MetricViewItem: {
+            /**
+             * Date Hour
+             * Format: date-time
+             */
+            date_hour: string;
+            /**
+             * Sample Count
+             * @default 0
+             */
+            sample_count: number;
+            /** Avg Cpu Percent */
+            avg_cpu_percent?: number | null;
+            /** Min Cpu Percent */
+            min_cpu_percent?: number | null;
+            /** Max Cpu Percent */
+            max_cpu_percent?: number | null;
+            /** Avg Latency Ms */
+            avg_latency_ms?: number | null;
+            /** Min Latency Ms */
+            min_latency_ms?: number | null;
+            /** Max Latency Ms */
+            max_latency_ms?: number | null;
+            /** Avg Memory Bytes */
+            avg_memory_bytes?: number | null;
+            /** Min Memory Bytes */
+            min_memory_bytes?: number | null;
+            /** Max Memory Bytes */
+            max_memory_bytes?: number | null;
+            /** Max Requests Total */
+            max_requests_total?: number | null;
+            /** Max Errors Total */
+            max_errors_total?: number | null;
         };
         /**
          * ModalitiesGenerationEvent
@@ -43165,6 +43446,31 @@ export interface components {
             /** Arguments Delta */
             arguments_delta?: string | null;
         };
+        /**
+         * ProblemViewItem
+         * @description Single problem from the problem list view.
+         */
+        ProblemViewItem: {
+            /**
+             * Problem Id
+             * Format: uuid
+             */
+            problem_id: string;
+            /** Type */
+            type?: string | null;
+            /** Message */
+            message?: string | null;
+            /** Resolved */
+            resolved?: boolean | null;
+            /** Session Id */
+            session_id?: string | null;
+            /** Problem Created At */
+            problem_created_at?: string | null;
+            /** Problem Updated At */
+            problem_updated_at?: string | null;
+            /** Profile Id */
+            profile_id?: string | null;
+        };
         /** ProcessCsvApiRequest */
         ProcessCsvApiRequest: {
             /** Csv Content */
@@ -44054,6 +44360,19 @@ export interface components {
             /** Arguments Delta */
             arguments_delta?: string | null;
         };
+        /** QGetActivityListViewV4Item */
+        QGetActivityListViewV4Item: {
+            /** Activity Id */
+            activity_id: string | null;
+            /** Profile Id */
+            profile_id: string | null;
+            /** Session Id */
+            session_id: string | null;
+            /** Last Active */
+            last_active: string | null;
+            /** Created At */
+            created_at: string | null;
+        };
         /** QGetAgentDraftsEntriesV4Item */
         QGetAgentDraftsEntriesV4Item: {
             /** Draft Id */
@@ -44164,6 +44483,44 @@ export interface components {
             default_value: string | null;
             /** Generated */
             generated: boolean | null;
+        };
+        /** QGetAttemptListViewV4Item */
+        QGetAttemptListViewV4Item: {
+            /** Attempt Id */
+            attempt_id: string | null;
+            /** Simulation Id */
+            simulation_id: string | null;
+            /** Profile Id */
+            profile_id: string | null;
+            /** Cohort Id */
+            cohort_id: string | null;
+            /** Department Id */
+            department_id: string | null;
+            /** Practice */
+            practice: boolean | null;
+            /** Infinite Mode */
+            infinite_mode: boolean | null;
+            /** Created At */
+            created_at: string | null;
+            /** Is Archived */
+            is_archived: boolean | null;
+            /** Scenario Ids */
+            scenario_ids: string[] | null;
+        };
+        /** QGetAuditListViewV4Item */
+        QGetAuditListViewV4Item: {
+            /** Audit Id */
+            audit_id: string | null;
+            /** Session Id */
+            session_id: string | null;
+            /** Audit Created At */
+            audit_created_at: string | null;
+            /** Message */
+            message: string | null;
+            /** Endpoint */
+            endpoint: string | null;
+            /** Error */
+            error: boolean | null;
         };
         /** QGetAuthDraftsEntriesV4Item */
         QGetAuthDraftsEntriesV4Item: {
@@ -44588,6 +44945,29 @@ export interface components {
             /** Generated */
             generated: boolean | null;
         };
+        /** QGetGrantListViewV4Item */
+        QGetGrantListViewV4Item: {
+            /** Grant Id */
+            grant_id: string | null;
+            /** Grantor Id */
+            grantor_id: string | null;
+            /** Emulation Id */
+            emulation_id: string | null;
+            /** Emulated Id */
+            emulated_id: string | null;
+            /** Grant Session Id */
+            grant_session_id: string | null;
+            /** Emulation Session Id */
+            emulation_session_id: string | null;
+            /** Expires At */
+            expires_at: string | null;
+            /** Used At */
+            used_at: string | null;
+            /** Revoked At */
+            revoked_at: string | null;
+            /** Created At */
+            created_at: string | null;
+        };
         /** QGetGroupPositionsV4Item */
         QGetGroupPositionsV4Item: {
             /** Id */
@@ -44618,6 +44998,31 @@ export interface components {
             id: string | null;
             /** Generated */
             generated: boolean | null;
+        };
+        /** QGetHealthListViewV4Item */
+        QGetHealthListViewV4Item: {
+            /** Date Hour */
+            date_hour: string | null;
+            /** Service */
+            service: string | null;
+            /** Check Count */
+            check_count: number | null;
+            /** Ok Count */
+            ok_count: number | null;
+            /** Fail Count */
+            fail_count: number | null;
+            /** Uptime Percent */
+            uptime_percent: number | null;
+            /** Avg Latency Ms */
+            avg_latency_ms: number | null;
+            /** Min Latency Ms */
+            min_latency_ms: number | null;
+            /** Max Latency Ms */
+            max_latency_ms: number | null;
+            /** Latest Ok */
+            latest_ok: boolean | null;
+            /** Latest Error */
+            latest_error: string | null;
         };
         /** QGetIconsV4Item */
         QGetIconsV4Item: {
@@ -44703,6 +45108,56 @@ export interface components {
             icon: string | null;
             /** Is Default */
             is_default: boolean | null;
+        };
+        /** QGetLoginListViewV4Item */
+        QGetLoginListViewV4Item: {
+            /** Login Id */
+            login_id: string | null;
+            /** Profile Id */
+            profile_id: string | null;
+            /** Session Id */
+            session_id: string | null;
+            /** Last Login */
+            last_login: string | null;
+            /** Login Created At */
+            login_created_at: string | null;
+            /** Active */
+            active: boolean | null;
+            /** Generated */
+            generated: boolean | null;
+            /** Mcp */
+            mcp: boolean | null;
+            /** Call Id */
+            call_id: string | null;
+        };
+        /** QGetMetricListViewV4Item */
+        QGetMetricListViewV4Item: {
+            /** Date Hour */
+            date_hour: string | null;
+            /** Sample Count */
+            sample_count: number | null;
+            /** Avg Cpu Percent */
+            avg_cpu_percent: number | null;
+            /** Min Cpu Percent */
+            min_cpu_percent: number | null;
+            /** Max Cpu Percent */
+            max_cpu_percent: number | null;
+            /** Avg Latency Ms */
+            avg_latency_ms: number | null;
+            /** Min Latency Ms */
+            min_latency_ms: number | null;
+            /** Max Latency Ms */
+            max_latency_ms: number | null;
+            /** Avg Memory Bytes */
+            avg_memory_bytes: number | null;
+            /** Min Memory Bytes */
+            min_memory_bytes: number | null;
+            /** Max Memory Bytes */
+            max_memory_bytes: number | null;
+            /** Max Requests Total */
+            max_requests_total: number | null;
+            /** Max Errors Total */
+            max_errors_total: number | null;
         };
         /** QGetModalitiesV4Item */
         QGetModalitiesV4Item: {
@@ -44995,6 +45450,25 @@ export interface components {
             unit_id: string | null;
             /** Generated */
             generated: boolean | null;
+        };
+        /** QGetProblemListViewV4Item */
+        QGetProblemListViewV4Item: {
+            /** Problem Id */
+            problem_id: string | null;
+            /** Type */
+            type: string | null;
+            /** Message */
+            message: string | null;
+            /** Resolved */
+            resolved: boolean | null;
+            /** Session Id */
+            session_id: string | null;
+            /** Problem Created At */
+            problem_created_at: string | null;
+            /** Problem Updated At */
+            problem_updated_at: string | null;
+            /** Profile Id */
+            profile_id: string | null;
         };
         /** QGetProblemStatementsV4Item */
         QGetProblemStatementsV4Item: {
@@ -45461,6 +45935,17 @@ export interface components {
             /** Generated */
             generated: boolean | null;
         };
+        /** QGetSessionListViewV4Item */
+        QGetSessionListViewV4Item: {
+            /** Session Id */
+            session_id: string | null;
+            /** Profile Id */
+            profile_id: string | null;
+            /** Session Created At */
+            session_created_at: string | null;
+            /** Active */
+            active: boolean | null;
+        };
         /** QGetSettingDraftsEntriesV4Item */
         QGetSettingDraftsEntriesV4Item: {
             /** Draft Id */
@@ -45629,6 +46114,74 @@ export interface components {
             temperature: number | null;
             /** Generated */
             generated: boolean | null;
+        };
+        /** QGetTestInvocationViewV4Item */
+        QGetTestInvocationViewV4Item: {
+            /** Invocation Id */
+            invocation_id: string | null;
+            /** Test Id */
+            test_id: string | null;
+            /** Group Id */
+            group_id: string | null;
+            /** Suite Department Id */
+            suite_department_id: string | null;
+            /** Created At */
+            created_at: string | null;
+            /** Title */
+            title: string | null;
+            /** Invocation Completed */
+            invocation_completed: boolean | null;
+            /** Grade Score */
+            grade_score: number | null;
+            /** Grade Passed */
+            grade_passed: boolean | null;
+            /** Grade Time Taken */
+            grade_time_taken: number | null;
+            /** Rubric Id */
+            rubric_id: string | null;
+            /** Grade Id */
+            grade_id: string | null;
+            /** Invocation Run Ids */
+            invocation_run_ids: string[] | null;
+            /** Run Ids */
+            run_ids: string[] | null;
+            /** Group Ids */
+            group_ids: string[] | null;
+            /** Instruction Ids */
+            instruction_ids: string[] | null;
+            /** Tool Ids */
+            tool_ids: string[] | null;
+            /** Model Id */
+            model_id: string | null;
+            /** Prompt Id */
+            prompt_id: string | null;
+            /** Voice Id */
+            voice_id: string | null;
+            /** Temperature Level Id */
+            temperature_level_id: string | null;
+            /** Reasoning Level Id */
+            reasoning_level_id: string | null;
+            /** Key Id */
+            key_id: string | null;
+            /** Historical Run Ids */
+            historical_run_ids: string[] | null;
+        };
+        /** QGetTestViewV4Item */
+        QGetTestViewV4Item: {
+            /** Test Id */
+            test_id: string | null;
+            /** Eval Id */
+            eval_id: string | null;
+            /** Profile Id */
+            profile_id: string | null;
+            /** Department Ids */
+            department_ids: string[] | null;
+            /** Infinite Mode */
+            infinite_mode: boolean | null;
+            /** Archived */
+            archived: boolean | null;
+            /** Created At */
+            created_at: string | null;
         };
         /** QGetTextsV4Item */
         QGetTextsV4Item: {
@@ -54486,6 +55039,26 @@ export interface components {
              */
             error_count: number;
         };
+        /**
+         * SessionViewItem
+         * @description Single session from the session list view.
+         */
+        SessionViewItem: {
+            /**
+             * Session Id
+             * Format: uuid
+             */
+            session_id: string;
+            /** Profile Id */
+            profile_id?: string | null;
+            /** Session Created At */
+            session_created_at?: string | null;
+            /**
+             * Active
+             * @default false
+             */
+            active: boolean;
+        };
         /** SettingAuthItemKeySection */
         SettingAuthItemKeySection: {
             /**
@@ -56611,9 +57184,9 @@ export interface components {
          */
         TestViews: {
             /** Test */
-            test?: components["schemas"]["BenchmarkTestViewItem"][] | null;
+            test?: components["schemas"]["QGetTestViewV4Item"][] | null;
             /** Test Invocation */
-            test_invocation?: components["schemas"]["app__api__v4__entries__test_invocation__get__BenchmarkInvocationViewItem"][] | null;
+            test_invocation?: components["schemas"]["QGetTestInvocationViewV4Item"][] | null;
             runs?: components["schemas"]["app__api__v4__entries__runs__search__GetRunListViewResponse"] | null;
         };
         /**
@@ -58075,246 +58648,6 @@ export interface components {
             count?: number | null;
         };
         /**
-         * ActivityViewItem
-         * @description Single item from the activity list view.
-         */
-        app__api__v4__entries__activity__get__ActivityViewItem: {
-            /**
-             * Activity Id
-             * Format: uuid
-             */
-            activity_id: string;
-            /** Profile Id */
-            profile_id?: string | null;
-            /** Session Id */
-            session_id?: string | null;
-            /** Last Active */
-            last_active?: string | null;
-            /** Created At */
-            created_at?: string | null;
-        };
-        /**
-         * AttemptViewItem
-         * @description Single attempt from the attempt list.
-         */
-        app__api__v4__entries__attempt__search__AttemptViewItem: {
-            /**
-             * Attempt Id
-             * Format: uuid
-             */
-            attempt_id: string;
-            /** Simulation Id */
-            simulation_id?: string | null;
-            /** Profile Id */
-            profile_id?: string | null;
-            /** Cohort Id */
-            cohort_id?: string | null;
-            /** Department Id */
-            department_id?: string | null;
-            /**
-             * Practice
-             * @default false
-             */
-            practice: boolean;
-            /**
-             * Infinite Mode
-             * @default false
-             */
-            infinite_mode: boolean;
-            /** Created At */
-            created_at?: string | null;
-            /**
-             * Is Archived
-             * @default false
-             */
-            is_archived: boolean;
-            /** Scenario Ids */
-            scenario_ids?: string[] | null;
-        };
-        /**
-         * AuditViewItem
-         * @description Single item from the audits list view.
-         */
-        app__api__v4__entries__audits__get__AuditViewItem: {
-            /**
-             * Audit Id
-             * Format: uuid
-             */
-            audit_id: string;
-            /** Session Id */
-            session_id?: string | null;
-            /** Audit Created At */
-            audit_created_at?: string | null;
-            /** Message */
-            message?: string | null;
-            /** Endpoint */
-            endpoint?: string | null;
-            /**
-             * Error
-             * @default false
-             */
-            error: boolean;
-        };
-        /**
-         * GrantViewItem
-         * @description Single item from the grants list view.
-         */
-        app__api__v4__entries__grants__get__GrantViewItem: {
-            /**
-             * Grant Id
-             * Format: uuid
-             */
-            grant_id: string;
-            /** Grantor Id */
-            grantor_id?: string | null;
-            /** Emulation Id */
-            emulation_id?: string | null;
-            /** Emulated Id */
-            emulated_id?: string | null;
-            /** Grant Session Id */
-            grant_session_id?: string | null;
-            /** Emulation Session Id */
-            emulation_session_id?: string | null;
-            /** Expires At */
-            expires_at?: string | null;
-            /** Used At */
-            used_at?: string | null;
-            /** Revoked At */
-            revoked_at?: string | null;
-            /** Created At */
-            created_at?: string | null;
-        };
-        /**
-         * HealthViewItem
-         * @description Single item from the health list view.
-         */
-        app__api__v4__entries__health__get__HealthViewItem: {
-            /**
-             * Date Hour
-             * Format: date-time
-             */
-            date_hour: string;
-            /** Service */
-            service?: string | null;
-            /**
-             * Check Count
-             * @default 0
-             */
-            check_count: number;
-            /**
-             * Ok Count
-             * @default 0
-             */
-            ok_count: number;
-            /**
-             * Fail Count
-             * @default 0
-             */
-            fail_count: number;
-            /** Uptime Percent */
-            uptime_percent?: number | null;
-            /** Avg Latency Ms */
-            avg_latency_ms?: number | null;
-            /** Min Latency Ms */
-            min_latency_ms?: number | null;
-            /** Max Latency Ms */
-            max_latency_ms?: number | null;
-            /** Latest Ok */
-            latest_ok?: boolean | null;
-            /** Latest Error */
-            latest_error?: string | null;
-        };
-        /**
-         * LoginViewItem
-         * @description Single item from the logins list view.
-         */
-        app__api__v4__entries__logins__get__LoginViewItem: {
-            /**
-             * Login Id
-             * Format: uuid
-             */
-            login_id: string;
-            /** Profile Id */
-            profile_id?: string | null;
-            /** Session Id */
-            session_id?: string | null;
-            /** Last Login */
-            last_login?: string | null;
-            /** Login Created At */
-            login_created_at?: string | null;
-            /** Active */
-            active?: boolean | null;
-            /** Generated */
-            generated?: boolean | null;
-            /** Mcp */
-            mcp?: boolean | null;
-            /** Call Id */
-            call_id?: string | null;
-        };
-        /**
-         * MetricViewItem
-         * @description Single item from the metrics list view.
-         */
-        app__api__v4__entries__metrics__get__MetricViewItem: {
-            /**
-             * Date Hour
-             * Format: date-time
-             */
-            date_hour: string;
-            /**
-             * Sample Count
-             * @default 0
-             */
-            sample_count: number;
-            /** Avg Cpu Percent */
-            avg_cpu_percent?: number | null;
-            /** Min Cpu Percent */
-            min_cpu_percent?: number | null;
-            /** Max Cpu Percent */
-            max_cpu_percent?: number | null;
-            /** Avg Latency Ms */
-            avg_latency_ms?: number | null;
-            /** Min Latency Ms */
-            min_latency_ms?: number | null;
-            /** Max Latency Ms */
-            max_latency_ms?: number | null;
-            /** Avg Memory Bytes */
-            avg_memory_bytes?: number | null;
-            /** Min Memory Bytes */
-            min_memory_bytes?: number | null;
-            /** Max Memory Bytes */
-            max_memory_bytes?: number | null;
-            /** Max Requests Total */
-            max_requests_total?: number | null;
-            /** Max Errors Total */
-            max_errors_total?: number | null;
-        };
-        /**
-         * ProblemViewItem
-         * @description Single item from the problems list view.
-         */
-        app__api__v4__entries__problems__get__ProblemViewItem: {
-            /**
-             * Problem Id
-             * Format: uuid
-             */
-            problem_id: string;
-            /** Type */
-            type?: string | null;
-            /** Message */
-            message?: string | null;
-            /** Resolved */
-            resolved?: boolean | null;
-            /** Session Id */
-            session_id?: string | null;
-            /** Problem Created At */
-            problem_created_at?: string | null;
-            /** Problem Updated At */
-            problem_updated_at?: string | null;
-            /** Profile Id */
-            profile_id?: string | null;
-        };
-        /**
          * GetRunListViewResponse
          * @description Response containing run list data.
          */
@@ -58368,89 +58701,6 @@ export interface components {
             provider_ids?: string[] | null;
             /** Pricing */
             pricing?: components["schemas"]["RunPricingItem"][];
-        };
-        /**
-         * SessionViewItem
-         * @description Single item from the sessions list view.
-         */
-        app__api__v4__entries__sessions__get__SessionViewItem: {
-            /**
-             * Session Id
-             * Format: uuid
-             */
-            session_id: string;
-            /** Profile Id */
-            profile_id?: string | null;
-            /** Session Created At */
-            session_created_at?: string | null;
-            /**
-             * Active
-             * @default false
-             */
-            active: boolean;
-        };
-        /**
-         * BenchmarkInvocationViewItem
-         * @description Single benchmark invocation row from test_invocation_mv.
-         */
-        app__api__v4__entries__test_invocation__get__BenchmarkInvocationViewItem: {
-            /**
-             * Invocation Id
-             * Format: uuid
-             */
-            invocation_id: string;
-            /**
-             * Test Id
-             * Format: uuid
-             */
-            test_id: string;
-            /** Group Id */
-            group_id?: string | null;
-            /** Suite Department Id */
-            suite_department_id?: string | null;
-            /** Created At */
-            created_at?: string | null;
-            /** Title */
-            title?: string | null;
-            /**
-             * Invocation Completed
-             * @default false
-             */
-            invocation_completed: boolean;
-            /** Grade Score */
-            grade_score?: number | null;
-            /** Grade Passed */
-            grade_passed?: boolean | null;
-            /** Grade Time Taken */
-            grade_time_taken?: number | null;
-            /** Rubric Id */
-            rubric_id?: string | null;
-            /** Grade Id */
-            grade_id?: string | null;
-            /** Invocation Run Ids */
-            invocation_run_ids?: string[];
-            /** Run Ids */
-            run_ids?: string[];
-            /** Group Ids */
-            group_ids?: string[];
-            /** Instruction Ids */
-            instruction_ids?: string[];
-            /** Tool Ids */
-            tool_ids?: string[];
-            /** Model Id */
-            model_id?: string | null;
-            /** Prompt Id */
-            prompt_id?: string | null;
-            /** Voice Id */
-            voice_id?: string | null;
-            /** Temperature Level Id */
-            temperature_level_id?: string | null;
-            /** Reasoning Level Id */
-            reasoning_level_id?: string | null;
-            /** Key Id */
-            key_id?: string | null;
-            /** Historical Run Ids */
-            historical_run_ids?: string[];
         };
         /**
          * QGetRolesV4Item
@@ -58545,25 +58795,6 @@ export interface components {
             providers?: components["schemas"]["QGetSettingsV4Provider"][] | null;
         };
         /**
-         * ActivityViewItem
-         * @description Single activity from the activity list view.
-         */
-        app__api__v4__views__activity__list__types__ActivityViewItem: {
-            /**
-             * Activity Id
-             * Format: uuid
-             */
-            activity_id: string;
-            /** Profile Id */
-            profile_id?: string | null;
-            /** Session Id */
-            session_id?: string | null;
-            /** Last Active */
-            last_active?: string | null;
-            /** Created At */
-            created_at?: string | null;
-        };
-        /**
          * GetChatsRequest
          * @description Request for getting chat data.
          */
@@ -58585,44 +58816,6 @@ export interface components {
              * @description Chat data items
              */
             items?: components["schemas"]["ChatViewItem"][];
-        };
-        /**
-         * AttemptViewItem
-         * @description Single attempt from the attempt list view.
-         */
-        app__api__v4__views__attempt__list__types__AttemptViewItem: {
-            /**
-             * Attempt Id
-             * Format: uuid
-             */
-            attempt_id: string;
-            /** Simulation Id */
-            simulation_id?: string | null;
-            /** Profile Id */
-            profile_id?: string | null;
-            /** Cohort Id */
-            cohort_id?: string | null;
-            /** Department Id */
-            department_id?: string | null;
-            /**
-             * Practice
-             * @default false
-             */
-            practice: boolean;
-            /**
-             * Infinite Mode
-             * @default false
-             */
-            infinite_mode: boolean;
-            /** Created At */
-            created_at?: string | null;
-            /**
-             * Is Archived
-             * @default false
-             */
-            is_archived: boolean;
-            /** Scenario Ids */
-            scenario_ids?: string[] | null;
         };
         /**
          * FilterOption
@@ -58696,96 +58889,6 @@ export interface components {
             history_content?: string | null;
             /** Audio Id */
             audio_id?: string | null;
-        };
-        /**
-         * AuditViewItem
-         * @description Single audit from the audit list view.
-         */
-        app__api__v4__views__audit__list__types__AuditViewItem: {
-            /**
-             * Audit Id
-             * Format: uuid
-             */
-            audit_id: string;
-            /** Session Id */
-            session_id?: string | null;
-            /** Audit Created At */
-            audit_created_at?: string | null;
-            /** Message */
-            message?: string | null;
-            /** Endpoint */
-            endpoint?: string | null;
-            /**
-             * Error
-             * @default false
-             */
-            error: boolean;
-        };
-        /**
-         * BenchmarkInvocationViewItem
-         * @description Single benchmark invocation row from test_invocation_mv.
-         *
-         *     Lean: entry attrs + resource IDs + grade scalars only. Feedbacks
-         *     fetched via simulation/test_feedback view.
-         */
-        app__api__v4__views__benchmark__invocations__types__BenchmarkInvocationViewItem: {
-            /**
-             * Invocation Id
-             * Format: uuid
-             */
-            invocation_id: string;
-            /**
-             * Test Id
-             * Format: uuid
-             */
-            test_id: string;
-            /** Group Id */
-            group_id?: string | null;
-            /** Suite Department Id */
-            suite_department_id?: string | null;
-            /** Created At */
-            created_at?: string | null;
-            /** Title */
-            title?: string | null;
-            /**
-             * Invocation Completed
-             * @default false
-             */
-            invocation_completed: boolean;
-            /** Grade Score */
-            grade_score?: number | null;
-            /** Grade Passed */
-            grade_passed?: boolean | null;
-            /** Grade Time Taken */
-            grade_time_taken?: number | null;
-            /** Rubric Id */
-            rubric_id?: string | null;
-            /** Grade Id */
-            grade_id?: string | null;
-            /** Invocation Run Ids */
-            invocation_run_ids?: string[];
-            /** Run Ids */
-            run_ids?: string[];
-            /** Group Ids */
-            group_ids?: string[];
-            /** Instruction Ids */
-            instruction_ids?: string[];
-            /** Tool Ids */
-            tool_ids?: string[];
-            /** Model Id */
-            model_id?: string | null;
-            /** Prompt Id */
-            prompt_id?: string | null;
-            /** Voice Id */
-            voice_id?: string | null;
-            /** Temperature Level Id */
-            temperature_level_id?: string | null;
-            /** Reasoning Level Id */
-            reasoning_level_id?: string | null;
-            /** Key Id */
-            key_id?: string | null;
-            /** Historical Run Ids */
-            historical_run_ids?: string[];
         };
         /**
          * FilterOption
@@ -58931,102 +59034,6 @@ export interface components {
             persona_options?: components["schemas"]["app__api__v4__views__chat__types__FilterOption"][] | null;
         };
         /**
-         * GrantViewItem
-         * @description Single grant from the grant list view.
-         */
-        app__api__v4__views__grant__list__types__GrantViewItem: {
-            /**
-             * Grant Id
-             * Format: uuid
-             */
-            grant_id: string;
-            /** Grantor Id */
-            grantor_id?: string | null;
-            /** Emulation Id */
-            emulation_id?: string | null;
-            /** Emulated Id */
-            emulated_id?: string | null;
-            /** Grant Session Id */
-            grant_session_id?: string | null;
-            /** Emulation Session Id */
-            emulation_session_id?: string | null;
-            /** Expires At */
-            expires_at?: string | null;
-            /** Used At */
-            used_at?: string | null;
-            /** Revoked At */
-            revoked_at?: string | null;
-            /** Created At */
-            created_at?: string | null;
-        };
-        /**
-         * HealthViewItem
-         * @description Single health row from the health list view.
-         */
-        app__api__v4__views__health__list__types__HealthViewItem: {
-            /**
-             * Date Hour
-             * Format: date-time
-             */
-            date_hour: string;
-            /** Service */
-            service?: string | null;
-            /**
-             * Check Count
-             * @default 0
-             */
-            check_count: number;
-            /**
-             * Ok Count
-             * @default 0
-             */
-            ok_count: number;
-            /**
-             * Fail Count
-             * @default 0
-             */
-            fail_count: number;
-            /** Uptime Percent */
-            uptime_percent?: number | null;
-            /** Avg Latency Ms */
-            avg_latency_ms?: number | null;
-            /** Min Latency Ms */
-            min_latency_ms?: number | null;
-            /** Max Latency Ms */
-            max_latency_ms?: number | null;
-            /** Latest Ok */
-            latest_ok?: boolean | null;
-            /** Latest Error */
-            latest_error?: string | null;
-        };
-        /**
-         * LoginViewItem
-         * @description Single login from the login list view.
-         */
-        app__api__v4__views__login__list__types__LoginViewItem: {
-            /**
-             * Login Id
-             * Format: uuid
-             */
-            login_id: string;
-            /** Profile Id */
-            profile_id?: string | null;
-            /** Session Id */
-            session_id?: string | null;
-            /** Last Login */
-            last_login?: string | null;
-            /** Login Created At */
-            login_created_at?: string | null;
-            /** Active */
-            active?: boolean | null;
-            /** Generated */
-            generated?: boolean | null;
-            /** Mcp */
-            mcp?: boolean | null;
-            /** Call Id */
-            call_id?: string | null;
-        };
-        /**
          * MessageViewItem
          * @description Single message from the message list view.
          */
@@ -59046,69 +59053,6 @@ export interface components {
             contents?: string[];
             /** Call Ids */
             call_ids?: string[];
-        };
-        /**
-         * MetricViewItem
-         * @description Single metric row from the metric list view.
-         */
-        app__api__v4__views__metric__list__types__MetricViewItem: {
-            /**
-             * Date Hour
-             * Format: date-time
-             */
-            date_hour: string;
-            /**
-             * Sample Count
-             * @default 0
-             */
-            sample_count: number;
-            /** Avg Cpu Percent */
-            avg_cpu_percent?: number | null;
-            /** Min Cpu Percent */
-            min_cpu_percent?: number | null;
-            /** Max Cpu Percent */
-            max_cpu_percent?: number | null;
-            /** Avg Latency Ms */
-            avg_latency_ms?: number | null;
-            /** Min Latency Ms */
-            min_latency_ms?: number | null;
-            /** Max Latency Ms */
-            max_latency_ms?: number | null;
-            /** Avg Memory Bytes */
-            avg_memory_bytes?: number | null;
-            /** Min Memory Bytes */
-            min_memory_bytes?: number | null;
-            /** Max Memory Bytes */
-            max_memory_bytes?: number | null;
-            /** Max Requests Total */
-            max_requests_total?: number | null;
-            /** Max Errors Total */
-            max_errors_total?: number | null;
-        };
-        /**
-         * ProblemViewItem
-         * @description Single problem from the problem list view.
-         */
-        app__api__v4__views__problem__list__types__ProblemViewItem: {
-            /**
-             * Problem Id
-             * Format: uuid
-             */
-            problem_id: string;
-            /** Type */
-            type?: string | null;
-            /** Message */
-            message?: string | null;
-            /** Resolved */
-            resolved?: boolean | null;
-            /** Session Id */
-            session_id?: string | null;
-            /** Problem Created At */
-            problem_created_at?: string | null;
-            /** Problem Updated At */
-            problem_updated_at?: string | null;
-            /** Profile Id */
-            profile_id?: string | null;
         };
         /**
          * GetRunListViewResponse
@@ -59164,26 +59108,6 @@ export interface components {
             provider_ids?: string[] | null;
             /** Pricing */
             pricing?: components["schemas"]["RunPricingItem"][];
-        };
-        /**
-         * SessionViewItem
-         * @description Single session from the session list view.
-         */
-        app__api__v4__views__session__list__types__SessionViewItem: {
-            /**
-             * Session Id
-             * Format: uuid
-             */
-            session_id: string;
-            /** Profile Id */
-            profile_id?: string | null;
-            /** Session Created At */
-            session_created_at?: string | null;
-            /**
-             * Active
-             * @default false
-             */
-            active: boolean;
         };
         /**
          * GetMessagesRequest

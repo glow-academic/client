@@ -6,11 +6,11 @@ from uuid import UUID
 
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel, Field
 
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
 from app.sql.types import (
+    GetMetricListViewSqlRow,
     GetMetricsEntriesApiRequest,
     GetMetricsEntriesApiResponse,
     GetMetricsEntriesSqlParams,
@@ -28,31 +28,6 @@ VIEW_SQL_PATH = "app/sql/v4/queries/views/metric/list/get_metric_list_view_compl
 router = APIRouter()
 
 
-class MetricViewItem(BaseModel):
-    """Single item from the metrics list view."""
-
-    date_hour: datetime
-    sample_count: int = 0
-    avg_cpu_percent: float | None = None
-    min_cpu_percent: float | None = None
-    max_cpu_percent: float | None = None
-    avg_latency_ms: float | None = None
-    min_latency_ms: float | None = None
-    max_latency_ms: float | None = None
-    avg_memory_bytes: int | None = None
-    min_memory_bytes: int | None = None
-    max_memory_bytes: int | None = None
-    max_requests_total: int | None = None
-    max_errors_total: int | None = None
-
-
-class GetMetricListViewResponse(BaseModel):
-    """Response containing metrics list data."""
-
-    items: list[MetricViewItem] = Field(default_factory=list)
-    total_count: int = Field(default=0)
-
-
 async def get_metric_list_view_internal(
     conn: asyncpg.Connection,
     date_from: datetime | None = None,
@@ -61,7 +36,7 @@ async def get_metric_list_view_internal(
     page_limit: int = 1000,
     page_offset: int = 0,
     bypass_cache: bool = False,
-) -> GetMetricListViewResponse:
+) -> GetMetricListViewSqlRow:
     """Internal function for fetching metrics data from MV."""
     from app.sql.types import GetMetricListViewSqlParams
 
@@ -79,7 +54,7 @@ async def get_metric_list_view_internal(
     if not bypass_cache:
         cached = await get_cached(cache_key_val)
         if cached:
-            return GetMetricListViewResponse.model_validate(cached)
+            return GetMetricListViewSqlRow.model_validate(cached)
 
     params = GetMetricListViewSqlParams(
         date_from=date_from or datetime.min,
@@ -91,29 +66,8 @@ async def get_metric_list_view_internal(
 
     result = await execute_sql_typed(conn, VIEW_SQL_PATH, params=params)
 
-    items: list[MetricViewItem] = []
-    if result and result.items:
-        for item in result.items:
-            items.append(
-                MetricViewItem(
-                    date_hour=item.date_hour,
-                    sample_count=item.sample_count or 0,
-                    avg_cpu_percent=item.avg_cpu_percent,
-                    min_cpu_percent=item.min_cpu_percent,
-                    max_cpu_percent=item.max_cpu_percent,
-                    avg_latency_ms=item.avg_latency_ms,
-                    min_latency_ms=item.min_latency_ms,
-                    max_latency_ms=item.max_latency_ms,
-                    avg_memory_bytes=item.avg_memory_bytes,
-                    min_memory_bytes=item.min_memory_bytes,
-                    max_memory_bytes=item.max_memory_bytes,
-                    max_requests_total=item.max_requests_total,
-                    max_errors_total=item.max_errors_total,
-                )
-            )
-
-    response = GetMetricListViewResponse(
-        items=items,
+    response = GetMetricListViewSqlRow(
+        items=list(result.items) if result and result.items else [],
         total_count=result.total_count or 0 if result else 0,
     )
 

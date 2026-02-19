@@ -5,7 +5,6 @@ from uuid import UUID
 
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel, Field
 
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
@@ -14,6 +13,7 @@ from app.sql.types import (
     GetTrainingEntriesApiResponse,
     GetTrainingEntriesSqlParams,
     GetTrainingEntriesSqlRow,
+    GetTrainingViewSqlRow,
     load_sql_query,
 )
 from app.utils.cache.cache_key import cache_key
@@ -25,34 +25,6 @@ SQL_PATH = "app/sql/v4/queries/entries/training/get_training_entries_complete.sq
 VIEW_SQL_PATH = "app/sql/v4/queries/views/training/bundle/get_training_view_complete.sql"
 
 router = APIRouter()
-
-
-class GetTrainingViewResponse(BaseModel):
-    """Thin MV-backed view response for a single training bundle."""
-
-    profile_has_access: bool = False
-    training_entry_id: UUID | None = None
-    parent_id: UUID | None = None
-    scenario_id: UUID | None = None
-    department_ids: list[UUID] = Field(default_factory=list)
-    persona_ids: list[UUID] = Field(default_factory=list)
-    document_ids: list[UUID] = Field(default_factory=list)
-    parameter_field_ids: list[UUID] = Field(default_factory=list)
-    parameter_ids: list[UUID] = Field(default_factory=list)
-    question_ids: list[UUID] = Field(default_factory=list)
-    option_ids: list[UUID] = Field(default_factory=list)
-    video_ids: list[UUID] = Field(default_factory=list)
-    image_ids: list[UUID] = Field(default_factory=list)
-    problem_statement_ids: list[UUID] = Field(default_factory=list)
-    objective_ids: list[UUID] = Field(default_factory=list)
-    flag_ids: list[UUID] = Field(default_factory=list)
-    name_ids: list[UUID] = Field(default_factory=list)
-    description_ids: list[UUID] = Field(default_factory=list)
-    video_enabled: bool = False
-    problem_statement_enabled: bool = False
-    objectives_enabled: bool = False
-    images_enabled: bool = False
-    questions_enabled: bool = False
 
 
 async def get_training_entries_internal(
@@ -97,7 +69,7 @@ async def get_training_view_internal(
     conn: asyncpg.Connection,
     profile_id: UUID,
     training_entry_id: UUID,
-) -> GetTrainingViewResponse:
+) -> GetTrainingViewSqlRow:
     """Thin MV-backed bundle scope lookup used by training artifacts."""
     from app.sql.types import GetTrainingViewSqlParams
 
@@ -108,9 +80,9 @@ async def get_training_view_internal(
     row = await execute_sql_typed(conn, VIEW_SQL_PATH, params=params)
 
     if not row:
-        return GetTrainingViewResponse()
+        return GetTrainingViewSqlRow()
 
-    return GetTrainingViewResponse(
+    return GetTrainingViewSqlRow(
         profile_has_access=row.profile_has_access or False,
         training_entry_id=row.training_entry_id,
         parent_id=row.parent_id,

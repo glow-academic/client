@@ -5,8 +5,6 @@ from uuid import UUID
 
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
-
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
 from app.sql.types import (
@@ -14,6 +12,7 @@ from app.sql.types import (
     GetAttemptMessageTreeEntriesApiResponse,
     GetAttemptMessageTreeEntriesSqlParams,
     GetAttemptMessageTreeEntriesSqlRow,
+    QGetSimulationMessageTreeViewV4Item,
     load_sql_query,
 )
 from app.utils.cache.cache_key import cache_key
@@ -25,14 +24,6 @@ SQL_PATH = "app/sql/v4/queries/entries/attempt_message_tree/get_attempt_message_
 VIEW_SQL_PATH = "app/sql/v4/queries/views/simulation/message_tree/get_simulation_message_tree_view_complete.sql"
 
 router = APIRouter()
-
-
-class MessageTreeViewItem(BaseModel):
-    """A single message_tree view item."""
-
-    message_id: UUID
-    branch_path: list[UUID] | None = None
-    depth: int | None = None
 
 
 async def get_attempt_message_tree_entries_internal(
@@ -77,7 +68,7 @@ async def get_attempt_message_tree_internal(
     conn: asyncpg.Connection,
     message_ids: list[UUID],
     bypass_cache: bool = False,
-) -> list[MessageTreeViewItem]:
+) -> list[QGetSimulationMessageTreeViewV4Item]:
     """Internal function for fetching message_tree data."""
     from app.sql.types import GetSimulationMessageTreeViewSqlParams
 
@@ -92,22 +83,16 @@ async def get_attempt_message_tree_internal(
         cached = await get_cached(cache_key_val)
         if cached:
             return [
-                MessageTreeViewItem.model_validate(item) for item in cached["items"]
+                QGetSimulationMessageTreeViewV4Item.model_validate(item)
+                for item in cached["items"]
             ]
 
     params = GetSimulationMessageTreeViewSqlParams(message_ids_filter=message_ids)
     result = await execute_sql_typed(conn, VIEW_SQL_PATH, params=params)
 
-    items: list[MessageTreeViewItem] = []
-    if result and result.items:
-        for item in result.items:
-            items.append(
-                MessageTreeViewItem(
-                    message_id=item.message_id,
-                    branch_path=list(item.branch_path) if item.branch_path else None,
-                    depth=item.depth,
-                )
-            )
+    items: list[QGetSimulationMessageTreeViewV4Item] = (
+        list(result.items) if result and result.items else []
+    )
 
     await set_cached(
         cache_key_val,

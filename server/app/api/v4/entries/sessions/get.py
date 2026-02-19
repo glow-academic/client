@@ -6,11 +6,11 @@ from uuid import UUID
 
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel, Field
 
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
 from app.sql.types import (
+    GetSessionListViewSqlRow,
     GetSessionsEntriesApiRequest,
     GetSessionsEntriesApiResponse,
     GetSessionsEntriesSqlParams,
@@ -26,22 +26,6 @@ SQL_PATH = "app/sql/v4/queries/entries/sessions/get_sessions_entries_complete.sq
 VIEW_SQL_PATH = "app/sql/v4/queries/views/session/list/get_session_list_view_complete.sql"
 
 router = APIRouter()
-
-
-class SessionViewItem(BaseModel):
-    """Single item from the sessions list view."""
-
-    session_id: UUID
-    profile_id: UUID | None = None
-    session_created_at: datetime | None = None
-    active: bool = False
-
-
-class GetSessionListViewResponse(BaseModel):
-    """Response containing sessions list data."""
-
-    items: list[SessionViewItem] = Field(default_factory=list)
-    total_count: int = Field(default=0)
 
 
 async def get_sessions_entries_internal(
@@ -95,7 +79,7 @@ async def get_session_list_view_internal(
     page_limit: int = 50,
     page_offset: int = 0,
     bypass_cache: bool = False,
-) -> GetSessionListViewResponse:
+) -> GetSessionListViewSqlRow:
     """Internal function for fetching sessions data from MV."""
     from app.sql.types import GetSessionListViewSqlParams
 
@@ -120,7 +104,7 @@ async def get_session_list_view_internal(
     if not bypass_cache:
         cached = await get_cached(cache_key_val)
         if cached:
-            return GetSessionListViewResponse.model_validate(cached)
+            return GetSessionListViewSqlRow.model_validate(cached)
 
     params = GetSessionListViewSqlParams(
         session_ids=session_ids,
@@ -137,20 +121,8 @@ async def get_session_list_view_internal(
 
     result = await execute_sql_typed(conn, VIEW_SQL_PATH, params=params)
 
-    items: list[SessionViewItem] = []
-    if result and result.items:
-        for item in result.items:
-            items.append(
-                SessionViewItem(
-                    session_id=item.session_id,
-                    profile_id=item.profile_id,
-                    session_created_at=item.session_created_at,
-                    active=item.active or False,
-                )
-            )
-
-    response = GetSessionListViewResponse(
-        items=items,
+    response = GetSessionListViewSqlRow(
+        items=list(result.items) if result and result.items else [],
         total_count=result.total_count or 0 if result else 0,
     )
 

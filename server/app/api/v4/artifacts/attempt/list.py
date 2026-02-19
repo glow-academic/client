@@ -21,7 +21,7 @@ from app.api.v4.artifacts.training.permissions import (
     compute_show_view,
 )
 from app.api.v4.entries.attempt.get import ChatViewItem, get_attempt_chats_internal
-from app.api.v4.entries.attempt.search import AttemptViewItem, get_attempt_list_internal
+from app.api.v4.entries.attempt.search import get_attempt_list_internal
 from app.api.v4.resources.personas.get import get_personas_internal
 from app.api.v4.resources.profiles.get import get_profiles_internal
 from app.api.v4.resources.scenarios.get import get_scenarios_internal
@@ -29,6 +29,7 @@ from app.api.v4.resources.simulations.get import get_simulations_internal
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
+from app.sql.types import QGetAttemptListViewV4Item as AttemptViewItem
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
@@ -320,7 +321,8 @@ async def get_attempt_list_artifact_internal(
     )
 
     # Step 2: Batch-fetch chats for paginated attempt_ids (single query)
-    paginated_ids = [item.attempt_id for item in list_result.items]
+    items = list_result.items or []
+    paginated_ids = [item.attempt_id for item in items]
 
     chats: list[ChatViewItem] = []
     if paginated_ids:
@@ -341,7 +343,7 @@ async def get_attempt_list_artifact_internal(
     all_scenario_ids: set[UUID] = set()
 
     aggregates_by_attempt: dict[UUID, dict[str, Any]] = {}
-    for item in list_result.items:
+    for item in items:
         attempt_chats = chats_by_attempt.get(item.attempt_id, [])
         agg = _compute_chat_aggregates(attempt_chats)
         aggregates_by_attempt[item.attempt_id] = agg
@@ -377,7 +379,7 @@ async def get_attempt_list_artifact_internal(
             pass_threshold,
             practice,
         )
-        for item in list_result.items
+        for item in items
     ]
 
     # Step 7: Build filter options from view result
