@@ -43,6 +43,9 @@ class RoutePermission(BaseModel):
     artifact_type: str | None = Field(
         default=None, description="Artifact type for edit/create pages"
     )
+    artifact: str | None = Field(
+        default=None, description="Artifact that grants access to this route"
+    )
 
     model_config = {"populate_by_name": True}
 
@@ -133,18 +136,21 @@ ROUTE_PERMISSIONS: list[SectionPermission] = [
                 roles=["member", "instructional", "admin", "superadmin"],
                 title="Home",
                 redirectTo="/home",
+                artifact="home",
             ),
             RoutePermission(
                 path="/home/[attemptId]",
                 roles=["member", "instructional", "admin", "superadmin"],
                 title="Simulation Attempt",
                 redirectTo="/home",
+                artifact="attempt",
             ),
             RoutePermission(
-                path="/home/[attemptId]/[bundleId]",
+                path="/home/[attemptId]/[trainingId]",
                 roles=["member", "instructional", "admin", "superadmin"],
                 title="Customize Training",
                 redirectTo="/home",
+                artifact="training",
             ),
         ],
     ),
@@ -161,18 +167,21 @@ ROUTE_PERMISSIONS: list[SectionPermission] = [
                 roles=["guest", "member", "instructional", "admin", "superadmin"],
                 title="Practice",
                 redirectTo="/practice",
+                artifact="practice",
             ),
             RoutePermission(
                 path="/practice/[attemptId]",
                 roles=["guest", "member", "instructional", "admin", "superadmin"],
                 title="Practice Attempt",
                 redirectTo="/practice",
+                artifact="attempt",
             ),
             RoutePermission(
-                path="/practice/[attemptId]/[bundleId]",
+                path="/practice/[attemptId]/[trainingId]",
                 roles=["guest", "member", "instructional", "admin", "superadmin"],
                 title="Customize Practice",
                 redirectTo="/practice",
+                artifact="training",
             ),
         ],
     ),
@@ -189,6 +198,7 @@ ROUTE_PERMISSIONS: list[SectionPermission] = [
                 roles=["member", "instructional", "admin", "superadmin"],
                 title="Leaderboard",
                 redirectTo="/leaderboard",
+                artifact="leaderboard",
             ),
         ],
     ),
@@ -201,6 +211,7 @@ ROUTE_PERMISSIONS: list[SectionPermission] = [
         order=3,
         children=["dashboard", "reports", "activity", "pricing"],
         routes=[
+            # Section parent — accessible if any child artifact is available
             RoutePermission(
                 path="/analytics",
                 roles=["instructional", "admin", "superadmin"],
@@ -212,12 +223,14 @@ ROUTE_PERMISSIONS: list[SectionPermission] = [
                 roles=["instructional", "admin", "superadmin"],
                 title="Dashboard",
                 redirectTo="/analytics/dashboard",
+                artifact="dashboard",
             ),
             RoutePermission(
                 path="/analytics/reports",
                 roles=["instructional", "admin", "superadmin"],
                 title="Reports",
                 redirectTo="/analytics/reports",
+                artifact="reports",
             ),
             RoutePermission(
                 path="/analytics/reports/[profileId]",
@@ -225,30 +238,35 @@ ROUTE_PERMISSIONS: list[SectionPermission] = [
                 title="Profile Report",
                 redirectTo="/analytics/reports",
                 artifact_type="profile",
+                artifact="record",
             ),
             RoutePermission(
                 path="/analytics/activity",
                 roles=["instructional", "admin", "superadmin"],
                 title="Activity",
                 redirectTo="/analytics/activity",
+                artifact="activity",
             ),
             RoutePermission(
                 path="/analytics/activity/[sessionId]",
                 roles=["instructional", "admin", "superadmin"],
                 title="Session Activity",
                 redirectTo="/analytics/activity",
+                artifact="session",
             ),
             RoutePermission(
                 path="/analytics/pricing",
                 roles=["instructional", "admin", "superadmin"],
                 title="Pricing",
                 redirectTo="/analytics/pricing",
+                artifact="pricing",
             ),
             RoutePermission(
                 path="/analytics/pricing/[groupId]",
                 roles=["instructional", "admin", "superadmin"],
                 title="Pricing Group",
                 redirectTo="/analytics/pricing",
+                artifact="group",
             ),
         ],
     ),
@@ -261,6 +279,7 @@ ROUTE_PERMISSIONS: list[SectionPermission] = [
         order=4,
         children=["cohorts", "simulations", "scenarios", "personas"],
         routes=[
+            # Section parent — accessible if any child artifact is available
             RoutePermission(
                 path="/training",
                 roles=["instructional", "admin", "superadmin"],
@@ -273,6 +292,7 @@ ROUTE_PERMISSIONS: list[SectionPermission] = [
                 title="Cohorts",
                 redirectTo="/training/cohorts",
                 create_label="Create Cohort",
+                artifact="cohort",
             ),
             RoutePermission(
                 path="/training/cohorts/new",
@@ -280,6 +300,7 @@ ROUTE_PERMISSIONS: list[SectionPermission] = [
                 title="Create Cohort",
                 redirectTo="/training/cohorts",
                 artifact_type="cohort",
+                artifact="cohort",
             ),
             RoutePermission(
                 path="/training/cohorts/[cohortId]",
@@ -287,6 +308,7 @@ ROUTE_PERMISSIONS: list[SectionPermission] = [
                 title="Edit Cohort",
                 redirectTo="/training/cohorts",
                 artifact_type="cohort",
+                artifact="cohort",
             ),
             RoutePermission(
                 path="/training/simulations",
@@ -294,6 +316,7 @@ ROUTE_PERMISSIONS: list[SectionPermission] = [
                 title="Simulations",
                 redirectTo="/training/simulations",
                 create_label="Create Simulation",
+                artifact="simulation",
             ),
             RoutePermission(
                 path="/training/simulations/new",
@@ -301,6 +324,7 @@ ROUTE_PERMISSIONS: list[SectionPermission] = [
                 title="Create Simulation",
                 redirectTo="/training/simulations",
                 artifact_type="simulation",
+                artifact="simulation",
             ),
             RoutePermission(
                 path="/training/simulations/[simulationId]",
@@ -308,6 +332,7 @@ ROUTE_PERMISSIONS: list[SectionPermission] = [
                 title="Edit Simulation",
                 redirectTo="/training/simulations",
                 artifact_type="simulation",
+                artifact="simulation",
             ),
             RoutePermission(
                 path="/training/scenarios",
@@ -315,6 +340,7 @@ ROUTE_PERMISSIONS: list[SectionPermission] = [
                 title="Scenarios",
                 redirectTo="/training/scenarios",
                 create_label="Create Scenario",
+                artifact="scenario",
             ),
             RoutePermission(
                 path="/training/scenarios/new",
@@ -322,6 +348,7 @@ ROUTE_PERMISSIONS: list[SectionPermission] = [
                 title="Create Scenario",
                 redirectTo="/training/scenarios",
                 artifact_type="scenario",
+                artifact="scenario",
             ),
             RoutePermission(
                 path="/training/scenarios/[scenarioId]",
@@ -329,6 +356,7 @@ ROUTE_PERMISSIONS: list[SectionPermission] = [
                 title="Edit Scenario",
                 redirectTo="/training/scenarios",
                 artifact_type="scenario",
+                artifact="scenario",
             ),
             RoutePermission(
                 path="/training/personas",
@@ -336,6 +364,7 @@ ROUTE_PERMISSIONS: list[SectionPermission] = [
                 title="Personas",
                 redirectTo="/training/personas",
                 create_label="Create Persona",
+                artifact="persona",
             ),
             RoutePermission(
                 path="/training/personas/new",
@@ -343,6 +372,7 @@ ROUTE_PERMISSIONS: list[SectionPermission] = [
                 title="Create Persona",
                 redirectTo="/training/personas",
                 artifact_type="persona",
+                artifact="persona",
             ),
             RoutePermission(
                 path="/training/personas/[personaId]",
@@ -350,6 +380,7 @@ ROUTE_PERMISSIONS: list[SectionPermission] = [
                 title="Edit Persona",
                 redirectTo="/training/personas",
                 artifact_type="persona",
+                artifact="persona",
             ),
         ],
     ),
@@ -362,6 +393,7 @@ ROUTE_PERMISSIONS: list[SectionPermission] = [
         order=5,
         children=["staff", "documents", "parameters", "fields"],
         routes=[
+            # Section parent — accessible if any child artifact is available
             RoutePermission(
                 path="/management",
                 roles=["admin", "superadmin"],
@@ -374,6 +406,7 @@ ROUTE_PERMISSIONS: list[SectionPermission] = [
                 title="Staff",
                 redirectTo="/management/staff",
                 create_label="Create Staff",
+                artifact="profile",
             ),
             RoutePermission(
                 path="/management/staff/new",
@@ -381,6 +414,7 @@ ROUTE_PERMISSIONS: list[SectionPermission] = [
                 title="Create Staff",
                 redirectTo="/management/staff",
                 artifact_type="profile",
+                artifact="profile",
             ),
             RoutePermission(
                 path="/management/staff/[profileId]",
@@ -388,6 +422,7 @@ ROUTE_PERMISSIONS: list[SectionPermission] = [
                 title="Staff Profile",
                 redirectTo="/management/staff",
                 artifact_type="profile",
+                artifact="profile",
             ),
             RoutePermission(
                 path="/management/documents",
@@ -395,6 +430,7 @@ ROUTE_PERMISSIONS: list[SectionPermission] = [
                 title="Documents",
                 redirectTo="/management/documents",
                 create_label="Create Document",
+                artifact="document",
             ),
             RoutePermission(
                 path="/management/documents/new",
@@ -402,6 +438,7 @@ ROUTE_PERMISSIONS: list[SectionPermission] = [
                 title="Create Document",
                 redirectTo="/management/documents",
                 artifact_type="document",
+                artifact="document",
             ),
             RoutePermission(
                 path="/management/documents/[documentId]",
@@ -409,6 +446,7 @@ ROUTE_PERMISSIONS: list[SectionPermission] = [
                 title="View Document",
                 redirectTo="/management/documents",
                 artifact_type="document",
+                artifact="document",
             ),
             RoutePermission(
                 path="/management/parameters",
@@ -416,6 +454,7 @@ ROUTE_PERMISSIONS: list[SectionPermission] = [
                 title="Parameters",
                 redirectTo="/management/parameters",
                 create_label="Create Parameter",
+                artifact="parameter",
             ),
             RoutePermission(
                 path="/management/parameters/new",
@@ -423,6 +462,7 @@ ROUTE_PERMISSIONS: list[SectionPermission] = [
                 title="Create Parameter",
                 redirectTo="/management/parameters",
                 artifact_type="parameter",
+                artifact="parameter",
             ),
             RoutePermission(
                 path="/management/parameters/[parameterId]",
@@ -430,6 +470,7 @@ ROUTE_PERMISSIONS: list[SectionPermission] = [
                 title="Edit Parameter",
                 redirectTo="/management/parameters",
                 artifact_type="parameter",
+                artifact="parameter",
             ),
             RoutePermission(
                 path="/management/fields",
@@ -437,6 +478,7 @@ ROUTE_PERMISSIONS: list[SectionPermission] = [
                 title="Fields",
                 redirectTo="/management/fields",
                 create_label="Create Field",
+                artifact="field",
             ),
             RoutePermission(
                 path="/management/fields/new",
@@ -444,6 +486,7 @@ ROUTE_PERMISSIONS: list[SectionPermission] = [
                 title="Create Field",
                 redirectTo="/management/fields",
                 artifact_type="field",
+                artifact="field",
             ),
             RoutePermission(
                 path="/management/fields/[fieldId]",
@@ -451,6 +494,7 @@ ROUTE_PERMISSIONS: list[SectionPermission] = [
                 title="Edit Field",
                 redirectTo="/management/fields",
                 artifact_type="field",
+                artifact="field",
             ),
         ],
     ),
@@ -463,6 +507,7 @@ ROUTE_PERMISSIONS: list[SectionPermission] = [
         order=6,
         children=["agents", "models", "providers", "tools"],
         routes=[
+            # Section parent — accessible if any child artifact is available
             RoutePermission(
                 path="/intelligence",
                 roles=["admin", "superadmin"],
@@ -475,6 +520,7 @@ ROUTE_PERMISSIONS: list[SectionPermission] = [
                 title="Agents",
                 redirectTo="/intelligence/agents",
                 create_label="Create Agent",
+                artifact="agent",
             ),
             RoutePermission(
                 path="/intelligence/agents/new",
@@ -482,6 +528,7 @@ ROUTE_PERMISSIONS: list[SectionPermission] = [
                 title="Create Agent",
                 redirectTo="/intelligence/agents",
                 artifact_type="agent",
+                artifact="agent",
             ),
             RoutePermission(
                 path="/intelligence/agents/[agentId]",
@@ -489,6 +536,7 @@ ROUTE_PERMISSIONS: list[SectionPermission] = [
                 title="Edit Agent",
                 redirectTo="/intelligence/agents",
                 artifact_type="agent",
+                artifact="agent",
             ),
             RoutePermission(
                 path="/intelligence/models",
@@ -496,6 +544,7 @@ ROUTE_PERMISSIONS: list[SectionPermission] = [
                 title="Models",
                 redirectTo="/intelligence/models",
                 create_label="Create Model",
+                artifact="model",
             ),
             RoutePermission(
                 path="/intelligence/models/new",
@@ -503,6 +552,7 @@ ROUTE_PERMISSIONS: list[SectionPermission] = [
                 title="Create Model",
                 redirectTo="/intelligence/models",
                 artifact_type="model",
+                artifact="model",
             ),
             RoutePermission(
                 path="/intelligence/models/[modelId]",
@@ -510,6 +560,7 @@ ROUTE_PERMISSIONS: list[SectionPermission] = [
                 title="Edit Model",
                 redirectTo="/intelligence/models",
                 artifact_type="model",
+                artifact="model",
             ),
             RoutePermission(
                 path="/intelligence/providers",
@@ -517,6 +568,7 @@ ROUTE_PERMISSIONS: list[SectionPermission] = [
                 title="Providers",
                 redirectTo="/intelligence/providers",
                 create_label="Create Provider",
+                artifact="provider",
             ),
             RoutePermission(
                 path="/intelligence/providers/new",
@@ -524,6 +576,7 @@ ROUTE_PERMISSIONS: list[SectionPermission] = [
                 title="Create Provider",
                 redirectTo="/intelligence/providers",
                 artifact_type="provider",
+                artifact="provider",
             ),
             RoutePermission(
                 path="/intelligence/providers/[providerId]",
@@ -531,6 +584,7 @@ ROUTE_PERMISSIONS: list[SectionPermission] = [
                 title="Edit Provider",
                 redirectTo="/intelligence/providers",
                 artifact_type="provider",
+                artifact="provider",
             ),
             RoutePermission(
                 path="/intelligence/tools",
@@ -538,6 +592,7 @@ ROUTE_PERMISSIONS: list[SectionPermission] = [
                 title="Tools",
                 redirectTo="/intelligence/tools",
                 create_label="Create Tool",
+                artifact="tool",
             ),
             RoutePermission(
                 path="/intelligence/tools/new",
@@ -545,6 +600,7 @@ ROUTE_PERMISSIONS: list[SectionPermission] = [
                 title="Create Tool",
                 redirectTo="/intelligence/tools",
                 artifact_type="tool",
+                artifact="tool",
             ),
             RoutePermission(
                 path="/intelligence/tools/[toolId]",
@@ -552,6 +608,7 @@ ROUTE_PERMISSIONS: list[SectionPermission] = [
                 title="Edit Tool",
                 redirectTo="/intelligence/tools",
                 artifact_type="tool",
+                artifact="tool",
             ),
         ],
     ),
@@ -564,6 +621,7 @@ ROUTE_PERMISSIONS: list[SectionPermission] = [
         order=7,
         children=["departments", "rubrics", "auth", "evals"],
         routes=[
+            # Section parent — accessible if any child artifact is available
             RoutePermission(
                 path="/system",
                 roles=["superadmin"],
@@ -576,6 +634,7 @@ ROUTE_PERMISSIONS: list[SectionPermission] = [
                 title="Departments",
                 redirectTo="/system/departments",
                 create_label="Create Department",
+                artifact="department",
             ),
             RoutePermission(
                 path="/system/departments/new",
@@ -583,6 +642,7 @@ ROUTE_PERMISSIONS: list[SectionPermission] = [
                 title="Create Department",
                 redirectTo="/system/departments",
                 artifact_type="department",
+                artifact="department",
             ),
             RoutePermission(
                 path="/system/departments/[departmentId]",
@@ -590,6 +650,7 @@ ROUTE_PERMISSIONS: list[SectionPermission] = [
                 title="Edit Department",
                 redirectTo="/system/departments",
                 artifact_type="department",
+                artifact="department",
             ),
             RoutePermission(
                 path="/system/rubrics",
@@ -597,6 +658,7 @@ ROUTE_PERMISSIONS: list[SectionPermission] = [
                 title="Rubrics",
                 redirectTo="/system/rubrics",
                 create_label="Create Rubric",
+                artifact="rubric",
             ),
             RoutePermission(
                 path="/system/rubrics/new",
@@ -604,6 +666,7 @@ ROUTE_PERMISSIONS: list[SectionPermission] = [
                 title="Create Rubric",
                 redirectTo="/system/rubrics",
                 artifact_type="rubric",
+                artifact="rubric",
             ),
             RoutePermission(
                 path="/system/rubrics/[rubricId]",
@@ -611,6 +674,7 @@ ROUTE_PERMISSIONS: list[SectionPermission] = [
                 title="Edit Rubric",
                 redirectTo="/system/rubrics",
                 artifact_type="rubric",
+                artifact="rubric",
             ),
             RoutePermission(
                 path="/system/auth",
@@ -618,6 +682,7 @@ ROUTE_PERMISSIONS: list[SectionPermission] = [
                 title="Auth",
                 redirectTo="/system/auth",
                 create_label="Create Auth",
+                artifact="auth",
             ),
             RoutePermission(
                 path="/system/auth/new",
@@ -625,6 +690,7 @@ ROUTE_PERMISSIONS: list[SectionPermission] = [
                 title="Create Auth",
                 redirectTo="/system/auth",
                 artifact_type="auth",
+                artifact="auth",
             ),
             RoutePermission(
                 path="/system/auth/[authId]",
@@ -632,6 +698,7 @@ ROUTE_PERMISSIONS: list[SectionPermission] = [
                 title="Edit Auth",
                 redirectTo="/system/auth",
                 artifact_type="auth",
+                artifact="auth",
             ),
             RoutePermission(
                 path="/system/evals",
@@ -639,6 +706,7 @@ ROUTE_PERMISSIONS: list[SectionPermission] = [
                 title="Evals",
                 redirectTo="/system/evals",
                 create_label="Create Eval",
+                artifact="eval",
             ),
             RoutePermission(
                 path="/system/evals/new",
@@ -646,6 +714,7 @@ ROUTE_PERMISSIONS: list[SectionPermission] = [
                 title="Create Eval",
                 redirectTo="/system/evals",
                 artifact_type="eval",
+                artifact="eval",
             ),
             RoutePermission(
                 path="/system/evals/[evalId]",
@@ -653,6 +722,7 @@ ROUTE_PERMISSIONS: list[SectionPermission] = [
                 title="Edit Eval",
                 redirectTo="/system/evals",
                 artifact_type="eval",
+                artifact="eval",
             ),
         ],
     ),
@@ -669,6 +739,7 @@ ROUTE_PERMISSIONS: list[SectionPermission] = [
                 roles=["admin", "superadmin"],
                 title="Health",
                 redirectTo="/health",
+                artifact="health",
             ),
         ],
     ),
@@ -685,18 +756,21 @@ ROUTE_PERMISSIONS: list[SectionPermission] = [
                 roles=["custom", "instructional", "admin", "superadmin"],
                 title="Benchmark",
                 redirectTo="/benchmark",
+                artifact="benchmark",
             ),
             RoutePermission(
                 path="/benchmark/[testId]",
                 roles=["custom", "instructional", "admin", "superadmin"],
                 title="Test Run",
                 redirectTo="/benchmark",
+                artifact="test",
             ),
             RoutePermission(
-                path="/benchmark/[testId]/[bundleId]",
+                path="/benchmark/[testId]/[suiteId]",
                 roles=["custom", "instructional", "admin", "superadmin"],
                 title="Test Bundle",
                 redirectTo="/benchmark",
+                artifact="suite",
             ),
         ],
     ),
@@ -714,6 +788,7 @@ ROUTE_PERMISSIONS: list[SectionPermission] = [
                 title="Settings",
                 redirectTo="/settings",
                 create_label="Create Setting",
+                artifact="setting",
             ),
             RoutePermission(
                 path="/settings/new",
@@ -721,6 +796,7 @@ ROUTE_PERMISSIONS: list[SectionPermission] = [
                 title="Create Setting",
                 redirectTo="/settings",
                 artifact_type="setting",
+                artifact="setting",
             ),
             RoutePermission(
                 path="/settings/[settingId]",
@@ -728,6 +804,7 @@ ROUTE_PERMISSIONS: list[SectionPermission] = [
                 title="Edit Setting",
                 redirectTo="/settings",
                 artifact_type="setting",
+                artifact="setting",
             ),
         ],
     ),
@@ -768,6 +845,27 @@ def _is_uuid(segment: str) -> bool:
 # ---------------------------------------------------------------------------
 # Computation functions
 # ---------------------------------------------------------------------------
+
+
+def compute_available_routes(user_artifacts: list[str]) -> list[str]:
+    """Expand artifact list into route paths."""
+    artifact_set = set(user_artifacts)
+    routes: list[str] = []
+    for sp in ROUTE_PERMISSIONS:
+        for rp in sp.routes:
+            if rp.artifact and rp.artifact in artifact_set:
+                routes.append(rp.path)
+    return routes
+
+
+def compute_available_sections(user_artifacts: list[str]) -> list[str]:
+    """Derive sections from artifacts — a section is visible if ANY of its routes' artifacts are in user_artifacts."""
+    artifact_set = set(user_artifacts)
+    sections: list[str] = []
+    for sp in ROUTE_PERMISSIONS:
+        if any(rp.artifact in artifact_set for rp in sp.routes if rp.artifact):
+            sections.append(sp.section)
+    return sections
 
 
 def compute_sidebar_routes(
@@ -935,6 +1033,7 @@ def _match_route_pattern(pattern: str, pathname: str) -> bool:
 def compute_page_access(
     pathname: str,
     available_routes: list[str],
+    available_sections: list[str] | None = None,
 ) -> PageAccess:
     """Check if the current pathname is accessible given available_routes."""
     if not pathname or pathname == "/":
@@ -945,8 +1044,15 @@ def compute_page_access(
         if _match_route_pattern(route_pattern, pathname):
             return PageAccess(authorized=True)
 
-    # Find the section to compute redirect
+    # For section parent routes (e.g. /training, /analytics, /management),
+    # allow access if the section itself is available
     segments = [s for s in pathname.split("/") if s]
+    if segments and available_sections:
+        section = segments[0]
+        if len(segments) == 1 and section in (available_sections or []):
+            return PageAccess(authorized=True)
+
+    # Find the section to compute redirect
     if segments:
         section = segments[0]
         sp = _SECTION_MAP.get(section)

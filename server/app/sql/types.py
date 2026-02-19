@@ -21077,6 +21077,7 @@ class GetProfileContextAccessSqlRow(BaseModel):
     draft_ids: list[UUID] | None = None
     scoped_roles: list[str] | None = None
     available_sections: list[str] | None = None
+    artifacts: list[str] | None = None
     actor_name: str | None = None
     artifact_agent_ids: list[QGetProfileContextAccessV4ArtifactAgent] | None = None
 
@@ -21099,6 +21100,7 @@ class GetProfileContextAccessApiResponse(BaseModel):
     draft_ids: list[UUID] | None = None
     scoped_roles: list[str] | None = None
     available_sections: list[str] | None = None
+    artifacts: list[str] | None = None
     actor_name: str | None = None
     artifact_agent_ids: list[QGetProfileContextAccessV4ArtifactAgent] | None = None
 

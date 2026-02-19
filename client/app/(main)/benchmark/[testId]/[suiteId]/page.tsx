@@ -58,10 +58,10 @@ export default async function BenchmarkBundlePage({
   params,
   searchParams,
 }: {
-  params: Promise<{ testId: string; bundleId: string }>;
+  params: Promise<{ testId: string; suiteId: string }>;
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
-  const { testId, bundleId } = await params;
+  const { testId, suiteId } = await params;
   const sp = await searchParams;
   const rawDraftId = sp["draftId"];
   const draftId =
@@ -71,7 +71,7 @@ export default async function BenchmarkBundlePage({
         ? (rawDraftId[0] ?? null)
         : null;
 
-  const bundleData = await getBenchmarkBundle(bundleId, draftId);
+  const bundleData = await getBenchmarkBundle(suiteId, draftId);
 
   return (
     <BenchmarkBundle

@@ -47,19 +47,19 @@ async function patchTrainingDraft(
 
 export async function generateMetadata(): Promise<Metadata> {
   return {
-    title: "Customize Training",
-    description: "Customize and start a bundle-based training session.",
+    title: "Customize Practice",
+    description: "Customize and start a bundle-based practice training session.",
   };
 }
 
-export default async function HomeBundlePage({
+export default async function PracticeBundlePage({
   params,
   searchParams,
 }: {
-  params: Promise<{ attemptId: string; bundleId: string }>;
+  params: Promise<{ attemptId: string; trainingId: string }>;
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
-  const { attemptId, bundleId } = await params;
+  const { attemptId, trainingId } = await params;
   const sp = await searchParams;
   const rawDraftId = sp["draftId"];
   const draftId =
@@ -69,11 +69,11 @@ export default async function HomeBundlePage({
         ? (rawDraftId[0] ?? null)
         : null;
 
-  const bundleData = await getTrainingBundle(bundleId, draftId);
+  const bundleData = await getTrainingBundle(trainingId, draftId);
 
   return (
     <TrainingBundle
-      mode="home"
+      mode="practice"
       bundleData={bundleData as TrainingBundleData}
       patchTrainingDraftAction={patchTrainingDraft}
       attemptId={attemptId}

@@ -13,6 +13,10 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from app.api.v4.auth.access import get_access_internal
 from app.api.v4.auth.callback import resolve_redirect_path
 from app.api.v4.auth.permissions import convert_role
+from app.api.v4.auth.route_permissions import (
+    compute_available_routes,
+    compute_available_sections,
+)
 from app.api.v4.auth.types import AuthProfileInternalData, GetAuthProfileApiResponse
 from app.api.v4.resources.cohorts.get import get_cohorts_internal
 from app.api.v4.resources.departments.get import get_departments_internal
@@ -140,6 +144,10 @@ async def get_auth_profile(
         response.headers["X-Two-Pass"] = "1"
         response.headers["X-Pass1-Time"] = f"{pass1_time:.1f}"
 
+        user_artifacts = access.artifacts or []
+        available_routes = compute_available_routes(user_artifacts)
+        available_sections = compute_available_sections(user_artifacts)
+
         return GetAuthProfileApiResponse(
             is_authorized=access.is_authorized,
             id=access.id,
@@ -147,8 +155,8 @@ async def get_auth_profile(
             role=access.role,
             active=access.active,
             scoped_roles=access.scoped_roles,
-            available_sections=access.available_sections,
-            available_routes=access.available_routes,
+            available_sections=available_sections,
+            available_routes=available_routes,
             redirect_path=redirect_path,
             role_resources=data.role_resources,
             session_id=data.session_id,

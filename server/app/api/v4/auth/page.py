@@ -11,6 +11,8 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 from app.api.v4.auth.access import get_access_internal
 from app.api.v4.auth.route_permissions import (
+    compute_available_routes,
+    compute_available_sections,
     compute_breadcrumbs,
     compute_page_access,
     compute_page_metadata,
@@ -59,13 +61,16 @@ async def get_auth_page(
         # Pure computation — no SQL in Pass 2
         pass2_start = time.time()
 
-        available_sections = access.available_sections or []
-        available_routes = access.available_routes or []
+        user_artifacts = access.artifacts or []
+        available_sections = compute_available_sections(user_artifacts)
+        available_routes = compute_available_routes(user_artifacts)
 
         sidebar_routes = compute_sidebar_routes(available_sections)
         breadcrumbs = compute_breadcrumbs(pathname) if pathname else []
         page_access = (
-            compute_page_access(pathname, available_routes) if pathname else None
+            compute_page_access(pathname, available_routes, available_sections)
+            if pathname
+            else None
         )
         page_metadata = (
             compute_page_metadata(pathname, available_routes) if pathname else None

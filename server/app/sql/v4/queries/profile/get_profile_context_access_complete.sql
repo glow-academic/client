@@ -66,6 +66,7 @@ RETURNS TABLE (
     -- Computed
     scoped_roles text[],
     available_sections text[],
+    artifacts text[],
     actor_name text,
     -- Artifact agent IDs
     artifact_agent_ids types.q_get_profile_context_access_v4_artifact_agent[]
@@ -88,7 +89,10 @@ profile_data AS (
          WHERE pr_j.profile_id = p.id
          LIMIT 1) as role,
         EXISTS (SELECT 1 FROM profile_flags_junction pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.profile_id = p.id AND f.name = 'profile_active' AND pf.value = TRUE) as active,
-        pd.department_id as primary_department_id
+        pd.department_id as primary_department_id,
+        (SELECT r.artifacts FROM profile_roles_junction pr_j
+         JOIN roles_resource r ON pr_j.role_id = r.id
+         WHERE pr_j.profile_id = p.id LIMIT 1) as artifacts
     FROM profile_artifact p
     LEFT JOIN profile_departments_junction pd ON p.id = pd.profile_id AND pd.is_primary = TRUE
     WHERE p.id = (SELECT profile_id FROM params)
@@ -99,7 +103,8 @@ profile_data AS (
         NULL::text as name,
         NULL::profile_type as role,
         NULL::boolean as active,
-        NULL::uuid as primary_department_id
+        NULL::uuid as primary_department_id,
+        NULL::text[] as artifacts
     WHERE (SELECT profile_id FROM params) IS NULL
 ),
 profile_type AS (
@@ -345,6 +350,7 @@ SELECT
     -- Computed
     (SELECT scoped_roles FROM scoped_roles_computed) as scoped_roles,
     ARRAY[]::text[] as available_sections,
+    pd.artifacts as artifacts,
     (SELECT actor_name FROM actor_name_computed) as actor_name,
     -- Artifact agent IDs
     (SELECT artifact_agent_ids FROM artifact_agent_ids_data) as artifact_agent_ids
