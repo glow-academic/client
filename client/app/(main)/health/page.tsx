@@ -17,15 +17,15 @@ import { cache } from "react";
 import { loadHealthSearchParams } from "@/lib/search-params/health";
 
 /** ---- Strong types from OpenAPI ---- */
-type HealthBundleIn = InputOf<"/api/v4/views/analytics/health/get", "post">;
-type HealthBundleOut = OutputOf<"/api/v4/views/analytics/health/get", "post">;
+type HealthBundleIn = InputOf<"/api/v4/artifacts/health/get", "post">;
+type HealthBundleOut = OutputOf<"/api/v4/artifacts/health/get", "post">;
 
 /** ---- Cached fetch used by page (prevents duplicate requests) ---- */
 const getHealthBundle = cache(
   async (input: HealthBundleIn): Promise<HealthBundleOut> => {
     const bypassCache = await isHardRefresh();
 
-    return api.post("/views/analytics/health/get", input, {
+    return api.post("/artifacts/health/get", input, {
       cache: "no-store",
       ...(bypassCache && {
         headers: {
@@ -59,8 +59,8 @@ export default async function HealthPage({ searchParams }: HealthPageProps) {
   // Fetch bundle data server-side (for KPIs and metrics)
   const bundleData = await getHealthBundle({
     body: {
-      start_date: filters.startDate,
-      end_date: filters.endDate,
+      date_from: filters.startDate,
+      date_to: filters.endDate,
     },
   });
 
