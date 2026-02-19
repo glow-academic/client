@@ -23,7 +23,7 @@ from app.api.v4.artifacts.leaderboard.types import (
 )
 from app.api.v4.artifacts.types import FilterOption
 from app.api.v4.entries.chat.get import get_chats_internal
-from app.api.v4.entries.chat.message_stats import get_message_stats_internal
+from app.api.v4.entries.chat.get import get_message_stats_internal
 from app.api.v4.resources.profiles.get import get_profiles_internal
 from app.api.v4.resources.scenarios.get import get_scenarios_internal
 from app.api.v4.resources.simulations.get import get_simulations_internal

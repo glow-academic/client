@@ -72,30 +72,30 @@ from app.api.v4.artifacts.attempt.types import (
     TimerData,
     VideoEntry,
 )
-from app.api.v4.entries.attempt.chats import get_attempt_chats_internal
-from app.api.v4.entries.attempt.list import get_attempt_list_internal
-from app.api.v4.entries.attempt.messages import get_attempt_messages_internal
-from app.api.v4.entries.attempt_analysis.view import get_attempt_analysis_internal
-from app.api.v4.entries.attempt_content.view import get_attempt_content_internal
-from app.api.v4.entries.attempt_feedback.view import get_attempt_feedback_internal
-from app.api.v4.entries.attempt_grade.view import get_attempt_grade_internal
-from app.api.v4.entries.attempt_highlight.view import (
+from app.api.v4.entries.attempt.get import get_attempt_chats_internal
+from app.api.v4.entries.attempt.get import get_attempt_messages_internal
+from app.api.v4.entries.attempt.search import get_attempt_list_internal
+from app.api.v4.entries.attempt_analysis.get import get_attempt_analysis_internal
+from app.api.v4.entries.attempt_content.get import get_attempt_content_internal
+from app.api.v4.entries.attempt_feedback.get import get_attempt_feedback_internal
+from app.api.v4.entries.attempt_grade.get import get_attempt_grade_internal
+from app.api.v4.entries.attempt_highlight.get import (
     get_attempt_highlight_internal,
 )
-from app.api.v4.entries.attempt_hint.view import get_attempt_hint_internal
-from app.api.v4.entries.attempt_improvement.view import (
+from app.api.v4.entries.attempt_hint.get import get_attempt_hint_internal
+from app.api.v4.entries.attempt_improvement.get import (
     get_attempt_improvement_internal,
 )
-from app.api.v4.entries.attempt_replacement.view import (
+from app.api.v4.entries.attempt_replacement.get import (
     get_attempt_replacement_internal,
 )
-from app.api.v4.entries.attempt_strength.view import (
+from app.api.v4.entries.attempt_strength.get import (
     get_attempt_strength_internal,
 )
 from app.api.v4.entries.responses.view import (
     get_simulation_responses_internal,
 )
-from app.api.v4.entries.uploads.view import get_upload_list_view_internal
+from app.api.v4.entries.uploads.get import get_upload_list_view_internal
 from app.api.v4.resources.agents.get import get_agents_internal
 from app.api.v4.resources.args.get import get_args_internal
 from app.api.v4.resources.args_outputs.get import get_args_outputs_internal
@@ -1649,7 +1649,7 @@ async def get_attempt_websocket(
     """
     from datetime import UTC, datetime
 
-    from app.api.v4.entries.runs.list import get_run_list_entries_internal
+    from app.api.v4.entries.runs.search import get_run_list_entries_internal
 
     data = await get_attempt_internal(
         conn=conn,

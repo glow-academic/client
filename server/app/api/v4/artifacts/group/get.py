@@ -26,7 +26,7 @@ from app.api.v4.artifacts.group.types import (
 )
 from app.api.v4.entries.calls.view import get_call_list_view_internal
 from app.api.v4.entries.groups.view import get_group_list_view_internal
-from app.api.v4.entries.runs.list import get_run_list_entries_internal
+from app.api.v4.entries.runs.search import get_run_list_entries_internal
 from app.api.v4.resources.names.get import get_names_internal
 from app.api.v4.resources.tools.get import get_tools_internal
 from app.infra.v4.activity.audit import audit_activity, audit_set

@@ -28,8 +28,7 @@ from app.api.v4.artifacts.training.types import (
     TrainingSimulationOperational,
 )
 from app.api.v4.auth.profile import get_auth_profile_internal
-from app.api.v4.entries.chat.get import get_chats_internal
-from app.api.v4.entries.chat.types import ChatItem, GetChatsResponse
+from app.api.v4.entries.chat.get import ChatItem, GetChatsResponse, get_chats_internal
 from app.api.v4.entries.home.view import (
     GetHomeContextViewResponse,
     get_home_context_view_internal,

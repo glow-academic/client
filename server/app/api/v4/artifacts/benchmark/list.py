@@ -15,7 +15,7 @@ from app.api.v4.artifacts.benchmark.types import (
     BenchmarkResponse,
 )
 from app.api.v4.artifacts.types import FilterOption
-from app.api.v4.entries.tests.view import BenchmarkTestViewItem, get_test_internal
+from app.api.v4.entries.tests.get import BenchmarkTestViewItem, get_test_internal
 from app.api.v4.resources.departments.get import get_departments_internal
 from app.api.v4.resources.evals.get import get_evals_internal
 from app.infra.v4.activity.audit import audit_activity

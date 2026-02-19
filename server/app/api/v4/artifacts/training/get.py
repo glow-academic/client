@@ -44,8 +44,8 @@ from app.api.v4.artifacts.training.types import (
     TrainingWebsocketViews,
 )
 from app.api.v4.auth.settings import get_auth_settings_internal
-from app.api.v4.entries.runs.list import get_run_list_entries_internal
-from app.api.v4.entries.training.view import get_training_view_internal
+from app.api.v4.entries.runs.search import get_run_list_entries_internal
+from app.api.v4.entries.training.get import get_training_view_internal
 from app.api.v4.entries.training_drafts.get import get_training_drafts_entries_internal
 from app.api.v4.permissions import resolve_agents_for_artifact
 from app.api.v4.resources.departments.get import get_departments_internal

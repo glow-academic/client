@@ -31,10 +31,10 @@ from app.api.v4.artifacts.test.types import (
     TestViews,
     TestWebsocketResources,
 )
-from app.api.v4.entries.test_invocation.view import (
+from app.api.v4.entries.test_invocation.get import (
     get_test_invocation_internal,
 )
-from app.api.v4.entries.tests.view import get_test_internal
+from app.api.v4.entries.tests.get import get_test_internal
 from app.api.v4.resources.agents.get import get_agents_internal
 from app.api.v4.resources.evals.get import get_evals_internal
 from app.api.v4.resources.models.get import get_models_internal
@@ -502,7 +502,7 @@ async def get_test_websocket(
     """
     from datetime import UTC, datetime
 
-    from app.api.v4.entries.runs.list import get_run_list_entries_internal
+    from app.api.v4.entries.runs.search import get_run_list_entries_internal
     from app.api.v4.resources.profiles.get import get_profiles_internal
 
     data = await get_test_internal(

@@ -67,7 +67,7 @@ from app.api.v4.artifacts.setting.types import (
 )
 from app.api.v4.auth.profile import get_auth_profile_internal
 from app.api.v4.auth.settings import get_auth_settings_internal
-from app.api.v4.entries.runs.list import get_run_list_entries_internal
+from app.api.v4.entries.runs.search import get_run_list_entries_internal
 from app.api.v4.entries.setting_drafts.get import get_setting_drafts_entries_internal
 from app.api.v4.permissions import resolve_agents_for_artifact
 from app.api.v4.resources.agents.get import get_agents_internal

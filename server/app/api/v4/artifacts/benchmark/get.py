@@ -32,8 +32,8 @@ from app.api.v4.artifacts.benchmark.types import (
     SuiteWebsocketViews,
 )
 from app.api.v4.auth.settings import get_auth_settings_internal
-from app.api.v4.entries.runs.list import get_run_list_entries_internal
-from app.api.v4.entries.suite.view import get_suite_view_internal
+from app.api.v4.entries.runs.search import get_run_list_entries_internal
+from app.api.v4.entries.suite.get import get_suite_view_internal
 from app.api.v4.permissions import resolve_agents_for_artifact
 from app.api.v4.resources.departments.get import get_departments_internal
 from app.api.v4.resources.instructions.get import get_instructions_internal

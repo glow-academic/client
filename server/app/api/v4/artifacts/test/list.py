@@ -15,7 +15,7 @@ from app.api.v4.artifacts.test.types import (
     TestListFilterOption,
     TestListItem,
 )
-from app.api.v4.entries.tests.view import get_test_internal
+from app.api.v4.entries.tests.get import get_test_internal
 from app.api.v4.resources.descriptions.get import get_descriptions_internal
 from app.api.v4.resources.names.get import get_names_internal
 from app.api.v4.resources.rubrics.get import get_rubrics_batch_internal

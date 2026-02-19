@@ -484,8 +484,6 @@ export function ParameterFields({
   const { isGenerating: aiIsGenerating, aiSuggestion, clear: clearAi } = useResourceAi({
     resourceType: "parameter_fields",
     groupId: group_id,
-      ];
-    },
   });
 
   const effectiveAiParameterFieldResources = aiSuggestion ?? aiParameterFieldResources ?? null;

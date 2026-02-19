@@ -36,7 +36,7 @@ from app.api.v4.entries.problems.view import (
     GetProblemListViewResponse,
     get_problem_list_view_internal,
 )
-from app.api.v4.entries.sessions.view import (
+from app.api.v4.entries.sessions.get import (
     GetSessionListViewResponse,
     get_session_list_view_internal,
 )

@@ -53,7 +53,7 @@ from app.api.v4.artifacts.profile.types import (
 from app.api.v4.auth.profile import get_auth_profile_internal
 from app.api.v4.auth.settings import get_auth_settings_internal
 from app.api.v4.entries.profile_drafts.get import get_profile_drafts_entries_internal
-from app.api.v4.entries.runs.list import get_run_list_entries_internal
+from app.api.v4.entries.runs.search import get_run_list_entries_internal
 from app.api.v4.permissions import has_tools_for_resource, resolve_agents_for_artifact
 from app.api.v4.resources.agents.get import get_agents_internal
 from app.api.v4.resources.cohorts.get import get_cohorts_internal

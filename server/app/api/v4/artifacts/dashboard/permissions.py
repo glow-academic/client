@@ -13,8 +13,7 @@ from app.api.v4.artifacts.dashboard.types import (
     DashboardPrimaryMetrics,
     DashboardSecondaryMetrics,
 )
-from app.api.v4.entries.chat.rubric_scores import RubricScoreItem
-from app.api.v4.entries.chat.types import ChatItem
+from app.api.v4.entries.chat.get import ChatItem, RubricScoreItem
 
 # Compat aliases for old type annotations — all now use ChatItem
 ProfileFactsItem = ChatItem

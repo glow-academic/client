@@ -24755,7 +24755,7 @@ export interface components {
          */
         ActivityViews: {
             /** Sessions */
-            sessions?: components["schemas"]["app__api__v4__entries__sessions__view__SessionViewItem"][];
+            sessions?: components["schemas"]["app__api__v4__entries__sessions__get__SessionViewItem"][];
             /** Activity */
             activity?: components["schemas"]["app__api__v4__entries__activity__view__ActivityViewItem"][];
             /** Logins */
@@ -26460,12 +26460,12 @@ export interface components {
          */
         AttemptViews: {
             /** Attempt */
-            attempt?: components["schemas"]["app__api__v4__entries__attempt__types__AttemptViewItem"][] | null;
+            attempt?: components["schemas"]["app__api__v4__entries__attempt__search__AttemptViewItem"][] | null;
             /** Attempt Chat */
             attempt_chat?: components["schemas"]["ChatData"][] | null;
             /** Attempt Message */
             attempt_message?: components["schemas"]["MessageData"][] | null;
-            runs?: components["schemas"]["app__api__v4__entries__runs__types__GetRunListViewResponse"] | null;
+            runs?: components["schemas"]["app__api__v4__entries__runs__search__GetRunListViewResponse"] | null;
         };
         /**
          * AudioViewItem
@@ -37308,7 +37308,7 @@ export interface components {
         GetTestArtifactResponse: {
             test?: components["schemas"]["BenchmarkTestViewItem"] | null;
             /** Invocations */
-            invocations?: components["schemas"]["app__api__v4__entries__test_invocation__view__BenchmarkInvocationViewItem"][];
+            invocations?: components["schemas"]["app__api__v4__entries__test_invocation__get__BenchmarkInvocationViewItem"][];
             /**
              * Status
              * @default pending
@@ -43041,7 +43041,7 @@ export interface components {
          */
         PricingViews: {
             /** Runs */
-            runs?: components["schemas"]["app__api__v4__entries__runs__types__RunViewItem"][];
+            runs?: components["schemas"]["app__api__v4__entries__runs__search__RunViewItem"][];
         };
         /** PrimaryPersonaPerformance */
         PrimaryPersonaPerformance: {
@@ -56613,8 +56613,8 @@ export interface components {
             /** Test */
             test?: components["schemas"]["BenchmarkTestViewItem"][] | null;
             /** Test Invocation */
-            test_invocation?: components["schemas"]["app__api__v4__entries__test_invocation__view__BenchmarkInvocationViewItem"][] | null;
-            runs?: components["schemas"]["app__api__v4__entries__runs__types__GetRunListViewResponse"] | null;
+            test_invocation?: components["schemas"]["app__api__v4__entries__test_invocation__get__BenchmarkInvocationViewItem"][] | null;
+            runs?: components["schemas"]["app__api__v4__entries__runs__search__GetRunListViewResponse"] | null;
         };
         /**
          * TextViewItem
@@ -58097,7 +58097,7 @@ export interface components {
          * AttemptViewItem
          * @description Single attempt from the attempt list.
          */
-        app__api__v4__entries__attempt__types__AttemptViewItem: {
+        app__api__v4__entries__attempt__search__AttemptViewItem: {
             /**
              * Attempt Id
              * Format: uuid
@@ -58318,12 +58318,12 @@ export interface components {
          * GetRunListViewResponse
          * @description Response containing run list data.
          */
-        app__api__v4__entries__runs__types__GetRunListViewResponse: {
+        app__api__v4__entries__runs__search__GetRunListViewResponse: {
             /**
              * Items
              * @description Run data items
              */
-            items?: components["schemas"]["app__api__v4__entries__runs__types__RunViewItem"][];
+            items?: components["schemas"]["app__api__v4__entries__runs__search__RunViewItem"][];
             /**
              * Total Count
              * @description Total count before pagination
@@ -58335,7 +58335,7 @@ export interface components {
          * RunViewItem
          * @description Single run from the run list.
          */
-        app__api__v4__entries__runs__types__RunViewItem: {
+        app__api__v4__entries__runs__search__RunViewItem: {
             /**
              * Run Id
              * Format: uuid
@@ -58373,7 +58373,7 @@ export interface components {
          * SessionViewItem
          * @description Single item from the sessions list view.
          */
-        app__api__v4__entries__sessions__view__SessionViewItem: {
+        app__api__v4__entries__sessions__get__SessionViewItem: {
             /**
              * Session Id
              * Format: uuid
@@ -58393,7 +58393,7 @@ export interface components {
          * BenchmarkInvocationViewItem
          * @description Single benchmark invocation row from test_invocation_mv.
          */
-        app__api__v4__entries__test_invocation__view__BenchmarkInvocationViewItem: {
+        app__api__v4__entries__test_invocation__get__BenchmarkInvocationViewItem: {
             /**
              * Invocation Id
              * Format: uuid

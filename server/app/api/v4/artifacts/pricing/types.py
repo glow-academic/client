@@ -6,7 +6,7 @@ from uuid import UUID
 from pydantic import BaseModel, Field
 
 from app.api.v4.artifacts.types import FilterOption
-from app.api.v4.entries.runs.types import RunViewItem
+from app.api.v4.entries.runs.search import RunViewItem
 
 
 class PricingRequest(BaseModel):

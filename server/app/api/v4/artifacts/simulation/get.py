@@ -70,7 +70,7 @@ from app.api.v4.artifacts.simulation.types import (
     SimulationWebsocketResources,
     SimulationWebsocketViews,
 )
-from app.api.v4.entries.runs.list import get_run_list_entries_internal
+from app.api.v4.entries.runs.search import get_run_list_entries_internal
 from app.api.v4.entries.simulation_drafts.get import (
     get_simulation_drafts_entries_internal,
 )

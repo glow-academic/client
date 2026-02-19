@@ -21,7 +21,7 @@ from app.api.v4.artifacts.leaderboard.types import (
     LeaderboardSections,
     LeaderboardSectionStatus,
 )
-from app.api.v4.entries.chat.types import ChatItem
+from app.api.v4.entries.chat.get import ChatItem
 
 # Type aliases for deprecated v1 types (modules deleted in DELETE OLD VIEWS)
 AttemptFactsItem = Any

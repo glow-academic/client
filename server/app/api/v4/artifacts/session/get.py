@@ -23,8 +23,8 @@ from app.api.v4.artifacts.session.types import (
 from app.api.v4.auth.profile import get_auth_profile_internal
 from app.api.v4.entries.audits.view import get_audit_list_view_internal
 from app.api.v4.entries.groups.view import get_group_list_view_internal
-from app.api.v4.entries.runs.list import get_run_list_entries_internal
-from app.api.v4.entries.sessions.view import get_session_list_view_internal
+from app.api.v4.entries.runs.search import get_run_list_entries_internal
+from app.api.v4.entries.sessions.get import get_session_list_view_internal
 from app.api.v4.resources.names.get import get_names_internal
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error

@@ -49,7 +49,7 @@ from app.api.v4.auth.settings import get_auth_settings_internal
 from app.api.v4.entries.department_drafts.get import (
     get_department_drafts_entries_internal,
 )
-from app.api.v4.entries.runs.list import get_run_list_entries_internal
+from app.api.v4.entries.runs.search import get_run_list_entries_internal
 from app.api.v4.permissions import has_tools_for_resource, resolve_agents_for_artifact
 from app.api.v4.resources.agents.get import get_agents_internal
 from app.api.v4.resources.descriptions.get import get_descriptions_internal

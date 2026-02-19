@@ -10,7 +10,7 @@ from app.api.v4.entries.audits.view import AuditViewItem
 from app.api.v4.entries.grants.view import GrantViewItem
 from app.api.v4.entries.logins.view import LoginViewItem
 from app.api.v4.entries.problems.view import ProblemViewItem
-from app.api.v4.entries.sessions.view import SessionViewItem
+from app.api.v4.entries.sessions.get import SessionViewItem
 
 
 class ActivityRequest(BaseModel):

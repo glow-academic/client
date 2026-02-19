@@ -122,8 +122,6 @@ export function Parameters({
   const { isGenerating: aiIsGenerating, aiSuggestion, clear: clearAi } = useResourceAi({
     resourceType: "parameters",
     groupId: group_id,
-      ];
-    },
   });
 
   const effectiveAiParameterResources =
