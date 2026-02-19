@@ -759,18 +759,19 @@ async def get_attempt_internal(
         training_entry_id: UUID | None = None
         training_row = await conn.fetchrow(
             """
-            SELECT a.training_id,
-                   (SELECT tb.id FROM training_entry tb
-                    WHERE tb.training_id = a.training_id AND tb.active = true
-                    LIMIT 1) AS training_entry_id
+            SELECT COALESCE(pte.training_id, hte.training_id) AS training_entry_id
             FROM attempt_entry a
+            LEFT JOIN attempt_practice_entry apc ON apc.attempt_id = a.id AND apc.active = true
+            LEFT JOIN practice_training_entry pte ON pte.practice_id = apc.practice_id AND pte.active = true
+            LEFT JOIN attempt_home_entry ahc ON ahc.attempt_id = a.id AND ahc.active = true
+            LEFT JOIN home_training_entry hte ON hte.home_id = ahc.home_id AND hte.active = true
             WHERE a.id = $1
             """,
             attempt_id,
         )
         if training_row:
-            training_id = training_row["training_id"]
             training_entry_id = training_row["training_entry_id"]
+            training_id = training_entry_id
 
         # === RESOLVE CONFIG CHAIN (group_id -> agent/model/provider) ===
         first_chat_item = chats_result[0] if chats_result else None

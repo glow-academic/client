@@ -56,7 +56,7 @@ SQL_ATTEMPT_CONTEXT = """
     LIMIT 1
 """
 
-# SQL to count remaining scenarios (expected - already chatted)
+# SQL to count remaining scenarios (expected from bundle - completed chats)
 SQL_REMAINING_SCENARIOS = """
     WITH attempt_training AS (
         SELECT COALESCE(pte.training_id, hte.training_id) AS training_id
@@ -72,17 +72,15 @@ SQL_REMAINING_SCENARIOS = """
         FROM attempt_training at2
         JOIN training_scenarios_connection tsc ON tsc.training_id = at2.training_id AND tsc.active = true
     ),
-    existing_scenarios AS (
-        SELECT DISTINCT csc.scenarios_id
+    completed_chats AS (
+        SELECT COUNT(*) AS cnt
         FROM attempt_chat_entry c
-        JOIN attempt_chat_scenarios_connection csc ON csc.chat_id = c.id AND csc.active = true
         WHERE c.attempt_id = $1 AND c.active = true
     )
     SELECT
         (SELECT COUNT(*) FROM expected_scenarios)::int AS total_scenarios,
-        (SELECT COUNT(*) FROM existing_scenarios)::int AS completed_scenarios,
-        (SELECT COUNT(*) FROM expected_scenarios es
-         WHERE es.scenario_id NOT IN (SELECT scenarios_id FROM existing_scenarios))::int AS remaining_scenarios
+        (SELECT cnt FROM completed_chats)::int AS completed_scenarios,
+        (GREATEST((SELECT COUNT(*) FROM expected_scenarios) - (SELECT cnt FROM completed_chats), 0))::int AS remaining_scenarios
 """
 
 
