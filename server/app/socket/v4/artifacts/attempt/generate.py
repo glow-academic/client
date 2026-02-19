@@ -3,13 +3,15 @@
 This module handles all business logic for attempt generation:
 - Rate limit validation (fail fast) — skipped when handler already validated
 - Group/run creation — skipped when handler already created via prepare SQL
+- Grade preparation (sync entry type) — when grade entry_types detected
 - Agent/model context from pre-fetched resources (denormalized chain)
 - Jinja template rendering for developer instructions
 - Chat history from views (attempt_message)
 - Message insertion with deduplication
 
-Callers (message.py, grade.py, audio/start.py) handle domain-specific mutations,
+Callers (message.py, audio/start.py) handle domain-specific mutations,
 then delegate to attempt_generate via internal bus with pre-created run_id/group_id.
+Grading is handled directly via entry_types (no separate handler needed).
 """
 
 import asyncio
@@ -41,6 +43,8 @@ from app.socket.v4.artifacts.types import GenerateErrorApiRequest
 from app.sql.types import (
     GetAgentEntryToolsSqlParams,
     GetAgentEntryToolsSqlRow,
+    PrepareAttemptGradeSqlParams,
+    PrepareAttemptGradeSqlRow,
     PreparePersonaGenerationSqlParams,
     PreparePersonaGenerationSqlRow,
 )
@@ -63,6 +67,9 @@ SQL_PATH_AGENT_ENTRY_TOOLS = (
 )
 SQL_PATH_CREATE_MESSAGE_WITH_TEXT = (
     "app/sql/v4/queries/messages/create_message_with_text_complete.sql"
+)
+SQL_PATH_PREPARE_GRADE = (
+    "app/sql/v4/queries/generate/attempt/prepare_attempt_grade_complete.sql"
 )
 
 
@@ -366,6 +373,79 @@ async def _attempt_generate_impl(
             if pre_run_id:
                 run_id = pre_run_id
                 group_id = existing_group_id
+            elif is_grade:
+                # Grade path: resolve chat_id from views, run grade prepare SQL
+                grade_chat_id = extra_chat_id
+                if not grade_chat_id and result.views and result.views.attempt_chat:
+                    grade_chat_id = result.views.attempt_chat[0].id
+
+                if not grade_chat_id:
+                    await emit_to_internal(
+                        "generate_call_error",
+                        GenerateErrorApiRequest(
+                            sid=sid,
+                            error_message="No chat found for grading",
+                            artifact_type="attempt",
+                            group_id=str(existing_group_id)
+                            if existing_group_id
+                            else None,
+                            resource_type="attempt",
+                        ),
+                        sid=sid,
+                    )
+                    return
+
+                if not existing_group_id:
+                    await emit_to_internal(
+                        "generate_call_error",
+                        GenerateErrorApiRequest(
+                            sid=sid,
+                            error_message="No group found for grading",
+                            artifact_type="attempt",
+                            group_id=None,
+                            resource_type="attempt",
+                        ),
+                        sid=sid,
+                    )
+                    return
+
+                grade_prepare_params = PrepareAttemptGradeSqlParams(
+                    p_profile_id=profile_id,
+                    p_group_id=existing_group_id,
+                    p_chat_id=grade_chat_id,
+                    p_agents_resource_id=agent_resource.id,
+                    p_models_resource_id=model_resource.id,
+                    p_providers_resource_id=provider_resource.id,
+                )
+                grade_prepare_row = cast(
+                    PrepareAttemptGradeSqlRow,
+                    await execute_sql_typed(
+                        conn, SQL_PATH_PREPARE_GRADE, params=grade_prepare_params
+                    ),
+                )
+
+                if not grade_prepare_row or not grade_prepare_row.run_id:
+                    logger.error(
+                        f"Attempt grade preparation failed - "
+                        f"profile_id={profile_id}, attempt_id={data.attempt_id}"
+                    )
+                    await emit_to_internal(
+                        "generate_call_error",
+                        GenerateErrorApiRequest(
+                            sid=sid,
+                            error_message="Failed to prepare grading",
+                            artifact_type="attempt",
+                            group_id=str(existing_group_id),
+                            resource_type="attempt",
+                        ),
+                        sid=sid,
+                    )
+                    return
+
+                run_id = grade_prepare_row.run_id
+                group_id = existing_group_id
+                extra_grade_id = grade_prepare_row.grade_id
+                extra_chat_id = grade_chat_id
             else:
                 prepare_params = PreparePersonaGenerationSqlParams(
                     p_profile_id=profile_id,

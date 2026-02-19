@@ -2,12 +2,11 @@
 
 Defines payload and event types for the attempt simulation WebSocket handlers:
 - AttemptMessagePayload: Send a message during an attempt (legacy - complex payload)
-- AttemptGradePayload: Grade an attempt
 - AttemptSendPayload: Simplified send message (new - server looks up context from chat_id)
 
 Entry types are predefined per handler (not in payload):
 - message.py: ['contents', 'hints'] - Message response tools
-- grade.py: All tools from agent's config chain (no client-side filtering)
+- generate.py with grade entry_types: All tools from agent's config chain (no client-side filtering)
 """
 
 from typing import Any
@@ -27,7 +26,7 @@ from app.socket.v4.artifacts.types import (
 
 ATTEMPT_RESOURCE_TYPES: list[str] = []
 
-ATTEMPT_SYNC_ENTRY_TYPES = ["runs", "chats"]
+ATTEMPT_SYNC_ENTRY_TYPES = ["runs", "chats", "grades"]
 
 ATTEMPT_ASYNC_ENTRY_TYPES = ["insights", "debug_info"]
 
@@ -74,18 +73,6 @@ class AttemptMessagePayload(BaseModel):
     voice_mode: bool = False
     upload_id: UUID | None = None  # For voice audio uploads
     group_id: UUID | None = None  # For regeneration (uses existing group)
-
-
-class AttemptGradePayload(BaseModel):
-    """Request payload for attempt_grade WebSocket event.
-
-    Ends the simulation and triggers grading.
-    Agent is resolved from pre-stored group (created at training start).
-    """
-
-    simulation_id: UUID
-    attempt_id: UUID
-    chat_id: UUID | None = None  # Optional - grade specific chat or all
 
 
 # =============================================================================

@@ -16392,26 +16392,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v4/client/attempt/grade": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Attempt Grade Api
-         * @description Client-to-server event: Grade simulation attempt.
-         */
-        post: operations["attempt_grade_api_socket_v4_client_attempt_grade_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/socket/v4/client/attempt/join": {
         parameters: {
             query?: never;
@@ -17031,26 +17011,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v4/server/attempt/graded": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Attempt Graded Api
-         * @description Server-to-client event: Simulation grading completed.
-         */
-        post: operations["attempt_graded_api_socket_v4_server_attempt_graded_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/socket/v4/server/attempt/progress": {
         parameters: {
             query?: never;
@@ -17185,6 +17145,26 @@ export interface paths {
          * @description Server-to-client event: Attempt grading progress update.
          */
         post: operations["attempt_grading_progress_api_socket_v4_server_attempt_grading_progress_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v4/server/attempt/graded": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Attempt Graded Api
+         * @description Server-to-client event: Simulation grading completed.
+         */
+        post: operations["attempt_graded_api_socket_v4_server_attempt_graded_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -27184,27 +27164,6 @@ export interface components {
             run_id: string;
             /** Entry Types */
             entry_types: string[];
-        };
-        /**
-         * AttemptGradePayload
-         * @description Request payload for attempt_grade WebSocket event.
-         *
-         *     Ends the simulation and triggers grading.
-         *     Agent is resolved from pre-stored group (created at training start).
-         */
-        AttemptGradePayload: {
-            /**
-             * Simulation Id
-             * Format: uuid
-             */
-            simulation_id: string;
-            /**
-             * Attempt Id
-             * Format: uuid
-             */
-            attempt_id: string;
-            /** Chat Id */
-            chat_id?: string | null;
         };
         /**
          * AttemptGradedEvent
@@ -89903,41 +89862,6 @@ export interface operations {
             };
         };
     };
-    attempt_grade_api_socket_v4_client_attempt_grade_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["AttemptGradePayload"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: boolean;
-                    };
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     attempt_join_api_socket_v4_client_attempt_join_post: {
         parameters: {
             query?: never;
@@ -90988,41 +90912,6 @@ export interface operations {
             };
         };
     };
-    attempt_graded_api_socket_v4_server_attempt_graded_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["AttemptGradedEvent"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: boolean;
-                    };
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     attempt_progress_api_socket_v4_server_attempt_progress_post: {
         parameters: {
             query?: never;
@@ -91243,6 +91132,41 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["AttemptGradingProgressEvent"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    attempt_graded_api_socket_v4_server_attempt_graded_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AttemptGradedEvent"];
             };
         };
         responses: {

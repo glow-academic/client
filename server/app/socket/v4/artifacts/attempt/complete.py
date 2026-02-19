@@ -458,3 +458,9 @@ async def attempt_grading_progress_api(
 ) -> dict[str, bool]:
     """Server-to-client event: Attempt grading progress update."""
     return {"success": True}
+
+
+@server_router.post("/attempt/graded", response_model=dict[str, bool])
+async def attempt_graded_api(request: AttemptGradedEvent) -> dict[str, bool]:
+    """Server-to-client event: Simulation grading completed."""
+    return {"success": True}

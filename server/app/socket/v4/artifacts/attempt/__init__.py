@@ -3,8 +3,8 @@
 Handles WebSocket events for active attempts:
 
 Client-to-server events:
+- attempt_generate: Generate attempt resources (message or grade entry_types)
 - attempt_message: Send a message during an attempt
-- attempt_grade: Grade an attempt
 - attempt_join: Join a chat room
 - attempt_leave: Leave a chat room
 - attempt_stop: Stop message generation
@@ -36,7 +36,6 @@ from . import (
     end_all,
     error,
     generate,
-    grade,
     join,
     leave,
     message,
@@ -54,7 +53,6 @@ __all__ = [
     "end_all",
     "error",
     "generate",
-    "grade",
     "join",
     "leave",
     "message",
@@ -71,7 +69,6 @@ server_router = APIRouter()
 # Register client-to-server events
 client_router.include_router(generate.client_router)
 client_router.include_router(message.client_router)
-client_router.include_router(grade.client_router)
 client_router.include_router(join.client_router)
 client_router.include_router(leave.client_router)
 client_router.include_router(stop.client_router)
@@ -84,7 +81,6 @@ client_router.include_router(start.client_router)
 # Register server-to-client events
 server_router.include_router(generate.server_router)
 server_router.include_router(message.server_router)
-server_router.include_router(grade.server_router)
 server_router.include_router(progress.server_router)
 server_router.include_router(complete.server_router)
 server_router.include_router(error.server_router)
