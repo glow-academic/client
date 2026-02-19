@@ -1,9 +1,9 @@
 """Unified event model for replacements entry socket events."""
 
-from pydantic import BaseModel
+from app.api.v4.entries.attempt_replacement.types import ReplacementsEntryData
 
 
-class ReplacementsGenerationEvent(BaseModel):
+class ReplacementsGenerationEvent(ReplacementsEntryData):
     """Unified socket event for replacements generation. Same type for all 4 events."""
 
     # Metadata
@@ -22,10 +22,3 @@ class ReplacementsGenerationEvent(BaseModel):
     tool_name: str | None = None
     # Streaming
     arguments_delta: str | None = None
-    # Entry fields (canonical shape from ReplacementViewItem)
-    replacement_id: str | None = None
-    improvement_id: str | None = None
-    section: str | None = None
-    replace_text: str | None = None
-    idx: int | None = None
-    created_at: str | None = None

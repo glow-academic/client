@@ -1,9 +1,9 @@
 """Unified event model for attempt_message entry socket events."""
 
-from pydantic import BaseModel
+from app.api.v4.entries.attempt_message.types import SimulationMessagesEntryData
 
 
-class SimulationMessagesGenerationEvent(BaseModel):
+class SimulationMessagesGenerationEvent(SimulationMessagesEntryData):
     """Unified socket event for attempt_message generation. Same type for all 4 events."""
 
     # Metadata
@@ -22,14 +22,3 @@ class SimulationMessagesGenerationEvent(BaseModel):
     tool_name: str | None = None
     # Streaming
     arguments_delta: str | None = None
-    # Entry fields (canonical shape from MessageViewItem)
-    message_id: str | None = None
-    chat_id: str | None = None
-    attempt_id: str | None = None
-    type: str | None = None
-    created_at: str | None = None
-    completed: bool | None = None
-    runs_id: str | None = None
-    text_id: str | None = None
-    audio_id: str | None = None
-    history_content: str | None = None

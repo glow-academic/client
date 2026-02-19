@@ -1,9 +1,9 @@
 """Unified event model for analyses entry socket events."""
 
-from pydantic import BaseModel
+from app.api.v4.entries.attempt_analysis.types import AnalysesEntryData
 
 
-class AnalysesGenerationEvent(BaseModel):
+class AnalysesGenerationEvent(AnalysesEntryData):
     """Unified socket event for analyses generation. Same type for all 4 events."""
 
     # Metadata
@@ -22,8 +22,3 @@ class AnalysesGenerationEvent(BaseModel):
     tool_name: str | None = None
     # Streaming
     arguments_delta: str | None = None
-    # Entry fields (canonical shape from AnalyseViewItem)
-    analysis_id: str | None = None
-    grade_id: str | None = None
-    content: str | None = None
-    created_at: str | None = None

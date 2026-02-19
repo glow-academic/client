@@ -1,9 +1,9 @@
 """Unified event model for responses entry socket events."""
 
-from pydantic import BaseModel
+from app.api.v4.entries.responses.types import ResponsesEntryData
 
 
-class ResponsesGenerationEvent(BaseModel):
+class ResponsesGenerationEvent(ResponsesEntryData):
     """Unified socket event for responses generation. Same type for all 4 events."""
 
     # Metadata
@@ -22,10 +22,3 @@ class ResponsesGenerationEvent(BaseModel):
     tool_name: str | None = None
     # Streaming
     arguments_delta: str | None = None
-    # Entry fields (canonical shape from ResponseViewItem)
-    response_id: str | None = None
-    chat_id: str | None = None
-    question_id: str | None = None
-    option_id: str | None = None
-    completed: bool | None = None
-    created_at: str | None = None

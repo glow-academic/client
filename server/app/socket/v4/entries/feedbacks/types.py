@@ -1,9 +1,9 @@
 """Unified event model for feedbacks entry socket events."""
 
-from pydantic import BaseModel
+from app.api.v4.entries.attempt_feedback.types import FeedbacksEntryData
 
 
-class FeedbacksGenerationEvent(BaseModel):
+class FeedbacksGenerationEvent(FeedbacksEntryData):
     """Unified socket event for feedbacks generation. Same type for all 4 events."""
 
     # Metadata
@@ -22,10 +22,3 @@ class FeedbacksGenerationEvent(BaseModel):
     tool_name: str | None = None
     # Streaming
     arguments_delta: str | None = None
-    # Entry fields (canonical shape from FeedbackViewItem)
-    feedback_id: str | None = None
-    grade_id: str | None = None
-    standard_id: str | None = None
-    total: float | None = None
-    feedback: str | None = None
-    created_at: str | None = None

@@ -1,9 +1,9 @@
 """Unified event model for highlights entry socket events."""
 
-from pydantic import BaseModel
+from app.api.v4.entries.attempt_highlight.types import HighlightsEntryData
 
 
-class HighlightsGenerationEvent(BaseModel):
+class HighlightsGenerationEvent(HighlightsEntryData):
     """Unified socket event for highlights generation. Same type for all 4 events."""
 
     # Metadata
@@ -22,9 +22,3 @@ class HighlightsGenerationEvent(BaseModel):
     tool_name: str | None = None
     # Streaming
     arguments_delta: str | None = None
-    # Entry fields (canonical shape from HighlightViewItem)
-    highlight_id: str | None = None
-    strength_id: str | None = None
-    section: str | None = None
-    idx: int | None = None
-    created_at: str | None = None

@@ -1,9 +1,9 @@
 """Unified event model for contents entry socket events."""
 
-from pydantic import BaseModel
+from app.api.v4.entries.attempt_content.types import ContentsEntryData
 
 
-class ContentsGenerationEvent(BaseModel):
+class ContentsGenerationEvent(ContentsEntryData):
     """Unified socket event for contents generation. Same type for all 4 events."""
 
     # Metadata
@@ -22,10 +22,3 @@ class ContentsGenerationEvent(BaseModel):
     tool_name: str | None = None
     # Streaming
     arguments_delta: str | None = None
-    # Entry fields (canonical shape from ContentViewItem)
-    content_id: str | None = None
-    message_id: str | None = None
-    content: str | None = None
-    persona_id: str | None = None
-    idx: int | None = None
-    created_at: str | None = None

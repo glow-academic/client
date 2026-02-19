@@ -1,9 +1,9 @@
 """Unified event model for strengths entry socket events."""
 
-from pydantic import BaseModel
+from app.api.v4.entries.attempt_strength.types import StrengthsEntryData
 
 
-class StrengthsGenerationEvent(BaseModel):
+class StrengthsGenerationEvent(StrengthsEntryData):
     """Unified socket event for strengths generation. Same type for all 4 events."""
 
     # Metadata
@@ -22,9 +22,3 @@ class StrengthsGenerationEvent(BaseModel):
     tool_name: str | None = None
     # Streaming
     arguments_delta: str | None = None
-    # Entry fields (canonical shape from StrengthViewItem)
-    strength_id: str | None = None
-    message_id: str | None = None
-    name: str | None = None
-    description: str | None = None
-    created_at: str | None = None

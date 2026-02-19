@@ -1,9 +1,9 @@
 """Unified event model for hints entry socket events."""
 
-from pydantic import BaseModel
+from app.api.v4.entries.attempt_hint.types import HintsEntryData
 
 
-class HintsGenerationEvent(BaseModel):
+class HintsGenerationEvent(HintsEntryData):
     """Unified socket event for hints generation. Same type for all 4 events."""
 
     # Metadata
@@ -22,9 +22,3 @@ class HintsGenerationEvent(BaseModel):
     tool_name: str | None = None
     # Streaming
     arguments_delta: str | None = None
-    # Entry fields (canonical shape from HintViewItem)
-    hint_id: str | None = None
-    message_id: str | None = None
-    hint: str | None = None
-    idx: int | None = None
-    created_at: str | None = None
