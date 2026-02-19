@@ -30,7 +30,10 @@ from app.infra.v4.websocket.generation_tracker import (
 from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.infra.v4.websocket.typed_emit import emit_to_internal
 from app.main import get_internal_sio, get_pool, sio
-from app.socket.v4.artifacts.profile.types import GenerateProfilePayload
+from app.socket.v4.artifacts.profile.types import (
+    PROFILE_RESOURCE_TYPES,
+    GenerateProfilePayload,
+)
 from app.socket.v4.artifacts.types import (
     GenerateErrorApiRequest,
     ProfileGenerationStartedEvent,
@@ -61,16 +64,6 @@ SQL_PATH_AGENT_TOOLS = (
 SQL_PATH_CREATE_MESSAGE_WITH_TEXT = (
     "app/sql/v4/queries/messages/create_message_with_text_complete.sql"
 )
-
-# Profile resource types
-PROFILE_RESOURCE_TYPES = [
-    "names",
-    "flags",
-    "request_limits",
-    "departments",
-    "emails",
-    "cohorts",
-]
 
 
 def _build_profile_jinja_context(

@@ -14,6 +14,10 @@ from app.socket.v4.artifacts.types import (
     GenerationErrorEvent,
 )
 
+# =============================================================================
+# Generation type constants
+# =============================================================================
+
 # Resource types that training generation can produce
 TRAINING_GENERATE_RESOURCE_TYPES = [
     "departments",
@@ -31,6 +35,10 @@ TRAINING_GENERATE_RESOURCE_TYPES = [
     "problem_statements",
     "objectives",
 ]
+
+TRAINING_SYNC_ENTRY_TYPES = ["runs"]
+
+TRAINING_ASYNC_ENTRY_TYPES = ["debug_info"]
 
 
 # =============================================================================

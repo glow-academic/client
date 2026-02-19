@@ -13,6 +13,25 @@ from app.socket.v4.artifacts.types import (
 )
 
 # =============================================================================
+# Generation type constants
+# =============================================================================
+
+RUBRIC_RESOURCE_TYPES = [
+    "names",
+    "descriptions",
+    "departments",
+    "flags",
+    "points",
+    "pass_points",
+    "standard_groups",
+    "standards",
+]
+
+RUBRIC_SYNC_ENTRY_TYPES = ["runs"]
+
+RUBRIC_ASYNC_ENTRY_TYPES = ["debug_info"]
+
+# =============================================================================
 # Client-to-Server Events (rubric_generate)
 # =============================================================================
 

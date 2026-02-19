@@ -14,6 +14,10 @@ from app.socket.v4.artifacts.types import (
     GenerationErrorEvent,
 )
 
+# =============================================================================
+# Generation type constants
+# =============================================================================
+
 # Resource types that benchmark bundle generation can produce
 BENCHMARK_BUNDLE_GENERATE_RESOURCE_TYPES = [
     "departments",
@@ -26,6 +30,10 @@ BENCHMARK_BUNDLE_GENERATE_RESOURCE_TYPES = [
     "tools",
     "keys",
 ]
+
+BENCHMARK_BUNDLE_SYNC_ENTRY_TYPES = ["runs"]
+
+BENCHMARK_BUNDLE_ASYNC_ENTRY_TYPES = ["debug_info"]
 
 
 # =============================================================================

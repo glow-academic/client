@@ -7,6 +7,23 @@ from app.socket.v4.artifacts.types import (
     GenerationProgressEvent,
 )
 
+# =============================================================================
+# Generation type constants
+# =============================================================================
+
+COHORT_RESOURCE_TYPES = [
+    "names",
+    "descriptions",
+    "flags",
+    "departments",
+    "simulations",
+    "simulation_positions",
+]
+
+COHORT_SYNC_ENTRY_TYPES = ["runs"]
+
+COHORT_ASYNC_ENTRY_TYPES = ["debug_info"]
+
 
 class GenerateCohortPayload(GetCohortApiRequest):
     """Client payload for cohort_generate event."""

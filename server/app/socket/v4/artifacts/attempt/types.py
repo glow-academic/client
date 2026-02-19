@@ -22,6 +22,16 @@ from app.socket.v4.artifacts.types import (
 )
 
 # =============================================================================
+# Generation type constants
+# =============================================================================
+
+ATTEMPT_RESOURCE_TYPES: list[str] = []
+
+ATTEMPT_SYNC_ENTRY_TYPES = ["runs", "chats"]
+
+ATTEMPT_ASYNC_ENTRY_TYPES = ["insights", "debug_info"]
+
+# =============================================================================
 # Entry type constants (predefined per handler, not in payload)
 # =============================================================================
 

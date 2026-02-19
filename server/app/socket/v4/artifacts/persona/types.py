@@ -14,6 +14,27 @@ from app.socket.v4.artifacts.types import (
 )
 
 # =============================================================================
+# Generation type constants
+# =============================================================================
+
+PERSONA_RESOURCE_TYPES = [
+    "names",
+    "descriptions",
+    "colors",
+    "icons",
+    "instructions",
+    "flags",
+    "examples",
+    "parameter_fields",
+    "departments",
+    "parameters",
+]
+
+PERSONA_SYNC_ENTRY_TYPES = ["runs"]
+
+PERSONA_ASYNC_ENTRY_TYPES = ["debug_info"]
+
+# =============================================================================
 # Client-to-Server Events (persona_generate)
 # =============================================================================
 

@@ -18,6 +18,16 @@ from uuid import UUID
 from pydantic import BaseModel
 
 # =============================================================================
+# Generation type constants
+# =============================================================================
+
+TEST_RESOURCE_TYPES: list[str] = []
+
+TEST_SYNC_ENTRY_TYPES = ["runs", "invocations"]
+
+TEST_ASYNC_ENTRY_TYPES = ["insights", "debug_info"]
+
+# =============================================================================
 # Entry type constants (predefined per handler, not in payload)
 # =============================================================================
 

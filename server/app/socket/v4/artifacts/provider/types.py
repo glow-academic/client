@@ -8,6 +8,23 @@ from app.socket.v4.artifacts.types import (
 )
 
 # =============================================================================
+# Generation type constants
+# =============================================================================
+
+PROVIDER_RESOURCE_TYPES = [
+    "names",
+    "descriptions",
+    "flags",
+    "departments",
+    "values",
+    "endpoints",
+]
+
+PROVIDER_SYNC_ENTRY_TYPES = ["runs"]
+
+PROVIDER_ASYNC_ENTRY_TYPES = ["debug_info"]
+
+# =============================================================================
 # Client-to-Server Events (provider_generate)
 # =============================================================================
 

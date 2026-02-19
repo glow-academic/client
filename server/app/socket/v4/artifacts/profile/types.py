@@ -7,6 +7,23 @@ from app.socket.v4.artifacts.types import (
     GenerationProgressEvent,
 )
 
+# =============================================================================
+# Generation type constants
+# =============================================================================
+
+PROFILE_RESOURCE_TYPES = [
+    "names",
+    "flags",
+    "request_limits",
+    "departments",
+    "emails",
+    "cohorts",
+]
+
+PROFILE_SYNC_ENTRY_TYPES = ["runs"]
+
+PROFILE_ASYNC_ENTRY_TYPES = ["debug_info"]
+
 
 class GenerateProfilePayload(GetProfileApiRequest):
     """Client-to-server payload for `profile_generate`."""

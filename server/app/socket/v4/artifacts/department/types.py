@@ -8,6 +8,21 @@ from app.socket.v4.artifacts.types import (
 )
 
 # =============================================================================
+# Generation type constants
+# =============================================================================
+
+DEPARTMENT_RESOURCE_TYPES = [
+    "names",
+    "descriptions",
+    "flags",
+    "settings",
+]
+
+DEPARTMENT_SYNC_ENTRY_TYPES = ["runs"]
+
+DEPARTMENT_ASYNC_ENTRY_TYPES = ["debug_info"]
+
+# =============================================================================
 # Client-to-Server Events (department_generate)
 # =============================================================================
 

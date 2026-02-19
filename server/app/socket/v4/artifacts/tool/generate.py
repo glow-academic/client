@@ -31,7 +31,10 @@ from app.infra.v4.websocket.generation_tracker import (
 from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.infra.v4.websocket.typed_emit import emit_to_internal
 from app.main import get_internal_sio, get_pool, sio
-from app.socket.v4.artifacts.tool.types import GenerateToolPayload
+from app.socket.v4.artifacts.tool.types import (
+    TOOL_RESOURCE_TYPES,
+    GenerateToolPayload,
+)
 from app.socket.v4.artifacts.types import (
     GenerateErrorApiRequest,
     ToolGenerationStartedEvent,
@@ -60,16 +63,6 @@ SQL_PATH_AGENT_TOOLS = (
 SQL_PATH_CREATE_MESSAGE_WITH_TEXT = (
     "app/sql/v4/queries/messages/create_message_with_text_complete.sql"
 )
-
-# Tool resource types
-TOOL_RESOURCE_TYPES = [
-    "names",
-    "descriptions",
-    "args",
-    "arg_positions",
-    "args_outputs",
-    "flags",
-]
 
 
 def _build_tool_jinja_context(

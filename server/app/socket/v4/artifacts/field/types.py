@@ -7,6 +7,22 @@ from app.socket.v4.artifacts.types import (
     GenerationProgressEvent,
 )
 
+# =============================================================================
+# Generation type constants
+# =============================================================================
+
+FIELD_RESOURCE_TYPES = [
+    "names",
+    "descriptions",
+    "flags",
+    "departments",
+    "conditional_parameters",
+]
+
+FIELD_SYNC_ENTRY_TYPES = ["runs"]
+
+FIELD_ASYNC_ENTRY_TYPES = ["debug_info"]
+
 
 class GenerateFieldPayload(GetFieldApiRequest):
     """Request payload for field_generate websocket event."""

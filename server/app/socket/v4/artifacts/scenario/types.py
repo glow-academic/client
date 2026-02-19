@@ -17,6 +17,30 @@ from app.sql.types import (
 )
 
 # =============================================================================
+# Generation type constants
+# =============================================================================
+
+SCENARIO_RESOURCE_TYPES = [
+    "names",
+    "descriptions",
+    "problem_statements",
+    "objectives",
+    "scenario_flags",
+    "images",
+    "videos",
+    "questions",
+    "departments",
+    "parameter_fields",
+    "personas",
+    "documents",
+    "parameters",
+]
+
+SCENARIO_SYNC_ENTRY_TYPES = ["runs"]
+
+SCENARIO_ASYNC_ENTRY_TYPES = ["debug_info"]
+
+# =============================================================================
 # Client-to-Server Events (scenario_generate)
 # =============================================================================
 

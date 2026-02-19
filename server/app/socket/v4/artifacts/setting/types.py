@@ -13,6 +13,27 @@ from app.socket.v4.artifacts.types import (
 )
 
 # =============================================================================
+# Generation type constants
+# =============================================================================
+
+SETTING_RESOURCE_TYPES = [
+    "names",
+    "descriptions",
+    "colors",
+    "flags",
+    "departments",
+    "profiles",
+    "auths",
+    "provider_keys",
+    "auth_item_keys",
+    "roles",
+]
+
+SETTING_SYNC_ENTRY_TYPES = ["runs"]
+
+SETTING_ASYNC_ENTRY_TYPES = ["debug_info"]
+
+# =============================================================================
 # Client-to-Server Events (setting_generate)
 # =============================================================================
 

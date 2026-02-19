@@ -28,7 +28,10 @@ from app.infra.v4.websocket.generation_tracker import (
 from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.infra.v4.websocket.typed_emit import emit_to_internal
 from app.main import get_internal_sio, get_pool, sio
-from app.socket.v4.artifacts.document.types import GenerateDocumentPayload
+from app.socket.v4.artifacts.document.types import (
+    DOCUMENT_RESOURCE_TYPES,
+    GenerateDocumentPayload,
+)
 from app.socket.v4.artifacts.types import (
     DocumentGenerationStartedEvent,
     GenerateErrorApiRequest,
@@ -59,18 +62,6 @@ SQL_PATH_AGENT_TOOLS = (
 SQL_PATH_CREATE_MESSAGE_WITH_TEXT = (
     "app/sql/v4/queries/messages/create_message_with_text_complete.sql"
 )
-
-# Document resource types
-DOCUMENT_RESOURCE_TYPES = [
-    "names",
-    "descriptions",
-    "flags",
-    "departments",
-    "fields",
-    "uploads",
-    "images",
-    "texts",
-]
 
 
 def _build_document_jinja_context(

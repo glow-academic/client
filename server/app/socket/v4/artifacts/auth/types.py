@@ -7,6 +7,10 @@ from app.socket.v4.artifacts.types import (
     GenerationProgressEvent,
 )
 
+# =============================================================================
+# Generation type constants
+# =============================================================================
+
 AUTH_GENERATE_RESOURCE_TYPES = [
     "names",
     "descriptions",
@@ -15,6 +19,10 @@ AUTH_GENERATE_RESOURCE_TYPES = [
     "slugs",
     "items",
 ]
+
+AUTH_SYNC_ENTRY_TYPES = ["runs"]
+
+AUTH_ASYNC_ENTRY_TYPES = ["debug_info"]
 
 
 class GenerateAuthPayload(GetAuthApiRequest):

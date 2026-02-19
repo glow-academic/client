@@ -16,6 +16,22 @@ from app.socket.v4.artifacts.types import (
 )
 
 # =============================================================================
+# Generation type constants
+# =============================================================================
+
+PARAMETER_RESOURCE_TYPES = [
+    "names",
+    "descriptions",
+    "flags",
+    "departments",
+    "fields",
+]
+
+PARAMETER_SYNC_ENTRY_TYPES = ["runs"]
+
+PARAMETER_ASYNC_ENTRY_TYPES = ["debug_info"]
+
+# =============================================================================
 # Client-to-Server Events (parameter_generate)
 # =============================================================================
 

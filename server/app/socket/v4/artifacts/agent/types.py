@@ -26,6 +26,28 @@ from app.sql.types import (
 )
 
 # =============================================================================
+# Generation type constants
+# =============================================================================
+
+AGENT_RESOURCE_TYPES = [
+    "names",
+    "descriptions",
+    "models",
+    "prompts",
+    "instructions",
+    "flags",
+    "departments",
+    "tools",
+    "temperature_levels",
+    "reasoning_levels",
+    "voices",
+]
+
+AGENT_SYNC_ENTRY_TYPES = ["runs"]
+
+AGENT_ASYNC_ENTRY_TYPES = ["debug_info"]
+
+# =============================================================================
 # Client-to-Server Events (agent_generate)
 # =============================================================================
 

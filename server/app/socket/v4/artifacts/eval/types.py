@@ -10,6 +10,28 @@ from app.socket.v4.artifacts.types import (
     GenerationProgressEvent,
 )
 
+# =============================================================================
+# Generation type constants
+# =============================================================================
+
+EVAL_RESOURCE_TYPES = [
+    "names",
+    "descriptions",
+    "flags",
+    "departments",
+    "agents",
+    "run_positions",
+    "group_positions",
+    "run_rubrics",
+    "group_rubrics",
+    # Temporary alias during hard migration rollout.
+    "rubrics",
+]
+
+EVAL_SYNC_ENTRY_TYPES = ["runs"]
+
+EVAL_ASYNC_ENTRY_TYPES = ["debug_info"]
+
 
 class GenerateEvalPayload(BaseModel):
     """Request payload for eval_generate WebSocket event."""

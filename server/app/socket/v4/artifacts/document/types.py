@@ -13,6 +13,25 @@ from app.socket.v4.artifacts.types import (
 )
 
 # =============================================================================
+# Generation type constants
+# =============================================================================
+
+DOCUMENT_RESOURCE_TYPES = [
+    "names",
+    "descriptions",
+    "flags",
+    "departments",
+    "fields",
+    "uploads",
+    "images",
+    "texts",
+]
+
+DOCUMENT_SYNC_ENTRY_TYPES = ["runs"]
+
+DOCUMENT_ASYNC_ENTRY_TYPES = ["debug_info"]
+
+# =============================================================================
 # Client-to-Server Events (document_generate)
 # =============================================================================
 

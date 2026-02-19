@@ -30,7 +30,10 @@ from app.infra.v4.websocket.generation_tracker import (
 from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.infra.v4.websocket.typed_emit import emit_to_internal
 from app.main import get_internal_sio, get_pool, sio
-from app.socket.v4.artifacts.field.types import GenerateFieldPayload
+from app.socket.v4.artifacts.field.types import (
+    FIELD_RESOURCE_TYPES,
+    GenerateFieldPayload,
+)
 from app.socket.v4.artifacts.types import (
     FieldGenerationStartedEvent,
     GenerateErrorApiRequest,
@@ -61,24 +64,6 @@ SQL_PATH_AGENT_TOOLS = (
 SQL_PATH_CREATE_MESSAGE_WITH_TEXT = (
     "app/sql/v4/queries/messages/create_message_with_text_complete.sql"
 )
-
-# Field resource types
-FIELD_RESOURCE_TYPES = [
-    "names",
-    "descriptions",
-    "flags",
-    "departments",
-    "conditional_parameters",
-]
-
-# Mapping from field resource types to internal resource types for agent_id lookup
-FIELD_RESOURCE_TYPE_TO_INTERNAL = {
-    "names": "names",
-    "descriptions": "descriptions",
-    "flags": "flags",
-    "departments": "departments",
-    "conditional_parameters": "parameters",
-}
 
 
 def _build_field_jinja_context(
@@ -154,18 +139,12 @@ async def _field_generate_impl(
         )
 
         # Group resource_types by agent_id for multi-agent dispatch
-        # Field has a mapping: conditional_parameters -> parameters for agent_id lookup
         resource_agent_ids = result.resource_agent_ids or {}
 
         # Build agent_groups: {agent_id: [resource_types]}
         agent_groups: dict[uuid.UUID, list[str]] = {}
         for rt in resource_types:
-            # Try direct lookup first, then mapped internal type
             aid = resource_agent_ids.get(rt)
-            if aid is None:
-                internal_rt = FIELD_RESOURCE_TYPE_TO_INTERNAL.get(rt, rt)
-                if internal_rt != rt:
-                    aid = resource_agent_ids.get(internal_rt)
             if aid is not None:
                 agent_groups.setdefault(aid, []).append(rt)
 
@@ -192,11 +171,6 @@ async def _field_generate_impl(
                 sid=sid,
             )
             return
-
-        # Map resource types to internal names for tools SQL filtering
-        internal_resource_types = [
-            FIELD_RESOURCE_TYPE_TO_INTERNAL.get(rt, rt) for rt in resource_types
-        ]
 
         # Step 2: Extract LLM config from pre-fetched resources
         config_agents = result.resources.agents or []
@@ -336,7 +310,7 @@ async def _field_generate_impl(
                 async with pool.acquire() as c:
                     tools_params = GetAgentToolsSqlParams(
                         p_agent_id=agent_id,
-                        p_resource_types=internal_resource_types,
+                        p_resource_types=resource_types,
                     )
                     tools_row = cast(
                         GetAgentToolsSqlRow,

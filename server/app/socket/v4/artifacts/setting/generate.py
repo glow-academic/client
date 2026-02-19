@@ -30,7 +30,10 @@ from app.infra.v4.websocket.generation_tracker import (
 from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.infra.v4.websocket.typed_emit import emit_to_internal
 from app.main import get_internal_sio, get_pool, sio
-from app.socket.v4.artifacts.setting.types import GenerateSettingPayload
+from app.socket.v4.artifacts.setting.types import (
+    SETTING_RESOURCE_TYPES,
+    GenerateSettingPayload,
+)
 from app.socket.v4.artifacts.types import (
     GenerateErrorApiRequest,
     SettingGenerationStartedEvent,
@@ -61,20 +64,6 @@ SQL_PATH_AGENT_TOOLS = (
 SQL_PATH_CREATE_MESSAGE_WITH_TEXT = (
     "app/sql/v4/queries/messages/create_message_with_text_complete.sql"
 )
-
-# Setting resource types
-SETTING_RESOURCE_TYPES = [
-    "names",
-    "descriptions",
-    "colors",
-    "flags",
-    "departments",
-    "profiles",
-    "auths",
-    "provider_keys",
-    "auth_item_keys",
-    "roles",
-]
 
 
 def _build_setting_jinja_context(

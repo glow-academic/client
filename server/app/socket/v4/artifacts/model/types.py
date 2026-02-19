@@ -13,6 +13,29 @@ from app.socket.v4.artifacts.types import (
 )
 
 # =============================================================================
+# Generation type constants
+# =============================================================================
+
+MODEL_RESOURCE_TYPES = [
+    "names",
+    "descriptions",
+    "values",
+    "providers",
+    "flags",
+    "departments",
+    "modalities",
+    "temperature_levels",
+    "pricing",
+    "reasoning_levels",
+    "qualities",
+    "voices",
+]
+
+MODEL_SYNC_ENTRY_TYPES = ["runs"]
+
+MODEL_ASYNC_ENTRY_TYPES = ["debug_info"]
+
+# =============================================================================
 # Client-to-Server Events (model_generate)
 # =============================================================================
 

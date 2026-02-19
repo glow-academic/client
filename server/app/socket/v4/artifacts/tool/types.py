@@ -13,6 +13,23 @@ from app.socket.v4.artifacts.types import (
 )
 
 # =============================================================================
+# Generation type constants
+# =============================================================================
+
+TOOL_RESOURCE_TYPES = [
+    "names",
+    "descriptions",
+    "args",
+    "arg_positions",
+    "args_outputs",
+    "flags",
+]
+
+TOOL_SYNC_ENTRY_TYPES = ["runs"]
+
+TOOL_ASYNC_ENTRY_TYPES = ["debug_info"]
+
+# =============================================================================
 # Client-to-Server Events (tool_generate)
 # =============================================================================
 
