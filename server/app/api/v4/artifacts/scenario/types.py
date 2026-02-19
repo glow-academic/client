@@ -11,13 +11,13 @@ from uuid import UUID
 from pydantic import BaseModel, Field
 
 from app.api.v4.types import BaseResourceSection, ListFilterSection
-from app.api.v4.views.drafts.types import DraftScenarioViewItem
 from app.api.v4.views.run.list.types import GetRunListViewResponse
 from app.sql.types import (
     QGetAgentsV4Item,
     QGetModelsV4Item,
     QGetProfilesV4Item,
     QGetProvidersV4Item,
+    QGetScenarioDraftsEntriesV4Item,
     QGetToolsV4Item,
 )
 
@@ -394,7 +394,7 @@ class GetScenarioWebsocketResponse(BaseModel):
 class ScenarioWebsocketViews(BaseModel):
     """Optional websocket views payload."""
 
-    draft_scenario: DraftScenarioViewItem | None = None
+    draft_scenario: QGetScenarioDraftsEntriesV4Item | None = None
     runs: GetRunListViewResponse | None = None
 
 

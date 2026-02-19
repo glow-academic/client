@@ -9,7 +9,6 @@ from uuid import UUID
 from pydantic import BaseModel
 
 from app.api.v4.types import BaseResourceSection, ListFilterSection
-from app.api.v4.views.drafts.types import DraftParameterViewItem
 from app.api.v4.views.run.list.types import GetRunListViewResponse
 from app.sql.types import (
     QGetAgentsV4Item,
@@ -17,6 +16,7 @@ from app.sql.types import (
     QGetDescriptionsV4Item,
     QGetModelsV4Item,
     QGetNamesV4Item,
+    QGetParameterDraftsEntriesV4Item,
     QGetParameterFieldsV4Item,
     QGetProfilesV4Item,
     QGetProvidersV4Item,
@@ -92,7 +92,7 @@ class GetParameterApiResponse(BaseModel):
 
 
 class ParameterWebsocketViews(BaseModel):
-    draft_parameter: DraftParameterViewItem | None = None
+    draft_parameter: QGetParameterDraftsEntriesV4Item | None = None
     runs: GetRunListViewResponse | None = None
 
 

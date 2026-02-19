@@ -149,8 +149,8 @@ async def get_suite_internal(
     bypass_cache: bool = False,
 ) -> SuiteInternalData:
     """Shared IDs-first + hydration internal fetch for benchmark bundle artifact."""
-    from app.api.v4.views.drafts.get import get_draft_benchmark_internal
-    from app.api.v4.views.drafts.types import DraftBenchmarkViewItem
+    from app.api.v4.entries.suite_drafts.get import get_suite_drafts_entries_internal
+    from app.sql.types import QGetSuiteDraftsEntriesV4Item
 
     # 1. Fetch MV view data (all 9 ID arrays)
     async with pool.acquire() as conn:
@@ -170,12 +170,12 @@ async def get_suite_internal(
         )
 
     # 2. Fetch draft if provided
-    draft_item: DraftBenchmarkViewItem | None = None
+    draft_item: QGetSuiteDraftsEntriesV4Item | None = None
     if draft_id is not None:
         async with pool.acquire() as conn:
-            draft_items = await get_draft_benchmark_internal(
+            draft_items = await get_suite_drafts_entries_internal(
                 conn=conn,
-                draft_ids=[draft_id],
+                ids=[draft_id],
                 bypass_cache=bypass_cache,
             )
             if draft_items:

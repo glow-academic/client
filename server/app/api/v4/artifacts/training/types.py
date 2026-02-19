@@ -15,7 +15,6 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-from app.api.v4.views.drafts.types import DraftTrainingViewItem
 from app.api.v4.views.run.list.types import GetRunListViewResponse
 from app.sql.types import (
     QGetAgentsV4Item,
@@ -34,6 +33,7 @@ from app.sql.types import (
     QGetQuestionsV4Item,
     QGetScenariosV4Item,
     QGetToolsV4Item,
+    QGetTrainingDraftsEntriesV4Item,
     QGetVideosV4Item,
 )
 
@@ -406,7 +406,7 @@ class GetTrainingResponse(BaseModel):
 class TrainingWebsocketViews(BaseModel):
     """Draft view for bundle websocket consumers."""
 
-    draft_training: DraftTrainingViewItem | None = None
+    draft_training: QGetTrainingDraftsEntriesV4Item | None = None
     runs: GetRunListViewResponse | None = None
 
 

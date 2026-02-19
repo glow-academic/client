@@ -8,10 +8,10 @@ from uuid import UUID
 from pydantic import BaseModel
 
 from app.api.v4.types import BaseResourceSection
-from app.api.v4.views.drafts.types import DraftDepartmentViewItem
 from app.api.v4.views.run.list.types import GetRunListViewResponse
 from app.sql.types import (
     QGetAgentsV4Item,
+    QGetDepartmentDraftsEntriesV4Item,
     QGetDescriptionsV4Item,
     QGetModelsV4Item,
     QGetNamesV4Item,
@@ -77,7 +77,7 @@ class GetDepartmentApiResponse(BaseModel):
 
 
 class DepartmentWebsocketViews(BaseModel):
-    draft_department: DraftDepartmentViewItem | None = None
+    draft_department: QGetDepartmentDraftsEntriesV4Item | None = None
     runs: GetRunListViewResponse | None = None
 
 

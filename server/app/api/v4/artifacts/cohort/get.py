@@ -60,6 +60,7 @@ from app.api.v4.artifacts.cohort.types import (
 )
 from app.api.v4.auth.profile import get_auth_profile_internal
 from app.api.v4.auth.settings import get_auth_settings_internal
+from app.api.v4.entries.cohort_drafts.get import get_cohort_drafts_entries_internal
 from app.api.v4.permissions import resolve_agents_for_artifact
 from app.api.v4.resources.agents.get import get_agents_internal
 from app.api.v4.resources.departments.get import get_departments_internal
@@ -79,7 +80,6 @@ from app.api.v4.resources.simulation_positions.get import (
 from app.api.v4.resources.simulations.get import get_simulations_internal
 from app.api.v4.resources.simulations.search import search_simulations_internal
 from app.api.v4.resources.tools.get import get_tools_internal
-from app.api.v4.views.drafts.get import get_draft_cohort_internal
 from app.api.v4.views.run.list.get import get_run_list_view_internal
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
@@ -224,9 +224,9 @@ async def get_cohort_internal(
     draft_item = None
     if draft_id is not None:
         async with pool.acquire() as draft_conn:
-            draft_items = await get_draft_cohort_internal(
+            draft_items = await get_cohort_drafts_entries_internal(
                 conn=draft_conn,
-                draft_ids=[draft_id],
+                ids=[draft_id],
                 bypass_cache=bypass_cache,
             )
             if draft_items:
@@ -702,9 +702,9 @@ async def get_cohort_websocket(
         if not draft_id or not pool:
             return None
         async with pool.acquire() as conn:
-            draft_items = await get_draft_cohort_internal(
+            draft_items = await get_cohort_drafts_entries_internal(
                 conn=conn,
-                draft_ids=[draft_id],
+                ids=[draft_id],
                 bypass_cache=bypass_cache,
             )
             return draft_items[0] if draft_items else None

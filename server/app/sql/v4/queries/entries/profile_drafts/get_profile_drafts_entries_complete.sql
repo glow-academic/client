@@ -14,37 +14,69 @@ BEGIN
     END LOOP;
 END $$;
 
+DO $$
+DECLARE
+    r RECORD;
+BEGIN
+    FOR r IN
+        SELECT typname
+        FROM pg_type
+        WHERE typname LIKE 'q_get_profile_drafts_entries_v4_item%'
+          AND typnamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'types')
+    LOOP
+        EXECUTE format('DROP TYPE IF EXISTS types.%I CASCADE', r.typname);
+    END LOOP;
+END $$;
+
+CREATE TYPE types.q_get_profile_drafts_entries_v4_item AS (
+    draft_id uuid,
+    created_at timestamptz,
+    updated_at timestamptz,
+    version integer,
+    generated boolean,
+    mcp boolean,
+    active boolean,
+    group_id uuid,
+    name_ids uuid[],
+    flag_ids uuid[],
+    department_ids uuid[]
+);
+
 CREATE OR REPLACE FUNCTION public.api_get_profile_drafts_entries_v4(
     ids uuid[]
-) RETURNS TABLE(
-    items jsonb
 )
-LANGUAGE plpgsql STABLE
+RETURNS TABLE (
+    items types.q_get_profile_drafts_entries_v4_item[]
+)
+LANGUAGE sql
+STABLE
 AS $$
-BEGIN
-    RETURN QUERY
-    SELECT jsonb_agg(
-        jsonb_build_object(
-            'draft_id', m.draft_id,
-            'created_at', m.created_at,
-            'updated_at', m.updated_at,
-            'version', m.version,
-            'generated', m.generated,
-            'mcp', m.mcp,
-            'active', m.active,
-            'group_id', m.group_id,
-            'cohort_ids', m.cohort_ids,
-            'department_ids', m.department_ids,
-            'email_ids', m.email_ids,
-            'flag_ids', m.flag_ids,
-            'name_ids', m.name_ids,
-            'profile_ids', m.profile_ids,
-            'request_limit_ids', m.request_limit_ids,
-            'role_ids', m.role_ids,
-            'route_ids', m.route_ids
-        )
-    ) AS items
-    FROM profile_drafts_mv m
-    WHERE m.draft_id = ANY(ids);
-END;
+    WITH mv_data AS (
+        SELECT mv.*
+        FROM profile_drafts_mv mv
+        WHERE mv.draft_id = ANY(ids)
+    ),
+    items_agg AS (
+        SELECT COALESCE(
+            ARRAY_AGG(
+                (
+                    draft_id,
+                    created_at,
+                    updated_at,
+                    version,
+                    generated,
+                    mcp,
+                    active,
+                    group_id,
+                    name_ids,
+                    flag_ids,
+                    department_ids
+                )::types.q_get_profile_drafts_entries_v4_item
+                ORDER BY updated_at DESC
+            ),
+            ARRAY[]::types.q_get_profile_drafts_entries_v4_item[]
+        ) AS items
+        FROM mv_data
+    )
+    SELECT items FROM items_agg;
 $$;

@@ -9,7 +9,6 @@ from uuid import UUID
 from pydantic import BaseModel, ConfigDict, Field
 
 from app.api.v4.types import BaseResourceSection
-from app.api.v4.views.drafts.types import DraftSettingViewItem
 from app.api.v4.views.run.list.types import GetRunListViewResponse
 from app.sql.types import (
     QGetAgentsV4Item,
@@ -24,6 +23,7 @@ from app.sql.types import (
     QGetProviderKeysV4Item,
     QGetProvidersV4Item,
     QGetRolesV4Item,
+    QGetSettingDraftsEntriesV4Item,
     QGetToolsV4Item,
 )
 
@@ -144,7 +144,7 @@ class GetSettingApiResponse(BaseModel):
 class SettingWebsocketViews(BaseModel):
     """Views data for websocket response."""
 
-    draft_setting: DraftSettingViewItem | None = None
+    draft_setting: QGetSettingDraftsEntriesV4Item | None = None
     runs: GetRunListViewResponse | None = None
 
 

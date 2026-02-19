@@ -9,7 +9,6 @@ from uuid import UUID
 from pydantic import BaseModel
 
 from app.api.v4.types import BaseResourceSection, ListFilterSection
-from app.api.v4.views.drafts.types import DraftPersonaViewItem
 from app.api.v4.views.run.list.types import GetRunListViewResponse
 from app.sql.types import (
     QGetAgentsV4Item,
@@ -24,6 +23,7 @@ from app.sql.types import (
     QGetNamesV4Item,
     QGetParameterFieldsV4Item,
     QGetParametersV4Item,
+    QGetPersonaDraftsEntriesV4Item,
     QGetProfilesV4Item,
     QGetProvidersV4Item,
     QGetToolsV4Item,
@@ -150,7 +150,7 @@ class GetPersonaApiResponse(BaseModel):
 class PersonaWebsocketViews(BaseModel):
     """Views data for websocket response."""
 
-    draft_persona: DraftPersonaViewItem | None = None
+    draft_persona: QGetPersonaDraftsEntriesV4Item | None = None
     runs: GetRunListViewResponse | None = None
 
 

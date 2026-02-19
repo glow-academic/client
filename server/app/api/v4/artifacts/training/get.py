@@ -41,6 +41,7 @@ from app.api.v4.artifacts.training.types import (
     TrainingWebsocketViews,
 )
 from app.api.v4.auth.settings import get_auth_settings_internal
+from app.api.v4.entries.training_drafts.get import get_training_drafts_entries_internal
 from app.api.v4.permissions import resolve_agents_for_artifact
 from app.api.v4.resources.departments.get import get_departments_internal
 from app.api.v4.resources.documents.get import get_documents_internal
@@ -58,8 +59,6 @@ from app.api.v4.resources.profiles.get import get_profiles_internal
 from app.api.v4.resources.questions.get import get_questions_internal
 from app.api.v4.resources.scenarios.get import get_scenarios_internal
 from app.api.v4.resources.videos.get import get_videos_internal
-from app.api.v4.views.drafts.get import get_draft_training_internal
-from app.api.v4.views.drafts.types import DraftTrainingViewItem
 from app.api.v4.views.run.list.get import get_run_list_view_internal
 from app.api.v4.views.training.bundle.get import get_training_view_internal
 from app.infra.v4.error.handle_route_error import handle_route_error
@@ -67,6 +66,7 @@ from app.main import get_pool
 from app.sql.types import (
     GetTrainingStartContextSqlParams,
     GetTrainingStartContextSqlRow,
+    QGetTrainingDraftsEntriesV4Item,
 )
 from app.utils.sql_helper import execute_sql_typed
 
@@ -165,7 +165,7 @@ class TrainingInternalData:
     config_providers: list[Any] = field(default_factory=list)
     config_tools: list[Any] = field(default_factory=list)
     # Draft view
-    draft_item: DraftTrainingViewItem | None = None
+    draft_item: QGetTrainingDraftsEntriesV4Item | None = None
 
 
 # =============================================================================
@@ -287,12 +287,12 @@ async def get_training_internal(
         )
 
     # 2. Fetch draft if provided
-    draft_item: DraftTrainingViewItem | None = None
+    draft_item: QGetTrainingDraftsEntriesV4Item | None = None
     if draft_id is not None:
         async with pool.acquire() as conn:
-            draft_items = await get_draft_training_internal(
+            draft_items = await get_training_drafts_entries_internal(
                 conn=conn,
-                draft_ids=[draft_id],
+                ids=[draft_id],
                 bypass_cache=bypass_cache,
             )
         if draft_items:

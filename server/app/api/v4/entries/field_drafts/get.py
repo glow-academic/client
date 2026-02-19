@@ -1,6 +1,6 @@
-"""Field Drafts entry GET endpoint."""
+"""FieldDrafts entry GET endpoint."""
 
-from typing import Annotated, cast
+from typing import Annotated
 from uuid import UUID
 
 import asyncpg  # type: ignore
@@ -12,7 +12,7 @@ from app.sql.types import (
     GetFieldDraftsEntriesApiRequest,
     GetFieldDraftsEntriesApiResponse,
     GetFieldDraftsEntriesSqlParams,
-    GetFieldDraftsEntriesSqlRow,
+    QGetFieldDraftsEntriesV4Item,
     load_sql_query,
 )
 from app.utils.cache.cache_key import cache_key
@@ -31,7 +31,7 @@ async def get_field_drafts_entries_internal(
     conn: asyncpg.Connection,
     ids: list[UUID],
     bypass_cache: bool = False,
-) -> list[dict]:
+) -> list[QGetFieldDraftsEntriesV4Item]:
     """Internal function to fetch field_drafts entries by IDs."""
     if not ids:
         return []
@@ -45,19 +45,21 @@ async def get_field_drafts_entries_internal(
     if not bypass_cache:
         cached = await get_cached(cache_key_val)
         if cached:
-            return list(cached.get("items", []))
+            return [
+                QGetFieldDraftsEntriesV4Item.model_validate(item)
+                for item in cached.get("items", [])
+            ]
 
     params = GetFieldDraftsEntriesSqlParams(ids=ids)
-    result = cast(
-        GetFieldDraftsEntriesSqlRow,
-        await execute_sql_typed(conn, SQL_PATH, params=params),
-    )
+    result = await execute_sql_typed(conn, SQL_PATH, params=params)
 
-    items: list[dict] = result.items if result and result.items else []
+    items: list[QGetFieldDraftsEntriesV4Item] = (
+        list(result.items) if result and result.items else []
+    )
 
     await set_cached(
         cache_key_val,
-        {"items": items if isinstance(items, list) else []},
+        {"items": [item.model_dump(mode="json") for item in items]},
         ttl=60,
         tags=tags,
     )

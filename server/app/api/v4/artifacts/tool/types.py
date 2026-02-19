@@ -9,7 +9,6 @@ from uuid import UUID
 from pydantic import BaseModel
 
 from app.api.v4.types import BaseResourceSection, ListFilterSection
-from app.api.v4.views.drafts.types import DraftToolViewItem
 from app.api.v4.views.run.list.types import GetRunListViewResponse
 from app.sql.types import (
     QGetAgentsV4Item,
@@ -21,6 +20,7 @@ from app.sql.types import (
     QGetNamesV4Item,
     QGetProfilesV4Item,
     QGetProvidersV4Item,
+    QGetToolDraftsEntriesV4Item,
     QGetToolsV4Item,
 )
 
@@ -95,7 +95,7 @@ class GetToolApiResponse(BaseModel):
 
 
 class ToolWebsocketViews(BaseModel):
-    draft_tool: DraftToolViewItem | None = None
+    draft_tool: QGetToolDraftsEntriesV4Item | None = None
     runs: GetRunListViewResponse | None = None
 
 

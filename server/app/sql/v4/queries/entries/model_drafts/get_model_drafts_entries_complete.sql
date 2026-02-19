@@ -14,41 +14,87 @@ BEGIN
     END LOOP;
 END $$;
 
+DO $$
+DECLARE
+    r RECORD;
+BEGIN
+    FOR r IN
+        SELECT typname
+        FROM pg_type
+        WHERE typname LIKE 'q_get_model_drafts_entries_v4_item%'
+          AND typnamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'types')
+    LOOP
+        EXECUTE format('DROP TYPE IF EXISTS types.%I CASCADE', r.typname);
+    END LOOP;
+END $$;
+
+CREATE TYPE types.q_get_model_drafts_entries_v4_item AS (
+    draft_id uuid,
+    created_at timestamptz,
+    updated_at timestamptz,
+    version integer,
+    generated boolean,
+    mcp boolean,
+    active boolean,
+    group_id uuid,
+    name_ids uuid[],
+    description_ids uuid[],
+    value_ids uuid[],
+    provider_ids uuid[],
+    flag_ids uuid[],
+    department_ids uuid[],
+    modality_ids uuid[],
+    temperature_level_ids uuid[],
+    pricing_ids uuid[],
+    reasoning_level_ids uuid[],
+    quality_ids uuid[],
+    voice_ids uuid[]
+);
+
 CREATE OR REPLACE FUNCTION public.api_get_model_drafts_entries_v4(
     ids uuid[]
-) RETURNS TABLE(
-    items jsonb
 )
-LANGUAGE plpgsql STABLE
+RETURNS TABLE (
+    items types.q_get_model_drafts_entries_v4_item[]
+)
+LANGUAGE sql
+STABLE
 AS $$
-BEGIN
-    RETURN QUERY
-    SELECT jsonb_agg(
-        jsonb_build_object(
-            'draft_id', m.draft_id,
-            'created_at', m.created_at,
-            'updated_at', m.updated_at,
-            'version', m.version,
-            'generated', m.generated,
-            'mcp', m.mcp,
-            'active', m.active,
-            'group_id', m.group_id,
-            'department_ids', m.department_ids,
-            'description_ids', m.description_ids,
-            'flag_ids', m.flag_ids,
-            'modality_ids', m.modality_ids,
-            'model_ids', m.model_ids,
-            'name_ids', m.name_ids,
-            'pricing_ids', m.pricing_ids,
-            'provider_ids', m.provider_ids,
-            'quality_ids', m.quality_ids,
-            'reasoning_level_ids', m.reasoning_level_ids,
-            'temperature_level_ids', m.temperature_level_ids,
-            'value_ids', m.value_ids,
-            'voice_ids', m.voice_ids
-        )
-    ) AS items
-    FROM model_drafts_mv m
-    WHERE m.draft_id = ANY(ids);
-END;
+    WITH mv_data AS (
+        SELECT mv.*
+        FROM model_drafts_mv mv
+        WHERE mv.draft_id = ANY(ids)
+    ),
+    items_agg AS (
+        SELECT COALESCE(
+            ARRAY_AGG(
+                (
+                    draft_id,
+                    created_at,
+                    updated_at,
+                    version,
+                    generated,
+                    mcp,
+                    active,
+                    group_id,
+                    name_ids,
+                    description_ids,
+                    value_ids,
+                    provider_ids,
+                    flag_ids,
+                    department_ids,
+                    modality_ids,
+                    temperature_level_ids,
+                    pricing_ids,
+                    reasoning_level_ids,
+                    quality_ids,
+                    voice_ids
+                )::types.q_get_model_drafts_entries_v4_item
+                ORDER BY updated_at DESC
+            ),
+            ARRAY[]::types.q_get_model_drafts_entries_v4_item[]
+        ) AS items
+        FROM mv_data
+    )
+    SELECT items FROM items_agg;
 $$;

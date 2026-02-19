@@ -7,10 +7,10 @@ from uuid import UUID
 from pydantic import BaseModel
 
 from app.api.v4.types import BaseResourceSection, ListFilterSection
-from app.api.v4.views.drafts.types import DraftAuthViewItem
 from app.api.v4.views.run.list.types import GetRunListViewResponse
 from app.sql.types import (
     QGetAgentsV4Item,
+    QGetAuthDraftsEntriesV4Item,
     QGetDescriptionsV4Item,
     QGetModelsV4Item,
     QGetNamesV4Item,
@@ -107,7 +107,7 @@ class GetAuthApiResponse(BaseModel):
 
 
 class AuthWebsocketViews(BaseModel):
-    draft_auth: DraftAuthViewItem | None = None
+    draft_auth: QGetAuthDraftsEntriesV4Item | None = None
     runs: GetRunListViewResponse | None = None
 
 

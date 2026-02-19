@@ -8,9 +8,9 @@ from uuid import UUID
 from pydantic import BaseModel
 
 from app.api.v4.types import BaseResourceSection, ListFilterSection
-from app.api.v4.views.drafts.types import DraftAgentViewItem
 from app.api.v4.views.run.list.types import GetRunListViewResponse
 from app.sql.types import (
+    QGetAgentDraftsEntriesV4Item,
     QGetAgentsV4Item,
     QGetDepartmentsV4Item,
     QGetDescriptionsV4Item,
@@ -131,7 +131,7 @@ class GetAgentApiResponse(BaseModel):
 class AgentWebsocketViews(BaseModel):
     """Views data for websocket response."""
 
-    draft_agent: DraftAgentViewItem | None = None
+    draft_agent: QGetAgentDraftsEntriesV4Item | None = None
     runs: GetRunListViewResponse | None = None
 
 

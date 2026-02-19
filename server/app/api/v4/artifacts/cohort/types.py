@@ -11,10 +11,10 @@ from uuid import UUID
 from pydantic import BaseModel
 
 from app.api.v4.types import BaseResourceSection, ListFilterSection
-from app.api.v4.views.drafts.types import DraftCohortViewItem
 from app.api.v4.views.run.list.types import GetRunListViewResponse
 from app.sql.types import (
     QGetAgentsV4Item,
+    QGetCohortDraftsEntriesV4Item,
     QGetModelsV4Item,
     QGetProfilesV4Item,
     QGetProvidersV4Item,
@@ -188,7 +188,7 @@ class GetCohortWebsocketResponse(BaseModel):
 
 
 class CohortWebsocketViews(BaseModel):
-    draft_cohort: DraftCohortViewItem | None = None
+    draft_cohort: QGetCohortDraftsEntriesV4Item | None = None
     runs: GetRunListViewResponse | None = None
 
 

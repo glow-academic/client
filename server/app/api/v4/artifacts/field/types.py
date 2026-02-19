@@ -9,12 +9,12 @@ from uuid import UUID
 from pydantic import BaseModel
 
 from app.api.v4.types import BaseResourceSection, ListFilterSection
-from app.api.v4.views.drafts.types import DraftFieldViewItem
 from app.api.v4.views.run.list.types import GetRunListViewResponse
 from app.sql.types import (
     QGetAgentsV4Item,
     QGetDepartmentsV4Item,
     QGetDescriptionsV4Item,
+    QGetFieldDraftsEntriesV4Item,
     QGetModelsV4Item,
     QGetNamesV4Item,
     QGetParametersV4Item,
@@ -92,7 +92,7 @@ class GetFieldApiResponse(BaseModel):
 
 
 class FieldWebsocketViews(BaseModel):
-    draft_field: DraftFieldViewItem | None = None
+    draft_field: QGetFieldDraftsEntriesV4Item | None = None
     runs: GetRunListViewResponse | None = None
 
 
@@ -150,7 +150,7 @@ class FieldInternalData:
     config_providers: list[QGetProvidersV4Item] | None
     config_tools: list[QGetToolsV4Item] | None
 
-    draft_view: DraftFieldViewItem | None
+    draft_view: QGetFieldDraftsEntriesV4Item | None
 
 
 # ========== List Endpoint Types ==========

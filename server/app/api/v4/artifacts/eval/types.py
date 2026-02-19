@@ -8,12 +8,12 @@ from uuid import UUID
 from pydantic import BaseModel
 
 from app.api.v4.types import ListFilterSection
-from app.api.v4.views.drafts.types import DraftEvalViewItem
 from app.api.v4.views.run.list.types import GetRunListViewResponse
 from app.sql.types import (
     QGetAgentsV4Item,
     QGetDepartmentsV4Item,
     QGetDescriptionsV4Item,
+    QGetEvalDraftsEntriesV4Item,
     QGetGroupPositionsV4Item,
     QGetGroupRubricsV4Item,
     QGetModelsV4Item,
@@ -202,7 +202,7 @@ class GetEvalApiResponse(BaseModel):
 
 
 class EvalWebsocketViews(BaseModel):
-    draft_eval: DraftEvalViewItem | None = None
+    draft_eval: QGetEvalDraftsEntriesV4Item | None = None
     runs: GetRunListViewResponse | None = None
 
 

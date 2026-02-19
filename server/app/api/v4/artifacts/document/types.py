@@ -12,12 +12,12 @@ from uuid import UUID
 from pydantic import BaseModel
 
 from app.api.v4.types import BaseResourceSection, ListFilterSection
-from app.api.v4.views.drafts.types import DraftDocumentViewItem
 from app.api.v4.views.run.list.types import GetRunListViewResponse
 from app.sql.types import (
     QGetAgentsV4Item,
     QGetDepartmentsV4Item,
     QGetDescriptionsV4Item,
+    QGetDocumentDraftsEntriesV4Item,
     QGetImagesV4Item,
     QGetModelsV4Item,
     QGetNamesV4Item,
@@ -143,7 +143,7 @@ class DocumentResources(BaseModel):
 class DocumentWebsocketViews(BaseModel):
     """Optional websocket views payload."""
 
-    draft_document: DraftDocumentViewItem | None = None
+    draft_document: QGetDocumentDraftsEntriesV4Item | None = None
     runs: GetRunListViewResponse | None = None
 
 

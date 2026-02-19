@@ -7,7 +7,6 @@ from uuid import UUID
 from pydantic import BaseModel
 
 from app.api.v4.types import BaseResourceSection, ListFilterSection
-from app.api.v4.views.drafts.types import DraftRubricViewItem
 from app.api.v4.views.run.list.types import GetRunListViewResponse
 from app.sql.types import (
     QGetAgentsV4Item,
@@ -18,6 +17,7 @@ from app.sql.types import (
     QGetPointsV4Item,
     QGetProfilesV4Item,
     QGetProvidersV4Item,
+    QGetRubricDraftsEntriesV4Item,
     QGetStandardGroupsV4Item,
     QGetStandardsV4Item,
     QGetToolsV4Item,
@@ -106,7 +106,7 @@ class GetRubricApiResponse(BaseModel):
 
 
 class RubricWebsocketViews(BaseModel):
-    draft_rubric: DraftRubricViewItem | None = None
+    draft_rubric: QGetRubricDraftsEntriesV4Item | None = None
     runs: GetRunListViewResponse | None = None
 
 

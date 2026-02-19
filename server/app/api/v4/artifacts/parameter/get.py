@@ -51,6 +51,9 @@ from app.api.v4.artifacts.parameter.types import (
 )
 from app.api.v4.auth.profile import get_auth_profile_internal
 from app.api.v4.auth.settings import get_auth_settings_internal
+from app.api.v4.entries.parameter_drafts.get import (
+    get_parameter_drafts_entries_internal,
+)
 from app.api.v4.permissions import has_tools_for_resource, resolve_agents_for_artifact
 from app.api.v4.resources.agents.get import get_agents_internal
 from app.api.v4.resources.departments.get import get_departments_internal
@@ -68,7 +71,6 @@ from app.api.v4.resources.parameter_fields.search import (
 )
 from app.api.v4.resources.profiles.get import get_profiles_internal
 from app.api.v4.resources.providers.get import get_providers_internal
-from app.api.v4.views.drafts.get import get_draft_parameter_internal
 from app.api.v4.views.run.list.get import get_run_list_view_internal
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
@@ -104,9 +106,9 @@ async def get_parameter_internal(
     draft_item = None
     if draft_id is not None:
         async with pool.acquire() as draft_conn:
-            draft_items = await get_draft_parameter_internal(
+            draft_items = await get_parameter_drafts_entries_internal(
                 conn=draft_conn,
-                draft_ids=[draft_id],
+                ids=[draft_id],
                 bypass_cache=bypass_cache,
             )
             if draft_items:
@@ -189,8 +191,8 @@ async def get_parameter_internal(
             selected_active_flag_id = draft_item.flag_ids[0]
         if draft_item.department_ids:
             selected_department_ids = draft_item.department_ids
-        if draft_item.parameter_field_ids:
-            selected_field_ids = draft_item.parameter_field_ids
+        if draft_item.field_ids:
+            selected_field_ids = draft_item.field_ids
 
     # === RESOLVE AGENTS FROM SETTINGS (source of truth) ===
     async with pool.acquire() as settings_conn:
@@ -515,9 +517,9 @@ async def get_parameter_websocket(
         if not draft_id or not pool:
             return None
         async with pool.acquire() as conn:
-            draft_items = await get_draft_parameter_internal(
+            draft_items = await get_parameter_drafts_entries_internal(
                 conn=conn,
-                draft_ids=[draft_id],
+                ids=[draft_id],
                 bypass_cache=bypass_cache,
             )
             return draft_items[0] if draft_items else None

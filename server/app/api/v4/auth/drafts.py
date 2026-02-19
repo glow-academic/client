@@ -2,34 +2,37 @@
 
 from __future__ import annotations
 
-from typing import Annotated
+from typing import Annotated, Any
 from uuid import UUID
 
 import asyncpg
 from fastapi import APIRouter, Depends, HTTPException, Request
 
 from app.api.v4.auth.types import GetDraftsApiResponse, QGetProfileContextV4Draft
-from app.api.v4.views.drafts.get import (
-    get_draft_agent_internal,
-    get_draft_auth_internal,
-    get_draft_cohort_internal,
-    get_draft_department_internal,
-    get_draft_document_internal,
-    get_draft_eval_internal,
-    get_draft_field_internal,
-    get_draft_model_internal,
-    get_draft_parameter_internal,
-    get_draft_persona_internal,
-    get_draft_profile_internal,
-    get_draft_provider_internal,
-    get_draft_rubric_internal,
-    get_draft_scenario_internal,
-    get_draft_setting_internal,
-    get_draft_simulation_internal,
-    get_draft_tool_internal,
-    get_draft_training_internal,
+from app.api.v4.entries.agent_drafts.get import get_agent_drafts_entries_internal
+from app.api.v4.entries.auth_drafts.get import get_auth_drafts_entries_internal
+from app.api.v4.entries.cohort_drafts.get import get_cohort_drafts_entries_internal
+from app.api.v4.entries.department_drafts.get import (
+    get_department_drafts_entries_internal,
 )
-from app.api.v4.views.drafts.types import DraftViewItemBase
+from app.api.v4.entries.document_drafts.get import get_document_drafts_entries_internal
+from app.api.v4.entries.eval_drafts.get import get_eval_drafts_entries_internal
+from app.api.v4.entries.field_drafts.get import get_field_drafts_entries_internal
+from app.api.v4.entries.model_drafts.get import get_model_drafts_entries_internal
+from app.api.v4.entries.parameter_drafts.get import (
+    get_parameter_drafts_entries_internal,
+)
+from app.api.v4.entries.persona_drafts.get import get_persona_drafts_entries_internal
+from app.api.v4.entries.profile_drafts.get import get_profile_drafts_entries_internal
+from app.api.v4.entries.provider_drafts.get import get_provider_drafts_entries_internal
+from app.api.v4.entries.rubric_drafts.get import get_rubric_drafts_entries_internal
+from app.api.v4.entries.scenario_drafts.get import get_scenario_drafts_entries_internal
+from app.api.v4.entries.setting_drafts.get import get_setting_drafts_entries_internal
+from app.api.v4.entries.simulation_drafts.get import (
+    get_simulation_drafts_entries_internal,
+)
+from app.api.v4.entries.tool_drafts.get import get_tool_drafts_entries_internal
+from app.api.v4.entries.training_drafts.get import get_training_drafts_entries_internal
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
 
@@ -59,24 +62,24 @@ _PATHNAME_TO_ARTIFACT: dict[str, str] = {
 
 # Artifact type → per-artifact draft internal function
 _ARTIFACT_INTERNAL_FN = {
-    "agent": get_draft_agent_internal,
-    "auth": get_draft_auth_internal,
-    "cohort": get_draft_cohort_internal,
-    "department": get_draft_department_internal,
-    "document": get_draft_document_internal,
-    "eval": get_draft_eval_internal,
-    "field": get_draft_field_internal,
-    "model": get_draft_model_internal,
-    "parameter": get_draft_parameter_internal,
-    "persona": get_draft_persona_internal,
-    "profile": get_draft_profile_internal,
-    "provider": get_draft_provider_internal,
-    "rubric": get_draft_rubric_internal,
-    "scenario": get_draft_scenario_internal,
-    "setting": get_draft_setting_internal,
-    "simulation": get_draft_simulation_internal,
-    "tool": get_draft_tool_internal,
-    "training": get_draft_training_internal,
+    "agent": get_agent_drafts_entries_internal,
+    "auth": get_auth_drafts_entries_internal,
+    "cohort": get_cohort_drafts_entries_internal,
+    "department": get_department_drafts_entries_internal,
+    "document": get_document_drafts_entries_internal,
+    "eval": get_eval_drafts_entries_internal,
+    "field": get_field_drafts_entries_internal,
+    "model": get_model_drafts_entries_internal,
+    "parameter": get_parameter_drafts_entries_internal,
+    "persona": get_persona_drafts_entries_internal,
+    "profile": get_profile_drafts_entries_internal,
+    "provider": get_provider_drafts_entries_internal,
+    "rubric": get_rubric_drafts_entries_internal,
+    "scenario": get_scenario_drafts_entries_internal,
+    "setting": get_setting_drafts_entries_internal,
+    "simulation": get_simulation_drafts_entries_internal,
+    "tool": get_tool_drafts_entries_internal,
+    "training": get_training_drafts_entries_internal,
 }
 
 
@@ -90,10 +93,8 @@ def _resolve_artifact_type(pathname: str) -> str | None:
     return None
 
 
-def _convert_draft(
-    item: DraftViewItemBase, artifact_type: str
-) -> QGetProfileContextV4Draft:
-    """Convert a DraftViewItemBase to the API response format."""
+def _convert_draft(item: Any, artifact_type: str) -> QGetProfileContextV4Draft:
+    """Convert a draft entries item to the API response format."""
     return QGetProfileContextV4Draft(
         id=item.draft_id,
         artifact_type=artifact_type,
@@ -152,7 +153,7 @@ async def get_drafts(
         if not draft_ids:
             return GetDraftsApiResponse(drafts=[])
 
-        # Fetch full draft data via per-artifact view internal
+        # Fetch full draft data via per-artifact entries internal
         async with pool.acquire() as c:
             draft_items = await internal_fn(c, draft_ids, bypass_cache)
 

@@ -70,6 +70,9 @@ from app.api.v4.artifacts.simulation.types import (
     SimulationWebsocketResources,
     SimulationWebsocketViews,
 )
+from app.api.v4.entries.simulation_drafts.get import (
+    get_simulation_drafts_entries_internal,
+)
 from app.api.v4.permissions import has_tools_for_resource, resolve_agents_for_artifact
 from app.api.v4.resources.agents.get import get_agents_internal
 from app.api.v4.resources.departments.get import get_departments_internal
@@ -106,7 +109,6 @@ from app.api.v4.resources.scenario_time_limits.search import (
 )
 from app.api.v4.resources.scenarios.search import search_scenarios_internal
 from app.api.v4.resources.tools.get import get_tools_internal
-from app.api.v4.views.drafts.get import get_draft_simulation_internal
 from app.api.v4.views.run.list.get import get_run_list_view_internal
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
@@ -204,9 +206,9 @@ async def get_simulation_internal(
     draft_item = None
     if draft_id is not None:
         async with pool.acquire() as draft_conn:
-            draft_items = await get_draft_simulation_internal(
+            draft_items = await get_simulation_drafts_entries_internal(
                 conn=draft_conn,
-                draft_ids=[draft_id],
+                ids=[draft_id],
                 bypass_cache=bypass_cache,
             )
             if draft_items:
@@ -777,9 +779,9 @@ async def get_simulation_websocket(
         if not draft_id or not pool:
             return None
         async with pool.acquire() as conn:
-            draft_items = await get_draft_simulation_internal(
+            draft_items = await get_simulation_drafts_entries_internal(
                 conn=conn,
-                draft_ids=[draft_id],
+                ids=[draft_id],
                 bypass_cache=bypass_cache,
             )
             return draft_items[0] if draft_items else None

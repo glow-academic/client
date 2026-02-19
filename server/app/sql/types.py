@@ -4327,9 +4327,31 @@ class GetAgentDraftsEntriesSqlParams(BaseModel):
             self.ids,
         )
 
+class QGetAgentDraftsEntriesV4Item(BaseModel):
+
+    draft_id: UUID | None
+    created_at: datetime | None
+    updated_at: datetime | None
+    version: int | None
+    generated: bool | None
+    mcp: bool | None
+    active: bool | None
+    group_id: UUID | None
+    name_ids: list[UUID] | None
+    description_ids: list[UUID] | None
+    model_ids: list[UUID] | None
+    prompt_ids: list[UUID] | None
+    instruction_ids: list[UUID] | None
+    flag_ids: list[UUID] | None
+    department_ids: list[UUID] | None
+    tool_ids: list[UUID] | None
+    temperature_level_ids: list[UUID] | None
+    reasoning_level_ids: list[UUID] | None
+    voice_ids: list[UUID] | None
+
 class GetAgentDraftsEntriesSqlRow(BaseModel):
 
-    items: Any | None = None
+    items: list[QGetAgentDraftsEntriesV4Item] | None = None
 
 class GetAgentDraftsEntriesApiRequest(BaseModel):
 
@@ -4337,7 +4359,7 @@ class GetAgentDraftsEntriesApiRequest(BaseModel):
 
 class GetAgentDraftsEntriesApiResponse(BaseModel):
 
-    items: Any | None = None
+    items: list[QGetAgentDraftsEntriesV4Item] | None = None
 
 
 
@@ -6317,9 +6339,25 @@ class GetAuthDraftsEntriesSqlParams(BaseModel):
             self.ids,
         )
 
+class QGetAuthDraftsEntriesV4Item(BaseModel):
+
+    draft_id: UUID | None
+    created_at: datetime | None
+    updated_at: datetime | None
+    version: int | None
+    generated: bool | None
+    mcp: bool | None
+    active: bool | None
+    group_id: UUID | None
+    name_ids: list[UUID] | None
+    description_ids: list[UUID] | None
+    flag_ids: list[UUID] | None
+    protocol_ids: list[UUID] | None
+    slug_ids: list[UUID] | None
+
 class GetAuthDraftsEntriesSqlRow(BaseModel):
 
-    items: Any | None = None
+    items: list[QGetAuthDraftsEntriesV4Item] | None = None
 
 class GetAuthDraftsEntriesApiRequest(BaseModel):
 
@@ -6327,7 +6365,7 @@ class GetAuthDraftsEntriesApiRequest(BaseModel):
 
 class GetAuthDraftsEntriesApiResponse(BaseModel):
 
-    items: Any | None = None
+    items: list[QGetAuthDraftsEntriesV4Item] | None = None
 
 
 
@@ -6866,9 +6904,26 @@ class GetCohortDraftsEntriesSqlParams(BaseModel):
             self.ids,
         )
 
+class QGetCohortDraftsEntriesV4Item(BaseModel):
+
+    draft_id: UUID | None
+    created_at: datetime | None
+    updated_at: datetime | None
+    version: int | None
+    generated: bool | None
+    mcp: bool | None
+    active: bool | None
+    group_id: UUID | None
+    name_ids: list[UUID] | None
+    description_ids: list[UUID] | None
+    flag_ids: list[UUID] | None
+    department_ids: list[UUID] | None
+    simulation_ids: list[UUID] | None
+    simulation_position_ids: list[UUID] | None
+
 class GetCohortDraftsEntriesSqlRow(BaseModel):
 
-    items: Any | None = None
+    items: list[QGetCohortDraftsEntriesV4Item] | None = None
 
 class GetCohortDraftsEntriesApiRequest(BaseModel):
 
@@ -6876,7 +6931,7 @@ class GetCohortDraftsEntriesApiRequest(BaseModel):
 
 class GetCohortDraftsEntriesApiResponse(BaseModel):
 
-    items: Any | None = None
+    items: list[QGetCohortDraftsEntriesV4Item] | None = None
 
 
 
@@ -7463,9 +7518,24 @@ class GetDepartmentDraftsEntriesSqlParams(BaseModel):
             self.ids,
         )
 
+class QGetDepartmentDraftsEntriesV4Item(BaseModel):
+
+    draft_id: UUID | None
+    created_at: datetime | None
+    updated_at: datetime | None
+    version: int | None
+    generated: bool | None
+    mcp: bool | None
+    active: bool | None
+    group_id: UUID | None
+    name_ids: list[UUID] | None
+    description_ids: list[UUID] | None
+    flag_ids: list[UUID] | None
+    settings_ids: list[UUID] | None
+
 class GetDepartmentDraftsEntriesSqlRow(BaseModel):
 
-    items: Any | None = None
+    items: list[QGetDepartmentDraftsEntriesV4Item] | None = None
 
 class GetDepartmentDraftsEntriesApiRequest(BaseModel):
 
@@ -7473,7 +7543,7 @@ class GetDepartmentDraftsEntriesApiRequest(BaseModel):
 
 class GetDepartmentDraftsEntriesApiResponse(BaseModel):
 
-    items: Any | None = None
+    items: list[QGetDepartmentDraftsEntriesV4Item] | None = None
 
 
 
@@ -7555,9 +7625,28 @@ class GetDocumentDraftsEntriesSqlParams(BaseModel):
             self.ids,
         )
 
+class QGetDocumentDraftsEntriesV4Item(BaseModel):
+
+    draft_id: UUID | None
+    created_at: datetime | None
+    updated_at: datetime | None
+    version: int | None
+    generated: bool | None
+    mcp: bool | None
+    active: bool | None
+    group_id: UUID | None
+    name_ids: list[UUID] | None
+    description_ids: list[UUID] | None
+    flag_ids: list[UUID] | None
+    department_ids: list[UUID] | None
+    parameter_field_ids: list[UUID] | None
+    upload_ids: list[UUID] | None
+    image_ids: list[UUID] | None
+    text_ids: list[UUID] | None
+
 class GetDocumentDraftsEntriesSqlRow(BaseModel):
 
-    items: Any | None = None
+    items: list[QGetDocumentDraftsEntriesV4Item] | None = None
 
 class GetDocumentDraftsEntriesApiRequest(BaseModel):
 
@@ -7565,7 +7654,7 @@ class GetDocumentDraftsEntriesApiRequest(BaseModel):
 
 class GetDocumentDraftsEntriesApiResponse(BaseModel):
 
-    items: Any | None = None
+    items: list[QGetDocumentDraftsEntriesV4Item] | None = None
 
 
 
@@ -7831,9 +7920,24 @@ class GetEvalDraftsEntriesSqlParams(BaseModel):
             self.ids,
         )
 
+class QGetEvalDraftsEntriesV4Item(BaseModel):
+
+    draft_id: UUID | None
+    created_at: datetime | None
+    updated_at: datetime | None
+    version: int | None
+    generated: bool | None
+    mcp: bool | None
+    active: bool | None
+    group_id: UUID | None
+    name_ids: list[UUID] | None
+    description_ids: list[UUID] | None
+    flag_ids: list[UUID] | None
+    department_ids: list[UUID] | None
+
 class GetEvalDraftsEntriesSqlRow(BaseModel):
 
-    items: Any | None = None
+    items: list[QGetEvalDraftsEntriesV4Item] | None = None
 
 class GetEvalDraftsEntriesApiRequest(BaseModel):
 
@@ -7841,7 +7945,7 @@ class GetEvalDraftsEntriesApiRequest(BaseModel):
 
 class GetEvalDraftsEntriesApiResponse(BaseModel):
 
-    items: Any | None = None
+    items: list[QGetEvalDraftsEntriesV4Item] | None = None
 
 
 
@@ -7923,9 +8027,26 @@ class GetFieldDraftsEntriesSqlParams(BaseModel):
             self.ids,
         )
 
+class QGetFieldDraftsEntriesV4Item(BaseModel):
+
+    draft_id: UUID | None
+    created_at: datetime | None
+    updated_at: datetime | None
+    version: int | None
+    generated: bool | None
+    mcp: bool | None
+    active: bool | None
+    group_id: UUID | None
+    conditional_parameter_ids: list[UUID] | None
+    department_ids: list[UUID] | None
+    description_ids: list[UUID] | None
+    field_ids: list[UUID] | None
+    flag_ids: list[UUID] | None
+    name_ids: list[UUID] | None
+
 class GetFieldDraftsEntriesSqlRow(BaseModel):
 
-    items: Any | None = None
+    items: list[QGetFieldDraftsEntriesV4Item] | None = None
 
 class GetFieldDraftsEntriesApiRequest(BaseModel):
 
@@ -7933,7 +8054,7 @@ class GetFieldDraftsEntriesApiRequest(BaseModel):
 
 class GetFieldDraftsEntriesApiResponse(BaseModel):
 
-    items: Any | None = None
+    items: list[QGetFieldDraftsEntriesV4Item] | None = None
 
 
 
@@ -9314,9 +9435,32 @@ class GetModelDraftsEntriesSqlParams(BaseModel):
             self.ids,
         )
 
+class QGetModelDraftsEntriesV4Item(BaseModel):
+
+    draft_id: UUID | None
+    created_at: datetime | None
+    updated_at: datetime | None
+    version: int | None
+    generated: bool | None
+    mcp: bool | None
+    active: bool | None
+    group_id: UUID | None
+    name_ids: list[UUID] | None
+    description_ids: list[UUID] | None
+    value_ids: list[UUID] | None
+    provider_ids: list[UUID] | None
+    flag_ids: list[UUID] | None
+    department_ids: list[UUID] | None
+    modality_ids: list[UUID] | None
+    temperature_level_ids: list[UUID] | None
+    pricing_ids: list[UUID] | None
+    reasoning_level_ids: list[UUID] | None
+    quality_ids: list[UUID] | None
+    voice_ids: list[UUID] | None
+
 class GetModelDraftsEntriesSqlRow(BaseModel):
 
-    items: Any | None = None
+    items: list[QGetModelDraftsEntriesV4Item] | None = None
 
 class GetModelDraftsEntriesApiRequest(BaseModel):
 
@@ -9324,7 +9468,7 @@ class GetModelDraftsEntriesApiRequest(BaseModel):
 
 class GetModelDraftsEntriesApiResponse(BaseModel):
 
-    items: Any | None = None
+    items: list[QGetModelDraftsEntriesV4Item] | None = None
 
 
 
@@ -9498,9 +9642,26 @@ class GetParameterDraftsEntriesSqlParams(BaseModel):
             self.ids,
         )
 
+class QGetParameterDraftsEntriesV4Item(BaseModel):
+
+    draft_id: UUID | None
+    created_at: datetime | None
+    updated_at: datetime | None
+    version: int | None
+    generated: bool | None
+    mcp: bool | None
+    active: bool | None
+    group_id: UUID | None
+    department_ids: list[UUID] | None
+    description_ids: list[UUID] | None
+    field_ids: list[UUID] | None
+    flag_ids: list[UUID] | None
+    name_ids: list[UUID] | None
+    parameter_ids: list[UUID] | None
+
 class GetParameterDraftsEntriesSqlRow(BaseModel):
 
-    items: Any | None = None
+    items: list[QGetParameterDraftsEntriesV4Item] | None = None
 
 class GetParameterDraftsEntriesApiRequest(BaseModel):
 
@@ -9508,7 +9669,7 @@ class GetParameterDraftsEntriesApiRequest(BaseModel):
 
 class GetParameterDraftsEntriesApiResponse(BaseModel):
 
-    items: Any | None = None
+    items: list[QGetParameterDraftsEntriesV4Item] | None = None
 
 
 
@@ -9682,9 +9843,30 @@ class GetPersonaDraftsEntriesSqlParams(BaseModel):
             self.ids,
         )
 
+class QGetPersonaDraftsEntriesV4Item(BaseModel):
+
+    draft_id: UUID | None
+    created_at: datetime | None
+    updated_at: datetime | None
+    version: int | None
+    generated: bool | None
+    mcp: bool | None
+    active: bool | None
+    group_id: UUID | None
+    name_ids: list[UUID] | None
+    description_ids: list[UUID] | None
+    color_ids: list[UUID] | None
+    icon_ids: list[UUID] | None
+    instruction_ids: list[UUID] | None
+    flag_ids: list[UUID] | None
+    department_ids: list[UUID] | None
+    parameter_field_ids: list[UUID] | None
+    example_ids: list[UUID] | None
+    parameter_ids: list[UUID] | None
+
 class GetPersonaDraftsEntriesSqlRow(BaseModel):
 
-    items: Any | None = None
+    items: list[QGetPersonaDraftsEntriesV4Item] | None = None
 
 class GetPersonaDraftsEntriesApiRequest(BaseModel):
 
@@ -9692,7 +9874,7 @@ class GetPersonaDraftsEntriesApiRequest(BaseModel):
 
 class GetPersonaDraftsEntriesApiResponse(BaseModel):
 
-    items: Any | None = None
+    items: list[QGetPersonaDraftsEntriesV4Item] | None = None
 
 
 
@@ -10236,9 +10418,23 @@ class GetProfileDraftsEntriesSqlParams(BaseModel):
             self.ids,
         )
 
+class QGetProfileDraftsEntriesV4Item(BaseModel):
+
+    draft_id: UUID | None
+    created_at: datetime | None
+    updated_at: datetime | None
+    version: int | None
+    generated: bool | None
+    mcp: bool | None
+    active: bool | None
+    group_id: UUID | None
+    name_ids: list[UUID] | None
+    flag_ids: list[UUID] | None
+    department_ids: list[UUID] | None
+
 class GetProfileDraftsEntriesSqlRow(BaseModel):
 
-    items: Any | None = None
+    items: list[QGetProfileDraftsEntriesV4Item] | None = None
 
 class GetProfileDraftsEntriesApiRequest(BaseModel):
 
@@ -10246,7 +10442,7 @@ class GetProfileDraftsEntriesApiRequest(BaseModel):
 
 class GetProfileDraftsEntriesApiResponse(BaseModel):
 
-    items: Any | None = None
+    items: list[QGetProfileDraftsEntriesV4Item] | None = None
 
 
 
@@ -10328,9 +10524,27 @@ class GetProviderDraftsEntriesSqlParams(BaseModel):
             self.ids,
         )
 
+class QGetProviderDraftsEntriesV4Item(BaseModel):
+
+    draft_id: UUID | None
+    created_at: datetime | None
+    updated_at: datetime | None
+    version: int | None
+    generated: bool | None
+    mcp: bool | None
+    active: bool | None
+    group_id: UUID | None
+    name_ids: list[UUID] | None
+    description_ids: list[UUID] | None
+    flag_ids: list[UUID] | None
+    value_ids: list[UUID] | None
+    endpoint_ids: list[UUID] | None
+    key_ids: list[UUID] | None
+    department_ids: list[UUID] | None
+
 class GetProviderDraftsEntriesSqlRow(BaseModel):
 
-    items: Any | None = None
+    items: list[QGetProviderDraftsEntriesV4Item] | None = None
 
 class GetProviderDraftsEntriesApiRequest(BaseModel):
 
@@ -10338,7 +10552,7 @@ class GetProviderDraftsEntriesApiRequest(BaseModel):
 
 class GetProviderDraftsEntriesApiResponse(BaseModel):
 
-    items: Any | None = None
+    items: list[QGetProviderDraftsEntriesV4Item] | None = None
 
 
 
@@ -10975,9 +11189,27 @@ class GetRubricDraftsEntriesSqlParams(BaseModel):
             self.ids,
         )
 
+class QGetRubricDraftsEntriesV4Item(BaseModel):
+
+    draft_id: UUID | None
+    created_at: datetime | None
+    updated_at: datetime | None
+    version: int | None
+    generated: bool | None
+    mcp: bool | None
+    active: bool | None
+    group_id: UUID | None
+    name_ids: list[UUID] | None
+    description_ids: list[UUID] | None
+    flag_ids: list[UUID] | None
+    department_ids: list[UUID] | None
+    point_ids: list[UUID] | None
+    standard_group_ids: list[UUID] | None
+    standard_ids: list[UUID] | None
+
 class GetRubricDraftsEntriesSqlRow(BaseModel):
 
-    items: Any | None = None
+    items: list[QGetRubricDraftsEntriesV4Item] | None = None
 
 class GetRubricDraftsEntriesApiRequest(BaseModel):
 
@@ -10985,7 +11217,7 @@ class GetRubricDraftsEntriesApiRequest(BaseModel):
 
 class GetRubricDraftsEntriesApiResponse(BaseModel):
 
-    items: Any | None = None
+    items: list[QGetRubricDraftsEntriesV4Item] | None = None
 
 
 
@@ -11272,9 +11504,29 @@ class GetScenarioDraftsEntriesSqlParams(BaseModel):
             self.ids,
         )
 
+class QGetScenarioDraftsEntriesV4Item(BaseModel):
+
+    draft_id: UUID | None
+    created_at: datetime | None
+    updated_at: datetime | None
+    version: int | None
+    generated: bool | None
+    mcp: bool | None
+    active: bool | None
+    group_id: UUID | None
+    name_ids: list[UUID] | None
+    description_ids: list[UUID] | None
+    flag_ids: list[UUID] | None
+    department_ids: list[UUID] | None
+    persona_ids: list[UUID] | None
+    document_ids: list[UUID] | None
+    parameter_ids: list[UUID] | None
+    parameter_field_ids: list[UUID] | None
+    question_ids: list[UUID] | None
+
 class GetScenarioDraftsEntriesSqlRow(BaseModel):
 
-    items: Any | None = None
+    items: list[QGetScenarioDraftsEntriesV4Item] | None = None
 
 class GetScenarioDraftsEntriesApiRequest(BaseModel):
 
@@ -11282,7 +11534,7 @@ class GetScenarioDraftsEntriesApiRequest(BaseModel):
 
 class GetScenarioDraftsEntriesApiResponse(BaseModel):
 
-    items: Any | None = None
+    items: list[QGetScenarioDraftsEntriesV4Item] | None = None
 
 
 
@@ -11455,9 +11707,25 @@ class GetSettingDraftsEntriesSqlParams(BaseModel):
             self.ids,
         )
 
+class QGetSettingDraftsEntriesV4Item(BaseModel):
+
+    draft_id: UUID | None
+    created_at: datetime | None
+    updated_at: datetime | None
+    version: int | None
+    generated: bool | None
+    mcp: bool | None
+    active: bool | None
+    group_id: UUID | None
+    name_ids: list[UUID] | None
+    description_ids: list[UUID] | None
+    flag_ids: list[UUID] | None
+    color_ids: list[UUID] | None
+    department_ids: list[UUID] | None
+
 class GetSettingDraftsEntriesSqlRow(BaseModel):
 
-    items: Any | None = None
+    items: list[QGetSettingDraftsEntriesV4Item] | None = None
 
 class GetSettingDraftsEntriesApiRequest(BaseModel):
 
@@ -11465,7 +11733,7 @@ class GetSettingDraftsEntriesApiRequest(BaseModel):
 
 class GetSettingDraftsEntriesApiResponse(BaseModel):
 
-    items: Any | None = None
+    items: list[QGetSettingDraftsEntriesV4Item] | None = None
 
 
 
@@ -11547,9 +11815,29 @@ class GetSimulationDraftsEntriesSqlParams(BaseModel):
             self.ids,
         )
 
+class QGetSimulationDraftsEntriesV4Item(BaseModel):
+
+    draft_id: UUID | None
+    created_at: datetime | None
+    updated_at: datetime | None
+    version: int | None
+    generated: bool | None
+    mcp: bool | None
+    active: bool | None
+    group_id: UUID | None
+    name_ids: list[UUID] | None
+    description_ids: list[UUID] | None
+    flag_ids: list[UUID] | None
+    department_ids: list[UUID] | None
+    scenario_ids: list[UUID] | None
+    scenario_flag_ids: list[UUID] | None
+    scenario_position_ids: list[UUID] | None
+    scenario_rubric_ids: list[UUID] | None
+    scenario_time_limit_ids: list[UUID] | None
+
 class GetSimulationDraftsEntriesSqlRow(BaseModel):
 
-    items: Any | None = None
+    items: list[QGetSimulationDraftsEntriesV4Item] | None = None
 
 class GetSimulationDraftsEntriesApiRequest(BaseModel):
 
@@ -11557,7 +11845,7 @@ class GetSimulationDraftsEntriesApiRequest(BaseModel):
 
 class GetSimulationDraftsEntriesApiResponse(BaseModel):
 
-    items: Any | None = None
+    items: list[QGetSimulationDraftsEntriesV4Item] | None = None
 
 
 
@@ -11826,9 +12114,33 @@ class GetSuiteDraftsEntriesSqlParams(BaseModel):
             self.ids,
         )
 
+class QGetSuiteDraftsEntriesV4Item(BaseModel):
+
+    draft_id: UUID | None
+    created_at: datetime | None
+    updated_at: datetime | None
+    version: int | None
+    generated: bool | None
+    mcp: bool | None
+    active: bool | None
+    group_id: UUID | None
+    department_ids: list[UUID] | None
+    description_ids: list[UUID] | None
+    flag_ids: list[UUID] | None
+    group_ids: list[UUID] | None
+    instruction_ids: list[UUID] | None
+    key_ids: list[UUID] | None
+    name_ids: list[UUID] | None
+    prompt_ids: list[UUID] | None
+    reasoning_level_ids: list[UUID] | None
+    run_ids: list[UUID] | None
+    temperature_level_ids: list[UUID] | None
+    tool_ids: list[UUID] | None
+    voice_ids: list[UUID] | None
+
 class GetSuiteDraftsEntriesSqlRow(BaseModel):
 
-    items: Any | None = None
+    items: list[QGetSuiteDraftsEntriesV4Item] | None = None
 
 class GetSuiteDraftsEntriesApiRequest(BaseModel):
 
@@ -11836,7 +12148,7 @@ class GetSuiteDraftsEntriesApiRequest(BaseModel):
 
 class GetSuiteDraftsEntriesApiResponse(BaseModel):
 
-    items: Any | None = None
+    items: list[QGetSuiteDraftsEntriesV4Item] | None = None
 
 
 
@@ -12971,9 +13283,25 @@ class GetToolDraftsEntriesSqlParams(BaseModel):
             self.ids,
         )
 
+class QGetToolDraftsEntriesV4Item(BaseModel):
+
+    draft_id: UUID | None
+    created_at: datetime | None
+    updated_at: datetime | None
+    version: int | None
+    generated: bool | None
+    mcp: bool | None
+    active: bool | None
+    group_id: UUID | None
+    name_ids: list[UUID] | None
+    description_ids: list[UUID] | None
+    flag_ids: list[UUID] | None
+    args_ids: list[UUID] | None
+    args_output_ids: list[UUID] | None
+
 class GetToolDraftsEntriesSqlRow(BaseModel):
 
-    items: Any | None = None
+    items: list[QGetToolDraftsEntriesV4Item] | None = None
 
 class GetToolDraftsEntriesApiRequest(BaseModel):
 
@@ -12981,7 +13309,7 @@ class GetToolDraftsEntriesApiRequest(BaseModel):
 
 class GetToolDraftsEntriesApiResponse(BaseModel):
 
-    items: Any | None = None
+    items: list[QGetToolDraftsEntriesV4Item] | None = None
 
 
 
@@ -13253,9 +13581,32 @@ class GetTrainingDraftsEntriesSqlParams(BaseModel):
             self.ids,
         )
 
+class QGetTrainingDraftsEntriesV4Item(BaseModel):
+
+    draft_id: UUID | None
+    created_at: datetime | None
+    updated_at: datetime | None
+    version: int | None
+    generated: bool | None
+    mcp: bool | None
+    active: bool | None
+    group_id: UUID | None
+    department_ids: list[UUID] | None
+    persona_ids: list[UUID] | None
+    document_ids: list[UUID] | None
+    parameter_field_ids: list[UUID] | None
+    parameter_ids: list[UUID] | None
+    field_ids: list[UUID] | None
+    question_ids: list[UUID] | None
+    option_ids: list[UUID] | None
+    video_ids: list[UUID] | None
+    image_ids: list[UUID] | None
+    problem_statement_ids: list[UUID] | None
+    objective_ids: list[UUID] | None
+
 class GetTrainingDraftsEntriesSqlRow(BaseModel):
 
-    items: Any | None = None
+    items: list[QGetTrainingDraftsEntriesV4Item] | None = None
 
 class GetTrainingDraftsEntriesApiRequest(BaseModel):
 
@@ -13263,7 +13614,7 @@ class GetTrainingDraftsEntriesApiRequest(BaseModel):
 
 class GetTrainingDraftsEntriesApiResponse(BaseModel):
 
-    items: Any | None = None
+    items: list[QGetTrainingDraftsEntriesV4Item] | None = None
 
 
 

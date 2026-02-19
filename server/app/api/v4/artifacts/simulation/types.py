@@ -11,7 +11,6 @@ from uuid import UUID
 from pydantic import BaseModel, Field
 
 from app.api.v4.types import BaseResourceSection, ListFilterSection
-from app.api.v4.views.drafts.types import DraftSimulationViewItem
 from app.api.v4.views.run.list.types import GetRunListViewResponse
 from app.sql.types import (
     QGetAgentsV4Item,
@@ -27,6 +26,7 @@ from app.sql.types import (
     QGetScenarioPositionsV4Item,
     QGetScenarioRubricsV4Item,
     QGetScenarioTimeLimitsV4Item,
+    QGetSimulationDraftsEntriesV4Item,
     QGetToolsV4Item,
 )
 
@@ -380,7 +380,7 @@ class GetSimulationApiResponse(BaseModel):
 class SimulationWebsocketViews(BaseModel):
     """Optional websocket views payload."""
 
-    draft_simulation: DraftSimulationViewItem | None = None
+    draft_simulation: QGetSimulationDraftsEntriesV4Item | None = None
     runs: GetRunListViewResponse | None = None
 
 
