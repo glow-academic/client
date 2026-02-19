@@ -105,3 +105,53 @@ class GetSessionDetailResponse(BaseModel):
     audit_total_count: int = 0
     audits: list[ArtifactSessionAudit] = Field(default_factory=list)
     groups: list[ArtifactSessionGroup] = Field(default_factory=list)
+
+
+# =============================================================================
+# WebSocket Types
+# =============================================================================
+
+
+class GetSessionApiRequest(BaseModel):
+    """Request model for get session endpoint."""
+
+    session_id: UUID | None = None
+    draft_id: UUID | None = None
+
+
+class SessionWebsocketViews(BaseModel):
+    """Views data for session websocket response."""
+
+    runs: "GetRunListViewResponse | None" = None
+
+
+class SessionWebsocketResources(BaseModel):
+    """Hydrated resources for session websocket — selected only."""
+
+    config_agents: "list[QGetAgentsV4Item] | None" = None
+    config_models: "list[QGetModelsV4Item] | None" = None
+    config_providers: "list[QGetProvidersV4Item] | None" = None
+    config_tools: "list[QGetToolsV4Item] | None" = None
+    config_profile: "list[QGetProfilesV4Item] | None" = None
+
+
+class GetSessionWebsocketResponse(BaseModel):
+    """Websocket-facing session response with hydrated resources."""
+
+    views: SessionWebsocketViews | None = None
+    resources: SessionWebsocketResources
+    resource_agent_ids: dict[str, UUID | None] | None = None
+    group_id: UUID | None = None
+
+
+from app.api.v4.entries.runs.search import GetRunListViewResponse  # noqa: E402
+from app.sql.types import (  # noqa: E402
+    QGetAgentsV4Item,
+    QGetModelsV4Item,
+    QGetProfilesV4Item,
+    QGetProvidersV4Item,
+    QGetToolsV4Item,
+)
+
+SessionWebsocketViews.model_rebuild()
+SessionWebsocketResources.model_rebuild()

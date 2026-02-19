@@ -7,6 +7,14 @@ from uuid import UUID
 from pydantic import BaseModel, Field
 
 from app.api.v4.artifacts.types import FilterOption
+from app.api.v4.entries.runs.search import GetRunListViewResponse
+from app.sql.types import (
+    QGetAgentsV4Item,
+    QGetModelsV4Item,
+    QGetProfilesV4Item,
+    QGetProvidersV4Item,
+    QGetToolsV4Item,
+)
 
 
 class ReportsRequest(BaseModel):
@@ -280,3 +288,40 @@ class ReportsResponse(BaseModel):
     simulation_options: list[FilterOption] = Field(default_factory=list)
     profile_options: list[FilterOption] = Field(default_factory=list)
     scenario_options: list[FilterOption] = Field(default_factory=list)
+
+
+# =============================================================================
+# WebSocket Types
+# =============================================================================
+
+
+class GetReportsApiRequest(BaseModel):
+    """Request model for get reports endpoint."""
+
+    reports_id: UUID | None = None
+    draft_id: UUID | None = None
+
+
+class ReportsWebsocketViews(BaseModel):
+    """Views data for reports websocket response."""
+
+    runs: GetRunListViewResponse | None = None
+
+
+class ReportsWebsocketResources(BaseModel):
+    """Hydrated resources for reports websocket — selected only."""
+
+    config_agents: list[QGetAgentsV4Item] | None = None
+    config_models: list[QGetModelsV4Item] | None = None
+    config_providers: list[QGetProvidersV4Item] | None = None
+    config_tools: list[QGetToolsV4Item] | None = None
+    config_profile: list[QGetProfilesV4Item] | None = None
+
+
+class GetReportsWebsocketResponse(BaseModel):
+    """Websocket-facing reports response with hydrated resources."""
+
+    views: ReportsWebsocketViews | None = None
+    resources: ReportsWebsocketResources
+    resource_agent_ids: dict[str, UUID | None] | None = None
+    group_id: UUID | None = None

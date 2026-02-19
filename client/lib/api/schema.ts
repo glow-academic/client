@@ -60615,6 +60615,8 @@ export interface components {
         /**
          * SuiteGenerationCompleteEvent
          * @description Server-to-client event: suite_generation_complete.
+         *
+         *     Emitted when all agents have finished generating suite resources.
          */
         app__socket__v4__artifacts__suite__types__SuiteGenerationCompleteEvent: {
             /**
@@ -60634,6 +60636,8 @@ export interface components {
             message: string;
             /** Type */
             type?: string | null;
+            /** Benchmark Entry Id */
+            benchmark_entry_id?: string | null;
         };
         /** DeleteDocumentApiRequest */
         app__sql__types__DeleteDocumentApiRequest: {

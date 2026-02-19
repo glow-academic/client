@@ -1,10 +1,11 @@
-"""Activity error handler."""
+"""Activity error handler - listens to generate_*_error events and emits activity-specific events."""
 
 from typing import Any
 
 from fastapi import APIRouter
 
 from app.main import get_internal_sio, sio
+from app.socket.v4.artifacts.activity.types import ActivityGenerationErrorEvent
 
 internal_sio = get_internal_sio()
 
@@ -12,13 +13,32 @@ client_router = APIRouter()
 server_router = APIRouter()
 
 
+# =============================================================================
+# FastAPI endpoint for OpenAPI documentation
+# =============================================================================
+
+
+@server_router.post("/activity_generation_error")
+async def activity_generation_error_api(
+    request: ActivityGenerationErrorEvent,
+) -> dict[str, bool]:
+    """Server-to-client event: Activity generation error.
+
+    Emitted when activity resource generation fails.
+    """
+    return {"success": True}
+
+
 @internal_sio.on("generate_call_error")  # type: ignore
+@internal_sio.on("generate_text_error")  # type: ignore
 async def handle_activity_error(data: dict[str, Any]) -> None:
-    """Forward activity generation errors to clients."""
-    if data.get("artifact_type") != "activity":
+    """Handle generate_*_error event - filter by activity artifact_type and emit activity-specific event."""
+    # Filter by artifact_type
+    artifact_type = data.get("artifact_type")
+    if artifact_type != "activity":
         return
 
-    sid = data.get("sid")
+    sid = data.get("sid", "")
     if not sid:
         return
 
@@ -26,26 +46,22 @@ async def handle_activity_error(data: dict[str, Any]) -> None:
         "message", "An error occurred during activity generation"
     )
 
+    resource_type = data.get("resource_type")
+    resource_types = data.get("resource_types", [])
+
+    # Emit activity-specific error event with all fields from internal event
+    event = ActivityGenerationErrorEvent(
+        artifact_type=artifact_type or "activity",
+        group_id=data.get("group_id"),
+        resource_type=resource_type,
+        resource_types=resource_types if resource_types else None,
+        resource_id=data.get("resource_id"),
+        success=False,
+        message=error_message,
+        trace_id=data.get("trace_id"),
+    )
     await sio.emit(
         "activity_generation_error",
-        {
-            "artifact_type": "activity",
-            "resource_type": data.get("resource_type"),
-            "resource_types": data.get("resource_types"),
-            "resource_id": data.get("resource_id"),
-            "group_id": data.get("group_id"),
-            "success": False,
-            "message": error_message,
-            "trace_id": data.get("trace_id"),
-        },
+        event.model_dump(mode="json"),
         room=sid,
     )
-
-
-@server_router.post("/activity_generation_error")
-async def activity_generation_error_api(
-    request: dict[str, Any],
-) -> dict[str, bool]:
-    """Server-to-client event: activity generation error."""
-    _ = request
-    return {"ok": True}

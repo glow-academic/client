@@ -137,3 +137,53 @@ class GetGroupDetailResponse(BaseModel):
     models: list[GroupDetailResourceItem] = Field(default_factory=list)
     agents: list[GroupDetailResourceItem] = Field(default_factory=list)
     profiles: list[GroupDetailResourceItem] = Field(default_factory=list)
+
+
+# =============================================================================
+# WebSocket Types
+# =============================================================================
+
+
+class GetGroupApiRequest(BaseModel):
+    """Request model for get group endpoint."""
+
+    group_id: UUID | None = None
+    draft_id: UUID | None = None
+
+
+class GroupWebsocketViews(BaseModel):
+    """Views data for group websocket response."""
+
+    runs: "GetRunListViewResponse | None" = None
+
+
+class GroupWebsocketResources(BaseModel):
+    """Hydrated resources for group websocket — selected only."""
+
+    config_agents: "list[QGetAgentsV4Item] | None" = None
+    config_models: "list[QGetModelsV4Item] | None" = None
+    config_providers: "list[QGetProvidersV4Item] | None" = None
+    config_tools: "list[QGetToolsV4Item] | None" = None
+    config_profile: "list[QGetProfilesV4Item] | None" = None
+
+
+class GetGroupWebsocketResponse(BaseModel):
+    """Websocket-facing group response with hydrated resources."""
+
+    views: GroupWebsocketViews | None = None
+    resources: GroupWebsocketResources
+    resource_agent_ids: dict[str, UUID | None] | None = None
+    group_id: UUID | None = None
+
+
+from app.api.v4.entries.runs.search import GetRunListViewResponse  # noqa: E402
+from app.sql.types import (  # noqa: E402
+    QGetAgentsV4Item,
+    QGetModelsV4Item,
+    QGetProfilesV4Item,
+    QGetProvidersV4Item,
+    QGetToolsV4Item,
+)
+
+GroupWebsocketViews.model_rebuild()
+GroupWebsocketResources.model_rebuild()

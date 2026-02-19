@@ -5,13 +5,19 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
+from app.api.v4.entries.runs.search import GetRunListViewResponse
 from app.sql.types import (
     QGetActivityListViewV4Item,
+    QGetAgentsV4Item,
     QGetAuditListViewV4Item,
     QGetGrantListViewV4Item,
     QGetLoginListViewV4Item,
+    QGetModelsV4Item,
     QGetProblemListViewV4Item,
+    QGetProfilesV4Item,
+    QGetProvidersV4Item,
     QGetSessionListViewV4Item,
+    QGetToolsV4Item,
 )
 
 
@@ -77,3 +83,40 @@ class ActivityResponse(BaseModel):
     views: ActivityViews = Field(default_factory=ActivityViews)
     resources: ActivityResources = Field(default_factory=ActivityResources)
     total_count: int = Field(default=0)
+
+
+# =============================================================================
+# WebSocket Types
+# =============================================================================
+
+
+class GetActivityApiRequest(BaseModel):
+    """Request model for get activity endpoint."""
+
+    activity_id: UUID | None = None
+    draft_id: UUID | None = None
+
+
+class ActivityWebsocketViews(BaseModel):
+    """Views data for activity websocket response."""
+
+    runs: GetRunListViewResponse | None = None
+
+
+class ActivityWebsocketResources(BaseModel):
+    """Hydrated resources for activity websocket — selected only."""
+
+    config_agents: list[QGetAgentsV4Item] | None = None
+    config_models: list[QGetModelsV4Item] | None = None
+    config_providers: list[QGetProvidersV4Item] | None = None
+    config_tools: list[QGetToolsV4Item] | None = None
+    config_profile: list[QGetProfilesV4Item] | None = None
+
+
+class GetActivityWebsocketResponse(BaseModel):
+    """Websocket-facing activity response with hydrated resources."""
+
+    views: ActivityWebsocketViews | None = None
+    resources: ActivityWebsocketResources
+    resource_agent_ids: dict[str, UUID | None] | None = None
+    group_id: UUID | None = None

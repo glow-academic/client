@@ -6,6 +6,14 @@ from uuid import UUID
 from pydantic import BaseModel, Field
 
 from app.api.v4.artifacts.types import FilterOption
+from app.api.v4.entries.runs.search import GetRunListViewResponse
+from app.sql.types import (
+    QGetAgentsV4Item,
+    QGetModelsV4Item,
+    QGetProfilesV4Item,
+    QGetProvidersV4Item,
+    QGetToolsV4Item,
+)
 
 # ============================================================================
 # Request
@@ -617,3 +625,40 @@ class DashboardFooterResponse(BaseModel):
 
 # Resolve forward reference for DashboardPrimaryMetrics.skill_performance
 DashboardPrimaryMetrics.model_rebuild()
+
+
+# =============================================================================
+# WebSocket Types
+# =============================================================================
+
+
+class GetDashboardApiRequest(BaseModel):
+    """Request model for get dashboard endpoint."""
+
+    dashboard_id: UUID | None = None
+    draft_id: UUID | None = None
+
+
+class DashboardWebsocketViews(BaseModel):
+    """Views data for dashboard websocket response."""
+
+    runs: GetRunListViewResponse | None = None
+
+
+class DashboardWebsocketResources(BaseModel):
+    """Hydrated resources for dashboard websocket — selected only."""
+
+    config_agents: list[QGetAgentsV4Item] | None = None
+    config_models: list[QGetModelsV4Item] | None = None
+    config_providers: list[QGetProvidersV4Item] | None = None
+    config_tools: list[QGetToolsV4Item] | None = None
+    config_profile: list[QGetProfilesV4Item] | None = None
+
+
+class GetDashboardWebsocketResponse(BaseModel):
+    """Websocket-facing dashboard response with hydrated resources."""
+
+    views: DashboardWebsocketViews | None = None
+    resources: DashboardWebsocketResources
+    resource_agent_ids: dict[str, UUID | None] | None = None
+    group_id: UUID | None = None
