@@ -823,15 +823,27 @@ class RefreshMvTrainingApiResponse(BaseModel):
 
 
 class CreateAttemptSqlParams(BaseModel):
-    p_profile_id: UUID
-    p_training_entry_id: UUID
+    p_practice: bool | None = False
     p_infinite_mode: bool | None = False
+    p_practice_id: UUID | None = None
+    p_home_id: UUID | None = None
+    p_simulations_resource_id: UUID | None = None
+    p_profiles_resource_id: UUID | None = None
+    p_cohorts_resource_id: UUID | None = None
+    p_departments_resource_id: UUID | None = None
+    p_roles_resource_id: UUID | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
-            self.p_profile_id,
-            self.p_training_entry_id,
+            self.p_practice,
             self.p_infinite_mode,
+            self.p_practice_id,
+            self.p_home_id,
+            self.p_simulations_resource_id,
+            self.p_profiles_resource_id,
+            self.p_cohorts_resource_id,
+            self.p_departments_resource_id,
+            self.p_roles_resource_id,
         )
 
 
@@ -840,9 +852,15 @@ class CreateAttemptSqlRow(BaseModel):
 
 
 class CreateAttemptApiRequest(BaseModel):
-    p_profile_id: UUID
-    p_training_entry_id: UUID
+    p_practice: bool | None = False
     p_infinite_mode: bool | None = False
+    p_practice_id: UUID | None = None
+    p_home_id: UUID | None = None
+    p_simulations_resource_id: UUID | None = None
+    p_profiles_resource_id: UUID | None = None
+    p_cohorts_resource_id: UUID | None = None
+    p_departments_resource_id: UUID | None = None
+    p_roles_resource_id: UUID | None = None
 
 
 class CreateAttemptApiResponse(BaseModel):
@@ -27972,6 +27990,49 @@ class SearchToolsApiResponse(BaseModel):
     items: list[QGetToolsV4Item] | None = None
 
 
+# Generated from: get_training_attempt_context
+
+
+class GetTrainingAttemptContextSqlParams(BaseModel):
+    p_profile_id: UUID
+    p_training_entry_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.p_profile_id,
+            self.p_training_entry_id,
+        )
+
+
+class GetTrainingAttemptContextSqlRow(BaseModel):
+    training_entry_id: UUID | None = None
+    is_practice: bool | None = None
+    practice_id: UUID | None = None
+    home_id: UUID | None = None
+    simulations_resource_id: UUID | None = None
+    profiles_resource_id: UUID | None = None
+    cohorts_resource_id: UUID | None = None
+    departments_resource_id: UUID | None = None
+    roles_resource_id: UUID | None = None
+
+
+class GetTrainingAttemptContextApiRequest(BaseModel):
+    p_profile_id: UUID
+    p_training_entry_id: UUID
+
+
+class GetTrainingAttemptContextApiResponse(BaseModel):
+    training_entry_id: UUID | None = None
+    is_practice: bool | None = None
+    practice_id: UUID | None = None
+    home_id: UUID | None = None
+    simulations_resource_id: UUID | None = None
+    profiles_resource_id: UUID | None = None
+    cohorts_resource_id: UUID | None = None
+    departments_resource_id: UUID | None = None
+    roles_resource_id: UUID | None = None
+
+
 # Generated from: get_uploads
 
 
@@ -40022,6 +40083,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "SearchToolsApiRequest",
         "SearchToolsApiResponse",
     ),
+    "app/sql/v4/queries/resources/training/get_training_attempt_context_complete.sql": (
+        "GetTrainingAttemptContextSqlParams",
+        "GetTrainingAttemptContextSqlRow",
+        "GetTrainingAttemptContextApiRequest",
+        "GetTrainingAttemptContextApiResponse",
+    ),
     "app/sql/v4/queries/resources/uploads/get_uploads_complete.sql": (
         "GetUploadsSqlParams",
         "GetUploadsSqlRow",
@@ -46318,6 +46385,13 @@ if TYPE_CHECKING:
     def load_sql_query(
         file_path: Literal[
             "app/sql/v4/queries/resources/tools/search_tools_complete.sql"
+        ],
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal[
+            "app/sql/v4/queries/resources/training/get_training_attempt_context_complete.sql"
         ],
     ) -> SqlString: ...
 

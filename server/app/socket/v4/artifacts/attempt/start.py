@@ -1,15 +1,18 @@
 """Attempt lifecycle control plane.
 
 Handles attempt_start event (client + internal). Dual-mode:
-- Create mode (no attempt_id): Create attempt via SQL, emit attempt_started
+- Create mode (no attempt_id): Resolve context, create attempt, emit attempt_started
 - Next mode (has attempt_id): Check remaining scenarios, emit training_generate or attempt_ended
 """
 
 import uuid
-from typing import Any, cast
+from typing import Any
 
 from fastapi import APIRouter
 
+from app.api.v4.entries.attempt.create import create_attempt_with_context_internal
+from app.api.v4.entries.attempt.get import get_attempt_entries_internal
+from app.api.v4.resources.training.context import get_training_attempt_context_internal
 from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
 from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.main import get_internal_sio, sio
@@ -19,13 +22,7 @@ from app.socket.v4.artifacts.attempt.types import (
     AttemptStartPayload,
     AttemptUnifiedErrorEvent,
 )
-from app.sql.types import (
-    CreateAttemptSqlParams,
-    CreateAttemptSqlRow,
-)
-from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.logging.db_logger import get_logger
-from app.utils.sql_helper import execute_sql_typed
 
 logger = get_logger(__name__)
 
@@ -35,26 +32,6 @@ client_router = APIRouter()
 server_router = APIRouter()
 
 SHOULD_PROCEED = True
-
-SQL_PATH_CREATE_ATTEMPT = (
-    "app/sql/v4/queries/artifacts/attempt/create_attempt_complete.sql"
-)
-
-# SQL to look up training_entry_id and training_department_id from an attempt
-SQL_ATTEMPT_CONTEXT = """
-    SELECT
-        COALESCE(pte.training_id, hte.training_id) AS training_entry_id,
-        tbd.id AS training_department_id
-    FROM attempt_entry a
-    LEFT JOIN attempt_practice_entry apc ON apc.attempt_id = a.id AND apc.active = true
-    LEFT JOIN practice_training_entry pte ON pte.practice_id = apc.practice_id AND pte.active = true
-    LEFT JOIN attempt_home_entry ahc ON ahc.attempt_id = a.id AND ahc.active = true
-    LEFT JOIN home_training_entry hte ON hte.home_id = ahc.home_id AND hte.active = true
-    LEFT JOIN training_department_entry tbd
-      ON tbd.training_id = COALESCE(pte.training_id, hte.training_id) AND tbd.active = true
-    WHERE a.id = $1
-    LIMIT 1
-"""
 
 # SQL to count remaining scenarios (expected from bundle - completed chats)
 SQL_REMAINING_SCENARIOS = """
@@ -102,33 +79,17 @@ async def _attempt_start_impl(
                 )
                 return
 
+            # Step 1: Resolve training context (cached)
             async with get_db_connection() as conn:
-                row = cast(
-                    CreateAttemptSqlRow,
-                    await execute_sql_typed(
-                        conn,
-                        SQL_PATH_CREATE_ATTEMPT,
-                        params=CreateAttemptSqlParams(
-                            p_profile_id=profile_id,
-                            p_training_entry_id=payload.training_entry_id,
-                            p_infinite_mode=payload.infinite_mode,
-                        ),
-                    ),
+                ctx = await get_training_attempt_context_internal(
+                    conn, profile_id, payload.training_entry_id
                 )
 
-                if not row or not row.out_attempt_id:
-                    await sio.emit(
-                        "attempt_error",
-                        AttemptUnifiedErrorEvent(
-                            type="start",
-                            message="Failed to create attempt",
-                        ).model_dump(mode="json"),
-                        room=sid,
-                    )
-                    return
-
-                attempt_id = row.out_attempt_id
-                await invalidate_tags(["attempt", "attempts"])
+            # Step 2: Create attempt with pre-resolved context
+            async with get_db_connection() as conn:
+                attempt_id = await create_attempt_with_context_internal(
+                    conn, context=ctx, infinite_mode=payload.infinite_mode
+                )
 
             # Emit attempt_started to client
             event = AttemptStartedEvent(
@@ -144,19 +105,23 @@ async def _attempt_start_impl(
             if not SHOULD_PROCEED:
                 return
 
-            # Auto-proceed: look up context and emit training_generate
+            # Step 3: GET from MV for training context
             async with get_db_connection() as conn:
-                ctx = await conn.fetchrow(SQL_ATTEMPT_CONTEXT, attempt_id)
+                items = await get_attempt_entries_internal(
+                    conn, [attempt_id], bypass_cache=True
+                )
 
-            if not ctx:
-                logger.warning(f"No training bundle context for attempt {attempt_id}")
+            if not items or not items[0].get("training_department_id"):
+                logger.warning(f"No training context in MV for attempt {attempt_id}")
                 return
 
             await _emit_training_generate(
                 sid=sid,
                 attempt_id=attempt_id,
                 training_entry_id=payload.training_entry_id,
-                training_department_id=ctx["training_department_id"],
+                training_department_id=uuid.UUID(
+                    str(items[0]["training_department_id"])
+                ),
                 payload=payload,
             )
 
@@ -164,27 +129,32 @@ async def _attempt_start_impl(
             # === NEXT MODE ===
             attempt_id = payload.attempt_id
 
+            # GET from MV for training context
             async with get_db_connection() as conn:
-                # Look up context
-                ctx = await conn.fetchrow(SQL_ATTEMPT_CONTEXT, attempt_id)
-                if not ctx:
-                    logger.warning(
-                        f"No training bundle context for attempt {attempt_id}"
-                    )
-                    await sio.emit(
-                        "attempt_error",
-                        AttemptUnifiedErrorEvent(
-                            type="start",
-                            message="Attempt context not found",
-                        ).model_dump(mode="json"),
-                        room=sid,
-                    )
-                    return
+                items = await get_attempt_entries_internal(
+                    conn, [attempt_id], bypass_cache=True
+                )
 
-                training_entry_id = ctx["training_entry_id"]
-                training_department_id = ctx["training_department_id"]
+            if not items or not items[0].get("training_entry_id"):
+                logger.warning(f"No training context in MV for attempt {attempt_id}")
+                await sio.emit(
+                    "attempt_error",
+                    AttemptUnifiedErrorEvent(
+                        type="start",
+                        message="Attempt context not found",
+                    ).model_dump(mode="json"),
+                    room=sid,
+                )
+                return
 
-                # Check remaining scenarios
+            attempt_data = items[0]
+            training_entry_id = uuid.UUID(str(attempt_data["training_entry_id"]))
+            training_department_id = uuid.UUID(
+                str(attempt_data["training_department_id"])
+            )
+
+            # Check remaining scenarios
+            async with get_db_connection() as conn:
                 remaining = await conn.fetchrow(SQL_REMAINING_SCENARIOS, attempt_id)
 
             remaining_count = remaining["remaining_scenarios"] if remaining else 0

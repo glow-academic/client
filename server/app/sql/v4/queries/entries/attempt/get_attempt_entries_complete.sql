@@ -34,7 +34,9 @@ BEGIN
             'attempt_created_at', m.attempt_created_at,
             'infinite_mode', m.infinite_mode,
             'is_archived', m.is_archived,
-            'scenario_ids', m.scenario_ids
+            'scenario_ids', m.scenario_ids,
+            'training_entry_id', m.training_entry_id,
+            'training_department_id', m.training_department_id
         )
     ) AS items
     FROM attempt_mv m

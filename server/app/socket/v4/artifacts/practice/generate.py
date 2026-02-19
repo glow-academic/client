@@ -2,18 +2,21 @@
 
 Flow:
 1. Validate profile via find_profile_by_socket(sid)
-2. SYNC step: Create attempt via create_attempt_v4() SQL
-3. Invalidate cache tags ["attempt", "attempts"]
-4. Emit practice_generation_started to client with attempt_id
-5. Look up training context via SQL_ATTEMPT_CONTEXT query
+2. Resolve training context (cached) via get_training_attempt_context_internal
+3. Create attempt via create_attempt_with_context_internal
+4. Emit practice_generation_started
+5. GET from attempt_mv for training_entry_id + training_department_id
 6. Emit training_generate on internal bus with context
 """
 
 import uuid
-from typing import Any, cast
+from typing import Any
 
 from fastapi import APIRouter
 
+from app.api.v4.entries.attempt.create import create_attempt_with_context_internal
+from app.api.v4.entries.attempt.get import get_attempt_entries_internal
+from app.api.v4.resources.training.context import get_training_attempt_context_internal
 from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
 from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.main import get_internal_sio, sio
@@ -22,13 +25,7 @@ from app.socket.v4.artifacts.practice.types import (
     PracticeGenerationErrorEvent,
     PracticeGenerationStartedEvent,
 )
-from app.sql.types import (
-    CreateAttemptSqlParams,
-    CreateAttemptSqlRow,
-)
-from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.logging.db_logger import get_logger
-from app.utils.sql_helper import execute_sql_typed
 
 logger = get_logger(__name__)
 
@@ -36,26 +33,6 @@ internal_sio = get_internal_sio()
 
 client_router = APIRouter()
 server_router = APIRouter()
-
-SQL_PATH_CREATE_ATTEMPT = (
-    "app/sql/v4/queries/artifacts/attempt/create_attempt_complete.sql"
-)
-
-# SQL to look up training_entry_id and training_department_id from an attempt
-SQL_ATTEMPT_CONTEXT = """
-    SELECT
-        COALESCE(pte.training_id, hte.training_id) AS training_entry_id,
-        tbd.id AS training_department_id
-    FROM attempt_entry a
-    LEFT JOIN attempt_practice_entry apc ON apc.attempt_id = a.id AND apc.active = true
-    LEFT JOIN practice_training_entry pte ON pte.practice_id = apc.practice_id AND pte.active = true
-    LEFT JOIN attempt_home_entry ahc ON ahc.attempt_id = a.id AND ahc.active = true
-    LEFT JOIN home_training_entry hte ON hte.home_id = ahc.home_id AND hte.active = true
-    LEFT JOIN training_department_entry tbd
-      ON tbd.training_id = COALESCE(pte.training_id, hte.training_id) AND tbd.active = true
-    WHERE a.id = $1
-    LIMIT 1
-"""
 
 
 async def _practice_generate_impl(
@@ -65,35 +42,17 @@ async def _practice_generate_impl(
 ) -> None:
     """Handle practice generation - create attempt, then delegate to training_generate."""
     try:
-        # Step 1: Create attempt synchronously
+        # Step 1: Resolve training context (cached)
         async with get_db_connection() as conn:
-            row = cast(
-                CreateAttemptSqlRow,
-                await execute_sql_typed(
-                    conn,
-                    SQL_PATH_CREATE_ATTEMPT,
-                    params=CreateAttemptSqlParams(
-                        p_profile_id=profile_id,
-                        p_training_entry_id=payload.training_entry_id,
-                        p_infinite_mode=payload.infinite_mode,
-                    ),
-                ),
+            ctx = await get_training_attempt_context_internal(
+                conn, profile_id, payload.training_entry_id
             )
 
-            if not row or not row.out_attempt_id:
-                await sio.emit(
-                    "practice_generation_error",
-                    PracticeGenerationErrorEvent(
-                        message="Failed to create attempt",
-                    ).model_dump(mode="json"),
-                    room=sid,
-                )
-                return
-
-            attempt_id = row.out_attempt_id
-
-        # Step 2: Invalidate cache
-        await invalidate_tags(["attempt", "attempts"])
+        # Step 2: Create attempt with pre-resolved context
+        async with get_db_connection() as conn:
+            attempt_id = await create_attempt_with_context_internal(
+                conn, context=ctx, infinite_mode=payload.infinite_mode
+            )
 
         # Step 3: Emit practice_generation_started to client
         event = PracticeGenerationStartedEvent(
@@ -106,12 +65,22 @@ async def _practice_generate_impl(
             room=sid,
         )
 
-        # Step 4: Look up training context
+        # Step 4: GET from MV (cached) — replaces SQL_ATTEMPT_CONTEXT
         async with get_db_connection() as conn:
-            ctx = await conn.fetchrow(SQL_ATTEMPT_CONTEXT, attempt_id)
+            items = await get_attempt_entries_internal(
+                conn, [attempt_id], bypass_cache=True
+            )
 
-        if not ctx:
-            logger.warning(f"No training context for attempt {attempt_id}")
+        if not items:
+            logger.warning(f"No attempt data in MV for attempt {attempt_id}")
+            return
+
+        attempt_data = items[0]
+
+        if not attempt_data.get("training_entry_id") or not attempt_data.get(
+            "training_department_id"
+        ):
+            logger.warning(f"No training context in MV for attempt {attempt_id}")
             return
 
         # Step 5: Delegate to training_generate on internal bus
@@ -124,11 +93,11 @@ async def _practice_generate_impl(
 
         emit_data: dict[str, Any] = {
             "sid": sid,
-            "training_entry_id": str(ctx["training_entry_id"]),
+            "training_entry_id": str(attempt_data["training_entry_id"]),
             "resource_types": resource_types,
             "save": payload.save,
             "attempt_id": str(attempt_id),
-            "training_department_id": str(ctx["training_department_id"]),
+            "training_department_id": str(attempt_data["training_department_id"]),
         }
 
         if payload.draft_id:
