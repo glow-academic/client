@@ -7422,6 +7422,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/entries/activity/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Refresh Activity
+         * @description Refresh the activity_mv materialized view.
+         */
+        post: operations["refresh_activity_api_v4_entries_activity_refresh_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v4/entries/activity_insights/get": {
         parameters: {
             query?: never;
@@ -7476,6 +7496,26 @@ export interface paths {
          * @description Search activity_insights entries.
          */
         post: operations["search_activity_insights_entries_api_v4_entries_activity_insights_search_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/entries/activity_insights/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Refresh Activity Insights
+         * @description Refresh the activity_insights_mv materialized view.
+         */
+        post: operations["refresh_activity_insights_api_v4_entries_activity_insights_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7542,6 +7582,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/entries/agent_drafts/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Refresh Agent Drafts
+         * @description Refresh the agent_drafts_mv materialized view.
+         */
+        post: operations["refresh_agent_drafts_api_v4_entries_agent_drafts_refresh_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v4/entries/args_outputs_values/get": {
         parameters: {
             query?: never;
@@ -7596,6 +7656,26 @@ export interface paths {
          * @description Search args_outputs_values entries.
          */
         post: operations["search_args_outputs_values_entries_api_v4_entries_args_outputs_values_search_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/entries/args_outputs_values/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Refresh Args Outputs Values
+         * @description Refresh the args_outputs_values_mv materialized view.
+         */
+        post: operations["refresh_args_outputs_values_api_v4_entries_args_outputs_values_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7662,6 +7742,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/entries/args_values/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Refresh Args Values
+         * @description Refresh the args_values_mv materialized view.
+         */
+        post: operations["refresh_args_values_api_v4_entries_args_values_refresh_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v4/entries/attempt/get": {
         parameters: {
             query?: never;
@@ -7716,6 +7816,26 @@ export interface paths {
          * @description Search attempt entries.
          */
         post: operations["search_attempt_entries_api_v4_entries_attempt_search_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/entries/attempt/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Refresh Attempt
+         * @description Refresh the attempt_mv materialized view.
+         */
+        post: operations["refresh_attempt_api_v4_entries_attempt_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7782,6 +7902,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/entries/attempt_analysis/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Refresh Attempt Analysis
+         * @description Refresh the attempt_analysis_mv materialized view.
+         */
+        post: operations["refresh_attempt_analysis_api_v4_entries_attempt_analysis_refresh_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v4/entries/attempt_archive/get": {
         parameters: {
             query?: never;
@@ -7836,6 +7976,26 @@ export interface paths {
          * @description Search attempt_archive entries.
          */
         post: operations["search_attempt_archive_entries_api_v4_entries_attempt_archive_search_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/entries/attempt_archive/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Refresh Attempt Archive
+         * @description Refresh the attempt_archive_mv materialized view.
+         */
+        post: operations["refresh_attempt_archive_api_v4_entries_attempt_archive_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7902,6 +8062,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/entries/attempt_chat/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Refresh Attempt Chat
+         * @description Refresh the attempt_chat_mv materialized view.
+         */
+        post: operations["refresh_attempt_chat_api_v4_entries_attempt_chat_refresh_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v4/entries/attempt_completion/get": {
         parameters: {
             query?: never;
@@ -7956,6 +8136,26 @@ export interface paths {
          * @description Search attempt_completion entries.
          */
         post: operations["search_attempt_completion_entries_api_v4_entries_attempt_completion_search_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/entries/attempt_completion/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Refresh Attempt Completion
+         * @description Refresh the attempt_completion_mv materialized view.
+         */
+        post: operations["refresh_attempt_completion_api_v4_entries_attempt_completion_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -8022,6 +8222,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/entries/attempt_content/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Refresh Attempt Content
+         * @description Refresh the attempt_content_mv materialized view.
+         */
+        post: operations["refresh_attempt_content_api_v4_entries_attempt_content_refresh_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v4/entries/attempt_feedback/get": {
         parameters: {
             query?: never;
@@ -8076,6 +8296,26 @@ export interface paths {
          * @description Search attempt_feedback entries.
          */
         post: operations["search_attempt_feedback_entries_api_v4_entries_attempt_feedback_search_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/entries/attempt_feedback/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Refresh Attempt Feedback
+         * @description Refresh the attempt_feedback_mv materialized view.
+         */
+        post: operations["refresh_attempt_feedback_api_v4_entries_attempt_feedback_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -8142,6 +8382,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/entries/attempt_grade/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Refresh Attempt Grade
+         * @description Refresh the attempt_grade_mv materialized view.
+         */
+        post: operations["refresh_attempt_grade_api_v4_entries_attempt_grade_refresh_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v4/entries/attempt_highlight/get": {
         parameters: {
             query?: never;
@@ -8196,6 +8456,26 @@ export interface paths {
          * @description Search attempt_highlight entries.
          */
         post: operations["search_attempt_highlight_entries_api_v4_entries_attempt_highlight_search_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/entries/attempt_highlight/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Refresh Attempt Highlight
+         * @description Refresh the attempt_highlight_mv materialized view.
+         */
+        post: operations["refresh_attempt_highlight_api_v4_entries_attempt_highlight_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -8262,6 +8542,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/entries/attempt_hint/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Refresh Attempt Hint
+         * @description Refresh the attempt_hint_mv materialized view.
+         */
+        post: operations["refresh_attempt_hint_api_v4_entries_attempt_hint_refresh_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v4/entries/attempt_improvement/get": {
         parameters: {
             query?: never;
@@ -8316,6 +8616,26 @@ export interface paths {
          * @description Search attempt_improvement entries.
          */
         post: operations["search_attempt_improvement_entries_api_v4_entries_attempt_improvement_search_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/entries/attempt_improvement/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Refresh Attempt Improvement
+         * @description Refresh the attempt_improvement_mv materialized view.
+         */
+        post: operations["refresh_attempt_improvement_api_v4_entries_attempt_improvement_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -8382,6 +8702,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/entries/attempt_insights/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Refresh Attempt Insights
+         * @description Refresh the attempt_insights_mv materialized view.
+         */
+        post: operations["refresh_attempt_insights_api_v4_entries_attempt_insights_refresh_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v4/entries/attempt_message/get": {
         parameters: {
             query?: never;
@@ -8436,6 +8776,26 @@ export interface paths {
          * @description Search attempt_message entries.
          */
         post: operations["search_attempt_message_entries_api_v4_entries_attempt_message_search_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/entries/attempt_message/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Refresh Attempt Message
+         * @description Refresh the attempt_message_mv materialized view.
+         */
+        post: operations["refresh_attempt_message_api_v4_entries_attempt_message_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -8502,6 +8862,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/entries/attempt_message_tree/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Refresh Attempt Message Tree
+         * @description Refresh the attempt_message_tree_mv materialized view.
+         */
+        post: operations["refresh_attempt_message_tree_api_v4_entries_attempt_message_tree_refresh_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v4/entries/attempt_replacement/get": {
         parameters: {
             query?: never;
@@ -8556,6 +8936,26 @@ export interface paths {
          * @description Search attempt_replacement entries.
          */
         post: operations["search_attempt_replacement_entries_api_v4_entries_attempt_replacement_search_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/entries/attempt_replacement/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Refresh Attempt Replacement
+         * @description Refresh the attempt_replacement_mv materialized view.
+         */
+        post: operations["refresh_attempt_replacement_api_v4_entries_attempt_replacement_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -8622,6 +9022,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/entries/attempt_strength/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Refresh Attempt Strength
+         * @description Refresh the attempt_strength_mv materialized view.
+         */
+        post: operations["refresh_attempt_strength_api_v4_entries_attempt_strength_refresh_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v4/entries/audios/get": {
         parameters: {
             query?: never;
@@ -8676,6 +9096,26 @@ export interface paths {
          * @description Search audios entries.
          */
         post: operations["search_audios_entries_api_v4_entries_audios_search_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/entries/audios/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Refresh Audios
+         * @description Refresh the audios_mv materialized view.
+         */
+        post: operations["refresh_audios_api_v4_entries_audios_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -8742,6 +9182,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/entries/audits/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Refresh Audits
+         * @description Refresh the audits_mv materialized view.
+         */
+        post: operations["refresh_audits_api_v4_entries_audits_refresh_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v4/entries/auth_drafts/get": {
         parameters: {
             query?: never;
@@ -8796,6 +9256,26 @@ export interface paths {
          * @description Search auth_drafts entries.
          */
         post: operations["search_auth_drafts_entries_api_v4_entries_auth_drafts_search_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/entries/auth_drafts/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Refresh Auth Drafts
+         * @description Refresh the auth_drafts_mv materialized view.
+         */
+        post: operations["refresh_auth_drafts_api_v4_entries_auth_drafts_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -8862,6 +9342,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/entries/benchmark/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Refresh Benchmark
+         * @description Refresh the benchmark_mv materialized view.
+         */
+        post: operations["refresh_benchmark_api_v4_entries_benchmark_refresh_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v4/entries/benchmark_insights/get": {
         parameters: {
             query?: never;
@@ -8916,6 +9416,26 @@ export interface paths {
          * @description Search benchmark_insights entries.
          */
         post: operations["search_benchmark_insights_entries_api_v4_entries_benchmark_insights_search_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/entries/benchmark_insights/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Refresh Benchmark Insights
+         * @description Refresh the benchmark_insights_mv materialized view.
+         */
+        post: operations["refresh_benchmark_insights_api_v4_entries_benchmark_insights_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -8982,6 +9502,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/entries/bindings/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Refresh Bindings
+         * @description Refresh the bindings_mv materialized view.
+         */
+        post: operations["refresh_bindings_api_v4_entries_bindings_refresh_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v4/entries/calls/get": {
         parameters: {
             query?: never;
@@ -9036,6 +9576,26 @@ export interface paths {
          * @description Search calls entries.
          */
         post: operations["search_calls_entries_api_v4_entries_calls_search_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/entries/calls/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Refresh Calls
+         * @description Refresh the calls_mv materialized view.
+         */
+        post: operations["refresh_calls_api_v4_entries_calls_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -9102,6 +9662,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/entries/certificates/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Refresh Certificates
+         * @description Refresh the certificates_mv materialized view.
+         */
+        post: operations["refresh_certificates_api_v4_entries_certificates_refresh_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v4/entries/cohort_drafts/get": {
         parameters: {
             query?: never;
@@ -9156,6 +9736,26 @@ export interface paths {
          * @description Search cohort_drafts entries.
          */
         post: operations["search_cohort_drafts_entries_api_v4_entries_cohort_drafts_search_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/entries/cohort_drafts/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Refresh Cohort Drafts
+         * @description Refresh the cohort_drafts_mv materialized view.
+         */
+        post: operations["refresh_cohort_drafts_api_v4_entries_cohort_drafts_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -9222,6 +9822,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/entries/config/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Refresh Config
+         * @description Refresh the config_mv materialized view.
+         */
+        post: operations["refresh_config_api_v4_entries_config_refresh_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v4/entries/conversations/get": {
         parameters: {
             query?: never;
@@ -9276,6 +9896,26 @@ export interface paths {
          * @description Search conversations entries.
          */
         post: operations["search_conversations_entries_api_v4_entries_conversations_search_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/entries/conversations/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Refresh Conversations
+         * @description Refresh the conversations_mv materialized view.
+         */
+        post: operations["refresh_conversations_api_v4_entries_conversations_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -9342,6 +9982,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/entries/conversations_completions/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Refresh Conversations Completions
+         * @description Refresh the conversations_completions_mv materialized view.
+         */
+        post: operations["refresh_conversations_completions_api_v4_entries_conversations_completions_refresh_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v4/entries/dashboard_insights/get": {
         parameters: {
             query?: never;
@@ -9396,6 +10056,26 @@ export interface paths {
          * @description Search dashboard_insights entries.
          */
         post: operations["search_dashboard_insights_entries_api_v4_entries_dashboard_insights_search_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/entries/dashboard_insights/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Refresh Dashboard Insights
+         * @description Refresh the dashboard_insights_mv materialized view.
+         */
+        post: operations["refresh_dashboard_insights_api_v4_entries_dashboard_insights_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -9462,6 +10142,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/entries/debug_info/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Refresh Debug Info
+         * @description Refresh the debug_info_mv materialized view.
+         */
+        post: operations["refresh_debug_info_api_v4_entries_debug_info_refresh_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v4/entries/department_drafts/get": {
         parameters: {
             query?: never;
@@ -9516,6 +10216,26 @@ export interface paths {
          * @description Search department_drafts entries.
          */
         post: operations["search_department_drafts_entries_api_v4_entries_department_drafts_search_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/entries/department_drafts/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Refresh Department Drafts
+         * @description Refresh the department_drafts_mv materialized view.
+         */
+        post: operations["refresh_department_drafts_api_v4_entries_department_drafts_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -9582,6 +10302,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/entries/document_drafts/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Refresh Document Drafts
+         * @description Refresh the document_drafts_mv materialized view.
+         */
+        post: operations["refresh_document_drafts_api_v4_entries_document_drafts_refresh_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v4/entries/domains/get": {
         parameters: {
             query?: never;
@@ -9636,6 +10376,26 @@ export interface paths {
          * @description Search domains entries.
          */
         post: operations["search_domains_entries_api_v4_entries_domains_search_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/entries/domains/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Refresh Domains
+         * @description Refresh the domains_mv materialized view.
+         */
+        post: operations["refresh_domains_api_v4_entries_domains_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -9702,6 +10462,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/entries/emulations/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Refresh Emulations
+         * @description Refresh the emulations_mv materialized view.
+         */
+        post: operations["refresh_emulations_api_v4_entries_emulations_refresh_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v4/entries/eval_drafts/get": {
         parameters: {
             query?: never;
@@ -9756,6 +10536,26 @@ export interface paths {
          * @description Search eval_drafts entries.
          */
         post: operations["search_eval_drafts_entries_api_v4_entries_eval_drafts_search_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/entries/eval_drafts/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Refresh Eval Drafts
+         * @description Refresh the eval_drafts_mv materialized view.
+         */
+        post: operations["refresh_eval_drafts_api_v4_entries_eval_drafts_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -9822,6 +10622,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/entries/field_drafts/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Refresh Field Drafts
+         * @description Refresh the field_drafts_mv materialized view.
+         */
+        post: operations["refresh_field_drafts_api_v4_entries_field_drafts_refresh_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v4/entries/grants/get": {
         parameters: {
             query?: never;
@@ -9876,6 +10696,26 @@ export interface paths {
          * @description Search grants entries.
          */
         post: operations["search_grants_entries_api_v4_entries_grants_search_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/entries/grants/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Refresh Grants
+         * @description Refresh the grants_mv materialized view.
+         */
+        post: operations["refresh_grants_api_v4_entries_grants_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -9942,6 +10782,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/entries/groups/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Refresh Groups
+         * @description Refresh the groups_mv materialized view.
+         */
+        post: operations["refresh_groups_api_v4_entries_groups_refresh_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v4/entries/health/get": {
         parameters: {
             query?: never;
@@ -9996,6 +10856,26 @@ export interface paths {
          * @description Search health entries.
          */
         post: operations["search_health_entries_api_v4_entries_health_search_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/entries/health/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Refresh Health
+         * @description Refresh the health_mv materialized view.
+         */
+        post: operations["refresh_health_api_v4_entries_health_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -10062,6 +10942,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/entries/health_insights/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Refresh Health Insights
+         * @description Refresh the health_insights_mv materialized view.
+         */
+        post: operations["refresh_health_insights_api_v4_entries_health_insights_refresh_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v4/entries/highlights/get": {
         parameters: {
             query?: never;
@@ -10116,6 +11016,26 @@ export interface paths {
          * @description Search highlights entries.
          */
         post: operations["search_highlights_entries_api_v4_entries_highlights_search_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/entries/highlights/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Refresh Highlights
+         * @description Refresh the highlights_mv materialized view.
+         */
+        post: operations["refresh_highlights_api_v4_entries_highlights_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -10182,6 +11102,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/entries/home/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Refresh Home
+         * @description Refresh the home_mv materialized view.
+         */
+        post: operations["refresh_home_api_v4_entries_home_refresh_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v4/entries/home_insights/get": {
         parameters: {
             query?: never;
@@ -10236,6 +11176,26 @@ export interface paths {
          * @description Search home_insights entries.
          */
         post: operations["search_home_insights_entries_api_v4_entries_home_insights_search_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/entries/home_insights/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Refresh Home Insights
+         * @description Refresh the home_insights_mv materialized view.
+         */
+        post: operations["refresh_home_insights_api_v4_entries_home_insights_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -10302,6 +11262,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/entries/home_training/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Refresh Home Training
+         * @description Refresh the home_training_mv materialized view.
+         */
+        post: operations["refresh_home_training_api_v4_entries_home_training_refresh_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v4/entries/images/get": {
         parameters: {
             query?: never;
@@ -10356,6 +11336,26 @@ export interface paths {
          * @description Search images entries.
          */
         post: operations["search_images_entries_api_v4_entries_images_search_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/entries/images/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Refresh Images
+         * @description Refresh the images_mv materialized view.
+         */
+        post: operations["refresh_images_api_v4_entries_images_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -10422,6 +11422,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/entries/leaderboard_insights/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Refresh Leaderboard Insights
+         * @description Refresh the leaderboard_insights_mv materialized view.
+         */
+        post: operations["refresh_leaderboard_insights_api_v4_entries_leaderboard_insights_refresh_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v4/entries/logins/get": {
         parameters: {
             query?: never;
@@ -10476,6 +11496,26 @@ export interface paths {
          * @description Search logins entries.
          */
         post: operations["search_logins_entries_api_v4_entries_logins_search_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/entries/logins/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Refresh Logins
+         * @description Refresh the logins_mv materialized view.
+         */
+        post: operations["refresh_logins_api_v4_entries_logins_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -10542,6 +11582,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/entries/messages/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Refresh Messages
+         * @description Refresh the messages_mv materialized view.
+         */
+        post: operations["refresh_messages_api_v4_entries_messages_refresh_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v4/entries/messages_completions/get": {
         parameters: {
             query?: never;
@@ -10596,6 +11656,26 @@ export interface paths {
          * @description Search messages_completions entries.
          */
         post: operations["search_messages_completions_entries_api_v4_entries_messages_completions_search_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/entries/messages_completions/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Refresh Messages Completions
+         * @description Refresh the messages_completions_mv materialized view.
+         */
+        post: operations["refresh_messages_completions_api_v4_entries_messages_completions_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -10662,6 +11742,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/entries/metrics/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Refresh Metrics
+         * @description Refresh the metrics_mv materialized view.
+         */
+        post: operations["refresh_metrics_api_v4_entries_metrics_refresh_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v4/entries/model_drafts/get": {
         parameters: {
             query?: never;
@@ -10716,6 +11816,26 @@ export interface paths {
          * @description Search model_drafts entries.
          */
         post: operations["search_model_drafts_entries_api_v4_entries_model_drafts_search_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/entries/model_drafts/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Refresh Model Drafts
+         * @description Refresh the model_drafts_mv materialized view.
+         */
+        post: operations["refresh_model_drafts_api_v4_entries_model_drafts_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -10782,6 +11902,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/entries/mutes/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Refresh Mutes
+         * @description Refresh the mutes_mv materialized view.
+         */
+        post: operations["refresh_mutes_api_v4_entries_mutes_refresh_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v4/entries/parameter_drafts/get": {
         parameters: {
             query?: never;
@@ -10836,6 +11976,26 @@ export interface paths {
          * @description Search parameter_drafts entries.
          */
         post: operations["search_parameter_drafts_entries_api_v4_entries_parameter_drafts_search_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/entries/parameter_drafts/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Refresh Parameter Drafts
+         * @description Refresh the parameter_drafts_mv materialized view.
+         */
+        post: operations["refresh_parameter_drafts_api_v4_entries_parameter_drafts_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -10902,6 +12062,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/entries/persona/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Refresh Persona
+         * @description Refresh the persona_mv materialized view.
+         */
+        post: operations["refresh_persona_api_v4_entries_persona_refresh_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v4/entries/persona_drafts/get": {
         parameters: {
             query?: never;
@@ -10956,6 +12136,26 @@ export interface paths {
          * @description Search persona_drafts entries.
          */
         post: operations["search_persona_drafts_entries_api_v4_entries_persona_drafts_search_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/entries/persona_drafts/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Refresh Persona Drafts
+         * @description Refresh the persona_drafts_mv materialized view.
+         */
+        post: operations["refresh_persona_drafts_api_v4_entries_persona_drafts_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -11022,6 +12222,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/entries/practice/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Refresh Practice
+         * @description Refresh the practice_mv materialized view.
+         */
+        post: operations["refresh_practice_api_v4_entries_practice_refresh_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v4/entries/practice_insights/get": {
         parameters: {
             query?: never;
@@ -11076,6 +12296,26 @@ export interface paths {
          * @description Search practice_insights entries.
          */
         post: operations["search_practice_insights_entries_api_v4_entries_practice_insights_search_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/entries/practice_insights/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Refresh Practice Insights
+         * @description Refresh the practice_insights_mv materialized view.
+         */
+        post: operations["refresh_practice_insights_api_v4_entries_practice_insights_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -11142,6 +12382,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/entries/practice_training/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Refresh Practice Training
+         * @description Refresh the practice_training_mv materialized view.
+         */
+        post: operations["refresh_practice_training_api_v4_entries_practice_training_refresh_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v4/entries/pricing_insights/get": {
         parameters: {
             query?: never;
@@ -11196,6 +12456,26 @@ export interface paths {
          * @description Search pricing_insights entries.
          */
         post: operations["search_pricing_insights_entries_api_v4_entries_pricing_insights_search_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/entries/pricing_insights/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Refresh Pricing Insights
+         * @description Refresh the pricing_insights_mv materialized view.
+         */
+        post: operations["refresh_pricing_insights_api_v4_entries_pricing_insights_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -11262,6 +12542,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/entries/problems/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Refresh Problems
+         * @description Refresh the problems_mv materialized view.
+         */
+        post: operations["refresh_problems_api_v4_entries_problems_refresh_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v4/entries/profile_drafts/get": {
         parameters: {
             query?: never;
@@ -11316,6 +12616,26 @@ export interface paths {
          * @description Search profile_drafts entries.
          */
         post: operations["search_profile_drafts_entries_api_v4_entries_profile_drafts_search_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/entries/profile_drafts/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Refresh Profile Drafts
+         * @description Refresh the profile_drafts_mv materialized view.
+         */
+        post: operations["refresh_profile_drafts_api_v4_entries_profile_drafts_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -11382,6 +12702,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/entries/provider_drafts/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Refresh Provider Drafts
+         * @description Refresh the provider_drafts_mv materialized view.
+         */
+        post: operations["refresh_provider_drafts_api_v4_entries_provider_drafts_refresh_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v4/entries/record_insights/get": {
         parameters: {
             query?: never;
@@ -11436,6 +12776,26 @@ export interface paths {
          * @description Search record_insights entries.
          */
         post: operations["search_record_insights_entries_api_v4_entries_record_insights_search_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/entries/record_insights/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Refresh Record Insights
+         * @description Refresh the record_insights_mv materialized view.
+         */
+        post: operations["refresh_record_insights_api_v4_entries_record_insights_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -11502,6 +12862,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/entries/replacements/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Refresh Replacements
+         * @description Refresh the replacements_mv materialized view.
+         */
+        post: operations["refresh_replacements_api_v4_entries_replacements_refresh_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v4/entries/reports/get": {
         parameters: {
             query?: never;
@@ -11556,6 +12936,26 @@ export interface paths {
          * @description Search reports entries.
          */
         post: operations["search_reports_entries_api_v4_entries_reports_search_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/entries/reports/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Refresh Reports
+         * @description Refresh the reports_mv materialized view.
+         */
+        post: operations["refresh_reports_api_v4_entries_reports_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -11622,6 +13022,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/entries/reports_insights/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Refresh Reports Insights
+         * @description Refresh the reports_insights_mv materialized view.
+         */
+        post: operations["refresh_reports_insights_api_v4_entries_reports_insights_refresh_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v4/entries/resolves/get": {
         parameters: {
             query?: never;
@@ -11676,6 +13096,26 @@ export interface paths {
          * @description Search resolves entries.
          */
         post: operations["search_resolves_entries_api_v4_entries_resolves_search_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/entries/resolves/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Refresh Resolves
+         * @description Refresh the resolves_mv materialized view.
+         */
+        post: operations["refresh_resolves_api_v4_entries_resolves_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -11742,6 +13182,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/entries/responses/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Refresh Responses
+         * @description Refresh the responses_mv materialized view.
+         */
+        post: operations["refresh_responses_api_v4_entries_responses_refresh_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v4/entries/rubric_drafts/get": {
         parameters: {
             query?: never;
@@ -11796,6 +13256,26 @@ export interface paths {
          * @description Search rubric_drafts entries.
          */
         post: operations["search_rubric_drafts_entries_api_v4_entries_rubric_drafts_search_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/entries/rubric_drafts/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Refresh Rubric Drafts
+         * @description Refresh the rubric_drafts_mv materialized view.
+         */
+        post: operations["refresh_rubric_drafts_api_v4_entries_rubric_drafts_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -11862,6 +13342,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/entries/run_pricing/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Refresh Run Pricing
+         * @description Refresh the run_pricing_mv materialized view.
+         */
+        post: operations["refresh_run_pricing_api_v4_entries_run_pricing_refresh_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v4/entries/runs/get": {
         parameters: {
             query?: never;
@@ -11916,6 +13416,26 @@ export interface paths {
          * @description Search runs entries.
          */
         post: operations["search_runs_entries_api_v4_entries_runs_search_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/entries/runs/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Refresh Runs
+         * @description Refresh the runs_mv materialized view.
+         */
+        post: operations["refresh_runs_api_v4_entries_runs_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -11982,6 +13502,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/entries/scenario_drafts/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Refresh Scenario Drafts
+         * @description Refresh the scenario_drafts_mv materialized view.
+         */
+        post: operations["refresh_scenario_drafts_api_v4_entries_scenario_drafts_refresh_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v4/entries/sessions/get": {
         parameters: {
             query?: never;
@@ -12036,6 +13576,26 @@ export interface paths {
          * @description Search sessions entries.
          */
         post: operations["search_sessions_entries_api_v4_entries_sessions_search_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/entries/sessions/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Refresh Sessions
+         * @description Refresh the sessions_mv materialized view.
+         */
+        post: operations["refresh_sessions_api_v4_entries_sessions_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -12102,6 +13662,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/entries/setting_drafts/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Refresh Setting Drafts
+         * @description Refresh the setting_drafts_mv materialized view.
+         */
+        post: operations["refresh_setting_drafts_api_v4_entries_setting_drafts_refresh_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v4/entries/simulation_drafts/get": {
         parameters: {
             query?: never;
@@ -12156,6 +13736,26 @@ export interface paths {
          * @description Search simulation_drafts entries.
          */
         post: operations["search_simulation_drafts_entries_api_v4_entries_simulation_drafts_search_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/entries/simulation_drafts/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Refresh Simulation Drafts
+         * @description Refresh the simulation_drafts_mv materialized view.
+         */
+        post: operations["refresh_simulation_drafts_api_v4_entries_simulation_drafts_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -12222,6 +13822,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/entries/suite/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Refresh Suite
+         * @description Refresh the suite_mv materialized view.
+         */
+        post: operations["refresh_suite_api_v4_entries_suite_refresh_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v4/entries/suite_department/get": {
         parameters: {
             query?: never;
@@ -12276,6 +13896,26 @@ export interface paths {
          * @description Search suite_department entries.
          */
         post: operations["search_suite_department_entries_api_v4_entries_suite_department_search_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/entries/suite_department/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Refresh Suite Department
+         * @description Refresh the suite_department_mv materialized view.
+         */
+        post: operations["refresh_suite_department_api_v4_entries_suite_department_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -12342,6 +13982,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/entries/suite_drafts/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Refresh Suite Drafts
+         * @description Refresh the suite_drafts_mv materialized view.
+         */
+        post: operations["refresh_suite_drafts_api_v4_entries_suite_drafts_refresh_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v4/entries/test/get": {
         parameters: {
             query?: never;
@@ -12396,6 +14056,26 @@ export interface paths {
          * @description Search test entries.
          */
         post: operations["search_test_entries_api_v4_entries_test_search_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/entries/test/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Refresh Test
+         * @description Refresh the test_mv materialized view.
+         */
+        post: operations["refresh_test_api_v4_entries_test_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -12462,6 +14142,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/entries/test_archive/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Refresh Test Archive
+         * @description Refresh the test_archive_mv materialized view.
+         */
+        post: operations["refresh_test_archive_api_v4_entries_test_archive_refresh_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v4/entries/test_completion/get": {
         parameters: {
             query?: never;
@@ -12516,6 +14216,26 @@ export interface paths {
          * @description Search test_completion entries.
          */
         post: operations["search_test_completion_entries_api_v4_entries_test_completion_search_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/entries/test_completion/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Refresh Test Completion
+         * @description Refresh the test_completion_mv materialized view.
+         */
+        post: operations["refresh_test_completion_api_v4_entries_test_completion_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -12582,6 +14302,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/entries/test_feedback/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Refresh Test Feedback
+         * @description Refresh the test_feedback_mv materialized view.
+         */
+        post: operations["refresh_test_feedback_api_v4_entries_test_feedback_refresh_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v4/entries/test_grade/get": {
         parameters: {
             query?: never;
@@ -12636,6 +14376,26 @@ export interface paths {
          * @description Search test_grade entries.
          */
         post: operations["search_test_grade_entries_api_v4_entries_test_grade_search_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/entries/test_grade/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Refresh Test Grade
+         * @description Refresh the test_grade_mv materialized view.
+         */
+        post: operations["refresh_test_grade_api_v4_entries_test_grade_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -12702,6 +14462,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/entries/test_insights/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Refresh Test Insights
+         * @description Refresh the test_insights_mv materialized view.
+         */
+        post: operations["refresh_test_insights_api_v4_entries_test_insights_refresh_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v4/entries/test_invocation/get": {
         parameters: {
             query?: never;
@@ -12756,6 +14536,26 @@ export interface paths {
          * @description Search test_invocation entries.
          */
         post: operations["search_test_invocation_entries_api_v4_entries_test_invocation_search_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/entries/test_invocation/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Refresh Test Invocation
+         * @description Refresh the test_invocation_mv materialized view.
+         */
+        post: operations["refresh_test_invocation_api_v4_entries_test_invocation_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -12822,6 +14622,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/entries/test_stop/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Refresh Test Stop
+         * @description Refresh the test_stop_mv materialized view.
+         */
+        post: operations["refresh_test_stop_api_v4_entries_test_stop_refresh_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v4/entries/tests/get": {
         parameters: {
             query?: never;
@@ -12876,6 +14696,26 @@ export interface paths {
          * @description Search tests entries.
          */
         post: operations["search_tests_entries_api_v4_entries_tests_search_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/entries/tests/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Refresh Tests
+         * @description Refresh the tests_mv materialized view.
+         */
+        post: operations["refresh_tests_api_v4_entries_tests_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -12942,6 +14782,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/entries/texts/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Refresh Texts
+         * @description Refresh the texts_mv materialized view.
+         */
+        post: operations["refresh_texts_api_v4_entries_texts_refresh_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v4/entries/tokens/get": {
         parameters: {
             query?: never;
@@ -12996,6 +14856,26 @@ export interface paths {
          * @description Search tokens entries.
          */
         post: operations["search_tokens_entries_api_v4_entries_tokens_search_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/entries/tokens/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Refresh Tokens
+         * @description Refresh the tokens_mv materialized view.
+         */
+        post: operations["refresh_tokens_api_v4_entries_tokens_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -13062,6 +14942,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/entries/tool_drafts/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Refresh Tool Drafts
+         * @description Refresh the tool_drafts_mv materialized view.
+         */
+        post: operations["refresh_tool_drafts_api_v4_entries_tool_drafts_refresh_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v4/entries/training/get": {
         parameters: {
             query?: never;
@@ -13116,6 +15016,26 @@ export interface paths {
          * @description Search training entries.
          */
         post: operations["search_training_entries_api_v4_entries_training_search_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/entries/training/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Refresh Training
+         * @description Refresh the training_mv materialized view.
+         */
+        post: operations["refresh_training_api_v4_entries_training_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -13182,6 +15102,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/entries/training_department/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Refresh Training Department
+         * @description Refresh the training_department_mv materialized view.
+         */
+        post: operations["refresh_training_department_api_v4_entries_training_department_refresh_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v4/entries/training_drafts/get": {
         parameters: {
             query?: never;
@@ -13236,6 +15176,26 @@ export interface paths {
          * @description Search training_drafts entries.
          */
         post: operations["search_training_drafts_entries_api_v4_entries_training_drafts_search_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/entries/training_drafts/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Refresh Training Drafts
+         * @description Refresh the training_drafts_mv materialized view.
+         */
+        post: operations["refresh_training_drafts_api_v4_entries_training_drafts_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -13428,6 +15388,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/entries/uploads/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Refresh Uploads
+         * @description Refresh the uploads_mv materialized view.
+         */
+        post: operations["refresh_uploads_api_v4_entries_uploads_refresh_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v4/entries/uploads_completions/get": {
         parameters: {
             query?: never;
@@ -13482,6 +15462,26 @@ export interface paths {
          * @description Search uploads_completions entries.
          */
         post: operations["search_uploads_completions_entries_api_v4_entries_uploads_completions_search_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/entries/uploads_completions/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Refresh Uploads Completions
+         * @description Refresh the uploads_completions_mv materialized view.
+         */
+        post: operations["refresh_uploads_completions_api_v4_entries_uploads_completions_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -13548,7 +15548,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v4/views/attempt/list/get": {
+    "/api/v4/entries/videos/refresh": {
         parameters: {
             query?: never;
             header?: never;
@@ -13558,193 +15558,10 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Get Attempts
-         * @description Get attempt data from the materialized view.
-         *
-         *     This endpoint fetches attempt-level data with resource metadata JOINed.
+         * Refresh Videos
+         * @description Refresh the videos_mv materialized view.
          */
-        post: operations["get_attempts_api_v4_views_attempt_list_get_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/views/attempt/list/refresh": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Refresh Attempts View
-         * @description Refresh the attempt_mv materialized view concurrently.
-         *
-         *     This is a fast refresh that doesn't require any schema changes.
-         *     It requires a unique index on the MV (attempt_mv_pk).
-         *
-         *     Use this when:
-         *     - You want to update the MV data without downtime
-         *     - The MV schema hasn't changed
-         *
-         *     Use /recreate when:
-         *     - You've changed the MV definition (schema changes)
-         */
-        post: operations["refresh_attempts_view_api_v4_views_attempt_list_refresh_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/views/attempt/list/recreate": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Recreate Attempts View
-         * @description Recreate the attempt_mv materialized view.
-         *
-         *     This drops and recreates the MV from its definition file.
-         *     There will be brief downtime while the MV is being recreated.
-         *
-         *     Use this when:
-         *     - You've changed the MV definition (schema changes)
-         *     - You need to rebuild from scratch
-         *
-         *     Use /refresh when:
-         *     - You just want to update the data
-         *     - The MV schema hasn't changed
-         */
-        post: operations["recreate_attempts_view_api_v4_views_attempt_list_recreate_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/views/attempt/chats/get": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Chats
-         * @description Get attempt chat data from the materialized view.
-         */
-        post: operations["get_chats_api_v4_views_attempt_chats_get_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/views/attempt/chats/refresh": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Refresh Chats View
-         * @description Refresh the attempt_chat_mv materialized view concurrently.
-         */
-        post: operations["refresh_chats_view_api_v4_views_attempt_chats_refresh_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/views/attempt/chats/recreate": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Recreate Chats View
-         * @description Recreate the attempt_chat_mv materialized view.
-         */
-        post: operations["recreate_chats_view_api_v4_views_attempt_chats_recreate_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/views/attempt/messages/get": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Messages
-         * @description Get attempt message data from the materialized view.
-         */
-        post: operations["get_messages_api_v4_views_attempt_messages_get_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/views/attempt/messages/refresh": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Refresh Messages View
-         * @description Refresh the attempt_message_mv materialized view concurrently.
-         */
-        post: operations["refresh_messages_view_api_v4_views_attempt_messages_refresh_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/views/attempt/messages/recreate": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Recreate Messages View
-         * @description Recreate the attempt_message_mv materialized view.
-         */
-        post: operations["recreate_messages_view_api_v4_views_attempt_messages_recreate_post"];
+        post: operations["refresh_videos_api_v4_entries_videos_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -13831,26 +15648,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v4/views/benchmark/tests/refresh": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Refresh Test
-         * @description Refresh test_mv concurrently.
-         */
-        post: operations["refresh_test_api_v4_views_benchmark_tests_refresh_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v4/views/benchmark/invocations/get": {
         parameters: {
             query?: never;
@@ -13871,26 +15668,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v4/views/benchmark/invocations/refresh": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Refresh Test Invocation
-         * @description Refresh test_invocation_mv concurrently.
-         */
-        post: operations["refresh_test_invocation_api_v4_views_benchmark_invocations_refresh_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v4/views/benchmark/bundle/get": {
         parameters: {
             query?: never;
@@ -13905,66 +15682,6 @@ export interface paths {
          * @description Get thin bundle scope for a single benchmark bundle entry.
          */
         post: operations["get_suite_view_api_v4_views_benchmark_bundle_get_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/views/config/get": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Config
-         * @description Get config data from the materialized view.
-         */
-        post: operations["get_config_api_v4_views_config_get_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/views/config/refresh": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Refresh Config View
-         * @description Refresh the config_mv materialized view concurrently.
-         */
-        post: operations["refresh_config_view_api_v4_views_config_refresh_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/views/config/recreate": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Recreate Config View
-         * @description Recreate the config_mv materialized view.
-         */
-        post: operations["recreate_config_view_api_v4_views_config_recreate_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -14105,29 +15822,6 @@ export interface paths {
          * @description Get call data from the materialized view.
          */
         post: operations["get_calls_api_v4_views_call_get_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/views/chat/get": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Chats
-         * @description Get chat data from attempt_chat_mv.
-         *
-         *     Unified endpoint replacing profile_facts, simulation_facts,
-         *     scenario_facts, and attempt_chats view endpoints.
-         */
-        post: operations["get_chats_api_v4_views_chat_get_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -14308,690 +16002,6 @@ export interface paths {
          * @description Get audio data from the materialized view.
          */
         post: operations["get_audios_api_v4_views_audio_list_get_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/views/simulation/messages/get": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Get Messages */
-        post: operations["get_messages_api_v4_views_simulation_messages_get_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/views/simulation/messages/refresh": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Refresh Messages View
-         * @description Refresh the attempt_message_mv materialized view concurrently.
-         */
-        post: operations["refresh_messages_view_api_v4_views_simulation_messages_refresh_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/views/simulation/messages/recreate": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Recreate Messages View
-         * @description Recreate the attempt_message_mv materialized view.
-         */
-        post: operations["recreate_messages_view_api_v4_views_simulation_messages_recreate_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/views/simulation/message_tree/get": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Get Message Tree */
-        post: operations["get_message_tree_api_v4_views_simulation_message_tree_get_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/views/simulation/message_tree/refresh": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Refresh Message Tree View
-         * @description Refresh the attempt_message_tree_mv materialized view concurrently.
-         */
-        post: operations["refresh_message_tree_view_api_v4_views_simulation_message_tree_refresh_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/views/simulation/message_tree/recreate": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Recreate Message Tree View
-         * @description Recreate the attempt_message_tree_mv materialized view.
-         */
-        post: operations["recreate_message_tree_view_api_v4_views_simulation_message_tree_recreate_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/views/simulation/contents/get": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Get Contents */
-        post: operations["get_contents_api_v4_views_simulation_contents_get_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/views/simulation/contents/refresh": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Refresh Contents View
-         * @description Refresh the attempt_content_mv materialized view concurrently.
-         */
-        post: operations["refresh_contents_view_api_v4_views_simulation_contents_refresh_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/views/simulation/contents/recreate": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Recreate Contents View
-         * @description Recreate the attempt_content_mv materialized view.
-         */
-        post: operations["recreate_contents_view_api_v4_views_simulation_contents_recreate_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/views/simulation/strengths/get": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Get Strengths */
-        post: operations["get_strengths_api_v4_views_simulation_strengths_get_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/views/simulation/strengths/refresh": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Refresh Strengths View
-         * @description Refresh the attempt_strength_mv materialized view concurrently.
-         */
-        post: operations["refresh_strengths_view_api_v4_views_simulation_strengths_refresh_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/views/simulation/strengths/recreate": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Recreate Strengths View
-         * @description Recreate the attempt_strength_mv materialized view.
-         */
-        post: operations["recreate_strengths_view_api_v4_views_simulation_strengths_recreate_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/views/simulation/highlights/get": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Get Highlights */
-        post: operations["get_highlights_api_v4_views_simulation_highlights_get_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/views/simulation/highlights/refresh": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Refresh Highlights View
-         * @description Refresh the attempt_highlight_mv materialized view concurrently.
-         */
-        post: operations["refresh_highlights_view_api_v4_views_simulation_highlights_refresh_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/views/simulation/highlights/recreate": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Recreate Highlights View
-         * @description Recreate the attempt_highlight_mv materialized view.
-         */
-        post: operations["recreate_highlights_view_api_v4_views_simulation_highlights_recreate_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/views/simulation/improvements/get": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Get Improvements */
-        post: operations["get_improvements_api_v4_views_simulation_improvements_get_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/views/simulation/improvements/refresh": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Refresh Improvements View
-         * @description Refresh the attempt_improvement_mv materialized view concurrently.
-         */
-        post: operations["refresh_improvements_view_api_v4_views_simulation_improvements_refresh_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/views/simulation/improvements/recreate": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Recreate Improvements View
-         * @description Recreate the attempt_improvement_mv materialized view.
-         */
-        post: operations["recreate_improvements_view_api_v4_views_simulation_improvements_recreate_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/views/simulation/replacements/get": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Get Replacements */
-        post: operations["get_replacements_api_v4_views_simulation_replacements_get_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/views/simulation/replacements/refresh": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Refresh Replacements View
-         * @description Refresh the attempt_replacement_mv materialized view concurrently.
-         */
-        post: operations["refresh_replacements_view_api_v4_views_simulation_replacements_refresh_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/views/simulation/replacements/recreate": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Recreate Replacements View
-         * @description Recreate the attempt_replacement_mv materialized view.
-         */
-        post: operations["recreate_replacements_view_api_v4_views_simulation_replacements_recreate_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/views/simulation/hints/get": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Get Hints */
-        post: operations["get_hints_api_v4_views_simulation_hints_get_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/views/simulation/hints/refresh": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Refresh Hints View
-         * @description Refresh the attempt_hint_mv materialized view concurrently.
-         */
-        post: operations["refresh_hints_view_api_v4_views_simulation_hints_refresh_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/views/simulation/hints/recreate": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Recreate Hints View
-         * @description Recreate the attempt_hint_mv materialized view.
-         */
-        post: operations["recreate_hints_view_api_v4_views_simulation_hints_recreate_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/views/simulation/feedbacks/get": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Get Feedbacks */
-        post: operations["get_feedbacks_api_v4_views_simulation_feedbacks_get_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/views/simulation/feedbacks/refresh": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Refresh Feedbacks View
-         * @description Refresh the attempt_feedback_mv materialized view concurrently.
-         */
-        post: operations["refresh_feedbacks_view_api_v4_views_simulation_feedbacks_refresh_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/views/simulation/feedbacks/recreate": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Recreate Feedbacks View
-         * @description Recreate the attempt_feedback_mv materialized view.
-         */
-        post: operations["recreate_feedbacks_view_api_v4_views_simulation_feedbacks_recreate_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/views/simulation/analyses/get": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Get Analyses */
-        post: operations["get_analyses_api_v4_views_simulation_analyses_get_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/views/simulation/analyses/refresh": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Refresh Analyses View
-         * @description Refresh the attempt_analysis_mv materialized view concurrently.
-         */
-        post: operations["refresh_analyses_view_api_v4_views_simulation_analyses_refresh_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/views/simulation/analyses/recreate": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Recreate Analyses View
-         * @description Recreate the attempt_analysis_mv materialized view.
-         */
-        post: operations["recreate_analyses_view_api_v4_views_simulation_analyses_recreate_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/views/simulation/responses/get": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Get Responses */
-        post: operations["get_responses_api_v4_views_simulation_responses_get_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/views/simulation/responses/refresh": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Refresh Responses View
-         * @description Refresh the responses_mv materialized view concurrently.
-         */
-        post: operations["refresh_responses_view_api_v4_views_simulation_responses_refresh_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/views/simulation/responses/recreate": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Recreate Responses View
-         * @description Recreate the responses_mv materialized view.
-         */
-        post: operations["recreate_responses_view_api_v4_views_simulation_responses_recreate_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/views/simulation/grades/get": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Get Grades */
-        post: operations["get_grades_api_v4_views_simulation_grades_get_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/views/simulation/grades/refresh": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Refresh Grades View
-         * @description Refresh the attempt_grade_mv materialized view concurrently.
-         */
-        post: operations["refresh_grades_view_api_v4_views_simulation_grades_refresh_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/views/simulation/grades/recreate": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Recreate Grades View
-         * @description Recreate the attempt_grade_mv materialized view.
-         */
-        post: operations["recreate_grades_view_api_v4_views_simulation_grades_recreate_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -25485,23 +26495,6 @@ export interface components {
             content?: string | null;
         };
         /**
-         * AnalysisViewItem
-         * @description A single analysis view item.
-         */
-        AnalysisViewItem: {
-            /**
-             * Analysis Id
-             * Format: uuid
-             */
-            analysis_id: string;
-            /** Grade Id */
-            grade_id?: string | null;
-            /** Content */
-            content?: string | null;
-            /** Created At */
-            created_at?: string | null;
-        };
-        /**
          * AnalyticsFilterField
          * @description Visibility/disabled state for a single filter field.
          */
@@ -26674,44 +27667,6 @@ export interface components {
             item_id: string;
         };
         /**
-         * AttemptViewItem
-         * @description Single attempt from the attempt list view.
-         */
-        AttemptViewItem: {
-            /**
-             * Attempt Id
-             * Format: uuid
-             */
-            attempt_id: string;
-            /** Simulation Id */
-            simulation_id?: string | null;
-            /** Profile Id */
-            profile_id?: string | null;
-            /** Cohort Id */
-            cohort_id?: string | null;
-            /** Department Id */
-            department_id?: string | null;
-            /**
-             * Practice
-             * @default false
-             */
-            practice: boolean;
-            /**
-             * Infinite Mode
-             * @default false
-             */
-            infinite_mode: boolean;
-            /** Created At */
-            created_at?: string | null;
-            /**
-             * Is Archived
-             * @default false
-             */
-            is_archived: boolean;
-            /** Scenario Ids */
-            scenario_ids?: string[] | null;
-        };
-        /**
          * AttemptViews
          * @description View payloads grouped by view type.
          */
@@ -27399,7 +28354,7 @@ export interface components {
             /** Departments */
             departments?: components["schemas"]["BenchmarkDepartmentItem"][];
             /** Department Options */
-            department_options?: components["schemas"]["app__api__v4__artifacts__types__FilterOption"][];
+            department_options?: components["schemas"]["FilterOption"][];
             /** Date Range Earliest */
             date_range_earliest?: string | null;
             /** Date Range Latest */
@@ -27625,159 +28580,6 @@ export interface components {
             document_ids?: string[] | null;
             /** Rubric Id */
             rubric_id?: string | null;
-            /** Standard Group Ids */
-            standard_group_ids?: string[] | null;
-            /** Standard Ids */
-            standard_ids?: string[] | null;
-        };
-        /**
-         * ChatItem
-         * @description Single chat row from attempt_chat_mv.
-         *
-         *     Unified type replacing ProfileFactsItem, SimulationFactsItem,
-         *     ScenarioFactsItem, and ChatViewItem.
-         */
-        ChatItem: {
-            /**
-             * Chat Id
-             * Format: uuid
-             */
-            chat_id: string;
-            /**
-             * Attempt Id
-             * Format: uuid
-             */
-            attempt_id: string;
-            /** Group Id */
-            group_id?: string | null;
-            /** Training Department Id */
-            training_department_id?: string | null;
-            /**
-             * Profile Id
-             * Format: uuid
-             */
-            profile_id: string;
-            /** Cohort Id */
-            cohort_id?: string | null;
-            /** Department Id */
-            department_id?: string | null;
-            /**
-             * Simulation Id
-             * Format: uuid
-             */
-            simulation_id: string;
-            /** Scenario Id */
-            scenario_id?: string | null;
-            /** User Persona Id */
-            user_persona_id?: string | null;
-            /** Rubric Id */
-            rubric_id?: string | null;
-            /** Grade Score */
-            grade_score?: number | null;
-            /** Grade Total Points */
-            grade_total_points?: number | null;
-            /** Grade Pass Points */
-            grade_pass_points?: number | null;
-            /** Grade Passed */
-            grade_passed?: boolean | null;
-            /** Grade Time Taken */
-            grade_time_taken?: number | null;
-            /**
-             * Completed
-             * @default false
-             */
-            completed: boolean;
-            /**
-             * Attempt Number
-             * @default 0
-             */
-            attempt_number: number;
-            /** Chat Created At */
-            chat_created_at?: string | null;
-            /** Attempt Date */
-            attempt_date?: string | null;
-            /** Attempt Type */
-            attempt_type?: string | null;
-            /**
-             * Is Archived
-             * @default false
-             */
-            is_archived: boolean;
-            /**
-             * Infinite Mode
-             * @default false
-             */
-            infinite_mode: boolean;
-            /**
-             * Num Messages Total
-             * @default 0
-             */
-            num_messages_total: number;
-            /** Avg Response Sec */
-            avg_response_sec?: number | null;
-            /** Document Ids */
-            document_ids?: string[];
-        };
-        /**
-         * ChatViewItem
-         * @description Single chat from attempt chats.
-         */
-        ChatViewItem: {
-            /**
-             * Chat Id
-             * Format: uuid
-             */
-            chat_id: string;
-            /** Attempt Id */
-            attempt_id?: string | null;
-            /** Group Id */
-            group_id?: string | null;
-            /** Scenario Id */
-            scenario_id?: string | null;
-            /** Rubric Id */
-            rubric_id?: string | null;
-            /** Problem Statement Id */
-            problem_statement_id?: string | null;
-            /** Copy Paste Allowed */
-            copy_paste_allowed?: boolean | null;
-            /** Text Enabled */
-            text_enabled?: boolean | null;
-            /** Audio Enabled */
-            audio_enabled?: boolean | null;
-            /** Hints Enabled */
-            hints_enabled?: boolean | null;
-            /** Show Images */
-            show_images?: boolean | null;
-            /** Show Objectives */
-            show_objectives?: boolean | null;
-            /** Show Problem Statement */
-            show_problem_statement?: boolean | null;
-            /** Time Limit Seconds */
-            time_limit_seconds?: number | null;
-            /** Negative */
-            negative?: boolean | null;
-            /** Created At */
-            created_at?: string | null;
-            /**
-             * Completed
-             * @default false
-             */
-            completed: boolean;
-            grade?: components["schemas"]["GradeItem"] | null;
-            /** Persona Ids */
-            persona_ids?: string[] | null;
-            /** Objective Ids */
-            objective_ids?: string[] | null;
-            /** Question Ids */
-            question_ids?: string[] | null;
-            /** Option Ids */
-            option_ids?: string[] | null;
-            /** Image Ids */
-            image_ids?: string[] | null;
-            /** Video Ids */
-            video_ids?: string[] | null;
-            /** Document Ids */
-            document_ids?: string[] | null;
             /** Standard Group Ids */
             standard_group_ids?: string[] | null;
             /** Standard Ids */
@@ -28292,27 +29094,6 @@ export interface components {
             arguments_delta?: string | null;
         };
         /**
-         * ConfigViewItem
-         * @description Single config from the config view (inference config).
-         */
-        ConfigViewItem: {
-            /**
-             * Config Id
-             * Format: uuid
-             */
-            config_id: string;
-            /** Agents Id */
-            agents_id?: string | null;
-            /** Models Id */
-            models_id?: string | null;
-            /** Providers Id */
-            providers_id?: string | null;
-            /** Tool Ids */
-            tool_ids?: string[] | null;
-            /** Created At */
-            created_at?: string | null;
-        };
-        /**
          * ConnectionConfirmedPayload
          * @description Response indicating WebSocket connection was confirmed.
          */
@@ -28343,27 +29124,6 @@ export interface components {
             color?: string | null;
             /** Icon */
             icon?: string | null;
-            /** Created At */
-            created_at?: string | null;
-        };
-        /**
-         * ContentViewItem
-         * @description A single content view item.
-         */
-        ContentViewItem: {
-            /**
-             * Content Id
-             * Format: uuid
-             */
-            content_id: string;
-            /** Message Id */
-            message_id?: string | null;
-            /** Content */
-            content?: string | null;
-            /** Persona Id */
-            persona_id?: string | null;
-            /** Idx */
-            idx?: number | null;
             /** Created At */
             created_at?: string | null;
         };
@@ -30604,7 +31364,7 @@ export interface components {
             header_metrics?: components["schemas"]["DashboardHeaderMetrics"];
             thresholds?: components["schemas"]["DashboardThresholds"] | null;
             /** Simulation Options */
-            simulation_options?: components["schemas"]["app__api__v4__artifacts__types__FilterOption"][];
+            simulation_options?: components["schemas"]["FilterOption"][];
             /** Profile Name */
             profile_name?: string | null;
             /** Profile Emails */
@@ -32907,27 +33667,6 @@ export interface components {
             feedback?: string | null;
         };
         /**
-         * FeedbackViewItem
-         * @description A single feedback view item.
-         */
-        FeedbackViewItem: {
-            /**
-             * Feedback Id
-             * Format: uuid
-             */
-            feedback_id: string;
-            /** Grade Id */
-            grade_id?: string | null;
-            /** Standard Id */
-            standard_id?: string | null;
-            /** Total */
-            total?: number | null;
-            /** Feedback */
-            feedback?: string | null;
-            /** Created At */
-            created_at?: string | null;
-        };
-        /**
          * FeedbacksGenerationEvent
          * @description Unified socket event for feedbacks generation. Same type for all 4 events.
          */
@@ -33241,6 +33980,18 @@ export interface components {
             resource?: components["schemas"]["QGetNamesV4Item"] | null;
             /** Resources */
             resources?: components["schemas"]["QGetNamesV4Item"][] | null;
+        };
+        /**
+         * FilterOption
+         * @description A single filter option for dropdown selectors.
+         */
+        FilterOption: {
+            /** Value */
+            value: string;
+            /** Label */
+            label?: string | null;
+            /** Count */
+            count?: number | null;
         };
         /** FinalizeUploadApiResponse */
         FinalizeUploadApiResponse: {
@@ -33680,22 +34431,6 @@ export interface components {
             page_offset: number | null;
         };
         /**
-         * GetAnalysesRequest
-         * @description Request for getting analyses.
-         */
-        GetAnalysesRequest: {
-            /** Grade Ids */
-            grade_ids: string[];
-        };
-        /**
-         * GetAnalysesResponse
-         * @description Response for getting analyses.
-         */
-        GetAnalysesResponse: {
-            /** Items */
-            items: components["schemas"]["AnalysisViewItem"][];
-        };
-        /**
          * GetAnalyticsFiltersApiResponse
          * @description Response for POST /api/v4/auth/analytics.
          */
@@ -34083,49 +34818,6 @@ export interface components {
         GetAttemptStrengthEntriesApiResponse: {
             /** Items */
             items?: unknown | null;
-        };
-        /**
-         * GetAttemptsRequest
-         * @description Request for getting attempt data.
-         */
-        GetAttemptsRequest: {
-            /**
-             * Attempt Ids
-             * @description List of attempt IDs to fetch
-             */
-            attempt_ids: string[];
-        };
-        /**
-         * GetAttemptsResponse
-         * @description Response containing attempt data.
-         */
-        GetAttemptsResponse: {
-            /**
-             * Items
-             * @description Attempt data items
-             */
-            items?: components["schemas"]["AttemptViewItem"][];
-            /**
-             * Total Count
-             * @description Total count before pagination
-             * @default 0
-             */
-            total_count: number;
-            /**
-             * Simulation Options
-             * @description Available simulation filter options
-             */
-            simulation_options?: components["schemas"]["app__api__v4__views__attempt__list__types__FilterOption"][] | null;
-            /**
-             * Scenario Options
-             * @description Available scenario filter options
-             */
-            scenario_options?: components["schemas"]["app__api__v4__views__attempt__list__types__FilterOption"][] | null;
-            /**
-             * Profile Options
-             * @description Available profile filter options
-             */
-            profile_options?: components["schemas"]["app__api__v4__views__attempt__list__types__FilterOption"][] | null;
         };
         /**
          * GetAudioListViewResponse
@@ -34645,45 +35337,6 @@ export interface components {
             /** Items */
             items?: components["schemas"]["QGetConfigEntriesV4Item"][] | null;
         };
-        /**
-         * GetConfigRequest
-         * @description Request for getting config data.
-         */
-        GetConfigRequest: {
-            /**
-             * Config Id
-             * Format: uuid
-             * @description Config ID to fetch
-             */
-            config_id: string;
-        };
-        /**
-         * GetConfigResponse
-         * @description Response containing config data.
-         */
-        GetConfigResponse: {
-            /**
-             * Items
-             * @description Config data items
-             */
-            items?: components["schemas"]["ConfigViewItem"][];
-        };
-        /**
-         * GetContentsRequest
-         * @description Request for getting contents.
-         */
-        GetContentsRequest: {
-            /** Message Ids */
-            message_ids: string[];
-        };
-        /**
-         * GetContentsResponse
-         * @description Response for getting contents.
-         */
-        GetContentsResponse: {
-            /** Items */
-            items: components["schemas"]["ContentViewItem"][];
-        };
         /** GetConversationsCompletionsEntriesApiRequest */
         GetConversationsCompletionsEntriesApiRequest: {
             /** Ids */
@@ -35084,22 +35737,6 @@ export interface components {
             items?: components["schemas"]["QGetExamplesV4Item"][] | null;
         };
         /**
-         * GetFeedbacksRequest
-         * @description Request for getting feedbacks.
-         */
-        GetFeedbacksRequest: {
-            /** Grade Ids */
-            grade_ids: string[];
-        };
-        /**
-         * GetFeedbacksResponse
-         * @description Response for getting feedbacks.
-         */
-        GetFeedbacksResponse: {
-            /** Items */
-            items: components["schemas"]["FeedbackViewItem"][];
-        };
-        /**
          * GetFieldApiRequest
          * @description Request model for get field endpoint.
          */
@@ -35196,22 +35833,6 @@ export interface components {
         GetFlagsApiResponse: {
             /** Items */
             items?: components["schemas"]["QGetFlagsV4Item"][] | null;
-        };
-        /**
-         * GetGradesRequest
-         * @description Request for getting grades.
-         */
-        GetGradesRequest: {
-            /** Chat Ids */
-            chat_ids: string[];
-        };
-        /**
-         * GetGradesResponse
-         * @description Response for getting grades.
-         */
-        GetGradesResponse: {
-            /** Items */
-            items: components["schemas"]["GradeViewItem"][];
         };
         /**
          * GetGrantListViewResponse
@@ -35429,38 +36050,6 @@ export interface components {
             items?: unknown | null;
         };
         /**
-         * GetHighlightsRequest
-         * @description Request for getting highlights.
-         */
-        GetHighlightsRequest: {
-            /** Strength Ids */
-            strength_ids: string[];
-        };
-        /**
-         * GetHighlightsResponse
-         * @description Response for getting highlights.
-         */
-        GetHighlightsResponse: {
-            /** Items */
-            items: components["schemas"]["HighlightViewItem"][];
-        };
-        /**
-         * GetHintsRequest
-         * @description Request for getting hints.
-         */
-        GetHintsRequest: {
-            /** Message Ids */
-            message_ids: string[];
-        };
-        /**
-         * GetHintsResponse
-         * @description Response for getting hints.
-         */
-        GetHintsResponse: {
-            /** Items */
-            items: components["schemas"]["HintViewItem"][];
-        };
-        /**
          * GetHomeContextViewResponse
          * @description View-layer response for home context.
          */
@@ -35591,22 +36180,6 @@ export interface components {
             /** Items */
             items?: unknown | null;
         };
-        /**
-         * GetImprovementsRequest
-         * @description Request for getting improvements.
-         */
-        GetImprovementsRequest: {
-            /** Message Ids */
-            message_ids: string[];
-        };
-        /**
-         * GetImprovementsResponse
-         * @description Response for getting improvements.
-         */
-        GetImprovementsResponse: {
-            /** Items */
-            items: components["schemas"]["ImprovementViewItem"][];
-        };
         /** GetInstructionsApiRequest */
         GetInstructionsApiRequest: {
             /** Ids */
@@ -35720,29 +36293,13 @@ export interface components {
              * Items
              * @description Message data items
              */
-            items?: components["schemas"]["app__api__v4__views__message__list__types__MessageViewItem"][];
+            items?: components["schemas"]["MessageViewItem"][];
             /**
              * Total Count
              * @description Total count before pagination
              * @default 0
              */
             total_count: number;
-        };
-        /**
-         * GetMessageTreeRequest
-         * @description Request for getting message tree.
-         */
-        GetMessageTreeRequest: {
-            /** Message Ids */
-            message_ids: string[];
-        };
-        /**
-         * GetMessageTreeResponse
-         * @description Response for getting message tree.
-         */
-        GetMessageTreeResponse: {
-            /** Items */
-            items: components["schemas"]["MessageTreeViewItem"][];
         };
         /** GetMessagesCompletionsEntriesApiRequest */
         GetMessagesCompletionsEntriesApiRequest: {
@@ -36608,22 +37165,6 @@ export interface components {
             /** Items */
             items?: unknown | null;
         };
-        /**
-         * GetReplacementsRequest
-         * @description Request for getting replacements.
-         */
-        GetReplacementsRequest: {
-            /** Improvement Ids */
-            improvement_ids: string[];
-        };
-        /**
-         * GetReplacementsResponse
-         * @description Response for getting replacements.
-         */
-        GetReplacementsResponse: {
-            /** Items */
-            items: components["schemas"]["ReplacementViewItem"][];
-        };
         /** GetReportsEntriesApiRequest */
         GetReportsEntriesApiRequest: {
             /** Ids */
@@ -36673,22 +37214,6 @@ export interface components {
         GetResponsesEntriesApiResponse: {
             /** Items */
             items?: unknown | null;
-        };
-        /**
-         * GetResponsesRequest
-         * @description Request for getting responses.
-         */
-        GetResponsesRequest: {
-            /** Chat Ids */
-            chat_ids: string[];
-        };
-        /**
-         * GetResponsesResponse
-         * @description Response for getting responses.
-         */
-        GetResponsesResponse: {
-            /** Items */
-            items: components["schemas"]["ResponseViewItem"][];
         };
         /**
          * GetRolesApiRequest
@@ -37533,22 +38058,6 @@ export interface components {
              */
             items: components["schemas"]["QGetStandardsV4Item"][];
         };
-        /**
-         * GetStrengthsRequest
-         * @description Request for getting strengths.
-         */
-        GetStrengthsRequest: {
-            /** Message Ids */
-            message_ids: string[];
-        };
-        /**
-         * GetStrengthsResponse
-         * @description Response for getting strengths.
-         */
-        GetStrengthsResponse: {
-            /** Items */
-            items: components["schemas"]["StrengthViewItem"][];
-        };
         /** GetSuiteDepartmentEntriesApiRequest */
         GetSuiteDepartmentEntriesApiRequest: {
             /** Ids */
@@ -38321,49 +38830,6 @@ export interface components {
             pass_points?: number | null;
         };
         /**
-         * GradeItem
-         * @description Grade composite type.
-         */
-        GradeItem: {
-            /** Score */
-            score?: number | null;
-            /** Passed */
-            passed?: boolean | null;
-            /** Time Taken */
-            time_taken?: number | null;
-            /** Total Points */
-            total_points?: number | null;
-            /** Pass Points */
-            pass_points?: number | null;
-        };
-        /**
-         * GradeViewItem
-         * @description A single grade view item.
-         */
-        GradeViewItem: {
-            /**
-             * Grade Id
-             * Format: uuid
-             */
-            grade_id: string;
-            /** Chat Id */
-            chat_id?: string | null;
-            /** Score */
-            score?: number | null;
-            /** Passed */
-            passed?: boolean | null;
-            /** Time Taken */
-            time_taken?: number | null;
-            /** Total Points */
-            total_points?: number | null;
-            /** Pass Points */
-            pass_points?: number | null;
-            /** Rubric Id */
-            rubric_id?: string | null;
-            /** Created At */
-            created_at?: string | null;
-        };
-        /**
          * GradingStateData
          * @description Grading state for a chat in Record format.
          *
@@ -38888,25 +39354,6 @@ export interface components {
             idx?: number | null;
         };
         /**
-         * HighlightViewItem
-         * @description A single highlight view item.
-         */
-        HighlightViewItem: {
-            /**
-             * Highlight Id
-             * Format: uuid
-             */
-            highlight_id: string;
-            /** Strength Id */
-            strength_id?: string | null;
-            /** Section */
-            section?: string | null;
-            /** Idx */
-            idx?: number | null;
-            /** Created At */
-            created_at?: string | null;
-        };
-        /**
          * HighlightsGenerationEvent
          * @description Unified socket event for highlights generation. Same type for all 4 events.
          */
@@ -38959,25 +39406,6 @@ export interface components {
             hint?: string | null;
             /** Idx */
             idx?: number | null;
-        };
-        /**
-         * HintViewItem
-         * @description A single hint view item.
-         */
-        HintViewItem: {
-            /**
-             * Hint Id
-             * Format: uuid
-             */
-            hint_id: string;
-            /** Message Id */
-            message_id?: string | null;
-            /** Hint */
-            hint?: string | null;
-            /** Idx */
-            idx?: number | null;
-            /** Created At */
-            created_at?: string | null;
         };
         /**
          * HintsGenerationEvent
@@ -39331,25 +39759,6 @@ export interface components {
             tool_name?: string | null;
             /** Arguments Delta */
             arguments_delta?: string | null;
-        };
-        /**
-         * ImprovementViewItem
-         * @description A single improvement view item.
-         */
-        ImprovementViewItem: {
-            /**
-             * Improvement Id
-             * Format: uuid
-             */
-            improvement_id: string;
-            /** Message Id */
-            message_id?: string | null;
-            /** Name */
-            name?: string | null;
-            /** Description */
-            description?: string | null;
-            /** Created At */
-            created_at?: string | null;
         };
         /**
          * ImprovementsGenerationEvent
@@ -39775,9 +40184,9 @@ export interface components {
              */
             total_count: number;
             /** Simulation Options */
-            simulation_options?: components["schemas"]["app__api__v4__artifacts__types__FilterOption"][];
+            simulation_options?: components["schemas"]["FilterOption"][];
             /** Profile Options */
-            profile_options?: components["schemas"]["app__api__v4__artifacts__types__FilterOption"][];
+            profile_options?: components["schemas"]["FilterOption"][];
         };
         /** LeaderboardScenarioResource */
         LeaderboardScenarioResource: {
@@ -40922,19 +41331,25 @@ export interface components {
             replaces?: components["schemas"]["ReplacementEntry"][] | null;
         };
         /**
-         * MessageTreeViewItem
-         * @description A single message tree view item.
+         * MessageViewItem
+         * @description Single message from the message list view.
          */
-        MessageTreeViewItem: {
+        MessageViewItem: {
             /**
              * Message Id
              * Format: uuid
              */
             message_id: string;
-            /** Branch Path */
-            branch_path?: string[] | null;
-            /** Depth */
-            depth?: number | null;
+            /** Run Id */
+            run_id?: string | null;
+            /** Role */
+            role?: string | null;
+            /** Message Created At */
+            message_created_at?: string | null;
+            /** Contents */
+            contents?: string[];
+            /** Call Ids */
+            call_ids?: string[];
         };
         /**
          * MetricViewItem
@@ -43781,9 +44196,9 @@ export interface components {
              */
             total_count: number;
             /** Model Options */
-            model_options?: components["schemas"]["app__api__v4__artifacts__types__FilterOption"][];
+            model_options?: components["schemas"]["FilterOption"][];
             /** Agent Options */
-            agent_options?: components["schemas"]["app__api__v4__artifacts__types__FilterOption"][];
+            agent_options?: components["schemas"]["FilterOption"][];
         };
         /**
          * PricingViews
@@ -47232,33 +47647,6 @@ export interface components {
             refreshed_views?: string[] | null;
         };
         /**
-         * RefreshResponse
-         * @description Response for refresh/recreate operations.
-         */
-        RefreshResponse: {
-            /**
-             * Success
-             * @description Whether the operation succeeded
-             */
-            success: boolean;
-            /**
-             * Method
-             * @description Refresh method used
-             * @enum {string}
-             */
-            method: "concurrent" | "recreate";
-            /**
-             * Message
-             * @description Additional message
-             */
-            message?: string | null;
-            /**
-             * Duration Ms
-             * @description Duration of the operation in milliseconds
-             */
-            duration_ms?: number | null;
-        };
-        /**
          * ReplacementEntry
          * @description Replacement entry within an improvement.
          */
@@ -47269,27 +47657,6 @@ export interface components {
             replace?: string | null;
             /** Idx */
             idx?: number | null;
-        };
-        /**
-         * ReplacementViewItem
-         * @description A single replacement view item.
-         */
-        ReplacementViewItem: {
-            /**
-             * Replacement Id
-             * Format: uuid
-             */
-            replacement_id: string;
-            /** Improvement Id */
-            improvement_id?: string | null;
-            /** Section */
-            section?: string | null;
-            /** Replace Text */
-            replace_text?: string | null;
-            /** Idx */
-            idx?: number | null;
-            /** Created At */
-            created_at?: string | null;
         };
         /**
          * ReplacementsGenerationEvent
@@ -47778,11 +48145,11 @@ export interface components {
              */
             total_count: number;
             /** Simulation Options */
-            simulation_options?: components["schemas"]["app__api__v4__artifacts__types__FilterOption"][];
+            simulation_options?: components["schemas"]["FilterOption"][];
             /** Profile Options */
-            profile_options?: components["schemas"]["app__api__v4__artifacts__types__FilterOption"][];
+            profile_options?: components["schemas"]["FilterOption"][];
             /** Scenario Options */
-            scenario_options?: components["schemas"]["app__api__v4__artifacts__types__FilterOption"][];
+            scenario_options?: components["schemas"]["FilterOption"][];
         };
         /** ReportsRubricResource */
         ReportsRubricResource: {
@@ -47978,25 +48345,6 @@ export interface components {
              * Format: date-time
              */
             updated_at: string;
-        };
-        /**
-         * ResponseViewItem
-         * @description A single response view item.
-         */
-        ResponseViewItem: {
-            /**
-             * Response Id
-             * Format: uuid
-             */
-            response_id: string;
-            /** Chat Id */
-            chat_id?: string | null;
-            /** Question Id */
-            question_id?: string | null;
-            /** Option Id */
-            option_id?: string | null;
-            /** Created At */
-            created_at?: string | null;
         };
         /**
          * ResponsesGenerationEvent
@@ -56848,25 +57196,6 @@ export interface components {
             arguments_delta?: string | null;
         };
         /**
-         * StrengthViewItem
-         * @description A single strength view item.
-         */
-        StrengthViewItem: {
-            /**
-             * Strength Id
-             * Format: uuid
-             */
-            strength_id: string;
-            /** Message Id */
-            message_id?: string | null;
-            /** Name */
-            name?: string | null;
-            /** Description */
-            description?: string | null;
-            /** Created At */
-            created_at?: string | null;
-        };
-        /**
          * StrengthsGenerationEvent
          * @description Unified socket event for strengths generation. Same type for all 4 events.
          */
@@ -59105,18 +59434,6 @@ export interface components {
             parameter_ids?: string[] | null;
         };
         /**
-         * FilterOption
-         * @description A single filter option for dropdown selectors.
-         */
-        app__api__v4__artifacts__types__FilterOption: {
-            /** Value */
-            value: string;
-            /** Label */
-            label?: string | null;
-            /** Count */
-            count?: number | null;
-        };
-        /**
          * GetRunListViewResponse
          * @description Response containing run list data.
          */
@@ -59264,266 +59581,6 @@ export interface components {
             providers?: components["schemas"]["QGetSettingsV4Provider"][] | null;
         };
         /**
-         * GetChatsRequest
-         * @description Request for getting chat data.
-         */
-        app__api__v4__views__attempt__chats__get__GetChatsRequest: {
-            /**
-             * Attempt Id
-             * Format: uuid
-             * @description Attempt ID to fetch chats for
-             */
-            attempt_id: string;
-        };
-        /**
-         * GetChatsResponse
-         * @description Response containing chat data.
-         */
-        app__api__v4__views__attempt__chats__get__GetChatsResponse: {
-            /**
-             * Items
-             * @description Chat data items
-             */
-            items?: components["schemas"]["ChatViewItem"][];
-        };
-        /**
-         * FilterOption
-         * @description Filter option for dropdowns.
-         */
-        app__api__v4__views__attempt__list__types__FilterOption: {
-            /** Value */
-            value: string;
-            /** Label */
-            label: string;
-            /**
-             * Count
-             * @default 0
-             */
-            count: number;
-        };
-        /**
-         * GetMessagesRequest
-         * @description Request for getting message data.
-         *
-         *     Note: Practice filtering is done at attempt level, not here.
-         */
-        app__api__v4__views__attempt__messages__types__GetMessagesRequest: {
-            /**
-             * Attempt Id
-             * Format: uuid
-             * @description Attempt ID to fetch messages for
-             */
-            attempt_id: string;
-        };
-        /**
-         * GetMessagesResponse
-         * @description Response containing message data.
-         */
-        app__api__v4__views__attempt__messages__types__GetMessagesResponse: {
-            /**
-             * Items
-             * @description Message data items
-             */
-            items?: components["schemas"]["app__api__v4__views__attempt__messages__types__MessageViewItem"][];
-        };
-        /**
-         * MessageViewItem
-         * @description Single message from the attempt messages view.
-         *
-         *     Lean: entry attrs + resource IDs only. Composites (contents, strengths,
-         *     improvements, hints, branch_path) fetched via simulation/* views.
-         */
-        app__api__v4__views__attempt__messages__types__MessageViewItem: {
-            /**
-             * Message Id
-             * Format: uuid
-             */
-            message_id: string;
-            /** Chat Id */
-            chat_id?: string | null;
-            /** Attempt Id */
-            attempt_id?: string | null;
-            /** Type */
-            type?: string | null;
-            /** Created At */
-            created_at?: string | null;
-            /**
-             * Completed
-             * @default false
-             */
-            completed: boolean;
-            /** Runs Id */
-            runs_id?: string | null;
-            /** History Content */
-            history_content?: string | null;
-            /** Audio Id */
-            audio_id?: string | null;
-        };
-        /**
-         * FilterOption
-         * @description Filter option for dropdowns.
-         */
-        app__api__v4__views__chat__types__FilterOption: {
-            /** Value */
-            value: string;
-            /** Label */
-            label: string;
-            /**
-             * Count
-             * @default 0
-             */
-            count: number;
-        };
-        /**
-         * GetChatsRequest
-         * @description Request for getting chats with filters and pagination.
-         */
-        app__api__v4__views__chat__types__GetChatsRequest: {
-            /**
-             * Profile Id
-             * @description Filter by profile ID
-             */
-            profile_id?: string | null;
-            /**
-             * Cohort Ids
-             * @description Filter by cohort IDs
-             */
-            cohort_ids?: string[] | null;
-            /**
-             * Department Ids
-             * @description Filter by department IDs
-             */
-            department_ids?: string[] | null;
-            /**
-             * Simulation Ids
-             * @description Filter by simulation IDs
-             */
-            simulation_ids?: string[] | null;
-            /**
-             * Scenario Ids
-             * @description Filter by scenario IDs
-             */
-            scenario_ids?: string[] | null;
-            /**
-             * Rubric Ids
-             * @description Filter by rubric IDs
-             */
-            rubric_ids?: string[] | null;
-            /**
-             * Attempt Id
-             * @description Filter by attempt ID
-             */
-            attempt_id?: string | null;
-            /**
-             * Attempt Type
-             * @description Filter by attempt type: 'general' | 'practice'
-             */
-            attempt_type?: string | null;
-            /**
-             * Is Archived
-             * @description Include archived attempts
-             * @default false
-             */
-            is_archived: boolean;
-            /**
-             * Date From
-             * @description Filter by date range start (inclusive)
-             */
-            date_from?: string | null;
-            /**
-             * Date To
-             * @description Filter by date range end (inclusive)
-             */
-            date_to?: string | null;
-            /**
-             * Sort By
-             * @description Sort field: 'date' | 'created_at'
-             * @default date
-             */
-            sort_by: string;
-            /**
-             * Sort Order
-             * @description Sort order: 'asc' | 'desc'
-             * @default desc
-             */
-            sort_order: string;
-            /**
-             * Page Limit
-             * @description Items per page
-             * @default 10000
-             */
-            page_limit: number;
-            /**
-             * Page Offset
-             * @description Pagination offset
-             * @default 0
-             */
-            page_offset: number;
-        };
-        /**
-         * GetChatsResponse
-         * @description Response with chat items and pagination info.
-         */
-        app__api__v4__views__chat__types__GetChatsResponse: {
-            /**
-             * Items
-             * @description Chat items
-             */
-            items?: components["schemas"]["ChatItem"][];
-            /**
-             * Total Count
-             * @description Total count before pagination
-             * @default 0
-             */
-            total_count: number;
-            /**
-             * Simulation Options
-             * @description Available simulation filter options
-             */
-            simulation_options?: components["schemas"]["app__api__v4__views__chat__types__FilterOption"][] | null;
-            /**
-             * Cohort Options
-             * @description Available cohort filter options
-             */
-            cohort_options?: components["schemas"]["app__api__v4__views__chat__types__FilterOption"][] | null;
-            /**
-             * Department Options
-             * @description Available department filter options
-             */
-            department_options?: components["schemas"]["app__api__v4__views__chat__types__FilterOption"][] | null;
-            /**
-             * Scenario Options
-             * @description Available scenario filter options
-             */
-            scenario_options?: components["schemas"]["app__api__v4__views__chat__types__FilterOption"][] | null;
-            /**
-             * Persona Options
-             * @description Available persona filter options
-             */
-            persona_options?: components["schemas"]["app__api__v4__views__chat__types__FilterOption"][] | null;
-        };
-        /**
-         * MessageViewItem
-         * @description Single message from the message list view.
-         */
-        app__api__v4__views__message__list__types__MessageViewItem: {
-            /**
-             * Message Id
-             * Format: uuid
-             */
-            message_id: string;
-            /** Run Id */
-            run_id?: string | null;
-            /** Role */
-            role?: string | null;
-            /** Message Created At */
-            message_created_at?: string | null;
-            /** Contents */
-            contents?: string[];
-            /** Call Ids */
-            call_ids?: string[];
-        };
-        /**
          * GetRunListViewResponse
          * @description Response containing run list data.
          */
@@ -59577,57 +59634,6 @@ export interface components {
             provider_ids?: string[] | null;
             /** Pricing */
             pricing?: components["schemas"]["RunPricingItem"][];
-        };
-        /**
-         * GetMessagesRequest
-         * @description Request for getting messages.
-         */
-        app__api__v4__views__simulation__messages__types__GetMessagesRequest: {
-            /**
-             * Attempt Id
-             * Format: uuid
-             */
-            attempt_id: string;
-        };
-        /**
-         * GetMessagesResponse
-         * @description Response for getting messages.
-         */
-        app__api__v4__views__simulation__messages__types__GetMessagesResponse: {
-            /** Items */
-            items: components["schemas"]["app__api__v4__views__simulation__messages__types__MessageViewItem"][];
-        };
-        /**
-         * MessageViewItem
-         * @description A single message view item.
-         */
-        app__api__v4__views__simulation__messages__types__MessageViewItem: {
-            /**
-             * Message Id
-             * Format: uuid
-             */
-            message_id: string;
-            /** Chat Id */
-            chat_id?: string | null;
-            /** Attempt Id */
-            attempt_id?: string | null;
-            /** Type */
-            type?: string | null;
-            /** Created At */
-            created_at?: string | null;
-            /**
-             * Completed
-             * @default false
-             */
-            completed: boolean;
-            /** Runs Id */
-            runs_id?: string | null;
-            /** Text Id */
-            text_id?: string | null;
-            /** Audio Id */
-            audio_id?: string | null;
-            /** History Content */
-            history_content?: string | null;
         };
         /** DeleteDocumentApiRequest */
         app__sql__types__DeleteDocumentApiRequest: {
@@ -73590,6 +73596,41 @@ export interface operations {
             };
         };
     };
+    refresh_activity_api_v4_entries_activity_refresh_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_activity_insights_entries_api_v4_entries_activity_insights_get_post: {
         parameters: {
             query?: never;
@@ -73688,6 +73729,41 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SearchActivityInsightsEntriesApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    refresh_activity_insights_api_v4_entries_activity_insights_refresh_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
                 };
             };
             /** @description Validation Error */
@@ -73812,6 +73888,41 @@ export interface operations {
             };
         };
     };
+    refresh_agent_drafts_api_v4_entries_agent_drafts_refresh_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_args_outputs_values_entries_api_v4_entries_args_outputs_values_get_post: {
         parameters: {
             query?: never;
@@ -73910,6 +74021,41 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SearchArgsOutputsValuesEntriesApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    refresh_args_outputs_values_api_v4_entries_args_outputs_values_refresh_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
                 };
             };
             /** @description Validation Error */
@@ -74034,6 +74180,41 @@ export interface operations {
             };
         };
     };
+    refresh_args_values_api_v4_entries_args_values_refresh_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_attempt_entries_api_v4_entries_attempt_get_post: {
         parameters: {
             query?: never;
@@ -74132,6 +74313,41 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SearchAttemptEntriesApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    refresh_attempt_api_v4_entries_attempt_refresh_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
                 };
             };
             /** @description Validation Error */
@@ -74256,6 +74472,41 @@ export interface operations {
             };
         };
     };
+    refresh_attempt_analysis_api_v4_entries_attempt_analysis_refresh_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_attempt_archive_entries_api_v4_entries_attempt_archive_get_post: {
         parameters: {
             query?: never;
@@ -74354,6 +74605,41 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SearchAttemptArchiveEntriesApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    refresh_attempt_archive_api_v4_entries_attempt_archive_refresh_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
                 };
             };
             /** @description Validation Error */
@@ -74478,6 +74764,41 @@ export interface operations {
             };
         };
     };
+    refresh_attempt_chat_api_v4_entries_attempt_chat_refresh_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_attempt_completion_entries_api_v4_entries_attempt_completion_get_post: {
         parameters: {
             query?: never;
@@ -74576,6 +74897,41 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SearchAttemptCompletionEntriesApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    refresh_attempt_completion_api_v4_entries_attempt_completion_refresh_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
                 };
             };
             /** @description Validation Error */
@@ -74700,6 +75056,41 @@ export interface operations {
             };
         };
     };
+    refresh_attempt_content_api_v4_entries_attempt_content_refresh_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_attempt_feedback_entries_api_v4_entries_attempt_feedback_get_post: {
         parameters: {
             query?: never;
@@ -74798,6 +75189,41 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SearchAttemptFeedbackEntriesApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    refresh_attempt_feedback_api_v4_entries_attempt_feedback_refresh_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
                 };
             };
             /** @description Validation Error */
@@ -74922,6 +75348,41 @@ export interface operations {
             };
         };
     };
+    refresh_attempt_grade_api_v4_entries_attempt_grade_refresh_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_attempt_highlight_entries_api_v4_entries_attempt_highlight_get_post: {
         parameters: {
             query?: never;
@@ -75020,6 +75481,41 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SearchAttemptHighlightEntriesApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    refresh_attempt_highlight_api_v4_entries_attempt_highlight_refresh_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
                 };
             };
             /** @description Validation Error */
@@ -75144,6 +75640,41 @@ export interface operations {
             };
         };
     };
+    refresh_attempt_hint_api_v4_entries_attempt_hint_refresh_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_attempt_improvement_entries_api_v4_entries_attempt_improvement_get_post: {
         parameters: {
             query?: never;
@@ -75242,6 +75773,41 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SearchAttemptImprovementEntriesApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    refresh_attempt_improvement_api_v4_entries_attempt_improvement_refresh_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
                 };
             };
             /** @description Validation Error */
@@ -75366,6 +75932,41 @@ export interface operations {
             };
         };
     };
+    refresh_attempt_insights_api_v4_entries_attempt_insights_refresh_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_attempt_message_entries_api_v4_entries_attempt_message_get_post: {
         parameters: {
             query?: never;
@@ -75464,6 +76065,41 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SearchAttemptMessageEntriesApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    refresh_attempt_message_api_v4_entries_attempt_message_refresh_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
                 };
             };
             /** @description Validation Error */
@@ -75588,6 +76224,41 @@ export interface operations {
             };
         };
     };
+    refresh_attempt_message_tree_api_v4_entries_attempt_message_tree_refresh_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_attempt_replacement_entries_api_v4_entries_attempt_replacement_get_post: {
         parameters: {
             query?: never;
@@ -75686,6 +76357,41 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SearchAttemptReplacementEntriesApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    refresh_attempt_replacement_api_v4_entries_attempt_replacement_refresh_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
                 };
             };
             /** @description Validation Error */
@@ -75810,6 +76516,41 @@ export interface operations {
             };
         };
     };
+    refresh_attempt_strength_api_v4_entries_attempt_strength_refresh_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_audios_entries_api_v4_entries_audios_get_post: {
         parameters: {
             query?: never;
@@ -75908,6 +76649,41 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SearchAudiosEntriesApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    refresh_audios_api_v4_entries_audios_refresh_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
                 };
             };
             /** @description Validation Error */
@@ -76032,6 +76808,41 @@ export interface operations {
             };
         };
     };
+    refresh_audits_api_v4_entries_audits_refresh_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_auth_drafts_entries_api_v4_entries_auth_drafts_get_post: {
         parameters: {
             query?: never;
@@ -76130,6 +76941,41 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SearchAuthDraftsEntriesApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    refresh_auth_drafts_api_v4_entries_auth_drafts_refresh_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
                 };
             };
             /** @description Validation Error */
@@ -76254,6 +77100,41 @@ export interface operations {
             };
         };
     };
+    refresh_benchmark_api_v4_entries_benchmark_refresh_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_benchmark_insights_entries_api_v4_entries_benchmark_insights_get_post: {
         parameters: {
             query?: never;
@@ -76352,6 +77233,41 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SearchBenchmarkInsightsEntriesApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    refresh_benchmark_insights_api_v4_entries_benchmark_insights_refresh_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
                 };
             };
             /** @description Validation Error */
@@ -76476,6 +77392,41 @@ export interface operations {
             };
         };
     };
+    refresh_bindings_api_v4_entries_bindings_refresh_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_calls_entries_api_v4_entries_calls_get_post: {
         parameters: {
             query?: never;
@@ -76574,6 +77525,41 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SearchCallsEntriesApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    refresh_calls_api_v4_entries_calls_refresh_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
                 };
             };
             /** @description Validation Error */
@@ -76698,6 +77684,41 @@ export interface operations {
             };
         };
     };
+    refresh_certificates_api_v4_entries_certificates_refresh_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_cohort_drafts_entries_api_v4_entries_cohort_drafts_get_post: {
         parameters: {
             query?: never;
@@ -76796,6 +77817,41 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SearchCohortDraftsEntriesApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    refresh_cohort_drafts_api_v4_entries_cohort_drafts_refresh_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
                 };
             };
             /** @description Validation Error */
@@ -76920,6 +77976,41 @@ export interface operations {
             };
         };
     };
+    refresh_config_api_v4_entries_config_refresh_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_conversations_entries_api_v4_entries_conversations_get_post: {
         parameters: {
             query?: never;
@@ -77018,6 +78109,41 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SearchConversationsEntriesApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    refresh_conversations_api_v4_entries_conversations_refresh_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
                 };
             };
             /** @description Validation Error */
@@ -77142,6 +78268,41 @@ export interface operations {
             };
         };
     };
+    refresh_conversations_completions_api_v4_entries_conversations_completions_refresh_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_dashboard_insights_entries_api_v4_entries_dashboard_insights_get_post: {
         parameters: {
             query?: never;
@@ -77240,6 +78401,41 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SearchDashboardInsightsEntriesApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    refresh_dashboard_insights_api_v4_entries_dashboard_insights_refresh_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
                 };
             };
             /** @description Validation Error */
@@ -77364,6 +78560,41 @@ export interface operations {
             };
         };
     };
+    refresh_debug_info_api_v4_entries_debug_info_refresh_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_department_drafts_entries_api_v4_entries_department_drafts_get_post: {
         parameters: {
             query?: never;
@@ -77462,6 +78693,41 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SearchDepartmentDraftsEntriesApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    refresh_department_drafts_api_v4_entries_department_drafts_refresh_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
                 };
             };
             /** @description Validation Error */
@@ -77586,6 +78852,41 @@ export interface operations {
             };
         };
     };
+    refresh_document_drafts_api_v4_entries_document_drafts_refresh_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_domains_entries_api_v4_entries_domains_get_post: {
         parameters: {
             query?: never;
@@ -77684,6 +78985,41 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SearchDomainsEntriesApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    refresh_domains_api_v4_entries_domains_refresh_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
                 };
             };
             /** @description Validation Error */
@@ -77808,6 +79144,41 @@ export interface operations {
             };
         };
     };
+    refresh_emulations_api_v4_entries_emulations_refresh_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_eval_drafts_entries_api_v4_entries_eval_drafts_get_post: {
         parameters: {
             query?: never;
@@ -77906,6 +79277,41 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SearchEvalDraftsEntriesApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    refresh_eval_drafts_api_v4_entries_eval_drafts_refresh_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
                 };
             };
             /** @description Validation Error */
@@ -78030,6 +79436,41 @@ export interface operations {
             };
         };
     };
+    refresh_field_drafts_api_v4_entries_field_drafts_refresh_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_grants_entries_api_v4_entries_grants_get_post: {
         parameters: {
             query?: never;
@@ -78128,6 +79569,41 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SearchGrantsEntriesApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    refresh_grants_api_v4_entries_grants_refresh_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
                 };
             };
             /** @description Validation Error */
@@ -78252,6 +79728,41 @@ export interface operations {
             };
         };
     };
+    refresh_groups_api_v4_entries_groups_refresh_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_health_entries_api_v4_entries_health_get_post: {
         parameters: {
             query?: never;
@@ -78350,6 +79861,41 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SearchHealthEntriesApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    refresh_health_api_v4_entries_health_refresh_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
                 };
             };
             /** @description Validation Error */
@@ -78474,6 +80020,41 @@ export interface operations {
             };
         };
     };
+    refresh_health_insights_api_v4_entries_health_insights_refresh_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_highlights_entries_api_v4_entries_highlights_get_post: {
         parameters: {
             query?: never;
@@ -78572,6 +80153,41 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SearchHighlightsEntriesApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    refresh_highlights_api_v4_entries_highlights_refresh_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
                 };
             };
             /** @description Validation Error */
@@ -78696,6 +80312,41 @@ export interface operations {
             };
         };
     };
+    refresh_home_api_v4_entries_home_refresh_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_home_insights_entries_api_v4_entries_home_insights_get_post: {
         parameters: {
             query?: never;
@@ -78794,6 +80445,41 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SearchHomeInsightsEntriesApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    refresh_home_insights_api_v4_entries_home_insights_refresh_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
                 };
             };
             /** @description Validation Error */
@@ -78918,6 +80604,41 @@ export interface operations {
             };
         };
     };
+    refresh_home_training_api_v4_entries_home_training_refresh_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_images_entries_api_v4_entries_images_get_post: {
         parameters: {
             query?: never;
@@ -79016,6 +80737,41 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SearchImagesEntriesApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    refresh_images_api_v4_entries_images_refresh_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
                 };
             };
             /** @description Validation Error */
@@ -79140,6 +80896,41 @@ export interface operations {
             };
         };
     };
+    refresh_leaderboard_insights_api_v4_entries_leaderboard_insights_refresh_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_logins_entries_api_v4_entries_logins_get_post: {
         parameters: {
             query?: never;
@@ -79238,6 +81029,41 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SearchLoginsEntriesApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    refresh_logins_api_v4_entries_logins_refresh_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
                 };
             };
             /** @description Validation Error */
@@ -79362,6 +81188,41 @@ export interface operations {
             };
         };
     };
+    refresh_messages_api_v4_entries_messages_refresh_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_messages_completions_entries_api_v4_entries_messages_completions_get_post: {
         parameters: {
             query?: never;
@@ -79460,6 +81321,41 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SearchMessagesCompletionsEntriesApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    refresh_messages_completions_api_v4_entries_messages_completions_refresh_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
                 };
             };
             /** @description Validation Error */
@@ -79584,6 +81480,41 @@ export interface operations {
             };
         };
     };
+    refresh_metrics_api_v4_entries_metrics_refresh_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_model_drafts_entries_api_v4_entries_model_drafts_get_post: {
         parameters: {
             query?: never;
@@ -79682,6 +81613,41 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SearchModelDraftsEntriesApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    refresh_model_drafts_api_v4_entries_model_drafts_refresh_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
                 };
             };
             /** @description Validation Error */
@@ -79806,6 +81772,41 @@ export interface operations {
             };
         };
     };
+    refresh_mutes_api_v4_entries_mutes_refresh_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_parameter_drafts_entries_api_v4_entries_parameter_drafts_get_post: {
         parameters: {
             query?: never;
@@ -79904,6 +81905,41 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SearchParameterDraftsEntriesApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    refresh_parameter_drafts_api_v4_entries_parameter_drafts_refresh_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
                 };
             };
             /** @description Validation Error */
@@ -80028,6 +82064,41 @@ export interface operations {
             };
         };
     };
+    refresh_persona_api_v4_entries_persona_refresh_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_persona_drafts_entries_api_v4_entries_persona_drafts_get_post: {
         parameters: {
             query?: never;
@@ -80126,6 +82197,41 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SearchPersonaDraftsEntriesApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    refresh_persona_drafts_api_v4_entries_persona_drafts_refresh_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
                 };
             };
             /** @description Validation Error */
@@ -80250,6 +82356,41 @@ export interface operations {
             };
         };
     };
+    refresh_practice_api_v4_entries_practice_refresh_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_practice_insights_entries_api_v4_entries_practice_insights_get_post: {
         parameters: {
             query?: never;
@@ -80348,6 +82489,41 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SearchPracticeInsightsEntriesApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    refresh_practice_insights_api_v4_entries_practice_insights_refresh_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
                 };
             };
             /** @description Validation Error */
@@ -80472,6 +82648,41 @@ export interface operations {
             };
         };
     };
+    refresh_practice_training_api_v4_entries_practice_training_refresh_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_pricing_insights_entries_api_v4_entries_pricing_insights_get_post: {
         parameters: {
             query?: never;
@@ -80570,6 +82781,41 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SearchPricingInsightsEntriesApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    refresh_pricing_insights_api_v4_entries_pricing_insights_refresh_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
                 };
             };
             /** @description Validation Error */
@@ -80694,6 +82940,41 @@ export interface operations {
             };
         };
     };
+    refresh_problems_api_v4_entries_problems_refresh_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_profile_drafts_entries_api_v4_entries_profile_drafts_get_post: {
         parameters: {
             query?: never;
@@ -80792,6 +83073,41 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SearchProfileDraftsEntriesApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    refresh_profile_drafts_api_v4_entries_profile_drafts_refresh_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
                 };
             };
             /** @description Validation Error */
@@ -80916,6 +83232,41 @@ export interface operations {
             };
         };
     };
+    refresh_provider_drafts_api_v4_entries_provider_drafts_refresh_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_record_insights_entries_api_v4_entries_record_insights_get_post: {
         parameters: {
             query?: never;
@@ -81014,6 +83365,41 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SearchRecordInsightsEntriesApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    refresh_record_insights_api_v4_entries_record_insights_refresh_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
                 };
             };
             /** @description Validation Error */
@@ -81138,6 +83524,41 @@ export interface operations {
             };
         };
     };
+    refresh_replacements_api_v4_entries_replacements_refresh_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_reports_entries_api_v4_entries_reports_get_post: {
         parameters: {
             query?: never;
@@ -81236,6 +83657,41 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SearchReportsEntriesApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    refresh_reports_api_v4_entries_reports_refresh_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
                 };
             };
             /** @description Validation Error */
@@ -81360,6 +83816,41 @@ export interface operations {
             };
         };
     };
+    refresh_reports_insights_api_v4_entries_reports_insights_refresh_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_resolves_entries_api_v4_entries_resolves_get_post: {
         parameters: {
             query?: never;
@@ -81458,6 +83949,41 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SearchResolvesEntriesApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    refresh_resolves_api_v4_entries_resolves_refresh_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
                 };
             };
             /** @description Validation Error */
@@ -81582,6 +84108,41 @@ export interface operations {
             };
         };
     };
+    refresh_responses_api_v4_entries_responses_refresh_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_rubric_drafts_entries_api_v4_entries_rubric_drafts_get_post: {
         parameters: {
             query?: never;
@@ -81680,6 +84241,41 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SearchRubricDraftsEntriesApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    refresh_rubric_drafts_api_v4_entries_rubric_drafts_refresh_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
                 };
             };
             /** @description Validation Error */
@@ -81804,6 +84400,41 @@ export interface operations {
             };
         };
     };
+    refresh_run_pricing_api_v4_entries_run_pricing_refresh_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_runs_entries_api_v4_entries_runs_get_post: {
         parameters: {
             query?: never;
@@ -81902,6 +84533,41 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SearchRunsEntriesApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    refresh_runs_api_v4_entries_runs_refresh_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
                 };
             };
             /** @description Validation Error */
@@ -82026,6 +84692,41 @@ export interface operations {
             };
         };
     };
+    refresh_scenario_drafts_api_v4_entries_scenario_drafts_refresh_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_sessions_entries_api_v4_entries_sessions_get_post: {
         parameters: {
             query?: never;
@@ -82124,6 +84825,41 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SearchSessionsEntriesApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    refresh_sessions_api_v4_entries_sessions_refresh_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
                 };
             };
             /** @description Validation Error */
@@ -82248,6 +84984,41 @@ export interface operations {
             };
         };
     };
+    refresh_setting_drafts_api_v4_entries_setting_drafts_refresh_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_simulation_drafts_entries_api_v4_entries_simulation_drafts_get_post: {
         parameters: {
             query?: never;
@@ -82346,6 +85117,41 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SearchSimulationDraftsEntriesApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    refresh_simulation_drafts_api_v4_entries_simulation_drafts_refresh_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
                 };
             };
             /** @description Validation Error */
@@ -82470,6 +85276,41 @@ export interface operations {
             };
         };
     };
+    refresh_suite_api_v4_entries_suite_refresh_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_suite_department_entries_api_v4_entries_suite_department_get_post: {
         parameters: {
             query?: never;
@@ -82568,6 +85409,41 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SearchSuiteDepartmentEntriesApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    refresh_suite_department_api_v4_entries_suite_department_refresh_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
                 };
             };
             /** @description Validation Error */
@@ -82692,6 +85568,41 @@ export interface operations {
             };
         };
     };
+    refresh_suite_drafts_api_v4_entries_suite_drafts_refresh_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_test_entries_api_v4_entries_test_get_post: {
         parameters: {
             query?: never;
@@ -82790,6 +85701,41 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SearchTestEntriesApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    refresh_test_api_v4_entries_test_refresh_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
                 };
             };
             /** @description Validation Error */
@@ -82914,6 +85860,41 @@ export interface operations {
             };
         };
     };
+    refresh_test_archive_api_v4_entries_test_archive_refresh_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_test_completion_entries_api_v4_entries_test_completion_get_post: {
         parameters: {
             query?: never;
@@ -83012,6 +85993,41 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SearchTestCompletionEntriesApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    refresh_test_completion_api_v4_entries_test_completion_refresh_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
                 };
             };
             /** @description Validation Error */
@@ -83136,6 +86152,41 @@ export interface operations {
             };
         };
     };
+    refresh_test_feedback_api_v4_entries_test_feedback_refresh_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_test_grade_entries_api_v4_entries_test_grade_get_post: {
         parameters: {
             query?: never;
@@ -83234,6 +86285,41 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SearchTestGradeEntriesApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    refresh_test_grade_api_v4_entries_test_grade_refresh_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
                 };
             };
             /** @description Validation Error */
@@ -83358,6 +86444,41 @@ export interface operations {
             };
         };
     };
+    refresh_test_insights_api_v4_entries_test_insights_refresh_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_test_invocation_entries_api_v4_entries_test_invocation_get_post: {
         parameters: {
             query?: never;
@@ -83456,6 +86577,41 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SearchTestInvocationEntriesApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    refresh_test_invocation_api_v4_entries_test_invocation_refresh_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
                 };
             };
             /** @description Validation Error */
@@ -83580,6 +86736,41 @@ export interface operations {
             };
         };
     };
+    refresh_test_stop_api_v4_entries_test_stop_refresh_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_tests_entries_api_v4_entries_tests_get_post: {
         parameters: {
             query?: never;
@@ -83678,6 +86869,41 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SearchTestsEntriesApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    refresh_tests_api_v4_entries_tests_refresh_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
                 };
             };
             /** @description Validation Error */
@@ -83802,6 +87028,41 @@ export interface operations {
             };
         };
     };
+    refresh_texts_api_v4_entries_texts_refresh_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_tokens_entries_api_v4_entries_tokens_get_post: {
         parameters: {
             query?: never;
@@ -83900,6 +87161,41 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SearchTokensEntriesApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    refresh_tokens_api_v4_entries_tokens_refresh_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
                 };
             };
             /** @description Validation Error */
@@ -84024,6 +87320,41 @@ export interface operations {
             };
         };
     };
+    refresh_tool_drafts_api_v4_entries_tool_drafts_refresh_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_training_entries_api_v4_entries_training_get_post: {
         parameters: {
             query?: never;
@@ -84122,6 +87453,41 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SearchTrainingEntriesApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    refresh_training_api_v4_entries_training_refresh_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
                 };
             };
             /** @description Validation Error */
@@ -84246,6 +87612,41 @@ export interface operations {
             };
         };
     };
+    refresh_training_department_api_v4_entries_training_department_refresh_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_training_drafts_entries_api_v4_entries_training_drafts_get_post: {
         parameters: {
             query?: never;
@@ -84344,6 +87745,41 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SearchTrainingDraftsEntriesApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    refresh_training_drafts_api_v4_entries_training_drafts_refresh_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
                 };
             };
             /** @description Validation Error */
@@ -84749,6 +88185,41 @@ export interface operations {
             };
         };
     };
+    refresh_uploads_api_v4_entries_uploads_refresh_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_uploads_completions_entries_api_v4_entries_uploads_completions_get_post: {
         parameters: {
             query?: never;
@@ -84847,6 +88318,41 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SearchUploadsCompletionsEntriesApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    refresh_uploads_completions_api_v4_entries_uploads_completions_refresh_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
                 };
             };
             /** @description Validation Error */
@@ -84971,44 +88477,7 @@ export interface operations {
             };
         };
     };
-    get_attempts_api_v4_views_attempt_list_get_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["GetAttemptsRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GetAttemptsResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    refresh_attempts_view_api_v4_views_attempt_list_refresh_post: {
+    refresh_videos_api_v4_entries_videos_refresh_post: {
         parameters: {
             query?: never;
             header?: {
@@ -85027,246 +88496,9 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["RefreshResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    recreate_attempts_view_api_v4_views_attempt_list_recreate_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["RefreshResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_chats_api_v4_views_attempt_chats_get_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["app__api__v4__views__attempt__chats__get__GetChatsRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["app__api__v4__views__attempt__chats__get__GetChatsResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    refresh_chats_view_api_v4_views_attempt_chats_refresh_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["RefreshResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    recreate_chats_view_api_v4_views_attempt_chats_recreate_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["RefreshResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_messages_api_v4_views_attempt_messages_get_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["app__api__v4__views__attempt__messages__types__GetMessagesRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["app__api__v4__views__attempt__messages__types__GetMessagesResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    refresh_messages_view_api_v4_views_attempt_messages_refresh_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["RefreshResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    recreate_messages_view_api_v4_views_attempt_messages_recreate_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["RefreshResponse"];
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
                 };
             };
             /** @description Validation Error */
@@ -85416,41 +88648,6 @@ export interface operations {
             };
         };
     };
-    refresh_test_api_v4_views_benchmark_tests_refresh_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: boolean;
-                    };
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     get_test_invocation_api_v4_views_benchmark_invocations_get_post: {
         parameters: {
             query?: never;
@@ -85488,41 +88685,6 @@ export interface operations {
             };
         };
     };
-    refresh_test_invocation_api_v4_views_benchmark_invocations_refresh_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: boolean;
-                    };
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     get_suite_view_api_v4_views_benchmark_bundle_get_post: {
         parameters: {
             query: {
@@ -85545,109 +88707,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["GetSuiteViewResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_config_api_v4_views_config_get_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["GetConfigRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GetConfigResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    refresh_config_view_api_v4_views_config_refresh_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["RefreshResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    recreate_config_view_api_v4_views_config_recreate_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["RefreshResponse"];
                 };
             };
             /** @description Validation Error */
@@ -85881,43 +88940,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["GetCallListViewResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_chats_api_v4_views_chat_get_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["app__api__v4__views__chat__types__GetChatsRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["app__api__v4__views__chat__types__GetChatsResponse"];
                 };
             };
             /** @description Validation Error */
@@ -86215,1242 +89237,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["GetAudioListViewResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_messages_api_v4_views_simulation_messages_get_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["app__api__v4__views__simulation__messages__types__GetMessagesRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["app__api__v4__views__simulation__messages__types__GetMessagesResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    refresh_messages_view_api_v4_views_simulation_messages_refresh_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["RefreshResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    recreate_messages_view_api_v4_views_simulation_messages_recreate_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["RefreshResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_message_tree_api_v4_views_simulation_message_tree_get_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["GetMessageTreeRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GetMessageTreeResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    refresh_message_tree_view_api_v4_views_simulation_message_tree_refresh_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["RefreshResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    recreate_message_tree_view_api_v4_views_simulation_message_tree_recreate_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["RefreshResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_contents_api_v4_views_simulation_contents_get_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["GetContentsRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GetContentsResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    refresh_contents_view_api_v4_views_simulation_contents_refresh_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["RefreshResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    recreate_contents_view_api_v4_views_simulation_contents_recreate_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["RefreshResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_strengths_api_v4_views_simulation_strengths_get_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["GetStrengthsRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GetStrengthsResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    refresh_strengths_view_api_v4_views_simulation_strengths_refresh_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["RefreshResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    recreate_strengths_view_api_v4_views_simulation_strengths_recreate_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["RefreshResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_highlights_api_v4_views_simulation_highlights_get_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["GetHighlightsRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GetHighlightsResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    refresh_highlights_view_api_v4_views_simulation_highlights_refresh_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["RefreshResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    recreate_highlights_view_api_v4_views_simulation_highlights_recreate_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["RefreshResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_improvements_api_v4_views_simulation_improvements_get_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["GetImprovementsRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GetImprovementsResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    refresh_improvements_view_api_v4_views_simulation_improvements_refresh_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["RefreshResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    recreate_improvements_view_api_v4_views_simulation_improvements_recreate_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["RefreshResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_replacements_api_v4_views_simulation_replacements_get_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["GetReplacementsRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GetReplacementsResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    refresh_replacements_view_api_v4_views_simulation_replacements_refresh_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["RefreshResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    recreate_replacements_view_api_v4_views_simulation_replacements_recreate_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["RefreshResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_hints_api_v4_views_simulation_hints_get_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["GetHintsRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GetHintsResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    refresh_hints_view_api_v4_views_simulation_hints_refresh_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["RefreshResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    recreate_hints_view_api_v4_views_simulation_hints_recreate_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["RefreshResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_feedbacks_api_v4_views_simulation_feedbacks_get_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["GetFeedbacksRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GetFeedbacksResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    refresh_feedbacks_view_api_v4_views_simulation_feedbacks_refresh_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["RefreshResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    recreate_feedbacks_view_api_v4_views_simulation_feedbacks_recreate_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["RefreshResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_analyses_api_v4_views_simulation_analyses_get_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["GetAnalysesRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GetAnalysesResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    refresh_analyses_view_api_v4_views_simulation_analyses_refresh_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["RefreshResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    recreate_analyses_view_api_v4_views_simulation_analyses_recreate_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["RefreshResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_responses_api_v4_views_simulation_responses_get_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["GetResponsesRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GetResponsesResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    refresh_responses_view_api_v4_views_simulation_responses_refresh_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["RefreshResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    recreate_responses_view_api_v4_views_simulation_responses_recreate_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["RefreshResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_grades_api_v4_views_simulation_grades_get_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["GetGradesRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GetGradesResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    refresh_grades_view_api_v4_views_simulation_grades_refresh_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["RefreshResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    recreate_grades_view_api_v4_views_simulation_grades_recreate_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["RefreshResponse"];
                 };
             };
             /** @description Validation Error */

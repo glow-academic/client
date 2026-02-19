@@ -22,6 +22,7 @@ from fastapi import APIRouter
 
 from app.api.v4.entries.uploads.create import router as create_router
 from app.api.v4.entries.uploads.get import router as get_router
+from app.api.v4.entries.uploads.refresh import router as refresh_router
 from app.api.v4.entries.uploads.search import router as search_router
 from app.api.v4.entries.uploads.tus import router as tus_router
 
@@ -30,3 +31,4 @@ router.include_router(get_router)
 router.include_router(create_router)
 router.include_router(search_router)
 router.include_router(tus_router)
+router.include_router(refresh_router)

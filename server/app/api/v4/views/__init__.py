@@ -8,13 +8,10 @@ from fastapi import APIRouter
 
 from app.api.v4.views.activity import router as activity_router
 from app.api.v4.views.analytics import router as analytics_router
-from app.api.v4.views.attempt import router as attempt_router
 from app.api.v4.views.audio import router as audio_router
 from app.api.v4.views.audit import router as audit_router
 from app.api.v4.views.benchmark import router as benchmark_router
 from app.api.v4.views.call import router as call_router
-from app.api.v4.views.chat import router as chat_router
-from app.api.v4.views.config import router as config_router
 from app.api.v4.views.grant import router as grant_router
 from app.api.v4.views.group import router as group_router
 from app.api.v4.views.health import router as health_router
@@ -27,7 +24,6 @@ from app.api.v4.views.practice import router as practice_router
 from app.api.v4.views.problem import router as problem_router
 from app.api.v4.views.run import router as run_router
 from app.api.v4.views.session import router as session_router
-from app.api.v4.views.simulation import router as simulation_router
 from app.api.v4.views.text import router as text_router
 from app.api.v4.views.training import router as training_router
 from app.api.v4.views.upload import router as upload_router
@@ -35,11 +31,9 @@ from app.api.v4.views.video import router as video_router
 
 router = APIRouter(prefix="/views", tags=["views"])
 
-router.include_router(attempt_router)
 router.include_router(activity_router)
 router.include_router(health_router)
 router.include_router(benchmark_router)
-router.include_router(config_router)
 router.include_router(training_router)
 router.include_router(session_router)
 router.include_router(group_router)
@@ -47,7 +41,6 @@ router.include_router(audit_router)
 router.include_router(run_router)
 router.include_router(message_router)
 router.include_router(call_router)
-router.include_router(chat_router)
 router.include_router(problem_router)
 router.include_router(login_router)
 router.include_router(metric_router)
@@ -58,6 +51,5 @@ router.include_router(image_router)
 router.include_router(video_router)
 router.include_router(grant_router)
 router.include_router(audio_router)
-router.include_router(simulation_router)
 router.include_router(home_router)
 router.include_router(practice_router)
