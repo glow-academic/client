@@ -81,7 +81,7 @@ DECLARE
     v_call_id uuid;
 BEGIN
     -- Resolve profile_artifact.id to profiles_resource.id via junction table
-    -- profiles_drafts_connection has FK to profiles_resource, not profile_artifact
+    -- setting_drafts_profiles_connection has FK to profiles_resource, not profile_artifact
     SELECT ppj.profiles_id INTO v_profiles_resource_id
     FROM profile_profiles_junction ppj
     WHERE ppj.profile_id = v_profile_id
@@ -112,7 +112,7 @@ BEGIN
     END IF;
 
     IF input_draft_id IS NOT NULL THEN
-        SELECT drafts_entry.group_id INTO v_group_id FROM drafts_entry WHERE id = input_draft_id;
+        SELECT setting_drafts_entry.group_id INTO v_group_id FROM setting_drafts_entry WHERE id = input_draft_id;
 
         IF v_group_id IS NULL THEN
             v_group_id := group_id;
@@ -128,13 +128,13 @@ BEGIN
             RETURNING id INTO v_group_id;
         END IF;
 
-        UPDATE drafts_entry
-        SET version = drafts_entry.version + 1,
+        UPDATE setting_drafts_entry
+        SET version = setting_drafts_entry.version + 1,
             updated_at = now(),
-            group_id = COALESCE(drafts_entry.group_id, v_group_id)
+            group_id = COALESCE(setting_drafts_entry.group_id, v_group_id)
         WHERE id = input_draft_id
-          AND EXISTS (SELECT 1 FROM profiles_drafts_connection pdj WHERE pdj.draft_id = drafts_entry.id AND pdj.profiles_id = v_profiles_resource_id)
-          AND drafts_entry.version = expected_version
+          AND EXISTS (SELECT 1 FROM setting_drafts_profiles_connection pdj WHERE pdj.draft_id = setting_drafts_entry.id AND pdj.profiles_id = v_profiles_resource_id)
+          AND setting_drafts_entry.version = expected_version
         RETURNING id, version INTO v_draft_id, v_new_version;
 
         IF v_draft_id IS NOT NULL THEN
@@ -336,14 +336,14 @@ BEGIN
             DELETE FROM setting_drafts_colors_connection WHERE setting_drafts_colors_connection.draft_id = v_draft_id;
             DELETE FROM setting_drafts_flags_connection WHERE setting_drafts_flags_connection.draft_id = v_draft_id;
             DELETE FROM setting_drafts_departments_connection WHERE setting_drafts_departments_connection.draft_id = v_draft_id;
-            DELETE FROM profiles_drafts_connection WHERE profiles_drafts_connection.draft_id = v_draft_id;
+            DELETE FROM setting_drafts_profiles_connection WHERE setting_drafts_profiles_connection.draft_id = v_draft_id;
             DELETE FROM setting_drafts_providers_connection WHERE setting_drafts_providers_connection.draft_id = v_draft_id;
             DELETE FROM setting_drafts_keys_connection WHERE setting_drafts_keys_connection.draft_id = v_draft_id;
             DELETE FROM setting_drafts_roles_connection WHERE setting_drafts_roles_connection.draft_id = v_draft_id;
 
-            INSERT INTO profiles_drafts_connection (draft_id, profiles_id, version)
+            INSERT INTO setting_drafts_profiles_connection (draft_id, profiles_id, version)
             VALUES (v_draft_id, v_profiles_resource_id, v_new_version)
-            ON CONFLICT ON CONSTRAINT profiles_draft_pkey DO UPDATE SET version = v_new_version;
+            ON CONFLICT (draft_id, profiles_id) DO UPDATE SET version = v_new_version;
 
             IF v_name_id IS NOT NULL THEN
                 INSERT INTO setting_drafts_names_connection (draft_id, names_id, version)
@@ -378,10 +378,10 @@ BEGIN
             END IF;
 
             IF COALESCE(array_length(v_profile_ids, 1), 0) > 0 THEN
-                INSERT INTO profiles_drafts_connection (draft_id, profiles_id, version)
+                INSERT INTO setting_drafts_profiles_connection (draft_id, profiles_id, version)
                 SELECT v_draft_id, profile_id, v_new_version
                 FROM UNNEST(v_profile_ids) as profile_id
-                ON CONFLICT ON CONSTRAINT profiles_draft_pkey DO UPDATE SET version = v_new_version;
+                ON CONFLICT (draft_id, profiles_id) DO UPDATE SET version = v_new_version;
             END IF;
 
             IF COALESCE(array_length(v_provider_key_ids, 1), 0) > 0 THEN
@@ -421,8 +421,8 @@ BEGIN
         RETURNING id INTO v_group_id;
     END IF;
 
-    INSERT INTO drafts_entry (artifact, group_id)
-    VALUES ('setting'::artifact_type, v_group_id)
+    INSERT INTO setting_drafts_entry (group_id)
+    VALUES (v_group_id)
     RETURNING id, version INTO v_draft_id, v_new_version;
 
     -- === TOOL CALL TRACKING (create path) ===
@@ -616,9 +616,9 @@ BEGIN
         END IF;
     END IF;
 
-    INSERT INTO profiles_drafts_connection (draft_id, profiles_id, version)
+    INSERT INTO setting_drafts_profiles_connection (draft_id, profiles_id, version)
     VALUES (v_draft_id, v_profiles_resource_id, v_new_version)
-    ON CONFLICT ON CONSTRAINT profiles_draft_pkey DO UPDATE SET version = v_new_version;
+    ON CONFLICT (draft_id, profiles_id) DO UPDATE SET version = v_new_version;
 
     IF v_name_id IS NOT NULL THEN
         INSERT INTO setting_drafts_names_connection (draft_id, names_id, version)
@@ -653,10 +653,10 @@ BEGIN
     END IF;
 
     IF COALESCE(array_length(v_profile_ids, 1), 0) > 0 THEN
-        INSERT INTO profiles_drafts_connection (draft_id, profiles_id, version)
+        INSERT INTO setting_drafts_profiles_connection (draft_id, profiles_id, version)
         SELECT v_draft_id, profile_id, v_new_version
         FROM UNNEST(v_profile_ids) as profile_id
-        ON CONFLICT ON CONSTRAINT profiles_draft_pkey DO UPDATE SET version = v_new_version;
+        ON CONFLICT (draft_id, profiles_id) DO UPDATE SET version = v_new_version;
     END IF;
 
     IF COALESCE(array_length(v_provider_key_ids, 1), 0) > 0 THEN

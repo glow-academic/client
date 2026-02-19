@@ -111,7 +111,7 @@ BEGIN
 
     IF input_draft_id IS NOT NULL THEN
         SELECT d.group_id INTO v_group_id
-        FROM drafts_entry d
+        FROM provider_drafts_entry d
         WHERE d.id = input_draft_id;
 
         IF v_group_id IS NULL THEN
@@ -135,19 +135,19 @@ BEGIN
             RETURNING id INTO v_group_id;
         END IF;
 
-        UPDATE drafts_entry
+        UPDATE provider_drafts_entry
         SET
-            version = drafts_entry.version + 1,
+            version = provider_drafts_entry.version + 1,
             updated_at = now(),
-            group_id = COALESCE(drafts_entry.group_id, v_group_id)
+            group_id = COALESCE(provider_drafts_entry.group_id, v_group_id)
         WHERE id = input_draft_id
           AND EXISTS (
               SELECT 1
-              FROM profiles_drafts_connection pdj
-              WHERE pdj.draft_id = drafts_entry.id
+              FROM provider_drafts_profiles_connection pdj
+              WHERE pdj.draft_id = provider_drafts_entry.id
                 AND pdj.profiles_id = v_profiles_resource_id
           )
-          AND drafts_entry.version = expected_version
+          AND provider_drafts_entry.version = expected_version
         RETURNING id, version INTO v_draft_id, v_new_version;
 
         IF v_draft_id IS NOT NULL THEN
@@ -175,11 +175,11 @@ BEGIN
             RETURNING id INTO v_group_id;
         END IF;
 
-        INSERT INTO drafts_entry (artifact, group_id)
-        VALUES ('provider'::artifact_type, v_group_id)
+        INSERT INTO provider_drafts_entry (group_id)
+        VALUES (v_group_id)
         RETURNING id, version INTO v_draft_id, v_new_version;
 
-        INSERT INTO profiles_drafts_connection (draft_id, profiles_id, version)
+        INSERT INTO provider_drafts_profiles_connection (draft_id, profiles_id, version)
         VALUES (v_draft_id, v_profiles_resource_id, v_new_version);
     END IF;
 

@@ -95,7 +95,7 @@ BEGIN
 
     -- Try to update existing draft
     IF input_draft_id IS NOT NULL THEN
-        SELECT group_id INTO v_group_id FROM drafts_entry WHERE id = input_draft_id;
+        SELECT group_id INTO v_group_id FROM suite_drafts_entry WHERE id = input_draft_id;
 
         IF v_group_id IS NULL THEN
             INSERT INTO groups_entry (created_at, updated_at, session_id)
@@ -103,13 +103,13 @@ BEGIN
             RETURNING id INTO v_group_id;
         END IF;
 
-        UPDATE drafts_entry
-        SET version = drafts_entry.version + 1,
+        UPDATE suite_drafts_entry
+        SET version = suite_drafts_entry.version + 1,
             updated_at = now(),
-            group_id = COALESCE(drafts_entry.group_id, v_group_id)
+            group_id = COALESCE(suite_drafts_entry.group_id, v_group_id)
         WHERE id = input_draft_id
-          AND EXISTS (SELECT 1 FROM profiles_drafts_connection pdj WHERE pdj.draft_id = drafts_entry.id AND pdj.profiles_id = v_profiles_resource_id)
-          AND drafts_entry.version = expected_version
+          AND EXISTS (SELECT 1 FROM suite_drafts_profiles_connection pdj WHERE pdj.draft_id = suite_drafts_entry.id AND pdj.profiles_id = v_profiles_resource_id)
+          AND suite_drafts_entry.version = expected_version
         RETURNING id, version INTO v_draft_id, v_new_version;
 
         IF v_draft_id IS NOT NULL THEN
@@ -198,11 +198,11 @@ BEGIN
         VALUES (NOW(), NOW(), (SELECT id FROM sessions_entry WHERE sessions_entry.profile_id = v_profile_id AND sessions_entry.active = true ORDER BY created_at DESC LIMIT 1))
         RETURNING id INTO v_group_id;
 
-        INSERT INTO drafts_entry (artifact, group_id)
-        VALUES ('benchmark'::artifact_type, v_group_id)
+        INSERT INTO suite_drafts_entry (group_id)
+        VALUES (v_group_id)
         RETURNING id, version INTO v_draft_id, v_new_version;
 
-        INSERT INTO profiles_drafts_connection (draft_id, profiles_id, version)
+        INSERT INTO suite_drafts_profiles_connection (draft_id, profiles_id, version)
         VALUES (v_draft_id, v_profiles_resource_id, v_new_version);
 
         v_draft_exists := false;

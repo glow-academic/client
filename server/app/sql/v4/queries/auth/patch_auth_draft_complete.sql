@@ -129,24 +129,24 @@ BEGIN
 
     IF input_draft_id IS NOT NULL THEN
         IF v_group_id IS NULL THEN
-            SELECT drafts_entry.group_id INTO v_group_id
-            FROM drafts_entry
-            WHERE drafts_entry.id = input_draft_id;
+            SELECT auth_drafts_entry.group_id INTO v_group_id
+            FROM auth_drafts_entry
+            WHERE auth_drafts_entry.id = input_draft_id;
         END IF;
 
-        UPDATE drafts_entry
-        SET version = drafts_entry.version + 1,
+        UPDATE auth_drafts_entry
+        SET version = auth_drafts_entry.version + 1,
             updated_at = NOW(),
-            group_id = COALESCE(drafts_entry.group_id, v_group_id)
-        WHERE drafts_entry.id = input_draft_id
+            group_id = COALESCE(auth_drafts_entry.group_id, v_group_id)
+        WHERE auth_drafts_entry.id = input_draft_id
           AND EXISTS (
               SELECT 1
-              FROM profiles_drafts_connection pdc
-              WHERE pdc.draft_id = drafts_entry.id
+              FROM auth_drafts_profiles_connection pdc
+              WHERE pdc.draft_id = auth_drafts_entry.id
                 AND pdc.profiles_id = v_profile_id
           )
-          AND drafts_entry.version = expected_version
-        RETURNING drafts_entry.id, drafts_entry.version INTO v_draft_id, v_new_version;
+          AND auth_drafts_entry.version = expected_version
+        RETURNING auth_drafts_entry.id, auth_drafts_entry.version INTO v_draft_id, v_new_version;
 
         IF v_draft_id IS NOT NULL THEN
             v_draft_exists := true;
@@ -171,11 +171,11 @@ BEGIN
             RETURNING id INTO v_group_id;
         END IF;
 
-        INSERT INTO drafts_entry (artifact, group_id)
-        VALUES ('auth'::artifact_type, v_group_id)
+        INSERT INTO auth_drafts_entry (group_id)
+        VALUES (v_group_id)
         RETURNING id, version INTO v_draft_id, v_new_version;
 
-        INSERT INTO profiles_drafts_connection (draft_id, profiles_id, version)
+        INSERT INTO auth_drafts_profiles_connection (draft_id, profiles_id, version)
         VALUES (v_draft_id, v_profile_id, v_new_version);
     END IF;
 

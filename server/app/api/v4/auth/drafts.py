@@ -135,17 +135,18 @@ async def get_drafts(
             raise HTTPException(status_code=500, detail="Database pool not available")
 
         # Resolve draft IDs via junction path, filtered by artifact type
+        # Both table names are safe — derived from _PATHNAME_TO_ARTIFACT dict (fixed set)
+        entry_table = f"{artifact_type}_drafts_entry"
+        ownership_table = f"{artifact_type}_drafts_profiles_connection"
         async with pool.acquire() as c:
             draft_id_rows = await c.fetch(
-                """SELECT pdc.draft_id
+                f"""SELECT pdc.draft_id
                    FROM profile_profiles_junction ppj
-                   JOIN profiles_drafts_connection pdc ON pdc.profiles_id = ppj.profiles_id
-                   JOIN drafts_entry de ON de.id = pdc.draft_id
+                   JOIN {ownership_table} pdc ON pdc.profiles_id = ppj.profiles_id
+                   JOIN {entry_table} de ON de.id = pdc.draft_id
                    WHERE ppj.profile_id = $1
-                     AND de.artifact = $2::artifact_type
                    ORDER BY de.updated_at DESC""",
                 profile_id,
-                artifact_type,
             )
 
         draft_ids: list[UUID] = [row["draft_id"] for row in draft_id_rows]

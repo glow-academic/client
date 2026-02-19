@@ -57,14 +57,16 @@ BEGIN
 
     -- Find expected scenarios and create stubs for missing ones
     FOR v_scenario_record IN
-        SELECT DISTINCT ss.scenario_id
-        FROM simulation_scenarios_junction ss
-        JOIN simulation_simulations_junction ssj ON ssj.simulation_id = ss.simulation_id
-            AND ssj.active = true
-        JOIN training_entry t ON t.simulations_id = ssj.simulations_id
-            AND t.active = true
-        JOIN attempt_entry a ON a.training_id = t.id
-        WHERE a.id = p_attempt_id AND ss.active = true
+        SELECT DISTINCT tsc.scenarios_id AS scenario_id
+        FROM attempt_entry a
+        LEFT JOIN attempt_practice_entry apc ON apc.attempt_id = a.id AND apc.active = true
+        LEFT JOIN practice_training_entry pte ON pte.practice_id = apc.practice_id AND pte.active = true
+        LEFT JOIN attempt_home_entry ahc ON ahc.attempt_id = a.id AND ahc.active = true
+        LEFT JOIN home_training_entry hte ON hte.home_id = ahc.home_id AND hte.active = true
+        JOIN training_scenarios_connection tsc
+          ON tsc.training_id = COALESCE(pte.training_id, hte.training_id)
+         AND tsc.active = true
+        WHERE a.id = p_attempt_id
     LOOP
         -- Skip if scenario already has a chat
         IF v_scenario_record.scenario_id = ANY(v_existing_scenario_ids) THEN

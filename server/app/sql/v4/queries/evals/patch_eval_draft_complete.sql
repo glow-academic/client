@@ -57,7 +57,7 @@ BEGIN
 
     IF input_draft_id IS NOT NULL THEN
         SELECT vde.group_id INTO v_group_id
-        FROM drafts_entry vde
+        FROM eval_drafts_entry vde
         WHERE vde.id = input_draft_id;
 
         IF v_group_id IS NULL THEN
@@ -77,16 +77,16 @@ BEGIN
             RETURNING id INTO v_group_id;
         END IF;
 
-        UPDATE drafts_entry
-        SET version = drafts_entry.version + 1,
+        UPDATE eval_drafts_entry
+        SET version = eval_drafts_entry.version + 1,
             updated_at = NOW(),
-            group_id = COALESCE(drafts_entry.group_id, v_group_id)
+            group_id = COALESCE(eval_drafts_entry.group_id, v_group_id)
         WHERE id = input_draft_id
-          AND drafts_entry.version = expected_version
+          AND eval_drafts_entry.version = expected_version
           AND EXISTS (
                 SELECT 1
-                FROM profiles_drafts_connection pdc
-                WHERE pdc.draft_id = drafts_entry.id
+                FROM eval_drafts_profiles_connection pdc
+                WHERE pdc.draft_id = eval_drafts_entry.id
                   AND pdc.profiles_id = v_profiles_resource_id
           )
         RETURNING id, version INTO v_draft_id, v_new_version;
@@ -114,11 +114,11 @@ BEGIN
             RETURNING id INTO v_group_id;
         END IF;
 
-        INSERT INTO drafts_entry (artifact, group_id)
-        VALUES ('eval'::artifact_type, v_group_id)
+        INSERT INTO eval_drafts_entry (group_id)
+        VALUES (v_group_id)
         RETURNING id, version INTO v_draft_id, v_new_version;
 
-        INSERT INTO profiles_drafts_connection (draft_id, profiles_id, version)
+        INSERT INTO eval_drafts_profiles_connection (draft_id, profiles_id, version)
         VALUES (v_draft_id, v_profiles_resource_id, v_new_version);
     END IF;
 

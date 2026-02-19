@@ -29,7 +29,8 @@ VOLATILE
 AS $$
 DECLARE
     v_attempt_id uuid;
-    v_training_id uuid;
+    v_practice_id uuid;
+    v_home_id uuid;
     v_simulations_resource_id uuid;
     v_simulation_artifact_id uuid;
     v_cohorts_resource_id uuid;
@@ -64,45 +65,67 @@ BEGIN
       AND pdj.is_primary = true
     LIMIT 1;
 
-    -- Resolve training scope from training_entry.
-    SELECT
-        tb.training_id,
-        t.simulations_id,
-        t.cohorts_id,
-        t.practice,
-        (
-            SELECT ssj.simulation_id
-            FROM simulation_simulations_junction ssj
-            WHERE ssj.simulations_id = t.simulations_id
-              AND ssj.active = true
-            LIMIT 1
-        )
-    INTO
-        v_training_id,
-        v_simulations_resource_id,
-        v_cohorts_resource_id,
-        v_is_practice,
-        v_simulation_artifact_id
-    FROM training_entry tb
-    JOIN training_entry t
-      ON t.id = tb.training_id
-     AND t.active = true
-    WHERE tb.id = p_training_entry_id
-      AND tb.active = true
+    -- Determine practice vs home via entry tables, resolve simulation + cohort.
+    SELECT pte.practice_id INTO v_practice_id
+    FROM practice_training_entry pte
+    WHERE pte.training_id = p_training_entry_id AND pte.active = true
     LIMIT 1;
 
-    IF v_training_id IS NULL THEN
-        RAISE EXCEPTION 'Training bundle not found or inactive: %', p_training_entry_id;
+    IF v_practice_id IS NOT NULL THEN
+        v_is_practice := true;
+        -- Simulation from practice_simulations_connection
+        SELECT psc.simulations_id INTO v_simulations_resource_id
+        FROM practice_simulations_connection psc
+        WHERE psc.practice_id = v_practice_id AND psc.active = true
+        LIMIT 1;
+        -- Cohort from practice_cohorts_connection
+        SELECT pcc.cohorts_id INTO v_cohorts_resource_id
+        FROM practice_cohorts_connection pcc
+        WHERE pcc.practice_id = v_practice_id AND pcc.active = true
+        LIMIT 1;
+    ELSE
+        -- Check home_training_entry
+        SELECT hte.home_id INTO v_home_id
+        FROM home_training_entry hte
+        WHERE hte.training_id = p_training_entry_id AND hte.active = true
+        LIMIT 1;
+
+        IF v_home_id IS NOT NULL THEN
+            v_is_practice := false;
+            SELECT hsc.simulations_id INTO v_simulations_resource_id
+            FROM home_simulations_connection hsc
+            WHERE hsc.home_id = v_home_id AND hsc.active = true
+            LIMIT 1;
+            SELECT hcc.cohorts_id INTO v_cohorts_resource_id
+            FROM home_cohorts_connection hcc
+            WHERE hcc.home_id = v_home_id AND hcc.active = true
+            LIMIT 1;
+        END IF;
     END IF;
 
+    -- Resolve simulation artifact
+    SELECT ssj.simulation_id INTO v_simulation_artifact_id
+    FROM simulation_simulations_junction ssj
+    WHERE ssj.simulations_id = v_simulations_resource_id AND ssj.active = true
+    LIMIT 1;
+
     IF v_simulations_resource_id IS NULL OR v_simulation_artifact_id IS NULL THEN
-        RAISE EXCEPTION 'Simulation scope not found for training bundle %', p_training_entry_id;
+        RAISE EXCEPTION 'Simulation scope not found for training entry %', p_training_entry_id;
     END IF;
 
     -- Create attempt entry (no chat - that happens later via WS).
-    INSERT INTO attempt_entry (created_at, updated_at, practice, infinite_mode, training_id)
-    VALUES (NOW(), NOW(), v_is_practice, p_infinite_mode, v_training_id)
+    INSERT INTO attempt_entry (created_at, updated_at, practice, infinite_mode)
+    VALUES (NOW(), NOW(), v_is_practice, p_infinite_mode)
     RETURNING id INTO v_attempt_id;
+
+    -- Insert into the appropriate connection table
+    IF v_practice_id IS NOT NULL THEN
+        INSERT INTO attempt_practice_entry (attempt_id, practice_id)
+        VALUES (v_attempt_id, v_practice_id);
+    ELSIF v_home_id IS NOT NULL THEN
+        INSERT INTO attempt_home_entry (attempt_id, home_id)
+        VALUES (v_attempt_id, v_home_id);
+    END IF;
 
     INSERT INTO attempt_simulations_connection (simulations_id, attempt_id, active)
     VALUES (v_simulations_resource_id, v_attempt_id, true)

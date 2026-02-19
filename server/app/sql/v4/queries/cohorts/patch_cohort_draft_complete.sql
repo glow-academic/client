@@ -108,9 +108,9 @@ BEGIN
     END IF;
 
     IF input_draft_id IS NOT NULL THEN
-        SELECT drafts_entry.group_id INTO v_group_id
-        FROM drafts_entry
-        WHERE drafts_entry.id = input_draft_id;
+        SELECT cohort_drafts_entry.group_id INTO v_group_id
+        FROM cohort_drafts_entry
+        WHERE cohort_drafts_entry.id = input_draft_id;
 
         IF v_group_id IS NULL THEN
             INSERT INTO groups_entry (created_at, updated_at, session_id)
@@ -129,19 +129,19 @@ BEGIN
             RETURNING id INTO v_group_id;
         END IF;
 
-        UPDATE drafts_entry
-        SET version = drafts_entry.version + 1,
+        UPDATE cohort_drafts_entry
+        SET version = cohort_drafts_entry.version + 1,
             updated_at = NOW(),
-            group_id = COALESCE(drafts_entry.group_id, v_group_id)
-        WHERE drafts_entry.id = input_draft_id
+            group_id = COALESCE(cohort_drafts_entry.group_id, v_group_id)
+        WHERE cohort_drafts_entry.id = input_draft_id
           AND EXISTS (
               SELECT 1
-              FROM profiles_drafts_connection pdc
-              WHERE pdc.draft_id = drafts_entry.id
+              FROM cohort_drafts_profiles_connection pdc
+              WHERE pdc.draft_id = cohort_drafts_entry.id
                 AND pdc.profiles_id = v_profile_resource_id
           )
-          AND drafts_entry.version = expected_version
-        RETURNING drafts_entry.id, drafts_entry.version
+          AND cohort_drafts_entry.version = expected_version
+        RETURNING cohort_drafts_entry.id, cohort_drafts_entry.version
         INTO v_draft_id, v_new_version;
 
         IF v_draft_id IS NOT NULL THEN
@@ -167,11 +167,11 @@ BEGIN
             RETURNING id INTO v_group_id;
         END IF;
 
-        INSERT INTO drafts_entry (artifact, group_id)
-        VALUES ('cohort'::artifact_type, v_group_id)
+        INSERT INTO cohort_drafts_entry (group_id)
+        VALUES (v_group_id)
         RETURNING id, version INTO v_draft_id, v_new_version;
 
-        INSERT INTO profiles_drafts_connection (draft_id, profiles_id, version)
+        INSERT INTO cohort_drafts_profiles_connection (draft_id, profiles_id, version)
         VALUES (v_draft_id, v_profile_resource_id, v_new_version);
     END IF;
 

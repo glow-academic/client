@@ -174,7 +174,7 @@ BEGIN
     -- Try update path first
     IF input_draft_id IS NOT NULL THEN
         SELECT vde.group_id INTO v_group_id
-        FROM drafts_entry vde
+        FROM simulation_drafts_entry vde
         WHERE vde.id = input_draft_id;
 
         IF v_group_id IS NULL THEN
@@ -191,18 +191,18 @@ BEGIN
             RETURNING id INTO v_group_id;
         END IF;
 
-        UPDATE drafts_entry
-        SET version = drafts_entry.version + 1,
+        UPDATE simulation_drafts_entry
+        SET version = simulation_drafts_entry.version + 1,
             updated_at = NOW(),
-            group_id = COALESCE(drafts_entry.group_id, v_group_id)
+            group_id = COALESCE(simulation_drafts_entry.group_id, v_group_id)
         WHERE id = input_draft_id
           AND EXISTS (
               SELECT 1
-              FROM profiles_drafts_connection pdc
-              WHERE pdc.draft_id = drafts_entry.id
+              FROM simulation_drafts_profiles_connection pdc
+              WHERE pdc.draft_id = simulation_drafts_entry.id
                 AND pdc.profiles_id = v_profiles_resource_id
           )
-          AND drafts_entry.version = expected_version
+          AND simulation_drafts_entry.version = expected_version
         RETURNING id, version INTO v_draft_id, v_new_version;
 
         IF v_draft_id IS NOT NULL THEN
@@ -226,11 +226,11 @@ BEGIN
             RETURNING id INTO v_group_id;
         END IF;
 
-        INSERT INTO drafts_entry (artifact, group_id)
-        VALUES ('simulation'::artifact_type, v_group_id)
+        INSERT INTO simulation_drafts_entry (group_id)
+        VALUES (v_group_id)
         RETURNING id, version INTO v_draft_id, v_new_version;
 
-        INSERT INTO profiles_drafts_connection (draft_id, profiles_id, version)
+        INSERT INTO simulation_drafts_profiles_connection (draft_id, profiles_id, version)
         VALUES (v_draft_id, v_profiles_resource_id, v_new_version);
     END IF;
 

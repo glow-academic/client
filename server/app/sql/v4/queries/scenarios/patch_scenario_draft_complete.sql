@@ -149,7 +149,7 @@ BEGIN
     flag_ids := COALESCE((flags).resource_ids, ARRAY[]::uuid[]);
 
     -- Resolve profile_artifact.id to profiles_resource.id via junction table
-    -- profiles_drafts_connection has FK to profiles_resource, not profile_artifact
+    -- scenario_drafts_profiles_connection has FK to profiles_resource, not profile_artifact
     SELECT ppj.profiles_id INTO v_profiles_resource_id
     FROM profile_profiles_junction ppj
     WHERE ppj.profile_id = v_profile_id
@@ -207,7 +207,7 @@ BEGIN
     -- Try to update existing draft
     IF input_draft_id IS NOT NULL THEN
         -- Get existing draft's group_id
-        SELECT group_id INTO v_group_id FROM drafts_entry WHERE id = input_draft_id;
+        SELECT group_id INTO v_group_id FROM scenario_drafts_entry WHERE id = input_draft_id;
         
         -- Create group if draft doesn't have one (shouldn't happen after migration, but safety check)
         IF v_group_id IS NULL THEN
@@ -216,13 +216,13 @@ BEGIN
             RETURNING id INTO v_group_id;
         END IF;
         
-        UPDATE drafts_entry
-        SET version = drafts_entry.version + 1,
+        UPDATE scenario_drafts_entry
+        SET version = scenario_drafts_entry.version + 1,
             updated_at = now(),
-            group_id = COALESCE(drafts_entry.group_id, v_group_id)
+            group_id = COALESCE(scenario_drafts_entry.group_id, v_group_id)
         WHERE id = input_draft_id
-          AND EXISTS (SELECT 1 FROM profiles_drafts_connection pdj WHERE pdj.draft_id = drafts_entry.id AND pdj.profiles_id = v_profiles_resource_id)
-          AND drafts_entry.version = expected_version
+          AND EXISTS (SELECT 1 FROM scenario_drafts_profiles_connection pdj WHERE pdj.draft_id = scenario_drafts_entry.id AND pdj.profiles_id = v_profiles_resource_id)
+          AND scenario_drafts_entry.version = expected_version
         RETURNING id, version INTO v_draft_id, v_new_version;
         
         IF v_draft_id IS NOT NULL THEN
@@ -388,12 +388,12 @@ BEGIN
         RETURNING id INTO v_group_id;
 
         -- Create draft
-        INSERT INTO drafts_entry (artifact, group_id)
-        VALUES ('scenario'::artifact_type, v_group_id)
+        INSERT INTO scenario_drafts_entry (group_id)
+        VALUES (v_group_id)
         RETURNING id, version INTO v_draft_id, v_new_version;
 
     -- Link profile to draft (using profiles_resource.id, not profile_artifact.id)
-    INSERT INTO profiles_drafts_connection (draft_id, profiles_id, version)
+    INSERT INTO scenario_drafts_profiles_connection (draft_id, profiles_id, version)
     VALUES (v_draft_id, v_profiles_resource_id, v_new_version);
         
         v_draft_exists := false;

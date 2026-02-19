@@ -111,8 +111,10 @@ chat_data AS (
         COALESCE(he.hints_enabled, pe.hints_enabled, true) as hints_enabled
     FROM attempt_chat_entry c
     LEFT JOIN attempt_entry a ON a.id = c.attempt_id
-    LEFT JOIN home_entry he ON he.id = a.home_id
-    LEFT JOIN practice_entry pe ON pe.id = a.practice_id
+    LEFT JOIN attempt_home_entry ahc ON ahc.attempt_id = a.id AND ahc.active = true
+    LEFT JOIN home_entry he ON he.id = ahc.home_id
+    LEFT JOIN attempt_practice_entry apc ON apc.attempt_id = a.id AND apc.active = true
+    LEFT JOIN practice_entry pe ON pe.id = apc.practice_id
     CROSS JOIN params p
     WHERE c.id = p.chat_id
     LIMIT 1

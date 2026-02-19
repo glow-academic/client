@@ -236,8 +236,10 @@ simulation_stats AS (
         SELECT archived FROM attempt_archive_entry
         WHERE attempt_id = a.id AND active = TRUE ORDER BY created_at DESC LIMIT 1
     ) sa_archive2 ON true
-    LEFT JOIN home_simulations_connection hsc ON hsc.home_id = a.home_id AND hsc.active = true
-    LEFT JOIN practice_simulations_connection psc ON psc.practice_id = a.practice_id AND psc.active = true
+    LEFT JOIN attempt_home_entry ahc ON ahc.attempt_id = a.id AND ahc.active = true
+    LEFT JOIN home_simulations_connection hsc ON hsc.home_id = ahc.home_id AND hsc.active = true
+    LEFT JOIN attempt_practice_entry ape ON ape.attempt_id = a.id AND ape.active = true
+    LEFT JOIN practice_simulations_connection psc ON psc.practice_id = ape.practice_id AND psc.active = true
     LEFT JOIN latest_attempt_grades lag ON lag.attempt_id = a.id
     WHERE COALESCE(sa_archive2.archived, false) = false
     GROUP BY COALESCE(hsc.simulations_id, psc.simulations_id)

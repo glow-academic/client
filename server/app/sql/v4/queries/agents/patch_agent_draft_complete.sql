@@ -57,7 +57,7 @@ BEGIN
     -- Try to update existing draft
     IF input_draft_id IS NOT NULL THEN
         -- Get existing draft's group_id
-        SELECT group_id INTO v_group_id FROM drafts_entry WHERE id = input_draft_id;
+        SELECT group_id INTO v_group_id FROM agent_drafts_entry WHERE id = input_draft_id;
         
         -- Create group if draft doesn't have one (shouldn't happen after migration, but safety check)
         IF v_group_id IS NULL THEN
@@ -66,13 +66,13 @@ BEGIN
             RETURNING id INTO v_group_id;
         END IF;
         
-        UPDATE drafts_entry
-        SET version = drafts_entry.version + 1,
+        UPDATE agent_drafts_entry
+        SET version = agent_drafts_entry.version + 1,
             updated_at = now(),
-            group_id = COALESCE(drafts_entry.group_id, v_group_id)
+            group_id = COALESCE(agent_drafts_entry.group_id, v_group_id)
         WHERE id = input_draft_id
-          AND EXISTS (SELECT 1 FROM profiles_drafts_connection pdj WHERE pdj.draft_id = drafts_entry.id AND pdj.profiles_id = v_profile_id)
-          AND drafts_entry.version = expected_version
+          AND EXISTS (SELECT 1 FROM agent_drafts_profiles_connection pdj WHERE pdj.draft_id = agent_drafts_entry.id AND pdj.profiles_id = v_profile_id)
+          AND agent_drafts_entry.version = expected_version
         RETURNING id, version INTO v_draft_id, v_new_version;
         
         IF v_draft_id IS NOT NULL THEN
@@ -127,12 +127,12 @@ BEGIN
     RETURNING id INTO v_group_id;
     
     -- Create new draft with group_id
-    INSERT INTO drafts_entry (artifact, group_id)
-    VALUES ('agent'::artifact_type, v_group_id)
+    INSERT INTO agent_drafts_entry (group_id)
+    VALUES (v_group_id)
     RETURNING id, version INTO v_draft_id, v_new_version;
 
     -- Link profile to draft
-    INSERT INTO profiles_drafts_connection (draft_id, profiles_id, version)
+    INSERT INTO agent_drafts_profiles_connection (draft_id, profiles_id, version)
     VALUES (v_draft_id, v_profile_id, v_new_version);
     
     -- Link resources to draft

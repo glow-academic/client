@@ -43,27 +43,34 @@ SQL_PATH_CREATE_ATTEMPT = (
 # SQL to look up training_entry_id and training_department_id from an attempt
 SQL_ATTEMPT_CONTEXT = """
     SELECT
-        tbe.id AS training_entry_id,
+        COALESCE(pte.training_id, hte.training_id) AS training_entry_id,
         tbd.id AS training_department_id
     FROM attempt_entry a
-    JOIN training_entry t ON t.id = a.training_id AND t.active = true
-    JOIN training_entry tbe ON tbe.training_id = t.id AND tbe.active = true
-    JOIN training_department_entry tbd ON tbd.training_id = tbe.id AND tbd.active = true
+    LEFT JOIN attempt_practice_entry apc ON apc.attempt_id = a.id AND apc.active = true
+    LEFT JOIN practice_training_entry pte ON pte.practice_id = apc.practice_id AND pte.active = true
+    LEFT JOIN attempt_home_entry ahc ON ahc.attempt_id = a.id AND ahc.active = true
+    LEFT JOIN home_training_entry hte ON hte.home_id = ahc.home_id AND hte.active = true
+    LEFT JOIN training_department_entry tbd
+      ON tbd.training_id = COALESCE(pte.training_id, hte.training_id) AND tbd.active = true
     WHERE a.id = $1
     LIMIT 1
 """
 
 # SQL to count remaining scenarios (expected - already chatted)
 SQL_REMAINING_SCENARIOS = """
-    WITH expected_scenarios AS (
-        SELECT DISTINCT ss.scenario_id
-        FROM simulation_scenarios_junction ss
-        JOIN simulation_simulations_junction ssj ON ssj.simulation_id = ss.simulation_id
-            AND ssj.active = true
-        JOIN training_entry t ON t.simulations_id = ssj.simulations_id
-            AND t.active = true
-        JOIN attempt_entry a ON a.training_id = t.id
-        WHERE a.id = $1 AND ss.active = true
+    WITH attempt_training AS (
+        SELECT COALESCE(pte.training_id, hte.training_id) AS training_id
+        FROM attempt_entry a
+        LEFT JOIN attempt_practice_entry apc ON apc.attempt_id = a.id AND apc.active = true
+        LEFT JOIN practice_training_entry pte ON pte.practice_id = apc.practice_id AND pte.active = true
+        LEFT JOIN attempt_home_entry ahc ON ahc.attempt_id = a.id AND ahc.active = true
+        LEFT JOIN home_training_entry hte ON hte.home_id = ahc.home_id AND hte.active = true
+        WHERE a.id = $1
+    ),
+    expected_scenarios AS (
+        SELECT DISTINCT tsc.scenarios_id AS scenario_id
+        FROM attempt_training at2
+        JOIN training_scenarios_connection tsc ON tsc.training_id = at2.training_id AND tsc.active = true
     ),
     existing_scenarios AS (
         SELECT DISTINCT csc.scenarios_id
