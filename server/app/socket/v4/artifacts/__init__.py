@@ -10,6 +10,8 @@ from . import (
     benchmark,
     call_events,
     generate,
+    home,
+    practice,
     simulation,
     test,
     training,
@@ -23,6 +25,8 @@ __all__ = [
     "benchmark",
     "call_events",
     "generate",
+    "home",
+    "practice",
     "simulation",
     "test",
     "training",
@@ -38,6 +42,8 @@ client_router.include_router(training.client_router)
 client_router.include_router(attempt.client_router)
 client_router.include_router(benchmark.client_router)
 client_router.include_router(test.client_router)
+client_router.include_router(home.client_router)
+client_router.include_router(practice.client_router)
 
 # Register server-to-server events (internal event listeners)
 server_router.include_router(auth.server_router)
@@ -46,4 +52,6 @@ server_router.include_router(attempt.server_router)
 server_router.include_router(benchmark.server_router)
 server_router.include_router(test.server_router)
 server_router.include_router(simulation.server_router)
+server_router.include_router(home.server_router)
+server_router.include_router(practice.server_router)
 server_router.include_router(call_events.server_router)

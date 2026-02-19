@@ -98,7 +98,9 @@ async def get_test_invocation_internal(
 
     result = await execute_sql_typed(conn, VIEW_SQL_PATH, params=params)
 
-    items: list[QGetTestInvocationViewV4Item] = list(result.items) if result and result.items else []
+    items: list[QGetTestInvocationViewV4Item] = (
+        list(result.items) if result and result.items else []
+    )
 
     await set_cached(
         cache_key_val,

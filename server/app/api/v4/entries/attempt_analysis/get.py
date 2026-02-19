@@ -83,12 +83,17 @@ async def get_attempt_analysis_internal(
     if not bypass_cache:
         cached = await get_cached(cache_key_val)
         if cached:
-            return [QGetSimulationAnalysesViewV4Item.model_validate(item) for item in cached["items"]]
+            return [
+                QGetSimulationAnalysesViewV4Item.model_validate(item)
+                for item in cached["items"]
+            ]
 
     params = GetSimulationAnalysesViewSqlParams(grade_ids_filter=grade_ids)
     result = await execute_sql_typed(conn, VIEW_SQL_PATH, params=params)
 
-    items: list[QGetSimulationAnalysesViewV4Item] = list(result.items) if result and result.items else []
+    items: list[QGetSimulationAnalysesViewV4Item] = (
+        list(result.items) if result and result.items else []
+    )
 
     await set_cached(
         cache_key_val,

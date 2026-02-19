@@ -83,12 +83,17 @@ async def get_attempt_feedback_internal(
     if not bypass_cache:
         cached = await get_cached(cache_key_val)
         if cached:
-            return [QGetSimulationFeedbacksViewV4Item.model_validate(item) for item in cached["items"]]
+            return [
+                QGetSimulationFeedbacksViewV4Item.model_validate(item)
+                for item in cached["items"]
+            ]
 
     params = GetSimulationFeedbacksViewSqlParams(grade_ids_filter=grade_ids)
     result = await execute_sql_typed(conn, VIEW_SQL_PATH, params=params)
 
-    items: list[QGetSimulationFeedbacksViewV4Item] = list(result.items) if result and result.items else []
+    items: list[QGetSimulationFeedbacksViewV4Item] = (
+        list(result.items) if result and result.items else []
+    )
 
     await set_cached(
         cache_key_val,

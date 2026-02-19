@@ -8,7 +8,6 @@ from pydantic import BaseModel, Field
 from app.api.v4.artifacts.types import FilterOption
 from app.api.v4.entries.runs.search import GetRunListViewResponse
 from app.sql.types import (
-    QGetTestViewV4Item,
     QGetAgentsV4Item,
     QGetDepartmentsV4Item,
     QGetInstructionsV4Item,
@@ -19,6 +18,7 @@ from app.sql.types import (
     QGetProvidersV4Item,
     QGetReasoningLevelsV4Item,
     QGetTemperatureLevelsV4Item,
+    QGetTestViewV4Item,
     QGetToolsV4Item,
     QGetVoicesV4Item,
 )

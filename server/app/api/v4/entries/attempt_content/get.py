@@ -22,9 +22,7 @@ from app.utils.cache.set_cached import set_cached
 from app.utils.sql_helper import execute_sql_typed
 
 SQL_PATH = "app/sql/v4/queries/entries/attempt_content/get_attempt_content_entries_complete.sql"
-VIEW_SQL_PATH = (
-    "app/sql/v4/queries/views/simulation/contents/get_simulation_contents_view_complete.sql"
-)
+VIEW_SQL_PATH = "app/sql/v4/queries/views/simulation/contents/get_simulation_contents_view_complete.sql"
 
 router = APIRouter()
 
@@ -85,12 +83,17 @@ async def get_attempt_content_internal(
     if not bypass_cache:
         cached = await get_cached(cache_key_val)
         if cached:
-            return [QGetSimulationContentsViewV4Item.model_validate(item) for item in cached["items"]]
+            return [
+                QGetSimulationContentsViewV4Item.model_validate(item)
+                for item in cached["items"]
+            ]
 
     params = GetSimulationContentsViewSqlParams(message_ids_filter=message_ids)
     result = await execute_sql_typed(conn, VIEW_SQL_PATH, params=params)
 
-    items: list[QGetSimulationContentsViewV4Item] = list(result.items) if result and result.items else []
+    items: list[QGetSimulationContentsViewV4Item] = (
+        list(result.items) if result and result.items else []
+    )
 
     await set_cached(
         cache_key_val,

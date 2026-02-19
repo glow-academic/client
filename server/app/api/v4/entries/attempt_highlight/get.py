@@ -83,12 +83,17 @@ async def get_attempt_highlight_internal(
     if not bypass_cache:
         cached = await get_cached(cache_key_val)
         if cached:
-            return [QGetSimulationHighlightsViewV4Item.model_validate(item) for item in cached["items"]]
+            return [
+                QGetSimulationHighlightsViewV4Item.model_validate(item)
+                for item in cached["items"]
+            ]
 
     params = GetSimulationHighlightsViewSqlParams(strength_ids_filter=strength_ids)
     result = await execute_sql_typed(conn, VIEW_SQL_PATH, params=params)
 
-    items: list[QGetSimulationHighlightsViewV4Item] = list(result.items) if result and result.items else []
+    items: list[QGetSimulationHighlightsViewV4Item] = (
+        list(result.items) if result and result.items else []
+    )
 
     await set_cached(
         cache_key_val,

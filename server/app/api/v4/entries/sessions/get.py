@@ -23,7 +23,9 @@ from app.utils.cache.set_cached import set_cached
 from app.utils.sql_helper import execute_sql_typed
 
 SQL_PATH = "app/sql/v4/queries/entries/sessions/get_sessions_entries_complete.sql"
-VIEW_SQL_PATH = "app/sql/v4/queries/views/session/list/get_session_list_view_complete.sql"
+VIEW_SQL_PATH = (
+    "app/sql/v4/queries/views/session/list/get_session_list_view_complete.sql"
+)
 
 router = APIRouter()
 

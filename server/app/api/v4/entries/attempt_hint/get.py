@@ -87,12 +87,17 @@ async def get_attempt_hint_internal(
     if not bypass_cache:
         cached = await get_cached(cache_key_val)
         if cached:
-            return [QGetSimulationHintsViewV4Item.model_validate(item) for item in cached["items"]]
+            return [
+                QGetSimulationHintsViewV4Item.model_validate(item)
+                for item in cached["items"]
+            ]
 
     params = GetSimulationHintsViewSqlParams(message_ids_filter=message_ids)
     result = await execute_sql_typed(conn, VIEW_SQL_PATH, params=params)
 
-    items: list[QGetSimulationHintsViewV4Item] = list(result.items) if result and result.items else []
+    items: list[QGetSimulationHintsViewV4Item] = (
+        list(result.items) if result and result.items else []
+    )
 
     await set_cached(
         cache_key_val,

@@ -37,9 +37,9 @@ from app.api.v4.artifacts.training.types import (
     TrainingQuestionSection,
     TrainingScenarioFlags,
     TrainingScenarioSection,
-    TrainingVideoSection,
     TrainingStartWebsocketResources,
     TrainingStartWebsocketViews,
+    TrainingVideoSection,
     TrainingWebsocketResources,
     TrainingWebsocketViews,
 )
@@ -57,11 +57,11 @@ from app.api.v4.resources.options.get import get_options_internal
 from app.api.v4.resources.parameter_fields.get import get_parameter_fields_internal
 from app.api.v4.resources.parameters.get import get_parameters_internal
 from app.api.v4.resources.personas.get import get_personas_internal
-from app.api.v4.resources.providers.get import get_providers_internal
 from app.api.v4.resources.problem_statements.get import (
     get_problem_statements_internal,
 )
 from app.api.v4.resources.profiles.get import get_profiles_internal
+from app.api.v4.resources.providers.get import get_providers_internal
 from app.api.v4.resources.questions.get import get_questions_internal
 from app.api.v4.resources.scenarios.get import get_scenarios_internal
 from app.api.v4.resources.videos.get import get_videos_internal

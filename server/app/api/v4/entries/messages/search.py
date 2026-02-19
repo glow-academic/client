@@ -21,8 +21,12 @@ from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
 from app.utils.sql_helper import execute_sql_typed
 
-SEARCH_SQL_PATH = "app/sql/v4/queries/entries/messages/search_messages_entries_complete.sql"
-LIST_SQL_PATH = "app/sql/v4/queries/views/message/list/get_message_list_view_complete.sql"
+SEARCH_SQL_PATH = (
+    "app/sql/v4/queries/entries/messages/search_messages_entries_complete.sql"
+)
+LIST_SQL_PATH = (
+    "app/sql/v4/queries/views/message/list/get_message_list_view_complete.sql"
+)
 
 router = APIRouter()
 

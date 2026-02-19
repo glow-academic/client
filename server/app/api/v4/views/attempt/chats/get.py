@@ -87,13 +87,25 @@ async def _fetch_training_config(
         for item in result.items:
             configs[item.training_department_id] = TrainingConfig(
                 training_department_id=item.training_department_id,
-                copy_paste_allowed=item.copy_paste_allowed if item.copy_paste_allowed is not None else True,
-                text_enabled=item.text_enabled if item.text_enabled is not None else True,
-                audio_enabled=item.audio_enabled if item.audio_enabled is not None else True,
-                hints_enabled=item.hints_enabled if item.hints_enabled is not None else True,
+                copy_paste_allowed=item.copy_paste_allowed
+                if item.copy_paste_allowed is not None
+                else True,
+                text_enabled=item.text_enabled
+                if item.text_enabled is not None
+                else True,
+                audio_enabled=item.audio_enabled
+                if item.audio_enabled is not None
+                else True,
+                hints_enabled=item.hints_enabled
+                if item.hints_enabled is not None
+                else True,
                 show_images=item.show_images if item.show_images is not None else True,
-                show_objectives=item.show_objectives if item.show_objectives is not None else True,
-                show_problem_statement=item.show_problem_statement if item.show_problem_statement is not None else True,
+                show_objectives=item.show_objectives
+                if item.show_objectives is not None
+                else True,
+                show_problem_statement=item.show_problem_statement
+                if item.show_problem_statement is not None
+                else True,
                 time_limit_seconds=item.time_limit_seconds or 0,
                 negative=item.negative or False,
                 scenario_id=item.scenario_id,
@@ -106,7 +118,9 @@ async def _fetch_training_config(
                 image_ids=list(item.image_ids) if item.image_ids else None,
                 video_ids=list(item.video_ids) if item.video_ids else None,
                 document_ids=list(item.document_ids) if item.document_ids else None,
-                standard_group_ids=list(item.standard_group_ids) if item.standard_group_ids else None,
+                standard_group_ids=list(item.standard_group_ids)
+                if item.standard_group_ids
+                else None,
                 standard_ids=list(item.standard_ids) if item.standard_ids else None,
             )
 

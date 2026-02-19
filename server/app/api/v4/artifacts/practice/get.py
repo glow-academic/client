@@ -27,7 +27,6 @@ from app.api.v4.artifacts.training.types import (
 from app.api.v4.auth.profile import get_auth_profile_internal
 from app.api.v4.entries.chat.get import ChatItem, GetChatsResponse, get_chats_internal
 from app.api.v4.entries.practice.get import get_practice_context_view_internal
-from app.sql.types import GetPracticeContextViewSqlRow
 from app.api.v4.resources.cohorts.get import get_cohorts_internal
 from app.api.v4.resources.personas.get import get_personas_internal
 from app.api.v4.resources.rubrics.get import get_rubrics_internal
@@ -41,6 +40,7 @@ from app.api.v4.resources.standards.search import search_standards_internal
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
+from app.sql.types import GetPracticeContextViewSqlRow
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached

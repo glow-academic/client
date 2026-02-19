@@ -72,8 +72,10 @@ from app.api.v4.artifacts.attempt.types import (
     TimerData,
     VideoEntry,
 )
-from app.api.v4.entries.attempt.get import get_attempt_chats_internal
-from app.api.v4.entries.attempt.get import get_attempt_messages_internal
+from app.api.v4.entries.attempt.get import (
+    get_attempt_chats_internal,
+    get_attempt_messages_internal,
+)
 from app.api.v4.entries.attempt.search import get_attempt_list_internal
 from app.api.v4.entries.attempt_analysis.get import get_attempt_analysis_internal
 from app.api.v4.entries.attempt_content.get import get_attempt_content_internal

@@ -129,7 +129,9 @@ async def get_test_internal(
 
     result = await execute_sql_typed(conn, VIEW_SQL_PATH, params=params)
 
-    items: list[QGetTestViewV4Item] = list(result.items) if result and result.items else []
+    items: list[QGetTestViewV4Item] = (
+        list(result.items) if result and result.items else []
+    )
     total_count = result.total_count if result else 0
 
     response = GetBenchmarkTestsViewSqlRow(items=items, total_count=total_count or 0)

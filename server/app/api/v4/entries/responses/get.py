@@ -45,12 +45,17 @@ async def get_simulation_responses_internal(
     if not bypass_cache:
         cached = await get_cached(cache_key_val)
         if cached:
-            return [QGetSimulationResponsesViewV4Item.model_validate(item) for item in cached["items"]]
+            return [
+                QGetSimulationResponsesViewV4Item.model_validate(item)
+                for item in cached["items"]
+            ]
 
     params = GetSimulationResponsesViewSqlParams(chat_ids_filter=chat_ids)
     result = await execute_sql_typed(conn, VIEW_SQL_PATH, params=params)
 
-    items: list[QGetSimulationResponsesViewV4Item] = list(result.items) if result and result.items else []
+    items: list[QGetSimulationResponsesViewV4Item] = (
+        list(result.items) if result and result.items else []
+    )
 
     await set_cached(
         cache_key_val,

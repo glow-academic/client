@@ -22,6 +22,9 @@ from app.api.v4.entries.grants.get import get_grant_list_view_internal
 from app.api.v4.entries.logins.get import get_login_list_view_internal
 from app.api.v4.entries.problems.get import get_problem_list_view_internal
 from app.api.v4.entries.sessions.get import get_session_list_view_internal
+from app.infra.v4.activity.audit import audit_activity
+from app.infra.v4.error.handle_route_error import handle_route_error
+from app.main import get_db, get_pool
 from app.sql.types import (
     GetActivityListViewSqlRow,
     GetAuditListViewSqlRow,
@@ -30,9 +33,6 @@ from app.sql.types import (
     GetProblemListViewSqlRow,
     GetSessionListViewSqlRow,
 )
-from app.infra.v4.activity.audit import audit_activity
-from app.infra.v4.error.handle_route_error import handle_route_error
-from app.main import get_db, get_pool
 
 router = APIRouter()
 

@@ -5,6 +5,7 @@ from uuid import UUID
 
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
+
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
 from app.sql.types import (
@@ -21,9 +22,7 @@ from app.utils.cache.set_cached import set_cached
 from app.utils.sql_helper import execute_sql_typed
 
 SQL_PATH = "app/sql/v4/queries/entries/attempt_message/get_attempt_message_entries_complete.sql"
-VIEW_SQL_PATH = (
-    "app/sql/v4/queries/views/simulation/messages/get_simulation_messages_view_complete.sql"
-)
+VIEW_SQL_PATH = "app/sql/v4/queries/views/simulation/messages/get_simulation_messages_view_complete.sql"
 
 router = APIRouter()
 

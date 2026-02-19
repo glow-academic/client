@@ -16,12 +16,12 @@ from app.api.v4.artifacts.benchmark.types import (
 )
 from app.api.v4.artifacts.types import FilterOption
 from app.api.v4.entries.tests.get import get_test_internal
-from app.sql.types import QGetTestViewV4Item
 from app.api.v4.resources.departments.get import get_departments_internal
 from app.api.v4.resources.evals.get import get_evals_internal
 from app.infra.v4.activity.audit import audit_activity
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
+from app.sql.types import QGetTestViewV4Item
 
 router = APIRouter()
 
