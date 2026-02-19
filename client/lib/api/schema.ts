@@ -24740,7 +24740,7 @@ export interface components {
             /** Available Events */
             available_events?: components["schemas"]["ActivityAvailableEvent"][];
             /** Problems */
-            problems?: components["schemas"]["ProblemViewItem"][];
+            problems?: components["schemas"]["app__api__v4__entries__problems__view__ProblemViewItem"][];
             views?: components["schemas"]["ActivityViews"];
             resources?: components["schemas"]["ActivityResources"];
             /**
@@ -24750,41 +24750,22 @@ export interface components {
             total_count: number;
         };
         /**
-         * ActivityViewItem
-         * @description Single activity from the activity list view.
-         */
-        ActivityViewItem: {
-            /**
-             * Activity Id
-             * Format: uuid
-             */
-            activity_id: string;
-            /** Profile Id */
-            profile_id?: string | null;
-            /** Session Id */
-            session_id?: string | null;
-            /** Last Active */
-            last_active?: string | null;
-            /** Created At */
-            created_at?: string | null;
-        };
-        /**
          * ActivityViews
          * @description Activity view data.
          */
         ActivityViews: {
             /** Sessions */
-            sessions?: components["schemas"]["SessionViewItem"][];
+            sessions?: components["schemas"]["app__api__v4__entries__sessions__view__SessionViewItem"][];
             /** Activity */
-            activity?: components["schemas"]["ActivityViewItem"][];
+            activity?: components["schemas"]["app__api__v4__entries__activity__view__ActivityViewItem"][];
             /** Logins */
-            logins?: components["schemas"]["LoginViewItem"][];
+            logins?: components["schemas"]["app__api__v4__entries__logins__view__LoginViewItem"][];
             /** Audits */
-            audits?: components["schemas"]["AuditViewItem"][];
+            audits?: components["schemas"]["app__api__v4__entries__audits__view__AuditViewItem"][];
             /** Problems */
-            problems?: components["schemas"]["ProblemViewItem"][];
+            problems?: components["schemas"]["app__api__v4__entries__problems__view__ProblemViewItem"][];
             /** Grants */
-            grants?: components["schemas"]["GrantViewItem"][];
+            grants?: components["schemas"]["app__api__v4__entries__grants__view__GrantViewItem"][];
         };
         /** AgentDepartmentSection */
         AgentDepartmentSection: {
@@ -26474,55 +26455,17 @@ export interface components {
             item_id: string;
         };
         /**
-         * AttemptViewItem
-         * @description Single attempt from the attempt list view.
-         */
-        AttemptViewItem: {
-            /**
-             * Attempt Id
-             * Format: uuid
-             */
-            attempt_id: string;
-            /** Simulation Id */
-            simulation_id?: string | null;
-            /** Profile Id */
-            profile_id?: string | null;
-            /** Cohort Id */
-            cohort_id?: string | null;
-            /** Department Id */
-            department_id?: string | null;
-            /**
-             * Practice
-             * @default false
-             */
-            practice: boolean;
-            /**
-             * Infinite Mode
-             * @default false
-             */
-            infinite_mode: boolean;
-            /** Created At */
-            created_at?: string | null;
-            /**
-             * Is Archived
-             * @default false
-             */
-            is_archived: boolean;
-            /** Scenario Ids */
-            scenario_ids?: string[] | null;
-        };
-        /**
          * AttemptViews
          * @description View payloads grouped by view type.
          */
         AttemptViews: {
             /** Attempt */
-            attempt?: components["schemas"]["AttemptViewItem"][] | null;
+            attempt?: components["schemas"]["app__api__v4__entries__attempt__types__AttemptViewItem"][] | null;
             /** Attempt Chat */
             attempt_chat?: components["schemas"]["ChatData"][] | null;
             /** Attempt Message */
             attempt_message?: components["schemas"]["MessageData"][] | null;
-            runs?: components["schemas"]["GetRunListViewResponse"] | null;
+            runs?: components["schemas"]["app__api__v4__entries__runs__types__GetRunListViewResponse"] | null;
         };
         /**
          * AudioViewItem
@@ -26551,30 +26494,6 @@ export interface components {
             voice_id?: string | null;
             /** Created At */
             created_at?: string | null;
-        };
-        /**
-         * AuditViewItem
-         * @description Single audit from the audit list view.
-         */
-        AuditViewItem: {
-            /**
-             * Audit Id
-             * Format: uuid
-             */
-            audit_id: string;
-            /** Session Id */
-            session_id?: string | null;
-            /** Audit Created At */
-            audit_created_at?: string | null;
-            /** Message */
-            message?: string | null;
-            /** Endpoint */
-            endpoint?: string | null;
-            /**
-             * Error
-             * @default false
-             */
-            error: boolean;
         };
         /** AuthDescriptionSection */
         AuthDescriptionSection: {
@@ -27103,72 +27022,6 @@ export interface components {
             description?: string | null;
             /** Department Ids */
             department_ids?: string[];
-        };
-        /**
-         * BenchmarkInvocationViewItem
-         * @description Single benchmark invocation row from test_invocation_mv.
-         *
-         *     Lean: entry attrs + resource IDs + grade scalars only. Feedbacks
-         *     fetched via simulation/test_feedback view.
-         */
-        BenchmarkInvocationViewItem: {
-            /**
-             * Invocation Id
-             * Format: uuid
-             */
-            invocation_id: string;
-            /**
-             * Test Id
-             * Format: uuid
-             */
-            test_id: string;
-            /** Group Id */
-            group_id?: string | null;
-            /** Suite Department Id */
-            suite_department_id?: string | null;
-            /** Created At */
-            created_at?: string | null;
-            /** Title */
-            title?: string | null;
-            /**
-             * Invocation Completed
-             * @default false
-             */
-            invocation_completed: boolean;
-            /** Grade Score */
-            grade_score?: number | null;
-            /** Grade Passed */
-            grade_passed?: boolean | null;
-            /** Grade Time Taken */
-            grade_time_taken?: number | null;
-            /** Rubric Id */
-            rubric_id?: string | null;
-            /** Grade Id */
-            grade_id?: string | null;
-            /** Invocation Run Ids */
-            invocation_run_ids?: string[];
-            /** Run Ids */
-            run_ids?: string[];
-            /** Group Ids */
-            group_ids?: string[];
-            /** Instruction Ids */
-            instruction_ids?: string[];
-            /** Tool Ids */
-            tool_ids?: string[];
-            /** Model Id */
-            model_id?: string | null;
-            /** Prompt Id */
-            prompt_id?: string | null;
-            /** Voice Id */
-            voice_id?: string | null;
-            /** Temperature Level Id */
-            temperature_level_id?: string | null;
-            /** Reasoning Level Id */
-            reasoning_level_id?: string | null;
-            /** Key Id */
-            key_id?: string | null;
-            /** Historical Run Ids */
-            historical_run_ids?: string[];
         };
         /**
          * BenchmarkRequest
@@ -33330,7 +33183,7 @@ export interface components {
              * Items
              * @description Activity data items
              */
-            items?: components["schemas"]["ActivityViewItem"][];
+            items?: components["schemas"]["app__api__v4__views__activity__list__types__ActivityViewItem"][];
             /**
              * Total Count
              * @description Total count before pagination
@@ -33389,7 +33242,7 @@ export interface components {
         /** GetAgentDraftsEntriesApiResponse */
         GetAgentDraftsEntriesApiResponse: {
             /** Items */
-            items?: unknown | null;
+            items?: components["schemas"]["QGetAgentDraftsEntriesV4Item"][] | null;
         };
         /** GetAgentsApiRequest */
         GetAgentsApiRequest: {
@@ -33853,7 +33706,7 @@ export interface components {
              * Items
              * @description Attempt data items
              */
-            items?: components["schemas"]["AttemptViewItem"][];
+            items?: components["schemas"]["app__api__v4__views__attempt__list__types__AttemptViewItem"][];
             /**
              * Total Count
              * @description Total count before pagination
@@ -33912,7 +33765,7 @@ export interface components {
              * Items
              * @description Audit data items
              */
-            items?: components["schemas"]["AuditViewItem"][];
+            items?: components["schemas"]["app__api__v4__views__audit__list__types__AuditViewItem"][];
             /**
              * Total Count
              * @description Total count before pagination
@@ -34001,7 +33854,7 @@ export interface components {
         /** GetAuthDraftsEntriesApiResponse */
         GetAuthDraftsEntriesApiResponse: {
             /** Items */
-            items?: unknown | null;
+            items?: components["schemas"]["QGetAuthDraftsEntriesV4Item"][] | null;
         };
         /** GetAuthItemKeysApiRequest */
         GetAuthItemKeysApiRequest: {
@@ -34153,7 +34006,7 @@ export interface components {
          */
         GetBenchmarkInvocationsResponse: {
             /** Items */
-            items?: components["schemas"]["BenchmarkInvocationViewItem"][];
+            items?: components["schemas"]["app__api__v4__views__benchmark__invocations__types__BenchmarkInvocationViewItem"][];
         };
         /**
          * GetBenchmarkTestsRequest
@@ -34319,7 +34172,7 @@ export interface components {
         /** GetCohortDraftsEntriesApiResponse */
         GetCohortDraftsEntriesApiResponse: {
             /** Items */
-            items?: unknown | null;
+            items?: components["schemas"]["QGetCohortDraftsEntriesV4Item"][] | null;
         };
         /**
          * GetCohortsApiRequest
@@ -34392,7 +34245,7 @@ export interface components {
         /** GetConfigEntriesApiResponse */
         GetConfigEntriesApiResponse: {
             /** Items */
-            items?: unknown | null;
+            items?: components["schemas"]["QGetConfigEntriesV4Item"][] | null;
         };
         /**
          * GetConfigRequest
@@ -34509,7 +34362,7 @@ export interface components {
         /** GetDepartmentDraftsEntriesApiResponse */
         GetDepartmentDraftsEntriesApiResponse: {
             /** Items */
-            items?: unknown | null;
+            items?: components["schemas"]["QGetDepartmentDraftsEntriesV4Item"][] | null;
         };
         /** GetDepartmentsApiRequest */
         GetDepartmentsApiRequest: {
@@ -34596,7 +34449,7 @@ export interface components {
         /** GetDocumentDraftsEntriesApiResponse */
         GetDocumentDraftsEntriesApiResponse: {
             /** Items */
-            items?: unknown | null;
+            items?: components["schemas"]["QGetDocumentDraftsEntriesV4Item"][] | null;
         };
         /** GetDocumentResourceApiRequest */
         GetDocumentResourceApiRequest: {
@@ -34791,7 +34644,7 @@ export interface components {
         /** GetEvalDraftsEntriesApiResponse */
         GetEvalDraftsEntriesApiResponse: {
             /** Items */
-            items?: unknown | null;
+            items?: components["schemas"]["QGetEvalDraftsEntriesV4Item"][] | null;
         };
         /** GetEvalsApiRequest */
         GetEvalsApiRequest: {
@@ -34897,7 +34750,7 @@ export interface components {
         /** GetFieldDraftsEntriesApiResponse */
         GetFieldDraftsEntriesApiResponse: {
             /** Items */
-            items?: unknown | null;
+            items?: components["schemas"]["QGetFieldDraftsEntriesV4Item"][] | null;
         };
         /** GetFieldsApiRequest */
         GetFieldsApiRequest: {
@@ -34971,7 +34824,7 @@ export interface components {
              * Items
              * @description Grant data items
              */
-            items?: components["schemas"]["GrantViewItem"][];
+            items?: components["schemas"]["app__api__v4__views__grant__list__types__GrantViewItem"][];
             /**
              * Total Count
              * @description Total count before pagination
@@ -35159,7 +35012,7 @@ export interface components {
              * Items
              * @description Health data items
              */
-            items?: components["schemas"]["HealthViewItem"][];
+            items?: components["schemas"]["app__api__v4__views__health__list__types__HealthViewItem"][];
             /**
              * Total Count
              * @description Total count before pagination
@@ -35442,7 +35295,7 @@ export interface components {
              * Items
              * @description Login data items
              */
-            items?: components["schemas"]["LoginViewItem"][];
+            items?: components["schemas"]["app__api__v4__views__login__list__types__LoginViewItem"][];
             /**
              * Total Count
              * @description Total count before pagination
@@ -35522,7 +35375,7 @@ export interface components {
              * Items
              * @description Metric data items
              */
-            items?: components["schemas"]["MetricViewItem"][];
+            items?: components["schemas"]["app__api__v4__views__metric__list__types__MetricViewItem"][];
             /**
              * Total Count
              * @description Total count before pagination
@@ -35604,7 +35457,7 @@ export interface components {
         /** GetModelDraftsEntriesApiResponse */
         GetModelDraftsEntriesApiResponse: {
             /** Items */
-            items?: unknown | null;
+            items?: components["schemas"]["QGetModelDraftsEntriesV4Item"][] | null;
         };
         /** GetModelsApiRequest */
         GetModelsApiRequest: {
@@ -35748,7 +35601,7 @@ export interface components {
         /** GetParameterDraftsEntriesApiResponse */
         GetParameterDraftsEntriesApiResponse: {
             /** Items */
-            items?: unknown | null;
+            items?: components["schemas"]["QGetParameterDraftsEntriesV4Item"][] | null;
         };
         /** GetParameterFieldsApiRequest */
         GetParameterFieldsApiRequest: {
@@ -35875,7 +35728,7 @@ export interface components {
         /** GetPersonaDraftsEntriesApiResponse */
         GetPersonaDraftsEntriesApiResponse: {
             /** Items */
-            items?: unknown | null;
+            items?: components["schemas"]["QGetPersonaDraftsEntriesV4Item"][] | null;
         };
         /** GetPersonaEntriesApiRequest */
         GetPersonaEntriesApiRequest: {
@@ -36026,7 +35879,7 @@ export interface components {
              * Items
              * @description Problem data items
              */
-            items?: components["schemas"]["ProblemViewItem"][];
+            items?: components["schemas"]["app__api__v4__views__problem__list__types__ProblemViewItem"][];
             /**
              * Total Count
              * @description Total count before pagination
@@ -36159,7 +36012,7 @@ export interface components {
         /** GetProfileDraftsEntriesApiResponse */
         GetProfileDraftsEntriesApiResponse: {
             /** Items */
-            items?: unknown | null;
+            items?: components["schemas"]["QGetProfileDraftsEntriesV4Item"][] | null;
         };
         /** GetProfilesApiRequest */
         GetProfilesApiRequest: {
@@ -36238,7 +36091,7 @@ export interface components {
         /** GetProviderDraftsEntriesApiResponse */
         GetProviderDraftsEntriesApiResponse: {
             /** Items */
-            items?: unknown | null;
+            items?: components["schemas"]["QGetProviderDraftsEntriesV4Item"][] | null;
         };
         /** GetProviderKeysApiRequest */
         GetProviderKeysApiRequest: {
@@ -36504,7 +36357,7 @@ export interface components {
         /** GetRubricDraftsEntriesApiResponse */
         GetRubricDraftsEntriesApiResponse: {
             /** Items */
-            items?: unknown | null;
+            items?: components["schemas"]["QGetRubricDraftsEntriesV4Item"][] | null;
         };
         /** GetRubricsApiRequest */
         GetRubricsApiRequest: {
@@ -36538,23 +36391,6 @@ export interface components {
              * @default 0
              */
             page_offset: number | null;
-        };
-        /**
-         * GetRunListViewResponse
-         * @description Response containing run list data.
-         */
-        GetRunListViewResponse: {
-            /**
-             * Items
-             * @description Run data items
-             */
-            items?: components["schemas"]["RunViewItem"][];
-            /**
-             * Total Count
-             * @description Total count before pagination
-             * @default 0
-             */
-            total_count: number;
         };
         /** GetRunPositionsApiRequest */
         GetRunPositionsApiRequest: {
@@ -36705,7 +36541,7 @@ export interface components {
         /** GetScenarioDraftsEntriesApiResponse */
         GetScenarioDraftsEntriesApiResponse: {
             /** Items */
-            items?: unknown | null;
+            items?: components["schemas"]["QGetScenarioDraftsEntriesV4Item"][] | null;
         };
         /** GetScenarioFlagsApiRequest */
         GetScenarioFlagsApiRequest: {
@@ -36935,7 +36771,7 @@ export interface components {
              * Items
              * @description Session data items
              */
-            items?: components["schemas"]["SessionViewItem"][];
+            items?: components["schemas"]["app__api__v4__views__session__list__types__SessionViewItem"][];
             /**
              * Total Count
              * @description Total count before pagination
@@ -37010,7 +36846,7 @@ export interface components {
         /** GetSettingDraftsEntriesApiResponse */
         GetSettingDraftsEntriesApiResponse: {
             /** Items */
-            items?: unknown | null;
+            items?: components["schemas"]["QGetSettingDraftsEntriesV4Item"][] | null;
         };
         /**
          * GetSettingsApiRequest
@@ -37103,7 +36939,7 @@ export interface components {
         /** GetSimulationDraftsEntriesApiResponse */
         GetSimulationDraftsEntriesApiResponse: {
             /** Items */
-            items?: unknown | null;
+            items?: components["schemas"]["QGetSimulationDraftsEntriesV4Item"][] | null;
         };
         /**
          * GetSimulationPositionsApiRequest
@@ -37333,7 +37169,7 @@ export interface components {
         /** GetSuiteDraftsEntriesApiResponse */
         GetSuiteDraftsEntriesApiResponse: {
             /** Items */
-            items?: unknown | null;
+            items?: components["schemas"]["QGetSuiteDraftsEntriesV4Item"][] | null;
         };
         /** GetSuiteEntriesApiRequest */
         GetSuiteEntriesApiRequest: {
@@ -37472,7 +37308,7 @@ export interface components {
         GetTestArtifactResponse: {
             test?: components["schemas"]["BenchmarkTestViewItem"] | null;
             /** Invocations */
-            invocations?: components["schemas"]["BenchmarkInvocationViewItem"][];
+            invocations?: components["schemas"]["app__api__v4__entries__test_invocation__view__BenchmarkInvocationViewItem"][];
             /**
              * Status
              * @default pending
@@ -37741,7 +37577,7 @@ export interface components {
         /** GetToolDraftsEntriesApiResponse */
         GetToolDraftsEntriesApiResponse: {
             /** Items */
-            items?: unknown | null;
+            items?: components["schemas"]["QGetToolDraftsEntriesV4Item"][] | null;
         };
         /** GetToolsApiRequest */
         GetToolsApiRequest: {
@@ -37796,7 +37632,7 @@ export interface components {
         /** GetTrainingDraftsEntriesApiResponse */
         GetTrainingDraftsEntriesApiResponse: {
             /** Items */
-            items?: unknown | null;
+            items?: components["schemas"]["QGetTrainingDraftsEntriesV4Item"][] | null;
         };
         /** GetTrainingEntriesApiRequest */
         GetTrainingEntriesApiRequest: {
@@ -38149,35 +37985,6 @@ export interface components {
             feedback_by_standard_id?: {
                 [key: string]: string;
             } | null;
-        };
-        /**
-         * GrantViewItem
-         * @description Single grant from the grant list view.
-         */
-        GrantViewItem: {
-            /**
-             * Grant Id
-             * Format: uuid
-             */
-            grant_id: string;
-            /** Grantor Id */
-            grantor_id?: string | null;
-            /** Emulation Id */
-            emulation_id?: string | null;
-            /** Emulated Id */
-            emulated_id?: string | null;
-            /** Grant Session Id */
-            grant_session_id?: string | null;
-            /** Emulation Session Id */
-            emulation_session_id?: string | null;
-            /** Expires At */
-            expires_at?: string | null;
-            /** Used At */
-            used_at?: string | null;
-            /** Revoked At */
-            revoked_at?: string | null;
-            /** Created At */
-            created_at?: string | null;
         };
         /**
          * GroupDetailCallItem
@@ -38594,54 +38401,14 @@ export interface components {
             total_count: number;
         };
         /**
-         * HealthViewItem
-         * @description Single health row from the health list view.
-         */
-        HealthViewItem: {
-            /**
-             * Date Hour
-             * Format: date-time
-             */
-            date_hour: string;
-            /** Service */
-            service?: string | null;
-            /**
-             * Check Count
-             * @default 0
-             */
-            check_count: number;
-            /**
-             * Ok Count
-             * @default 0
-             */
-            ok_count: number;
-            /**
-             * Fail Count
-             * @default 0
-             */
-            fail_count: number;
-            /** Uptime Percent */
-            uptime_percent?: number | null;
-            /** Avg Latency Ms */
-            avg_latency_ms?: number | null;
-            /** Min Latency Ms */
-            min_latency_ms?: number | null;
-            /** Max Latency Ms */
-            max_latency_ms?: number | null;
-            /** Latest Ok */
-            latest_ok?: boolean | null;
-            /** Latest Error */
-            latest_error?: string | null;
-        };
-        /**
          * HealthViews
          * @description Health view data.
          */
         HealthViews: {
             /** Service Hourly */
-            service_hourly?: components["schemas"]["HealthViewItem"][];
+            service_hourly?: components["schemas"]["app__api__v4__entries__health__view__HealthViewItem"][];
             /** Metrics Hourly */
-            metrics_hourly?: components["schemas"]["MetricViewItem"][];
+            metrics_hourly?: components["schemas"]["app__api__v4__entries__metrics__view__MetricViewItem"][];
         };
         /**
          * HighlightEntry
@@ -40501,33 +40268,6 @@ export interface components {
             can_delete?: boolean | null;
         };
         /**
-         * LoginViewItem
-         * @description Single login from the login list view.
-         */
-        LoginViewItem: {
-            /**
-             * Login Id
-             * Format: uuid
-             */
-            login_id: string;
-            /** Profile Id */
-            profile_id?: string | null;
-            /** Session Id */
-            session_id?: string | null;
-            /** Last Login */
-            last_login?: string | null;
-            /** Login Created At */
-            login_created_at?: string | null;
-            /** Active */
-            active?: boolean | null;
-            /** Generated */
-            generated?: boolean | null;
-            /** Mcp */
-            mcp?: boolean | null;
-            /** Call Id */
-            call_id?: string | null;
-        };
-        /**
          * MessageData
          * @description Message with contents, feedbacks, and hints.
          *
@@ -40592,44 +40332,6 @@ export interface components {
             branch_path?: string[] | null;
             /** Depth */
             depth?: number | null;
-        };
-        /**
-         * MetricViewItem
-         * @description Single metric row from the metric list view.
-         */
-        MetricViewItem: {
-            /**
-             * Date Hour
-             * Format: date-time
-             */
-            date_hour: string;
-            /**
-             * Sample Count
-             * @default 0
-             */
-            sample_count: number;
-            /** Avg Cpu Percent */
-            avg_cpu_percent?: number | null;
-            /** Min Cpu Percent */
-            min_cpu_percent?: number | null;
-            /** Max Cpu Percent */
-            max_cpu_percent?: number | null;
-            /** Avg Latency Ms */
-            avg_latency_ms?: number | null;
-            /** Min Latency Ms */
-            min_latency_ms?: number | null;
-            /** Max Latency Ms */
-            max_latency_ms?: number | null;
-            /** Avg Memory Bytes */
-            avg_memory_bytes?: number | null;
-            /** Min Memory Bytes */
-            min_memory_bytes?: number | null;
-            /** Max Memory Bytes */
-            max_memory_bytes?: number | null;
-            /** Max Requests Total */
-            max_requests_total?: number | null;
-            /** Max Errors Total */
-            max_errors_total?: number | null;
         };
         /**
          * ModalitiesGenerationEvent
@@ -43339,7 +43041,7 @@ export interface components {
          */
         PricingViews: {
             /** Runs */
-            runs?: components["schemas"]["RunViewItem"][];
+            runs?: components["schemas"]["app__api__v4__entries__runs__types__RunViewItem"][];
         };
         /** PrimaryPersonaPerformance */
         PrimaryPersonaPerformance: {
@@ -43462,31 +43164,6 @@ export interface components {
             tool_name?: string | null;
             /** Arguments Delta */
             arguments_delta?: string | null;
-        };
-        /**
-         * ProblemViewItem
-         * @description Single problem from the problem list view.
-         */
-        ProblemViewItem: {
-            /**
-             * Problem Id
-             * Format: uuid
-             */
-            problem_id: string;
-            /** Type */
-            type?: string | null;
-            /** Message */
-            message?: string | null;
-            /** Resolved */
-            resolved?: boolean | null;
-            /** Session Id */
-            session_id?: string | null;
-            /** Problem Created At */
-            problem_created_at?: string | null;
-            /** Problem Updated At */
-            problem_updated_at?: string | null;
-            /** Profile Id */
-            profile_id?: string | null;
         };
         /** ProcessCsvApiRequest */
         ProcessCsvApiRequest: {
@@ -44377,6 +44054,47 @@ export interface components {
             /** Arguments Delta */
             arguments_delta?: string | null;
         };
+        /** QGetAgentDraftsEntriesV4Item */
+        QGetAgentDraftsEntriesV4Item: {
+            /** Draft Id */
+            draft_id: string | null;
+            /** Created At */
+            created_at: string | null;
+            /** Updated At */
+            updated_at: string | null;
+            /** Version */
+            version: number | null;
+            /** Generated */
+            generated: boolean | null;
+            /** Mcp */
+            mcp: boolean | null;
+            /** Active */
+            active: boolean | null;
+            /** Group Id */
+            group_id: string | null;
+            /** Name Ids */
+            name_ids: string[] | null;
+            /** Description Ids */
+            description_ids: string[] | null;
+            /** Model Ids */
+            model_ids: string[] | null;
+            /** Prompt Ids */
+            prompt_ids: string[] | null;
+            /** Instruction Ids */
+            instruction_ids: string[] | null;
+            /** Flag Ids */
+            flag_ids: string[] | null;
+            /** Department Ids */
+            department_ids: string[] | null;
+            /** Tool Ids */
+            tool_ids: string[] | null;
+            /** Temperature Level Ids */
+            temperature_level_ids: string[] | null;
+            /** Reasoning Level Ids */
+            reasoning_level_ids: string[] | null;
+            /** Voice Ids */
+            voice_ids: string[] | null;
+        };
         /** QGetAgentsV4Item */
         QGetAgentsV4Item: {
             /** Id */
@@ -44447,6 +44165,35 @@ export interface components {
             /** Generated */
             generated: boolean | null;
         };
+        /** QGetAuthDraftsEntriesV4Item */
+        QGetAuthDraftsEntriesV4Item: {
+            /** Draft Id */
+            draft_id: string | null;
+            /** Created At */
+            created_at: string | null;
+            /** Updated At */
+            updated_at: string | null;
+            /** Version */
+            version: number | null;
+            /** Generated */
+            generated: boolean | null;
+            /** Mcp */
+            mcp: boolean | null;
+            /** Active */
+            active: boolean | null;
+            /** Group Id */
+            group_id: string | null;
+            /** Name Ids */
+            name_ids: string[] | null;
+            /** Description Ids */
+            description_ids: string[] | null;
+            /** Flag Ids */
+            flag_ids: string[] | null;
+            /** Protocol Ids */
+            protocol_ids: string[] | null;
+            /** Slug Ids */
+            slug_ids: string[] | null;
+        };
         /** QGetAuthItemKeysV4Item */
         QGetAuthItemKeysV4Item: {
             /** Id */
@@ -44494,6 +44241,37 @@ export interface components {
             /** Generated */
             generated: boolean | null;
         };
+        /** QGetCohortDraftsEntriesV4Item */
+        QGetCohortDraftsEntriesV4Item: {
+            /** Draft Id */
+            draft_id: string | null;
+            /** Created At */
+            created_at: string | null;
+            /** Updated At */
+            updated_at: string | null;
+            /** Version */
+            version: number | null;
+            /** Generated */
+            generated: boolean | null;
+            /** Mcp */
+            mcp: boolean | null;
+            /** Active */
+            active: boolean | null;
+            /** Group Id */
+            group_id: string | null;
+            /** Name Ids */
+            name_ids: string[] | null;
+            /** Description Ids */
+            description_ids: string[] | null;
+            /** Flag Ids */
+            flag_ids: string[] | null;
+            /** Department Ids */
+            department_ids: string[] | null;
+            /** Simulation Ids */
+            simulation_ids: string[] | null;
+            /** Simulation Position Ids */
+            simulation_position_ids: string[] | null;
+        };
         /**
          * QGetCohortsV4Item
          * @description Cohort item returned from get endpoint.
@@ -44532,6 +44310,48 @@ export interface components {
             /** Generated */
             generated: boolean | null;
         };
+        /** QGetConfigEntriesV4Item */
+        QGetConfigEntriesV4Item: {
+            /** Config Id */
+            config_id: string | null;
+            /** Agents Id */
+            agents_id: string | null;
+            /** Models Id */
+            models_id: string | null;
+            /** Providers Id */
+            providers_id: string | null;
+            /** Tool Ids */
+            tool_ids: string[] | null;
+            /** Created At */
+            created_at: string | null;
+        };
+        /** QGetDepartmentDraftsEntriesV4Item */
+        QGetDepartmentDraftsEntriesV4Item: {
+            /** Draft Id */
+            draft_id: string | null;
+            /** Created At */
+            created_at: string | null;
+            /** Updated At */
+            updated_at: string | null;
+            /** Version */
+            version: number | null;
+            /** Generated */
+            generated: boolean | null;
+            /** Mcp */
+            mcp: boolean | null;
+            /** Active */
+            active: boolean | null;
+            /** Group Id */
+            group_id: string | null;
+            /** Name Ids */
+            name_ids: string[] | null;
+            /** Description Ids */
+            description_ids: string[] | null;
+            /** Flag Ids */
+            flag_ids: string[] | null;
+            /** Settings Ids */
+            settings_ids: string[] | null;
+        };
         /** QGetDepartmentsV4Item */
         QGetDepartmentsV4Item: {
             /** Department Id */
@@ -44551,6 +44371,41 @@ export interface components {
             description: string | null;
             /** Generated */
             generated: boolean | null;
+        };
+        /** QGetDocumentDraftsEntriesV4Item */
+        QGetDocumentDraftsEntriesV4Item: {
+            /** Draft Id */
+            draft_id: string | null;
+            /** Created At */
+            created_at: string | null;
+            /** Updated At */
+            updated_at: string | null;
+            /** Version */
+            version: number | null;
+            /** Generated */
+            generated: boolean | null;
+            /** Mcp */
+            mcp: boolean | null;
+            /** Active */
+            active: boolean | null;
+            /** Group Id */
+            group_id: string | null;
+            /** Name Ids */
+            name_ids: string[] | null;
+            /** Description Ids */
+            description_ids: string[] | null;
+            /** Flag Ids */
+            flag_ids: string[] | null;
+            /** Department Ids */
+            department_ids: string[] | null;
+            /** Parameter Field Ids */
+            parameter_field_ids: string[] | null;
+            /** Upload Ids */
+            upload_ids: string[] | null;
+            /** Image Ids */
+            image_ids: string[] | null;
+            /** Text Ids */
+            text_ids: string[] | null;
         };
         /** QGetDocumentResourceV4Item */
         QGetDocumentResourceV4Item: {
@@ -44623,6 +44478,33 @@ export interface components {
             /** Generated */
             generated: boolean | null;
         };
+        /** QGetEvalDraftsEntriesV4Item */
+        QGetEvalDraftsEntriesV4Item: {
+            /** Draft Id */
+            draft_id: string | null;
+            /** Created At */
+            created_at: string | null;
+            /** Updated At */
+            updated_at: string | null;
+            /** Version */
+            version: number | null;
+            /** Generated */
+            generated: boolean | null;
+            /** Mcp */
+            mcp: boolean | null;
+            /** Active */
+            active: boolean | null;
+            /** Group Id */
+            group_id: string | null;
+            /** Name Ids */
+            name_ids: string[] | null;
+            /** Description Ids */
+            description_ids: string[] | null;
+            /** Flag Ids */
+            flag_ids: string[] | null;
+            /** Department Ids */
+            department_ids: string[] | null;
+        };
         /** QGetEvalsV4Item */
         QGetEvalsV4Item: {
             /** Id */
@@ -44646,6 +44528,37 @@ export interface components {
             idx: number | null;
             /** Generated */
             generated: boolean | null;
+        };
+        /** QGetFieldDraftsEntriesV4Item */
+        QGetFieldDraftsEntriesV4Item: {
+            /** Draft Id */
+            draft_id: string | null;
+            /** Created At */
+            created_at: string | null;
+            /** Updated At */
+            updated_at: string | null;
+            /** Version */
+            version: number | null;
+            /** Generated */
+            generated: boolean | null;
+            /** Mcp */
+            mcp: boolean | null;
+            /** Active */
+            active: boolean | null;
+            /** Group Id */
+            group_id: string | null;
+            /** Conditional Parameter Ids */
+            conditional_parameter_ids: string[] | null;
+            /** Department Ids */
+            department_ids: string[] | null;
+            /** Description Ids */
+            description_ids: string[] | null;
+            /** Field Ids */
+            field_ids: string[] | null;
+            /** Flag Ids */
+            flag_ids: string[] | null;
+            /** Name Ids */
+            name_ids: string[] | null;
         };
         /** QGetFieldsV4Item */
         QGetFieldsV4Item: {
@@ -44802,6 +44715,49 @@ export interface components {
             /** Generated */
             generated: boolean | null;
         };
+        /** QGetModelDraftsEntriesV4Item */
+        QGetModelDraftsEntriesV4Item: {
+            /** Draft Id */
+            draft_id: string | null;
+            /** Created At */
+            created_at: string | null;
+            /** Updated At */
+            updated_at: string | null;
+            /** Version */
+            version: number | null;
+            /** Generated */
+            generated: boolean | null;
+            /** Mcp */
+            mcp: boolean | null;
+            /** Active */
+            active: boolean | null;
+            /** Group Id */
+            group_id: string | null;
+            /** Name Ids */
+            name_ids: string[] | null;
+            /** Description Ids */
+            description_ids: string[] | null;
+            /** Value Ids */
+            value_ids: string[] | null;
+            /** Provider Ids */
+            provider_ids: string[] | null;
+            /** Flag Ids */
+            flag_ids: string[] | null;
+            /** Department Ids */
+            department_ids: string[] | null;
+            /** Modality Ids */
+            modality_ids: string[] | null;
+            /** Temperature Level Ids */
+            temperature_level_ids: string[] | null;
+            /** Pricing Ids */
+            pricing_ids: string[] | null;
+            /** Reasoning Level Ids */
+            reasoning_level_ids: string[] | null;
+            /** Quality Ids */
+            quality_ids: string[] | null;
+            /** Voice Ids */
+            voice_ids: string[] | null;
+        };
         /** QGetModelsV4Item */
         QGetModelsV4Item: {
             /** Id */
@@ -44860,6 +44816,37 @@ export interface components {
             /** Question Id */
             question_id: string | null;
         };
+        /** QGetParameterDraftsEntriesV4Item */
+        QGetParameterDraftsEntriesV4Item: {
+            /** Draft Id */
+            draft_id: string | null;
+            /** Created At */
+            created_at: string | null;
+            /** Updated At */
+            updated_at: string | null;
+            /** Version */
+            version: number | null;
+            /** Generated */
+            generated: boolean | null;
+            /** Mcp */
+            mcp: boolean | null;
+            /** Active */
+            active: boolean | null;
+            /** Group Id */
+            group_id: string | null;
+            /** Department Ids */
+            department_ids: string[] | null;
+            /** Description Ids */
+            description_ids: string[] | null;
+            /** Field Ids */
+            field_ids: string[] | null;
+            /** Flag Ids */
+            flag_ids: string[] | null;
+            /** Name Ids */
+            name_ids: string[] | null;
+            /** Parameter Ids */
+            parameter_ids: string[] | null;
+        };
         /** QGetParameterFieldsV4Item */
         QGetParameterFieldsV4Item: {
             /** Id */
@@ -44901,6 +44888,45 @@ export interface components {
             conditional: boolean | null;
             /** Field Ids */
             field_ids: string[] | null;
+        };
+        /** QGetPersonaDraftsEntriesV4Item */
+        QGetPersonaDraftsEntriesV4Item: {
+            /** Draft Id */
+            draft_id: string | null;
+            /** Created At */
+            created_at: string | null;
+            /** Updated At */
+            updated_at: string | null;
+            /** Version */
+            version: number | null;
+            /** Generated */
+            generated: boolean | null;
+            /** Mcp */
+            mcp: boolean | null;
+            /** Active */
+            active: boolean | null;
+            /** Group Id */
+            group_id: string | null;
+            /** Name Ids */
+            name_ids: string[] | null;
+            /** Description Ids */
+            description_ids: string[] | null;
+            /** Color Ids */
+            color_ids: string[] | null;
+            /** Icon Ids */
+            icon_ids: string[] | null;
+            /** Instruction Ids */
+            instruction_ids: string[] | null;
+            /** Flag Ids */
+            flag_ids: string[] | null;
+            /** Department Ids */
+            department_ids: string[] | null;
+            /** Parameter Field Ids */
+            parameter_field_ids: string[] | null;
+            /** Example Ids */
+            example_ids: string[] | null;
+            /** Parameter Ids */
+            parameter_ids: string[] | null;
         };
         /** QGetPersonaResourceV4Item */
         QGetPersonaResourceV4Item: {
@@ -45089,6 +45115,31 @@ export interface components {
             /** Sidebar Ring */
             sidebar_ring: string | null;
         };
+        /** QGetProfileDraftsEntriesV4Item */
+        QGetProfileDraftsEntriesV4Item: {
+            /** Draft Id */
+            draft_id: string | null;
+            /** Created At */
+            created_at: string | null;
+            /** Updated At */
+            updated_at: string | null;
+            /** Version */
+            version: number | null;
+            /** Generated */
+            generated: boolean | null;
+            /** Mcp */
+            mcp: boolean | null;
+            /** Active */
+            active: boolean | null;
+            /** Group Id */
+            group_id: string | null;
+            /** Name Ids */
+            name_ids: string[] | null;
+            /** Flag Ids */
+            flag_ids: string[] | null;
+            /** Department Ids */
+            department_ids: string[] | null;
+        };
         /** QGetProfilesV4Item */
         QGetProfilesV4Item: {
             /** Profile Id */
@@ -45125,6 +45176,39 @@ export interface components {
             value: string | null;
             /** Generated */
             generated: boolean | null;
+        };
+        /** QGetProviderDraftsEntriesV4Item */
+        QGetProviderDraftsEntriesV4Item: {
+            /** Draft Id */
+            draft_id: string | null;
+            /** Created At */
+            created_at: string | null;
+            /** Updated At */
+            updated_at: string | null;
+            /** Version */
+            version: number | null;
+            /** Generated */
+            generated: boolean | null;
+            /** Mcp */
+            mcp: boolean | null;
+            /** Active */
+            active: boolean | null;
+            /** Group Id */
+            group_id: string | null;
+            /** Name Ids */
+            name_ids: string[] | null;
+            /** Description Ids */
+            description_ids: string[] | null;
+            /** Flag Ids */
+            flag_ids: string[] | null;
+            /** Value Ids */
+            value_ids: string[] | null;
+            /** Endpoint Ids */
+            endpoint_ids: string[] | null;
+            /** Key Ids */
+            key_ids: string[] | null;
+            /** Department Ids */
+            department_ids: string[] | null;
         };
         /** QGetProviderKeysV4Item */
         QGetProviderKeysV4Item: {
@@ -45204,6 +45288,39 @@ export interface components {
             /** Generated */
             generated: boolean | null;
         };
+        /** QGetRubricDraftsEntriesV4Item */
+        QGetRubricDraftsEntriesV4Item: {
+            /** Draft Id */
+            draft_id: string | null;
+            /** Created At */
+            created_at: string | null;
+            /** Updated At */
+            updated_at: string | null;
+            /** Version */
+            version: number | null;
+            /** Generated */
+            generated: boolean | null;
+            /** Mcp */
+            mcp: boolean | null;
+            /** Active */
+            active: boolean | null;
+            /** Group Id */
+            group_id: string | null;
+            /** Name Ids */
+            name_ids: string[] | null;
+            /** Description Ids */
+            description_ids: string[] | null;
+            /** Flag Ids */
+            flag_ids: string[] | null;
+            /** Department Ids */
+            department_ids: string[] | null;
+            /** Point Ids */
+            point_ids: string[] | null;
+            /** Standard Group Ids */
+            standard_group_ids: string[] | null;
+            /** Standard Ids */
+            standard_ids: string[] | null;
+        };
         /** QGetRubricsV4Item */
         QGetRubricsV4Item: {
             /** Id */
@@ -45245,6 +45362,43 @@ export interface components {
             id: string | null;
             /** Generated */
             generated: boolean | null;
+        };
+        /** QGetScenarioDraftsEntriesV4Item */
+        QGetScenarioDraftsEntriesV4Item: {
+            /** Draft Id */
+            draft_id: string | null;
+            /** Created At */
+            created_at: string | null;
+            /** Updated At */
+            updated_at: string | null;
+            /** Version */
+            version: number | null;
+            /** Generated */
+            generated: boolean | null;
+            /** Mcp */
+            mcp: boolean | null;
+            /** Active */
+            active: boolean | null;
+            /** Group Id */
+            group_id: string | null;
+            /** Name Ids */
+            name_ids: string[] | null;
+            /** Description Ids */
+            description_ids: string[] | null;
+            /** Flag Ids */
+            flag_ids: string[] | null;
+            /** Department Ids */
+            department_ids: string[] | null;
+            /** Persona Ids */
+            persona_ids: string[] | null;
+            /** Document Ids */
+            document_ids: string[] | null;
+            /** Parameter Ids */
+            parameter_ids: string[] | null;
+            /** Parameter Field Ids */
+            parameter_field_ids: string[] | null;
+            /** Question Ids */
+            question_ids: string[] | null;
         };
         /** QGetScenarioFlagsV4Item */
         QGetScenarioFlagsV4Item: {
@@ -45307,6 +45461,35 @@ export interface components {
             /** Generated */
             generated: boolean | null;
         };
+        /** QGetSettingDraftsEntriesV4Item */
+        QGetSettingDraftsEntriesV4Item: {
+            /** Draft Id */
+            draft_id: string | null;
+            /** Created At */
+            created_at: string | null;
+            /** Updated At */
+            updated_at: string | null;
+            /** Version */
+            version: number | null;
+            /** Generated */
+            generated: boolean | null;
+            /** Mcp */
+            mcp: boolean | null;
+            /** Active */
+            active: boolean | null;
+            /** Group Id */
+            group_id: string | null;
+            /** Name Ids */
+            name_ids: string[] | null;
+            /** Description Ids */
+            description_ids: string[] | null;
+            /** Flag Ids */
+            flag_ids: string[] | null;
+            /** Color Ids */
+            color_ids: string[] | null;
+            /** Department Ids */
+            department_ids: string[] | null;
+        };
         /**
          * QGetSettingsV4Provider
          * @description Provider item in settings.
@@ -45320,6 +45503,43 @@ export interface components {
             description?: string | null;
             /** Value */
             value?: string | null;
+        };
+        /** QGetSimulationDraftsEntriesV4Item */
+        QGetSimulationDraftsEntriesV4Item: {
+            /** Draft Id */
+            draft_id: string | null;
+            /** Created At */
+            created_at: string | null;
+            /** Updated At */
+            updated_at: string | null;
+            /** Version */
+            version: number | null;
+            /** Generated */
+            generated: boolean | null;
+            /** Mcp */
+            mcp: boolean | null;
+            /** Active */
+            active: boolean | null;
+            /** Group Id */
+            group_id: string | null;
+            /** Name Ids */
+            name_ids: string[] | null;
+            /** Description Ids */
+            description_ids: string[] | null;
+            /** Flag Ids */
+            flag_ids: string[] | null;
+            /** Department Ids */
+            department_ids: string[] | null;
+            /** Scenario Ids */
+            scenario_ids: string[] | null;
+            /** Scenario Flag Ids */
+            scenario_flag_ids: string[] | null;
+            /** Scenario Position Ids */
+            scenario_position_ids: string[] | null;
+            /** Scenario Rubric Ids */
+            scenario_rubric_ids: string[] | null;
+            /** Scenario Time Limit Ids */
+            scenario_time_limit_ids: string[] | null;
         };
         /** QGetSlugsV4Item */
         QGetSlugsV4Item: {
@@ -45356,6 +45576,51 @@ export interface components {
             /** Points */
             points: number | null;
         };
+        /** QGetSuiteDraftsEntriesV4Item */
+        QGetSuiteDraftsEntriesV4Item: {
+            /** Draft Id */
+            draft_id: string | null;
+            /** Created At */
+            created_at: string | null;
+            /** Updated At */
+            updated_at: string | null;
+            /** Version */
+            version: number | null;
+            /** Generated */
+            generated: boolean | null;
+            /** Mcp */
+            mcp: boolean | null;
+            /** Active */
+            active: boolean | null;
+            /** Group Id */
+            group_id: string | null;
+            /** Department Ids */
+            department_ids: string[] | null;
+            /** Description Ids */
+            description_ids: string[] | null;
+            /** Flag Ids */
+            flag_ids: string[] | null;
+            /** Group Ids */
+            group_ids: string[] | null;
+            /** Instruction Ids */
+            instruction_ids: string[] | null;
+            /** Key Ids */
+            key_ids: string[] | null;
+            /** Name Ids */
+            name_ids: string[] | null;
+            /** Prompt Ids */
+            prompt_ids: string[] | null;
+            /** Reasoning Level Ids */
+            reasoning_level_ids: string[] | null;
+            /** Run Ids */
+            run_ids: string[] | null;
+            /** Temperature Level Ids */
+            temperature_level_ids: string[] | null;
+            /** Tool Ids */
+            tool_ids: string[] | null;
+            /** Voice Ids */
+            voice_ids: string[] | null;
+        };
         /** QGetTemperatureLevelsV4Item */
         QGetTemperatureLevelsV4Item: {
             /** Id */
@@ -45383,6 +45648,35 @@ export interface components {
             /** Generated */
             generated: boolean | null;
         };
+        /** QGetToolDraftsEntriesV4Item */
+        QGetToolDraftsEntriesV4Item: {
+            /** Draft Id */
+            draft_id: string | null;
+            /** Created At */
+            created_at: string | null;
+            /** Updated At */
+            updated_at: string | null;
+            /** Version */
+            version: number | null;
+            /** Generated */
+            generated: boolean | null;
+            /** Mcp */
+            mcp: boolean | null;
+            /** Active */
+            active: boolean | null;
+            /** Group Id */
+            group_id: string | null;
+            /** Name Ids */
+            name_ids: string[] | null;
+            /** Description Ids */
+            description_ids: string[] | null;
+            /** Flag Ids */
+            flag_ids: string[] | null;
+            /** Args Ids */
+            args_ids: string[] | null;
+            /** Args Output Ids */
+            args_output_ids: string[] | null;
+        };
         /** QGetToolsV4Item */
         QGetToolsV4Item: {
             /** Id */
@@ -45397,6 +45691,49 @@ export interface components {
             args_ids: string[] | null;
             /** Args Output Ids */
             args_output_ids: string[] | null;
+        };
+        /** QGetTrainingDraftsEntriesV4Item */
+        QGetTrainingDraftsEntriesV4Item: {
+            /** Draft Id */
+            draft_id: string | null;
+            /** Created At */
+            created_at: string | null;
+            /** Updated At */
+            updated_at: string | null;
+            /** Version */
+            version: number | null;
+            /** Generated */
+            generated: boolean | null;
+            /** Mcp */
+            mcp: boolean | null;
+            /** Active */
+            active: boolean | null;
+            /** Group Id */
+            group_id: string | null;
+            /** Department Ids */
+            department_ids: string[] | null;
+            /** Persona Ids */
+            persona_ids: string[] | null;
+            /** Document Ids */
+            document_ids: string[] | null;
+            /** Parameter Field Ids */
+            parameter_field_ids: string[] | null;
+            /** Parameter Ids */
+            parameter_ids: string[] | null;
+            /** Field Ids */
+            field_ids: string[] | null;
+            /** Question Ids */
+            question_ids: string[] | null;
+            /** Option Ids */
+            option_ids: string[] | null;
+            /** Video Ids */
+            video_ids: string[] | null;
+            /** Image Ids */
+            image_ids: string[] | null;
+            /** Problem Statement Ids */
+            problem_statement_ids: string[] | null;
+            /** Objective Ids */
+            objective_ids: string[] | null;
         };
         /** QGetUploadsV4Item */
         QGetUploadsV4Item: {
@@ -47304,44 +47641,6 @@ export interface components {
             tool_name?: string | null;
             /** Arguments Delta */
             arguments_delta?: string | null;
-        };
-        /**
-         * RunViewItem
-         * @description Single run from the run list view.
-         */
-        RunViewItem: {
-            /**
-             * Run Id
-             * Format: uuid
-             */
-            run_id: string;
-            /** Group Id */
-            group_id?: string | null;
-            /**
-             * Input Tokens
-             * @default 0
-             */
-            input_tokens: number;
-            /**
-             * Output Tokens
-             * @default 0
-             */
-            output_tokens: number;
-            /**
-             * Cached Input Tokens
-             * @default 0
-             */
-            cached_input_tokens: number;
-            /** Run Created At */
-            run_created_at?: string | null;
-            /** Agent Ids */
-            agent_ids?: string[] | null;
-            /** Model Ids */
-            model_ids?: string[] | null;
-            /** Provider Ids */
-            provider_ids?: string[] | null;
-            /** Pricing */
-            pricing?: components["schemas"]["RunPricingItem"][];
         };
         /**
          * SaveAgentApiRequest
@@ -54187,26 +54486,6 @@ export interface components {
              */
             error_count: number;
         };
-        /**
-         * SessionViewItem
-         * @description Single session from the session list view.
-         */
-        SessionViewItem: {
-            /**
-             * Session Id
-             * Format: uuid
-             */
-            session_id: string;
-            /** Profile Id */
-            profile_id?: string | null;
-            /** Session Created At */
-            session_created_at?: string | null;
-            /**
-             * Active
-             * @default false
-             */
-            active: boolean;
-        };
         /** SettingAuthItemKeySection */
         SettingAuthItemKeySection: {
             /**
@@ -56334,8 +56613,8 @@ export interface components {
             /** Test */
             test?: components["schemas"]["BenchmarkTestViewItem"][] | null;
             /** Test Invocation */
-            test_invocation?: components["schemas"]["BenchmarkInvocationViewItem"][] | null;
-            runs?: components["schemas"]["GetRunListViewResponse"] | null;
+            test_invocation?: components["schemas"]["app__api__v4__entries__test_invocation__view__BenchmarkInvocationViewItem"][] | null;
+            runs?: components["schemas"]["app__api__v4__entries__runs__types__GetRunListViewResponse"] | null;
         };
         /**
          * TextViewItem
@@ -57796,6 +58075,384 @@ export interface components {
             count?: number | null;
         };
         /**
+         * ActivityViewItem
+         * @description Single item from the activity list view.
+         */
+        app__api__v4__entries__activity__view__ActivityViewItem: {
+            /**
+             * Activity Id
+             * Format: uuid
+             */
+            activity_id: string;
+            /** Profile Id */
+            profile_id?: string | null;
+            /** Session Id */
+            session_id?: string | null;
+            /** Last Active */
+            last_active?: string | null;
+            /** Created At */
+            created_at?: string | null;
+        };
+        /**
+         * AttemptViewItem
+         * @description Single attempt from the attempt list.
+         */
+        app__api__v4__entries__attempt__types__AttemptViewItem: {
+            /**
+             * Attempt Id
+             * Format: uuid
+             */
+            attempt_id: string;
+            /** Simulation Id */
+            simulation_id?: string | null;
+            /** Profile Id */
+            profile_id?: string | null;
+            /** Cohort Id */
+            cohort_id?: string | null;
+            /** Department Id */
+            department_id?: string | null;
+            /**
+             * Practice
+             * @default false
+             */
+            practice: boolean;
+            /**
+             * Infinite Mode
+             * @default false
+             */
+            infinite_mode: boolean;
+            /** Created At */
+            created_at?: string | null;
+            /**
+             * Is Archived
+             * @default false
+             */
+            is_archived: boolean;
+            /** Scenario Ids */
+            scenario_ids?: string[] | null;
+        };
+        /**
+         * AuditViewItem
+         * @description Single item from the audits list view.
+         */
+        app__api__v4__entries__audits__view__AuditViewItem: {
+            /**
+             * Audit Id
+             * Format: uuid
+             */
+            audit_id: string;
+            /** Session Id */
+            session_id?: string | null;
+            /** Audit Created At */
+            audit_created_at?: string | null;
+            /** Message */
+            message?: string | null;
+            /** Endpoint */
+            endpoint?: string | null;
+            /**
+             * Error
+             * @default false
+             */
+            error: boolean;
+        };
+        /**
+         * GrantViewItem
+         * @description Single item from the grants list view.
+         */
+        app__api__v4__entries__grants__view__GrantViewItem: {
+            /**
+             * Grant Id
+             * Format: uuid
+             */
+            grant_id: string;
+            /** Grantor Id */
+            grantor_id?: string | null;
+            /** Emulation Id */
+            emulation_id?: string | null;
+            /** Emulated Id */
+            emulated_id?: string | null;
+            /** Grant Session Id */
+            grant_session_id?: string | null;
+            /** Emulation Session Id */
+            emulation_session_id?: string | null;
+            /** Expires At */
+            expires_at?: string | null;
+            /** Used At */
+            used_at?: string | null;
+            /** Revoked At */
+            revoked_at?: string | null;
+            /** Created At */
+            created_at?: string | null;
+        };
+        /**
+         * HealthViewItem
+         * @description Single item from the health list view.
+         */
+        app__api__v4__entries__health__view__HealthViewItem: {
+            /**
+             * Date Hour
+             * Format: date-time
+             */
+            date_hour: string;
+            /** Service */
+            service?: string | null;
+            /**
+             * Check Count
+             * @default 0
+             */
+            check_count: number;
+            /**
+             * Ok Count
+             * @default 0
+             */
+            ok_count: number;
+            /**
+             * Fail Count
+             * @default 0
+             */
+            fail_count: number;
+            /** Uptime Percent */
+            uptime_percent?: number | null;
+            /** Avg Latency Ms */
+            avg_latency_ms?: number | null;
+            /** Min Latency Ms */
+            min_latency_ms?: number | null;
+            /** Max Latency Ms */
+            max_latency_ms?: number | null;
+            /** Latest Ok */
+            latest_ok?: boolean | null;
+            /** Latest Error */
+            latest_error?: string | null;
+        };
+        /**
+         * LoginViewItem
+         * @description Single item from the logins list view.
+         */
+        app__api__v4__entries__logins__view__LoginViewItem: {
+            /**
+             * Login Id
+             * Format: uuid
+             */
+            login_id: string;
+            /** Profile Id */
+            profile_id?: string | null;
+            /** Session Id */
+            session_id?: string | null;
+            /** Last Login */
+            last_login?: string | null;
+            /** Login Created At */
+            login_created_at?: string | null;
+            /** Active */
+            active?: boolean | null;
+            /** Generated */
+            generated?: boolean | null;
+            /** Mcp */
+            mcp?: boolean | null;
+            /** Call Id */
+            call_id?: string | null;
+        };
+        /**
+         * MetricViewItem
+         * @description Single item from the metrics list view.
+         */
+        app__api__v4__entries__metrics__view__MetricViewItem: {
+            /**
+             * Date Hour
+             * Format: date-time
+             */
+            date_hour: string;
+            /**
+             * Sample Count
+             * @default 0
+             */
+            sample_count: number;
+            /** Avg Cpu Percent */
+            avg_cpu_percent?: number | null;
+            /** Min Cpu Percent */
+            min_cpu_percent?: number | null;
+            /** Max Cpu Percent */
+            max_cpu_percent?: number | null;
+            /** Avg Latency Ms */
+            avg_latency_ms?: number | null;
+            /** Min Latency Ms */
+            min_latency_ms?: number | null;
+            /** Max Latency Ms */
+            max_latency_ms?: number | null;
+            /** Avg Memory Bytes */
+            avg_memory_bytes?: number | null;
+            /** Min Memory Bytes */
+            min_memory_bytes?: number | null;
+            /** Max Memory Bytes */
+            max_memory_bytes?: number | null;
+            /** Max Requests Total */
+            max_requests_total?: number | null;
+            /** Max Errors Total */
+            max_errors_total?: number | null;
+        };
+        /**
+         * ProblemViewItem
+         * @description Single item from the problems list view.
+         */
+        app__api__v4__entries__problems__view__ProblemViewItem: {
+            /**
+             * Problem Id
+             * Format: uuid
+             */
+            problem_id: string;
+            /** Type */
+            type?: string | null;
+            /** Message */
+            message?: string | null;
+            /** Resolved */
+            resolved?: boolean | null;
+            /** Session Id */
+            session_id?: string | null;
+            /** Problem Created At */
+            problem_created_at?: string | null;
+            /** Problem Updated At */
+            problem_updated_at?: string | null;
+            /** Profile Id */
+            profile_id?: string | null;
+        };
+        /**
+         * GetRunListViewResponse
+         * @description Response containing run list data.
+         */
+        app__api__v4__entries__runs__types__GetRunListViewResponse: {
+            /**
+             * Items
+             * @description Run data items
+             */
+            items?: components["schemas"]["app__api__v4__entries__runs__types__RunViewItem"][];
+            /**
+             * Total Count
+             * @description Total count before pagination
+             * @default 0
+             */
+            total_count: number;
+        };
+        /**
+         * RunViewItem
+         * @description Single run from the run list.
+         */
+        app__api__v4__entries__runs__types__RunViewItem: {
+            /**
+             * Run Id
+             * Format: uuid
+             */
+            run_id: string;
+            /** Group Id */
+            group_id?: string | null;
+            /**
+             * Input Tokens
+             * @default 0
+             */
+            input_tokens: number;
+            /**
+             * Output Tokens
+             * @default 0
+             */
+            output_tokens: number;
+            /**
+             * Cached Input Tokens
+             * @default 0
+             */
+            cached_input_tokens: number;
+            /** Run Created At */
+            run_created_at?: string | null;
+            /** Agent Ids */
+            agent_ids?: string[] | null;
+            /** Model Ids */
+            model_ids?: string[] | null;
+            /** Provider Ids */
+            provider_ids?: string[] | null;
+            /** Pricing */
+            pricing?: components["schemas"]["RunPricingItem"][];
+        };
+        /**
+         * SessionViewItem
+         * @description Single item from the sessions list view.
+         */
+        app__api__v4__entries__sessions__view__SessionViewItem: {
+            /**
+             * Session Id
+             * Format: uuid
+             */
+            session_id: string;
+            /** Profile Id */
+            profile_id?: string | null;
+            /** Session Created At */
+            session_created_at?: string | null;
+            /**
+             * Active
+             * @default false
+             */
+            active: boolean;
+        };
+        /**
+         * BenchmarkInvocationViewItem
+         * @description Single benchmark invocation row from test_invocation_mv.
+         */
+        app__api__v4__entries__test_invocation__view__BenchmarkInvocationViewItem: {
+            /**
+             * Invocation Id
+             * Format: uuid
+             */
+            invocation_id: string;
+            /**
+             * Test Id
+             * Format: uuid
+             */
+            test_id: string;
+            /** Group Id */
+            group_id?: string | null;
+            /** Suite Department Id */
+            suite_department_id?: string | null;
+            /** Created At */
+            created_at?: string | null;
+            /** Title */
+            title?: string | null;
+            /**
+             * Invocation Completed
+             * @default false
+             */
+            invocation_completed: boolean;
+            /** Grade Score */
+            grade_score?: number | null;
+            /** Grade Passed */
+            grade_passed?: boolean | null;
+            /** Grade Time Taken */
+            grade_time_taken?: number | null;
+            /** Rubric Id */
+            rubric_id?: string | null;
+            /** Grade Id */
+            grade_id?: string | null;
+            /** Invocation Run Ids */
+            invocation_run_ids?: string[];
+            /** Run Ids */
+            run_ids?: string[];
+            /** Group Ids */
+            group_ids?: string[];
+            /** Instruction Ids */
+            instruction_ids?: string[];
+            /** Tool Ids */
+            tool_ids?: string[];
+            /** Model Id */
+            model_id?: string | null;
+            /** Prompt Id */
+            prompt_id?: string | null;
+            /** Voice Id */
+            voice_id?: string | null;
+            /** Temperature Level Id */
+            temperature_level_id?: string | null;
+            /** Reasoning Level Id */
+            reasoning_level_id?: string | null;
+            /** Key Id */
+            key_id?: string | null;
+            /** Historical Run Ids */
+            historical_run_ids?: string[];
+        };
+        /**
          * QGetRolesV4Item
          * @description Role item returned from get endpoint.
          */
@@ -57888,6 +58545,25 @@ export interface components {
             providers?: components["schemas"]["QGetSettingsV4Provider"][] | null;
         };
         /**
+         * ActivityViewItem
+         * @description Single activity from the activity list view.
+         */
+        app__api__v4__views__activity__list__types__ActivityViewItem: {
+            /**
+             * Activity Id
+             * Format: uuid
+             */
+            activity_id: string;
+            /** Profile Id */
+            profile_id?: string | null;
+            /** Session Id */
+            session_id?: string | null;
+            /** Last Active */
+            last_active?: string | null;
+            /** Created At */
+            created_at?: string | null;
+        };
+        /**
          * GetChatsRequest
          * @description Request for getting chat data.
          */
@@ -57909,6 +58585,44 @@ export interface components {
              * @description Chat data items
              */
             items?: components["schemas"]["ChatViewItem"][];
+        };
+        /**
+         * AttemptViewItem
+         * @description Single attempt from the attempt list view.
+         */
+        app__api__v4__views__attempt__list__types__AttemptViewItem: {
+            /**
+             * Attempt Id
+             * Format: uuid
+             */
+            attempt_id: string;
+            /** Simulation Id */
+            simulation_id?: string | null;
+            /** Profile Id */
+            profile_id?: string | null;
+            /** Cohort Id */
+            cohort_id?: string | null;
+            /** Department Id */
+            department_id?: string | null;
+            /**
+             * Practice
+             * @default false
+             */
+            practice: boolean;
+            /**
+             * Infinite Mode
+             * @default false
+             */
+            infinite_mode: boolean;
+            /** Created At */
+            created_at?: string | null;
+            /**
+             * Is Archived
+             * @default false
+             */
+            is_archived: boolean;
+            /** Scenario Ids */
+            scenario_ids?: string[] | null;
         };
         /**
          * FilterOption
@@ -57982,6 +58696,96 @@ export interface components {
             history_content?: string | null;
             /** Audio Id */
             audio_id?: string | null;
+        };
+        /**
+         * AuditViewItem
+         * @description Single audit from the audit list view.
+         */
+        app__api__v4__views__audit__list__types__AuditViewItem: {
+            /**
+             * Audit Id
+             * Format: uuid
+             */
+            audit_id: string;
+            /** Session Id */
+            session_id?: string | null;
+            /** Audit Created At */
+            audit_created_at?: string | null;
+            /** Message */
+            message?: string | null;
+            /** Endpoint */
+            endpoint?: string | null;
+            /**
+             * Error
+             * @default false
+             */
+            error: boolean;
+        };
+        /**
+         * BenchmarkInvocationViewItem
+         * @description Single benchmark invocation row from test_invocation_mv.
+         *
+         *     Lean: entry attrs + resource IDs + grade scalars only. Feedbacks
+         *     fetched via simulation/test_feedback view.
+         */
+        app__api__v4__views__benchmark__invocations__types__BenchmarkInvocationViewItem: {
+            /**
+             * Invocation Id
+             * Format: uuid
+             */
+            invocation_id: string;
+            /**
+             * Test Id
+             * Format: uuid
+             */
+            test_id: string;
+            /** Group Id */
+            group_id?: string | null;
+            /** Suite Department Id */
+            suite_department_id?: string | null;
+            /** Created At */
+            created_at?: string | null;
+            /** Title */
+            title?: string | null;
+            /**
+             * Invocation Completed
+             * @default false
+             */
+            invocation_completed: boolean;
+            /** Grade Score */
+            grade_score?: number | null;
+            /** Grade Passed */
+            grade_passed?: boolean | null;
+            /** Grade Time Taken */
+            grade_time_taken?: number | null;
+            /** Rubric Id */
+            rubric_id?: string | null;
+            /** Grade Id */
+            grade_id?: string | null;
+            /** Invocation Run Ids */
+            invocation_run_ids?: string[];
+            /** Run Ids */
+            run_ids?: string[];
+            /** Group Ids */
+            group_ids?: string[];
+            /** Instruction Ids */
+            instruction_ids?: string[];
+            /** Tool Ids */
+            tool_ids?: string[];
+            /** Model Id */
+            model_id?: string | null;
+            /** Prompt Id */
+            prompt_id?: string | null;
+            /** Voice Id */
+            voice_id?: string | null;
+            /** Temperature Level Id */
+            temperature_level_id?: string | null;
+            /** Reasoning Level Id */
+            reasoning_level_id?: string | null;
+            /** Key Id */
+            key_id?: string | null;
+            /** Historical Run Ids */
+            historical_run_ids?: string[];
         };
         /**
          * FilterOption
@@ -58127,6 +58931,102 @@ export interface components {
             persona_options?: components["schemas"]["app__api__v4__views__chat__types__FilterOption"][] | null;
         };
         /**
+         * GrantViewItem
+         * @description Single grant from the grant list view.
+         */
+        app__api__v4__views__grant__list__types__GrantViewItem: {
+            /**
+             * Grant Id
+             * Format: uuid
+             */
+            grant_id: string;
+            /** Grantor Id */
+            grantor_id?: string | null;
+            /** Emulation Id */
+            emulation_id?: string | null;
+            /** Emulated Id */
+            emulated_id?: string | null;
+            /** Grant Session Id */
+            grant_session_id?: string | null;
+            /** Emulation Session Id */
+            emulation_session_id?: string | null;
+            /** Expires At */
+            expires_at?: string | null;
+            /** Used At */
+            used_at?: string | null;
+            /** Revoked At */
+            revoked_at?: string | null;
+            /** Created At */
+            created_at?: string | null;
+        };
+        /**
+         * HealthViewItem
+         * @description Single health row from the health list view.
+         */
+        app__api__v4__views__health__list__types__HealthViewItem: {
+            /**
+             * Date Hour
+             * Format: date-time
+             */
+            date_hour: string;
+            /** Service */
+            service?: string | null;
+            /**
+             * Check Count
+             * @default 0
+             */
+            check_count: number;
+            /**
+             * Ok Count
+             * @default 0
+             */
+            ok_count: number;
+            /**
+             * Fail Count
+             * @default 0
+             */
+            fail_count: number;
+            /** Uptime Percent */
+            uptime_percent?: number | null;
+            /** Avg Latency Ms */
+            avg_latency_ms?: number | null;
+            /** Min Latency Ms */
+            min_latency_ms?: number | null;
+            /** Max Latency Ms */
+            max_latency_ms?: number | null;
+            /** Latest Ok */
+            latest_ok?: boolean | null;
+            /** Latest Error */
+            latest_error?: string | null;
+        };
+        /**
+         * LoginViewItem
+         * @description Single login from the login list view.
+         */
+        app__api__v4__views__login__list__types__LoginViewItem: {
+            /**
+             * Login Id
+             * Format: uuid
+             */
+            login_id: string;
+            /** Profile Id */
+            profile_id?: string | null;
+            /** Session Id */
+            session_id?: string | null;
+            /** Last Login */
+            last_login?: string | null;
+            /** Login Created At */
+            login_created_at?: string | null;
+            /** Active */
+            active?: boolean | null;
+            /** Generated */
+            generated?: boolean | null;
+            /** Mcp */
+            mcp?: boolean | null;
+            /** Call Id */
+            call_id?: string | null;
+        };
+        /**
          * MessageViewItem
          * @description Single message from the message list view.
          */
@@ -58146,6 +59046,144 @@ export interface components {
             contents?: string[];
             /** Call Ids */
             call_ids?: string[];
+        };
+        /**
+         * MetricViewItem
+         * @description Single metric row from the metric list view.
+         */
+        app__api__v4__views__metric__list__types__MetricViewItem: {
+            /**
+             * Date Hour
+             * Format: date-time
+             */
+            date_hour: string;
+            /**
+             * Sample Count
+             * @default 0
+             */
+            sample_count: number;
+            /** Avg Cpu Percent */
+            avg_cpu_percent?: number | null;
+            /** Min Cpu Percent */
+            min_cpu_percent?: number | null;
+            /** Max Cpu Percent */
+            max_cpu_percent?: number | null;
+            /** Avg Latency Ms */
+            avg_latency_ms?: number | null;
+            /** Min Latency Ms */
+            min_latency_ms?: number | null;
+            /** Max Latency Ms */
+            max_latency_ms?: number | null;
+            /** Avg Memory Bytes */
+            avg_memory_bytes?: number | null;
+            /** Min Memory Bytes */
+            min_memory_bytes?: number | null;
+            /** Max Memory Bytes */
+            max_memory_bytes?: number | null;
+            /** Max Requests Total */
+            max_requests_total?: number | null;
+            /** Max Errors Total */
+            max_errors_total?: number | null;
+        };
+        /**
+         * ProblemViewItem
+         * @description Single problem from the problem list view.
+         */
+        app__api__v4__views__problem__list__types__ProblemViewItem: {
+            /**
+             * Problem Id
+             * Format: uuid
+             */
+            problem_id: string;
+            /** Type */
+            type?: string | null;
+            /** Message */
+            message?: string | null;
+            /** Resolved */
+            resolved?: boolean | null;
+            /** Session Id */
+            session_id?: string | null;
+            /** Problem Created At */
+            problem_created_at?: string | null;
+            /** Problem Updated At */
+            problem_updated_at?: string | null;
+            /** Profile Id */
+            profile_id?: string | null;
+        };
+        /**
+         * GetRunListViewResponse
+         * @description Response containing run list data.
+         */
+        app__api__v4__views__run__list__types__GetRunListViewResponse: {
+            /**
+             * Items
+             * @description Run data items
+             */
+            items?: components["schemas"]["app__api__v4__views__run__list__types__RunViewItem"][];
+            /**
+             * Total Count
+             * @description Total count before pagination
+             * @default 0
+             */
+            total_count: number;
+        };
+        /**
+         * RunViewItem
+         * @description Single run from the run list view.
+         */
+        app__api__v4__views__run__list__types__RunViewItem: {
+            /**
+             * Run Id
+             * Format: uuid
+             */
+            run_id: string;
+            /** Group Id */
+            group_id?: string | null;
+            /**
+             * Input Tokens
+             * @default 0
+             */
+            input_tokens: number;
+            /**
+             * Output Tokens
+             * @default 0
+             */
+            output_tokens: number;
+            /**
+             * Cached Input Tokens
+             * @default 0
+             */
+            cached_input_tokens: number;
+            /** Run Created At */
+            run_created_at?: string | null;
+            /** Agent Ids */
+            agent_ids?: string[] | null;
+            /** Model Ids */
+            model_ids?: string[] | null;
+            /** Provider Ids */
+            provider_ids?: string[] | null;
+            /** Pricing */
+            pricing?: components["schemas"]["RunPricingItem"][];
+        };
+        /**
+         * SessionViewItem
+         * @description Single session from the session list view.
+         */
+        app__api__v4__views__session__list__types__SessionViewItem: {
+            /**
+             * Session Id
+             * Format: uuid
+             */
+            session_id: string;
+            /** Profile Id */
+            profile_id?: string | null;
+            /** Session Created At */
+            session_created_at?: string | null;
+            /**
+             * Active
+             * @default false
+             */
+            active: boolean;
         };
         /**
          * GetMessagesRequest
@@ -84383,7 +85421,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["GetRunListViewResponse"];
+                    "application/json": components["schemas"]["app__api__v4__views__run__list__types__GetRunListViewResponse"];
                 };
             };
             /** @description Validation Error */
