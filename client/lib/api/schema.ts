@@ -27720,10 +27720,7 @@ export interface components {
         };
         /**
          * ChatViewItem
-         * @description Single chat from the attempt chats view.
-         *
-         *     Lean: entry attrs + resource IDs + grade scalars only. Composites
-         *     (feedbacks, analyses, responses) fetched via simulation/* views.
+         * @description Single chat from attempt chats.
          */
         ChatViewItem: {
             /**
@@ -38325,7 +38322,7 @@ export interface components {
         };
         /**
          * GradeItem
-         * @description Grade composite type (no id - not a resource, no rubric points - fetched via rubric handler).
+         * @description Grade composite type.
          */
         GradeItem: {
             /** Score */
@@ -59270,7 +59267,7 @@ export interface components {
          * GetChatsRequest
          * @description Request for getting chat data.
          */
-        app__api__v4__views__attempt__chats__types__GetChatsRequest: {
+        app__api__v4__views__attempt__chats__get__GetChatsRequest: {
             /**
              * Attempt Id
              * Format: uuid
@@ -59282,7 +59279,7 @@ export interface components {
          * GetChatsResponse
          * @description Response containing chat data.
          */
-        app__api__v4__views__attempt__chats__types__GetChatsResponse: {
+        app__api__v4__views__attempt__chats__get__GetChatsResponse: {
             /**
              * Items
              * @description Chat data items
@@ -85090,7 +85087,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["app__api__v4__views__attempt__chats__types__GetChatsRequest"];
+                "application/json": components["schemas"]["app__api__v4__views__attempt__chats__get__GetChatsRequest"];
             };
         };
         responses: {
@@ -85100,7 +85097,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__api__v4__views__attempt__chats__types__GetChatsResponse"];
+                    "application/json": components["schemas"]["app__api__v4__views__attempt__chats__get__GetChatsResponse"];
                 };
             };
             /** @description Validation Error */
