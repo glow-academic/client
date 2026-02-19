@@ -16,9 +16,9 @@ from fastapi import APIRouter
 
 from app.api.v4.artifacts.document.get import get_document_websocket
 from app.api.v4.artifacts.document.types import GetDocumentWebsocketResponse
+from app.api.v4.entries.config.get import get_config_entry_internal
 from app.api.v4.resources.instructions.get import get_instructions_internal
 from app.api.v4.resources.prompts.get import get_prompts_internal
-from app.api.v4.views.config.get import get_config_internal
 from app.infra.v4.generation import convert_tools_to_dict, render_developer_instructions
 from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
 from app.infra.v4.websocket.generation_tracker import (
@@ -363,7 +363,7 @@ async def _generate_document_impl(
             # Inject config view into Jinja context for template access
             if config_id:
                 async with pool.acquire() as config_conn:
-                    config_view_items = await get_config_internal(
+                    config_view_items = await get_config_entry_internal(
                         conn=config_conn,
                         config_id=config_id,
                         bypass_cache=True,

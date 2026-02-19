@@ -13,6 +13,7 @@ from app.sql.types import (
     GetConfigEntriesApiResponse,
     GetConfigEntriesSqlParams,
     GetConfigEntriesSqlRow,
+    QGetConfigEntriesV4Item,
     load_sql_query,
 )
 from app.utils.cache.cache_key import cache_key
@@ -29,7 +30,7 @@ async def get_config_entries_internal(
     conn: asyncpg.Connection,
     ids: list[UUID],
     bypass_cache: bool = False,
-) -> list[dict]:
+) -> list[QGetConfigEntriesV4Item]:
     """Internal function to fetch config entries by IDs."""
     if not ids:
         return []
@@ -43,7 +44,10 @@ async def get_config_entries_internal(
     if not bypass_cache:
         cached = await get_cached(cache_key_val)
         if cached:
-            return list(cached.get("items", []))
+            return [
+                QGetConfigEntriesV4Item.model_validate(item)
+                for item in cached.get("items", [])
+            ]
 
     params = GetConfigEntriesSqlParams(ids=ids)
     result = cast(
@@ -51,16 +55,29 @@ async def get_config_entries_internal(
         await execute_sql_typed(conn, SQL_PATH, params=params),
     )
 
-    items: list[dict] = result.items if result and result.items else []
+    items: list[QGetConfigEntriesV4Item] = (
+        result.items if result and result.items else []
+    )
 
     await set_cached(
         cache_key_val,
-        {"items": items if isinstance(items, list) else []},
+        {"items": [item.model_dump(mode="json") for item in items]},
         ttl=60,
         tags=tags,
     )
 
     return items
+
+
+async def get_config_entry_internal(
+    conn: asyncpg.Connection,
+    config_id: UUID,
+    bypass_cache: bool = False,
+) -> list[QGetConfigEntriesV4Item]:
+    """Single-ID wrapper matching the old view signature."""
+    return await get_config_entries_internal(
+        conn=conn, ids=[config_id], bypass_cache=bypass_cache
+    )
 
 
 @router.post(

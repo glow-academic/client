@@ -16,7 +16,7 @@ from app.api.v4.artifacts.pricing.types import (
 from app.api.v4.artifacts.types import FilterOption
 from app.api.v4.resources.agents.get import get_agents_internal
 from app.api.v4.resources.models.get import get_models_internal
-from app.api.v4.views.run.list.get import get_run_list_view_internal
+from app.api.v4.entries.runs.list import get_run_list_entries_internal
 from app.infra.v4.activity.audit import audit_activity
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
@@ -51,7 +51,7 @@ async def get_pricing(
 
         # Step 1: Fetch runs from runs_mv
         async with pool.acquire() as c:
-            runs_result = await get_run_list_view_internal(
+            runs_result = await get_run_list_entries_internal(
                 conn=c,
                 date_from=effective_date_from,
                 date_to=effective_date_to,

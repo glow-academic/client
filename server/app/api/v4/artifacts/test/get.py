@@ -38,10 +38,10 @@ from app.api.v4.resources.names.get import get_names_internal
 from app.api.v4.resources.providers.get import get_providers_internal
 from app.api.v4.resources.rubrics.get import get_rubrics_batch_internal
 from app.api.v4.resources.tools.get import get_tools_internal
-from app.api.v4.views.benchmark.invocations.get import (
+from app.api.v4.entries.test_invocation.view import (
     get_test_invocation_internal,
 )
-from app.api.v4.views.benchmark.tests.get import get_test_internal
+from app.api.v4.entries.tests.view import get_test_internal
 from app.infra.v4.activity.audit import audit_activity
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
@@ -460,7 +460,7 @@ async def get_test_websocket(
     from datetime import UTC, datetime
 
     from app.api.v4.resources.profiles.get import get_profiles_internal
-    from app.api.v4.views.run.list.get import get_run_list_view_internal
+    from app.api.v4.entries.runs.list import get_run_list_entries_internal
 
     data = await get_test_internal(
         conn=conn,
@@ -485,7 +485,7 @@ async def get_test_websocket(
         today_utc = datetime.now(UTC).replace(hour=0, minute=0, second=0, microsecond=0)
         tomorrow_utc = today_utc.replace(hour=23, minute=59, second=59)
         async with pool.acquire() as c:
-            return await get_run_list_view_internal(
+            return await get_run_list_entries_internal(
                 conn=c,
                 profile_id_filter=profile_id,
                 date_from=today_utc,

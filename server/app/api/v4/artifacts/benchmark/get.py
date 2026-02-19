@@ -44,8 +44,8 @@ from app.api.v4.resources.reasoning_levels.get import get_reasoning_levels_inter
 from app.api.v4.resources.temperature_levels.get import get_temperature_levels_internal
 from app.api.v4.resources.tools.get import get_tools_internal
 from app.api.v4.resources.voices.get import get_voices_internal
-from app.api.v4.views.benchmark.bundle.get import get_suite_view_internal
-from app.api.v4.views.run.list.get import get_run_list_view_internal
+from app.api.v4.entries.suite.view import get_suite_view_internal
+from app.api.v4.entries.runs.list import get_run_list_entries_internal
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_pool
 
@@ -368,7 +368,7 @@ async def get_suite_websocket(
         today_utc = datetime.now(UTC).replace(hour=0, minute=0, second=0, microsecond=0)
         tomorrow_utc = today_utc.replace(hour=23, minute=59, second=59)
         async with pool.acquire() as conn:
-            return await get_run_list_view_internal(
+            return await get_run_list_entries_internal(
                 conn=conn,
                 profile_id_filter=profile_id,
                 date_from=today_utc,

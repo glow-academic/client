@@ -18,8 +18,8 @@ from app.api.v4.artifacts.group.types import (
     GroupListItem,
 )
 from app.api.v4.resources.names.get import get_names_internal
-from app.api.v4.views.group.list.get import get_group_list_view_internal
-from app.api.v4.views.run.list.get import get_run_list_view_internal
+from app.api.v4.entries.groups.view import get_group_list_view_internal
+from app.api.v4.entries.runs.list import get_run_list_entries_internal
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
@@ -70,7 +70,7 @@ async def get_group_list_internal(
         )
 
     # Pass 2: Get all runs for these groups via view internal
-    runs_result = await get_run_list_view_internal(
+    runs_result = await get_run_list_entries_internal(
         conn=conn,
         group_ids=group_ids,
         page_limit=10000,

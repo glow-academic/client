@@ -26,10 +26,10 @@ from app.api.v4.artifacts.group.types import (
 )
 from app.api.v4.resources.names.get import get_names_internal
 from app.api.v4.resources.tools.get import get_tools_internal
-from app.api.v4.views.call.list.get import get_call_list_view_internal
-from app.api.v4.views.group.list.get import get_group_list_view_internal
-from app.api.v4.views.message.list.get import get_message_list_view_internal
-from app.api.v4.views.run.list.get import get_run_list_view_internal
+from app.api.v4.entries.calls.view import get_call_list_view_internal
+from app.api.v4.entries.groups.view import get_group_list_view_internal
+from app.api.v4.entries.messages.list import get_message_list_entries_internal
+from app.api.v4.entries.runs.list import get_run_list_entries_internal
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
@@ -94,7 +94,7 @@ async def get_group(
             )
 
         # Step 2: Get runs via view internal
-        runs_result = await get_run_list_view_internal(
+        runs_result = await get_run_list_entries_internal(
             conn=conn,
             group_id_filter=request.group_id,
             page_limit=10000,

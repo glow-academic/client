@@ -14,26 +14,59 @@ BEGIN
     END LOOP;
 END $$;
 
+DO $$
+DECLARE
+    r RECORD;
+BEGIN
+    FOR r IN
+        SELECT typname
+        FROM pg_type
+        WHERE typname LIKE 'q_get_config_entries_v4_item%'
+          AND typnamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'types')
+    LOOP
+        EXECUTE format('DROP TYPE IF EXISTS types.%I CASCADE', r.typname);
+    END LOOP;
+END $$;
+
+CREATE TYPE types.q_get_config_entries_v4_item AS (
+    config_id uuid,
+    agents_id uuid,
+    models_id uuid,
+    providers_id uuid,
+    tool_ids uuid[],
+    created_at timestamptz
+);
+
 CREATE OR REPLACE FUNCTION public.api_get_config_entries_v4(
     ids uuid[]
-) RETURNS TABLE(
-    items jsonb
 )
-LANGUAGE plpgsql STABLE
+RETURNS TABLE (
+    items types.q_get_config_entries_v4_item[]
+)
+LANGUAGE sql
+STABLE
 AS $$
-BEGIN
-    RETURN QUERY
-    SELECT jsonb_agg(
-        jsonb_build_object(
-            'config_id', m.config_id,
-            'agents_id', m.agents_id,
-            'models_id', m.models_id,
-            'providers_id', m.providers_id,
-            'tool_ids', m.tool_ids,
-            'config_created_at', m.config_created_at
-        )
-    ) AS items
-    FROM config_mv m
-    WHERE m.config_id = ANY(ids);
-END;
+    WITH mv_data AS (
+        SELECT mv.*
+        FROM config_mv mv
+        WHERE mv.config_id = ANY(ids)
+    ),
+    items_agg AS (
+        SELECT COALESCE(
+            ARRAY_AGG(
+                (
+                    config_id,
+                    agents_id,
+                    models_id,
+                    providers_id,
+                    tool_ids,
+                    config_created_at
+                )::types.q_get_config_entries_v4_item
+                ORDER BY config_created_at
+            ),
+            ARRAY[]::types.q_get_config_entries_v4_item[]
+        ) AS items
+        FROM mv_data
+    )
+    SELECT items FROM items_agg;
 $$;

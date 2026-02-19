@@ -11,8 +11,8 @@ from app.api.v4.artifacts.health.types import (
     HealthResponse,
     HealthViews,
 )
-from app.api.v4.views.health.list.get import get_health_list_view_internal
-from app.api.v4.views.metric.list.get import get_metric_list_view_internal
+from app.api.v4.entries.health.view import get_health_list_view_internal
+from app.api.v4.entries.metrics.view import get_metric_list_view_internal
 from app.infra.v4.activity.audit import audit_activity
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool

@@ -8,7 +8,7 @@ from pydantic import BaseModel
 
 from app.api.v4.resources.cohorts.types import QGetCohortsV4Item
 from app.api.v4.types import BaseResourceSection, ListFilterSection
-from app.api.v4.views.run.list.types import GetRunListViewResponse
+from app.api.v4.entries.runs.types import GetRunListViewResponse
 from app.sql.types import (
     QGetAgentsV4Item,
     QGetDepartmentsV4Item,

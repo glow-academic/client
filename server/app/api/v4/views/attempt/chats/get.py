@@ -34,8 +34,8 @@ async def get_attempt_chats_internal(
     and resource ID arrays. Composites (feedbacks, analyses, responses)
     fetched via simulation/* views.
     """
-    from app.api.v4.views.chat.get import get_chats_internal
-    from app.api.v4.views.chat.training_config import get_training_config_internal
+    from app.api.v4.entries.chat.get import get_chats_internal
+    from app.api.v4.entries.chat.training_config import get_training_config_internal
 
     ids = attempt_ids or ([attempt_id] if attempt_id else [])
 

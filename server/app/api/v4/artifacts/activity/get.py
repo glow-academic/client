@@ -16,18 +16,18 @@ from app.api.v4.artifacts.activity.types import (
     ActivityResponse,
     ActivityViews,
 )
-from app.api.v4.views.activity.list.get import get_activity_list_view_internal
-from app.api.v4.views.activity.list.types import GetActivityListViewResponse
-from app.api.v4.views.audit.list.get import get_audit_list_view_internal
-from app.api.v4.views.audit.list.types import GetAuditListViewResponse
-from app.api.v4.views.grant.list.get import get_grant_list_view_internal
-from app.api.v4.views.grant.list.types import GetGrantListViewResponse
-from app.api.v4.views.login.list.get import get_login_list_view_internal
-from app.api.v4.views.login.list.types import GetLoginListViewResponse
-from app.api.v4.views.problem.list.get import get_problem_list_view_internal
-from app.api.v4.views.problem.list.types import GetProblemListViewResponse
-from app.api.v4.views.session.list.get import get_session_list_view_internal
-from app.api.v4.views.session.list.types import GetSessionListViewResponse
+from app.api.v4.entries.activity.view import get_activity_list_view_internal
+from app.api.v4.entries.activity.view import GetActivityListViewResponse
+from app.api.v4.entries.audits.view import get_audit_list_view_internal
+from app.api.v4.entries.audits.view import GetAuditListViewResponse
+from app.api.v4.entries.grants.view import get_grant_list_view_internal
+from app.api.v4.entries.grants.view import GetGrantListViewResponse
+from app.api.v4.entries.logins.view import get_login_list_view_internal
+from app.api.v4.entries.logins.view import GetLoginListViewResponse
+from app.api.v4.entries.problems.view import get_problem_list_view_internal
+from app.api.v4.entries.problems.view import GetProblemListViewResponse
+from app.api.v4.entries.sessions.view import get_session_list_view_internal
+from app.api.v4.entries.sessions.view import GetSessionListViewResponse
 from app.infra.v4.activity.audit import audit_activity
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool

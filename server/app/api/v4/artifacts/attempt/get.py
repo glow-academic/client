@@ -94,30 +94,30 @@ from app.api.v4.resources.standard_groups.get import get_standard_groups_interna
 from app.api.v4.resources.standards.get import get_standards_internal
 from app.api.v4.resources.tools.get import get_tools_internal
 from app.api.v4.resources.videos.get import get_videos_internal
-from app.api.v4.views.attempt.chats.get import get_attempt_chats_internal
-from app.api.v4.views.attempt.list.get import get_attempt_list_internal
-from app.api.v4.views.attempt.messages.get import get_attempt_messages_internal
-from app.api.v4.views.simulation.analyses.get import get_attempt_analysis_internal
-from app.api.v4.views.simulation.contents.get import get_attempt_content_internal
-from app.api.v4.views.simulation.feedbacks.get import get_attempt_feedback_internal
-from app.api.v4.views.simulation.grades.get import get_attempt_grade_internal
-from app.api.v4.views.simulation.highlights.get import (
+from app.api.v4.entries.attempt.chats import get_attempt_chats_internal
+from app.api.v4.entries.attempt.list import get_attempt_list_internal
+from app.api.v4.entries.attempt.messages import get_attempt_messages_internal
+from app.api.v4.entries.attempt_analysis.view import get_attempt_analysis_internal
+from app.api.v4.entries.attempt_content.view import get_attempt_content_internal
+from app.api.v4.entries.attempt_feedback.view import get_attempt_feedback_internal
+from app.api.v4.entries.attempt_grade.view import get_attempt_grade_internal
+from app.api.v4.entries.attempt_highlight.view import (
     get_attempt_highlight_internal,
 )
-from app.api.v4.views.simulation.hints.get import get_attempt_hint_internal
-from app.api.v4.views.simulation.improvements.get import (
+from app.api.v4.entries.attempt_hint.view import get_attempt_hint_internal
+from app.api.v4.entries.attempt_improvement.view import (
     get_attempt_improvement_internal,
 )
-from app.api.v4.views.simulation.replacements.get import (
+from app.api.v4.entries.attempt_replacement.view import (
     get_attempt_replacement_internal,
 )
-from app.api.v4.views.simulation.responses.get import (
+from app.api.v4.entries.responses.view import (
     get_simulation_responses_internal,
 )
-from app.api.v4.views.simulation.strengths.get import (
+from app.api.v4.entries.attempt_strength.view import (
     get_attempt_strength_internal,
 )
-from app.api.v4.views.upload.list.get import get_upload_list_view_internal
+from app.api.v4.entries.uploads.view import get_upload_list_view_internal
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
@@ -1648,7 +1648,7 @@ async def get_attempt_websocket(
     """
     from datetime import UTC, datetime
 
-    from app.api.v4.views.run.list.get import get_run_list_view_internal
+    from app.api.v4.entries.runs.list import get_run_list_entries_internal
 
     data = await get_attempt_internal(
         conn=conn,
@@ -1674,7 +1674,7 @@ async def get_attempt_websocket(
         today_utc = datetime.now(UTC).replace(hour=0, minute=0, second=0, microsecond=0)
         tomorrow_utc = today_utc.replace(hour=23, minute=59, second=59)
         async with pool.acquire() as c:
-            return await get_run_list_view_internal(
+            return await get_run_list_entries_internal(
                 conn=c,
                 profile_id_filter=profile_id,
                 date_from=today_utc,

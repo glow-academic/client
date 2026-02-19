@@ -17,8 +17,8 @@ from app.api.v4.artifacts.benchmark.types import (
 from app.api.v4.artifacts.types import FilterOption
 from app.api.v4.resources.departments.get import get_departments_internal
 from app.api.v4.resources.evals.get import get_evals_internal
-from app.api.v4.views.benchmark.tests.get import get_test_internal
-from app.api.v4.views.benchmark.tests.types import BenchmarkTestViewItem
+from app.api.v4.entries.tests.view import get_test_internal
+from app.api.v4.entries.tests.view import BenchmarkTestViewItem
 from app.infra.v4.activity.audit import audit_activity
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool

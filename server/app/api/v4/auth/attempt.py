@@ -14,9 +14,9 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 from app.api.v4.auth.access import get_access_internal
 from app.api.v4.auth.types import GetAuthAttemptApiResponse
-from app.api.v4.views.attempt.chats.get import get_attempt_chats_internal
-from app.api.v4.views.attempt.list.get import get_attempt_list_internal
-from app.api.v4.views.attempt.messages.get import get_attempt_messages_internal
+from app.api.v4.entries.attempt.chats import get_attempt_chats_internal
+from app.api.v4.entries.attempt.list import get_attempt_list_internal
+from app.api.v4.entries.attempt.messages import get_attempt_messages_internal
 from app.infra.v4.activity.audit import audit_activity
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool

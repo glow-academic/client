@@ -13,8 +13,8 @@ import asyncpg
 from app.api.v4.artifacts.dashboard.types import DashboardSectionRequest
 from app.api.v4.resources.rubrics.get import get_rubrics_batch_internal
 from app.api.v4.resources.standard_groups.get import get_standard_groups_internal
-from app.api.v4.views.chat.rubric_scores import RubricScoresResponse
-from app.api.v4.views.chat.types import GetChatsResponse
+from app.api.v4.entries.chat.rubric_scores import RubricScoresResponse
+from app.api.v4.entries.chat.types import GetChatsResponse
 from app.sql.types import GetActiveSettingsSqlParams, GetActiveSettingsSqlRow
 from app.utils.sql_helper import execute_sql_typed
 
@@ -117,7 +117,7 @@ async def fetch_chats_data(
     bypass_cache: bool = False,
 ) -> "GetChatsResponse":
     """Fetch chat data from attempt_chat_mv — unified replacement for all 4 facts fetchers."""
-    from app.api.v4.views.chat.get import get_chats_internal
+    from app.api.v4.entries.chat.get import get_chats_internal
 
     async with pool.acquire() as c:
         return await get_chats_internal(
@@ -143,7 +143,7 @@ async def fetch_rubric_scores_data(
     bypass_cache: bool = False,
 ) -> "RubricScoresResponse":
     """Fetch rubric scores — replaces fetch_rubric_facts_data."""
-    from app.api.v4.views.chat.rubric_scores import get_rubric_scores_internal
+    from app.api.v4.entries.chat.rubric_scores import get_rubric_scores_internal
 
     async with pool.acquire() as c:
         return await get_rubric_scores_internal(

@@ -35,10 +35,10 @@ from app.api.v4.resources.scenarios.get import get_scenarios_internal
 from app.api.v4.resources.simulations.get import get_simulations_internal
 from app.api.v4.resources.standard_groups.get import get_standard_groups_internal
 from app.api.v4.resources.standards.search import search_standards_internal
-from app.api.v4.views.chat.get import get_chats_internal
-from app.api.v4.views.chat.types import ChatItem, GetChatsResponse
-from app.api.v4.views.practice.context.get import get_practice_context_view_internal
-from app.api.v4.views.practice.context.types import GetPracticeContextViewResponse
+from app.api.v4.entries.chat.get import get_chats_internal
+from app.api.v4.entries.chat.types import ChatItem, GetChatsResponse
+from app.api.v4.entries.practice.view import get_practice_context_view_internal
+from app.api.v4.entries.practice.view import GetPracticeContextViewResponse
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool

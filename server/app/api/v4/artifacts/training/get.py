@@ -59,8 +59,8 @@ from app.api.v4.resources.profiles.get import get_profiles_internal
 from app.api.v4.resources.questions.get import get_questions_internal
 from app.api.v4.resources.scenarios.get import get_scenarios_internal
 from app.api.v4.resources.videos.get import get_videos_internal
-from app.api.v4.views.run.list.get import get_run_list_view_internal
-from app.api.v4.views.training.bundle.get import get_training_view_internal
+from app.api.v4.entries.runs.list import get_run_list_entries_internal
+from app.api.v4.entries.training.view import get_training_view_internal
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_pool
 from app.sql.types import (
@@ -484,7 +484,7 @@ async def get_training_websocket(
         today_utc = datetime.now(UTC).replace(hour=0, minute=0, second=0, microsecond=0)
         tomorrow_utc = today_utc.replace(hour=23, minute=59, second=59)
         async with pool.acquire() as conn:
-            return await get_run_list_view_internal(
+            return await get_run_list_entries_internal(
                 conn=conn,
                 profile_id_filter=profile_id,
                 date_from=today_utc,

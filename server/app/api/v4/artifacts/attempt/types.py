@@ -12,10 +12,10 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-from app.api.v4.views.attempt.chats.types import ChatViewItem
-from app.api.v4.views.attempt.list.types import AttemptViewItem
-from app.api.v4.views.attempt.messages.types import MessageViewItem
-from app.api.v4.views.run.list.types import GetRunListViewResponse
+from app.api.v4.entries.attempt.types import ChatViewItem
+from app.api.v4.entries.attempt.types import AttemptViewItem
+from app.api.v4.entries.attempt.types import AttemptMessageViewItem as MessageViewItem
+from app.api.v4.entries.runs.types import GetRunListViewResponse
 from app.sql.types import (
     QGetAgentsV4Item,
     QGetArgsOutputsV4Item,

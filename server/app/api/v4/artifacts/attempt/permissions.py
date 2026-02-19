@@ -15,7 +15,7 @@ if TYPE_CHECKING:
         AvailableContinuationOptions,
         ChatData,
     )
-    from app.api.v4.views.attempt.chats.types import ChatViewItem
+    from app.api.v4.entries.attempt.types import ChatViewItem
 
 # Default styling for user messages
 DEFAULT_USER_COLOR = "#6366f1"  # Indigo
