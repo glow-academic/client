@@ -479,7 +479,7 @@ export default function AttemptMessages({
           <ScrollArea className="flex-1 px-2 min-h-0" ref={scrollAreaRef}>
             <div className="space-y-4 py-4">
               {messages.length === 0 ? (
-                <div className="flex flex-col items-center justify-center h-full min-h-[400px] space-y-6">
+                <div className="flex flex-col items-center justify-center h-full min-h-[200px] md:min-h-[400px] space-y-6">
                   <>
                     <div className="text-center space-y-2">
                       <p className="text-sm text-muted-foreground">
