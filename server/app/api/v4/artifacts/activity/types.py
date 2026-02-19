@@ -5,11 +5,11 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-from app.api.v4.entries.activity.view import ActivityViewItem
-from app.api.v4.entries.audits.view import AuditViewItem
-from app.api.v4.entries.grants.view import GrantViewItem
-from app.api.v4.entries.logins.view import LoginViewItem
-from app.api.v4.entries.problems.view import ProblemViewItem
+from app.api.v4.entries.activity.get import ActivityViewItem
+from app.api.v4.entries.audits.get import AuditViewItem
+from app.api.v4.entries.grants.get import GrantViewItem
+from app.api.v4.entries.logins.get import LoginViewItem
+from app.api.v4.entries.problems.get import ProblemViewItem
 from app.api.v4.entries.sessions.get import SessionViewItem
 
 

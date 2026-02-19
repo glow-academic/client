@@ -16,23 +16,23 @@ from app.api.v4.artifacts.activity.types import (
     ActivityResponse,
     ActivityViews,
 )
-from app.api.v4.entries.activity.view import (
+from app.api.v4.entries.activity.get import (
     GetActivityListViewResponse,
     get_activity_list_view_internal,
 )
-from app.api.v4.entries.audits.view import (
+from app.api.v4.entries.audits.get import (
     GetAuditListViewResponse,
     get_audit_list_view_internal,
 )
-from app.api.v4.entries.grants.view import (
+from app.api.v4.entries.grants.get import (
     GetGrantListViewResponse,
     get_grant_list_view_internal,
 )
-from app.api.v4.entries.logins.view import (
+from app.api.v4.entries.logins.get import (
     GetLoginListViewResponse,
     get_login_list_view_internal,
 )
-from app.api.v4.entries.problems.view import (
+from app.api.v4.entries.problems.get import (
     GetProblemListViewResponse,
     get_problem_list_view_internal,
 )

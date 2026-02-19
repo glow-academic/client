@@ -24740,7 +24740,7 @@ export interface components {
             /** Available Events */
             available_events?: components["schemas"]["ActivityAvailableEvent"][];
             /** Problems */
-            problems?: components["schemas"]["app__api__v4__entries__problems__view__ProblemViewItem"][];
+            problems?: components["schemas"]["app__api__v4__entries__problems__get__ProblemViewItem"][];
             views?: components["schemas"]["ActivityViews"];
             resources?: components["schemas"]["ActivityResources"];
             /**
@@ -24757,15 +24757,15 @@ export interface components {
             /** Sessions */
             sessions?: components["schemas"]["app__api__v4__entries__sessions__get__SessionViewItem"][];
             /** Activity */
-            activity?: components["schemas"]["app__api__v4__entries__activity__view__ActivityViewItem"][];
+            activity?: components["schemas"]["app__api__v4__entries__activity__get__ActivityViewItem"][];
             /** Logins */
-            logins?: components["schemas"]["app__api__v4__entries__logins__view__LoginViewItem"][];
+            logins?: components["schemas"]["app__api__v4__entries__logins__get__LoginViewItem"][];
             /** Audits */
-            audits?: components["schemas"]["app__api__v4__entries__audits__view__AuditViewItem"][];
+            audits?: components["schemas"]["app__api__v4__entries__audits__get__AuditViewItem"][];
             /** Problems */
-            problems?: components["schemas"]["app__api__v4__entries__problems__view__ProblemViewItem"][];
+            problems?: components["schemas"]["app__api__v4__entries__problems__get__ProblemViewItem"][];
             /** Grants */
-            grants?: components["schemas"]["app__api__v4__entries__grants__view__GrantViewItem"][];
+            grants?: components["schemas"]["app__api__v4__entries__grants__get__GrantViewItem"][];
         };
         /** AgentDepartmentSection */
         AgentDepartmentSection: {
@@ -38406,9 +38406,9 @@ export interface components {
          */
         HealthViews: {
             /** Service Hourly */
-            service_hourly?: components["schemas"]["app__api__v4__entries__health__view__HealthViewItem"][];
+            service_hourly?: components["schemas"]["app__api__v4__entries__health__get__HealthViewItem"][];
             /** Metrics Hourly */
-            metrics_hourly?: components["schemas"]["app__api__v4__entries__metrics__view__MetricViewItem"][];
+            metrics_hourly?: components["schemas"]["app__api__v4__entries__metrics__get__MetricViewItem"][];
         };
         /**
          * HighlightEntry
@@ -58078,7 +58078,7 @@ export interface components {
          * ActivityViewItem
          * @description Single item from the activity list view.
          */
-        app__api__v4__entries__activity__view__ActivityViewItem: {
+        app__api__v4__entries__activity__get__ActivityViewItem: {
             /**
              * Activity Id
              * Format: uuid
@@ -58135,7 +58135,7 @@ export interface components {
          * AuditViewItem
          * @description Single item from the audits list view.
          */
-        app__api__v4__entries__audits__view__AuditViewItem: {
+        app__api__v4__entries__audits__get__AuditViewItem: {
             /**
              * Audit Id
              * Format: uuid
@@ -58159,7 +58159,7 @@ export interface components {
          * GrantViewItem
          * @description Single item from the grants list view.
          */
-        app__api__v4__entries__grants__view__GrantViewItem: {
+        app__api__v4__entries__grants__get__GrantViewItem: {
             /**
              * Grant Id
              * Format: uuid
@@ -58188,7 +58188,7 @@ export interface components {
          * HealthViewItem
          * @description Single item from the health list view.
          */
-        app__api__v4__entries__health__view__HealthViewItem: {
+        app__api__v4__entries__health__get__HealthViewItem: {
             /**
              * Date Hour
              * Format: date-time
@@ -58228,7 +58228,7 @@ export interface components {
          * LoginViewItem
          * @description Single item from the logins list view.
          */
-        app__api__v4__entries__logins__view__LoginViewItem: {
+        app__api__v4__entries__logins__get__LoginViewItem: {
             /**
              * Login Id
              * Format: uuid
@@ -58255,7 +58255,7 @@ export interface components {
          * MetricViewItem
          * @description Single item from the metrics list view.
          */
-        app__api__v4__entries__metrics__view__MetricViewItem: {
+        app__api__v4__entries__metrics__get__MetricViewItem: {
             /**
              * Date Hour
              * Format: date-time
@@ -58293,7 +58293,7 @@ export interface components {
          * ProblemViewItem
          * @description Single item from the problems list view.
          */
-        app__api__v4__entries__problems__view__ProblemViewItem: {
+        app__api__v4__entries__problems__get__ProblemViewItem: {
             /**
              * Problem Id
              * Format: uuid

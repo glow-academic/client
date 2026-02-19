@@ -4,8 +4,8 @@ from datetime import datetime
 
 from pydantic import BaseModel, Field
 
-from app.api.v4.entries.health.view import HealthViewItem
-from app.api.v4.entries.metrics.view import MetricViewItem
+from app.api.v4.entries.health.get import HealthViewItem
+from app.api.v4.entries.metrics.get import MetricViewItem
 
 
 class HealthRequest(BaseModel):

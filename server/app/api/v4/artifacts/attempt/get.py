@@ -92,7 +92,7 @@ from app.api.v4.entries.attempt_replacement.get import (
 from app.api.v4.entries.attempt_strength.get import (
     get_attempt_strength_internal,
 )
-from app.api.v4.entries.responses.view import (
+from app.api.v4.entries.responses.get import (
     get_simulation_responses_internal,
 )
 from app.api.v4.entries.uploads.get import get_upload_list_view_internal

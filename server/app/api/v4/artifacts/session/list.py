@@ -21,8 +21,8 @@ from app.api.v4.artifacts.session.types import (
     GetSessionListResponse,
     SessionListItem,
 )
-from app.api.v4.entries.audits.view import get_audit_list_view_internal
-from app.api.v4.entries.groups.view import get_group_list_view_internal
+from app.api.v4.entries.audits.get import get_audit_list_view_internal
+from app.api.v4.entries.groups.get import get_group_list_view_internal
 from app.api.v4.entries.runs.search import get_run_list_entries_internal
 from app.api.v4.entries.sessions.get import get_session_list_view_internal
 from app.api.v4.resources.names.get import get_names_internal
