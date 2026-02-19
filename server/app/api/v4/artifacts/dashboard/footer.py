@@ -2,6 +2,7 @@
 
 import asyncio
 from typing import Annotated
+from uuid import UUID
 
 import asyncpg
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
@@ -19,7 +20,6 @@ from app.api.v4.artifacts.dashboard.types import (
     DashboardFooterRequest,
     DashboardFooterResponse,
 )
-from app.api.v4.entries.training_department.get import get_training_config_internal
 from app.api.v4.resources.documents.get import get_documents_internal
 from app.api.v4.resources.fields.get import get_fields_internal
 from app.api.v4.resources.parameter_fields.get import get_parameter_fields_internal
@@ -32,6 +32,54 @@ from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
 
 router = APIRouter()
+
+TRAINING_CONFIG_SQL = (
+    "app/sql/v4/queries/views/chat/training_config/get_training_config_complete.sql"
+)
+
+
+async def _fetch_training_doc_ids(
+    conn: asyncpg.Connection,
+    training_department_ids: list[UUID],
+    bypass_cache: bool = False,
+) -> dict[UUID, list[UUID]]:
+    """Fetch document_ids from training config for a batch of training_department_ids."""
+    if not training_department_ids:
+        return {}
+
+    from app.sql.types import GetTrainingConfigSqlParams
+    from app.utils.cache.cache_key import cache_key
+    from app.utils.cache.get_cached import get_cached
+    from app.utils.cache.set_cached import set_cached
+    from app.utils.sql_helper import execute_sql_typed
+
+    tc_cache_key = cache_key(
+        "dashboard/training_doc_ids",
+        {"ids": sorted(str(i) for i in training_department_ids)},
+    )
+
+    if not bypass_cache:
+        cached = await get_cached(tc_cache_key)
+        if cached:
+            return {UUID(k): [UUID(d) for d in v] for k, v in cached.items() if v}
+
+    params = GetTrainingConfigSqlParams(training_department_ids=training_department_ids)
+    result = await execute_sql_typed(conn, TRAINING_CONFIG_SQL, params=params)
+
+    doc_map: dict[UUID, list[UUID]] = {}
+    if result and result.items:
+        for item in result.items:
+            if item.document_ids:
+                doc_map[item.training_department_id] = list(item.document_ids)
+
+    await set_cached(
+        tc_cache_key,
+        {str(k): [str(d) for d in v] for k, v in doc_map.items()},
+        ttl=300,
+        tags=["entries", "chat", "training_config"],
+    )
+
+    return doc_map
 
 
 @router.post(
@@ -90,16 +138,16 @@ async def get_dashboard_footer(
         )
         if td_ids:
             async with pool.acquire() as c:
-                config_map = await get_training_config_internal(
+                doc_map = await _fetch_training_doc_ids(
                     conn=c,
                     training_department_ids=td_ids,
                     bypass_cache=bypass_cache,
                 )
             for item in chat_items:
                 if item.training_department_id:
-                    config = config_map.get(item.training_department_id)
-                    if config and config.document_ids:
-                        item.document_ids = list(config.document_ids)
+                    doc_ids = doc_map.get(item.training_department_id)
+                    if doc_ids:
+                        item.document_ids = list(doc_ids)
 
         # 4. Collect resource IDs from chat items
         simulation_ids_set: set = set()
