@@ -1,17 +1,18 @@
 """Attempt generation router - unified handler for all attempt entry types.
 
 This module handles all business logic for attempt generation:
+- Sync entry types (user_messages, assistant_messages, grades) create DB entries
+  and emit client events before LLM generation begins
 - Rate limit validation (fail fast) — skipped when handler already validated
-- Group/run creation — skipped when handler already created via prepare SQL
-- Grade preparation (sync entry type) — when grade entry_types detected
+- Group/run creation via prepare SQL
 - Agent/model context from pre-fetched resources (denormalized chain)
 - Jinja template rendering for developer instructions
 - Chat history from views (attempt_message)
 - Message insertion with deduplication
 
-Callers (message.py, audio/start.py) handle domain-specific mutations,
+Callers (audio/start.py) handle domain-specific mutations,
 then delegate to attempt_generate via internal bus with pre-created run_id/group_id.
-Grading is handled directly via entry_types (no separate handler needed).
+Messages and grading are handled directly via entry_types.
 """
 
 import asyncio
@@ -36,7 +37,9 @@ from app.main import get_internal_sio, get_pool, sio
 from app.socket.v4.artifacts.attempt.types import (
     ATTEMPT_ENTRY_TYPES,
     ATTEMPT_GRADE_ENTRY_TYPES,
+    AttemptAssistantStartEvent,
     AttemptGenerationStartedEvent,
+    AttemptUserCompleteEvent,
     GenerateAttemptPayload,
 )
 from app.socket.v4.artifacts.types import GenerateErrorApiRequest
@@ -45,6 +48,8 @@ from app.sql.types import (
     GetAgentEntryToolsSqlRow,
     PrepareAttemptGradeSqlParams,
     PrepareAttemptGradeSqlRow,
+    PrepareAttemptMessageSqlParams,
+    PrepareAttemptMessageSqlRow,
     PreparePersonaGenerationSqlParams,
     PreparePersonaGenerationSqlRow,
 )
@@ -70,6 +75,9 @@ SQL_PATH_CREATE_MESSAGE_WITH_TEXT = (
 )
 SQL_PATH_PREPARE_GRADE = (
     "app/sql/v4/queries/generate/attempt/prepare_attempt_grade_complete.sql"
+)
+SQL_PATH_PREPARE_MESSAGE = (
+    "app/sql/v4/queries/generate/attempt/prepare_attempt_message_complete.sql"
 )
 
 
@@ -149,8 +157,39 @@ async def _attempt_generate_impl(
 
         # Detect modality and resource_type from entry_types
         is_grade = any(et in ATTEMPT_GRADE_ENTRY_TYPES for et in entry_types)
+        is_message = "user_messages" in entry_types or "assistant_messages" in entry_types
         resource_type = "grade" if is_grade else "attempt"
         modality = "call" if is_grade else "text"
+
+        # Validate message-specific fields
+        if is_message:
+            if not data.message or not data.message.strip():
+                await emit_to_internal(
+                    "generate_call_error",
+                    GenerateErrorApiRequest(
+                        sid=sid,
+                        error_message="Missing or empty message",
+                        artifact_type="attempt",
+                        group_id=None,
+                        resource_type="attempt",
+                    ),
+                    sid=sid,
+                )
+                return
+
+            if not data.chat_id:
+                await emit_to_internal(
+                    "generate_call_error",
+                    GenerateErrorApiRequest(
+                        sid=sid,
+                        error_message="chat_id is required for message entry types",
+                        artifact_type="attempt",
+                        group_id=None,
+                        resource_type="attempt",
+                    ),
+                    sid=sid,
+                )
+                return
 
         # Step 1: Fetch attempt data (includes pre-fetched config resources)
         async with get_db_connection() as conn:
@@ -159,6 +198,42 @@ async def _attempt_generate_impl(
                 profile_id=profile_id,
                 attempt_id=data.attempt_id,
             )
+
+        # Validate chat state for message entry types
+        if is_message and data.chat_id:
+            chat_valid = False
+            if result.views and result.views.attempt_chat:
+                for chat in result.views.attempt_chat:
+                    if chat.id == data.chat_id:
+                        if chat.completed:
+                            await emit_to_internal(
+                                "generate_call_error",
+                                GenerateErrorApiRequest(
+                                    sid=sid,
+                                    error_message="Chat has already been completed",
+                                    artifact_type="attempt",
+                                    group_id=None,
+                                    resource_type="attempt",
+                                ),
+                                sid=sid,
+                            )
+                            return
+                        chat_valid = True
+                        break
+
+            if not chat_valid:
+                await emit_to_internal(
+                    "generate_call_error",
+                    GenerateErrorApiRequest(
+                        sid=sid,
+                        error_message="Chat does not exist",
+                        artifact_type="attempt",
+                        group_id=None,
+                        resource_type="attempt",
+                    ),
+                    sid=sid,
+                )
+                return
 
         # Resolve agent_id from resource_agent_ids
         resource_agent_ids = result.resource_agent_ids or {}
@@ -446,6 +521,86 @@ async def _attempt_generate_impl(
                 group_id = existing_group_id
                 extra_grade_id = grade_prepare_row.grade_id
                 extra_chat_id = grade_chat_id
+            elif is_message and data.chat_id:
+                # Message path: create user message + assistant placeholder
+                msg_prepare_params = PrepareAttemptMessageSqlParams(
+                    p_profile_id=profile_id,
+                    p_chat_id=data.chat_id,
+                    p_message=data.message or "",
+                    p_voice_mode=data.voice_mode,
+                    p_upload_id=data.upload_id,
+                    p_group_id=existing_group_id,
+                    p_agents_resource_id=agent_resource.id,
+                    p_models_resource_id=model_resource.id,
+                    p_providers_resource_id=provider_resource.id,
+                )
+                msg_prepare_row = cast(
+                    PrepareAttemptMessageSqlRow,
+                    await execute_sql_typed(
+                        conn, SQL_PATH_PREPARE_MESSAGE, params=msg_prepare_params
+                    ),
+                )
+
+                if not msg_prepare_row or not msg_prepare_row.run_id:
+                    logger.error(
+                        f"Attempt message preparation failed - "
+                        f"profile_id={profile_id}, chat_id={data.chat_id}"
+                    )
+                    await emit_to_internal(
+                        "generate_call_error",
+                        GenerateErrorApiRequest(
+                            sid=sid,
+                            error_message="Failed to create message",
+                            artifact_type="attempt",
+                            group_id=str(existing_group_id)
+                            if existing_group_id
+                            else None,
+                            resource_type="attempt",
+                        ),
+                        sid=sid,
+                    )
+                    return
+
+                run_id = msg_prepare_row.run_id
+                group_id = existing_group_id
+                extra_chat_id = data.chat_id
+
+                # Emit sync entry events to client
+                created_at_str = (
+                    msg_prepare_row.created_at.isoformat()
+                    if msg_prepare_row.created_at
+                    else ""
+                )
+
+                # user_messages sync entry → attempt_user_complete
+                user_complete_event = AttemptUserCompleteEvent(
+                    chat_id=str(data.chat_id),
+                    message_id=str(msg_prepare_row.user_message_id),
+                    content=data.message or "",
+                    created_at=created_at_str,
+                )
+                await sio.emit(
+                    "attempt_user_complete",
+                    user_complete_event.model_dump(mode="json"),
+                    room=sid,
+                )
+                await sio.emit(
+                    "attempt_user_complete",
+                    user_complete_event.model_dump(mode="json"),
+                    room=f"attempt_{data.chat_id}",
+                )
+
+                # assistant_messages sync entry → attempt_assistant_start
+                assistant_start_event = AttemptAssistantStartEvent(
+                    chat_id=str(data.chat_id),
+                    message_id=str(msg_prepare_row.assistant_message_id),
+                    created_at=created_at_str,
+                )
+                await sio.emit(
+                    "attempt_assistant_start",
+                    assistant_start_event.model_dump(mode="json"),
+                    room=sid,
+                )
             else:
                 prepare_params = PreparePersonaGenerationSqlParams(
                     p_profile_id=profile_id,

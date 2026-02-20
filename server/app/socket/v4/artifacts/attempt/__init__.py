@@ -3,8 +3,7 @@
 Handles WebSocket events for active attempts:
 
 Client-to-server events:
-- attempt_generate: Generate attempt resources (message or grade entry_types)
-- attempt_message: Send a message during an attempt
+- attempt_generate: Unified generation (message, grade, or direct entry_types)
 - attempt_join: Join a chat room
 - attempt_leave: Leave a chat room
 - attempt_stop: Stop message generation
@@ -16,11 +15,11 @@ Client-to-server events:
 - attempt_mic_mute: Toggle microphone mute
 - attempt_response_submit: Submit video question response
 
-Event flow:
-1. Client sends attempt_message -> Server creates messages, routes to AI, streams progress
-2. Server emits attempt_user_complete -> Client shows user message
-3. Server emits attempt_assistant_start -> Client shows placeholder
-4. Server emits attempt_assistant_delta -> Client shows streaming
+Event flow (message):
+1. Client sends attempt_generate with user_messages/assistant_messages/contents/hints
+2. Server creates user message (sync) -> emits attempt_user_complete
+3. Server creates assistant placeholder (sync) -> emits attempt_assistant_start
+4. Server generates via LLM -> emits attempt_assistant_delta (streaming)
 5. Server emits attempt_assistant_complete -> Client shows final message
 6. Server emits attempt_complete -> Client clears sending state (terminal event)
 7. Server emits attempt_hint_progress -> Client shows hints (auto-triggered)
@@ -38,7 +37,6 @@ from . import (
     generate,
     join,
     leave,
-    message,
     progress,
     responses,
     start,
@@ -55,7 +53,6 @@ __all__ = [
     "generate",
     "join",
     "leave",
-    "message",
     "progress",
     "responses",
     "start",
@@ -68,7 +65,6 @@ server_router = APIRouter()
 
 # Register client-to-server events
 client_router.include_router(generate.client_router)
-client_router.include_router(message.client_router)
 client_router.include_router(join.client_router)
 client_router.include_router(leave.client_router)
 client_router.include_router(stop.client_router)
@@ -80,7 +76,6 @@ client_router.include_router(start.client_router)
 
 # Register server-to-client events
 server_router.include_router(generate.server_router)
-server_router.include_router(message.server_router)
 server_router.include_router(progress.server_router)
 server_router.include_router(complete.server_router)
 server_router.include_router(error.server_router)

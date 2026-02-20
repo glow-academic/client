@@ -20,11 +20,13 @@ from app.main import get_internal_sio, sio
 SHOULD_PROCEED = True
 from app.socket.v4.artifacts.attempt.types import (
     AttemptAssistantCompleteEvent,
+    AttemptAssistantStartEvent,
     AttemptCompleteEvent,
     AttemptContentProgressEvent,
     AttemptGradedEvent,
     AttemptGradingProgressEvent,
     AttemptHintProgressEvent,
+    AttemptUserCompleteEvent,
 )
 from app.sql.types import (
     CompleteAttemptGradeSqlParams,
@@ -463,4 +465,20 @@ async def attempt_grading_progress_api(
 @server_router.post("/attempt/graded", response_model=dict[str, bool])
 async def attempt_graded_api(request: AttemptGradedEvent) -> dict[str, bool]:
     """Server-to-client event: Simulation grading completed."""
+    return {"success": True}
+
+
+@server_router.post("/attempt/user_complete", response_model=dict[str, bool])
+async def attempt_user_complete_api(
+    request: AttemptUserCompleteEvent,
+) -> dict[str, bool]:
+    """Server-to-client event: User message finalized."""
+    return {"success": True}
+
+
+@server_router.post("/attempt/assistant_start", response_model=dict[str, bool])
+async def attempt_assistant_start_api(
+    request: AttemptAssistantStartEvent,
+) -> dict[str, bool]:
+    """Server-to-client event: Assistant message generation started."""
     return {"success": True}

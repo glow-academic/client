@@ -1,12 +1,10 @@
 """Types for attempt simulation socket events.
 
-Defines payload and event types for the attempt simulation WebSocket handlers:
-- AttemptMessagePayload: Send a message during an attempt (legacy - complex payload)
-- AttemptSendPayload: Simplified send message (new - server looks up context from chat_id)
+Defines payload and event types for the attempt simulation WebSocket handlers.
 
-Entry types are predefined per handler (not in payload):
-- message.py: ['contents', 'hints'] - Message response tools
-- generate.py with grade entry_types: All tools from agent's config chain (no client-side filtering)
+Entry types control what generate.py does:
+- Sync: user_messages, assistant_messages, grades (DB mutations before LLM)
+- Async: contents, hints, feedbacks, strengths, etc. (LLM-generated via tools)
 """
 
 from typing import Any
@@ -26,14 +24,11 @@ from app.socket.v4.artifacts.types import (
 
 ATTEMPT_RESOURCE_TYPES: list[str] = []
 
-ATTEMPT_SYNC_ENTRY_TYPES = ["runs", "chats", "grades"]
+ATTEMPT_SYNC_ENTRY_TYPES = ["runs", "chats", "grades", "user_messages", "assistant_messages"]
 
 ATTEMPT_ASYNC_ENTRY_TYPES = ["insights", "debug_info"]
 
-# =============================================================================
-# Entry type constants (predefined per handler, not in payload)
-# =============================================================================
-
+# Entry type groups for detection in generate.py
 ATTEMPT_MESSAGE_ENTRY_TYPES = ["contents", "hints"]
 ATTEMPT_GRADE_ENTRY_TYPES = [
     "feedbacks",
@@ -44,6 +39,8 @@ ATTEMPT_GRADE_ENTRY_TYPES = [
     "replacements",
 ]
 ATTEMPT_ENTRY_TYPES = [
+    "user_messages",
+    "assistant_messages",
     "contents",
     "hints",
     "feedbacks",
@@ -56,41 +53,8 @@ ATTEMPT_ENTRY_TYPES = [
 
 
 # =============================================================================
-# Client-to-Server Event Payloads
-# =============================================================================
-
-
-class AttemptMessagePayload(BaseModel):
-    """Request payload for attempt_message WebSocket event.
-
-    Sends a user message during an active simulation chat.
-    Agent is resolved from pre-stored group (created at training start).
-    """
-
-    simulation_id: UUID
-    chat_id: UUID
-    message: str
-    voice_mode: bool = False
-    upload_id: UUID | None = None  # For voice audio uploads
-    group_id: UUID | None = None  # For regeneration (uses existing group)
-
-
-# =============================================================================
 # Server-to-Client Event Types
 # =============================================================================
-
-
-class AttemptMessageSentEvent(BaseModel):
-    """Server-to-client event: attempt_message_sent.
-
-    Emitted when a user message is received and assistant placeholder created.
-    """
-
-    artifact_type: str = "attempt"
-    chat_id: str
-    user_message_id: str
-    run_id: str | None = None
-    group_id: str | None = None
 
 
 class AttemptGradedEvent(BaseModel):
@@ -513,15 +477,20 @@ class AttemptUnifiedErrorEvent(BaseModel):
 class GenerateAttemptPayload(BaseModel):
     """Request payload for attempt_generate WebSocket event.
 
-    Unified handler that accepts entry_types to filter which tools are fetched.
-    Callers (message.py, grade.py, audio/start.py) handle domain-specific
-    mutations outside, then call attempt_generate with their entry_types.
-    Everything else is discoverable from the attempt's websocket data.
+    Unified handler that accepts entry_types to control the full pipeline.
+    Sync entry types (user_messages, assistant_messages, grades) create DB
+    entries and emit events before LLM generation begins.
+    Async entry types (contents, hints, feedbacks, etc.) are LLM-generated.
     """
 
     attempt_id: UUID
     entry_types: list[str]
     user_instructions: list[str] | None = None
+    # Message-specific fields (required when entry_types includes user_messages)
+    chat_id: UUID | None = None
+    message: str | None = None
+    voice_mode: bool = False
+    upload_id: UUID | None = None
 
 
 class AttemptGenerationStartedEvent(BaseModel):
