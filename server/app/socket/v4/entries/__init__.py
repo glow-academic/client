@@ -6,27 +6,208 @@ and provides server_router endpoints for OpenAPI documentation.
 
 from fastapi import APIRouter
 
+from .activity import server_router as activity_server_router
+from .activity_insights import server_router as activity_insights_server_router
+from .agent_drafts import server_router as agent_drafts_server_router
 from .analyses import server_router as analyses_server_router
+from .args_outputs_values import server_router as args_outputs_values_server_router
+from .args_values import server_router as args_values_server_router
+from .attempt import server_router as attempt_server_router
+from .attempt_archive import server_router as attempt_archive_server_router
+from .attempt_chat import server_router as attempt_chat_server_router
+from .attempt_completion import server_router as attempt_completion_server_router
+from .attempt_grade import server_router as attempt_grade_server_router
+from .attempt_insights import server_router as attempt_insights_server_router
+from .attempt_message_tree import server_router as attempt_message_tree_server_router
+from .audios import server_router as audios_server_router
+from .audits import server_router as audits_server_router
+from .auth_drafts import server_router as auth_drafts_server_router
+from .benchmark import server_router as benchmark_server_router
+from .benchmark_insights import server_router as benchmark_insights_server_router
+from .bindings import server_router as bindings_server_router
+from .calls import server_router as calls_server_router
+from .certificates import server_router as certificates_server_router
+from .chat import server_router as chat_server_router
+from .cohort_drafts import server_router as cohort_drafts_server_router
+from .config import server_router as config_server_router
 from .contents import server_router as contents_server_router
+from .conversations import server_router as conversations_server_router
+from .conversations_completions import (
+    server_router as conversations_completions_server_router,
+)
+from .dashboard_insights import server_router as dashboard_insights_server_router
+from .debug_info import server_router as debug_info_server_router
+from .department_drafts import server_router as department_drafts_server_router
+from .document_drafts import server_router as document_drafts_server_router
+from .domains import server_router as domains_server_router
+from .emulations import server_router as emulations_server_router
+from .eval_drafts import server_router as eval_drafts_server_router
 from .feedbacks import server_router as feedbacks_server_router
+from .field_drafts import server_router as field_drafts_server_router
+from .grants import server_router as grants_server_router
+from .groups import server_router as groups_server_router
+from .health import server_router as health_server_router
+from .health_insights import server_router as health_insights_server_router
 from .highlights import server_router as highlights_server_router
 from .hints import server_router as hints_server_router
+from .home import server_router as home_server_router
+from .home_insights import server_router as home_insights_server_router
+from .home_training import server_router as home_training_server_router
+from .images import server_router as images_server_router
 from .improvements import server_router as improvements_server_router
+from .leaderboard_insights import server_router as leaderboard_insights_server_router
+from .logins import server_router as logins_server_router
+from .messages import server_router as messages_server_router
+from .messages_completions import server_router as messages_completions_server_router
+from .metrics import server_router as metrics_server_router
+from .model_drafts import server_router as model_drafts_server_router
+from .mutes import server_router as mutes_server_router
+from .parameter_drafts import server_router as parameter_drafts_server_router
+from .persona import server_router as persona_server_router
+from .persona_drafts import server_router as persona_drafts_server_router
+from .practice import server_router as practice_server_router
+from .practice_insights import server_router as practice_insights_server_router
+from .practice_training import server_router as practice_training_server_router
+from .pricing_insights import server_router as pricing_insights_server_router
+from .problems import server_router as problems_server_router
+from .profile_drafts import server_router as profile_drafts_server_router
+from .provider_drafts import server_router as provider_drafts_server_router
+from .record_insights import server_router as record_insights_server_router
 from .replacements import server_router as replacements_server_router
+from .reports import server_router as reports_server_router
+from .reports_insights import server_router as reports_insights_server_router
+from .resolves import server_router as resolves_server_router
 from .responses import server_router as responses_server_router
-
-# from .attempt_message import server_router as attempt_message_server_router
+from .rubric_drafts import server_router as rubric_drafts_server_router
+from .run_pricing import server_router as run_pricing_server_router
+from .runs import server_router as runs_server_router
+from .scenario_drafts import server_router as scenario_drafts_server_router
+from .sessions import server_router as sessions_server_router
+from .setting_drafts import server_router as setting_drafts_server_router
+from .simulation_drafts import server_router as simulation_drafts_server_router
+from .simulation_messages import server_router as simulation_messages_server_router
 from .strengths import server_router as strengths_server_router
+from .suite import server_router as suite_server_router
+from .suite_department import server_router as suite_department_server_router
+from .suite_drafts import server_router as suite_drafts_server_router
+from .test import server_router as test_server_router
+from .test_archive import server_router as test_archive_server_router
+from .test_completion import server_router as test_completion_server_router
+from .test_feedback import server_router as test_feedback_server_router
+from .test_grade import server_router as test_grade_server_router
+from .test_insights import server_router as test_insights_server_router
+from .test_invocation import server_router as test_invocation_server_router
+from .test_stop import server_router as test_stop_server_router
+from .tests import server_router as tests_server_router
+from .texts import server_router as texts_server_router
+from .tokens import server_router as tokens_server_router
+from .tool_drafts import server_router as tool_drafts_server_router
+from .training import server_router as training_server_router
+from .training_department import server_router as training_department_server_router
+from .training_drafts import server_router as training_drafts_server_router
+from .uploads import server_router as uploads_server_router
+from .uploads_completions import server_router as uploads_completions_server_router
+from .videos import server_router as videos_server_router
 
 server_router = APIRouter()
 
+server_router.include_router(activity_server_router)
+server_router.include_router(activity_insights_server_router)
+server_router.include_router(agent_drafts_server_router)
 server_router.include_router(analyses_server_router)
+server_router.include_router(args_outputs_values_server_router)
+server_router.include_router(args_values_server_router)
+server_router.include_router(attempt_server_router)
+server_router.include_router(attempt_archive_server_router)
+server_router.include_router(attempt_chat_server_router)
+server_router.include_router(attempt_completion_server_router)
+server_router.include_router(attempt_grade_server_router)
+server_router.include_router(attempt_insights_server_router)
+server_router.include_router(attempt_message_tree_server_router)
+server_router.include_router(audios_server_router)
+server_router.include_router(audits_server_router)
+server_router.include_router(auth_drafts_server_router)
+server_router.include_router(benchmark_server_router)
+server_router.include_router(benchmark_insights_server_router)
+server_router.include_router(bindings_server_router)
+server_router.include_router(calls_server_router)
+server_router.include_router(certificates_server_router)
+server_router.include_router(chat_server_router)
+server_router.include_router(cohort_drafts_server_router)
+server_router.include_router(config_server_router)
 server_router.include_router(contents_server_router)
+server_router.include_router(conversations_server_router)
+server_router.include_router(conversations_completions_server_router)
+server_router.include_router(dashboard_insights_server_router)
+server_router.include_router(debug_info_server_router)
+server_router.include_router(department_drafts_server_router)
+server_router.include_router(document_drafts_server_router)
+server_router.include_router(domains_server_router)
+server_router.include_router(emulations_server_router)
+server_router.include_router(eval_drafts_server_router)
 server_router.include_router(feedbacks_server_router)
+server_router.include_router(field_drafts_server_router)
+server_router.include_router(grants_server_router)
+server_router.include_router(groups_server_router)
+server_router.include_router(health_server_router)
+server_router.include_router(health_insights_server_router)
 server_router.include_router(highlights_server_router)
 server_router.include_router(hints_server_router)
+server_router.include_router(home_server_router)
+server_router.include_router(home_insights_server_router)
+server_router.include_router(home_training_server_router)
+server_router.include_router(images_server_router)
 server_router.include_router(improvements_server_router)
+server_router.include_router(leaderboard_insights_server_router)
+server_router.include_router(logins_server_router)
+server_router.include_router(messages_server_router)
+server_router.include_router(messages_completions_server_router)
+server_router.include_router(metrics_server_router)
+server_router.include_router(model_drafts_server_router)
+server_router.include_router(mutes_server_router)
+server_router.include_router(parameter_drafts_server_router)
+server_router.include_router(persona_server_router)
+server_router.include_router(persona_drafts_server_router)
+server_router.include_router(practice_server_router)
+server_router.include_router(practice_insights_server_router)
+server_router.include_router(practice_training_server_router)
+server_router.include_router(pricing_insights_server_router)
+server_router.include_router(problems_server_router)
+server_router.include_router(profile_drafts_server_router)
+server_router.include_router(provider_drafts_server_router)
+server_router.include_router(record_insights_server_router)
 server_router.include_router(replacements_server_router)
+server_router.include_router(reports_server_router)
+server_router.include_router(reports_insights_server_router)
+server_router.include_router(resolves_server_router)
 server_router.include_router(responses_server_router)
-# server_router.include_router(attempt_message_server_router)
+server_router.include_router(rubric_drafts_server_router)
+server_router.include_router(run_pricing_server_router)
+server_router.include_router(runs_server_router)
+server_router.include_router(scenario_drafts_server_router)
+server_router.include_router(sessions_server_router)
+server_router.include_router(setting_drafts_server_router)
+server_router.include_router(simulation_drafts_server_router)
+server_router.include_router(simulation_messages_server_router)
 server_router.include_router(strengths_server_router)
+server_router.include_router(suite_server_router)
+server_router.include_router(suite_department_server_router)
+server_router.include_router(suite_drafts_server_router)
+server_router.include_router(test_server_router)
+server_router.include_router(test_archive_server_router)
+server_router.include_router(test_completion_server_router)
+server_router.include_router(test_feedback_server_router)
+server_router.include_router(test_grade_server_router)
+server_router.include_router(test_insights_server_router)
+server_router.include_router(test_invocation_server_router)
+server_router.include_router(test_stop_server_router)
+server_router.include_router(tests_server_router)
+server_router.include_router(texts_server_router)
+server_router.include_router(tokens_server_router)
+server_router.include_router(tool_drafts_server_router)
+server_router.include_router(training_server_router)
+server_router.include_router(training_department_server_router)
+server_router.include_router(training_drafts_server_router)
+server_router.include_router(uploads_server_router)
+server_router.include_router(uploads_completions_server_router)
+server_router.include_router(videos_server_router)

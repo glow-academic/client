@@ -1,0 +1,24 @@
+"""Unified event model for problems entry socket events."""
+
+from app.api.v4.entries.problems.types import ProblemsEntryData
+
+
+class ProblemsGenerationEvent(ProblemsEntryData):
+    """Unified socket event for problems generation. Same type for all 4 events."""
+
+    # Metadata
+    artifact_type: str = ""
+    entry_type: str = "problems"
+    entry_id: str | None = None
+    group_id: str | None = None
+    run_id: str | None = None
+    # Completion
+    success: bool | None = None
+    # Error
+    message: str | None = None
+    error_stage: str | None = None
+    # Tool call tracking
+    tool_call_id: str | None = None
+    tool_name: str | None = None
+    # Streaming
+    arguments_delta: str | None = None
