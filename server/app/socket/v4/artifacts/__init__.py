@@ -10,11 +10,13 @@ from . import (
     auth,
     benchmark,
     call_events,
+    chat,
     dashboard,
     generate,
     group,
     health,
     home,
+    invocation,
     leaderboard,
     practice,
     pricing,
@@ -22,9 +24,7 @@ from . import (
     reports,
     session,
     simulation,
-    suite,
     test,
-    training,
 )
 
 __all__ = [
@@ -47,9 +47,9 @@ __all__ = [
     "reports",
     "session",
     "simulation",
-    "suite",
+    "invocation",
     "test",
-    "training",
+    "chat",
 ]
 
 # Export routers for inclusion in main router
@@ -58,7 +58,7 @@ server_router = APIRouter()
 
 # Register client-to-server events
 client_router.include_router(auth.client_router)
-client_router.include_router(training.client_router)
+client_router.include_router(chat.client_router)
 client_router.include_router(attempt.client_router)
 client_router.include_router(benchmark.client_router)
 client_router.include_router(test.client_router)
@@ -66,7 +66,7 @@ client_router.include_router(home.client_router)
 client_router.include_router(practice.client_router)
 client_router.include_router(activity.client_router)
 client_router.include_router(record.client_router)
-client_router.include_router(suite.client_router)
+client_router.include_router(invocation.client_router)
 client_router.include_router(dashboard.client_router)
 client_router.include_router(leaderboard.client_router)
 client_router.include_router(reports.client_router)
@@ -77,7 +77,7 @@ client_router.include_router(health.client_router)
 
 # Register server-to-server events (internal event listeners)
 server_router.include_router(auth.server_router)
-server_router.include_router(training.server_router)
+server_router.include_router(chat.server_router)
 server_router.include_router(attempt.server_router)
 server_router.include_router(benchmark.server_router)
 server_router.include_router(test.server_router)
@@ -87,7 +87,7 @@ server_router.include_router(practice.server_router)
 server_router.include_router(call_events.server_router)
 server_router.include_router(activity.server_router)
 server_router.include_router(record.server_router)
-server_router.include_router(suite.server_router)
+server_router.include_router(invocation.server_router)
 server_router.include_router(dashboard.server_router)
 server_router.include_router(leaderboard.server_router)
 server_router.include_router(reports.server_router)

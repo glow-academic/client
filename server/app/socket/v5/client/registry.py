@@ -577,7 +577,7 @@ _register(
 
 _register(
     ArtifactGenerateConfig(
-        artifact_type="training",
+        artifact_type="chat",
         valid_resource_types=[
             "departments",
             "personas",
@@ -595,17 +595,17 @@ _register(
             "objectives",
         ],
         prepare_sql_path="app/sql/v4/queries/generate/training/prepare_training_generation_complete.sql",
-        draft_view_key="draft_training",
+        draft_view_key="draft_chat",
         config_agents_attr="config_agents",
         config_models_attr="config_models",
         config_providers_attr="config_providers",
         requires_pool=True,
-        fetcher_id_kwarg="training_entry_id",
+        fetcher_id_kwarg="chat_entry_id",
         extra_emit_fields=["attempt_id", "training_department_id"],
         fetcher=_make_fetcher(
-            "app.api.v4.artifacts.training.get",
-            "get_training_websocket",
-            "training_entry_id",
+            "app.api.v4.artifacts.chat.get",
+            "get_chat_websocket",
+            "chat_entry_id",
             needs_pool=True,
         ),
     )
@@ -626,16 +626,16 @@ _register(
             "keys",
         ],
         prepare_sql_path="app/sql/v4/queries/generate/benchmark/prepare_benchmark_generation_complete.sql",
-        draft_view_key="draft_suite",
+        draft_view_key="draft_invocation",
         config_agents_attr="config_agents",
         config_models_attr="config_models",
         config_providers_attr="config_providers",
         requires_pool=True,
-        fetcher_id_kwarg="suite_entry_id",
+        fetcher_id_kwarg="invocation_entry_id",
         fetcher=_make_fetcher(
             "app.api.v4.artifacts.benchmark.get",
-            "get_suite_websocket",
-            "suite_entry_id",
+            "get_invocation_websocket",
+            "invocation_entry_id",
             needs_pool=True,
         ),
     )
@@ -643,7 +643,7 @@ _register(
 
 _register(
     ArtifactGenerateConfig(
-        artifact_type="suite",
+        artifact_type="invocation",
         valid_resource_types=[
             "departments",
             "models",
@@ -656,15 +656,15 @@ _register(
             "keys",
         ],
         prepare_sql_path="app/sql/v4/queries/generate/suite/prepare_suite_generation_complete.sql",
-        draft_view_key="draft_suite",
+        draft_view_key="draft_invocation",
         config_agents_attr="config_agents",
         config_models_attr="config_models",
         config_providers_attr="config_providers",
         requires_pool=True,
         fetcher_id_kwarg="benchmark_entry_id",
         fetcher=_make_fetcher(
-            "app.api.v4.artifacts.suite.get",
-            "get_suite_websocket",
+            "app.api.v4.artifacts.invocation.get",
+            "get_invocation_websocket",
             "benchmark_entry_id",
             needs_pool=True,
         ),

@@ -14,7 +14,7 @@ from app.api.v4.artifacts.attempt.types import (
     GetAttemptListRequest,
     GetAttemptListResponse,
 )
-from app.api.v4.artifacts.training.permissions import (
+from app.api.v4.artifacts.chat.permissions import (
     compute_pass_pct,
     compute_score_status,
     compute_show_continue,

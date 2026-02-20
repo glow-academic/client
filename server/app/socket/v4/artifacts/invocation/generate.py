@@ -1,6 +1,6 @@
-"""Benchmark bundle generation router - unified handler for all benchmark bundle resource types.
+"""Invocation generation router - unified handler for all invocation resource types.
 
-This module handles all business logic for benchmark bundle generation:
+This module handles all business logic for invocation generation:
 - Rate limit validation (fail fast)
 - Group/run creation
 - Agent/model context from pre-fetched resources (denormalized chain)
@@ -16,8 +16,8 @@ from typing import Any, cast
 
 from fastapi import APIRouter
 
-from app.api.v4.artifacts.benchmark.get import get_invocation_websocket
-from app.api.v4.artifacts.benchmark.types import GetSuiteWebsocketResponse
+from app.api.v4.artifacts.invocation.get import get_invocation_websocket
+from app.api.v4.artifacts.invocation.types import GetInvocationWebsocketResponse
 from app.api.v4.entries.config.get import get_config_entry_internal
 from app.api.v4.resources.instructions.get import get_instructions_internal
 from app.api.v4.resources.prompts.get import get_prompts_internal
@@ -30,13 +30,13 @@ from app.infra.v4.websocket.generation_tracker import (
 from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.infra.v4.websocket.typed_emit import emit_to_internal
 from app.main import get_internal_sio, get_pool, sio
-from app.socket.v4.artifacts.benchmark.types import (
-    BENCHMARK_BUNDLE_GENERATE_RESOURCE_TYPES,
-    GenerateSuitePayload,
+from app.socket.v4.artifacts.invocation.types import (
+    INVOCATION_RESOURCE_TYPES,
+    GenerateInvocationPayload,
 )
 from app.socket.v4.artifacts.types import (
     GenerateErrorApiRequest,
-    SuiteGenerationStartedEvent,
+    InvocationGenerationStartedEvent,
 )
 from app.sql.types import (
     GetAgentToolsSqlParams,
@@ -66,13 +66,12 @@ SQL_PATH_CREATE_MESSAGE_WITH_TEXT = (
 )
 
 
-def _build_suite_jinja_context(
-    response: GetSuiteWebsocketResponse, resource_types: list[str]
+def _build_invocation_jinja_context(
+    response: GetInvocationWebsocketResponse, resource_types: list[str]
 ) -> dict[str, Any]:
     """Build Jinja context with resources as top-level variables.
 
-    Resources are the current selections (from get_suite_internal's ID resolution).
-    Templates access resources directly: {{ departments[0].name }}, {{ models[0].name }}
+    Resources are the current selections (from get_invocation_internal's ID resolution).
     Views (e.g. config) are injected separately after prepare.
     """
     if response.resources:
@@ -81,13 +80,15 @@ def _build_suite_jinja_context(
 
 
 async def _invocation_generate_impl(
-    sid: str, data: GenerateSuitePayload, profile_id: uuid.UUID
+    sid: str,
+    data: GenerateInvocationPayload,
+    profile_id: uuid.UUID,
 ) -> None:
-    """Handle benchmark bundle generation with all business logic.
+    """Handle invocation generation with all business logic.
 
     This function:
     1. Validates resource_types and resolves agent_id from domain mappings
-    2. Fetches benchmark bundle data via internal function (includes pre-fetched config resources)
+    2. Fetches invocation bundle data via internal function (includes pre-fetched config resources)
     3. Extracts LLM config from pre-fetched agents/models/providers resources
     4. Validates prerequisites (rate limit from SQL, agent/model/provider from resources)
     5. Calls simplified prepare SQL (mutations only: group/run/config creation)
@@ -106,7 +107,7 @@ async def _invocation_generate_impl(
                     error_message="resource_types must be provided",
                     artifact_type="invocation",
                     group_id=None,
-                    resource_type="suite",
+                    resource_type="invocation",
                 ),
                 sid=sid,
             )
@@ -114,26 +115,26 @@ async def _invocation_generate_impl(
 
         resource_types = data.resource_types
 
-        invalid_types = [
-            rt
-            for rt in resource_types
-            if rt not in BENCHMARK_BUNDLE_GENERATE_RESOURCE_TYPES
-        ]
-        if invalid_types:
-            await emit_to_internal(
-                "generate_call_error",
-                GenerateErrorApiRequest(
+        # Validate resource_types against allowed list (if INVOCATION_RESOURCE_TYPES is populated)
+        if INVOCATION_RESOURCE_TYPES:
+            invalid_types = [
+                rt for rt in resource_types if rt not in INVOCATION_RESOURCE_TYPES
+            ]
+            if invalid_types:
+                await emit_to_internal(
+                    "generate_call_error",
+                    GenerateErrorApiRequest(
+                        sid=sid,
+                        error_message=f"Invalid resource types: {', '.join(invalid_types)}",
+                        artifact_type="invocation",
+                        group_id=None,
+                        resource_type="invocation",
+                    ),
                     sid=sid,
-                    error_message=f"Invalid resource types: {', '.join(invalid_types)}",
-                    artifact_type="invocation",
-                    group_id=None,
-                    resource_type="suite",
-                ),
-                sid=sid,
-            )
-            return
+                )
+                return
 
-        # Step 1: Fetch benchmark bundle data (includes pre-fetched config resources)
+        # Step 1: Fetch invocation bundle data (includes pre-fetched config resources)
         pool = get_pool()
         if not pool:
             raise RuntimeError("Database pool not initialized")
@@ -141,7 +142,7 @@ async def _invocation_generate_impl(
         result = await get_invocation_websocket(
             pool=pool,
             profile_id=profile_id,
-            suite_entry_id=data.suite_entry_id,
+            benchmark_entry_id=data.benchmark_entry_id,
             draft_id=data.draft_id,
         )
 
@@ -173,7 +174,7 @@ async def _invocation_generate_impl(
                     error_message="No agent found for the requested resource types",
                     artifact_type="invocation",
                     group_id=None,
-                    resource_type="suite",
+                    resource_type="invocation",
                 ),
                 sid=sid,
             )
@@ -197,7 +198,7 @@ async def _invocation_generate_impl(
                     error_message="No agent configuration found. Check department settings.",
                     artifact_type="invocation",
                     group_id=None,
-                    resource_type="suite",
+                    resource_type="invocation",
                 ),
                 sid=sid,
             )
@@ -212,7 +213,7 @@ async def _invocation_generate_impl(
                     error_message=f"Agent '{agent_resource.name}' has no model configured",
                     artifact_type="invocation",
                     group_id=None,
-                    resource_type="suite",
+                    resource_type="invocation",
                 ),
                 sid=sid,
             )
@@ -227,7 +228,7 @@ async def _invocation_generate_impl(
                     error_message=f"Model '{model_resource.name}' has no provider configured",
                     artifact_type="invocation",
                     group_id=None,
-                    resource_type="suite",
+                    resource_type="invocation",
                 ),
                 sid=sid,
             )
@@ -264,13 +265,15 @@ async def _invocation_generate_impl(
                     error_message=f"No API key configured for provider '{provider_name}'",
                     artifact_type="invocation",
                     group_id=None,
-                    resource_type="suite",
+                    resource_type="invocation",
                 ),
                 sid=sid,
             )
             return
 
-        suite_jinja_context = _build_suite_jinja_context(result, resource_types)
+        invocation_jinja_context = _build_invocation_jinja_context(
+            result, resource_types
+        )
 
         # Step 3: Check rate limit using pre-fetched data
         config_profile = (
@@ -288,7 +291,7 @@ async def _invocation_generate_impl(
                 f"Rate limit exceeded ({runs_today}/{requests_per_day} requests today)"
             )
             logger.error(
-                f"Benchmark bundle generation rate limit exceeded - "
+                f"Invocation generation rate limit exceeded - "
                 f"profile_id={profile_id}, agent_id={agent_id}, "
                 f"reason: {error_msg}"
             )
@@ -296,10 +299,10 @@ async def _invocation_generate_impl(
                 "generate_call_error",
                 GenerateErrorApiRequest(
                     sid=sid,
-                    error_message=f"Failed to prepare benchmark bundle generation: {error_msg}",
+                    error_message=f"Failed to prepare invocation generation: {error_msg}",
                     artifact_type="invocation",
                     group_id=str(result.group_id) if result.group_id else None,
-                    resource_type="suite",
+                    resource_type="invocation",
                 ),
                 sid=sid,
             )
@@ -374,17 +377,17 @@ async def _invocation_generate_impl(
 
             if not prepare_row.run_id:
                 logger.error(
-                    f"Benchmark bundle generation preparation failed unexpectedly - "
+                    f"Invocation generation preparation failed unexpectedly - "
                     f"profile_id={profile_id}, agent_id={agent_id}"
                 )
                 await emit_to_internal(
                     "generate_call_error",
                     GenerateErrorApiRequest(
                         sid=sid,
-                        error_message="Failed to prepare benchmark bundle generation: Unknown error",
+                        error_message="Failed to prepare invocation generation: Unknown error",
                         artifact_type="invocation",
                         group_id=str(existing_group_id) if existing_group_id else None,
-                        resource_type="suite",
+                        resource_type="invocation",
                     ),
                     sid=sid,
                 )
@@ -395,7 +398,7 @@ async def _invocation_generate_impl(
             _trace_id = prepare_row.trace_id
             config_id = prepare_row.config_id
 
-            jinja_context = suite_jinja_context
+            jinja_context = invocation_jinja_context
 
             # Inject config view into Jinja context for template access
             if config_id:
@@ -412,14 +415,8 @@ async def _invocation_generate_impl(
                 )
             else:
                 config_view = {}
-            draft_suite_view = (
-                result.views.draft_suite.model_dump(mode="json")
-                if result.views and result.views.draft_suite
-                else {}
-            )
             jinja_context["views"] = {
                 "config": config_view,
-                "draft_suite": draft_suite_view,
             }
 
             # Step 7: Render developer instructions with Jinja
@@ -495,7 +492,7 @@ async def _invocation_generate_impl(
                         "artifact_type": "invocation",
                         "resource_type": agent_resource_types[0]
                         if agent_resource_types
-                        else "suite",
+                        else "invocation",
                         "run_id": str(run_id),
                         "group_id": str(group_id) if group_id else None,
                         "message_id": None,
@@ -518,15 +515,15 @@ async def _invocation_generate_impl(
                 )
 
     except Exception as e:
-        logger.exception(f"Failed to generate benchmark bundle resources: {str(e)}")
+        logger.exception(f"Failed to generate invocation resources: {str(e)}")
         await emit_to_internal(
             "generate_call_error",
             GenerateErrorApiRequest(
                 sid=sid,
-                error_message=f"Failed to generate benchmark bundle resources: {str(e)}",
+                error_message=f"Failed to generate invocation resources: {str(e)}",
                 artifact_type="invocation",
                 group_id=None,
-                resource_type="suite",
+                resource_type="invocation",
             ),
             sid=sid,
         )
@@ -536,7 +533,7 @@ async def _invocation_generate_impl(
 async def invocation_generate(sid: str, data: dict[str, Any]) -> None:
     """Handle invocation_generate event (client-to-server)."""
     try:
-        payload = GenerateSuitePayload(**data)
+        payload = GenerateInvocationPayload(**data)
         profile_id_str = await find_profile_by_socket(sid)
         if not profile_id_str:
             await emit_to_internal(
@@ -546,7 +543,7 @@ async def invocation_generate(sid: str, data: dict[str, Any]) -> None:
                     error_message="Profile not found. Please reconnect.",
                     artifact_type="invocation",
                     group_id=None,
-                    resource_type="suite",
+                    resource_type="invocation",
                 ),
                 sid=sid,
             )
@@ -561,7 +558,7 @@ async def invocation_generate(sid: str, data: dict[str, Any]) -> None:
                 error_message=f"Invalid request: {str(e)}",
                 artifact_type="invocation",
                 group_id=None,
-                resource_type="suite",
+                resource_type="invocation",
             ),
             sid=sid,
         )
@@ -584,14 +581,14 @@ async def invocation_generate_internal(data: dict[str, Any]) -> None:
                     error_message="Profile not found. Please reconnect.",
                     artifact_type="invocation",
                     group_id=None,
-                    resource_type="suite",
+                    resource_type="invocation",
                 ),
                 sid=sid,
             )
             return
 
         profile_id = uuid.UUID(profile_id_str)
-        payload = GenerateSuitePayload(**data)
+        payload = GenerateInvocationPayload(**data)
         await _invocation_generate_impl(sid, payload, profile_id)
     except Exception as e:
         await emit_to_internal(
@@ -601,7 +598,7 @@ async def invocation_generate_internal(data: dict[str, Any]) -> None:
                 error_message=f"Invalid request: {str(e)}",
                 artifact_type="invocation",
                 group_id=None,
-                resource_type="suite",
+                resource_type="invocation",
             ),
             sid=sid,
         )
@@ -614,10 +611,10 @@ async def invocation_generate_internal(data: dict[str, Any]) -> None:
 
 @server_router.post("/invocation_generation_started")
 async def invocation_generation_started_api(
-    request: SuiteGenerationStartedEvent,
+    request: InvocationGenerationStartedEvent,
 ) -> dict[str, bool]:
-    """Server-to-client event: Benchmark bundle generation started.
+    """Server-to-client event: Invocation generation started.
 
-    Emitted when benchmark bundle generation begins, listing resource types being generated.
+    Emitted when invocation generation begins, listing resource types being generated.
     """
     return {"success": True}

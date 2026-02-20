@@ -1,16 +1,11 @@
-"""Benchmark bundle error handler - listens to generate_*_error events and emits benchmark-bundle-specific events."""
+"""Invocation error handler - listens to generate_*_error events and emits invocation-specific events."""
 
 from typing import Any
 
 from fastapi import APIRouter
 
 from app.main import get_internal_sio, sio
-from app.socket.v4.artifacts.benchmark.types import (
-    SuiteGenerationErrorEvent,
-)
-from app.utils.logging.db_logger import get_logger
-
-logger = get_logger(__name__)
+from app.socket.v4.artifacts.invocation.types import InvocationGenerationErrorEvent
 
 internal_sio = get_internal_sio()
 
@@ -25,19 +20,20 @@ server_router = APIRouter()
 
 @server_router.post("/invocation_generation_error")
 async def invocation_generation_error_api(
-    request: SuiteGenerationErrorEvent,
+    request: InvocationGenerationErrorEvent,
 ) -> dict[str, bool]:
-    """Server-to-client event: Benchmark bundle generation error.
+    """Server-to-client event: Invocation generation error.
 
-    Emitted when benchmark bundle resource generation fails.
+    Emitted when invocation resource generation fails.
     """
     return {"success": True}
 
 
 @internal_sio.on("generate_call_error")  # type: ignore
 @internal_sio.on("generate_text_error")  # type: ignore
-async def handle_suite_error(data: dict[str, Any]) -> None:
-    """Handle generate_*_error event - filter by suite artifact_type and emit benchmark-bundle-specific event."""
+async def handle_invocation_error(data: dict[str, Any]) -> None:
+    """Handle generate_*_error event - filter by invocation artifact_type and emit invocation-specific event."""
+    # Filter by artifact_type
     artifact_type = data.get("artifact_type")
     if artifact_type != "invocation":
         return
@@ -46,15 +42,16 @@ async def handle_suite_error(data: dict[str, Any]) -> None:
     if not sid:
         return
 
+    error_message = data.get("error_message") or data.get(
+        "message", "An error occurred during invocation generation"
+    )
+
     resource_type = data.get("resource_type")
     resource_types = data.get("resource_types", [])
 
-    error_message = data.get("error_message") or data.get(
-        "message", "An error occurred during benchmark bundle generation"
-    )
-
-    event = SuiteGenerationErrorEvent(
-        artifact_type="invocation",
+    # Emit invocation-specific error event with all fields from internal event
+    event = InvocationGenerationErrorEvent(
+        artifact_type=artifact_type or "invocation",
         group_id=data.get("group_id"),
         resource_type=resource_type,
         resource_types=resource_types if resource_types else None,

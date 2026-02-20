@@ -1,8 +1,8 @@
 """Benchmark bundle artifact endpoint.
 
 Section-first three-layer implementation (mirrors training/bundle.py):
-1) get_suite_internal() - MV view → hydrate all 9 → filter current
-2) get_suite_client() - HTTP section-first payload formatter
+1) get_invocation_internal() - MV view → hydrate all 9 → filter current
+2) get_invocation_client() - HTTP section-first payload formatter
 """
 
 import asyncio
@@ -141,7 +141,7 @@ RESOURCE_CONFIG: list[tuple[str, str, Any, str]] = [
 # =============================================================================
 
 
-async def get_suite_internal(
+async def get_invocation_internal(
     pool: asyncpg.Pool,
     profile_id: UUID,
     suite_entry_id: UUID,
@@ -288,7 +288,7 @@ _SECTION_CLASSES: dict[str, type] = {
 }
 
 
-async def get_suite_client(
+async def get_invocation_client(
     pool: asyncpg.Pool,
     profile_id: UUID,
     suite_entry_id: UUID,
@@ -296,7 +296,7 @@ async def get_suite_client(
     bypass_cache: bool = False,
 ) -> GetSuiteResponse:
     """HTTP-facing bundle response formatter — section-first pattern."""
-    data = await get_suite_internal(
+    data = await get_invocation_internal(
         pool=pool,
         profile_id=profile_id,
         suite_entry_id=suite_entry_id,
@@ -340,7 +340,7 @@ async def get_suite_client(
 # =============================================================================
 
 
-async def get_suite_websocket(
+async def get_invocation_websocket(
     pool: asyncpg.Pool,
     profile_id: UUID,
     suite_entry_id: UUID,
@@ -350,7 +350,7 @@ async def get_suite_websocket(
     """Thin wrapper for websocket consumers — selected resources only."""
 
     async def fetch_bundle():
-        return await get_suite_internal(
+        return await get_invocation_internal(
             pool=pool,
             profile_id=profile_id,
             suite_entry_id=suite_entry_id,
@@ -415,7 +415,7 @@ async def get_suite_websocket(
 
 
 @router.post("/get", response_model=GetSuiteResponse)
-async def suite_get(
+async def invocation_get(
     request: GetSuiteRequest,
     http_request: Request,
 ) -> GetSuiteResponse:
@@ -434,7 +434,7 @@ async def suite_get(
         if not pool:
             raise RuntimeError("Database pool not initialized")
 
-        return await get_suite_client(
+        return await get_invocation_client(
             pool=pool,
             profile_id=cast(UUID, profile_id),
             suite_entry_id=request.suite_entry_id,
@@ -447,7 +447,7 @@ async def suite_get(
         handle_route_error(
             error=e,
             route_path=http_request.url.path,
-            operation="suite_get",
+            operation="invocation_get",
             sql_query=None,
             sql_params=None,
             request=http_request,

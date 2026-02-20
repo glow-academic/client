@@ -1,6 +1,6 @@
-"""Benchmark bundle generation router - unified handler for all benchmark bundle resource types.
+"""Chat generation router - unified handler for all chat resource types.
 
-This module handles all business logic for benchmark bundle generation:
+This module handles all business logic for chat generation:
 - Rate limit validation (fail fast)
 - Group/run creation
 - Agent/model context from pre-fetched resources (denormalized chain)
@@ -16,8 +16,8 @@ from typing import Any, cast
 
 from fastapi import APIRouter
 
-from app.api.v4.artifacts.benchmark.get import get_invocation_websocket
-from app.api.v4.artifacts.benchmark.types import GetSuiteWebsocketResponse
+from app.api.v4.artifacts.chat.get import get_chat_websocket
+from app.api.v4.artifacts.chat.types import GetChatWebsocketResponse
 from app.api.v4.entries.config.get import get_config_entry_internal
 from app.api.v4.resources.instructions.get import get_instructions_internal
 from app.api.v4.resources.prompts.get import get_prompts_internal
@@ -30,19 +30,19 @@ from app.infra.v4.websocket.generation_tracker import (
 from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.infra.v4.websocket.typed_emit import emit_to_internal
 from app.main import get_internal_sio, get_pool, sio
-from app.socket.v4.artifacts.benchmark.types import (
-    BENCHMARK_BUNDLE_GENERATE_RESOURCE_TYPES,
-    GenerateSuitePayload,
+from app.socket.v4.artifacts.chat.types import (
+    CHAT_GENERATE_RESOURCE_TYPES,
+    GenerateChatPayload,
 )
 from app.socket.v4.artifacts.types import (
+    ChatGenerationStartedEvent,
     GenerateErrorApiRequest,
-    SuiteGenerationStartedEvent,
 )
 from app.sql.types import (
     GetAgentToolsSqlParams,
     GetAgentToolsSqlRow,
-    PrepareSuiteGenerationSqlParams,
-    PrepareSuiteGenerationSqlRow,
+    PrepareTrainingGenerationSqlParams,
+    PrepareTrainingGenerationSqlRow,
 )
 from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import execute_sql_typed, load_sql
@@ -56,7 +56,7 @@ server_router = APIRouter()
 
 # SQL paths
 SQL_PATH_PREPARE = (
-    "app/sql/v4/queries/generate/suite/prepare_suite_generation_complete.sql"
+    "app/sql/v4/queries/generate/training/prepare_training_generation_complete.sql"
 )
 SQL_PATH_AGENT_TOOLS = (
     "app/sql/v4/queries/generate/persona/get_agent_tools_complete.sql"
@@ -66,13 +66,13 @@ SQL_PATH_CREATE_MESSAGE_WITH_TEXT = (
 )
 
 
-def _build_suite_jinja_context(
-    response: GetSuiteWebsocketResponse, resource_types: list[str]
+def _build_chat_jinja_context(
+    response: GetChatWebsocketResponse, resource_types: list[str]
 ) -> dict[str, Any]:
     """Build Jinja context with resources as top-level variables.
 
-    Resources are the current selections (from get_suite_internal's ID resolution).
-    Templates access resources directly: {{ departments[0].name }}, {{ models[0].name }}
+    Resources are the current selections (from get_chat_internal's ID resolution).
+    Templates access resources directly: {{ personas[0].name }}, {{ scenarios[0].name }}
     Views (e.g. config) are injected separately after prepare.
     """
     if response.resources:
@@ -80,14 +80,19 @@ def _build_suite_jinja_context(
     return {}
 
 
-async def _invocation_generate_impl(
-    sid: str, data: GenerateSuitePayload, profile_id: uuid.UUID
+async def _chat_generate_impl(
+    sid: str,
+    data: GenerateChatPayload,
+    profile_id: uuid.UUID,
+    *,
+    attempt_id: str | None = None,
+    training_department_id: str | None = None,
 ) -> None:
-    """Handle benchmark bundle generation with all business logic.
+    """Handle chat generation with all business logic.
 
     This function:
     1. Validates resource_types and resolves agent_id from domain mappings
-    2. Fetches benchmark bundle data via internal function (includes pre-fetched config resources)
+    2. Fetches chat bundle data via internal function (includes pre-fetched config resources)
     3. Extracts LLM config from pre-fetched agents/models/providers resources
     4. Validates prerequisites (rate limit from SQL, agent/model/provider from resources)
     5. Calls simplified prepare SQL (mutations only: group/run/config creation)
@@ -104,9 +109,9 @@ async def _invocation_generate_impl(
                 GenerateErrorApiRequest(
                     sid=sid,
                     error_message="resource_types must be provided",
-                    artifact_type="invocation",
+                    artifact_type="chat",
                     group_id=None,
-                    resource_type="suite",
+                    resource_type="chat",
                 ),
                 sid=sid,
             )
@@ -115,9 +120,7 @@ async def _invocation_generate_impl(
         resource_types = data.resource_types
 
         invalid_types = [
-            rt
-            for rt in resource_types
-            if rt not in BENCHMARK_BUNDLE_GENERATE_RESOURCE_TYPES
+            rt for rt in resource_types if rt not in CHAT_GENERATE_RESOURCE_TYPES
         ]
         if invalid_types:
             await emit_to_internal(
@@ -125,23 +128,23 @@ async def _invocation_generate_impl(
                 GenerateErrorApiRequest(
                     sid=sid,
                     error_message=f"Invalid resource types: {', '.join(invalid_types)}",
-                    artifact_type="invocation",
+                    artifact_type="chat",
                     group_id=None,
-                    resource_type="suite",
+                    resource_type="chat",
                 ),
                 sid=sid,
             )
             return
 
-        # Step 1: Fetch benchmark bundle data (includes pre-fetched config resources)
+        # Step 1: Fetch chat bundle data (includes pre-fetched config resources)
         pool = get_pool()
         if not pool:
             raise RuntimeError("Database pool not initialized")
 
-        result = await get_invocation_websocket(
+        result = await get_chat_websocket(
             pool=pool,
             profile_id=profile_id,
-            suite_entry_id=data.suite_entry_id,
+            training_entry_id=data.training_entry_id,
             draft_id=data.draft_id,
         )
 
@@ -171,9 +174,9 @@ async def _invocation_generate_impl(
                 GenerateErrorApiRequest(
                     sid=sid,
                     error_message="No agent found for the requested resource types",
-                    artifact_type="invocation",
+                    artifact_type="chat",
                     group_id=None,
-                    resource_type="suite",
+                    resource_type="chat",
                 ),
                 sid=sid,
             )
@@ -195,9 +198,9 @@ async def _invocation_generate_impl(
                 GenerateErrorApiRequest(
                     sid=sid,
                     error_message="No agent configuration found. Check department settings.",
-                    artifact_type="invocation",
+                    artifact_type="chat",
                     group_id=None,
-                    resource_type="suite",
+                    resource_type="chat",
                 ),
                 sid=sid,
             )
@@ -210,9 +213,9 @@ async def _invocation_generate_impl(
                 GenerateErrorApiRequest(
                     sid=sid,
                     error_message=f"Agent '{agent_resource.name}' has no model configured",
-                    artifact_type="invocation",
+                    artifact_type="chat",
                     group_id=None,
-                    resource_type="suite",
+                    resource_type="chat",
                 ),
                 sid=sid,
             )
@@ -225,9 +228,9 @@ async def _invocation_generate_impl(
                 GenerateErrorApiRequest(
                     sid=sid,
                     error_message=f"Model '{model_resource.name}' has no provider configured",
-                    artifact_type="invocation",
+                    artifact_type="chat",
                     group_id=None,
-                    resource_type="suite",
+                    resource_type="chat",
                 ),
                 sid=sid,
             )
@@ -262,15 +265,15 @@ async def _invocation_generate_impl(
                 GenerateErrorApiRequest(
                     sid=sid,
                     error_message=f"No API key configured for provider '{provider_name}'",
-                    artifact_type="invocation",
+                    artifact_type="chat",
                     group_id=None,
-                    resource_type="suite",
+                    resource_type="chat",
                 ),
                 sid=sid,
             )
             return
 
-        suite_jinja_context = _build_suite_jinja_context(result, resource_types)
+        chat_jinja_context = _build_chat_jinja_context(result, resource_types)
 
         # Step 3: Check rate limit using pre-fetched data
         config_profile = (
@@ -288,7 +291,7 @@ async def _invocation_generate_impl(
                 f"Rate limit exceeded ({runs_today}/{requests_per_day} requests today)"
             )
             logger.error(
-                f"Benchmark bundle generation rate limit exceeded - "
+                f"Chat generation rate limit exceeded - "
                 f"profile_id={profile_id}, agent_id={agent_id}, "
                 f"reason: {error_msg}"
             )
@@ -296,10 +299,10 @@ async def _invocation_generate_impl(
                 "generate_call_error",
                 GenerateErrorApiRequest(
                     sid=sid,
-                    error_message=f"Failed to prepare benchmark bundle generation: {error_msg}",
-                    artifact_type="invocation",
+                    error_message=f"Failed to prepare chat generation: {error_msg}",
+                    artifact_type="chat",
                     group_id=str(result.group_id) if result.group_id else None,
-                    resource_type="suite",
+                    resource_type="chat",
                 ),
                 sid=sid,
             )
@@ -360,7 +363,7 @@ async def _invocation_generate_impl(
             )
 
             # Step 6: Prepare generation (mutations only: group/run/config creation)
-            prepare_params = PrepareSuiteGenerationSqlParams(
+            prepare_params = PrepareTrainingGenerationSqlParams(
                 p_profile_id=profile_id,
                 p_group_id=existing_group_id,
                 p_agents_resource_id=agent_resource.id,
@@ -368,23 +371,23 @@ async def _invocation_generate_impl(
                 p_providers_resource_id=provider_resource.id,
             )
             prepare_row = cast(
-                PrepareSuiteGenerationSqlRow,
+                PrepareTrainingGenerationSqlRow,
                 await execute_sql_typed(conn, SQL_PATH_PREPARE, params=prepare_params),
             )
 
             if not prepare_row.run_id:
                 logger.error(
-                    f"Benchmark bundle generation preparation failed unexpectedly - "
+                    f"Chat generation preparation failed unexpectedly - "
                     f"profile_id={profile_id}, agent_id={agent_id}"
                 )
                 await emit_to_internal(
                     "generate_call_error",
                     GenerateErrorApiRequest(
                         sid=sid,
-                        error_message="Failed to prepare benchmark bundle generation: Unknown error",
-                        artifact_type="invocation",
+                        error_message="Failed to prepare chat generation: Unknown error",
+                        artifact_type="chat",
                         group_id=str(existing_group_id) if existing_group_id else None,
-                        resource_type="suite",
+                        resource_type="chat",
                     ),
                     sid=sid,
                 )
@@ -395,7 +398,7 @@ async def _invocation_generate_impl(
             _trace_id = prepare_row.trace_id
             config_id = prepare_row.config_id
 
-            jinja_context = suite_jinja_context
+            jinja_context = chat_jinja_context
 
             # Inject config view into Jinja context for template access
             if config_id:
@@ -412,14 +415,14 @@ async def _invocation_generate_impl(
                 )
             else:
                 config_view = {}
-            draft_suite_view = (
-                result.views.draft_suite.model_dump(mode="json")
-                if result.views and result.views.draft_suite
+            draft_training_view = (
+                result.views.draft_training.model_dump(mode="json")
+                if result.views and result.views.draft_training
                 else {}
             )
             jinja_context["views"] = {
                 "config": config_view,
-                "draft_suite": draft_suite_view,
+                "draft_training": draft_training_view,
             }
 
             # Step 7: Render developer instructions with Jinja
@@ -474,11 +477,11 @@ async def _invocation_generate_impl(
             await init_generation(str(run_id), num_agents)
             await init_resource_progress(str(run_id), len(resource_types))
 
-            # Emit invocation_generation_started to client
+            # Emit chat_generation_started to client
             await sio.emit(
-                "invocation_generation_started",
+                "chat_generation_started",
                 {
-                    "artifact_type": "invocation",
+                    "artifact_type": "chat",
                     "group_id": str(group_id) if group_id else "",
                     "run_id": str(run_id),
                     "resource_types": resource_types,
@@ -492,10 +495,10 @@ async def _invocation_generate_impl(
                     "generate_artifact",
                     {
                         "sid": sid,
-                        "artifact_type": "invocation",
+                        "artifact_type": "chat",
                         "resource_type": agent_resource_types[0]
                         if agent_resource_types
-                        else "suite",
+                        else "chat",
                         "run_id": str(run_id),
                         "group_id": str(group_id) if group_id else None,
                         "message_id": None,
@@ -514,29 +517,31 @@ async def _invocation_generate_impl(
                         },
                         "tools": convert_tools_to_dict(tools),
                         "save": data.save,
+                        "attempt_id": attempt_id,
+                        "training_department_id": training_department_id,
                     },
                 )
 
     except Exception as e:
-        logger.exception(f"Failed to generate benchmark bundle resources: {str(e)}")
+        logger.exception(f"Failed to generate chat resources: {str(e)}")
         await emit_to_internal(
             "generate_call_error",
             GenerateErrorApiRequest(
                 sid=sid,
-                error_message=f"Failed to generate benchmark bundle resources: {str(e)}",
-                artifact_type="invocation",
+                error_message=f"Failed to generate chat resources: {str(e)}",
+                artifact_type="chat",
                 group_id=None,
-                resource_type="suite",
+                resource_type="chat",
             ),
             sid=sid,
         )
 
 
 @sio.event  # type: ignore
-async def invocation_generate(sid: str, data: dict[str, Any]) -> None:
-    """Handle invocation_generate event (client-to-server)."""
+async def chat_generate(sid: str, data: dict[str, Any]) -> None:
+    """Handle chat_generate event (client-to-server)."""
     try:
-        payload = GenerateSuitePayload(**data)
+        payload = GenerateChatPayload(**data)
         profile_id_str = await find_profile_by_socket(sid)
         if not profile_id_str:
             await emit_to_internal(
@@ -544,32 +549,32 @@ async def invocation_generate(sid: str, data: dict[str, Any]) -> None:
                 GenerateErrorApiRequest(
                     sid=sid,
                     error_message="Profile not found. Please reconnect.",
-                    artifact_type="invocation",
+                    artifact_type="chat",
                     group_id=None,
-                    resource_type="suite",
+                    resource_type="chat",
                 ),
                 sid=sid,
             )
             return
         profile_id = uuid.UUID(profile_id_str)
-        await _invocation_generate_impl(sid, payload, profile_id)
+        await _chat_generate_impl(sid, payload, profile_id)
     except Exception as e:
         await emit_to_internal(
             "generate_call_error",
             GenerateErrorApiRequest(
                 sid=sid,
                 error_message=f"Invalid request: {str(e)}",
-                artifact_type="invocation",
+                artifact_type="chat",
                 group_id=None,
-                resource_type="suite",
+                resource_type="chat",
             ),
             sid=sid,
         )
 
 
-@internal_sio.on("invocation_generate")  # type: ignore
-async def invocation_generate_internal(data: dict[str, Any]) -> None:
-    """Handle invocation_generate event from internal bus (server-to-server)."""
+@internal_sio.on("chat_generate")  # type: ignore
+async def chat_generate_internal(data: dict[str, Any]) -> None:
+    """Handle chat_generate event from internal bus (server-to-server)."""
     try:
         sid = data.get("sid", "")
         if not sid:
@@ -582,26 +587,32 @@ async def invocation_generate_internal(data: dict[str, Any]) -> None:
                 GenerateErrorApiRequest(
                     sid=sid,
                     error_message="Profile not found. Please reconnect.",
-                    artifact_type="invocation",
+                    artifact_type="chat",
                     group_id=None,
-                    resource_type="suite",
+                    resource_type="chat",
                 ),
                 sid=sid,
             )
             return
 
         profile_id = uuid.UUID(profile_id_str)
-        payload = GenerateSuitePayload(**data)
-        await _invocation_generate_impl(sid, payload, profile_id)
+        payload = GenerateChatPayload(**data)
+        await _chat_generate_impl(
+            sid,
+            payload,
+            profile_id,
+            attempt_id=data.get("attempt_id"),
+            training_department_id=data.get("training_department_id"),
+        )
     except Exception as e:
         await emit_to_internal(
             "generate_call_error",
             GenerateErrorApiRequest(
                 sid=sid,
                 error_message=f"Invalid request: {str(e)}",
-                artifact_type="invocation",
+                artifact_type="chat",
                 group_id=None,
-                resource_type="suite",
+                resource_type="chat",
             ),
             sid=sid,
         )
@@ -612,12 +623,12 @@ async def invocation_generate_internal(data: dict[str, Any]) -> None:
 # =============================================================================
 
 
-@server_router.post("/invocation_generation_started")
-async def invocation_generation_started_api(
-    request: SuiteGenerationStartedEvent,
+@server_router.post("/chat_generation_started")
+async def chat_generation_started_api(
+    request: ChatGenerationStartedEvent,
 ) -> dict[str, bool]:
-    """Server-to-client event: Benchmark bundle generation started.
+    """Server-to-client event: Chat generation started.
 
-    Emitted when benchmark bundle generation begins, listing resource types being generated.
+    Emitted when chat generation begins, listing resource types being generated.
     """
     return {"success": True}

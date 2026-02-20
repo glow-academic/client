@@ -1,6 +1,6 @@
-"""Benchmark bundle progress handler - emits percentage-based progress as resources complete.
+"""Invocation progress handler - emits percentage-based progress as resources complete.
 
-Listens on generate_call_complete, filters for suite artifact with tool_result events
+Listens on generate_call_complete, filters for invocation artifact with tool_result events
 that have a resource_id (successful resource creation), and emits invocation_generation_progress
 with percentage tracking.
 """
@@ -11,9 +11,7 @@ from fastapi import APIRouter
 
 from app.infra.v4.websocket.generation_tracker import record_resource_complete
 from app.main import get_internal_sio, sio
-from app.socket.v4.artifacts.benchmark.types import (
-    SuiteGenerationProgressEvent,
-)
+from app.socket.v4.artifacts.invocation.types import InvocationGenerationProgressEvent
 from app.utils.logging.db_logger import get_logger
 
 logger = get_logger(__name__)
@@ -24,8 +22,8 @@ server_router = APIRouter()
 
 
 @internal_sio.on("generate_call_complete")  # type: ignore
-async def handle_suite_resource_progress(data: dict[str, Any]) -> None:
-    """Track resource completions and emit benchmark bundle progress percentage."""
+async def handle_invocation_resource_progress(data: dict[str, Any]) -> None:
+    """Track resource completions and emit invocation progress percentage."""
     artifact_type = data.get("artifact_type")
     if artifact_type != "invocation":
         return
@@ -56,7 +54,7 @@ async def handle_suite_resource_progress(data: dict[str, Any]) -> None:
 
     percentage = round((completed / total) * 100) if total > 0 else 0
 
-    event = SuiteGenerationProgressEvent(
+    event = InvocationGenerationProgressEvent(
         group_id=group_id_str,
         run_id=run_id,
         completed_resources=completed,
@@ -79,11 +77,11 @@ async def handle_suite_resource_progress(data: dict[str, Any]) -> None:
 
 @server_router.post("/invocation_generation_progress")
 async def invocation_generation_progress_api(
-    request: SuiteGenerationProgressEvent,
+    request: InvocationGenerationProgressEvent,
 ) -> dict[str, bool]:
-    """Server-to-client event: Benchmark bundle generation progress.
+    """Server-to-client event: Invocation generation progress.
 
-    Emitted as individual resources complete during benchmark bundle generation.
+    Emitted as individual resources complete during invocation generation.
     Contains percentage-based progress tracking.
     """
     return {"success": True}

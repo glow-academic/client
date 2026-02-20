@@ -1,35 +1,35 @@
 /**
  * app/(main)/chat/[chatId]/page.tsx
- * Canonical chat customization page (training bundle).
+ * Canonical chat customization page (chat bundle).
  * @AshokSaravanan222 & @siladiea
  * 06/08/2025
  */
 
-import TrainingBundle, { type TrainingBundleData } from "@/components/artifacts/training/TrainingBundle";
+import ChatBundle, { type ChatBundleData } from "@/components/artifacts/chat/ChatBundle";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
 
 /** ---- Strong types from OpenAPI ---- */
-type GetTrainingBundleOut = OutputOf<
-  "/api/v4/artifacts/training/get",
+type GetChatBundleOut = OutputOf<
+  "/api/v4/artifacts/chat/get",
   "post"
 >;
-type PatchTrainingDraftIn = InputOf<
-  "/api/v4/artifacts/training/draft",
+type PatchChatDraftIn = InputOf<
+  "/api/v4/artifacts/chat/draft",
   "patch"
 >;
-type PatchTrainingDraftOut = OutputOf<
-  "/api/v4/artifacts/training/draft",
+type PatchChatDraftOut = OutputOf<
+  "/api/v4/artifacts/chat/draft",
   "patch"
 >;
 
-const getTrainingBundle = async (
+const getChatBundle = async (
   bundleId: string,
   draftId: string | null,
-): Promise<GetTrainingBundleOut> => {
+): Promise<GetChatBundleOut> => {
   return api.post(
-    "/artifacts/training/get",
+    "/artifacts/chat/get",
     {
       body: {
         training_entry_id: bundleId,
@@ -45,11 +45,11 @@ const getTrainingBundle = async (
   );
 };
 
-async function patchTrainingDraft(
-  input: PatchTrainingDraftIn,
-): Promise<PatchTrainingDraftOut> {
+async function patchChatDraft(
+  input: PatchChatDraftIn,
+): Promise<PatchChatDraftOut> {
   "use server";
-  return api.patch("/artifacts/training/draft", input);
+  return api.patch("/artifacts/chat/draft", input);
 }
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -84,12 +84,12 @@ export default async function ChatPage({
         ? (rawAttemptId[0] ?? null)
         : null;
 
-  const bundleData = await getTrainingBundle(chatId, draftId);
+  const bundleData = await getChatBundle(chatId, draftId);
 
   return (
-    <TrainingBundle
-      bundleData={bundleData as TrainingBundleData}
-      patchTrainingDraftAction={patchTrainingDraft}
+    <ChatBundle
+      bundleData={bundleData as ChatBundleData}
+      patchChatDraftAction={patchChatDraft}
       attemptId={attemptId ?? ""}
     />
   );

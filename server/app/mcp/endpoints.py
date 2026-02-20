@@ -269,12 +269,12 @@ ARTIFACT_REGISTRY: dict[str, dict[str, tuple[str, str]]] = {
         "draft": ("app.api.v4.artifacts.tool.draft", "patch_tool_draft"),
         "docs": ("app.api.v4.artifacts.tool.docs", "get_tools_docs"),
     },
-    "training": {
-        "get": ("app.api.v4.artifacts.training.get", "training_bundle_get"),
-        "list": ("app.api.v4.artifacts.training.list", "training_get"),
-        "draft": ("app.api.v4.artifacts.training.draft", "patch_training_draft"),
-        "refresh": ("app.api.v4.artifacts.training.refresh", "training_refresh"),
-        "docs": ("app.api.v4.artifacts.training.docs", "get_training_docs_static"),
+    "chat": {
+        "get": ("app.api.v4.artifacts.chat.get", "chat_bundle_get"),
+        "list": ("app.api.v4.artifacts.chat.list", "chat_get"),
+        "draft": ("app.api.v4.artifacts.chat.draft", "patch_chat_draft"),
+        "refresh": ("app.api.v4.artifacts.chat.refresh", "chat_refresh"),
+        "docs": ("app.api.v4.artifacts.chat.docs", "get_chat_docs_static"),
     },
 }
 

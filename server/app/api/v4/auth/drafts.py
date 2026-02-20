@@ -57,7 +57,7 @@ _PATHNAME_TO_ARTIFACT: dict[str, str] = {
     "rubrics": "rubric",
     "evals": "eval",
     "auth": "auth",
-    "training": "training",
+    "training": "chat",
 }
 
 # Artifact type → per-artifact draft internal function
@@ -79,7 +79,7 @@ _ARTIFACT_INTERNAL_FN = {
     "setting": get_setting_drafts_entries_internal,
     "simulation": get_simulation_drafts_entries_internal,
     "tool": get_tool_drafts_entries_internal,
-    "training": get_training_drafts_entries_internal,
+    "chat": get_training_drafts_entries_internal,
 }
 
 

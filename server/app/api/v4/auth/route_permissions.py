@@ -150,7 +150,7 @@ ROUTE_PERMISSIONS: list[SectionPermission] = [
                 roles=["member", "instructional", "admin", "superadmin"],
                 title="Customize Training",
                 redirectTo="/home",
-                artifact="training",
+                artifact="chat",
             ),
             # Canonical routes (top-level)
             RoutePermission(
@@ -165,7 +165,7 @@ ROUTE_PERMISSIONS: list[SectionPermission] = [
                 roles=["guest", "member", "instructional", "admin", "superadmin"],
                 title="Customize Training",
                 redirectTo="/home",
-                artifact="training",
+                artifact="chat",
             ),
         ],
     ),
@@ -196,7 +196,7 @@ ROUTE_PERMISSIONS: list[SectionPermission] = [
                 roles=["guest", "member", "instructional", "admin", "superadmin"],
                 title="Customize Practice",
                 redirectTo="/practice",
-                artifact="training",
+                artifact="chat",
             ),
         ],
     ),
@@ -808,7 +808,7 @@ ROUTE_PERMISSIONS: list[SectionPermission] = [
                 roles=["custom", "instructional", "admin", "superadmin"],
                 title="Test Bundle",
                 redirectTo="/benchmark",
-                artifact="suite",
+                artifact="invocation",
             ),
             # Canonical routes (top-level)
             RoutePermission(
@@ -823,7 +823,7 @@ ROUTE_PERMISSIONS: list[SectionPermission] = [
                 roles=["custom", "instructional", "admin", "superadmin"],
                 title="Test Bundle",
                 redirectTo="/benchmark",
-                artifact="suite",
+                artifact="invocation",
             ),
         ],
     ),
@@ -1222,7 +1222,7 @@ def compute_page_metadata(
     # Bundle pages get artifact_type based on section
     if is_bundle and not artifact_type:
         if section in {"home", "practice"}:
-            artifact_type = "training"
+            artifact_type = "chat"
         elif section == "benchmark":
             artifact_type = "eval"
 

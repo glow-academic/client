@@ -323,20 +323,20 @@ class TrainingGenerationStartedEvent(BaseModel):
     will be generated.
     """
 
-    artifact_type: str = "training"
+    artifact_type: str = "chat"
     group_id: str
     run_id: str
     resource_types: list[str]
 
 
 class SuiteGenerationStartedEvent(BaseModel):
-    """Server-to-client event: suite_generation_started.
+    """Server-to-client event: invocation_generation_started.
 
     Emitted when benchmark bundle generation begins, listing which resource types
     will be generated.
     """
 
-    artifact_type: str = "suite"
+    artifact_type: str = "invocation"
     group_id: str
     run_id: str
     resource_types: list[str]

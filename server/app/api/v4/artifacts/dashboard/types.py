@@ -5,8 +5,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-from app.api.v4.artifacts.attempt.types import GetAttemptListResponse
-from app.api.v4.artifacts.types import FilterOption
+from app.api.v4.artifacts.types import FilterOption, HistoryResponse
 from app.api.v4.entries.runs.search import GetRunListViewResponse
 from app.sql.types import (
     QGetAgentsV4Item,
@@ -548,7 +547,7 @@ class DashboardBundleResponse(BaseModel):
     profile_role: str | None = None
 
     # Attempt history (populated when history_enabled=True)
-    history: GetAttemptListResponse | None = None
+    history: HistoryResponse | None = None
 
 
 # ============================================================================

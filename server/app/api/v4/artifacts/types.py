@@ -1,5 +1,7 @@
 """Shared types for analytics artifact endpoints."""
 
+from uuid import UUID
+
 from pydantic import BaseModel, Field
 
 
@@ -9,6 +11,47 @@ class FilterOption(BaseModel):
     value: str
     label: str | None = None
     count: int | None = None
+
+
+class HistoryItem(BaseModel):
+    """Single attempt row in history list."""
+
+    attempt_id: UUID
+    date: str | None = None
+    profile_id: UUID | None = None
+    profile_name: str | None = None
+    simulation_id: UUID | None = None
+    simulation_name: str | None = None
+    num_scenarios: int | None = None
+    num_scenarios_completed: int | None = None
+    infinite_mode: bool | None = None
+    time_limit: int | None = None
+    persona_names_junction: list[str] | None = None
+    persona_colors_junction: list[str] | None = None
+    scenario_ids: list[UUID] | None = None
+    scenario_titles: list[str] | None = None
+    department_ids: list[str] | None = None
+    score: int | None = None
+    score_status: str | None = None
+    pass_pct: int | None = None
+    show_view: bool | None = None
+    show_continue: bool | None = None
+    is_archived: bool | None = None
+    practice_simulation: bool | None = None
+    practice_scenario_id: UUID | None = None
+
+
+class HistoryResponse(BaseModel):
+    """Paginated attempt history list."""
+
+    data: list[HistoryItem] = Field(default_factory=list)
+    total_count: int = 0
+    page: int = 0
+    page_size: int = 20
+    total_pages: int = 0
+    simulation_options: list[FilterOption] | None = None
+    scenario_options: list[FilterOption] | None = None
+    profile_options: list[FilterOption] | None = None
 
 
 class AnalyticsFilterOptions(BaseModel):

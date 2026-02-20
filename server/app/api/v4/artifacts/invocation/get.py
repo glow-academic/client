@@ -1,25 +1,19 @@
-"""Get endpoint for health artifact — internal + websocket layers."""
+"""Get endpoint for invocation artifact — internal + websocket layers."""
 
 import asyncio
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
-from typing import Annotated, Any
+from typing import Any
 from uuid import UUID
 
 import asyncpg
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
-from app.api.v4.artifacts.health.types import (
-    GetHealthWebsocketResponse,
-    HealthRequest,
-    HealthResponse,
-    HealthViews,
-    HealthWebsocketResources,
-    HealthWebsocketViews,
+from app.api.v4.artifacts.invocation.types import (
+    GetInvocationWebsocketResponse,
+    InvocationWebsocketResources,
+    InvocationWebsocketViews,
 )
 from app.api.v4.auth.settings import get_auth_settings_internal
-from app.api.v4.entries.health.get import get_health_list_view_internal
-from app.api.v4.entries.metrics.get import get_metric_list_view_internal
 from app.api.v4.entries.runs.search import (
     GetRunListViewResponse,
     get_run_list_entries_internal,
@@ -28,9 +22,6 @@ from app.api.v4.permissions import resolve_agents_for_artifact
 from app.api.v4.resources.models.get import get_models_internal
 from app.api.v4.resources.profiles.get import get_profiles_internal
 from app.api.v4.resources.providers.get import get_providers_internal
-from app.infra.v4.activity.audit import audit_activity
-from app.infra.v4.error.handle_route_error import handle_route_error
-from app.main import get_db, get_pool
 from app.sql.types import (
     QGetAgentsV4Item,
     QGetModelsV4Item,
@@ -39,90 +30,13 @@ from app.sql.types import (
     QGetToolsV4Item,
 )
 
-router = APIRouter()
-
-# Health has no domain resources for agent resolution
-HEALTH_BUNDLE_RESOURCES: set[str] = set()
-
-
-@router.post(
-    "/get",
-    response_model=HealthResponse,
-    dependencies=[
-        audit_activity(
-            "artifacts.health.get",
-            "{{ actor.name }} fetched health artifact data",
-        )
-    ],
-)
-async def get_health(
-    request: HealthRequest,
-    http_request: Request,
-    response: Response,
-    conn: Annotated[asyncpg.Connection, Depends(get_db)],
-) -> HealthResponse:
-    """Get health artifact data."""
-    tags = ["artifacts", "health"]
-    bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
-    pool = get_pool()
-
-    try:
-
-        async def fetch_service_hourly():
-            async with pool.acquire() as c:
-                return await get_health_list_view_internal(
-                    conn=c,
-                    service_filter=request.service,
-                    date_from=request.date_from,
-                    date_to=request.date_to,
-                    page_limit=request.page_limit,
-                    page_offset=request.page_offset,
-                    bypass_cache=bypass_cache,
-                )
-
-        async def fetch_metrics_hourly():
-            async with pool.acquire() as c:
-                return await get_metric_list_view_internal(
-                    conn=c,
-                    date_from=request.date_from,
-                    date_to=request.date_to,
-                    page_limit=request.page_limit,
-                    page_offset=request.page_offset,
-                    bypass_cache=bypass_cache,
-                )
-
-        service_hourly_result, metrics_hourly_result = await asyncio.gather(
-            fetch_service_hourly(),
-            fetch_metrics_hourly(),
-        )
-
-        views = HealthViews(
-            service_hourly=service_hourly_result.items,
-            metrics_hourly=metrics_hourly_result.items,
-        )
-
-        response.headers["X-Cache-Tags"] = ",".join(tags)
-        return HealthResponse(
-            views=views,
-            total_count=service_hourly_result.total_count,
-        )
-
-    except HTTPException:
-        raise
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e)) from e
-    except Exception as e:
-        handle_route_error(
-            error=e,
-            route_path=http_request.url.path,
-            operation="artifacts_health_get",
-            request=http_request,
-        )
+# Invocation has no domain resources for agent resolution
+INVOCATION_BUNDLE_RESOURCES: set[str] = set()
 
 
 @dataclass
-class HealthInternalData:
-    """Internal data from core health fetching (cacheable layer)."""
+class InvocationInternalData:
+    """Internal data from core invocation fetching (cacheable layer)."""
 
     config_agents: list[QGetAgentsV4Item] = field(default_factory=list)
     config_models: list[QGetModelsV4Item] = field(default_factory=list)
@@ -134,16 +48,16 @@ class HealthInternalData:
     group_id: UUID | None = None
 
 
-async def get_health_internal(
+async def get_invocation_internal(
     pool: asyncpg.Pool,
     profile_id: UUID,
-    health_id: UUID | None = None,
+    benchmark_entry_id: UUID | None = None,
     draft_id: UUID | None = None,
     bypass_cache: bool = False,
-) -> HealthInternalData:
-    """Fetch config chain for health artifact.
+) -> InvocationInternalData:
+    """Fetch config chain for invocation artifact.
 
-    Returns a HealthInternalData dataclass consumed by the websocket wrapper.
+    Returns a InvocationInternalData dataclass consumed by the websocket wrapper.
     """
     # 1. Settings-based agent resolution + config chain
     async with pool.acquire() as settings_conn:
@@ -151,7 +65,7 @@ async def get_health_internal(
             settings_conn, profile_id, bypass_cache
         )
     agent_ids, _create_tool_ids, _link_tool_ids = resolve_agents_for_artifact(
-        settings_data.agent_tool_entries, HEALTH_BUNDLE_RESOURCES
+        settings_data.agent_tool_entries, INVOCATION_BUNDLE_RESOURCES
     )
 
     config_agents = list(settings_data.settings_agents)
@@ -200,7 +114,7 @@ async def get_health_internal(
         fetch_runs_today(),
     )
 
-    return HealthInternalData(
+    return InvocationInternalData(
         config_agents=config_agents,
         config_models=config_models,
         config_providers=config_providers,
@@ -212,27 +126,27 @@ async def get_health_internal(
     )
 
 
-async def get_health_websocket(
+async def get_invocation_websocket(
     pool: asyncpg.Pool,
     profile_id: UUID,
-    health_id: UUID | None = None,
+    benchmark_entry_id: UUID | None = None,
     draft_id: UUID | None = None,
     bypass_cache: bool = False,
-) -> GetHealthWebsocketResponse:
+) -> GetInvocationWebsocketResponse:
     """Thin wrapper for websocket consumers — config chain + rate limit info."""
-    data = await get_health_internal(
+    data = await get_invocation_internal(
         pool=pool,
         profile_id=profile_id,
-        health_id=health_id,
+        benchmark_entry_id=benchmark_entry_id,
         draft_id=draft_id,
         bypass_cache=bypass_cache,
     )
 
-    return GetHealthWebsocketResponse(
-        views=HealthWebsocketViews(
+    return GetInvocationWebsocketResponse(
+        views=InvocationWebsocketViews(
             runs=data.runs_today,
         ),
-        resources=HealthWebsocketResources(
+        resources=InvocationWebsocketResources(
             config_agents=data.config_agents or None,
             config_models=data.config_models or None,
             config_providers=data.config_providers or None,

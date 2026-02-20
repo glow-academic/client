@@ -25,6 +25,7 @@ from app.api.v4.artifacts.agent import router as agents_router
 from app.api.v4.artifacts.attempt import router as attempt_artifact_router
 from app.api.v4.artifacts.auth import router as auth_artifact_router
 from app.api.v4.artifacts.benchmark import router as benchmark_artifact_router
+from app.api.v4.artifacts.chat import router as chat_artifact_router
 from app.api.v4.artifacts.cohort import router as cohorts_router
 
 # View-based artifact handlers (aggregated data for UI sections)
@@ -52,7 +53,6 @@ from app.api.v4.artifacts.setting import router as settings_router
 from app.api.v4.artifacts.simulation import router as simulations_router
 from app.api.v4.artifacts.test import router as test_artifact_router
 from app.api.v4.artifacts.tool import router as tools_router
-from app.api.v4.artifacts.training import router as training_artifact_router
 
 # ============================================================================
 # Auth (not available to MCP)
@@ -122,7 +122,7 @@ artifacts_router.include_router(auth_artifact_router)
 artifacts_router.include_router(tools_router)
 artifacts_router.include_router(group_router)
 artifacts_router.include_router(session_router)
-artifacts_router.include_router(training_artifact_router)
+artifacts_router.include_router(chat_artifact_router)
 artifacts_router.include_router(home_artifact_router)
 artifacts_router.include_router(practice_artifact_router)
 artifacts_router.include_router(attempt_artifact_router)

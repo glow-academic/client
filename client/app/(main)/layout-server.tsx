@@ -25,7 +25,7 @@ type CreateFeedbackIn = InputOf<"/api/v4/artifacts/activity/problem", "post">;
 type CreateFeedbackOut = OutputOf<"/api/v4/artifacts/activity/problem", "post">;
 /** Page-specific refresh endpoint mapping */
 const REFRESH_ENDPOINT_MAP: Record<string, string> = {
-  training: "/artifacts/training/refresh",
+  chat: "/artifacts/chat/refresh",
   dashboard: "/artifacts/dashboard/refresh",
   leaderboard: "/artifacts/leaderboard/refresh",
   reports: "/artifacts/reports/refresh",

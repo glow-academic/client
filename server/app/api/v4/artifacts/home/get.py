@@ -12,26 +12,33 @@ from uuid import UUID
 import asyncpg
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
-from app.api.v4.artifacts.home.types import GetHomeResponse
-from app.api.v4.artifacts.training.permissions import (
+from app.api.v4.artifacts.chat.permissions import (
     compute_completion_pct,
     compute_mode,
     compute_pass_pct,
+    compute_score_status,
+    compute_show_continue,
+    compute_show_view,
     compute_status,
     compute_status_instructional,
     format_cohort_names,
 )
-from app.api.v4.artifacts.training.types import (
+from app.api.v4.artifacts.chat.types import (
     RubricMapping,
     StandardGroupMapping,
     StandardMapping,
     TrainingSimulationOperational,
 )
+from app.api.v4.artifacts.home.types import GetHomeRequest, GetHomeResponse
+from app.api.v4.artifacts.types import FilterOption, HistoryItem, HistoryResponse
 from app.api.v4.auth.profile import get_auth_profile_internal
+from app.api.v4.entries.attempt.get import ChatViewItem, get_attempt_chats_internal
+from app.api.v4.entries.attempt.search import get_attempt_list_internal
 from app.api.v4.entries.chat.get import ChatItem, GetChatsResponse, get_chats_internal
 from app.api.v4.entries.home.get import get_home_context_view_internal
 from app.api.v4.resources.cohorts.get import get_cohorts_internal
 from app.api.v4.resources.personas.get import get_personas_internal
+from app.api.v4.resources.profiles.get import get_profiles_internal
 from app.api.v4.resources.rubrics.get import get_rubrics_internal
 from app.api.v4.resources.scenario_time_limits.get import (
     get_scenario_time_limits_internal,
@@ -159,12 +166,384 @@ def _aggregate_instructional_stats(
 
 
 # =============================================================================
+# History helpers — inline pipeline (entries layer → HistoryResponse)
+# =============================================================================
+
+
+def _compute_history_aggregates(
+    chats: list[ChatViewItem],
+) -> dict[str, Any]:
+    """Compute attempt-level aggregates from chat view items."""
+    num_chats = len(chats)
+    num_chats_completed = sum(1 for c in chats if c.completed)
+
+    scenario_ids_set: set[UUID] = set()
+    completed_scenario_ids: set[UUID] = set()
+    persona_ids_set: set[UUID] = set()
+
+    total_score = 0.0
+    total_possible = 0.0
+    has_passed = False
+    total_time_seconds = 0
+    rubric_total_points: int | None = None
+    rubric_pass_points: int | None = None
+
+    for chat in chats:
+        if chat.scenario_id:
+            scenario_ids_set.add(chat.scenario_id)
+            if chat.completed:
+                completed_scenario_ids.add(chat.scenario_id)
+        if chat.persona_ids:
+            persona_ids_set.update(chat.persona_ids)
+
+        if chat.grade:
+            if chat.grade.score is not None and chat.grade.total_points:
+                total_score += chat.grade.score
+                total_possible += chat.grade.total_points
+            if chat.grade.passed:
+                has_passed = True
+            if chat.grade.time_taken is not None:
+                total_time_seconds += chat.grade.time_taken
+            if chat.grade.total_points is not None:
+                rubric_total_points = (
+                    rubric_total_points or 0
+                ) + chat.grade.total_points
+            if chat.grade.pass_points is not None:
+                rubric_pass_points = (rubric_pass_points or 0) + chat.grade.pass_points
+
+    score_percent: float | None = None
+    if total_possible > 0:
+        score_percent = round((total_score / total_possible) * 100, 2)
+
+    return {
+        "num_scenarios": len(scenario_ids_set),
+        "num_scenarios_completed": len(completed_scenario_ids),
+        "num_chats": num_chats,
+        "num_chats_completed": num_chats_completed,
+        "score_percent": score_percent,
+        "has_passed": has_passed,
+        "total_time_seconds": total_time_seconds,
+        "rubric_total_points": rubric_total_points,
+        "rubric_pass_points": rubric_pass_points,
+        "persona_ids": list(persona_ids_set) if persona_ids_set else None,
+        "scenario_ids": list(scenario_ids_set) if scenario_ids_set else None,
+    }
+
+
+def _transform_history_item(
+    attempt: Any,
+    aggregates: dict[str, Any],
+    resource_meta: dict[str, dict[UUID, dict[str, Any]]],
+    pass_threshold: float | None,
+    practice: bool,
+) -> HistoryItem:
+    """Transform an attempt MV row + aggregates into a HistoryItem."""
+    sim_meta = (
+        resource_meta["simulations"].get(attempt.simulation_id, {})
+        if attempt.simulation_id
+        else {}
+    )
+    simulation_name = sim_meta.get("name")
+    time_limit = sim_meta.get("time_limit")
+
+    profile_meta = (
+        resource_meta["profiles"].get(attempt.profile_id, {})
+        if attempt.profile_id
+        else {}
+    )
+    profile_name = profile_meta.get("name")
+
+    persona_names: list[str] = []
+    persona_colors: list[str] = []
+    persona_ids = aggregates.get("persona_ids")
+    if persona_ids:
+        for pid in persona_ids:
+            p_meta = resource_meta["personas"].get(pid, {})
+            if p_meta.get("name"):
+                persona_names.append(p_meta["name"])
+            if p_meta.get("color"):
+                persona_colors.append(p_meta["color"])
+
+    scenario_titles: list[str] = []
+    scenario_ids = aggregates.get("scenario_ids") or (
+        list(attempt.scenario_ids) if attempt.scenario_ids else None
+    )
+    if scenario_ids:
+        for sid in scenario_ids:
+            s_meta = resource_meta["scenarios"].get(sid, {})
+            if s_meta.get("name"):
+                scenario_titles.append(s_meta["name"])
+
+    score_percent = aggregates.get("score_percent")
+    pass_pct = compute_pass_pct(
+        aggregates.get("rubric_total_points"), aggregates.get("rubric_pass_points")
+    )
+    score_status = compute_score_status(score_percent, pass_threshold)
+    score = round(score_percent) if score_percent is not None else None
+
+    is_archived = attempt.is_archived if practice else False
+    show_view = compute_show_view(is_archived)
+    num_incomplete_chats = (aggregates.get("num_chats") or 0) - (
+        aggregates.get("num_chats_completed") or 0
+    )
+    show_continue = compute_show_continue(
+        is_archived=is_archived,
+        infinite_mode=attempt.infinite_mode,
+        num_scenarios=aggregates.get("num_scenarios"),
+        num_scenarios_completed=aggregates.get("num_scenarios_completed"),
+        time_limit_seconds=time_limit,
+        elapsed_seconds=aggregates.get("total_time_seconds"),
+        num_incomplete_chats=num_incomplete_chats,
+    )
+
+    department_ids = [str(attempt.department_id)] if attempt.department_id else None
+    practice_scenario_id = scenario_ids[0] if scenario_ids else None
+
+    return HistoryItem(
+        attempt_id=attempt.attempt_id,
+        date=attempt.created_at.isoformat() if attempt.created_at else None,
+        profile_id=attempt.profile_id,
+        profile_name=profile_name,
+        simulation_id=attempt.simulation_id,
+        simulation_name=simulation_name,
+        num_scenarios=aggregates.get("num_scenarios"),
+        num_scenarios_completed=aggregates.get("num_scenarios_completed"),
+        infinite_mode=attempt.infinite_mode,
+        time_limit=time_limit,
+        persona_names_junction=persona_names if persona_names else None,
+        persona_colors_junction=persona_colors if persona_colors else None,
+        scenario_ids=scenario_ids,
+        scenario_titles=scenario_titles if scenario_titles else None,
+        department_ids=department_ids,
+        score=score,
+        score_status=score_status,
+        pass_pct=pass_pct,
+        show_view=show_view,
+        show_continue=show_continue,
+        is_archived=is_archived if practice else None,
+        practice_simulation=None,
+        practice_scenario_id=practice_scenario_id if practice else None,
+    )
+
+
+async def _fetch_home_history_data(
+    pool: asyncpg.Pool,
+    request: GetHomeRequest,
+    profile_resource_id: UUID,
+    bypass_cache: bool = False,
+) -> HistoryResponse | None:
+    """Fetch paginated attempt history for home page."""
+    if not request.history_enabled or not profile_resource_id:
+        return None
+
+    practice = False
+    page = request.history_page
+    page_size = request.history_page_size
+    page_offset = page * page_size
+    pass_threshold = 70.0
+
+    # Step 1: Paginated attempts from attempt_mv
+    async with pool.acquire() as c:
+        list_result = await get_attempt_list_internal(
+            conn=c,
+            profile_id_filter=profile_resource_id,
+            practice_filter=practice,
+            is_archived_filter=False,
+            simulation_id_filter=None,
+            cohort_ids=None,
+            department_ids=None,
+            scenario_ids_filter=request.history_scenario_ids,
+            infinite_mode_filter=request.history_infinite_mode,
+            date_from=None,
+            date_to=None,
+            sort_by=request.history_sort_by or "date",
+            sort_order=request.history_sort_order or "desc",
+            page_limit=page_size,
+            page_offset=page_offset,
+            bypass_cache=bypass_cache,
+        )
+
+    # Step 2: Batch-fetch chats for paginated attempt_ids
+    items = list_result.items or []
+    paginated_ids = [item.attempt_id for item in items]
+
+    chats: list[ChatViewItem] = []
+    if paginated_ids:
+        async with pool.acquire() as c:
+            chats = await get_attempt_chats_internal(
+                c, attempt_ids=paginated_ids, bypass_cache=bypass_cache
+            )
+
+    # Step 3: Group chats by attempt_id
+    chats_by_attempt: dict[UUID, list[ChatViewItem]] = defaultdict(list)
+    for chat in chats:
+        if chat.attempt_id:
+            chats_by_attempt[chat.attempt_id].append(chat)
+
+    # Step 4: Compute aggregates and collect resource IDs
+    h_sim_ids: set[UUID] = set()
+    h_profile_ids: set[UUID] = set()
+    h_persona_ids: set[UUID] = set()
+    h_scenario_ids: set[UUID] = set()
+    aggregates_by_attempt: dict[UUID, dict[str, Any]] = {}
+
+    for item in items:
+        attempt_chats = chats_by_attempt.get(item.attempt_id, [])
+        agg = _compute_history_aggregates(attempt_chats)
+        aggregates_by_attempt[item.attempt_id] = agg
+        if item.simulation_id:
+            h_sim_ids.add(item.simulation_id)
+        if item.profile_id:
+            h_profile_ids.add(item.profile_id)
+        if agg.get("persona_ids"):
+            h_persona_ids.update(agg["persona_ids"])
+        if agg.get("scenario_ids"):
+            h_scenario_ids.update(agg["scenario_ids"])
+        elif item.scenario_ids:
+            h_scenario_ids.update(item.scenario_ids)
+
+    # Step 5: Fetch resource metadata in parallel
+    async def _h_sims() -> list[Any]:
+        if not h_sim_ids:
+            return []
+        async with pool.acquire() as c:
+            return await get_simulations_internal(
+                c, list(h_sim_ids), bypass_cache=bypass_cache
+            )
+
+    async def _h_profiles() -> list[Any]:
+        if not h_profile_ids:
+            return []
+        async with pool.acquire() as c:
+            return await get_profiles_internal(
+                c, list(h_profile_ids), bypass_cache=bypass_cache
+            )
+
+    async def _h_personas() -> list[Any]:
+        if not h_persona_ids:
+            return []
+        async with pool.acquire() as c:
+            return await get_personas_internal(
+                c, list(h_persona_ids), bypass_cache=bypass_cache
+            )
+
+    async def _h_scenarios() -> list[Any]:
+        if not h_scenario_ids:
+            return []
+        async with pool.acquire() as c:
+            return await get_scenarios_internal(
+                c, list(h_scenario_ids), bypass_cache=bypass_cache
+            )
+
+    h_sims, h_profs, h_pers, h_scens = await asyncio.gather(
+        _h_sims(), _h_profiles(), _h_personas(), _h_scenarios()
+    )
+
+    resource_meta: dict[str, dict[UUID, dict[str, Any]]] = {
+        "simulations": {},
+        "profiles": {},
+        "personas": {},
+        "scenarios": {},
+    }
+    for s in h_sims:
+        if s.simulation_id:
+            resource_meta["simulations"][s.simulation_id] = {
+                "name": s.name,
+                "time_limit": None,
+            }
+    for p in h_profs:
+        if p.profile_id:
+            resource_meta["profiles"][p.profile_id] = {"name": p.name}
+    for p in h_pers:
+        if p.persona_id:
+            resource_meta["personas"][p.persona_id] = {
+                "name": p.name,
+                "color": p.color,
+            }
+    for s in h_scens:
+        if s.scenario_id:
+            resource_meta["scenarios"][s.scenario_id] = {"name": s.name}
+
+    # Step 6: Transform attempts
+    attempts = [
+        _transform_history_item(
+            item,
+            aggregates_by_attempt.get(item.attempt_id, {}),
+            resource_meta,
+            pass_threshold,
+            practice,
+        )
+        for item in items
+    ]
+
+    # Step 7: Build filter options with name resolution
+    simulation_options: list[FilterOption] | None = None
+    if list_result.simulation_options:
+        simulation_options = []
+        for opt in list_result.simulation_options:
+            if not opt.value:
+                continue
+            try:
+                sim_id = UUID(opt.value)
+                label = (
+                    resource_meta["simulations"].get(sim_id, {}).get("name")
+                    or opt.value
+                )
+            except ValueError:
+                label = opt.value
+            simulation_options.append(
+                FilterOption(value=opt.value, label=label, count=opt.count or 0)
+            )
+        if request.history_simulation_search:
+            q = request.history_simulation_search.lower()
+            simulation_options = [
+                o for o in simulation_options if q in (o.label or "").lower()
+            ]
+
+    scenario_options: list[FilterOption] | None = None
+    if list_result.scenario_options:
+        scenario_options = []
+        for opt in list_result.scenario_options:
+            if not opt.value:
+                continue
+            try:
+                scn_id = UUID(opt.value)
+                label = (
+                    resource_meta["scenarios"].get(scn_id, {}).get("name") or opt.value
+                )
+            except ValueError:
+                label = opt.value
+            scenario_options.append(
+                FilterOption(value=opt.value, label=label, count=opt.count or 0)
+            )
+        if request.history_scenario_search:
+            q = request.history_scenario_search.lower()
+            scenario_options = [
+                o for o in scenario_options if q in (o.label or "").lower()
+            ]
+
+    total_count = list_result.total_count
+    total_pages = (total_count + page_size - 1) // page_size if page_size > 0 else 0
+
+    return HistoryResponse(
+        data=attempts,
+        total_count=total_count,
+        page=page,
+        page_size=page_size,
+        total_pages=total_pages,
+        simulation_options=simulation_options,
+        scenario_options=scenario_options,
+    )
+
+
+# =============================================================================
 # Main internal fetch
 # =============================================================================
 
 
 async def get_home_internal(
     pool: asyncpg.Pool,
+    request: GetHomeRequest,
     profile_id: UUID,
     bypass_cache: bool = False,
 ) -> GetHomeResponse:
@@ -211,8 +590,19 @@ async def get_home_internal(
                 bypass_cache=bypass_cache,
             )
 
-    context, personal_facts, profile_ctx = await asyncio.gather(
-        fetch_context(), fetch_personal_stats(), fetch_profile_context()
+    async def fetch_history() -> HistoryResponse | None:
+        return await _fetch_home_history_data(
+            pool=pool,
+            request=request,
+            profile_resource_id=profiles_resource_id,
+            bypass_cache=bypass_cache,
+        )
+
+    context, personal_facts, profile_ctx, history_result = await asyncio.gather(
+        fetch_context(),
+        fetch_personal_stats(),
+        fetch_profile_context(),
+        fetch_history(),
     )
 
     actor_name = profile_ctx.access.actor_name if profile_ctx else None
@@ -580,6 +970,7 @@ async def get_home_internal(
         rubrics=rubrics,
         standard_groups=standard_groups,
         standards=standards,
+        history=history_result,
     )
 
 
@@ -596,6 +987,7 @@ async def get_home_internal(
     ],
 )
 async def home_get(
+    request: GetHomeRequest,
     http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
@@ -604,9 +996,12 @@ async def home_get(
     tags = ["home", "get"]
     bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
 
-    cache_key_val = cache_key(http_request.url.path, {})
+    cache_key_val = cache_key(
+        http_request.url.path,
+        request.model_dump(mode="json") if request.history_enabled else {},
+    )
 
-    if not bypass_cache:
+    if not bypass_cache and not request.history_enabled:
         cached = await get_cached(cache_key_val)
         if cached:
             response.headers["X-Cache-Tags"] = ",".join(tags)
@@ -630,6 +1025,7 @@ async def home_get(
 
         api_response = await get_home_internal(
             pool=pool,
+            request=request,
             profile_id=profile_id,
             bypass_cache=bypass_cache,
         )

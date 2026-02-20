@@ -1,6 +1,6 @@
-"""WebSocket-specific types for benchmark bundle generation.
+"""WebSocket-specific types for chat generation.
 
-Extends base artifact types with benchmark-bundle-specific fields.
+Extends base artifact types with chat-specific fields.
 Types are registered in OpenAPI via FastAPI endpoints, enabling
 automatic type extraction in the frontend via InputOf/OutputOf.
 """
@@ -18,33 +18,38 @@ from app.socket.v4.artifacts.types import (
 # Generation type constants
 # =============================================================================
 
-# Resource types that benchmark bundle generation can produce
-BENCHMARK_BUNDLE_GENERATE_RESOURCE_TYPES = [
+# Resource types that chat generation can produce
+CHAT_GENERATE_RESOURCE_TYPES = [
     "departments",
-    "models",
-    "prompts",
-    "instructions",
-    "voices",
-    "temperature_levels",
-    "reasoning_levels",
-    "tools",
-    "keys",
+    "personas",
+    "documents",
+    "parameter_fields",
+    "scenarios",
+    "parameters",
+    "fields",
+    "questions",
+    "options",
+    "videos",
+    "images",
+    "templates",
+    "problem_statements",
+    "objectives",
 ]
 
-BENCHMARK_BUNDLE_SYNC_ENTRY_TYPES = ["runs"]
+CHAT_SYNC_ENTRY_TYPES = ["runs"]
 
-BENCHMARK_BUNDLE_ASYNC_ENTRY_TYPES = ["debug_info"]
+CHAT_ASYNC_ENTRY_TYPES = ["debug_info"]
 
 
 # =============================================================================
-# Client-to-Server Events (suite_generate)
+# Client-to-Server Events (chat_generate)
 # =============================================================================
 
 
-class GenerateSuitePayload(BaseModel):
-    """Request payload for suite_generate WebSocket event."""
+class GenerateChatPayload(BaseModel):
+    """Request payload for chat_generate WebSocket event."""
 
-    suite_entry_id: UUID
+    training_entry_id: UUID
     draft_id: UUID | None = None
     resource_types: list[str]
     user_instructions: list[str] | None = None
@@ -56,24 +61,24 @@ class GenerateSuitePayload(BaseModel):
 # =============================================================================
 
 
-class SuiteGenerationCompleteEvent(GenerationCompleteEvent):
-    """Server-to-client event: suite_generation_complete.
+class ChatGenerationCompleteEvent(GenerationCompleteEvent):
+    """Server-to-client event: chat_generation_complete.
 
-    Emitted when all agents have finished generating benchmark bundle resources.
+    Emitted when all agents have finished generating chat resources.
     """
 
-    artifact_type: str = "invocation"
+    artifact_type: str = "chat"
     attempt_id: str | None = None
     chat_id: str | None = None
 
 
-class SuiteGenerationProgressEvent(BaseModel):
-    """Server-to-client event: suite_generation_progress.
+class ChatGenerationProgressEvent(BaseModel):
+    """Server-to-client event: training_generation_progress.
 
     Emitted as individual resources complete, providing percentage progress.
     """
 
-    artifact_type: str = "invocation"
+    artifact_type: str = "chat"
     group_id: str
     run_id: str | None = None
     completed_resources: int
@@ -82,10 +87,10 @@ class SuiteGenerationProgressEvent(BaseModel):
     last_completed_resource: str | None = None
 
 
-class SuiteGenerationErrorEvent(GenerationErrorEvent):
-    """Server-to-client event: suite_generation_error.
+class ChatGenerationErrorEvent(GenerationErrorEvent):
+    """Server-to-client event: training_generation_error.
 
-    Emitted when benchmark bundle resource generation fails.
+    Emitted when training resource generation fails.
     """
 
-    artifact_type: str = "invocation"
+    artifact_type: str = "chat"

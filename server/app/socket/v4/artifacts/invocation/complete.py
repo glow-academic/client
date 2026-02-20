@@ -1,4 +1,4 @@
-"""Benchmark bundle completion handler - handles run/text completion and multi-agent coordination.
+"""Invocation completion handler - handles run/text completion and multi-agent coordination.
 
 Resource-level tool_call_complete/tool_result events are now handled by the shared
 resource_complete.py handler. This module handles:
@@ -17,8 +17,8 @@ from app.infra.v4.websocket.generation_tracker import (
 )
 from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.main import get_internal_sio, sio
-from app.socket.v4.artifacts.benchmark.types import (
-    SuiteGenerationCompleteEvent,
+from app.socket.v4.artifacts.invocation.types import (
+    InvocationGenerationCompleteEvent,
 )
 from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import load_sql
@@ -36,8 +36,8 @@ server_router = APIRouter()
 
 @internal_sio.on("generate_call_complete")  # type: ignore
 @internal_sio.on("generate_text_complete")  # type: ignore
-async def handle_suite_artifact_complete(data: dict[str, Any]) -> None:
-    """Handle generate_call_complete and generate_text_complete events - filter by suite artifact_type."""
+async def handle_invocation_artifact_complete(data: dict[str, Any]) -> None:
+    """Handle generate_call_complete and generate_text_complete events - filter by invocation artifact_type."""
 
     artifact_type = data.get("artifact_type")
     if artifact_type != "invocation":
@@ -51,20 +51,20 @@ async def handle_suite_artifact_complete(data: dict[str, Any]) -> None:
 
     # Handle text completion - save assistant message
     if event_type == "text_complete":
-        await _handle_suite_text_complete(sid, data)
+        await _handle_invocation_text_complete(sid, data)
         return
 
     # Handle run complete - coordinate multi-agent, emit completion
     if event_type == "run_complete":
-        await _handle_suite_run_complete(sid, data)
+        await _handle_invocation_run_complete(sid, data)
         return
 
     # tool_call_complete and tool_result events are now handled by
     # resource_complete.py (shared handler) - nothing to do here
 
 
-async def _handle_suite_text_complete(sid: str, data: dict[str, Any]) -> None:
-    """Handle benchmark bundle text generation completion - save assistant message."""
+async def _handle_invocation_text_complete(sid: str, data: dict[str, Any]) -> None:
+    """Handle invocation text generation completion - save assistant message."""
     run_id = data.get("run_id")
     final_content = data.get("text") or ""
 
@@ -83,11 +83,11 @@ async def _handle_suite_text_complete(sid: str, data: dict[str, Any]) -> None:
                 False,
             )
     except Exception as e:
-        logger.exception(f"Failed to save benchmark bundle text message: {str(e)}")
+        logger.exception(f"Failed to save invocation text message: {str(e)}")
 
 
-async def _handle_suite_run_complete(sid: str, data: dict[str, Any]) -> None:
-    """Handle benchmark bundle generation run completion.
+async def _handle_invocation_run_complete(sid: str, data: dict[str, Any]) -> None:
+    """Handle invocation generation run completion.
 
     Coordinates multi-agent completion via generation_tracker:
     1. Records this agent's completion
@@ -140,21 +140,21 @@ async def _handle_suite_run_complete(sid: str, data: dict[str, Any]) -> None:
                     output_tokens,
                 )
     except Exception as e:
-        logger.exception(f"Failed to save benchmark bundle run complete: {str(e)}")
+        logger.exception(f"Failed to save invocation run complete: {str(e)}")
 
     # Multi-agent coordination via generation tracker
     tool_results = data.get("tool_results") or []
-    is_complete, all_tool_results = await record_agent_complete(run_id, tool_results)
+    is_complete, _all_tool_results = await record_agent_complete(run_id, tool_results)
 
     if is_complete:
         # Emit invocation_generation_complete
-        event = SuiteGenerationCompleteEvent(
+        event = InvocationGenerationCompleteEvent(
             artifact_type="invocation",
             group_id=group_id_str or "",
-            resource_type="suite",
+            resource_type="invocation",
             run_id=run_id,
             success=True,
-            message="Benchmark bundle generation completed",
+            message="Invocation generation completed",
         )
 
         await sio.emit(
@@ -173,10 +173,10 @@ async def _handle_suite_run_complete(sid: str, data: dict[str, Any]) -> None:
 
 @server_router.post("/invocation_generation_complete")
 async def invocation_generation_complete_api(
-    request: SuiteGenerationCompleteEvent,
+    request: InvocationGenerationCompleteEvent,
 ) -> dict[str, bool]:
-    """Server-to-client event: Benchmark bundle generation completed.
+    """Server-to-client event: Invocation generation completed.
 
-    Emitted when all agents have finished generating benchmark bundle resources.
+    Emitted when all agents have finished generating invocation resources.
     """
     return {"success": True}
