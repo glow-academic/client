@@ -109,3 +109,80 @@ class TestErrorEvent(BaseModel):
     run_id: str | None = None
     message: str
     error_type: str | None = None
+
+
+# ---------------------------------------------------------------------------
+# Attempt state management
+# ---------------------------------------------------------------------------
+
+
+class AttemptStartPayload(BaseModel):
+    """Client-to-server: start or proceed with an attempt.
+
+    Dual-mode:
+    - Create mode (no attempt_id): creates a new attempt, then generates first chat
+    - Next mode (has attempt_id): checks remaining scenarios and proceeds or ends
+    """
+
+    training_entry_id: UUID | None = None
+    attempt_id: UUID | None = None
+    draft_id: UUID | None = None
+    infinite_mode: bool = False
+    resource_types: list[str] | None = None
+    user_instructions: list[str] | None = None
+    save: bool = True
+
+
+class AttemptStartedEvent(BaseModel):
+    """Server-to-client: new attempt created."""
+
+    attempt_id: str
+    training_entry_id: str
+
+
+class AttemptEndPayload(BaseModel):
+    """Client-to-server: end a single chat within an attempt."""
+
+    attempt_id: UUID
+    chat_id: UUID
+
+
+class AttemptChatEndedEvent(BaseModel):
+    """Server-to-client: single chat ended."""
+
+    chat_id: str
+    is_attempt_finished: bool | None = None
+    grade_id: str | None = None
+
+
+class AttemptEndAllPayload(BaseModel):
+    """Client-to-server: end all remaining chats in an attempt."""
+
+    attempt_id: UUID
+
+
+class AttemptEndedEvent(BaseModel):
+    """Server-to-client: entire attempt ended (all scenarios complete)."""
+
+    attempt_id: str
+    success: bool
+    all_scenarios_complete: bool = False
+    message: str | None = None
+
+
+class AttemptUsePreviousPayload(BaseModel):
+    """Client-to-server: copy grades from a previous attempt's chats.
+
+    previous_chat_map: {scenario_id: previous_chat_id}
+    """
+
+    attempt_id: UUID
+    previous_chat_map: dict[str, str]
+
+
+class AttemptErrorEvent(BaseModel):
+    """Server-to-client: attempt error."""
+
+    chat_id: str | None = None
+    type: str | None = None
+    message: str
