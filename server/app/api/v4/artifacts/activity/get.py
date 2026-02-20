@@ -30,7 +30,6 @@ from app.api.v4.entries.grants.get import get_grant_list_view_internal
 from app.api.v4.entries.logins.get import get_login_list_view_internal
 from app.api.v4.entries.problems.get import get_problem_list_view_internal
 from app.api.v4.entries.runs.search import (
-    GetRunListViewResponse,
     get_run_list_entries_internal,
 )
 from app.api.v4.entries.sessions.get import get_session_list_view_internal
@@ -208,7 +207,7 @@ async def get_activity_internal(
         async with pool.acquire() as c:
             return await get_profiles_internal(c, [profile_id], bypass_cache)
 
-    async def fetch_runs_today() -> GetRunListViewResponse:
+    async def fetch_runs_today() -> Any:
         today_utc = datetime.now(UTC).replace(hour=0, minute=0, second=0, microsecond=0)
         tomorrow_utc = today_utc.replace(hour=23, minute=59, second=59)
         async with pool.acquire() as c:

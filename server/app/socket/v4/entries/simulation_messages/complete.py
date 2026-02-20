@@ -5,7 +5,7 @@ from typing import Any
 from fastapi import APIRouter
 
 from app.main import get_internal_sio, sio
-from app.socket.v4.entries.attempt_message.types import (
+from app.socket.v4.entries.simulation_messages.types import (
     SimulationMessagesGenerationEvent,
 )
 from app.socket.v4.entries.utils import resolve_entry_type

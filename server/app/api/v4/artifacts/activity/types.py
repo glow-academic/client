@@ -4,12 +4,10 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 from uuid import UUID
 
 from pydantic import BaseModel, Field
-
-from app.api.v4.entries.runs.search import GetRunListViewResponse
 
 if TYPE_CHECKING:
     from app.api.v4.artifacts.session.types import GetSessionListResponse
@@ -51,7 +49,7 @@ class ActivityInternalData:
     config_providers: list[QGetProvidersV4Item] = field(default_factory=list)
     config_tools: list[QGetToolsV4Item] = field(default_factory=list)
     config_profile: list[QGetProfilesV4Item] = field(default_factory=list)
-    runs_today: GetRunListViewResponse | None = None
+    runs_today: Any = None  # GetRunListViewResponse — lazy to avoid circular import
     resource_agent_ids: dict[str, UUID | None] = field(default_factory=dict)
     group_id: UUID | None = None
 
@@ -146,7 +144,7 @@ class GetActivityApiRequest(BaseModel):
 class ActivityWebsocketViews(BaseModel):
     """Views data for activity websocket response."""
 
-    runs: GetRunListViewResponse | None = None
+    runs: Any = None  # GetRunListViewResponse — lazy to avoid circular import
     # Domain views (from internal layer)
     sessions: list[QGetSessionListViewV4Item] | None = None
     activity: list[QGetActivityListViewV4Item] | None = None
