@@ -15,13 +15,25 @@ from app.api.v4.artifacts.activity.types import (
     ActivityResources,
     ActivityResponse,
     ActivityViews,
+    ActivityWebsocketResources,
+    ActivityWebsocketViews,
+    GetActivityWebsocketResponse,
 )
+from app.api.v4.auth.settings import get_auth_settings_internal
 from app.api.v4.entries.activity.get import get_activity_list_view_internal
 from app.api.v4.entries.audits.get import get_audit_list_view_internal
 from app.api.v4.entries.grants.get import get_grant_list_view_internal
 from app.api.v4.entries.logins.get import get_login_list_view_internal
 from app.api.v4.entries.problems.get import get_problem_list_view_internal
+from app.api.v4.entries.runs.search import (
+    GetRunListViewResponse,
+    get_run_list_entries_internal,
+)
 from app.api.v4.entries.sessions.get import get_session_list_view_internal
+from app.api.v4.permissions import resolve_agents_for_artifact
+from app.api.v4.resources.models.get import get_models_internal
+from app.api.v4.resources.profiles.get import get_profiles_internal
+from app.api.v4.resources.providers.get import get_providers_internal
 from app.infra.v4.activity.audit import audit_activity
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
@@ -32,6 +44,7 @@ from app.sql.types import (
     GetLoginListViewSqlRow,
     GetProblemListViewSqlRow,
     GetSessionListViewSqlRow,
+    QGetProfilesV4Item,
 )
 
 router = APIRouter()
@@ -259,3 +272,98 @@ async def get_activity(
             operation="artifacts_activity_get",
             request=http_request,
         )
+
+
+# =============================================================================
+# WebSocket Layer
+# =============================================================================
+
+# Activity resource types used for agent resolution via settings
+ACTIVITY_BUNDLE_RESOURCES: set[str] = {
+    "activity",
+    "insights",
+    "debug_info",
+}
+
+
+async def get_activity_websocket(
+    pool: asyncpg.Pool,
+    profile_id: UUID,
+    activity_id: UUID | None = None,
+    draft_id: UUID | None = None,
+    bypass_cache: bool = False,
+) -> GetActivityWebsocketResponse:
+    """Thin wrapper for websocket consumers — config chain + rate limit info."""
+    from datetime import UTC, datetime
+    from typing import Any
+
+    # 1. Settings-based agent resolution + config chain
+    async with pool.acquire() as settings_conn:
+        settings_data = await get_auth_settings_internal(
+            settings_conn, profile_id, bypass_cache
+        )
+    agent_ids, _create_tool_ids, _link_tool_ids = resolve_agents_for_artifact(
+        settings_data.agent_tool_entries, ACTIVITY_BUNDLE_RESOURCES
+    )
+
+    # Config chain from settings
+    config_agents = list(settings_data.settings_agents)
+    config_tools = list(settings_data.settings_tools)
+
+    config_model_resource_ids = list(
+        dict.fromkeys(a.model_id for a in settings_data.settings_agents if a.model_id)
+    )
+    config_models: list[Any] = []
+    if config_model_resource_ids:
+        async with pool.acquire() as conn:
+            config_models = await get_models_internal(
+                conn, config_model_resource_ids, bypass_cache
+            )
+
+    config_provider_resource_ids = list(
+        dict.fromkeys(m.provider_id for m in config_models if m.provider_id)
+    )
+    config_providers: list[Any] = []
+    if config_provider_resource_ids:
+        async with pool.acquire() as conn:
+            config_providers = await get_providers_internal(
+                conn, config_provider_resource_ids, bypass_cache
+            )
+
+    # 2. Fetch config profile and today's runs in parallel
+    async def fetch_config_profile() -> list[QGetProfilesV4Item]:
+        async with pool.acquire() as conn:
+            return await get_profiles_internal(conn, [profile_id], bypass_cache)
+
+    async def fetch_runs_today() -> GetRunListViewResponse:
+        today_utc = datetime.now(UTC).replace(hour=0, minute=0, second=0, microsecond=0)
+        tomorrow_utc = today_utc.replace(hour=23, minute=59, second=59)
+        async with pool.acquire() as conn:
+            return await get_run_list_entries_internal(
+                conn=conn,
+                profile_id_filter=profile_id,
+                date_from=today_utc,
+                date_to=tomorrow_utc,
+                page_limit=1,
+                bypass_cache=True,
+            )
+
+    config_profile_result, runs_result = await asyncio.gather(
+        fetch_config_profile(),
+        fetch_runs_today(),
+    )
+
+    return GetActivityWebsocketResponse(
+        views=ActivityWebsocketViews(
+            runs=runs_result,
+        ),
+        resources=ActivityWebsocketResources(
+            config_agents=config_agents or None,
+            config_models=config_models or None,
+            config_providers=config_providers or None,
+            config_tools=config_tools or None,
+            config_profile=config_profile_result or None,
+        ),
+        resource_agent_ids=agent_ids,
+        group_id=None,
+    )
