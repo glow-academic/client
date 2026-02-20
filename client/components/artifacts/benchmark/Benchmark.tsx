@@ -76,7 +76,7 @@ export default function Benchmark({
 
       toast.success("Eval started successfully.");
       router.refresh();
-      router.push(`/benchmark/${data.test_id}`);
+      router.push(`/test/${data.test_id}`);
     };
 
     const handleTestError = (data: { message?: string }) => {

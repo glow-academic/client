@@ -165,7 +165,7 @@ export default function BenchmarkBundle({
       const params = new URLSearchParams();
       if (draftId) params.set("draftId", draftId);
       const qs = params.toString();
-      router.push(`/benchmark/${testId}${qs ? `?${qs}` : ""}`);
+      router.push(`/test/${testId}${qs ? `?${qs}` : ""}`);
     } catch {
       toast.error("Failed to save draft.");
     } finally {

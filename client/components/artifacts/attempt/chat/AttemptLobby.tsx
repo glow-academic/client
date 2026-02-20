@@ -27,7 +27,6 @@ interface AttemptLobbyProps {
   attemptId: string;
   trainingBundleEntryId: string;
   simulationName: string | null;
-  mode: "home" | "practice";
   draftId: string | null;
   infiniteMode?: boolean;
   userInstructions?: string | null;
@@ -38,7 +37,6 @@ export function AttemptLobby({
   attemptId,
   trainingBundleEntryId,
   simulationName,
-  mode,
   draftId,
   infiniteMode,
   userInstructions,
@@ -81,8 +79,7 @@ export function AttemptLobby({
       setIsStarting(false);
       if (data.attempt_id === attemptId) {
         // All scenarios complete — navigate to results
-        const basePath = mode === "practice" ? "/practice" : "/home";
-        router.push(`${basePath}/${attemptId}/results`);
+        router.push(`/attempt/${attemptId}/results`);
       }
     };
 
@@ -170,9 +167,8 @@ export function AttemptLobby({
   }, [selectedOptionIndex, options, socket, isConnected, attemptId]);
 
   const handleCustomize = useCallback(() => {
-    const basePath = mode === "practice" ? "/practice" : "/home";
-    router.push(`${basePath}/${attemptId}/${trainingBundleEntryId}`);
-  }, [mode, router, attemptId, trainingBundleEntryId]);
+    router.push(`/chat/${trainingBundleEntryId}?attemptId=${attemptId}`);
+  }, [router, attemptId, trainingBundleEntryId]);
 
   return (
     <div className="flex flex-col items-center justify-center h-full min-h-[400px] gap-6">

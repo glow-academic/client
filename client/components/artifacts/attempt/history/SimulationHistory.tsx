@@ -140,9 +140,7 @@ function HistoryRowActions({
     (!item.infinite_mode || isInfiniteWindowOpen);
 
   const buttonText = wantContinue ? "Continue" : "View";
-  // practice_simulation only exists on practice endpoint - defaults to false for home/dashboard
-  const isPractice = "practice_simulation" in item && item.practice_simulation;
-  const linkHref = `/${isPractice ? "practice" : "home"}/${item.attempt_id}`;
+  const linkHref = `/attempt/${item.attempt_id}`;
 
   const isOwnAttempt = profile?.id === item.profile_id;
   const shouldShowRetry =
@@ -166,9 +164,7 @@ function HistoryRowActions({
       const { attemptId } = event.detail;
       // Server-side Redis cache is already invalidated by the WebSocket handler
       router.refresh(); // Refresh current page data so it's updated when user returns
-      router.push(
-        `/${isPractice ? "practice" : "home"}/${attemptId}`,
-      );
+      router.push(`/attempt/${attemptId}`);
     };
 
     const handleSimulationError = () => {
@@ -199,7 +195,7 @@ function HistoryRowActions({
         clearTimeout(timeoutRef.current);
       }
     };
-  }, [router, isPractice, item.attempt_id]);
+  }, [router, item.attempt_id]);
 
   const handleStartSimulation = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -225,6 +221,7 @@ function HistoryRowActions({
     try {
       const profileIdForEmit = String(profile?.id || "");
       // practice_scenario_id only exists on practice endpoint
+      const isPractice = "practice_simulation" in item && item.practice_simulation;
       const practiceScenarioId = "practice_scenario_id" in item ? item.practice_scenario_id : null;
       emitStartSimulation({
         simulation_id: String(item.simulation_id),

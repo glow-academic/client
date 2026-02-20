@@ -42,7 +42,7 @@ def test_home_workflow(page: Page, base_url: str) -> None:
         with page.wait_for_event("framenavigated", timeout=30000):
             start_button.click()
 
-        page.wait_for_url(re.compile(r".*/home/a/[^/]+"), timeout=30000)
+        page.wait_for_url(re.compile(r".*/attempt/[^/]+"), timeout=30000)
         page.wait_for_load_state("networkidle")
 
         # Step 3: Verify chat UI renders
@@ -144,7 +144,7 @@ def test_practice_workflow(page: Page, base_url: str) -> None:
         with page.wait_for_event("framenavigated", timeout=30000):
             start_button.click()
 
-        page.wait_for_url(re.compile(r".*/practice/a/[^/]+"), timeout=30000)
+        page.wait_for_url(re.compile(r".*/attempt/[^/]+"), timeout=30000)
         page.wait_for_load_state("networkidle")
 
         # Step 6: Verify chat UI renders

@@ -1304,7 +1304,7 @@ export default function Staff({
                   onClick={() => {
                     if (!staff.profile_id) return;
                     window.open(
-                      `/analytics/reports/${staff.profile_id}`,
+                      `/record/${staff.profile_id}`,
                       "_blank",
                       "noopener,noreferrer"
                     );

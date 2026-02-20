@@ -1233,13 +1233,11 @@ export function AttemptChat({
 
   // Lobby state: server says is_lobby (inter-chat interstitial), OR no chats yet with training context
   if (attemptData.is_lobby || (chats.length === 0 && attemptData.training_entry_id)) {
-    const practice = attemptData?.attempt?.practice ?? false;
     return (
       <AttemptLobby
         attemptId={attempt_id}
         trainingBundleEntryId={attemptData.training_entry_id ?? ""}
         simulationName={attemptData?.simulation?.name ?? null}
-        mode={practice ? "practice" : "home"}
         draftId={draftIdProp ?? null}
         infiniteMode={infiniteModeProp}
         userInstructions={userInstructionsProp}

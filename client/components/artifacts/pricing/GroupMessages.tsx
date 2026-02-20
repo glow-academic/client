@@ -7,7 +7,7 @@
  */
 "use client";
 
-import type { PricingGroupDetailOut } from "@/app/(main)/analytics/pricing/[groupId]/page";
+import type { PricingGroupDetailOut } from "@/app/(main)/group/[groupId]/page";
 import Markdown from "@/components/artifacts/attempt/chat/markdown/Markdown";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";

@@ -151,7 +151,18 @@ def get_page_filter_config(pathname: str) -> PageFilterConfig | None:
     """Resolve a pathname to its filter configuration."""
     if pathname in PAGE_FILTER_CONFIGS:
         return PAGE_FILTER_CONFIGS[pathname]
-    # Dynamic routes
+    # Dynamic routes — canonical top-level routes
+    if pathname.startswith("/record/"):
+        return PAGE_FILTER_CONFIGS["/analytics/reports/[id]"]
+    if pathname.startswith("/group/"):
+        return PAGE_FILTER_CONFIGS["/analytics/pricing"]
+    if pathname.startswith("/session/"):
+        return None  # No filters for session detail
+    if pathname.startswith("/test/"):
+        return PAGE_FILTER_CONFIGS["/benchmark"]
+    if pathname.startswith("/invocation/"):
+        return PAGE_FILTER_CONFIGS["/benchmark"]
+    # Legacy nested routes
     if pathname.startswith("/analytics/reports/") and len(pathname.split("/")) >= 4:
         return PAGE_FILTER_CONFIGS["/analytics/reports/[id]"]
     if pathname.startswith("/analytics/pricing/"):

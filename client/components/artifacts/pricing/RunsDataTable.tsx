@@ -402,7 +402,7 @@ export function RunsDataTable({
               variant="outline"
               size="sm"
               onClick={() => {
-                router.push(`/analytics/pricing/${groupId}`);
+                router.push(`/group/${groupId}`);
               }}
             >
               View

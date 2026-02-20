@@ -9,7 +9,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
-import type { ReportsOut } from "@/app/(main)/analytics/reports/page";
+import type { ReportsOut } from "@/app/(main)/record/page";
 import { GenericPicker } from "@/components/common/forms/GenericPicker";
 import { EXPORT_METRICS } from "@/components/artifacts/reports/export-metrics";
 import { DataTableColumnHeader } from "@/components/common/table/DataTableColumnHeader";
@@ -562,7 +562,7 @@ export default function Reports({
             <div
               className="flex items-center space-x-1 cursor-pointer hover:text-primary hover:underline justify-start pl-1 py-0 max-w-[130px]"
               onClick={() =>
-                router.push(`/analytics/reports/${profile.profileId}`)
+                router.push(`/record/${profile.profileId}`)
               }
               title={`${displayName}${(profile.emails && profile.emails.length > 0) || profile.primary_email ? ` (${profile.emails && profile.emails.length > 0 ? profile.emails.join(", ") : profile.primary_email || ""})` : ""} - Click to view detailed report`}
               data-testid={`reports-profile-row-${profile.profileId}`}
@@ -1772,7 +1772,7 @@ export default function Reports({
                   className="h-6 hover:bg-muted/30 transition-colors cursor-pointer"
                   onClick={() =>
                     router.push(
-                      `/analytics/reports/${row.original.profileId}`
+                      `/record/${row.original.profileId}`
                     )
                   }
                 >

@@ -152,6 +152,21 @@ ROUTE_PERMISSIONS: list[SectionPermission] = [
                 redirectTo="/home",
                 artifact="training",
             ),
+            # Canonical routes (top-level)
+            RoutePermission(
+                path="/attempt/[attemptId]",
+                roles=["guest", "member", "instructional", "admin", "superadmin"],
+                title="Attempt",
+                redirectTo="/home",
+                artifact="attempt",
+            ),
+            RoutePermission(
+                path="/chat/[chatId]",
+                roles=["guest", "member", "instructional", "admin", "superadmin"],
+                title="Customize Training",
+                redirectTo="/home",
+                artifact="training",
+            ),
         ],
     ),
     SectionPermission(
@@ -263,6 +278,29 @@ ROUTE_PERMISSIONS: list[SectionPermission] = [
             ),
             RoutePermission(
                 path="/analytics/pricing/[groupId]",
+                roles=["instructional", "admin", "superadmin"],
+                title="Pricing Group",
+                redirectTo="/analytics/pricing",
+                artifact="group",
+            ),
+            # Canonical routes (top-level)
+            RoutePermission(
+                path="/record/[recordId]",
+                roles=["instructional", "admin", "superadmin"],
+                title="Profile Report",
+                redirectTo="/analytics/reports",
+                artifact_type="profile",
+                artifact="record",
+            ),
+            RoutePermission(
+                path="/session/[sessionId]",
+                roles=["instructional", "admin", "superadmin"],
+                title="Session Activity",
+                redirectTo="/analytics/activity",
+                artifact="session",
+            ),
+            RoutePermission(
+                path="/group/[groupId]",
                 roles=["instructional", "admin", "superadmin"],
                 title="Pricing Group",
                 redirectTo="/analytics/pricing",
@@ -767,6 +805,21 @@ ROUTE_PERMISSIONS: list[SectionPermission] = [
             ),
             RoutePermission(
                 path="/benchmark/[testId]/[suiteId]",
+                roles=["custom", "instructional", "admin", "superadmin"],
+                title="Test Bundle",
+                redirectTo="/benchmark",
+                artifact="suite",
+            ),
+            # Canonical routes (top-level)
+            RoutePermission(
+                path="/test/[testId]",
+                roles=["custom", "instructional", "admin", "superadmin"],
+                title="Test Run",
+                redirectTo="/benchmark",
+                artifact="test",
+            ),
+            RoutePermission(
+                path="/invocation/[invocationId]",
                 roles=["custom", "instructional", "admin", "superadmin"],
                 title="Test Bundle",
                 redirectTo="/benchmark",

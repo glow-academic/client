@@ -53,7 +53,6 @@ type TrainingBundleFormState = {
 };
 
 interface TrainingBundleProps {
-  mode: "practice" | "home";
   bundleData: GetTrainingBundleOut;
   patchTrainingDraftAction: (
     input: PatchTrainingBundleDraftIn,
@@ -72,7 +71,6 @@ function extractIds<T>(
 }
 
 export default function TrainingBundle({
-  mode,
   bundleData,
   patchTrainingDraftAction,
   attemptId,
@@ -191,19 +189,18 @@ export default function TrainingBundle({
     setIsSaving(true);
     try {
       await saveDraftNow();
-      const basePath = mode === "practice" ? "/practice" : "/home";
       const params = new URLSearchParams();
       if (draftId) params.set("draftId", draftId);
       if (infiniteMode) params.set("infiniteMode", "true");
       if (userInstructions.trim()) params.set("userInstructions", userInstructions.trim());
       const qs = params.toString();
-      router.push(`${basePath}/${attemptId}${qs ? `?${qs}` : ""}`);
+      router.push(`/attempt/${attemptId}${qs ? `?${qs}` : ""}`);
     } catch {
       toast.error("Failed to save draft.");
     } finally {
       setIsSaving(false);
     }
-  }, [saveDraftNow, mode, attemptId, draftId, infiniteMode, userInstructions, router]);
+  }, [saveDraftNow, attemptId, draftId, infiniteMode, userInstructions, router]);
 
   if (!s.profile_has_access) {
     return (

@@ -37,8 +37,11 @@ import { RoleSelector } from "./analytics/RoleSelector";
 function getRefreshPageFromPathname(pathname: string): string {
   if (pathname.startsWith("/analytics/dashboard")) return "dashboard";
   if (pathname.startsWith("/analytics/reports")) return "reports";
+  if (pathname.startsWith("/record/")) return "reports";
   if (pathname.startsWith("/analytics/pricing")) return "pricing";
+  if (pathname.startsWith("/group/")) return "pricing";
   if (pathname.startsWith("/analytics/activity")) return "activity";
+  if (pathname.startsWith("/session/")) return "activity";
   if (pathname.startsWith("/leaderboard")) return "leaderboard";
   if (pathname.startsWith("/benchmark")) return "benchmark";
   if (pathname.startsWith("/health")) return "health";

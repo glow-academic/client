@@ -55,7 +55,7 @@ def test_attempt_lifecycle(page: Page, base_url: str) -> None:
         assert attempt_detail is not None
 
         # Step 3: Navigate to attempt page in browser → verify chat renders
-        page.goto(f"{base_url}/home/a/{attempt_id}")
+        page.goto(f"{base_url}/attempt/{attempt_id}")
         page.wait_for_load_state("networkidle")
 
         chat_container = page.get_by_test_id("attempt-chat-container")

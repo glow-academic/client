@@ -371,7 +371,7 @@ export default function EvalAttemptStatus({
                           <Button
                             onClick={() =>
                               router.push(
-                                `/benchmark/${attemptId}/${(run as RunItem & { benchmark_bundle_entry_id: string }).benchmark_bundle_entry_id}`
+                                `/invocation/${(run as RunItem & { benchmark_bundle_entry_id: string }).benchmark_bundle_entry_id}?testId=${attemptId}`
                               )
                             }
                             variant="ghost"

@@ -131,9 +131,6 @@ export default function SimulationCard({
   const router = useRouter();
   const { socket, isConnected } = useSocket();
 
-  // Determine if this is practice mode based on type
-  const practice = type === "default";
-
   // Loading state for this card
   const [isStarting, setIsStarting] = useState(false);
   const isStartingRef = useRef(false);
@@ -150,8 +147,7 @@ export default function SimulationCard({
       data: Parameters<ServerToClientEvents["attempt_started"]>[0],
     ) => {
       if (!isStartingRef.current) return;
-      const basePath = practice ? "/practice" : "/home";
-      router.push(`${basePath}/${data.attempt_id}`);
+      router.push(`/attempt/${data.attempt_id}`);
 
       // Dispatch custom event for analytics
       window.dispatchEvent(

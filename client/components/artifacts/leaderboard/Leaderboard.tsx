@@ -122,7 +122,7 @@ export default function Leaderboard({
   }, []);
 
   const handleViewReport = (profileId: string) => {
-    router.push(`/analytics/reports/${profileId}`);
+    router.push(`/record/${profileId}`);
   };
 
   const shouldDisableNavigation = false;
@@ -704,7 +704,7 @@ export default function Leaderboard({
                     </div>
                     {canViewReports && (
                       <Link
-                        href={`/analytics/reports/${selected.accolade.holder.profile_id}`}
+                        href={`/record/${selected.accolade.holder.profile_id}`}
                         className="inline-flex items-center gap-2 text-sm px-3 py-2 rounded-xl bg-primary text-primary-foreground hover:opacity-90"
                         data-testid={`btn-view-report-${selected.accolade.holder.profile_id}`}
                       >
@@ -768,7 +768,7 @@ export default function Leaderboard({
                           </div>
                           {canViewReports && (
                             <Link
-                              href={`/analytics/reports/${challenger.row.profile_id}`}
+                              href={`/record/${challenger.row.profile_id}`}
                               className="text-xs px-2 py-1 rounded-md bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
                               data-testid={`btn-view-report-${challenger.row.profile_id}`}
                             >

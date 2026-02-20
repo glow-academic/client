@@ -60,7 +60,7 @@ def test_benchmark_test_lifecycle(page: Page, base_url: str) -> None:
                 assert test_detail is not None
 
                 # Step 4: Click on test entry → navigate to test detail page
-                page.goto(f"{base_url}/benchmark/t/{test_id}")
+                page.goto(f"{base_url}/test/{test_id}")
                 page.wait_for_load_state("networkidle")
 
         # Step 5: Create a new test via API (if applicable)
