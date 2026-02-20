@@ -2,7 +2,7 @@
 
 Handles attempt_start event (client + internal). Dual-mode:
 - Create mode (no attempt_id): Resolve context, create attempt, emit attempt_started
-- Next mode (has attempt_id): Check remaining scenarios, emit training_generate or attempt_ended
+- Next mode (has attempt_id): Check remaining scenarios, emit chat_generate or attempt_ended
 """
 
 import uuid
@@ -115,7 +115,7 @@ async def _attempt_start_impl(
                 logger.warning(f"No training context in MV for attempt {attempt_id}")
                 return
 
-            await _emit_training_generate(
+            await _emit_chat_generate(
                 sid=sid,
                 attempt_id=attempt_id,
                 training_entry_id=payload.training_entry_id,
@@ -160,8 +160,8 @@ async def _attempt_start_impl(
             remaining_count = remaining["remaining_scenarios"] if remaining else 0
 
             if remaining_count > 0:
-                # More scenarios to go — emit training_generate
-                await _emit_training_generate(
+                # More scenarios to go — emit chat_generate
+                await _emit_chat_generate(
                     sid=sid,
                     attempt_id=attempt_id,
                     training_entry_id=training_entry_id,
@@ -194,14 +194,14 @@ async def _attempt_start_impl(
         )
 
 
-async def _emit_training_generate(
+async def _emit_chat_generate(
     sid: str,
     attempt_id: uuid.UUID,
     training_entry_id: uuid.UUID,
     training_department_id: uuid.UUID,
     payload: AttemptStartPayload,
 ) -> None:
-    """Emit training_generate internally with attempt context."""
+    """Emit chat_generate internally with attempt context."""
     resource_types = payload.resource_types or [
         "personas",
         "scenarios",
@@ -223,7 +223,7 @@ async def _emit_training_generate(
     if payload.user_instructions:
         emit_data["user_instructions"] = payload.user_instructions
 
-    await internal_sio.emit("training_generate", emit_data)
+    await internal_sio.emit("chat_generate", emit_data)
 
 
 @sio.event  # type: ignore

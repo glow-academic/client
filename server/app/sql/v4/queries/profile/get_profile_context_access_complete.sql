@@ -236,9 +236,9 @@ draft_ids_data AS (
      UNION ALL SELECT id, group_id, created_at, updated_at, active FROM scenario_drafts_entry
      UNION ALL SELECT id, group_id, created_at, updated_at, active FROM setting_drafts_entry
      UNION ALL SELECT id, group_id, created_at, updated_at, active FROM simulation_drafts_entry
-     UNION ALL SELECT id, group_id, created_at, updated_at, active FROM suite_drafts_entry
+     UNION ALL SELECT id, group_id, created_at, updated_at, active FROM invocation_drafts_entry
      UNION ALL SELECT id, group_id, created_at, updated_at, active FROM tool_drafts_entry
-     UNION ALL SELECT id, group_id, created_at, updated_at, active FROM training_drafts_entry) d ON d.id = pdc.draft_id
+     UNION ALL SELECT id, group_id, created_at, updated_at, active FROM chat_drafts_entry) d ON d.id = pdc.draft_id
     WHERE ppj.profile_id = (SELECT profile_id FROM params)
 ),
 settings_agent_ids_data AS (

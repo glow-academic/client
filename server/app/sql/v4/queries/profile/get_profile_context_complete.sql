@@ -625,9 +625,9 @@ drafts_data AS (
      UNION ALL SELECT id, 'scenario', version, updated_at FROM scenario_drafts_entry
      UNION ALL SELECT id, 'setting', version, updated_at FROM setting_drafts_entry
      UNION ALL SELECT id, 'simulation', version, updated_at FROM simulation_drafts_entry
-     UNION ALL SELECT id, 'suite', version, updated_at FROM suite_drafts_entry
+     UNION ALL SELECT id, 'suite', version, updated_at FROM invocation_drafts_entry
      UNION ALL SELECT id, 'tool', version, updated_at FROM tool_drafts_entry
-     UNION ALL SELECT id, 'training', version, updated_at FROM training_drafts_entry) d ON d.id = pdc.draft_id
+     UNION ALL SELECT id, 'training', version, updated_at FROM chat_drafts_entry) d ON d.id = pdc.draft_id
     WHERE ppj.profile_id = (SELECT profile_id FROM params)
 ),
 drafts_aggregated AS (

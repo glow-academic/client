@@ -4,8 +4,8 @@
 
 DO $$
 BEGIN
-    DROP TYPE IF EXISTS types.training_multi_resource_action CASCADE;
-    CREATE TYPE types.training_multi_resource_action AS (
+    DROP TYPE IF EXISTS types.chat_multi_resource_action CASCADE;
+    CREATE TYPE types.chat_multi_resource_action AS (
         resource_ids uuid[],
         create_tool_id uuid,
         link_tool_id uuid
@@ -32,18 +32,18 @@ CREATE OR REPLACE FUNCTION api_patch_training_draft_v4(
     profile_id uuid,
     input_draft_id uuid DEFAULT NULL,
     group_id uuid DEFAULT NULL,
-    departments types.training_multi_resource_action DEFAULT NULL,
-    personas types.training_multi_resource_action DEFAULT NULL,
-    documents types.training_multi_resource_action DEFAULT NULL,
-    parameter_fields types.training_multi_resource_action DEFAULT NULL,
-    parameters types.training_multi_resource_action DEFAULT NULL,
-    fields types.training_multi_resource_action DEFAULT NULL,
-    questions types.training_multi_resource_action DEFAULT NULL,
-    options types.training_multi_resource_action DEFAULT NULL,
-    videos types.training_multi_resource_action DEFAULT NULL,
-    images types.training_multi_resource_action DEFAULT NULL,
-    problem_statements types.training_multi_resource_action DEFAULT NULL,
-    objectives types.training_multi_resource_action DEFAULT NULL,
+    departments types.chat_multi_resource_action DEFAULT NULL,
+    personas types.chat_multi_resource_action DEFAULT NULL,
+    documents types.chat_multi_resource_action DEFAULT NULL,
+    parameter_fields types.chat_multi_resource_action DEFAULT NULL,
+    parameters types.chat_multi_resource_action DEFAULT NULL,
+    fields types.chat_multi_resource_action DEFAULT NULL,
+    questions types.chat_multi_resource_action DEFAULT NULL,
+    options types.chat_multi_resource_action DEFAULT NULL,
+    videos types.chat_multi_resource_action DEFAULT NULL,
+    images types.chat_multi_resource_action DEFAULT NULL,
+    problem_statements types.chat_multi_resource_action DEFAULT NULL,
+    objectives types.chat_multi_resource_action DEFAULT NULL,
     expected_version int DEFAULT 0
 )
 RETURNS TABLE (
@@ -104,7 +104,7 @@ BEGIN
 
     -- Try to update existing draft
     IF input_draft_id IS NOT NULL THEN
-        SELECT group_id INTO v_group_id FROM training_drafts_entry WHERE id = input_draft_id;
+        SELECT group_id INTO v_group_id FROM chat_drafts_entry WHERE id = input_draft_id;
 
         IF v_group_id IS NULL THEN
             INSERT INTO groups_entry (created_at, updated_at, session_id)
@@ -112,111 +112,111 @@ BEGIN
             RETURNING id INTO v_group_id;
         END IF;
 
-        UPDATE training_drafts_entry
-        SET version = training_drafts_entry.version + 1,
+        UPDATE chat_drafts_entry
+        SET version = chat_drafts_entry.version + 1,
             updated_at = now(),
-            group_id = COALESCE(training_drafts_entry.group_id, v_group_id)
+            group_id = COALESCE(chat_drafts_entry.group_id, v_group_id)
         WHERE id = input_draft_id
-          AND EXISTS (SELECT 1 FROM training_drafts_profiles_connection pdj WHERE pdj.draft_id = training_drafts_entry.id AND pdj.profiles_id = v_profiles_resource_id)
-          AND training_drafts_entry.version = expected_version
+          AND EXISTS (SELECT 1 FROM chat_drafts_profiles_connection pdj WHERE pdj.draft_id = chat_drafts_entry.id AND pdj.profiles_id = v_profiles_resource_id)
+          AND chat_drafts_entry.version = expected_version
         RETURNING id, version INTO v_draft_id, v_new_version;
 
         IF v_draft_id IS NOT NULL THEN
             v_draft_exists := true;
 
             -- Delete old resource links
-            DELETE FROM training_drafts_departments_connection WHERE training_drafts_departments_connection.draft_id = v_draft_id;
-            DELETE FROM training_drafts_personas_connection WHERE training_drafts_personas_connection.draft_id = v_draft_id;
-            DELETE FROM training_drafts_documents_connection WHERE training_drafts_documents_connection.draft_id = v_draft_id;
-            DELETE FROM training_drafts_fields_connection WHERE training_drafts_fields_connection.draft_id = v_draft_id;
-            DELETE FROM training_drafts_parameters_connection WHERE training_drafts_parameters_connection.draft_id = v_draft_id;
-            DELETE FROM training_drafts_questions_connection WHERE training_drafts_questions_connection.draft_id = v_draft_id;
-            DELETE FROM training_drafts_options_connection WHERE training_drafts_options_connection.draft_id = v_draft_id;
-            DELETE FROM training_drafts_videos_connection WHERE training_drafts_videos_connection.draft_id = v_draft_id;
-            DELETE FROM training_drafts_images_connection WHERE training_drafts_images_connection.draft_id = v_draft_id;
-            DELETE FROM training_drafts_problem_statements_connection WHERE training_drafts_problem_statements_connection.draft_id = v_draft_id;
-            DELETE FROM training_drafts_objectives_connection WHERE training_drafts_objectives_connection.draft_id = v_draft_id;
+            DELETE FROM chat_drafts_departments_connection WHERE chat_drafts_departments_connection.draft_id = v_draft_id;
+            DELETE FROM chat_drafts_personas_connection WHERE chat_drafts_personas_connection.draft_id = v_draft_id;
+            DELETE FROM chat_drafts_documents_connection WHERE chat_drafts_documents_connection.draft_id = v_draft_id;
+            DELETE FROM chat_drafts_fields_connection WHERE chat_drafts_fields_connection.draft_id = v_draft_id;
+            DELETE FROM chat_drafts_parameters_connection WHERE chat_drafts_parameters_connection.draft_id = v_draft_id;
+            DELETE FROM chat_drafts_questions_connection WHERE chat_drafts_questions_connection.draft_id = v_draft_id;
+            DELETE FROM chat_drafts_options_connection WHERE chat_drafts_options_connection.draft_id = v_draft_id;
+            DELETE FROM chat_drafts_videos_connection WHERE chat_drafts_videos_connection.draft_id = v_draft_id;
+            DELETE FROM chat_drafts_images_connection WHERE chat_drafts_images_connection.draft_id = v_draft_id;
+            DELETE FROM chat_drafts_problem_statements_connection WHERE chat_drafts_problem_statements_connection.draft_id = v_draft_id;
+            DELETE FROM chat_drafts_objectives_connection WHERE chat_drafts_objectives_connection.draft_id = v_draft_id;
 
             -- Insert new resource links
             IF department_ids IS NOT NULL THEN
-                INSERT INTO training_drafts_departments_connection (draft_id, departments_id, version)
+                INSERT INTO chat_drafts_departments_connection (draft_id, departments_id, version)
                 SELECT v_draft_id, dept_id, v_new_version
                 FROM unnest(department_ids) as dept_id
                 ON CONFLICT ON CONSTRAINT departments_draft_pkey DO UPDATE SET version = v_new_version;
             END IF;
 
             IF persona_ids IS NOT NULL THEN
-                INSERT INTO training_drafts_personas_connection (draft_id, personas_id, version)
+                INSERT INTO chat_drafts_personas_connection (draft_id, personas_id, version)
                 SELECT v_draft_id, persona_id, v_new_version
                 FROM unnest(persona_ids) as persona_id
                 ON CONFLICT ON CONSTRAINT personas_draft_pkey DO UPDATE SET version = v_new_version;
             END IF;
 
             IF document_ids IS NOT NULL THEN
-                INSERT INTO training_drafts_documents_connection (draft_id, documents_id, version)
+                INSERT INTO chat_drafts_documents_connection (draft_id, documents_id, version)
                 SELECT v_draft_id, doc_id, v_new_version
                 FROM unnest(document_ids) as doc_id
                 ON CONFLICT ON CONSTRAINT documents_draft_pkey DO UPDATE SET version = v_new_version;
             END IF;
 
             IF parameter_field_ids IS NOT NULL THEN
-                INSERT INTO training_drafts_fields_connection (draft_id, fields_id, version)
+                INSERT INTO chat_drafts_fields_connection (draft_id, fields_id, version)
                 SELECT v_draft_id, pf_id, v_new_version
                 FROM unnest(parameter_field_ids) as pf_id
                 ON CONFLICT ON CONSTRAINT fields_draft_pkey DO UPDATE SET version = v_new_version;
             END IF;
 
             IF parameter_ids IS NOT NULL THEN
-                INSERT INTO training_drafts_parameters_connection (draft_id, parameters_id, version)
+                INSERT INTO chat_drafts_parameters_connection (draft_id, parameters_id, version)
                 SELECT v_draft_id, param_id, v_new_version
                 FROM unnest(parameter_ids) as param_id
                 ON CONFLICT ON CONSTRAINT parameters_draft_pkey DO UPDATE SET version = v_new_version;
             END IF;
 
             IF field_ids IS NOT NULL THEN
-                INSERT INTO training_drafts_fields_connection (draft_id, fields_id, version)
+                INSERT INTO chat_drafts_fields_connection (draft_id, fields_id, version)
                 SELECT v_draft_id, f_id, v_new_version
                 FROM unnest(field_ids) as f_id
                 ON CONFLICT ON CONSTRAINT fields_draft_pkey DO UPDATE SET version = v_new_version;
             END IF;
 
             IF question_ids IS NOT NULL THEN
-                INSERT INTO training_drafts_questions_connection (draft_id, questions_id, version)
+                INSERT INTO chat_drafts_questions_connection (draft_id, questions_id, version)
                 SELECT v_draft_id, question_id, v_new_version
                 FROM unnest(question_ids) as question_id
                 ON CONFLICT ON CONSTRAINT questions_draft_pkey DO UPDATE SET version = v_new_version;
             END IF;
 
             IF option_ids IS NOT NULL THEN
-                INSERT INTO training_drafts_options_connection (draft_id, options_id, version)
+                INSERT INTO chat_drafts_options_connection (draft_id, options_id, version)
                 SELECT v_draft_id, option_id, v_new_version
                 FROM unnest(option_ids) as option_id
                 ON CONFLICT ON CONSTRAINT options_draft_pkey DO UPDATE SET version = v_new_version;
             END IF;
 
             IF video_ids IS NOT NULL THEN
-                INSERT INTO training_drafts_videos_connection (draft_id, videos_id, version)
+                INSERT INTO chat_drafts_videos_connection (draft_id, videos_id, version)
                 SELECT v_draft_id, video_id, v_new_version
                 FROM unnest(video_ids) as video_id
                 ON CONFLICT ON CONSTRAINT videos_draft_pkey DO UPDATE SET version = v_new_version;
             END IF;
 
             IF image_ids IS NOT NULL THEN
-                INSERT INTO training_drafts_images_connection (draft_id, images_id, version)
+                INSERT INTO chat_drafts_images_connection (draft_id, images_id, version)
                 SELECT v_draft_id, image_id, v_new_version
                 FROM unnest(image_ids) as image_id
                 ON CONFLICT ON CONSTRAINT images_draft_pkey DO UPDATE SET version = v_new_version;
             END IF;
 
             IF problem_statement_ids IS NOT NULL THEN
-                INSERT INTO training_drafts_problem_statements_connection (draft_id, problem_statements_id, version)
+                INSERT INTO chat_drafts_problem_statements_connection (draft_id, problem_statements_id, version)
                 SELECT v_draft_id, ps_id, v_new_version
                 FROM unnest(problem_statement_ids) as ps_id
                 ON CONFLICT ON CONSTRAINT problem_statements_draft_pkey DO UPDATE SET version = v_new_version;
             END IF;
 
             IF objective_ids IS NOT NULL THEN
-                INSERT INTO training_drafts_objectives_connection (draft_id, objectives_id, version)
+                INSERT INTO chat_drafts_objectives_connection (draft_id, objectives_id, version)
                 SELECT v_draft_id, objective_id, v_new_version
                 FROM unnest(objective_ids) as objective_id
                 ON CONFLICT ON CONSTRAINT objectives_draft_pkey DO UPDATE SET version = v_new_version;
@@ -230,95 +230,95 @@ BEGIN
         VALUES (NOW(), NOW(), (SELECT id FROM sessions_entry WHERE sessions_entry.profile_id = v_profile_id AND sessions_entry.active = true ORDER BY created_at DESC LIMIT 1))
         RETURNING id INTO v_group_id;
 
-        INSERT INTO training_drafts_entry (group_id)
+        INSERT INTO chat_drafts_entry (group_id)
         VALUES (v_group_id)
         RETURNING id, version INTO v_draft_id, v_new_version;
 
-        INSERT INTO training_drafts_profiles_connection (draft_id, profiles_id, version)
+        INSERT INTO chat_drafts_profiles_connection (draft_id, profiles_id, version)
         VALUES (v_draft_id, v_profiles_resource_id, v_new_version);
 
         v_draft_exists := false;
 
         -- Insert resource links for new draft
         IF department_ids IS NOT NULL THEN
-            INSERT INTO training_drafts_departments_connection (draft_id, departments_id, version)
+            INSERT INTO chat_drafts_departments_connection (draft_id, departments_id, version)
             SELECT v_draft_id, dept_id, v_new_version
             FROM unnest(department_ids) as dept_id
             ON CONFLICT ON CONSTRAINT departments_draft_pkey DO UPDATE SET version = v_new_version;
         END IF;
 
         IF persona_ids IS NOT NULL THEN
-            INSERT INTO training_drafts_personas_connection (draft_id, personas_id, version)
+            INSERT INTO chat_drafts_personas_connection (draft_id, personas_id, version)
             SELECT v_draft_id, persona_id, v_new_version
             FROM unnest(persona_ids) as persona_id
             ON CONFLICT ON CONSTRAINT personas_draft_pkey DO UPDATE SET version = v_new_version;
         END IF;
 
         IF document_ids IS NOT NULL THEN
-            INSERT INTO training_drafts_documents_connection (draft_id, documents_id, version)
+            INSERT INTO chat_drafts_documents_connection (draft_id, documents_id, version)
             SELECT v_draft_id, doc_id, v_new_version
             FROM unnest(document_ids) as doc_id
             ON CONFLICT ON CONSTRAINT documents_draft_pkey DO UPDATE SET version = v_new_version;
         END IF;
 
         IF parameter_field_ids IS NOT NULL THEN
-            INSERT INTO training_drafts_fields_connection (draft_id, fields_id, version)
+            INSERT INTO chat_drafts_fields_connection (draft_id, fields_id, version)
             SELECT v_draft_id, pf_id, v_new_version
             FROM unnest(parameter_field_ids) as pf_id
             ON CONFLICT ON CONSTRAINT fields_draft_pkey DO UPDATE SET version = v_new_version;
         END IF;
 
         IF parameter_ids IS NOT NULL THEN
-            INSERT INTO training_drafts_parameters_connection (draft_id, parameters_id, version)
+            INSERT INTO chat_drafts_parameters_connection (draft_id, parameters_id, version)
             SELECT v_draft_id, param_id, v_new_version
             FROM unnest(parameter_ids) as param_id
             ON CONFLICT ON CONSTRAINT parameters_draft_pkey DO UPDATE SET version = v_new_version;
         END IF;
 
         IF field_ids IS NOT NULL THEN
-            INSERT INTO training_drafts_fields_connection (draft_id, fields_id, version)
+            INSERT INTO chat_drafts_fields_connection (draft_id, fields_id, version)
             SELECT v_draft_id, f_id, v_new_version
             FROM unnest(field_ids) as f_id
             ON CONFLICT ON CONSTRAINT fields_draft_pkey DO UPDATE SET version = v_new_version;
         END IF;
 
         IF question_ids IS NOT NULL THEN
-            INSERT INTO training_drafts_questions_connection (draft_id, questions_id, version)
+            INSERT INTO chat_drafts_questions_connection (draft_id, questions_id, version)
             SELECT v_draft_id, question_id, v_new_version
             FROM unnest(question_ids) as question_id
             ON CONFLICT ON CONSTRAINT questions_draft_pkey DO UPDATE SET version = v_new_version;
         END IF;
 
         IF option_ids IS NOT NULL THEN
-            INSERT INTO training_drafts_options_connection (draft_id, options_id, version)
+            INSERT INTO chat_drafts_options_connection (draft_id, options_id, version)
             SELECT v_draft_id, option_id, v_new_version
             FROM unnest(option_ids) as option_id
             ON CONFLICT ON CONSTRAINT options_draft_pkey DO UPDATE SET version = v_new_version;
         END IF;
 
         IF video_ids IS NOT NULL THEN
-            INSERT INTO training_drafts_videos_connection (draft_id, videos_id, version)
+            INSERT INTO chat_drafts_videos_connection (draft_id, videos_id, version)
             SELECT v_draft_id, video_id, v_new_version
             FROM unnest(video_ids) as video_id
             ON CONFLICT ON CONSTRAINT videos_draft_pkey DO UPDATE SET version = v_new_version;
         END IF;
 
         IF image_ids IS NOT NULL THEN
-            INSERT INTO training_drafts_images_connection (draft_id, images_id, version)
+            INSERT INTO chat_drafts_images_connection (draft_id, images_id, version)
             SELECT v_draft_id, image_id, v_new_version
             FROM unnest(image_ids) as image_id
             ON CONFLICT ON CONSTRAINT images_draft_pkey DO UPDATE SET version = v_new_version;
         END IF;
 
         IF problem_statement_ids IS NOT NULL THEN
-            INSERT INTO training_drafts_problem_statements_connection (draft_id, problem_statements_id, version)
+            INSERT INTO chat_drafts_problem_statements_connection (draft_id, problem_statements_id, version)
             SELECT v_draft_id, ps_id, v_new_version
             FROM unnest(problem_statement_ids) as ps_id
             ON CONFLICT ON CONSTRAINT problem_statements_draft_pkey DO UPDATE SET version = v_new_version;
         END IF;
 
         IF objective_ids IS NOT NULL THEN
-            INSERT INTO training_drafts_objectives_connection (draft_id, objectives_id, version)
+            INSERT INTO chat_drafts_objectives_connection (draft_id, objectives_id, version)
             SELECT v_draft_id, objective_id, v_new_version
             FROM unnest(objective_ids) as objective_id
             ON CONFLICT ON CONSTRAINT objectives_draft_pkey DO UPDATE SET version = v_new_version;

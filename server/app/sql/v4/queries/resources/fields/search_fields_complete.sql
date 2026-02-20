@@ -75,7 +75,7 @@ FROM (
                   SELECT 1 FROM (
                       SELECT fields_id, draft_id FROM field_drafts_fields_connection WHERE active = true
                       UNION ALL SELECT fields_id, draft_id FROM parameter_drafts_fields_connection WHERE active = true
-                      UNION ALL SELECT fields_id, draft_id FROM training_drafts_fields_connection WHERE active = true
+                      UNION ALL SELECT fields_id, draft_id FROM chat_drafts_fields_connection WHERE active = true
                   ) dc
                   WHERE dc.fields_id = f.id
                     AND dc.draft_id = api_search_fields_v4.draft_id

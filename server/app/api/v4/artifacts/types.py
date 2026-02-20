@@ -54,6 +54,33 @@ class HistoryResponse(BaseModel):
     profile_options: list[FilterOption] | None = None
 
 
+class TestHistoryItem(BaseModel):
+    """Single test row in history list."""
+
+    attempt_id: str
+    eval_id: str | None = None
+    eval_name: str | None = None
+    eval_description: str | None = None
+    rubric_id: str | None = None
+    rubric_name: str | None = None
+    created_at: str | None = None
+    archived: bool = False
+    status: str = "pending"
+    total_runs: int = 0
+    completed_runs: int = 0
+    pending_runs: int = 0
+
+
+class TestHistoryResponse(BaseModel):
+    """Paginated test history list."""
+
+    data: list[TestHistoryItem] = Field(default_factory=list)
+    total_count: int = 0
+    page: int = 0
+    page_size: int = 10
+    eval_options: list[FilterOption] | None = None
+
+
 class AnalyticsFilterOptions(BaseModel):
     """Filter options returned by analytics endpoints for populating UI dropdowns."""
 

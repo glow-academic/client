@@ -21,10 +21,10 @@ from app.api.v4.artifacts.chat.permissions import (
     format_cohort_names,
 )
 from app.api.v4.artifacts.chat.types import (
+    ChatSimulationOperational,
     RubricMapping,
     StandardGroupMapping,
     StandardMapping,
-    ChatSimulationOperational,
 )
 from app.api.v4.artifacts.practice.types import GetPracticeRequest, GetPracticeResponse
 from app.api.v4.artifacts.types import FilterOption, HistoryItem, HistoryResponse

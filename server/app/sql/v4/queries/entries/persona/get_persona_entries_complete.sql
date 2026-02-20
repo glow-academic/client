@@ -26,7 +26,7 @@ BEGIN
     SELECT jsonb_agg(
         jsonb_build_object(
             'id', m.id,
-            'training_id', m.training_id,
+            'chat_id', m.chat_id,
             'created_at', m.created_at,
             'updated_at', m.updated_at,
             'active', m.active,

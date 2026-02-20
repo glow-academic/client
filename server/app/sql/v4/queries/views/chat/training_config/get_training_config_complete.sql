@@ -1,10 +1,10 @@
 -- ============================================================================
 -- Query: get_training_config
--- Purpose: Fetch training department config by training_department_ids
+-- Purpose: Fetch training department config by chat_resolved_ids
 -- Section: VIEWS/CHAT/TRAINING_CONFIG
 --
 -- Replaces the subbundle_snapshot CTE from attempt_chat_mv.
--- Returns config flags + resource ID arrays per training_department_id.
+-- Returns config flags + resource ID arrays per chat_resolved_id.
 -- ============================================================================
 
 DO $$
@@ -36,7 +36,7 @@ BEGIN
 END $$;
 
 CREATE TYPE types.q_get_training_config_v4_item AS (
-    training_department_id uuid,
+    chat_resolved_id uuid,
     -- Config flags
     copy_paste_allowed boolean,
     text_enabled boolean,
@@ -64,7 +64,7 @@ CREATE TYPE types.q_get_training_config_v4_item AS (
 );
 
 CREATE OR REPLACE FUNCTION api_get_training_config_v4(
-    training_department_ids uuid[]
+    chat_resolved_ids uuid[]
 )
 RETURNS TABLE (
     items types.q_get_training_config_v4_item[]
@@ -74,7 +74,7 @@ STABLE
 AS $$
     WITH config AS (
         SELECT
-            tbd.id AS training_department_id,
+            tbd.id AS chat_resolved_id,
             COALESCE(he.copy_paste_allowed, pe.copy_paste_allowed, true) AS copy_paste_allowed,
             COALESCE(he.text_enabled, pe.text_enabled, true) AS text_enabled,
             COALESCE(he.audio_enabled, pe.audio_enabled, true) AS audio_enabled,
@@ -98,27 +98,27 @@ AS $$
             COALESCE(ARRAY_AGG(DISTINCT tdc.documents_id ORDER BY tdc.documents_id) FILTER (WHERE tdc.documents_id IS NOT NULL), ARRAY[]::uuid[]) AS document_ids,
             COALESCE(ARRAY_AGG(DISTINCT tsgc.standard_groups_id ORDER BY tsgc.standard_groups_id) FILTER (WHERE tsgc.standard_groups_id IS NOT NULL), ARRAY[]::uuid[]) AS standard_group_ids,
             COALESCE(ARRAY_AGG(DISTINCT tsc2.standards_id ORDER BY tsc2.standards_id) FILTER (WHERE tsc2.standards_id IS NOT NULL), ARRAY[]::uuid[]) AS standard_ids
-        FROM training_department_entry tbd
-        JOIN training_entry tb ON tb.id = tbd.training_id
-        LEFT JOIN home_training_entry hte ON hte.training_id = tb.id
+        FROM chat_resolved_entry tbd
+        JOIN chat_entry tb ON tb.id = tbd.chat_id
+        LEFT JOIN home_chat_entry hte ON hte.chat_id = tb.id
         LEFT JOIN home_entry he ON he.id = hte.home_id
-        LEFT JOIN practice_training_entry pte ON pte.training_id = tb.id
+        LEFT JOIN practice_chat_entry pte ON pte.chat_id = tb.id
         LEFT JOIN practice_entry pe ON pe.id = pte.practice_id
-        LEFT JOIN training_department_time_limits_connection tdtl ON tdtl.training_department_id = tbd.id AND tdtl.active = true
+        LEFT JOIN chat_resolved_time_limits_connection tdtl ON tdtl.chat_resolved_id = tbd.id AND tdtl.active = true
         LEFT JOIN scenario_time_limits_resource stlr ON stlr.id = tdtl.scenario_time_limits_id AND stlr.active = true
-        LEFT JOIN training_department_scenarios_connection tsc ON tsc.training_department_id = tbd.id AND tsc.active = true
-        LEFT JOIN training_department_rubrics_connection trc ON trc.training_department_id = tbd.id AND trc.active = true
-        LEFT JOIN training_department_problem_statements_connection tpsc ON tpsc.training_department_id = tbd.id AND tpsc.active = true
-        LEFT JOIN training_department_personas_connection tpc ON tpc.training_department_id = tbd.id AND tpc.active = true
-        LEFT JOIN training_department_objectives_connection toc ON toc.training_department_id = tbd.id AND toc.active = true
-        LEFT JOIN training_department_questions_connection tqc ON tqc.training_department_id = tbd.id AND tqc.active = true
-        LEFT JOIN training_department_options_connection topt ON topt.training_department_id = tbd.id AND topt.active = true
-        LEFT JOIN training_department_images_connection tic ON tic.training_department_id = tbd.id AND tic.active = true
-        LEFT JOIN training_department_videos_connection tvc ON tvc.training_department_id = tbd.id AND tvc.active = true
-        LEFT JOIN training_department_documents_connection tdc ON tdc.training_department_id = tbd.id AND tdc.active = true
-        LEFT JOIN training_department_standard_groups_connection tsgc ON tsgc.training_department_id = tbd.id AND tsgc.active = true
-        LEFT JOIN training_department_standards_connection tsc2 ON tsc2.training_department_id = tbd.id AND tsc2.active = true
-        WHERE tbd.id = ANY(training_department_ids)
+        LEFT JOIN chat_resolved_scenarios_connection tsc ON tsc.chat_resolved_id = tbd.id AND tsc.active = true
+        LEFT JOIN chat_resolved_rubrics_connection trc ON trc.chat_resolved_id = tbd.id AND trc.active = true
+        LEFT JOIN chat_resolved_problem_statements_connection tpsc ON tpsc.chat_resolved_id = tbd.id AND tpsc.active = true
+        LEFT JOIN chat_resolved_personas_connection tpc ON tpc.chat_resolved_id = tbd.id AND tpc.active = true
+        LEFT JOIN chat_resolved_objectives_connection toc ON toc.chat_resolved_id = tbd.id AND toc.active = true
+        LEFT JOIN chat_resolved_questions_connection tqc ON tqc.chat_resolved_id = tbd.id AND tqc.active = true
+        LEFT JOIN chat_resolved_options_connection topt ON topt.chat_resolved_id = tbd.id AND topt.active = true
+        LEFT JOIN chat_resolved_images_connection tic ON tic.chat_resolved_id = tbd.id AND tic.active = true
+        LEFT JOIN chat_resolved_videos_connection tvc ON tvc.chat_resolved_id = tbd.id AND tvc.active = true
+        LEFT JOIN chat_resolved_documents_connection tdc ON tdc.chat_resolved_id = tbd.id AND tdc.active = true
+        LEFT JOIN chat_resolved_standard_groups_connection tsgc ON tsgc.chat_resolved_id = tbd.id AND tsgc.active = true
+        LEFT JOIN chat_resolved_standards_connection tsc2 ON tsc2.chat_resolved_id = tbd.id AND tsc2.active = true
+        WHERE tbd.id = ANY(chat_resolved_ids)
           AND tbd.active = true
         GROUP BY
             tbd.id,
@@ -134,7 +134,7 @@ AS $$
         SELECT COALESCE(
             ARRAY_AGG(
                 (
-                    training_department_id,
+                    chat_resolved_id,
                     copy_paste_allowed, text_enabled, audio_enabled, hints_enabled,
                     show_images, show_objectives, show_problem_statement,
                     time_limit_seconds, negative,

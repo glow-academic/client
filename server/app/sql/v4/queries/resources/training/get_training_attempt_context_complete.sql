@@ -17,9 +17,9 @@ END $$;
 
 CREATE OR REPLACE FUNCTION public.get_training_attempt_context_v4(
     p_profile_id uuid,
-    p_training_entry_id uuid
+    p_chat_entry_id uuid
 ) RETURNS TABLE(
-    training_entry_id uuid,
+    chat_entry_id uuid,
     is_practice boolean,
     practice_id uuid,
     home_id uuid,
@@ -69,8 +69,8 @@ BEGIN
 
     -- Determine practice vs home
     SELECT pte.practice_id INTO v_practice_id
-    FROM practice_training_entry pte
-    WHERE pte.training_id = p_training_entry_id AND pte.active = true
+    FROM practice_chat_entry pte
+    WHERE pte.chat_id = p_chat_entry_id AND pte.active = true
     LIMIT 1;
 
     IF v_practice_id IS NOT NULL THEN
@@ -85,8 +85,8 @@ BEGIN
         LIMIT 1;
     ELSE
         SELECT hte.home_id INTO v_home_id
-        FROM home_training_entry hte
-        WHERE hte.training_id = p_training_entry_id AND hte.active = true
+        FROM home_chat_entry hte
+        WHERE hte.chat_id = p_chat_entry_id AND hte.active = true
         LIMIT 1;
 
         IF v_home_id IS NOT NULL THEN
@@ -103,7 +103,7 @@ BEGIN
     END IF;
 
     RETURN QUERY SELECT
-        p_training_entry_id,
+        p_chat_entry_id,
         v_is_practice,
         v_practice_id,
         v_home_id,

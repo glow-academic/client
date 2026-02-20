@@ -91,9 +91,9 @@ FROM (
                       UNION ALL SELECT descriptions_id, draft_id FROM scenario_drafts_descriptions_connection WHERE active = true
                       UNION ALL SELECT descriptions_id, draft_id FROM setting_drafts_descriptions_connection WHERE active = true
                       UNION ALL SELECT descriptions_id, draft_id FROM simulation_drafts_descriptions_connection WHERE active = true
-                      UNION ALL SELECT descriptions_id, draft_id FROM suite_drafts_descriptions_connection WHERE active = true
+                      UNION ALL SELECT descriptions_id, draft_id FROM invocation_drafts_descriptions_connection WHERE active = true
                       UNION ALL SELECT descriptions_id, draft_id FROM tool_drafts_descriptions_connection WHERE active = true
-                      UNION ALL SELECT descriptions_id, draft_id FROM training_drafts_descriptions_connection WHERE active = true
+                      UNION ALL SELECT descriptions_id, draft_id FROM chat_drafts_descriptions_connection WHERE active = true
                   ) dc
                   WHERE dc.descriptions_id = d.id
                     AND dc.draft_id = api_search_descriptions_v4.draft_id

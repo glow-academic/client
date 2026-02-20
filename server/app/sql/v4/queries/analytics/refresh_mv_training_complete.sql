@@ -46,8 +46,8 @@ BEGIN
     REFRESH MATERIALIZED VIEW CONCURRENTLY practice_mv;
     refreshed := array_append(refreshed, 'practice_mv');
 
-    REFRESH MATERIALIZED VIEW CONCURRENTLY training_mv;
-    refreshed := array_append(refreshed, 'training_mv');
+    REFRESH MATERIALIZED VIEW CONCURRENTLY chat_mv;
+    refreshed := array_append(refreshed, 'chat_mv');
 
     -- Get actor_name from profile_artifact using profile_names_junction junction table
     SELECT COALESCE(

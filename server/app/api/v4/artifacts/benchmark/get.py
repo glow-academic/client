@@ -1,454 +1,362 @@
-"""Benchmark bundle artifact endpoint.
-
-Section-first three-layer implementation (mirrors training/bundle.py):
-1) get_invocation_internal() - MV view → hydrate all 9 → filter current
-2) get_invocation_client() - HTTP section-first payload formatter
-"""
+"""Get endpoint for benchmark artifact."""
 
 import asyncio
-from collections.abc import Callable, Coroutine
-from dataclasses import dataclass, field
-from typing import Any, TypeVar, cast
+from collections import Counter
+from datetime import datetime
+from typing import Annotated
 from uuid import UUID
 
 import asyncpg
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 from app.api.v4.artifacts.benchmark.types import (
-    BaseSuiteSection,
-    GetSuiteRequest,
-    GetSuiteResponse,
-    GetSuiteWebsocketResponse,
-    SuiteDepartmentSection,
-    SuiteInstructionSection,
-    SuiteKeySection,
-    SuiteModelSection,
-    SuitePromptSection,
-    SuiteReasoningLevelSection,
-    SuiteTemperatureLevelSection,
-    SuiteToolSection,
-    SuiteVoiceSection,
-    SuiteWebsocketResources,
-    SuiteWebsocketViews,
+    BenchmarkDepartmentItem,
+    BenchmarkEvalItem,
+    BenchmarkRequest,
+    BenchmarkResponse,
 )
-from app.api.v4.auth.settings import get_auth_settings_internal
-from app.api.v4.entries.runs.search import get_run_list_entries_internal
-from app.api.v4.entries.suite.get import get_suite_view_internal
-from app.api.v4.permissions import resolve_agents_for_artifact
+from app.api.v4.artifacts.test.permissions import compute_test_status
+from app.api.v4.artifacts.types import (
+    FilterOption,
+    TestHistoryItem,
+    TestHistoryResponse,
+)
+from app.api.v4.entries.tests.get import get_test_internal
 from app.api.v4.resources.departments.get import get_departments_internal
-from app.api.v4.resources.instructions.get import get_instructions_internal
-from app.api.v4.resources.keys.get import get_keys_internal
-from app.api.v4.resources.models.get import get_models_internal
-from app.api.v4.resources.profiles.get import get_profiles_internal
-from app.api.v4.resources.prompts.get import get_prompts_internal
-from app.api.v4.resources.providers.get import get_providers_internal
-from app.api.v4.resources.reasoning_levels.get import get_reasoning_levels_internal
-from app.api.v4.resources.temperature_levels.get import get_temperature_levels_internal
-from app.api.v4.resources.tools.get import get_tools_internal
-from app.api.v4.resources.voices.get import get_voices_internal
+from app.api.v4.resources.descriptions.get import get_descriptions_internal
+from app.api.v4.resources.evals.get import get_evals_internal
+from app.api.v4.resources.names.get import get_names_internal
+from app.api.v4.resources.rubrics.get import get_rubrics_batch_internal
+from app.infra.v4.activity.audit import audit_activity
 from app.infra.v4.error.handle_route_error import handle_route_error
-from app.main import get_pool
+from app.main import get_db, get_pool
+from app.sql.types import QGetTestViewV4Item
 
 router = APIRouter()
 
 
-# =============================================================================
-# Constants
-# =============================================================================
-
-BENCHMARK_BUNDLE_RESOURCES: set[str] = {
-    "departments",
-    "models",
-    "prompts",
-    "instructions",
-    "voices",
-    "temperature_levels",
-    "reasoning_levels",
-    "tools",
-    "keys",
-}
-
-
-# =============================================================================
-# Internal Data
-# =============================================================================
-
-
-@dataclass
-class SuiteInternalData:
-    suite_entry_id: UUID
-    benchmark_id: UUID | None
-    profile_has_access: bool
-    group_id: UUID | None = None
-    draft_version: int | None = None
-    draft_item: Any | None = None
-    # Per-resource: all (suggestions) and current (selected)
-    all_resources: dict[str, list[Any]] = field(default_factory=dict)
-    current_resources: dict[str, list[Any]] = field(default_factory=dict)
-    resource_agent_ids: dict[str, UUID | None] = field(default_factory=dict)
-    # Config chain
-    config_agents: list[Any] = field(default_factory=list)
-    config_models: list[Any] = field(default_factory=list)
-    config_providers: list[Any] = field(default_factory=list)
-    config_tools: list[Any] = field(default_factory=list)
-
-
-# =============================================================================
-# Helpers
-# =============================================================================
-
-T = TypeVar("T")
-
-
-def _filter_by_ids(items: list[T], ids: list[UUID], id_attr: str) -> list[T]:
-    if not items or not ids:
-        return []
-    id_set = {str(i) for i in ids}
-    output: list[T] = []
-    for item in items:
-        value = getattr(item, id_attr, None)
-        if value and str(value) in id_set:
-            output.append(item)
-    return output
-
-
-# Resource key → (view_data attr for IDs, get_*_internal func, id_attr for filtering)
-RESOURCE_CONFIG: list[tuple[str, str, Any, str]] = [
-    ("departments", "department_ids", get_departments_internal, "department_id"),
-    ("models", "model_ids", get_models_internal, "id"),
-    ("prompts", "prompt_ids", get_prompts_internal, "id"),
-    ("instructions", "instruction_ids", get_instructions_internal, "id"),
-    ("voices", "voice_ids", get_voices_internal, "id"),
-    (
-        "temperature_levels",
-        "temperature_level_ids",
-        get_temperature_levels_internal,
-        "id",
-    ),
-    (
-        "reasoning_levels",
-        "reasoning_level_ids",
-        get_reasoning_levels_internal,
-        "id",
-    ),
-    ("tools", "tool_ids", get_tools_internal, "id"),
-    ("keys", "key_ids", get_keys_internal, "id"),
-]
-
-
-# =============================================================================
-# Internal fetch
-# =============================================================================
-
-
-async def get_invocation_internal(
+async def _fetch_test_history_data(
     pool: asyncpg.Pool,
-    profile_id: UUID,
-    suite_entry_id: UUID,
-    draft_id: UUID | None = None,
-    bypass_cache: bool = False,
-) -> SuiteInternalData:
-    """Shared IDs-first + hydration internal fetch for benchmark bundle artifact."""
-    from app.api.v4.entries.suite_drafts.get import get_suite_drafts_entries_internal
-    from app.sql.types import QGetSuiteDraftsEntriesV4Item
+    request: BenchmarkRequest,
+    department_uuids: list[UUID] | None,
+    date_from: datetime | None,
+    date_to: datetime | None,
+    bypass_cache: bool,
+) -> TestHistoryResponse:
+    """Fetch paginated test history with hydrated names — adapted from test/list.py."""
+    page_limit = request.history_page_size
+    page_offset = request.history_page * request.history_page_size
 
-    # 1. Fetch MV view data (all 9 ID arrays)
-    async with pool.acquire() as conn:
-        view_data = await get_suite_view_internal(
-            conn=conn,
-            profile_id=profile_id,
-            suite_entry_id=suite_entry_id,
-        )
-
-    if not view_data.suite_entry_id:
-        raise HTTPException(status_code=404, detail="Benchmark bundle not found")
-
-    if not view_data.profile_has_access:
-        raise HTTPException(
-            status_code=403,
-            detail="You do not have access to this benchmark bundle.",
-        )
-
-    # 2. Fetch draft if provided
-    draft_item: QGetSuiteDraftsEntriesV4Item | None = None
-    if draft_id is not None:
-        async with pool.acquire() as conn:
-            draft_items = await get_suite_drafts_entries_internal(
-                conn=conn,
-                ids=[draft_id],
-                bypass_cache=bypass_cache,
-            )
-            if draft_items:
-                draft_item = draft_items[0]
-
-    # 3. Build selected IDs — draft overrides MV when present
-    selected_ids: dict[str, list[UUID]] = {}
-    for resource_key, view_attr, _fetch_fn, _id_attr in RESOURCE_CONFIG:
-        if draft_item is not None:
-            draft_ids_val = getattr(draft_item, view_attr, None)
-            selected_ids[resource_key] = list(draft_ids_val) if draft_ids_val else []
-        else:
-            mv_ids = list(getattr(view_data, view_attr, []) or [])
-            selected_ids[resource_key] = mv_ids
-
-    # 4. Hydrate ALL 9 resources in parallel
-    FetchFn = Callable[..., Coroutine[Any, Any, list[Any]]]
-
-    async def _fetch_resource(
-        resource_key: str,
-        view_attr: str,
-        fetch_fn: FetchFn,
-    ) -> tuple[str, list[Any]]:
-        all_ids = list(getattr(view_data, view_attr, []) or [])
-        if not all_ids:
-            return (resource_key, [])
-        async with pool.acquire() as conn:
-            return (resource_key, await fetch_fn(conn, all_ids, bypass_cache))
-
-    fetch_tasks = [_fetch_resource(rk, va, fn) for rk, va, fn, _ia in RESOURCE_CONFIG]
-    fetch_results = await asyncio.gather(*fetch_tasks)
-
-    all_resources: dict[str, list[Any]] = {}
-    for resource_key, items in fetch_results:
-        all_resources[resource_key] = items
-
-    # 5. Filter current selections from full lists
-    current_resources: dict[str, list[Any]] = {}
-    for resource_key, _view_attr, _fetch_fn, id_attr in RESOURCE_CONFIG:
-        current_resources[resource_key] = _filter_by_ids(
-            all_resources.get(resource_key, []),
-            selected_ids.get(resource_key, []),
-            id_attr,
-        )
-
-    # 6. Settings-based agent resolution + config chain
-    async with pool.acquire() as conn:
-        settings_data = await get_auth_settings_internal(conn, profile_id, bypass_cache)
-    agent_ids, create_tool_ids_map, link_tool_ids_map = resolve_agents_for_artifact(
-        settings_data.agent_tool_entries, BENCHMARK_BUNDLE_RESOURCES
+    eval_uuids = (
+        [UUID(e) for e in request.history_eval_ids]
+        if request.history_eval_ids
+        else None
     )
 
-    # Config chain (agents + tools already hydrated, models need fetch)
-    config_agents = list(settings_data.settings_agents)
-    config_tools = list(settings_data.settings_tools)
-
-    config_model_ids = list(
-        dict.fromkeys(a.model_id for a in settings_data.settings_agents if a.model_id)
-    )
-    config_models: list[Any] = []
-    if config_model_ids:
-        async with pool.acquire() as conn:
-            config_models = await get_models_internal(
-                conn, config_model_ids, bypass_cache
-            )
-
-    config_provider_ids = list(
-        dict.fromkeys(m.provider_id for m in config_models if m.provider_id)
-    )
-    config_providers: list[Any] = []
-    if config_provider_ids:
-        async with pool.acquire() as conn:
-            config_providers = await get_providers_internal(
-                conn, config_provider_ids, bypass_cache
-            )
-
-    return SuiteInternalData(
-        suite_entry_id=view_data.suite_entry_id,
-        benchmark_id=view_data.benchmark_id,
-        profile_has_access=view_data.profile_has_access,
-        group_id=draft_item.group_id if draft_item else None,
-        draft_version=draft_item.version if draft_item else None,
-        draft_item=draft_item,
-        all_resources=all_resources,
-        current_resources=current_resources,
-        resource_agent_ids=agent_ids,
-        config_agents=config_agents,
-        config_models=config_models,
-        config_providers=config_providers,
-        config_tools=config_tools,
-    )
-
-
-# =============================================================================
-# Client/BFF Layer
-# =============================================================================
-
-
-# Section class mapping for building typed sections
-_SECTION_CLASSES: dict[str, type] = {
-    "departments": SuiteDepartmentSection,
-    "models": SuiteModelSection,
-    "prompts": SuitePromptSection,
-    "instructions": SuiteInstructionSection,
-    "voices": SuiteVoiceSection,
-    "temperature_levels": SuiteTemperatureLevelSection,
-    "reasoning_levels": SuiteReasoningLevelSection,
-    "tools": SuiteToolSection,
-    "keys": SuiteKeySection,
-}
-
-
-async def get_invocation_client(
-    pool: asyncpg.Pool,
-    profile_id: UUID,
-    suite_entry_id: UUID,
-    draft_id: UUID | None = None,
-    bypass_cache: bool = False,
-) -> GetSuiteResponse:
-    """HTTP-facing bundle response formatter — section-first pattern."""
-    data = await get_invocation_internal(
-        pool=pool,
-        profile_id=profile_id,
-        suite_entry_id=suite_entry_id,
-        draft_id=draft_id,
-        bypass_cache=bypass_cache,
-    )
-
-    def _section(resource_key: str) -> BaseSuiteSection:
-        cls = _SECTION_CLASSES[resource_key]
-        return cls(
-            show=True,
-            required=False,
-            show_ai_generate=data.resource_agent_ids.get(resource_key) is not None,
-            current=data.current_resources.get(resource_key) or None,
-            resources=data.all_resources.get(resource_key) or None,
-        )
-
-    return GetSuiteResponse(
-        suite_entry_id=data.suite_entry_id,
-        benchmark_id=data.benchmark_id,
-        profile_has_access=data.profile_has_access,
-        draft_version=data.draft_version,
-        departments=_section("departments"),
-        models=_section("models"),
-        prompts=_section("prompts"),
-        instructions=_section("instructions"),
-        voices=_section("voices"),
-        temperature_levels=_section("temperature_levels"),
-        reasoning_levels=_section("reasoning_levels"),
-        tools=_section("tools"),
-        keys=_section("keys"),
-        config_agents=data.config_agents or None,
-        config_models=data.config_models or None,
-        config_providers=data.config_providers or None,
-        config_tools=data.config_tools or None,
-    )
-
-
-# =============================================================================
-# WebSocket Layer
-# =============================================================================
-
-
-async def get_invocation_websocket(
-    pool: asyncpg.Pool,
-    profile_id: UUID,
-    suite_entry_id: UUID,
-    draft_id: UUID | None = None,
-    bypass_cache: bool = False,
-) -> GetSuiteWebsocketResponse:
-    """Thin wrapper for websocket consumers — selected resources only."""
-
-    async def fetch_bundle():
-        return await get_invocation_internal(
-            pool=pool,
-            profile_id=profile_id,
-            suite_entry_id=suite_entry_id,
-            draft_id=draft_id,
+    async with pool.acquire() as c:
+        result = await get_test_internal(
+            conn=c,
+            eval_ids=eval_uuids,
+            department_ids=department_uuids,
+            date_from=date_from,
+            date_to=date_to,
+            archived=request.history_archived,
+            search=request.history_search,
+            sort_by=request.history_sort_by,
+            sort_order=request.history_sort_order,
+            page_limit=page_limit,
+            page_offset=page_offset,
             bypass_cache=bypass_cache,
         )
 
-    async def fetch_config_profile():
-        async with pool.acquire() as conn:
-            return await get_profiles_internal(conn, [profile_id], bypass_cache)
+    # Collect IDs for hydration
+    eval_name_ids: set[UUID] = set()
+    eval_description_ids: set[UUID] = set()
+    rubric_ids: set[UUID] = set()
 
-    async def fetch_runs_today():
-        from datetime import UTC, datetime
+    for row in result.items:
+        if row.eval_name_id:
+            eval_name_ids.add(row.eval_name_id)
+        if row.eval_description_id:
+            eval_description_ids.add(row.eval_description_id)
+        if row.rubric_id:
+            rubric_ids.add(row.rubric_id)
 
-        today_utc = datetime.now(UTC).replace(hour=0, minute=0, second=0, microsecond=0)
-        tomorrow_utc = today_utc.replace(hour=23, minute=59, second=59)
-        async with pool.acquire() as conn:
-            return await get_run_list_entries_internal(
-                conn=conn,
-                profile_id_filter=profile_id,
-                date_from=today_utc,
-                date_to=tomorrow_utc,
-                page_limit=1,
-                bypass_cache=True,
+    # Batch resolve names, descriptions, rubrics
+    async with pool.acquire() as c:
+        eval_names = await get_names_internal(
+            c, list(eval_name_ids), bypass_cache=bypass_cache
+        )
+        eval_descriptions = await get_descriptions_internal(
+            c, list(eval_description_ids), bypass_cache=bypass_cache
+        )
+        rubrics = await get_rubrics_batch_internal(
+            c, list(rubric_ids), bypass_cache=bypass_cache
+        )
+
+    # Build lookup maps
+    name_map: dict[UUID, str] = {}
+    for n in eval_names:
+        if n.id and n.name:
+            name_map[n.id] = n.name
+
+    desc_map: dict[UUID, str] = {}
+    for d in eval_descriptions:
+        if d.id and d.description:
+            desc_map[d.id] = d.description
+
+    rubric_name_map: dict[UUID, str] = {}
+    for r in rubrics:
+        if r.rubric_id and r.name:
+            rubric_name_map[r.rubric_id] = r.name
+
+    # Build enriched items
+    items: list[TestHistoryItem] = []
+    eval_counter: Counter[str] = Counter()
+    eval_id_to_name: dict[str, str | None] = {}
+
+    for row in result.items:
+        eval_name = name_map.get(row.eval_name_id) if row.eval_name_id else None
+        eval_desc = (
+            desc_map.get(row.eval_description_id) if row.eval_description_id else None
+        )
+        rubric_name = rubric_name_map.get(row.rubric_id) if row.rubric_id else None
+
+        total_runs = row.num_chats
+        completed_runs = row.num_chats_completed
+        pending_runs = total_runs - completed_runs
+
+        if row.eval_id:
+            eid = str(row.eval_id)
+            eval_counter[eid] += 1
+            if eid not in eval_id_to_name:
+                eval_id_to_name[eid] = eval_name
+
+        items.append(
+            TestHistoryItem(
+                attempt_id=str(row.test_id),
+                eval_id=str(row.eval_id) if row.eval_id else None,
+                eval_name=eval_name,
+                eval_description=eval_desc,
+                rubric_id=str(row.rubric_id) if row.rubric_id else None,
+                rubric_name=rubric_name,
+                created_at=(
+                    row.test_created_at.isoformat() if row.test_created_at else None
+                ),
+                archived=row.archived,
+                status=compute_test_status(row.num_chats, row.num_chats_completed),
+                total_runs=total_runs,
+                completed_runs=completed_runs,
+                pending_runs=pending_runs,
             )
+        )
 
-    (data, config_profile_result, runs_result) = await asyncio.gather(
-        fetch_bundle(),
-        fetch_config_profile(),
-        fetch_runs_today(),
-    )
+    # Build eval_options with name labels
+    eval_options = [
+        FilterOption(
+            value=eval_id,
+            label=eval_id_to_name.get(eval_id),
+            count=count,
+        )
+        for eval_id, count in eval_counter.items()
+    ]
+    eval_options.sort(key=lambda option: option.value)
 
-    return GetSuiteWebsocketResponse(
-        views=SuiteWebsocketViews(
-            draft_suite=data.draft_item,
-            runs=runs_result,
-        ),
-        resources=SuiteWebsocketResources(
-            departments=data.current_resources.get("departments") or None,
-            models=data.current_resources.get("models") or None,
-            prompts=data.current_resources.get("prompts") or None,
-            instructions=data.current_resources.get("instructions") or None,
-            voices=data.current_resources.get("voices") or None,
-            temperature_levels=data.current_resources.get("temperature_levels") or None,
-            reasoning_levels=data.current_resources.get("reasoning_levels") or None,
-            tools=data.current_resources.get("tools") or None,
-            keys=data.current_resources.get("keys") or None,
-            config_agents=data.config_agents or None,
-            config_models=data.config_models or None,
-            config_providers=data.config_providers or None,
-            config_tools=data.config_tools or None,
-            config_profile=config_profile_result or None,
-        ),
-        resource_agent_ids=data.resource_agent_ids,
-        group_id=data.group_id,
+    return TestHistoryResponse(
+        data=items,
+        total_count=result.total_count,
+        page=request.history_page,
+        page_size=request.history_page_size,
+        eval_options=eval_options,
     )
 
 
-# =============================================================================
-# Route Handler
-# =============================================================================
-
-
-@router.post("/get", response_model=GetSuiteResponse)
-async def invocation_get(
-    request: GetSuiteRequest,
+@router.post(
+    "/get",
+    response_model=BenchmarkResponse,
+    dependencies=[
+        audit_activity(
+            "artifacts.benchmark.get",
+            "{{ actor.name }} fetched benchmark artifact data",
+        )
+    ],
+)
+async def get_benchmark(
+    request: BenchmarkRequest,
     http_request: Request,
-) -> GetSuiteResponse:
-    """Get hydrated resources for benchmark bundle customization."""
+    response: Response,
+    conn: Annotated[asyncpg.Connection, Depends(get_db)],
+) -> BenchmarkResponse:
+    """Get benchmark artifact data with full resource hydration."""
+    tags = ["artifacts", "benchmark"]
+    bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
+    pool = get_pool()
+
     try:
-        profile_id = http_request.state.profile_id
-        if not profile_id:
-            raise HTTPException(
-                status_code=401,
-                detail="Profile ID is required. Please sign in again.",
+        # Convert string department_ids to UUIDs for filtering
+        department_uuids = (
+            [UUID(d) for d in request.department_ids]
+            if request.department_ids
+            else None
+        )
+
+        # Parse date strings to datetime
+        date_from: datetime | None = None
+        date_to: datetime | None = None
+        if request.start_date:
+            date_from = datetime.fromisoformat(request.start_date)
+        if request.end_date:
+            date_to = datetime.fromisoformat(request.end_date)
+
+        # Step 1: Fetch tests from MV + date range + optional history in parallel
+        async def fetch_tests():
+            async with pool.acquire() as c:
+                return await get_test_internal(
+                    conn=c,
+                    department_ids=department_uuids,
+                    date_from=date_from,
+                    date_to=date_to,
+                    page_limit=200,
+                    bypass_cache=bypass_cache,
+                )
+
+        async def fetch_benchmark_date_range() -> tuple[str | None, str | None]:
+            async with pool.acquire() as c:
+                conditions: list[str] = []
+                params: list = []
+                idx = 1
+                if department_uuids:
+                    conditions.append(f"department_ids && ${idx}::uuid[]")
+                    params.append(department_uuids)
+                    idx += 1
+                if date_from:
+                    conditions.append(f"created_at >= ${idx}")
+                    params.append(date_from)
+                    idx += 1
+                if date_to:
+                    conditions.append(f"created_at < ${idx}")
+                    params.append(date_to)
+                    idx += 1
+                where = " AND ".join(conditions) if conditions else "TRUE"
+                row = await c.fetchrow(
+                    f"""
+                    SELECT MIN(created_at) as earliest, MAX(created_at) as latest
+                    FROM test_mv
+                    WHERE {where}
+                    """,
+                    *params,
+                )
+                if row and row["earliest"]:
+                    return (
+                        row["earliest"].isoformat(),
+                        row["latest"].isoformat(),
+                    )
+                return (None, None)
+
+        # Build parallel tasks
+        parallel_tasks: list = [fetch_tests(), fetch_benchmark_date_range()]
+        if request.history_enabled:
+            parallel_tasks.append(
+                _fetch_test_history_data(
+                    pool=pool,
+                    request=request,
+                    department_uuids=department_uuids,
+                    date_from=date_from,
+                    date_to=date_to,
+                    bypass_cache=bypass_cache,
+                )
             )
 
-        bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
-
-        pool = get_pool()
-        if not pool:
-            raise RuntimeError("Database pool not initialized")
-
-        return await get_invocation_client(
-            pool=pool,
-            profile_id=cast(UUID, profile_id),
-            suite_entry_id=request.suite_entry_id,
-            draft_id=request.draft_id,
-            bypass_cache=bypass_cache,
+        parallel_results = await asyncio.gather(*parallel_tasks)
+        tests_result = parallel_results[0]
+        benchmark_date_range = parallel_results[1]
+        history_data: TestHistoryResponse | None = (
+            parallel_results[2] if request.history_enabled else None
         )
+
+        # Step 2: Collect unique IDs from tests
+        eval_ids: set[UUID] = set()
+        all_department_ids: set[UUID] = set()
+
+        for item in tests_result.items:
+            if item.eval_id:
+                eval_ids.add(item.eval_id)
+            if item.department_ids:
+                all_department_ids.update(item.department_ids)
+
+        # Step 3: Batch resolve evals and departments
+        async def fetch_evals():
+            async with pool.acquire() as c:
+                return await get_evals_internal(
+                    c, list(eval_ids), bypass_cache=bypass_cache
+                )
+
+        async def fetch_departments():
+            async with pool.acquire() as c:
+                return await get_departments_internal(
+                    c, list(all_department_ids), bypass_cache=bypass_cache
+                )
+
+        evals_list, departments = await asyncio.gather(
+            fetch_evals(),
+            fetch_departments(),
+        )
+
+        # Step 4: Build eval items from eval resource
+        evals: list[BenchmarkEvalItem] = []
+        for ev in evals_list:
+            evals.append(
+                BenchmarkEvalItem(
+                    eval_id=str(ev.id),
+                    name=ev.name,
+                    description=ev.description,
+                    department_ids=(
+                        [str(d) for d in ev.department_ids] if ev.department_ids else []
+                    ),
+                )
+            )
+
+        # Step 5: Build department items
+        department_items = [
+            BenchmarkDepartmentItem(
+                department_id=str(d.department_id),
+                name=d.name,
+                description=d.description,
+            )
+            for d in departments
+            if d.department_id
+        ]
+
+        # Step 6: Build filter options
+        department_options = [
+            FilterOption(value=str(d.department_id), label=d.name)
+            for d in departments
+            if d.department_id
+        ]
+
+        # Build test items for response
+        tests: list[QGetTestViewV4Item] = tests_result.items
+
+        response.headers["X-Cache-Tags"] = ",".join(tags)
+        return BenchmarkResponse(
+            tests=tests,
+            total_count=tests_result.total_count,
+            evals=evals,
+            departments=department_items,
+            department_options=department_options,
+            date_range_earliest=benchmark_date_range[0],
+            date_range_latest=benchmark_date_range[1],
+            history=history_data,
+        )
+
     except HTTPException:
         raise
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
     except Exception as e:
         handle_route_error(
             error=e,
             route_path=http_request.url.path,
-            operation="invocation_get",
-            sql_query=None,
-            sql_params=None,
+            operation="artifacts_benchmark_get",
             request=http_request,
         )

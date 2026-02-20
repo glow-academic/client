@@ -1,11 +1,11 @@
-"""Benchmark bundle draft endpoint - handles autosave for benchmark bundle setup."""
+"""Invocation bundle draft endpoint - handles autosave for benchmark bundle setup."""
 
 from typing import Annotated, Any, cast
 
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
-from app.api.v4.artifacts.benchmark.types import (
+from app.api.v4.artifacts.invocation.types import (
     PatchSuiteDraftApiRequest,
     PatchSuiteDraftApiResponse,
     PatchSuiteDraftSqlParams,
@@ -27,13 +27,13 @@ router = APIRouter()
     "/draft",
     response_model=PatchSuiteDraftApiResponse,
 )
-async def patch_benchmark_draft(
+async def patch_invocation_draft(
     request: PatchSuiteDraftApiRequest,
     http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> PatchSuiteDraftApiResponse:
-    """Patch benchmark bundle draft for bundle configuration and create/update draft."""
+    """Patch invocation bundle draft for bundle configuration and create/update draft."""
     tags = ["benchmark", "drafts"]
 
     sql_query = load_sql_query(SQL_PATH)
@@ -59,7 +59,7 @@ async def patch_benchmark_draft(
             )
 
             if not result:
-                raise ValueError("Failed to patch benchmark bundle draft")
+                raise ValueError("Failed to patch invocation bundle draft")
 
             audit_set(
                 http_request,
@@ -81,7 +81,7 @@ async def patch_benchmark_draft(
         handle_route_error(
             error=e,
             route_path=http_request.url.path,
-            operation="patch_benchmark_draft",
+            operation="patch_invocation_draft",
             sql_query=sql_query,
             sql_params=sql_params,
             request=http_request,

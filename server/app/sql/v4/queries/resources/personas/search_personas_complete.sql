@@ -79,7 +79,7 @@ FROM (
                   SELECT 1 FROM (
                       SELECT personas_id, draft_id FROM persona_drafts_personas_connection WHERE active = true
                       UNION ALL SELECT personas_id, draft_id FROM scenario_drafts_personas_connection WHERE active = true
-                      UNION ALL SELECT personas_id, draft_id FROM training_drafts_personas_connection WHERE active = true
+                      UNION ALL SELECT personas_id, draft_id FROM chat_drafts_personas_connection WHERE active = true
                   ) dc
                   WHERE dc.personas_id = p.id
                     AND dc.draft_id = api_search_personas_v4.draft_id

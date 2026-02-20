@@ -5,10 +5,10 @@ from uuid import UUID
 from pydantic import BaseModel
 
 from app.api.v4.artifacts.chat.types import (
+    ChatSimulationOperational,
     RubricMapping,
     StandardGroupMapping,
     StandardMapping,
-    ChatSimulationOperational,
 )
 from app.api.v4.artifacts.types import HistoryResponse
 

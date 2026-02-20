@@ -83,7 +83,7 @@ usage_check AS (
                 AND ssf.value = true
           )
     ) + (
-        SELECT COUNT(*) FROM attempt_chat_mv msc
+        SELECT COUNT(*) FROM chat_resolved_mv msc
         WHERE msc.scenario_id = (SELECT scenarios_id FROM scenario_resource)
     ) as usage_count
 )

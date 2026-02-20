@@ -15,14 +15,11 @@ import {
   resolveAnalyticsFilters,
 } from "@/lib/search-params/analytics-defaults";
 import type { Metadata } from "next";
-import { Suspense } from "react";
 import { loadBenchmarkSearchParams } from "@/lib/search-params/benchmark";
 
 /** ---- Strong types from OpenAPI ---- */
-type BenchmarkOverviewIn = InputOf<"/api/v4/artifacts/benchmark/list", "post">;
-type BenchmarkOverviewOut = OutputOf<"/api/v4/artifacts/benchmark/list", "post">;
-type BenchmarkHistoryIn = InputOf<"/api/v4/artifacts/test/list", "post">;
-type BenchmarkHistoryOut = OutputOf<"/api/v4/artifacts/test/list", "post">;
+type BenchmarkOverviewIn = InputOf<"/api/v4/artifacts/benchmark/get", "post">;
+type BenchmarkOverviewOut = OutputOf<"/api/v4/artifacts/benchmark/get", "post">;
 // For backward compatibility, extract evals list structure from overview
 type EvalsListOut = {
   evals: BenchmarkOverviewOut["evals"];
@@ -52,23 +49,7 @@ const getBenchmarkOverview = async (
   "use server";
   const bypassCache = await isHardRefresh();
 
-  return api.post("/artifacts/benchmark/list", input, {
-    cache: "no-store",
-    ...(bypassCache && {
-      headers: {
-        "X-Bypass-Cache": "1",
-      },
-    }),
-  });
-};
-
-const getBenchmarkHistory = async (
-  input: BenchmarkHistoryIn
-): Promise<BenchmarkHistoryOut> => {
-  "use server";
-  const bypassCache = await isHardRefresh();
-
-  return api.post("/artifacts/test/list", input, {
+  return api.post("/artifacts/benchmark/get", input, {
     cache: "no-store",
     ...(bypassCache && {
       headers: {
@@ -105,15 +86,6 @@ export default async function BenchmarkPage({
   const { defaults, profileContext } = await computeAnalyticsDefaults();
   const defaultFilters = resolveAnalyticsFilters(q, defaults, profileContext);
 
-  // Build benchmark overview filters
-  const overviewFilters: BenchmarkOverviewIn = {
-    body: {
-      start_date: defaultFilters.startDate,
-      end_date: defaultFilters.endDate,
-      department_ids: defaultFilters.departmentIds,
-    },
-  };
-
   // History params with defaults
   const historyPage = q.historyPage ?? 0;
   const historyPageSize = q.historyPageSize ?? 10;
@@ -124,7 +96,28 @@ export default async function BenchmarkPage({
   const historySortBy = q.historySortBy ?? "created_at";
   const historySortOrder = q.historySortOrder ?? "desc";
 
-  // Fetch benchmark overview server-side
+  // Build benchmark overview filters with embedded history
+  const overviewFilters: BenchmarkOverviewIn = {
+    body: {
+      start_date: defaultFilters.startDate,
+      end_date: defaultFilters.endDate,
+      department_ids: defaultFilters.departmentIds,
+      history_enabled: true,
+      history_page: historyPage,
+      history_page_size: historyPageSize,
+      ...(historySearch && { history_search: historySearch }),
+      ...(historyEvalIds &&
+        historyEvalIds.length > 0 && {
+          history_eval_ids: historyEvalIds,
+        }),
+      ...(historyStatus && { history_status: historyStatus }),
+      ...(historyArchived !== undefined && { history_archived: historyArchived }),
+      history_sort_by: historySortBy,
+      history_sort_order: historySortOrder,
+    },
+  };
+
+  // Fetch benchmark overview server-side (includes embedded history)
   const overviewData = await getBenchmarkOverview(overviewFilters);
 
   // Convert arrays to dicts for backward compatibility with Benchmark component
@@ -228,21 +221,6 @@ export default async function BenchmarkPage({
     date_range_latest: overviewData.date_range_latest ?? null,
   };
 
-  // Create historyKey for Suspense boundary
-  const historyKey = [
-    historyPage,
-    historyPageSize,
-    historySearch || "",
-    (historyEvalIds || []).join(","),
-    historyStatus || "",
-    historyArchived === undefined ? "all" : historyArchived ? "true" : "false",
-    historySortBy,
-    historySortOrder,
-    defaultFilters.startDate,
-    defaultFilters.endDate,
-    defaultFilters.departmentIds.join(","),
-  ].join("|");
-
   // Build rubric mappings from evals list response
   const rubricMappings: Record<
     string,
@@ -315,6 +293,10 @@ export default async function BenchmarkPage({
     }
   }
 
+  // Extract history from embedded response
+  const historyData = overviewData.history;
+  const dataArray = historyData?.data || [];
+
   return (
     <div className="space-y-6">
       <Benchmark
@@ -322,98 +304,25 @@ export default async function BenchmarkPage({
         rubricMappings={rubricMappings}
       />
 
-      {/* History section moved out of Benchmark, fully server-driven */}
+      {/* History section — data embedded in benchmark/get response */}
       <div className="mt-12">
-        <Suspense
-          key={historyKey}
-          fallback={
-            <div className="text-muted-foreground">Loading history...</div>
-          }
-        >
-          <BenchmarkHistorySection
-            defaultFilters={defaultFilters}
-            historyPage={historyPage}
-            historyPageSize={historyPageSize}
-            historySearch={historySearch}
-            historyEvalIds={historyEvalIds}
-            historyStatus={historyStatus}
-            historyArchived={historyArchived}
-            historySortBy={historySortBy}
-            historySortOrder={historySortOrder}
+        <div className="space-y-4">
+          <EvalHistory
+            data={dataArray}
+            totalCount={historyData?.total_count || 0}
+            pageIndex={historyPage}
+            pageSize={historyPageSize}
+            isLoading={false}
+            showCustomize={true}
           />
-        </Suspense>
+        </div>
       </div>
-    </div>
-  );
-}
-
-/** ---- Inline history section component (only used here) ---- */
-async function BenchmarkHistorySection({
-  defaultFilters,
-  historyPage,
-  historyPageSize,
-  historySearch,
-  historyEvalIds,
-  historyStatus,
-  historyArchived,
-  historySortBy,
-  historySortOrder,
-}: {
-  defaultFilters: {
-    startDate: string;
-    endDate: string;
-    departmentIds: string[];
-  };
-  historyPage: number;
-  historyPageSize: number;
-  historySearch?: string | undefined;
-  historyEvalIds?: string[] | undefined;
-  historyStatus?: string | undefined;
-  historyArchived?: boolean | undefined;
-  historySortBy: string;
-  historySortOrder: string;
-}) {
-  const historyFilters: BenchmarkHistoryIn = {
-    body: {
-      start_date: defaultFilters.startDate,
-      end_date: defaultFilters.endDate,
-      department_ids: defaultFilters.departmentIds,
-      page: historyPage,
-      page_size: historyPageSize,
-      ...(historySearch && { search: historySearch }),
-      ...(historyEvalIds &&
-        historyEvalIds.length > 0 && {
-          eval_ids: historyEvalIds,
-        }),
-      ...(historyStatus && { status: historyStatus }),
-      ...(historyArchived !== undefined && { archived: historyArchived }),
-      sort_by: historySortBy,
-      sort_order: historySortOrder,
-    },
-  };
-
-  const historyData = await getBenchmarkHistory(historyFilters);
-
-  const dataArray = historyData.data || [];
-
-  return (
-    <div className="space-y-4">
-      <EvalHistory
-        data={dataArray}
-        totalCount={historyData.total_count || 0}
-        pageIndex={historyPage}
-        pageSize={historyPageSize}
-        isLoading={false}
-        showCustomize={true}
-      />
     </div>
   );
 }
 
 /** ---- Export types for client component ---- */
 export type {
-  BenchmarkHistoryIn,
-  BenchmarkHistoryOut,
   BenchmarkOverviewIn,
   BenchmarkOverviewOut,
   EvalsListOut,

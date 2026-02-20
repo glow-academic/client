@@ -20,11 +20,11 @@ END $$;
 
 CREATE OR REPLACE FUNCTION api_get_training_view_v4(
     profile_id_filter uuid,
-    training_entry_id_filter uuid
+    chat_entry_id_filter uuid
 )
 RETURNS TABLE (
     profile_has_access boolean,
-    training_entry_id uuid,
+    chat_entry_id uuid,
     parent_id uuid,
     -- Single scenario (from connection)
     scenario_id uuid,
@@ -56,12 +56,12 @@ AS $$
 WITH params AS (
     SELECT
         profile_id_filter AS profile_id,
-        training_entry_id_filter AS training_entry_id
+        chat_entry_id_filter AS chat_entry_id
 ),
 bundle AS (
     SELECT mtb.*
-    FROM training_mv mtb
-    WHERE mtb.training_entry_id = (SELECT training_entry_id FROM params)
+    FROM chat_mv mtb
+    WHERE mtb.chat_entry_id = (SELECT chat_entry_id FROM params)
     LIMIT 1
 ),
 parent_cohorts AS (
@@ -87,7 +87,7 @@ access_check AS (
 )
 SELECT
     COALESCE(ac.profile_has_access, false) AS profile_has_access,
-    b.training_entry_id,
+    b.chat_entry_id,
     b.parent_id,
     b.scenario_id,
     b.department_ids,

@@ -20,11 +20,11 @@ END $$;
 
 CREATE OR REPLACE FUNCTION api_get_benchmark_bundle_view_v4(
     profile_id_filter uuid,
-    suite_entry_id_filter uuid
+    invocation_entry_id_filter uuid
 )
 RETURNS TABLE (
     profile_has_access boolean,
-    suite_entry_id uuid,
+    invocation_entry_id uuid,
     benchmark_id uuid,
     -- 12 bundle-level resource ID arrays
     department_ids uuid[],
@@ -46,12 +46,12 @@ AS $$
 WITH params AS (
     SELECT
         profile_id_filter AS profile_id,
-        suite_entry_id_filter AS suite_entry_id
+        invocation_entry_id_filter AS invocation_entry_id
 ),
 bundle AS (
     SELECT mbb.*
-    FROM suite_mv mbb
-    WHERE mbb.suite_entry_id = (SELECT suite_entry_id FROM params)
+    FROM invocation_mv mbb
+    WHERE mbb.invocation_entry_id = (SELECT invocation_entry_id FROM params)
     LIMIT 1
 ),
 benchmark AS (
@@ -76,7 +76,7 @@ access_check AS (
 )
 SELECT
     COALESCE(ac.profile_has_access, false) AS profile_has_access,
-    b.suite_entry_id,
+    b.invocation_entry_id,
     b.benchmark_id,
     b.department_ids,
     b.model_ids,

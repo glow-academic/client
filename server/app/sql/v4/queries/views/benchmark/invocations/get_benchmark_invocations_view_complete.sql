@@ -1,6 +1,6 @@
 -- ============================================================================
 -- Query: get_test_invocation_view
--- Purpose: Fetch invocation-level data from test_invocation_mv with declarative filters
+-- Purpose: Fetch invocation-level data from invocation_resolved_mv with declarative filters
 -- Section: VIEWS/BENCHMARK/INVOCATIONS
 -- ============================================================================
 
@@ -52,7 +52,7 @@ CREATE TYPE types.q_get_test_invocation_view_v4_item AS (
     -- Foreign keys
     test_id uuid,
     group_id uuid,
-    suite_department_id uuid,
+    invocation_resolved_id uuid,
 
     -- Invocation data
     created_at timestamptz,
@@ -105,7 +105,7 @@ AS $$
     -- Fetch from MV with declarative filters
     mv_data AS (
         SELECT mv.*
-        FROM test_invocation_mv mv
+        FROM invocation_resolved_mv mv
         WHERE (test_id_filter IS NULL OR mv.test_id = test_id_filter)
           AND (invocation_ids_filter IS NULL OR mv.invocation_id = ANY(invocation_ids_filter))
     ),
@@ -115,7 +115,7 @@ AS $$
             mv.invocation_id,
             mv.test_id,
             mv.group_id,
-            mv.suite_department_id,
+            mv.invocation_resolved_id,
             mv.invocation_created_at AS created_at,
             mv.invocation_title AS title,
             mv.invocation_completed,
@@ -149,7 +149,7 @@ AS $$
                     invocation_id,
                     test_id,
                     group_id,
-                    suite_department_id,
+                    invocation_resolved_id,
                     created_at,
                     title,
                     invocation_completed,

@@ -1,4 +1,4 @@
-"""Home generation handler - creates attempt synchronously, then delegates to training_generate.
+"""Home generation handler - creates attempt synchronously, then delegates to chat_generate.
 
 Flow:
 1. Validate profile via find_profile_by_socket(sid)
@@ -6,7 +6,7 @@ Flow:
 3. Create attempt via create_attempt_with_context_internal
 4. Invalidate cache, emit home_generation_started
 5. GET from attempt_mv for training_entry_id + training_department_id
-6. Emit training_generate on internal bus with context
+6. Emit chat_generate on internal bus with context
 """
 
 import uuid
@@ -40,7 +40,7 @@ async def _home_generate_impl(
     payload: GenerateHomePayload,
     profile_id: uuid.UUID,
 ) -> None:
-    """Handle home generation - create attempt, then delegate to training_generate."""
+    """Handle home generation - create attempt, then delegate to chat_generate."""
     try:
         # Step 1: Resolve training context (cached)
         async with get_db_connection() as conn:
@@ -83,7 +83,7 @@ async def _home_generate_impl(
             logger.warning(f"No training context in MV for attempt {attempt_id}")
             return
 
-        # Step 5: Delegate to training_generate on internal bus
+        # Step 5: Delegate to chat_generate on internal bus
         resource_types = payload.resource_types or [
             "personas",
             "scenarios",
@@ -105,7 +105,7 @@ async def _home_generate_impl(
         if payload.user_instructions:
             emit_data["user_instructions"] = payload.user_instructions
 
-        await internal_sio.emit("training_generate", emit_data)
+        await internal_sio.emit("chat_generate", emit_data)
 
     except Exception as e:
         logger.exception(f"Error in home_generate: {str(e)}")

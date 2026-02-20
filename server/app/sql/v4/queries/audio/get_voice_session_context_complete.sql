@@ -39,10 +39,11 @@ WITH chat_info AS (
     -- Get chat and related IDs
     SELECT
         c.id as chat_id,
-        c.attempt_id,
+        ac.attempt_id,
         sas.simulations_id as simulation_id
-    FROM attempt_chat_entry c
-    JOIN attempt_simulations_connection sas ON sas.attempt_id = c.attempt_id AND sas.active = true
+    FROM chat_resolved_entry c
+    JOIN attempt_chat_entry ac ON ac.chat_resolved_id = c.id
+    JOIN attempt_simulations_connection sas ON sas.attempt_id = ac.attempt_id AND sas.active = true
     WHERE c.id = p_chat_id
     LIMIT 1
 ),

@@ -61,8 +61,8 @@ BEGIN
     refreshed := array_append(refreshed, 'calls_mv');
 
     -- Attempt MVs
-    REFRESH MATERIALIZED VIEW CONCURRENTLY attempt_chat_mv;
-    refreshed := array_append(refreshed, 'attempt_chat_mv');
+    REFRESH MATERIALIZED VIEW CONCURRENTLY chat_resolved_mv;
+    refreshed := array_append(refreshed, 'chat_resolved_mv');
 
     REFRESH MATERIALIZED VIEW CONCURRENTLY attempt_mv;
     refreshed := array_append(refreshed, 'attempt_mv');
@@ -74,11 +74,11 @@ BEGIN
     REFRESH MATERIALIZED VIEW CONCURRENTLY benchmark_mv;
     refreshed := array_append(refreshed, 'benchmark_mv');
 
-    REFRESH MATERIALIZED VIEW CONCURRENTLY suite_mv;
-    refreshed := array_append(refreshed, 'suite_mv');
+    REFRESH MATERIALIZED VIEW CONCURRENTLY invocation_mv;
+    refreshed := array_append(refreshed, 'invocation_mv');
 
-    REFRESH MATERIALIZED VIEW CONCURRENTLY test_invocation_mv;
-    refreshed := array_append(refreshed, 'test_invocation_mv');
+    REFRESH MATERIALIZED VIEW CONCURRENTLY invocation_resolved_mv;
+    refreshed := array_append(refreshed, 'invocation_resolved_mv');
 
     REFRESH MATERIALIZED VIEW CONCURRENTLY test_mv;
     refreshed := array_append(refreshed, 'test_mv');
@@ -90,8 +90,8 @@ BEGIN
     REFRESH MATERIALIZED VIEW CONCURRENTLY practice_mv;
     refreshed := array_append(refreshed, 'practice_mv');
 
-    REFRESH MATERIALIZED VIEW CONCURRENTLY training_mv;
-    refreshed := array_append(refreshed, 'training_mv');
+    REFRESH MATERIALIZED VIEW CONCURRENTLY chat_mv;
+    refreshed := array_append(refreshed, 'chat_mv');
 
     -- Lean Activity MVs
     REFRESH MATERIALIZED VIEW CONCURRENTLY problems_mv;

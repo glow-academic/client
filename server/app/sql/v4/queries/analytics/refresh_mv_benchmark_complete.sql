@@ -43,11 +43,11 @@ BEGIN
     REFRESH MATERIALIZED VIEW CONCURRENTLY benchmark_mv;
     refreshed := array_append(refreshed, 'benchmark_mv');
 
-    REFRESH MATERIALIZED VIEW CONCURRENTLY suite_mv;
-    refreshed := array_append(refreshed, 'suite_mv');
+    REFRESH MATERIALIZED VIEW CONCURRENTLY invocation_mv;
+    refreshed := array_append(refreshed, 'invocation_mv');
 
-    REFRESH MATERIALIZED VIEW CONCURRENTLY test_invocation_mv;
-    refreshed := array_append(refreshed, 'test_invocation_mv');
+    REFRESH MATERIALIZED VIEW CONCURRENTLY invocation_resolved_mv;
+    refreshed := array_append(refreshed, 'invocation_resolved_mv');
 
     REFRESH MATERIALIZED VIEW CONCURRENTLY test_mv;
     refreshed := array_append(refreshed, 'test_mv');

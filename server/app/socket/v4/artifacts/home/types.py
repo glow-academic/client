@@ -1,7 +1,7 @@
 """WebSocket-specific types for home generation.
 
 Home generation creates an attempt synchronously, then delegates to
-training_generate on the internal bus for AI resource generation.
+chat_generate on the internal bus for AI resource generation.
 """
 
 from uuid import UUID

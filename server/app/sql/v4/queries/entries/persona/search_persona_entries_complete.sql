@@ -18,7 +18,7 @@ CREATE OR REPLACE FUNCTION public.api_search_persona_entries_v4(
     search text DEFAULT NULL,
     limit_count integer DEFAULT 20,
     offset_count integer DEFAULT 0,
-    training_id uuid DEFAULT NULL
+    chat_id uuid DEFAULT NULL
 ) RETURNS TABLE(
     items jsonb
 )
@@ -30,7 +30,7 @@ BEGIN
     FROM (
         SELECT jsonb_build_object(
             'id', m.id,
-            'training_id', m.training_id,
+            'chat_id', m.chat_id,
             'created_at', m.created_at,
             'updated_at', m.updated_at,
             'active', m.active,
@@ -39,7 +39,7 @@ BEGIN
         ) AS row_data
         FROM persona_mv m
         WHERE true
-          AND (training_id IS NULL OR m.training_id = training_id)
+          AND (chat_id IS NULL OR m.chat_id = chat_id)
         ORDER BY m.created_at DESC
         LIMIT limit_count
         OFFSET offset_count

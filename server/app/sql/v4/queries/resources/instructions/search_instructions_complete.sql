@@ -65,7 +65,7 @@ FROM (
                   SELECT 1 FROM (
                       SELECT instructions_id, draft_id FROM agent_drafts_instructions_connection WHERE active = true
                       UNION ALL SELECT instructions_id, draft_id FROM persona_drafts_instructions_connection WHERE active = true
-                      UNION ALL SELECT instructions_id, draft_id FROM suite_drafts_instructions_connection WHERE active = true
+                      UNION ALL SELECT instructions_id, draft_id FROM invocation_drafts_instructions_connection WHERE active = true
                   ) dc
                   WHERE dc.instructions_id = i.id
                     AND dc.draft_id = api_search_instructions_v4.draft_id
