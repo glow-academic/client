@@ -73,7 +73,7 @@ class ChatGenerationCompleteEvent(GenerationCompleteEvent):
 
 
 class ChatGenerationProgressEvent(BaseModel):
-    """Server-to-client event: training_generation_progress.
+    """Server-to-client event: chat_generation_progress.
 
     Emitted as individual resources complete, providing percentage progress.
     """
@@ -88,9 +88,9 @@ class ChatGenerationProgressEvent(BaseModel):
 
 
 class ChatGenerationErrorEvent(GenerationErrorEvent):
-    """Server-to-client event: training_generation_error.
+    """Server-to-client event: chat_generation_error.
 
-    Emitted when training resource generation fails.
+    Emitted when chat resource generation fails.
     """
 
     artifact_type: str = "chat"

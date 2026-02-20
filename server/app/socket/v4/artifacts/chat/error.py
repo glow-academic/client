@@ -1,12 +1,12 @@
-"""Training error handler - listens to generate_*_error events and emits training-specific events."""
+"""Chat error handler - listens to generate_*_error events and emits chat-specific events."""
 
 from typing import Any
 
 from fastapi import APIRouter
 
 from app.main import get_internal_sio, sio
-from app.socket.v4.artifacts.training.types import (
-    TrainingGenerationErrorEvent,
+from app.socket.v4.artifacts.chat.types import (
+    ChatGenerationErrorEvent,
 )
 from app.utils.logging.db_logger import get_logger
 
@@ -23,23 +23,23 @@ server_router = APIRouter()
 # =============================================================================
 
 
-@server_router.post("/training_generation_error")
-async def training_generation_error_api(
-    request: TrainingGenerationErrorEvent,
+@server_router.post("/chat_generation_error")
+async def chat_generation_error_api(
+    request: ChatGenerationErrorEvent,
 ) -> dict[str, bool]:
-    """Server-to-client event: Training generation error.
+    """Server-to-client event: Chat generation error.
 
-    Emitted when training resource generation fails.
+    Emitted when chat resource generation fails.
     """
     return {"success": True}
 
 
 @internal_sio.on("generate_call_error")  # type: ignore
 @internal_sio.on("generate_text_error")  # type: ignore
-async def handle_training_error(data: dict[str, Any]) -> None:
-    """Handle generate_*_error event - filter by training artifact_type and emit training-specific event."""
+async def handle_chat_error(data: dict[str, Any]) -> None:
+    """Handle generate_*_error event - filter by chat artifact_type and emit chat-specific event."""
     artifact_type = data.get("artifact_type")
-    if artifact_type != "training":
+    if artifact_type != "chat":
         return
 
     sid = data.get("sid", "")
@@ -50,11 +50,11 @@ async def handle_training_error(data: dict[str, Any]) -> None:
     resource_types = data.get("resource_types", [])
 
     error_message = data.get("error_message") or data.get(
-        "message", "An error occurred during training generation"
+        "message", "An error occurred during chat generation"
     )
 
-    event = TrainingGenerationErrorEvent(
-        artifact_type="training",
+    event = ChatGenerationErrorEvent(
+        artifact_type="chat",
         group_id=data.get("group_id"),
         resource_type=resource_type,
         resource_types=resource_types if resource_types else None,
@@ -64,7 +64,7 @@ async def handle_training_error(data: dict[str, Any]) -> None:
         trace_id=data.get("trace_id"),
     )
     await sio.emit(
-        "training_generation_error",
+        "chat_generation_error",
         event.model_dump(mode="json"),
         room=sid,
     )

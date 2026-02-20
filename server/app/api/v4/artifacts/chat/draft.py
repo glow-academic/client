@@ -18,7 +18,7 @@ from app.sql.types import load_sql_query
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.sql_helper import execute_sql_typed
 
-SQL_PATH = "app/sql/v4/queries/training/patch_chat_draft_complete.sql"
+SQL_PATH = "app/sql/v4/queries/training/patch_training_draft_complete.sql"
 
 router = APIRouter()
 

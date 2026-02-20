@@ -1,7 +1,7 @@
-"""Training progress handler - emits percentage-based progress as resources complete.
+"""Chat progress handler - emits percentage-based progress as resources complete.
 
-Listens on generate_call_complete, filters for training artifact with tool_result events
-that have a resource_id (successful resource creation), and emits training_generation_progress
+Listens on generate_call_complete, filters for chat artifact with tool_result events
+that have a resource_id (successful resource creation), and emits chat_generation_progress
 with percentage tracking.
 """
 
@@ -11,8 +11,8 @@ from fastapi import APIRouter
 
 from app.infra.v4.websocket.generation_tracker import record_resource_complete
 from app.main import get_internal_sio, sio
-from app.socket.v4.artifacts.training.types import (
-    TrainingGenerationProgressEvent,
+from app.socket.v4.artifacts.chat.types import (
+    ChatGenerationProgressEvent,
 )
 from app.utils.logging.db_logger import get_logger
 
@@ -24,10 +24,10 @@ server_router = APIRouter()
 
 
 @internal_sio.on("generate_call_complete")  # type: ignore
-async def handle_training_resource_progress(data: dict[str, Any]) -> None:
-    """Track resource completions and emit training progress percentage."""
+async def handle_chat_resource_progress(data: dict[str, Any]) -> None:
+    """Track resource completions and emit chat progress percentage."""
     artifact_type = data.get("artifact_type")
-    if artifact_type != "training":
+    if artifact_type != "chat":
         return
 
     event_type = data.get("event_type")
@@ -56,7 +56,7 @@ async def handle_training_resource_progress(data: dict[str, Any]) -> None:
 
     percentage = round((completed / total) * 100) if total > 0 else 0
 
-    event = TrainingGenerationProgressEvent(
+    event = ChatGenerationProgressEvent(
         group_id=group_id_str,
         run_id=run_id,
         completed_resources=completed,
@@ -66,7 +66,7 @@ async def handle_training_resource_progress(data: dict[str, Any]) -> None:
     )
 
     await sio.emit(
-        "training_generation_progress",
+        "chat_generation_progress",
         event.model_dump(mode="json"),
         room=sid,
     )
@@ -77,13 +77,13 @@ async def handle_training_resource_progress(data: dict[str, Any]) -> None:
 # =============================================================================
 
 
-@server_router.post("/training_generation_progress")
-async def training_generation_progress_api(
-    request: TrainingGenerationProgressEvent,
+@server_router.post("/chat_generation_progress")
+async def chat_generation_progress_api(
+    request: ChatGenerationProgressEvent,
 ) -> dict[str, bool]:
-    """Server-to-client event: Training generation progress.
+    """Server-to-client event: Chat generation progress.
 
-    Emitted as individual resources complete during training generation.
+    Emitted as individual resources complete during chat generation.
     Contains percentage-based progress tracking.
     """
     return {"success": True}

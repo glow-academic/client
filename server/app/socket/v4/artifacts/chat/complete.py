@@ -1,4 +1,4 @@
-"""Training completion handler - handles run/text completion and multi-agent coordination.
+"""Chat completion handler - handles run/text completion and multi-agent coordination.
 
 Resource-level tool_call_complete/tool_result events are now handled by the shared
 resource_complete.py handler. This module handles:
@@ -18,8 +18,8 @@ from app.infra.v4.websocket.generation_tracker import (
 )
 from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.main import get_internal_sio, sio
-from app.socket.v4.artifacts.training.types import (
-    TrainingGenerationCompleteEvent,
+from app.socket.v4.artifacts.chat.types import (
+    ChatGenerationCompleteEvent,
 )
 from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import load_sql
@@ -37,11 +37,11 @@ server_router = APIRouter()
 
 @internal_sio.on("generate_call_complete")  # type: ignore
 @internal_sio.on("generate_text_complete")  # type: ignore
-async def handle_training_artifact_complete(data: dict[str, Any]) -> None:
-    """Handle generate_call_complete and generate_text_complete events - filter by training artifact_type."""
+async def handle_chat_artifact_complete(data: dict[str, Any]) -> None:
+    """Handle generate_call_complete and generate_text_complete events - filter by chat artifact_type."""
 
     artifact_type = data.get("artifact_type")
-    if artifact_type != "training":
+    if artifact_type != "chat":
         return
 
     sid = data.get("sid", "")
@@ -52,20 +52,20 @@ async def handle_training_artifact_complete(data: dict[str, Any]) -> None:
 
     # Handle text completion - save assistant message
     if event_type == "text_complete":
-        await _handle_training_text_complete(sid, data)
+        await _handle_chat_text_complete(sid, data)
         return
 
     # Handle run complete - coordinate multi-agent, emit completion
     if event_type == "run_complete":
-        await _handle_training_run_complete(sid, data)
+        await _handle_chat_run_complete(sid, data)
         return
 
     # tool_call_complete and tool_result events are now handled by
     # resource_complete.py (shared handler) - nothing to do here
 
 
-async def _handle_training_text_complete(sid: str, data: dict[str, Any]) -> None:
-    """Handle training text generation completion - save assistant message."""
+async def _handle_chat_text_complete(sid: str, data: dict[str, Any]) -> None:
+    """Handle chat text generation completion - save assistant message."""
     run_id = data.get("run_id")
     final_content = data.get("text") or ""
 
@@ -84,15 +84,15 @@ async def _handle_training_text_complete(sid: str, data: dict[str, Any]) -> None
                 False,
             )
     except Exception as e:
-        logger.exception(f"Failed to save training text message: {str(e)}")
+        logger.exception(f"Failed to save chat text message: {str(e)}")
 
 
-async def _handle_training_run_complete(sid: str, data: dict[str, Any]) -> None:
-    """Handle training generation run completion.
+async def _handle_chat_run_complete(sid: str, data: dict[str, Any]) -> None:
+    """Handle chat generation run completion.
 
     Coordinates multi-agent completion via generation_tracker:
     1. Records this agent's completion
-    2. If all agents done: emits training_generation_complete
+    2. If all agents done: emits chat_generation_complete
     3. Cleans up generation tracking
     """
     run_id = data.get("run_id")
@@ -141,7 +141,7 @@ async def _handle_training_run_complete(sid: str, data: dict[str, Any]) -> None:
                     output_tokens,
                 )
     except Exception as e:
-        logger.exception(f"Failed to save training run complete: {str(e)}")
+        logger.exception(f"Failed to save chat run complete: {str(e)}")
 
     # Multi-agent coordination via generation tracker
     tool_results = data.get("tool_results") or []
@@ -176,20 +176,20 @@ async def _handle_training_run_complete(sid: str, data: dict[str, Any]) -> None:
                 },
             )
 
-        # Emit training_generation_complete
-        event = TrainingGenerationCompleteEvent(
-            artifact_type="training",
+        # Emit chat_generation_complete
+        event = ChatGenerationCompleteEvent(
+            artifact_type="chat",
             group_id=group_id_str or "",
-            resource_type="training",
+            resource_type="chat",
             run_id=run_id,
             success=True,
-            message="Training generation completed",
+            message="Chat generation completed",
             attempt_id=attempt_id_str,
             chat_id=chat_id,
         )
 
         await sio.emit(
-            "training_generation_complete",
+            "chat_generation_complete",
             event.model_dump(mode="json"),
             room=sid,
         )
@@ -202,12 +202,12 @@ async def _handle_training_run_complete(sid: str, data: dict[str, Any]) -> None:
 # =============================================================================
 
 
-@server_router.post("/training_generation_complete")
-async def training_generation_complete_api(
-    request: TrainingGenerationCompleteEvent,
+@server_router.post("/chat_generation_complete")
+async def chat_generation_complete_api(
+    request: ChatGenerationCompleteEvent,
 ) -> dict[str, bool]:
-    """Server-to-client event: Training generation completed.
+    """Server-to-client event: Chat generation completed.
 
-    Emitted when all agents have finished generating training resources.
+    Emitted when all agents have finished generating chat resources.
     """
     return {"success": True}

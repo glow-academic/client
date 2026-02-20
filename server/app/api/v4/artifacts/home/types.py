@@ -8,7 +8,7 @@ from app.api.v4.artifacts.chat.types import (
     RubricMapping,
     StandardGroupMapping,
     StandardMapping,
-    TrainingSimulationOperational,
+    ChatSimulationOperational,
 )
 from app.api.v4.artifacts.types import HistoryResponse
 
@@ -35,7 +35,7 @@ class GetHomeResponse(BaseModel):
     """
 
     actor_name: str | None = None
-    items: list[TrainingSimulationOperational] | None = None
+    items: list[ChatSimulationOperational] | None = None
     rubrics: list[RubricMapping] | None = None
     standard_groups: list[StandardGroupMapping] | None = None
     standards: list[StandardMapping] | None = None

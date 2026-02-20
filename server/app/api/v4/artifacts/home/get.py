@@ -27,7 +27,7 @@ from app.api.v4.artifacts.chat.types import (
     RubricMapping,
     StandardGroupMapping,
     StandardMapping,
-    TrainingSimulationOperational,
+    ChatSimulationOperational,
 )
 from app.api.v4.artifacts.home.types import GetHomeRequest, GetHomeResponse
 from app.api.v4.artifacts.types import FilterOption, HistoryItem, HistoryResponse
@@ -790,7 +790,7 @@ async def get_home_internal(
         )
 
     # --- Phase 3: Stitch + business logic ---
-    items: list[TrainingSimulationOperational] = []
+    items: list[ChatSimulationOperational] = []
     if context and context.items:
         for item in context.items:
             simulation = simulation_map.get(item.simulation_id)
@@ -890,7 +890,7 @@ async def get_home_internal(
                 not_started_count = None
 
             items.append(
-                TrainingSimulationOperational(
+                ChatSimulationOperational(
                     simulation_id=item.simulation_id,
                     simulation_name=simulation.name if simulation else None,
                     simulation_description=(

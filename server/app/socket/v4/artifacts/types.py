@@ -316,10 +316,10 @@ class SettingGenerationStartedEvent(BaseModel):
     resource_types: list[str]
 
 
-class TrainingGenerationStartedEvent(BaseModel):
-    """Server-to-client event: training_generation_started.
+class ChatGenerationStartedEvent(BaseModel):
+    """Server-to-client event: chat_generation_started.
 
-    Emitted when training generation begins, listing which resource types
+    Emitted when chat generation begins, listing which resource types
     will be generated.
     """
 
@@ -329,7 +329,7 @@ class TrainingGenerationStartedEvent(BaseModel):
     resource_types: list[str]
 
 
-class SuiteGenerationStartedEvent(BaseModel):
+class InvocationGenerationStartedEvent(BaseModel):
     """Server-to-client event: invocation_generation_started.
 
     Emitted when benchmark bundle generation begins, listing which resource types

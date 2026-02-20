@@ -24,7 +24,7 @@ from app.api.v4.artifacts.chat.types import (
     RubricMapping,
     StandardGroupMapping,
     StandardMapping,
-    TrainingSimulationOperational,
+    ChatSimulationOperational,
 )
 from app.api.v4.artifacts.practice.types import GetPracticeRequest, GetPracticeResponse
 from app.api.v4.artifacts.types import FilterOption, HistoryItem, HistoryResponse
@@ -670,7 +670,7 @@ async def get_practice_internal(
     personal_stats = _aggregate_personal_stats(personal_facts.items)
 
     # --- Phase 3: Stitch + business logic ---
-    items: list[TrainingSimulationOperational] = []
+    items: list[ChatSimulationOperational] = []
     if context and context.items:
         for item in context.items:
             simulation = simulation_map.get(item.simulation_id)
@@ -758,7 +758,7 @@ async def get_practice_internal(
             status = compute_status(has_passed, attempt_count)
 
             items.append(
-                TrainingSimulationOperational(
+                ChatSimulationOperational(
                     simulation_id=item.simulation_id,
                     simulation_name=simulation.name if simulation else None,
                     simulation_description=(

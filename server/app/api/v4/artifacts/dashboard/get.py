@@ -15,6 +15,12 @@ from uuid import UUID
 import asyncpg
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
+from app.api.v4.artifacts.chat.permissions import (
+    compute_pass_pct,
+    compute_score_status,
+    compute_show_continue,
+    compute_show_view,
+)
 from app.api.v4.artifacts.dashboard.permissions import (
     compute_footer_metrics_v2,
     compute_header_metrics_v2,
@@ -41,12 +47,6 @@ from app.api.v4.artifacts.dashboard.types import (
     DashboardWebsocketResources,
     DashboardWebsocketViews,
     GetDashboardWebsocketResponse,
-)
-from app.api.v4.artifacts.training.permissions import (
-    compute_pass_pct,
-    compute_score_status,
-    compute_show_continue,
-    compute_show_view,
 )
 from app.api.v4.artifacts.types import FilterOption, HistoryItem, HistoryResponse
 from app.api.v4.entries.attempt.get import ChatViewItem, get_attempt_chats_internal
@@ -567,7 +567,7 @@ async def get_dashboard_internal(
             target_profile_id=request.target_profile_id,
             department_ids=request.department_ids,
         ),
-        _fetch_history(),
+        _fetch_history_data(),
     )
     chat_items = chats_result.items
     rubric_items = rubric_scores_result.items

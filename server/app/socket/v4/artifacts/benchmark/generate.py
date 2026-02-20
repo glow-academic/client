@@ -36,7 +36,7 @@ from app.socket.v4.artifacts.benchmark.types import (
 )
 from app.socket.v4.artifacts.types import (
     GenerateErrorApiRequest,
-    SuiteGenerationStartedEvent,
+    InvocationGenerationStartedEvent,
 )
 from app.sql.types import (
     GetAgentToolsSqlParams,
@@ -71,7 +71,7 @@ def _build_suite_jinja_context(
 ) -> dict[str, Any]:
     """Build Jinja context with resources as top-level variables.
 
-    Resources are the current selections (from get_suite_internal's ID resolution).
+    Resources are the current selections (from get_invocation_internal's ID resolution).
     Templates access resources directly: {{ departments[0].name }}, {{ models[0].name }}
     Views (e.g. config) are injected separately after prepare.
     """
@@ -614,7 +614,7 @@ async def invocation_generate_internal(data: dict[str, Any]) -> None:
 
 @server_router.post("/invocation_generation_started")
 async def invocation_generation_started_api(
-    request: SuiteGenerationStartedEvent,
+    request: InvocationGenerationStartedEvent,
 ) -> dict[str, bool]:
     """Server-to-client event: Benchmark bundle generation started.
 
