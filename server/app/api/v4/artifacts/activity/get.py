@@ -21,6 +21,7 @@ from app.api.v4.artifacts.activity.types import (
     ActivityWebsocketViews,
     GetActivityWebsocketResponse,
 )
+
 # session types imported lazily inside _fetch_session_history_data
 # to avoid circular: activity/get → session/__init__ → session/list → activity/get
 from app.api.v4.auth.settings import get_auth_settings_internal
@@ -352,9 +353,7 @@ async def get_activity(
 
         parallel_results = await asyncio.gather(*parallel_tasks)
         data = parallel_results[0]
-        history_data: Any = (
-            parallel_results[1] if request.history_enabled else None
-        )
+        history_data: Any = parallel_results[1] if request.history_enabled else None
 
         # Build chart_data from activity view (date_key + event_type + event_count)
         chart_data = [

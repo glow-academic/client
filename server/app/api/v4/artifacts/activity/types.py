@@ -4,13 +4,11 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import TYPE_CHECKING, Any
+from typing import Any
 from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-if TYPE_CHECKING:
-    from app.api.v4.artifacts.session.types import GetSessionListResponse
 from app.sql.types import (
     GetActivityListViewSqlRow,
     GetAuditListViewSqlRow,
@@ -126,7 +124,7 @@ class ActivityResponse(BaseModel):
     total_count: int = Field(default=0)
 
     # Embedded session history (when history_enabled=True)
-    history: GetSessionListResponse | None = None
+    history: Any = None  # GetSessionListResponse — avoids circular import
 
 
 # =============================================================================

@@ -164,10 +164,3 @@ router.include_router(auth_router)
 # Docs
 # ============================================================================
 router.include_router(docs_router)
-
-# ============================================================================
-# Deferred model rebuilds (resolve TYPE_CHECKING forward references)
-# ============================================================================
-from app.api.v4.artifacts.activity.types import ActivityResponse  # noqa: E402
-
-ActivityResponse.model_rebuild()
