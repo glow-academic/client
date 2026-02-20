@@ -55,12 +55,13 @@ runs_today_data AS (
 chat_data AS (
     SELECT
         c.id as chat_id,
-        c.attempt_id,
+        ac.attempt_id,
         EXISTS (
             SELECT 1 FROM attempt_completion_entry comp
             WHERE comp.chat_id = c.id AND comp.active = TRUE
         ) as chat_is_completed
-    FROM attempt_chat_entry c
+    FROM chat_resolved_entry c
+    JOIN attempt_chat_entry ac ON ac.chat_resolved_id = c.id
     WHERE c.id = p_chat_id AND c.active = TRUE
     LIMIT 1
 ),

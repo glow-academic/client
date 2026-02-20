@@ -110,9 +110,10 @@ chat_data AS (
     SELECT
         sc.id as chat_id,
         sc.group_id
-    FROM attempt_chat_entry sc
+    FROM chat_resolved_entry sc
+    JOIN attempt_chat_entry ac ON ac.chat_resolved_id = sc.id
     CROSS JOIN params p
-    WHERE sc.attempt_id = p.attempt_id
+    WHERE ac.attempt_id = p.attempt_id
       AND sc.active = TRUE
     ORDER BY sc.created_at ASC
     LIMIT 1

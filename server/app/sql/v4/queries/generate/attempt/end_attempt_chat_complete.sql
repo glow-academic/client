@@ -32,8 +32,9 @@ DECLARE
 BEGIN
     -- Verify chat exists and belongs to this attempt
     SELECT c.id INTO v_chat_id
-    FROM attempt_chat_entry c
-    WHERE c.id = p_chat_id AND c.attempt_id = p_attempt_id AND c.active = TRUE;
+    FROM chat_resolved_entry c
+    JOIN attempt_chat_entry ac ON ac.chat_resolved_id = c.id
+    WHERE c.id = p_chat_id AND ac.attempt_id = p_attempt_id AND c.active = TRUE;
 
     IF v_chat_id IS NULL THEN
         RETURN QUERY SELECT FALSE, NULL::uuid;

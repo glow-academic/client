@@ -3,8 +3,8 @@
 --
 -- Grain: One row per home_entry.id
 -- All resource IDs from home_*_connection tables.
--- Training-level resources (scenario_ids) aggregated UP from
--- home_training_entry → training_entry → training_scenarios_connection.
+-- Chat-level resources (scenario_ids) aggregated UP from
+-- home_chat_entry -> chat_entry -> chat_scenarios_connection.
 
 DO $$
 DECLARE
@@ -98,12 +98,12 @@ persona_agg AS (
     WHERE hspc.active = true
     GROUP BY hspc.home_id
 ),
--- Training level connections (aggregated UP to home_entry via home_training_entry)
-training_agg AS (
+-- Chat level connections (aggregated UP to home_entry via home_chat_entry)
+chat_agg AS (
     SELECT
         hte.home_id,
-        ARRAY_AGG(DISTINCT hte.training_id ORDER BY hte.training_id) AS training_ids
-    FROM home_training_entry hte
+        ARRAY_AGG(DISTINCT hte.chat_id ORDER BY hte.chat_id) AS chat_ids
+    FROM home_chat_entry hte
     WHERE hte.active = true
     GROUP BY hte.home_id
 ),
@@ -111,9 +111,9 @@ scenario_agg AS (
     SELECT
         hte.home_id,
         ARRAY_AGG(DISTINCT tsc.scenarios_id ORDER BY tsc.scenarios_id) AS scenario_ids
-    FROM home_training_entry hte
-    JOIN training_scenarios_connection tsc
-      ON tsc.training_id = hte.training_id AND tsc.active = true
+    FROM home_chat_entry hte
+    JOIN chat_scenarios_connection tsc
+      ON tsc.chat_id = hte.chat_id AND tsc.active = true
     WHERE hte.active = true
     GROUP BY hte.home_id
 )
@@ -133,8 +133,8 @@ SELECT
     COALESCE(pos.position_ids, ARRAY[]::uuid[]) AS position_ids,
     COALESCE(per.persona_ids, ARRAY[]::uuid[]) AS persona_ids,
 
-    -- Aggregated UP from training level
-    COALESCE(trn.training_ids, ARRAY[]::uuid[]) AS training_ids,
+    -- Aggregated UP from chat level
+    COALESCE(trn.chat_ids, ARRAY[]::uuid[]) AS chat_ids,
     COALESCE(scn.scenario_ids, ARRAY[]::uuid[]) AS scenario_ids,
 
     he.created_at,
@@ -151,7 +151,7 @@ LEFT JOIN time_limit_agg tl ON tl.home_id = he.id
 LEFT JOIN flag_agg flg ON flg.home_id = he.id
 LEFT JOIN position_agg pos ON pos.home_id = he.id
 LEFT JOIN persona_agg per ON per.home_id = he.id
-LEFT JOIN training_agg trn ON trn.home_id = he.id
+LEFT JOIN chat_agg trn ON trn.home_id = he.id
 LEFT JOIN scenario_agg scn ON scn.home_id = he.id
 WHERE he.active = true
 WITH NO DATA;

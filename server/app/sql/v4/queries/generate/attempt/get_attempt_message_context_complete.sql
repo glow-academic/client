@@ -100,17 +100,18 @@ access_data AS (
         WHERE cs.simulation_id = p.simulation_id
     ) as has_access
 ),
--- Chat data (chat has attempt_id directly)
+-- Chat data (chat linked to attempt via bridge table)
 chat_data AS (
     SELECT
         c.id as chat_id,
         TRUE as chat_exists,
         (EXISTS (SELECT 1 FROM attempt_completion_entry comp WHERE comp.chat_id = c.id AND comp.active = TRUE)) as chat_is_completed,
-        c.attempt_id,
+        ac.attempt_id,
         c.group_id,
         COALESCE(he.hints_enabled, pe.hints_enabled, true) as hints_enabled
-    FROM attempt_chat_entry c
-    LEFT JOIN attempt_entry a ON a.id = c.attempt_id
+    FROM chat_resolved_entry c
+    JOIN attempt_chat_entry ac ON ac.chat_resolved_id = c.id
+    LEFT JOIN attempt_entry a ON a.id = ac.attempt_id
     LEFT JOIN attempt_home_entry ahc ON ahc.attempt_id = a.id AND ahc.active = true
     LEFT JOIN home_entry he ON he.id = ahc.home_id
     LEFT JOIN attempt_practice_entry apc ON apc.attempt_id = a.id AND apc.active = true

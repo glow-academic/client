@@ -31,11 +31,12 @@ AS $$
 SELECT
     m.id AS message_id,
     sm.chat_id,
-    c.attempt_id,
+    ac.attempt_id,
     m.created_at
 FROM messages_entry m
 JOIN attempt_message_entry sm ON sm.id = m.id
-JOIN attempt_chat_entry c ON c.id = sm.chat_id
+JOIN chat_resolved_entry c ON c.id = sm.chat_id
+JOIN attempt_chat_entry ac ON ac.chat_resolved_id = c.id
 WHERE m.run_id = p_run_id
   AND m.role = 'assistant'::message_type
 ORDER BY m.created_at DESC

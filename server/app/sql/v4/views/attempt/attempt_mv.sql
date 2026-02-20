@@ -40,23 +40,22 @@ CREATE MATERIALIZED VIEW attempt_mv AS
 -- Simple attempt-level data only
 -- All aggregates (total_chats, scores, etc.) derived in service layer from chats
 WITH
--- Collect scenario_ids per attempt from chats → training_departments
+-- Collect scenario_ids per attempt from chats → chat_resolved scenarios
 attempt_scenarios AS (
     SELECT
-        c.attempt_id,
+        ac.attempt_id,
         COALESCE(
             ARRAY_AGG(DISTINCT tsc.scenarios_id ORDER BY tsc.scenarios_id)
             FILTER (WHERE tsc.scenarios_id IS NOT NULL),
             ARRAY[]::uuid[]
         ) AS scenario_ids
-    FROM attempt_chat_entry c
-    JOIN attempt_entry a2 ON a2.id = c.attempt_id AND a2.active = TRUE
-    LEFT JOIN training_department_entry tbd
-        ON tbd.id = c.training_department_id AND tbd.active = TRUE
-    LEFT JOIN training_department_scenarios_connection tsc
-        ON tsc.training_department_id = tbd.id AND tsc.active = TRUE
+    FROM chat_resolved_entry c
+    JOIN attempt_chat_entry ac ON ac.chat_resolved_id = c.id
+    JOIN attempt_entry a2 ON a2.id = ac.attempt_id AND a2.active = TRUE
+    LEFT JOIN chat_resolved_scenarios_connection tsc
+        ON tsc.chat_resolved_id = c.id AND tsc.active = TRUE
     WHERE c.active = TRUE
-    GROUP BY c.attempt_id
+    GROUP BY ac.attempt_id
 )
 SELECT
     -- Primary key
@@ -83,7 +82,7 @@ SELECT
 
     -- Training context (for socket handlers — replaces inline SQL_ATTEMPT_CONTEXT)
     training_ctx.training_entry_id,
-    training_ctx.training_department_id
+    training_ctx.chat_resolved_id
 
 FROM attempt_entry a
 -- Attempt connections (required)
@@ -94,18 +93,18 @@ LEFT JOIN attempt_departments_connection adc ON adc.attempt_id = a.id
 LEFT JOIN attempt_cohorts_connection acc ON acc.attempt_id = a.id
 -- Scenario IDs (optional)
 LEFT JOIN attempt_scenarios ascn ON ascn.attempt_id = a.id
--- Training context: resolve training_entry_id + training_department_id (LATERAL for 1:1)
+-- Training context: resolve training_entry_id + chat_resolved_id (LATERAL for 1:1)
 LEFT JOIN LATERAL (
     SELECT
         COALESCE(pte.training_id, hte.training_id) AS training_entry_id,
-        tbd.id AS training_department_id
+        cr.id AS chat_resolved_id
     FROM (SELECT 1) _dummy
     LEFT JOIN attempt_practice_entry ape ON ape.attempt_id = a.id AND ape.active = true
     LEFT JOIN practice_training_entry pte ON pte.practice_id = ape.practice_id AND pte.active = true
     LEFT JOIN attempt_home_entry ahe ON ahe.attempt_id = a.id AND ahe.active = true
     LEFT JOIN home_training_entry hte ON hte.home_id = ahe.home_id AND hte.active = true
-    LEFT JOIN training_department_entry tbd
-        ON tbd.training_id = COALESCE(pte.training_id, hte.training_id) AND tbd.active = true
+    LEFT JOIN attempt_chat_entry ac_ctx ON ac_ctx.attempt_id = a.id
+    LEFT JOIN chat_resolved_entry cr ON cr.id = ac_ctx.chat_resolved_id AND cr.active = true
     LIMIT 1
 ) training_ctx ON true
 -- Latest archive state (append-only)

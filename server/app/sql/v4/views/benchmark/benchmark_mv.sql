@@ -85,8 +85,8 @@ group_position_agg AS (
 bundle_agg AS (
     SELECT
         bbe.benchmark_id,
-        ARRAY_AGG(DISTINCT bbe.id ORDER BY bbe.id) AS suite_entry_ids
-    FROM suite_entry bbe
+        ARRAY_AGG(DISTINCT bbe.id ORDER BY bbe.id) AS invocation_entry_ids
+    FROM invocation_entry bbe
     WHERE bbe.active = true
     GROUP BY bbe.benchmark_id
 )
@@ -107,7 +107,7 @@ SELECT
     COALESCE(gp.group_position_ids, ARRAY[]::uuid[]) AS group_position_ids,
 
     -- Aggregated UP from benchmark_bundle level
-    COALESCE(bun.suite_entry_ids, ARRAY[]::uuid[]) AS suite_entry_ids,
+    COALESCE(bun.invocation_entry_ids, ARRAY[]::uuid[]) AS invocation_entry_ids,
 
     be.created_at,
     be.updated_at,

@@ -46,7 +46,7 @@ DECLARE
 BEGIN
     -- Get group_id from the chat
     SELECT sc.group_id INTO v_group_id
-    FROM attempt_chat_entry sc
+    FROM chat_resolved_entry sc
     WHERE sc.id = p_chat_id;
 
     IF v_group_id IS NULL THEN

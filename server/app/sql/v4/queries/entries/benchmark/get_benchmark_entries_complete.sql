@@ -35,7 +35,7 @@ BEGIN
             'group_rubric_ids', m.group_rubric_ids,
             'run_position_ids', m.run_position_ids,
             'group_position_ids', m.group_position_ids,
-            'suite_entry_ids', m.suite_entry_ids,
+            'invocation_entry_ids', m.invocation_entry_ids,
             'created_at', m.created_at,
             'updated_at', m.updated_at,
             'active', m.active

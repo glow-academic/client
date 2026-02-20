@@ -208,7 +208,8 @@ latest_attempt_grades AS (
         MAX(g.score) AS score_percent,
         BOOL_OR(g.passed) AS has_passed
     FROM attempt_entry a
-    LEFT JOIN attempt_chat_entry c ON c.attempt_id = a.id AND c.active = true
+    LEFT JOIN attempt_chat_entry ac ON ac.attempt_id = a.id
+    LEFT JOIN chat_resolved_entry c ON c.id = ac.chat_resolved_id AND c.active = true
     LEFT JOIN attempt_grade_entry g ON g.chat_id = c.id AND g.active = true
     LEFT JOIN LATERAL (
         SELECT archived FROM attempt_archive_entry

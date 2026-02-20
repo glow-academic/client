@@ -17,7 +17,7 @@ END $$;
 
 CREATE OR REPLACE FUNCTION socket_get_training_start_context_v4(
     p_profile_id uuid,
-    p_training_entry_id uuid,
+    p_chat_entry_id uuid,
     p_department_id uuid,
     p_draft_id uuid DEFAULT NULL
 )
@@ -54,13 +54,13 @@ AS $$
 WITH params AS (
     SELECT
         p_profile_id AS profile_id,
-        p_training_entry_id AS training_entry_id,
+        p_chat_entry_id AS chat_entry_id,
         p_department_id AS department_id,
         p_draft_id AS draft_id
 ),
 scope AS (
     SELECT
-        tb.id AS training_entry_id,
+        tb.id AS chat_entry_id,
         scj_conn.scenarios_id,
         COALESCE(hsc.simulations_id, psc.simulations_id) AS simulations_id,
         COALESCE(hcc.cohorts_id, pcc.cohorts_id) AS cohorts_id,
@@ -70,19 +70,19 @@ scope AS (
         s.active AS simulation_resource_active,
         sc.id AS scenario_artifact_id
     FROM params p
-    JOIN training_entry tb
-      ON tb.id = p.training_entry_id
+    JOIN chat_entry tb
+      ON tb.id = p.chat_entry_id
      AND tb.active = true
-    LEFT JOIN home_training_entry hte ON hte.training_id = tb.id
+    LEFT JOIN home_chat_entry hte ON hte.chat_id = tb.id
     LEFT JOIN home_entry he ON he.id = hte.home_id
-    LEFT JOIN practice_training_entry pte ON pte.training_id = tb.id
+    LEFT JOIN practice_chat_entry pte ON pte.chat_id = tb.id
     LEFT JOIN practice_entry pe ON pe.id = pte.practice_id
     LEFT JOIN home_simulations_connection hsc ON hsc.home_id = he.id AND hsc.active = true
     LEFT JOIN practice_simulations_connection psc ON psc.practice_id = pe.id AND psc.active = true
     LEFT JOIN home_cohorts_connection hcc ON hcc.home_id = he.id AND hcc.active = true
     LEFT JOIN practice_cohorts_connection pcc ON pcc.practice_id = pe.id AND pcc.active = true
-    LEFT JOIN training_scenarios_connection scj_conn
-      ON scj_conn.training_id = tb.id
+    LEFT JOIN chat_scenarios_connection scj_conn
+      ON scj_conn.chat_id = tb.id
      AND scj_conn.active = true
     LEFT JOIN simulation_simulations_junction ssj
       ON ssj.simulations_id = COALESCE(hsc.simulations_id, psc.simulations_id)
@@ -226,7 +226,7 @@ scenario_content AS (
         CASE
             WHEN p.draft_id IS NOT NULL THEN EXISTS (
                 SELECT 1
-                FROM training_drafts_personas_connection pdc
+                FROM chat_drafts_personas_connection pdc
                 WHERE pdc.draft_id = p.draft_id
             )
             ELSE EXISTS (
@@ -257,7 +257,7 @@ scenario_content AS (
             WHERE pa.id = COALESCE(
                 (
                     SELECT pdc.personas_id
-                    FROM training_drafts_personas_connection pdc
+                    FROM chat_drafts_personas_connection pdc
                     WHERE p.draft_id IS NOT NULL
                       AND pdc.draft_id = p.draft_id
                     LIMIT 1

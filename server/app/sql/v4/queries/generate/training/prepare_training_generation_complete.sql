@@ -42,7 +42,7 @@ END $$;
 -- 3) Create the function
 CREATE OR REPLACE FUNCTION socket_prepare_training_generation_v4(
     p_profile_id uuid,
-    p_training_entry_id uuid,
+    p_chat_entry_id uuid,
     p_department_id uuid,
     p_draft_id uuid DEFAULT NULL,
     p_resource_types text[] DEFAULT ARRAY['problem_statements', 'objectives', 'personas']
@@ -74,7 +74,7 @@ VOLATILE
 AS $$
 WITH scope AS (
     SELECT
-        tb.id AS training_entry_id,
+        tb.id AS chat_entry_id,
         scj_conn.scenarios_id AS scenarios_resource_id,
         COALESCE(hsc.simulations_id, psc.simulations_id) AS simulations_id,
         (
@@ -91,17 +91,17 @@ WITH scope AS (
               AND scj.active = true
             LIMIT 1
         ) AS scenario_artifact_id
-    FROM training_entry tb
-    LEFT JOIN home_training_entry hte ON hte.training_id = tb.id
+    FROM chat_entry tb
+    LEFT JOIN home_chat_entry hte ON hte.chat_id = tb.id
     LEFT JOIN home_entry he ON he.id = hte.home_id
-    LEFT JOIN practice_training_entry pte ON pte.training_id = tb.id
+    LEFT JOIN practice_chat_entry pte ON pte.chat_id = tb.id
     LEFT JOIN practice_entry pe ON pe.id = pte.practice_id
     LEFT JOIN home_simulations_connection hsc ON hsc.home_id = he.id AND hsc.active = true
     LEFT JOIN practice_simulations_connection psc ON psc.practice_id = pe.id AND psc.active = true
-    LEFT JOIN training_scenarios_connection scj_conn
-      ON scj_conn.training_id = tb.id
+    LEFT JOIN chat_scenarios_connection scj_conn
+      ON scj_conn.chat_id = tb.id
      AND scj_conn.active = true
-    WHERE tb.id = p_training_entry_id
+    WHERE tb.id = p_chat_entry_id
       AND tb.active = true
     LIMIT 1
 ),
@@ -371,7 +371,7 @@ current_content AS (
             WHERE pa.id = COALESCE(
                 (
                     SELECT pdc.personas_id
-                    FROM training_drafts_personas_connection pdc
+                    FROM chat_drafts_personas_connection pdc
                     WHERE p_draft_id IS NOT NULL
                       AND pdc.draft_id = p_draft_id
                     LIMIT 1

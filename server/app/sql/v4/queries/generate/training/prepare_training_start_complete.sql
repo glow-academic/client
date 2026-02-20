@@ -19,19 +19,19 @@ END $$;
 
 CREATE OR REPLACE FUNCTION socket_prepare_training_start_v4(
     p_profile_id uuid,
-    p_training_entry_id uuid,
+    p_chat_entry_id uuid,
     p_department_id uuid,
     p_draft_id uuid DEFAULT NULL
 )
 RETURNS TABLE (
-    training_department_id uuid,
+    chat_resolved_id uuid,
     scenario_id uuid
 )
 LANGUAGE plpgsql
 VOLATILE
 AS $$
 DECLARE
-    v_training_id uuid;
+    v_chat_id uuid;
     v_scenarios_resource_id uuid;
     v_scenario_artifact_id uuid;
     v_simulations_resource_id uuid;
@@ -48,7 +48,7 @@ DECLARE
     v_problem_statements_resource_id uuid;
     v_selected_department_id uuid;
 
-    v_training_department_id uuid;
+    v_chat_resolved_id uuid;
     v_config_signature text := 'runtime-v1';
     v_draft_persona_ids uuid[] := ARRAY[]::uuid[];
     v_draft_document_ids uuid[] := ARRAY[]::uuid[];
@@ -73,7 +73,7 @@ BEGIN
 
     -- Resolve training scope from bundle.
     SELECT
-        tb.training_id,
+        tb.chat_id,
         tb.scenarios_id,
         t.simulations_id,
         t.cohorts_id,
@@ -93,31 +93,31 @@ BEGIN
             LIMIT 1
         )
     INTO
-        v_training_id,
+        v_chat_id,
         v_scenarios_resource_id,
         v_simulations_resource_id,
         v_cohorts_resource_id,
         v_is_practice,
         v_simulation_artifact_id,
         v_scenario_artifact_id
-    FROM training_entry tb
-    JOIN training_entry t
-      ON t.id = tb.training_id
+    FROM chat_entry tb
+    JOIN chat_entry t
+      ON t.id = tb.chat_id
      AND t.active = true
-    WHERE tb.id = p_training_entry_id
+    WHERE tb.id = p_chat_entry_id
       AND tb.active = true
     LIMIT 1;
 
-    IF v_training_id IS NULL THEN
-        RAISE EXCEPTION 'Training bundle not found or inactive: %', p_training_entry_id;
+    IF v_chat_id IS NULL THEN
+        RAISE EXCEPTION 'Training bundle not found or inactive: %', p_chat_entry_id;
     END IF;
 
     IF v_simulations_resource_id IS NULL OR v_simulation_artifact_id IS NULL THEN
-        RAISE EXCEPTION 'Simulation scope not found for training bundle %', p_training_entry_id;
+        RAISE EXCEPTION 'Simulation scope not found for training bundle %', p_chat_entry_id;
     END IF;
 
     IF v_scenarios_resource_id IS NULL OR v_scenario_artifact_id IS NULL THEN
-        RAISE EXCEPTION 'Scenario scope not found for training bundle %', p_training_entry_id;
+        RAISE EXCEPTION 'Scenario scope not found for training bundle %', p_chat_entry_id;
     END IF;
 
     -- Resolve rubric/persona/problem statement from scenario scope.
@@ -147,22 +147,22 @@ BEGIN
     IF p_draft_id IS NOT NULL THEN
         SELECT ARRAY_AGG(DISTINCT pdc.personas_id)
         INTO v_draft_persona_ids
-        FROM training_drafts_personas_connection pdc
+        FROM chat_drafts_personas_connection pdc
         WHERE pdc.draft_id = p_draft_id;
 
         SELECT ARRAY_AGG(DISTINCT ddc.documents_id)
         INTO v_draft_document_ids
-        FROM training_drafts_documents_connection ddc
+        FROM chat_drafts_documents_connection ddc
         WHERE ddc.draft_id = p_draft_id;
 
         SELECT ARRAY_AGG(DISTINCT pfdc.parameter_fields_id)
         INTO v_draft_parameter_field_ids
-        FROM training_drafts_parameter_fields_connection pfdc
+        FROM chat_drafts_parameter_fields_connection pfdc
         WHERE pfdc.draft_id = p_draft_id;
 
         SELECT ddc.departments_id
         INTO v_selected_department_id
-        FROM training_drafts_departments_connection ddc
+        FROM chat_drafts_departments_connection ddc
         WHERE ddc.draft_id = p_draft_id
         ORDER BY ddc.version DESC NULLS LAST
         LIMIT 1;
@@ -170,18 +170,18 @@ BEGIN
 
     v_selected_department_id := COALESCE(v_selected_department_id, p_department_id);
 
-    -- Ensure department-scoped bundle exists at runtime.
-    SELECT tbd.id INTO v_training_department_id
-    FROM training_department_entry tbd
-    WHERE tbd.training_id = p_training_entry_id
-      AND tbd.departments_id = v_selected_department_id
-      AND tbd.active = true
-    ORDER BY tbd.created_at
+    -- Ensure department-scoped resolved entry exists at runtime.
+    SELECT cre.id INTO v_chat_resolved_id
+    FROM chat_resolved_entry cre
+    WHERE cre.chat_id = p_chat_entry_id
+      AND cre.departments_id = v_selected_department_id
+      AND cre.active = true
+    ORDER BY cre.created_at
     LIMIT 1;
 
-    IF v_training_department_id IS NULL THEN
-        INSERT INTO training_department_entry (
-            training_id,
+    IF v_chat_resolved_id IS NULL THEN
+        INSERT INTO chat_resolved_entry (
+            chat_id,
             departments_id,
             config_signature,
             created_at,
@@ -191,7 +191,7 @@ BEGIN
             mcp
         )
         VALUES (
-            p_training_entry_id,
+            p_chat_entry_id,
             v_selected_department_id,
             v_config_signature,
             NOW(),
@@ -200,23 +200,23 @@ BEGIN
             false,
             false
         )
-        ON CONFLICT (training_id, departments_id, config_signature)
+        ON CONFLICT (chat_id, departments_id, config_signature)
         DO UPDATE SET updated_at = NOW(), active = true
-        RETURNING id INTO v_training_department_id;
+        RETURNING id INTO v_chat_resolved_id;
     END IF;
 
     -- Ensure canonical scope links exist on sub-bundle.
-    INSERT INTO training_department_scenarios_connection (
-        training_department_id, scenarios_id, created_at, active, generated, mcp
+    INSERT INTO chat_resolved_scenarios_connection (
+        chat_resolved_id, scenarios_id, created_at, active, generated, mcp
     )
-    VALUES (v_training_department_id, v_scenarios_resource_id, NOW(), true, false, false)
-    ON CONFLICT (training_department_id, scenarios_id) DO NOTHING;
+    VALUES (v_chat_resolved_id, v_scenarios_resource_id, NOW(), true, false, false)
+    ON CONFLICT (chat_resolved_id, scenarios_id) DO NOTHING;
 
-    INSERT INTO training_department_time_limits_connection (
-        training_department_id, scenario_time_limits_id, created_at, active, generated, mcp
+    INSERT INTO chat_resolved_time_limits_connection (
+        chat_resolved_id, scenario_time_limits_id, created_at, active, generated, mcp
     )
     SELECT
-        v_training_department_id,
+        v_chat_resolved_id,
         stlr.id,
         NOW(),
         true,
@@ -229,14 +229,14 @@ BEGIN
     WHERE sstl.simulation_id = v_simulation_artifact_id
       AND sstl.active = true
       AND stlr.scenario_id = v_scenarios_resource_id
-    ON CONFLICT (training_department_id, scenario_time_limits_id) DO NOTHING;
+    ON CONFLICT (chat_resolved_id, scenario_time_limits_id) DO NOTHING;
 
     IF COALESCE(array_length(v_draft_persona_ids, 1), 0) > 0 OR v_personas_resource_id IS NOT NULL THEN
-        INSERT INTO training_department_personas_connection (
-            training_department_id, personas_id, created_at, active, generated, mcp
+        INSERT INTO chat_resolved_personas_connection (
+            chat_resolved_id, personas_id, created_at, active, generated, mcp
         )
         SELECT
-            v_training_department_id,
+            v_chat_resolved_id,
             pid,
             NOW(),
             true,
@@ -248,28 +248,28 @@ BEGIN
                 ELSE ARRAY[v_personas_resource_id]::uuid[]
             END
         ) AS pid
-        ON CONFLICT (training_department_id, personas_id) DO NOTHING;
+        ON CONFLICT (chat_resolved_id, personas_id) DO NOTHING;
     END IF;
 
     IF v_rubrics_resource_id IS NOT NULL THEN
-        INSERT INTO training_department_rubrics_connection (
-            training_department_id, rubrics_id, created_at, active, generated, mcp
+        INSERT INTO chat_resolved_rubrics_connection (
+            chat_resolved_id, rubrics_id, created_at, active, generated, mcp
         )
-        VALUES (v_training_department_id, v_rubrics_resource_id, NOW(), true, false, false)
-        ON CONFLICT (training_department_id, rubrics_id) DO NOTHING;
+        VALUES (v_chat_resolved_id, v_rubrics_resource_id, NOW(), true, false, false)
+        ON CONFLICT (chat_resolved_id, rubrics_id) DO NOTHING;
     END IF;
 
     IF v_problem_statements_resource_id IS NOT NULL THEN
-        INSERT INTO training_department_problem_statements_connection (
-            training_department_id, problem_statements_id, created_at, active, generated, mcp
+        INSERT INTO chat_resolved_problem_statements_connection (
+            chat_resolved_id, problem_statements_id, created_at, active, generated, mcp
         )
-        VALUES (v_training_department_id, v_problem_statements_resource_id, NOW(), true, false, false)
-        ON CONFLICT (training_department_id, problem_statements_id) DO NOTHING;
+        VALUES (v_chat_resolved_id, v_problem_statements_resource_id, NOW(), true, false, false)
+        ON CONFLICT (chat_resolved_id, problem_statements_id) DO NOTHING;
     END IF;
 
-    INSERT INTO training_department_documents_connection (training_department_id, documents_id, created_at, active, generated, mcp)
+    INSERT INTO chat_resolved_documents_connection (chat_resolved_id, documents_id, created_at, active, generated, mcp)
     SELECT DISTINCT
-        v_training_department_id,
+        v_chat_resolved_id,
         doc_id,
         NOW(),
         true,
@@ -285,11 +285,11 @@ BEGIN
         SELECT unnest(v_draft_document_ids)
         WHERE COALESCE(array_length(v_draft_document_ids, 1), 0) > 0
     ) selected_docs
-    ON CONFLICT (training_department_id, documents_id) DO NOTHING;
+    ON CONFLICT (chat_resolved_id, documents_id) DO NOTHING;
 
-    INSERT INTO training_department_parameter_fields_connection (training_department_id, parameter_fields_id, created_at, active, generated, mcp)
+    INSERT INTO chat_resolved_parameter_fields_connection (chat_resolved_id, parameter_fields_id, created_at, active, generated, mcp)
     SELECT DISTINCT
-        v_training_department_id,
+        v_chat_resolved_id,
         field_id,
         NOW(),
         true,
@@ -305,59 +305,59 @@ BEGIN
         SELECT unnest(v_draft_parameter_field_ids)
         WHERE COALESCE(array_length(v_draft_parameter_field_ids, 1), 0) > 0
     ) selected_fields
-    ON CONFLICT (training_department_id, parameter_fields_id) DO NOTHING;
+    ON CONFLICT (chat_resolved_id, parameter_fields_id) DO NOTHING;
 
-    INSERT INTO training_department_objectives_connection (training_department_id, objectives_id, created_at, active, generated, mcp)
-    SELECT DISTINCT v_training_department_id, soj.objective_id, NOW(), true, false, false
+    INSERT INTO chat_resolved_objectives_connection (chat_resolved_id, objectives_id, created_at, active, generated, mcp)
+    SELECT DISTINCT v_chat_resolved_id, soj.objective_id, NOW(), true, false, false
     FROM scenario_objectives_junction soj
     WHERE soj.scenario_id = v_scenario_artifact_id
       AND soj.active = true
-    ON CONFLICT (training_department_id, objectives_id) DO NOTHING;
+    ON CONFLICT (chat_resolved_id, objectives_id) DO NOTHING;
 
-    INSERT INTO training_department_questions_connection (training_department_id, questions_id, created_at, active, generated, mcp)
-    SELECT DISTINCT v_training_department_id, sqj.question_id, NOW(), true, false, false
+    INSERT INTO chat_resolved_questions_connection (chat_resolved_id, questions_id, created_at, active, generated, mcp)
+    SELECT DISTINCT v_chat_resolved_id, sqj.question_id, NOW(), true, false, false
     FROM scenario_questions_junction sqj
     WHERE sqj.scenario_id = v_scenario_artifact_id
       AND sqj.active = true
-    ON CONFLICT (training_department_id, questions_id) DO NOTHING;
+    ON CONFLICT (chat_resolved_id, questions_id) DO NOTHING;
 
-    INSERT INTO training_department_options_connection (training_department_id, options_id, created_at, active, generated, mcp)
-    SELECT DISTINCT v_training_department_id, soj.option_id, NOW(), true, false, false
+    INSERT INTO chat_resolved_options_connection (chat_resolved_id, options_id, created_at, active, generated, mcp)
+    SELECT DISTINCT v_chat_resolved_id, soj.option_id, NOW(), true, false, false
     FROM scenario_options_junction soj
     WHERE soj.scenario_id = v_scenario_artifact_id
       AND soj.active = true
-    ON CONFLICT (training_department_id, options_id) DO NOTHING;
+    ON CONFLICT (chat_resolved_id, options_id) DO NOTHING;
 
-    INSERT INTO training_department_videos_connection (training_department_id, videos_id, created_at, active, generated, mcp)
-    SELECT DISTINCT v_training_department_id, svj.video_id, NOW(), true, false, false
+    INSERT INTO chat_resolved_videos_connection (chat_resolved_id, videos_id, created_at, active, generated, mcp)
+    SELECT DISTINCT v_chat_resolved_id, svj.video_id, NOW(), true, false, false
     FROM scenario_videos_junction svj
     WHERE svj.scenario_id = v_scenario_artifact_id
       AND svj.active = true
-    ON CONFLICT (training_department_id, videos_id) DO NOTHING;
+    ON CONFLICT (chat_resolved_id, videos_id) DO NOTHING;
 
-    INSERT INTO training_department_images_connection (training_department_id, images_id, created_at, active, generated, mcp)
-    SELECT DISTINCT v_training_department_id, sij.image_id, NOW(), true, false, false
+    INSERT INTO chat_resolved_images_connection (chat_resolved_id, images_id, created_at, active, generated, mcp)
+    SELECT DISTINCT v_chat_resolved_id, sij.image_id, NOW(), true, false, false
     FROM scenario_images_junction sij
     WHERE sij.scenario_id = v_scenario_artifact_id
       AND sij.active = true
-    ON CONFLICT (training_department_id, images_id) DO NOTHING;
+    ON CONFLICT (chat_resolved_id, images_id) DO NOTHING;
 
     IF v_rubric_artifact_id IS NOT NULL THEN
-        INSERT INTO training_department_standards_connection (training_department_id, standards_id, created_at, active, generated, mcp)
-        SELECT DISTINCT v_training_department_id, rsj.standard_id, NOW(), true, false, false
+        INSERT INTO chat_resolved_standards_connection (chat_resolved_id, standards_id, created_at, active, generated, mcp)
+        SELECT DISTINCT v_chat_resolved_id, rsj.standard_id, NOW(), true, false, false
         FROM rubric_standards_junction rsj
         WHERE rsj.rubric_id = v_rubric_artifact_id
           AND rsj.active = true
-        ON CONFLICT (training_department_id, standards_id) DO NOTHING;
+        ON CONFLICT (chat_resolved_id, standards_id) DO NOTHING;
 
-        INSERT INTO training_department_standard_groups_connection (training_department_id, standard_groups_id, created_at, active, generated, mcp)
-        SELECT DISTINCT v_training_department_id, rsgj.standard_group_id, NOW(), true, false, false
+        INSERT INTO chat_resolved_standard_groups_connection (chat_resolved_id, standard_groups_id, created_at, active, generated, mcp)
+        SELECT DISTINCT v_chat_resolved_id, rsgj.standard_group_id, NOW(), true, false, false
         FROM rubric_standard_groups_junction rsgj
         WHERE rsgj.rubric_id = v_rubric_artifact_id
           AND rsgj.active = true
-        ON CONFLICT (training_department_id, standard_groups_id) DO NOTHING;
+        ON CONFLICT (chat_resolved_id, standard_groups_id) DO NOTHING;
     END IF;
 
-    RETURN QUERY SELECT v_training_department_id, v_scenario_artifact_id;
+    RETURN QUERY SELECT v_chat_resolved_id, v_scenario_artifact_id;
 END;
 $$;

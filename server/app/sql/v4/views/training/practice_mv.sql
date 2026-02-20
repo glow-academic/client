@@ -3,8 +3,8 @@
 --
 -- Grain: One row per practice_entry.id
 -- All resource IDs from practice_*_connection tables.
--- Training-level resources (scenario_ids) aggregated UP from
--- practice_training_entry → training_entry → training_scenarios_connection.
+-- Chat-level resources (scenario_ids) aggregated UP from
+-- practice_chat_entry -> chat_entry -> chat_scenarios_connection.
 
 DO $$
 DECLARE
@@ -98,12 +98,12 @@ persona_agg AS (
     WHERE pspc.active = true
     GROUP BY pspc.practice_id
 ),
--- Training level connections (aggregated UP to practice_entry via practice_training_entry)
-training_agg AS (
+-- Chat level connections (aggregated UP to practice_entry via practice_chat_entry)
+chat_agg AS (
     SELECT
         pte.practice_id,
-        ARRAY_AGG(DISTINCT pte.training_id ORDER BY pte.training_id) AS training_ids
-    FROM practice_training_entry pte
+        ARRAY_AGG(DISTINCT pte.chat_id ORDER BY pte.chat_id) AS chat_ids
+    FROM practice_chat_entry pte
     WHERE pte.active = true
     GROUP BY pte.practice_id
 ),
@@ -111,9 +111,9 @@ scenario_agg AS (
     SELECT
         pte.practice_id,
         ARRAY_AGG(DISTINCT tsc.scenarios_id ORDER BY tsc.scenarios_id) AS scenario_ids
-    FROM practice_training_entry pte
-    JOIN training_scenarios_connection tsc
-      ON tsc.training_id = pte.training_id AND tsc.active = true
+    FROM practice_chat_entry pte
+    JOIN chat_scenarios_connection tsc
+      ON tsc.chat_id = pte.chat_id AND tsc.active = true
     WHERE pte.active = true
     GROUP BY pte.practice_id
 )
@@ -133,8 +133,8 @@ SELECT
     COALESCE(pos.position_ids, ARRAY[]::uuid[]) AS position_ids,
     COALESCE(per.persona_ids, ARRAY[]::uuid[]) AS persona_ids,
 
-    -- Aggregated UP from training level
-    COALESCE(trn.training_ids, ARRAY[]::uuid[]) AS training_ids,
+    -- Aggregated UP from chat level
+    COALESCE(trn.chat_ids, ARRAY[]::uuid[]) AS chat_ids,
     COALESCE(scn.scenario_ids, ARRAY[]::uuid[]) AS scenario_ids,
 
     pe.created_at,
@@ -151,7 +151,7 @@ LEFT JOIN time_limit_agg tl ON tl.practice_id = pe.id
 LEFT JOIN flag_agg flg ON flg.practice_id = pe.id
 LEFT JOIN position_agg pos ON pos.practice_id = pe.id
 LEFT JOIN persona_agg per ON per.practice_id = pe.id
-LEFT JOIN training_agg trn ON trn.practice_id = pe.id
+LEFT JOIN chat_agg trn ON trn.practice_id = pe.id
 LEFT JOIN scenario_agg scn ON scn.practice_id = pe.id
 WHERE pe.active = true
 WITH NO DATA;

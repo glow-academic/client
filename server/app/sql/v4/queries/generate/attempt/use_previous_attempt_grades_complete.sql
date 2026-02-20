@@ -31,9 +31,13 @@ DECLARE
     v_skipped_chat_id uuid;
 BEGIN
     -- Create a chat entry for the skipped scenario
-    INSERT INTO attempt_chat_entry (attempt_id, active)
-    VALUES (p_attempt_id, true)
+    INSERT INTO chat_resolved_entry (active)
+    VALUES (true)
     RETURNING id INTO v_skipped_chat_id;
+
+    -- Bridge: link chat to attempt
+    INSERT INTO attempt_chat_entry (attempt_id, chat_resolved_id)
+    VALUES (p_attempt_id, v_skipped_chat_id);
 
     IF v_skipped_chat_id IS NULL THEN
         RETURN;

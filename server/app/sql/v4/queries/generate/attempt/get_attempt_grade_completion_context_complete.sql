@@ -31,12 +31,13 @@ AS $$
 SELECT
     g.id AS grade_id,
     g.chat_id,
-    c.attempt_id,
+    ac.attempt_id,
     sas.simulations_id AS simulation_id
 FROM attempt_grade_entry g
-JOIN attempt_chat_entry c ON c.id = g.chat_id
+JOIN chat_resolved_entry c ON c.id = g.chat_id
+JOIN attempt_chat_entry ac ON ac.chat_resolved_id = c.id
 LEFT JOIN attempt_simulations_connection sas
-    ON sas.attempt_id = c.attempt_id
+    ON sas.attempt_id = ac.attempt_id
    AND sas.active = true
 WHERE g.run_id = p_run_id
 ORDER BY g.created_at DESC

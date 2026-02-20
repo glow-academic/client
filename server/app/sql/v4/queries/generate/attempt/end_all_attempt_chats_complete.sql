@@ -38,8 +38,9 @@ BEGIN
     -- Mark all existing incomplete chats as completed
     FOR v_chat_record IN
         SELECT c.id
-        FROM attempt_chat_entry c
-        WHERE c.attempt_id = p_attempt_id AND c.active = TRUE
+        FROM chat_resolved_entry c
+        JOIN attempt_chat_entry ac ON ac.chat_resolved_id = c.id
+        WHERE ac.attempt_id = p_attempt_id AND c.active = TRUE
     LOOP
         INSERT INTO attempt_completion_entry (chat_id)
         VALUES (v_chat_record.id)
@@ -49,27 +50,32 @@ BEGIN
 
     -- Count existing chats
     SELECT COUNT(*) INTO v_existing_chat_count
-    FROM attempt_chat_entry c
-    WHERE c.attempt_id = p_attempt_id AND c.active = TRUE;
+    FROM chat_resolved_entry c
+    JOIN attempt_chat_entry ac ON ac.chat_resolved_id = c.id
+    WHERE ac.attempt_id = p_attempt_id AND c.active = TRUE;
 
     -- Count expected scenarios from training bundle
     SELECT COUNT(DISTINCT tsc.scenarios_id) INTO v_expected_scenario_count
     FROM attempt_entry a
     LEFT JOIN attempt_practice_entry apc ON apc.attempt_id = a.id AND apc.active = true
-    LEFT JOIN practice_training_entry pte ON pte.practice_id = apc.practice_id AND pte.active = true
+    LEFT JOIN practice_chat_entry pte ON pte.practice_id = apc.practice_id AND pte.active = true
     LEFT JOIN attempt_home_entry ahc ON ahc.attempt_id = a.id AND ahc.active = true
-    LEFT JOIN home_training_entry hte ON hte.home_id = ahc.home_id AND hte.active = true
-    JOIN training_scenarios_connection tsc
-      ON tsc.training_id = COALESCE(pte.training_id, hte.training_id)
+    LEFT JOIN home_chat_entry hte ON hte.home_id = ahc.home_id AND hte.active = true
+    JOIN chat_scenarios_connection tsc
+      ON tsc.chat_id = COALESCE(pte.chat_id, hte.chat_id)
      AND tsc.active = true
     WHERE a.id = p_attempt_id;
 
     -- Create stub chats for missing scenarios (count-based, no scenario linkage)
     FOR v_i IN 1..GREATEST(v_expected_scenario_count - v_existing_chat_count, 0)
     LOOP
-        INSERT INTO attempt_chat_entry (attempt_id, active)
-        VALUES (p_attempt_id, true)
+        INSERT INTO chat_resolved_entry (active)
+        VALUES (true)
         RETURNING id INTO v_stub_chat_id;
+
+        -- Bridge: link stub chat to attempt
+        INSERT INTO attempt_chat_entry (attempt_id, chat_resolved_id)
+        VALUES (p_attempt_id, v_stub_chat_id);
 
         IF v_stub_chat_id IS NOT NULL THEN
             INSERT INTO attempt_completion_entry (chat_id)

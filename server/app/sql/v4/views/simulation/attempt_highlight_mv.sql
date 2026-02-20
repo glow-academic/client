@@ -43,8 +43,9 @@ FROM attempt_highlight_entry h
 JOIN attempt_strength_entry s ON s.id = h.strength_id
 JOIN attempt_message_entry sm ON sm.id = s.message_id
 JOIN messages_entry m ON m.id = sm.id
-JOIN attempt_chat_entry c ON c.id = sm.chat_id
-JOIN attempt_entry a ON a.id = c.attempt_id
+JOIN chat_resolved_entry c ON c.id = sm.chat_id
+JOIN attempt_chat_entry ac ON ac.chat_resolved_id = c.id
+JOIN attempt_entry a ON a.id = ac.attempt_id
 LEFT JOIN LATERAL (
     SELECT archived FROM attempt_archive_entry
     WHERE attempt_id = a.id AND active = TRUE ORDER BY created_at DESC LIMIT 1

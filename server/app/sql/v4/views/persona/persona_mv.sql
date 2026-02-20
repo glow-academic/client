@@ -24,7 +24,7 @@ CREATE UNIQUE INDEX persona_mv_pk ON persona_mv (id);
 
 -- Step 5: Filter indexes
 CREATE INDEX persona_mv_created_at_idx ON persona_mv (created_at DESC);
-CREATE INDEX persona_mv_training_id_idx ON persona_mv (training_id);
+CREATE INDEX persona_mv_chat_id_idx ON persona_mv (chat_id);
 
 -- Step 6: Refresh
 REFRESH MATERIALIZED VIEW persona_mv;

@@ -35,8 +35,8 @@ BEGIN
             'infinite_mode', m.infinite_mode,
             'is_archived', m.is_archived,
             'scenario_ids', m.scenario_ids,
-            'training_entry_id', m.training_entry_id,
-            'training_department_id', m.training_department_id
+            'chat_entry_id', m.chat_entry_id,
+            'chat_resolved_id', m.chat_resolved_id
         )
     ) AS items
     FROM attempt_mv m
