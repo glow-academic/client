@@ -38,3 +38,74 @@ class GeneratePayload(BaseModel):
     attempt_id: str | None = None
     training_department_id: str | None = None
     staff_id: str | None = None
+
+
+# ---------------------------------------------------------------------------
+# Lifecycle
+# ---------------------------------------------------------------------------
+
+
+class ConnectionConfirmedPayload(BaseModel):
+    """Server-to-client: connection confirmed."""
+
+    sid: str
+    profile_id: str | None
+    guest_id: str | None
+    server_time: float
+
+
+# ---------------------------------------------------------------------------
+# Attempt room management
+# ---------------------------------------------------------------------------
+
+
+class AttemptJoinPayload(BaseModel):
+    """Client-to-server: join a chat room for real-time updates."""
+
+    chat_id: UUID
+
+
+class AttemptLeavePayload(BaseModel):
+    """Client-to-server: leave a chat room."""
+
+    chat_id: UUID
+
+
+class AttemptJoinedEvent(BaseModel):
+    """Server-to-client: successfully joined a chat room."""
+
+    chat_id: str
+    success: bool
+
+
+# ---------------------------------------------------------------------------
+# Test room management
+# ---------------------------------------------------------------------------
+
+
+class TestJoinPayload(BaseModel):
+    """Client-to-server: join a test room for real-time updates."""
+
+    invocation_id: UUID
+
+
+class TestLeavePayload(BaseModel):
+    """Client-to-server: leave a test room."""
+
+    invocation_id: UUID
+
+
+class TestJoinedEvent(BaseModel):
+    """Server-to-client: successfully joined a test room."""
+
+    invocation_id: str
+    success: bool = True
+
+
+class TestErrorEvent(BaseModel):
+    """Server-to-client: test error."""
+
+    invocation_id: str | None = None
+    run_id: str | None = None
+    message: str
+    error_type: str | None = None

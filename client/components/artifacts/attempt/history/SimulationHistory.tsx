@@ -45,7 +45,6 @@ import {
 } from "@/components/ui/tooltip";
 import { useProfile } from "@/contexts/profile-context";
 import { useSocket } from "@/contexts/socket-context";
-import type { OutputOf } from "@/lib/api/types";
 import {
   Column,
   ColumnDef,
@@ -73,14 +72,9 @@ import * as React from "react";
 import { toast } from "sonner";
 import { SingleProfileCertificateButton } from "./SingleProfileCertificateButton";
 
-// Use strong server types directly (union of all history endpoint types)
-type HomeHistoryData = NonNullable<OutputOf<"/api/v4/home/list", "post">["data"]>;
-type DashboardHistoryData = NonNullable<OutputOf<"/api/v4/artifacts/attempt/list", "post">["data"]>;
-type PracticeHistoryData = NonNullable<OutputOf<"/api/v4/artifacts/attempt/list", "post">["data"]>;
-export type HistoryDataItem =
-  | (HomeHistoryData extends Array<infer T> ? T : never)
-  | (DashboardHistoryData extends Array<infer T> ? T : never)
-  | (PracticeHistoryData extends Array<infer T> ? T : never);
+// Use strong server types directly
+import type { components } from "@/lib/api/schema";
+export type HistoryDataItem = components["schemas"]["HistoryItem"];
 
 // Inlined row actions component (from DataTableRowActions)
 function HistoryRowActions({

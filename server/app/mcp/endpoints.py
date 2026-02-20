@@ -54,7 +54,6 @@ ARTIFACT_REGISTRY: dict[str, dict[str, tuple[str, str]]] = {
     },
     "attempt": {
         "get": ("app.api.v4.artifacts.attempt.get", "attempt_get"),
-        "list": ("app.api.v4.artifacts.attempt.list", "list_attempts"),
         "docs": ("app.api.v4.artifacts.attempt.docs", "get_attempts_docs"),
     },
     "auth": {
@@ -134,7 +133,6 @@ ARTIFACT_REGISTRY: dict[str, dict[str, tuple[str, str]]] = {
     },
     "group": {
         "get": ("app.api.v4.artifacts.group.get", "get_group"),
-        "list": ("app.api.v4.artifacts.group.list", "list_groups"),
         "docs": ("app.api.v4.artifacts.group.docs", "get_groups_docs"),
     },
     "health": {
@@ -231,7 +229,6 @@ ARTIFACT_REGISTRY: dict[str, dict[str, tuple[str, str]]] = {
     },
     "session": {
         "get": ("app.api.v4.artifacts.session.get", "get_session"),
-        "list": ("app.api.v4.artifacts.session.list", "list_sessions"),
         "docs": ("app.api.v4.artifacts.session.docs", "get_sessions_docs"),
     },
     "setting": {
@@ -257,7 +254,6 @@ ARTIFACT_REGISTRY: dict[str, dict[str, tuple[str, str]]] = {
     },
     "test": {
         "get": ("app.api.v4.artifacts.test.get", "get_test_artifact"),
-        "list": ("app.api.v4.artifacts.test.list", "list_test_artifacts"),
         "docs": ("app.api.v4.artifacts.test.docs", "get_tests_docs"),
     },
     "tool": {

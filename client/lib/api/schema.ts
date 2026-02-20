@@ -2566,26 +2566,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v4/artifacts/group/list": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * List Groups
-         * @description Get paginated group list with resource hydration.
-         */
-        post: operations["list_groups_api_v4_artifacts_group_list_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v4/artifacts/group/docs": {
         parameters: {
             query?: never;
@@ -2617,26 +2597,6 @@ export interface paths {
          * @description Get session detail with paginated audits and groups.
          */
         post: operations["get_session_api_v4_artifacts_session_get_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/artifacts/session/list": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * List Sessions
-         * @description Get paginated session list with resource hydration.
-         */
-        post: operations["list_sessions_api_v4_artifacts_session_list_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2799,26 +2759,6 @@ export interface paths {
          *     The practice flag is determined from the attempt data itself.
          */
         post: operations["attempt_get_api_v4_artifacts_attempt_get_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/artifacts/attempt/list": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * List Attempts
-         * @description Get unified attempt history list for home/practice style screens.
-         */
-        post: operations["list_attempts_api_v4_artifacts_attempt_list_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3454,26 +3394,6 @@ export interface paths {
          * @description Get benchmark test artifact details with tests/invocations in parallel.
          */
         post: operations["get_test_artifact_api_v4_artifacts_test_get_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/artifacts/test/list": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * List Test Artifacts
-         * @description List benchmark tests with enriched names.
-         */
-        post: operations["list_test_artifacts_api_v4_artifacts_test_list_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -32931,8 +32851,7 @@ export interface components {
              * @default 0
              */
             total_count: number;
-            /** History */
-            history?: unknown;
+            history?: components["schemas"]["GetSessionListResponse"] | null;
         };
         /**
          * ActivityViewItem
@@ -34664,75 +34583,6 @@ export interface components {
              * Format: uuid
              */
             chat_id: string;
-        };
-        /**
-         * AttemptListFilterOption
-         * @description Filter option for attempt history dropdowns.
-         */
-        AttemptListFilterOption: {
-            /** Value */
-            value: string;
-            /** Label */
-            label?: string | null;
-            /** Count */
-            count?: number | null;
-        };
-        /**
-         * AttemptListItem
-         * @description Unified attempt history row shape.
-         */
-        AttemptListItem: {
-            /**
-             * Attempt Id
-             * Format: uuid
-             */
-            attempt_id: string;
-            /** Date */
-            date?: string | null;
-            /** Profile Id */
-            profile_id?: string | null;
-            /** Profile Name */
-            profile_name?: string | null;
-            /** Simulation Id */
-            simulation_id?: string | null;
-            /** Simulation Name */
-            simulation_name?: string | null;
-            /** Num Scenarios */
-            num_scenarios?: number | null;
-            /** Num Scenarios Completed */
-            num_scenarios_completed?: number | null;
-            /** Infinite Mode */
-            infinite_mode?: boolean | null;
-            /** Time Limit */
-            time_limit?: number | null;
-            /** Persona Names Junction */
-            persona_names_junction?: string[] | null;
-            /** Persona Colors Junction */
-            persona_colors_junction?: string[] | null;
-            /** Scenario Ids */
-            scenario_ids?: string[] | null;
-            /** Scenario Titles */
-            scenario_titles?: string[] | null;
-            /** Department Ids */
-            department_ids?: string[] | null;
-            /** Cohort Names Junction */
-            cohort_names_junction?: string[] | null;
-            /** Score */
-            score?: number | null;
-            /** Score Status */
-            score_status?: string | null;
-            /** Pass Pct */
-            pass_pct?: number | null;
-            /** Show View */
-            show_view?: boolean | null;
-            /** Show Continue */
-            show_continue?: boolean | null;
-            /** Is Archived */
-            is_archived?: boolean | null;
-            /** Practice Simulation */
-            practice_simulation?: boolean | null;
-            /** Practice Scenario Id */
-            practice_scenario_id?: string | null;
         };
         /**
          * AttemptMessageTreeGenerationEvent
@@ -43403,102 +43253,6 @@ export interface components {
             /** Items */
             items?: unknown | null;
         };
-        /**
-         * GetAttemptListRequest
-         * @description Request for unified attempt list/history fetch.
-         */
-        GetAttemptListRequest: {
-            /**
-             * Practice
-             * @default false
-             */
-            practice: boolean;
-            /** Target Profile Id */
-            target_profile_id?: string | null;
-            /** Start Date */
-            start_date?: string | null;
-            /** End Date */
-            end_date?: string | null;
-            /** Cohort Ids */
-            cohort_ids?: string[] | null;
-            /** Department Ids */
-            department_ids?: string[] | null;
-            /** Simulation Ids */
-            simulation_ids?: string[] | null;
-            /** Scenario Ids */
-            scenario_ids?: string[] | null;
-            /** Infinite Mode */
-            infinite_mode?: boolean | null;
-            /** Search */
-            search?: string | null;
-            /** Profile Search */
-            profile_search?: string | null;
-            /** Simulation Search */
-            simulation_search?: string | null;
-            /** Scenario Search */
-            scenario_search?: string | null;
-            /**
-             * Sort By
-             * @default date
-             */
-            sort_by: string | null;
-            /**
-             * Sort Order
-             * @default desc
-             */
-            sort_order: string | null;
-            /**
-             * Page
-             * @default 0
-             */
-            page: number;
-            /**
-             * Page Size
-             * @default 20
-             */
-            page_size: number;
-            /**
-             * Show Archived
-             * @default false
-             */
-            show_archived: boolean;
-        };
-        /**
-         * GetAttemptListResponse
-         * @description Response for unified attempt list/history fetch.
-         */
-        GetAttemptListResponse: {
-            /** Actor Name */
-            actor_name?: string | null;
-            /** Data */
-            data?: components["schemas"]["AttemptListItem"][];
-            /**
-             * Total Count
-             * @default 0
-             */
-            total_count: number;
-            /**
-             * Page
-             * @default 0
-             */
-            page: number;
-            /**
-             * Page Size
-             * @default 20
-             */
-            page_size: number;
-            /**
-             * Total Pages
-             * @default 0
-             */
-            total_pages: number;
-            /** Simulation Options */
-            simulation_options?: components["schemas"]["AttemptListFilterOption"][] | null;
-            /** Scenario Options */
-            scenario_options?: components["schemas"]["AttemptListFilterOption"][] | null;
-            /** Profile Options */
-            profile_options?: components["schemas"]["AttemptListFilterOption"][] | null;
-        };
         /** GetAttemptMessageEntriesApiRequest */
         GetAttemptMessageEntriesApiRequest: {
             /** Ids */
@@ -44674,43 +44428,6 @@ export interface components {
             agents?: components["schemas"]["GroupDetailResourceItem"][];
             /** Profiles */
             profiles?: components["schemas"]["GroupDetailResourceItem"][];
-        };
-        /**
-         * GetGroupListRequest
-         * @description Request for group list endpoint.
-         */
-        GetGroupListRequest: {
-            /** Session Id */
-            session_id?: string | null;
-            /** Agent Id */
-            agent_id?: string | null;
-            /** Model Id */
-            model_id?: string | null;
-            /** Date From */
-            date_from?: string | null;
-            /** Date To */
-            date_to?: string | null;
-            /**
-             * Sort By
-             * @description 'date' | 'cost' | 'tokens' | 'runs'
-             * @default date
-             */
-            sort_by: string;
-            /**
-             * Sort Order
-             * @default desc
-             */
-            sort_order: string;
-            /**
-             * Page Limit
-             * @default 50
-             */
-            page_limit: number;
-            /**
-             * Page Offset
-             * @default 0
-             */
-            page_offset: number;
         };
         /**
          * GetGroupListResponse
@@ -46471,43 +46188,6 @@ export interface components {
             groups?: components["schemas"]["ArtifactSessionGroup"][];
         };
         /**
-         * GetSessionListRequest
-         * @description Request for session list endpoint.
-         */
-        GetSessionListRequest: {
-            /** Active */
-            active?: boolean | null;
-            /** Date From */
-            date_from?: string | null;
-            /** Date To */
-            date_to?: string | null;
-            /** Department Ids */
-            department_ids?: string[];
-            /** Roles */
-            roles?: string[];
-            /**
-             * Sort By
-             * @description 'date' | 'cost' | 'tokens' | 'groups' | 'runs'
-             * @default date
-             */
-            sort_by: string;
-            /**
-             * Sort Order
-             * @default desc
-             */
-            sort_order: string;
-            /**
-             * Page Limit
-             * @default 50
-             */
-            page_limit: number;
-            /**
-             * Page Offset
-             * @default 0
-             */
-            page_offset: number;
-        };
-        /**
          * GetSessionListResponse
          * @description Response for session list endpoint.
          */
@@ -47059,71 +46739,6 @@ export interface components {
         GetTestInsightsEntriesApiResponse: {
             /** Items */
             items?: unknown | null;
-        };
-        /**
-         * GetTestListRequest
-         * @description Request for benchmark test list artifact.
-         */
-        GetTestListRequest: {
-            /** Start Date */
-            start_date?: string | null;
-            /** End Date */
-            end_date?: string | null;
-            /** Eval Ids */
-            eval_ids?: string[];
-            /** Department Ids */
-            department_ids?: string[];
-            /**
-             * Page
-             * @default 0
-             */
-            page: number;
-            /**
-             * Page Size
-             * @default 10
-             */
-            page_size: number;
-            /** Search */
-            search?: string | null;
-            /** Status */
-            status?: string | null;
-            /** Archived */
-            archived?: boolean | null;
-            /**
-             * Sort By
-             * @default date
-             */
-            sort_by: string;
-            /**
-             * Sort Order
-             * @default desc
-             */
-            sort_order: string;
-        };
-        /**
-         * GetTestListResponse
-         * @description Response for benchmark tests list artifact.
-         */
-        GetTestListResponse: {
-            /** Data */
-            data?: components["schemas"]["TestListItem"][];
-            /**
-             * Total Count
-             * @default 0
-             */
-            total_count: number;
-            /**
-             * Page
-             * @default 0
-             */
-            page: number;
-            /**
-             * Page Size
-             * @default 10
-             */
-            page_size: number;
-            /** Eval Options */
-            eval_options?: components["schemas"]["TestListFilterOption"][];
         };
         /** GetTestStopEntriesApiRequest */
         GetTestStopEntriesApiRequest: {
@@ -68553,66 +68168,6 @@ export interface components {
             invocation_id: string;
         };
         /**
-         * TestListFilterOption
-         * @description Filter option row for tests list.
-         */
-        TestListFilterOption: {
-            /** Value */
-            value: string;
-            /** Label */
-            label?: string | null;
-            /**
-             * Count
-             * @default 0
-             */
-            count: number;
-        };
-        /**
-         * TestListItem
-         * @description List row for benchmark tests.
-         */
-        TestListItem: {
-            /** Attempt Id */
-            attempt_id: string;
-            /** Eval Id */
-            eval_id?: string | null;
-            /** Eval Name */
-            eval_name?: string | null;
-            /** Eval Description */
-            eval_description?: string | null;
-            /** Rubric Id */
-            rubric_id?: string | null;
-            /** Rubric Name */
-            rubric_name?: string | null;
-            /** Created At */
-            created_at?: string | null;
-            /**
-             * Archived
-             * @default false
-             */
-            archived: boolean;
-            /**
-             * Status
-             * @default pending
-             */
-            status: string;
-            /**
-             * Total Runs
-             * @default 0
-             */
-            total_runs: number;
-            /**
-             * Completed Runs
-             * @default 0
-             */
-            completed_runs: number;
-            /**
-             * Pending Runs
-             * @default 0
-             */
-            pending_runs: number;
-        };
-        /**
          * TestProgressEvent
          * @description Server-to-client event: test_progress.
          *
@@ -75891,43 +75446,6 @@ export interface operations {
             };
         };
     };
-    list_groups_api_v4_artifacts_group_list_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["GetGroupListRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GetGroupListResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     get_group_docs_endpoint_api_v4_artifacts_group_docs_post: {
         parameters: {
             query?: never;
@@ -75987,43 +75505,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["GetSessionDetailResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    list_sessions_api_v4_artifacts_session_list_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["GetSessionListRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GetSessionListResponse"];
                 };
             };
             /** @description Validation Error */
@@ -76318,43 +75799,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["GetAttemptDetailResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    list_attempts_api_v4_artifacts_attempt_list_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["GetAttemptListRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GetAttemptListResponse"];
                 };
             };
             /** @description Validation Error */
@@ -77533,43 +76977,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["GetTestArtifactResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    list_test_artifacts_api_v4_artifacts_test_list_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["GetTestListRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GetTestListResponse"];
                 };
             };
             /** @description Validation Error */
