@@ -14,14 +14,12 @@ import {
   resolveAnalyticsFilters,
 } from "@/lib/search-params/analytics-defaults";
 import type { Metadata } from "next";
-import { Suspense } from "react";
 import { loadActivitySearchParams } from "@/lib/search-params/activity";
 
 /** ---- Strong types from OpenAPI ---- */
 type ActivityBundleIn = InputOf<"/api/v4/artifacts/activity/get", "post">;
 type ActivityBundleOut = OutputOf<"/api/v4/artifacts/activity/get", "post">;
-type ActivityListIn = InputOf<"/api/v4/artifacts/session/list", "post">;
-type ActivityListOut = OutputOf<"/api/v4/artifacts/session/list", "post">;
+type ActivityListOut = NonNullable<ActivityBundleOut["history"]>;
 
 export type ActivityOut = {
   bundleData: ActivityBundleOut | null;
@@ -35,21 +33,6 @@ const getActivityBundle = async (
   const bypassCache = await isHardRefresh();
 
   return api.post("/artifacts/activity/get", input, {
-    cache: "no-store",
-    ...(bypassCache && {
-      headers: {
-        "X-Bypass-Cache": "1",
-      },
-    }),
-  });
-};
-
-const getActivityList = async (
-  input: ActivityListIn
-): Promise<ActivityListOut> => {
-  const bypassCache = await isHardRefresh();
-
-  return api.post("/artifacts/session/list", input, {
     cache: "no-store",
     ...(bypassCache && {
       headers: {
@@ -89,20 +72,8 @@ export default async function ActivityPage({
   // Activity-specific params with defaults
   const activityPage = q.activityPage ?? 0;
   const activityPageSize = q.activityPageSize ?? 50;
-  const activitySearch = q.activitySearch ?? undefined;
 
-  // Create activityKey for Suspense boundary to trigger re-fetch on URL param changes
-  const activityKey = [
-    activityPage,
-    activityPageSize,
-    activitySearch || "",
-    filters.startDate,
-    filters.endDate,
-    filters.departmentIds.join(","),
-    filters.roles.join(","),
-  ].join("|");
-
-  // Fetch bundle data server-side (no pagination)
+  // Fetch bundle + embedded session history in a single API call
   const bundleData = await getActivityBundle({
     body: {
       date_from: filters.startDate,
@@ -111,11 +82,17 @@ export default async function ActivityPage({
       roles: filters.roles,
       page_limit: 50,
       page_offset: 0,
+      // Embedded session history params
+      history_enabled: true,
+      history_page: activityPage,
+      history_page_size: activityPageSize,
+      history_sort_by: "date",
+      history_sort_order: "desc",
     },
   });
 
-  // Create empty sessions data for loading state
-  const emptyActivityData: ActivityListOut = {
+  // Extract embedded history or use empty fallback
+  const activityData: ActivityListOut = bundleData.history ?? {
     items: [],
     total_count: 0,
     page: activityPage,
@@ -125,74 +102,16 @@ export default async function ActivityPage({
 
   return (
     <div className="space-y-6" data-page="activity-index">
-      <Suspense
-        key={activityKey}
-        fallback={
-          <Activity
-            activityData={{
-              bundleData,
-              activityData: emptyActivityData,
-            }}
-            isLoading={true}
-          />
-        }
-      >
-        <ActivityListSection
-          bundleData={bundleData}
-          filters={filters}
-          activityPage={activityPage}
-          activityPageSize={activityPageSize}
-        />
-      </Suspense>
+      <Activity
+        activityData={{
+          bundleData,
+          activityData,
+        }}
+        isLoading={false}
+      />
     </div>
   );
 }
 
-/** ---- Inline activity list section component (only used here) ---- */
-async function ActivityListSection({
-  bundleData,
-  filters,
-  activityPage,
-  activityPageSize,
-}: {
-  bundleData: ActivityBundleOut;
-  filters: {
-    startDate: string;
-    endDate: string;
-    departmentIds: string[];
-    roles: string[];
-  };
-  activityPage: number;
-  activityPageSize: number;
-}) {
-  const activityListData = await getActivityList({
-    body: {
-      date_from: filters.startDate,
-      date_to: filters.endDate,
-      department_ids: filters.departmentIds,
-      roles: filters.roles,
-      sort_by: "date",
-      sort_order: "desc",
-      page_limit: activityPageSize,
-      page_offset: activityPage * activityPageSize,
-    },
-  });
-
-  return (
-    <Activity
-      activityData={{
-        bundleData,
-        activityData: activityListData,
-      }}
-      isLoading={false}
-    />
-  );
-}
-
 /** ---- Export types for client (type-only imports) ---- */
-export type {
-  ActivityBundleIn,
-  ActivityBundleOut,
-  ActivityListIn,
-  ActivityListOut,
-};
+export type { ActivityBundleIn, ActivityBundleOut, ActivityListOut };

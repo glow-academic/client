@@ -96,13 +96,13 @@ LEFT JOIN attempt_scenarios ascn ON ascn.attempt_id = a.id
 -- Training context: resolve training_entry_id + chat_resolved_id (LATERAL for 1:1)
 LEFT JOIN LATERAL (
     SELECT
-        COALESCE(pte.training_id, hte.training_id) AS training_entry_id,
+        COALESCE(pte.chat_id, hte.chat_id) AS training_entry_id,
         cr.id AS chat_resolved_id
     FROM (SELECT 1) _dummy
     LEFT JOIN attempt_practice_entry ape ON ape.attempt_id = a.id AND ape.active = true
-    LEFT JOIN practice_training_entry pte ON pte.practice_id = ape.practice_id AND pte.active = true
+    LEFT JOIN practice_chat_entry pte ON pte.practice_id = ape.practice_id AND pte.active = true
     LEFT JOIN attempt_home_entry ahe ON ahe.attempt_id = a.id AND ahe.active = true
-    LEFT JOIN home_training_entry hte ON hte.home_id = ahe.home_id AND hte.active = true
+    LEFT JOIN home_chat_entry hte ON hte.home_id = ahe.home_id AND hte.active = true
     LEFT JOIN attempt_chat_entry ac_ctx ON ac_ctx.attempt_id = a.id
     LEFT JOIN chat_resolved_entry cr ON cr.id = ac_ctx.chat_resolved_id AND cr.active = true
     LIMIT 1

@@ -74,7 +74,7 @@ accessible_training AS (
         mh.home_id AS parent_id,
         mh.simulation_ids,
         mh.cohort_ids,
-        mh.training_ids AS training_entry_ids,
+        mh.chat_ids AS training_entry_ids,
         mh.scenario_ids,
         mh.persona_ids,
         mh.rubric_ids,

@@ -12,6 +12,7 @@ from uuid import UUID
 import asyncpg
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
+from app.api.v4.artifacts.chat.get import get_chat_internal
 from app.api.v4.artifacts.chat.permissions import (
     compute_pass_pct,
     compute_score_status,
@@ -26,13 +27,20 @@ from app.api.v4.artifacts.chat.types import (
     StandardGroupMapping,
     StandardMapping,
 )
-from app.api.v4.artifacts.practice.types import GetPracticeRequest, GetPracticeResponse
+from app.api.v4.artifacts.practice.types import (
+    GetPracticeRequest,
+    GetPracticeResponse,
+    GetPracticeWebsocketResponse,
+    PracticeWebsocketResources,
+    PracticeWebsocketViews,
+)
 from app.api.v4.artifacts.types import FilterOption, HistoryItem, HistoryResponse
 from app.api.v4.auth.profile import get_auth_profile_internal
 from app.api.v4.entries.attempt.get import ChatViewItem, get_attempt_chats_internal
 from app.api.v4.entries.attempt.search import get_attempt_list_internal
 from app.api.v4.entries.chat.get import ChatItem, GetChatsResponse, get_chats_internal
 from app.api.v4.entries.practice.get import get_practice_context_view_internal
+from app.api.v4.entries.runs.search import get_run_list_entries_internal
 from app.api.v4.resources.cohorts.get import get_cohorts_internal
 from app.api.v4.resources.personas.get import get_personas_internal
 from app.api.v4.resources.profiles.get import get_profiles_internal
@@ -839,6 +847,83 @@ async def get_practice_internal(
         standard_groups=standard_groups,
         standards=standards,
         history=history_result,
+    )
+
+
+# =============================================================================
+# Websocket wrapper
+# =============================================================================
+
+
+async def get_practice_websocket(
+    pool: asyncpg.Pool,
+    profile_id: UUID,
+    training_entry_id: UUID,
+    draft_id: UUID | None = None,
+    bypass_cache: bool = False,
+) -> GetPracticeWebsocketResponse:
+    """Independent websocket wrapper for practice generation — config chain + bundle resources."""
+
+    async def fetch_bundle():
+        return await get_chat_internal(
+            pool=pool,
+            profile_id=profile_id,
+            training_entry_id=training_entry_id,
+            draft_id=draft_id,
+            bypass_cache=bypass_cache,
+        )
+
+    async def fetch_config_profile():
+        async with pool.acquire() as conn:
+            return await get_profiles_internal(conn, [profile_id], bypass_cache)
+
+    async def fetch_runs_today():
+        from datetime import UTC, datetime
+
+        today_utc = datetime.now(UTC).replace(hour=0, minute=0, second=0, microsecond=0)
+        tomorrow_utc = today_utc.replace(hour=23, minute=59, second=59)
+        async with pool.acquire() as conn:
+            return await get_run_list_entries_internal(
+                conn=conn,
+                profile_id_filter=profile_id,
+                date_from=today_utc,
+                date_to=tomorrow_utc,
+                page_limit=1,
+                bypass_cache=True,
+            )
+
+    (data, config_profile_result, runs_result) = await asyncio.gather(
+        fetch_bundle(),
+        fetch_config_profile(),
+        fetch_runs_today(),
+    )
+
+    return GetPracticeWebsocketResponse(
+        views=PracticeWebsocketViews(
+            draft_training=data.draft_item,
+            runs=runs_result,
+        ),
+        resources=PracticeWebsocketResources(
+            departments=data.current_resources.get("departments") or None,
+            personas=data.current_resources.get("personas") or None,
+            documents=data.current_resources.get("documents") or None,
+            parameter_fields=data.current_resources.get("parameter_fields") or None,
+            scenarios=data.current_resources.get("scenarios") or None,
+            parameters=data.current_resources.get("parameters") or None,
+            questions=data.current_resources.get("questions") or None,
+            options=data.current_resources.get("options") or None,
+            videos=data.current_resources.get("videos") or None,
+            images=data.current_resources.get("images") or None,
+            problem_statements=data.current_resources.get("problem_statements") or None,
+            objectives=data.current_resources.get("objectives") or None,
+            config_agents=data.config_agents or None,
+            config_models=data.config_models or None,
+            config_providers=data.config_providers or None,
+            config_tools=data.config_tools or None,
+            config_profile=config_profile_result or None,
+        ),
+        resource_agent_ids=data.resource_agent_ids,
+        group_id=data.group_id,
     )
 
 

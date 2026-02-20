@@ -1,7 +1,8 @@
 """WebSocket-specific types for home generation.
 
-Home generation creates an attempt synchronously, then delegates to
-chat_generate on the internal bus for AI resource generation.
+Home generation follows the canonical pattern: creates an attempt,
+then uses an independent config chain via get_home_websocket() to
+fetch resources and generate directly (no delegation to chat_generate).
 """
 
 from uuid import UUID

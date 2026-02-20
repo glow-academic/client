@@ -7,6 +7,8 @@ from uuid import UUID
 import asyncpg
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
+from app.api.v4.artifacts.group.list import get_group_list_internal
+from app.api.v4.artifacts.group.types import GetGroupListRequest, GetGroupListResponse
 from app.api.v4.artifacts.pricing.types import (
     PricingRequest,
     PricingResources,
@@ -22,6 +24,33 @@ from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
 
 router = APIRouter()
+
+
+async def _fetch_group_history_data(
+    pool: asyncpg.Pool,
+    profile_id: UUID,
+    request: PricingRequest,
+    bypass_cache: bool,
+) -> GetGroupListResponse:
+    """Fetch group list history inline — adapted from group/list.py."""
+    group_request = GetGroupListRequest(
+        session_id=request.history_session_id,
+        model_id=request.history_model_id,
+        agent_id=request.history_agent_id,
+        date_from=request.effective_date_from,
+        date_to=request.effective_date_to,
+        sort_by=request.history_sort_by,
+        sort_order=request.history_sort_order,
+        page_limit=request.history_page_size,
+        page_offset=request.history_page * request.history_page_size,
+    )
+    async with pool.acquire() as conn:
+        return await get_group_list_internal(
+            conn=conn,
+            profile_id=profile_id,
+            request=group_request,
+            bypass_cache=bypass_cache,
+        )
 
 
 @router.post(
@@ -46,19 +75,33 @@ async def get_pricing(
     pool = get_pool()
 
     try:
+        profile_id = http_request.state.profile_id
         effective_date_from = request.effective_date_from
         effective_date_to = request.effective_date_to
 
-        # Step 1: Fetch runs from runs_mv
-        async with pool.acquire() as c:
-            runs_result = await get_run_list_entries_internal(
-                conn=c,
-                date_from=effective_date_from,
-                date_to=effective_date_to,
-                page_limit=request.page_limit,
-                page_offset=request.page_offset,
-                bypass_cache=bypass_cache,
+        # Step 1: Fetch runs from runs_mv (+ optional group history in parallel)
+        async def fetch_runs():
+            async with pool.acquire() as c:
+                return await get_run_list_entries_internal(
+                    conn=c,
+                    date_from=effective_date_from,
+                    date_to=effective_date_to,
+                    page_limit=request.page_limit,
+                    page_offset=request.page_offset,
+                    bypass_cache=bypass_cache,
+                )
+
+        parallel_tasks: list = [fetch_runs()]
+        if request.history_enabled:
+            parallel_tasks.append(
+                _fetch_group_history_data(pool, profile_id, request, bypass_cache)
             )
+
+        parallel_results = await asyncio.gather(*parallel_tasks)
+        runs_result = parallel_results[0]
+        history_data: GetGroupListResponse | None = (
+            parallel_results[1] if request.history_enabled else None
+        )
 
         # Step 2: Collect unique agent/model IDs from runs
         agent_ids_set: set[UUID] = set()
@@ -104,6 +147,7 @@ async def get_pricing(
             total_count=runs_result.total_count,
             model_options=model_options,
             agent_options=agent_options,
+            history=history_data,
         )
 
     except HTTPException:

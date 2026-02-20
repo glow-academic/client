@@ -74,7 +74,7 @@ accessible_training AS (
         mp.practice_id AS parent_id,
         mp.simulation_ids,
         mp.cohort_ids,
-        mp.training_ids AS training_entry_ids,
+        mp.chat_ids AS training_entry_ids,
         mp.scenario_ids,
         mp.persona_ids,
         mp.rubric_ids,

@@ -137,7 +137,7 @@ AS $$
             ch.chat_id,
             ch.attempt_id,
             ch.group_id,
-            ch.chat_resolved_id,
+            ch.chat_id AS chat_resolved_id,
             ch.profile_id,
             ch.cohort_id,
             ch.department_id,

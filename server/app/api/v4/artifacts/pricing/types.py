@@ -5,6 +5,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
+from app.api.v4.artifacts.group.types import GetGroupListResponse
 from app.api.v4.artifacts.types import FilterOption
 from app.api.v4.entries.runs.search import GetRunListViewResponse, RunViewItem
 from app.sql.types import (
@@ -32,6 +33,16 @@ class PricingRequest(BaseModel):
     # Pagination
     page_limit: int = Field(default=50, ge=1, le=200)
     page_offset: int = Field(default=0, ge=0)
+
+    # Embedded group history params
+    history_enabled: bool = False
+    history_page: int = 0
+    history_page_size: int = 50
+    history_sort_by: str = "date"
+    history_sort_order: str = "desc"
+    history_session_id: UUID | None = None
+    history_model_id: UUID | None = None
+    history_agent_id: UUID | None = None
 
     @property
     def effective_date_from(self) -> datetime | None:
@@ -66,6 +77,9 @@ class PricingResponse(BaseModel):
 
     model_options: list[FilterOption] = Field(default_factory=list)
     agent_options: list[FilterOption] = Field(default_factory=list)
+
+    # Embedded group history (when history_enabled=True)
+    history: GetGroupListResponse | None = None
 
 
 # =============================================================================

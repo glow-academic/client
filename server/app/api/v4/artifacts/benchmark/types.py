@@ -1,6 +1,5 @@
 """Types for benchmark artifact."""
 
-
 from pydantic import BaseModel, Field
 
 from app.api.v4.artifacts.types import FilterOption, TestHistoryResponse

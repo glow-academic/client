@@ -115,7 +115,7 @@ AS $$
             mv.invocation_id,
             mv.test_id,
             mv.group_id,
-            mv.invocation_resolved_id,
+            mv.invocation_id AS invocation_resolved_id,
             mv.invocation_created_at AS created_at,
             mv.invocation_title AS title,
             mv.invocation_completed,

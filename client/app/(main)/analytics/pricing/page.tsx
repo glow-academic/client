@@ -4,7 +4,6 @@
  * @AshokSaravanan222 & @siladiea
  * 08/10/2025
  */
-import { Suspense } from "react";
 
 import { PricingRunsClient } from "@/components/artifacts/pricing/PricingRunsClient";
 import { PricingSummary } from "@/components/artifacts/pricing/PricingSummary";
@@ -21,29 +20,13 @@ import { loadPricingSearchParams } from "@/lib/search-params/pricing";
 /** ---- Strong types from OpenAPI ---- */
 type PricingIn = InputOf<"/api/v4/artifacts/pricing/get", "post">;
 type PricingOut = OutputOf<"/api/v4/artifacts/pricing/get", "post">;
-type PricingRunsIn = InputOf<"/api/v4/artifacts/group/list", "post">;
-type PricingRunsOut = OutputOf<"/api/v4/artifacts/group/list", "post">;
+type PricingRunsOut = NonNullable<PricingOut["history"]>;
 
 /** ---- Direct fetch (no Next.js cache) ---- */
 const getPricingAnalytics = async (input: PricingIn): Promise<PricingOut> => {
   const bypassCache = await isHardRefresh();
 
   return api.post("/artifacts/pricing/get", input, {
-    cache: "no-store",
-    ...(bypassCache && {
-      headers: {
-        "X-Bypass-Cache": "1",
-      },
-    }),
-  });
-};
-
-const getPricingRuns = async (
-  input: PricingRunsIn
-): Promise<PricingRunsOut> => {
-  const bypassCache = await isHardRefresh();
-
-  return api.post("/artifacts/group/list", input, {
     cache: "no-store",
     ...(bypassCache && {
       headers: {
@@ -78,7 +61,20 @@ export default async function PricingPage({ searchParams }: PricingPageProps) {
   const { defaults, profileContext } = await computeAnalyticsDefaults();
   const filters = resolveAnalyticsFilters(q, defaults, profileContext);
 
-  // Fetch summary data server-side (for chart - all runs, no pagination)
+  // Pricing-specific params with defaults
+  const pricingPage = q.pricingPage ?? 0;
+  const pricingPageSize = q.pricingPageSize ?? 10;
+  const pricingModelIds = q.pricingModelIds ?? undefined;
+  const pricingSortBy = q.pricingSortBy ?? "date";
+  const pricingSortOrder = q.pricingSortOrder ?? "desc";
+
+  // Map frontend sort field to backend field name
+  const sortBy = pricingSortBy === "createdAt" ? "date" : pricingSortBy;
+
+  // Use first model ID if provided (endpoint accepts single model_id)
+  const modelId = pricingModelIds?.[0] ?? null;
+
+  // Fetch summary + embedded group history in a single API call
   const pricingData = await getPricingAnalytics({
     body: {
       start_date: filters.startDate,
@@ -87,29 +83,18 @@ export default async function PricingPage({ searchParams }: PricingPageProps) {
       roles: filters.roles,
       page_limit: 100,
       page_offset: 0,
+      // Embedded group history params
+      history_enabled: true,
+      history_page: pricingPage,
+      history_page_size: pricingPageSize,
+      history_sort_by: sortBy,
+      history_sort_order: pricingSortOrder,
+      history_model_id: modelId,
     },
   });
 
-  // Pricing-specific params with defaults
-  const pricingPage = q.pricingPage ?? 0;
-  const pricingPageSize = q.pricingPageSize ?? 10;
-  const pricingModelIds = q.pricingModelIds ?? undefined;
-  const pricingSortBy = q.pricingSortBy ?? "date";
-  const pricingSortOrder = q.pricingSortOrder ?? "desc";
-
-  // Create runsKey for Suspense boundary
-  const runsKey = [
-    pricingPage,
-    pricingPageSize,
-    (pricingModelIds || []).join(","),
-    pricingSortBy,
-    pricingSortOrder,
-    filters.startDate,
-    filters.endDate,
-  ].join("|");
-
-  // Create empty runs data for loading state
-  const emptyRunsData: PricingRunsOut = {
+  // Extract embedded history or use empty fallback
+  const runsData: PricingRunsOut = pricingData.history ?? {
     items: [],
     total_count: 0,
   };
@@ -117,69 +102,10 @@ export default async function PricingPage({ searchParams }: PricingPageProps) {
   return (
     <div className="space-y-6" data-page="pricing-index">
       <PricingSummary pricingData={pricingData} />
-
-      <Suspense
-        key={runsKey}
-        fallback={
-          <PricingRunsClient runsData={emptyRunsData} isLoading={true} />
-        }
-      >
-        <PricingRunsSection
-          filters={filters}
-          pricingPage={pricingPage}
-          pricingPageSize={pricingPageSize}
-          pricingModelIds={pricingModelIds}
-          pricingSortBy={pricingSortBy}
-          pricingSortOrder={pricingSortOrder}
-        />
-      </Suspense>
+      <PricingRunsClient runsData={runsData} isLoading={false} />
     </div>
   );
 }
 
-/** ---- Inline runs section component (only used here) ---- */
-async function PricingRunsSection({
-  filters,
-  pricingPage,
-  pricingPageSize,
-  pricingModelIds,
-  pricingSortBy,
-  pricingSortOrder,
-}: {
-  filters: {
-    startDate: string;
-    endDate: string;
-    cohortIds: string[];
-    departmentIds: string[];
-    roles: string[];
-    simulationFilters: string[];
-  };
-  pricingPage: number;
-  pricingPageSize: number;
-  pricingModelIds?: string[] | undefined;
-  pricingSortBy: string;
-  pricingSortOrder: string;
-}) {
-  // Map frontend sort field to backend field name
-  const sortBy = pricingSortBy === "createdAt" ? "date" : pricingSortBy;
-
-  // Use first model ID if provided (endpoint accepts single model_id)
-  const modelId = pricingModelIds?.[0] ?? null;
-
-  const runsData = await getPricingRuns({
-    body: {
-      date_from: filters.startDate,
-      date_to: filters.endDate,
-      model_id: modelId,
-      sort_by: sortBy,
-      sort_order: pricingSortOrder,
-      page_limit: pricingPageSize,
-      page_offset: pricingPage * pricingPageSize,
-    },
-  });
-
-  return <PricingRunsClient runsData={runsData} isLoading={false} />;
-}
-
 /** ---- Export types for client component (type-only imports) ---- */
-export type { PricingIn, PricingOut, PricingRunsIn, PricingRunsOut };
+export type { PricingIn, PricingOut, PricingRunsOut };

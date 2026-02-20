@@ -21,6 +21,11 @@ from app.api.v4.artifacts.activity.types import (
     ActivityWebsocketViews,
     GetActivityWebsocketResponse,
 )
+from app.api.v4.artifacts.session.list import get_session_list_internal
+from app.api.v4.artifacts.session.types import (
+    GetSessionListRequest,
+    GetSessionListResponse,
+)
 from app.api.v4.auth.settings import get_auth_settings_internal
 from app.api.v4.entries.activity.get import get_activity_list_view_internal
 from app.api.v4.entries.audits.get import get_audit_list_view_internal
@@ -257,6 +262,35 @@ async def get_activity_internal(
     )
 
 
+async def _fetch_session_history_data(
+    pool: asyncpg.Pool,
+    profile_id: UUID,
+    request: ActivityRequest,
+    filter_profile_ids: list[UUID] | None,
+    bypass_cache: bool,
+) -> GetSessionListResponse:
+    """Fetch session list history inline — adapted from session/list.py."""
+    session_request = GetSessionListRequest(
+        active=request.history_active,
+        date_from=request.date_from,
+        date_to=request.date_to,
+        department_ids=request.department_ids,
+        roles=request.roles,
+        sort_by=request.history_sort_by,
+        sort_order=request.history_sort_order,
+        page_limit=request.history_page_size,
+        page_offset=request.history_page * request.history_page_size,
+    )
+    async with pool.acquire() as conn:
+        return await get_session_list_internal(
+            conn=conn,
+            profile_id=profile_id,
+            request=session_request,
+            profile_ids=filter_profile_ids,
+            bypass_cache=bypass_cache,
+        )
+
+
 # =============================================================================
 # HTTP Endpoint
 # =============================================================================
@@ -295,16 +329,31 @@ async def get_activity(
                     roles=request.roles or None,
                 )
 
-        data = await get_activity_internal(
-            pool=pool,
-            profile_id=profile_id,
-            bypass_cache=bypass_cache,
-            profile_id_filter=request.profile_id,
-            profile_ids_filter=filter_profile_ids,
-            date_from=request.date_from,
-            date_to=request.date_to,
-            page_limit=request.page_limit,
-            page_offset=request.page_offset,
+        # Fetch activity data (+ optional session history in parallel)
+        parallel_tasks: list = [
+            get_activity_internal(
+                pool=pool,
+                profile_id=profile_id,
+                bypass_cache=bypass_cache,
+                profile_id_filter=request.profile_id,
+                profile_ids_filter=filter_profile_ids,
+                date_from=request.date_from,
+                date_to=request.date_to,
+                page_limit=request.page_limit,
+                page_offset=request.page_offset,
+            )
+        ]
+        if request.history_enabled:
+            parallel_tasks.append(
+                _fetch_session_history_data(
+                    pool, profile_id, request, filter_profile_ids, bypass_cache
+                )
+            )
+
+        parallel_results = await asyncio.gather(*parallel_tasks)
+        data = parallel_results[0]
+        history_data: GetSessionListResponse | None = (
+            parallel_results[1] if request.history_enabled else None
         )
 
         # Build chart_data from activity view (date_key + event_type + event_count)
@@ -379,6 +428,7 @@ async def get_activity(
             views=views,
             resources=resources,
             total_count=data.sessions_result.total_count,
+            history=history_data,
         )
 
     except HTTPException:

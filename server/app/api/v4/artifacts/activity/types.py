@@ -6,6 +6,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
+from app.api.v4.artifacts.session.types import GetSessionListResponse
 from app.api.v4.entries.runs.search import GetRunListViewResponse
 from app.sql.types import (
     GetActivityListViewSqlRow,
@@ -61,6 +62,14 @@ class ActivityRequest(BaseModel):
     page_limit: int = Field(default=50, ge=1, le=100)
     page_offset: int = Field(default=0, ge=0)
 
+    # Embedded session history params
+    history_enabled: bool = False
+    history_page: int = 0
+    history_page_size: int = 50
+    history_sort_by: str = "date"
+    history_sort_order: str = "desc"
+    history_active: bool | None = None
+
 
 class ActivityViews(BaseModel):
     """Activity view data."""
@@ -112,6 +121,9 @@ class ActivityResponse(BaseModel):
     views: ActivityViews = Field(default_factory=ActivityViews)
     resources: ActivityResources = Field(default_factory=ActivityResources)
     total_count: int = Field(default=0)
+
+    # Embedded session history (when history_enabled=True)
+    history: GetSessionListResponse | None = None
 
 
 # =============================================================================
