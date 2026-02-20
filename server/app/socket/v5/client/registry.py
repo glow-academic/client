@@ -753,12 +753,12 @@ _register(
         config_models_attr="config_models",
         config_providers_attr="config_providers",
         entry_types=["insights", "debug_info"],
+        has_artifact_id=False,
         requires_pool=True,
-        fetcher_id_kwarg="pricing_id",
         fetcher=_make_fetcher(
             "app.api.v4.artifacts.pricing.get",
             "get_pricing_websocket",
-            "pricing_id",
+            "",
             needs_pool=True,
         ),
     )
@@ -836,7 +836,7 @@ _register(
         fetcher=_make_fetcher(
             "app.api.v4.artifacts.health.get",
             "get_health_websocket",
-            "health_id",
+            "",
             needs_pool=True,
         ),
     )
@@ -862,7 +862,7 @@ _register(
         fetcher=_make_fetcher(
             "app.api.v4.artifacts.leaderboard.get",
             "get_leaderboard_websocket",
-            "leaderboard_id",
+            "",
             needs_pool=True,
         ),
     )
@@ -883,8 +883,8 @@ _register(
         config_models_attr="config_models",
         config_providers_attr="config_providers",
         entry_types=["insights", "debug_info"],
-        has_artifact_id=False,
         requires_pool=True,
+        fetcher_id_kwarg="record_id",
         fetcher=_make_fetcher(
             "app.api.v4.artifacts.record.get",
             "get_record_websocket",
@@ -914,7 +914,51 @@ _register(
         fetcher=_make_fetcher(
             "app.api.v4.artifacts.dashboard.get",
             "get_dashboard_websocket",
-            "dashboard_id",
+            "",
+            needs_pool=True,
+        ),
+    )
+)
+
+# === No-ID, no resource types (home/practice — fetcher bug to fix) ===
+
+_register(
+    ArtifactGenerateConfig(
+        artifact_type="home",
+        valid_resource_types=[],
+        prepare_sql_path="app/sql/v4/queries/generate/training/prepare_training_generation_complete.sql",
+        draft_view_key="draft_training",
+        config_agents_attr="config_agents",
+        config_models_attr="config_models",
+        config_providers_attr="config_providers",
+        entry_types=["insights", "debug_info"],
+        has_artifact_id=False,
+        requires_pool=True,
+        fetcher=_make_fetcher(
+            "app.api.v4.artifacts.home.get",
+            "get_home_websocket",
+            "",
+            needs_pool=True,
+        ),
+    )
+)
+
+_register(
+    ArtifactGenerateConfig(
+        artifact_type="practice",
+        valid_resource_types=[],
+        prepare_sql_path="app/sql/v4/queries/generate/training/prepare_training_generation_complete.sql",
+        draft_view_key="draft_training",
+        config_agents_attr="config_agents",
+        config_models_attr="config_models",
+        config_providers_attr="config_providers",
+        entry_types=["insights", "debug_info"],
+        has_artifact_id=False,
+        requires_pool=True,
+        fetcher=_make_fetcher(
+            "app.api.v4.artifacts.practice.get",
+            "get_practice_websocket",
+            "",
             needs_pool=True,
         ),
     )
