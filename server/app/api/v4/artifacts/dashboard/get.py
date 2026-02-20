@@ -237,6 +237,270 @@ def _transform_history_item(
 
 
 # =============================================================================
+# Standalone history fetcher — reusable from header.py
+# =============================================================================
+
+
+async def fetch_dashboard_history_data(
+    pool: asyncpg.Pool,
+    *,
+    history_enabled: bool,
+    profile_resource_id: UUID | None,
+    target_profile_id: UUID | None,
+    start_date: str | None,
+    end_date: str | None,
+    cohort_ids: list[UUID] | None,
+    department_ids: list[UUID] | None,
+    history_practice: bool = False,
+    history_scenario_ids: list[UUID] | None = None,
+    history_infinite_mode: bool | None = None,
+    history_show_archived: bool = False,
+    history_sort_by: str | None = "date",
+    history_sort_order: str | None = "desc",
+    history_page: int = 0,
+    history_page_size: int = 20,
+    history_simulation_search: str | None = None,
+    history_scenario_search: str | None = None,
+    history_profile_search: str | None = None,
+    bypass_cache: bool = False,
+) -> HistoryResponse | None:
+    """Fetch attempt history data — shared between dashboard/get and dashboard/header."""
+    if not history_enabled or not profile_resource_id:
+        return None
+
+    query_profile_id = target_profile_id or profile_resource_id
+    date_from = (
+        datetime.fromisoformat(start_date.replace("Z", "+00:00"))
+        if start_date
+        else None
+    )
+    date_to = (
+        datetime.fromisoformat(end_date.replace("Z", "+00:00")) if end_date else None
+    )
+    practice = history_practice
+    page = history_page
+    page_size = history_page_size
+    page_offset = page * page_size
+    pass_threshold = 70.0
+
+    # Step 1: Paginated attempts from attempt_mv
+    async with pool.acquire() as c:
+        list_result = await get_attempt_list_internal(
+            conn=c,
+            profile_id_filter=query_profile_id,
+            practice_filter=practice,
+            is_archived_filter=(history_show_archived if practice else False),
+            simulation_id_filter=None,
+            cohort_ids=cohort_ids,
+            department_ids=department_ids,
+            scenario_ids_filter=history_scenario_ids,
+            infinite_mode_filter=history_infinite_mode,
+            date_from=date_from,
+            date_to=date_to,
+            sort_by=history_sort_by or "date",
+            sort_order=history_sort_order or "desc",
+            page_limit=page_size,
+            page_offset=page_offset,
+            bypass_cache=bypass_cache,
+        )
+
+    # Step 2: Batch-fetch chats for paginated attempt_ids
+    items = list_result.items or []
+    paginated_ids = [item.attempt_id for item in items]
+
+    chats: list[ChatViewItem] = []
+    if paginated_ids:
+        async with pool.acquire() as c:
+            chats = await get_attempt_chats_internal(
+                c, attempt_ids=paginated_ids, bypass_cache=bypass_cache
+            )
+
+    # Step 3: Group chats by attempt_id
+    chats_by_attempt: dict[UUID, list[ChatViewItem]] = defaultdict(list)
+    for chat in chats:
+        if chat.attempt_id:
+            chats_by_attempt[chat.attempt_id].append(chat)
+
+    # Step 4: Compute aggregates and collect resource IDs
+    h_sim_ids: set[UUID] = set()
+    h_profile_ids: set[UUID] = set()
+    h_persona_ids: set[UUID] = set()
+    h_scenario_ids: set[UUID] = set()
+    aggregates_by_attempt: dict[UUID, dict[str, Any]] = {}
+
+    for item in items:
+        attempt_chats = chats_by_attempt.get(item.attempt_id, [])
+        agg = _compute_history_aggregates(attempt_chats)
+        aggregates_by_attempt[item.attempt_id] = agg
+        if item.simulation_id:
+            h_sim_ids.add(item.simulation_id)
+        if item.profile_id:
+            h_profile_ids.add(item.profile_id)
+        if agg.get("persona_ids"):
+            h_persona_ids.update(agg["persona_ids"])
+        if agg.get("scenario_ids"):
+            h_scenario_ids.update(agg["scenario_ids"])
+        elif item.scenario_ids:
+            h_scenario_ids.update(item.scenario_ids)
+
+    # Step 5: Fetch resource metadata in parallel
+    async def _h_sims():
+        if not h_sim_ids:
+            return []
+        async with pool.acquire() as c:
+            return await get_simulations_internal(
+                c, list(h_sim_ids), bypass_cache=bypass_cache
+            )
+
+    async def _h_profiles():
+        if not h_profile_ids:
+            return []
+        async with pool.acquire() as c:
+            return await get_profiles_internal(
+                c, list(h_profile_ids), bypass_cache=bypass_cache
+            )
+
+    async def _h_personas():
+        if not h_persona_ids:
+            return []
+        async with pool.acquire() as c:
+            return await get_personas_internal(
+                c, list(h_persona_ids), bypass_cache=bypass_cache
+            )
+
+    async def _h_scenarios():
+        if not h_scenario_ids:
+            return []
+        async with pool.acquire() as c:
+            return await get_scenarios_internal(
+                c, list(h_scenario_ids), bypass_cache=bypass_cache
+            )
+
+    h_sims, h_profs, h_pers, h_scens = await asyncio.gather(
+        _h_sims(), _h_profiles(), _h_personas(), _h_scenarios()
+    )
+
+    resource_meta: dict[str, dict[UUID, dict[str, Any]]] = {
+        "simulations": {},
+        "profiles": {},
+        "personas": {},
+        "scenarios": {},
+    }
+    for s in h_sims:
+        if s.simulation_id:
+            resource_meta["simulations"][s.simulation_id] = {
+                "name": s.name,
+                "time_limit": None,
+            }
+    for p in h_profs:
+        if p.profile_id:
+            resource_meta["profiles"][p.profile_id] = {"name": p.name}
+    for p in h_pers:
+        if p.persona_id:
+            resource_meta["personas"][p.persona_id] = {
+                "name": p.name,
+                "color": p.color,
+            }
+    for s in h_scens:
+        if s.scenario_id:
+            resource_meta["scenarios"][s.scenario_id] = {"name": s.name}
+
+    # Step 6: Transform attempts
+    attempts = [
+        _transform_history_item(
+            item,
+            aggregates_by_attempt.get(item.attempt_id, {}),
+            resource_meta,
+            pass_threshold,
+            practice,
+        )
+        for item in items
+    ]
+
+    # Step 7: Build filter options with name resolution
+    simulation_options: list[FilterOption] | None = None
+    if list_result.simulation_options:
+        simulation_options = []
+        for opt in list_result.simulation_options:
+            if not opt.value:
+                continue
+            try:
+                sim_id = UUID(opt.value)
+                label = (
+                    resource_meta["simulations"].get(sim_id, {}).get("name")
+                    or opt.value
+                )
+            except ValueError:
+                label = opt.value
+            simulation_options.append(
+                FilterOption(value=opt.value, label=label, count=opt.count or 0)
+            )
+        if history_simulation_search:
+            q = history_simulation_search.lower()
+            simulation_options = [
+                o for o in simulation_options if q in (o.label or "").lower()
+            ]
+
+    scenario_options: list[FilterOption] | None = None
+    if list_result.scenario_options:
+        scenario_options = []
+        for opt in list_result.scenario_options:
+            if not opt.value:
+                continue
+            try:
+                scn_id = UUID(opt.value)
+                label = (
+                    resource_meta["scenarios"].get(scn_id, {}).get("name") or opt.value
+                )
+            except ValueError:
+                label = opt.value
+            scenario_options.append(
+                FilterOption(value=opt.value, label=label, count=opt.count or 0)
+            )
+        if history_scenario_search:
+            q = history_scenario_search.lower()
+            scenario_options = [
+                o for o in scenario_options if q in (o.label or "").lower()
+            ]
+
+    profile_options: list[FilterOption] | None = None
+    if practice and list_result.profile_options:
+        profile_options = []
+        for opt in list_result.profile_options:
+            if not opt.value:
+                continue
+            try:
+                prof_id = UUID(opt.value)
+                label = (
+                    resource_meta["profiles"].get(prof_id, {}).get("name") or opt.value
+                )
+            except ValueError:
+                label = opt.value
+            profile_options.append(
+                FilterOption(value=opt.value, label=label, count=opt.count or 0)
+            )
+        if history_profile_search:
+            q = history_profile_search.lower()
+            profile_options = [
+                o for o in profile_options if q in (o.label or "").lower()
+            ]
+
+    total_count = list_result.total_count
+    total_pages = (total_count + page_size - 1) // page_size if page_size > 0 else 0
+
+    return HistoryResponse(
+        data=attempts,
+        total_count=total_count,
+        page=page,
+        page_size=page_size,
+        total_pages=total_pages,
+        simulation_options=simulation_options,
+        scenario_options=scenario_options,
+        profile_options=profile_options,
+    )
+
+
+# =============================================================================
 # Internal Layer — unified single-pass data fetcher
 # =============================================================================
 
@@ -302,247 +566,6 @@ async def get_dashboard_internal(
     )
 
     # Phase 1 — Parallel data fetch
-    async def _fetch_history_data() -> HistoryResponse | None:
-        if not request.history_enabled or not profile_resource_id:
-            return None
-
-        query_profile_id = request.target_profile_id or profile_resource_id
-        date_from = (
-            datetime.fromisoformat(request.start_date.replace("Z", "+00:00"))
-            if request.start_date
-            else None
-        )
-        date_to = (
-            datetime.fromisoformat(request.end_date.replace("Z", "+00:00"))
-            if request.end_date
-            else None
-        )
-        practice = request.history_practice
-        page = request.history_page
-        page_size = request.history_page_size
-        page_offset = page * page_size
-        pass_threshold = 70.0
-
-        # Step 1: Paginated attempts from attempt_mv
-        async with pool.acquire() as c:
-            list_result = await get_attempt_list_internal(
-                conn=c,
-                profile_id_filter=query_profile_id,
-                practice_filter=practice,
-                is_archived_filter=(
-                    request.history_show_archived if practice else False
-                ),
-                simulation_id_filter=None,
-                cohort_ids=request.cohort_ids,
-                department_ids=request.department_ids,
-                scenario_ids_filter=request.history_scenario_ids,
-                infinite_mode_filter=request.history_infinite_mode,
-                date_from=date_from,
-                date_to=date_to,
-                sort_by=request.history_sort_by or "date",
-                sort_order=request.history_sort_order or "desc",
-                page_limit=page_size,
-                page_offset=page_offset,
-                bypass_cache=bypass_cache,
-            )
-
-        # Step 2: Batch-fetch chats for paginated attempt_ids
-        items = list_result.items or []
-        paginated_ids = [item.attempt_id for item in items]
-
-        chats: list[ChatViewItem] = []
-        if paginated_ids:
-            async with pool.acquire() as c:
-                chats = await get_attempt_chats_internal(
-                    c, attempt_ids=paginated_ids, bypass_cache=bypass_cache
-                )
-
-        # Step 3: Group chats by attempt_id
-        chats_by_attempt: dict[UUID, list[ChatViewItem]] = defaultdict(list)
-        for chat in chats:
-            if chat.attempt_id:
-                chats_by_attempt[chat.attempt_id].append(chat)
-
-        # Step 4: Compute aggregates and collect resource IDs
-        h_sim_ids: set[UUID] = set()
-        h_profile_ids: set[UUID] = set()
-        h_persona_ids: set[UUID] = set()
-        h_scenario_ids: set[UUID] = set()
-        aggregates_by_attempt: dict[UUID, dict[str, Any]] = {}
-
-        for item in items:
-            attempt_chats = chats_by_attempt.get(item.attempt_id, [])
-            agg = _compute_history_aggregates(attempt_chats)
-            aggregates_by_attempt[item.attempt_id] = agg
-            if item.simulation_id:
-                h_sim_ids.add(item.simulation_id)
-            if item.profile_id:
-                h_profile_ids.add(item.profile_id)
-            if agg.get("persona_ids"):
-                h_persona_ids.update(agg["persona_ids"])
-            if agg.get("scenario_ids"):
-                h_scenario_ids.update(agg["scenario_ids"])
-            elif item.scenario_ids:
-                h_scenario_ids.update(item.scenario_ids)
-
-        # Step 5: Fetch resource metadata in parallel
-        async def _h_sims() -> list[Any]:
-            if not h_sim_ids:
-                return []
-            async with pool.acquire() as c:
-                return await get_simulations_internal(
-                    c, list(h_sim_ids), bypass_cache=bypass_cache
-                )
-
-        async def _h_profiles() -> list[Any]:
-            if not h_profile_ids:
-                return []
-            async with pool.acquire() as c:
-                return await get_profiles_internal(
-                    c, list(h_profile_ids), bypass_cache=bypass_cache
-                )
-
-        async def _h_personas() -> list[Any]:
-            if not h_persona_ids:
-                return []
-            async with pool.acquire() as c:
-                return await get_personas_internal(
-                    c, list(h_persona_ids), bypass_cache=bypass_cache
-                )
-
-        async def _h_scenarios() -> list[Any]:
-            if not h_scenario_ids:
-                return []
-            async with pool.acquire() as c:
-                return await get_scenarios_internal(
-                    c, list(h_scenario_ids), bypass_cache=bypass_cache
-                )
-
-        h_sims, h_profs, h_pers, h_scens = await asyncio.gather(
-            _h_sims(), _h_profiles(), _h_personas(), _h_scenarios()
-        )
-
-        resource_meta: dict[str, dict[UUID, dict[str, Any]]] = {
-            "simulations": {},
-            "profiles": {},
-            "personas": {},
-            "scenarios": {},
-        }
-        for s in h_sims:
-            if s.simulation_id:
-                resource_meta["simulations"][s.simulation_id] = {
-                    "name": s.name,
-                    "time_limit": None,
-                }
-        for p in h_profs:
-            if p.profile_id:
-                resource_meta["profiles"][p.profile_id] = {"name": p.name}
-        for p in h_pers:
-            if p.persona_id:
-                resource_meta["personas"][p.persona_id] = {
-                    "name": p.name,
-                    "color": p.color,
-                }
-        for s in h_scens:
-            if s.scenario_id:
-                resource_meta["scenarios"][s.scenario_id] = {"name": s.name}
-
-        # Step 6: Transform attempts
-        attempts = [
-            _transform_history_item(
-                item,
-                aggregates_by_attempt.get(item.attempt_id, {}),
-                resource_meta,
-                pass_threshold,
-                practice,
-            )
-            for item in items
-        ]
-
-        # Step 7: Build filter options with name resolution
-        simulation_options: list[FilterOption] | None = None
-        if list_result.simulation_options:
-            simulation_options = []
-            for opt in list_result.simulation_options:
-                if not opt.value:
-                    continue
-                try:
-                    sim_id = UUID(opt.value)
-                    label = (
-                        resource_meta["simulations"].get(sim_id, {}).get("name")
-                        or opt.value
-                    )
-                except ValueError:
-                    label = opt.value
-                simulation_options.append(
-                    FilterOption(value=opt.value, label=label, count=opt.count or 0)
-                )
-            if request.history_simulation_search:
-                q = request.history_simulation_search.lower()
-                simulation_options = [
-                    o for o in simulation_options if q in (o.label or "").lower()
-                ]
-
-        scenario_options: list[FilterOption] | None = None
-        if list_result.scenario_options:
-            scenario_options = []
-            for opt in list_result.scenario_options:
-                if not opt.value:
-                    continue
-                try:
-                    scn_id = UUID(opt.value)
-                    label = (
-                        resource_meta["scenarios"].get(scn_id, {}).get("name")
-                        or opt.value
-                    )
-                except ValueError:
-                    label = opt.value
-                scenario_options.append(
-                    FilterOption(value=opt.value, label=label, count=opt.count or 0)
-                )
-            if request.history_scenario_search:
-                q = request.history_scenario_search.lower()
-                scenario_options = [
-                    o for o in scenario_options if q in (o.label or "").lower()
-                ]
-
-        profile_options: list[FilterOption] | None = None
-        if practice and list_result.profile_options:
-            profile_options = []
-            for opt in list_result.profile_options:
-                if not opt.value:
-                    continue
-                try:
-                    prof_id = UUID(opt.value)
-                    label = (
-                        resource_meta["profiles"].get(prof_id, {}).get("name")
-                        or opt.value
-                    )
-                except ValueError:
-                    label = opt.value
-                profile_options.append(
-                    FilterOption(value=opt.value, label=label, count=opt.count or 0)
-                )
-            if request.history_profile_search:
-                q = request.history_profile_search.lower()
-                profile_options = [
-                    o for o in profile_options if q in (o.label or "").lower()
-                ]
-
-        total_count = list_result.total_count
-        total_pages = (total_count + page_size - 1) // page_size if page_size > 0 else 0
-
-        return HistoryResponse(
-            data=attempts,
-            total_count=total_count,
-            page=page,
-            page_size=page_size,
-            total_pages=total_pages,
-            simulation_options=simulation_options,
-            scenario_options=scenario_options,
-            profile_options=profile_options,
-        )
-
     (
         chats_result,
         rubric_scores_result,
@@ -567,7 +590,28 @@ async def get_dashboard_internal(
             target_profile_id=request.target_profile_id,
             department_ids=request.department_ids,
         ),
-        _fetch_history_data(),
+        fetch_dashboard_history_data(
+            pool,
+            history_enabled=request.history_enabled,
+            profile_resource_id=profile_resource_id,
+            target_profile_id=request.target_profile_id,
+            start_date=request.start_date,
+            end_date=request.end_date,
+            cohort_ids=request.cohort_ids,
+            department_ids=request.department_ids,
+            history_practice=request.history_practice,
+            history_scenario_ids=request.history_scenario_ids,
+            history_infinite_mode=request.history_infinite_mode,
+            history_show_archived=request.history_show_archived,
+            history_sort_by=request.history_sort_by,
+            history_sort_order=request.history_sort_order,
+            history_page=request.history_page,
+            history_page_size=request.history_page_size,
+            history_simulation_search=request.history_simulation_search,
+            history_scenario_search=request.history_scenario_search,
+            history_profile_search=request.history_profile_search,
+            bypass_cache=bypass_cache,
+        ),
     )
     chat_items = chats_result.items
     rubric_items = rubric_scores_result.items

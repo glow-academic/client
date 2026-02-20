@@ -15,43 +15,18 @@ import {
   resolveAnalyticsFilters,
 } from "@/lib/search-params/analytics-defaults";
 import type { Metadata } from "next";
-import { Suspense } from "react";
 import { loadHomeSearchParams } from "@/lib/search-params/home";
 
 /** ---- Strong types from OpenAPI ---- */
-// Using /home/get for simulation cards (enhanced with stats)
-type HomeCardsIn = InputOf<"/api/v4/artifacts/home/get", "post">;
-type HomeCardsOut = OutputOf<"/api/v4/artifacts/home/get", "post">;
-// Using /attempt/list for history section
-type HomeHistoryIn = InputOf<"/api/v4/artifacts/attempt/list", "post">;
-type HomeHistoryOut = OutputOf<"/api/v4/artifacts/attempt/list", "post">;
+type HomeIn = InputOf<"/api/v4/artifacts/home/get", "post">;
+type HomeOut = OutputOf<"/api/v4/artifacts/home/get", "post">;
+type HomeHistoryOut = NonNullable<HomeOut["history"]>;
 
-// Home component uses cards data directly (no merge needed)
-type HomeOut = HomeCardsOut;
-
-/** ---- Direct fetch for simulation cards (enhanced with stats) ---- */
-const getHomeCards = async (
-  input: HomeCardsIn
-): Promise<HomeCardsOut> => {
+/** ---- Direct fetch for home data (cards + embedded history) ---- */
+const getHomeData = async (input: HomeIn): Promise<HomeOut> => {
   const bypassCache = await isHardRefresh();
 
   return api.post("/artifacts/home/get", input, {
-    cache: "no-store",
-    ...(bypassCache && {
-      headers: {
-        "X-Bypass-Cache": "1",
-      },
-    }),
-  });
-};
-
-/** ---- Direct fetch for history data ---- */
-const getHomeHistory = async (
-  input: HomeHistoryIn
-): Promise<HomeHistoryOut> => {
-  const bypassCache = await isHardRefresh();
-
-  return api.post("/artifacts/attempt/list", input, {
     cache: "no-store",
     ...(bypassCache && {
       headers: {
@@ -81,9 +56,6 @@ export default async function HomePage({ searchParams }: HomePageProps) {
   const { defaults, profileContext } = await computeAnalyticsDefaults();
   const defaultFilters = resolveAnalyticsFilters(q, defaults, profileContext);
 
-  // Cards endpoint (now includes all stats needed for simulation cards)
-  const cardsFilters: HomeCardsIn = {};
-
   // History params with defaults
   const historyPage = q.historyPage ?? 0;
   const historyPageSize = q.historyPageSize ?? 10;
@@ -94,140 +66,40 @@ export default async function HomePage({ searchParams }: HomePageProps) {
   const historySortBy = q.historySortBy ?? "date";
   const historySortOrder = q.historySortOrder ?? "desc";
 
-  // Fetch cards data (now includes all stats needed for simulation cards)
-  const homeData = await getHomeCards(cardsFilters);
-
-  // Create historyKey for Suspense boundary to trigger re-fetch on URL param changes
-  const historyKey = [
-    historyPage,
-    historyPageSize,
-    historySearch || "",
-    (historySimulationIds || []).join(","),
-    (historyScenarioIds || []).join(","),
-    historyInfiniteMode === undefined
-      ? "all"
-      : historyInfiniteMode
-        ? "inf"
-        : "std",
-    historySortBy,
-    historySortOrder,
-    defaultFilters.startDate,
-    defaultFilters.endDate,
-    defaultFilters.cohortIds.join(","),
-    defaultFilters.departmentIds.join(","),
-    defaultFilters.roles.join(","),
-    defaultFilters.simulationFilters.join(","),
-  ].join("|");
-
-  return (
-    <div className="space-y-6">
-      <Home homeData={homeData} />
-
-      {/* History section moved out of Home, fully server-driven */}
-      <div className="mt-12">
-        <Suspense
-          key={historyKey}
-          fallback={
-            <SimulationHistory
-              data={[]}
-              totalCount={0}
-              archivedCount={0}
-              unarchivedCount={0}
-              pageIndex={historyPage}
-              pageSize={historyPageSize}
-              showExport={true}
-              showArchive={false}
-              singleProfile={true}
-              initialFilters={defaultFilters}
-              profileOptions={[]}
-              simulationOptions={[]}
-              scenarioOptions={[]}
-              isLoading={true}
-            />
-          }
-        >
-          <HomeHistorySection
-            defaultFilters={defaultFilters}
-            historyPage={historyPage}
-            historyPageSize={historyPageSize}
-            historySearch={historySearch}
-            historySimulationIds={historySimulationIds}
-            historyScenarioIds={historyScenarioIds}
-            historyInfiniteMode={historyInfiniteMode}
-            historySortBy={historySortBy}
-            historySortOrder={historySortOrder}
-          />
-        </Suspense>
-      </div>
-    </div>
-  );
-}
-
-/** ---- Inline history section component (only used here) ---- */
-async function HomeHistorySection({
-  defaultFilters,
-  historyPage,
-  historyPageSize,
-  historySearch,
-  historySimulationIds,
-  historyScenarioIds,
-  historyInfiniteMode,
-  historySortBy,
-  historySortOrder,
-}: {
-  defaultFilters: {
-    startDate: string;
-    endDate: string;
-    cohortIds: string[];
-    departmentIds: string[];
-    roles: string[];
-  };
-  historyPage: number;
-  historyPageSize: number;
-  historySearch?: string | undefined;
-  historySimulationIds?: string[] | undefined;
-  historyScenarioIds?: string[] | undefined;
-  historyInfiniteMode?: boolean | undefined;
-  historySortBy: string;
-  historySortOrder: string;
-}) {
-  // Build history filters using /attempt/list endpoint
-  // practice: false for home mode
-  const historyFilters: HomeHistoryIn = {
+  // Single fetch: cards + embedded history
+  const homeData = await getHomeData({
     body: {
-      practice: false,
-      start_date: defaultFilters.startDate,
-      end_date: defaultFilters.endDate,
-      cohort_ids: defaultFilters.cohortIds,
-      department_ids: defaultFilters.departmentIds,
-      page: historyPage,
-      page_size: historyPageSize,
-      show_archived: false,
-      ...(historySearch && { search: historySearch }),
-      ...(historySimulationIds &&
-        historySimulationIds.length > 0 && {
-          simulation_ids: historySimulationIds,
-        }),
+      history_enabled: true,
+      history_page: historyPage,
+      history_page_size: historyPageSize,
+      history_sort_by: historySortBy,
+      history_sort_order: historySortOrder,
+      ...(historySearch && { history_simulation_search: historySearch }),
       ...(historyScenarioIds &&
         historyScenarioIds.length > 0 && {
-          scenario_ids: historyScenarioIds,
+          history_scenario_ids: historyScenarioIds,
         }),
       ...(historyInfiniteMode !== undefined && {
-        infinite_mode: historyInfiniteMode,
+        history_infinite_mode: historyInfiniteMode,
       }),
-      sort_by: historySortBy,
-      sort_order: historySortOrder,
     },
-  };
+  });
 
-  const historyData = await getHomeHistory(historyFilters);
+  // Extract history from embedded response
+  const historyData: HomeHistoryOut = homeData.history || {
+    data: [],
+    total_count: 0,
+    page: 0,
+    page_size: historyPageSize,
+    total_pages: 0,
+  };
 
   // Home history data is never archived (MV filters out archived)
   const dataArray = historyData.data || [];
   const archivedCount = 0;
   const unarchivedCount = dataArray.length;
 
-  // Extract options from API response
+  // Extract options from embedded history response
   const profileOptions: { value: string; label: string; count?: number }[] = [];
   const simulationOptions = (historyData.simulation_options || []).map(
     (opt) => {
@@ -249,23 +121,30 @@ async function HomeHistorySection({
   });
 
   return (
-    <SimulationHistory
-      data={dataArray}
-      totalCount={historyData.total_count || 0}
-      archivedCount={archivedCount}
-      unarchivedCount={unarchivedCount}
-      pageIndex={historyPage}
-      pageSize={historyPageSize}
-      showExport={true}
-      showArchive={false}
-      singleProfile={true}
-      initialFilters={defaultFilters}
-      profileOptions={profileOptions}
-      simulationOptions={simulationOptions}
-      scenarioOptions={scenarioOptions}
-    />
+    <div className="space-y-6">
+      <Home homeData={homeData} />
+
+      {/* History section — data from embedded home/get response */}
+      <div className="mt-12">
+        <SimulationHistory
+          data={dataArray}
+          totalCount={historyData.total_count || 0}
+          archivedCount={archivedCount}
+          unarchivedCount={unarchivedCount}
+          pageIndex={historyPage}
+          pageSize={historyPageSize}
+          showExport={true}
+          showArchive={false}
+          singleProfile={true}
+          initialFilters={defaultFilters}
+          profileOptions={profileOptions}
+          simulationOptions={simulationOptions}
+          scenarioOptions={scenarioOptions}
+        />
+      </div>
+    </div>
   );
 }
 
 /** ---- Export types for client component (type-only imports) ---- */
-export type { HomeHistoryIn, HomeHistoryOut, HomeOut };
+export type { HomeHistoryOut, HomeOut };

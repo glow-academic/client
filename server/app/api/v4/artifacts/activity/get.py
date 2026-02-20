@@ -21,11 +21,8 @@ from app.api.v4.artifacts.activity.types import (
     ActivityWebsocketViews,
     GetActivityWebsocketResponse,
 )
-from app.api.v4.artifacts.session.list import get_session_list_internal
-from app.api.v4.artifacts.session.types import (
-    GetSessionListRequest,
-    GetSessionListResponse,
-)
+# session types imported lazily inside _fetch_session_history_data
+# to avoid circular: activity/get → session/__init__ → session/list → activity/get
 from app.api.v4.auth.settings import get_auth_settings_internal
 from app.api.v4.entries.activity.get import get_activity_list_view_internal
 from app.api.v4.entries.audits.get import get_audit_list_view_internal
@@ -268,8 +265,12 @@ async def _fetch_session_history_data(
     request: ActivityRequest,
     filter_profile_ids: list[UUID] | None,
     bypass_cache: bool,
-) -> GetSessionListResponse:
+) -> Any:
     """Fetch session list history inline — adapted from session/list.py."""
+    # Lazy imports to avoid circular: activity/get → session/__init__ → session/list → activity/get
+    from app.api.v4.artifacts.session.list import get_session_list_internal
+    from app.api.v4.artifacts.session.types import GetSessionListRequest
+
     session_request = GetSessionListRequest(
         active=request.history_active,
         date_from=request.date_from,
@@ -352,7 +353,7 @@ async def get_activity(
 
         parallel_results = await asyncio.gather(*parallel_tasks)
         data = parallel_results[0]
-        history_data: GetSessionListResponse | None = (
+        history_data: Any = (
             parallel_results[1] if request.history_enabled else None
         )
 

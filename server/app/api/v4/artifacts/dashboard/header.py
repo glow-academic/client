@@ -7,6 +7,7 @@ from uuid import UUID
 import asyncpg
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
+from app.api.v4.artifacts.dashboard.get import fetch_dashboard_history_data
 from app.api.v4.artifacts.dashboard.permissions import compute_header_metrics_v2
 from app.api.v4.artifacts.dashboard.shared import (
     fetch_chats_data,
@@ -53,11 +54,13 @@ async def get_dashboard_header(
         if not pool:
             raise RuntimeError("Database pool not initialized")
 
+        profile_id = http_request.state.profile_id
+
         # 1. Parse filters
         filters = parse_dashboard_filters(request)
 
-        # 2. Fetch chats + thresholds in parallel
-        chats_result, thresholds = await asyncio.gather(
+        # 2. Fetch chats + thresholds + optional history in parallel
+        parallel_tasks: list = [
             fetch_chats_data(
                 pool=pool,
                 request=request,
@@ -70,7 +73,39 @@ async def get_dashboard_header(
                 target_profile_id=request.target_profile_id,
                 department_ids=request.department_ids,
             ),
-        )
+        ]
+
+        if request.history_enabled:
+            parallel_tasks.append(
+                fetch_dashboard_history_data(
+                    pool,
+                    history_enabled=True,
+                    profile_resource_id=profile_id,
+                    target_profile_id=request.target_profile_id,
+                    start_date=request.start_date,
+                    end_date=request.end_date,
+                    cohort_ids=request.cohort_ids,
+                    department_ids=request.department_ids,
+                    history_practice=request.history_practice,
+                    history_scenario_ids=request.history_scenario_ids,
+                    history_infinite_mode=request.history_infinite_mode,
+                    history_show_archived=request.history_show_archived,
+                    history_sort_by=request.history_sort_by,
+                    history_sort_order=request.history_sort_order,
+                    history_page=request.history_page,
+                    history_page_size=request.history_page_size,
+                    history_simulation_search=request.history_simulation_search,
+                    history_scenario_search=request.history_scenario_search,
+                    history_profile_search=request.history_profile_search,
+                    bypass_cache=bypass_cache,
+                )
+            )
+
+        parallel_results = await asyncio.gather(*parallel_tasks)
+        chats_result = parallel_results[0]
+        thresholds = parallel_results[1]
+        history_data = parallel_results[2] if request.history_enabled else None
+
         chat_items = chats_result.items
 
         # 3. Enrich with message stats
@@ -137,6 +172,7 @@ async def get_dashboard_header(
             header_metrics=header_metrics,
             thresholds=thresholds.as_dict(),
             simulation_options=simulation_options,
+            history=history_data,
         )
 
         # 8. Fetch target profile info if present

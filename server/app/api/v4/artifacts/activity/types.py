@@ -1,13 +1,18 @@
 """Types for activity artifact."""
 
+from __future__ import annotations
+
 from dataclasses import dataclass, field
 from datetime import datetime
+from typing import TYPE_CHECKING
 from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-from app.api.v4.artifacts.session.types import GetSessionListResponse
 from app.api.v4.entries.runs.search import GetRunListViewResponse
+
+if TYPE_CHECKING:
+    from app.api.v4.artifacts.session.types import GetSessionListResponse
 from app.sql.types import (
     GetActivityListViewSqlRow,
     GetAuditListViewSqlRow,

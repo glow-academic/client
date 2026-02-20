@@ -42,12 +42,18 @@ class ArtifactGenerateConfig:
     # Whether draft_id is required (most artifacts require it)
     requires_draft: bool = True
 
+    # Whether this artifact has a canonical artifact_id (draft artifacts only)
+    has_artifact_id: bool = True
+
     # Whether the fetcher requires an explicit pool argument
     requires_pool: bool = False
 
     # The kwarg name for the artifact's ID in the fetcher call
-    # e.g. "agent_id", "training_entry_id", "suite_entry_id"
+    # e.g. "agent_id", "chat_entry_id" — empty for non-ID artifacts
     fetcher_id_kwarg: str = ""
+
+    # Async entry types for this artifact
+    entry_types: list[str] = field(default_factory=lambda: ["debug_info"])
 
     # Extra fields to forward from the client payload to generate_artifact emit
     extra_emit_fields: list[str] = field(default_factory=list)
@@ -85,7 +91,10 @@ async def _fetch_standard(
 
     mod = importlib.import_module(module_path)
     fn = getattr(mod, func_name)
-    return await fn(profile_id=profile_id, **{id_kwarg: artifact_id}, draft_id=draft_id)
+    kwargs: dict[str, object] = {"profile_id": profile_id, "draft_id": draft_id}
+    if id_kwarg:
+        kwargs[id_kwarg] = artifact_id
+    return await fn(**kwargs)
 
 
 async def _fetch_with_pool(
@@ -97,16 +106,21 @@ async def _fetch_with_pool(
     draft_id: UUID | None,
     pool: asyncpg.Pool | None,
 ) -> object:
-    """Pool-based fetcher: get_*_websocket(pool, profile_id, <id_kwarg>, draft_id)."""
+    """Pool-based fetcher: get_*_websocket(pool, profile_id, [<id_kwarg>,] draft_id)."""
     import importlib
 
     if pool is None:
         raise RuntimeError("Database pool required but not available")
     mod = importlib.import_module(module_path)
     fn = getattr(mod, func_name)
-    return await fn(
-        pool=pool, profile_id=profile_id, **{id_kwarg: artifact_id}, draft_id=draft_id
-    )
+    kwargs: dict[str, object] = {
+        "pool": pool,
+        "profile_id": profile_id,
+        "draft_id": draft_id,
+    }
+    if id_kwarg:
+        kwargs[id_kwarg] = artifact_id
+    return await fn(**kwargs)
 
 
 def _make_fetcher(
@@ -630,12 +644,12 @@ _register(
         config_agents_attr="config_agents",
         config_models_attr="config_models",
         config_providers_attr="config_providers",
+        has_artifact_id=False,
         requires_pool=True,
-        fetcher_id_kwarg="invocation_entry_id",
         fetcher=_make_fetcher(
             "app.api.v4.artifacts.benchmark.get",
             "get_invocation_websocket",
-            "invocation_entry_id",
+            "",
             needs_pool=True,
         ),
     )
@@ -660,6 +674,7 @@ _register(
         config_agents_attr="config_agents",
         config_models_attr="config_models",
         config_providers_attr="config_providers",
+        entry_types=["insights", "debug_info"],
         requires_pool=True,
         fetcher_id_kwarg="benchmark_entry_id",
         fetcher=_make_fetcher(
@@ -685,12 +700,13 @@ _register(
         config_agents_attr="config_agents",
         config_models_attr="config_models",
         config_providers_attr="config_providers",
+        entry_types=["insights", "debug_info"],
+        has_artifact_id=False,
         requires_pool=True,
-        fetcher_id_kwarg="activity_id",
         fetcher=_make_fetcher(
             "app.api.v4.artifacts.activity.get",
             "get_activity_websocket",
-            "activity_id",
+            "",
             needs_pool=True,
         ),
     )
@@ -710,6 +726,7 @@ _register(
         config_agents_attr="config_agents",
         config_models_attr="config_models",
         config_providers_attr="config_providers",
+        entry_types=["insights", "debug_info"],
         requires_pool=True,
         fetcher_id_kwarg="session_id",
         fetcher=_make_fetcher(
@@ -735,6 +752,7 @@ _register(
         config_agents_attr="config_agents",
         config_models_attr="config_models",
         config_providers_attr="config_providers",
+        entry_types=["insights", "debug_info"],
         requires_pool=True,
         fetcher_id_kwarg="pricing_id",
         fetcher=_make_fetcher(
@@ -760,12 +778,13 @@ _register(
         config_agents_attr="config_agents",
         config_models_attr="config_models",
         config_providers_attr="config_providers",
+        entry_types=["insights", "debug_info"],
+        has_artifact_id=False,
         requires_pool=True,
-        fetcher_id_kwarg="reports_id",
         fetcher=_make_fetcher(
             "app.api.v4.artifacts.reports.get",
             "get_reports_websocket",
-            "reports_id",
+            "",
             needs_pool=True,
         ),
     )
@@ -785,6 +804,7 @@ _register(
         config_agents_attr="config_agents",
         config_models_attr="config_models",
         config_providers_attr="config_providers",
+        entry_types=["insights", "debug_info"],
         requires_pool=True,
         fetcher_id_kwarg="group_id",
         fetcher=_make_fetcher(
@@ -810,8 +830,9 @@ _register(
         config_agents_attr="config_agents",
         config_models_attr="config_models",
         config_providers_attr="config_providers",
+        entry_types=["insights", "debug_info"],
+        has_artifact_id=False,
         requires_pool=True,
-        fetcher_id_kwarg="health_id",
         fetcher=_make_fetcher(
             "app.api.v4.artifacts.health.get",
             "get_health_websocket",
@@ -835,8 +856,9 @@ _register(
         config_agents_attr="config_agents",
         config_models_attr="config_models",
         config_providers_attr="config_providers",
+        entry_types=["insights", "debug_info"],
+        has_artifact_id=False,
         requires_pool=True,
-        fetcher_id_kwarg="leaderboard_id",
         fetcher=_make_fetcher(
             "app.api.v4.artifacts.leaderboard.get",
             "get_leaderboard_websocket",
@@ -860,8 +882,9 @@ _register(
         config_agents_attr="config_agents",
         config_models_attr="config_models",
         config_providers_attr="config_providers",
+        entry_types=["insights", "debug_info"],
+        has_artifact_id=False,
         requires_pool=True,
-        fetcher_id_kwarg="record_id",
         fetcher=_make_fetcher(
             "app.api.v4.artifacts.record.get",
             "get_record_websocket",
@@ -885,8 +908,9 @@ _register(
         config_agents_attr="config_agents",
         config_models_attr="config_models",
         config_providers_attr="config_providers",
+        entry_types=["insights", "debug_info"],
+        has_artifact_id=False,
         requires_pool=True,
-        fetcher_id_kwarg="dashboard_id",
         fetcher=_make_fetcher(
             "app.api.v4.artifacts.dashboard.get",
             "get_dashboard_websocket",

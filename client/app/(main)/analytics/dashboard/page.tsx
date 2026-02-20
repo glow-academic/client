@@ -2,6 +2,7 @@
  * app/(main)/analytics/dashboard/page.tsx
  * Dashboard page for the analytics section.
  * Decomposed into 4 independent Suspense-wrapped sections for parallel streaming.
+ * History is embedded in the header section response.
  * @AshokSaravanan222 & @siladiea
  * 06/08/2025
  */
@@ -35,9 +36,8 @@ type SecondaryIn = InputOf<"/api/v4/artifacts/dashboard/secondary", "post">;
 type SecondaryOut = OutputOf<"/api/v4/artifacts/dashboard/secondary", "post">;
 type FooterIn = InputOf<"/api/v4/artifacts/dashboard/footer", "post">;
 type FooterOut = OutputOf<"/api/v4/artifacts/dashboard/footer", "post">;
-// History section
-type DashboardHistoryIn = InputOf<"/api/v4/artifacts/attempt/list", "post">;
-type DashboardHistoryOut = OutputOf<"/api/v4/artifacts/attempt/list", "post">;
+// History from embedded header response
+type DashboardHistoryOut = NonNullable<HeaderOut["history"]>;
 type BulkArchiveAttemptsIn = InputOf<
   "/api/v4/attempts/simulation/archive",
   "post"
@@ -75,16 +75,6 @@ const getDashboardSecondary = async (input: SecondaryIn): Promise<SecondaryOut> 
 const getDashboardFooter = async (input: FooterIn): Promise<FooterOut> => {
   const bypassCache = await isHardRefresh();
   return api.post("/artifacts/dashboard/footer", input, {
-    cache: "no-store",
-    ...(bypassCache && { headers: { "X-Bypass-Cache": "1" } }),
-  });
-};
-
-const getDashboardHistory = async (
-  input: DashboardHistoryIn
-): Promise<DashboardHistoryOut> => {
-  const bypassCache = await isHardRefresh();
-  return api.post("/artifacts/attempt/list", input, {
     cache: "no-store",
     ...(bypassCache && { headers: { "X-Bypass-Cache": "1" } }),
   });
@@ -176,16 +166,10 @@ export default async function DashboardPage({
     q._refresh || "",
   ].join("|");
 
-  const headerKey = `header|${filterKey}`;
-
-  const primaryKey = `primary|${filterKey}|${(heatmapRubricIds || []).join(",")}|${heatmapRubricSearch || ""}|${(trendRubricIds || []).join(",")}|${trendRubricSearch || ""}|${(skillRubricIds || []).join(",")}|${skillRubricSearch || ""}`;
-
-  const secondaryKey = `secondary|${filterKey}|${(personaSimulationIds || []).join(",")}|${personaSimulationsSearch || ""}|${(cohortSimulationIds || []).join(",")}|${cohortSimulationsSearch || ""}|${(improvementSimulationIds || []).join(",")}|${improvementSimulationsSearch || ""}`;
-
-  const footerKey = `footer|${filterKey}|${(scenarioPerfParameterIds || []).join(",")}|${scenarioPerfParamSearch || ""}|${(scenarioStatsParameterIds || []).join(",")}|${scenarioStatsParamSearch || ""}|${(simPerfSimulationIds || []).join(",")}|${simPerfSimulationSearch || ""}`;
-
-  const historyKey = [
-    "history",
+  // Header key includes history params since history is embedded in header
+  const headerKey = [
+    "header",
+    filterKey,
     historyPage,
     historyPageSize,
     historySearch || "",
@@ -202,14 +186,34 @@ export default async function DashboardPage({
     historyProfileSearch || "",
     historySimulationSearch || "",
     historyScenarioSearch || "",
-    filterKey,
   ].join("|");
+
+  const primaryKey = `primary|${filterKey}|${(heatmapRubricIds || []).join(",")}|${heatmapRubricSearch || ""}|${(trendRubricIds || []).join(",")}|${trendRubricSearch || ""}|${(skillRubricIds || []).join(",")}|${skillRubricSearch || ""}`;
+
+  const secondaryKey = `secondary|${filterKey}|${(personaSimulationIds || []).join(",")}|${personaSimulationsSearch || ""}|${(cohortSimulationIds || []).join(",")}|${cohortSimulationsSearch || ""}|${(improvementSimulationIds || []).join(",")}|${improvementSimulationsSearch || ""}`;
+
+  const footerKey = `footer|${filterKey}|${(scenarioPerfParameterIds || []).join(",")}|${scenarioPerfParamSearch || ""}|${(scenarioStatsParameterIds || []).join(",")}|${scenarioStatsParamSearch || ""}|${(simPerfSimulationIds || []).join(",")}|${simPerfSimulationSearch || ""}`;
 
   return (
     <div className="space-y-6" data-page="dashboard-index">
-      {/* Header - full width */}
+      {/* Header - full width (includes embedded history) */}
       <Suspense key={headerKey} fallback={<HeaderSkeleton />}>
-        <DashboardHeaderSection commonBody={commonBody} />
+        <DashboardHeaderSection
+          commonBody={commonBody}
+          historyPage={historyPage}
+          historyPageSize={historyPageSize}
+          historySearch={historySearch}
+          historySimulationIds={historySimulationIds}
+          historyScenarioIds={historyScenarioIds}
+          historyInfiniteMode={historyInfiniteMode}
+          historySortBy={historySortBy}
+          historySortOrder={historySortOrder}
+          historyProfileSearch={historyProfileSearch}
+          historySimulationSearch={historySimulationSearch}
+          historyScenarioSearch={historyScenarioSearch}
+          defaultFilters={filters}
+          bulkArchiveAttemptsAction={bulkArchiveAttempts}
+        />
       </Suspense>
 
       {/* Primary + Secondary in side-by-side grid */}
@@ -253,50 +257,6 @@ export default async function DashboardPage({
           simPerfSimulationSearch={simPerfSimulationSearch}
         />
       </Suspense>
-
-      {/* History - unchanged */}
-      <div className="">
-        <Suspense
-          key={historyKey}
-          fallback={
-            <SimulationHistory
-              data={[]}
-              totalCount={0}
-              archivedCount={0}
-              unarchivedCount={0}
-              pageIndex={historyPage}
-              pageSize={historyPageSize}
-              showExport={false}
-              showArchive={true}
-              singleProfile={false}
-              initialFilters={filters}
-              profileOptions={[]}
-              simulationOptions={[]}
-              scenarioOptions={[]}
-              profileSearch=""
-              simulationSearch=""
-              scenarioSearch=""
-              isLoading={true}
-            />
-          }
-        >
-          <DashboardHistorySection
-            defaultFilters={filters}
-            historyPage={historyPage}
-            historyPageSize={historyPageSize}
-            historySearch={historySearch}
-            historySimulationIds={historySimulationIds}
-            historyScenarioIds={historyScenarioIds}
-            historyInfiniteMode={historyInfiniteMode}
-            historySortBy={historySortBy}
-            historySortOrder={historySortOrder}
-            historyProfileSearch={historyProfileSearch}
-            historySimulationSearch={historySimulationSearch}
-            historyScenarioSearch={historyScenarioSearch}
-            bulkArchiveAttemptsAction={bulkArchiveAttempts}
-          />
-        </Suspense>
-      </div>
     </div>
   );
 }
@@ -324,11 +284,137 @@ type CommonBody = {
 
 async function DashboardHeaderSection({
   commonBody,
+  historyPage,
+  historyPageSize,
+  historySearch,
+  historySimulationIds,
+  historyScenarioIds,
+  historyInfiniteMode,
+  historySortBy,
+  historySortOrder,
+  historyProfileSearch,
+  historySimulationSearch,
+  historyScenarioSearch,
+  defaultFilters,
+  bulkArchiveAttemptsAction,
 }: {
   commonBody: CommonBody;
+  historyPage: number;
+  historyPageSize: number;
+  historySearch?: string | undefined;
+  historySimulationIds?: string[] | undefined;
+  historyScenarioIds?: string[] | undefined;
+  historyInfiniteMode?: boolean | undefined;
+  historySortBy: string;
+  historySortOrder: string;
+  historyProfileSearch?: string | undefined;
+  historySimulationSearch?: string | undefined;
+  historyScenarioSearch?: string | undefined;
+  defaultFilters: {
+    startDate: string;
+    endDate: string;
+    cohortIds: string[];
+    departmentIds: string[];
+    roles: string[];
+  };
+  bulkArchiveAttemptsAction?: (
+    input: BulkArchiveAttemptsIn
+  ) => Promise<BulkArchiveAttemptsOut>;
 }) {
-  const data = await getDashboardHeader({ body: commonBody });
-  return <DashboardHeader data={data} />;
+  const data = await getDashboardHeader({
+    body: {
+      ...commonBody,
+      history_enabled: true,
+      history_page: historyPage,
+      history_page_size: historyPageSize,
+      history_sort_by: historySortBy,
+      history_sort_order: historySortOrder,
+      ...(historySearch && { history_simulation_search: historySearch }),
+      ...(historyScenarioIds &&
+        historyScenarioIds.length > 0 && {
+          history_scenario_ids: historyScenarioIds,
+        }),
+      ...(historyInfiniteMode !== undefined && {
+        history_infinite_mode: historyInfiniteMode,
+      }),
+      ...(historyProfileSearch && { history_profile_search: historyProfileSearch }),
+      ...(historySimulationSearch && { history_simulation_search: historySimulationSearch }),
+      ...(historyScenarioSearch && { history_scenario_search: historyScenarioSearch }),
+    },
+  });
+
+  // Extract history from embedded header response
+  const historyData: DashboardHistoryOut = data.history || {
+    data: [],
+    total_count: 0,
+    page: 0,
+    page_size: historyPageSize,
+    total_pages: 0,
+  };
+
+  const dataArray = historyData.data || [];
+  const archivedCount = dataArray.filter((item: { is_archived?: boolean | null }) => item.is_archived).length;
+  const unarchivedCount = dataArray.filter((item: { is_archived?: boolean | null }) => !item.is_archived).length;
+
+  const profileOptions = (historyData.profile_options || []).map(
+    (opt: { value?: string | null; label?: string | null; count?: number | null }) => {
+      const count = typeof opt.count === "number" ? opt.count : undefined;
+      return {
+        value: String(opt.value || ""),
+        label: String(opt.label || ""),
+        ...(count !== undefined && { count }),
+      };
+    }
+  );
+  const simulationOptions = (historyData.simulation_options || []).map(
+    (opt: { value?: string | null; label?: string | null; count?: number | null }) => {
+      const count = typeof opt.count === "number" ? opt.count : undefined;
+      return {
+        value: String(opt.value || ""),
+        label: String(opt.label || ""),
+        ...(count !== undefined && { count }),
+      };
+    }
+  );
+  const scenarioOptions = (historyData.scenario_options || []).map(
+    (opt: { value?: string | null; label?: string | null; count?: number | null }) => {
+      const count = typeof opt.count === "number" ? opt.count : undefined;
+      return {
+        value: String(opt.value || ""),
+        label: String(opt.label || ""),
+        ...(count !== undefined && { count }),
+      };
+    }
+  );
+
+  return (
+    <>
+      <DashboardHeader data={data} />
+
+      {/* History section — data from embedded header response */}
+      <div className="">
+        <SimulationHistory
+          data={dataArray}
+          totalCount={historyData.total_count || 0}
+          archivedCount={archivedCount}
+          unarchivedCount={unarchivedCount}
+          pageIndex={historyPage}
+          pageSize={historyPageSize}
+          showExport={false}
+          showArchive={!!bulkArchiveAttemptsAction}
+          singleProfile={false}
+          initialFilters={defaultFilters}
+          profileOptions={profileOptions}
+          simulationOptions={simulationOptions}
+          scenarioOptions={scenarioOptions}
+          profileSearch={historyProfileSearch || ""}
+          simulationSearch={historySimulationSearch || ""}
+          scenarioSearch={historyScenarioSearch || ""}
+          {...(bulkArchiveAttemptsAction && { bulkArchiveAttemptsAction })}
+        />
+      </div>
+    </>
+  );
 }
 
 async function DashboardPrimarySection({
@@ -490,138 +576,10 @@ async function DashboardFooterSection({
   );
 }
 
-/** ---- Inline history section component (only used here) ---- */
-async function DashboardHistorySection({
-  defaultFilters,
-  historyPage,
-  historyPageSize,
-  historySearch,
-  historySimulationIds,
-  historyScenarioIds,
-  historyInfiniteMode,
-  historySortBy,
-  historySortOrder,
-  historyProfileSearch,
-  historySimulationSearch,
-  historyScenarioSearch,
-  bulkArchiveAttemptsAction,
-}: {
-  defaultFilters: {
-    startDate: string;
-    endDate: string;
-    cohortIds: string[];
-    departmentIds: string[];
-    roles: string[];
-  };
-  historyPage: number;
-  historyPageSize: number;
-  historySearch?: string | undefined;
-  historySimulationIds?: string[] | undefined;
-  historyScenarioIds?: string[] | undefined;
-  historyInfiniteMode?: boolean | undefined;
-  historySortBy: string;
-  historySortOrder: string;
-  historyProfileSearch?: string | undefined;
-  historySimulationSearch?: string | undefined;
-  historyScenarioSearch?: string | undefined;
-  bulkArchiveAttemptsAction?: (
-    input: BulkArchiveAttemptsIn
-  ) => Promise<BulkArchiveAttemptsOut>;
-}) {
-  const historyFilters: DashboardHistoryIn = {
-    body: {
-      practice: false,
-      start_date: defaultFilters.startDate,
-      end_date: defaultFilters.endDate,
-      department_ids: defaultFilters.departmentIds,
-      page: historyPage,
-      page_size: historyPageSize,
-      show_archived: false,
-      ...(historySearch && { search: historySearch }),
-      ...(historySimulationIds &&
-        historySimulationIds.length > 0 && {
-          simulation_ids: historySimulationIds,
-        }),
-      ...(historyScenarioIds &&
-        historyScenarioIds.length > 0 && {
-          scenario_ids: historyScenarioIds,
-        }),
-      ...(historyInfiniteMode !== undefined && {
-        infinite_mode: historyInfiniteMode,
-      }),
-      ...(historyProfileSearch && { profile_search: historyProfileSearch }),
-      ...(historySimulationSearch && { simulation_search: historySimulationSearch }),
-      ...(historyScenarioSearch && { scenario_search: historyScenarioSearch }),
-      sort_by: historySortBy,
-      sort_order: historySortOrder,
-    },
-  };
-
-  const historyData = await getDashboardHistory(historyFilters);
-
-  const dataArray = historyData.data || [];
-  const archivedCount = dataArray.filter((item: { is_archived?: boolean | null }) => item.is_archived).length;
-  const unarchivedCount = dataArray.filter((item: { is_archived?: boolean | null }) => !item.is_archived).length;
-
-  const profileOptions = (historyData.profile_options || []).map(
-    (opt: { value?: string | null; label?: string | null; count?: number | null }) => {
-      const count = typeof opt.count === "number" ? opt.count : undefined;
-      return {
-        value: String(opt.value || ""),
-        label: String(opt.label || ""),
-        ...(count !== undefined && { count }),
-      };
-    }
-  );
-  const simulationOptions = (historyData.simulation_options || []).map(
-    (opt: { value?: string | null; label?: string | null; count?: number | null }) => {
-      const count = typeof opt.count === "number" ? opt.count : undefined;
-      return {
-        value: String(opt.value || ""),
-        label: String(opt.label || ""),
-        ...(count !== undefined && { count }),
-      };
-    }
-  );
-  const scenarioOptions = (historyData.scenario_options || []).map(
-    (opt: { value?: string | null; label?: string | null; count?: number | null }) => {
-      const count = typeof opt.count === "number" ? opt.count : undefined;
-      return {
-        value: String(opt.value || ""),
-        label: String(opt.label || ""),
-        ...(count !== undefined && { count }),
-      };
-    }
-  );
-
-  return (
-    <SimulationHistory
-      data={dataArray}
-      totalCount={historyData.total_count || 0}
-      archivedCount={archivedCount}
-      unarchivedCount={unarchivedCount}
-      pageIndex={historyPage}
-      pageSize={historyPageSize}
-      showExport={false}
-      showArchive={!!bulkArchiveAttemptsAction}
-      singleProfile={false}
-      initialFilters={defaultFilters}
-      profileOptions={profileOptions}
-      simulationOptions={simulationOptions}
-      scenarioOptions={scenarioOptions}
-      profileSearch={historyProfileSearch || ""}
-      simulationSearch={historySimulationSearch || ""}
-      scenarioSearch={historyScenarioSearch || ""}
-      {...(bulkArchiveAttemptsAction && { bulkArchiveAttemptsAction })}
-    />
-  );
-}
-
 /** ---- Export types for client component (type-only imports) ---- */
 export type {
   BulkArchiveAttemptsIn,
   BulkArchiveAttemptsOut,
-  DashboardHistoryIn,
   DashboardHistoryOut,
   HeaderIn,
   HeaderOut,

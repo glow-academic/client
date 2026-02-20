@@ -2,6 +2,7 @@
  * app/(main)/record/[recordId]/page.tsx
  * Canonical record (profile) page — dashboard report for a specific profile.
  * Decomposed into 4 independent Suspense-wrapped sections for parallel streaming.
+ * History is embedded in the header section response.
  * @AshokSaravanan222 & @siladiea
  * 06/08/2025
  */
@@ -38,9 +39,8 @@ type SecondaryIn = InputOf<"/api/v4/artifacts/dashboard/secondary", "post">;
 type SecondaryOut = OutputOf<"/api/v4/artifacts/dashboard/secondary", "post">;
 type FooterIn = InputOf<"/api/v4/artifacts/dashboard/footer", "post">;
 type FooterOut = OutputOf<"/api/v4/artifacts/dashboard/footer", "post">;
-// History section
-type ReportHistoryIn = InputOf<"/api/v4/artifacts/attempt/list", "post">;
-type ReportHistoryOut = OutputOf<"/api/v4/artifacts/attempt/list", "post">;
+// History from embedded header response
+type ReportHistoryOut = NonNullable<HeaderOut["history"]>;
 
 /** ---- Section fetch functions ---- */
 const getReportHeader = async (input: HeaderIn): Promise<HeaderOut> => {
@@ -70,16 +70,6 @@ const getReportSecondary = async (input: SecondaryIn): Promise<SecondaryOut> => 
 const getReportFooter = async (input: FooterIn): Promise<FooterOut> => {
   const bypassCache = await isHardRefresh();
   return api.post("/artifacts/dashboard/footer", input, {
-    cache: "no-store",
-    ...(bypassCache && { headers: { "X-Bypass-Cache": "1" } }),
-  });
-};
-
-const getReportHistory = async (
-  input: ReportHistoryIn
-): Promise<ReportHistoryOut> => {
-  const bypassCache = await isHardRefresh();
-  return api.post("/artifacts/attempt/list", input, {
     cache: "no-store",
     ...(bypassCache && { headers: { "X-Bypass-Cache": "1" } }),
   });
@@ -178,16 +168,10 @@ export default async function RecordPage({
     recordId,
   ].join("|");
 
-  const headerKey = `header|${filterKey}`;
-
-  const primaryKey = `primary|${filterKey}|${(heatmapRubricIds || []).join(",")}|${heatmapRubricSearch || ""}|${(trendRubricIds || []).join(",")}|${trendRubricSearch || ""}|${(skillRubricIds || []).join(",")}|${skillRubricSearch || ""}`;
-
-  const secondaryKey = `secondary|${filterKey}|${(personaSimulationIds || []).join(",")}|${personaSimulationsSearch || ""}|${(cohortSimulationIds || []).join(",")}|${cohortSimulationsSearch || ""}|${(improvementSimulationIds || []).join(",")}|${improvementSimulationsSearch || ""}`;
-
-  const footerKey = `footer|${filterKey}|${(scenarioPerfParameterIds || []).join(",")}|${scenarioPerfParamSearch || ""}|${(scenarioStatsParameterIds || []).join(",")}|${scenarioStatsParamSearch || ""}|${(simPerfSimulationIds || []).join(",")}|${simPerfSimulationSearch || ""}`;
-
-  const historyKey = [
-    "history",
+  // Header key includes history params since history is embedded in header
+  const headerKey = [
+    "header",
+    filterKey,
     historyPage,
     historyPageSize,
     historySearch || "",
@@ -200,8 +184,13 @@ export default async function RecordPage({
         : "std",
     historySortBy,
     historySortOrder,
-    filterKey,
   ].join("|");
+
+  const primaryKey = `primary|${filterKey}|${(heatmapRubricIds || []).join(",")}|${heatmapRubricSearch || ""}|${(trendRubricIds || []).join(",")}|${trendRubricSearch || ""}|${(skillRubricIds || []).join(",")}|${skillRubricSearch || ""}`;
+
+  const secondaryKey = `secondary|${filterKey}|${(personaSimulationIds || []).join(",")}|${personaSimulationsSearch || ""}|${(cohortSimulationIds || []).join(",")}|${cohortSimulationsSearch || ""}|${(improvementSimulationIds || []).join(",")}|${improvementSimulationsSearch || ""}`;
+
+  const footerKey = `footer|${filterKey}|${(scenarioPerfParameterIds || []).join(",")}|${scenarioPerfParamSearch || ""}|${(scenarioStatsParameterIds || []).join(",")}|${scenarioStatsParamSearch || ""}|${(simPerfSimulationIds || []).join(",")}|${simPerfSimulationSearch || ""}`;
 
   return (
     <div className="space-y-6">
@@ -210,9 +199,20 @@ export default async function RecordPage({
         <ReportProfileHeaderSection commonBody={commonBody} />
       </Suspense>
 
-      {/* Header - full width */}
+      {/* Header - full width (includes embedded history) */}
       <Suspense key={headerKey} fallback={<HeaderSkeleton />}>
-        <ReportHeaderSection commonBody={commonBody} />
+        <ReportHeaderSection
+          commonBody={commonBody}
+          historyPage={historyPage}
+          historyPageSize={historyPageSize}
+          historySearch={historySearch}
+          historySimulationIds={historySimulationIds}
+          historyScenarioIds={historyScenarioIds}
+          historyInfiniteMode={historyInfiniteMode}
+          historySortBy={historySortBy}
+          historySortOrder={historySortOrder}
+          defaultFilters={filters}
+        />
       </Suspense>
 
       {/* Primary + Secondary in side-by-side grid */}
@@ -257,50 +257,6 @@ export default async function RecordPage({
           simPerfSimulationSearch={simPerfSimulationSearch}
         />
       </Suspense>
-
-      {/* History section - filtered by recordId */}
-      <div className="">
-        <Suspense
-          key={historyKey}
-          fallback={
-            <SimulationHistory
-              data={[]}
-              totalCount={0}
-              archivedCount={0}
-              unarchivedCount={0}
-              pageIndex={historyPage}
-              pageSize={historyPageSize}
-              showExport={false}
-              showArchive={false}
-              singleProfile={true}
-              initialFilters={{
-                startDate: filters.startDate,
-                endDate: filters.endDate,
-                cohortIds: filters.cohortIds,
-                departmentIds: filters.departmentIds,
-                roles: filters.roles,
-              }}
-              profileOptions={[]}
-              simulationOptions={[]}
-              scenarioOptions={[]}
-              isLoading={true}
-            />
-          }
-        >
-          <ReportHistorySection
-            recordId={recordId}
-            defaultFilters={filters}
-            historyPage={historyPage}
-            historyPageSize={historyPageSize}
-            historySearch={historySearch}
-            historySimulationIds={historySimulationIds}
-            historyScenarioIds={historyScenarioIds}
-            historyInfiniteMode={historyInfiniteMode}
-            historySortBy={historySortBy}
-            historySortOrder={historySortOrder}
-          />
-        </Suspense>
-      </div>
     </div>
   );
 }
@@ -359,11 +315,117 @@ async function ReportProfileHeaderSection({
 
 async function ReportHeaderSection({
   commonBody,
+  historyPage,
+  historyPageSize,
+  historySearch,
+  historySimulationIds,
+  historyScenarioIds,
+  historyInfiniteMode,
+  historySortBy,
+  historySortOrder,
+  defaultFilters,
 }: {
   commonBody: CommonBody;
+  historyPage: number;
+  historyPageSize: number;
+  historySearch?: string | undefined;
+  historySimulationIds?: string[] | undefined;
+  historyScenarioIds?: string[] | undefined;
+  historyInfiniteMode?: boolean | undefined;
+  historySortBy: string;
+  historySortOrder: string;
+  defaultFilters: {
+    startDate: string;
+    endDate: string;
+    cohortIds: string[];
+    departmentIds: string[];
+    roles: string[];
+    simulationFilters: string[];
+  };
 }) {
-  const data = await getReportHeader({ body: commonBody });
-  return <DashboardHeader data={data} />;
+  const data = await getReportHeader({
+    body: {
+      ...commonBody,
+      history_enabled: true,
+      history_page: historyPage,
+      history_page_size: historyPageSize,
+      history_sort_by: historySortBy,
+      history_sort_order: historySortOrder,
+      ...(historySearch && { history_simulation_search: historySearch }),
+      ...(historyScenarioIds &&
+        historyScenarioIds.length > 0 && {
+          history_scenario_ids: historyScenarioIds,
+        }),
+      ...(historyInfiniteMode !== undefined && {
+        history_infinite_mode: historyInfiniteMode,
+      }),
+    },
+  });
+
+  // Extract history from embedded header response
+  const historyData: ReportHistoryOut = data.history || {
+    data: [],
+    total_count: 0,
+    page: 0,
+    page_size: historyPageSize,
+    total_pages: 0,
+  };
+
+  const dataArray = historyData.data || [];
+  const archivedCount = dataArray.filter((item: { is_archived?: boolean | null }) => item.is_archived).length;
+  const unarchivedCount = dataArray.filter((item: { is_archived?: boolean | null }) => !item.is_archived).length;
+
+  const simulationOptions = (historyData.simulation_options || []).map(
+    (opt: { value?: string | null; label?: string | null; count?: number | null }) => {
+      const count = typeof opt.count === "number" ? opt.count : undefined;
+      return {
+        value: String(opt.value || ""),
+        label: String(opt.label || ""),
+        ...(count !== undefined && { count }),
+      };
+    }
+  );
+  const scenarioOptions = (historyData.scenario_options || []).map(
+    (opt: { value?: string | null; label?: string | null; count?: number | null }) => {
+      const count = typeof opt.count === "number" ? opt.count : undefined;
+      return {
+        value: String(opt.value || ""),
+        label: String(opt.label || ""),
+        ...(count !== undefined && { count }),
+      };
+    }
+  );
+
+  return (
+    <>
+      <DashboardHeader data={data} />
+
+      {/* History section — data from embedded header response */}
+      <div className="">
+        <SimulationHistory
+          data={dataArray}
+          totalCount={historyData.total_count || 0}
+          archivedCount={archivedCount}
+          unarchivedCount={unarchivedCount}
+          pageIndex={historyPage}
+          pageSize={historyPageSize}
+          showExport={false}
+          showArchive={false}
+          singleProfile={true}
+          initialFilters={{
+            startDate: defaultFilters.startDate,
+            endDate: defaultFilters.endDate,
+            cohortIds: defaultFilters.cohortIds,
+            departmentIds: defaultFilters.departmentIds,
+            roles: defaultFilters.roles,
+          }}
+          profileOptions={[]}
+          simulationOptions={simulationOptions}
+          scenarioOptions={scenarioOptions}
+        />
+      </div>
+    </>
+  );
 }
 
 async function ReportPrimarySection({
@@ -528,116 +590,6 @@ async function ReportFooterSection({
   );
 }
 
-/** ---- Inline history section component (only used here) ---- */
-async function ReportHistorySection({
-  recordId,
-  defaultFilters,
-  historyPage,
-  historyPageSize,
-  historySearch,
-  historySimulationIds,
-  historyScenarioIds,
-  historyInfiniteMode,
-  historySortBy,
-  historySortOrder,
-}: {
-  recordId: string;
-  defaultFilters: {
-    startDate: string;
-    endDate: string;
-    cohortIds: string[];
-    departmentIds: string[];
-    roles: string[];
-    simulationFilters: string[];
-  };
-  historyPage: number;
-  historyPageSize: number;
-  historySearch?: string | undefined;
-  historySimulationIds?: string[] | undefined;
-  historyScenarioIds?: string[] | undefined;
-  historyInfiniteMode?: boolean | undefined;
-  historySortBy: string;
-  historySortOrder: string;
-}) {
-  const historyFilters: ReportHistoryIn = {
-    body: {
-      practice: false,
-      target_profile_id: recordId,
-      start_date: defaultFilters.startDate,
-      end_date: defaultFilters.endDate,
-      department_ids: defaultFilters.departmentIds,
-      page: historyPage,
-      page_size: historyPageSize,
-      show_archived: false,
-      ...(historySearch && { search: historySearch }),
-      ...(historySimulationIds &&
-        historySimulationIds.length > 0 && {
-          simulation_ids: historySimulationIds,
-        }),
-      ...(historyScenarioIds &&
-        historyScenarioIds.length > 0 && {
-          scenario_ids: historyScenarioIds,
-        }),
-      ...(historyInfiniteMode !== undefined && {
-        infinite_mode: historyInfiniteMode,
-      }),
-      sort_by: historySortBy,
-      sort_order: historySortOrder,
-    },
-  };
-
-  const historyData = await getReportHistory(historyFilters);
-
-  const dataArray = historyData.data || [];
-  const archivedCount = dataArray.filter((item: { is_archived?: boolean | null }) => item.is_archived).length;
-  const unarchivedCount = dataArray.filter((item: { is_archived?: boolean | null }) => !item.is_archived).length;
-
-  const simulationOptions = (historyData.simulation_options || []).map(
-    (opt: { value?: string | null; label?: string | null; count?: number | null }) => {
-      const count = typeof opt.count === "number" ? opt.count : undefined;
-      return {
-        value: String(opt.value || ""),
-        label: String(opt.label || ""),
-        ...(count !== undefined && { count }),
-      };
-    }
-  );
-  const scenarioOptions = (historyData.scenario_options || []).map(
-    (opt: { value?: string | null; label?: string | null; count?: number | null }) => {
-      const count = typeof opt.count === "number" ? opt.count : undefined;
-      return {
-        value: String(opt.value || ""),
-        label: String(opt.label || ""),
-        ...(count !== undefined && { count }),
-      };
-    }
-  );
-
-  return (
-    <SimulationHistory
-      data={dataArray}
-      totalCount={historyData.total_count || 0}
-      archivedCount={archivedCount}
-      unarchivedCount={unarchivedCount}
-      pageIndex={historyPage}
-      pageSize={historyPageSize}
-      showExport={false}
-      showArchive={false}
-      singleProfile={true}
-      initialFilters={{
-        startDate: defaultFilters.startDate,
-        endDate: defaultFilters.endDate,
-        cohortIds: defaultFilters.cohortIds,
-        departmentIds: defaultFilters.departmentIds,
-        roles: defaultFilters.roles,
-      }}
-      profileOptions={[]}
-      simulationOptions={simulationOptions}
-      scenarioOptions={scenarioOptions}
-    />
-  );
-}
-
 /** ---- Export types for client component (type-only imports) ---- */
 export type GetProfileOut = {
   name: string | null;
@@ -645,4 +597,4 @@ export type GetProfileOut = {
   primary_email: string | null;
   role: string | null;
 };
-export type { ReportHistoryIn, ReportHistoryOut, HeaderIn as ReportsOverviewIn, HeaderOut as ReportsOverviewOut };
+export type { ReportHistoryOut, HeaderIn as ReportsOverviewIn, HeaderOut as ReportsOverviewOut };
