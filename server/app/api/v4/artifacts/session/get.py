@@ -6,8 +6,9 @@ then aggregates in Python.
 """
 
 import asyncio
+from datetime import UTC, datetime
 from decimal import Decimal
-from typing import Annotated
+from typing import Annotated, Any
 from uuid import UUID
 
 import asyncpg
@@ -19,21 +20,208 @@ from app.api.v4.artifacts.session.types import (
     ArtifactSessionGroup,
     GetSessionDetailRequest,
     GetSessionDetailResponse,
+    GetSessionWebsocketResponse,
+    SessionInternalData,
+    SessionWebsocketResources,
+    SessionWebsocketViews,
 )
 from app.api.v4.auth.profile import get_auth_profile_internal
+from app.api.v4.auth.settings import get_auth_settings_internal
 from app.api.v4.entries.audits.get import get_audit_list_view_internal
 from app.api.v4.entries.groups.get import get_group_list_view_internal
-from app.api.v4.entries.runs.search import get_run_list_entries_internal
+from app.api.v4.entries.runs.search import (
+    GetRunListViewResponse,
+    get_run_list_entries_internal,
+)
 from app.api.v4.entries.sessions.get import get_session_list_view_internal
+from app.api.v4.permissions import resolve_agents_for_artifact
+from app.api.v4.resources.models.get import get_models_internal
 from app.api.v4.resources.names.get import get_names_internal
+from app.api.v4.resources.profiles.get import get_profiles_internal
+from app.api.v4.resources.providers.get import get_providers_internal
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
+from app.sql.types import (
+    GetAuditListViewSqlRow,
+    GetGroupListViewSqlRow,
+    QGetProfilesV4Item,
+)
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
 
 router = APIRouter()
+
+# Session resource types for agent resolution (empty — session has no domain resources)
+SESSION_BUNDLE_RESOURCES: set[str] = set()
+
+
+# =============================================================================
+# Internal Layer
+# =============================================================================
+
+
+async def get_session_internal(
+    pool: asyncpg.Pool,
+    profile_id: UUID,
+    session_id: UUID,
+    bypass_cache: bool = False,
+    audit_limit: int = 50,
+    audit_offset: int = 0,
+) -> SessionInternalData:
+    """Fetch both domain views and config chain for a session.
+
+    Returns a SessionInternalData dataclass consumed by both the HTTP
+    endpoint and the websocket wrapper.
+    """
+    # 1. Settings-based agent resolution + config chain
+    async with pool.acquire() as settings_conn:
+        settings_data = await get_auth_settings_internal(
+            settings_conn, profile_id, bypass_cache
+        )
+    agent_ids, _create_tool_ids, _link_tool_ids = resolve_agents_for_artifact(
+        settings_data.agent_tool_entries, SESSION_BUNDLE_RESOURCES
+    )
+
+    config_agents = list(settings_data.settings_agents)
+    config_tools = list(settings_data.settings_tools)
+
+    config_model_resource_ids = list(
+        dict.fromkeys(a.model_id for a in settings_data.settings_agents if a.model_id)
+    )
+    config_models: list[Any] = []
+    if config_model_resource_ids:
+        async with pool.acquire() as conn:
+            config_models = await get_models_internal(
+                conn, config_model_resource_ids, bypass_cache
+            )
+
+    config_provider_resource_ids = list(
+        dict.fromkeys(m.provider_id for m in config_models if m.provider_id)
+    )
+    config_providers: list[Any] = []
+    if config_provider_resource_ids:
+        async with pool.acquire() as conn:
+            config_providers = await get_providers_internal(
+                conn, config_provider_resource_ids, bypass_cache
+            )
+
+    # 2. Resolve actor context
+    async with pool.acquire() as context_conn:
+        profile_ctx = await get_auth_profile_internal(
+            conn=context_conn,
+            profile_id=profile_id,
+            bypass_cache=False,
+        )
+        actor_name = profile_ctx.access.actor_name
+
+    # 3. Verify session exists
+    async with pool.acquire() as conn:
+        session_view = await get_session_list_view_internal(
+            conn=conn,
+            session_ids=[session_id],
+            bypass_cache=bypass_cache,
+        )
+
+    if not session_view.items:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Session not found: {session_id}",
+        )
+
+    session = session_view.items[0]
+
+    # 4. Parallel fetch: groups, audits, config profile, runs today
+    async def fetch_groups() -> GetGroupListViewSqlRow:
+        async with pool.acquire() as c:
+            return await get_group_list_view_internal(
+                conn=c,
+                session_id_filter=session_id,
+                page_limit=1000,
+                bypass_cache=bypass_cache,
+            )
+
+    async def fetch_audits() -> GetAuditListViewSqlRow:
+        async with pool.acquire() as c:
+            return await get_audit_list_view_internal(
+                conn=c,
+                session_id_filter=session_id,
+                page_limit=audit_limit,
+                page_offset=audit_offset,
+                bypass_cache=bypass_cache,
+            )
+
+    async def fetch_config_profile() -> list[QGetProfilesV4Item]:
+        async with pool.acquire() as c:
+            return await get_profiles_internal(c, [profile_id], bypass_cache)
+
+    async def fetch_runs_today() -> GetRunListViewResponse:
+        today_utc = datetime.now(UTC).replace(hour=0, minute=0, second=0, microsecond=0)
+        tomorrow_utc = today_utc.replace(hour=23, minute=59, second=59)
+        async with pool.acquire() as c:
+            return await get_run_list_entries_internal(
+                conn=c,
+                profile_id_filter=profile_id,
+                date_from=today_utc,
+                date_to=tomorrow_utc,
+                page_limit=1,
+                bypass_cache=True,
+            )
+
+    (
+        groups_result,
+        audits_result,
+        config_profile_result,
+        runs_today_result,
+    ) = await asyncio.gather(
+        fetch_groups(),
+        fetch_audits(),
+        fetch_config_profile(),
+        fetch_runs_today(),
+    )
+
+    # 5. Fetch runs for groups (needs group IDs from step 4)
+    group_ids = [g.group_id for g in groups_result.items]
+    async with pool.acquire() as conn:
+        runs_result = await get_run_list_entries_internal(
+            conn=conn,
+            group_ids=group_ids if group_ids else None,
+            page_limit=10000,
+            bypass_cache=bypass_cache,
+        )
+
+    # 6. Get profile name
+    profile_name = None
+    if session.profile_id:
+        async with pool.acquire() as conn:
+            name_items = await get_names_internal(
+                conn, [session.profile_id], bypass_cache
+            )
+            if name_items:
+                profile_name = name_items[0].name
+
+    return SessionInternalData(
+        session_view=session_view,
+        groups_result=groups_result,
+        audits_result=audits_result,
+        runs_result=runs_result,
+        config_agents=config_agents,
+        config_models=config_models,
+        config_providers=config_providers,
+        config_tools=config_tools,
+        config_profile=config_profile_result,
+        runs_today=runs_today_result,
+        resource_agent_ids=agent_ids,
+        group_id=None,
+        actor_name=actor_name,
+        profile_name=profile_name,
+    )
+
+
+# =============================================================================
+# HTTP Endpoint
+# =============================================================================
 
 
 @router.post(
@@ -63,19 +251,6 @@ async def get_session(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        # Fetch user context for audit logging
-        pool = get_pool()
-        if pool:
-            async with pool.acquire() as context_conn:
-                profile_ctx = await get_auth_profile_internal(
-                    conn=context_conn,
-                    profile_id=profile_id,
-                    bypass_cache=False,
-                )
-                actor_name = profile_ctx.access.actor_name
-        else:
-            actor_name = None
-
         # Check for cached response
         body_dict = request.model_dump(mode="json")
         body_dict["profile_id"] = str(profile_id)
@@ -88,57 +263,30 @@ async def get_session(
                 response.headers["X-Cache-Hit"] = "1"
                 return GetSessionDetailResponse.model_validate(cached["data"])
 
-        # Verify session exists via lean MV
-        session_view = await get_session_list_view_internal(
-            conn=conn,
-            session_ids=[request.session_id],
+        pool = get_pool()
+        data = await get_session_internal(
+            pool=pool,
+            profile_id=profile_id,
+            session_id=request.session_id,
             bypass_cache=bypass_cache,
+            audit_limit=request.audit_limit,
+            audit_offset=request.audit_offset,
         )
 
-        if not session_view.items:
-            raise HTTPException(
-                status_code=404,
-                detail=f"Session not found: {request.session_id}",
-            )
-
-        session = session_view.items[0]
+        session = data.session_view.items[0]
 
         # Set audit context
-        if actor_name:
-            audit_set(http_request, actor={"name": actor_name, "id": profile_id})
-
-        # Parallel fetch: groups and audits via view internals
-        groups_result, audits_result = await asyncio.gather(
-            get_group_list_view_internal(
-                conn=conn,
-                session_id_filter=request.session_id,
-                page_limit=1000,
-                bypass_cache=bypass_cache,
-            ),
-            get_audit_list_view_internal(
-                conn=conn,
-                session_id_filter=request.session_id,
-                page_limit=request.audit_limit,
-                page_offset=request.audit_offset,
-                bypass_cache=bypass_cache,
-            ),
-        )
-
-        # Fetch runs for groups
-        group_ids = [g.group_id for g in groups_result.items]
-        runs_result = await get_run_list_entries_internal(
-            conn=conn,
-            group_ids=group_ids if group_ids else None,
-            page_limit=10000,
-            bypass_cache=bypass_cache,
-        )
+        if data.actor_name:
+            audit_set(http_request, actor={"name": data.actor_name, "id": profile_id})
 
         # Compute per-run costs
-        run_costs = await compute_costs_from_runs(conn, runs_result.items, bypass_cache)
+        run_costs = await compute_costs_from_runs(
+            conn, data.runs_result.items, bypass_cache
+        )
 
         # Aggregate run stats per group
         group_run_aggs: dict[UUID, dict] = {}
-        for run in runs_result.items:
+        for run in data.runs_result.items:
             gid = run.group_id
             if not gid:
                 continue
@@ -170,7 +318,7 @@ async def get_session(
 
         # Build groups with run aggregates
         groups = []
-        for g in groups_result.items:
+        for g in data.groups_result.items:
             agg = group_run_aggs.get(g.group_id, {})
             groups.append(
                 ArtifactSessionGroup(
@@ -194,27 +342,18 @@ async def get_session(
                 endpoint=a.endpoint,
                 error=a.error,
             )
-            for a in audits_result.items
+            for a in data.audits_result.items
         ]
 
-        # Get profile name via resource layer
-        profile_name = None
-        if session.profile_id:
-            name_items = await get_names_internal(
-                conn, [session.profile_id], bypass_cache
-            )
-            if name_items:
-                profile_name = name_items[0].name
-
         api_response = GetSessionDetailResponse(
-            actor_name=actor_name,
+            actor_name=data.actor_name,
             session_exists=True,
             session_id=session.session_id,
             profile_id=session.profile_id,
-            profile_name=profile_name,
+            profile_name=data.profile_name,
             session_created_at=session.session_created_at,
             active=session.active,
-            audit_total_count=audits_result.total_count,
+            audit_total_count=data.audits_result.total_count,
             audits=audits,
             groups=groups,
         )
@@ -242,3 +381,47 @@ async def get_session(
             operation="artifacts_session_get",
             request=http_request,
         )
+
+
+# =============================================================================
+# WebSocket Layer
+# =============================================================================
+
+
+async def get_session_websocket(
+    pool: asyncpg.Pool,
+    profile_id: UUID,
+    session_id: UUID | None = None,
+    draft_id: UUID | None = None,
+    bypass_cache: bool = False,
+) -> GetSessionWebsocketResponse:
+    """Thin wrapper for websocket consumers — config chain + domain views."""
+    if not session_id:
+        raise HTTPException(
+            status_code=400,
+            detail="session_id is required for websocket.",
+        )
+
+    data = await get_session_internal(
+        pool=pool,
+        profile_id=profile_id,
+        session_id=session_id,
+        bypass_cache=bypass_cache,
+    )
+
+    return GetSessionWebsocketResponse(
+        views=SessionWebsocketViews(
+            runs=data.runs_today,
+            groups=data.groups_result.items if data.groups_result.items else None,
+            audits=data.audits_result.items if data.audits_result.items else None,
+        ),
+        resources=SessionWebsocketResources(
+            config_agents=data.config_agents or None,
+            config_models=data.config_models or None,
+            config_providers=data.config_providers or None,
+            config_tools=data.config_tools or None,
+            config_profile=data.config_profile or None,
+        ),
+        resource_agent_ids=data.resource_agent_ids,
+        group_id=data.group_id,
+    )

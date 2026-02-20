@@ -46,7 +46,9 @@ async def handle_progress(data: dict[str, Any]) -> None:
 
 
 @internal_sio.on("generate_call_progress")  # type: ignore
-async def conversations_completions_call_progress_listener(data: dict[str, Any]) -> None:
+async def conversations_completions_call_progress_listener(
+    data: dict[str, Any],
+) -> None:
     """Listen for tool_call_delta events targeting conversations_completions."""
     if data.get("event_type") != "tool_call_delta":
         return

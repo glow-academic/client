@@ -5,6 +5,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
+from app.api.v4.artifacts.attempt.types import GetAttemptListResponse
 from app.api.v4.artifacts.types import FilterOption
 from app.api.v4.entries.runs.search import GetRunListViewResponse
 from app.sql.types import (
@@ -23,6 +24,7 @@ from app.sql.types import (
 class DashboardRequest(BaseModel):
     """Request for getting dashboard data (get.py scope only)."""
 
+    # Global filters
     start_date: str | None = None
     end_date: str | None = None
     cohort_ids: list[UUID] | None = None
@@ -34,6 +36,44 @@ class DashboardRequest(BaseModel):
     target_profile_id: UUID | None = None
     page_limit: int = Field(default=50, ge=1, le=200)
     page_offset: int = Field(default=0, ge=0)
+
+    # Primary section pickers (rubric-focused)
+    heatmap_rubric_ids: list[UUID] | None = None
+    heatmap_rubric_search: str | None = None
+    trend_rubric_ids: list[UUID] | None = None
+    trend_rubric_search: str | None = None
+    skill_rubric_ids: list[UUID] | None = None
+    skill_rubric_search: str | None = None
+
+    # Secondary section pickers (simulation-focused)
+    persona_simulation_ids: list[UUID] | None = None
+    persona_simulations_search: str | None = None
+    cohort_simulation_ids: list[UUID] | None = None
+    cohort_simulations_search: str | None = None
+    improvement_simulation_ids: list[UUID] | None = None
+    improvement_simulations_search: str | None = None
+
+    # Footer section pickers (scenario/simulation-focused)
+    scenario_perf_parameter_ids: list[UUID] | None = None
+    scenario_perf_param_search: str | None = None
+    scenario_stats_parameter_ids: list[UUID] | None = None
+    scenario_stats_param_search: str | None = None
+    sim_perf_simulation_ids: list[UUID] | None = None
+    sim_perf_simulation_search: str | None = None
+
+    # History section (attempt list)
+    history_enabled: bool = False
+    history_practice: bool = False
+    history_scenario_ids: list[UUID] | None = None
+    history_infinite_mode: bool | None = None
+    history_show_archived: bool = False
+    history_sort_by: str | None = "date"
+    history_sort_order: str | None = "desc"
+    history_page: int = 0
+    history_page_size: int = 20
+    history_simulation_search: str | None = None
+    history_scenario_search: str | None = None
+    history_profile_search: str | None = None
 
 
 # ============================================================================
@@ -506,6 +546,9 @@ class DashboardBundleResponse(BaseModel):
     profile_emails: list[str] | None = None
     profile_primary_email: str | None = None
     profile_role: str | None = None
+
+    # Attempt history (populated when history_enabled=True)
+    history: GetAttemptListResponse | None = None
 
 
 # ============================================================================

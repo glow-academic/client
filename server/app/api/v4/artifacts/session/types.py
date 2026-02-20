@@ -1,5 +1,6 @@
 """Types for session artifact endpoints."""
 
+from dataclasses import dataclass, field
 from datetime import datetime
 from decimal import Decimal
 from uuid import UUID
@@ -123,6 +124,9 @@ class SessionWebsocketViews(BaseModel):
     """Views data for session websocket response."""
 
     runs: "GetRunListViewResponse | None" = None
+    # Domain views (from internal layer)
+    groups: "list[QGetGroupListViewV4Item] | None" = None
+    audits: "list[QGetAuditListViewV4Item] | None" = None
 
 
 class SessionWebsocketResources(BaseModel):
@@ -146,7 +150,12 @@ class GetSessionWebsocketResponse(BaseModel):
 
 from app.api.v4.entries.runs.search import GetRunListViewResponse  # noqa: E402
 from app.sql.types import (  # noqa: E402
+    GetAuditListViewSqlRow,
+    GetGroupListViewSqlRow,
+    GetSessionListViewSqlRow,
     QGetAgentsV4Item,
+    QGetAuditListViewV4Item,
+    QGetGroupListViewV4Item,
     QGetModelsV4Item,
     QGetProfilesV4Item,
     QGetProvidersV4Item,
@@ -155,3 +164,26 @@ from app.sql.types import (  # noqa: E402
 
 SessionWebsocketViews.model_rebuild()
 SessionWebsocketResources.model_rebuild()
+
+
+@dataclass
+class SessionInternalData:
+    """Internal data from core session fetching (cacheable layer)."""
+
+    # Views
+    session_view: GetSessionListViewSqlRow
+    groups_result: GetGroupListViewSqlRow
+    audits_result: GetAuditListViewSqlRow
+    runs_result: GetRunListViewResponse
+    # Config chain
+    config_agents: list[QGetAgentsV4Item] = field(default_factory=list)
+    config_models: list[QGetModelsV4Item] = field(default_factory=list)
+    config_providers: list[QGetProvidersV4Item] = field(default_factory=list)
+    config_tools: list[QGetToolsV4Item] = field(default_factory=list)
+    config_profile: list[QGetProfilesV4Item] = field(default_factory=list)
+    runs_today: GetRunListViewResponse | None = None
+    resource_agent_ids: dict[str, UUID | None] = field(default_factory=dict)
+    group_id: UUID | None = None
+    # Context
+    actor_name: str | None = None
+    profile_name: str | None = None

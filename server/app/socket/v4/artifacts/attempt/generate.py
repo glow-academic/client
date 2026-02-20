@@ -157,7 +157,9 @@ async def _attempt_generate_impl(
 
         # Detect modality and resource_type from entry_types
         is_grade = any(et in ATTEMPT_GRADE_ENTRY_TYPES for et in entry_types)
-        is_message = "user_messages" in entry_types or "assistant_messages" in entry_types
+        is_message = (
+            "user_messages" in entry_types or "assistant_messages" in entry_types
+        )
         resource_type = "grade" if is_grade else "attempt"
         modality = "call" if is_grade else "text"
 

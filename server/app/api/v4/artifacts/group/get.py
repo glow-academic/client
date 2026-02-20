@@ -7,7 +7,8 @@ then assembles the full group detail in Python.
 
 import asyncio
 from collections import defaultdict
-from typing import Annotated
+from datetime import UTC, datetime
+from typing import Annotated, Any
 from uuid import UUID
 
 import asyncpg
@@ -17,26 +18,264 @@ from app.api.v4.artifacts._shared.pricing import compute_costs_from_runs
 from app.api.v4.artifacts.group.types import (
     GetGroupDetailRequest,
     GetGroupDetailResponse,
+    GetGroupWebsocketResponse,
     GroupDetailCallItem,
     GroupDetailContentItem,
     GroupDetailMessageItem,
     GroupDetailResourceItem,
     GroupDetailRunItem,
     GroupDetailRunWithMessages,
+    GroupInternalData,
+    GroupWebsocketResources,
+    GroupWebsocketViews,
 )
+from app.api.v4.auth.settings import get_auth_settings_internal
 from app.api.v4.entries.calls.get import get_call_list_view_internal
 from app.api.v4.entries.groups.get import get_group_list_view_internal
-from app.api.v4.entries.runs.search import get_run_list_entries_internal
+from app.api.v4.entries.runs.search import (
+    GetRunListViewResponse,
+    get_run_list_entries_internal,
+)
+from app.api.v4.permissions import resolve_agents_for_artifact
+from app.api.v4.resources.agents.get import get_agents_internal
+from app.api.v4.resources.models.get import get_models_internal
 from app.api.v4.resources.names.get import get_names_internal
+from app.api.v4.resources.profiles.get import get_profiles_internal
+from app.api.v4.resources.providers.get import get_providers_internal
 from app.api.v4.resources.tools.get import get_tools_internal
+from app.api.v4.views.message.list.get import get_message_list_view_internal
+from app.api.v4.views.message.list.types import GetMessageListViewResponse
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
-from app.main import get_db
+from app.main import get_db, get_pool
+from app.sql.types import GetCallListViewSqlRow
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
 
 router = APIRouter()
+
+
+# =============================================================================
+# Internal Layer
+# =============================================================================
+
+
+async def get_group_internal(
+    pool: asyncpg.Pool,
+    profile_id: UUID,
+    group_id: UUID,
+    bypass_cache: bool = False,
+) -> GroupInternalData:
+    """Fetch both domain views and config chain for a group.
+
+    Returns a GroupInternalData dataclass consumed by both the HTTP
+    endpoint and the websocket wrapper.
+    """
+    # 1. Settings-based agent resolution + config chain
+    async with pool.acquire() as settings_conn:
+        settings_data = await get_auth_settings_internal(
+            settings_conn, profile_id, bypass_cache
+        )
+    agent_ids, _tool_ids_map, _link_tool_ids = resolve_agents_for_artifact(
+        settings_data.agent_tool_entries, set()
+    )
+
+    config_agent_resource_ids = [a.id for a in settings_data.settings_agents if a.id]
+    config_model_resource_ids = [
+        a.model_id for a in settings_data.settings_agents if a.model_id
+    ]
+
+    # 2. Parallel fetch: config agents, config models, config profile, runs today
+    async def fetch_config_agents() -> list[Any]:
+        if not config_agent_resource_ids:
+            return []
+        async with pool.acquire() as c:
+            return await get_agents_internal(c, config_agent_resource_ids, bypass_cache)
+
+    async def fetch_config_models() -> list[Any]:
+        if not config_model_resource_ids:
+            return []
+        async with pool.acquire() as c:
+            return await get_models_internal(c, config_model_resource_ids, bypass_cache)
+
+    async def fetch_config_profile() -> list[Any]:
+        async with pool.acquire() as c:
+            return await get_profiles_internal(c, [profile_id], bypass_cache)
+
+    async def fetch_runs_today() -> GetRunListViewResponse:
+        today_utc = datetime.now(UTC).replace(hour=0, minute=0, second=0, microsecond=0)
+        tomorrow_utc = today_utc.replace(hour=23, minute=59, second=59)
+        async with pool.acquire() as c:
+            return await get_run_list_entries_internal(
+                conn=c,
+                profile_id_filter=profile_id,
+                date_from=today_utc,
+                date_to=tomorrow_utc,
+                page_limit=1,
+                bypass_cache=True,
+            )
+
+    (
+        config_agents_result,
+        config_models_result,
+        config_profile_result,
+        runs_today_result,
+    ) = await asyncio.gather(
+        fetch_config_agents(),
+        fetch_config_models(),
+        fetch_config_profile(),
+        fetch_runs_today(),
+    )
+
+    # Derive providers from fetched models (sequential — needs model results)
+    config_provider_ids = list(
+        dict.fromkeys(
+            m.provider_id for m in (config_models_result or []) if m.provider_id
+        )
+    )
+    config_providers_result: list[Any] = []
+    if config_provider_ids:
+        async with pool.acquire() as c:
+            config_providers_result = await get_providers_internal(
+                c, config_provider_ids, bypass_cache
+            )
+
+    # Fetch tools from config agent (sequential — needs agent results)
+    config_tools_result: list[Any] = []
+    if config_agents_result:
+        agent_resource = config_agents_result[0]
+        tool_ids = getattr(agent_resource, "tool_ids", None)
+        if tool_ids:
+            async with pool.acquire() as c:
+                config_tools_result = await get_tools_internal(
+                    c, list(tool_ids), bypass_cache
+                )
+
+    # 3. Resolve actor name
+    async with pool.acquire() as conn:
+        actor_name_items = await get_names_internal(conn, [profile_id], bypass_cache)
+    actor_name = actor_name_items[0].name if actor_name_items else None
+
+    # 4. Verify group exists
+    async with pool.acquire() as conn:
+        group_view = await get_group_list_view_internal(
+            conn=conn,
+            group_ids=[group_id],
+            bypass_cache=bypass_cache,
+        )
+
+    if not group_view.items:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Group not found: {group_id}",
+        )
+
+    # 5. Get runs for group
+    async with pool.acquire() as conn:
+        runs_result = await get_run_list_entries_internal(
+            conn=conn,
+            group_id_filter=group_id,
+            page_limit=10000,
+            sort_order="asc",
+            bypass_cache=bypass_cache,
+        )
+
+    if not runs_result.items:
+        raise HTTPException(
+            status_code=403,
+            detail="You don't have access to this group. It may be restricted to other departments.",
+        )
+
+    run_ids = [r.run_id for r in runs_result.items]
+
+    # 6. Fetch messages and calls in parallel
+    async def fetch_messages() -> GetMessageListViewResponse:
+        async with pool.acquire() as c:
+            return await get_message_list_view_internal(
+                conn=c,
+                run_ids=run_ids,
+                bypass_cache=bypass_cache,
+            )
+
+    async def fetch_calls() -> GetCallListViewSqlRow:
+        async with pool.acquire() as c:
+            return await get_call_list_view_internal(
+                conn=c,
+                run_ids=run_ids,
+                bypass_cache=bypass_cache,
+            )
+
+    messages_result, calls_result = await asyncio.gather(
+        fetch_messages(),
+        fetch_calls(),
+    )
+
+    return GroupInternalData(
+        group_view=group_view,
+        runs_result=runs_result,
+        messages_result=messages_result,
+        calls_result=calls_result,
+        config_agents=config_agents_result,
+        config_models=config_models_result,
+        config_providers=config_providers_result,
+        config_tools=config_tools_result,
+        config_profile=config_profile_result,
+        runs_today=runs_today_result,
+        resource_agent_ids=agent_ids,
+        group_id=group_id,
+        actor_name=actor_name,
+    )
+
+
+# =============================================================================
+# WebSocket Layer
+# =============================================================================
+
+
+async def get_group_websocket(
+    pool: asyncpg.Pool,
+    profile_id: UUID,
+    group_id: UUID | None = None,
+    draft_id: UUID | None = None,
+    bypass_cache: bool = False,
+) -> GetGroupWebsocketResponse:
+    """Thin wrapper for websocket consumers — config chain + domain views."""
+    if not group_id:
+        raise HTTPException(
+            status_code=400,
+            detail="group_id is required for websocket.",
+        )
+
+    data = await get_group_internal(
+        pool=pool,
+        profile_id=profile_id,
+        group_id=group_id,
+        bypass_cache=bypass_cache,
+    )
+
+    return GetGroupWebsocketResponse(
+        views=GroupWebsocketViews(
+            runs=data.runs_today,
+            group_runs=data.runs_result.items if data.runs_result.items else None,
+            messages=data.messages_result.items if data.messages_result.items else None,
+            calls=data.calls_result.items if data.calls_result.items else None,
+        ),
+        resources=GroupWebsocketResources(
+            config_agents=data.config_agents or None,
+            config_models=data.config_models or None,
+            config_providers=data.config_providers or None,
+            config_tools=data.config_tools or None,
+            config_profile=data.config_profile or None,
+        ),
+        resource_agent_ids=data.resource_agent_ids,
+        group_id=data.group_id,
+    )
+
+
+# =============================================================================
+# HTTP Endpoint
+# =============================================================================
 
 
 @router.post(
@@ -72,77 +311,39 @@ async def get_group(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        # Resolve actor name via resource layer
-        actor_name_items = await get_names_internal(conn, [profile_id], bypass_cache)
-        actor_name = actor_name_items[0].name if actor_name_items else None
-
-        if actor_name:
-            audit_set(http_request, actor={"name": actor_name, "id": profile_id})
-
-        # Step 1: Verify group exists via lean MV
-        group_view = await get_group_list_view_internal(
-            conn=conn,
-            group_ids=[request.group_id],
+        pool = get_pool()
+        data = await get_group_internal(
+            pool=pool,
+            profile_id=profile_id,
+            group_id=request.group_id,
             bypass_cache=bypass_cache,
         )
 
-        if not group_view.items:
-            raise HTTPException(
-                status_code=404,
-                detail=f"Group not found: {request.group_id}",
-            )
-
-        # Step 2: Get runs via view internal
-        runs_result = await get_run_list_entries_internal(
-            conn=conn,
-            group_id_filter=request.group_id,
-            page_limit=10000,
-            sort_order="asc",
-            bypass_cache=bypass_cache,
-        )
-
-        if not runs_result.items:
-            raise HTTPException(
-                status_code=403,
-                detail="You don't have access to this group. It may be restricted to other departments.",
-            )
+        if data.actor_name:
+            audit_set(http_request, actor={"name": data.actor_name, "id": profile_id})
 
         # Compute per-run costs
-        run_costs = await compute_costs_from_runs(conn, runs_result.items, bypass_cache)
-
-        run_ids = [r.run_id for r in runs_result.items]
-
-        # Step 3: Fetch messages and calls via view internals (parallel)
-        messages_result, calls_result = await asyncio.gather(
-            get_message_list_view_internal(
-                conn=conn,
-                run_ids=run_ids,
-                bypass_cache=bypass_cache,
-            ),
-            get_call_list_view_internal(
-                conn=conn,
-                run_ids=run_ids,
-                bypass_cache=bypass_cache,
-            ),
+        run_costs = await compute_costs_from_runs(
+            conn, data.runs_result.items, bypass_cache
         )
 
         # Build call_id → CallViewItem lookup
-        call_lookup = {c.call_id: c for c in calls_result.items}
+        call_lookup = {c.call_id: c for c in data.calls_result.items}
 
         # Track linked call IDs
         linked_call_ids: set[UUID] = set()
-        for msg in messages_result.items:
+        for msg in data.messages_result.items:
             linked_call_ids.update(msg.call_ids)
 
         # Group messages by run_id (already ordered by role precedence + created_at from SQL)
         run_messages: dict[UUID, list] = defaultdict(list)
-        for msg in messages_result.items:
+        for msg in data.messages_result.items:
             if msg.run_id:
                 run_messages[msg.run_id].append(msg)
 
         # Identify orphan calls per run (calls not linked to any message)
         orphan_calls_by_run: dict[UUID, list] = defaultdict(list)
-        for call in calls_result.items:
+        for call in data.calls_result.items:
             if call.call_id not in linked_call_ids and call.run_id:
                 orphan_calls_by_run[call.run_id].append(call)
 
@@ -151,12 +352,12 @@ async def get_group(
         all_agent_ids: set[UUID] = set()
         all_profile_ids: set[UUID] = set()
         all_tool_ids: set[UUID] = set()
-        for r in runs_result.items:
+        for r in data.runs_result.items:
             if r.model_ids:
                 all_model_ids.update(r.model_ids)
             if r.agent_ids:
                 all_agent_ids.update(r.agent_ids)
-        for c in calls_result.items:
+        for c in data.calls_result.items:
             if c.tool_id:
                 all_tool_ids.add(c.tool_id)
 
@@ -173,7 +374,7 @@ async def get_group(
 
         # Build runs with messages
         runs: list[GroupDetailRunWithMessages] = []
-        for r in runs_result.items:
+        for r in data.runs_result.items:
             run_id = r.run_id
 
             agent_id = r.agent_ids[0] if r.agent_ids else None
@@ -263,7 +464,7 @@ async def get_group(
 
         api_response = GetGroupDetailResponse(
             group_exists=True,
-            actor_name=actor_name,
+            actor_name=data.actor_name,
             runs=runs,
             models=models,
             agents=agents,

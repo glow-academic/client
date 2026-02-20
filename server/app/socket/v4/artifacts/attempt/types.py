@@ -24,7 +24,13 @@ from app.socket.v4.artifacts.types import (
 
 ATTEMPT_RESOURCE_TYPES: list[str] = []
 
-ATTEMPT_SYNC_ENTRY_TYPES = ["runs", "chats", "grades", "user_messages", "assistant_messages"]
+ATTEMPT_SYNC_ENTRY_TYPES = [
+    "runs",
+    "chats",
+    "grades",
+    "user_messages",
+    "assistant_messages",
+]
 
 ATTEMPT_ASYNC_ENTRY_TYPES = ["insights", "debug_info"]
 

@@ -1,5 +1,6 @@
 """Types for activity artifact."""
 
+from dataclasses import dataclass, field
 from datetime import datetime
 from uuid import UUID
 
@@ -7,6 +8,12 @@ from pydantic import BaseModel, Field
 
 from app.api.v4.entries.runs.search import GetRunListViewResponse
 from app.sql.types import (
+    GetActivityListViewSqlRow,
+    GetAuditListViewSqlRow,
+    GetGrantListViewSqlRow,
+    GetLoginListViewSqlRow,
+    GetProblemListViewSqlRow,
+    GetSessionListViewSqlRow,
     QGetActivityListViewV4Item,
     QGetAgentsV4Item,
     QGetAuditListViewV4Item,
@@ -19,6 +26,28 @@ from app.sql.types import (
     QGetSessionListViewV4Item,
     QGetToolsV4Item,
 )
+
+
+@dataclass
+class ActivityInternalData:
+    """Internal data from core activity fetching (cacheable layer)."""
+
+    # Views
+    activity_result: GetActivityListViewSqlRow
+    sessions_result: GetSessionListViewSqlRow
+    logins_result: GetLoginListViewSqlRow
+    audits_result: GetAuditListViewSqlRow
+    problems_result: GetProblemListViewSqlRow
+    grants_result: GetGrantListViewSqlRow
+    # Config chain
+    config_agents: list[QGetAgentsV4Item] = field(default_factory=list)
+    config_models: list[QGetModelsV4Item] = field(default_factory=list)
+    config_providers: list[QGetProvidersV4Item] = field(default_factory=list)
+    config_tools: list[QGetToolsV4Item] = field(default_factory=list)
+    config_profile: list[QGetProfilesV4Item] = field(default_factory=list)
+    runs_today: GetRunListViewResponse | None = None
+    resource_agent_ids: dict[str, UUID | None] = field(default_factory=dict)
+    group_id: UUID | None = None
 
 
 class ActivityRequest(BaseModel):
@@ -101,6 +130,13 @@ class ActivityWebsocketViews(BaseModel):
     """Views data for activity websocket response."""
 
     runs: GetRunListViewResponse | None = None
+    # Domain views (from internal layer)
+    sessions: list[QGetSessionListViewV4Item] | None = None
+    activity: list[QGetActivityListViewV4Item] | None = None
+    logins: list[QGetLoginListViewV4Item] | None = None
+    audits: list[QGetAuditListViewV4Item] | None = None
+    problems: list[QGetProblemListViewV4Item] | None = None
+    grants: list[QGetGrantListViewV4Item] | None = None
 
 
 class ActivityWebsocketResources(BaseModel):

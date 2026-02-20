@@ -524,3 +524,140 @@ def build_field_meta(
         }
         for item in fields
     ]
+
+
+# ---------------------------------------------------------------------------
+# Message stats types + internal (moved from header.py)
+# ---------------------------------------------------------------------------
+
+SQL_PATH_MESSAGE_STATS = (
+    "app/sql/v4/queries/views/chat/message_stats/get_message_stats_complete.sql"
+)
+
+
+class MessageStats:
+    """Message statistics for a single chat."""
+
+    __slots__ = ("chat_id", "num_messages_total", "avg_response_sec")
+
+    def __init__(
+        self,
+        chat_id: UUID,
+        num_messages_total: int = 0,
+        avg_response_sec: float | None = None,
+    ) -> None:
+        self.chat_id = chat_id
+        self.num_messages_total = num_messages_total
+        self.avg_response_sec = avg_response_sec
+
+
+async def get_message_stats_internal(
+    conn: asyncpg.Connection,
+    chat_ids: list[UUID],
+    bypass_cache: bool = False,
+) -> dict[UUID, MessageStats]:
+    """Fetch message stats for a batch of chat IDs.
+
+    Returns a dict keyed by chat_id for O(1) lookup.
+    """
+    if not chat_ids:
+        return {}
+
+    from app.sql.types import GetMessageStatsSqlParams
+
+    cache_key_val = cache_key(
+        "entries/chat/message_stats",
+        {"chat_ids": sorted(str(c) for c in chat_ids)},
+    )
+
+    if not bypass_cache:
+        cached = await get_cached(cache_key_val)
+        if cached:
+            return {
+                UUID(k): MessageStats(
+                    chat_id=UUID(k),
+                    num_messages_total=v["num_messages_total"],
+                    avg_response_sec=v.get("avg_response_sec"),
+                )
+                for k, v in cached.items()
+            }
+
+    params = GetMessageStatsSqlParams(chat_ids=chat_ids)
+    result = await execute_sql_typed(conn, SQL_PATH_MESSAGE_STATS, params=params)
+
+    stats_map: dict[UUID, MessageStats] = {}
+    if result and result.items:
+        for item in result.items:
+            if item.chat_id:
+                stats_map[item.chat_id] = MessageStats(
+                    chat_id=item.chat_id,
+                    num_messages_total=item.num_messages_total or 0,
+                    avg_response_sec=float(item.avg_response_sec)
+                    if item.avg_response_sec is not None
+                    else None,
+                )
+
+    # Cache as simple dict
+    await set_cached(
+        cache_key_val,
+        {
+            str(k): {
+                "num_messages_total": v.num_messages_total,
+                "avg_response_sec": v.avg_response_sec,
+            }
+            for k, v in stats_map.items()
+        },
+        ttl=60,
+        tags=["entries", "chat", "message_stats"],
+    )
+
+    return stats_map
+
+
+# ---------------------------------------------------------------------------
+# Training doc IDs (moved from footer.py)
+# ---------------------------------------------------------------------------
+
+TRAINING_CONFIG_SQL = (
+    "app/sql/v4/queries/views/chat/training_config/get_training_config_complete.sql"
+)
+
+
+async def fetch_training_doc_ids(
+    conn: asyncpg.Connection,
+    training_department_ids: list[UUID],
+    bypass_cache: bool = False,
+) -> dict[UUID, list[UUID]]:
+    """Fetch document_ids from training config for a batch of training_department_ids."""
+    if not training_department_ids:
+        return {}
+
+    from app.sql.types import GetTrainingConfigSqlParams
+
+    tc_cache_key = cache_key(
+        "dashboard/training_doc_ids",
+        {"ids": sorted(str(i) for i in training_department_ids)},
+    )
+
+    if not bypass_cache:
+        cached = await get_cached(tc_cache_key)
+        if cached:
+            return {UUID(k): [UUID(d) for d in v] for k, v in cached.items() if v}
+
+    params = GetTrainingConfigSqlParams(training_department_ids=training_department_ids)
+    result = await execute_sql_typed(conn, TRAINING_CONFIG_SQL, params=params)
+
+    doc_map: dict[UUID, list[UUID]] = {}
+    if result and result.items:
+        for item in result.items:
+            if item.document_ids:
+                doc_map[item.training_department_id] = list(item.document_ids)
+
+    await set_cached(
+        tc_cache_key,
+        {str(k): [str(d) for d in v] for k, v in doc_map.items()},
+        ttl=300,
+        tags=["entries", "chat", "training_config"],
+    )
+
+    return doc_map

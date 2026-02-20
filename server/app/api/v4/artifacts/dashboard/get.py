@@ -1,0 +1,789 @@
+"""Unified entry point for dashboard artifact.
+
+Provides:
+- get_dashboard_internal() — single-pass efficient metrics bundle
+- get_dashboard_websocket() — config resources for socket generation
+- POST /dashboard/get — HTTP endpoint returning DashboardBundleResponse
+"""
+
+import asyncio
+from datetime import datetime
+from typing import Annotated, Any
+from uuid import UUID
+
+import asyncpg
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
+
+from app.api.v4.artifacts.attempt.types import GetAttemptListResponse
+from app.api.v4.artifacts.dashboard.permissions import (
+    compute_footer_metrics_v2,
+    compute_header_metrics_v2,
+    compute_primary_metrics_v2,
+    compute_secondary_metrics_v2,
+)
+from app.api.v4.artifacts.dashboard.shared import (
+    ParsedFilters,
+    build_field_meta,
+    build_parameter_meta,
+    build_rubric_meta,
+    build_simulation_meta,
+    fetch_chats_data,
+    fetch_rubric_scores_data,
+    fetch_thresholds,
+    fetch_training_doc_ids,
+    get_message_stats_internal,
+    hydrate_rubric_resources,
+)
+from app.api.v4.artifacts.dashboard.types import (
+    DashboardBundleResponse,
+    DashboardRequest,
+    DashboardSectionRequest,
+    DashboardWebsocketResources,
+    DashboardWebsocketViews,
+    GetDashboardWebsocketResponse,
+)
+from app.api.v4.artifacts.types import FilterOption
+from app.api.v4.entries.runs.search import GetRunListViewResponse
+from app.api.v4.resources.documents.get import get_documents_internal
+from app.api.v4.resources.fields.get import get_fields_internal
+from app.api.v4.resources.parameter_fields.get import get_parameter_fields_internal
+from app.api.v4.resources.parameters.get import get_parameters_internal
+from app.api.v4.resources.personas.get import get_personas_internal
+from app.api.v4.resources.profiles.get import get_profiles_internal
+from app.api.v4.resources.scenarios.get import get_scenarios_internal
+from app.api.v4.resources.simulations.get import get_simulations_internal
+from app.infra.v4.activity.audit import audit_activity
+from app.infra.v4.error.handle_route_error import handle_route_error
+from app.main import get_db, get_pool
+
+router = APIRouter()
+
+# Dashboard resource types for agent resolution
+DASHBOARD_BUNDLE_RESOURCES: set[str] = {
+    "names",
+    "descriptions",
+    "flags",
+    "departments",
+}
+
+
+# =============================================================================
+# Internal Layer — unified single-pass data fetcher
+# =============================================================================
+
+
+async def get_dashboard_internal(
+    pool: asyncpg.Pool,
+    request: DashboardRequest,
+    bypass_cache: bool = False,
+    profile_resource_id: UUID | None = None,
+) -> DashboardBundleResponse:
+    """Single-pass efficient dashboard metrics bundle.
+
+    Replaces the 4 independent section calls with:
+    Phase 1 — Parallel data fetch (chats, rubric scores, thresholds, history)
+    Phase 2 — Collect resource IDs
+    Phase 3 — Parallel resource hydration
+    Phase 4 — Enrich chat items (message stats, document_ids)
+    Phase 5 — Compute all 4 sections' metrics
+    Phase 6 — Assemble DashboardBundleResponse
+    """
+    # Build filters from the unified request
+    parsed_start_date = (
+        datetime.fromisoformat(request.start_date.replace("Z", "+00:00"))
+        if request.start_date
+        else None
+    )
+    parsed_end_date = (
+        datetime.fromisoformat(request.end_date.replace("Z", "+00:00"))
+        if request.end_date
+        else None
+    )
+    is_archived = bool(
+        request.simulation_filters and "archived" in request.simulation_filters
+    )
+    if request.simulation_filters and "general" in request.simulation_filters:
+        attempt_type = "general"
+    elif request.simulation_filters and "practice" in request.simulation_filters:
+        attempt_type = "practice"
+    else:
+        attempt_type = None
+
+    filters = ParsedFilters(
+        simulation_ids=request.simulation_ids,
+        cohort_ids=request.cohort_ids,
+        parsed_start_date=parsed_start_date,
+        parsed_end_date=parsed_end_date,
+        is_archived=is_archived,
+        attempt_type=attempt_type,
+    )
+
+    # Adapt DashboardRequest to DashboardSectionRequest for shared fetchers
+    section_request = DashboardSectionRequest(
+        start_date=request.start_date,
+        end_date=request.end_date,
+        cohort_ids=request.cohort_ids,
+        department_ids=request.department_ids,
+        roles=request.roles,
+        simulation_filters=request.simulation_filters,
+        target_profile_id=request.target_profile_id,
+        actor_profile_id=request.actor_profile_id,
+        page_limit=request.page_limit,
+        page_offset=request.page_offset,
+    )
+
+    # Phase 1 — Parallel data fetch
+    async def _fetch_history() -> "GetAttemptListResponse | None":
+        if not request.history_enabled or not profile_resource_id:
+            return None
+        from app.api.v4.artifacts.attempt.list import (
+            get_attempt_list_artifact_internal,
+        )
+        from app.api.v4.artifacts.attempt.types import GetAttemptListRequest
+
+        query_profile_id = request.target_profile_id or profile_resource_id
+        history_request = GetAttemptListRequest(
+            practice=request.history_practice,
+            target_profile_id=request.target_profile_id,
+            start_date=request.start_date,
+            end_date=request.end_date,
+            cohort_ids=request.cohort_ids,
+            department_ids=request.department_ids,
+            simulation_ids=request.simulation_ids,
+            scenario_ids=request.history_scenario_ids,
+            infinite_mode=request.history_infinite_mode,
+            simulation_search=request.history_simulation_search,
+            scenario_search=request.history_scenario_search,
+            profile_search=request.history_profile_search,
+            sort_by=request.history_sort_by,
+            sort_order=request.history_sort_order,
+            page=request.history_page,
+            page_size=request.history_page_size,
+            show_archived=request.history_show_archived,
+        )
+        async with pool.acquire() as c:
+            return await get_attempt_list_artifact_internal(
+                conn=c,
+                request=history_request,
+                profile_resource_id=query_profile_id,
+                pass_threshold=70.0,
+                bypass_cache=bypass_cache,
+            )
+
+    (
+        chats_result,
+        rubric_scores_result,
+        thresholds,
+        history_result,
+    ) = await asyncio.gather(
+        fetch_chats_data(
+            pool=pool,
+            request=section_request,
+            filters=filters,
+            bypass_cache=bypass_cache,
+        ),
+        fetch_rubric_scores_data(
+            pool=pool,
+            request=section_request,
+            filters=filters,
+            bypass_cache=bypass_cache,
+        ),
+        fetch_thresholds(
+            pool=pool,
+            actor_profile_id=request.actor_profile_id,
+            target_profile_id=request.target_profile_id,
+            department_ids=request.department_ids,
+        ),
+        _fetch_history(),
+    )
+    chat_items = chats_result.items
+    rubric_items = rubric_scores_result.items
+
+    # Phase 2 — Collect resource IDs from chats + rubric scores
+    simulation_ids_set: set[UUID] = set()
+    persona_ids_set: set[UUID] = set()
+    cohort_ids_set: set[UUID] = set()
+    scenario_ids_set: set[UUID] = set()
+    training_department_ids_set: set[UUID] = set()
+    chat_ids: list[UUID] = []
+
+    for item in chat_items:
+        chat_ids.append(item.chat_id)
+        if item.simulation_id:
+            simulation_ids_set.add(item.simulation_id)
+        if item.user_persona_id:
+            persona_ids_set.add(item.user_persona_id)
+        if item.cohort_id:
+            cohort_ids_set.add(item.cohort_id)
+        if item.scenario_id:
+            scenario_ids_set.add(item.scenario_id)
+        if item.training_department_id:
+            training_department_ids_set.add(item.training_department_id)
+        if item.persona_id:
+            persona_ids_set.add(item.persona_id)
+
+    rubric_ids_set: set[UUID] = set()
+    for item in rubric_items:
+        if item.rubric_id:
+            rubric_ids_set.add(item.rubric_id)
+        if item.simulation_id:
+            simulation_ids_set.add(item.simulation_id)
+
+    # Phase 3 — Parallel resource hydration
+    async def _get_simulations() -> list[Any]:
+        async with pool.acquire() as c:
+            return await get_simulations_internal(
+                conn=c, ids=list(simulation_ids_set), bypass_cache=bypass_cache
+            )
+
+    async def _get_personas() -> list[Any]:
+        async with pool.acquire() as c:
+            return await get_personas_internal(
+                conn=c, ids=list(persona_ids_set), bypass_cache=bypass_cache
+            )
+
+    async def _get_scenarios() -> list[Any]:
+        async with pool.acquire() as c:
+            return await get_scenarios_internal(
+                conn=c, ids=list(scenario_ids_set), bypass_cache=bypass_cache
+            )
+
+    async def _get_rubric_resources() -> tuple[list[Any], dict[str, str]]:
+        return await hydrate_rubric_resources(
+            pool=pool,
+            rubric_ids=list(rubric_ids_set),
+            bypass_cache=bypass_cache,
+        )
+
+    async def _get_message_stats() -> dict[UUID, Any]:
+        if not chat_ids:
+            return {}
+        async with pool.acquire() as c:
+            return await get_message_stats_internal(
+                conn=c, chat_ids=chat_ids, bypass_cache=bypass_cache
+            )
+
+    async def _get_cohort_names() -> list[Any]:
+        if not cohort_ids_set:
+            return []
+        async with pool.acquire() as c:
+            return await c.fetch(
+                """
+                SELECT id, name FROM cohorts_resource
+                WHERE id = ANY($1::uuid[])
+                """,
+                list(cohort_ids_set),
+            )
+
+    async def _get_scenario_counts() -> list[Any]:
+        if not simulation_ids_set:
+            return []
+        async with pool.acquire() as c:
+            return await c.fetch(
+                """
+                SELECT simulation_id, COUNT(*)::int AS scenario_count
+                FROM simulation_scenarios_junction
+                WHERE simulation_id = ANY($1::uuid[]) AND active = true
+                GROUP BY simulation_id
+                """,
+                list(simulation_ids_set),
+            )
+
+    async def _get_training_doc_ids() -> dict[UUID, list[UUID]]:
+        if not training_department_ids_set:
+            return {}
+        async with pool.acquire() as c:
+            return await fetch_training_doc_ids(
+                conn=c,
+                training_department_ids=list(training_department_ids_set),
+                bypass_cache=bypass_cache,
+            )
+
+    async def _get_profiles() -> list[Any]:
+        if not request.target_profile_id:
+            return []
+        async with pool.acquire() as c:
+            return await get_profiles_internal(
+                conn=c,
+                ids=[UUID(str(request.target_profile_id))],
+                bypass_cache=bypass_cache,
+            )
+
+    (
+        simulations,
+        personas,
+        scenarios_list,
+        (rubrics, standard_group_name_map),
+        message_stats,
+        cohort_name_rows,
+        scenario_count_rows,
+        doc_map,
+        target_profiles,
+    ) = await asyncio.gather(
+        _get_simulations(),
+        _get_personas(),
+        _get_scenarios(),
+        _get_rubric_resources(),
+        _get_message_stats(),
+        _get_cohort_names(),
+        _get_scenario_counts(),
+        _get_training_doc_ids(),
+        _get_profiles(),
+    )
+
+    # Phase 4a — Enrich chat items with message stats
+    for item in chat_items:
+        stats = message_stats.get(item.chat_id)
+        if stats:
+            item.num_messages_total = stats.num_messages_total
+            item.avg_response_sec = stats.avg_response_sec
+
+    # Phase 4b — Enrich chat items with document_ids from training config
+    for item in chat_items:
+        if item.training_department_id:
+            doc_ids = doc_map.get(item.training_department_id)
+            if doc_ids:
+                item.document_ids = list(doc_ids)
+
+    # Phase 4c — Hydrate documents from collected document_ids
+    document_ids_set: set[UUID] = set()
+    for item in chat_items:
+        for doc_id in item.document_ids or []:
+            document_ids_set.add(doc_id)
+
+    async with pool.acquire() as c:
+        documents = await get_documents_internal(
+            conn=c, ids=list(document_ids_set), bypass_cache=bypass_cache
+        )
+
+    # Phase 4d — Hydrate parameter_fields, then parameters + fields
+    all_pf_ids: set[UUID] = set()
+    for s in scenarios_list:
+        for pfid in getattr(s, "parameter_field_ids", None) or []:
+            all_pf_ids.add(pfid)
+    for p in personas:
+        for pfid in getattr(p, "parameter_field_ids", None) or []:
+            all_pf_ids.add(pfid)
+    for d in documents:
+        for pfid in getattr(d, "parameter_field_ids", None) or []:
+            all_pf_ids.add(pfid)
+
+    async with pool.acquire() as c:
+        parameter_fields = await get_parameter_fields_internal(
+            conn=c, ids=list(all_pf_ids), bypass_cache=bypass_cache
+        )
+
+    parameter_ids_set: set[UUID] = set()
+    field_ids_set: set[UUID] = set()
+    field_parameter_map: dict[UUID, UUID] = {}
+    for pf in parameter_fields:
+        if pf.parameter_id:
+            parameter_ids_set.add(pf.parameter_id)
+        if pf.field_id:
+            field_ids_set.add(pf.field_id)
+            if pf.parameter_id:
+                field_parameter_map[pf.field_id] = pf.parameter_id
+
+    async def _get_parameters() -> list[Any]:
+        async with pool.acquire() as c:
+            return await get_parameters_internal(
+                conn=c, ids=list(parameter_ids_set), bypass_cache=bypass_cache
+            )
+
+    async def _get_fields() -> list[Any]:
+        async with pool.acquire() as c:
+            return await get_fields_internal(
+                conn=c, ids=list(field_ids_set), bypass_cache=bypass_cache
+            )
+
+    parameters, fields_list = await asyncio.gather(
+        _get_parameters(),
+        _get_fields(),
+    )
+
+    # Build name maps
+    simulation_scenario_counts = {
+        str(r["simulation_id"]): r["scenario_count"] for r in scenario_count_rows
+    }
+    persona_name_map: dict[str, str] = {
+        str(p.persona_id): p.name for p in personas if p.persona_id and p.name
+    }
+    cohort_name_map: dict[str, str] = {
+        str(r["id"]): r["name"] for r in cohort_name_rows if r["id"] and r["name"]
+    }
+    simulation_name_map: dict[str, str] = {
+        str(s.simulation_id): s.name for s in simulations if s.simulation_id and s.name
+    }
+    scenario_name_map: dict[str, str] = {
+        str(s.scenario_id): s.name for s in scenarios_list if s.scenario_id and s.name
+    }
+
+    thresholds_dict = thresholds.as_dict()
+
+    # Phase 5 — Compute all 4 sections' metrics
+    header_metrics = compute_header_metrics_v2(
+        profile_facts_items=chat_items,
+        simulation_scenario_counts=simulation_scenario_counts,
+        thresholds=thresholds_dict,
+    )
+
+    primary_metrics = compute_primary_metrics_v2(
+        rubric_facts=rubric_items,
+        standard_group_name_map=standard_group_name_map,
+        thresholds=thresholds_dict,
+    )
+
+    secondary_metrics = compute_secondary_metrics_v2(
+        simulation_facts=chat_items,
+        persona_name_map=persona_name_map,
+        cohort_name_map=cohort_name_map,
+        thresholds=thresholds_dict,
+    )
+
+    footer_metrics = compute_footer_metrics_v2(
+        scenario_facts_items=chat_items,
+        scenarios=scenarios_list,
+        personas=personas,
+        documents=documents,
+        parameter_fields=parameter_fields,
+        parameters=parameters,
+        fields=fields_list,
+        simulation_name_map=simulation_name_map,
+        scenario_name_map=scenario_name_map,
+        thresholds=thresholds_dict,
+    )
+
+    # Phase 5b — Apply picker filters (valid_*_ids stay intact for picker options)
+
+    # Primary: rubric picker filters
+    if request.heatmap_rubric_ids:
+        filter_set = {str(rid) for rid in request.heatmap_rubric_ids}
+        primary_metrics.rubric_heatmap.matrices = [
+            m
+            for m in primary_metrics.rubric_heatmap.matrices
+            if m.rubric_id in filter_set
+        ]
+    if request.skill_rubric_ids:
+        filter_set = {str(rid) for rid in request.skill_rubric_ids}
+        primary_metrics.skill_performance.packages = [
+            p
+            for p in primary_metrics.skill_performance.packages
+            if p.rubric_id in filter_set
+        ]
+
+    # Secondary: simulation picker filters
+    if request.persona_simulation_ids:
+        filter_set = {str(sid) for sid in request.persona_simulation_ids}
+        secondary_metrics.persona_performance.chart_data = [
+            row
+            for row in secondary_metrics.persona_performance.chart_data
+            if any(sid in filter_set for sid in (row.simulation_ids or []))
+        ]
+    if request.cohort_simulation_ids:
+        filter_set = {str(sid) for sid in request.cohort_simulation_ids}
+        secondary_metrics.cohort_performance.simulation_facts = [
+            f
+            for f in secondary_metrics.cohort_performance.simulation_facts
+            if f.simulation_id in filter_set
+        ]
+        secondary_metrics.cohort_performance.daily_facts = [
+            f
+            for f in secondary_metrics.cohort_performance.daily_facts
+            if f.simulation_id in filter_set
+        ]
+    if request.improvement_simulation_ids:
+        filter_set = {str(sid) for sid in request.improvement_simulation_ids}
+        secondary_metrics.attempt_improvement.facts = [
+            f
+            for f in secondary_metrics.attempt_improvement.facts
+            if f.simulation_id in filter_set
+        ]
+
+    # Footer: parameter/simulation picker filters
+    if request.scenario_perf_parameter_ids:
+        filter_set = {str(pid) for pid in request.scenario_perf_parameter_ids}
+        footer_metrics.scenario_performance.attribute_attempt_facts = [
+            f
+            for f in footer_metrics.scenario_performance.attribute_attempt_facts
+            if f.parameter_id in filter_set
+        ]
+        footer_metrics.scenario_performance.attribute_scenario_facts = [
+            f
+            for f in footer_metrics.scenario_performance.attribute_scenario_facts
+            if f.parameter_id in filter_set
+        ]
+    if request.scenario_stats_parameter_ids:
+        filter_set = {str(pid) for pid in request.scenario_stats_parameter_ids}
+        footer_metrics.scenario_stats.numeric_attempt_facts = [
+            f
+            for f in footer_metrics.scenario_stats.numeric_attempt_facts
+            if f.parameter_id in filter_set
+        ]
+        footer_metrics.scenario_stats.numeric_scenario_facts = [
+            f
+            for f in footer_metrics.scenario_stats.numeric_scenario_facts
+            if f.parameter_id in filter_set
+        ]
+    if request.sim_perf_simulation_ids:
+        filter_set = {str(sid) for sid in request.sim_perf_simulation_ids}
+        footer_metrics.simulation_performance.scenario_facts = [
+            f
+            for f in footer_metrics.simulation_performance.scenario_facts
+            if f.simulation_id in filter_set
+        ]
+
+    # Phase 6 — Build metadata lists
+    simulations_meta = build_simulation_meta(simulations)
+    rubrics_meta = build_rubric_meta(rubrics)
+    parameters_meta = build_parameter_meta(parameters)
+    fields_meta = build_field_meta(fields_list, field_parameter_map, parameters)
+
+    # Apply search filters to metadata lists
+    if (
+        request.heatmap_rubric_search
+        or request.trend_rubric_search
+        or request.skill_rubric_search
+    ):
+        q = (
+            request.heatmap_rubric_search
+            or request.trend_rubric_search
+            or request.skill_rubric_search
+            or ""
+        ).lower()
+        rubrics_meta = [r for r in rubrics_meta if q in (r.get("name") or "").lower()]
+
+    if (
+        request.persona_simulations_search
+        or request.cohort_simulations_search
+        or request.improvement_simulations_search
+        or request.sim_perf_simulation_search
+    ):
+        q = (
+            request.persona_simulations_search
+            or request.cohort_simulations_search
+            or request.improvement_simulations_search
+            or request.sim_perf_simulation_search
+            or ""
+        ).lower()
+        simulations_meta = [
+            s for s in simulations_meta if q in (s.get("name") or "").lower()
+        ]
+
+    if request.scenario_perf_param_search or request.scenario_stats_param_search:
+        q = (
+            request.scenario_perf_param_search
+            or request.scenario_stats_param_search
+            or ""
+        ).lower()
+        parameters_meta = [
+            p for p in parameters_meta if q in (p.get("name") or "").lower()
+        ]
+
+    simulation_options = [
+        FilterOption(
+            value=str(item.simulation_id) if item.simulation_id else "",
+            label=item.name,
+        )
+        for item in simulations
+        if item.simulation_id
+    ]
+
+    bundle = DashboardBundleResponse(
+        header_metrics=header_metrics,
+        primary_metrics=primary_metrics,
+        secondary_metrics=secondary_metrics,
+        footer_metrics=footer_metrics,
+        simulations=simulations_meta,
+        rubrics=rubrics_meta,
+        parameters=parameters_meta,
+        fields=fields_meta,
+        thresholds=thresholds_dict,
+        simulation_options=simulation_options,
+    )
+
+    # Attach profile metadata if target_profile_id is provided
+    if target_profiles:
+        tp = target_profiles[0]
+        bundle.profile_name = tp.name
+        bundle.profile_emails = tp.emails
+        bundle.profile_primary_email = tp.primary_email
+
+    # Attach history if fetched
+    if history_result is not None:
+        bundle.history = history_result
+
+    return bundle
+
+
+# =============================================================================
+# WebSocket Layer
+# =============================================================================
+
+
+async def get_dashboard_websocket(
+    pool: asyncpg.Pool,
+    profile_id: UUID,
+    dashboard_id: UUID | None = None,
+    draft_id: UUID | None = None,
+    bypass_cache: bool = False,
+) -> GetDashboardWebsocketResponse:
+    """Fetch config resources for dashboard socket generation.
+
+    Returns agent/model/provider chain + rate-limiting data (runs today, profile).
+    This is separate from the metrics bundle — it's about LLM generation config.
+    """
+    from app.api.v4.auth.settings import get_auth_settings_internal
+    from app.api.v4.entries.runs.search import get_run_list_entries_internal
+    from app.api.v4.permissions import resolve_agents_for_artifact
+    from app.api.v4.resources.models.get import get_models_internal
+    from app.api.v4.resources.providers.get import get_providers_internal
+
+    # 1. Fetch settings-based agent config
+    async with pool.acquire() as conn:
+        settings_data = await get_auth_settings_internal(conn, profile_id, bypass_cache)
+
+    agent_ids, _create_tool_ids, _link_tool_ids = resolve_agents_for_artifact(
+        settings_data.agent_tool_entries, DASHBOARD_BUNDLE_RESOURCES
+    )
+
+    config_agents = list(settings_data.settings_agents)
+    config_tools = list(settings_data.settings_tools)
+
+    # 2. Resolve model + provider chain from agents
+    config_model_ids = list(
+        dict.fromkeys(a.model_id for a in settings_data.settings_agents if a.model_id)
+    )
+    config_models: list[Any] = []
+    if config_model_ids:
+        async with pool.acquire() as conn:
+            config_models = await get_models_internal(
+                conn, config_model_ids, bypass_cache
+            )
+
+    config_provider_ids = list(
+        dict.fromkeys(m.provider_id for m in config_models if m.provider_id)
+    )
+    config_providers: list[Any] = []
+    if config_provider_ids:
+        async with pool.acquire() as conn:
+            config_providers = await get_providers_internal(
+                conn, config_provider_ids, bypass_cache
+            )
+
+    # 3. Fetch config profile + runs today in parallel
+    async def _fetch_config_profile() -> list[Any]:
+        async with pool.acquire() as conn:
+            return await get_profiles_internal(conn, [profile_id], bypass_cache)
+
+    async def _fetch_runs_today() -> GetRunListViewResponse:
+        from datetime import UTC
+
+        today_utc = datetime.now(UTC).replace(hour=0, minute=0, second=0, microsecond=0)
+        tomorrow_utc = today_utc.replace(hour=23, minute=59, second=59)
+        async with pool.acquire() as conn:
+            return await get_run_list_entries_internal(
+                conn=conn,
+                profile_id_filter=profile_id,
+                date_from=today_utc,
+                date_to=tomorrow_utc,
+                page_limit=1,
+                bypass_cache=True,
+            )
+
+    config_profile_result, runs_result = await asyncio.gather(
+        _fetch_config_profile(),
+        _fetch_runs_today(),
+    )
+
+    # 4. Resolve group_id from dashboard_insights_entry if dashboard_id provided
+    group_id: UUID | None = None
+    if dashboard_id:
+        async with pool.acquire() as conn:
+            row = await conn.fetchrow(
+                "SELECT group_id FROM dashboard_insights_entry WHERE id = $1",
+                dashboard_id,
+            )
+            if row:
+                group_id = row["group_id"]
+
+    return GetDashboardWebsocketResponse(
+        views=DashboardWebsocketViews(
+            runs=runs_result,
+        ),
+        resources=DashboardWebsocketResources(
+            config_agents=config_agents or None,
+            config_models=config_models or None,
+            config_providers=config_providers or None,
+            config_tools=config_tools or None,
+            config_profile=config_profile_result or None,
+        ),
+        resource_agent_ids=agent_ids,
+        group_id=group_id,
+    )
+
+
+# =============================================================================
+# Route Handler
+# =============================================================================
+
+
+@router.post(
+    "/get",
+    response_model=DashboardBundleResponse,
+    dependencies=[
+        audit_activity(
+            "artifacts.dashboard.get",
+            "{{ actor.name }} fetched dashboard artifact data",
+        )
+    ],
+)
+async def get_dashboard(
+    request: DashboardRequest,
+    http_request: Request,
+    response: Response,
+    conn: Annotated[asyncpg.Connection, Depends(get_db)],
+) -> DashboardBundleResponse:
+    """Get full dashboard bundle with all 4 sections in a single call."""
+    tags = ["artifacts", "dashboard", "views", "analytics"]
+    bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
+
+    try:
+        pool = get_pool()
+        if not pool:
+            raise RuntimeError("Database pool not initialized")
+
+        # Resolve profile_resource_id for history section
+        profile_resource_id: UUID | None = None
+        if request.history_enabled:
+            profile_id = http_request.state.profile_id
+            if profile_id:
+                profile_resource_id = await conn.fetchval(
+                    """
+                    SELECT profiles_id FROM profile_profiles_junction
+                    WHERE profile_id = $1 AND active = true
+                    LIMIT 1
+                    """,
+                    profile_id,
+                )
+
+        bundle = await get_dashboard_internal(
+            pool=pool,
+            request=request,
+            bypass_cache=bypass_cache,
+            profile_resource_id=profile_resource_id,
+        )
+
+        response.headers["X-Cache-Tags"] = ",".join(tags)
+        return bundle
+
+    except HTTPException:
+        raise
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
+    except Exception as e:
+        handle_route_error(
+            error=e,
+            route_path=http_request.url.path,
+            operation="artifacts_dashboard_get",
+            request=http_request,
+        )

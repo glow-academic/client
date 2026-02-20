@@ -49,7 +49,9 @@ async def handle_complete(data: dict[str, Any]) -> None:
 
 
 @internal_sio.on("generate_call_complete")  # type: ignore
-async def conversations_completions_call_complete_listener(data: dict[str, Any]) -> None:
+async def conversations_completions_call_complete_listener(
+    data: dict[str, Any],
+) -> None:
     """Listen for tool_result events targeting conversations_completions."""
     if data.get("event_type") != "tool_result":
         return

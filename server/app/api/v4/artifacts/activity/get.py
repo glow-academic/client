@@ -2,7 +2,8 @@
 
 import asyncio
 from collections import defaultdict
-from typing import Annotated
+from datetime import UTC, datetime
+from typing import Annotated, Any
 from uuid import UUID
 
 import asyncpg
@@ -11,6 +12,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from app.api.v4.artifacts.activity.types import (
     ActivityAvailableEvent,
     ActivityChartPoint,
+    ActivityInternalData,
     ActivityRequest,
     ActivityResources,
     ActivityResponse,
@@ -81,203 +83,6 @@ async def resolve_profile_ids_for_filters(
     return [row["id"] for row in rows]
 
 
-@router.post(
-    "/get",
-    response_model=ActivityResponse,
-    dependencies=[
-        audit_activity(
-            "artifacts.activity.get",
-            "{{ actor.name }} fetched activity artifact data",
-        )
-    ],
-)
-async def get_activity(
-    request: ActivityRequest,
-    http_request: Request,
-    response: Response,
-    conn: Annotated[asyncpg.Connection, Depends(get_db)],
-) -> ActivityResponse:
-    """Get activity artifact data."""
-    tags = ["artifacts", "activity"]
-    bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
-    pool = get_pool()
-
-    try:
-        # Pre-resolve department/role filters to profile_ids
-        filter_profile_ids: list[UUID] | None = None
-        if request.department_ids or request.roles:
-            async with pool.acquire() as c:
-                filter_profile_ids = await resolve_profile_ids_for_filters(
-                    conn=c,
-                    department_ids=request.department_ids or None,
-                    roles=request.roles or None,
-                )
-
-        async def fetch_activity() -> GetActivityListViewSqlRow:
-            async with pool.acquire() as c:
-                return await get_activity_list_view_internal(
-                    conn=c,
-                    date_from=request.date_from.date() if request.date_from else None,
-                    date_to=request.date_to.date() if request.date_to else None,
-                    page_limit=1000,
-                    bypass_cache=bypass_cache,
-                )
-
-        async def fetch_sessions() -> GetSessionListViewSqlRow:
-            async with pool.acquire() as c:
-                return await get_session_list_view_internal(
-                    conn=c,
-                    profile_id_filter=request.profile_id,
-                    profile_ids_filter=filter_profile_ids,
-                    date_from=request.date_from,
-                    date_to=request.date_to,
-                    page_limit=request.page_limit,
-                    page_offset=request.page_offset,
-                    bypass_cache=bypass_cache,
-                )
-
-        async def fetch_logins() -> GetLoginListViewSqlRow:
-            async with pool.acquire() as c:
-                return await get_login_list_view_internal(
-                    conn=c,
-                    profile_id_filter=request.profile_id,
-                    date_from=request.date_from,
-                    date_to=request.date_to,
-                    bypass_cache=bypass_cache,
-                )
-
-        async def fetch_audits() -> GetAuditListViewSqlRow:
-            async with pool.acquire() as c:
-                return await get_audit_list_view_internal(
-                    conn=c,
-                    date_from=request.date_from,
-                    date_to=request.date_to,
-                    bypass_cache=bypass_cache,
-                )
-
-        async def fetch_problems() -> GetProblemListViewSqlRow:
-            async with pool.acquire() as c:
-                return await get_problem_list_view_internal(
-                    conn=c,
-                    profile_id_filter=request.profile_id,
-                    date_from=request.date_from,
-                    date_to=request.date_to,
-                    bypass_cache=bypass_cache,
-                )
-
-        async def fetch_grants() -> GetGrantListViewSqlRow:
-            async with pool.acquire() as c:
-                return await get_grant_list_view_internal(
-                    conn=c, bypass_cache=bypass_cache
-                )
-
-        (
-            activity_result,
-            sessions_result,
-            logins_result,
-            audits_result,
-            problems_result,
-            grants_result,
-        ) = await asyncio.gather(
-            fetch_activity(),
-            fetch_sessions(),
-            fetch_logins(),
-            fetch_audits(),
-            fetch_problems(),
-            fetch_grants(),
-        )
-
-        # Build chart_data from activity view (date_key + event_type + event_count)
-        chart_data = [
-            ActivityChartPoint(
-                date=str(item.date_key),
-                event_id=item.event_type or "",
-                count=item.event_count,
-            )
-            for item in activity_result.items
-        ]
-
-        # Build available_events by aggregating activity items by event_type
-        event_totals: dict[str, int] = defaultdict(int)
-        for item in activity_result.items:
-            if item.event_type:
-                event_totals[item.event_type] += item.event_count
-        available_events = sorted(
-            [
-                ActivityAvailableEvent(
-                    id=event_type,
-                    name=event_type,
-                    total_count=total,
-                )
-                for event_type, total in event_totals.items()
-            ],
-            key=lambda e: e.total_count,
-            reverse=True,
-        )
-
-        # Derive header metrics from view total_counts
-        sessions_count = sessions_result.total_count
-        active_profiles_count = activity_result.total_count
-        logins_count = logins_result.total_count
-
-        # Compute emulations count from grants
-        emulations_count = sum(
-            1 for g in grants_result.items if g.emulation_id is not None
-        )
-
-        # Build views container
-        views = ActivityViews(
-            sessions=sessions_result.items,
-            activity=activity_result.items,
-            logins=logins_result.items,
-            audits=audits_result.items,
-            problems=problems_result.items,
-            grants=grants_result.items,
-        )
-
-        # Collect profile_ids for resources
-        profile_ids: set[str] = set()
-        for item in sessions_result.items:
-            if item.profile_id:
-                profile_ids.add(str(item.profile_id))
-        for item in logins_result.items:
-            if item.profile_id:
-                profile_ids.add(str(item.profile_id))
-        resources = ActivityResources(
-            profiles={pid: {} for pid in profile_ids},
-        )
-
-        response.headers["X-Cache-Tags"] = ",".join(tags)
-        return ActivityResponse(
-            sessions_count=sessions_count,
-            active_profiles_count=active_profiles_count,
-            logins_count=logins_count,
-            emulations_count=emulations_count,
-            chart_data=chart_data,
-            available_events=available_events,
-            problems=problems_result.items,
-            views=views,
-            resources=resources,
-            total_count=sessions_result.total_count,
-        )
-
-    except HTTPException:
-        raise
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e)) from e
-    except Exception as e:
-        handle_route_error(
-            error=e,
-            route_path=http_request.url.path,
-            operation="artifacts_activity_get",
-            request=http_request,
-        )
-
-
-# =============================================================================
-# WebSocket Layer
-# =============================================================================
-
 # Activity resource types used for agent resolution via settings
 ACTIVITY_BUNDLE_RESOURCES: set[str] = {
     "activity",
@@ -286,17 +91,28 @@ ACTIVITY_BUNDLE_RESOURCES: set[str] = {
 }
 
 
-async def get_activity_websocket(
+# =============================================================================
+# Internal Layer
+# =============================================================================
+
+
+async def get_activity_internal(
     pool: asyncpg.Pool,
     profile_id: UUID,
-    activity_id: UUID | None = None,
-    draft_id: UUID | None = None,
     bypass_cache: bool = False,
-) -> GetActivityWebsocketResponse:
-    """Thin wrapper for websocket consumers — config chain + rate limit info."""
-    from datetime import UTC, datetime
-    from typing import Any
+    # HTTP-specific view filters (ignored by websocket callers)
+    profile_id_filter: UUID | None = None,
+    profile_ids_filter: list[UUID] | None = None,
+    date_from: datetime | None = None,
+    date_to: datetime | None = None,
+    page_limit: int = 50,
+    page_offset: int = 0,
+) -> ActivityInternalData:
+    """Fetch both domain views and config chain in parallel.
 
+    Returns an ActivityInternalData dataclass consumed by both the HTTP
+    endpoint and the websocket wrapper.
+    """
     # 1. Settings-based agent resolution + config chain
     async with pool.acquire() as settings_conn:
         settings_data = await get_auth_settings_internal(
@@ -306,7 +122,6 @@ async def get_activity_websocket(
         settings_data.agent_tool_entries, ACTIVITY_BUNDLE_RESOURCES
     )
 
-    # Config chain from settings
     config_agents = list(settings_data.settings_agents)
     config_tools = list(settings_data.settings_tools)
 
@@ -330,17 +145,73 @@ async def get_activity_websocket(
                 conn, config_provider_resource_ids, bypass_cache
             )
 
-    # 2. Fetch config profile and today's runs in parallel
+    # 2. Parallel fetch: views + config profile + runs today
+    async def fetch_activity() -> GetActivityListViewSqlRow:
+        async with pool.acquire() as c:
+            return await get_activity_list_view_internal(
+                conn=c,
+                date_from=date_from.date() if date_from else None,
+                date_to=date_to.date() if date_to else None,
+                page_limit=1000,
+                bypass_cache=bypass_cache,
+            )
+
+    async def fetch_sessions() -> GetSessionListViewSqlRow:
+        async with pool.acquire() as c:
+            return await get_session_list_view_internal(
+                conn=c,
+                profile_id_filter=profile_id_filter,
+                profile_ids_filter=profile_ids_filter,
+                date_from=date_from,
+                date_to=date_to,
+                page_limit=page_limit,
+                page_offset=page_offset,
+                bypass_cache=bypass_cache,
+            )
+
+    async def fetch_logins() -> GetLoginListViewSqlRow:
+        async with pool.acquire() as c:
+            return await get_login_list_view_internal(
+                conn=c,
+                profile_id_filter=profile_id_filter,
+                date_from=date_from,
+                date_to=date_to,
+                bypass_cache=bypass_cache,
+            )
+
+    async def fetch_audits() -> GetAuditListViewSqlRow:
+        async with pool.acquire() as c:
+            return await get_audit_list_view_internal(
+                conn=c,
+                date_from=date_from,
+                date_to=date_to,
+                bypass_cache=bypass_cache,
+            )
+
+    async def fetch_problems() -> GetProblemListViewSqlRow:
+        async with pool.acquire() as c:
+            return await get_problem_list_view_internal(
+                conn=c,
+                profile_id_filter=profile_id_filter,
+                date_from=date_from,
+                date_to=date_to,
+                bypass_cache=bypass_cache,
+            )
+
+    async def fetch_grants() -> GetGrantListViewSqlRow:
+        async with pool.acquire() as c:
+            return await get_grant_list_view_internal(conn=c, bypass_cache=bypass_cache)
+
     async def fetch_config_profile() -> list[QGetProfilesV4Item]:
-        async with pool.acquire() as conn:
-            return await get_profiles_internal(conn, [profile_id], bypass_cache)
+        async with pool.acquire() as c:
+            return await get_profiles_internal(c, [profile_id], bypass_cache)
 
     async def fetch_runs_today() -> GetRunListViewResponse:
         today_utc = datetime.now(UTC).replace(hour=0, minute=0, second=0, microsecond=0)
         tomorrow_utc = today_utc.replace(hour=23, minute=59, second=59)
-        async with pool.acquire() as conn:
+        async with pool.acquire() as c:
             return await get_run_list_entries_internal(
-                conn=conn,
+                conn=c,
                 profile_id_filter=profile_id,
                 date_from=today_utc,
                 date_to=tomorrow_utc,
@@ -348,22 +219,217 @@ async def get_activity_websocket(
                 bypass_cache=True,
             )
 
-    config_profile_result, runs_result = await asyncio.gather(
+    (
+        activity_result,
+        sessions_result,
+        logins_result,
+        audits_result,
+        problems_result,
+        grants_result,
+        config_profile_result,
+        runs_result,
+    ) = await asyncio.gather(
+        fetch_activity(),
+        fetch_sessions(),
+        fetch_logins(),
+        fetch_audits(),
+        fetch_problems(),
+        fetch_grants(),
         fetch_config_profile(),
         fetch_runs_today(),
     )
 
-    return GetActivityWebsocketResponse(
-        views=ActivityWebsocketViews(
-            runs=runs_result,
-        ),
-        resources=ActivityWebsocketResources(
-            config_agents=config_agents or None,
-            config_models=config_models or None,
-            config_providers=config_providers or None,
-            config_tools=config_tools or None,
-            config_profile=config_profile_result or None,
-        ),
+    return ActivityInternalData(
+        activity_result=activity_result,
+        sessions_result=sessions_result,
+        logins_result=logins_result,
+        audits_result=audits_result,
+        problems_result=problems_result,
+        grants_result=grants_result,
+        config_agents=config_agents,
+        config_models=config_models,
+        config_providers=config_providers,
+        config_tools=config_tools,
+        config_profile=config_profile_result,
+        runs_today=runs_result,
         resource_agent_ids=agent_ids,
         group_id=None,
+    )
+
+
+# =============================================================================
+# HTTP Endpoint
+# =============================================================================
+
+
+@router.post(
+    "/get",
+    response_model=ActivityResponse,
+    dependencies=[
+        audit_activity(
+            "artifacts.activity.get",
+            "{{ actor.name }} fetched activity artifact data",
+        )
+    ],
+)
+async def get_activity(
+    request: ActivityRequest,
+    http_request: Request,
+    response: Response,
+    conn: Annotated[asyncpg.Connection, Depends(get_db)],
+) -> ActivityResponse:
+    """Get activity artifact data."""
+    tags = ["artifacts", "activity"]
+    bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
+    pool = get_pool()
+    profile_id = http_request.state.profile_id
+
+    try:
+        # Pre-resolve department/role filters to profile_ids
+        filter_profile_ids: list[UUID] | None = None
+        if request.department_ids or request.roles:
+            async with pool.acquire() as c:
+                filter_profile_ids = await resolve_profile_ids_for_filters(
+                    conn=c,
+                    department_ids=request.department_ids or None,
+                    roles=request.roles or None,
+                )
+
+        data = await get_activity_internal(
+            pool=pool,
+            profile_id=profile_id,
+            bypass_cache=bypass_cache,
+            profile_id_filter=request.profile_id,
+            profile_ids_filter=filter_profile_ids,
+            date_from=request.date_from,
+            date_to=request.date_to,
+            page_limit=request.page_limit,
+            page_offset=request.page_offset,
+        )
+
+        # Build chart_data from activity view (date_key + event_type + event_count)
+        chart_data = [
+            ActivityChartPoint(
+                date=str(item.date_key),
+                event_id=item.event_type or "",
+                count=item.event_count,
+            )
+            for item in data.activity_result.items
+        ]
+
+        # Build available_events by aggregating activity items by event_type
+        event_totals: dict[str, int] = defaultdict(int)
+        for item in data.activity_result.items:
+            if item.event_type:
+                event_totals[item.event_type] += item.event_count
+        available_events = sorted(
+            [
+                ActivityAvailableEvent(
+                    id=event_type,
+                    name=event_type,
+                    total_count=total,
+                )
+                for event_type, total in event_totals.items()
+            ],
+            key=lambda e: e.total_count,
+            reverse=True,
+        )
+
+        # Derive header metrics from view total_counts
+        sessions_count = data.sessions_result.total_count
+        active_profiles_count = data.activity_result.total_count
+        logins_count = data.logins_result.total_count
+
+        # Compute emulations count from grants
+        emulations_count = sum(
+            1 for g in data.grants_result.items if g.emulation_id is not None
+        )
+
+        # Build views container
+        views = ActivityViews(
+            sessions=data.sessions_result.items,
+            activity=data.activity_result.items,
+            logins=data.logins_result.items,
+            audits=data.audits_result.items,
+            problems=data.problems_result.items,
+            grants=data.grants_result.items,
+        )
+
+        # Collect profile_ids for resources
+        profile_ids: set[str] = set()
+        for item in data.sessions_result.items:
+            if item.profile_id:
+                profile_ids.add(str(item.profile_id))
+        for item in data.logins_result.items:
+            if item.profile_id:
+                profile_ids.add(str(item.profile_id))
+        resources = ActivityResources(
+            profiles={pid: {} for pid in profile_ids},
+        )
+
+        response.headers["X-Cache-Tags"] = ",".join(tags)
+        return ActivityResponse(
+            sessions_count=sessions_count,
+            active_profiles_count=active_profiles_count,
+            logins_count=logins_count,
+            emulations_count=emulations_count,
+            chart_data=chart_data,
+            available_events=available_events,
+            problems=data.problems_result.items,
+            views=views,
+            resources=resources,
+            total_count=data.sessions_result.total_count,
+        )
+
+    except HTTPException:
+        raise
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
+    except Exception as e:
+        handle_route_error(
+            error=e,
+            route_path=http_request.url.path,
+            operation="artifacts_activity_get",
+            request=http_request,
+        )
+
+
+# =============================================================================
+# WebSocket Layer
+# =============================================================================
+
+
+async def get_activity_websocket(
+    pool: asyncpg.Pool,
+    profile_id: UUID,
+    activity_id: UUID | None = None,
+    draft_id: UUID | None = None,
+    bypass_cache: bool = False,
+) -> GetActivityWebsocketResponse:
+    """Thin wrapper for websocket consumers — config chain + domain views."""
+    data = await get_activity_internal(
+        pool=pool,
+        profile_id=profile_id,
+        bypass_cache=bypass_cache,
+    )
+
+    return GetActivityWebsocketResponse(
+        views=ActivityWebsocketViews(
+            runs=data.runs_today,
+            sessions=data.sessions_result.items,
+            activity=data.activity_result.items,
+            logins=data.logins_result.items,
+            audits=data.audits_result.items,
+            problems=data.problems_result.items,
+            grants=data.grants_result.items,
+        ),
+        resources=ActivityWebsocketResources(
+            config_agents=data.config_agents or None,
+            config_models=data.config_models or None,
+            config_providers=data.config_providers or None,
+            config_tools=data.config_tools or None,
+            config_profile=data.config_profile or None,
+        ),
+        resource_agent_ids=data.resource_agent_ids,
+        group_id=data.group_id,
     )
