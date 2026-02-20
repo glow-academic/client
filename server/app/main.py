@@ -837,6 +837,11 @@ from app.socket.v4 import router as socket_v4_router  # noqa: E402
 
 fastapi_app.include_router(socket_v4_router)
 
+# Include socket v5 unified client layer (alongside v4)
+from app.socket.v5 import router as socket_v5_router  # noqa: E402
+
+fastapi_app.include_router(socket_v5_router)
+
 # Root-level endpoints (must be registered before MCP mount to avoid route interception)
 
 # Default-IdP OIDC endpoints (infrastructure-level, not versioned)
