@@ -407,6 +407,7 @@ sql-compile-incremental: check-venv
 	 DB_HOST="$${DB_HOST:-localhost}" \
 	 DB_PORT="$${DB_PORT:-5432}" \
 	 $(VENV_PYTHON) -c "import asyncio, sys; from app.infra.v4.sql.compile_types import compile_sql_types; exit(0 if asyncio.run(compile_sql_types(sql_files=[sys.argv[1]]))[0] else 1)" "$(FILE)"
+	@curl -sfX POST http://localhost:$(SERVER_PORT)/schema-changed >/dev/null 2>&1 || true
 
 # Watch SQL files and regenerate types on change
 watch-sql-types:

@@ -15,6 +15,7 @@ See:
 - `AGENTS.md` for overall architecture principles
 """
 
+import asyncio
 from pathlib import Path
 from typing import Any, Protocol
 
@@ -31,6 +32,10 @@ _metadata_cache: dict[str, Any] = {}
 # redundant DROP TYPE / CREATE TYPE on every request (which causes race
 # conditions under concurrent load).
 _jit_created_functions: set[str] = set()
+
+# Serialize JIT creation to prevent thundering herd when multiple coroutines
+# hit stale OIDs simultaneously (e.g. after sql-compile-incremental).
+_jit_lock = asyncio.Lock()
 
 
 class HasToTuple(Protocol):
@@ -164,11 +169,12 @@ async def execute_sql_typed(
         # JIT-create the function only once per process to avoid DROP TYPE / CREATE TYPE
         # race conditions under concurrent load (OIDs change mid-flight on other connections).
         cache_key_fn = f"{schema}.{function_name}"
-        if cache_key_fn not in _jit_created_functions:
-            await conn.execute(sql_text)
-            # Refresh asyncpg's type cache after DROP TYPE/CREATE TYPE changes OIDs
-            await conn.reload_schema_state()
-            _jit_created_functions.add(cache_key_fn)
+        async with _jit_lock:
+            if cache_key_fn not in _jit_created_functions:
+                await conn.execute(sql_text)
+                # Refresh asyncpg's type cache after DROP TYPE/CREATE TYPE changes OIDs
+                await conn.reload_schema_state()
+                _jit_created_functions.add(cache_key_fn)
 
         # Call it with SELECT * FROM schema.function_name($1, $2, ...)
         num_params = len(sql_params)
@@ -192,14 +198,14 @@ async def execute_sql_typed(
             asyncpg.exceptions.InternalServerError,
         ):
             # After DB drop/restore (migrate-db), OIDs change and connections hold stale
-            # prepared statements. reload_schema_state() clears client-side caches and
-            # re-introspects types so the retry uses fresh OIDs.
-            _jit_created_functions.discard(cache_key_fn)
-            await conn.reload_schema_state()
-            # Re-create the function on this connection (OIDs changed)
-            await conn.execute(sql_text)
-            await conn.reload_schema_state()
-            _jit_created_functions.add(cache_key_fn)
+            # prepared statements. Serialize re-creation to prevent thundering herd.
+            async with _jit_lock:
+                _jit_created_functions.discard(cache_key_fn)
+                await conn.reload_schema_state()
+                # Re-create the function on this connection (OIDs changed)
+                await conn.execute(sql_text)
+                await conn.reload_schema_state()
+                _jit_created_functions.add(cache_key_fn)
             if sql_params:
                 rows = await conn.fetch(function_call_sql, *sql_params)
             else:

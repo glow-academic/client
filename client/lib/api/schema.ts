@@ -32507,6 +32507,29 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/schema-changed": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Schema Changed
+         * @description Notify the server that SQL types have changed (e.g. after sql-compile-incremental).
+         *
+         *     Expires all pooled connections so stale prepared statements with old OIDs
+         *     are discarded. Called automatically by the sql-compile-incremental watcher.
+         */
+        post: operations["schema_changed_schema_changed_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/init": {
         parameters: {
             query?: never;
@@ -128827,6 +128850,26 @@ export interface operations {
         };
     };
     metrics_snapshot_metrics_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
+    schema_changed_schema_changed_post: {
         parameters: {
             query?: never;
             header?: never;

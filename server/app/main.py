@@ -1003,6 +1003,17 @@ async def _compile_sql_types() -> tuple[bool, str]:
         return False, f"Error running SQL compilation: {str(e)}"
 
 
+@fastapi_app.post("/schema-changed")
+async def schema_changed() -> JSONResponse:
+    """Notify the server that SQL types have changed (e.g. after sql-compile-incremental).
+
+    Expires all pooled connections so stale prepared statements with old OIDs
+    are discarded. Called automatically by the sql-compile-incremental watcher.
+    """
+    await expire_all_connections()
+    return JSONResponse(content={"success": True})
+
+
 @fastapi_app.post("/init")
 async def init_system() -> JSONResponse:
     """Trigger system initialization (SQL compilation and Keycloak sync).
