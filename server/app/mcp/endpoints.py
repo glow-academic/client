@@ -526,19 +526,21 @@ _ALL_ENTRIES = [
     "videos",
 ]
 
+_ENTRIES_WITH_CREATE_ROUTE = {
+    "problems",
+    "resolves",
+    "attempt_archive",
+    "test_archive",
+    "uploads",
+}
+
 ENTRY_REGISTRY: dict[str, dict[str, tuple[str, str]]] = {}
 for _name in _ALL_ENTRIES:
     _entry: dict[str, tuple[str, str]] = {
         "get": (f"app.api.v4.entries.{_name}.get", f"get_{_name}_entries"),
         "search": (f"app.api.v4.entries.{_name}.search", f"search_{_name}_entries"),
     }
-    # Special case: uploads uses create_uploads_entry_mcp
-    if _name == "uploads":
-        _entry["create"] = (
-            f"app.api.v4.entries.{_name}.create",
-            "create_uploads_entry_mcp",
-        )
-    else:
+    if _name in _ENTRIES_WITH_CREATE_ROUTE:
         _entry["create"] = (
             f"app.api.v4.entries.{_name}.create",
             f"create_{_name}_entry",
@@ -1812,22 +1814,149 @@ def register_endpoints(server: FastMCP) -> None:
             filename: Original filename with extension (e.g., "photo.png").
             base64_data: Base64-encoded file contents.
             mime_type: MIME type (e.g., "image/png"). Auto-detected from extension if omitted.
-            subfolder: Optional subfolder path for organization.
+            subfolder: Optional subfolder — "audio" or "video". Files go to default uploads folder if omitted.
         """
+        import base64 as b64
+        import os
+        import uuid as uuid_mod
+
+        from app.main import AUDIO_FOLDER, UPLOAD_FOLDER, VIDEO_FOLDER, get_db
+        from app.sql.types import FinalizeUploadSqlParams, FinalizeUploadSqlRow
+        from app.utils.cache.invalidate_tags import invalidate_tags
         from app.utils.mcp.get_mcp_profile_id import get_mcp_profile_id
+        from app.utils.mime.get_content_type import get_content_type
+        from app.utils.sql_helper import execute_sql_typed
 
         profile_id = get_mcp_profile_id()
+        finalize_sql = "app/sql/v4/queries/uploads/finalize_upload_complete.sql"
 
-        entry_data: dict[str, Any] = {
-            "filename": filename,
-            "base64_data": base64_data,
-        }
-        if mime_type is not None:
-            entry_data["mime_type"] = mime_type
-        if subfolder is not None:
-            entry_data["subfolder"] = subfolder
+        try:
+            file_bytes = b64.b64decode(base64_data)
+        except Exception as e:
+            return {"error": f"Invalid base64 data: {e}", "status": "error"}
 
-        handler = _get_handler(*ENTRY_REGISTRY["uploads"]["create"])
-        return await call_endpoint_handler(
-            handler, {"entry_data": entry_data}, profile_id
-        )
+        upload_uuid = uuid_mod.uuid4()
+        _, ext = os.path.splitext(filename)
+        if not ext:
+            ext = ".bin"
+
+        if subfolder == "audio":
+            target_folder = AUDIO_FOLDER
+            final_file_path = f"audio/{upload_uuid}{ext}"
+        elif subfolder == "video":
+            target_folder = VIDEO_FOLDER
+            final_file_path = f"video/{upload_uuid}{ext}"
+        else:
+            target_folder = UPLOAD_FOLDER
+            final_file_path = f"{upload_uuid}{ext}"
+
+        final_full_path = target_folder / f"{upload_uuid}{ext}"
+
+        with open(final_full_path, "wb") as f:
+            f.write(file_bytes)
+
+        content_type = mime_type or get_content_type(filename)
+        file_size = len(file_bytes)
+
+        try:
+            params = FinalizeUploadSqlParams(
+                upload_file_path=final_file_path,
+                content_type=content_type,
+                file_size=file_size,
+                profile_id=uuid_mod.UUID(profile_id),
+            )
+
+            async for conn in get_db():
+                result = cast(
+                    FinalizeUploadSqlRow,
+                    await execute_sql_typed(conn, finalize_sql, params=params),
+                )
+
+                if not result or not result.upload_id:
+                    return {
+                        "error": "Failed to create upload record",
+                        "status": "error",
+                    }
+
+                await invalidate_tags(["entries", "uploads"])
+
+                return {
+                    "id": str(result.upload_id),
+                    "status": "success",
+                }
+
+            return {"error": "Database connection not available", "status": "error"}
+        except Exception as e:
+            return {"error": str(e), "status": "error", "type": type(e).__name__}
+
+    @server.tool()
+    async def download(
+        upload_id: str,
+    ) -> dict[str, Any]:
+        """Download a file by upload ID. Returns base64-encoded content + metadata.
+
+        Args:
+            upload_id: The UUID of the upload to download.
+        """
+        import base64 as b64
+        import os
+        import uuid as uuid_mod
+
+        from app.main import AUDIO_FOLDER, IMAGE_FOLDER, UPLOAD_FOLDER, get_db
+        from app.sql.types import GetUploadFileInfoSqlParams, GetUploadFileInfoSqlRow
+        from app.utils.mcp.get_mcp_profile_id import get_mcp_profile_id
+        from app.utils.mime.get_content_type import get_content_type
+        from app.utils.sql_helper import execute_sql_typed
+
+        profile_id = get_mcp_profile_id()
+        download_sql = "app/sql/v4/queries/uploads/get_upload_file_info_complete.sql"
+
+        try:
+            params = GetUploadFileInfoSqlParams(
+                upload_id=uuid_mod.UUID(upload_id),
+                profile_id=uuid_mod.UUID(profile_id),
+            )
+
+            async for conn in get_db():
+                result = cast(
+                    GetUploadFileInfoSqlRow,
+                    await execute_sql_typed(conn, download_sql, params=params),
+                )
+
+                if not result or not result.upload_exists:
+                    return {"error": "Upload not found", "status": "error"}
+
+                stored_path = result.file_path or ""
+                if stored_path.startswith("audio/"):
+                    file_path = os.path.join(
+                        AUDIO_FOLDER, os.path.basename(stored_path)
+                    )
+                elif stored_path.startswith("image/"):
+                    file_path = os.path.join(
+                        IMAGE_FOLDER, os.path.basename(stored_path)
+                    )
+                else:
+                    file_path = os.path.join(UPLOAD_FOLDER, stored_path)
+
+                if not os.path.exists(file_path):
+                    return {"error": "Upload file not found on disk", "status": "error"}
+
+                with open(file_path, "rb") as f:
+                    file_bytes = f.read()
+
+                content_type = get_content_type(
+                    result.file_path or "", result.mime_type or ""
+                )
+
+                return {
+                    "upload_id": str(result.upload_id),
+                    "filename": os.path.basename(result.file_path or ""),
+                    "mime_type": content_type,
+                    "size": result.size,
+                    "base64_data": b64.b64encode(file_bytes).decode("ascii"),
+                    "status": "success",
+                }
+
+            return {"error": "Database connection not available", "status": "error"}
+        except Exception as e:
+            return {"error": str(e), "status": "error", "type": type(e).__name__}

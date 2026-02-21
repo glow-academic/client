@@ -1,22 +1,4 @@
-"""Uploads entry endpoints — dual MCP/non-MCP interface.
-
-MCP class:
-  POST /uploads/get        — Returns metadata from uploads_mv
-  POST /uploads/create/mcp — Accepts base64 data inline
-
-Non-MCP class:
-  POST /uploads/get          — Returns metadata (use download for file content)
-  POST /uploads/create       — Creates entry record
-  GET  /uploads/download/{id} — Streams file content
-  POST /uploads/search       — Search uploads
-
-TUS protocol (non-MCP, separate):
-  OPTIONS /uploads/tus           — TUS discovery
-  POST    /uploads/tus           — Create TUS upload
-  HEAD    /uploads/tus/{id}      — Get upload progress
-  PATCH   /uploads/tus/{id}      — Upload chunk
-  POST    /uploads/tus/{id}/finalize — Finalize and create record
-"""
+"""Uploads entry endpoints."""
 
 from fastapi import APIRouter
 
