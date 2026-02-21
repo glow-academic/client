@@ -14,7 +14,11 @@ from app.infra.v4.activity.websocket_logger import log_websocket_activity
 from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
 from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.main import get_internal_sio
-from app.socket.v5.internal.attempt.types import AttemptErrorData, AttemptGradeStartData
+from app.socket.v5.internal.attempt.types import (
+    AttemptErrorData,
+    AttemptGradeStartData,
+    GenerateRequestData,
+)
 from app.sql.types import PrepareAttemptGradeSqlParams, PrepareAttemptGradeSqlRow
 from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import execute_sql_typed
@@ -180,22 +184,22 @@ async def attempt_grade_handler(data: dict[str, Any]) -> None:
         # Step 7: Emit to generate pipeline (pre-created run_id skips prepare)
         await internal_sio.emit(
             "generate",
-            {
-                "sid": sid,
-                "profile_id": str(profile_id),
-                "artifact_type": "attempt",
-                "artifact_id": str(attempt_id),
-                "resource_types": resource_types or GRADE_RESOURCE_TYPES,
-                "user_instructions": user_instructions,
-                "save": True,
-                "attempt_id": str(attempt_id),
-                "run_id": str(grade_prepare_row.run_id),
-                "group_id": str(existing_group_id),
-                "chat_id": str(grade_chat_id),
-                "grade_id": str(grade_prepare_row.grade_id)
+            GenerateRequestData(
+                sid=sid,
+                profile_id=str(profile_id),
+                artifact_type="attempt",
+                artifact_id=str(attempt_id),
+                resource_types=resource_types or GRADE_RESOURCE_TYPES,
+                user_instructions=user_instructions,
+                save=True,
+                attempt_id=str(attempt_id),
+                run_id=str(grade_prepare_row.run_id),
+                group_id=str(existing_group_id),
+                chat_id=str(grade_chat_id),
+                grade_id=str(grade_prepare_row.grade_id)
                 if grade_prepare_row.grade_id
                 else None,
-            },
+            ).model_dump(mode="json"),
         )
 
         # Log activity

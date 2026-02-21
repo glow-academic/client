@@ -20,6 +20,7 @@ from app.socket.v5.internal.attempt.types import (
     AttemptAssistantStartData,
     AttemptErrorData,
     AttemptUserCompleteData,
+    GenerateRequestData,
 )
 from app.sql.types import PrepareAttemptMessageSqlParams, PrepareAttemptMessageSqlRow
 from app.utils.logging.db_logger import get_logger
@@ -225,20 +226,20 @@ async def attempt_message_handler(data: dict[str, Any]) -> None:
 
         await internal_sio.emit(
             "generate",
-            {
-                "sid": sid,
-                "profile_id": str(profile_id),
-                "artifact_type": "attempt",
-                "artifact_id": str(attempt_id),
-                "resource_types": resource_types,
-                "user_instructions": payload.user_instructions,
-                "save": True,
-                "attempt_id": str(attempt_id),
-                "run_id": str(msg_prepare_row.run_id),
-                "group_id": str(existing_group_id) if existing_group_id else None,
-                "chat_id": str(chat_id),
-                "extra_messages": extra_messages if extra_messages else None,
-            },
+            GenerateRequestData(
+                sid=sid,
+                profile_id=str(profile_id),
+                artifact_type="attempt",
+                artifact_id=str(attempt_id),
+                resource_types=resource_types,
+                user_instructions=payload.user_instructions,
+                save=True,
+                attempt_id=str(attempt_id),
+                run_id=str(msg_prepare_row.run_id),
+                group_id=str(existing_group_id) if existing_group_id else None,
+                chat_id=str(chat_id),
+                extra_messages=extra_messages if extra_messages else None,
+            ).model_dump(mode="json"),
         )
 
         # Log activity

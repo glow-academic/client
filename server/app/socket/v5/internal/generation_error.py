@@ -7,6 +7,7 @@ generate_text_error, re-emits as generation_channel(type=error).
 from typing import Any
 
 from app.main import get_internal_sio
+from app.socket.v5.internal.generation_types import GenerationErrorData
 from app.utils.logging.db_logger import get_logger
 
 logger = get_logger(__name__)
@@ -28,16 +29,14 @@ async def handle_generation_error(data: dict[str, Any]) -> None:
 
     await internal_sio.emit(
         "generation_channel",
-        {
-            "type": "error",
-            "sid": sid,
-            "artifact_type": data.get("artifact_type", "unknown"),
-            "group_id": data.get("group_id"),
-            "resource_type": data.get("resource_type"),
-            "resource_types": data.get("resource_types"),
-            "resource_id": data.get("resource_id"),
-            "run_id": data.get("run_id"),
-            "success": False,
-            "message": error_message,
-        },
+        GenerationErrorData(
+            sid=sid,
+            artifact_type=data.get("artifact_type", "unknown"),
+            group_id=data.get("group_id"),
+            resource_type=data.get("resource_type"),
+            resource_types=data.get("resource_types"),
+            resource_id=data.get("resource_id"),
+            run_id=data.get("run_id"),
+            message=error_message,
+        ).model_dump(mode="json"),
     )

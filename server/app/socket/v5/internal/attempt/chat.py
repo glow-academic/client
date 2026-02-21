@@ -18,6 +18,7 @@ from app.socket.v5.internal.attempt.types import (
     AttemptChatEndedData,
     AttemptChatStartedData,
     AttemptErrorData,
+    AttemptStartRequestData,
 )
 from app.sql.types import (
     CreateAttemptChatSqlParams,
@@ -97,10 +98,10 @@ async def _attempt_chat_impl(sid: str, data: dict[str, Any]) -> None:
             if SHOULD_PROCEED:
                 await internal_sio.emit(
                     "attempt_start",
-                    {
-                        "sid": sid,
-                        "attempt_id": str(attempt_id),
-                    },
+                    AttemptStartRequestData(
+                        sid=sid,
+                        attempt_id=str(attempt_id),
+                    ).model_dump(mode="json"),
                 )
 
         else:

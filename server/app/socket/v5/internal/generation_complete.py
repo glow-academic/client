@@ -17,7 +17,12 @@ from app.infra.v4.websocket.generation_tracker import (
 )
 from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.main import get_internal_sio
+from app.socket.v5.internal.attempt.types import AttemptChatRequestData
 from app.socket.v5.internal.generation_save_registry import save_artifact
+from app.socket.v5.internal.generation_types import (
+    GenerationCompleteData,
+    GenerationSavedData,
+)
 from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import load_sql
 
@@ -134,30 +139,28 @@ async def handle_run_complete(data: dict[str, Any]) -> None:
     if artifact_id:
         await internal_sio.emit(
             "generation_channel",
-            {
-                "type": "saved",
-                "sid": sid,
-                "artifact_type": artifact_type,
-                "group_id": group_id_str or "",
-                "run_id": run_id,
-                "artifact_id": artifact_id,
-            },
+            GenerationSavedData(
+                sid=sid,
+                artifact_type=artifact_type,
+                group_id=group_id_str or "",
+                run_id=run_id,
+                artifact_id=artifact_id,
+            ).model_dump(mode="json"),
         )
 
     # 4d: Emit complete event
     await internal_sio.emit(
         "generation_channel",
-        {
-            "type": "complete",
-            "sid": sid,
-            "artifact_type": artifact_type,
-            "group_id": group_id_str or "",
-            "run_id": run_id,
-            "success": True,
-            "message": f"{artifact_type.capitalize()} generation completed",
-            "artifact_id": artifact_id,
-            "resource_actions": resource_actions,
-        },
+        GenerationCompleteData(
+            sid=sid,
+            artifact_type=artifact_type,
+            group_id=group_id_str or "",
+            run_id=run_id,
+            success=True,
+            message=f"{artifact_type.capitalize()} generation completed",
+            artifact_id=artifact_id,
+            resource_actions=resource_actions,
+        ).model_dump(mode="json"),
     )
 
     # 4e: Special case — chat emits attempt_chat after completion
@@ -173,12 +176,12 @@ async def handle_run_complete(data: dict[str, Any]) -> None:
         ):
             await internal_sio.emit(
                 "attempt_chat",
-                {
-                    "sid": sid,
-                    "attempt_id": attempt_id_data,
-                    "training_department_id": training_department_id_data,
-                    "profile_id": profile_id_str,
-                },
+                AttemptChatRequestData(
+                    sid=sid,
+                    attempt_id=attempt_id_data,
+                    training_department_id=training_department_id_data,
+                    profile_id=profile_id_str,
+                ).model_dump(mode="json"),
             )
 
     # 4f: Cleanup

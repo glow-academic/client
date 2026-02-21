@@ -9,6 +9,7 @@ from typing import Any
 
 from app.infra.v4.websocket.generation_tracker import record_resource_complete
 from app.main import get_internal_sio
+from app.socket.v5.internal.generation_types import GenerationProgressData
 from app.utils.logging.db_logger import get_logger
 
 logger = get_logger(__name__)
@@ -48,15 +49,14 @@ async def handle_resource_progress(data: dict[str, Any]) -> None:
 
     await internal_sio.emit(
         "generation_channel",
-        {
-            "type": "progress",
-            "sid": sid,
-            "artifact_type": artifact_type,
-            "group_id": group_id_str,
-            "run_id": run_id,
-            "completed_resources": completed,
-            "total_resources": total,
-            "percentage": min(percentage, 100),
-            "last_completed_resource": resource_type,
-        },
+        GenerationProgressData(
+            sid=sid,
+            artifact_type=artifact_type,
+            group_id=group_id_str,
+            run_id=run_id,
+            completed_resources=completed,
+            total_resources=total,
+            percentage=min(percentage, 100),
+            last_completed_resource=resource_type,
+        ).model_dump(mode="json"),
     )

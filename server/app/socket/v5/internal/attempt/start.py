@@ -23,6 +23,7 @@ from app.socket.v5.internal.attempt.types import (
     AttemptEndedData,
     AttemptErrorData,
     AttemptStartedData,
+    GenerateRequestData,
 )
 from app.utils.logging.db_logger import get_logger
 
@@ -76,18 +77,18 @@ async def _emit_chat_generate(
 
     await internal_sio.emit(
         "generate",
-        {
-            "sid": sid,
-            "profile_id": str(profile_id),
-            "artifact_type": "chat",
-            "artifact_id": str(training_entry_id),
-            "draft_id": str(payload.draft_id) if payload.draft_id else None,
-            "resource_types": resource_types,
-            "user_instructions": payload.user_instructions,
-            "save": payload.save,
-            "attempt_id": str(attempt_id),
-            "chat_resolved_id": str(chat_resolved_id),
-        },
+        GenerateRequestData(
+            sid=sid,
+            profile_id=str(profile_id),
+            artifact_type="chat",
+            artifact_id=str(training_entry_id),
+            draft_id=str(payload.draft_id) if payload.draft_id else None,
+            resource_types=resource_types,
+            user_instructions=payload.user_instructions,
+            save=payload.save,
+            attempt_id=str(attempt_id),
+            chat_resolved_id=str(chat_resolved_id),
+        ).model_dump(mode="json"),
     )
 
 

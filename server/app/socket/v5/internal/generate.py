@@ -26,6 +26,8 @@ from app.main import get_internal_sio, get_pool
 from app.socket.v4.artifacts.types import GenerateErrorApiRequest
 from app.socket.v5.client.registry import REGISTRY, ArtifactGenerateConfig
 from app.socket.v5.client.types import GeneratePayload
+from app.socket.v5.internal.generate_artifact import GenerateArtifactPayload
+from app.socket.v5.internal.generation_types import GenerationStartedData
 from app.sql.types import (
     PrepareAgentGenerationSqlParams,
     PrepareAgentGenerationSqlRow,
@@ -513,13 +515,13 @@ async def generate_handler(data: dict[str, Any]) -> None:
             # Step 15: Emit generation_started to server layer
             await internal_sio.emit(
                 "generation_started",
-                {
-                    "sid": sid,
-                    "artifact_type": artifact_type,
-                    "group_id": str(group_id) if group_id else "",
-                    "run_id": str(run_id),
-                    "resource_types": resource_types,
-                },
+                GenerationStartedData(
+                    sid=sid,
+                    artifact_type=artifact_type,
+                    group_id=str(group_id) if group_id else "",
+                    run_id=str(run_id),
+                    resource_types=resource_types,
+                ).model_dump(mode="json"),
             )
 
             # Step 16: Convert tools and enrich with _args_outputs
@@ -528,32 +530,6 @@ async def generate_handler(data: dict[str, Any]) -> None:
 
             # Step 17: Dispatch to generate_artifact handler(s)
             for _agent_group_id, agent_resource_types in agent_groups.items():
-                emit_payload: dict[str, Any] = {
-                    "sid": sid,
-                    "artifact_type": artifact_type,
-                    "resource_type": agent_resource_types[0]
-                    if agent_resource_types
-                    else artifact_type,
-                    "run_id": str(run_id),
-                    "group_id": str(group_id) if group_id else None,
-                    "message_id": None,
-                    "messages": messages,
-                    "llm_config": {
-                        "model": model_name,
-                        "api_key": api_key,
-                        "base_url": base_url,
-                        "temperature": temperature,
-                        "reasoning": reasoning,
-                        "provider": provider_name,
-                        "voice": voice,
-                        "quality": quality,
-                        "length_seconds": None,
-                        "tool_choice": "required",
-                    },
-                    "tools": tool_dicts,
-                    "save": payload.save,
-                }
-
                 # Build metadata from extra_emit_fields + attempt-specific IDs
                 metadata: dict[str, Any] = {}
                 for field_name in config.extra_emit_fields:
@@ -569,9 +545,35 @@ async def generate_handler(data: dict[str, Any]) -> None:
                 if payload.save is not None:
                     metadata["save"] = payload.save
 
-                emit_payload["metadata"] = metadata or None
-
-                await internal_sio.emit("generate_artifact", emit_payload)
+                await internal_sio.emit(
+                    "generate_artifact",
+                    GenerateArtifactPayload(
+                        sid=sid,
+                        artifact_type=artifact_type,
+                        resource_type=agent_resource_types[0]
+                        if agent_resource_types
+                        else artifact_type,
+                        run_id=str(run_id),
+                        group_id=str(group_id) if group_id else None,
+                        message_id=None,
+                        messages=messages,
+                        llm_config={
+                            "model": model_name,
+                            "api_key": api_key,
+                            "base_url": base_url,
+                            "temperature": temperature,
+                            "reasoning": reasoning,
+                            "provider": provider_name,
+                            "voice": voice,
+                            "quality": quality,
+                            "length_seconds": None,
+                            "tool_choice": "required",
+                        },
+                        tools=tool_dicts,
+                        save=payload.save,
+                        metadata=metadata or None,
+                    ).model_dump(mode="json"),
+                )
 
     except Exception as e:
         logger.exception(f"Failed to generate {artifact_type} resources: {str(e)}")

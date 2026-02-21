@@ -7,6 +7,7 @@ Listens to internal `generation_started` and emits to client:
 from typing import Any
 
 from app.main import get_internal_sio, sio
+from app.socket.v5.internal.generation_types import GenerationStartedEvent
 
 internal_sio = get_internal_sio()
 
@@ -21,12 +22,12 @@ async def generation_started_server_handler(data: dict[str, Any]) -> None:
     artifact_type = data.get("artifact_type", "unknown")
     rooms = data.get("rooms") or [sid]
 
-    payload = {
-        "artifact_type": artifact_type,
-        "group_id": data.get("group_id", ""),
-        "run_id": data.get("run_id", ""),
-        "resource_types": data.get("resource_types", []),
-    }
+    payload = GenerationStartedEvent(
+        artifact_type=artifact_type,
+        group_id=data.get("group_id", ""),
+        run_id=data.get("run_id", ""),
+        resource_types=data.get("resource_types", []),
+    ).model_dump(mode="json")
 
     for room in rooms:
         await sio.emit(f"{artifact_type}_generation_started", payload, room=room)

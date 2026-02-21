@@ -10,6 +10,7 @@ from typing import Any
 from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
 from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.main import get_internal_sio
+from app.socket.v5.internal.test.types import TestGradedData
 from app.sql.types import CompleteTestGradeSqlParams
 from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import execute_sql_typed
@@ -71,15 +72,14 @@ async def handle_test_grade_complete(data: dict[str, Any]) -> None:
         # Emit graded via internal bus
         await internal_sio.emit(
             "test_progress",
-            {
-                "type": "graded",
-                "sid": sid,
-                "invocation_id": invocation_id_str,
-                "grade_id": str(grade_id) if grade_id else None,
-                "score": score,
-                "passed": passed,
-                "feedback": feedback,
-            },
+            TestGradedData(
+                sid=sid,
+                invocation_id=invocation_id_str,
+                grade_id=str(grade_id) if grade_id else None,
+                score=score,
+                passed=passed,
+                feedback=feedback,
+            ).model_dump(mode="json"),
         )
 
         logger.info(

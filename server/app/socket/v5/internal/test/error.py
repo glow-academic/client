@@ -6,6 +6,7 @@ Handles: test_error_event — re-emits as test_progress(type=error).
 from typing import Any
 
 from app.main import get_internal_sio
+from app.socket.v5.internal.test.types import TestErrorData
 
 internal_sio = get_internal_sio()
 
@@ -18,12 +19,11 @@ async def handle_test_error(data: dict[str, Any]) -> None:
 
     await internal_sio.emit(
         "test_progress",
-        {
-            "type": "error",
-            "sid": data.get("sid"),
-            "invocation_id": str(invocation_id) if invocation_id else None,
-            "run_id": str(data.get("run_id")) if data.get("run_id") else None,
-            "message": message,
-            "error_type": data.get("error_type"),
-        },
+        TestErrorData(
+            sid=data.get("sid"),
+            invocation_id=str(invocation_id) if invocation_id else None,
+            run_id=str(data.get("run_id")) if data.get("run_id") else None,
+            message=message,
+            error_type=data.get("error_type"),
+        ).model_dump(mode="json"),
     )
