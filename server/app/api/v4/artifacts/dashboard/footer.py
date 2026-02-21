@@ -81,23 +81,23 @@ async def get_dashboard_footer(
         chat_items = chats_result.items
 
         # 3. Enrich with document_ids from training config
-        td_ids = list(
+        cr_ids = list(
             {
-                item.training_department_id
+                item.chat_resolved_id
                 for item in chat_items
-                if item.training_department_id
+                if item.chat_resolved_id
             }
         )
-        if td_ids:
+        if cr_ids:
             async with pool.acquire() as c:
                 doc_map = await fetch_training_doc_ids(
                     conn=c,
-                    training_department_ids=td_ids,
+                    chat_resolved_ids=cr_ids,
                     bypass_cache=bypass_cache,
                 )
             for item in chat_items:
-                if item.training_department_id:
-                    doc_ids = doc_map.get(item.training_department_id)
+                if item.chat_resolved_id:
+                    doc_ids = doc_map.get(item.chat_resolved_id)
                     if doc_ids:
                         item.document_ids = list(doc_ids)
 

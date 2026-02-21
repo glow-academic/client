@@ -2,8 +2,8 @@
 
 Handles: attempt_grade — trigger grading for an attempt chat.
 
-Registered on both @sio.event (client) and @internal_sio.on (internal bus)
-so that attempt_end can compose by emitting attempt_grade internally.
+Client-facing @sio.event handler. The internal @internal_sio.on handler
+lives in v5/internal/attempt/grade.py.
 
 Flow: Fetch → resolve chat_id → prepare SQL → compose with _generate_impl.
 """
@@ -15,7 +15,7 @@ from app.api.v4.artifacts.attempt.get import get_attempt_websocket
 from app.infra.v4.activity.websocket_logger import log_websocket_activity
 from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
 from app.infra.v4.websocket.get_db_connection import get_db_connection
-from app.main import get_internal_sio, sio
+from app.main import sio
 from app.socket.v5.client.generate import _generate_impl
 from app.socket.v5.client.types import (
     AttemptErrorEvent,
@@ -27,8 +27,6 @@ from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import execute_sql_typed
 
 logger = get_logger(__name__)
-
-internal_sio = get_internal_sio()
 
 SQL_PATH_PREPARE_GRADE = (
     "app/sql/v4/queries/generate/attempt/prepare_attempt_grade_complete.sql"
@@ -243,28 +241,3 @@ async def attempt_grade(sid: str, data: dict[str, Any]) -> None:
         )
 
 
-@internal_sio.on("attempt_grade")  # type: ignore
-async def attempt_grade_internal(data: dict[str, Any]) -> None:
-    """Handle attempt_grade from internal bus (e.g. from attempt_end)."""
-    try:
-        sid = data.get("sid", "")
-        if not sid:
-            return
-
-        profile_id_str = await find_profile_by_socket(sid)
-        if not profile_id_str:
-            return
-
-        profile_id = uuid.UUID(profile_id_str)
-        attempt_id = uuid.UUID(str(data["attempt_id"]))
-        chat_id = uuid.UUID(str(data["chat_id"])) if data.get("chat_id") else None
-
-        await _attempt_grade_impl(
-            sid=sid,
-            attempt_id=attempt_id,
-            chat_id=chat_id,
-            profile_id=profile_id,
-        )
-
-    except Exception as e:
-        logger.exception(f"Error in attempt_grade_internal: {e}")

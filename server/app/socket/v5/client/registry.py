@@ -655,7 +655,7 @@ _register(
 
         requires_pool=True,
         fetcher_id_kwarg="chat_entry_id",
-        extra_emit_fields=["attempt_id", "training_department_id"],
+        extra_emit_fields=["attempt_id", "chat_resolved_id"],
         fetcher=_make_fetcher(
             "app.api.v4.artifacts.chat.get",
             "get_chat_websocket",

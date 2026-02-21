@@ -301,7 +301,9 @@ async def get_rubric_scores_internal(
                     profile_id=item.profile_id,
                     cohort_id=item.cohort_id,
                     department_id=item.department_id,
-                    attempt_date=item.attempt_date,
+                    attempt_date=date.fromisoformat(item.attempt_date)
+                    if isinstance(item.attempt_date, str)
+                    else item.attempt_date,
                     attempt_type=item.attempt_type,
                     is_archived=item.is_archived or False,
                 )
@@ -625,18 +627,18 @@ TRAINING_CONFIG_SQL = (
 
 async def fetch_training_doc_ids(
     conn: asyncpg.Connection,
-    training_department_ids: list[UUID],
+    chat_resolved_ids: list[UUID],
     bypass_cache: bool = False,
 ) -> dict[UUID, list[UUID]]:
-    """Fetch document_ids from training config for a batch of training_department_ids."""
-    if not training_department_ids:
+    """Fetch document_ids from training config for a batch of chat_resolved_ids."""
+    if not chat_resolved_ids:
         return {}
 
     from app.sql.types import GetTrainingConfigSqlParams
 
     tc_cache_key = cache_key(
         "dashboard/training_doc_ids",
-        {"ids": sorted(str(i) for i in training_department_ids)},
+        {"ids": sorted(str(i) for i in chat_resolved_ids)},
     )
 
     if not bypass_cache:
@@ -644,14 +646,14 @@ async def fetch_training_doc_ids(
         if cached:
             return {UUID(k): [UUID(d) for d in v] for k, v in cached.items() if v}
 
-    params = GetTrainingConfigSqlParams(training_department_ids=training_department_ids)
+    params = GetTrainingConfigSqlParams(chat_resolved_ids=chat_resolved_ids)
     result = await execute_sql_typed(conn, TRAINING_CONFIG_SQL, params=params)
 
     doc_map: dict[UUID, list[UUID]] = {}
     if result and result.items:
         for item in result.items:
             if item.document_ids:
-                doc_map[item.training_department_id] = list(item.document_ids)
+                doc_map[item.chat_resolved_id] = list(item.document_ids)
 
     await set_cached(
         tc_cache_key,

@@ -17282,26 +17282,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v4/server/attempt/chat_started": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Attempt Chat Started Api
-         * @description Server-to-client event: Chat created within an attempt.
-         */
-        post: operations["attempt_chat_started_api_socket_v4_server_attempt_chat_started_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/socket/v4/server/invocation_generation_started": {
         parameters: {
             query?: never;
@@ -34091,8 +34071,8 @@ export interface components {
             title?: string | null;
             /** Group Id */
             group_id?: string | null;
-            /** Training Department Id */
-            training_department_id?: string | null;
+            /** Chat Resolved Id */
+            chat_resolved_id?: string | null;
             /**
              * Artifact Type
              * @default
@@ -34119,18 +34099,6 @@ export interface components {
             tool_name?: string | null;
             /** Arguments Delta */
             arguments_delta?: string | null;
-        };
-        /**
-         * AttemptChatStartedEvent
-         * @description Server-to-client event: attempt_chat_started.
-         *
-         *     Emitted when a new chat is created within an attempt.
-         */
-        AttemptChatStartedEvent: {
-            /** Attempt Id */
-            attempt_id: string;
-            /** Chat Id */
-            chat_id: string;
         };
         /**
          * AttemptCompleteEvent
@@ -102356,41 +102324,6 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["AttemptStartedEvent"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: boolean;
-                    };
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    attempt_chat_started_api_socket_v4_server_attempt_chat_started_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["AttemptChatStartedEvent"];
             };
         };
         responses: {

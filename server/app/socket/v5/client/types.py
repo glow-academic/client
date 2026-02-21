@@ -23,7 +23,7 @@ class GeneratePayload(BaseModel):
 
         # Pass-through fields (training-specific, forwarded to internal emit)
         attempt_id:    Optional attempt context.
-        training_department_id: Optional department context.
+        chat_resolved_id: Optional chat resolved context.
         staff_id:      Optional staff ID (profile artifact resolves to target_profile_id).
 
         # Pre-created IDs (skip prepare step when populated)
@@ -50,7 +50,7 @@ class GeneratePayload(BaseModel):
 
     # Pass-through context fields
     attempt_id: str | None = None
-    training_department_id: str | None = None
+    chat_resolved_id: str | None = None
     staff_id: str | None = None
 
     # Pre-created IDs (skip prepare step when populated)
@@ -173,6 +173,13 @@ class AttemptEndPayload(BaseModel):
 
     attempt_id: UUID
     chat_id: UUID
+
+
+class AttemptChatStartedEvent(BaseModel):
+    """Server-to-client: new chat created within an attempt."""
+
+    attempt_id: str
+    chat_id: str
 
 
 class AttemptChatEndedEvent(BaseModel):

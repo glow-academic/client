@@ -34,7 +34,7 @@ async def search_attempt_chat_entries_internal(
     offset_count: int | None = 0,
     attempt_id: UUID | None = None,
     group_id: UUID | None = None,
-    training_department_id: UUID | None = None,
+    chat_resolved_id: UUID | None = None,
     profile_id: UUID | None = None,
     cohort_id: UUID | None = None,
     department_id: UUID | None = None,
@@ -57,8 +57,8 @@ async def search_attempt_chat_entries_internal(
             "offset_count": offset_count,
             "attempt_id": str(attempt_id) if attempt_id else None,
             "group_id": str(group_id) if group_id else None,
-            "training_department_id": str(training_department_id)
-            if training_department_id
+            "chat_resolved_id": str(chat_resolved_id)
+            if chat_resolved_id
             else None,
             "profile_id": str(profile_id) if profile_id else None,
             "cohort_id": str(cohort_id) if cohort_id else None,
@@ -81,7 +81,7 @@ async def search_attempt_chat_entries_internal(
         offset_count=offset_count,
         attempt_id=attempt_id,
         group_id=group_id,
-        training_department_id=training_department_id,
+        chat_resolved_id=chat_resolved_id,
         profile_id=profile_id,
         cohort_id=cohort_id,
         department_id=department_id,

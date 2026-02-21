@@ -559,7 +559,7 @@ async def _generate_impl(
                     "save": data.save,
                 }
 
-                # Forward extra fields (e.g. attempt_id, training_department_id)
+                # Forward extra fields (e.g. attempt_id, chat_resolved_id)
                 for field_name in config.extra_emit_fields:
                     value = getattr(data, field_name, None)
                     if value is not None:
@@ -614,30 +614,3 @@ async def generate(sid: str, data: dict[str, Any]) -> None:
         )
 
 
-@internal_sio.on("generate")  # type: ignore
-async def generate_internal(data: dict[str, Any]) -> None:
-    """Handle ``generate`` event from internal bus (server-to-server)."""
-    artifact_type = data.get("artifact_type", "unknown")
-    try:
-        sid = data.get("sid", "")
-        if not sid:
-            return
-
-        profile_id_str = await find_profile_by_socket(sid)
-        if not profile_id_str:
-            await _emit_error(
-                sid,
-                "Profile not found. Please reconnect.",
-                artifact_type,
-            )
-            return
-
-        profile_id = uuid.UUID(profile_id_str)
-        payload = GeneratePayload(**data)
-        await _generate_impl(sid, payload, profile_id)
-    except Exception as e:
-        await _emit_error(
-            sid,
-            f"Invalid request: {str(e)}",
-            artifact_type,
-        )

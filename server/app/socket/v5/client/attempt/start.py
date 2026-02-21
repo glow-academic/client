@@ -17,7 +17,7 @@ from app.api.v4.entries.attempt.get import get_attempt_entries_internal
 from app.api.v4.resources.training.context import get_training_attempt_context_internal
 from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
 from app.infra.v4.websocket.get_db_connection import get_db_connection
-from app.main import get_internal_sio, sio
+from app.main import sio
 from app.socket.v5.client.generate import _generate_impl
 from app.socket.v5.client.types import (
     AttemptEndedEvent,
@@ -29,8 +29,6 @@ from app.socket.v5.client.types import (
 from app.utils.logging.db_logger import get_logger
 
 logger = get_logger(__name__)
-
-internal_sio = get_internal_sio()
 
 # SQL to count remaining scenarios (expected from training - completed chats)
 SQL_REMAINING_SCENARIOS = """
@@ -65,7 +63,7 @@ async def _compose_chat_generate(
     profile_id: uuid.UUID,
     attempt_id: uuid.UUID,
     training_entry_id: uuid.UUID,
-    training_department_id: uuid.UUID,
+    chat_resolved_id: uuid.UUID,
     payload: AttemptStartPayload,
 ) -> None:
     """Compose with the unified generate handler to start a chat generation."""
@@ -84,7 +82,7 @@ async def _compose_chat_generate(
         user_instructions=payload.user_instructions,
         save=payload.save,
         attempt_id=str(attempt_id),
-        training_department_id=str(training_department_id),
+        chat_resolved_id=str(chat_resolved_id),
     )
 
     await _generate_impl(sid, generate_payload, profile_id)
@@ -136,7 +134,7 @@ async def _attempt_start_impl(
                     conn, [attempt_id], bypass_cache=True
                 )
 
-            if not items or not items[0].get("training_department_id"):
+            if not items or not items[0].get("chat_resolved_id"):
                 logger.warning(f"No training context in MV for attempt {attempt_id}")
                 return
 
@@ -145,8 +143,8 @@ async def _attempt_start_impl(
                 profile_id=profile_id,
                 attempt_id=attempt_id,
                 training_entry_id=payload.training_entry_id,
-                training_department_id=uuid.UUID(
-                    str(items[0]["training_department_id"])
+                chat_resolved_id=uuid.UUID(
+                    str(items[0]["chat_resolved_id"])
                 ),
                 payload=payload,
             )
@@ -175,8 +173,8 @@ async def _attempt_start_impl(
 
             attempt_data = items[0]
             training_entry_id = uuid.UUID(str(attempt_data["training_entry_id"]))
-            training_department_id = uuid.UUID(
-                str(attempt_data["training_department_id"])
+            chat_resolved_id = uuid.UUID(
+                str(attempt_data["chat_resolved_id"])
             )
 
             # Check remaining scenarios
@@ -192,7 +190,7 @@ async def _attempt_start_impl(
                     profile_id=profile_id,
                     attempt_id=attempt_id,
                     training_entry_id=training_entry_id,
-                    training_department_id=training_department_id,
+                    chat_resolved_id=chat_resolved_id,
                     payload=payload,
                 )
             else:
@@ -253,21 +251,3 @@ async def attempt_start(sid: str, data: dict[str, Any]) -> None:
         )
 
 
-@internal_sio.on("attempt_start")  # type: ignore
-async def attempt_start_internal(data: dict[str, Any]) -> None:
-    """Handle attempt_start from internal bus (auto-proceed after chat completes)."""
-    try:
-        sid = data.get("sid", "")
-        if not sid:
-            return
-
-        profile_id_str = await find_profile_by_socket(sid)
-        if not profile_id_str:
-            return
-
-        profile_id = uuid.UUID(profile_id_str)
-        payload = AttemptStartPayload(**data)
-        await _attempt_start_impl(sid, payload, profile_id)
-
-    except Exception as e:
-        logger.exception(f"Error in attempt_start_internal: {e}")
