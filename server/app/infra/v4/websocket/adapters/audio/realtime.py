@@ -9,7 +9,7 @@ input_audio_buffer.append, etc.) — just set the appropriate base_url.
 
 Architecture:
 - Uplink loop: Consumes from session.inbound_queue, sends to provider WebSocket
-- Downlink loop: Receives from provider WebSocket, calls audio_events functions
+- Downlink loop: Receives from provider WebSocket, calls emitter callbacks
 
 The adapter uses the server-side WebSocket approach (not WebRTC ephemeral keys)
 to maintain control over the connection and enable server-side processing.
@@ -25,19 +25,11 @@ import websockets
 from websockets.asyncio.client import ClientConnection
 
 from app.infra.v4.websocket.adapters.audio.base import (
+    AudioEventEmitter,
     AudioSessionConfig,
     BaseAudioAdapter,
 )
 from app.infra.v4.websocket.session_store import AudioSession
-from app.socket.v5.internal.attempt.audio.events import (
-    emit_audio_delta,
-    emit_audio_error,
-    emit_audio_response_done,
-    emit_audio_transcript_delta,
-    emit_audio_user_speech_complete,
-    emit_audio_user_speech_delta,
-    emit_audio_user_speech_start,
-)
 
 logger = logging.getLogger(__name__)
 
@@ -56,7 +48,8 @@ class RealtimeAudioAdapter(BaseAudioAdapter):
     to point at OpenAI, Azure, xAI, Gemini, a litellm proxy, etc.
     """
 
-    def __init__(self) -> None:
+    def __init__(self, emitter: AudioEventEmitter) -> None:
+        super().__init__(emitter)
         self._tasks: dict[
             str, list[asyncio.Task[Any]]
         ] = {}  # group_id -> [uplink_task, downlink_task]
@@ -260,13 +253,12 @@ class RealtimeAudioAdapter(BaseAudioAdapter):
             raise
         except Exception as e:
             logger.exception(f"Uplink loop error - group_id={group_id}: {e}")
-            await emit_audio_error(group_id, f"Uplink error: {str(e)}")
+            await self._emitter.on_error(group_id, f"Uplink error: {str(e)}")
 
     async def _downlink_loop(self, session: AudioSession) -> None:
-        """Receive from provider and call audio_events functions.
+        """Receive from provider and call emitter callbacks.
 
-        Translates provider Realtime events to generate_audio_* events
-        defined in audio_events.py (the single event contract).
+        Translates provider Realtime events to emitter callback calls.
         """
         ws: ClientConnection = session.oa_ws_connection
         group_id = session.group_id
@@ -295,7 +287,7 @@ class RealtimeAudioAdapter(BaseAudioAdapter):
                 elif event_type == "input_audio_buffer.speech_started":
                     item_id = event.get("item_id", f"user-{group_id}")
                     current_user_item_id = item_id
-                    await emit_audio_user_speech_start(group_id, item_id)
+                    await self._emitter.on_user_speech_start(group_id, item_id)
 
                 elif event_type == "input_audio_buffer.speech_stopped":
                     pass  # Transcription will come separately
@@ -308,31 +300,35 @@ class RealtimeAudioAdapter(BaseAudioAdapter):
                     item_id = event.get(
                         "item_id", current_user_item_id or f"user-{group_id}"
                     )
-                    await emit_audio_user_speech_delta(group_id, item_id, transcript)
-                    await emit_audio_user_speech_complete(group_id, item_id, transcript)
+                    await self._emitter.on_user_speech_delta(
+                        group_id, item_id, transcript
+                    )
+                    await self._emitter.on_user_speech_complete(
+                        group_id, item_id, transcript
+                    )
 
                 elif event_type == "response.audio.delta":
                     audio_b64 = event.get("delta", "")
                     if audio_b64:
                         audio_bytes = base64.b64decode(audio_b64)
-                        await emit_audio_delta(group_id, audio_bytes)
+                        await self._emitter.on_audio_delta(group_id, audio_bytes)
 
                 elif event_type == "response.audio_transcript.delta":
                     transcript = event.get("delta", "")
                     if transcript:
-                        await emit_audio_transcript_delta(group_id, transcript)
+                        await self._emitter.on_transcript_delta(group_id, transcript)
 
                 elif event_type == "response.done":
                     response = event.get("response", {})
                     usage = response.get("usage", {})
                     logger.info(f"Response done - group_id={group_id}, usage={usage}")
-                    await emit_audio_response_done(group_id, usage)
+                    await self._emitter.on_response_done(group_id, usage)
 
                 elif event_type == "error":
                     error = event.get("error", {})
                     error_msg = error.get("message", "Unknown error")
                     logger.error(f"Provider error - group_id={group_id}: {error_msg}")
-                    await emit_audio_error(group_id, error_msg)
+                    await self._emitter.on_error(group_id, error_msg)
 
         except asyncio.CancelledError:
             logger.info(f"Downlink loop cancelled - group_id={group_id}")
@@ -341,7 +337,7 @@ class RealtimeAudioAdapter(BaseAudioAdapter):
             logger.warning(f"WebSocket closed - group_id={group_id}: {e}")
         except Exception as e:
             logger.exception(f"Downlink loop error - group_id={group_id}: {e}")
-            await emit_audio_error(group_id, f"Downlink error: {str(e)}")
+            await self._emitter.on_error(group_id, f"Downlink error: {str(e)}")
 
     def _format_tools(self, tools: list[dict[str, Any]]) -> list[dict[str, Any]]:
         """Format tools for OpenAI Realtime API.

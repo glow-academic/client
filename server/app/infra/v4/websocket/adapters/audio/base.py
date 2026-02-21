@@ -1,7 +1,7 @@
 """Base audio adapter interface for voice mode."""
 
 from abc import ABC, abstractmethod
-from typing import Any, Literal
+from typing import Any, Literal, Protocol
 
 from pydantic import BaseModel
 
@@ -20,6 +20,48 @@ class AudioSessionConfig(BaseModel):
     expires_in: int | None = None  # Seconds until ephemeral key expires
 
 
+class AudioEventEmitter(Protocol):
+    """Callback protocol for audio adapter events.
+
+    Adapters call these methods instead of importing socket emit functions
+    directly, keeping the infra layer decoupled from the socket layer.
+    """
+
+    async def on_audio_delta(self, group_id: str, audio: bytes) -> None:
+        """Assistant audio chunk (PCM16 bytes)."""
+        ...
+
+    async def on_transcript_delta(self, group_id: str, transcript: str) -> None:
+        """Assistant transcript chunk."""
+        ...
+
+    async def on_user_speech_start(self, group_id: str, item_id: str) -> None:
+        """VAD detected user started speaking."""
+        ...
+
+    async def on_user_speech_delta(
+        self, group_id: str, item_id: str, transcript: str
+    ) -> None:
+        """User speech transcript chunk."""
+        ...
+
+    async def on_user_speech_complete(
+        self, group_id: str, item_id: str, transcript: str
+    ) -> None:
+        """User speech finalized."""
+        ...
+
+    async def on_error(self, group_id: str, error_message: str) -> None:
+        """Adapter or provider error."""
+        ...
+
+    async def on_response_done(
+        self, group_id: str, usage: dict[str, Any] | None
+    ) -> None:
+        """Provider response completed."""
+        ...
+
+
 class BaseAudioAdapter(ABC):
     """Base class for audio adapters.
 
@@ -29,9 +71,12 @@ class BaseAudioAdapter(ABC):
     - **WebRTC**: Client connects directly to provider (e.g., OpenAI Realtime API with ephemeral key)
     - **WebSocket**: Server maintains connection to provider, relays audio via Socket.IO
 
-    For WebSocket adapters, the adapter consumes from session.inbound_queue and emits
-    events via internal_sio for outbound audio.
+    For WebSocket adapters, the adapter consumes from session.inbound_queue and calls
+    emitter callbacks for outbound audio events.
     """
+
+    def __init__(self, emitter: AudioEventEmitter) -> None:
+        self._emitter = emitter
 
     @abstractmethod
     def get_implementation_type(self) -> Literal["webrtc", "websocket"]:

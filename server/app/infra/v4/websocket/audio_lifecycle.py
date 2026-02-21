@@ -22,7 +22,9 @@ def get_audio_adapter() -> RealtimeAudioAdapter:
     """Get or create the audio adapter singleton."""
     global _audio_adapter
     if _audio_adapter is None:
-        _audio_adapter = RealtimeAudioAdapter()
+        from app.socket.v5.internal.attempt.audio.events import get_audio_emitter
+
+        _audio_adapter = RealtimeAudioAdapter(emitter=get_audio_emitter())
     return _audio_adapter
 
 
