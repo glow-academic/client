@@ -113,9 +113,9 @@ params AS (
             FROM (
                 SELECT
                     a.id AS agent_id,
-                    COUNT(DISTINCT rt.resource::text) FILTER (
-                        WHERE rt.resource IS NOT NULL
-                          AND rt.resource::text = ANY(p_resource_types)
+                    COUNT(DISTINCT dr.resource::text) FILTER (
+                        WHERE dr.resource IS NOT NULL
+                          AND dr.resource::text = ANY(p_resource_types)
                     ) AS coverage
                 FROM agent_artifact a
                 LEFT JOIN agent_tools_junction at
@@ -125,8 +125,10 @@ params AS (
                   ON tr.id = at.tool_id
                 LEFT JOIN tool_tools_junction ttj
                   ON ttj.tools_id = tr.id
-                LEFT JOIN resource_tools_relation rt
-                  ON rt.tool_id = ttj.tool_id
+                LEFT JOIN tool_domains_junction tdj
+                  ON tdj.tool_id = ttj.tool_id AND tdj.active = true
+                LEFT JOIN domains_resource dr
+                  ON dr.id = tdj.domain_id AND dr.active = true
                 WHERE EXISTS (
                     SELECT 1
                     FROM agent_flags_junction af
@@ -282,12 +284,12 @@ agent_tools_data AS (
         sa.agent_id,
         COALESCE(
             ARRAY_AGG(
-                (t.id, (SELECT n.name FROM tool_names_junction tn JOIN names_resource n ON tn.name_id = n.id WHERE tn.tool_id = t.id LIMIT 1), COALESCE((SELECT d.description FROM tool_descriptions_junction td JOIN descriptions_resource d ON td.description_id = d.id WHERE td.tool_id = t.id LIMIT 1), ''), COALESCE(rt.resource::text, ''), COALESCE(NULL::artifact_type::text, ''), COALESCE(tsd.arguments, '{}'::jsonb), COALESCE(tsd.argument_descriptions, '{}'::jsonb), COALESCE(tsd.argument_defaults, '{}'::jsonb), EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true))::types.i_get_text_run_context_and_create_run_v4_tool
-                ORDER BY COALESCE(rt.resource::text, ''), (SELECT n.name FROM tool_names_junction tn JOIN names_resource n ON tn.name_id = n.id WHERE tn.tool_id = t.id LIMIT 1)
+                (t.id, (SELECT n.name FROM tool_names_junction tn JOIN names_resource n ON tn.name_id = n.id WHERE tn.tool_id = t.id LIMIT 1), COALESCE((SELECT d.description FROM tool_descriptions_junction td JOIN descriptions_resource d ON td.description_id = d.id WHERE td.tool_id = t.id LIMIT 1), ''), COALESCE(dr.resource::text, ''), COALESCE(NULL::artifact_type::text, ''), COALESCE(tsd.arguments, '{}'::jsonb), COALESCE(tsd.argument_descriptions, '{}'::jsonb), COALESCE(tsd.argument_defaults, '{}'::jsonb), EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true))::types.i_get_text_run_context_and_create_run_v4_tool
+                ORDER BY COALESCE(dr.resource::text, ''), (SELECT n.name FROM tool_names_junction tn JOIN names_resource n ON tn.name_id = n.id WHERE tn.tool_id = t.id LIMIT 1)
             ) FILTER (WHERE t.id IS NOT NULL AND (
                 p.resource_types IS NULL
-                OR rt.resource IS NULL
-                OR rt.resource::text = ANY(p.resource_types)
+                OR dr.resource IS NULL
+                OR dr.resource::text = ANY(p.resource_types)
             )),
             '{}'::types.i_get_text_run_context_and_create_run_v4_tool[]
         ) as tools
@@ -298,7 +300,8 @@ agent_tools_data AS (
     LEFT JOIN tool_tools_junction ttj ON ttj.tools_id = tr.id
     LEFT JOIN tool_artifact t ON t.id = ttj.tool_id AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
     LEFT JOIN tool_schema_data tsd ON tsd.tool_id = t.id
-    LEFT JOIN resource_tools_relation rt ON rt.tool_id = t.id
+    LEFT JOIN tool_domains_junction tdj ON tdj.tool_id = t.id AND tdj.active = true
+    LEFT JOIN domains_resource dr ON dr.id = tdj.domain_id AND dr.active = true
     GROUP BY sa.agent_id
 ),
 -- Get developer instruction templates (array)

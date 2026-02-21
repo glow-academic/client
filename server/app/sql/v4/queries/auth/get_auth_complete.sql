@@ -585,8 +585,8 @@ user_departments_for_agents AS (
 agent_artifact_tool_counts AS (
     SELECT
         a.id as agent_id,
-        COUNT(DISTINCT CASE WHEN ar.resource IS NOT NULL THEN rt.resource::text END) as matched_artifact_count,
-        COUNT(DISTINCT CASE WHEN ar.resource IS NULL THEN rt.resource::text END) as extra_outside_count
+        COUNT(DISTINCT CASE WHEN ar.resource IS NOT NULL THEN dr_rt.resource::text END) as matched_artifact_count,
+        COUNT(DISTINCT CASE WHEN ar.resource IS NULL THEN dr_rt.resource::text END) as extra_outside_count
     FROM agent_artifact a
     LEFT JOIN agent_tools_junction at ON at.agent_id = a.id AND at.active = true
     LEFT JOIN tools_resource tr ON tr.id = at.tool_id
@@ -596,8 +596,9 @@ agent_artifact_tool_counts AS (
         JOIN flags_resource f ON tf.flag_id = f.id
         WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true
     )
-    LEFT JOIN resource_tools_relation rt ON rt.tool_id = t.id
-    LEFT JOIN artifact_resources_relation ar ON ar.resource = rt.resource AND ar.artifact = 'auth'::artifact_type
+    LEFT JOIN tool_domains_junction tdj_rt ON tdj_rt.tool_id = t.id AND tdj_rt.active = true
+    LEFT JOIN domains_resource dr_rt ON dr_rt.id = tdj_rt.domain_id AND dr_rt.active = true
+    LEFT JOIN artifact_resources_relation ar ON ar.resource = dr_rt.resource AND ar.artifact = 'auth'::artifact_type
     GROUP BY a.id
 ),
 
@@ -627,9 +628,10 @@ name_agent_data AS (
             JOIN tools_resource tr ON tr.id = at.tool_id
             JOIN tool_tools_junction ttj ON ttj.tools_id = tr.id
             JOIN tool_artifact t ON t.id = ttj.tool_id AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
-            JOIN resource_tools_relation rt ON rt.tool_id = t.id
+            JOIN tool_domains_junction tdj ON tdj.tool_id = t.id AND tdj.active = true
+            JOIN domains_resource dr ON dr.id = tdj.domain_id AND dr.active = true
             WHERE at.agent_id = a.id AND at.active = true
-              AND rt.resource = 'names'::resource_type
+              AND dr.resource = 'names'::resource_type
         )
         -- Filter by MCP flag when mcp=true
         AND (
@@ -701,9 +703,10 @@ description_agent_data AS (
             JOIN tools_resource tr ON tr.id = at.tool_id
             JOIN tool_tools_junction ttj ON ttj.tools_id = tr.id
             JOIN tool_artifact t ON t.id = ttj.tool_id AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
-            JOIN resource_tools_relation rt ON rt.tool_id = t.id
+            JOIN tool_domains_junction tdj ON tdj.tool_id = t.id AND tdj.active = true
+            JOIN domains_resource dr ON dr.id = tdj.domain_id AND dr.active = true
             WHERE at.agent_id = a.id AND at.active = true
-              AND rt.resource = 'descriptions'::resource_type
+              AND dr.resource = 'descriptions'::resource_type
         )
         -- Filter by MCP flag when mcp=true
         AND (
@@ -775,9 +778,10 @@ flag_agent_data AS (
             JOIN tools_resource tr ON tr.id = at.tool_id
             JOIN tool_tools_junction ttj ON ttj.tools_id = tr.id
             JOIN tool_artifact t ON t.id = ttj.tool_id AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
-            JOIN resource_tools_relation rt ON rt.tool_id = t.id
+            JOIN tool_domains_junction tdj ON tdj.tool_id = t.id AND tdj.active = true
+            JOIN domains_resource dr ON dr.id = tdj.domain_id AND dr.active = true
             WHERE at.agent_id = a.id AND at.active = true
-              AND rt.resource = 'flags'::resource_type
+              AND dr.resource = 'flags'::resource_type
         )
         -- Filter by MCP flag when mcp=true
         AND (
@@ -849,9 +853,10 @@ protocols_agent_data AS (
             JOIN tools_resource tr ON tr.id = at.tool_id
             JOIN tool_tools_junction ttj ON ttj.tools_id = tr.id
             JOIN tool_artifact t ON t.id = ttj.tool_id AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
-            JOIN resource_tools_relation rt ON rt.tool_id = t.id
+            JOIN tool_domains_junction tdj ON tdj.tool_id = t.id AND tdj.active = true
+            JOIN domains_resource dr ON dr.id = tdj.domain_id AND dr.active = true
             WHERE at.agent_id = a.id AND at.active = true
-              AND rt.resource = 'protocols'::resource_type
+              AND dr.resource = 'protocols'::resource_type
         )
         -- Filter by MCP flag when mcp=true
         AND (
@@ -923,9 +928,10 @@ slugs_agent_data AS (
             JOIN tools_resource tr ON tr.id = at.tool_id
             JOIN tool_tools_junction ttj ON ttj.tools_id = tr.id
             JOIN tool_artifact t ON t.id = ttj.tool_id AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
-            JOIN resource_tools_relation rt ON rt.tool_id = t.id
+            JOIN tool_domains_junction tdj ON tdj.tool_id = t.id AND tdj.active = true
+            JOIN domains_resource dr ON dr.id = tdj.domain_id AND dr.active = true
             WHERE at.agent_id = a.id AND at.active = true
-              AND rt.resource = 'slugs'::resource_type
+              AND dr.resource = 'slugs'::resource_type
         )
         -- Filter by MCP flag when mcp=true
         AND (
@@ -996,21 +1002,27 @@ ui_flags AS (
 tools_existence_check AS (
     SELECT 
         EXISTS (
-            SELECT 1 FROM resource_tools_relation rt
-            JOIN tool_artifact t ON t.id = rt.tool_id
-            WHERE rt.resource = 'names'::resource_type 
+            SELECT 1 FROM tool_domains_junction tdj
+            JOIN domains_resource dr ON dr.id = tdj.domain_id AND dr.active = true
+            JOIN tool_artifact t ON t.id = tdj.tool_id
+            WHERE tdj.active = true
+              AND dr.resource = 'names'::resource_type 
               AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
         ) as names_has_tools,
         EXISTS (
-            SELECT 1 FROM resource_tools_relation rt
-            JOIN tool_artifact t ON t.id = rt.tool_id
-            WHERE rt.resource = 'protocols'::resource_type 
+            SELECT 1 FROM tool_domains_junction tdj
+            JOIN domains_resource dr ON dr.id = tdj.domain_id AND dr.active = true
+            JOIN tool_artifact t ON t.id = tdj.tool_id
+            WHERE tdj.active = true
+              AND dr.resource = 'protocols'::resource_type 
               AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
         ) as protocols_has_tools,
         EXISTS (
-            SELECT 1 FROM resource_tools_relation rt
-            JOIN tool_artifact t ON t.id = rt.tool_id
-            WHERE rt.resource = 'slugs'::resource_type 
+            SELECT 1 FROM tool_domains_junction tdj
+            JOIN domains_resource dr ON dr.id = tdj.domain_id AND dr.active = true
+            JOIN tool_artifact t ON t.id = tdj.tool_id
+            WHERE tdj.active = true
+              AND dr.resource = 'slugs'::resource_type 
               AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
         ) as slugs_has_tools
     FROM params x

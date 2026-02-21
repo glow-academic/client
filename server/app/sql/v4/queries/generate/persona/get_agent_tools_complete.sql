@@ -52,12 +52,12 @@ STABLE
 AS $$
 SELECT COALESCE(
     ARRAY_AGG(
-        (t.id, (SELECT n.name FROM tool_names_junction tn JOIN names_resource n ON tn.name_id = n.id WHERE tn.tool_id = t.id LIMIT 1), COALESCE((SELECT d.description FROM tool_descriptions_junction td JOIN descriptions_resource d ON td.description_id = d.id WHERE td.tool_id = t.id LIMIT 1), ''), COALESCE(rt.resource::text, ''), COALESCE(NULL::artifact_type::text, ''), COALESCE(tsd.arguments, '{}'::jsonb), COALESCE(tsd.argument_descriptions, '{}'::jsonb), COALESCE(tsd.argument_defaults, '{}'::jsonb), EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true))::types.i_get_text_run_context_and_create_run_v4_tool
-        ORDER BY COALESCE(rt.resource::text, ''), (SELECT n.name FROM tool_names_junction tn JOIN names_resource n ON tn.name_id = n.id WHERE tn.tool_id = t.id LIMIT 1)
+        (t.id, (SELECT n.name FROM tool_names_junction tn JOIN names_resource n ON tn.name_id = n.id WHERE tn.tool_id = t.id LIMIT 1), COALESCE((SELECT d.description FROM tool_descriptions_junction td JOIN descriptions_resource d ON td.description_id = d.id WHERE td.tool_id = t.id LIMIT 1), ''), COALESCE(dr.resource::text, ''), COALESCE(NULL::artifact_type::text, ''), COALESCE(tsd.arguments, '{}'::jsonb), COALESCE(tsd.argument_descriptions, '{}'::jsonb), COALESCE(tsd.argument_defaults, '{}'::jsonb), EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true))::types.i_get_text_run_context_and_create_run_v4_tool
+        ORDER BY COALESCE(dr.resource::text, ''), (SELECT n.name FROM tool_names_junction tn JOIN names_resource n ON tn.name_id = n.id WHERE tn.tool_id = t.id LIMIT 1)
     ) FILTER (WHERE t.id IS NOT NULL AND (
         p_resource_types IS NULL
-        OR rt.resource IS NULL
-        OR rt.resource::text = ANY(p_resource_types)
+        OR dr.resource IS NULL
+        OR dr.resource::text = ANY(p_resource_types)
     )),
     '{}'::types.i_get_text_run_context_and_create_run_v4_tool[]
 ) as tools
@@ -125,6 +125,7 @@ LEFT JOIN (
     LEFT JOIN args_resource ar ON ar.id = ta.args_id AND ar.active = true
     GROUP BY tsd_inner.id
 ) tsd ON tsd.tool_id = t.id
-LEFT JOIN resource_tools_relation rt ON rt.tool_id = t.id
+LEFT JOIN tool_domains_junction tdj ON tdj.tool_id = t.id AND tdj.active = true
+LEFT JOIN domains_resource dr ON dr.id = tdj.domain_id AND dr.active = true
 WHERE atj.agent_id = p_agent_id AND atj.active = true;
 $$;

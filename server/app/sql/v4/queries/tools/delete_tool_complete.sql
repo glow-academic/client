@@ -41,7 +41,7 @@ usage_check AS (
         UNION ALL
         SELECT 1 FROM agent_tools_junction at JOIN tools_resource tr ON tr.id = at.tool_id JOIN tool_tools_junction ttj ON ttj.tools_id = tr.id WHERE ttj.tool_id = x.tool_id AND at.active = true
         UNION ALL
-        SELECT 1 FROM resource_tools_relation rt WHERE rt.tool_id = x.tool_id
+        SELECT 1 FROM tool_domains_junction tdj WHERE tdj.tool_id = x.tool_id AND tdj.active = true
     )
 ),
 tool_info AS (

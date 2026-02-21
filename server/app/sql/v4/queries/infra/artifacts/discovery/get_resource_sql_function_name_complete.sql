@@ -29,10 +29,11 @@ AS $$
 DECLARE
     v_function_name text;
 BEGIN
-    -- First check if resource exists in resource_tools_relation
+    -- First check if resource exists in tool_domains_junction + domains_resource
     IF NOT EXISTS (
-        SELECT 1 FROM resource_tools_relation
-        WHERE resource = resource_type::resource_type
+        SELECT 1 FROM tool_domains_junction tdj
+        JOIN domains_resource dr ON dr.id = tdj.domain_id AND dr.active = true
+        WHERE dr.resource = resource_type::resource_type
     ) THEN
         RETURN;  -- Return empty (no rows)
     END IF;

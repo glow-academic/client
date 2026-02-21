@@ -292,10 +292,11 @@ artifact_agent_ids_data AS (
                 FROM artifact_resources_relation arr2
                 WHERE arr2.artifact = arr.artifact
                 EXCEPT
-                SELECT rt.resource
+                SELECT dr.resource
                 FROM agent_tools_junction at
                 JOIN tool_tools_junction ttj ON ttj.tools_id = at.tool_id
-                JOIN resource_tools_relation rt ON rt.tool_id = ttj.tool_id AND rt.active = true
+                JOIN tool_domains_junction tdj ON tdj.tool_id = ttj.tool_id AND tdj.active = true
+                JOIN domains_resource dr ON dr.id = tdj.domain_id AND dr.active = true
                 WHERE at.agent_id = ea.agent_id AND at.active = true
             )
         )

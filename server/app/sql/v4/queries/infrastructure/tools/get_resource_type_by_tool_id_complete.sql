@@ -24,9 +24,10 @@ RETURNS TABLE (
 LANGUAGE sql
 STABLE
 AS $$
-    SELECT rtr.resource::text as resource_type
-    FROM resource_tools_relation rtr
-    WHERE rtr.tool_id = $1
-      AND rtr.active = true
+    SELECT dr.resource::text as resource_type
+    FROM tool_domains_junction tdj
+    JOIN domains_resource dr ON dr.id = tdj.domain_id AND dr.active = true
+    WHERE tdj.tool_id = $1
+      AND tdj.active = true
     LIMIT 1;
 $$;

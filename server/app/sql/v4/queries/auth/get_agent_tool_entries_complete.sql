@@ -29,18 +29,19 @@ LANGUAGE sql
 STABLE
 AS $$
 -- Resolve: agent_artifact → agent_tools_junction → tools_resource → tool_tools_junction
---        → tool_artifact → resource_tools_relation + flag checks
+--        → tool_artifact → tool_domains_junction + domains_resource + flag checks
 SELECT
     a.id as agent_id,
     ta.id as tool_id,
-    rt.resource::text as resource,
+    dr.resource::text as resource,
     COALESCE(tf_create.value, true) as is_creatable
 FROM agent_artifact a
 JOIN agent_tools_junction atj ON atj.agent_id = a.id AND atj.active = true
 JOIN tools_resource tr ON tr.id = atj.tool_id
 JOIN tool_tools_junction ttj ON ttj.tools_id = tr.id
 JOIN tool_artifact ta ON ta.id = ttj.tool_id
-JOIN resource_tools_relation rt ON rt.tool_id = ta.id
+JOIN tool_domains_junction tdj ON tdj.tool_id = ta.id AND tdj.active = true
+JOIN domains_resource dr ON dr.id = tdj.domain_id AND dr.active = true
 LEFT JOIN tool_flags_junction tf_active ON tf_active.tool_id = ta.id
 LEFT JOIN flags_resource f_active ON f_active.id = tf_active.flag_id AND f_active.name = 'tool_active'
 LEFT JOIN tool_flags_junction tf_create ON tf_create.tool_id = ta.id

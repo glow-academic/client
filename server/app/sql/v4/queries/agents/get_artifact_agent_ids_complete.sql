@@ -130,19 +130,20 @@ eligible_agents AS (
 -- ============================================================================
 
 -- Get tool resources for each eligible agent (for resources path)
--- Path: agent_tools_junction -> tool_tools_junction -> resource_tools_relation
+-- Path: agent_tools_junction -> tool_tools_junction -> tool_domains_junction -> domains_resource
 agent_tool_resources AS (
     SELECT
         ea.agent_id,
         ea.updated_at,
         COALESCE(
-            ARRAY_AGG(DISTINCT rt.resource::text) FILTER (WHERE rt.resource IS NOT NULL),
+            ARRAY_AGG(DISTINCT dr.resource::text) FILTER (WHERE dr.resource IS NOT NULL),
             ARRAY[]::text[]
         ) as tool_resources
     FROM eligible_agents ea
     LEFT JOIN agent_tools_junction at ON at.agent_id = ea.agent_id AND at.active = true
     LEFT JOIN tool_tools_junction ttj ON ttj.tools_id = at.tool_id
-    LEFT JOIN resource_tools_relation rt ON rt.tool_id = ttj.tool_id AND rt.active = true
+    LEFT JOIN tool_domains_junction tdj ON tdj.tool_id = ttj.tool_id AND tdj.active = true
+    LEFT JOIN domains_resource dr ON dr.id = tdj.domain_id AND dr.active = true
     GROUP BY ea.agent_id, ea.updated_at
 ),
 
