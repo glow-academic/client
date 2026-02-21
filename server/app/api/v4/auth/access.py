@@ -2,12 +2,14 @@
 
 from __future__ import annotations
 
+import json
 from typing import cast
 from uuid import UUID
 
 import asyncpg
 from fastapi import HTTPException
 
+from app.registry.relations import ARTIFACT_ENTRIES
 from app.sql.types import (
     GetProfileContextAccessSqlParams,
     GetProfileContextAccessSqlRow,
@@ -36,6 +38,7 @@ async def get_access_internal(
     params = GetProfileContextAccessSqlParams(
         profile_id=profile_id,
         department_id=None,
+        p_artifact_entries=json.dumps(ARTIFACT_ENTRIES),
     )
 
     # Cache lookup

@@ -46,7 +46,8 @@ CREATE TYPE types.q_get_profile_context_access_v4_artifact_agent AS (
 -- Create function
 CREATE OR REPLACE FUNCTION api_get_profile_context_access_v4(
     profile_id uuid DEFAULT NULL,
-    department_id text DEFAULT NULL
+    department_id text DEFAULT NULL,
+    p_artifact_entries jsonb DEFAULT '{}'::jsonb
 )
 RETURNS TABLE (
     -- Authorization
@@ -300,10 +301,10 @@ artifact_agent_ids_data AS (
         )
         UNION
         -- Path 2: artifact has an eligible agent whose tools have ANY matching binding entries
-        SELECT DISTINCT avr.artifact::text as artifact
-        FROM artifact_view_relation avr
-        JOIN view_entry_relation ver ON ver.view = avr.view
-        JOIN bindings_resource br ON br.entry = ver.entry AND br.active = true
+        SELECT DISTINCT kv.key as artifact
+        FROM jsonb_each(p_artifact_entries) AS kv(key, value)
+        CROSS JOIN LATERAL jsonb_array_elements_text(kv.value) AS e(entry)
+        JOIN bindings_resource br ON br.entry = e.entry::entry_type AND br.active = true
         WHERE EXISTS (
             SELECT 1 FROM tool_bindings_junction tbj
             WHERE tbj.binding_id = br.id AND tbj.active = true
@@ -314,7 +315,7 @@ artifact_agent_ids_data AS (
             JOIN tool_tools_junction ttj ON ttj.tools_id = at.tool_id
             JOIN tool_bindings_junction tbj ON tbj.tool_id = ttj.tool_id AND tbj.active = true
             JOIN bindings_resource br2 ON br2.id = tbj.binding_id AND br2.active = true
-            WHERE br2.entry = ver.entry
+            WHERE br2.entry = e.entry::entry_type
         )
     )
     SELECT COALESCE(

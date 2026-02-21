@@ -42,7 +42,8 @@ END $$;
 
 CREATE OR REPLACE FUNCTION socket_get_agent_entry_tools_v4(
     p_agent_id uuid,
-    p_entry_types text[] DEFAULT NULL
+    p_entry_types text[] DEFAULT NULL,
+    p_tool_entry_map jsonb DEFAULT '{}'::jsonb
 )
 RETURNS TABLE (
     tools types.i_get_text_run_context_and_create_run_v4_tool[]
@@ -125,6 +126,8 @@ LEFT JOIN (
     LEFT JOIN args_resource ar ON ar.id = ta.args_id AND ar.active = true
     GROUP BY tsd_inner.id
 ) tsd ON tsd.tool_id = t.id
-LEFT JOIN entry_tools_relation et ON et.tool_id = t.id
+LEFT JOIN LATERAL (
+    SELECT (p_tool_entry_map->>t.id::text)::entry_type as entry
+) et ON true
 WHERE atj.agent_id = p_agent_id AND atj.active = true;
 $$;

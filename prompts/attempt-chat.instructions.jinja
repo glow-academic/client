@@ -1,0 +1,50 @@
+## Context
+
+{% set draft = views.draft_attempt_chat if views and views.draft_attempt_chat else None %}
+
+{% if draft %}
+### Current State
+{% if draft.scenario_name is defined %}
+**Scenario:** {{ draft.scenario_name }}
+{% endif %}
+{% if draft.persona_name is defined %}
+**Persona:** {{ draft.persona_name }}
+{% endif %}
+{% if draft.department_ids and draft.department_ids|length > 0 %}
+**Departments:** {% for id in draft.department_ids %}{{ id }}{% if not loop.last %}, {% endif %}{% endfor %}
+{% endif %}
+{% endif %}
+
+### Available Resources
+
+{% if user_messages and user_messages|length > 0 %}
+### Available User Messages
+{% for item in user_messages %}
+- id: {{ item.id }} | {{ item.name if item.name is defined else item.id }}
+{% endfor %}
+{% endif %}
+
+{% if assistant_messages and assistant_messages|length > 0 %}
+### Available Assistant Messages
+{% for item in assistant_messages %}
+- id: {{ item.id }} | {{ item.name if item.name is defined else item.id }}
+{% endfor %}
+{% endif %}
+
+{% if contents and contents|length > 0 %}
+### Available Contents
+{% for item in contents %}
+- id: {{ item.id }} | {{ item.name if item.name is defined else item.id }}
+{% endfor %}
+{% endif %}
+
+{% if hints and hints|length > 0 %}
+### Available Hints
+{% for item in hints %}
+- id: {{ item.id }} | {{ item.name if item.name is defined else item.id }}
+{% endfor %}
+{% endif %}
+
+## Tool Usage
+
+For each resource type, use the appropriate **create_*** tool to generate new content based on the context above.

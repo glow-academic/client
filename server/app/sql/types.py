@@ -398,11 +398,13 @@ class GetAgentsListApiResponse(BaseModel):
 class GetArtifactAgentIdsSqlParams(BaseModel):
     profile_id: UUID | None = None
     user_department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    p_artifact_entries: Any | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.profile_id,
             self.user_department_ids,
+            self.p_artifact_entries,
         )
 
 
@@ -417,6 +419,7 @@ class GetArtifactAgentIdsSqlRow(BaseModel):
 
 class GetArtifactAgentIdsApiRequest(BaseModel):
     user_department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    p_artifact_entries: Any | None = None
 
 
 class GetArtifactAgentIdsApiResponse(BaseModel):
@@ -14333,11 +14336,13 @@ class EndAttemptChatApiResponse(BaseModel):
 class GetAgentEntryToolsSqlParams(BaseModel):
     p_agent_id: UUID
     p_entry_types: list[str] | None = None
+    p_tool_entry_map: Any | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.p_agent_id,
             self.p_entry_types,
+            self.p_tool_entry_map,
         )
 
 
@@ -14360,6 +14365,7 @@ class GetAgentEntryToolsSqlRow(BaseModel):
 class GetAgentEntryToolsApiRequest(BaseModel):
     p_agent_id: UUID
     p_entry_types: list[str] | None = None
+    p_tool_entry_map: Any | None = None
 
 
 class GetAgentEntryToolsApiResponse(BaseModel):
@@ -16261,34 +16267,6 @@ class GetResourceOutputSchemaFieldsApiRequest(BaseModel):
 
 
 class GetResourceOutputSchemaFieldsApiResponse(BaseModel):
-    name: str | None = None
-    field_type: str | None = None
-    required: bool | None = None
-    template: str | None = None
-
-
-# Generated from: get_resource_schema_fields
-
-
-class GetResourceSchemaFieldsSqlParams(BaseModel):
-    resource_type: str
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (self.resource_type,)
-
-
-class GetResourceSchemaFieldsSqlRow(BaseModel):
-    name: str | None = None
-    field_type: str | None = None
-    required: bool | None = None
-    template: str | None = None
-
-
-class GetResourceSchemaFieldsApiRequest(BaseModel):
-    resource_type: str
-
-
-class GetResourceSchemaFieldsApiResponse(BaseModel):
     name: str | None = None
     field_type: str | None = None
     required: bool | None = None
@@ -19853,11 +19831,13 @@ class GetProfileApiResponse(BaseModel):
 class GetProfileContextAccessSqlParams(BaseModel):
     profile_id: UUID | None = None
     department_id: str | None = None
+    p_artifact_entries: Any | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.profile_id,
             self.department_id,
+            self.p_artifact_entries,
         )
 
 
@@ -19887,6 +19867,7 @@ class GetProfileContextAccessSqlRow(BaseModel):
 
 class GetProfileContextAccessApiRequest(BaseModel):
     department_id: str | None = None
+    p_artifact_entries: Any | None = None
 
 
 class GetProfileContextAccessApiResponse(BaseModel):
@@ -37975,12 +37956,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetResourceOutputSchemaFieldsApiRequest",
         "GetResourceOutputSchemaFieldsApiResponse",
     ),
-    "app/sql/v4/queries/infra/artifacts/discovery/get_resource_schema_fields_complete.sql": (
-        "GetResourceSchemaFieldsSqlParams",
-        "GetResourceSchemaFieldsSqlRow",
-        "GetResourceSchemaFieldsApiRequest",
-        "GetResourceSchemaFieldsApiResponse",
-    ),
     "app/sql/v4/queries/infra/artifacts/discovery/get_resource_sql_function_name_complete.sql": (
         "GetResourceSqlFunctionNameSqlParams",
         "GetResourceSqlFunctionNameSqlRow",
@@ -44064,13 +44039,6 @@ if TYPE_CHECKING:
     def load_sql_query(
         file_path: Literal[
             "app/sql/v4/queries/infra/artifacts/discovery/get_resource_output_schema_fields_complete.sql"
-        ],
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal[
-            "app/sql/v4/queries/infra/artifacts/discovery/get_resource_schema_fields_complete.sql"
         ],
     ) -> SqlString: ...
 

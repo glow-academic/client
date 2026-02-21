@@ -174,12 +174,11 @@ pricing_ids_data AS (
         CASE
             WHEN (SELECT model_id FROM params) IS NULL THEN ARRAY[]::uuid[]
             ELSE COALESCE(
-                (SELECT ARRAY_AGG(pr.id ORDER BY pr.pricing_type, u.name)
+                (SELECT ARRAY_AGG(pr.id ORDER BY pr.pricing_type, pr.id)
                  FROM model_pricing_junction mp
                  JOIN pricing_resource pr ON pr.id = mp.pricing_id
-                 JOIN artifact_units_relation u ON u.id = pr.unit_id
                  WHERE mp.model_id = (SELECT model_id FROM params)
-                 AND mp.active = true AND pr.active = true AND u.active = true),
+                 AND mp.active = true AND pr.active = true),
                 ARRAY[]::uuid[]
             )
         END as pricing_ids

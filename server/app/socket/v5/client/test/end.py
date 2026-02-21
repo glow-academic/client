@@ -4,6 +4,7 @@ Handles: test_end — triggers grading flow after runs complete.
 """
 
 import asyncio
+import json
 import uuid
 from typing import Any, cast
 
@@ -15,6 +16,7 @@ from app.infra.v4.generation import convert_tools_to_dict, render_developer_inst
 from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
 from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.main import get_internal_sio, get_pool, sio
+from app.registry.relations import TOOL_ENTRY_TYPES
 from app.socket.v5.client.types import TestEndPayload
 from app.socket.v5.types import TEST_GRADE_ENTRY_TYPES
 from app.sql.types import (
@@ -281,6 +283,7 @@ async def _test_end_impl(sid: str, data: TestEndPayload, profile_id: uuid.UUID) 
                         params=GetAgentEntryToolsSqlParams(
                             p_agent_id=agent_id,
                             p_entry_types=TEST_GRADE_ENTRY_TYPES,
+                            p_tool_entry_map=json.dumps(TOOL_ENTRY_TYPES),
                         ),
                     ),
                 )

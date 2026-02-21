@@ -403,3 +403,205 @@ RESOURCE_SCHEMAS: dict[str, dict[str, str]] = {
         "voice": "text",
     },
 }
+
+# resource_outputs_relation (resource_type → output schema fields)
+# Simplified types (string/number/boolean) for the tool-facing output contract.
+RESOURCE_OUTPUT_SCHEMAS: dict[str, list[dict[str, str]]] = {
+    "agents": [{"field_type": "string", "name": "id"}],
+    "arg_positions": [{"field_type": "string", "name": "id"}],
+    "args": [{"field_type": "string", "name": "id"}],
+    "args_outputs": [{"field_type": "string", "name": "id"}],
+    "auth_item_keys": [{"field_type": "string", "name": "id"}],
+    "cohorts": [{"field_type": "string", "name": "id"}],
+    "colors": [
+        {"field_type": "string", "name": "description"},
+        {"field_type": "string", "name": "hex_code"},
+        {"field_type": "string", "name": "id"},
+        {"field_type": "string", "name": "name"},
+    ],
+    "departments": [{"field_type": "string", "name": "id"}],
+    "descriptions": [
+        {"field_type": "string", "name": "description"},
+        {"field_type": "string", "name": "id"},
+    ],
+    "documents": [{"field_type": "string", "name": "id"}],
+    "emails": [{"field_type": "string", "name": "email"}],
+    "endpoints": [{"field_type": "string", "name": "base_url"}],
+    "evals": [{"field_type": "string", "name": "id"}],
+    "examples": [
+        {"field_type": "string", "name": "example"},
+        {"field_type": "string", "name": "id"},
+    ],
+    "fields": [{"field_type": "string", "name": "id"}],
+    "flags": [{"field_type": "string", "name": "id"}],
+    "group_positions": [
+        {"field_type": "boolean", "name": "active"},
+        {"field_type": "string", "name": "eval_id"},
+        {"field_type": "string", "name": "group_id"},
+        {"field_type": "string", "name": "value"},
+    ],
+    "group_rubrics": [{"field_type": "string", "name": "id"}],
+    "groups": [
+        {"field_type": "boolean", "name": "active"},
+        {"field_type": "string", "name": "group_id"},
+    ],
+    "icons": [{"field_type": "string", "name": "id"}],
+    "images": [
+        {"field_type": "string", "name": "description"},
+        {"field_type": "string", "name": "name"},
+    ],
+    "instructions": [
+        {"field_type": "string", "name": "id"},
+        {"field_type": "string", "name": "template"},
+    ],
+    "items": [
+        {"field_type": "string", "name": "description"},
+        {"field_type": "boolean", "name": "encrypted"},
+        {"field_type": "string", "name": "name"},
+        {"field_type": "number", "name": "position"},
+    ],
+    "keys": [
+        {"field_type": "string", "name": "id"},
+        {"field_type": "string", "name": "key_id"},
+    ],
+    "modalities": [
+        {"field_type": "boolean", "name": "active"},
+        {"field_type": "string", "name": "modality"},
+    ],
+    "models": [
+        {"field_type": "string", "name": "id"},
+        {"field_type": "string", "name": "value"},
+    ],
+    "names": [
+        {"field_type": "string", "name": "id"},
+        {"field_type": "string", "name": "name"},
+    ],
+    "objectives": [{"field_type": "string", "name": "objective"}],
+    "options": [
+        {"field_type": "boolean", "name": "is_correct"},
+        {"field_type": "string", "name": "option_text"},
+    ],
+    "parameter_fields": [
+        {"field_type": "string", "name": "field_id"},
+        {"field_type": "string", "name": "id"},
+        {"field_type": "string", "name": "parameter_id"},
+    ],
+    "parameters": [{"field_type": "string", "name": "id"}],
+    "personas": [{"field_type": "string", "name": "id"}],
+    "points": [{"field_type": "string", "name": "value"}],
+    "pricing": [
+        {"field_type": "boolean", "name": "active"},
+        {"field_type": "number", "name": "price"},
+        {"field_type": "string", "name": "pricing_type"},
+        {"field_type": "string", "name": "unit_id"},
+    ],
+    "problem_statements": [
+        {"field_type": "string", "name": "name"},
+        {"field_type": "string", "name": "problem_statement"},
+    ],
+    "profiles": [{"field_type": "string", "name": "id"}],
+    "prompts": [
+        {"field_type": "string", "name": "description"},
+        {"field_type": "string", "name": "name"},
+        {"field_type": "string", "name": "system_prompt"},
+    ],
+    "protocols": [{"field_type": "string", "name": "value"}],
+    "provider_keys": [{"field_type": "string", "name": "id"}],
+    "providers": [{"field_type": "string", "name": "provider_id"}],
+    "qualities": [
+        {"field_type": "boolean", "name": "active"},
+        {"field_type": "string", "name": "quality"},
+    ],
+    "questions": [
+        {"field_type": "boolean", "name": "allow_multiple"},
+        {"field_type": "string", "name": "question_text"},
+        {"field_type": "number", "name": "time"},
+    ],
+    "reasoning_levels": [
+        {"field_type": "boolean", "name": "active"},
+        {"field_type": "string", "name": "reasoning_level"},
+        {"field_type": "string", "name": "reasoning_level_id"},
+    ],
+    "request_limits": [{"field_type": "number", "name": "requests_per_day"}],
+    "rubrics": [{"field_type": "string", "name": "id"}],
+    "run_positions": [
+        {"field_type": "boolean", "name": "active"},
+        {"field_type": "string", "name": "eval_id"},
+        {"field_type": "string", "name": "run_id"},
+        {"field_type": "string", "name": "value"},
+    ],
+    "run_rubrics": [{"field_type": "string", "name": "id"}],
+    "runs": [
+        {"field_type": "boolean", "name": "active"},
+        {"field_type": "string", "name": "run_id"},
+    ],
+    "scenario_flags": [
+        {"field_type": "boolean", "name": "active"},
+        {"field_type": "string", "name": "description"},
+        {"field_type": "string", "name": "icon_id"},
+        {"field_type": "string", "name": "id"},
+        {"field_type": "string", "name": "name"},
+    ],
+    "scenario_personas": [{"field_type": "string", "name": "id"}],
+    "scenario_positions": [
+        {"field_type": "string", "name": "id"},
+        {"field_type": "string", "name": "scenario_id"},
+        {"field_type": "string", "name": "simulation_id"},
+        {"field_type": "string", "name": "value"},
+    ],
+    "scenario_rubrics": [{"field_type": "string", "name": "id"}],
+    "scenario_time_limits": [{"field_type": "string", "name": "id"}],
+    "scenarios": [{"field_type": "string", "name": "id"}],
+    "settings": [{"field_type": "string", "name": "id"}],
+    "simulation_availability": [
+        {"field_type": "string", "name": "simulation_id"},
+        {"field_type": "number", "name": "time"},
+        {"field_type": "string", "name": "type"},
+    ],
+    "simulation_positions": [
+        {"field_type": "string", "name": "simulation_id"},
+        {"field_type": "string", "name": "value"},
+    ],
+    "simulations": [{"field_type": "string", "name": "id"}],
+    "slugs": [{"field_type": "string", "name": "value"}],
+    "standard_groups": [
+        {"field_type": "string", "name": "description"},
+        {"field_type": "string", "name": "name"},
+        {"field_type": "number", "name": "pass_points"},
+        {"field_type": "number", "name": "points"},
+        {"field_type": "string", "name": "short_name"},
+    ],
+    "temperature_levels": [
+        {"field_type": "boolean", "name": "active"},
+        {"field_type": "boolean", "name": "is_upper"},
+        {"field_type": "number", "name": "temperature"},
+        {"field_type": "string", "name": "temperature_level_id"},
+    ],
+    "texts": [{"field_type": "string", "name": "id"}],
+    "thresholds": [{"field_type": "string", "name": "value"}],
+    "uploads": [{"field_type": "string", "name": "id"}],
+    "values": [
+        {"field_type": "boolean", "name": "active"},
+        {"field_type": "string", "name": "value"},
+    ],
+    "videos": [
+        {"field_type": "string", "name": "description"},
+        {"field_type": "number", "name": "length_seconds"},
+        {"field_type": "string", "name": "name"},
+    ],
+    "voices": [
+        {"field_type": "boolean", "name": "active"},
+        {"field_type": "string", "name": "voice"},
+        {"field_type": "string", "name": "voice_id"},
+    ],
+}
+
+# artifact_units_relation (unit_id → unit_name)
+UNIT_NAMES: dict[str, str] = {
+    "019b3be4-3ced-7b19-a313-ffdaa73b65fe": "200k",
+    "019b3be4-3ced-7b2b-8fd2-54556abd3391": "image",
+    "019b3be4-3ced-7b0d-b978-c5a8f6729c49": "million_audio",
+    "019b3be4-3ced-7b1c-84f7-4e13f220fdb4": "million_image",
+    "019b3be4-3ced-7acb-afab-19ceef6b410b": "million_text",
+    "019b3be4-3ced-7b23-a804-0ab3f0dff208": "second",
+}

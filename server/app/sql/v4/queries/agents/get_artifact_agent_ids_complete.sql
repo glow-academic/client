@@ -44,7 +44,8 @@ CREATE TYPE types.q_get_artifact_agent_ids_v4_item AS (
 -- Create function
 CREATE OR REPLACE FUNCTION api_get_artifact_agent_ids_v4(
     profile_id uuid DEFAULT NULL,
-    user_department_ids uuid[] DEFAULT ARRAY[]::uuid[]
+    user_department_ids uuid[] DEFAULT ARRAY[]::uuid[],
+    p_artifact_entries jsonb DEFAULT '{}'::jsonb
 )
 RETURNS TABLE (
     items types.q_get_artifact_agent_ids_v4_item[]
@@ -70,21 +71,24 @@ artifact_resources AS (
 -- For artifacts like: attempt, test
 -- ============================================================================
 
--- Get all artifact -> entry mappings via views
+-- Get all artifact -> entry mappings from JSONB parameter
 -- Only include entries that actually have tool bindings (intersection with bound entries)
 artifact_entries AS (
     SELECT
-        avr.artifact,
-        ARRAY_AGG(DISTINCT ver.entry::text) FILTER (
+        kv.key::artifact_type as artifact,
+        ARRAY_AGG(DISTINCT e.entry::text) FILTER (
             WHERE EXISTS (
-                SELECT 1 FROM tool_bindings_junction tbj
-                WHERE tbj.binding_id = b.id AND tbj.active = true
+                SELECT 1 FROM bindings_resource b
+                WHERE b.entry = e.entry::entry_type
+                AND EXISTS (
+                    SELECT 1 FROM tool_bindings_junction tbj
+                    WHERE tbj.binding_id = b.id AND tbj.active = true
+                )
             )
         ) as required_entries
-    FROM artifact_view_relation avr
-    JOIN view_entry_relation ver ON ver.view = avr.view
-    JOIN bindings_resource b ON b.entry = ver.entry
-    GROUP BY avr.artifact
+    FROM jsonb_each(p_artifact_entries) AS kv(key, value)
+    CROSS JOIN LATERAL jsonb_array_elements_text(kv.value) AS e(entry)
+    GROUP BY kv.key
 ),
 
 -- ============================================================================

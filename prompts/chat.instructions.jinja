@@ -1,0 +1,120 @@
+## Context
+
+{% set draft = views.draft_chat if views and views.draft_chat else None %}
+
+{% if draft %}
+### Current State
+{% if draft.scenario_name is defined %}
+**Scenario:** {{ draft.scenario_name }}
+{% endif %}
+{% if draft.persona_name is defined %}
+**Persona:** {{ draft.persona_name }}
+{% endif %}
+{% if draft.department_ids and draft.department_ids|length > 0 %}
+**Departments:** {% for id in draft.department_ids %}{{ id }}{% if not loop.last %}, {% endif %}{% endfor %}
+{% endif %}
+{% endif %}
+
+### Available Resources
+
+{% if departments and departments|length > 0 %}
+### Available Departments
+{% for item in departments %}
+- id: {{ item.id }} | {{ item.name if item.name is defined else item.id }}
+{% endfor %}
+{% endif %}
+
+{% if personas and personas|length > 0 %}
+### Available Personas
+{% for item in personas %}
+- id: {{ item.id }} | {{ item.name if item.name is defined else item.id }}
+{% endfor %}
+{% endif %}
+
+{% if documents and documents|length > 0 %}
+### Available Documents
+{% for item in documents %}
+- id: {{ item.id }} | {{ item.name if item.name is defined else item.id }}
+{% endfor %}
+{% endif %}
+
+{% if parameter_fields and parameter_fields|length > 0 %}
+### Available Parameter Fields
+{% for item in parameter_fields %}
+- id: {{ item.id }} | {{ item.name if item.name is defined else item.id }}
+{% endfor %}
+{% endif %}
+
+{% if scenarios and scenarios|length > 0 %}
+### Available Scenarios
+{% for item in scenarios %}
+- id: {{ item.id }} | {{ item.name if item.name is defined else item.id }}
+{% endfor %}
+{% endif %}
+
+{% if parameters and parameters|length > 0 %}
+### Available Parameters
+{% for item in parameters %}
+- id: {{ item.id }} | {{ item.name if item.name is defined else item.id }}
+{% endfor %}
+{% endif %}
+
+{% if fields and fields|length > 0 %}
+### Available Fields
+{% for item in fields %}
+- id: {{ item.id }} | {{ item.name if item.name is defined else item.id }}
+{% endfor %}
+{% endif %}
+
+{% if questions and questions|length > 0 %}
+### Available Questions
+{% for item in questions %}
+- id: {{ item.id }} | {{ item.name if item.name is defined else item.id }}
+{% endfor %}
+{% endif %}
+
+{% if options and options|length > 0 %}
+### Available Options
+{% for item in options %}
+- id: {{ item.id }} | {{ item.name if item.name is defined else item.id }}
+{% endfor %}
+{% endif %}
+
+{% if videos and videos|length > 0 %}
+### Available Videos
+{% for item in videos %}
+- id: {{ item.id }} | {{ item.name if item.name is defined else item.id }}
+{% endfor %}
+{% endif %}
+
+{% if images and images|length > 0 %}
+### Available Images
+{% for item in images %}
+- id: {{ item.id }} | {{ item.name if item.name is defined else item.id }}
+{% endfor %}
+{% endif %}
+
+{% if templates and templates|length > 0 %}
+### Available Templates
+{% for item in templates %}
+- id: {{ item.id }} | {{ item.name if item.name is defined else item.id }}
+{% endfor %}
+{% endif %}
+
+{% if problem_statements and problem_statements|length > 0 %}
+### Available Problem Statements
+{% for item in problem_statements %}
+- id: {{ item.id }} | {{ item.name if item.name is defined else item.id }}
+{% endfor %}
+{% endif %}
+
+{% if objectives and objectives|length > 0 %}
+### Available Objectives
+{% for item in objectives %}
+- id: {{ item.id }} | {{ item.name if item.name is defined else item.id }}
+{% endfor %}
+{% endif %}
+
+## Tool Usage
+
+For each resource type, use the appropriate **create_*** tool to generate new content based on the context above.

@@ -694,3 +694,22 @@ VIEW_ENTRIES: dict[str, frozenset[str]] = {
     "benchmark_messages": frozenset({"highlights", "messages", "replacements"}),
     "simulation_messages": frozenset({"highlights", "messages", "replacements"}),
 }
+
+# entry_tools_relation (tool_id → entry_type)
+TOOL_ENTRY_TYPES: dict[str, str] = {
+    "019b71cc-0154-7343-b89d-96d865c3b7b8": "debug_info",
+    "019c16d8-a128-7352-b010-39432de8e0dc": "highlights",
+    "019c16d8-a128-7f6f-a6f8-c9c5aa236504": "replacements",
+    "019b916f-f5c8-7e4e-8412-3e3fb1a9ce5c": "responses",
+}
+
+# artifact_view_relation + view_entry_relation combined (artifact_type → entry_types)
+# Computed from ARTIFACT_VIEWS × VIEW_ENTRIES
+ARTIFACT_ENTRIES: dict[str, list[str]] = {}
+for _art, _views in ARTIFACT_VIEWS.items():
+    _ents: set[str] = set()
+    for _v in _views:
+        if _v in VIEW_ENTRIES:
+            _ents.update(VIEW_ENTRIES[_v])
+    if _ents:
+        ARTIFACT_ENTRIES[_art] = sorted(_ents)

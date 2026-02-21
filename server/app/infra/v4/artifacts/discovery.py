@@ -147,16 +147,13 @@ async def get_entry_table_columns(
     ]
 
 
-async def get_resource_schema_fields(
-    conn: asyncpg.Connection, resource_type: str
-) -> list[dict[str, Any]]:
-    """Discover schema fields for a resource type.
+def get_resource_schema_fields(resource_type: str) -> list[dict[str, Any]]:
+    """Get output schema fields for a resource type from the registry.
 
-    Queries resource_outputs_relation → outputs to get the output schema fields for a resource.
-    These fields define what output fields the resource has.
+    Returns simplified output field schemas (string/number/boolean) that define
+    the tool-facing output contract.
 
     Args:
-        conn: Database connection
         resource_type: Resource type name (e.g., "personas", "names")
 
     Returns:
@@ -167,29 +164,17 @@ async def get_resource_schema_fields(
         - position: Always 0 (outputs don't have position field)
         - template: Always empty string (templates are handled by args_outputs)
     """
-    sql_path = "app/sql/v4/queries/infra/artifacts/discovery/get_resource_schema_fields_complete.sql"
-
-    # Load SQL and detect if it's a function
-    sql_text = load_sql(sql_path)
-    is_function, function_name, schema = _detect_function_in_sql(sql_text)
-
-    if is_function and function_name:
-        # Call function and fetch all rows
-        function_call_sql = f'SELECT * FROM "{schema}"."{function_name}"($1::text)'
-        rows = await conn.fetch(function_call_sql, resource_type)
-    else:
-        # Raw SQL - execute directly
-        rows = await conn.fetch(sql_text, resource_type)
+    from app.registry.resources import RESOURCE_OUTPUT_SCHEMAS
 
     return [
         {
-            "name": str(row["name"]),
-            "field_type": str(row["field_type"]),
-            "required": bool(row["required"]),
-            "position": int(row["position"]),
-            "template": str(row["template"]),
+            "name": f["name"],
+            "field_type": f["field_type"],
+            "required": False,
+            "position": 0,
+            "template": "",
         }
-        for row in rows
+        for f in RESOURCE_OUTPUT_SCHEMAS.get(resource_type, [])
     ]
 
 
@@ -299,7 +284,7 @@ async def map_template_values_to_table_columns(
     if tool_id:
         schema_fields = await get_resource_output_schema_fields(conn, tool_id)
     else:
-        schema_fields = await get_resource_schema_fields(conn, resource_type)
+        schema_fields = get_resource_schema_fields(resource_type)
 
     # Build mapping: schema field name -> table column name
     mapped_data: dict[str, Any] = {}

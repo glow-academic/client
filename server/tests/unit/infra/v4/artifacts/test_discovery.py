@@ -14,6 +14,7 @@ from app.infra.v4.artifacts.discovery import (
     get_resource_table_columns,
     map_template_values_to_table_columns,
 )
+from app.registry.resources import RESOURCE_OUTPUT_SCHEMAS
 
 
 class TestExtractTemplateVariableName:
@@ -204,38 +205,31 @@ class TestGetResourceTableColumns:
 class TestGetResourceSchemaFields:
     """Test get_resource_schema_fields function."""
 
-    @pytest.mark.asyncio
-    async def test_returns_schema_fields(self):
-        """Test returning schema fields."""
-        from unittest.mock import patch
+    def test_returns_schema_fields_from_registry(self):
+        """Test returning schema fields from RESOURCE_OUTPUT_SCHEMAS registry."""
+        result = get_resource_schema_fields("names")
 
-        conn = AsyncMock()
-        mock_rows = [
-            {
-                "name": "name",
-                "field_type": "string",
-                "required": True,
-                "position": 0,
-                "template": "{{ name }}",
-            },
-        ]
-        conn.fetch = AsyncMock(return_value=mock_rows)
-
-        with patch(
-            "app.infra.v4.artifacts.discovery.load_sql",
-            return_value="CREATE FUNCTION...",
-        ):
-            with patch(
-                "app.infra.v4.artifacts.discovery._detect_function_in_sql",
-                return_value=(True, "api_get_resource_schema_fields_v4", "public"),
-            ):
-                result = await get_resource_schema_fields(conn, "names")
-
-        assert len(result) == 1
-        assert result[0]["name"] == "name"
+        assert len(result) == len(RESOURCE_OUTPUT_SCHEMAS["names"])
+        assert result[0]["name"] == "id"
         assert result[0]["field_type"] == "string"
-        assert result[0]["required"] is True
-        assert result[0]["template"] == "{{ name }}"
+        assert result[0]["required"] is False
+        assert result[0]["position"] == 0
+        assert result[0]["template"] == ""
+
+    def test_unknown_resource_returns_empty(self):
+        """Test that unknown resource type returns empty list."""
+        result = get_resource_schema_fields("nonexistent_resource")
+        assert result == []
+
+    def test_colors_has_multiple_fields(self):
+        """Test resource with multiple output fields."""
+        result = get_resource_schema_fields("colors")
+        assert len(result) == 4
+        field_names = [f["name"] for f in result]
+        assert "description" in field_names
+        assert "hex_code" in field_names
+        assert "id" in field_names
+        assert "name" in field_names
 
 
 class TestGetResourceOutputSchemaFields:
@@ -288,26 +282,15 @@ class TestMapTemplateValuesToTableColumns:
 
         from unittest.mock import patch
 
-        # Mock table columns
+        # Mock table columns (only one DB call now — schema fields come from registry)
         conn.fetch = AsyncMock(
-            side_effect=[
-                [  # get_resource_table_columns
-                    {
-                        "name": "name",
-                        "data_type": "text",
-                        "is_nullable": False,
-                        "column_default": None,
-                    },
-                ],
-                [  # get_resource_schema_fields (no tool_id)
-                    {
-                        "name": "name",
-                        "field_type": "string",
-                        "required": True,
-                        "position": 0,
-                        "template": "",
-                    },
-                ],
+            return_value=[
+                {
+                    "name": "name",
+                    "data_type": "text",
+                    "is_nullable": False,
+                    "column_default": None,
+                },
             ]
         )
 
@@ -328,33 +311,27 @@ class TestMapTemplateValuesToTableColumns:
 
     @pytest.mark.asyncio
     async def test_template_extraction(self):
-        """Test mapping via template variable extraction."""
+        """Test mapping via template variable extraction with patched registry."""
         conn = AsyncMock()
 
         from unittest.mock import patch
 
-        # Mock table columns
+        # Mock table columns (only one DB call)
         conn.fetch = AsyncMock(
-            side_effect=[
-                [  # get_resource_table_columns
-                    {
-                        "name": "message",
-                        "data_type": "text",
-                        "is_nullable": False,
-                        "column_default": None,
-                    },
-                ],
-                [  # get_resource_schema_fields (no tool_id)
-                    {
-                        "name": "content",
-                        "field_type": "string",
-                        "required": True,
-                        "position": 0,
-                        "template": "{{ message }}",
-                    },
-                ],
+            return_value=[
+                {
+                    "name": "message",
+                    "data_type": "text",
+                    "is_nullable": False,
+                    "column_default": None,
+                },
             ]
         )
+
+        # Patch registry to have a "contents" resource with template
+        mock_schemas = {
+            "contents": [{"name": "content", "field_type": "string"}],
+        }
 
         with patch(
             "app.infra.v4.artifacts.discovery.load_sql",
@@ -364,10 +341,22 @@ class TestMapTemplateValuesToTableColumns:
                 "app.infra.v4.artifacts.discovery._detect_function_in_sql",
                 return_value=(True, "api_function_v4", "public"),
             ):
-                template_values = {"content": "Test Content"}
-                result = await map_template_values_to_table_columns(
-                    conn, "contents", template_values
-                )
+                with patch(
+                    "app.infra.v4.artifacts.discovery.get_resource_schema_fields",
+                    return_value=[
+                        {
+                            "name": "content",
+                            "field_type": "string",
+                            "required": True,
+                            "position": 0,
+                            "template": "{{ message }}",
+                        },
+                    ],
+                ):
+                    template_values = {"content": "Test Content"}
+                    result = await map_template_values_to_table_columns(
+                        conn, "contents", template_values
+                    )
 
         # Should map "content" (schema field) to "message" (table column) via template
         assert result == {"message": "Test Content"}

@@ -1,0 +1,85 @@
+## Context
+
+{% set draft = views.draft_benchmark if views and views.draft_benchmark else None %}
+
+{% if draft %}
+### Current State
+{% if draft.scenario_name is defined %}
+**Scenario:** {{ draft.scenario_name }}
+{% endif %}
+{% if draft.persona_name is defined %}
+**Persona:** {{ draft.persona_name }}
+{% endif %}
+{% if draft.department_ids and draft.department_ids|length > 0 %}
+**Departments:** {% for id in draft.department_ids %}{{ id }}{% if not loop.last %}, {% endif %}{% endfor %}
+{% endif %}
+{% endif %}
+
+### Available Resources
+
+{% if departments and departments|length > 0 %}
+### Available Departments
+{% for item in departments %}
+- id: {{ item.id }} | {{ item.name if item.name is defined else item.id }}
+{% endfor %}
+{% endif %}
+
+{% if models and models|length > 0 %}
+### Available Models
+{% for item in models %}
+- id: {{ item.id }} | {{ item.name if item.name is defined else item.id }}
+{% endfor %}
+{% endif %}
+
+{% if prompts and prompts|length > 0 %}
+### Available Prompts
+{% for item in prompts %}
+- id: {{ item.id }} | {{ item.name if item.name is defined else item.id }}
+{% endfor %}
+{% endif %}
+
+{% if instructions and instructions|length > 0 %}
+### Available Instructions
+{% for item in instructions %}
+- id: {{ item.id }} | {{ item.name if item.name is defined else item.id }}
+{% endfor %}
+{% endif %}
+
+{% if voices and voices|length > 0 %}
+### Available Voices
+{% for item in voices %}
+- id: {{ item.id }} | {{ item.name if item.name is defined else item.id }}
+{% endfor %}
+{% endif %}
+
+{% if temperature_levels and temperature_levels|length > 0 %}
+### Available Temperature Levels
+{% for item in temperature_levels %}
+- id: {{ item.id }} | {{ item.name if item.name is defined else item.id }}
+{% endfor %}
+{% endif %}
+
+{% if reasoning_levels and reasoning_levels|length > 0 %}
+### Available Reasoning Levels
+{% for item in reasoning_levels %}
+- id: {{ item.id }} | {{ item.name if item.name is defined else item.id }}
+{% endfor %}
+{% endif %}
+
+{% if tools and tools|length > 0 %}
+### Available Tools
+{% for item in tools %}
+- id: {{ item.id }} | {{ item.name if item.name is defined else item.id }}
+{% endfor %}
+{% endif %}
+
+{% if keys and keys|length > 0 %}
+### Available Keys
+{% for item in keys %}
+- id: {{ item.id }} | {{ item.name if item.name is defined else item.id }}
+{% endfor %}
+{% endif %}
+
+## Tool Usage
+
+For each resource type, use the appropriate **create_*** tool to generate new content based on the context above.
